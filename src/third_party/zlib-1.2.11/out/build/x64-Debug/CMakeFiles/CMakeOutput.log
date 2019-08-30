@@ -1,0 +1,77 @@
+The system is: Windows - 10.0.18362 - AMD64
+Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+Compiler: C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.22.27905/bin/HostX64/x64/cl.exe 
+Build flags: 
+Id flags:  
+
+The output was:
+0
+用于 x64 的 Microsoft (R) C/C++ 优化编译器 19.22.27905 版
+版权所有(C) Microsoft Corporation。保留所有权利。
+
+CMakeCCompilerId.c
+Microsoft (R) Incremental Linker Version 14.22.27905.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+/out:CMakeCCompilerId.exe 
+CMakeCCompilerId.obj 
+
+
+Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CMakeCCompilerId.exe"
+
+Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CMakeCCompilerId.obj"
+
+The C compiler identification is MSVC, found in "C:/Users/himself65/Desktop/OpenArkCompiler-master-ae976ab813e7243fe8c59a9dd0dc0ddedd773acf/src/third_party/zlib-1.2.11/out/build/x64-Debug/CMakeFiles/3.14.19060802-MSVC_2/CompilerIdC/CMakeCCompilerId.exe"
+
+Determining if the C compiler works passed with the following output:
+Change Dir: C:/Users/himself65/Desktop/OpenArkCompiler-master-ae976ab813e7243fe8c59a9dd0dc0ddedd773acf/src/third_party/zlib-1.2.11/out/build/x64-Debug/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_0e84d 
+[1/2] Building C object CMakeFiles\cmTC_0e84d.dir\testCCompiler.c.obj
+[2/2] Linking C executable cmTC_0e84d.exe
+
+
+Detecting C compiler ABI info compiled with the following output:
+Change Dir: C:/Users/himself65/Desktop/OpenArkCompiler-master-ae976ab813e7243fe8c59a9dd0dc0ddedd773acf/src/third_party/zlib-1.2.11/out/build/x64-Debug/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_d81a7 
+[1/2] Building C object CMakeFiles\cmTC_d81a7.dir\CMakeCCompilerABI.c.obj
+[2/2] Linking C executable cmTC_d81a7.exe
+
+
+
+
+Detecting C [] compiler features compiled with the following output:
+Change Dir: C:/Users/himself65/Desktop/OpenArkCompiler-master-ae976ab813e7243fe8c59a9dd0dc0ddedd773acf/src/third_party/zlib-1.2.11/out/build/x64-Debug/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_40f54 
+[1/2] Building C object CMakeFiles\cmTC_40f54.dir\feature_tests.c.obj
+[2/2] Linking C executable cmTC_40f54.exe
+
+
+    Feature record: C_FEATURE:1c_function_prototypes
+    Feature record: C_FEATURE:1c_variadic_macros
+Determining if the include file sys/types.h exists passed with the following output:
+Change Dir: C:/Users/himself65/Desktop/OpenArkCompiler-master-ae976ab813e7243fe8c59a9dd0dc0ddedd773acf/src/third_party/zlib-1.2.11/out/build/x64-Debug/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_4a79e 
+[1/2] Building C object CMakeFiles\cmTC_4a79e.dir\CheckIncludeFile.c.obj
+[2/2] Linking C executable cmTC_4a79e.exe
+
+
+Determining if the include file stdint.h exists passed with the following output:
+Change Dir: C:/Users/himself65/Desktop/OpenArkCompiler-master-ae976ab813e7243fe8c59a9dd0dc0ddedd773acf/src/third_party/zlib-1.2.11/out/build/x64-Debug/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_e5636 
+[1/2] Building C object CMakeFiles\cmTC_e5636.dir\CheckIncludeFile.c.obj
+[2/2] Linking C executable cmTC_e5636.exe
+
+
+Determining if the include file stddef.h exists passed with the following output:
+Change Dir: C:/Users/himself65/Desktop/OpenArkCompiler-master-ae976ab813e7243fe8c59a9dd0dc0ddedd773acf/src/third_party/zlib-1.2.11/out/build/x64-Debug/CMakeFiles/CMakeTmp
+
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_4f8ef 
+[1/2] Building C object CMakeFiles\cmTC_4f8ef.dir\CheckIncludeFile.c.obj
+[2/2] Linking C executable cmTC_4f8ef.exe
+
+

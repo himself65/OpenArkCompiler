@@ -1,0 +1,13 @@
+prefix=C:/Users/himself65/Desktop/OpenArkCompiler-master-ae976ab813e7243fe8c59a9dd0dc0ddedd773acf/src/third_party/zlib-1.2.11/out/install/x64-Debug
+exec_prefix=C:/Users/himself65/Desktop/OpenArkCompiler-master-ae976ab813e7243fe8c59a9dd0dc0ddedd773acf/src/third_party/zlib-1.2.11/out/install/x64-Debug
+libdir=C:/Users/himself65/Desktop/OpenArkCompiler-master-ae976ab813e7243fe8c59a9dd0dc0ddedd773acf/src/third_party/zlib-1.2.11/out/install/x64-Debug/lib
+sharedlibdir=C:/Users/himself65/Desktop/OpenArkCompiler-master-ae976ab813e7243fe8c59a9dd0dc0ddedd773acf/src/third_party/zlib-1.2.11/out/install/x64-Debug/lib
+includedir=C:/Users/himself65/Desktop/OpenArkCompiler-master-ae976ab813e7243fe8c59a9dd0dc0ddedd773acf/src/third_party/zlib-1.2.11/out/install/x64-Debug/include
+
+Name: zlib
+Description: zlib compression library
+Version: 1.2.11
+
+Requires:
+Libs: -L${libdir} -L${sharedlibdir} -lz
+Cflags: -I${includedir}

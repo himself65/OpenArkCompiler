@@ -1,0 +1,10 @@
+C:/Users/himself65/Desktop/OpenArkCompiler-master-ae976ab813e7243fe8c59a9dd0dc0ddedd773acf/src/third_party/zlib-1.2.11/out/build/x64-Debug/CMakeFiles/zlib.dir
+C:/Users/himself65/Desktop/OpenArkCompiler-master-ae976ab813e7243fe8c59a9dd0dc0ddedd773acf/src/third_party/zlib-1.2.11/out/build/x64-Debug/CMakeFiles/zlibstatic.dir
+C:/Users/himself65/Desktop/OpenArkCompiler-master-ae976ab813e7243fe8c59a9dd0dc0ddedd773acf/src/third_party/zlib-1.2.11/out/build/x64-Debug/CMakeFiles/example.dir
+C:/Users/himself65/Desktop/OpenArkCompiler-master-ae976ab813e7243fe8c59a9dd0dc0ddedd773acf/src/third_party/zlib-1.2.11/out/build/x64-Debug/CMakeFiles/list_install_components.dir
+C:/Users/himself65/Desktop/OpenArkCompiler-master-ae976ab813e7243fe8c59a9dd0dc0ddedd773acf/src/third_party/zlib-1.2.11/out/build/x64-Debug/CMakeFiles/minigzip.dir
+C:/Users/himself65/Desktop/OpenArkCompiler-master-ae976ab813e7243fe8c59a9dd0dc0ddedd773acf/src/third_party/zlib-1.2.11/out/build/x64-Debug/CMakeFiles/rebuild_cache.dir
+C:/Users/himself65/Desktop/OpenArkCompiler-master-ae976ab813e7243fe8c59a9dd0dc0ddedd773acf/src/third_party/zlib-1.2.11/out/build/x64-Debug/CMakeFiles/test.dir
+C:/Users/himself65/Desktop/OpenArkCompiler-master-ae976ab813e7243fe8c59a9dd0dc0ddedd773acf/src/third_party/zlib-1.2.11/out/build/x64-Debug/CMakeFiles/install.dir
+C:/Users/himself65/Desktop/OpenArkCompiler-master-ae976ab813e7243fe8c59a9dd0dc0ddedd773acf/src/third_party/zlib-1.2.11/out/build/x64-Debug/CMakeFiles/edit_cache.dir
+C:/Users/himself65/Desktop/OpenArkCompiler-master-ae976ab813e7243fe8c59a9dd0dc0ddedd773acf/src/third_party/zlib-1.2.11/out/build/x64-Debug/CMakeFiles/install/local.dir

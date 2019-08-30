@@ -1,0 +1,65 @@
+/*
+ * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reverved.
+ *
+ * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * You can use this software according to the terms and conditions of the Mulan PSL v1.
+ * You may obtain a copy of Mulan PSL v1 at:
+ *
+ * 	http://license.coscl.org.cn/MulanPSL 
+ *
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
+ * FIT FOR A PARTICULAR PURPOSE.  
+ * See the Mulan PSL v1 for more details.  
+ */
+;
+; Slightly modified version of ../nt/zlib.dnt :-)
+;
+
+LIBRARY		Z
+DESCRIPTION	"Zlib compression library for OS/2"
+CODE		PRELOAD MOVEABLE DISCARDABLE
+DATA		PRELOAD MOVEABLE MULTIPLE
+
+EXPORTS
+    adler32
+    compress
+    crc32
+    deflate
+    deflateCopy
+    deflateEnd
+    deflateInit2_
+    deflateInit_
+    deflateParams
+    deflateReset
+    deflateSetDictionary
+    gzclose
+    gzdopen
+    gzerror
+    gzflush
+    gzopen
+    gzread
+    gzwrite
+    inflate
+    inflateEnd
+    inflateInit2_
+    inflateInit_
+    inflateReset
+    inflateSetDictionary
+    inflateSync
+    uncompress
+    zlibVersion
+    gzprintf
+    gzputc
+    gzgetc
+    gzseek
+    gzrewind
+    gztell
+    gzeof
+    gzsetparams
+    zError
+    inflateSyncPoint
+    get_crc_table
+    compress2
+    gzputs
+    gzgets
