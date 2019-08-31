@@ -1,17 +1,7 @@
-/*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reverved.
- *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
- * You can use this software according to the terms and conditions of the Mulan PSL v1.
- * You may obtain a copy of Mulan PSL v1 at:
- *
- * 	http://license.coscl.org.cn/MulanPSL 
- *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
- */
+/* zran.c -- example of zlib/gzip stream indexing and random access
+ * Copyright (C) 2005, 2012 Mark Adler
+ * For conditions of distribution and use, see copyright notice in zlib.h
+   Version 1.1  29 Sep 2012  Mark Adler */
 
 /* Version History:
  1.0  29 May 2005  First version

@@ -1,6 +1,6 @@
-**OPEN SOURCE SOFTWARE NOTICE**
+﻿**OPEN SOURCE SOFTWARE NOTICE**
 
-Please note we provide an open source software notice along with this product and/or this product firmware (in the following just “this product”). The open source software licenses are granted by the respective right holders. And the open source licenses prevail all other license information with regard to the respective open source software contained in the product, including but not limited to End User Software Licensing Agreement. This notice is provided on behalf of Huawei Technologies Co. Ltd. and any of its local subsidiaries which may have provided this product to you in your local country.
+Please note we provide an open source software notice for the third party open source software along with this software and/or this software component contributed by Huawei (in the following just “this SOFTWARE”). The open source software licenses are granted by the respective right holders.
 
 **Warranty Disclaimer **
 
@@ -96,8 +96,3 @@ distribution.
 
 
 
-*foss@huawei.com*
-
-detailing the name of the product and the firmware version for which you need the source code and indicating how we can contact you.
-
-**This offer is valid for three years from the moment we distributed the product and valid for 3 years.**

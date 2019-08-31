@@ -9,7 +9,7 @@
 
 ## 源码下载
 
-   下载地址：<https://code.opensource.huaweicloud.com/openarkcompiler/openarkcompiler/home>，可以通过`Clone` or `Download`的方式下载openarkcompiler源码
+   下载地址：<https://code.opensource.huaweicloud.com/HarmonyOS/OpenArkCompiler/home>，可以通过`Clone` or `Download`的方式下载openarkcompiler源码
    > 注：默认源码下载目录为openarkcompiler
 
 

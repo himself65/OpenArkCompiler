@@ -1,17 +1,6 @@
-/*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reverved.
- *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
- * You can use this software according to the terms and conditions of the Mulan PSL v1.
- * You may obtain a copy of Mulan PSL v1 at:
- *
- * 	http://license.coscl.org.cn/MulanPSL 
- *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
- */
+/* fitblk.c: example of fitting compressed output to a specified size
+   Not copyrighted -- provided to the public domain
+   Version 1.1  25 November 2004  Mark Adler */
 
 /* Version history:
    1.0  24 Nov 2004  First version

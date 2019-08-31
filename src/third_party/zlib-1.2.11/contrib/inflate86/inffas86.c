@@ -1,16 +1,29 @@
-/*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reverved.
+/* inffas86.c is a hand tuned assembler version of
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
- * You can use this software according to the terms and conditions of the Mulan PSL v1.
- * You may obtain a copy of Mulan PSL v1 at:
+ * inffast.c -- fast decoding
+ * Copyright (C) 1995-2003 Mark Adler
+ * For conditions of distribution and use, see copyright notice in zlib.h
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ * Copyright (C) 2003 Chris Anderson <christop@charm.net>
+ * Please use the copyright conditions above.
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * Dec-29-2003 -- I added AMD64 inflate asm support.  This version is also
+ * slightly quicker on x86 systems because, instead of using rep movsb to copy
+ * data, it uses rep movsw, which moves data in 2-byte chunks instead of single
+ * bytes.  I've tested the AMD64 code on a Fedora Core 1 + the x86_64 updates
+ * from http://fedora.linux.duke.edu/fc1_x86_64
+ * which is running on an Athlon 64 3000+ / Gigabyte GA-K8VT800M system with
+ * 1GB ram.  The 64-bit version is about 4% faster than the 32-bit version,
+ * when decompressing mozilla-source-1.3.tar.gz.
+ *
+ * Mar-13-2003 -- Most of this is derived from inffast.S which is derived from
+ * the gcc -S output of zlib-1.2.0/inffast.c.  Zlib-1.2.0 is in beta release at
+ * the moment.  I have successfully compiled and tested this code with gcc2.96,
+ * gcc3.2, icc5.0, msvc6.0.  It is very close to the speed of inffast.S
+ * compiled with gcc -DNO_MMX, but inffast.S is still faster on the P3 with MMX
+ * enabled.  I will attempt to merge the MMX code into this version.  Newer
+ * versions of this and inffast.S can be found at
+ * http://www.eetbeetee.com/zlib/ and http://www.charm.net/~christop/zlib/
  */
 
 #include "zutil.h"

@@ -1,16 +1,31 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reverved.
+ * puff.c
+ * Copyright (C) 2002-2013 Mark Adler
+ * For conditions of distribution and use, see copyright notice in puff.h
+ * version 2.3, 21 Jan 2013
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
- * You can use this software according to the terms and conditions of the Mulan PSL v1.
- * You may obtain a copy of Mulan PSL v1 at:
+ * puff.c is a simple inflate written to be an unambiguous way to specify the
+ * deflate format.  It is not written for speed but rather simplicity.  As a
+ * side benefit, this code might actually be useful when small code is more
+ * important than speed, such as bootstrap applications.  For typical deflate
+ * data, zlib's inflate() is about four times as fast as puff().  zlib's
+ * inflate compiles to around 20K on my machine, whereas puff.c compiles to
+ * around 4K on my machine (a PowerPC using GNU cc).  If the faster decode()
+ * function here is used, then puff() is only twice as slow as zlib's
+ * inflate().
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ * All dynamically allocated memory comes from the stack.  The stack required
+ * is less than 2K bytes.  This code is compatible with 16-bit int's and
+ * assumes that long's are at least 32 bits.  puff.c uses the short data type,
+ * assumed to be 16 bits, for arrays in order to conserve memory.  The code
+ * works whether integers are stored big endian or little endian.
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * In the comments below are "Format notes" that describe the inflate process
+ * and document some of the less obvious aspects of the format.  This source
+ * code is meant to supplement RFC 1951, which formally describes the deflate
+ * format:
+ *
+ *    http://www.zlib.org/rfc-deflate.html
  */
 
 /*

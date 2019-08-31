@@ -1,17 +1,7 @@
-/*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reverved.
- *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
- * You can use this software according to the terms and conditions of the Mulan PSL v1.
- * You may obtain a copy of Mulan PSL v1 at:
- *
- * 	http://license.coscl.org.cn/MulanPSL 
- *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
- */
+/* gun.c -- simple gunzip to give an example of the use of inflateBack()
+ * Copyright (C) 2003, 2005, 2008, 2010, 2012 Mark Adler
+ * For conditions of distribution and use, see copyright notice in zlib.h
+   Version 1.7  12 August 2012  Mark Adler */
 
 /* Version history:
    1.0  16 Feb 2003  First version for testing of inflateBack()

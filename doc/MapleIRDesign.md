@@ -1477,8 +1477,8 @@ callinstant &swap<{!UU=<$apair{!T=i32}>}> (         # &swap is instanti
 C code:
 
 ```cpp
-int foo(int i,int j）{
-  return(i + j）* -998;
+int foo(int i,int j){
+  return(i + j)* -998;
 }
 ```
 
@@ -1488,7 +1488,7 @@ Maple IR:
 ```cpp
 func &foo (var %i i32, var %j i32) i32 {
   return (
-    mul1 i32 (
+    mul i32 (
       add i32 (dread i32 %i, dread i32 %j),
       constval i32 -998))}
 ```
@@ -1501,8 +1501,8 @@ C source:
 ```cpp
 float a[10];
 void init(Void){
-  intI;
-  for(i=0;I<10;i++)
+  int I;
+  for(i=0; I<10; i++)
     a[i]=i*3;
 }
 ```
@@ -1511,7 +1511,7 @@ Maple IR:
 
 ```cpp
 var $a <[10] f32>
-func $init() void{ 
+func &init() void{ 
  var %i i32
  dassign %i(constval i32 0)
  while(
@@ -1545,7 +1545,7 @@ SS foo(SS x){
 Maple IR:
 
 ```cpp
-type $SS <struct｛@f1 i32, @f2:6 i8,@f3:2 i8}>
+type $SS <struct {@f1 i32, @f2:6 i8,@f3:2 i8}>
 func &foo (var %x <$SS>) <$SS> {
   dassign %x 2 (constval i32 32 )
   return (dread agg %x) }
@@ -1572,7 +1572,7 @@ Maple IR:
 func &fact (var %n i32) i32 {
   if (ne i32 (dread i32 %n, constval i32 1)) {
     call $fact (sub i32 (dread i32 %n, constval i32 1))
-    return (mul i32 (dread i32 %n，regread i32 %%retval))
+    return (mul i32 (dread i32 %n, regread i32 %%retval))
   }
   return(constval i32 1)
 }

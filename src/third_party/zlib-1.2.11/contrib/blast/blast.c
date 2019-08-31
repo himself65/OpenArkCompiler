@@ -1,16 +1,20 @@
-/*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reverved.
+/* blast.c
+ * Copyright (C) 2003, 2012, 2013 Mark Adler
+ * For conditions of distribution and use, see copyright notice in blast.h
+ * version 1.3, 24 Aug 2013
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
- * You can use this software according to the terms and conditions of the Mulan PSL v1.
- * You may obtain a copy of Mulan PSL v1 at:
+ * blast.c decompresses data compressed by the PKWare Compression Library.
+ * This function provides functionality similar to the explode() function of
+ * the PKWare library, hence the name "blast".
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ * This decompressor is based on the excellent format description provided by
+ * Ben Rudiak-Gould in comp.compression on August 13, 2001.  Interestingly, the
+ * example Ben provided in the post is incorrect.  The distance 110001 should
+ * instead be 111000.  When corrected, the example byte stream becomes:
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ *    00 04 82 24 25 8f 80 7f
+ *
+ * which decompresses to "AIAIAIAIAIAIA" (without the quotes).
  */
 
 /*

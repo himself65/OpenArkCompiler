@@ -1,16 +1,9 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reverved.
+ * untgz.c -- Display contents and extract files from a gzip'd TAR file
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
- * You can use this software according to the terms and conditions of the Mulan PSL v1.
- * You may obtain a copy of Mulan PSL v1 at:
- *
- * 	http://license.coscl.org.cn/MulanPSL 
- *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * written by Pedro A. Aranda Gutierrez <paag@tid.es>
+ * adaptation to Unix by Jean-loup Gailly <jloup@gzip.org>
+ * various fixes by Cosmin Truta <cosmint@cs.ubbcluj.ro>
  */
 
 #include <stdio.h>
