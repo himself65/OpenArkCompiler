@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ *
+ * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * You can use this software according to the terms and conditions of the Mulan PSL v1.
+ * You may obtain a copy of Mulan PSL v1 at:
+ *
+ * 	http://license.coscl.org.cn/MulanPSL 
+ *
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
+ * FIT FOR A PARTICULAR PURPOSE.  
+ * See the Mulan PSL v1 for more details.  
+ */
+  PRIMTYPE(void)
+  PRIMTYPE(i8)
+  PRIMTYPE(i16)
+  PRIMTYPE(i32)
+  PRIMTYPE(i64)
+  PRIMTYPE(u8)
+  PRIMTYPE(u16)
+  PRIMTYPE(u32)
+  PRIMTYPE(u64)
+  PRIMTYPE(u1)
+  PRIMTYPE(ptr)
+  PRIMTYPE(ref)
+  PRIMTYPE(a32)
+  PRIMTYPE(a64)
+  PRIMTYPE(f32)
+  PRIMTYPE(f64)
+  PRIMTYPE(f128)
+  PRIMTYPE(c64)
+  PRIMTYPE(c128)
+#ifdef DYNAMICLANG
+  PRIMTYPE(simplestr)
+  PRIMTYPE(simpleobj)
+  PRIMTYPE(dynany)
+  PRIMTYPE(dynundef)
+  PRIMTYPE(dynnull)
+  PRIMTYPE(dynbool)
+  PRIMTYPE(dyni32)
+  PRIMTYPE(dynstr)
+  PRIMTYPE(dynobj)
+  PRIMTYPE(dynf64)
+  PRIMTYPE(dynf32)
+  PRIMTYPE(dynnone)
+#endif
+  PRIMTYPE(constStr)
+  PRIMTYPE(gen)
+  PRIMTYPE(agg)
+  PRIMTYPE(unknown)
