@@ -24,12 +24,12 @@ sudo apt-get -y install gcc-5-aarch64-linux-gnu g++-5-aarch64-linux-gnu
 下载**clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04**
 LLVM下载地址：http://releases.llvm.org/download.html#8.0.0
 
-放置到`openarkcompiler/tools`目录，打开`openarkcompiler/build/config/BUILDCONFIG.gn`文件，将`GN_C_COMPILER`、`GN_CXX_COMPILER`和`GN_AR`三个变量配置为Clang编译器所在路径，例如：
+放置到`openarkcompiler/tools`目录，打开`openarkcompiler/build/config/BUILDCONFIG.gn`文件，将`GN_C_COMPILER`、`GN_CXX_COMPILER`和`GN_AR_COMPILER`三个变量配置为Clang编译器所在路径，例如：
 
 ```
 GN_C_COMPILER = "${MAPLE_ROOT}/tools/clang_llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/bin/clang"
 GN_CXX_COMPILER = "${MAPLE_ROOT}/tools/clang_llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/bin/clang++"
-GN_AR = "${MAPLE_ROOT}/tools/clang_llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/bin/llvm-ar"
+GN_AR_COMPILER = "${MAPLE_ROOT}/tools/clang_llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/bin/llvm-ar"
 ```
 
 其中${MAPLE_ROOT}为openarkcompiler源码根目录。
