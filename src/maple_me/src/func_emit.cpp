@@ -78,7 +78,7 @@ void FuncEmit::EmitBeforeHSSA(MIRFunction *func, const MapleVector<BB*> &bbList)
       lastStmt = bb->GetStmtNodes().rbegin().base().d();
     }
     if (bb->AddBackEndTry()) {
-      /* generate op_endtry andd added to next, it could be in an empty bb. */
+      /* generate op_endtry and added to next, it could be in an empty bb. */
       StmtNode *endtry = func->GetCodeMempool()->New<StmtNode>(OP_endtry);
       endtry->InsertBeforeThis(lastStmt);
       lastStmt = endtry;
