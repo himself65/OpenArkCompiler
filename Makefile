@@ -1,5 +1,5 @@
 #
-#Makefile for OpenArkCompiler
+# Makefile for OpenArkCompiler
 #
 
 INSTALL_DIR := ${MAPLE_ROOT}/out
