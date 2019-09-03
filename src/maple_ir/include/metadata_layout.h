@@ -35,7 +35,7 @@ using AddrOffset = int64_t;
 using MetaRef = uint32_t;      // consistent with reffield_t in address.h
 using MetaRefOffset = int32_t;
 #else
-using MetaRef = uintptr_t;     // consistent iwth reffield_t in address.h
+using MetaRef = uintptr_t;     // consistent with reffield_t in address.h
 using MetaRefOffset = int64_t;
 #endif // USE_32BIT_REF
 

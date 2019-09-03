@@ -24,7 +24,7 @@
  * on. So many phases rely on this phase's analysis result, such as
  * call graph, ssa and so on.
  * The main procedure shows as following.
- * A. Based on the infomation read from mplts, it collect all class that
+ * A. Based on the information read from mplts, it collect all class that
  *    declared in modules. And create a Klass for each class.
  * B. Fill class method info. Connect superclass<->subclass and
  *    interface->implementation edges.

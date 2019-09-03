@@ -358,7 +358,7 @@
     ((__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ > 3))) && \
     !defined(SECUREC_PCLINT)
 /* This is a built-in function that can be used without a declaration, if you encounter an undeclared compilation alarm,
- * you can add -DSECUREC_NEED_BUILTIN_EXPECT_DECLARE to complier options
+ * you can add -DSECUREC_NEED_BUILTIN_EXPECT_DECLARE to compiler options
  */
 #if defined(SECUREC_NEED_BUILTIN_EXPECT_DECLARE)
 long __builtin_expect(long exp, long c);
