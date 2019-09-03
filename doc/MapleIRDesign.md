@@ -227,7 +227,7 @@ and "x = a[i,j]" is:
 ```
 dassign $x (
   iread i32 <* i32>(
-   array a32 <* [10] [10] i32> (addrof a32 a, dread i32 i,dread i32 $j))) # <* [10] [10] i32 indicates pointer to a 10x10 matrix of ints
+   array a32 <* [10] [10] i32> (addrof a32 $a, dread i32 $i, dread i32 $j))) # <* [10] [10] i32 indicates pointer to a 10x10 matrix of ints
 ```
 
 **Structures**
@@ -1500,9 +1500,9 @@ func &foo (var %i i32, var %j i32) i32 {
 C source:
 ```cpp
 float a[10];
-void init(Void){
-  int I;
-  for(i=0; I<10; i++)
+void init(void){
+  int i;
+  for(i=0; i<10; i++)
     a[i]=i*3;
 }
 ```
@@ -1512,15 +1512,15 @@ Maple IR:
 ```cpp
 var $a <[10] f32>
 func &init() void{ 
- var %i i32
- dassign %i(constval i32 0)
- while(
- It i32 i32(dread i32 %i, constval i32 10)){
-   iassign<*[10] f32>(
-     array a32<*[10] f32>(addrof a32 $a, dread i32 %i),
-     mul f32(dread i32 %i, constval i32 3))
+  var %i i32
+  dassign %i(constval i32 0)
+  while(
+  lt i32 i32(dread i32 %i, constval i32 10)){
+    iassign<*[10] f32>(
+      array a32<*[10] f32>(addrof a32 $a, dread i32 %i),
+      mul f32(dread i32 %i, constval i32 3))
     dassign %i(
-     add i32(dread i32 %i, constval i32 1))}}
+      add i32(dread i32 %i, constval i32 1))}}
 ```
 
 ## Example 3
