@@ -48,79 +48,57 @@ inline uint32 GetPrimTypeBitSize(PrimType primType) {
 #endif  // MIR_FEATURE_FULL
 // return the same type with size increased to register size
 PrimType GetRegPrimType(PrimType primType);
-inline bool IsAddress(PrimType tp) {
-#ifdef DYNAMICLANG
-  return (tp == PTY_ptr || tp == PTY_ref || tp == PTY_a32 || tp == PTY_a64 || tp == PTY_simplestr ||
-          tp == PTY_simpleobj);
-#else
-  return (tp == PTY_ptr || tp == PTY_ref || tp == PTY_a32 || tp == PTY_a64);
-#endif
-}
-
-inline bool IsPrimitivePureScalar(PrimType tp) {
-  return (tp >= PTY_u8 && tp <= PTY_u64) || tp == PTY_u1 || (tp >= PTY_i8 && tp <= PTY_i64);
-}
-
-inline bool IsUnsignedInteger(PrimType tp) {
-  return ((tp >= PTY_u8 && tp <= PTY_u64) || tp == PTY_u1 || tp == PTY_ptr || tp == PTY_ref || tp == PTY_a32 ||
-          tp == PTY_a64);
-}
-
-inline bool IsSignedInteger(PrimType tp) {
-  return (tp >= PTY_i8 && tp <= PTY_i64);
-}
-
-bool IsPrimitiveInteger(PrimType pType);
-inline bool IsPrimitiveDynType(PrimType tp) {
-#if defined(DYNAMICLANG)
-  return tp >= PTY_dynany && tp <= PTY_dynnone;
-#else
-  return false;
-#endif
-}
-
-inline bool IsPrimitiveDynInteger(PrimType tp) {
-#if defined(DYNAMICLANG)
-  return (tp == PTY_dyni32 || tp == PTY_dynbool);
-#else
-  return false;
-#endif
-}
-
-inline bool IsPrimitiveDynFloat(PrimType tp) {
-#if defined(DYNAMICLANG)
-  return (tp == PTY_dynf64 || tp == PTY_dynf32);
-#else
-  return false;
-#endif
-}
-
 PrimType GetDynType(PrimType pType);
 PrimType GetNonDynType(PrimType pType);
-inline bool IsPrimitiveFloat(PrimType tp) {
-  return (tp == PTY_f32 || tp == PTY_f64 || tp == PTY_f128);
+
+inline bool IsAddress(PrimitiveType primitiveType) {
+  return primitiveType.IsAddress();
 }
 
-inline bool IsPrimitiveScalar(PrimType tp) {
-#ifdef DYNAMICLANG
-  return (IsPrimitiveInteger(tp) || IsPrimitiveFloat(tp) || IsPrimitiveDynInteger(tp) || IsPrimitiveDynFloat(tp) ||
-          tp == PTY_dynany || tp == PTY_dynundef || tp == PTY_dynstr || tp == PTY_simplestr || tp == PTY_dynbool ||
-          tp == PTY_dynobj || tp == PTY_simpleobj);
-#else
-  return (IsPrimitiveInteger(tp) || IsPrimitiveFloat(tp));
-#endif
+inline bool IsPrimitivePureScalar(PrimitiveType primitiveType) {
+  return primitiveType.IsInteger() && !primitiveType.IsAddress() && !primitiveType.IsDynamic();
 }
 
-inline bool IsPrimitiveValid(PrimType tp) {
-#ifdef DYNAMICLANG
-  return IsPrimitiveScalar(tp) && tp != PTY_dynany;
-#else
-  return IsPrimitiveScalar(tp);
-#endif
+inline bool IsUnsignedInteger(PrimitiveType primitiveType) {
+  return primitiveType.IsInteger() && primitiveType.IsUnsigned() && !primitiveType.IsDynamic();
 }
 
-inline bool IsPrimitivePoint(PrimType tp) {
-  return tp == PTY_ptr || tp == PTY_ref || tp == PTY_a32 || tp == PTY_a64 || tp == PTY_constStr;
+inline bool IsSignedInteger(PrimitiveType primitiveType) {
+  return primitiveType.IsInteger() && !primitiveType.IsUnsigned() && !primitiveType.IsDynamic();
+}
+
+inline bool IsPrimitiveInteger(PrimitiveType primitiveType) {
+  return primitiveType.IsInteger() && !primitiveType.IsDynamic();
+}
+
+inline bool IsPrimitiveDynType(PrimitiveType primitiveType) {
+  return primitiveType.IsDynamic();
+}
+
+inline bool IsPrimitiveDynInteger(PrimitiveType primitiveType) {
+  return primitiveType.IsDynamic() && primitiveType.IsInteger();
+}
+
+inline bool IsPrimitiveDynFloat(PrimitiveType primitiveType) {
+  return primitiveType.IsDynamic() && primitiveType.IsFloat();
+}
+
+inline bool IsPrimitiveFloat(PrimitiveType primitiveType) {
+  return primitiveType.IsFloat() && !primitiveType.IsDynamic();
+}
+
+inline bool IsPrimitiveScalar(PrimitiveType primitiveType) {
+  return (primitiveType.IsInteger() || primitiveType.IsFloat() ||
+          (primitiveType.IsDynamic() && !primitiveType.IsDynamicNone()) ||
+          primitiveType.IsSimple());
+}
+
+inline bool IsPrimitiveValid(PrimitiveType primitiveType) {
+  return IsPrimitiveScalar(primitiveType) && !primitiveType.IsDynamicAny();
+}
+
+inline bool IsPrimitivePoint(PrimitiveType primitiveType) {
+  return primitiveType.IsPointer();
 }
 
 bool IsNoCvtNeeded(PrimType toType, PrimType fromType);

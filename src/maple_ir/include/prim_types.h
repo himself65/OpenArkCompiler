@@ -15,19 +15,52 @@
 #ifndef MAPLE_IR_INCLUDE_PRIM_TYPES_H
 #define MAPLE_IR_INCLUDE_PRIM_TYPES_H
 #include "types_def.h"
+#include "cfg_primitive_types.h"
 
 namespace maple {
-enum PrimType {
-  kPtyInvalid,
-#define PRIMTYPE(P) PTY_##P,
-#include "prim_types.def"
-#undef PRIMTYPE
-  kPtyDerived  // just for test, no primitive type for derived
-               // SIMD types to be defined
-};
 
-const PrimType kPTYIntStart = PTY_i8;
-const PrimType kPTYIntEnd = PTY_a64;
+class PrimitiveType {
+ public:
+  PrimitiveType(PrimType type) {
+    property = &GetPrimitiveTypeProperty(type);
+  }
+  ~PrimitiveType() = default;
+
+  PrimType GetType() const {
+    return property->type;
+  }
+
+  bool IsInteger() const {
+    return property->isInteger;
+  }
+  bool IsUnsigned() const {
+    return property->isUnsigned;
+  }
+  bool IsAddress() const {
+    return property->isAddress;
+  }
+  bool IsFloat() const {
+    return property->isFloat;
+  }
+  bool IsPointer() const {
+    return property->isPointer;
+  }
+  bool IsDynamic() const {
+    return property->isDynamic;
+  }
+  bool IsSimple() const {
+    return property->isSimple;
+  }
+  bool IsDynamicAny() const {
+    return property->isDynamicAny;
+  }
+  bool IsDynamicNone() const {
+    return property->isDynamicNone;
+  }
+
+ private:
+  const PrimitiveTypeProperty *property;
+};
 
 }  // namespace maple
 #endif
