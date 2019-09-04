@@ -182,7 +182,6 @@ class AnalysisResultManager {
 
  private:
   MapleAllocator *allocator; /* allocator used in local field */
-  /* map < pair<phaseId, ir*>, AnalysisResult_T> */
   using analysisResultKey = std::pair<PhaseIDT, UnitIR*>;
   MapleMap<analysisResultKey, AnalysisResult*> analysisResults;
   MapleMap<PhaseIDT, PhaseT*> analysisPhases;

@@ -37,15 +37,21 @@ CompilerFactory::CompilerFactory() {
 CompilerFactory::~CompilerFactory() {
   auto it = supportedCompilers.begin();
   while (it != supportedCompilers.end()) {
-    delete it->second;
-    it->second = nullptr;
+    if (it->second != nullptr) {
+      delete it->second;
+      it->second = nullptr;
+    }
     it++;
   }
   supportedCompilers.clear();
-  delete compilerSelector;
-  compilerSelector = nullptr;
-  delete theModule;
-  theModule = nullptr;
+  if (compilerSelector != nullptr) {
+    delete compilerSelector;
+    compilerSelector = nullptr;
+  }
+  if (theModule != nullptr) {
+    delete theModule;
+    theModule = nullptr;
+  }
 }
 
 void CompilerFactory::Insert(const std::string &name, Compiler *value) {

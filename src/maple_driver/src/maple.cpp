@@ -48,8 +48,6 @@ void PrintErrorMessage(int ret) {
   }
 }
 
-using namespace maple;
-
 int main(int argc, char **argv) {
   MplOptions mplOptions;
   int ret = mplOptions.Parse(argc, argv);

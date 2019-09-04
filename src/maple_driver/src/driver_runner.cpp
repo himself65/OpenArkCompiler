@@ -34,12 +34,12 @@ const char *kMe = "me";
     }                                                                           \
   } while (0)
 
-#define RELEASE(pointer) \
-  do {                   \
-    if (pointer) {       \
-      delete pointer;    \
-      pointer = nullptr; \
-    }                    \
+#define RELEASE(pointer)      \
+  do {                        \
+    if (pointer != nullptr) { \
+      delete pointer;         \
+      pointer = nullptr;      \
+    }                         \
   } while (0)
 
 #define ADD_PHASE(name, condition)       \
