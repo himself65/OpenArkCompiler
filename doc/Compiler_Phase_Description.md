@@ -13,40 +13,36 @@ virtual AnalysisResult *Run(MeFunction *ir, MeFuncResultMgr *frm) {
 
 // By default mrm will not be used because most ME phases do not need 
 // IPA result. For those will use IPA result, this function will be overrode.
-virtual AnalysisResult *Run(MeFunction *ir, MeFuncResultMgr *frm,  
-                            ModuleResultMgr *mrm) {
+virtual AnalysisResult *Run(MeFunction *ir, MeFuncResultMgr *frm, ModuleResultMgr *mrm) {
   return Run(ir, frm);
-}                                                                     
+}
 ```
+
 所以，当添加一个新的phase的时候，必须要实现其中至少一个Run方法,并重写PhaseName方法返回名字。以rclowering作为一个例子：
 
 ```cpp
 class MeDoRCLowering : public MeFuncPhase {
  public:
   MeDoRCLowering(MePhaseID id) : MeFuncPhase(id) {}
+
   virtual ~MeDoRCLowering() = default;
-      AnalysisResult *Run(MeFunction*, MeFuncResultMgr*, ModuleResultMgr*) override;
+  AnalysisResult *Run(MeFunction*, MeFuncResultMgr*, ModuleResultMgr*) override;
   const std::string PhaseName() const override {
-        return "rclowering";
+    return "rclowering";
   }
 };
 ```
 
 ```cpp
-AnalysisResult *MeDoRCLowering::Run(MeFunction *func, MeFuncResultMgr *m,
-                                        ModuleResultMgr *mrm) {
-  KlassHierarchy *kh =         
-      static_cast<KlassHierarchy*>(mrm->GetAnalysisResult(MoPhase_CHA,   
-                                                          &func->GetMIRModule())); 
+AnalysisResult *MeDoRCLowering::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) {
+  KlassHierarchy *kh = static_cast<KlassHierarchy*>(mrm->GetAnalysisResult(MoPhase_CHA, &func->GetMIRModule())); 
   DASSERT(kh != nullptr, "KlassHierarchy has problem");
-  MeIRMap *hmap = static_cast<MeIRMap*>(m->GetAnalysisResult(MeFuncPhase_IRMAP,  
-                                                                 func));
+  MeIRMap *hmap = static_cast<MeIRMap*>(m->GetAnalysisResult(MeFuncPhase_IRMAP, func));
   DASSERT(hmap != nullptr, "hssamap has problem");
   RCLowering rclowering(func, kh);
   MIRFunction *mirfunction = func->GetMirFunc();
-  DASSERT(mirfunction->GetModule()->CurFunction() == mirfunction,
-          "unexpected CurFunction");
- string funcname = mirfunction->GetName();
+  DASSERT(mirfunction->GetModule()->CurFunction() == mirfunction, "unexpected CurFunction");
+  string funcname = mirfunction->GetName();
   if (DEBUGFUNC(func)) {
     LogInfo::MapleLogger() << "Handling function " << funcname << std::endl;
   }
@@ -86,7 +82,7 @@ void MeFuncPhaseManager::RegisterFuncPhases() {
 }
 void RegisterPhase(PhaseId id, Phase *p) {
   registeredPhases[id] = p;
-} 
+}
 ```
 
 这里使用了宏的机制来实现注册，便于管理需要注册的phase，只需编辑对应的def文件即可。mephases.def部分内容如下，第一个参数是id，第二个是phase类名。
@@ -120,9 +116,9 @@ void AddPhase(const std::string &pname) {
     if (GetPhaseName(it) == pname) {
       phaseSequences.push_back(GetPhaseId(it));
       phaseTimers.push_back(0);
-        return;
-      }
+      return;
     }
+  }
 ...
 ```
 
@@ -137,30 +133,26 @@ void AddPhase(const std::string &pname) {
 InterleavedManager负责phase manager的创建、管理和运行。通过调用AddPhases接口，它将创建一个对应类型的phase manager并添加进MapleVector中, 同时该phase manager相应的phase注册、添加也会自动被触发。
 
 ```cpp
-void InterleavedManager::AddPhases(vector<string> &phases, bool isModulePhase,  
-                                   bool timephases, bool genmpl) {
+void InterleavedManager::AddPhases(vector<string> &phases, bool isModulePhase, bool timephases, bool genmpl) {
   ModuleResultMgr *mrm = nullptr;
   if (!phaseManagers.empty()) {
-// ModuleResult such class hierarchy need to be carried on
-    ModulePhaseManager *mpm =  
-    dynamic_cast<ModulePhaseManager*>(phaseManagers[phaseManagers.size()-1]);
-MeFuncPhaseManager *mepm = 
-    dynamic_cast<MeFuncPhaseManager*>(phaseManagers[phaseManagers.size()-1]);
-if (mpm != nullptr) {
-  mrm = mpm->GetModResultMgr();
-} else if (mepm != nullptr) {
-  mrm = mepm->GetModResultMgr();
-}
-      }
+    // ModuleResult such class hierarchy need to be carried on
+    ModulePhaseManager *mpm = dynamic_cast<ModulePhaseManager*>(phaseManagers[phaseManagers.size()-1]);
+    MeFuncPhaseManager *mepm = dynamic_cast<MeFuncPhaseManager*>(phaseManagers[phaseManagers.size()-1]);
+    if (mpm != nullptr) {
+      mrm = mpm->GetModResultMgr();
+    } else if (mepm != nullptr) {
+      mrm = mepm->GetModResultMgr();
+    }
+  }
   if (isModulePhase) {
-   ModulePhaseManager *mpm =
-        GetMempool()->New<ModulePhaseManager>(GetMempool(), &mirmodule, mrm);
-mpm->RegisterModulePhases();
-mpm->AddModulePhases(phases);
+    ModulePhaseManager *mpm = GetMempool()->New<ModulePhaseManager>(GetMempool(), &mirmodule, mrm);
+    mpm->RegisterModulePhases();
+    mpm->AddModulePhases(phases);
     if (timephases) {
-  mpm->SetTimePhases(true);
-}
-phaseManagers.push_back(mpm);
+      mpm->SetTimePhases(true);
+    }
+    phaseManagers.push_back(mpm);
 ...
 ```
 
