@@ -1478,7 +1478,7 @@ C code:
 
 ```cpp
 int foo(int i,int j){
-  return(i + j)* -998;
+  return (i + j) * -998;
 }
 ```
 
@@ -1518,7 +1518,7 @@ func &init() void{
   lt i32 i32(dread i32 %i, constval i32 10)){
     iassign<*[10] f32>(
       array a32<*[10] f32>(addrof a32 $a, dread i32 %i),
-      mul f32(dread i32 %i, constval i32 3))
+      mul i32(dread i32 %i, constval i32 3))
     dassign %i(
       add i32(dread i32 %i, constval i32 1))}}
 ```
@@ -1571,7 +1571,7 @@ Maple IR:
 ```cpp
 func &fact (var %n i32) i32 {
   if (ne i32 (dread i32 %n, constval i32 1)) {
-    call $fact (sub i32 (dread i32 %n, constval i32 1))
+    call &fact (sub i32 (dread i32 %n, constval i32 1))
     return (mul i32 (dread i32 %n, regread i32 %%retval))
   }
   return(constval i32 1)
