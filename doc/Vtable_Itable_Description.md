@@ -32,7 +32,7 @@ class C extends A {
 public class IsEmpty {
   public Static void main(String [] args) {
     A x = new B();
-    X.first();
+    x.first();
     A y = new C()
     y.first();
   }
