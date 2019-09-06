@@ -302,7 +302,6 @@ class VarMeExpr : public MeExpr {
   }
 
  private:
-  /* bool recursivePtr: 1;    // if pointer to recursive data structures */
   union {
     MeStmt *defStmt;  // definition stmt of this var
     MeVarPhiNode *defPhi;

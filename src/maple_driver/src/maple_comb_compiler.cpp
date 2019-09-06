@@ -264,11 +264,11 @@ ErrorCode MapleCombCompiler::Compile(const MplOptions &options, MIRModulePtr &th
                       options.timePhases, options.genMemPl);
   nErr = runner.Run();
 
-  if (mpl2mplOptions) {
+  if (mpl2mplOptions != nullptr) {
     delete mpl2mplOptions;
     mpl2mplOptions = nullptr;
   }
-  if (meOptions) {
+  if (meOptions != nullptr) {
     delete meOptions;
     meOptions = nullptr;
   }

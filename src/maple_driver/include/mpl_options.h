@@ -54,9 +54,9 @@ class MplOption {
   void init(const std::string &key, const std::string &value, const std::string &connectSymbol, bool isAppend,
             const std::string &appendSplit,
             bool needRootPath = false) {
-    this->key = std::move(key);
-    this->value = std::move(value);
-    this->connectSymbol = std::move(connectSymbol);
+    this->key = key;
+    this->value = value;
+    this->connectSymbol = connectSymbol;
     this->isAppend = isAppend;
     this->appendSplit = appendSplit;
     this->needRootPath = needRootPath;
