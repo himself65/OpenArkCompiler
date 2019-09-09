@@ -17,6 +17,7 @@
 #include "opcodes.def"
 #undef OPCODE
   // primitive types
+#define LOAD_ALGO_PRIMARY_TYPE
 #define PRIMTYPE(P) KEYWORD(P)
 #include "prim_types.def"
 #undef PRIMTYPE
