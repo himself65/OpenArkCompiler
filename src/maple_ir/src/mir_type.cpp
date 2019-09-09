@@ -22,9 +22,30 @@
 #include "name_mangler.h"
 #include "global_tables.h"
 #include "mir_builder.h"
+#include "cfg_primitive_types.h"
 #if MIR_FEATURE_FULL
 
 namespace maple {
+
+#define LOAD_PRIMARY_TYPE_PROPERTY
+#include "prim_types.def"
+
+#define LOAD_ALGO_PRIMARY_TYPE
+const PrimitiveTypeProperty &GetPrimitiveTypeProperty(PrimType pType) {
+  switch (pType) {
+    case PTY_begin:
+      return PTProperty_begin;
+#define PRIMTYPE(P) \
+    case PTY_##P:   \
+      return PTProperty_##P;
+#include "prim_types.def"
+#undef PRIMTYPE
+    case PTY_end:
+    default:
+      return PTProperty_end;
+  }
+}
+
 PrimType GetRegPrimType(PrimType primType) {
   switch (primType) {
     case PTY_i8:
@@ -96,10 +117,6 @@ PrimType GetNonDynType(PrimType pType) {
   }
 #endif
   return pType;
-}
-
-bool IsPrimitiveInteger(PrimType pType) {
-  return pType >= kPTYIntStart && pType <= kPTYIntEnd;
 }
 
 bool IsNoCvtNeeded(PrimType toType, PrimType fromType) {
@@ -217,6 +234,7 @@ uint32 GetPrimTypeP2Size(PrimType primType) {
 }
 
 const char *GetPrimTypeName(PrimType primType) {
+#define LOAD_ALGO_PRIMARY_TYPE
   switch (primType) {
     default:
     case kPtyInvalid:

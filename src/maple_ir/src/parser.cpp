@@ -132,6 +132,7 @@ bool MIRParser::IsStatement(TokenKind tk) const {
 }
 
 PrimType MIRParser::GetPrimitiveType(TokenKind tk) const {
+#define LOAD_ALGO_PRIMARY_TYPE
   switch (tk) {
 #define PRIMTYPE(P) \
   case TK_##P:      \
