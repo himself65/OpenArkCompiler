@@ -1,19 +1,17 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
-// The common facility for binary fomat MIR files.
-// Currently, it implements the LiteOS binary file format.
 #ifndef MAPLE_IR_INCLUDE_BIN_MIR_FILE_H
 #define MAPLE_IR_INCLUDE_BIN_MIR_FILE_H
 #include <string>
@@ -41,4 +39,4 @@ struct BinMIRFileHeader {
 };
 
 }  // namespace maple
-#endif  // MAPLE_INCLUDE_BINMIR_FILE
+#endif  // MAPLE_IR_INCLUDE_BIN_MIR_FILE_H

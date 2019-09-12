@@ -1,16 +1,16 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
 #include "muid_replacement.h"
 #include <fstream>
@@ -98,7 +98,6 @@ void MUIDReplacement::CollectFuncAndDataFromKlasses() {
     for (MethodPair &methodPair : sType->GetMethods()) {
       MIRSymbol *funcSymbol = GlobalTables::GetGsymTable().GetSymbolFromStidx(methodPair.first.Idx());
       MIRFunction *mirFunc = funcSymbol->GetFunction();
-      CHECK_FATAL(mirFunc, "Invalid function symbol for Class %s", sType->GetName().c_str());
       if (mirFunc != nullptr && mirFunc->GetBody()) {
         AddDefFunc(mirFunc);
       }
@@ -108,11 +107,10 @@ void MUIDReplacement::CollectFuncAndDataFromKlasses() {
     // 2. direct call (collected later when iterating function bodies)
     if (!klass->IsInterface()) {
       for (MethodPair *vMethodPair : sType->GetVTableMethods()) {
-        CHECK_FATAL(vMethodPair, "Invalid vtable_methods entry for Class %s", sType->GetName().c_str());
         if (vMethodPair != nullptr) {
           MIRSymbol *funcSymbol = GlobalTables::GetGsymTable().GetSymbolFromStidx(vMethodPair->first.Idx());
           MIRFunction *mirFunc = funcSymbol->GetFunction();
-          if (mirFunc && !mirFunc->GetBody() && !mirFunc->IsAbstract()) {
+          if (mirFunc && mirFunc->GetBody() == nullptr && !mirFunc->IsAbstract()) {
             AddUndefFunc(mirFunc);
           }
         }
@@ -900,9 +898,10 @@ void MUIDReplacement::ReplaceDassign(MIRFunction *currentFunc, DassignNode *dass
   ArrayNode *arrayExpr = builder->CreateExprArray(arrayType, baseExpr, offsetExpr);
   arrayExpr->SetBoundsCheck(false);
   MIRType *elemType = arrayType->GetElemType();
+  MIRType *mVoidPtr = GlobalTables::GetTypeTable().GetVoidPtr();
+  CHECK_FATAL(mVoidPtr != nullptr, "null ptr check");
   BaseNode *ireadPtrExpr =
-      builder->CreateExprIread(GlobalTables::GetTypeTable().GetVoidPtr(),
-                               GlobalTables::GetTypeTable().GetOrCreatePointerType(elemType), 1, arrayExpr);
+      builder->CreateExprIread(mVoidPtr, GlobalTables::GetTypeTable().GetOrCreatePointerType(elemType), 1, arrayExpr);
   PregIdx symPtrPreg = 0;
   MIRSymbol *symPtrSym = nullptr;
   BaseNode *destExpr = nullptr;
@@ -912,7 +911,6 @@ void MUIDReplacement::ReplaceDassign(MIRFunction *currentFunc, DassignNode *dass
     currentFunc->GetBody()->InsertBefore(dassignNode, symPtrPregAssign);
     destExpr = builder->CreateExprRegread(PTY_ptr, symPtrPreg);
   } else {
-    MIRType *mVoidPtr = GlobalTables::GetTypeTable().GetVoidPtr();
     symPtrSym = builder->GetOrCreateLocalDecl(kMuidFuncPtrStr, mVoidPtr);
     DassignNode *addrNode = builder->CreateStmtDassign(symPtrSym, 0, ireadPtrExpr);
     currentFunc->GetBody()->InsertBefore(dassignNode, addrNode);
@@ -994,8 +992,8 @@ BaseNode *MUIDReplacement::ReplaceDreadExpr(MIRFunction *currentFunc, StmtNode *
         for (i = 0; i < expr->NumOpnds(); i++) {
           expr->SetOpnd(ReplaceDreadExpr(currentFunc, stmt, expr->Opnd(i)), i);
         }
-        break;
       }
+      break;
     }
   }
   return expr;

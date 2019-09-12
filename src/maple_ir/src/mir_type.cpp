@@ -1,16 +1,16 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
 #include "mir_type.h"
 #include <cmath>
@@ -311,12 +311,12 @@ const std::string &MIRType::GetName(void) const {
   return GlobalTables::GetStrTable().GetStringFromStrIdx(nameStrIdx);
 }
 
-bool MIRType::ValidateClassOrInterface(const char *className, bool isWarning) {
+bool MIRType::ValidateClassOrInterface(const char *className, bool noWarning) {
   if (primType == maple::PTY_agg && (typeKind == maple::kTypeClass || typeKind == maple::kTypeInterface) &&
       nameStrIdx.GetIdx()) {
     return true;
   } else {
-    if (isWarning) {
+    if (!noWarning) {
       int len = strlen(className);
       constexpr int minClassNameLen = 4;
       constexpr char suffix[] = "_3B";
@@ -671,7 +671,7 @@ size_t MIRInterfaceType::GetSize() const {
   return size;
 }
 
-static void DumpStaticValue(MIREncodedArray staticValue, int indent) {
+static void DumpStaticValue(const MIREncodedArray &staticValue, int indent) {
   if (staticValue.empty()) {
     return;
   }
@@ -680,7 +680,7 @@ static void DumpStaticValue(MIREncodedArray staticValue, int indent) {
   LogInfo::MapleLogger() << "@staticvalue";
   constexpr uint32 typeLen = 5;
   constexpr uint32 typeMask = 0x1f;
-  for (EncodedValue value : staticValue) {
+  for (const auto &value : staticValue) {
     LogInfo::MapleLogger() << " [";
     uint8 valueArg = static_cast<uint32>(value.encodedValue[0]) >> typeLen;
     uint8 valueType = static_cast<uint32>(value.encodedValue[0]) & typeMask;
@@ -696,7 +696,6 @@ static void DumpStaticValue(MIREncodedArray staticValue, int indent) {
     }
     LogInfo::MapleLogger() << "]";
   }
-  return;
 }
 
 static void DumpFields(FieldVector fields, int indent, bool otherFields = false) {
@@ -726,10 +725,10 @@ static void DumpFields(FieldVector fields, int indent, bool otherFields = false)
   return;
 }
 
-static void DumpFieldsAsCxx(FieldVector fields, int indent) {
+static void DumpFieldsAsCxx(const FieldVector &fields, int indent) {
   for (auto &f : fields) {
     PrintIndentation(indent);
-    FieldAttrs &fa = f.second.second;
+    const FieldAttrs &fa = f.second.second;
     if (fa.GetAttr(FLDATTR_static)) {
       LogInfo::MapleLogger() << "// ";
     }

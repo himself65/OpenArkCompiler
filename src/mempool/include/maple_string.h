@@ -1,19 +1,19 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
-#ifndef MAPLESTRING_H
-#define MAPLESTRING_H
+#ifndef MEMPOOL_INCLUDE_MAPLE_STRING_H
+#define MEMPOOL_INCLUDE_MAPLE_STRING_H
 #include <cstring>
 #include <limits.h>
 #include "mempool.h"
@@ -52,9 +52,6 @@ class MapleString {
   }
 
   char *c_str() {
-    if (dataLength <= 0) {
-      return nullptr;
-    }
     return data;
   }
 
@@ -258,12 +255,12 @@ class MapleString {
 
   inline static char *NewData(MemPool *memPool, const char *source, size_t len) {
     MIR_ASSERT(memPool && "Pointer to Mempool can not be nullptr");
-    if (len == 0) {
+    if (source == nullptr && len == 0) {
       return nullptr;
     }
     char *str = static_cast<char*>(memPool->Malloc((len + 1) * sizeof(char)));
     CHECK_FATAL(str != nullptr, "MemPool::Malloc failed");
-    if (source != nullptr) {
+    if (source != nullptr && len != 0) {
       errno_t err = memcpy_s(str, len, source, len);
       CHECK_FATAL(err == EOK, "memcpy_s failed");
     }
@@ -281,4 +278,4 @@ bool operator!=(const MapleString &str1, const char *str2);
 bool operator!=(const char *str1, const MapleString &str2);
 bool operator<(const MapleString &str1, const MapleString &str2);
 }  // namespace maple
-#endif /* MAPLESTRING_H */
+#endif  // MEMPOOL_INCLUDE_MAPLE_STRING_H

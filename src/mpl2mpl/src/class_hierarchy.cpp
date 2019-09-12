@@ -1,16 +1,16 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
 #include "class_hierarchy.h"
 #include <iostream>
@@ -296,7 +296,7 @@ void Klass::CountVirtMethBottomUp() {
 }
 
 const MIRFunction *Klass::HasMethod(const char *funcname) {
-  for (auto method : methods) {
+  for (auto *method : methods) {
     if (method->GetBaseFuncNameWithType().find(funcname) != std::string::npos) {
       return method;
     }
@@ -440,15 +440,6 @@ const std::string &KlassHierarchy::GetLCA(const std::string &name1, const std::s
 
 void KlassHierarchy::AddKlasses() {
   for (MIRType *type : GlobalTables::GetTypeTable().GetTypeTable()) {
-#if DEBUG
-    if (type != nullptr) {
-      MIRTypeKind kd = type->GetKind();
-      if (kd == kTypeStructIncomplete || kd == kTypeClassIncomplete || kd == kTypeInterfaceIncomplete)
-        LogInfo::MapleLogger() << "Warning: KlassHierarchy::AddKlasses "
-                               << GlobalTables::GetStrTable().GetStringFromStrIdx(type->GetNameStrIdx())
-                               << " INCOMPLETE " << std::endl;
-    }
-#endif
     if (type == nullptr || (type->GetKind() != kTypeClass && type->GetKind() != kTypeInterface)) {
       continue;
     }

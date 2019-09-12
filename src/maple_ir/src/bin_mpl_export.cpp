@@ -1,16 +1,16 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
 #include "bin_mpl_export.h"
 #include <sstream>
@@ -71,7 +71,7 @@ void OutputConstStr16(MIRConst *constVal, BinaryMplExport *mplExport) {
   NameMangler::UTF16ToUTF8(str, str16);
   mplExport->WriteNum(str.length());
   for (uint64 i = 0; i < str.length(); i++) {
-    mplExport->Write((uint8)str[i]);
+    mplExport->Write(static_cast<uint8>(str[i]));
   }
 }
 
@@ -309,13 +309,11 @@ uint8 BinaryMplExport::Read() {
 
 /* Little endian */
 int32 BinaryMplExport::ReadInt() {
-  uint32 x0, x1, x2, x3;
-  int32 x;
-  x0 = static_cast<uint32>(Read());
-  x1 = static_cast<uint32>(Read());
-  x2 = static_cast<uint32>(Read());
-  x3 = static_cast<uint32>(Read());
-  x = static_cast<int32>((((((x3 << 8) + x2) << 8) + x1) << 8) + x0);
+  uint32 x0 = static_cast<uint32>(Read());
+  uint32 x1 = static_cast<uint32>(Read());
+  uint32 x2 = static_cast<uint32>(Read());
+  uint32 x3 = static_cast<uint32>(Read());
+  int32 x = static_cast<int32>((((((x3 << 8) + x2) << 8) + x1) << 8) + x0);
   return x;
 }
 
@@ -325,10 +323,10 @@ void BinaryMplExport::Write(uint8 b) {
 
 /* Little endian */
 void BinaryMplExport::WriteInt(int32 x) {
-  Write((uint8)(static_cast<uint32>(x) & 0xFF));
-  Write((uint8)((static_cast<uint32>(x) >> 8) & 0xFF));
-  Write((uint8)((static_cast<uint32>(x) >> 16) & 0xFF));
-  Write((uint8)((static_cast<uint32>(x) >> 24) & 0xFF));
+  Write(static_cast<uint8>(static_cast<uint32>(x) & 0xFF));
+  Write(static_cast<uint8>((static_cast<uint32>(x) >> 8) & 0xFF));
+  Write(static_cast<uint8>((static_cast<uint32>(x) >> 16) & 0xFF));
+  Write(static_cast<uint8>((static_cast<uint32>(x) >> 24) & 0xFF));
 }
 
 void BinaryMplExport::ExpandFourBuffSize() {
@@ -336,12 +334,10 @@ void BinaryMplExport::ExpandFourBuffSize() {
 }
 
 void BinaryMplExport::Fixup(size_t i, int32 x) {
-  constexpr int fixupCount = 4;
-  CHECK_FATAL(i <= buf.size() - fixupCount, "Index out of bound in BinaryMplImport::Fixup()");
-  buf[i] = (uint8)(static_cast<uint32>(x) & 0xFF);
-  buf[i + 1] = (uint8)((static_cast<uint32>(x) >> 8) & 0xFF);
-  buf[i + 2] = (uint8)((static_cast<uint32>(x) >> 16) & 0xFF);
-  buf[i + 3] = (uint8)((static_cast<uint32>(x) >> 24) & 0xFF);
+  buf[i] = static_cast<uint8>(static_cast<uint32>(x) & 0xFF);
+  buf[i + 1] = static_cast<uint8>((static_cast<uint32>(x) >> 8) & 0xFF);
+  buf[i + 2] = static_cast<uint8>((static_cast<uint32>(x) >> 16) & 0xFF);
+  buf[i + 3] = static_cast<uint8>((static_cast<uint32>(x) >> 24) & 0xFF);
 }
 
 void BinaryMplExport::WriteInt64(int64 x) {
@@ -352,7 +348,7 @@ void BinaryMplExport::WriteInt64(int64 x) {
 /* LEB128 */
 void BinaryMplExport::WriteNum(int64 x) {
   while (x < -0x40 || x >= 0x40) {
-    Write((uint8)((static_cast<uint64>(x) & 0x7F) + 0x80));
+    Write(static_cast<uint8>((static_cast<uint64>(x) & 0x7F) + 0x80));
     x = x >> 7;
   }
   Write((uint8)(static_cast<uint64>(x) & 0x7F));
@@ -360,18 +356,18 @@ void BinaryMplExport::WriteNum(int64 x) {
 
 void BinaryMplExport::WriteAsciiStr(const std::string &str) {
   for (size_t i = 0; i < str.size(); i++) {
-    Write((uint8)str[i]);
+    Write(static_cast<uint8>(str[i]));
   }
-  Write((uint8)0);
+  Write(0);
 }
 
-void BinaryMplExport::CreateFile(const std::string &name) {
+void BinaryMplExport::DumpBuf(const std::string &name) {
   FILE *f = fopen(name.c_str(), "wb");
-  size_t size = buf.size();
   if (f == nullptr) {
     LogInfo::MapleLogger(kLlErr) << "Error while creating the binary file: " << name << std::endl;
     FATAL(kLncFatal, "Error while creating the binary file: %s\n", name.c_str());
   }
+  size_t size = buf.size();
   size_t k = fwrite(&buf[0], sizeof(uint8), size, f);
   fclose(f);
   if (k != size) {
@@ -396,7 +392,7 @@ void BinaryMplExport::OutputConst(MIRConst *constVal) {
   }
 }
 
-void BinaryMplExport::OutputStr(GStrIdx gstr) {
+void BinaryMplExport::OutputStr(const GStrIdx &gstr) {
   if (gstr == 0) {
     WriteNum(0);
     return;
@@ -533,7 +529,7 @@ void BinaryMplExport::OutputImplementedInterfaces(const std::vector<TyIdx> &inte
 void BinaryMplExport::OutputInfoIsString(const std::vector<bool> &infoIsString) {
   WriteNum(infoIsString.size());
   for (bool isString : infoIsString) {
-    WriteNum(isString);
+    WriteNum(static_cast<int64>(isString));
   }
 }
 
@@ -717,19 +713,18 @@ void BinaryMplExport::Export(const std::string &fname) {
   WriteTypeField(fieldStartPoint[1]);
   WriteNum(kBinFinish);
   importFileName = fname;
-  CreateFile(fname);
+  DumpBuf(fname);
 }
 
 void BinaryMplExport::AppendAt(const std::string &name, int32 offset) {
   FILE *f = fopen(name.c_str(), "r+b");
-  size_t size = buf.size();
   if (f == nullptr) {
     LogInfo::MapleLogger(kLlErr) << "Error while opening the binary file: " << name << std::endl;
     FATAL(kLncFatal, "Error while creating the binary file: %s\n", name.c_str());
   }
   int seekRet = fseek(f, (long int)offset, SEEK_SET);
   CHECK_FATAL(seekRet == 0, "call fseek failed");
-
+  size_t size = buf.size();
   size_t k = fwrite(&buf[0], sizeof(uint8), size, f);
   fclose(f);
   if (k != size) {

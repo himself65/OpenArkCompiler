@@ -1,16 +1,16 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
 #ifndef MAPLE_UTIL_INCLUDE_MPL_LOGGING_H
 #define MAPLE_UTIL_INCLUDE_MPL_LOGGING_H
@@ -204,17 +204,17 @@ class LogInfo {
 #define DBG(tag, fmt, ...)                                                                      \
   do {                                                                                          \
     if (PRINT_LEVEL_DEV <= kLlLog)                                                              \
-      logInfo.EmitLogForDev(tag, kLlLog, __FILE__, __FUNCTION__, __LINE__, fmt, ##__VA_ARGS__); \
+      maple::logInfo.EmitLogForDev(tag, kLlLog, __FILE__, __FUNCTION__, __LINE__, fmt, ##__VA_ARGS__); \
   } while (0)
 #define LOG(tag, fmt, ...)                                                                      \
   do {                                                                                          \
     if (PRINT_LEVEL_DEV <= kLlLog)                                                              \
-      logInfo.EmitLogForDev(tag, kLlLog, __FILE__, __FUNCTION__, __LINE__, fmt, ##__VA_ARGS__); \
+      maple::logInfo.EmitLogForDev(tag, kLlLog, __FILE__, __FUNCTION__, __LINE__, fmt, ##__VA_ARGS__); \
   } while (0)
 #define CHECK(cond, fmt, ...)                                                       \
   do {                                                                              \
     if (!(cond))                                                                    \
-      logInfo.EmitErrorMessage(#cond, __FILE__, __LINE__, fmt "\n", ##__VA_ARGS__); \
+      maple::logInfo.EmitErrorMessage(#cond, __FILE__, __LINE__, fmt "\n", ##__VA_ARGS__); \
   } while (0)
 #define DCHECK(cond, fmt, ...)                   \
   do {                                           \
@@ -224,7 +224,7 @@ class LogInfo {
 #define CHECK_FATAL(cond, fmt, ...)                                                 \
   do {                                                                              \
     if (!(cond)) {                                                                  \
-      logInfo.EmitErrorMessage(#cond, __FILE__, __LINE__, fmt "\n", ##__VA_ARGS__); \
+      maple::logInfo.EmitErrorMessage(#cond, __FILE__, __LINE__, fmt "\n", ##__VA_ARGS__); \
       if (DEBUG_TEST)                                                               \
         abort();                                                                    \
       else                                                                          \
@@ -236,7 +236,7 @@ class LogInfo {
 #define ASSERT(cond, fmt, ...)                                                      \
   do {                                                                              \
     if (!(cond)) {                                                                  \
-      logInfo.EmitErrorMessage(#cond, __FILE__, __LINE__, fmt "\n", ##__VA_ARGS__); \
+      maple::logInfo.EmitErrorMessage(#cond, __FILE__, __LINE__, fmt "\n", ##__VA_ARGS__); \
       abort();                                                                      \
     }                                                                               \
   } while (0)
@@ -250,28 +250,28 @@ class LogInfo {
 #define INFO(num, fmt, ...)                                     \
   do {                                                          \
     if (PRINT_LEVEL_USER <= kLlInfo)                            \
-      logInfo.EmitLogForUser(num, kLlInfo, fmt, ##__VA_ARGS__); \
+      maple::logInfo.EmitLogForUser(num, kLlInfo, fmt, ##__VA_ARGS__); \
   } while (0)
 #define INFO_V(verbose, num, fmt, ...)                          \
   if (verbose) {                                                \
     if (PRINT_LEVEL_USER <= kLlInfo)                            \
-      logInfo.EmitLogForUser(num, kLlInfo, fmt, ##__VA_ARGS__); \
+      maple::logInfo.EmitLogForUser(num, kLlInfo, fmt, ##__VA_ARGS__); \
   }
 #define WARN(num, fmt, ...)                                     \
   do {                                                          \
     if (PRINT_LEVEL_USER <= kLlWarn)                            \
-      logInfo.EmitLogForUser(num, kLlWarn, fmt, ##__VA_ARGS__); \
+      maple::logInfo.EmitLogForUser(num, kLlWarn, fmt, ##__VA_ARGS__); \
   } while (0)
 #define ERR(num, fmt, ...)                                     \
   do {                                                         \
     if (PRINT_LEVEL_USER <= kLlErr)                            \
-      logInfo.EmitLogForUser(num, kLlErr, fmt, ##__VA_ARGS__); \
+      maple::logInfo.EmitLogForUser(num, kLlErr, fmt, ##__VA_ARGS__); \
   } while (0)
 
 #define FATAL(num, fmt, ...)                                     \
   do {                                                           \
     if (PRINT_LEVEL_USER <= kLlFatal)                            \
-      logInfo.EmitLogForUser(num, kLlFatal, fmt, ##__VA_ARGS__); \
+      maple::logInfo.EmitLogForUser(num, kLlFatal, fmt, ##__VA_ARGS__); \
     if (DEBUG_TEST)                                              \
       abort();                                                   \
     else                                                         \
@@ -279,4 +279,4 @@ class LogInfo {
   } while (0)
 
 }  // namespace maple
-#endif  // MAPLE_LOGGING_H
+#endif  // MAPLE_UTIL_INCLUDE_MPL_LOGGING_H

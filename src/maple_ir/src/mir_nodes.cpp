@@ -1,16 +1,16 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
 #include "mir_nodes.h"
 #include <algorithm>
@@ -64,8 +64,8 @@ bool BaseNode::MayThrowException() {
 }
 
 bool AddrofNode::CheckNode(const MIRModule *mod) const {
-  MIRSymbol *st = mod->CurFunction()->GetLocalOrGlobalSymbol(GetStIdx());
   ASSERT(mod != nullptr, "mod is null");
+  MIRSymbol *st = mod->CurFunction()->GetLocalOrGlobalSymbol(GetStIdx());
   MIRType *ty = st->GetType();
   switch (ty->GetKind()) {
     case kTypeScalar: {
@@ -1040,7 +1040,7 @@ void BlockNode::Dump(const MIRModule *mod, int32 indent, const MIRSymbolTable *t
   // output puid for debugging purpose
   if (isFuncbody) {
     mod->CurFunction()->DumpFuncBody(indent);
-    if (theSymTab) {
+    if (theSymTab != nullptr) {
       // print the locally declared type names
       for (auto it : mod->CurFunction()->GetTypeNameTab()->GetGStrIdxToTyIdxMap()) {
         const std::string &name = GlobalTables::GetStrTable().GetStringFromStrIdx(it.first);
@@ -1118,6 +1118,7 @@ bool ExcludeSmallIntTypeVerify(const BaseNode *opnd) {
 }
 
 bool ArithTypeVerify(const BaseNode *opnd) {
+  ASSERT(opnd != nullptr, "null ptr check");
   bool verifyResult = ExcludeSmallIntTypeVerify(opnd);
   if (!verifyResult) {
     LogInfo::MapleLogger() << "\n#Error:u1,i8,u8,i16,u16 should not be used as types of arithmetic operations\n";
@@ -1188,6 +1189,8 @@ inline bool BinaryTypeVerify(PrimType ptyp) {
 }
 
 inline bool BinaryGenericVerify(const BaseNode *bOpnd0, const BaseNode *bOpnd1) {
+  ASSERT(bOpnd0 != nullptr, "null ptr check");
+  ASSERT(bOpnd1 != nullptr, "null ptr check");
   return bOpnd0->Verify() && bOpnd1->Verify() && ArithTypeVerify(bOpnd0) && ArithTypeVerify(bOpnd1);
 }
 

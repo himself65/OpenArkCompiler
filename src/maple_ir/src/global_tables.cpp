@@ -1,16 +1,16 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
 #include "global_tables.h"
 #include <cmath>
@@ -24,7 +24,6 @@ MIRType *TypeTable::CreateMirType(uint32 ti) const {
   MIRTypeKind defaultKind = ti == PTY_constStr ? kTypeConstString : kTypeScalar;
   PrimType pti = static_cast<PrimType>(ti);
   MIRType *type = new MIRType(defaultKind, pti);
-  CHECK_FATAL(type != nullptr, "null ptr check");
   return type;
 }
 
@@ -58,7 +57,6 @@ void TypeTable::PutToHashTable(MIRType *mirtype) {
 inline MIRType *TypeTable::CreateType(MIRType *oldType) {
   ASSERT(oldType != nullptr, "oldType is null");
   MIRType *newType = oldType->CopyMIRTypeNode();
-  CHECK_FATAL(newType != nullptr, "Type idx is zero");
   newType->SetTypeIndex(TyIdx(typeTable.size()));
   typeTable.push_back(newType);
   return newType;
@@ -280,8 +278,7 @@ GSymbolTable::~GSymbolTable() {
 }
 
 MIRSymbol *GSymbolTable::CreateSymbol(uint8 scopeID) {
-  MIRSymbol *st = new (std::nothrow) MIRSymbol(symbolTable.size(), scopeID);
-  CHECK_FATAL(st != nullptr, "Failed to create global symbol");
+  MIRSymbol *st = new MIRSymbol(symbolTable.size(), scopeID);
   symbolTable.push_back(st);
   module->AddSymbol(st);
   return st;
@@ -297,8 +294,9 @@ bool GSymbolTable::AddToStringSymbolMap(const MIRSymbol *st) {
 }
 
 bool GSymbolTable::RemoveFromStringSymbolMap(const MIRSymbol *st) {
-  if (strIdxToStIdxMap.find(st->GetNameStrIdx()) != strIdxToStIdxMap.end()) {
-    strIdxToStIdxMap.erase(st->GetNameStrIdx());
+  auto it = strIdxToStIdxMap.find(st->GetNameStrIdx());
+  if (it != strIdxToStIdxMap.end()) {
+    strIdxToStIdxMap.erase(it);
     return true;
   }
   return false;

@@ -1,16 +1,16 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
 #ifndef MAPLE_IR_INCLUDE_BIN_MPL_EXPORT_H
 #define MAPLE_IR_INCLUDE_BIN_MPL_EXPORT_H
@@ -75,7 +75,7 @@ class BinaryMplExport {
   void Init();
   void OutputConst(MIRConst *c);
   void OutputConstBase(const MIRConst *c);
-  void OutputStr(GStrIdx gstr);
+  void OutputStr(const GStrIdx &gstr);
   void OutputUsrStr(UStrIdx ustr);
   void OutputTypePairs(MIRInstantVectorType *typ);
   void OutputTypeBase(const MIRType *type);
@@ -105,7 +105,7 @@ class BinaryMplExport {
   void WriteNum(int64 x);
   void WriteAsciiStr(const std::string &str);
   void Fixup(uint64 i, int32 x);
-  void CreateFile(const std::string &modid);
+  void DumpBuf(const std::string &modid);
   void AppendAt(const std::string &fname, int32 ipaIdx);
   const MIRModule &GetMIRModule() const {
     return mod;
@@ -127,4 +127,4 @@ class BinaryMplExport {
 
 
 }  // namespace maple
-#endif
+#endif  // MAPLE_IR_INCLUDE_BIN_MPL_EXPORT_H

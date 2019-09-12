@@ -1,16 +1,16 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
 #include "me_function.h"
 #include <iostream>
@@ -67,7 +67,6 @@ void MeFunction::Dump(bool DumpSimpIr) {
 }
 
 void MeFunction::SetTryBlockInfo(const StmtNode *nextStmt, StmtNode *tryStmt, BB *lastTryBB, BB *curBB, BB *newBB) {
-  ASSERT(tryStmt != nullptr, "null ptr check");
   if (nextStmt->GetOpCode() == OP_endtry) {
     curBB->SetAttributes(kBBAttrIsTryEnd);
     ASSERT(lastTryBB != nullptr, "null ptr check");
@@ -289,7 +288,7 @@ void MeFunction::CreateBasicBlocks() {
         for (size_t i = 0; i < exceptiontyidxvec.size(); i++) {
           MIRType *eType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(exceptiontyidxvec[i]);
           ASSERT(eType != nullptr && (eType->GetPrimType() == maple::PTY_ptr || eType->GetPrimType() == maple::PTY_ref),
-                 "");
+                 "wrong exception type");
           MIRPtrType *epType = static_cast<MIRPtrType*>(eType);
           MIRType *pointType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(epType->GetPointedTyIdx());
           const std::string &ename = GlobalTables::GetStrTable().GetStringFromStrIdx(pointType->GetNameStrIdx());
@@ -381,9 +380,9 @@ void MeFunction::CreateBasicBlocks() {
     }
   } while (nextStmt != nullptr);
   ASSERT(tryStmt == nullptr,
-         "");  // tryandendtry should be one-one mapping
+         "unclosed try");    // tryandendtry should be one-one mapping
   ASSERT(lastTryBB == nullptr,
-         "");  // tryandendtry should be one-one mapping
+         "unclosed tryBB");  // tryandendtry should be one-one mapping
   auto *lastBB = curBB;
   if (lastBB->IsEmpty()) {
     // insert a return statement

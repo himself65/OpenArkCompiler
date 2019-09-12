@@ -7,6 +7,7 @@ include_directories = [
   "${MAPLEALL_ROOT}/mpl2mpl/include",
   "${MAPLEALL_ROOT}/mempool/include",
   "${MAPLEALL_ROOT}/huawei_secure_c/include",
+  "${MAPLEALL_ROOT}/third_party/zlib-1.2.11",
 ]
 
 src_libmpl2mpl = [
