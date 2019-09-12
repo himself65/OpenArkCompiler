@@ -1,16 +1,16 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
 #include "reflection_analysis.h"
 #include <unordered_map>
@@ -26,6 +26,7 @@
 #include "name_mangler.h"
 #include "itab_util.h"
 #include "zlib.h"
+#include "string_utils.h"
 
 // Reflection metadata
 // This file is used to generate the classmetadata and classhashmetadata.
@@ -92,7 +93,7 @@ int ReflectionAnalysis::GetDeflateStringIdx(const std::string &subStr) {
   return signatureIdx;
 }
 
-static uint32 FirstFindOrInsertRepeatString(const std::string &str, bool isHot, uint32 hotType) {
+static uint32 FirstFindOrInsertRepeatString(const std::string &str, bool isHot, uint8 hotType) {
   uint32 index = 0;
   constexpr int kLengthShift = 2;
   auto it = ReflectionAnalysis::GetStr2IdxMap().find(str);
@@ -130,7 +131,7 @@ void ReflectionAnalysis::InitReflectString() {
   }
 }
 
-uint32 ReflectionAnalysis::FindOrInsertRepeatString(const std::string &str, bool isHot, uint32 hotType) {
+uint32 ReflectionAnalysis::FindOrInsertRepeatString(const std::string &str, bool isHot, uint8 hotType) {
   if (strTabInited == false) {
     // Add default hot strings.
     strTabInited = true;
@@ -494,7 +495,7 @@ MIRSymbol *ReflectionAnalysis::GetOrCreateSymbol(const std::string &name, TyIdx 
   }
   st = CreateSymbol(strIdx, tyIdx);
   // Set classinfo symbol as extern if not defined locally.
-  if (name.find(CLASSINFO_PREFIX_STR) == 0) {
+  if (StringUtils::StartsWith(name, CLASSINFO_PREFIX_STR)) {
     std::string className = name.substr(strlen(CLASSINFO_PREFIX_STR));
     Klass *klass = klassh->GetKlassFromName(className);
     if (klass && !klass->GetMIRStructType()->IsLocal()) {

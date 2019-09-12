@@ -1,16 +1,16 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
 #ifndef MAPLE_ME_INCLUDE_BB_H
 #define MAPLE_ME_INCLUDE_BB_H
@@ -131,7 +131,6 @@ class BB {
         pred(kBBVectorInitialSize, nullptr, alloc->Adapter()),
         succ(kBBVectorInitialSize, nullptr, alloc->Adapter()),
         phiList(versAlloc->Adapter()),
-        lastMeStmt(nullptr),
         mevarPhiList(alloc->Adapter()),
         meregPhiList(alloc->Adapter()),
         frequency(0),
@@ -298,10 +297,6 @@ class BB {
     bbLabel = idx;
   }
 
-  const MeStmt *GetLastMestmt() const {
-    return lastMeStmt;
-  }
-
   const uint32 &GetFrequency() const {
     return frequency;
   }
@@ -382,7 +377,6 @@ class BB {
   MapleVector<BB*> pred;  // predecessor list
   MapleVector<BB*> succ;  // successor list
   MapleMap<OriginalSt*, PhiNode> phiList;
-  MeStmt *lastMeStmt;
   MapleMap<OStIdx, MeVarPhiNode*> mevarPhiList;
   MapleMap<OStIdx, MeRegPhiNode*> meregPhiList;
   uint32 frequency;
@@ -412,4 +406,4 @@ struct hash<maple::OStIdx> {
 
 }  // namespace std
 
-#endif  // MAPLEME_INCLUDE_BB_H
+#endif  // MAPLE_ME_INCLUDE_BB_H

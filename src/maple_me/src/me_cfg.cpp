@@ -1,16 +1,16 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
 #include "me_cfg.h"
 #include <iostream>
@@ -518,7 +518,7 @@ void MirCFG::WontExitAnalysis() {
     if (!visitedBBs[idx]) {
       bb->SetAttributes(kBBAttrWontExit);
       if (!MeOptions::quiet) {
-        printf("#### BB %d wont exit\n", idx);
+        LogInfo::MapleLogger() << "#### BB " << idx << " wont exit\n";
       }
       if (bb->GetKind() == kBBGoto) {
         // create artificial BB to transition to common_exit_bb
@@ -611,7 +611,7 @@ void MirCFG::Dump() {
   // BSF  Dump the cfg
   // map<uint32, uint32> visited_map;
   // set<uint32> visited_set;
-  printf("####### CFG Dump: ");
+  LogInfo::MapleLogger() << "####### CFG Dump: ";
   ASSERT(func->NumBBs() != 0, "size to be allocated is 0");
   bool *visitedMap = static_cast<bool*>(calloc(func->NumBBs(), sizeof(bool)));
   if (visitedMap != nullptr) {
@@ -627,7 +627,7 @@ void MirCFG::Dump() {
       if (visitedMap[id.idx] == true) {
         continue;
       }
-      printf("%zu ", id.idx);
+      LogInfo::MapleLogger() << id.idx << " ";
       visitedMap[id.idx] = true;
       auto it = bb->GetSucc().begin();
       while (it != bb->GetSucc().end()) {
@@ -638,7 +638,7 @@ void MirCFG::Dump() {
         it++;
       }
     }
-    printf("\n");
+    LogInfo::MapleLogger() << "\n";
     free(visitedMap);
   }
 }

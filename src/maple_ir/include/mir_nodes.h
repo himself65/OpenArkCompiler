@@ -1,16 +1,16 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
 #ifndef MAPLE_IR_INCLUDE_MIR_NODES_H
 #define MAPLE_IR_INCLUDE_MIR_NODES_H
@@ -1669,15 +1669,6 @@ class CatchNode : public StmtNode {
   void Dump(const MIRModule *mod, int32 indent) const;
   void Dump(const MIRModule *mod) const;
 
-  CatchNode *CloneTree(MapleAllocator *allocator) const {
-    CatchNode *j = allocator->GetMemPool()->New<CatchNode>(allocator);
-    j->SetStmtID(stmtIDNext++);
-    for (uint32 i = 0; i < Size(); i++) {
-      j->PushBack(GetExceptionTyIdxVecElement(i));
-    }
-    return j;
-  }
-
   TyIdx GetExceptionTyIdxVecElement(size_t i) const {
     CHECK_FATAL(i < exceptionTyIdxVec.size(), "array index out of range");
     return exceptionTyIdxVec[i];
@@ -1704,7 +1695,7 @@ class CatchNode : public StmtNode {
     exceptionTyIdxVec.push_back(idx);
   }
 
-  CatchNode *CloneTree(MapleAllocator *allocator) {
+  CatchNode *CloneTree(MapleAllocator *allocator) const {
     CatchNode *j = allocator->GetMemPool()->New<CatchNode>(allocator);
     j->SetStmtID(stmtIDNext++);
     for (uint32 i = 0; i < Size(); i++) {
@@ -3053,4 +3044,4 @@ class CommentNode : public StmtNode {
 
 void DumpCallReturns(const MIRModule *mod, CallReturnVector nrets, int32 indent);
 }  // namespace maple
-#endif
+#endif  // MAPLE_IR_INCLUDE_MIR_NODES_H

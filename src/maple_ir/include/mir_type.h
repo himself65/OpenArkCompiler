@@ -1,16 +1,16 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
 #ifndef MAPLE_IR_INCLUDE_MIR_TYPE_H
 #define MAPLE_IR_INCLUDE_MIR_TYPE_H
@@ -477,7 +477,7 @@ class MIRType {
     return false;
   }
 
-  virtual bool ValidateClassOrInterface(const char *className, bool isWarning);
+  virtual bool ValidateClassOrInterface(const char *className, bool noWarning);
   const std::string &GetName(void) const;
   virtual bool PointsToConstString() const;
   virtual size_t GetHashIndex() const {
@@ -555,7 +555,7 @@ class MIRArrayType : public MIRType {
     sizeArray[idx] = value;
   }
 
-  bool EqualTo(const MIRType &type) const;
+  bool EqualTo(const MIRType &type) const override;
   MIRArrayType &operator=(const MIRArrayType &p) = default;
   MIRArrayType() : MIRType(kTypeArray, PTY_agg), eTyIdx(0), dim(0), sizeArray{ 0 } {}
 
@@ -577,8 +577,8 @@ class MIRArrayType : public MIRType {
     }
   }
 
-  explicit MIRArrayType(const GStrIdx &strIdx)
-      : MIRType(kTypeArray, PTY_agg, strIdx), eTyIdx(TyIdx()), dim(0), sizeArray{ 0 } {}
+  explicit MIRArrayType(const GStrIdx &strIdx) : MIRType(kTypeArray, PTY_agg, strIdx), dim(0), sizeArray{ 0 } {}
+
   uint16 GetDim() const {
     return dim;
   }
@@ -589,16 +589,16 @@ class MIRArrayType : public MIRType {
 
   MIRType *GetElemType() const;
 
-  MIRType *CopyMIRTypeNode() const {
+  MIRType *CopyMIRTypeNode() const override {
     return new MIRArrayType(*this);
   }
 
-  bool HasTypeParam() const {
+  bool HasTypeParam() const override {
     return GetElemType()->HasTypeParam();
   }
 
-  void Dump(int indent, bool dontUseName = false) const;
-  size_t GetSize() const {
+  void Dump(int indent, bool dontUseName) const override;
+  size_t GetSize() const override {
     size_t elemSize = GetElemType()->GetSize();
     if (elemSize == 0) {
       return 0;
@@ -611,7 +611,7 @@ class MIRArrayType : public MIRType {
     return elemSize * numElems;
   }
 
-  size_t GetHashIndex() const {
+  size_t GetHashIndex() const override {
     constexpr uint8 kIdxShift = 2;
     size_t hidx = (eTyIdx.GetIdx() << kIdxShift) + (typeKind << kShiftNumOfTypeKind);
     for (size_t i = 0; i < dim; i++) {
@@ -969,6 +969,10 @@ class MIRStructType : public MIRType {
     CHECK_FATAL(false, "can not use GetInfo");
   }
 
+  virtual std::vector<MIRInfoPair> &GetInfo() {
+    CHECK_FATAL(false, "can not use GetInfo");
+  }
+
   virtual const std::vector<bool> &GetIsStringInfo() const {
     CHECK_FATAL(false, "can not use GetIsStringInfo");
   }
@@ -1126,7 +1130,7 @@ class MIRClassType : public MIRStructType {
     interfacesImplemented.at(i) = tyIdx;
   }
 
-  std::vector<MIRInfoPair> &GetInfo() {
+  std::vector<MIRInfoPair> &GetInfo() override {
     return info;
   }
 
@@ -1280,7 +1284,7 @@ class MIRInterfaceType : public MIRStructType {
     parentsTyIdx[i] = tyIdx;
   }
 
-  std::vector<MIRInfoPair> &GetInfo() {
+  std::vector<MIRInfoPair> &GetInfo() override {
     return info;
   }
 
@@ -1656,4 +1660,4 @@ class MIRGenericInstantType : public MIRInstantVectorType {
 
 #endif  // MIR_FEATURE_FULL
 }  // namespace maple
-#endif
+#endif  // MAPLE_IR_INCLUDE_MIR_TYPE_H

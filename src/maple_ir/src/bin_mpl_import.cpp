@@ -1,16 +1,16 @@
 /*
  * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
- * OpenArkCompiler is licensed under the Mulan PSL v1. 
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
  * You may obtain a copy of Mulan PSL v1 at:
  *
- * 	http://license.coscl.org.cn/MulanPSL 
+ *     http://license.coscl.org.cn/MulanPSL
  *
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER 
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
- * FIT FOR A PARTICULAR PURPOSE.  
- * See the Mulan PSL v1 for more details.  
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
  */
 #include "bin_mpl_import.h"
 #include <sstream>
@@ -63,10 +63,12 @@ int64 BinaryMplImport::ReadNum() {
 
 void BinaryMplImport::ReadAsciiStr(std::string &str) {
   uint8 ch = Read();
+  std::ostringstream strStream(str);
   while (ch != '\0') {
-    str.push_back(static_cast<char>(ch));
+    strStream << ch;
     ch = Read();
   }
+  str = strStream.str();
 }
 
 void BinaryMplImport::ReadFileAt(const std::string &name, int32 offset) {
@@ -91,7 +93,7 @@ void BinaryMplImport::ReadFileAt(const std::string &name, int32 offset) {
 }
 
 void BinaryMplImport::ImportConstBase(MIRConstKind &kind, MIRTypePtr &type, uint32 &fieldID) {
-  kind = (MIRConstKind)ReadNum();  // todo is kind ever used?
+  kind = static_cast<MIRConstKind>(ReadNum());
   TyIdx tyidx = ImportType();
   type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyidx);
   fieldID = ReadNum();
@@ -131,12 +133,12 @@ MIRConst *BinaryMplImport::ImportConst(MIRFunction *func) {
     cs = memPool->New<Conststr16Node>();
     cs->SetPrimType(type->GetPrimType());
     int64 len = ReadNum();
-    std::string str;
+    std::ostringstream ostr;
     for (int64 i = 0; i < len; i++) {
-      str.push_back(static_cast<char>(Read()));
+      ostr << Read();
     }
     std::u16string str16;
-    NameMangler::UTF8ToUTF16(str16, str);
+    NameMangler::UTF8ToUTF16(str16, ostr.str());
     cs->SetStrIdx(GlobalTables::GetU16StrTable().GetOrCreateStrIdxFromName(str16));
     return memPool->New<MIRStr16Const>(cs->GetStrIdx(), type);
   } else if (tag == kBinKindConstFloat) {
@@ -222,9 +224,9 @@ MIRPragmaElement *BinaryMplImport::ImportPragmaElement() {
   element->SetType((PragmaValueType)ReadNum());
   if (element->GetType() == kValueString || element->GetType() == kValueType || element->GetType() == kValueField ||
       element->GetType() == kValueMethod || element->GetType() == kValueEnum) {
-    element->SetI32Val((int32)ImportStr().GetIdx());
+    element->SetI32Val(static_cast<int32>(ImportStr().GetIdx()));
   } else {
-    element->SetU64Val((uint64)ReadInt64());
+    element->SetU64Val(static_cast<uint64>(ReadInt64()));
   }
   int64 size = ReadNum();
   for (int64 i = 0; i < size; i++) {
@@ -235,7 +237,7 @@ MIRPragmaElement *BinaryMplImport::ImportPragmaElement() {
 
 MIRPragma *BinaryMplImport::ImportPragma() {
   MIRPragma *p = mod.GetMemPool()->New<MIRPragma>(&mod);
-  p->SetKind((PragmaKind)ReadNum());
+  p->SetKind(static_cast<PragmaKind>(ReadNum()));
   p->SetVisibility(ReadNum());
   p->SetStrIdx(ImportStr());
   p->SetTyIdx(ImportType());
@@ -386,6 +388,9 @@ void BinaryMplImport::ImportInfoOfClassType(std::vector<bool> &infoIsString, std
 void BinaryMplImport::ImportPragmaOfClassType(std::vector<MIRPragma*> &pragmas) {
   int64 size = ReadNum();
   bool isEmpty = pragmas.empty();
+  if (!isEmpty) {
+    LogInfo::MapleLogger() << "The pragmas list is not empty, do not need to add new pragma to it" << std::endl;
+  }
   for (int64 i = 0; i < size; i++) {
     MIRPragma *pragma = ImportPragma();
     if (isEmpty) {
@@ -726,8 +731,8 @@ void BinaryMplImport::SetupEHRootType() {
   }
 }
 
-MIRSymbol *BinaryMplImport::GetOrCreateSymbol(TyIdx tyIdx, GStrIdx strIdx, MIRSymKind mclass, MIRStorageClass sclass,
-                                              MIRFunction *func, uint8 scpID) {
+MIRSymbol *BinaryMplImport::GetOrCreateSymbol(const TyIdx &tyIdx, const GStrIdx &strIdx, MIRSymKind mclass,
+                                              MIRStorageClass sclass, MIRFunction *func, uint8 scpID) {
   MIRSymbol *st = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(strIdx);
   if (st != nullptr && st->GetStorageClass() == sclass && st->GetSKind() == mclass && scpID == kScopeGlobal) {
     return st;
@@ -746,8 +751,8 @@ MIRSymbol *BinaryMplImport::InSymbol(MIRFunction *func) {
     ASSERT(tag == kBinSymbol, "expecting kBinSymbol");
     int64 scope = ReadNum();
     GStrIdx stridx = ImportStr();
-    MIRSymKind skind = (MIRSymKind)ReadNum();
-    MIRStorageClass sclass = (MIRStorageClass)ReadNum();
+    MIRSymKind skind = static_cast<MIRSymKind>(ReadNum());
+    MIRStorageClass sclass = static_cast<MIRStorageClass>(ReadNum());
     TyIdx tyTmp(0);
     MIRSymbol *sym = GetOrCreateSymbol(tyTmp, stridx, skind, sclass, func, scope);
     symTab.push_back(sym);
@@ -816,7 +821,6 @@ void BinaryMplImport::ReadStrField() {
     GlobalTables::GetConstPool().PutLiteralNameAsImported(stridx);
   }
   ASSERT(ReadNum() == ~kBinStrStart, "pattern mismatch in Read STR");
-  return;
 }
 
 void BinaryMplImport::ReadTypeField() {
@@ -827,7 +831,6 @@ void BinaryMplImport::ReadTypeField() {
     ImportType();
   }
   ASSERT(ReadNum() == ~kBinTypeStart, "pattern mismatch in Read TYPE");
-  return;
 }
 
 void BinaryMplImport::ReadContentField() {
@@ -848,7 +851,6 @@ void BinaryMplImport::Jump2NextField() {
   uint32 totalSize = ReadInt();
   bufI += (totalSize - sizeof(uint32));
   ReadNum();  /// skip end tag for this field
-  return;
 }
 
 bool BinaryMplImport::Import(const std::string &fname, bool readSymbols, bool readSe) {
