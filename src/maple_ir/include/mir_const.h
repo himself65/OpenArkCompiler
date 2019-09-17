@@ -45,7 +45,7 @@ class MIRConst {
 
   virtual void Dump() const;
 
-  uint32 GetFiledId() const {
+  uint32 GetFieldId() const {
     return fieldID;
   }
 
@@ -264,7 +264,7 @@ class MIRStrConst : public MIRConst {
     return value;
   }
 
-  static const PrimType GetPrimType() {
+  static PrimType GetPrimType() {
     return kPrimType;
   }
 
@@ -284,7 +284,7 @@ class MIRStr16Const : public MIRConst {
 
   ~MIRStr16Const() {}
 
-  static const PrimType GetPrimType() {
+  static PrimType GetPrimType() {
     return kPrimType;
   }
 
@@ -317,7 +317,7 @@ class MIRFloatConst : public MIRConst {
     return value.floatValue;
   }
 
-  static const PrimType GetPrimType() {
+  static PrimType GetPrimType() {
     return kPrimType;
   }
 
@@ -382,7 +382,7 @@ class MIRDoubleConst : public MIRConst {
     return value.dValue;
   }
 
-  static const PrimType GetPrimType() {
+  static PrimType GetPrimType() {
     return kPrimType;
   }
 
@@ -425,7 +425,7 @@ class MIRFloat128Const : public MIRConst {
     return value;
   }
 
-  static const PrimType GetPrimType() {
+  static PrimType GetPrimType() {
     return kPrimType;
   }
 
@@ -470,7 +470,7 @@ class MIRAggConst : public MIRConst {
       if (constVec[i] == nullptr) {
         CHECK_FATAL(false, "exist nullptr in constVec");
       }
-      if (fieldidx == constVec[i]->GetFiledId()) {
+      if (fieldidx == constVec[i]->GetFieldId()) {
         return constVec[i];
       }
     }

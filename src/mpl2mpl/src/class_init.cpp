@@ -126,8 +126,7 @@ void ClassInit::ProcessFunc(MIRFunction *func) {
           WARN(kLncWarn, "ClassInit::ProcessFunc: Skip INCOMPLETE type %s", className.c_str());
           doClinitCheck = true;
         } else {
-          doClinitCheck = !CanRemoveClinitCheck(className) && (func->IsStatic() || className != selfClassName) &&
-                          klassHierarchy->NeedClinitCheckRecursively(klass);
+          doClinitCheck = !CanRemoveClinitCheck(className) && klassHierarchy->NeedClinitCheckRecursively(klass);
         }
         if (doClinitCheck) {
           MIRSymbol *classInfo = GetClassInfo(className);

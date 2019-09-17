@@ -382,7 +382,7 @@ bool MIRParser::ParsePragmaElement(MIRPragmaElement *elem) {
     { TK_const, kValueNull },       { TK_u1, kValueBoolean }
   };
   if (tkPragmaValType.find(tk) == tkPragmaValType.end()) {
-    Error("parsing pragam error: wrong element type");
+    Error("parsing pragma error: wrong element type");
     return false;
   }
   elem->SetType(tkPragmaValType[tk]);
@@ -442,31 +442,31 @@ bool MIRParser::ParsePragmaElementForArray(MIRPragmaElement *elem) {
   TokenKind tk;
   tk = lexer.GetTokenKind();
   if (tk != kTkLbrack) {
-    Error("parsing pragam error: expecting [ but get ");
+    Error("parsing pragma error: expecting [ but get ");
     return false;
   }
   tk = lexer.NextToken();
   if (tk != kTkIntconst) {
-    Error("parsing pragam error: expecting int but get ");
+    Error("parsing pragma error: expecting int but get ");
     return false;
   }
   int64 size = lexer.GetTheIntVal();
   tk = lexer.NextToken();
   if (tk != kTkComa && size) {
-    Error("parsing pragam error: expecting , but get ");
+    Error("parsing pragma error: expecting , but get ");
     return false;
   }
   for (int64 i = 0; i < size; i++) {
     MIRPragmaElement *e0 = mod.GetMemPool()->New<MIRPragmaElement>(&mod);
     tk = lexer.NextToken();
     if (!ParsePragmaElement(e0)) {
-      Error("parsing pragam error type ");
+      Error("parsing pragma error type ");
       return false;
     }
     elem->PushSubElemVec(e0);
     tk = lexer.NextToken();
     if (tk != kTkComa && tk != kTkRbrack) {
-      Error("parsing pragam error: expecting , or ] but get ");
+      Error("parsing pragma error: expecting , or ] but get ");
       return false;
     }
   }
@@ -478,49 +478,49 @@ bool MIRParser::ParsePragmaElementForAnnotation(MIRPragmaElement *elem) {
   TokenKind tk;
   tk = lexer.GetTokenKind();
   if (tk != kTkLangle) {
-    Error("parsing pragam error: expecting < but get ");
+    Error("parsing pragma error: expecting < but get ");
     return false;
   }
   tk = lexer.NextToken();
   elem->SetTypeStrIdx(GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName()));
   tk = lexer.NextToken();
   if (tk != kTkRangle) {
-    Error("parsing pragam error: expecting > but get ");
+    Error("parsing pragma error: expecting > but get ");
     return false;
   }
   tk = lexer.NextToken();
   if (tk != kTkLbrack) {
-    Error("parsing pragam error: expecting [ but get ");
+    Error("parsing pragma error: expecting [ but get ");
     return false;
   }
   tk = lexer.NextToken();
   if (tk != kTkIntconst) {
-    Error("parsing pragam error: expecting int but get ");
+    Error("parsing pragma error: expecting int but get ");
     return false;
   }
   int64 size = lexer.GetTheIntVal();
   tk = lexer.NextToken();
   if (tk != kTkComa && size) {
-    Error("parsing pragam error: expecting , but get ");
+    Error("parsing pragma error: expecting , but get ");
     return false;
   }
   for (int i = 0; i < size; i++) {
     MIRPragmaElement *e0 = mod.GetMemPool()->New<MIRPragmaElement>(&mod);
     tk = lexer.NextToken();
     if (tk != TK_label) {
-      Error("parsing pragam error: expecting @ but get ");
+      Error("parsing pragma error: expecting @ but get ");
       return false;
     }
     e0->SetNameStrIdx(GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName()));
     tk = lexer.NextToken();
     if (!ParsePragmaElement(e0)) {
-      Error("parsing pragam error type ");
+      Error("parsing pragma error type ");
       return false;
     }
     elem->PushSubElemVec(e0);
     tk = lexer.NextToken();
     if (tk != kTkComa && tk != kTkRbrack) {
-      Error("parsing pragam error: expecting , or ] but get ");
+      Error("parsing pragma error: expecting , or ] but get ");
       return false;
     }
   }
@@ -539,7 +539,7 @@ bool MIRParser::ParsePragma(MIRStructType &type) {
                                                                            { TK_func_ex, kPragmaFuncExecptioni },
                                                                            { TK_func_var, kPragmaFuncVar } };
   if (tkPragmaKind.find(tk) == tkPragmaKind.end()) {
-    Error("parsing pragam error: wrong kind ");
+    Error("parsing pragma error: wrong kind ");
     return false;
   }
   p->SetKind(tkPragmaKind[tk]);
@@ -557,13 +557,13 @@ bool MIRParser::ParsePragma(MIRStructType &type) {
   tk = lexer.NextToken();
   TyIdx tyidx;
   if (!ParseType(tyidx)) {
-    Error("parsing pragam error: wrong type ");
+    Error("parsing pragma error: wrong type ");
     return false;
   }
   p->SetTyIdx(tyidx);
   tk = lexer.GetTokenKind();
   if (tk != kTkLbrace) {
-    Error("parsing pragam error: expecting { but get ");
+    Error("parsing pragma error: expecting { but get ");
     return false;
   }
   tk = lexer.NextToken();
@@ -572,13 +572,13 @@ bool MIRParser::ParsePragma(MIRStructType &type) {
     e->SetNameStrIdx(GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName()));
     tk = lexer.NextToken();
     if (!ParsePragmaElement(e)) {
-      Error("parsing pragam error type ");
+      Error("parsing pragma error type ");
       return false;
     }
     p->PushElementVector(e);
     tk = lexer.NextToken();
     if (tk != kTkRbrace && tk != kTkComa) {
-      Error("parsing pragam error syntax ");
+      Error("parsing pragma error syntax ");
       return false;
     }
     if (tk == kTkComa) {
@@ -610,11 +610,11 @@ bool MIRParser::ParseFields(MIRStructType &type) {
       if (type.GetKind() == kTypeClass || type.GetKind() == kTypeClassIncomplete || type.GetKind() == kTypeInterface ||
           type.GetKind() == kTypeInterfaceIncomplete) {
         if (!ParsePragma(type)) {
-          Error("parsing pragam error ");
+          Error("parsing pragma error ");
           return false;
         }
       } else {
-        Error("parsing pragam error ");
+        Error("parsing pragma error ");
         return false;
       }
       notaType = true;

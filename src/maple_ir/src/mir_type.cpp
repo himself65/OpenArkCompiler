@@ -1207,7 +1207,7 @@ bool MIRStructType::HasVolatileField() {
 }
 
 // set hasVolatileField to true if parent type has volatile field, otherwise flase.
-static bool ParentTypeHasVolatileField(const TyIdx &parentTyIdx, bool &hasVolatileField) {
+static bool ParentTypeHasVolatileField(const TyIdx parentTyIdx, bool &hasVolatileField) {
   hasVolatileField = (GlobalTables::GetTypeTable().GetTypeFromTyIdx(parentTyIdx)->HasVolatileField()) ? true : false;
   return hasVolatileField;
 }

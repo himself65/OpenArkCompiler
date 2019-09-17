@@ -413,7 +413,7 @@ class MIRType {
     return primType;
   }
 
-  void SetPrimType(const PrimType &pt) {
+  void SetPrimType(const PrimType pt) {
     primType = pt;
   }
 
@@ -425,7 +425,7 @@ class MIRType {
     return tyIdx;
   }
 
-  void SetTypeIndex(const TyIdx &idx) {
+  void SetTypeIndex(const TyIdx idx) {
     tyIdx = idx;
   }
 
@@ -437,7 +437,7 @@ class MIRType {
     return typeKind;
   }
 
-  void SetMIRTypeKind(const MIRTypeKind &kind) {
+  void SetMIRTypeKind(const MIRTypeKind kind) {
     typeKind = kind;
   }
 
@@ -457,7 +457,7 @@ class MIRType {
     return nameStrIdx;
   }
 
-  void SetNameStrIdx(GStrIdx &strIdx) {
+  void SetNameStrIdx(GStrIdx strIdx) {
     nameStrIdx = strIdx;
   }
 
@@ -499,7 +499,7 @@ class MIRPtrType : public MIRType {
     return pointedTyIdx;
   }
 
-  void SetPointedTyIdx(const TyIdx &idx) {
+  void SetPointedTyIdx(const TyIdx idx) {
     pointedTyIdx = idx;
   }
 
@@ -541,7 +541,7 @@ class MIRArrayType : public MIRType {
     return eTyIdx;
   }
 
-  void SetElemtTyIdx(const TyIdx &idx) {
+  void SetElemtTyIdx(const TyIdx idx) {
     eTyIdx = idx;
   }
 
@@ -569,7 +569,7 @@ class MIRArrayType : public MIRType {
     }
   }
 
-  MIRArrayType(const TyIdx &eTyIdx, std::vector<uint32> &sizeArray) : MIRType(kTypeArray, PTY_agg) {
+  MIRArrayType(const TyIdx eTyIdx, std::vector<uint32> &sizeArray) : MIRType(kTypeArray, PTY_agg) {
     this->eTyIdx = eTyIdx;
     dim = sizeArray.size();
     for (int i = 0; i < kMaxArrayDim; i++) {
@@ -577,7 +577,7 @@ class MIRArrayType : public MIRType {
     }
   }
 
-  explicit MIRArrayType(const GStrIdx &strIdx) : MIRType(kTypeArray, PTY_agg, strIdx), dim(0), sizeArray{ 0 } {}
+  explicit MIRArrayType(const GStrIdx strIdx) : MIRType(kTypeArray, PTY_agg, strIdx), dim(0), sizeArray{ 0 } {}
 
   uint16 GetDim() const {
     return dim;
@@ -634,7 +634,7 @@ class MIRFarrayType : public MIRType {
     return elemTyIdx;
   }
 
-  void SetElemtTyIdx(const TyIdx &idx) {
+  void SetElemtTyIdx(const TyIdx idx) {
     elemTyIdx = idx;
   }
 
@@ -1112,7 +1112,7 @@ class MIRClassType : public MIRStructType {
     return parentTyIdx;
   }
 
-  void SetParentTyIdx(const TyIdx &idx) {
+  void SetParentTyIdx(const TyIdx idx) {
     parentTyIdx = idx;
   }
 
@@ -1125,7 +1125,7 @@ class MIRClassType : public MIRStructType {
     return interfacesImplemented.at(i);
   }
 
-  void SetNthInerfaceImplemented(uint32 i, TyIdx &tyIdx) {
+  void SetNthInerfaceImplemented(uint32 i, TyIdx tyIdx) {
     ASSERT(i < interfacesImplemented.size(), "array index out of range");
     interfacesImplemented.at(i) = tyIdx;
   }
@@ -1279,7 +1279,7 @@ class MIRInterfaceType : public MIRStructType {
     return parentsTyIdx[i];
   }
 
-  void SetParentsElementTyIdx(size_t i, TyIdx &tyIdx) {
+  void SetParentsElementTyIdx(size_t i, TyIdx tyIdx) {
     ASSERT(i < parentsTyIdx.size(), "array index out of range");
     parentsTyIdx[i] = tyIdx;
   }
@@ -1462,7 +1462,7 @@ class MIRFuncType : public MIRType {
     return retTyIdx;
   }
 
-  void SetRetTyIdx(const TyIdx &idx) {
+  void SetRetTyIdx(const TyIdx idx) {
     retTyIdx = idx;
   }
 
@@ -1475,7 +1475,7 @@ class MIRFuncType : public MIRType {
     return paramTypeList[i];
   }
 
-  void AddParamTypeList(const TyIdx &tyIdx) {
+  void AddParamTypeList(const TyIdx tyIdx) {
     paramTypeList.push_back(tyIdx);
   }
 
@@ -1641,7 +1641,7 @@ class MIRGenericInstantType : public MIRInstantVectorType {
     return genericTyIdx;
   }
 
-  void SetGenericTyIdx(const TyIdx &idx) {
+  void SetGenericTyIdx(const TyIdx idx) {
     genericTyIdx = idx;
   }
 

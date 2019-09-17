@@ -82,7 +82,7 @@
   KEYWORD(nan)
   KEYWORD(inff)
   KEYWORD(inf)
-  // pragam
+  // pragma
   KEYWORD(pragma)
   KEYWORD(param)
   KEYWORD(func_ex)

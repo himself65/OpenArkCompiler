@@ -378,7 +378,7 @@ void BinaryMplExport::DumpBuf(const std::string &name) {
 void BinaryMplExport::OutputConstBase(const MIRConst *constVal) {
   WriteNum(constVal->GetKind());
   OutputType(constVal->GetType()->GetTypeIndex());
-  WriteNum(constVal->GetFiledId());
+  WriteNum(constVal->GetFieldId());
 }
 
 void BinaryMplExport::OutputConst(MIRConst *constVal) {
