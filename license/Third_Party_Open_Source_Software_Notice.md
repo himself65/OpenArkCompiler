@@ -16,11 +16,11 @@ Copyright (C) 1995-2016 Mark Adler
 
 Copyright (C) 2004, 2008, 2012 Mark Adler, all rights reserved
 
-Copyright (C) 1998-2010 Gilles Vollant (minizip) ( http:www.winimage.com/zLibDll/minizip.html )
+Copyright (C) 1998-2010 Gilles Vollant (minizip) ( http://www.winimage.com/zLibDll/minizip.html )
 
 Copyright (C) 2007-2008 Even Rouault
 
-Copyright (C) 2009-2010 Mathias Svensson ( http:result42.com )
+Copyright (C) 2009-2010 Mathias Svensson ( http://result42.com )
 
 Copyright (C) 2004, 2008, 2012, 2016 Mark Adler, all rights reserved
 
