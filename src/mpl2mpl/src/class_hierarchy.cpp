@@ -824,7 +824,7 @@ bool WKTypes::Util::MayRefMeta(const BaseNode *n, MIRType *type) {
        public interface AnnotatedElement {...}
      */
     if (pointedType == javalangrefMethod || pointedType == javalangrefExecutable ||
-        pointedType == javalangrefAccessibleObject || pointedType == javalangrefAnnotatedElement ||
+        pointedType == javalangrefAccessibleObject ||
         pointedType == javalangrefMember || pointedType == javalangrefGenericDeclaration ||
         pointedType == javalangrefAnnotatedElement || pointedType == javalangObject) {
       return true;

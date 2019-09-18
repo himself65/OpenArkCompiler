@@ -287,7 +287,7 @@ class RetypeNode : public TypeCvtNode {
     return tyIdx;
   }
 
-  void SetTyIdx(const TyIdx &tyIdxVal) {
+  void SetTyIdx(const TyIdx tyIdxVal) {
     tyIdx = tyIdxVal;
   }
 
@@ -428,7 +428,7 @@ class IreadNode : public UnaryNode {
     return tyIdx;
   }
 
-  void SetTyIdx(const TyIdx &tyIdxVal) {
+  void SetTyIdx(const TyIdx tyIdxVal) {
     tyIdx = tyIdxVal;
   }
 
