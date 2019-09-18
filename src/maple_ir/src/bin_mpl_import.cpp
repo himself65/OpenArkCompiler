@@ -388,9 +388,6 @@ void BinaryMplImport::ImportInfoOfClassType(std::vector<bool> &infoIsString, std
 void BinaryMplImport::ImportPragmaOfClassType(std::vector<MIRPragma*> &pragmas) {
   int64 size = ReadNum();
   bool isEmpty = pragmas.empty();
-  if (!isEmpty) {
-    LogInfo::MapleLogger() << "The pragmas list is not empty, do not need to add new pragma to it" << std::endl;
-  }
   for (int64 i = 0; i < size; i++) {
     MIRPragma *pragma = ImportPragma();
     if (isEmpty) {
