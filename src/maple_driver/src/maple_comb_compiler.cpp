@@ -222,6 +222,7 @@ Options *MapleCombCompiler::MakeMpl2MplOptions(const MplOptions &options, maple:
         break;
       case kMpl2MplMapleLinker:
         mpl2mplOption->mapleLinker = true;
+        mpl2mplOption->dumpMuidFile = true;
         break;
       case kMplnkDumpMuid:
         mpl2mplOption->dumpMuidFile = true;

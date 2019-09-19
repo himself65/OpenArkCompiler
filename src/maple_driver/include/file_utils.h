@@ -33,6 +33,9 @@ class FileUtils {
   const static std::string GetFileFolder(const std::string &filePath);
   const static std::string ConvertPathIfNeeded(const std::string &src);
   const static int Remove(const std::string &filePath);
+  const static std::string AppendMapleRootIfNeeded(bool needRootPath, const std::string &path,
+                                                   const std::string &defaultRoot =
+                                                   ("." + FileSeperator::kFileSeperatorStr));
 };
 
 }  // namespace maple

@@ -673,6 +673,7 @@ const static mapleOption::Descriptor USAGES[] = {
     { { nullptr } } },
 #endif
   // End
+
   { kUnknown,
     0,
     nullptr,
