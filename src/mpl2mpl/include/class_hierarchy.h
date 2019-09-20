@@ -33,6 +33,7 @@ static constexpr uint32 kClassIsExceptionKlass = 0x0200;
 static constexpr uint32 kClassIsanonymousclass = 0x0400;
 static constexpr uint32 kClassIscoldclass = 0x0800;
 static constexpr uint32 kClassHasNativeMethod = 0x1000;
+static constexpr uint32 kClassLazyBindingClass = 0x2000;
 static constexpr char kJavaLangNoMethodStr[] = "Ljava_2Flang_2FNoSuchMethodException_3B";
 
 #define CLASS_REFERENCE \

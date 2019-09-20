@@ -16,7 +16,6 @@
 #include <string>
 #include <vector>
 #include <algorithm>
-#include <cstdlib>
 #include "compiler_factory.h"
 #include "file_utils.h"
 #include "mpl_logging.h"
@@ -35,8 +34,45 @@ int MplOptions::Parse(int argc, char **argv) {
   this->optionParser = new OptionParser(USAGES);
   exeFolder = FileUtils::GetFileFolder(*argv);
   int ret = optionParser->Parse(argc, argv);
+  bool isOptLevelO0 = false;
+  bool isOptLevelO2 = false;
   if (ret != ErrorCode::kErrorNoError) {
     return ErrorCode::kErrorInvalidParameter;
+  }
+  // We should recognize O0, O2 and run options firstly to decide the real options
+  for (auto opt : optionParser->GetOptions()) {
+    switch (opt.Index()) {
+      case kOptimization0:
+        isOptLevelO0 = true;
+        isOptLevelO2 = false;
+        break;
+      case kRun:
+        this->UpdateRunningExe(opt.Args());
+        break;
+      default:
+        break;
+    }
+  }
+  // Set Default options as O0
+  if (runningExes.size() == 0 && isOptLevelO0 == false && isOptLevelO2 == false) {
+    isOptLevelO0 = true;
+    isOptLevelO2 = false;
+  }
+  // Set O0 options
+  if (isOptLevelO0 == true) {
+    this->UpdateOptLevel(kO0);
+    this->setDefaultLevel = true;
+    this->UpdateRunningExe("jbc2mpl");
+    ret = AppendDefaultOptions(kBinNameMe, kMeDefaultOptionsO0, sizeof(kMeDefaultOptionsO0) / sizeof(MplOption));
+    if (ret != ErrorCode::kErrorNoError) {
+      return ret;
+    }
+    ret = AppendDefaultOptions(kBinNameMpl2mpl, kMpl2MplDefaultOptionsO0,
+                               sizeof(kMpl2MplDefaultOptionsO0) / sizeof(MplOption));
+    if (ret != ErrorCode::kErrorNoError) {
+      return ret;
+    }
+    this->UpdateRunningExe("mplcg");
   }
   for (auto opt : optionParser->GetOptions()) {
     switch (opt.Index()) {
@@ -66,21 +102,6 @@ int MplOptions::Parse(int argc, char **argv) {
         }
         break;
       }
-      case kOptimization0:
-        this->UpdateOptLevel(kO0);
-        this->setDefaultLevel = true;
-        this->UpdateRunningExe("jbc2mpl");
-        ret = AppendDefaultOptions(kBinNameMe, kMeDefaultOptionsO0, sizeof(kMeDefaultOptionsO0) / sizeof(MplOption));
-        if (ret != ErrorCode::kErrorNoError) {
-          return ret;
-        }
-        ret = AppendDefaultOptions(kBinNameMpl2mpl, kMpl2MplDefaultOptionsO0,
-                                   sizeof(kMpl2MplDefaultOptionsO0) / sizeof(MplOption));
-        if (ret != ErrorCode::kErrorNoError) {
-          return ret;
-        }
-        this->UpdateRunningExe("mplcg");
-        break;
       case kCombTimePhases:
         this->timePhases = true;
         this->printCommandStr += " -time-phases";
@@ -104,9 +125,6 @@ int MplOptions::Parse(int argc, char **argv) {
         }
         break;
       case kInMplt:
-        break;
-      case kRun:
-        this->UpdateRunningExe(opt.Args());
         break;
       case kAllDebug:
         this->debugFlag = true;
@@ -134,6 +152,17 @@ int MplOptions::Parse(int argc, char **argv) {
       // Check whether the file was readable
       ret = CheckFileExits();
     }
+  }
+  // Set Default options as O0
+  if (runningExes.size() == 0) {
+    this->UpdateOptLevel(kO0);
+    this->setDefaultLevel = true;
+    this->UpdateRunningExe("dex2mpl");
+    AppendDefaultOptions(kBinNameMe, kMeDefaultOptionsO0,
+                         sizeof(kMeDefaultOptionsO0) / sizeof(MplOption));
+    AppendDefaultOptions(kBinNameMpl2mpl, kMpl2MplDefaultOptionsO0,
+                         sizeof(kMpl2MplDefaultOptionsO0) / sizeof(MplOption));
+    this->UpdateRunningExe("mplcg");
   }
   return ret;
 }
