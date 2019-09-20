@@ -97,7 +97,6 @@ class BinaryMplImport {
   MIRPragma *ImportPragma();
   void ImportFieldPair(FieldPair &fp);
   void ImportMethodPair(MethodPair &memPool);
-  void ImportFieldsOfStructType(FieldVector &fields);
   void ImportMethodsOfStructType(MethodVector &methods);
   void ImportStructTypeData(MIRStructType *type);
   void ImportInterfacesOfClassType(std::vector<TyIdx> &interfaces);
@@ -139,6 +138,7 @@ class BinaryMplImport {
   std::string importFileName;
 
   void SkipTotalSize();
+  void ImportFieldsOfStructType(FieldVector &fields, uint32 methodSize);
 };
 
 }  // namespace maple

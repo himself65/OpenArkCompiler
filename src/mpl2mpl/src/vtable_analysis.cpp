@@ -380,6 +380,13 @@ void VtableAnalysis::ReplaceSuperclassInvoke(CallNode *stmt) {
       }
     }
   }
+  if (!cands || cands->size() == 0) {
+    if (klass->IsClass() || klass->IsInterface()) {
+      LogInfo::MapleLogger() << "warning: func " << callee->GetName() << " is not found in SuperInvoke!" << std::endl;
+      stmt->SetOpCode(OP_callassigned);
+      return;
+    }
+  }
   CHECK_FATAL(cands != nullptr && !cands->empty(),
               "Dependency Error: function %s cannot be found in %s or any of its superclasses/interfaces",
               callee->GetBaseFuncNameWithType().c_str(), klass->GetKlassName().c_str());
