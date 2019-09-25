@@ -34,7 +34,7 @@ make
 
 **基础库准备**
 
-- 您可以自己下载Android代码本地编译来获得libcore的jar包，建议使用Android的9.0.0_r45版本；
+- 您可以自己下载Android代码本地编译来获得libcore的jar包，建议使用Android的9.0.0_r45版本
 
 - 同时码云上也提供了已经编译好的libcore的jar文件，你可以下载直接使用，下载链接：https://gitee.com/mirrors/java-core/
 
