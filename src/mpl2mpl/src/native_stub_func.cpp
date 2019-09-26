@@ -154,44 +154,50 @@ void GenericNativeStubFunc::ProcessFunc(MIRFunction *func) {
   // Generate stubfunc call/return stmt, extra args only for non-critical_native calls
   MIRSymbol *envPtrSym = nullptr;
   PregIdx envPregIdx = 0;
+  if (Options::usePreg) {
+    envPregIdx = func->GetPregTab()->CreatePreg(PTY_ptr);
+  } else {
+    envPtrSym = builder->CreateSymbol(GlobalTables::GetTypeTable().GetVoidPtr()->GetTypeIndex(), "env_ptr", kStVar,
+                                      kScAuto, func, kScopeLocal);
+  }
+  // Generate a MRT call for extra work before calling the native
+  BaseNode *callerObj = nullptr;  // it will be used by PreNativeCall, and might be used by syncenter
+  if (func->GetAttr(FUNCATTR_static)) {
+    // Grab class object
+    callerObj = builder->CreateExprAddrof(0, classObjSymbol);
+  } else {
+    // Grab _this pointer
+    MIRSymbol *formal0St = func->GetFormal(0);
+    if (formal0St->GetSKind() == kStPreg)
+      callerObj =
+          builder->CreateExprRegread(formal0St->GetType()->GetPrimType(),
+                                     func->GetPregTab()->GetPregIdxFromPregno(formal0St->GetPreg()->GetPregNo()));
+    else {
+      callerObj = builder->CreateExprDread(formal0St);
+    }
+  }
+  MapleVector<BaseNode*> args(builder->GetCurrentFuncCodeMpAllocator()->Adapter());
+  args.push_back(callerObj);
+  CallNode *preFuncCall =
+      Options::usePreg
+      ? builder->CreateStmtCallRegassigned(MRTPreNativeFunc->GetPuidx(), args, envPregIdx, OP_callassigned)
+      : builder->CreateStmtCallAssigned(MRTPreNativeFunc->GetPuidx(), args, envPtrSym, OP_callassigned);
+  // Generate a MRT call for extra work after calling the native
+  MapleVector<BaseNode*> postArgs(func->GetCodeMempoolAllocator()->Adapter());
+  postArgs.push_back(Options::usePreg ? (static_cast<BaseNode*>(builder->CreateExprRegread(PTY_ptr, envPregIdx)))
+                                      : (static_cast<BaseNode*>(builder->CreateExprDread(envPtrSym))));
+  CallNode *postFuncCall =
+      builder->CreateStmtCallAssigned(MRTPostNativeFunc->GetPuidx(), postArgs, nullptr, OP_callassigned);
+
   MapleVector<BaseNode*> allocCallArgs(func->GetCodeMempoolAllocator()->Adapter());
   if (!func->GetAttr(FUNCATTR_critical_native)) {
-    // a return value
-    if (Options::usePreg) {
-      envPregIdx = func->GetPregTab()->CreatePreg(PTY_ptr);
-    } else {
-      envPtrSym = builder->CreateSymbol(GlobalTables::GetTypeTable().GetVoidPtr()->GetTypeIndex(), "env_ptr", kStVar,
-                                        kScAuto, func, kScopeLocal);
-    }
     if (needNativeCall) {
-      // Generate a MRT call for extra work before calling the native
-      BaseNode *callerObj = nullptr;  // it will be used by PreNativeCall, and might be used by syncenter
-      if (func->GetAttr(FUNCATTR_static)) {
-        // Grab class object
-        callerObj = builder->CreateExprAddrof(0, classObjSymbol);
-      } else {
-        // Grab _this pointer
-        MIRSymbol *formal0St = func->GetFormal(0);
-        if (formal0St->GetSKind() == kStPreg)
-          callerObj =
-              builder->CreateExprRegread(formal0St->GetType()->GetPrimType(),
-                                         func->GetPregTab()->GetPregIdxFromPregno(formal0St->GetPreg()->GetPregNo()));
-        else {
-          callerObj = builder->CreateExprDread(formal0St);
-        }
-      }
-      MapleVector<BaseNode*> args(builder->GetCurrentFuncCodeMpAllocator()->Adapter());
-      args.push_back(callerObj);
-      CallNode *preFuncCall =
-          Options::usePreg
-              ? builder->CreateStmtCallRegassigned(MRTPreNativeFunc->GetPuidx(), args, envPregIdx, OP_callassigned)
-              : builder->CreateStmtCallAssigned(MRTPreNativeFunc->GetPuidx(), args, envPtrSym, OP_callassigned);
       func->GetBody()->AddStatement(preFuncCall);
     }
     // set up env
     allocCallArgs.push_back(Options::usePreg
-                                ? (static_cast<BaseNode*>(builder->CreateExprRegread(PTY_ptr, envPregIdx)))
-                                : (static_cast<BaseNode*>(builder->CreateExprDread(envPtrSym))));
+        ? (static_cast<BaseNode*>(builder->CreateExprRegread(PTY_ptr, envPregIdx)))
+        : (static_cast<BaseNode*>(builder->CreateExprDread(envPtrSym))));
     // set up class
     if (func->GetAttr(FUNCATTR_static)) {
       allocCallArgs.push_back(builder->CreateExprAddrof(0, classObjSymbol));
@@ -216,7 +222,8 @@ void GenericNativeStubFunc::ProcessFunc(MIRFunction *func) {
   MIRFunction *nativeFunc = GetOrCreateDefaultNativeFunc(func);
 
   if (Options::regNativeFunc) {
-    GenericRegisteredNativeFuncCall(func, nativeFunc, allocCallArgs, stubFuncRet);
+    GenericRegisteredNativeFuncCall(func, nativeFunc, allocCallArgs, stubFuncRet, needNativeCall, preFuncCall,
+                                    postFuncCall);
   } else if (Options::nativeWrapper) {
     GenericNativeWrapperFuncCall(func, nativeFunc, allocCallArgs, stubFuncRet);
   } else {
@@ -235,11 +242,6 @@ void GenericNativeStubFunc::ProcessFunc(MIRFunction *func) {
   }
   // Generate a MRT call for extra work after calling the native
   if (needNativeCall) {
-    MapleVector<BaseNode*> postArgs(func->GetCodeMempoolAllocator()->Adapter());
-    postArgs.push_back(Options::usePreg ? (static_cast<BaseNode*>(builder->CreateExprRegread(PTY_ptr, envPregIdx)))
-                                        : (static_cast<BaseNode*>(builder->CreateExprDread(envPtrSym))));
-    CallNode *postFuncCall =
-        builder->CreateStmtCallAssigned(MRTPostNativeFunc->GetPuidx(), postArgs, nullptr, OP_callassigned);
     func->GetBody()->AddStatement(postFuncCall);
   }
   // Generate MonitorExit if this is a synchronized method
@@ -327,7 +329,9 @@ void GenericNativeStubFunc::GenericRegTabEntry(const MIRFunction *func) {
 }
 
 void GenericNativeStubFunc::GenericRegisteredNativeFuncCall(MIRFunction *func, const MIRFunction *nativeFunc,
-                                                            MapleVector<BaseNode*> &args, const MIRSymbol *ret) {
+                                                            MapleVector<BaseNode*> &args, const MIRSymbol *ret,
+                                                            bool needNativeCall, CallNode *preNativeFuncCall,
+                                                            CallNode *postNativeFuncCall) {
   // Generate registration table entry.
   GenericRegTabEntry(func);
   GenericRegFuncTabEntry();
@@ -417,7 +421,13 @@ void GenericNativeStubFunc::GenericRegisteredNativeFuncCall(MIRFunction *func, c
           GlobalTables::GetTypeTable().GetOrCreatePointerType(elemType), 0, arrayExpr, nativeMethodPtr);
       subIfStmt->GetThenPart()->AddStatement(nativeFuncTableEntry);
       // Add if-statement to function body
+      if (!needNativeCall) {
+        ifStmt->GetThenPart()->AddStatement(preNativeFuncCall);
+      }
       ifStmt->GetThenPart()->AddStatement(callGetFindNativeFunc);
+      if (!needNativeCall) {
+        ifStmt->GetThenPart()->AddStatement(postNativeFuncCall);
+      }
       ifStmt->GetThenPart()->AddStatement(callDummyNativeFunc);
       ifStmt->GetThenPart()->AddStatement(subIfStmt);
       if (needCheckThrowPendingExceptionFunc) {
@@ -447,7 +457,13 @@ void GenericNativeStubFunc::GenericRegisteredNativeFuncCall(MIRFunction *func, c
       CallNode *callGetFindNativeFunc = builder->CreateStmtCallRegassigned(findNativeFunc->GetPuidx(), dynamicStubOpnds,
                                                                            funcptrPreg, OP_callassigned);
       // Add if-statement to function body
+      if (!needNativeCall) {
+        ifStmt->GetThenPart()->AddStatement(preNativeFuncCall);
+      }
       ifStmt->GetThenPart()->AddStatement(callGetFindNativeFunc);
+      if (!needNativeCall) {
+        ifStmt->GetThenPart()->AddStatement(postNativeFuncCall);
+      }
       if (!needCheckThrowPendingExceptionFunc) {
         MapleVector<BaseNode*> opnds(builder->GetCurrentFuncCodeMpAllocator()->Adapter());
         CallNode *callGetExceptFunc = builder->CreateStmtCallAssigned(MRTCheckThrowPendingExceptionFunc->GetPuidx(),

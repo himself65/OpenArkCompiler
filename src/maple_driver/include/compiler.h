@@ -126,7 +126,6 @@ class MapleCombCompiler : public Compiler {
   const std::string GetInputFileName(const MplOptions &options) const;
 
  protected:
-  void GetTmpFilesToDelete(const MplOptions &mplOptions, std::vector<std::string> &tempFiles) const;
   const std::unordered_set<std::string> GetFinalOutputs(const MplOptions &mplOptions) const;
 
  private:

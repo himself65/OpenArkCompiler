@@ -49,6 +49,7 @@ Klass::Klass(MIRStructType *type, MapleAllocator *alc)
       implKlasses(alloc->Adapter()),
       implInterfaces(alloc->Adapter()),
       methods(alloc->Adapter()),
+      strIdx2Method(std::less<GStrIdx>(), alloc->Adapter()),
       clinitMethod(nullptr),
       classInitBridge(nullptr),
       strIdx2CandidateMap(std::less<GStrIdx>(), alloc->Adapter()),
@@ -136,6 +137,9 @@ MIRFunction *Klass::GetClosestMethod(GStrIdx funcnamewithtype) const {
 }
 
 void Klass::DelMethod(const MIRFunction *func) {
+  if (GetMethod(func->GetBaseFuncNameWithTypeStrIdx()) == func) {
+    strIdx2Method.erase(func->GetBaseFuncNameWithTypeStrIdx());
+  }
   for (auto it = methods.begin(); it != methods.end(); it++) {
     if (*it == func) {
       methods.erase(it--);

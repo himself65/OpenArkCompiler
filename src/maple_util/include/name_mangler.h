@@ -95,6 +95,7 @@ static constexpr const char kReflectionStartHotStrtabPrefixStr[] = "__reflection
 static constexpr const char kReflectionBothHotStrTabPrefixStr[] = "__reflection_both_hot_strtab";
 static constexpr const char kReflectionRunHotStrtabPrefixStr[] = "__reflection_run_hot_strtab";
 static constexpr const char kReflectionNoEmitStrtabPrefixStr[] = "__reflection_no_emit_strtab";
+static constexpr const char kMarkMuidFuncDefStr[] = "muid_func_def:";
 static constexpr const char kMarkMuidFuncUndefStr[] = "muid_func_undef:";
 static constexpr const char kGcRootList[] = "gcRootNewList";
 static constexpr const char kDecoupleOption[] = "__decouple_option";

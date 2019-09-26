@@ -302,12 +302,12 @@ class ReflectionAnalysis : public AnalysisResult {
   bool VtableFunc(const MIRFunction *func) const;
   void GenPrimitiveClass();
   bool RootClassDefined();  // wether current module defines root classes
-  void GenAllMethodHash(std::vector<std::pair<MethodPair*, int>> &methodInfoVec, bool &isFinalize,
+  void GenAllMethodHash(std::vector<std::pair<MethodPair*, int>> &methodInfoVec,
                         std::unordered_map<uint32, std::string> &baseNameMap,
                         std::unordered_map<uint32, std::string> &fullNameMap);
   void GenAllFieldHash(std::vector<std::pair<FieldPair, uint16>> &fieldV);
   void GeneAnnotation(std::map<int, int> &idxNumMap, std::string &annoArr, MIRClassType *classType,
-                      PragmaKind paragKind, const std::string &paragName,
+                      PragmaKind paragKind, const std::string &paragName, TyIdx fieldTypeIdx,
                       std::map<int, int> *paramNumArray = nullptr, int *paramIndex = nullptr);
   void SetAnnoFieldConst(const MIRStructType *metadataRoType, MIRAggConst *newConst, uint32 fieldID,
                          std::map<int, int> &idxNumMap, const std::string &annoArr);
@@ -348,6 +348,7 @@ class ReflectionAnalysis : public AnalysisResult {
   static std::string strTabBothHot;
   static std::string strTabRunHot;
   static bool strTabInited;
+  static TyIdx invalidIdx;
 };
 
 class DoReflectionAnalysis : public ModulePhase {

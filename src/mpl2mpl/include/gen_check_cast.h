@@ -22,6 +22,8 @@ namespace maple {
 static constexpr char kMCCReflectThrowCastException[] = "MCC_Reflect_ThrowCastException";
 static constexpr char kMCCReflectCheckCastingNoArray[] = "MCC_Reflect_Check_Casting_NoArray";
 static constexpr char kMCCReflectCheckCastingArray[] = "MCC_Reflect_Check_Casting_Array";
+
+
 class CheckCastGenerator : public FuncOptimizeImpl {
  public:
   CheckCastGenerator(MIRModule *mod, KlassHierarchy *kh, bool dump);
@@ -42,8 +44,7 @@ class CheckCastGenerator : public FuncOptimizeImpl {
   void InitTypes();
   void InitFuncs();
   void GenAllCheckCast();
-  void GenCheckCast(BaseNode *stmt, BaseNode *latestInstanceOfStmt, StIdx lastOpndStidx);
-  bool FindDef(BaseNode *x, MIRSymbol *symbol);
+  void GenCheckCast(BaseNode *stmt);
   BaseNode *GetObjectShadow(BaseNode *opnd);
   MIRSymbol *GetOrCreateClassInfoSymbol(const std::string &className);
   bool FindUseExpr(BaseNode *node, StIdx idx);
@@ -65,6 +66,7 @@ class DoCheckCastGeneration : public ModulePhase {
     return nullptr;
   }
 };
+
 
 }  // namespace maple
 #endif  // MPL2MPL_INCLUDE_GEN_CHECK_CAST_H

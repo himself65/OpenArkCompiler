@@ -479,6 +479,8 @@ class MIRType {
 
   virtual bool ValidateClassOrInterface(const char *className, bool noWarning);
   const std::string &GetName(void) const;
+  virtual std::string GetMplTypeName() const;
+  virtual std::string GetCompactMplTypeName() const;
   virtual bool PointsToConstString() const;
   virtual size_t GetHashIndex() const {
     constexpr uint8 kIdxShift = 2;
@@ -531,6 +533,9 @@ class MIRPtrType : public MIRType {
 
   bool PointsToConstString() const override;
 
+  std::string GetMplTypeName() const override;
+
+  std::string GetCompactMplTypeName() const override;
  private:
   TyIdx pointedTyIdx;
 };
@@ -621,6 +626,8 @@ class MIRArrayType : public MIRType {
     return hidx % kTypeHashLength;
   }
 
+  std::string GetMplTypeName() const override;
+  std::string GetCompactMplTypeName() const override;
  private:
   TyIdx eTyIdx;
   uint16 dim;
@@ -638,27 +645,28 @@ class MIRFarrayType : public MIRType {
     elemTyIdx = idx;
   }
 
-  bool EqualTo(const MIRType &type) const;
+  bool EqualTo(const MIRType &type) const override;
   MIRFarrayType() : MIRType(kTypeFArray, PTY_agg), elemTyIdx(TyIdx(0)){};
   explicit MIRFarrayType(TyIdx elemTyIdx) : MIRType(kTypeFArray, PTY_agg), elemTyIdx(elemTyIdx) {}
 
   explicit MIRFarrayType(GStrIdx strIdx) : MIRType(kTypeFArray, PTY_agg, strIdx), elemTyIdx(TyIdx(0)) {}
 
   ~MIRFarrayType() = default;
-  MIRType *CopyMIRTypeNode() const;
+  MIRType *CopyMIRTypeNode() const override;
   MIRType *GetElemType() const;
 
-  bool HasTypeParam() const {
+  bool HasTypeParam() const override {
     return GetElemType()->HasTypeParam();
   }
 
-  void Dump(int indent, bool dontUseName = false) const;
+  void Dump(int indent, bool dontUseName = false) const override;
 
-  size_t GetHashIndex() const {
+  size_t GetHashIndex() const override {
     constexpr uint8 kIdxShift = 5;
     return ((elemTyIdx.GetIdx() << kIdxShift) + (typeKind << kShiftNumOfTypeKind)) % kTypeHashLength;
   }
-
+  std::string GetMplTypeName() const override;
+  std::string GetCompactMplTypeName() const override;
  private:
   TyIdx elemTyIdx;
 };
@@ -842,10 +850,10 @@ class MIRStructType : public MIRType {
     return std::find(fields.begin(), fields.end(), pair) != fields.end();
   }
 
-  virtual bool HasVolatileField();
-  virtual bool HasTypeParam() const;
-  bool EqualTo(const MIRType &type) const;
-  MIRType *CopyMIRTypeNode() const {
+  virtual bool HasVolatileField() override;
+  virtual bool HasTypeParam() const override;
+  bool EqualTo(const MIRType &type) const override;
+  MIRType *CopyMIRTypeNode() const override {
     return new MIRStructType(*this);
   }
 
@@ -909,7 +917,7 @@ class MIRStructType : public MIRType {
   }
 
   void DumpFieldsAndMethods(int indent, bool hasMethod) const;
-  void Dump(int indent, bool dontUseName = false) const;
+  void Dump(int indent, bool dontUseName = false) const override;
   bool IsIncomplete() const {
     return typeKind == kTypeStructIncomplete || typeKind == kTypeClassIncomplete ||
            typeKind == kTypeInterfaceIncomplete;
@@ -922,7 +930,7 @@ class MIRStructType : public MIRType {
   // only meaningful for MIRClassType and MIRInterface types
   bool IsLocal() const;
 
-  size_t GetSize() const {
+  size_t GetSize() const override {
     if (typeKind == kTypeUnion) {
       size_t maxSize = GetElemType(0)->GetSize();
       for (size_t i = 1; i < fields.size(); i++) {
@@ -948,7 +956,7 @@ class MIRStructType : public MIRType {
     }
   }
 
-  size_t GetHashIndex() const {
+  size_t GetHashIndex() const override {
     return ((nameStrIdx.GetIdx() << kShiftNumOfNameStrIdx) + (typeKind << kShiftNumOfTypeKind)) % kTypeHashLength;
   }
 
@@ -1001,8 +1009,9 @@ class MIRStructType : public MIRType {
     CHECK_FATAL(false, "can not use AddStaticValue");
   }
 
-  virtual FieldPair TraverseToFieldRef(FieldID &fieldID) const ;
-
+  virtual FieldPair TraverseToFieldRef(FieldID &fieldID) const;
+  std::string GetMplTypeName() const override;
+  std::string GetCompactMplTypeName() const override;
  protected:
   FieldVector fields;
   std::vector<TyIdx> fieldInferredTyIdx;

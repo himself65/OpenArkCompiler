@@ -16,6 +16,7 @@
 #define MAPLE_IR_INCLUDE_MIR_PREG_H
 #if MIR_FEATURE_FULL
 #include "mir_module.h"
+#include "global_tables.h"
 #endif  // MIR_FEATURE_FULL
 
 namespace maple {
@@ -119,6 +120,7 @@ class MIRPregTable {
     ASSERT(idx < 0xffff, "will has problem if over 16 bits");
     pregTable.push_back(preg);
     pregNoToPregIdxMap[index] = idx;
+    pregTable[idx]->SetMIRType(GlobalTables::GetTypeTable().GetPrimType(primType));
     return idx;
   }
 

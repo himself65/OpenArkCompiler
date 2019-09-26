@@ -37,7 +37,8 @@ class MirCFG {
   void AddAuxilaryBB();
   bool FindExprUse(BaseNode *expr, StIdx stIdx);
   bool FindUse(StmtNode *stmt, StIdx stid);
-  bool HasNoUseBetween(StmtNode *from, StmtNode *to, StIdx stIdx);
+  bool FindDef(StmtNode *stmt, StIdx stid);
+  bool HasNoOccBetween(StmtNode *from, StmtNode *to, StIdx stIdx);
 
   MeFunction *GetFunc() {
     return func;

@@ -241,6 +241,7 @@ MIRPragma *BinaryMplImport::ImportPragma() {
   p->SetVisibility(ReadNum());
   p->SetStrIdx(ImportStr());
   p->SetTyIdx(ImportType());
+  p->SetTyIdxEx(ImportType());
   p->SetParamNum(ReadNum());
   int64 size = ReadNum();
   for (int64 i = 0; i < size; i++) {
@@ -411,7 +412,11 @@ void BinaryMplImport::SetClassTyidxOfMethods(MIRStructType *type) {
 }
 
 void BinaryMplImport::ImportClassTypeData(MIRClassType *type) {
-  type->GetParentTyIdx() = ImportType();
+  TyIdx tempType = ImportType();
+  // Keep the parent_tyidx we first met.
+  if (type->GetParentTyIdx().GetIdx() == 0) {
+    type->GetParentTyIdx() = tempType;
+  }
   ImportInterfacesOfClassType(type->GetInerfaceImplemented());
   ImportInfoIsStringOfClassType(type->GetInfoIsString());
   ImportInfoOfClassType(type->GetInfoIsString(), type->GetInfo());

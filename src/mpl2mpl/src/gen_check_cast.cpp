@@ -16,6 +16,7 @@
 #include <iostream>
 #include <algorithm>
 #include "reflection_analysis.h"
+#include "mir_lower.h"
 
 // This phase does two things:
 // #1 implement the opcode check-cast vx, type_id
@@ -46,6 +47,7 @@ CheckCastGenerator::CheckCastGenerator(MIRModule *mod, KlassHierarchy *kh, bool 
   InitFuncs();
 }
 
+
 void CheckCastGenerator::InitTypes() {
   pointerObjType = GlobalTables::GetTypeTable().GetOrCreatePointerType(WKTypes::Util::GetJavaLangObjectType());
 }
@@ -73,7 +75,7 @@ MIRSymbol *CheckCastGenerator::GetOrCreateClassInfoSymbol(const std::string &cla
   return classInfoSymbol;
 }
 
-void CheckCastGenerator::GenCheckCast(BaseNode *stmt, BaseNode *latestInstanceOfStmt, StIdx lastOpndStidx) {
+void CheckCastGenerator::GenCheckCast(BaseNode *stmt) {
   // Handle the special case like (Type)null, we don't need a checkcast.
   if (stmt->GetOpCode() == OP_intrinsiccallwithtypeassigned) {
     IntrinsiccallNode *callNode = static_cast<IntrinsiccallNode*>(stmt);
@@ -102,24 +104,8 @@ void CheckCastGenerator::GenCheckCast(BaseNode *stmt, BaseNode *latestInstanceOf
   TyIdx checkTyidx = callNode->GetTyIdx();
   MIRType *checkType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(checkTyidx);
   Klass *checkKlass = klassHierarchy->GetKlassFromTyIdx(static_cast<MIRPtrType*>(checkType)->GetPointedTyIdx());
-  bool hasChecked = false;
-  if (latestInstanceOfStmt != nullptr) {
-    IntrinsicopNode *latestInstanceOfNode = static_cast<IntrinsicopNode*>(latestInstanceOfStmt);
-    if (latestInstanceOfNode->GetTyIdx() == checkTyidx) {
-      const size_t latestInstanceOfNodeNopndSize = latestInstanceOfNode->GetNopndSize();
-      CHECK_FATAL(latestInstanceOfNodeNopndSize > 0, "contain check");
-      AddrofNode *instanceOfNode = static_cast<AddrofNode*>(latestInstanceOfNode->GetNopndAt(0));
-      const size_t callNodeNopndSize = callNode->GetNopndSize();
-      CHECK_FATAL(callNodeNopndSize > 0, "contain check");
-      AddrofNode *castNode = static_cast<AddrofNode*>(callNode->GetNopndAt(0));
-      if ((instanceOfNode->GetStIdx().Idx() == castNode->GetStIdx().Idx()) ||
-          (lastOpndStidx.Idx() == castNode->GetStIdx().Idx())) {
-        hasChecked = true;
-      }
-    }
-  }
 
-  if (!hasChecked) {
+  {
     if (checkKlass && strcmp("", checkKlass->GetKlassName().c_str())) {
       if (!strcmp(checkKlass->GetKlassName().c_str(), NameMangler::kJavaLangObjectStr)) {
         const size_t callNodeNopndSize1 = callNode->GetNopndSize();
@@ -147,21 +133,17 @@ void CheckCastGenerator::GenCheckCast(BaseNode *stmt, BaseNode *latestInstanceOf
         IfStmtNode *ifStmt = static_cast<IfStmtNode*>(builder->CreateStmtIf(cond));
         MIRType *mVoidPtr = GlobalTables::GetTypeTable().GetVoidPtr();
         CHECK_FATAL(mVoidPtr != nullptr, "builder->GetVoidPtr() is null in CheckCastGenerator::GenCheckCast");
-        MIRSymbol *retst = builder->GetOrCreateLocalDecl("_retst", mVoidPtr);
-        BaseNode *retVal = builder->CreateExprDread(retst);
-        CHECK_FATAL(callNode->GetNopndAt(0)->GetOpCode() == OP_dread,
-                    "expect dread node for MCC_Reflect_Check_Casting_NoArray");
-        BaseNode *ireadExpr = GetObjectShadow(callNode->GetNopndAt(0));
-        StmtNode *dassignTaget = builder->CreateStmtDassign(retst, 0, ireadExpr);
+        BaseNode *opnd = callNode->GetNopndAt(0);
+        BaseNode *ireadExpr = GetObjectShadow(opnd);
+
         BaseNode *innerCond = builder->CreateExprCompare(OP_ne, GlobalTables::GetTypeTable().GetUInt1(),
-                                                         GlobalTables::GetTypeTable().GetPtr(), valueExpr, retVal);
-        IfStmtNode *innerIfStmt = static_cast<IfStmtNode*>(builder->CreateStmtIf(innerCond));
+                                                          GlobalTables::GetTypeTable().GetPtr(), valueExpr, ireadExpr);
+        IfStmtNode *innerIfStmt = static_cast<IfStmtNode *>(builder->CreateStmtIf(innerCond));
         MapleVector<BaseNode*> args(builder->GetCurrentFuncCodeMpAllocator()->Adapter());
         args.push_back(valueExpr);
-        args.push_back(callNode->GetNopndAt(0));
+        args.push_back(opnd);
         StmtNode *dassignStmt = builder->CreateStmtCall(checkCastingNoArray->GetPuidx(), args);
         innerIfStmt->GetThenPart()->AddStatement(dassignStmt);
-        ifStmt->GetThenPart()->AddStatement(dassignTaget);
         ifStmt->GetThenPart()->AddStatement(innerIfStmt);
         currFunc->GetBody()->InsertBefore(static_cast<StmtNode*>(stmt), ifStmt);
       }
@@ -277,116 +259,13 @@ void CheckCastGenerator::GenCheckCast(BaseNode *stmt, BaseNode *latestInstanceOf
   currFunc->GetBody()->ReplaceStmt1WithStmt2(static_cast<StmtNode*>(stmt), assignReturnTypeNode);
 }
 
-bool CheckCastGenerator::FindDef(BaseNode *x, MIRSymbol *symbol) {
-  if (x == nullptr) {
-    return false;
-  }
-  Opcode op = x->GetOpCode();
-  switch (op) {
-    case OP_call:
-    case OP_virtualcall:
-    case OP_superclasscall:
-    case OP_interfacecall:
-    case OP_customcall:
-    case OP_polymorphiccall:
-    case OP_icall:
-    case OP_intrinsiccall:
-    case OP_xintrinsiccall:
-    case OP_intrinsiccallwithtype:
-    case OP_callassigned:
-    case OP_virtualcallassigned:
-    case OP_superclasscallassigned:
-    case OP_interfacecallassigned:
-    case OP_customcallassigned:
-    case OP_polymorphiccallassigned:
-    case OP_icallassigned:
-    case OP_intrinsiccallassigned:
-    case OP_xintrinsiccallassigned:
-    case OP_intrinsiccallwithtypeassigned:
-    case OP_callinstant:
-    case OP_virtualcallinstant:
-    case OP_superclasscallinstant:
-    case OP_interfacecallinstant:
-    case OP_callinstantassigned:
-    case OP_virtualcallinstantassigned:
-    case OP_superclasscallinstantassigned:
-    case OP_interfacecallinstantassigned: {
-      CallNode *cnode = static_cast<CallNode*>(x);
-      CallReturnVector &nrets = cnode->GetReturnVec();
-      MIRSymbol *retSt = nullptr;
-      if (nrets.empty() || !kOpcodeInfo.IsCallAssigned(x->GetOpCode())) {
-        retSt = nullptr;
-      } else {
-        ASSERT(nrets.size() == 1, "Single Ret value for now.");
-        StIdx stIdx = nrets[0].first;
-        RegFieldPair regFieldPair = nrets[0].second;
-        if (!regFieldPair.IsReg()) {
-          retSt = builder->GetSymbolFromEnclosingScope(stIdx);
-        }
-      }
-      if (retSt == symbol) {
-        return true;
-      }
-    } break;
-    case OP_maydassign:
-    case OP_dassign: {
-      DassignNode *dnode = static_cast<DassignNode*>(x);
-      MIRSymbol *st = currFunc->GetLocalOrGlobalSymbol(dnode->GetStIdx(), true);
-      if (symbol == st) {
-        return true;
-      }
-      if (dnode->GetRHS()) {
-        return FindDef(dnode->GetRHS(), st);
-      }
-    } break;
-    case OP_regassign: {
-      RegassignNode *rnode = static_cast<RegassignNode*>(x);
-      if (FindDef(rnode->Opnd(), symbol)) {
-        return true;
-      }
-    } break;
-    default:;
-  }
-  return false;
-}
-
 void CheckCastGenerator::GenAllCheckCast() {
-  BaseNode *latestInstanceOfStmt = nullptr;
-  StIdx lastOpndStidx;
   auto &stmtNodes = currFunc->GetBody()->GetStmtNodes();
   for (auto &stmt : stmtNodes) {
-    if (stmt.GetOpCode() == OP_dassign) {
-      for (size_t i = 0; i < stmt.NumOpnds(); i++) {
-        BaseNode *opnd = stmt.Opnd(i);
-        IntrinsicopNode *callNode =
-            (opnd->GetOpCode() == OP_intrinsicopwithtype) ? static_cast<IntrinsicopNode*>(opnd) : nullptr;
-        if (callNode != nullptr && callNode->GetIntrinsic() == INTRN_JAVA_INSTANCE_OF) {
-          latestInstanceOfStmt = static_cast<StmtNode*>(opnd);
-          break;
-        } else if ((latestInstanceOfStmt != nullptr) && (latestInstanceOfStmt->GetOpCode() == OP_intrinsicopwithtype)) {
-          IntrinsicopNode *latestInstanceOfNode = static_cast<IntrinsicopNode*>(latestInstanceOfStmt);
-          DreadNode *instanceOfNode = static_cast<DreadNode*>(latestInstanceOfNode->GetNopndAt(0));
-          DassignNode &dnode = static_cast<DassignNode&>(stmt);
-          if (dnode.GetRHS()) {
-            DreadNode *rhs = static_cast<DreadNode*>(dnode.GetRHS());
-            if (rhs != nullptr) {
-              if (rhs->GetStIdx().Idx() == instanceOfNode->GetStIdx().Idx()) {
-                lastOpndStidx = dnode.GetStIdx();
-              }
-            }
-          }
-          MIRSymbol *st = currFunc->GetLocalOrGlobalSymbol(instanceOfNode->GetStIdx(), true);
-          if (FindDef(&stmt, st)) {
-            latestInstanceOfStmt = nullptr;
-            break;
-          }
-        }
-      }
-    }
     if (stmt.GetOpCode() == OP_intrinsiccallwithtypeassigned || stmt.GetOpCode() == OP_intrinsiccallwithtype) {
       IntrinsiccallNode &callNode = static_cast<IntrinsiccallNode&>(stmt);
       if (callNode.GetIntrinsic() == INTRN_JAVA_CHECK_CAST) {
-        GenCheckCast(&stmt, latestInstanceOfStmt, lastOpndStidx);
+        GenCheckCast(&stmt);
         if (stmt.GetOpCode() == OP_intrinsiccallwithtype) {
           currFunc->GetBody()->RemoveStmt(&stmt);
         }
@@ -517,6 +396,8 @@ void CheckCastGenerator::ProcessFunc(MIRFunction *func) {
   }
   SetCurrentFunction(func);
   GenAllCheckCast();
+  MIRLower mirlowerer(*(GetModule()), func);
+  mirlowerer.LowerFunc(func);
 }
 
 }  // namespace maple

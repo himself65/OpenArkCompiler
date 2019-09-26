@@ -339,6 +339,10 @@ void MIRPragma::Dump(int indent) {
   }
   LogInfo::MapleLogger() << GlobalTables::GetStrTable().GetStringFromStrIdx(strIdx) << " ";
   GStrIdx gStrIdx = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->GetNameStrIdx();
+  if (tyIdxEx.GetIdx() != 0) {
+    MIRType *typeEx = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdxEx);
+    LogInfo::MapleLogger() << "\"" << typeEx->GetMplTypeName() << "\" ";
+  }
   LogInfo::MapleLogger() << "<$" << GlobalTables::GetStrTable().GetStringFromStrIdx(gStrIdx) << "> {";
   for (size_t j = 0; j < elementVec.size(); j++) {
     LogInfo::MapleLogger() << std::endl;

@@ -172,7 +172,7 @@ void MeFuncPhaseManager::Run(MIRFunction *mirfunc, uint64 rangenum, const std::s
       if ((MeOptions::dumpAfter || dumpPhase) && dumpFunc) {
         LogInfo::MapleLogger() << ">>>>>Second time Dump after " << phaseName << " <<<<<\n";
         if (phaseName != "emit") {
-          func.Dump(false);
+          function.Dump(false);
         }
         LogInfo::MapleLogger() << ">>>>> Second time Dump after End <<<<<\n\n";
       }
