@@ -808,15 +808,16 @@ void MUIDReplacement::ReplaceDirectInvokeOrAddroffunc(MIRFunction *currentFunc, 
   if (!calleeFunc || (!calleeFunc->IsJava() && calleeFunc->GetBaseClassName().empty())) {
     return;
   }
-  // Add a comment to store the original function name
-  std::string commentLabel = "Call function:" + calleeFunc->GetName();
-  currentFunc->GetBody()->InsertBefore(stmt, builder->CreateStmtComment(commentLabel.c_str()));
   // Load the function pointer
   AddrofNode *baseExpr = nullptr;
   uint32 index = 0;
   MIRArrayType *arrayType = nullptr;
   if (calleeFunc->GetBody()) {
     // Local function is accessed through funcDefTab
+    // Add a comment to store the original function name
+    std::string commentLabel = NameMangler::kMarkMuidFuncDefStr + calleeFunc->GetName();
+    currentFunc->GetBody()->InsertBefore(stmt, builder->CreateStmtComment(commentLabel.c_str()));
+
     std::string moduleName = GetModule()->GetFileNameAsPostfix();
     std::string baseName = calleeFunc->GetBaseClassName();
     baseExpr = builder->CreateExprAddrof(0, funcDefTabSym, GetModule()->GetMemPool());
@@ -824,6 +825,10 @@ void MUIDReplacement::ReplaceDirectInvokeOrAddroffunc(MIRFunction *currentFunc, 
     arrayType = static_cast<MIRArrayType*>(funcDefTabSym->GetType());
   } else {
     // External function is accessed through funcUndefTab
+    // Add a comment to store the original function name
+    std::string commentLabel = NameMangler::kMarkMuidFuncUndefStr + calleeFunc->GetName();
+    currentFunc->GetBody()->InsertBefore(stmt, builder->CreateStmtComment(commentLabel.c_str()));
+
     baseExpr = builder->CreateExprAddrof(0, funcUndefTabSym, GetModule()->GetMemPool());
     index = FindIndexFromUndefTable(calleeFunc->GetFuncSymbol(), true);
     arrayType = static_cast<MIRArrayType*>(funcUndefTabSym->GetType());

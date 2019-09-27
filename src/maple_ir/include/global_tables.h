@@ -96,6 +96,11 @@ class TypeTable {
     return typeTable.at(tyIdx.GetIdx());
   }
 
+  MIRType *GetTypeFromTyIdx(uint32 index) const {
+    ASSERT(index < typeTable.size(), "array index out of range");
+    return typeTable.at(index);
+  }
+
   PrimType GetPrimTypeFromTyIdx(TyIdx tyIdx) const {
     ASSERT(tyIdx.GetIdx() < typeTable.size(), "array index out of range");
     return typeTable.at(tyIdx.GetIdx())->GetPrimType();
@@ -107,6 +112,11 @@ class TypeTable {
   }
 
   TyIdx GetOrCreateMIRType(MIRType *ptype);
+
+  uint32 GetTypeTableSize(void) const {
+    return typeTable.size();
+  }
+
   // Get primtive types.
   MIRType *GetPrimType(PrimType ptyp) const {
     ASSERT(ptyp < typeTable.size(), "array index out of range");

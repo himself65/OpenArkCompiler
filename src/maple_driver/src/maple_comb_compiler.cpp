@@ -31,13 +31,6 @@ const std::string MapleCombCompiler::GetInputFileName(const MplOptions &options)
   }
 }
 
-void MapleCombCompiler::GetTmpFilesToDelete(const MplOptions &mplOptions, std::vector<std::string> &tempFiles) const {
-  if (this->realRunningExe == kBinNameMe) {
-    tempFiles.push_back(mplOptions.outputFolder + mplOptions.outputName + ".me.mpl");
-  } else {
-    tempFiles.push_back(mplOptions.outputFolder + mplOptions.outputName + ".VtableImpl.mpl");
-  }
-}
 
 const std::unordered_set<std::string> MapleCombCompiler::GetFinalOutputs(const MplOptions &mplOptions) const {
   auto finalOutputs = std::unordered_set<std::string>();

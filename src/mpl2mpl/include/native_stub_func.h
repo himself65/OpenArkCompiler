@@ -92,7 +92,8 @@ class GenericNativeStubFunc : public FuncOptimizeImpl {
   };
   MIRFunction *GetOrCreateDefaultNativeFunc(MIRFunction *stubFunc);
   void GenericRegisteredNativeFuncCall(MIRFunction *func, const MIRFunction *nativeFunc, MapleVector<BaseNode*> &args,
-                                       const MIRSymbol *ret);
+                                       const MIRSymbol *ret, bool needNativeCall, CallNode *prevNativeFuncCall,
+                                       CallNode *postNativeFuncCall);
   StmtNode *CreateNativeWrapperCallNode(MIRFunction *func, BaseNode *funcPtr, MapleVector<BaseNode*> &args,
                                         const MIRSymbol *ret);
   void GenericNativeWrapperFuncCall(MIRFunction *func, const MIRFunction *nativeFunc, MapleVector<BaseNode*> &args,

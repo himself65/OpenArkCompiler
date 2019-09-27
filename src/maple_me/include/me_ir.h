@@ -1130,6 +1130,10 @@ class MeStmt {
     return nullptr;
   }
 
+  virtual MeExpr *GetAssignedLHS() {
+    return nullptr;
+  }
+
   virtual MapleMap<OStIdx, ChiMeNode*> *GetChiList() {
     return nullptr;
   }
@@ -1958,6 +1962,10 @@ class CallMeStmt : public NaryMeStmt, public MuChiMePart, public AssignedPart {
     return mustDefList.empty() ? nullptr : mustDefList.front().GetLHS();
   }
 
+  MeExpr *GetAssignedLHS() {
+    return mustDefList.empty() ? nullptr : mustDefList.front().GetLHS();
+  }
+
   MeExpr *GetLHSRef(SSATab *ssatab, bool excludelocalrefvar) {
     return GetAssignedPartLHSRef(ssatab, excludelocalrefvar);
   }
@@ -2140,6 +2148,10 @@ class IntrinsiccallMeStmt : public NaryMeStmt, public MuChiMePart, public Assign
   }
 
   const MeExpr *GetAssignedLHS() const {
+    return mustDefList.empty() ? nullptr : mustDefList.front().GetLHS();
+  }
+
+  MeExpr *GetAssignedLHS() {
     return mustDefList.empty() ? nullptr : mustDefList.front().GetLHS();
   }
 

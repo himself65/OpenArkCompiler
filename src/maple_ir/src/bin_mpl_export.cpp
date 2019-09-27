@@ -454,6 +454,7 @@ void BinaryMplExport::OutputPragma(const MIRPragma *p) {
   WriteNum(p->GetVisibility());
   OutputStr(p->GetStrIdx());
   OutputType(p->GetTyIdx());
+  OutputType(p->GetTyIdxEx());
   WriteNum(p->GetParamNum());
   size_t size = p->GetElementVector().size();
   WriteNum(size);

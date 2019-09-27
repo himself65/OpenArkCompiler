@@ -62,6 +62,8 @@ class Klass {
   MapleSet<Klass*, KlassComparator> implInterfaces;
   // A collection of class member methods
   MapleList<MIRFunction*> methods;
+  // A mapping to track every method to its baseFuncNameWithType
+  MapleMap<GStrIdx, MIRFunction*> strIdx2Method;
   MIRFunction *clinitMethod;
   MIRSymbol *classInitBridge;
   // A mapping to track possible implementations for each virtual function
@@ -100,6 +102,10 @@ class Klass {
     return methods;
   }
 
+  const MIRFunction *GetMethod(GStrIdx idx) const {
+    MapleMap<GStrIdx, MIRFunction*>::const_iterator it = strIdx2Method.find(idx);
+    return it != strIdx2Method.end() ? it->second : nullptr;
+  }
   GStrIdx GetKlassNameStrIdx() const {
     return structType->GetNameStrIdx();
   }
@@ -261,6 +267,7 @@ class Klass {
 
   void AddMethod(MIRFunction *func) {
     methods.push_front(func);
+    strIdx2Method.insert({ func->GetBaseFuncNameWithTypeStrIdx(), func });
   }
 
   void DelMethod(const MIRFunction *func);

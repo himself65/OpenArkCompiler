@@ -332,6 +332,7 @@ class MIRSymbol {
   }
 
   MIRFunction *GetFunction() const {
+    ASSERT(sKind == kStFunc, "must be function symbol");
     return value.mirFunc;
   }
 

@@ -786,13 +786,10 @@ void AliasClass::CollectMayDefForIassign(StmtNode *stmt, std::set<OriginalSt*> &
     mayDefOsts.insert(lhsAe->GetOriginalSt());
     return;
   }
-  MIRPtrType *ptrType = dynamic_cast<MIRPtrType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(iass->GetTyIdx()));
-  TyIdx pointedTyIdx = (ptrType) ? ptrType->GetPointedTyIdxWithFieldID(iass->GetFieldID()) : TyIdx(0);
   for (uint elemID : *(lhsAe->GetClassSet())) {
     AliasElem *aliasElem = id2Elem[elemID];
     OriginalSt *ostOfAliasAE = aliasElem->GetOriginalSt();
-    if (aliasElem != lhsAe &&
-        (OriginalStIsZeroLevAndAuto(ostOfAliasAE) || (ostOfAliasAE->GetTyIdx() != pointedTyIdx && pointedTyIdx != 0))) {
+    if (aliasElem != lhsAe && OriginalStIsZeroLevAndAuto(ostOfAliasAE)) {
       continue;
     }
     mayDefOsts.insert(ostOfAliasAE);

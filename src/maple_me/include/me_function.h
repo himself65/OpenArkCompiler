@@ -138,6 +138,13 @@ bool FilterNullPtr(Iterator it, Iterator endIt) {
   return it == endIt || *it != nullptr;
 }
 
+enum MeFuncHint {
+    kReserved      = 0x00,       // reserved
+    kPlacementRCed = 0x01,       // method processed by placementrc
+    kAnalyzeRCed   = 0x02,       // method processed by analyzerc
+    kRcLowered     = 0x04,       // method lowered by rclowering
+};
+
 // to suppress warning
 // lint -sem(maple::MeFunction::PartialInit,initializer)
 class MeFunction : public FuncEmit {
@@ -162,6 +169,7 @@ class MeFunction : public FuncEmit {
         endTryBB2TryBB(alloc.Adapter()),
         fileName(fileName),
         regNum(0),
+        hints(0),
         hasEH(false),
         secondPass(false) {}
 
@@ -418,6 +426,14 @@ class MeFunction : public FuncEmit {
     regNum = num;
   }
 
+  uint32 GetHints() const {
+    return hints;
+  }
+
+  void SetHints(uint32 num) {
+    hints = num;
+  }
+
   void PartialInit(bool isSecondPass);
 
  private:
@@ -443,6 +459,7 @@ class MeFunction : public FuncEmit {
   /* input */
   std::string fileName;
   uint32 regNum;    // count virtual registers
+  uint32 hints;
   bool hasEH;       /* current has try statement */
   bool secondPass;  // second pass for the same function
 };

@@ -108,12 +108,6 @@ class MIRTypeNameTable {
   }
 };
 
-enum MIRModuleHint {
-  kReserved = 0x00,    // reserved
-  kRcAnalyzed = 0x01,  // module analyzerc by analyzerc
-  kRcLowered = 0x02,   // module lowered by rcLowering
-};
-
 class MIRModule {
  public:
   using CallSite = std::pair<CallInfo*, PUIdx>;

@@ -181,6 +181,7 @@ class MIRPragma {
         visibility(0),
         strIdx(0),
         tyIdx(0),
+        tyIdxEx(0),
         paramNum(-1),
         elementVec(m->GetMPAllocator().Adapter()) {}
 
@@ -209,6 +210,10 @@ class MIRPragma {
 
   const TyIdx GetTyIdx() const {
     return tyIdx;
+  }
+
+  const TyIdx GetTyIdxEx() const {
+    return tyIdxEx;
   }
 
   int32 GetParamNum() const {
@@ -243,6 +248,10 @@ class MIRPragma {
     tyIdx = idx;
   }
 
+  void SetTyIdxEx(TyIdx idx) {
+    tyIdxEx = idx;
+  }
+
   void SetParamNum(int32 paramnum) {
     paramNum = paramnum;
   }
@@ -253,6 +262,7 @@ class MIRPragma {
   uint8 visibility;
   GStrIdx strIdx;
   TyIdx tyIdx;
+  TyIdx tyIdxEx;
   int32 paramNum;  // paramNum th param in function, -1 not for param annotation
   MapleVector<MIRPragmaElement*> elementVec;
 };

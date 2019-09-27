@@ -336,6 +336,22 @@ bool MIRType::PointsToConstString() const {
   return (typeKind == kTypePointer) ? static_cast<const MIRPtrType*>(this)->PointsToConstString() : false;
 }
 
+std::string MIRType::GetMplTypeName() const {
+  if (typeKind == kTypeScalar) {
+    return GetPrimTypeName(primType);
+  } else {
+    return "";
+  }
+}
+
+std::string MIRType::GetCompactMplTypeName() const {
+  if (typeKind == kTypeScalar) {
+    return GetPrimTypeJavaName(primType);
+  } else {
+    return "";
+  }
+}
+
 void MIRType::Dump(int indent, bool dontUseName) const {
   LogInfo::MapleLogger() << GetPrimTypeName(primType);
 }
@@ -448,6 +464,13 @@ void MIRArrayType::Dump(int indent, bool dontUseName) const {
   LogInfo::MapleLogger() << ">";
 }
 
+std::string MIRArrayType::GetCompactMplTypeName() const {
+  std::stringstream ss;
+  ss << "A";
+  MIRType *elemType = GetElemType();
+  ss << elemType->GetCompactMplTypeName();
+  return ss.str();
+}
 MIRType *MIRFarrayType::CopyMIRTypeNode() const {
   return new MIRFarrayType(*this);
 }
@@ -459,6 +482,14 @@ void MIRFarrayType::Dump(int indent, bool dontUseName) const {
   LogInfo::MapleLogger() << "<[] ";
   GlobalTables::GetTypeTable().GetTypeFromTyIdx(elemTyIdx)->Dump(indent + 1);
   LogInfo::MapleLogger() << ">";
+}
+
+std::string MIRFarrayType::GetCompactMplTypeName() const {
+  std::stringstream ss;
+  ss << "A";
+  MIRType *elemType = GetElemType();
+  ss << elemType->GetCompactMplTypeName();
+  return ss.str();
 }
 
 const std::string &MIRJarrayType::GetJavaName(void) {
@@ -1033,6 +1064,15 @@ MIRType *MIRArrayType::GetElemType() const {
   return GlobalTables::GetTypeTable().GetTypeFromTyIdx(eTyIdx);
 }
 
+std::string MIRArrayType::GetMplTypeName() const {
+  std::stringstream ss;
+  ss << "<[] ";
+  MIRType *elemType = GetElemType();
+  ss << elemType->GetMplTypeName();
+  ss << ">";
+  return ss.str();
+}
+
 MIRType *MIRFarrayType::GetElemType() const {
   return GlobalTables::GetTypeTable().GetTypeFromTyIdx(elemTyIdx);
 }
@@ -1044,6 +1084,15 @@ bool MIRFarrayType::EqualTo(const MIRType &type) const {
   const MIRFarrayType *pType = dynamic_cast<const MIRFarrayType*>(&type);
   ASSERT(pType, "make sure the elemTyIdx is not nullptr");
   return elemTyIdx == pType->GetElemTyIdx();
+}
+
+std::string MIRFarrayType::GetMplTypeName() const {
+  std::stringstream ss;
+  ss << "<[] ";
+  MIRType *elemType = GetElemType();
+  ss << elemType->GetMplTypeName();
+  ss << ">";
+  return ss.str();
 }
 
 bool MIRFuncType::EqualTo(const MIRType &type) const {
@@ -1069,6 +1118,10 @@ bool MIRStructType::EqualTo(const MIRType &type) const {
   return (typeKind == type.GetKind() && nameStrIdx == type.GetNameStrIdx());
 }
 
+std::string MIRStructType::GetCompactMplTypeName() const {
+  return GlobalTables::GetStrTable().GetStringFromStrIdx(nameStrIdx);
+}
+
 MIRType *MIRStructType::GetElemType(uint32 n) const {
   return GlobalTables::GetTypeTable().GetTypeFromTyIdx(GetElemTyIdx(n));
 }
@@ -1080,6 +1133,14 @@ MIRType *MIRStructType::GetFieldType(FieldID fieldID) {
 
 bool MIRStructType::IsLocal() const {
   return GlobalTables::GetGsymTable().GetStIdxFromStrIdx(nameStrIdx).Idx() != 0;
+}
+
+std::string MIRStructType::GetMplTypeName() const {
+  std::stringstream ss;
+  ss << "<$";
+  ss << GlobalTables::GetStrTable().GetStringFromStrIdx(nameStrIdx);
+  ss << ">";
+  return ss.str();
 }
 
 bool MIRClassType::EqualTo(const MIRType &type) const {
@@ -1297,6 +1358,22 @@ TyIdxFieldAttrPair MIRPtrType::GetPointedTyIdxFldAttrPairWithFieldID(FieldID fie
 
 TyIdx MIRPtrType::GetPointedTyIdxWithFieldID(FieldID fieldID) const {
   return GetPointedTyIdxFldAttrPairWithFieldID(fieldID).first;
+}
+
+std::string MIRPtrType::GetMplTypeName() const {
+  std::stringstream ss;
+  ss << "<* ";
+  MIRType *pointedType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(pointedTyIdx);
+  CHECK_FATAL(pointedType, "invalid ptr type");
+  ss << pointedType->GetMplTypeName();
+  ss << ">";
+  return ss.str();
+}
+
+std::string MIRPtrType::GetCompactMplTypeName() const {
+  MIRType *pointedType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(pointedTyIdx);
+  CHECK_FATAL(pointedType, "invalid ptr type");
+  return pointedType->GetCompactMplTypeName();
 }
 
 TypeAttrs FieldAttrs::ConvertToTypeAttrs() {

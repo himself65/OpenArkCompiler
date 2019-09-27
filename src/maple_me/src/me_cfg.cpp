@@ -244,17 +244,39 @@ bool MirCFG::FindUse(StmtNode *stmt, StIdx stID) {
   return false;
 }
 
-// Return true if there is no use of sym betweent from to to.
-bool MirCFG::HasNoUseBetween(StmtNode *from, StmtNode *to, StIdx stIdx) {
+bool MirCFG::FindDef(StmtNode *stmt, StIdx stid) {
+  if (stmt->GetOpCode() != OP_dassign && !kOpcodeInfo.IsCallAssigned(stmt->GetOpCode())) {
+    return false;
+  }
+  if (stmt->GetOpCode() == OP_dassign) {
+    DassignNode *dassStmt = static_cast<DassignNode *>(stmt);
+    return dassStmt->GetStIdx() == stid;
+  } else {
+    CallNode *cnode = static_cast<CallNode *>(stmt);
+    CallReturnVector &nrets = cnode->GetReturnVec();
+    if (nrets.size() != 0) {
+      ASSERT(nrets.size() == 1, "Single Ret value for now.");
+      StIdx stidx = nrets[0].first;
+      RegFieldPair regfieldpair = nrets[0].second;
+      if (!regfieldpair.IsReg()) {
+        return stidx == stid;
+      }
+    }
+  }
+  return false;
+}
+
+// Return true if there is no use or def of sym betweent from to to.
+bool MirCFG::HasNoOccBetween(StmtNode *from, StmtNode *to, StIdx stIdx) {
   for (StmtNode *stmt = from; stmt && stmt != to; stmt = stmt->GetNext()) {
-    if (FindUse(stmt, stIdx)) {
+    if (FindUse(stmt, stIdx) || FindDef(stmt, stIdx)) {
       return false;
     }
   }
   return true;
 }
 
-// Fix the initially created CFG removing outgoing exception edge from normal return bb
+// Fix the initially created CFG
 void MirCFG::FixMirCFG() {
   auto eIt = func->valid_end();
   for (auto bIt = func->valid_begin(); bIt != eIt; ++bIt) {
@@ -264,6 +286,54 @@ void MirCFG::FixMirCFG() {
     auto *bb = *bIt;
     // Split bb in try if there are use -- def the same ref var.
     if (bb->GetAttributes(kBBAttrIsTry)) {
+      // 1. Spilit callassigned stmt to two insns if it redefine a symbole and also use
+      //    the same symbol as its operand.
+      for (auto &stmt : bb->GetStmtNodes()) {
+        if (!kOpcodeInfo.IsCallAssigned(stmt.GetOpCode())) {
+          continue;
+        }
+        CallNode *cnode = static_cast<CallNode *>(&stmt);
+        CallReturnVector &nrets = cnode->GetReturnVec();
+        MIRSymbol *sym = nullptr;
+        if (nrets.size() != 0) {
+          ASSERT(nrets.size() == 1, "Single Ret value for now.");
+          StIdx stidx = nrets[0].first;
+          RegFieldPair regfieldpair = nrets[0].second;
+          if (!regfieldpair.IsReg()) {
+            sym = func->GetMirFunc()->GetLocalOrGlobalSymbol(stidx);
+          }
+        }
+        if (sym == nullptr || sym->GetType()->GetPrimType() != PTY_ref || !sym->IsLocal()) {
+           continue;
+        }
+        if (FindUse(&stmt, sym->GetStIdx())) {
+          func->GetMirFunc()->IncTempCount();
+          std::string tempStr = std::string("tempRet").append(std::to_string(func->GetMirFunc()->GetTempCount()));
+          MIRBuilder *builder = func->GetMirFunc()->GetModule()->GetMIRBuilder();
+          MIRSymbol *targetSt = builder->GetOrCreateLocalDecl(tempStr.c_str(), sym->GetType());
+          targetSt->ResetIsDeleted();
+          nrets[0].first = targetSt->GetStIdx();
+          StmtNode *dassign = builder->CreateStmtDassign(sym, 0, builder->CreateExprDread(targetSt));
+          if (stmt.GetNext() != nullptr) {
+            bb->InsertStmtBefore(stmt.GetNext(), dassign);
+          } else {
+            ASSERT( &stmt == &(bb->GetStmtNodes().back()), "just check");
+            stmt.SetNext(dassign);
+            dassign->SetPrev(&stmt);
+            bb->GetStmtNodes().update_back(dassign);
+          }
+        }
+      }
+    }
+  }
+
+  // 2. Split bb to two bbs if there are use and def the same ref var in bb.
+  for (auto bIt = func->valid_begin(); bIt != eIt; ++bIt) {
+    if (bIt == func->common_entry() || bIt == func->common_exit()) {
+      continue;
+    }
+    auto *bb = *bIt;
+    if (bb && bb->GetAttributes(kBBAttrIsTry)) {
       for (auto &splitPoint : bb->GetStmtNodes()) {
         StmtNode *nextStmt = splitPoint.GetNext();
         if (nextStmt != nullptr &&
@@ -288,7 +358,7 @@ void MirCFG::FixMirCFG() {
           if (sym == nullptr || sym->GetType()->GetPrimType() != PTY_ref || !sym->IsLocal()) {
             continue;
           }
-          if (HasNoUseBetween(bb->GetStmtNodes().begin().d(), nextStmt, sym->GetStIdx())) {
+          if (HasNoOccBetween(bb->GetStmtNodes().begin().d(), nextStmt, sym->GetStIdx())) {
             continue;
           }
           BB *newBB = func->SplitBB(bb, &splitPoint);
@@ -307,6 +377,7 @@ void MirCFG::FixMirCFG() {
         }
       }
     }
+    // removing outgoing exception edge from normal return bb
     if (bb->GetKind() != kBBReturn || !bb->GetAttributes(kBBAttrIsTry) || bb->IsEmpty()) {
       continue;
     }

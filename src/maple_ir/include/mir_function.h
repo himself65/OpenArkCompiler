@@ -86,6 +86,7 @@ class MIRFunction {
     upFormalSize = 0;
     moduleID = 0;
     funcSize = 0;
+    tempCount = 0;
     puIdxOrigin = 0;
     baseFuncStrIdx = GStrIdx(0);
     baseClassStrIdx = GStrIdx(0);
@@ -759,6 +760,14 @@ class MIRFunction {
     funcSize = fs;
   }
 
+  uint32 GetTempCount() const {
+    return tempCount;
+  }
+
+  void IncTempCount() {
+    tempCount++;
+  }
+
   uint8 *GetFormalWordsTypeTagged() {
     return formalWordsTypeTagged;
   }
@@ -943,6 +952,7 @@ class MIRFunction {
   uint16 upFormalSize;
   uint16 moduleID;
   uint32 funcSize;                         // size of code in words
+  uint32 tempCount;
   uint8 *formalWordsTypeTagged = nullptr;  // bit vector where the Nth bit tells whether
   // the Nth word in the formal parameters area
   // addressed upward from %%FP (that means
