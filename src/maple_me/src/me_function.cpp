@@ -443,7 +443,10 @@ BB *MeFunction::InsertNewBasicBlock(BB *position) {
   auto eIt = end();
   // update bb's idx
   for (auto it = newIt; it != eIt; ++it) {
-    (*it)->SetBBId(BBId(idx++));
+    if ((*it) != nullptr) {
+      (*it)->SetBBId(BBId(idx));
+    }
+    idx++;
   }
   return newbb;
 }
