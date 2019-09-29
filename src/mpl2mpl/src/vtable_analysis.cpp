@@ -394,6 +394,7 @@ void VtableAnalysis::ReplaceSuperclassInvoke(CallNode *stmt) {
   CHECK_FATAL(actualMIRFunc, "Can not find the implementation of %s", callee->GetName().c_str());
   stmt->SetOpCode(OP_callassigned);
   stmt->SetPUIdx(actualMIRFunc->GetPuidx());
+  GetModule()->addSuperCall(actualMIRFunc->GetName());
 }
 
 void VtableAnalysis::ReplacePolymorphicInvoke(CallNode *stmt) {
@@ -458,6 +459,7 @@ void VtableAnalysis::ReplaceVirtualInvoke(CallNode *stmt) {
   stmt->GetNopnd().insert(stmt->GetNopnd().begin(), readFuncPtr);
   stmt->SetNumOpnds(stmt->GetNumOpnds() + 1);
 }
+
 
 void VtableAnalysis::ReplaceInterfaceInvoke(CallNode *stmt) {
   CHECK_FATAL(stmt->GetNopnd().empty() == false, "container check");

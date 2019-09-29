@@ -26,9 +26,9 @@ DEF_MIR_INTRINSIC(MPL_GET_VTAB_FUNC,\
 DEF_MIR_INTRINSIC(MPL_READ_OVTABLE_ENTRY,\
                   "__mpl_const_offset", INTRNISPURE, kArgTyA32, kArgTyDynany, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
 DEF_MIR_INTRINSIC(MPL_READ_OVTABLE_ENTRY_VTAB_LAZY,\
-                  "__mpl_const_offset_vtab_lazy", INTRNISPURE, kArgTyA32, kArgTyDynany, kArgTyDynany, kArgTyDynany, kArgTyDynany, kArgTyUndef, kArgTyUndef)
+                  "__mpl_const_offset_vtab_lazy", INTRNISPURE, kArgTyA32, kArgTyDynany, kArgTyDynany, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
 DEF_MIR_INTRINSIC(MPL_READ_OVTABLE_ENTRY_FIELD_LAZY,\
-                  "__mpl_const_offset_field_lazy", INTRNISPURE, kArgTyA32, kArgTyDynany, kArgTyDynany, kArgTyDynany, kArgTyDynany, kArgTyUndef, kArgTyUndef)
+                  "__mpl_const_offset_field_lazy", INTRNISPURE, kArgTyA32, kArgTyDynany, kArgTyDynany, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
 DEF_MIR_INTRINSIC(MPL_BOUNDARY_CHECK,\
                   "", INTRNISJAVA | INTRNNOSIDEEFFECT, kArgTyVoid, kArgTyU1, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
 

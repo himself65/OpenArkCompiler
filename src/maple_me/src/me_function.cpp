@@ -525,7 +525,10 @@ BB *MeFunction::SplitBB(BB *bb, StmtNode *splitPoint) {
   auto eIt = end();
   // update bb's idx
   for (auto it = newIt; it != eIt; ++it) {
-    (*it)->SetBBId(BBId(++idx));
+    idx++;
+    if ((*it) != nullptr) {
+      (*it)->SetBBId(BBId(idx));
+    }
   }
   // Special Case: commonExitBB is orig bb's succ
   auto *commonExitBB = *common_exit();

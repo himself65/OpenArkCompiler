@@ -2695,6 +2695,11 @@ class CallNode : public NaryStmtNode {
     return returnValues.at(idx);
   }
 
+  void SetReturnPair(CallReturnPair retVal, size_t idx) {
+    ASSERT(idx < returnValues.size(), "out of range in CallNode::GetReturnPair");
+    returnValues.at(idx) = retVal;
+  }
+
   const CallReturnVector &GetReturnVec() const {
     return returnValues;
   }

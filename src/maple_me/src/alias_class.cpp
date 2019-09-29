@@ -94,7 +94,7 @@ AliasElem *AliasClass::FindOrCreateAliasElem(OriginalSt *ost) {
 
 AliasElem *AliasClass::FindOrCreateExtraLevAliasElem(BaseNode *expr, TyIdx tyIdx, FieldID fieldId) {
   ASSERT(expr != nullptr, "nullptr check");
-  AliasElem *ae = CreateAliasElemsExpr((expr->GetOpCode() == OP_cvt) ? expr->Opnd(0) : expr);
+  AliasElem *ae = CreateAliasElemsExpr(kOpcodeInfo.IsTypeCvt(expr->GetOpCode()) ? expr->Opnd(0) : expr);
   if (ae == nullptr) {
     return nullptr;
   }

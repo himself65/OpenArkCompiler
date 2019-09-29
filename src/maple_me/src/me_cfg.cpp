@@ -286,40 +286,56 @@ void MirCFG::FixMirCFG() {
     auto *bb = *bIt;
     // Split bb in try if there are use -- def the same ref var.
     if (bb->GetAttributes(kBBAttrIsTry)) {
-      // 1. Spilit callassigned stmt to two insns if it redefine a symbole and also use
+      // 1. Split callassigned/dassign stmt to two insns if it redefine a symbole and also use
       //    the same symbol as its operand.
-      for (auto &stmt : bb->GetStmtNodes()) {
-        if (!kOpcodeInfo.IsCallAssigned(stmt.GetOpCode())) {
-          continue;
-        }
-        CallNode *cnode = static_cast<CallNode *>(&stmt);
-        CallReturnVector &nrets = cnode->GetReturnVec();
+      for (StmtNode *stmt = to_ptr(bb->GetStmtNodes().begin()); stmt != nullptr; stmt = stmt->GetNext()) {
         MIRSymbol *sym = nullptr;
-        if (nrets.size() != 0) {
-          ASSERT(nrets.size() == 1, "Single Ret value for now.");
-          StIdx stidx = nrets[0].first;
-          RegFieldPair regfieldpair = nrets[0].second;
-          if (!regfieldpair.IsReg()) {
-            sym = func->GetMirFunc()->GetLocalOrGlobalSymbol(stidx);
+        if (kOpcodeInfo.IsCallAssigned(stmt->GetOpCode())) {
+          CallNode *cnode = static_cast<CallNode *>(stmt);
+          CallReturnVector &nrets = cnode->GetReturnVec();
+          if (nrets.size() != 0) {
+            ASSERT(nrets.size() == 1, "Single Ret value for now.");
+            StIdx stidx = nrets[0].first;
+            RegFieldPair regfieldpair = nrets[0].second;
+            if (!regfieldpair.IsReg()) {
+              sym = func->GetMirFunc()->GetLocalOrGlobalSymbol(stidx);
+            }
           }
+        } else if (stmt->GetOpCode() == OP_dassign) {
+          DassignNode *dassStmt = static_cast<DassignNode*>(stmt);
+          // exclude the case a = b;
+          if (dassStmt->GetRHS()->GetOpCode() == OP_dread) {
+            continue;
+          }
+          sym = func->GetMirFunc()->GetLocalOrGlobalSymbol(dassStmt->GetStIdx());
         }
         if (sym == nullptr || sym->GetType()->GetPrimType() != PTY_ref || !sym->IsLocal()) {
            continue;
         }
-        if (FindUse(&stmt, sym->GetStIdx())) {
+        if (FindUse(stmt, sym->GetStIdx())) {
           func->GetMirFunc()->IncTempCount();
           std::string tempStr = std::string("tempRet").append(std::to_string(func->GetMirFunc()->GetTempCount()));
           MIRBuilder *builder = func->GetMirFunc()->GetModule()->GetMIRBuilder();
           MIRSymbol *targetSt = builder->GetOrCreateLocalDecl(tempStr.c_str(), sym->GetType());
           targetSt->ResetIsDeleted();
-          nrets[0].first = targetSt->GetStIdx();
-          StmtNode *dassign = builder->CreateStmtDassign(sym, 0, builder->CreateExprDread(targetSt));
-          if (stmt.GetNext() != nullptr) {
-            bb->InsertStmtBefore(stmt.GetNext(), dassign);
+          if (stmt->GetOpCode() == OP_dassign) {
+            BaseNode *rhs = static_cast<DassignNode*>(stmt)->GetRHS();
+            StmtNode *dassign = builder->CreateStmtDassign(targetSt, 0, rhs);
+            bb->ReplaceStmt(stmt, dassign);
+            stmt = dassign;
           } else {
-            ASSERT( &stmt == &(bb->GetStmtNodes().back()), "just check");
-            stmt.SetNext(dassign);
-            dassign->SetPrev(&stmt);
+            CallNode *cnode = static_cast<CallNode *>(stmt);
+            CallReturnPair retPair = cnode->GetReturnPair(0);
+            retPair.first = targetSt->GetStIdx();
+            cnode->SetReturnPair(retPair, 0);
+          }
+          StmtNode *dassign = builder->CreateStmtDassign(sym, 0, builder->CreateExprDread(targetSt));
+          if (stmt->GetNext() != nullptr) {
+            bb->InsertStmtBefore(stmt->GetNext(), dassign);
+          } else {
+            ASSERT( stmt == &(bb->GetStmtNodes().back()), "just check");
+            stmt->SetNext(dassign);
+            dassign->SetPrev(stmt);
             bb->GetStmtNodes().update_back(dassign);
           }
         }
