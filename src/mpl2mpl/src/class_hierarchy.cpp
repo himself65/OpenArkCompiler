@@ -55,6 +55,7 @@ Klass::Klass(MIRStructType *type, MapleAllocator *alc)
       strIdx2CandidateMap(std::less<GStrIdx>(), alloc->Adapter()),
       flags(0),
       isPrivateInnerAndNoSubClassFlag(false),
+      hasNativeMethods(false),
       needDecoupling(true) {
   ASSERT((type != nullptr) && (type->GetKind() == kTypeClass || type->GetKind() == kTypeInterface),
          "runtime check error");
@@ -697,7 +698,7 @@ void KlassHierarchy::MarkClassFlags() {
     // Mark native function info
     for (auto &method : klass->GetMethods()) {
       if (method->GetAttr(FUNCATTR_native)) {
-        klass->SetHasNativeMethod();
+        klass->SetHasNativeMethod(true);
         break;
       }
     }

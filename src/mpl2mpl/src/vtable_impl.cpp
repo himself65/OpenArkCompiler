@@ -15,6 +15,7 @@
 #include "vtable_impl.h"
 #include "vtable_analysis.h"
 #include "itab_util.h"
+#include "reflection_analysis.h"
 
 // This phase is mainly to lower interfacecall into icall
 

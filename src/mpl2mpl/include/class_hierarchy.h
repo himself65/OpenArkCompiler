@@ -32,7 +32,7 @@ static constexpr uint32 kClassFinalizerreferenceSentinel = 0x0100;
 static constexpr uint32 kClassIsExceptionKlass = 0x0200;
 static constexpr uint32 kClassIsanonymousclass = 0x0400;
 static constexpr uint32 kClassIscoldclass = 0x0800;
-static constexpr uint32 kClassHasNativeMethod = 0x1000;
+static constexpr uint32 kClassNeedDecouple = 0x1000;
 static constexpr uint32 kClassLazyBindingClass = 0x2000;
 static constexpr char kJavaLangNoMethodStr[] = "Ljava_2Flang_2FNoSuchMethodException_3B";
 
@@ -72,6 +72,7 @@ class Klass {
   // Now contains whether this class is exception, reference or has finalizer.
   uint32 flags;
   bool isPrivateInnerAndNoSubClassFlag;
+  bool hasNativeMethods;
   bool needDecoupling;
   void DumpKlassImplInterfaces() const;
   void DumpKlassImplKlasses() const;
@@ -167,16 +168,16 @@ class Klass {
     return HasFlag(kClassHasFinalizer);
   }
 
-  bool HasNativeMethod() const {
-    return HasFlag(kClassHasNativeMethod);
-  }
-
-  void SetHasNativeMethod() {
-    SetFlag(kClassHasNativeMethod);
-  }
-
   void SetHasFinalizer() {
     SetFlag(kClassHasFinalizer);
+  }
+
+  bool HasNativeMethod() const {
+    return hasNativeMethods;
+  }
+
+  void SetHasNativeMethod(bool flag) {
+    hasNativeMethods = flag;
   }
 
   bool IsReference(uint32 flag) const {

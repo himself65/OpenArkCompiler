@@ -258,6 +258,14 @@ class MIRModule {
     return srcLang == kSrcLangC || srcLang == kSrcLangCPlusPlus;
   }
 
+  inline void addSuperCall(const std::string &func) {
+    superCallSet.insert(func);
+  }
+
+  inline bool findSuperCall(const std::string &func) {
+    return superCallSet.find(func) != superCallSet.end();
+  }
+
   void SetFuncInfoPrinted() const;
   size_t GetOptFuncsSize() {
     return optimizedFuncs.size();
@@ -497,6 +505,8 @@ class MIRModule {
   uint32 floatNum;
   MIRFunction *curFunction;
   MapleVector<MIRFunction*> optimizedFuncs;
+  // Add the field for decouple optimization
+  std::unordered_set<std::string> superCallSet;
   MapleSet<uint32> rcNotNeedingLock;  // set of stmtID's which does incref/decref to an object not escaping
   // record all the fields that are initialized in the constructor. module scope,
   // if puIdx doesn't appear in this map, it writes to all field id
