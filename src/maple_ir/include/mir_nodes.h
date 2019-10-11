@@ -274,6 +274,9 @@ class RetypeNode : public TypeCvtNode {
 
   explicit RetypeNode(PrimType typ) : TypeCvtNode(OP_retype, typ), tyIdx(0) {}
 
+  RetypeNode(PrimType typ, PrimType fromtyp, TyIdx idx, BaseNode *expr)
+      : TypeCvtNode(OP_retype, typ, fromtyp, expr), tyIdx(idx) {}
+
   ~RetypeNode() = default;
   void Dump(const MIRModule *mod, int32 indent) const;
 
@@ -380,6 +383,8 @@ class JarrayMallocNode : public UnaryNode {
 
   JarrayMallocNode(Opcode o, PrimType typ, TyIdx typeIdx) : UnaryNode(o, typ), tyIdx(typeIdx) {}
 
+  JarrayMallocNode(Opcode o, PrimType typ, TyIdx typeIdx, BaseNode *opnd) : UnaryNode(o, typ, opnd), tyIdx(typeIdx) {}
+
   ~JarrayMallocNode() = default;
 
   void Dump(const MIRModule *mod, int32 indent) const;
@@ -462,6 +467,8 @@ class IreadoffNode : public UnaryNode {
   IreadoffNode() : UnaryNode(OP_ireadoff), offset(0) {}
 
   IreadoffNode(PrimType ptyp, int32 ofst) : UnaryNode(OP_ireadoff, ptyp), offset(ofst) {}
+
+  IreadoffNode(PrimType ptyp, BaseNode *opnd, int32 ofst) : UnaryNode(OP_ireadoff, ptyp, opnd), offset(ofst) {}
 
   ~IreadoffNode() = default;
 
@@ -882,7 +889,7 @@ class NaryNode : public BaseNode, public NaryOpnds {
 class IntrinsicopNode : public NaryNode {
  public:
   explicit IntrinsicopNode(MapleAllocator *allocator, Opcode o, TyIdx typeIdx = TyIdx())
-      : NaryNode(allocator, 0), intrinsic(INTRN_UNDEFINED), tyIdx(typeIdx) {}
+      : NaryNode(allocator, o), intrinsic(INTRN_UNDEFINED), tyIdx(typeIdx) {}
 
   explicit IntrinsicopNode(const MIRModule *mod, Opcode o, TyIdx typeIdx = TyIdx())
       : IntrinsicopNode(mod->CurFuncCodeMemPoolAllocator(), o, typeIdx) {}
@@ -1185,6 +1192,8 @@ class AddrofNode : public BaseNode {
  public:
   explicit AddrofNode(Opcode o) : BaseNode(o), stIdx(), fieldID(0) {}
 
+  AddrofNode(Opcode o, PrimType typ) : AddrofNode(o, typ, StIdx(), 0) {}
+
   AddrofNode(Opcode o, PrimType typ, StIdx sIdx, FieldID fid) : BaseNode(o, typ, 0), stIdx(sIdx), fieldID(fid) {}
 
   ~AddrofNode() = default;
@@ -1231,6 +1240,10 @@ class RegreadNode : public BaseNode {
   explicit RegreadNode() : BaseNode(OP_regread), regIdx(0) {}
 
   RegreadNode(PregIdx pIdx) : BaseNode(OP_regread), regIdx(pIdx) {}
+
+  RegreadNode(PrimType primType, PregIdx pIdx) : RegreadNode(pIdx) {
+    ptyp = primType;
+  }
 
   ~RegreadNode() = default;
 
@@ -1454,7 +1467,10 @@ class StmtNode : public BaseNode, public PtrListNodeBase<StmtNode> {
 
 class IassignNode : public StmtNode {
  public:
-  IassignNode() : StmtNode(OP_iassign), tyIdx(0), fieldID(0), addrExpr(nullptr), rhs(nullptr) {
+  IassignNode() : IassignNode(TyIdx(0), 0, nullptr, nullptr) {}
+
+  IassignNode(TyIdx tyIdx, FieldID fieldID, BaseNode *addrOpnd, BaseNode *rhsOpnd)
+      : StmtNode(OP_iassign), tyIdx(tyIdx), fieldID(fieldID), addrExpr(addrOpnd), rhs(rhsOpnd) {
     SetNumOpnds(2);
   }
 
@@ -1607,6 +1623,8 @@ class TryNode : public StmtNode {
  public:
   explicit TryNode(MapleAllocator *allocator) : StmtNode(OP_try), offsets(allocator->Adapter()) {}
 
+  TryNode(MapleAllocator *allocator, const MapleVector<LabelIdx> &offsets) : StmtNode(OP_try), offsets(offsets) {}
+
   explicit TryNode(const MIRModule *mod) : TryNode(mod->CurFuncCodeMemPoolAllocator()) {}
 
   TryNode(TryNode &node) = delete;
@@ -1642,6 +1660,19 @@ class TryNode : public StmtNode {
     return offsets.size();
   }
 
+  MapleVector<LabelIdx>::iterator GetOffsetsBegin() {
+    return offsets.begin();
+  }
+
+  MapleVector<LabelIdx>::iterator GetOffsetsEnd() {
+    return offsets.end();
+  }
+
+  void OffsetsInsert(MapleVector<LabelIdx>::iterator a, MapleVector<LabelIdx>::iterator b,
+                     MapleVector<LabelIdx>::iterator c) {
+    offsets.insert(a, b, c);
+  }
+
   TryNode *CloneTree(MapleAllocator *allocator) const {
     TryNode *nd = allocator->GetMemPool()->New<TryNode>(allocator);
     nd->SetStmtID(stmtIDNext++);
@@ -1659,6 +1690,9 @@ class TryNode : public StmtNode {
 class CatchNode : public StmtNode {
  public:
   explicit CatchNode(MapleAllocator *allocator) : StmtNode(OP_catch), exceptionTyIdxVec(allocator->Adapter()) {}
+
+  CatchNode(MapleAllocator *allocator, const MapleVector<TyIdx> &tyIdxVec)
+      : StmtNode(OP_catch), exceptionTyIdxVec(tyIdxVec) {}
 
   explicit CatchNode(const MIRModule *mod) : CatchNode(mod->CurFuncCodeMemPoolAllocator()) {}
 
@@ -1718,8 +1752,10 @@ class SwitchNode : public StmtNode {
 
   explicit SwitchNode(const MIRModule *mod) : SwitchNode(mod->CurFuncCodeMemPoolAllocator()) {}
 
-  SwitchNode(MapleAllocator *allocator, LabelIdx label)
-      : StmtNode(OP_switch, 1), switchOpnd(nullptr), defaultLabel(label), switchTable(allocator->Adapter()) {}
+  SwitchNode(MapleAllocator *allocator, LabelIdx label) : SwitchNode(allocator, label, nullptr) {}
+
+  SwitchNode(MapleAllocator *allocator, LabelIdx label, BaseNode *opnd)
+      : StmtNode(OP_switch, 1), switchOpnd(opnd), defaultLabel(label), switchTable(allocator->Adapter()) {}
 
   SwitchNode(const MIRModule *mod, LabelIdx label) : SwitchNode(mod->CurFuncCodeMemPoolAllocator(), label) {}
 
@@ -1929,6 +1965,8 @@ class DassignNode : public UnaryStmtNode {
   DassignNode(PrimType typ, BaseNode *opnd, StIdx idx, FieldID fieldID)
       : UnaryStmtNode(OP_dassign, typ, opnd), stIdx(idx), fieldID(fieldID) {}
 
+  DassignNode(BaseNode *opnd, StIdx idx, FieldID fieldID) : DassignNode(kPtyInvalid, opnd, idx, fieldID) {}
+
   ~DassignNode() = default;
 
   void Dump(const MIRModule *mod, int32 indent) const;
@@ -1990,6 +2028,9 @@ class RegassignNode : public UnaryStmtNode {
 
   explicit RegassignNode(const RegassignNode &node) : UnaryStmtNode(node), regIdx(node.regIdx) {}
 
+  RegassignNode(PrimType primType, PregIdx idx, BaseNode *opnd)
+      : UnaryStmtNode(OP_regassign, primType, opnd), regIdx(idx) {}
+
   ~RegassignNode() = default;
 
   void Dump(const MIRModule *mod, int32 indent) const;
@@ -2029,7 +2070,9 @@ class RegassignNode : public UnaryStmtNode {
 // brtrue and brfalse
 class CondGotoNode : public UnaryStmtNode {
  public:
-  explicit CondGotoNode(Opcode o) : UnaryStmtNode(o), offset(0) {
+  explicit CondGotoNode(Opcode o) : CondGotoNode(o, 0, nullptr) {}
+
+  CondGotoNode(Opcode o, uint32 offset, BaseNode *opnd) : UnaryStmtNode(o, kPtyInvalid, opnd), offset(offset) {
     SetNumOpnds(1);
   }
 
@@ -2311,14 +2354,16 @@ class WhileStmtNode : public UnaryStmtNode {
 
 class DoloopNode : public StmtNode {
  public:
-  DoloopNode()
+  DoloopNode() : DoloopNode(StIdx(), false, nullptr, nullptr, nullptr, nullptr) {}
+
+  DoloopNode(StIdx doVarStIdx, bool isPReg, BaseNode *startExp, BaseNode *contExp, BaseNode *incrExp, BlockNode *doBody)
       : StmtNode(OP_doloop, 4),
-        doVarStIdx(),
-        isPreg(false),
-        startExpr(nullptr),
-        condExpr(nullptr),
-        incrExpr(nullptr),
-        doBody(nullptr) {}
+        doVarStIdx(doVarStIdx),
+        isPreg(isPReg),
+        startExpr(startExp),
+        condExpr(contExp),
+        incrExpr(incrExp),
+        doBody(doBody) {}
 
   ~DoloopNode() = default;
 
@@ -2527,6 +2572,12 @@ class IassignoffNode : public BinaryStmtNode {
 
   explicit IassignoffNode(int32 ofst) : BinaryStmtNode(OP_iassignoff), offset(ofst) {}
 
+  IassignoffNode(PrimType primType, int32 offset, BaseNode *addrOpnd, BaseNode *srcOpnd) : IassignoffNode(offset) {
+    SetPrimType(primType);
+    SetBOpnd(addrOpnd, 0);
+    SetBOpnd(srcOpnd, 1);
+  }
+
   ~IassignoffNode() = default;
 
   void Dump(const MIRModule *mod, int32 indent) const;
@@ -2546,6 +2597,11 @@ class IassignFPoffNode : public UnaryStmtNode {
   IassignFPoffNode() : UnaryStmtNode(OP_iassignfpoff), offset(0) {}
 
   explicit IassignFPoffNode(int32 ofst) : UnaryStmtNode(OP_iassignfpoff), offset(ofst) {}
+
+  IassignFPoffNode(PrimType primType, int32 offset, BaseNode *src) : IassignFPoffNode(offset) {
+    SetPrimType(primType);
+    SetOpnd(src);
+  }
 
   ~IassignFPoffNode() = default;
 
@@ -2613,6 +2669,18 @@ class NaryStmtNode : public StmtNode, public NaryOpnds {
     ASSERT(numopnds == GetNopndSize(), "NaryStmtNode has wrong numopnds field");
     return GetNopndSize();
   }
+
+  void SetOpnds(const MapleVector<BaseNode*> &arguments) {
+    SetNOpnd(arguments);
+    SetNumOpnds(arguments.size());
+  }
+
+  void PushOpnd(BaseNode *node) {
+    if (node != nullptr) {
+      GetNopnd().push_back(node);
+    }
+    SetNumOpnds(GetNopndSize());
+  }
 };
 
 class ReturnValuePart {
@@ -2634,6 +2702,8 @@ class CallNode : public NaryStmtNode {
  public:
   CallNode(MapleAllocator *allocator, Opcode o)
       : NaryStmtNode(allocator, o), puIdx(0), tyIdx(0), returnValues(allocator->Adapter()) {}
+
+  CallNode(MapleAllocator *allocator, Opcode o, PUIdx idx) : CallNode(allocator, o, idx, TyIdx()) {}
 
   CallNode(MapleAllocator *allocator, Opcode o, PUIdx idx, TyIdx tdx)
       : NaryStmtNode(allocator, o), puIdx(idx), tyIdx(tdx), returnValues(allocator->Adapter()) {}

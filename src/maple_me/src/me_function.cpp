@@ -499,8 +499,10 @@ void MeFunction::CloneBasicBlock(BB *newBB, BB *orig) {
 }
 
 /* Split BB at split_point */
-BB *MeFunction::SplitBB(BB *bb, StmtNode *splitPoint) {
-  BB *newBB = memPool->New<BB>(&alloc, &versAlloc, BBId(nextBBId++));
+BB *MeFunction::SplitBB(BB *bb, StmtNode *splitPoint, BB *newBB) {
+  if (newBB == nullptr){
+    newBB = memPool->New<BB>(&alloc, &versAlloc, BBId(nextBBId++));
+  }
   StmtNode *newBBStart = splitPoint->GetNext();
   // Fix Stmt in BB.
   if (newBBStart != nullptr) {

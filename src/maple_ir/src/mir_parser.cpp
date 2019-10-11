@@ -2625,6 +2625,7 @@ bool MIRParser::ParseConstAddrLeafExpr(MIRConstPtr &cexpr, MIRType *type) {
     MIRFunction *currfn = static_cast<MIRFunction*>(mod.CurFunction());
     MIRSymbol *var = currfn->GetLocalOrGlobalSymbol(anode->GetStIdx());
     var->SetNeedForwDecl();
+    mod.SetSomeSymbolNeedForDecl(true);
     TyIdx ptyidx = var->GetTyIdx();
     MIRPtrType ptrtype(ptyidx, (mod.IsJavaModule() ? PTY_ref : PTY_ptr));
     ptyidx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&ptrtype);

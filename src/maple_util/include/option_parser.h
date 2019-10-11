@@ -217,6 +217,9 @@ class OptionParser {
 
   const maple::ErrorCode Parse(int argc, char **argv);
 
+  const maple::ErrorCode HandleInputArgs(const std::vector<std::string> &inputArgs, const std::string &exeName,
+                                         std::vector<mapleOption::Option> &inputOption);
+
   const std::vector<Option> &GetOptions() const {
     return options;
   }
@@ -245,9 +248,13 @@ class OptionParser {
 
   const ArgStatus CheckArg(Option &option) const;
 
-  const bool HandleKeyValue(const std::string &key, const std::string &value, bool isValueEmpty);
-  const bool CheckOpt(const std::string option, std::string &lastKey, bool &isLastMatch);
+  const bool HandleKeyValue(const std::string &key, const std::string &value, bool isValueEmpty,
+                            std::vector<mapleOption::Option> &inputOption,  const std::string &exeName);
+  const bool CheckOpt(const std::string option, std::string &lastKey, bool &isLastMatch,
+                      std::vector<mapleOption::Option> &inputOption, const std::string &exeName);
   void InsertOption(const char *opt, Descriptor usage);
+
+  const bool CheckSpecialOption(const std::string &option, std::string &key, std::string &value);
 };
 
 }  // namespace mapleOption

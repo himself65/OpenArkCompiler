@@ -187,13 +187,14 @@ class IassignMeStmt;  // forward decl
 class VarMeExpr : public MeExpr {
  public:
  public:
-  VarMeExpr(int32 exprid, OStIdx oidx, size_t vidx)
+  VarMeExpr(MapleAllocator *alloc, int32 exprid, OStIdx oidx, size_t vidx)
       : MeExpr(exprid, kMeOpVar),
         def{ .defStmt = nullptr },
         ostIdx(oidx),
         vstIdx(vidx),
         fieldID(0),
         inferredTyIdx(0),
+        inferredTypeCandidates(alloc->Adapter()),
         defBy(kDefByNo),
         maybeNull(true) {
   }
@@ -251,6 +252,10 @@ class VarMeExpr : public MeExpr {
 
   void SetInferredTyIdx(TyIdx inferredTyIdxVal) {
     inferredTyIdx = inferredTyIdxVal;
+  }
+
+  MapleVector<TyIdx> &GetInferredTypeCandidates() {
+    return inferredTypeCandidates;
   }
 
   MeDefBy GetDefBy() const {
@@ -313,6 +318,7 @@ class VarMeExpr : public MeExpr {
   size_t vstIdx;  // the index in MEOptimizer's VersionStTable, 0 if not in VersionStTable
   FieldID fieldID;
   TyIdx inferredTyIdx; /* Non zero if it has a known type (allocation type is seen). */
+  MapleVector<TyIdx> inferredTypeCandidates;
   MeDefBy defBy;
   bool maybeNull;  // false if definitely not null
 };
@@ -821,7 +827,7 @@ class OpMeExpr : public MeExpr {
     bitsOffset = bitsOffSetVal;
   }
 
-  uint8 GetBitsSize() {
+  uint8 GetBitsSize() const {
     return bitsSize;
   }
 
@@ -1456,6 +1462,14 @@ class DassignMeStmt : public MeStmt {
 
   bool NeedDecref() const {
     return needDecref;
+  }
+
+  void SetNeedDecref(bool isNeedDecref) {
+    needDecref = isNeedDecref;
+  }
+
+  void SetNeedIncref(bool isNeedIncref) {
+    needIncref = isNeedIncref;
   }
 
   void EnableNeedDecref() {

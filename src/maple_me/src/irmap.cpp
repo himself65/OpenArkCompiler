@@ -78,7 +78,7 @@ void IRMap::BuildPhiMeNode(BB *bb) {
 }
 
 VarMeExpr *IRMap::CreateVarMeExprVersion(const VarMeExpr *origExpr) {
-  VarMeExpr *varmeexpr = New<VarMeExpr>(exprID++, origExpr->GetOStIdx(), verst2MeExprTable.size());
+  VarMeExpr *varmeexpr = New<VarMeExpr>(&irMapAlloc, exprID++, origExpr->GetOStIdx(), verst2MeExprTable.size());
   verst2MeExprTable.push_back(varmeexpr);
   varmeexpr->InitBase(origExpr->GetOp(), origExpr->GetPrimType(), origExpr->GetNumOpnds());
   varmeexpr->SetFieldID(origExpr->GetFieldID());
@@ -111,7 +111,7 @@ VarMeExpr *IRMap::CreateNewGlobalTmp(GStrIdx strIdx, PrimType ptyp) {
       mirModule->GetMIRBuilder()->CreateSymbol((TyIdx)ptyp, strIdx, kStVar, kScGlobal, nullptr, kScopeGlobal);
   st->SetIsTmp(true);
   OriginalSt *oSt = ssaTab->CreateSymbolOriginalSt(st, 0, 0);
-  VarMeExpr *varx = New<VarMeExpr>(exprID++, oSt->GetIndex(), oSt->GetZeroVersionIndex());
+  VarMeExpr *varx = New<VarMeExpr>(&irMapAlloc, exprID++, oSt->GetIndex(), oSt->GetZeroVersionIndex());
   varx->InitBase(OP_dread, ptyp, 0);
   return varx;
 }
@@ -124,7 +124,7 @@ VarMeExpr *IRMap::CreateNewLocalRefVarTmp(GStrIdx strIdx, TyIdx tIdx) {
   oSt->SetZeroVersionIndex(verst2MeExprTable.size());
   verst2MeExprTable.push_back(nullptr);
   oSt->GetVersionsIndex().push_back(oSt->GetZeroVersionIndex());
-  VarMeExpr *newlocalrefvar = New<VarMeExpr>(exprID++, oSt->GetIndex(), verst2MeExprTable.size());
+  VarMeExpr *newlocalrefvar = New<VarMeExpr>(&irMapAlloc, exprID++, oSt->GetIndex(), verst2MeExprTable.size());
   verst2MeExprTable.push_back(newlocalrefvar);
   newlocalrefvar->InitBase(OP_dread, PTY_ref, 0);
   return newlocalrefvar;
@@ -236,7 +236,7 @@ VarMeExpr *IRMap::GetOrCreateVarFromVerSt(const VersionSt *verSt) {
   }
   OriginalSt *oSt = verSt->GetOrigSt();
   ASSERT(oSt->IsSymbolOst(), "GetOrCreateVarFromVerSt: wrong ost_type");
-  VarMeExpr *varx = New<VarMeExpr>(exprID++, oSt->GetIndex(), vindex);
+  VarMeExpr *varx = New<VarMeExpr>(&irMapAlloc, exprID++, oSt->GetIndex(), vindex);
   ASSERT(!GlobalTables::GetTypeTable().GetTypeTable().empty(), "container check");
   varx->InitBase(OP_dread, GlobalTables::GetTypeTable().GetTypeFromTyIdx(oSt->GetTyIdx())->GetPrimType(), 0);
   varx->SetFieldID(oSt->GetFieldID());
@@ -252,7 +252,7 @@ VarMeExpr *IRMap::GetOrCreateZeroVersionVarMeExpr(OriginalSt *oSt) {
     verst2MeExprTable.push_back(nullptr);
   }
   if (verst2MeExprTable[oSt->GetZeroVersionIndex()] == nullptr) {
-    VarMeExpr *varmeexpr = New<VarMeExpr>(exprID++, oSt->GetIndex(), oSt->GetZeroVersionIndex());
+    VarMeExpr *varmeexpr = New<VarMeExpr>(&irMapAlloc, exprID++, oSt->GetIndex(), oSt->GetZeroVersionIndex());
     varmeexpr->SetFieldID(oSt->GetFieldID());
     varmeexpr->SetOp(OP_dread);
     ASSERT(!GlobalTables::GetTypeTable().GetTypeTable().empty(), "container check");

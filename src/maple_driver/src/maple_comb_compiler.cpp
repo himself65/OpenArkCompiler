@@ -59,11 +59,11 @@ void MapleCombCompiler::PrintCommand(const MplOptions &options) const {
     } else {
       runStr += "mpl2mpl";
     }
-  }
-  auto inputMpl2mplOptions = options.exeOptions.find(kBinNameMpl2mpl);
-  for (auto &opt : inputMpl2mplOptions->second) {
-    connectSym = opt.Args() != "" ? "=" : "";
-    optionStr += " --" + opt.OptionKey() + connectSym + opt.Args();
+    auto inputMpl2mplOptions = options.exeOptions.find(kBinNameMpl2mpl);
+    for (auto &opt : inputMpl2mplOptions->second) {
+      connectSym = opt.Args() != "" ? "=" : "";
+      optionStr += " --" + opt.OptionKey() + connectSym + opt.Args();
+    }
   }
   optionStr += "\"";
   LogInfo::MapleLogger() << "Starting:" << options.exeFolder << "maple " << runStr << " " << optionStr << " "

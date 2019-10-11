@@ -41,14 +41,16 @@ bool MeExpr::IsTheSameWorkcand(MeExpr *meexpr) const {
     // exclude cvt for different return type
     return false;
   }
-  if (op == OP_resolveinterfacefunc || op == OP_resolvevirtualfunc)
+  if (op == OP_sext &&
+      static_cast<const OpMeExpr*>(this)->GetBitsSize() != static_cast<OpMeExpr*>(meexpr)->GetBitsSize()) {
+    return false;
+  }
+  if (op == OP_resolveinterfacefunc || op == OP_resolvevirtualfunc) {
     if (static_cast<const OpMeExpr*>(this)->GetFieldID() != static_cast<OpMeExpr*>(meexpr)->GetFieldID()) {
       return false;
     }
-  if (IsUseSameSymbol(meexpr)) {
-    return true;
   }
-  return false;
+  return IsUseSameSymbol(meexpr);
 }
 
 void MeExpr::UpdateDepth() {

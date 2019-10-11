@@ -44,53 +44,9 @@ std::string ReflectionAnalysis::strTabStartHot = std::string(1, '\0');
 std::string ReflectionAnalysis::strTabBothHot = std::string(1, '\0');
 std::string ReflectionAnalysis::strTabRunHot = std::string(1, '\0');
 bool ReflectionAnalysis::strTabInited = false;
-uint8 *DeflateBuffer(const uint8 *rawBuffer, uint32 rawBufferSize, uint32 *deflateSize) {
-  z_stream stream;
-  stream.zalloc = Z_NULL;
-  stream.zfree = Z_NULL;
-  stream.opaque = Z_NULL;
-  int ret = deflateInit(&stream, Z_BEST_COMPRESSION);
-  if (ret != Z_OK) {
-    return nullptr;
-  }
-  uint32 deflateMaxSize = deflateBound(&stream, rawBufferSize);
-  CHECK_FATAL(deflateMaxSize > 0, "Buffer size checkout");
-  uint8 *deflateBuffer = nullptr;
-  deflateBuffer = new uint8[deflateMaxSize];
-  stream.avail_in = rawBufferSize;
-  stream.next_in = const_cast<uint8*>(rawBuffer);
-  stream.avail_out = deflateMaxSize;
-  stream.next_out = &deflateBuffer[0];
-  ret = deflate(&stream, Z_FINISH);
-  if (ret == Z_STREAM_ERROR) {
-    delete[] deflateBuffer;
-    deflateBuffer = nullptr;
-    return nullptr;
-  }
-  *deflateSize = deflateMaxSize - stream.avail_out;
-  deflateEnd(&stream);
-  return deflateBuffer;
-}
 
 int ReflectionAnalysis::GetDeflateStringIdx(const std::string &subStr) {
-  uint32 deflateSize = 0;
-  uint32 signatureIdx;
-  char *deflateBuffer =
-      reinterpret_cast<char*>(DeflateBuffer((const uint8*)(subStr.c_str()), subStr.size(), &deflateSize));
-  // The flag length at least 6 byte, so we do not compress if compress gain less than 6 byte.
-  if (subStr.size() < deflateSize + 6) {
-    signatureIdx = FindOrInsertReflectString("0!" + subStr);
-  } else {
-    CHECK_FATAL(deflateBuffer != nullptr, "deflateBuffer check");
-    std::string deflateString(deflateBuffer, deflateBuffer + deflateSize);
-    signatureIdx = FindOrInsertReflectString(std::to_string(deflateSize) + "!" + std::to_string(subStr.size()) + "!" +
-                                             deflateString);
-  }
-  if (deflateBuffer != nullptr) {
-    delete[] deflateBuffer;
-    deflateBuffer = nullptr;
-  }
-  return signatureIdx;
+  return FindOrInsertReflectString("0!" + subStr);
 }
 
 static uint32 FirstFindOrInsertRepeatString(const std::string &str, bool isHot, uint8 hotType) {
@@ -809,6 +765,10 @@ static void ConvertFieldName(std::string &fieldname, bool staticfield) {
     CHECK_FATAL(pos1 != fieldname.npos, "fieldname not found");
     int fieldLength = strlen(kClassNameSplitterStr);
     fieldname = fieldname.substr(pos1 + fieldLength);
+    size_t pos2 = fieldname.find(kNameSplitterStr);
+    if (pos2 != fieldname.npos) {
+      fieldname = fieldname.substr(0, pos2);
+    }
   }
   fieldname = NameMangler::DecodeName(fieldname);
 }
