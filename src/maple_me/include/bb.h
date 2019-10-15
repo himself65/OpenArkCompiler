@@ -211,6 +211,14 @@ class BB {
     stmtNodeList.update_back(stmt);
   }
 
+  StmtNode *GetFirst() {
+    return &stmtNodeList.front();
+  }
+
+  StmtNode *GetLast() {
+    return &stmtNodeList.back();
+  }
+
   void SetFirstMe(MeStmt *stmt);
   void SetLastMe(MeStmt *stmt);
   bool IsInList(MapleVector<BB*> &) const;

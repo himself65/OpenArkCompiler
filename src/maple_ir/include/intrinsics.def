@@ -25,6 +25,8 @@ DEF_MIR_INTRINSIC(MPL_GET_VTAB_FUNC,\
                   "MCC_getFuncPtrFromVtab", kIntrnUndef, kArgTyA64, kArgTyDynany, kArgTyDynany, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
 DEF_MIR_INTRINSIC(MPL_READ_OVTABLE_ENTRY,\
                   "__mpl_const_offset", INTRNISPURE, kArgTyA32, kArgTyDynany, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
+DEF_MIR_INTRINSIC(MPL_READ_OVTABLE_ENTRY_LAZY,\
+                  "__mpl_const_offset_lazy", INTRNNOSIDEEFFECT, kArgTyA32, kArgTyDynany, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
 DEF_MIR_INTRINSIC(MPL_READ_OVTABLE_ENTRY_VTAB_LAZY,\
                   "__mpl_const_offset_vtab_lazy", INTRNISPURE, kArgTyA32, kArgTyDynany, kArgTyDynany, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
 DEF_MIR_INTRINSIC(MPL_READ_OVTABLE_ENTRY_FIELD_LAZY,\

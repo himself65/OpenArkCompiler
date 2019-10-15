@@ -76,7 +76,8 @@ void SSAUpdate::RenamePhi(BB *bb) {
       if (phi->GetLHS() == nullptr) {
         // create a new VarMeExpr defined by this phi
         irMap->SetExprID(irMap->GetExprID() + 1);
-        VarMeExpr *newvar = irMap->New<VarMeExpr>(irMap->GetExprID(), it2->first, irMap->GetVerst2MeExprTableSize());
+        VarMeExpr *newvar = irMap->New<VarMeExpr>(&irMap->GetIRMapAlloc(), irMap->GetExprID(), it2->first,
+                                                  irMap->GetVerst2MeExprTableSize());
         newvar->InitBase(OP_dread, PTY_ref, 0);
         newvar->SetFieldID(0);
         irMap->PushBackVerst2MeExprTable(newvar);

@@ -761,7 +761,8 @@ VarMeExpr *RCLowering::CreateNewTmpVarMeExpr(bool isLocalrefvar) {
     ost->GetVersionsIndex().push_back(ost->GetZeroVersionIndex());
   }
   irMap->SetExprID(irMap->GetExprID() + 1);
-  VarMeExpr *varMeExpr = irMap->New<VarMeExpr>(irMap->GetExprID(), ost->GetIndex(), irMap->GetVerst2MeExprTableSize());
+  VarMeExpr *varMeExpr = irMap->New<VarMeExpr>(&irMap->GetIRMapAlloc(), irMap->GetExprID(), ost->GetIndex(),
+                                               irMap->GetVerst2MeExprTableSize());
   varMeExpr->InitBase(OP_dread, PTY_ptr, 0);
   varMeExpr->SetFieldID(0);
   irMap->PushBackVerst2MeExprTable(varMeExpr);

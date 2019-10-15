@@ -291,6 +291,10 @@ class MIRBuilder {
  private:
   MIRSymbol *GetOrCreateDecl(const std::string &str, const MIRType *type, MIRFunction *func, bool isLocal,
                              bool &created);
+  bool IsValidCallReturn(const MIRSymbol &ret) const {
+    return ret.GetStorageClass() == kScAuto || ret.GetStorageClass() == kScFormal ||
+           ret.GetStorageClass() == kScExtern || ret.GetStorageClass() == kScGlobal;
+  }
 };
 
 }  // namespace maple

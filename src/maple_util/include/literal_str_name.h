@@ -41,9 +41,8 @@ union DigestHash {
 class LiteralStrName {
  public:
   static int32_t CalculateHashSwapByte(const char16_t *data, uint32_t len);
-
   static int32_t CalculateHash(const char16_t *data, uint32_t len, bool dataIsCompress) {
-    int hash = 0;
+    uint32_t hash = 0;
     if (dataIsCompress) {
       const char *dataStart = reinterpret_cast<const char*>(data);
       const char *end = dataStart + len;

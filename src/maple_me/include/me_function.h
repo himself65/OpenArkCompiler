@@ -316,7 +316,7 @@ class MeFunction : public FuncEmit {
   void CreateBBLabel(BB *bb);
   /* clone stmtnodes from orig to newbb */
   void CloneBasicBlock(BB *newbb, BB *orig);
-  BB *SplitBB(BB *bb, StmtNode *splitPoint);
+  BB *SplitBB(BB *bb, StmtNode *splitPoint, BB *newBB = nullptr);
   const bool HasException() const {
     return hasEH;
   }
@@ -416,6 +416,10 @@ class MeFunction : public FuncEmit {
 
   void SetNextBBId(uint32 currNextBBId) {
     nextBBId = currNextBBId;
+  }
+
+  uint32 &GetNextBBId() {
+    return nextBBId;
   }
 
   uint32 GetRegNum() const {

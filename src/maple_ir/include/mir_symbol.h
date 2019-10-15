@@ -533,6 +533,14 @@ class MIRLabelTable {
     labelTable[idx] = strIdx;
   }
 
+  MapleVector<GStrIdx> GetLabelTable() {
+    return labelTable;
+  }
+
+  MapleMap<GStrIdx, LabelIdx> &GetStrIdxToLabelIdxMap() {
+    return strIdxToLabIdxMap;
+  }
+
  private:
   static constexpr uint32 kDummyLabel = 0;
   MapleAllocator *mAllocator;

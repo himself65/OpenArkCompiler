@@ -32,5 +32,6 @@ config("mapleallcompilecfg") {
 group("mapleall") {
   deps = [
     "${MAPLEALL_ROOT}/maple_driver:maple",
+    "${MAPLEALL_ROOT}/maple_ir:irbuild",
   ]
 }

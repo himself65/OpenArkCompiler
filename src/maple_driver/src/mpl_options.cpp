@@ -39,6 +39,7 @@ int MplOptions::Parse(int argc, char **argv) {
   if (ret != ErrorCode::kErrorNoError) {
     return ErrorCode::kErrorInvalidParameter;
   }
+  auto options = optionParser->GetOptions();
   // We should recognize O0, O2 and run options firstly to decide the real options
   for (auto opt : optionParser->GetOptions()) {
     switch (opt.Index()) {
@@ -264,43 +265,29 @@ ErrorCode MplOptions::UpdateExtraOptionOpt(const std::string &args) {
   }
   auto settingExe = runningExes.begin();
   for (const auto &tempIt : temp) {
-    bool ret = true;
+    ErrorCode ret = ErrorCode::kErrorNoError;
 
     std::vector<std::string> tmpArgs;
     // Split options with ' '
     StringUtils::Split(tempIt, tmpArgs, ' ');
     auto &exeOption = exeOptions[*settingExe];
+    ret = optionParser->HandleInputArgs(tmpArgs, *settingExe, exeOption);
+    if (ret != ErrorCode::kErrorNoError) {
+      return ret;
+    }
+    // Fill extraOption
     // For compiler bins called by system()
     auto &extraOption = extras[*settingExe];
-    for (const auto &argsIt : tmpArgs) {
+    for (int i = 0; i < exeOption.size(); i++) {
       MplOption mplOption;
-      // If "=" is not in the string, indicates that it is an option without value
-      if (argsIt.find("=") == std::string::npos) {
-        if (!argsIt.empty()) {
-          // Set key only
-          mplOption.init(argsIt, "", " ", false, "");
-          ret &= optionParser->SetOption(argsIt, "", *settingExe, exeOption);
-        } else {
-          continue;
-        }
+      if (exeOption[i].Args() != "") {
+        mplOption.init("-" + exeOption[i].OptionKey(), exeOption[i].Args(), "=", false, "");
       } else {
-        // If "=" is in the string, indicates that it is an option with value
-        std::vector<std::string> arg;
-        StringUtils::Split(argsIt, arg, '=');
-        if (arg.size() > 1) {
-          // Set key and value
-          mplOption.init(arg.at(0), arg.at(1), "=", false, "");
-          ret &= optionParser->SetOption(arg.at(0), arg.at(1), *settingExe, exeOption);
-        } else {
-          WARN(kLncWarn, "warning no args after \'=\' for " + arg.at(0));
-          continue;
-        }
+        mplOption.init("-" + exeOption[i].OptionKey(), "", " ", false, "");
       }
       extraOption.push_back(mplOption);
     }
-    if (!ret) {
-      return ErrorCode::kErrorInvalidParameter;
-    }
+
     settingExe++;
   }
   return ErrorCode::kErrorNoError;

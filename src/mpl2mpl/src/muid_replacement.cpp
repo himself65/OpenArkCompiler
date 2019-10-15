@@ -1070,6 +1070,7 @@ void MUIDReplacement::ProcessFunc(MIRFunction *func) {
   }
 }
 
+// Create GC Root
 void MUIDReplacement::GenericGlobalRootList() {
   MIRType *voidType = GlobalTables::GetTypeTable().GetVoidPtr();
   MIRArrayType *arrayType = GlobalTables::GetTypeTable().GetOrCreateArrayType(voidType, 0);
