@@ -59,7 +59,7 @@ void VtableImpl::ProcessFunc(MIRFunction *func) {
         icallNode->GetNopnd().resize(callNode->GetNopndSize());
         icallNode->SetNumOpnds(icallNode->GetNopndSize());
         for (size_t i = 0; i < callNode->GetNopndSize(); i++) {
-          icallNode->SetOpnd(callNode->GetNopndAt(i)->CloneTree(builder->GetCurrentFuncCodeMpAllocator()), i);
+          icallNode->SetOpnd(callNode->GetNopndAt(i)->CloneTree(mirModule->GetCurFuncCodeMPAllocator()), i);
         }
         currFunc->GetBody()->ReplaceStmt1WithStmt2(stmt, icallNode);
         stmt = icallNode;

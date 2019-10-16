@@ -25,13 +25,13 @@ namespace maple {
 // This phase performs alias analysis based on Steensgaard's algorithm and
 // represent the resulting alias relationships in the Maple IR representation
 bool MeAliasClass::HasWriteToStaticFinal() const {
-  auto eIt = func->valid_end();
-  for (auto bIt = func->valid_begin(); bIt != eIt; ++bIt) {
+  auto eIt = func.valid_end();
+  for (auto bIt = func.valid_begin(); bIt != eIt; ++bIt) {
     for (auto &stmt : (*bIt)->GetStmtNodes()) {
       if (stmt.GetOpCode() == OP_dassign) {
         DassignNode &dass = static_cast<DassignNode&>(stmt);
         if (dass.GetStIdx().IsGlobal()) {
-          MIRSymbol *sym = mirModule->CurFunction()->GetLocalOrGlobalSymbol(dass.GetStIdx());
+          MIRSymbol *sym = mirModule.CurFunction()->GetLocalOrGlobalSymbol(dass.GetStIdx());
           if (sym->IsFinal()) {
             return true;
           }
@@ -49,8 +49,8 @@ AnalysisResult *MeDoAliasClass::Run(MeFunction *func, MeFuncResultMgr *m, Module
   MemPool *aliasClassMp = NewMemPool();
   KlassHierarchy *kh = static_cast<KlassHierarchy*>(mrm->GetAnalysisResult(MoPhase_CHA, &func->GetMIRModule()));
   MeAliasClass *aliasClass = aliasClassMp->New<MeAliasClass>(
-      aliasClassMp, &func->GetMIRModule(), func->GetMeSSATab(), func, MeOptions::lessThrowAlias,
-      MeOptions::finalFieldAlias, MeOptions::ignoreIPA, DEBUGFUNC(func), MeOptions::setCalleeHasSideEffect, kh);
+      *aliasClassMp, func->GetMIRModule(), *func->GetMeSSATab(), *func, MeOption::lessThrowAlias,
+      MeOption::finalFieldAlias, MeOption::ignoreIPA, DEBUGFUNC(func), MeOption::setCalleeHasSideEffect, kh);
   // pass 1 through the program statements
   if (DEBUGFUNC(func)) {
     LogInfo::MapleLogger() << "\n============ Alias Classification Pass 1 ============" << std::endl;
@@ -58,7 +58,7 @@ AnalysisResult *MeDoAliasClass::Run(MeFunction *func, MeFuncResultMgr *m, Module
   auto eIt = func->valid_end();
   for (auto bIt = func->valid_begin(); bIt != eIt; ++bIt) {
     for (auto &stmt : (*bIt)->GetStmtNodes()) {
-      aliasClass->ApplyUnionForCopies(&stmt);
+      aliasClass->ApplyUnionForCopies(stmt);
     }
   }
   aliasClass->CreateAssignSets();
@@ -66,14 +66,14 @@ AnalysisResult *MeDoAliasClass::Run(MeFunction *func, MeFuncResultMgr *m, Module
     aliasClass->DumpAssignSets();
   }
   aliasClass->ReinitUnionFind();
-  if (MeOptions::noSteensgaard) {
+  if (MeOption::noSteensgaard) {
     aliasClass->UnionAllPointedTos();
   } else {
     aliasClass->ApplyUnionForPointedTos();
     aliasClass->UnionForNotAllDefsSeen();
   }
   // TBAA
-  if (!MeOptions::noTBAA) {
+  if (!MeOption::noTBAA) {
     aliasClass->ReconstructAliasGroups();
   }
   aliasClass->CreateClassSets();
@@ -89,7 +89,7 @@ AnalysisResult *MeDoAliasClass::Run(MeFunction *func, MeFuncResultMgr *m, Module
   for (auto bIt = func->valid_begin(); bIt != eIt; ++bIt) {
     auto *bb = *bIt;
     for (auto &stmt : bb->GetStmtNodes()) {
-      aliasClass->GenericInsertMayDefUse(&stmt, bb->GetBBId());
+      aliasClass->GenericInsertMayDefUse(stmt, bb->GetBBId());
     }
   }
   timer.Stop();
@@ -99,5 +99,4 @@ AnalysisResult *MeDoAliasClass::Run(MeFunction *func, MeFuncResultMgr *m, Module
   }
   return aliasClass;
 }
-
 }  // namespace maple

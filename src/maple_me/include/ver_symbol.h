@@ -56,7 +56,6 @@ class VersionSt {
   void SetDefBB(BB *defbb) {
     defBB = defbb;
   }
-
   const BB *GetDefBB() const {
     return defBB;
   }
@@ -225,6 +224,5 @@ class VersionStTable {
   MapleAllocator vstAlloc;                   // this stores versionStVector
   MapleVector<VersionSt*> versionStVector;  // the vector that map a versionst's index to its pointer
 };
-
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_VER_SYMBOL_H

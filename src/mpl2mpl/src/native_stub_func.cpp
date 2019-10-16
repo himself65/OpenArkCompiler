@@ -482,7 +482,7 @@ void GenericNativeStubFunc::GenericRegisteredNativeFuncCall(MIRFunction *func, c
   icall->GetNopnd().resize(icall->GetNumOpnds());
   icall->SetReturnVec(nrets);
   for (size_t i = 1; i < icall->GetNopndSize(); i++) {
-    icall->SetNOpndAt(i, args[i - 1]->CloneTree(GetModule()->CurFuncCodeMemPoolAllocator()));
+    icall->SetNOpndAt(i, args[i - 1]->CloneTree(GetModule()->GetCurFuncCodeMPAllocator()));
   }
   icall->SetNOpndAt(0, readFuncPtr);
   icall->SetRetTyIdx(nativeFunc->GetReturnTyIdx());
@@ -526,7 +526,7 @@ StmtNode *GenericNativeStubFunc::CreateNativeWrapperCallNode(MIRFunction *func, 
     icall->GetNopnd().resize(icall->GetNumOpnds());
     icall->SetReturnVec(nrets);
     for (size_t i = 1; i < icall->GetNopndSize(); i++) {
-      icall->SetNOpndAt(i, args[i - 1]->CloneTree(GetModule()->CurFuncCodeMemPoolAllocator()));
+      icall->SetNOpndAt(i, args[i - 1]->CloneTree(GetModule()->GetCurFuncCodeMPAllocator()));
     }
     icall->SetNOpndAt(0, funcPtr);
     icall->SetRetTyIdx(func->GetReturnTyIdx());

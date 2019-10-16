@@ -107,7 +107,7 @@ void BB::DumpPhi(const MIRModule *mod) {
   }
 }
 
-PhiNode *BB::PhiofVerStInserted(VersionSt *vsym) {
+const PhiNode *BB::PhiofVerStInserted(VersionSt *vsym) {
   auto phiit = phiList.find(vsym->GetOrigSt());
   return (phiit != phiList.end()) ? &(*phiit).second : nullptr;
 }
@@ -364,5 +364,4 @@ void BB::DumpMeRegPhiList(IRMap *irMap) {
     (*phiIt).second->Dump(irMap);
   }
 }
-
 }  // namespace maple

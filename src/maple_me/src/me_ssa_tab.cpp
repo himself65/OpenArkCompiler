@@ -17,7 +17,6 @@
 #include "mpl_timer.h"
 
 // allocate the data structure to store SSA information
-
 namespace maple {
 AnalysisResult *MeDoSSATab::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) {
   MPLTimer timer;
@@ -46,5 +45,4 @@ AnalysisResult *MeDoSSATab::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResu
   }
   return ssaTab;
 }
-
 }  // namespace maple

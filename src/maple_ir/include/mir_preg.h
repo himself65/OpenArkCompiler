@@ -125,7 +125,7 @@ class MIRPregTable {
   }
 
   PregIdx CreateRefPreg(MIRType *mirType) {
-    ASSERT(mirType->GetPrimType() == PTY_ref || mirType->GetPrimType() == PTY_ptr, "ref or ptr type");
+    ASSERT(mirType->GetPrimType() == PTY_ref, "only ref type needed");
     PregIdx idx = CreatePreg(mirType->GetPrimType());
     pregTable[idx]->SetMIRType(mirType);
     return idx;

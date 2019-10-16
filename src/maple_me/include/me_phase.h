@@ -78,6 +78,5 @@ class MeFuncPhase : public Phase {
   std::string prevPhaseName; /* used in filename for emit */
   bool isCFGChanged;         // is this phase changed CFG
 };
-
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_ME_PHASE_H

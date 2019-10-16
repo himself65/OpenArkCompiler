@@ -25,7 +25,7 @@ namespace maple {
 
 class Options {
  public:
-  explicit Options(maple::MemPool *memPool) : optionAlloc(memPool) {}
+  explicit Options(maple::MemPool &memPool) : optionAlloc(&memPool) {}
 
   bool ParseOptions(int argc, char **argv, std::string &fileName);
   ~Options() {}

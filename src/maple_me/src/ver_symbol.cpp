@@ -76,5 +76,4 @@ void VersionStTable::Dump(MIRModule *mod) {
   }
   mod->GetOut() << "=======end version st table===========\n";
 }
-
 }  // namespace maple

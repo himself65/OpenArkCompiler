@@ -21,16 +21,14 @@
 #include "ssa_mir_nodes.h"
 
 namespace maple {
-class VersionStTable;
 class SSATab : public AnalysisResult {
   // represent the SSA table
  public:
-  MIRModule &mirModule;
   SSATab(MemPool *memPool, MemPool *versmp, MIRModule *mod)
       : AnalysisResult(memPool),
         mirModule(*mod),
         versionStTable(versmp),
-        originalStTable(memPool, mod),
+        originalStTable(*memPool, *mod),
         stmtsSSAPart(versmp),
         wholeProgramScope(false) {}
 
@@ -44,25 +42,25 @@ class SSATab : public AnalysisResult {
 
   // following are handles to methods in originalStTable
   OriginalSt *CreateSymbolOriginalSt(MIRSymbol *mirSt, PUIdx puIdx, FieldID fld) {
-    return originalStTable.CreateSymbolOriginalSt(mirSt, puIdx, fld);
+    return originalStTable.CreateSymbolOriginalSt(*mirSt, puIdx, fld);
   }
 
   OriginalSt *FindOrCreateSymbolOriginalSt(MIRSymbol *mirSt, PUIdx puIdx, FieldID fld) {
-    return originalStTable.FindOrCreateSymbolOriginalSt(mirSt, puIdx, fld);
+    return originalStTable.FindOrCreateSymbolOriginalSt(*mirSt, puIdx, fld);
   }
 
-  OriginalSt *GetOriginalStFromID(OStIdx id) {
+  const OriginalSt *GetOriginalStFromID(OStIdx id) {
     return originalStTable.GetOriginalStFromID(id);
   }
 
-  OriginalSt *GetSymbolOriginalStFromID(OStIdx id) {
-    OriginalSt *ost = originalStTable.GetOriginalStFromID(id);
+  const OriginalSt *GetSymbolOriginalStFromID(OStIdx id) {
+    const OriginalSt *ost = originalStTable.GetOriginalStFromID(id);
     ASSERT(ost->IsSymbolOst(), "GetSymbolOriginalStFromid: id has wrong ost type");
     return ost;
   }
 
   MIRSymbol *GetMIRSymbolFromOriginalSt(const OriginalSt *ost) {
-    return originalStTable.GetMIRSymbolFromOriginalSt(ost);
+    return originalStTable.GetMIRSymbolFromOriginalSt(*ost);
   }
 
   MIRSymbol *GetMIRSymbolFromID(OStIdx id) {
@@ -97,12 +95,32 @@ class SSATab : public AnalysisResult {
     wholeProgramScope = val;
   }
 
+  MIRModule &GetModule() const {
+    return mirModule;
+  }
+
+  void SetEPreLocalRefVar(const OStIdx &ostIdx, bool epreLocalrefvarPara = true) {
+    originalStTable.SetEPreLocalRefVar(ostIdx, epreLocalrefvarPara);
+  }
+
+  void SetZeroVersionIndex(const OStIdx &ostIdx, size_t zeroVersionIndexParam) {
+    originalStTable.SetZeroVersionIndex(ostIdx, zeroVersionIndexParam);
+  }
+
+  size_t GetVersionsIndexSize(const OStIdx &ostIdx) const {
+    return originalStTable.GetVersionsIndexSize(ostIdx);
+  }
+
+  void UpdateVarOstMap(const OStIdx &ostIdx, std::map<OStIdx, OriginalSt*> &varOstMap) {
+    originalStTable.UpdateVarOstMap(ostIdx, varOstMap);
+  }
+
  private:
+  MIRModule &mirModule;
   VersionStTable versionStTable;  // this uses special versmp because it will be freed earlier
   OriginalStTable originalStTable;
   StmtsSSAPart stmtsSSAPart;  // this uses special versmp because it will be freed earlier
   bool wholeProgramScope;
 };
-
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_SSA_TAB_H

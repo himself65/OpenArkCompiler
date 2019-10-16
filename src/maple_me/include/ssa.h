@@ -124,6 +124,5 @@ class SSA {
   MapleVector<bool> bbRenamed;                       //   indicate bb is renamed or not
   SSATab *ssaTab;
 };
-
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_SSA_H

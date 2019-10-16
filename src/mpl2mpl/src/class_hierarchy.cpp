@@ -378,6 +378,42 @@ bool KlassHierarchy::IsInterfaceImplemented(Klass *interface, const Klass *base)
   return (base->GetImplInterfaces().find(interface) != base->GetImplInterfaces().end());
 }
 
+int KlassHierarchy::GetFieldIDOffsetBetweenClasses(const Klass &super, const Klass &base) const {
+  int offset = 0;
+  const Klass *superPtr = &super;
+  const Klass *basePtr = &base;
+  while (basePtr != superPtr) {
+    basePtr = basePtr->GetSuperKlass();
+    ASSERT(basePtr != nullptr, "null ptr check");
+    offset++;
+  }
+  return offset;
+}
+
+bool KlassHierarchy::UpdateFieldID(TyIdx baseTypeIdx, TyIdx targetTypeIdx, FieldID &fldID) const {
+  MIRType *baseType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(baseTypeIdx);
+  MIRType *targetType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(targetTypeIdx);
+  if (baseType->GetKind() == kTypePointer && targetType->GetKind() == kTypePointer) {
+    baseType = static_cast<const MIRPtrType*>(baseType)->GetPointedType();
+    targetType = static_cast<const MIRPtrType*>(targetType)->GetPointedType();
+  }
+  if (baseType->GetKind() != kTypeClass || targetType->GetKind() != kTypeClass) {
+    return false;
+  }
+  Klass *baseKlass = GetKlassFromTyIdx(baseType->GetTypeIndex());
+  ASSERT(baseKlass != nullptr, "null ptr check");
+  Klass *targetKlass = GetKlassFromTyIdx(targetType->GetTypeIndex());
+  ASSERT(targetKlass != nullptr, "null ptr check");
+  if (IsSuperKlass(baseKlass, targetKlass)) {
+    fldID += GetFieldIDOffsetBetweenClasses(*baseKlass, *targetKlass);
+    return true;
+  } else if (IsSuperKlass(targetKlass, baseKlass)) {
+    fldID -= GetFieldIDOffsetBetweenClasses(*targetKlass, *baseKlass);
+    return true;
+  }
+  return false;
+}
+
 bool KlassHierarchy::NeedClinitCheckRecursively(Klass *kl) {
   Klass *klass = kl;
   if (klass->IsClass()) {

@@ -20,27 +20,27 @@
 namespace maple {
 class Dominance : public AnalysisResult {
  public:
-  Dominance(MemPool *memPool, MemPool *tmpPool, MapleVector<BB*> *bbVec, BB *commonEntryBB, BB *commonExitBB)
-      : AnalysisResult(memPool),
-        domAllocator(memPool),
-        tmpAllocator(tmpPool),
-        bbVec(*bbVec),
+  Dominance(MemPool &memPool, MemPool &tmpPool, MapleVector<BB*> &bbVec, BB &commonEntryBB, BB &commonExitBB)
+      : AnalysisResult(&memPool),
+        domAllocator(&memPool),
+        tmpAllocator(&tmpPool),
+        bbVec(bbVec),
         commonEntryBB(commonEntryBB),
         commonExitBB(commonExitBB),
-        postOrderIDVec(bbVec->size(), -1, tmpAllocator.Adapter()),
+        postOrderIDVec(bbVec.size(), -1, tmpAllocator.Adapter()),
         reversePostOrder(tmpAllocator.Adapter()),
-        doms(bbVec->size(), nullptr, domAllocator.Adapter()),
-        pdomPostOrderIDVec(bbVec->size(), -1, tmpAllocator.Adapter()),
+        doms(bbVec.size(), nullptr, domAllocator.Adapter()),
+        pdomPostOrderIDVec(bbVec.size(), -1, tmpAllocator.Adapter()),
         pdomReversePostOrder(tmpAllocator.Adapter()),
-        pdoms(bbVec->size(), nullptr, domAllocator.Adapter()),
-        domFrontier(bbVec->size(), MapleSet<BBId>(std::less<BBId>(), domAllocator.Adapter()), domAllocator.Adapter()),
-        domChildren(bbVec->size(), MapleSet<BBId>(std::less<BBId>(), domAllocator.Adapter()), domAllocator.Adapter()),
-        dtPreOrder(bbVec->size(), BBId(0), domAllocator.Adapter()),
-        dtDfn(bbVec->size(), -1, domAllocator.Adapter()),
-        pdomFrontier(bbVec->size(), MapleSet<BBId>(std::less<BBId>(), domAllocator.Adapter()), domAllocator.Adapter()),
-        pdomChildren(bbVec->size(), MapleSet<BBId>(std::less<BBId>(), domAllocator.Adapter()), domAllocator.Adapter()),
-        pdtPreOrder(bbVec->size(), BBId(0), domAllocator.Adapter()),
-        pdtDfn(bbVec->size(), -1, domAllocator.Adapter()) {}
+        pdoms(bbVec.size(), nullptr, domAllocator.Adapter()),
+        domFrontier(bbVec.size(), MapleSet<BBId>(std::less<BBId>(), domAllocator.Adapter()), domAllocator.Adapter()),
+        domChildren(bbVec.size(), MapleSet<BBId>(std::less<BBId>(), domAllocator.Adapter()), domAllocator.Adapter()),
+        dtPreOrder(bbVec.size(), BBId(0), domAllocator.Adapter()),
+        dtDfn(bbVec.size(), -1, domAllocator.Adapter()),
+        pdomFrontier(bbVec.size(), MapleSet<BBId>(std::less<BBId>(), domAllocator.Adapter()), domAllocator.Adapter()),
+        pdomChildren(bbVec.size(), MapleSet<BBId>(std::less<BBId>(), domAllocator.Adapter()), domAllocator.Adapter()),
+        pdtPreOrder(bbVec.size(), BBId(0), domAllocator.Adapter()),
+        pdtDfn(bbVec.size(), -1, domAllocator.Adapter()) {}
 
   ~Dominance() = default;
 
@@ -48,23 +48,22 @@ class Dominance : public AnalysisResult {
   void ComputeDominance();
   void ComputeDomFrontiers();
   void ComputeDomChildren();
-  void ComputeDtPreorder(const BB *bb, size_t &num);
+  void ComputeDtPreorder(const BB &bb, size_t &num);
   void ComputeDtDfn();
-  bool Dominate(const BB *b1, BB *b2);  // true if b1 dominates b2
+  bool Dominate(const BB &b1, BB &b2);  // true if b1 dominates b2
   void DumpDoms();
   void PdomGenPostOrderID();
   void ComputePostDominance();
   void ComputePdomFrontiers();
   void ComputePdomChildren();
-  void ComputePdtPreorder(const BB *bb, size_t &num);
+  void ComputePdtPreorder(const BB &bb, size_t &num);
   void ComputePdtDfn();
-  bool PostDominate(const BB *b1, BB *b2);  // true if b1 postdominates b2
+  bool PostDominate(const BB &b1, BB &b2);  // true if b1 postdominates b2
   void DumpPdoms();
 
   MapleVector<BB*> &GetBBVec() {
     return bbVec;
   }
-
   const MapleVector<BB*> &GetBBVec() const {
     return bbVec;
   }
@@ -81,20 +80,12 @@ class Dominance : public AnalysisResult {
     return bbVec[i];
   }
 
-  BB *GetCommonEntryBB() {
+  BB &GetCommonEntryBB() {
     return commonEntryBB;
   }
 
-  void SetCommonEntryBB(BB *bb) {
-    commonEntryBB = bb;
-  }
-
-  BB *GetCommonExitBB() {
+  BB &GetCommonExitBB() {
     return commonExitBB;
-  }
-
-  void SetCommonExitBB(BB *exitBB) {
-    commonExitBB = exitBB;
   }
 
   MapleVector<int32> &GetPostOrderIDVec() {
@@ -206,8 +197,8 @@ class Dominance : public AnalysisResult {
  private:
   MapleAllocator tmpAllocator;  // can be freed after dominator computation
   MapleVector<BB*> &bbVec;
-  BB *commonEntryBB;
-  BB *commonExitBB;
+  BB &commonEntryBB;
+  BB &commonExitBB;
   MapleVector<int32> postOrderIDVec;  // index is bb id
   MapleVector<BB*> reversePostOrder;  // an ordering of the BB in reverse postorder
   MapleVector<BB*> doms;              // index is bb id; immediate dominator for each BB
@@ -225,12 +216,11 @@ class Dominance : public AnalysisResult {
   MapleVector<uint32> pdtDfn;                // gives position of each BB in pdt_preorder
 
  protected:
-  void PostOrderWalk(BB *bb, int32 &pid, std::vector<bool> &visitedMap);
-  BB *Intersect(BB *bb1, const BB *bb2);
-  bool CommonEntryBBIsPred(const BB *bb);
-  void PdomPostOrderWalk(BB *bb, int32 &pid, std::vector<bool> &visitedMap);
-  BB *PdomIntersect(BB *bb1, const BB *bb2);
+  void PostOrderWalk(BB &bb, int32 &pid, std::vector<bool> &visitedMap);
+  BB *Intersect(BB &bb1, const BB &bb2);
+  bool CommonEntryBBIsPred(const BB &bb);
+  void PdomPostOrderWalk(BB &bb, int32 &pid, std::vector<bool> &visitedMap);
+  BB *PdomIntersect(BB &bb1, const BB &bb2);
 };
-
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_DOMINANCE_H

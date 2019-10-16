@@ -82,7 +82,7 @@ void InterleavedManager::Run() {
         compList = &mirModule.GetFunctionList();
       }
       for (MIRFunction *func : *compList) {
-        if (MeOptions::useRange && (rangeNum < MeOptions::range[0] || rangeNum > MeOptions::range[1])) {
+        if (MeOption::useRange && (rangeNum < MeOption::range[0] || rangeNum > MeOption::range[1])) {
           rangeNum++;
           continue;
         }

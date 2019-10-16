@@ -28,7 +28,7 @@
 #include "me_ssa.h"
 
 namespace maple {
-class MirCFG;
+class MeCFG;
 class MeIRMap;
 #if DEBUG
 extern MIRModule *g_mirmodule;
@@ -398,11 +398,11 @@ class MeFunction : public FuncEmit {
     return endTryBB2TryBB[endTry];
   }
 
-  MirCFG *GetTheCfg() {
+  MeCFG *GetTheCfg() {
     return theCFG;
   }
 
-  void SetTheCfg(MirCFG *currTheCfg) {
+  void SetTheCfg(MeCFG *currTheCfg) {
     theCFG = currTheCfg;
   }
 
@@ -455,7 +455,7 @@ class MeFunction : public FuncEmit {
   /* mempool */
   MapleUnorderedMap<LabelIdx, BB*> labelBBIdMap;
   BBPtrHolder bbVec;
-  MirCFG *theCFG;
+  MeCFG *theCFG;
   SSATab *meSSATab;
   MeIRMap *irmap;
   MapleUnorderedMap<BB*, StmtNode*> bbTryNodeMap;  // maps isTry bb to its try stmt
@@ -467,6 +467,5 @@ class MeFunction : public FuncEmit {
   bool hasEH;       /* current has try statement */
   bool secondPass;  // second pass for the same function
 };
-
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_ME_FUNCTION_H

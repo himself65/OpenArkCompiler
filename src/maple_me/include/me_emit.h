@@ -18,18 +18,16 @@
 #include "me_phase.h"
 
 /* emit ir to specified file */
-
 namespace maple {
-class MeDoEmission : public MeFuncPhase {
+class MeDoEmit : public MeFuncPhase {
  public:
-  explicit MeDoEmission(MePhaseID id) : MeFuncPhase(id) {}
+  explicit MeDoEmit(MePhaseID id) : MeFuncPhase(id) {}
 
-  virtual ~MeDoEmission() = default;
+  virtual ~MeDoEmit() = default;
   AnalysisResult *Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) override;
   std::string PhaseName() const override {
     return "emit";
   }
 };
-
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_ME_EMIT_H

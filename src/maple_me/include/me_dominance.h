@@ -29,6 +29,5 @@ class MeDoDominance : public MeFuncPhase {
     return "dominance";
   }
 };
-
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_ME_DOMINANCE_H

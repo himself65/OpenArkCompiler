@@ -25,13 +25,12 @@ void SSA::InitRenameStack(OriginalStTable *otable, size_t bbsize, VersionStTable
   bbRenamed.resize(bbsize, false);
   for (size_t i = 1; i < otable->Size(); i++) {
     MapleStack<VersionSt*> *vstack = ssaAlloc.GetMemPool()->New<MapleStack<VersionSt*>>(ssaAlloc.Adapter());
-    OriginalSt *ost = otable->GetOriginalStFromID(OStIdx(i));
+    const OriginalSt *ost = otable->GetOriginalStFromID(OStIdx(i));
     VersionSt *temp = (ost->GetIndirectLev() >= 0) ? versttab.GetVersionStFromID(ost->GetZeroVersionIndex(), true)
                                                    : &versttab.GetDummyVersionSt();
     vstack->push(temp);
     vstStacks[i] = vstack;
   }
-
 }
 
 VersionSt *SSA::CreateNewVersion(VersionSt *vsym, BB *defBB) {
@@ -347,5 +346,4 @@ void PhiNode::Dump(const MIRModule *mod) {
   }
   LogInfo::MapleLogger() << ")" << std::endl;
 }
-
 }  // namespace maple

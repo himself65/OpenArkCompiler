@@ -136,11 +136,6 @@ bool AddrofNode::CheckNode(const MIRModule *mod) const {
   }
 }
 
-bool AddrofNode::HasSymbol(MIRModule *mod, MIRSymbol *st) {
-  ASSERT(mod != nullptr, "mod is null");
-  return st == mod->CurFunction()->GetLocalOrGlobalSymbol(GetStIdx());
-}
-
 void BlockNode::AddStatement(StmtNode *stmt) {
   ASSERT(stmt != nullptr, "null ptr check");
   stmtNodeList.push_back(stmt);

@@ -198,6 +198,7 @@ class MIRModule {
   MIRFunction *CurFunction(void) const;
   MemPool *CurFuncCodeMemPool(void) const;
   MapleAllocator *CurFuncCodeMemPoolAllocator(void) const;
+  MapleAllocator &GetCurFuncCodeMPAllocator(void) const;
   void AddExternStructType(TyIdx tyIdx);
   void AddExternStructType(const MIRType *t);
   void AddSymbol(StIdx stIdx);
@@ -273,10 +274,6 @@ class MIRModule {
 
   void AddOptFuncs(MIRFunction *func) {
     return optimizedFuncs.push_back(func);
-  }
-
-  MapleSet<uint32> &GetRcNoNeedingLock() {
-    return rcNotNeedingLock;
   }
 
   MapleMap<PUIdx, MapleSet<FieldID>*> &GetPuIdxFieldInitializedMap() {
@@ -507,7 +504,6 @@ class MIRModule {
   MapleVector<MIRFunction*> optimizedFuncs;
   // Add the field for decouple optimization
   std::unordered_set<std::string> superCallSet;
-  MapleSet<uint32> rcNotNeedingLock;  // set of stmtID's which does incref/decref to an object not escaping
   // record all the fields that are initialized in the constructor. module scope,
   // if puIdx doesn't appear in this map, it writes to all field id
   // if puIdx appears in the map, but it's corresponding MapleSet is nullptr, it writes nothing fieldID

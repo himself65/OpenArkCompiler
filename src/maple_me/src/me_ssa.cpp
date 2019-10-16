@@ -46,7 +46,6 @@
    returns from those recursive calls, we restores the stack of current SSA names to
    the state that existed before the current block was visited.
  */
-
 namespace maple {
 void MeSSA::BuildSSA() {
   InsertPhiNode();
@@ -68,7 +67,7 @@ void MeSSA::CollectDefBBs(std::map<OStIdx, std::set<BBId>> &ostDefBBs) {
         MapleMap<OStIdx, MayDefNode> *mayDefs = SSAGenericGetMayDefNodes(&stmt, &GetSSATab()->GetStmtsSSAPart());
         MapleMap<OStIdx, MayDefNode>::iterator iter;
         for (iter = mayDefs->begin(); iter != mayDefs->end(); ++iter) {
-          OriginalSt *ost = func->GetMeSSATab()->GetOriginalStFromID(iter->first);
+          const OriginalSt *ost = func->GetMeSSATab()->GetOriginalStFromID(iter->first);
           if (ost && (!ost->IsFinal() || func->GetMirFunc()->IsConstructor())) {
             ostDefBBs[iter->first].insert(bb->GetBBId());
           } else if (stmt.GetOpCode() == OP_intrinsiccallwithtype) {
@@ -105,7 +104,7 @@ void MeSSA::InsertPhiNode() {
   CollectDefBBs(ost2DefBBs);
   OriginalStTable *otable = &func->GetMeSSATab()->GetOriginalStTable();
   for (size_t i = 1; i < otable->Size(); i++) {
-    OriginalSt *ost = otable->GetOriginalStFromID(OStIdx(i));
+    const OriginalSt *ost = otable->GetOriginalStFromID(OStIdx(i));
     VersionSt *vst = func->GetMeSSATab()->GetVersionStTable().GetVersionStFromID(ost->GetZeroVersionIndex(), true);
     ASSERT(vst != nullptr, "null ptr check");
     if (ost2DefBBs[ost->GetIndex()].empty()) {
@@ -129,6 +128,7 @@ void MeSSA::InsertPhiNode() {
       MapleSet<BBId> &dfs = dom->GetDomFrontier(defBB->GetBBId().idx);
       for (auto &bbID : dfs) {
         BB *dfBB = func->GetBBFromID(bbID);
+        CHECK_FATAL(dfBB != nullptr, "null ptr check");
         if (!dfBB->PhiofVerStInserted(vst)) {
           workList->push_back(dfBB);
           dfBB->InsertPhi(&func->GetAlloc(), vst);
@@ -214,7 +214,7 @@ bool MeSSA::VerifySSA() {
       opcode = stmt.GetOpCode();
       if (opcode == OP_dassign || opcode == OP_regassign) {
         VersionSt *verSt = func->GetMeSSATab()->GetStmtsSSAPart().SSAPartOf(&stmt)->GetSSAVar();
-        CHECK_FATAL(verSt->GetIndex() < vtableSize, "runtime check error");
+        CHECK_FATAL(verSt != nullptr && verSt->GetIndex() < vtableSize, "runtime check error");
       }
       for (size_t i = 0; i < stmt.NumOpnds(); i++) {
         CHECK_FATAL(VerifySSAOpnd(stmt.Opnd(i)), "runtime check error");
@@ -234,9 +234,8 @@ AnalysisResult *MeDoSSA::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultM
   ssa->BuildSSA();
   ssa->VerifySSA();
   if (DEBUGFUNC(func)) {
-    ssatab->GetVersionStTable().Dump(&ssatab->mirModule);
+    ssatab->GetVersionStTable().Dump(&ssatab->GetModule());
   }
   return ssa;
 }
-
 }  // namespace maple
