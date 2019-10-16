@@ -25,14 +25,14 @@
 namespace maple {
 AnalysisResult *MeDoDominance::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) {
   MemPool *memPool = NewMemPool();
-  Dominance *dom = memPool->New<Dominance>(memPool, NewMemPool(), (MapleVector<BB*> *)&func->GetAllBBs(),
-                                           func->GetCommonEntryBB(), func->GetCommonExitBB());
+  Dominance *dom = memPool->New<Dominance>(*memPool, *NewMemPool(), func->GetAllBBs(),
+                                           *func->GetCommonEntryBB(), *func->GetCommonExitBB());
   dom->GenPostOrderID();
   dom->ComputeDominance();
   dom->ComputeDomFrontiers();
   dom->ComputeDomChildren();
   size_t num = 0;
-  dom->ComputeDtPreorder(func->GetCommonEntryBB(), num);
+  dom->ComputeDtPreorder(*func->GetCommonEntryBB(), num);
   dom->GetDtPreOrder().resize(num);
   dom->ComputeDtDfn();
   dom->PdomGenPostOrderID();
@@ -40,7 +40,7 @@ AnalysisResult *MeDoDominance::Run(MeFunction *func, MeFuncResultMgr *m, ModuleR
   dom->ComputePdomFrontiers();
   dom->ComputePdomChildren();
   num = 0;
-  dom->ComputePdtPreorder(func->GetCommonExitBB(), num);
+  dom->ComputePdtPreorder(*func->GetCommonExitBB(), num);
   dom->GetPdtPreOrder().resize(num);
   dom->ComputePdtDfn();
   if (DEBUGFUNC(func)) {
@@ -50,5 +50,4 @@ AnalysisResult *MeDoDominance::Run(MeFunction *func, MeFuncResultMgr *m, ModuleR
   }
   return dom;
 }
-
 }  // namespace maple

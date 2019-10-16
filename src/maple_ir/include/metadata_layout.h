@@ -88,31 +88,8 @@ inline void *MRTGetAddressFromMetaRefOffset(MetaRefOffset *pOffset) {
   return reinterpret_cast<void*>(reinterpret_cast<char*>(pOffset) + (*pOffset));
 }
 
-struct FieldInfo {
-  AddrOffset offset;
-  uint32_t mod;
-  uint16_t flag;
-  uint16_t index;
-  AddrOffset typeName;
-  int32_t fieldName;
-  int32_t annotation;
-  int64_t declaringClass;
-};
-
-struct MethodInfo {
-  AddrOffset methodInVtabIndex;
-  AddrOffset addr;
-  AddrOffset declaringClass;
-  uint32_t mod;
-  int32_t methodName;
-  int32_t signatureName;
-  int32_t annotationValue;
-  uint16_t flag;
-  uint16_t argSize;
-#ifndef USE_32BIT_REF
-  uint32_t paddind;
-#endif
-};
+// MethodMeta defined in MethodMeta.h
+// FieldMeta  defined in FieldMeta.h
 
 // MethodDesc contains MethodMetadata and stack map
 struct MethodDesc {

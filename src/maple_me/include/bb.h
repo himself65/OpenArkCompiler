@@ -261,7 +261,7 @@ class BB {
 
   void FindReachableBBs(std::vector<bool> &);
   void FindWillExitBBs(std::vector<bool> &);
-  PhiNode *PhiofVerStInserted(VersionSt *vsym);
+  const PhiNode *PhiofVerStInserted(VersionSt *vsym);
   void InsertPhi(MapleAllocator *alloc, VersionSt *vsym);
   void DumpPhi(const MIRModule*);
   bool IsMeStmtEmpty() const {
@@ -393,11 +393,9 @@ class BB {
   StmtNodes stmtNodeList;
   MeStmts meStmtList;
 };
-
 }  // namespace maple
 
 namespace std {
-
 template <>
 struct hash<maple::BBId> {
   size_t operator()(const maple::BBId &x) const {
@@ -411,7 +409,6 @@ struct hash<maple::OStIdx> {
     return x.idx;
   }
 };
-
 }  // namespace std
 
 #endif  // MAPLE_ME_INCLUDE_BB_H

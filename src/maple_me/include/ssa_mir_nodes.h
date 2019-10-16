@@ -20,7 +20,6 @@
 
 /* This file define data structures to store SSA information in the IR
    instructions */
-
 namespace maple {
 struct OriginalStComparator {
   bool operator()(const OriginalSt *lhs, const OriginalSt *rhs) const {
@@ -405,10 +404,9 @@ class StmtsSSAPart {
 
   template <class T>
   void SetSSAPartOf(const StmtNode *s, T *p) {
-    ssaPart[s->GetStmtID()] = p;
+    ssaPart[s->GetStmtID()] = static_cast<AccessSSANodes *>(p);
   }
 
-  template <>
   void SetSSAPartOf(const StmtNode *s, VersionSt *vst) {
     VersionStPart *vStSSAPart = GetSSAPartMp()->New<VersionStPart>();
     vStSSAPart->SetSSAVar(vst);
@@ -531,6 +529,5 @@ inline bool HasMallocOpnd(const BaseNode *x) {
   return x->GetOpCode() == OP_malloc || x->GetOpCode() == OP_gcmalloc || x->GetOpCode() == OP_gcmallocjarray ||
          x->GetOpCode() == OP_alloca;
 }
-
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_SSA_MIR_NODES_H

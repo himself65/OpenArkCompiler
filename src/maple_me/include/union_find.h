@@ -27,11 +27,11 @@ namespace maple {
 // id.
 class UnionFind {
  public:
-  explicit UnionFind(maple::MemPool *memPool)
-      : ufAlloc(memPool), num(0), id(ufAlloc.Adapter()), sz(ufAlloc.Adapter()) {}
+  explicit UnionFind(maple::MemPool &memPool)
+      : ufAlloc(&memPool), num(0), id(ufAlloc.Adapter()), sz(ufAlloc.Adapter()) {}
 
-  UnionFind(maple::MemPool *memPool, maple::uint32 siz)
-      : ufAlloc(memPool), num(siz), id(siz, 0, ufAlloc.Adapter()), sz(siz, 0, ufAlloc.Adapter()) {
+  UnionFind(maple::MemPool &memPool, maple::uint32 siz)
+      : ufAlloc(&memPool), num(siz), id(siz, 0, ufAlloc.Adapter()), sz(siz, 0, ufAlloc.Adapter()) {
     Reinit();
   }
 
@@ -110,6 +110,5 @@ class UnionFind {
   // maintain a flat tree
   maple::MapleVector<uint> sz;  // gives number of elements in the tree rooted there
 };
-
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_UNION_FIND_H

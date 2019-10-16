@@ -107,10 +107,10 @@ class MIRBuilder {
   MIRFunction *GetFunctionFromStidx(StIdx stIdx);
   MIRFunction *GetFunctionFromName(const std::string&);
   // For compiler-generated metadata struct
-  void AddIntFieldConst(const MIRStructType *sType, MIRAggConst *newConst, uint32 fieldID, int64 constValue);
-  void AddAddrofFieldConst(const MIRStructType *sType, MIRAggConst *newConst, uint32 fieldID, const MIRSymbol *fieldSt);
-  void AddAddroffuncFieldConst(const MIRStructType *sType, MIRAggConst *newConst, uint32 fieldID,
-                               const MIRSymbol *funcSt);
+  void AddIntFieldConst(const MIRStructType &sType, MIRAggConst &newConst, uint32 fieldID, int64 constValue);
+  void AddAddrofFieldConst(const MIRStructType &sType, MIRAggConst &newConst, uint32 fieldID, const MIRSymbol &fieldSt);
+  void AddAddroffuncFieldConst(const MIRStructType &sType, MIRAggConst &newConst, uint32 fieldID,
+                               const MIRSymbol &funcSt);
   bool TraverseToNamedField(MIRStructType *structType, GStrIdx nameIdx, uint32 &fieldID);
   bool IsOfSameType(MIRType *type1, MIRType *type2);
   bool TraverseToNamedFieldWithTypeAndMatchStyle(MIRStructType *structType, GStrIdx nameIdx, TyIdx typeIdx,

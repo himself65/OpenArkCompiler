@@ -18,42 +18,35 @@
 
 namespace maple {
 // This is for compiler-generated metadata 1-level struct
-void MIRBuilder::AddIntFieldConst(const MIRStructType *sType, MIRAggConst *newConst, uint32 fieldID, int64 constValue) {
-  if (sType != nullptr && newConst != nullptr) {
-    MIRConst *fieldConst = mirModule->GetMemPool()->New<MIRIntConst>(constValue,
-                                                                     sType->GetElemType(fieldID - 1), fieldID);
-    newConst->GetConstVec().push_back(fieldConst);
-  }
+void MIRBuilder::AddIntFieldConst(const MIRStructType &sType, MIRAggConst &newConst, uint32 fieldID, int64 constValue) {
+  MIRConst *fieldConst = mirModule->GetMemPool()->New<MIRIntConst>(constValue, sType.GetElemType(fieldID - 1), fieldID);
+  newConst.GetConstVec().push_back(fieldConst);
 }
 
 // This is for compiler-generated metadata 1-level struct
-void MIRBuilder::AddAddrofFieldConst(const MIRStructType *structType, MIRAggConst *newConst, uint32 fieldID,
-                                     const MIRSymbol *fieldSymbol) {
-  if (structType != nullptr && newConst != nullptr && fieldSymbol != nullptr) {
-    AddrofNode *fieldExpr = CreateExprAddrof(0, fieldSymbol, mirModule->GetMemPool());
-    MIRConst *fieldConst = mirModule->GetMemPool()->New<MIRAddrofConst>(fieldExpr->GetStIdx(), fieldExpr->GetFieldID(),
-                                                                        structType->GetElemType(fieldID - 1));
-    fieldConst->SetFieldID(fieldID);
-    newConst->GetConstVec().push_back(fieldConst);
-  }
+void MIRBuilder::AddAddrofFieldConst(const MIRStructType &structType, MIRAggConst &newConst, uint32 fieldID,
+                                     const MIRSymbol &fieldSymbol) {
+  AddrofNode *fieldExpr = CreateExprAddrof(0, &fieldSymbol, mirModule->GetMemPool());
+  MIRConst *fieldConst = mirModule->GetMemPool()->New<MIRAddrofConst>(fieldExpr->GetStIdx(), fieldExpr->GetFieldID(),
+                                                                      structType.GetElemType(fieldID - 1));
+  fieldConst->SetFieldID(fieldID);
+  newConst.GetConstVec().push_back(fieldConst);
 }
 
 // This is for compiler-generated metadata 1-level struct
-void MIRBuilder::AddAddroffuncFieldConst(const MIRStructType *structType, MIRAggConst *newConst, uint32 fieldID,
-                                         const MIRSymbol *funcSymbol) {
-  if (structType != nullptr && newConst != nullptr && funcSymbol != nullptr) {
-    MIRConst *fieldConst = nullptr;
-    MIRFunction *vMethod = funcSymbol->GetFunction();
-    if (vMethod->IsAbstract()) {
-      fieldConst = mirModule->GetMemPool()->New<MIRIntConst>(0, structType->GetElemType(fieldID - 1), fieldID);
-    } else {
-      AddroffuncNode *addrofFuncExpr =
-          CreateExprAddroffunc(funcSymbol->GetFunction()->GetPuidx(), mirModule->GetMemPool());
-      fieldConst = mirModule->GetMemPool()->New<MIRAddroffuncConst>(addrofFuncExpr->GetPUIdx(),
-                                                                    structType->GetElemType(fieldID - 1), fieldID);
-    }
-    newConst->GetConstVec().push_back(fieldConst);
+void MIRBuilder::AddAddroffuncFieldConst(const MIRStructType &structType, MIRAggConst &newConst, uint32 fieldID,
+                                         const MIRSymbol &funcSymbol) {
+  MIRConst *fieldConst = nullptr;
+  MIRFunction *vMethod = funcSymbol.GetFunction();
+  if (vMethod->IsAbstract()) {
+    fieldConst = mirModule->GetMemPool()->New<MIRIntConst>(0, structType.GetElemType(fieldID - 1), fieldID);
+  } else {
+    AddroffuncNode *addrofFuncExpr =
+        CreateExprAddroffunc(funcSymbol.GetFunction()->GetPuidx(), mirModule->GetMemPool());
+    fieldConst = mirModule->GetMemPool()->New<MIRAddroffuncConst>(addrofFuncExpr->GetPUIdx(),
+                                                                  structType.GetElemType(fieldID - 1), fieldID);
   }
+  newConst.GetConstVec().push_back(fieldConst);
 }
 
 // fieldID is continuously being updated during traversal;

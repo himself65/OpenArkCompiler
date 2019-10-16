@@ -163,5 +163,4 @@ bool HasMayDef(const StmtNode *stmtNode, SSATab *func) {
   }
   return false;
 }
-
 }  // namespace maple

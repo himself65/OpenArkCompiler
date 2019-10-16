@@ -87,6 +87,5 @@ class MeFuncPhaseManager : public PhaseManager {
   bool genMempool;
   bool timePhases;
 };
-
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_ME_PHASE_MANAGER_H

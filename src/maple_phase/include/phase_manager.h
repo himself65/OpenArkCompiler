@@ -48,7 +48,7 @@ class PhaseManager {
     if (registeredPhases.find(id) != registeredPhases.end()) {
       return registeredPhases[id];
     }
-    MIR_WARNING("not a valid phase");
+    CHECK_FATAL(false, "not a valid phase");
     return nullptr;
   }
 

@@ -53,7 +53,6 @@ MIRModule::MIRModule(const char *fn)
       entryFunc(nullptr),
       floatNum(0),
       optimizedFuncs(memPoolAllocator.Adapter()),
-      rcNotNeedingLock(memPoolAllocator.Adapter()),
       puIdxFieldInitializedMap(std::less<PUIdx>(), memPoolAllocator.Adapter()) {
   flavor = kFlavorUnknown;
   srcLang = kSrcLangUnknown;
@@ -89,6 +88,10 @@ MemPool *MIRModule::CurFuncCodeMemPool(void) const {
 
 MapleAllocator *MIRModule::CurFuncCodeMemPoolAllocator(void) const {
   return curFunction->GetCodeMempoolAllocator();
+}
+
+MapleAllocator &MIRModule::GetCurFuncCodeMPAllocator(void) const {
+  return curFunction->GetCodeMPAllocator();
 }
 
 void MIRModule::AddExternStructType(TyIdx tyIdx) {

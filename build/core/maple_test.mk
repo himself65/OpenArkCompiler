@@ -15,3 +15,4 @@ clean:
 	@rm -f *.groots.txt
 	@rm -f *.primordials.txt
 	@rm -rf comb.log
+	@rm -rf *.muid

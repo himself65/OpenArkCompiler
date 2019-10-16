@@ -22,16 +22,15 @@
 
 // This file defines the data structure OriginalSt that represents a program
 // symbol occurring in the code of the program being optimized.
-
 namespace maple {
 constexpr int kInitVersion = 0;
 class VarMeExpr;
 class OriginalSt {
  public:
-  OriginalSt(OStIdx index, MapleAllocator *alloc, bool local, bool isFormal, FieldID fieldIDPara)
+  OriginalSt(OStIdx index, MapleAllocator &alloc, bool local, bool isFormal, FieldID fieldIDPara)
       : ostType(kUnkonwnOst),
         index(index),
-        versionsIndex(alloc->Adapter()),
+        versionsIndex(alloc.Adapter()),
         zeroVersionIndex(0),
         tyIdx(0),
         fieldID(fieldIDPara),
@@ -46,19 +45,19 @@ class OriginalSt {
         symOrPreg(),
         puIdx(0) {}
 
-  OriginalSt(uint32 index, PregIdx rIdx, PUIdx pIdx, MapleAllocator *alloc)
+  OriginalSt(uint32 index, PregIdx rIdx, PUIdx pIdx, MapleAllocator &alloc)
       : OriginalSt(OStIdx(index), alloc, true, false, 0) {
     ostType = kPregOst;
     symOrPreg.pregIdx = rIdx;
     puIdx = pIdx;
   }
 
-  OriginalSt(uint32 index, MIRSymbol *mirSt, PUIdx pIdx, FieldID fieldIDPara, MapleAllocator *alloc)
-      : OriginalSt(OStIdx(index), alloc, mirSt->IsLocal(), mirSt->GetStorageClass() == kScFormal, fieldIDPara) {
+  OriginalSt(uint32 index, MIRSymbol &mirSt, PUIdx pIdx, FieldID fieldIDPara, MapleAllocator &alloc)
+      : OriginalSt(OStIdx(index), alloc, mirSt.IsLocal(), mirSt.GetStorageClass() == kScFormal, fieldIDPara) {
     ostType = kSymbolOst;
-    symOrPreg.mirSt = mirSt;
+    symOrPreg.mirSt = &mirSt;
     puIdx = pIdx;
-    ignoreRC = mirSt->IgnoreRC();
+    ignoreRC = mirSt.IgnoreRC();
   }
 
   void Dump() const;
@@ -123,7 +122,7 @@ class OriginalSt {
     return (ostType == kSymbolOst) ? symOrPreg.mirSt->GetIsTmp() : false;
   }
 
-  bool Equal(const OriginalSt *ost) const;
+  bool Equal(const OriginalSt &ost) const;
 
   bool IsRealSymbol() const {
     return (ostType == kSymbolOst || ostType == kPregOst);
@@ -184,7 +183,7 @@ class OriginalSt {
     fieldID = fieldIDPara;
   }
 
-  bool IsIgnoreRC() {
+  bool IsIgnoreRC() const {
     return ignoreRC;
   }
 
@@ -192,7 +191,7 @@ class OriginalSt {
     return addressTaken;
   }
 
-  bool IsEPreLocalRefVar() {
+  bool IsEPreLocalRefVar() const {
     return epreLocalRefVar;
   }
 
@@ -235,15 +234,15 @@ class OriginalSt {
 // This Table is for original symobols only. There is no SSA info attached and SSA is built based on this table.
 class OriginalStTable {
  public:
-  OriginalStTable(MemPool *memPool, MIRModule *mod);
+  OriginalStTable(MemPool &memPool, MIRModule &mod);
   ~OriginalStTable() {}
 
-  OriginalSt *FindOrCreateSymbolOriginalSt(MIRSymbol *mirSt, PUIdx puIdx, FieldID fld);
+  OriginalSt *FindOrCreateSymbolOriginalSt(MIRSymbol &mirSt, PUIdx puIdx, FieldID fld);
   OriginalSt *FindOrCreatePregOriginalSt(PregIdx pregIdx, PUIdx puIdx);
-  OriginalSt *CreateSymbolOriginalSt(MIRSymbol *mirSt, PUIdx pidx, FieldID fld);
+  OriginalSt *CreateSymbolOriginalSt(MIRSymbol &mirSt, PUIdx pidx, FieldID fld);
   OriginalSt *CreatePregOriginalSt(PregIdx pregIdx, PUIdx puIdx);
-  OriginalSt *FindSymbolOriginalSt(MIRSymbol *mirSt);
-  OriginalSt *GetOriginalStFromID(OStIdx id, bool checkfirst = false) {
+  OriginalSt *FindSymbolOriginalSt(MIRSymbol &mirSt);
+  const OriginalSt *GetOriginalStFromID(OStIdx id, bool checkfirst = false) {
     if (checkfirst && id.idx >= originalStVector.size()) {
       return nullptr;
     }
@@ -255,13 +254,13 @@ class OriginalStTable {
     return originalStVector.size();
   }
 
-  MIRSymbol *GetMIRSymbolFromOriginalSt(const OriginalSt *ost) const {
-    ASSERT(ost->IsRealSymbol(), "runtime check error");
-    return ost->GetMIRSymbol();
+  MIRSymbol *GetMIRSymbolFromOriginalSt(const OriginalSt &ost) const {
+    ASSERT(ost.IsRealSymbol(), "runtime check error");
+    return ost.GetMIRSymbol();
   }
 
   MIRSymbol *GetMIRSymbolFromID(OStIdx id) {
-    return GetMIRSymbolFromOriginalSt(GetOriginalStFromID(id, false));
+    return GetMIRSymbolFromOriginalSt(*GetOriginalStFromID(id, false));
   }
 
   MapleAllocator &GetAlloc() {
@@ -272,11 +271,31 @@ class OriginalStTable {
     return originalStVector;
   }
 
+  void SetEPreLocalRefVar(const OStIdx &id, bool epreLocalrefvarPara = true) {
+    ASSERT(id.idx < originalStVector.size(), "symbol table index out of range");
+    originalStVector[id.idx]->SetEPreLocalRefVar(epreLocalrefvarPara);
+  }
+
+  void SetZeroVersionIndex(const OStIdx &id, size_t zeroVersionIndexParam) {
+    ASSERT(id.idx < originalStVector.size(), "symbol table index out of range");
+    originalStVector[id.idx]->SetZeroVersionIndex(zeroVersionIndexParam);
+  }
+
+  size_t GetVersionsIndexSize(const OStIdx &id) const {
+    ASSERT(id.idx < originalStVector.size(), "symbol table index out of range");
+    return originalStVector[id.idx]->GetVersionsIndex().size();
+  }
+
+  void UpdateVarOstMap(const OStIdx &id, std::map<OStIdx, OriginalSt*> &varOstMap) {
+    ASSERT(id.idx < originalStVector.size(), "symbol table index out of range");
+    varOstMap[id] = originalStVector[id.idx];
+  }
+
   void Dump();
 
  private:
   MapleAllocator alloc;
-  MIRModule *mirModule;
+  MIRModule &mirModule;
   MapleVector<OriginalSt*> originalStVector;  // the vector that map a OriginalSt's index to its pointer
   MapleUnorderedMap<MIRSymbol*, OStIdx>
       mirSt2Ost;  // mir symbol to original table, this only exists for no-original variables.
@@ -289,6 +308,5 @@ class OriginalStTable {
   OStIdx virtuaLostUnkownMem;
   OStIdx virtuaLostConstMem;
 };
-
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_ORIG_SYMBOL_H

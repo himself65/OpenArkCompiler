@@ -129,7 +129,7 @@ class MapleCombCompiler : public Compiler {
   const std::unordered_set<std::string> GetFinalOutputs(const MplOptions &mplOptions) const;
 
  private:
-  MeOptions *MakeMeOptions(const MplOptions &options, MemPool *optmp);
+  MeOption *MakeMeOptions(const MplOptions &options, MemPool *optmp);
   Options *MakeMpl2MplOptions(const MplOptions &options, MemPool *optmp);
   std::string realRunningExe;
 };

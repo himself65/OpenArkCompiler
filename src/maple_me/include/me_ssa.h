@@ -20,10 +20,9 @@
 #include "me_phase.h"
 #include "ssa.h"
 #include "bb.h"
+#include "dominance.h"
 
 namespace maple {
-class Dominance;
-class BB;
 class MeSSA : public maple::SSA, public AnalysisResult {
  public:
   explicit MeSSA(MeFunction *func, Dominance *dom, MemPool *memPool);
@@ -55,6 +54,5 @@ class MeDoSSA : public MeFuncPhase {
     return "ssa";
   }
 };
-
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_ME_SSA_H

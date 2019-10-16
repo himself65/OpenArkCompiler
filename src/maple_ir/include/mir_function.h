@@ -945,7 +945,6 @@ class MIRFunction {
   MapleVector<bool> infoIsString;               // tells if an entry has string value
   MapleMap<GStrIdx, MIRAliasVars> aliasVarMap;  // source code alias variables for debuginfo
   bool withLocInfo;
-  enum { kEasumInvalid = -1, kEasumNosum = 0 };
 
   uint8_t layoutType;
   uint16 frameSize;

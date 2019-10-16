@@ -79,7 +79,7 @@ void MeFunction::SetTryBlockInfo(const StmtNode *nextStmt, StmtNode *tryStmt, BB
 
 void MeFunction::CreateBasicBlocks() {
   if (mirModule.CurFunction()->IsEmpty()) {
-    if (!MeOptions::quiet) {
+    if (!MeOption::quiet) {
       LogInfo::MapleLogger() << "function is empty, cfg is nullptr\n";
     }
     return;
@@ -397,7 +397,7 @@ void MeFunction::CreateBasicBlocks() {
 }
 
 void MeFunction::Prepare(unsigned long rangeNum) {
-  if (!MeOptions::quiet) {
+  if (!MeOption::quiet) {
     LogInfo::MapleLogger() << "---Preparing Function  < " << mirModule.CurFunction()->GetName() << " > [" << rangeNum
                            << "] ---\n";
   }
@@ -413,7 +413,7 @@ void MeFunction::Prepare(unsigned long rangeNum) {
     return;
   }
   RemoveEhEdgesInSyncRegion();
-  theCFG = memPool->New<MirCFG>(this);
+  theCFG = memPool->New<MeCFG>(*this);
   theCFG->BuildMirCFG();
   theCFG->FixMirCFG();
   theCFG->VerifyLabels();
@@ -487,7 +487,7 @@ void MeFunction::CloneBasicBlock(BB *newBB, BB *orig) {
     return;
   }
   for (auto &stmt : orig->GetStmtNodes()) {
-    StmtNode *newStmt = static_cast<StmtNode*>(stmt.CloneTree(mirModule.CurFuncCodeMemPoolAllocator()));
+    StmtNode *newStmt = static_cast<StmtNode*>(stmt.CloneTree(mirModule.GetCurFuncCodeMPAllocator()));
     ASSERT(newStmt != nullptr, "null ptr check");
     newStmt->SetNext(nullptr);
     newStmt->SetPrev(nullptr);
@@ -610,5 +610,4 @@ void MeFunction::RemoveEhEdgesInSyncRegion() {
     }
   }
 }
-
 }  // namespace maple

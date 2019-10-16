@@ -70,8 +70,8 @@ void MapleCombCompiler::PrintCommand(const MplOptions &options) const {
                          << GetInputFileName(options) << options.printCommandStr << std::endl;
 }
 
-MeOptions *MapleCombCompiler::MakeMeOptions(const MplOptions &options, maple::MemPool *optMp) {
-  MeOptions *meOption = new MeOptions(optMp);
+MeOption *MapleCombCompiler::MakeMeOptions(const MplOptions &options, maple::MemPool *optMp) {
+  MeOption *meOption = new MeOption(*optMp);
   auto inputMeOptions = options.exeOptions.find(kBinNameMe);
   if (inputMeOptions == options.exeOptions.end()) {
     LogInfo::MapleLogger() << "no me input options" << std::endl;
@@ -84,11 +84,11 @@ MeOptions *MapleCombCompiler::MakeMeOptions(const MplOptions &options, maple::Me
     }
     switch (opt.Index()) {
       case kMeSkipPhases:
-        meOption->SplitPhases(opt.Args().c_str(), meOption->GetSkipPhases());
+        meOption->SplitPhases(opt.Args(), meOption->GetSkipPhases());
         break;
       case kMeRange:
         meOption->useRange = true;
-        meOption->GetRange(opt.Args().c_str());
+        meOption->GetRange(opt.Args());
         break;
       case kMeDumpAfter:
         meOption->dumpAfter = true;
@@ -97,7 +97,7 @@ MeOptions *MapleCombCompiler::MakeMeOptions(const MplOptions &options, maple::Me
         meOption->dumpFunc = opt.Args();
         break;
       case kMeDumpPhases:
-        meOption->SplitPhases(opt.Args().c_str(), meOption->dumpPhases);
+        meOption->SplitPhases(opt.Args(), meOption->dumpPhases);
         break;
       case kMeQuiet:
         meOption->quiet = true;
@@ -165,7 +165,7 @@ MeOptions *MapleCombCompiler::MakeMeOptions(const MplOptions &options, maple::Me
 }
 
 Options *MapleCombCompiler::MakeMpl2MplOptions(const MplOptions &options, maple::MemPool *optMp) {
-  Options *mpl2mplOption = new Options(optMp);
+  Options *mpl2mplOption = new Options(*optMp);
   auto inputOptions = options.exeOptions.find(kBinNameMpl2mpl);
   if (inputOptions == options.exeOptions.end()) {
     LogInfo::MapleLogger() << "no mpl2mpl input options" << std::endl;
@@ -241,7 +241,7 @@ ErrorCode MapleCombCompiler::Compile(const MplOptions &options, MIRModulePtr &th
   std::string fileName = GetInputFileName(options);
   theModule = new MIRModule(fileName.c_str());
   int nErr = 0;
-  MeOptions *meOptions = nullptr;
+  MeOption *meOptions = nullptr;
   Options *mpl2mplOptions = nullptr;
   auto iterMe = std::find(options.runningExes.begin(), options.runningExes.end(), kBinNameMe);
   if (iterMe != options.runningExes.end()) {

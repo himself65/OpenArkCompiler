@@ -24,7 +24,6 @@
 // by allocating the larger SSANodes.  Statement nodes' SSA information is
 // stored in class SSATab's StmtsSSAPart, which has an array of pointers indexed
 // by the stmtID field of each statement node.
-
 namespace maple {
 BaseNode *SSATab::CreateSSAExpr(BaseNode *expr) {
   if (expr->GetOpCode() == OP_addrof || expr->GetOpCode() == OP_dread) {
@@ -76,7 +75,7 @@ void SSATab::CreateSSAStmt(StmtNode *stmt, const BB *curbb, bool ignoreCallassig
       MayDefPartWithVersionSt *theSSAPart =
           stmtsSSAPart.GetSSAPartMp()->New<MayDefPartWithVersionSt>(&stmtsSSAPart.GetSSAPartAlloc());
       stmtsSSAPart.SetSSAPartOf(stmt, theSSAPart);
-      DassignNode *dnode = dynamic_cast<DassignNode*>(stmt);
+      DassignNode *dnode = static_cast<DassignNode*>(stmt);
       MIRSymbol *st = mirModule.CurFunction()->GetLocalOrGlobalSymbol(dnode->GetStIdx());
       CHECK_FATAL(st != nullptr, "null ptr check");
 
@@ -118,7 +117,7 @@ void SSATab::CreateSSAStmt(StmtNode *stmt, const BB *curbb, bool ignoreCallassig
         stmtsSSAPart.SetSSAPartOf(stmt, theSSAPart);
         // insert the mustdefs
         CallReturnVector *nrets = static_cast<NaryStmtNode*>(stmt)->GetCallReturnVector();
-        ASSERT(nrets != nullptr, "CreateSSAStmt: failed to retrieve call return vector");
+        CHECK_FATAL(nrets != nullptr, "CreateSSAStmt: failed to retrieve call return vector");
         if (nrets->empty()) {
           return;
         }
@@ -145,5 +144,4 @@ void SSATab::CreateSSAStmt(StmtNode *stmt, const BB *curbb, bool ignoreCallassig
   }
   return;
 }
-
 }  // namespace maple

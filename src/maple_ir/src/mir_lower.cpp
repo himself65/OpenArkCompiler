@@ -133,7 +133,7 @@ BlockNode *MIRLower::LowerWhileStmt(WhileStmtNode *whileStmt) {
   ASSERT(whileStmt->GetBody(), "null ptr check");
   blk->AppendStatementsFromBlock(whileStmt->GetBody());
   CondGotoNode *brTrueStmt = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(OP_brtrue);
-  brTrueStmt->SetOpnd(whileStmt->Opnd()->CloneTree(mirModule.CurFuncCodeMemPoolAllocator()));
+  brTrueStmt->SetOpnd(whileStmt->Opnd()->CloneTree(mirModule.GetCurFuncCodeMPAllocator()));
   brTrueStmt->SetOffset(bodyLableIdx);
   blk->AddStatement(brTrueStmt);
   lableStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
@@ -214,7 +214,7 @@ BlockNode *MIRLower::LowerDoloopStmt(DoloopNode *doloop) {
     blk->AddStatement(endDassign);
   }
   CondGotoNode *brTrueStmt = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(OP_brtrue);
-  brTrueStmt->SetOpnd(doloop->GetCondExpr()->CloneTree(mirModule.CurFuncCodeMemPoolAllocator()));
+  brTrueStmt->SetOpnd(doloop->GetCondExpr()->CloneTree(mirModule.GetCurFuncCodeMPAllocator()));
   brTrueStmt->SetOffset(bodyLabelIdx);
   blk->AddStatement(brTrueStmt);
   labelStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();

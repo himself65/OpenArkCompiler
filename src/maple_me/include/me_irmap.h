@@ -23,33 +23,32 @@ constexpr int kHmapHashLength = 5107;
 namespace maple {
 class MeIRMap : public IRMap {
  public:
-  MeIRMap(MeFunction *f, Dominance *dom, MemPool *memPool, MemPool *tmpMemPool)
-      : IRMap(f->GetMeSSATab(), dom, memPool, tmpMemPool, kHmapHashLength), func(f) {
-    SetDumpStmtNum(MeOptions::stmtNum);
+  MeIRMap(MeFunction &f, Dominance &dom, MemPool &memPool, MemPool &tmpMemPool)
+      : IRMap(*f.GetMeSSATab(), dom, memPool, tmpMemPool, kHmapHashLength), func(f) {
+    SetDumpStmtNum(MeOption::stmtNum);
   }
 
   ~MeIRMap() {}
 
-  // following are virtual functions
-  BB *GetBB(BBId id) {
-    return func->GetBBFromID(id);
+  BB *GetBB(BBId id) override {
+    return func.GetBBFromID(id);
   }
 
-  BB *GetBBForLabIdx(LabelIdx lidx, PUIdx pidx = 0) {
-    return func->GetLabelBBIdMap()[lidx];
+  BB *GetBBForLabIdx(LabelIdx lidx, PUIdx pidx = 0) override {
+    return func.GetLabelBBIdMap()[lidx];
   }
 
-  void DumpBB(BB *bb);
-  void Dump();
-  void EmitBB(BB*, BlockNode*);
-  void EmitBBStmts(BB*, BlockNode*);
+  void DumpBB(BB &bb);
+  void Dump() override;
+  void EmitBB(BB&, BlockNode&);
+  void EmitBBStmts(BB&, BlockNode&);
 
   MeFunction *GetFunc() const {
-    return func;
+    return &func;
   }
 
  private:
-  MeFunction *func;
+  MeFunction &func;
 };
 
 class MeDoIRMap : public MeFuncPhase {
@@ -63,6 +62,5 @@ class MeDoIRMap : public MeFuncPhase {
     return "irmap";
   }
 };
-
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_ME_IRMAP_H

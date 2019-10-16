@@ -309,7 +309,7 @@ class ReflectionAnalysis : public AnalysisResult {
   void GeneAnnotation(std::map<int, int> &idxNumMap, std::string &annoArr, MIRClassType *classType,
                       PragmaKind paragKind, const std::string &paragName, TyIdx fieldTypeIdx,
                       std::map<int, int> *paramNumArray = nullptr, int *paramIndex = nullptr);
-  void SetAnnoFieldConst(const MIRStructType *metadataRoType, MIRAggConst *newConst, uint32 fieldID,
+  void SetAnnoFieldConst(const MIRStructType *metadataRoType, MIRAggConst &newConst, uint32 fieldID,
                          std::map<int, int> &idxNumMap, const std::string &annoArr);
   bool IsAnonymousClass(const std::string &annotationString);
   bool IsPrivateClass(MIRClassType *classType);

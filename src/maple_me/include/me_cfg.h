@@ -18,29 +18,29 @@
 #include "me_phase.h"
 
 namespace maple {
-class MirCFG {
+class MeCFG {
  public:
-  explicit MirCFG(MeFunction *f) : func(f), hasDoWhile(false) {}
+  MeCFG(MeFunction &f) : func(f) {}
 
 
-  ~MirCFG() {}
+  ~MeCFG() {}
 
   void BuildMirCFG();
   void FixMirCFG();
-  void ConvertPhis2IdentityAssigns(BB *meBB);
+  void ConvertPhis2IdentityAssigns(BB &meBB);
   void UnreachCodeAnalysis(bool updatePhi = false);
   void WontExitAnalysis();
   void Verify();
   void VerifyLabels();
   void Dump();
-  void DumpToFile(const char *prefix, bool dumpInStrs = false);
+  void DumpToFile(const std::string &prefix, bool dumpInStrs = false);
   void AddAuxilaryBB();
-  bool FindExprUse(BaseNode *expr, StIdx stIdx);
-  bool FindUse(StmtNode *stmt, StIdx stid);
-  bool FindDef(StmtNode *stmt, StIdx stid);
-  bool HasNoOccBetween(StmtNode *from, StmtNode *to, StIdx stIdx);
+  bool FindExprUse(BaseNode &expr, StIdx stIdx);
+  bool FindUse(StmtNode &stmt, StIdx stid);
+  bool FindDef(StmtNode &stmt, StIdx stid);
+  bool HasNoOccBetween(StmtNode &from, StmtNode &to, StIdx stIdx);
 
-  MeFunction *GetFunc() {
+  MeFunction &GetFunc() {
     return func;
   }
 
@@ -53,9 +53,8 @@ class MirCFG {
   }
 
  private:
-  MeFunction *func;
-  bool hasDoWhile;
+  MeFunction &func;
+  bool hasDoWhile = false;
 };
-
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_ME_CFG_H

@@ -342,6 +342,7 @@ class KlassHierarchy : public AnalysisResult {
   bool IsSuperKlass(const Klass *super, const Klass *base) const;
   bool IsSuperKlassForInterface(const Klass *super, Klass *base) const;
   bool IsInterfaceImplemented(Klass *interface, const Klass *base) const;
+  bool UpdateFieldID(TyIdx baseTypeIdx, TyIdx targetTypeIdx, FieldID &fldID) const;
   // return true if class, its super or interfaces have at least one clinit function
   bool NeedClinitCheckRecursively(Klass *kl);
   void TopologicalSortKlasses();
@@ -381,6 +382,7 @@ class KlassHierarchy : public AnalysisResult {
   void GetChildKlasses(const Klass *klass, std::vector<Klass*> &childKlasses) const;
   void ExceptionFlagProp(Klass *klass);
   Klass *AddClassFlag(const char *name, uint32 flag);
+  int GetFieldIDOffsetBetweenClasses(const Klass &super, const Klass &base) const;
 };
 
 }  // namespace maple
