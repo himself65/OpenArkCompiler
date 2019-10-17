@@ -55,6 +55,5 @@ class DoClassInit : public ModulePhase {
     return nullptr;
   }
 };
-
 }  // namespace maple
 #endif  // MPL2MPL_INCLUDE_CLASS_INIT_H

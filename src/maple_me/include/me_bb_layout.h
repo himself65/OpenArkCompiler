@@ -19,15 +19,6 @@
 
 namespace maple {
 class BBLayout : public AnalysisResult {
- private:
-  MeFunction &func;
-  MapleAllocator layoutAlloc;
-  MapleVector<BB*> layoutBBs;  // gives the determined layout order
-  BBId curBBId;                // to index into func.bb_vec_ to return the next BB
-  bool bbCreated;              // new create bb will change mefunction::bb_vec_ and
-  // related analysis result
-  MapleVector<bool> laidOut;  // indexed by bbid to tell if has been laid out
-  bool tryOutstanding;        // true if a try laid out but not its endtry
  public:
   BBLayout(MemPool &memPool, MeFunction &f)
       : AnalysisResult(&memPool),
@@ -97,6 +88,15 @@ class BBLayout : public AnalysisResult {
   std::string PhaseName() const {
     return "bblayout";
   }
+ private:
+  MeFunction &func;
+  MapleAllocator layoutAlloc;
+  MapleVector<BB*> layoutBBs;  // gives the determined layout order
+  BBId curBBId;                // to index into func.bb_vec_ to return the next BB
+  bool bbCreated;              // new create bb will change mefunction::bb_vec_ and
+  // related analysis result
+  MapleVector<bool> laidOut;  // indexed by bbid to tell if has been laid out
+  bool tryOutstanding;        // true if a try laid out but not its endtry
 };
 
 class MeDoBBLayout : public MeFuncPhase {

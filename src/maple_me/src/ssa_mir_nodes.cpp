@@ -36,7 +36,7 @@ bool HasMayUsePart(const StmtNode *stmtNode) {
 }
 
 void GenericSSAPrint(MIRModule *mod, const StmtNode *stmtNode, int32 indent, StmtsSSAPart *stmtsSsaprt) {
-  stmtNode->Dump(mod, indent);
+  stmtNode->Dump(*mod, indent);
   // print SSAPart
   Opcode op = stmtNode->GetOpCode();
   AccessSSANodes *ssaPart = stmtsSsaprt->SSAPartOf(stmtNode);

@@ -24,7 +24,7 @@
 
 namespace maple {
 class AliasElem {
- friend class AliasClass;
+  friend class AliasClass;
  public:
   AliasElem(uint32 i, OriginalSt &origst)
       : id(i),

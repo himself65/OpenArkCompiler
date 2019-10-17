@@ -178,6 +178,7 @@ void JavaIntrnLowering::ProcessJavaIntrnFillNewArray(IntrinsiccallNode *intrinCa
     currFunc->GetBody()->ReplaceStmt1WithStmt2(intrinCall, assignStmt);
     addrExpr = builder->CreateExprRegread(mirpreg->GetPrimType(), pregidx);
   }
+  assignStmt->SetSrcPos(intrinCall->GetSrcPos());
   StmtNode *stmt = assignStmt;
   for (int i = 0; i < intrinCall->NumOpnds(); i++) {
     ArrayNode *arrayexpr = builder->CreateExprArray(arrayType, addrExpr, builder->CreateIntConst(i, PTY_i32));
@@ -187,5 +188,4 @@ void JavaIntrnLowering::ProcessJavaIntrnFillNewArray(IntrinsiccallNode *intrinCa
     stmt = storeStmt;
   }
 }
-
 }  // namespace maple

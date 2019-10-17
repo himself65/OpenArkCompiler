@@ -137,7 +137,7 @@ void CheckCastGenerator::GenCheckCast(BaseNode *stmt) {
         BaseNode *ireadExpr = GetObjectShadow(opnd);
 
         BaseNode *innerCond = builder->CreateExprCompare(OP_ne, GlobalTables::GetTypeTable().GetUInt1(),
-                                                          GlobalTables::GetTypeTable().GetPtr(), valueExpr, ireadExpr);
+                                                         GlobalTables::GetTypeTable().GetPtr(), valueExpr, ireadExpr);
         IfStmtNode *innerIfStmt = static_cast<IfStmtNode *>(builder->CreateStmtIf(innerCond));
         MapleVector<BaseNode*> args(builder->GetCurrentFuncCodeMpAllocator()->Adapter());
         args.push_back(valueExpr);
@@ -291,5 +291,4 @@ void CheckCastGenerator::ProcessFunc(MIRFunction *func) {
   MIRLower mirlowerer(*(GetModule()), func);
   mirlowerer.LowerFunc(func);
 }
-
 }  // namespace maple

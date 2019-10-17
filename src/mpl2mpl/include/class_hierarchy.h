@@ -384,6 +384,5 @@ class KlassHierarchy : public AnalysisResult {
   Klass *AddClassFlag(const char *name, uint32 flag);
   int GetFieldIDOffsetBetweenClasses(const Klass &super, const Klass &base) const;
 };
-
 }  // namespace maple
 #endif  // MPL2MPL_INCLUDE_CLASS_HIERARCHY_H

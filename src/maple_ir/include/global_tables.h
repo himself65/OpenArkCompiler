@@ -60,26 +60,9 @@ class UStrIdxHash {
 };
 
 class TypeTable {
- private:
-  using MIRTypePtr = MIRType*;
-  struct Hash {
-    uint32 operator()(const MIRTypePtr &ty) const {
-      return ty->GetHashIndex();
-    }
-  };
-
-  struct Equal {
-    uint32 operator()(const MIRTypePtr &tx, const MIRTypePtr &ty) const {
-      return tx->EqualTo(*ty);
-    }
-  };
-
-  std::unordered_set<MIRTypePtr, Hash, Equal> typeHashTable;
-
  public:
   static MIRType *voidPtrType;
 
- public:
   TypeTable();
   TypeTable(const TypeTable&) = delete;
   TypeTable &operator=(const TypeTable&) = delete;
@@ -305,9 +288,22 @@ class TypeTable {
   void AddFieldToStructType(MIRStructType *structType, const char *fieldName, MIRType *fieldType);
 
  private:
+  using MIRTypePtr = MIRType*;
+  struct Hash {
+    uint32 operator()(const MIRTypePtr &ty) const {
+      return ty->GetHashIndex();
+    }
+  };
+
+  struct Equal {
+    uint32 operator()(const MIRTypePtr &tx, const MIRTypePtr &ty) const {
+      return tx->EqualTo(*ty);
+    }
+  };
+
+  std::unordered_set<MIRTypePtr, Hash, Equal> typeHashTable;
   std::vector<MIRType*> typeTable;
 
- private:
   MIRType *CreateType(MIRType *oldType);
   MIRType *GetOrCreateStructOrUnion(const char *name, const FieldVector &fields, const FieldVector &prntFields,
                                     MIRModule *module, bool forStruct = true);

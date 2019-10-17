@@ -58,6 +58,9 @@ constexpr uint8 kNoUseEffect = 0x8;
 constexpr uint8 kNoDefEffect = 0x4;
 constexpr uint8 kNoRetNewlyAllocObj = 0x2;
 constexpr uint8 kNoThrowException = 0x1;
+
+class MeFunction;
+class EAConnectionGraph;
 class MIRFunction {
  public:
   MIRFunction(MIRModule *mod, const StIdx sidx)
@@ -94,6 +97,8 @@ class MIRFunction {
     signatureStrIdx = GStrIdx(0);
     hashCode = 0;
     layoutType = kLayoutUnused;
+    mefunc = nullptr;
+    eacg = nullptr;
   }
 
   ~MIRFunction() {}
@@ -824,6 +829,22 @@ class MIRFunction {
     localWordsRefCounted = lwr;
   }
 
+  MeFunction *GetMeFunc() {
+    return mefunc;
+  }
+
+  void SetMeFunc(MeFunction *func) {
+    mefunc = func;
+  }
+
+  EAConnectionGraph *GetEACG() {
+    return eacg;
+  }
+
+  void SetEACG(EAConnectionGraph *eacgVal) {
+    eacg = eacgVal;
+  }
+
   TyIdx GetClassTyIdx() {
     return classTyIdx;
   }
@@ -983,6 +1004,8 @@ class MIRFunction {
   // uint16 numlabels; // removed. label table size
   // StmtNode **lbl2stmt; // lbl2stmt table, removed;
   // to hold unmangled class and function names
+  MeFunction *mefunc;
+  EAConnectionGraph *eacg;
   GStrIdx baseClassStrIdx;  // the string table index of base class name
   GStrIdx baseFuncStrIdx;   // the string table index of base function name
   // the string table index of base function name mangled with type info

@@ -18,7 +18,6 @@
 #include "phase_impl.h"
 
 namespace maple {
-
 static constexpr int kSlownativeFuncnum = 9;
 static constexpr int kJniTypeNormal = 0;
 static constexpr int kJniTypeMapleCriticalNative = 1;
@@ -122,6 +121,5 @@ class DoGenericNativeStubFunc : public ModulePhase {
     return nullptr;
   }
 };
-
 }  // namespace maple
 #endif  // MPL2MPL_INCLUDE_NATIVE_STUB_FUNC_H

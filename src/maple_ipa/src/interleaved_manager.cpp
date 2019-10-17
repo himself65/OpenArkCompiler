@@ -27,17 +27,13 @@
 
 using namespace maple;
 
+
 void InterleavedManager::AddPhases(std::vector<std::string> &phases, bool isModulePhase, bool timePhases, bool genMpl) {
   ModuleResultMgr *mrm = nullptr;
   if (!phaseManagers.empty()) {
     // ModuleResult such class hierarchy need to be carried on
-    ModulePhaseManager *mpm = dynamic_cast<ModulePhaseManager*>(phaseManagers[phaseManagers.size() - 1]);
-    MeFuncPhaseManager *mepm = dynamic_cast<MeFuncPhaseManager*>(phaseManagers[phaseManagers.size() - 1]);
-    if (mpm != nullptr) {
-      mrm = mpm->GetModResultMgr();
-    } else if (mepm != nullptr) {
-      mrm = mepm->GetModResultMgr();
-    }
+    PhaseManager *pm = phaseManagers.back();
+    mrm = pm->GetModResultMgr();
   }
 
   if (isModulePhase) {
@@ -61,6 +57,7 @@ void InterleavedManager::AddPhases(std::vector<std::string> &phases, bool isModu
     phaseManagers.push_back(fpm);
   }
 }
+
 
 void InterleavedManager::Run() {
   for (PhaseManager * const &pm : phaseManagers) {

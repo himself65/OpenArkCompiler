@@ -123,26 +123,29 @@ TyIdx ReflectionAnalysis::fieldsInfoTyIdx = TyIdx(0);
 TyIdx ReflectionAnalysis::fieldsInfoCompactTyIdx = TyIdx(0);
 TyIdx ReflectionAnalysis::superclassMetadataTyIdx = TyIdx(0);
 TyIdx ReflectionAnalysis::invalidIdx = TyIdx(-1);
-static constexpr int kModPublic = 1;                 // 0x00000001
-static constexpr int kModPrivate = 2;                // 0x00000002
-static constexpr int kModProtected = 3;              // 0x00000004
-static constexpr int kModStatic = 4;                 // 0x00000008
-static constexpr int kModFinal = 5;                  // 0x00000010
-static constexpr int kModSynchronized = 6;           // 0x00000020
-static constexpr int kModVolatile = 7;               // 0x00000040
-static constexpr int kModTransient = 8;              // 0x00000080
-static constexpr int kModNative = 9;                 // 0x00000100
-static constexpr int kModAbstract = 11;              // 0x00000400
-static constexpr int kModStrict = 12;                // 0x00000800
-static constexpr int kModSynthetic = 13;             // 0x00001000
-static constexpr int kModConstructor = 17;           // 0x00010000
-static constexpr int kModDefault = 22;               // 0x00400000
-static constexpr int kModBridge = 7;                 // 0x00000040
-static constexpr int kModVarargs = 8;                // 0x00000080
-static constexpr int kModEnum = 15;                  // 0x00004000
-static constexpr int kModDeclaredSynchronized = 18;  // 0x00020000
-static constexpr int kModifierRCUnowned = 24;        // 0x00800000
-static constexpr int kModifierRCWeak = 25;           // 0x01000000
+namespace {
+constexpr int kModPublic = 1;                 // 0x00000001
+constexpr int kModPrivate = 2;                // 0x00000002
+constexpr int kModProtected = 3;              // 0x00000004
+constexpr int kModStatic = 4;                 // 0x00000008
+constexpr int kModFinal = 5;                  // 0x00000010
+constexpr int kModSynchronized = 6;           // 0x00000020
+constexpr int kModVolatile = 7;               // 0x00000040
+constexpr int kModTransient = 8;              // 0x00000080
+constexpr int kModNative = 9;                 // 0x00000100
+constexpr int kModAbstract = 11;              // 0x00000400
+constexpr int kModStrict = 12;                // 0x00000800
+constexpr int kModSynthetic = 13;             // 0x00001000
+constexpr int kModConstructor = 17;           // 0x00010000
+constexpr int kModDefault = 22;               // 0x00400000
+constexpr int kModBridge = 7;                 // 0x00000040
+constexpr int kModVarargs = 8;                // 0x00000080
+constexpr int kModEnum = 15;                  // 0x00004000
+constexpr int kModDeclaredSynchronized = 18;  // 0x00020000
+constexpr int kModifierRCUnowned = 24;        // 0x00800000
+constexpr int kModifierRCWeak = 25;           // 0x01000000
+}
+
 
 uint32 GetMethodModifier(FuncAttrs fa) {
   return (static_cast<unsigned char>(fa.GetAttr(FUNCATTR_public)) << (kModPublic - 1)) |
@@ -406,20 +409,21 @@ uint16 GetFieldHash(std::vector<std::pair<FieldPair, uint16>> &fieldV, FieldPair
 }
 
 static void DelimeterConvert(std::string &str) {
+  constexpr size_t kNextPos = 2;
   size_t loc = str.find("`");
   while (loc != std::string::npos) {
     str.replace(loc, 1, "``");
-    loc = str.find("`", loc + 2);
+    loc = str.find("`", loc + kNextPos);
   }
   loc = str.find("!");
   while (loc != std::string::npos) {
     str.replace(loc, 1, "`!");
-    loc = str.find("!", loc + 2);
+    loc = str.find("!", loc + kNextPos);
   }
   loc = str.find("|");
   while (loc != std::string::npos) {
     str.replace(loc, 1, "`|");
-    loc = str.find("|", loc + 2);
+    loc = str.find("|", loc + kNextPos);
   }
 }
 
@@ -685,7 +689,7 @@ MIRSymbol *ReflectionAnalysis::GenMethodsMetaData(const Klass *klass) {
       flag |= kMethodAbstract;
     }
     uint16 hash = func->GetHashCode();
-    flag |= (hash << 6);  // hash 10 bit
+    flag |= (hash << kNoHashBits);  // hash 10 bit
     // @method_in_vtable_index
     uint32 methodInVtabIndex = static_cast<uint32>(static_cast<int32>(GetMethodInVtabIndex(klass, func)));
     methodInVtabIndex &= 0xFFFF;
@@ -714,8 +718,7 @@ MIRSymbol *ReflectionAnalysis::GenMethodsMetaData(const Klass *klass) {
     ConvertMethodSig(signature);
     std::vector<std::string> typeNames;
     GetSignatureTypeNames(signature.c_str(), typeNames);
-    uint32 signatureIdx = 0;
-    signatureIdx = FindOrInsertReflectString(signature);
+    uint32 signatureIdx = FindOrInsertReflectString(signature);
     mirBuilder.AddIntFieldConst(*methodsInfoType, *newconst, fieldID++, signatureIdx);
     // @annotation
     int annotationIdx = SolveAnnotation(classType, func);
@@ -865,7 +868,7 @@ MIRSymbol *ReflectionAnalysis::GenFieldsMetaData(const Klass *klass) {
     uint32 typeNameIdx = GetTypeNameIdxFromType(ty, klass, fieldname);
     // @flag
     uint16 hash = GetFieldHash(fieldHashvec, fieldP);
-    uint16 flag = (hash << 6);  // Hash 10 bit.
+    uint16 flag = (hash << kNoHashBits);  // Hash 10 bit.
     mirBuilder.AddIntFieldConst(*fieldsInfoType, *newconst, fieldID++, flag);
     // @index
     mirBuilder.AddIntFieldConst(*fieldsInfoType, *newconst, fieldID++, idx);
@@ -1685,5 +1688,4 @@ AnalysisResult *DoReflectionAnalysis::Run(MIRModule *module, ModuleResultMgr *mr
   mempoolctrler.DeleteMemPool(memPool);
   return nullptr;
 }
-
 }  // namespace maple

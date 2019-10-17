@@ -172,7 +172,7 @@ bool MIRSymbol::IsReflectionSuperclassInfo() {
   return (GetName().find(SUPERCLASSINFO_PREFIX_STR) == 0);
 }
 
-bool MIRSymbol::IsReflectionClassInfo() {
+bool MIRSymbol::IsReflectionClassInfo() const {
   return (GetName().find(CLASSINFO_PREFIX_STR) == 0);
 }
 

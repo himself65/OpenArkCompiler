@@ -35,7 +35,8 @@ class MeFuncPhaseManager : public PhaseManager {
         modResMgr(mrm),
         mePhaseType(kMePhaseInvalid),
         genMempool(false),
-        timePhases(false) {}
+        timePhases(false),
+        ipa(false) {}
 
   ~MeFuncPhaseManager() {
     arFuncManager.InvalidAllResults();
@@ -54,13 +55,14 @@ class MeFuncPhaseManager : public PhaseManager {
   }
 
   void Run(MIRFunction *mirfunc, uint64 rangenum, const std::string &meinput);
+  void IPACleanUp(MeFunction *mirfunc);
   void Run() override {}
 
   MeFuncResultMgr *GetAnalysisResultManager(void) {
     return &arFuncManager;
   }
 
-  ModuleResultMgr *GetModResultMgr() {
+  ModuleResultMgr *GetModResultMgr() override {
     return modResMgr;
   }
 
@@ -78,6 +80,14 @@ class MeFuncPhaseManager : public PhaseManager {
     timePhases = phs;
   }
 
+  bool isIPA() {
+    return ipa;
+  }
+
+  void SetIPA(bool ipaVal) {
+    ipa = ipaVal;
+  }
+
  private:
   /* analysis phase result manager */
   MeFuncResultMgr arFuncManager;
@@ -86,6 +96,7 @@ class MeFuncPhaseManager : public PhaseManager {
   MePhaseType mePhaseType;
   bool genMempool;
   bool timePhases;
+  bool ipa;
 };
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_ME_PHASE_MANAGER_H

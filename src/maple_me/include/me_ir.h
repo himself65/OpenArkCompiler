@@ -1967,6 +1967,10 @@ class CallMeStmt : public NaryMeStmt, public MuChiMePart, public AssignedPart {
     return &mustDefList;
   }
 
+  MustDefMeNode &GetMustDefListItem(int i) {
+    return mustDefList[i];
+  }
+
   size_t MustDefListSize() const {
     return mustDefList.size();
   }
@@ -2115,6 +2119,7 @@ class IntrinsiccallMeStmt : public NaryMeStmt, public MuChiMePart, public Assign
         MuChiMePart(alloc),
         AssignedPart(alloc),
         intrinsic(static_cast<const IntrinsiccallNode*>(stt)->GetIntrinsic()),
+        oriExprInRcLowering(alloc->Adapter()),
         tyIdx(static_cast<const IntrinsiccallNode*>(stt)->GetTyIdx()),
         retPType(stt->GetPrimType()) {}
 
@@ -2123,6 +2128,7 @@ class IntrinsiccallMeStmt : public NaryMeStmt, public MuChiMePart, public Assign
         MuChiMePart(alloc),
         AssignedPart(alloc),
         intrinsic(id),
+        oriExprInRcLowering(alloc->Adapter()),
         tyIdx(tyid),
         retPType(kPtyInvalid) {}
 
@@ -2131,6 +2137,7 @@ class IntrinsiccallMeStmt : public NaryMeStmt, public MuChiMePart, public Assign
         MuChiMePart(alloc),
         AssignedPart(intrn->mustDefList),
         intrinsic(intrn->GetIntrinsic()),
+        oriExprInRcLowering(alloc->Adapter()),
         tyIdx(intrn->tyIdx),
         retPType(intrn->retPType) {}
 
@@ -2210,8 +2217,13 @@ class IntrinsiccallMeStmt : public NaryMeStmt, public MuChiMePart, public Assign
     return tyIdx;
   }
 
+  MapleVector<MeExpr*> &GetOriExprInRcLowering() {
+    return oriExprInRcLowering;
+  }
+
  private:
   MIRIntrinsicID intrinsic;
+  MapleVector<MeExpr*> oriExprInRcLowering;
   TyIdx tyIdx;
   // Used to store return value type
   PrimType retPType;

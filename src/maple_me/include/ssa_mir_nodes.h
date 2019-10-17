@@ -439,10 +439,10 @@ class AddrofSSANode : public AddrofNode {
 
   ~AddrofSSANode() {}
 
-  void Dump(const MIRModule *mod, int32 indent) const {
+  void Dump(const MIRModule &mod, int32 indent) const {
     AddrofNode::Dump(mod, indent);
     if (ssaVar != nullptr) {
-      ssaVar->Dump(mod, true);
+      ssaVar->Dump(&mod, true);
     }
   }
 
@@ -469,9 +469,9 @@ class IreadSSANode : public IreadNode {
 
   ~IreadSSANode() {}
 
-  void Dump(const MIRModule *mod, int32 indent) const {
+  void Dump(const MIRModule &mod, int32 indent) const {
     if (mayUse.GetOpnd() != nullptr) {
-      mayUse.Dump(mod);
+      mayUse.Dump(&mod);
     }
     IreadNode::Dump(mod, indent);
   }
@@ -494,10 +494,10 @@ class RegreadSSANode : public RegreadNode {
 
   ~RegreadSSANode() {}
 
-  void Dump(const MIRModule *mod, int32 indent) const {
+  void Dump(const MIRModule &mod, int32 indent) const {
     RegreadNode::Dump(mod, indent);
     if (ssaVar != nullptr) {
-      ssaVar->Dump(mod, true);
+      ssaVar->Dump(&mod, true);
     }
   }
 

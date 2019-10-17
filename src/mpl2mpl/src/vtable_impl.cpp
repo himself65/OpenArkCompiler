@@ -148,5 +148,4 @@ void VtableImpl::ReplaceResolveInterface(StmtNode *stmt, const ResolveFuncNode *
     icall->SetNOpndAt(0, builder->CreateExprRegread(compactPtrPrim, pregFuncPtr));
   }
 }
-
 }  // namespace maple

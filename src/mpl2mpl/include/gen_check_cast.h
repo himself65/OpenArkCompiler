@@ -65,6 +65,5 @@ class DoCheckCastGeneration : public ModulePhase {
   }
 };
 
-
 }  // namespace maple
 #endif  // MPL2MPL_INCLUDE_GEN_CHECK_CAST_H

@@ -1272,7 +1272,7 @@ BB *IRMap::GetFalseBrBB(CondGotoMeStmt &condgoto) {
   LabelIdx lblidx = (LabelIdx)condgoto.GetOffset();
   BB *gotobb = GetBBForLabIdx(lblidx);
   BB *bb = condgoto.GetBB();
-  ASSERT(bb->GetSucc().size() == 2, "array size error");
+  ASSERT(bb->GetSucc().size() == kBBVectorInitialSize, "array size error");
   if (condgoto.GetOp() == OP_brfalse) {
     return gotobb;
   } else {

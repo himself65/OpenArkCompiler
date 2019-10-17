@@ -21,12 +21,9 @@
 #include "mir_builder.h"
 
 namespace {
-
-
 }
 
 namespace maple {
-
 static inline bool IsReadOnlyOst(const OriginalSt &ost) {
   return ost.GetMIRSymbol()->HasAddrOfValues();
 }

@@ -17,7 +17,6 @@
 #include "class_hierarchy.h"
 
 namespace maple {
-
 // +1 is needed here because our field id starts with 0 pointing to the struct itself
 #define OBJ_KLASS_FIELDID (static_cast<uint32>(ClassProperty::kShadow) + 1)
 #define METADATA_KLASS_FIELDID (static_cast<uint32>(ClassProperty::kShadow) + 1)
@@ -349,6 +348,7 @@ class ReflectionAnalysis : public AnalysisResult {
   static std::string strTabRunHot;
   static bool strTabInited;
   static TyIdx invalidIdx;
+  static constexpr uint16 kNoHashBits = 6u;
 };
 
 class DoReflectionAnalysis : public ModulePhase {
@@ -362,6 +362,5 @@ class DoReflectionAnalysis : public ModulePhase {
     return "reflectionanalysis";
   }
 };
-
 }  // namespace maple
 #endif  // MPL2MPL_INCLUDE_REFLECTION_ANALYSIS_H
