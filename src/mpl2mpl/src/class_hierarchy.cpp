@@ -959,5 +959,4 @@ bool WKTypes::Util::NotCyclicType(MIRType *type, std::set<MIRType*> &workList) {
   }
   return false;
 }
-
 }  // namespace maple

@@ -69,6 +69,7 @@ MIRModule::MIRModule(const char *fn)
   IntrinDesc::InitMIRModule(this);
   binMplt = nullptr;
   curFunction = nullptr;
+  inIPA = false;
 }
 
 MIRModule::~MIRModule() {

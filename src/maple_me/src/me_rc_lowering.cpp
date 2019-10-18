@@ -186,6 +186,7 @@ void RCLowering::HandleAssignMeStmtRHS(MeStmt &stmt) {
   if (loadCall == nullptr) {
     return;
   }
+  loadCall->GetOriExprInRcLowering().push_back(rhs);
   if (stmt.GetOp() == OP_regassign) {
     stmt.GetBB()->ReplaceMeStmt(&stmt, loadCall);
     if (rhs->IsVolatile(ssaTab)) {
@@ -208,7 +209,8 @@ void RCLowering::HandleCallAssignedMeStmt(MeStmt &stmt, MeExpr *pendingDec) {
     // introduce a ret and decref on it as callee has +1 return ref
     RegMeExpr *curTmp = irMap.CreateRegMeExpr(PTY_ref);
     stmt.GetMustDefList()->push_back(MustDefMeNode(curTmp, &stmt));
-    MeStmt *decrefCall = CreateRCIntrinsic(INTRN_MCCDecRef, stmt, std::vector<MeExpr*>({ curTmp }));
+    IntrinsiccallMeStmt *decrefCall = CreateRCIntrinsic(INTRN_MCCDecRef, stmt, std::vector<MeExpr*>({ curTmp }));
+    decrefCall->GetOriExprInRcLowering().push_back(curTmp);
     bb->InsertMeStmtAfter(&stmt, decrefCall);
     return;
   }
@@ -232,8 +234,9 @@ void RCLowering::HandleCallAssignedMeStmt(MeStmt &stmt, MeExpr *pendingDec) {
   }
 
   MeStmt *backup = irMap.CreateRegassignMeStmt(*irMap.CreateRegMeExpr(PTY_ref), *pendingDec, *bb);
-  MeStmt *decrefCall = CreateRCIntrinsic(
+  IntrinsiccallMeStmt *decrefCall = CreateRCIntrinsic(
       INTRN_MCCDecRef, stmt, std::vector<MeExpr*>({ static_cast<RegassignMeStmt*>(backup)->GetRegLHS() }));
+  decrefCall->GetOriExprInRcLowering().push_back(backup->GetRegLHS());
   if (!dynamic_cast<CallMeStmt*>(&stmt)) {
     bb->InsertMeStmtBefore(&stmt, backup);
     bb->InsertMeStmtAfter(&stmt, decrefCall);
@@ -304,7 +307,8 @@ void RCLowering::HandleAssignMeStmtRegLHS(MeStmt &stmt) {
   if (!stmt.NeedIncref()) {
     return;
   }
-  MeStmt *incCall = CreateRCIntrinsic(INTRN_MCCIncRef, stmt, std::vector<MeExpr*>({ stmt.GetLHS() }));
+  IntrinsiccallMeStmt *incCall = CreateRCIntrinsic(INTRN_MCCIncRef, stmt, std::vector<MeExpr*>({ stmt.GetLHS() }));
+  incCall->GetOriExprInRcLowering().push_back(stmt.GetLHS());
   stmt.GetBB()->InsertMeStmtAfter(&stmt, incCall);
 }
 
@@ -320,8 +324,9 @@ void RCLowering::HandleAssignMeStmtVarLHS(MeStmt &stmt, MeExpr *pendingDec) {
   BB *bb = stmt.GetBB();
   if (lsym->IsGlobal()) {
     // decref could be optimized away after if null check
-    MeStmt *writeRefCall = CreateRCIntrinsic(SelectWriteBarrier(stmt), stmt,
+    IntrinsiccallMeStmt *writeRefCall = CreateRCIntrinsic(SelectWriteBarrier(stmt), stmt,
                                              std::vector<MeExpr*>({irMap.CreateAddrofMeExpr(*lhs), rhs}));
+    writeRefCall->GetOriExprInRcLowering().push_back(lhs);
     bb->ReplaceMeStmt(&stmt, writeRefCall);
   } else {
     // local assign, backup old value and insert Inc and Dec after
@@ -333,18 +338,21 @@ void RCLowering::HandleAssignMeStmtVarLHS(MeStmt &stmt, MeExpr *pendingDec) {
           bb->InsertMeStmtBefore(&stmt, incCall);
           incWithLHS = false;
         }
-        MeStmt *decCall = CreateRCIntrinsic(INTRN_MCCDecRef, stmt, std::vector<MeExpr*>({ pendingDec }));
+        IntrinsiccallMeStmt *decCall = CreateRCIntrinsic(INTRN_MCCDecRef, stmt, std::vector<MeExpr*>({ pendingDec }));
+        decCall->GetOriExprInRcLowering().push_back(pendingDec);
         bb->InsertMeStmtBefore(&stmt, decCall);
       } else {
         MeStmt *backup = irMap.CreateRegassignMeStmt(*irMap.CreateRegMeExpr(PTY_ref), *pendingDec, *bb);
         bb->InsertMeStmtBefore(&stmt, backup);
-        MeStmt *decCall = CreateRCIntrinsic(INTRN_MCCDecRef, stmt,
+        IntrinsiccallMeStmt *decCall = CreateRCIntrinsic(INTRN_MCCDecRef, stmt,
                                             std::vector<MeExpr*>({ static_cast<DassignMeStmt*>(backup)->GetLHS() }));
+        decCall->GetOriExprInRcLowering().push_back(backup->GetLHS());
         bb->InsertMeStmtAfter(&stmt, decCall);
       }
     }
     if (incWithLHS) {
-      MeStmt *incCall = CreateRCIntrinsic(INTRN_MCCIncRef, stmt, std::vector<MeExpr*>({ lhs }));
+      IntrinsiccallMeStmt *incCall = CreateRCIntrinsic(INTRN_MCCIncRef, stmt, std::vector<MeExpr*>({ lhs }));
+      incCall->GetOriExprInRcLowering().push_back(lhs);
       bb->InsertMeStmtAfter(&stmt, incCall);
     }
   }
@@ -394,9 +402,10 @@ void RCLowering::HandleAssignMeStmtIvarLHS(MeStmt &stmt) {
   }
   MeExpr *rhsInner = stmt.GetRHS();
   MIRIntrinsicID intrinsicID = SelectWriteBarrier(stmt);
-  MeStmt *writeRefCall = CreateRCIntrinsic(
+  IntrinsiccallMeStmt *writeRefCall = CreateRCIntrinsic(
       intrinsicID, stmt,
       std::vector<MeExpr*>({ &lhsInner->GetBase()->GetAddrExprBase(), irMap.CreateAddrofMeExpr(*lhsInner), rhsInner }));
+  writeRefCall->GetOriExprInRcLowering().push_back(lhsInner);
   stmt.GetBB()->ReplaceMeStmt(&stmt, writeRefCall);
 }
 
@@ -522,7 +531,9 @@ void RCLowering::BBLower(BB *bb) {
     RegMeExpr *regreadExpr = irMap.CreateRegMeExprVersion(*ost);
     regreadExpr->SetPtyp(PTY_ref);
     MeStmt *firstMeStmt = to_ptr(bb->GetMeStmts().begin());
-    MeStmt *decRefcall = CreateRCIntrinsic(INTRN_MCCDecRef, *firstMeStmt, std::vector<MeExpr*>({ regreadExpr }));
+    IntrinsiccallMeStmt *decRefcall = CreateRCIntrinsic(INTRN_MCCDecRef, *firstMeStmt,
+                                                        std::vector<MeExpr*>({ regreadExpr }));
+    decRefcall->GetOriExprInRcLowering().push_back(regreadExpr);
     bb->InsertMeStmtAfter(firstMeStmt, decRefcall);
   }
 }
@@ -550,6 +561,7 @@ void RCLowering::HandleReturnVar(RetMeStmt &ret) {
   if (sym != nullptr && sym->IsGlobal() && !sym->IsFinal()) {
     IntrinsiccallMeStmt *loadCall =
         CreateRCIntrinsic(INTRN_MCCLoadRefS, ret, std::vector<MeExpr*>({ irMap.CreateAddrofMeExpr(*retVar) }), true);
+    loadCall->GetOriExprInRcLowering().push_back(retVar);
     ret.GetBB()->InsertMeStmtBefore(&ret, loadCall);
     ret.SetOpnd(0, loadCall->GetMustDefList()->front().GetLHS());
   } else if (assignedPtrSym.count(sym) > 0 && sym->GetStorageClass() == kScAuto && sym->GetAttr(ATTR_localrefvar)) {
@@ -559,7 +571,9 @@ void RCLowering::HandleReturnVar(RetMeStmt &ret) {
      */
     IntrinsiccallMeStmt *cleanup = FindCleanupIntrinsic(ret);
     if (cleanup == nullptr) {
-      ret.GetBB()->InsertMeStmtBefore(&ret, CreateRCIntrinsic(INTRN_MCCIncRef, ret, std::vector<MeExpr*>({ retVar })));
+      IntrinsiccallMeStmt *incCall = CreateRCIntrinsic(INTRN_MCCIncRef, ret, std::vector<MeExpr*>({ retVar }));
+      incCall->GetOriExprInRcLowering().push_back(retVar);
+      ret.GetBB()->InsertMeStmtBefore(&ret, incCall);
     } else {
       // remove argument from intrinsiccall MPL_CLEANUP_LOCALREFVARS (dread ref %Reg1_R5678, ...
       MapleVector<MeExpr*> *opnds = &cleanup->GetOpnds();
@@ -575,6 +589,8 @@ void RCLowering::HandleReturnVar(RetMeStmt &ret) {
   } else {
     // if returning formal, incref unless placementRC is used and formal is NOT reassigned
     IntrinsiccallMeStmt *increfStmt = CreateRCIntrinsic(INTRN_MCCIncRef, ret, std::vector<MeExpr*>({ retVar }), true);
+    ret.SetOpnd(0, increfStmt->GetMustDefList()->front().GetLHS());
+    increfStmt->GetOriExprInRcLowering().push_back(retVar);
     ret.SetOpnd(0, increfStmt->GetMustDefList()->front().GetLHS());
     IntrinsiccallMeStmt *cleanup = FindCleanupIntrinsic(ret);
     if (cleanup == nullptr) {
@@ -594,6 +610,7 @@ void RCLowering::HandleReturnIvar(RetMeStmt &ret) {
         std::vector<MeExpr*>({ &retIvar->GetBase()->GetAddrExprBase(), irMap.CreateAddrofMeExpr(*retIvar) }), true);
     ret.GetBB()->InsertMeStmtBefore(&ret, loadCall);
     ret.SetOpnd(0, loadCall->GetMustDefList()->front().GetLHS());
+    loadCall->GetOriExprInRcLowering().push_back(retIvar);
   } else {
     MeStmt *loadCall = CreateRCIntrinsic(
         INTRN_MCCLoadRef, ret,
@@ -619,7 +636,8 @@ void RCLowering::HandleReturnReg(RetMeStmt &ret) {
       return;
     }
   }
-  MeStmt *incCall = CreateRCIntrinsic(INTRN_MCCIncRef, ret, std::vector<MeExpr*>({ retreg }), true);
+  IntrinsiccallMeStmt *incCall = CreateRCIntrinsic(INTRN_MCCIncRef, ret, std::vector<MeExpr*>({ retreg }), true);
+  incCall->GetOriExprInRcLowering().push_back(retreg);
   ret.SetOpnd(0, incCall->GetMustDefList()->front().GetLHS());
   ret.GetBB()->InsertMeStmtBefore(&ret, incCall);
 }
@@ -652,8 +670,9 @@ void RCLowering::HandleReturnWithCleanup() {
       RegMeExpr *tmpReg = irMap.CreateRegMeExpr(PTY_ref);
       MeStmt *temp = irMap.CreateRegassignMeStmt(*tmpReg, *retVal, *stmt->GetBB());
       stmt->GetBB()->InsertMeStmtBefore(stmt, temp);
-      stmt->GetBB()->InsertMeStmtBefore(stmt,
-                                        CreateRCIntrinsic(INTRN_MCCIncRef, *stmt, std::vector<MeExpr*>({ tmpReg })));
+      IntrinsiccallMeStmt *incCall = CreateRCIntrinsic(INTRN_MCCIncRef, *stmt, std::vector<MeExpr*>({ tmpReg }));
+      incCall->GetOriExprInRcLowering().push_back(tmpReg);
+      stmt->GetBB()->InsertMeStmtBefore(stmt, incCall);
       ret->SetOpnd(0, tmpReg);
     }
   }
@@ -705,9 +724,11 @@ void RCLowering::HandleArguments() {
     }
     VarMeExpr *argVar = CreateVarMeExprFromSym(*sym);
     CHECK_FATAL(argVar != nullptr, "null ptr check");
+    IntrinsiccallMeStmt *incCall = nullptr;
     if (firstMestmt != nullptr) {
-      firstBB->InsertMeStmtBefore(firstMestmt,
-                                  CreateRCIntrinsic(INTRN_MCCIncRef, *firstMestmt, std::vector<MeExpr*>({ argVar })));
+      incCall = CreateRCIntrinsic(INTRN_MCCIncRef, *firstMestmt, std::vector<MeExpr*>({ argVar }));
+      incCall->GetOriExprInRcLowering().push_back(argVar);
+      firstBB->InsertMeStmtBefore(firstMestmt, incCall);
     }
     TypeAttrs typeAttr = mirFunc->GetNthParamAttr(i);
     typeAttr.SetAttr(ATTR_localrefvar);
@@ -715,7 +736,8 @@ void RCLowering::HandleArguments() {
     sym->SetLocalRefVar();
 
     for (auto *stmt : rets) {
-      MeStmt *decrefCall = CreateRCIntrinsic(INTRN_MCCDecRef, *stmt, std::vector<MeExpr*>({ argVar }));
+      IntrinsiccallMeStmt *decrefCall = CreateRCIntrinsic(INTRN_MCCDecRef, *stmt, std::vector<MeExpr*>({ argVar }));
+      decrefCall->GetOriExprInRcLowering().push_back(argVar);
       stmt->GetBB()->InsertMeStmtBefore(stmt, decrefCall);
     }
   }

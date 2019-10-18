@@ -106,6 +106,11 @@ bool MeFuncPhaseManager::FuncFilter(const std::string &filter, const std::string
   return false;
 }
 
+void MeFuncPhaseManager::IPACleanUp(MeFunction *func) {
+  GetAnalysisResultManager()->InvalidAllResults();
+  mempoolctrler.DeleteMemPool(func->GetMemPool());
+}
+
 void MeFuncPhaseManager::Run(MIRFunction *mirfunc, uint64 rangenum, const std::string &meinput) {
   if (!MeOption::quiet)
     LogInfo::MapleLogger() << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>> Optimizing Function  < " << mirfunc->GetName()
@@ -119,6 +124,9 @@ void MeFuncPhaseManager::Run(MIRFunction *mirfunc, uint64 rangenum, const std::s
   g_func = &func;
 #endif
   func.Prepare(rangenum);
+  if (ipa) {
+    mirfunc->SetMeFunc(&func);
+  }
   std::string phaseName = "";
   MeFuncPhase *changeCFGPhase = nullptr;
   /* each function level phase */
@@ -150,8 +158,13 @@ void MeFuncPhaseManager::Run(MIRFunction *mirfunc, uint64 rangenum, const std::s
       break;
     }
   }
-  GetAnalysisResultManager()->InvalidAllResults();
+  if (!ipa) {
+    GetAnalysisResultManager()->InvalidAllResults();
+  }
   if (changeCFGPhase != nullptr) {
+    if (ipa) {
+      CHECK_FATAL(false, "phases in ipa will not chang cfg.");
+    }
     // do all the phases start over
     MemPool *versMemPool = mempoolctrler.NewMemPool("second verst mempool");
     MeFunction function(&mirModule, mirfunc, funcMP, versMemPool, meinput);
@@ -177,6 +190,8 @@ void MeFuncPhaseManager::Run(MIRFunction *mirfunc, uint64 rangenum, const std::s
     }
     GetAnalysisResultManager()->InvalidAllResults();
   }
-  mempoolctrler.DeleteMemPool(funcMP);
+  if (!ipa) {
+    mempoolctrler.DeleteMemPool(funcMP);
+  }
 }
 }  // namespace maple

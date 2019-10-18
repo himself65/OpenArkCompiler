@@ -88,7 +88,7 @@ void BB::DumpHeader(MIRModule *mod) {
   if (bbLabel != 0) {
     static LabelNode lblNode;
     lblNode.SetLabelIdx(bbLabel);
-    lblNode.Dump(mod, 0);
+    lblNode.Dump(*mod, 0);
     mod->GetOut() << "\n";
   }
 }
@@ -97,7 +97,7 @@ void BB::Dump(MIRModule *mod) {
   DumpHeader(mod);
   DumpPhi(mod);
   for (auto &stmt : stmtNodeList) {
-    stmt.Dump(mod, 1);
+    stmt.Dump(*mod, 1);
   }
 }
 

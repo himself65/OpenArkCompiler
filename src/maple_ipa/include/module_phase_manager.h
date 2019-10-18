@@ -52,7 +52,7 @@ class ModulePhaseManager : public PhaseManager {
   // Add module phases which are going to be run
   void AddModulePhases(std::vector<std::string> &phases);
   void RunModulePhases() const;
-  ModuleResultMgr *GetModResultMgr() {
+  ModuleResultMgr *GetModResultMgr() override {
     return arModuleMgr;
   }
 

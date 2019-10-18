@@ -25,7 +25,6 @@
 //
 // B) It will replace the relevant reference about the methods and static variable with def or undef
 // table.And then we can close these symbols to reduce the code size.
-//
 
 namespace maple {
 MUID MUIDReplacement::kMplMuid;
@@ -312,8 +311,9 @@ void MUIDReplacement::GenericFuncDefTable() {
     // Use the left 1 bit of muidIdx to mark wether the function is weak or not. 1 is for weak
     MIRIntConst *indexConst = nullptr;
     if (kReflectionList.find(mirFunc->GetName()) != kReflectionList.end()) {
+      constexpr uint32 kWeakFuncFlag = 0x80000000; // 0b10000000 00000000 00000000 00000000
       indexConst =
-          GetModule()->GetMemPool()->New<MIRIntConst>((1u << 31) | idx, GlobalTables::GetTypeTable().GetUInt32());
+          GetModule()->GetMemPool()->New<MIRIntConst>(kWeakFuncFlag | idx, GlobalTables::GetTypeTable().GetUInt32());
     } else {
       indexConst = GetModule()->GetMemPool()->New<MIRIntConst>(idx, GlobalTables::GetTypeTable().GetUInt32());
     }
@@ -325,7 +325,7 @@ void MUIDReplacement::GenericFuncDefTable() {
     if (trace) {
       LogInfo::MapleLogger() << "funcDefMap, MUID: " << muid.ToStr()
                              << ", Function Name: " << iter->second.first->GetName()
-                             << ", Offset in addr order: " << idx - 1
+                             << ", Offset in addr order: " << (idx - 1)
                              << ", Offset in muid order: " << iter->second.second << std::endl;
     }
   }
@@ -714,13 +714,16 @@ void MUIDReplacement::ReplaceAddroffuncConst(MIRConst *&entry, uint32 fieldId, b
   ASSERT(func, "Invalid MIRFunction");
   uint64 offset = 0;
   MIRIntConst *constNode = nullptr;
+  constexpr uint64 kReservedBits = 2u;
   if (func->GetBody()) {
     offset = FindIndexFromDefTable(func->GetFuncSymbol(), true);
     // Left shifting is needed because in itable 0 and 1 are reserved.
     // 0 marks no entry and 1 marks a conflict.
     // The second least significant bit is set to 1, indicating
     // this is an index into the funcDefTab
-    constNode = GetModule()->GetMemPool()->New<MIRIntConst>(((offset + 1) << 2) + 2, voidType);
+    constexpr uint64 kIdxIntoFuncDefTabFlag = 2u;
+    constNode = GetModule()->GetMemPool()->New<MIRIntConst>(((offset + 1) << kReservedBits) + kIdxIntoFuncDefTabFlag,
+                                                            voidType);
   } else if (isVtab && func->IsAbstract()) {
     MIRType *type = GlobalTables::GetTypeTable().GetVoidPtr();
     constNode = GetModule()->GetMemPool()->New<MIRIntConst>(0, type);
@@ -728,7 +731,7 @@ void MUIDReplacement::ReplaceAddroffuncConst(MIRConst *&entry, uint32 fieldId, b
     offset = FindIndexFromUndefTable(func->GetFuncSymbol(), true);
     // The second least significant bit is set to 0, indicating
     // this is an index into the funcUndefTab
-    constNode = GetModule()->GetMemPool()->New<MIRIntConst>((offset + 1) << 2, voidType);
+    constNode = GetModule()->GetMemPool()->New<MIRIntConst>((offset + 1) << kReservedBits, voidType);
   }
   if (fieldId != 0xffffffff) {
     constNode->SetFieldID(fieldId);
@@ -1151,5 +1154,4 @@ void MUIDReplacement::GenericTables() {
   ReplaceDataTable(NameMangler::kGcRootList);
   GenericCompilerVersionNum();
 }
-
 }  // namespace maple

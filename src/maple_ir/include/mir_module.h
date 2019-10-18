@@ -67,6 +67,7 @@ class MIRDoubleConst;
 class MIRBuilder;
 class DebugInfo;
 class BinaryMplt;
+class EAConnectionGraph;
 using MIRInfoPair = std::pair<GStrIdx, uint32>;
 using MIRInfoVector = MapleVector<MIRInfoPair>;
 using MIRDataPair = std::pair<GStrIdx, std::vector<uint8>>;
@@ -77,10 +78,6 @@ struct EncodedValue {
 };
 
 class MIRTypeNameTable {
- private:
-  MapleAllocator *mAllocator;
-  MapleMap<GStrIdx, TyIdx> gStrIdxToTyIdxMap;
-
  public:
   explicit MIRTypeNameTable(MapleAllocator *allocator)
       : mAllocator(allocator), gStrIdxToTyIdxMap(std::less<GStrIdx>(), mAllocator->Adapter()) {}
@@ -106,6 +103,10 @@ class MIRTypeNameTable {
   size_t Size() const {
     return gStrIdxToTyIdxMap.size();
   }
+ private:
+  MapleAllocator *mAllocator;
+  MapleMap<GStrIdx, TyIdx> gStrIdxToTyIdxMap;
+
 };
 
 class MIRModule {
@@ -328,6 +329,14 @@ class MIRModule {
     binMplt = binaryMplt;
   }
 
+  bool IsInIPA() {
+    return inIPA;
+  }
+
+  void SetInIPA(bool isInIPA) {
+    inIPA = isInIPA;
+  }
+
   MIRInfoVector &GetFileInfo() {
     return fileInfo;
   }
@@ -448,6 +457,10 @@ class MIRModule {
     method2TargetHash[idx] = value;
   }
 
+  std::map<GStrIdx, EAConnectionGraph*> &GetEASummary() {
+    return EASummary;
+  }
+
  private:
   MemPool *memPool;
   MapleAllocator memPoolAllocator;
@@ -471,6 +484,7 @@ class MIRModule {
   bool withProfileInfo;
   // for cg in mplt
   BinaryMplt *binMplt;
+  bool inIPA;
   MIRInfoVector fileInfo;              // store info provided under fileInfo keyword
   MapleVector<bool> fileInfoIsString;  // tells if an entry has string value
   MIRDataVector fileData;
@@ -497,6 +511,7 @@ class MIRModule {
 
   std::map<PUIdx, std::vector<CallSite>> method2TargetMap;
   std::map<PUIdx, std::unordered_set<uint64>> method2TargetHash;
+  std::map<GStrIdx, EAConnectionGraph*> EASummary;
 
   MIRFunction *entryFunc;
   uint32 floatNum;

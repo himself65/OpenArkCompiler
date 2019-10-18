@@ -72,8 +72,12 @@ void ClassInit::ProcessFunc(MIRFunction *func) {
   } else {
     const std::string &funcName = func->GetName();
     size_t pos = funcName.find(NameMangler::kNameSplitterStr);
-    while (pos != std::string::npos && (pos >= 2 && funcName[pos - 1] == '_' && funcName[pos - 2] != '_')) {
-      pos = funcName.find(NameMangler::kNameSplitterStr, pos + 3);
+    constexpr size_t kPrePos = 2;
+    constexpr size_t kLigalPos = 2;
+    while (pos != std::string::npos &&
+           (pos >= kLigalPos && funcName[pos - 1] == '_' && funcName[pos - kPrePos] != '_')) {
+      constexpr size_t kNextPos = 3;
+      pos = funcName.find(NameMangler::kNameSplitterStr, pos + kNextPos);
     }
     selfClassName = funcName.substr(0, pos);
   }
@@ -160,5 +164,4 @@ MIRSymbol *ClassInit::GetClassInfo(const std::string &classname) {
   }
   return classInfo;
 }
-
 }  // namespace maple

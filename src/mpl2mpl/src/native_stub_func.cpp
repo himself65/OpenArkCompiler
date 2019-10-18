@@ -25,7 +25,6 @@
 // for the preparations before the actual native function is called,
 // including the parameter mapping, GC preparation, and so on.
 namespace maple {
-
 GenericNativeStubFunc::GenericNativeStubFunc(MIRModule *mod, KlassHierarchy *kh, bool dump)
     : FuncOptimizeImpl(mod, kh, dump) {
   MIRType *jstrType = GlobalTables::GetTypeTable().GetOrCreateClassType(
@@ -298,8 +297,9 @@ void GenericNativeStubFunc::GenericRegFuncTabEntry() {
   constexpr int locIdxShift = 4;
   constexpr uint64 locIdxMask = 0xFF00000000000000;
   uint64 locIdx = regFuncTabConst->GetConstVec().size();
-  MIRConst *newConst = GetModule()->GetMemPool()->New<MIRIntConst>((uint64)((locIdx << locIdxShift) | locIdxMask),
-                                                                   GlobalTables::GetTypeTable().GetVoidPtr());
+  MIRConst *newConst =
+      GetModule()->GetMemPool()->New<MIRIntConst>(static_cast<uint64>((locIdx << locIdxShift) | locIdxMask),
+                                                  GlobalTables::GetTypeTable().GetVoidPtr());
   regFuncTabConst->GetConstVec().push_back(newConst);
 }
 
@@ -379,9 +379,9 @@ void GenericNativeStubFunc::GenericRegisteredNativeFuncCall(MIRFunction *func, c
   // Use native wrapper if required.
   if (Options::nativeWrapper) {
     // Now native binding have three mode: default mode, dynamic-only mode, static binding list mode
-    // default mode, it will generate a week function, which can link in compile time
-    // dynamic only mode, it won't generate any week function, it can't link in compile time
-    // static binding list mode, it will generate a week function only in list
+    // default mode, it will generate a weak function, which can link in compile time
+    // dynamic only mode, it won't generate any weak function, it can't link in compile time
+    // static binding list mode, it will generate a weak function only in list
     if (IsStaticBindingListMode() && IsStaticBindingMethod(func->GetName())) {
       // Get current func_ptr (strong/weak symbol address)
       auto *nativeFuncAddr = builder->CreateExprAddroffunc(nativeFunc->GetPuidx());
@@ -443,7 +443,8 @@ void GenericNativeStubFunc::GenericRegisteredNativeFuncCall(MIRFunction *func, c
         ifStmt->GetThenPart()->AddStatement(callGetExceptFunc);
         BlockNode *elseBlock = func->GetCodeMempool()->New<BlockNode>();
         ifStmt->SetElsePart(elseBlock);
-        ifStmt->SetNumOpnds(3);
+        constexpr uint32 kNumOfOpnds = 3u;
+        ifStmt->SetNumOpnds(kNumOfOpnds);
         wrapperCall = CreateNativeWrapperCallNode(func, readFuncPtr, args, ret);
         elseBlock->AddStatement(wrapperCall);
         func->GetBody()->AddStatement(ifStmt);
@@ -513,7 +514,8 @@ StmtNode *GenericNativeStubFunc::CreateNativeWrapperCallNode(MIRFunction *func, 
   auto isFast = (func->GetAttr(FUNCATTR_fast_native) || func->GetAttr(FUNCATTR_critical_native));
   // Do not need native wrapper for critical natives
   // if num_of_args < 8
-  if (func->GetAttr(FUNCATTR_critical_native) && args.size() <= 7) {
+  constexpr size_t kNumOfArgs = 8;
+  if (func->GetAttr(FUNCATTR_critical_native) && args.size() < kNumOfArgs) {
     IcallNode *icall = func->GetCodeMempool()->New<IcallNode>(GetModule(), OP_icallassigned);
     CallReturnVector nrets(func->GetCodeMempoolAllocator()->Adapter());
     if (ret) {
@@ -534,7 +536,7 @@ StmtNode *GenericNativeStubFunc::CreateNativeWrapperCallNode(MIRFunction *func, 
   }
 
   // If num of args > 8
-  if (args.size() > 8) {
+  if (args.size() > kNumOfArgs) {
     wrapperFunc = isFast ? MRTCallFastNativeExtFunc : MRTCallSlowNativeExtFunc;
   } else if (isFast) {
     wrapperFunc = MRTCallFastNativeFunc;
@@ -670,5 +672,4 @@ void GenericNativeStubFunc::Finish() {
     ReflectionAnalysis::GenStrTab(GetModule());
   }
 }
-
 }  // namespace maple

@@ -57,26 +57,6 @@ class MIRSymbol {
     MIRPreg *preg;  // the MIRSymKind must be kStPreg
   };
 
-  // Please keep order of the fields, avoid paddings.
- private:
-  TyIdx tyIdx;
-  TyIdx inferredTyIdx;
-  MIRStorageClass storageClass;
-  MIRSymKind sKind;
-  bool isTmp;
-  bool needForwDecl;  // addrof of this symbol used in initialization, NOT serialized
-  bool isDeleted;     // tell if it is deleted, NOT serialized
-  bool instrumented;  // a local ref pointer instrumented by RC opt, NOT serialized
-  bool isImported;
-  StIdx stIdx;
-  TypeAttrs typeAttrs;
-  GStrIdx nameStrIdx;
-  SymbolType value;
-  static GStrIdx reflectClassNameIdx;
-  static GStrIdx reflectMethodNameIdx;
-  static GStrIdx reflectFieldNameIdx;
-
- public:
   MIRSymbol()
       : tyIdx(0),
         inferredTyIdx(kInitTyIdx),
@@ -357,7 +337,7 @@ class MIRSymbol {
   bool IsReflectionFieldsInfo() const;
   bool IsReflectionFieldsInfoCompact() const;
   bool IsReflectionSuperclassInfo();
-  bool IsReflectionClassInfo();
+  bool IsReflectionClassInfo() const;
   bool IsReflectionArrayClassInfo() const;
   bool IsReflectionClassInfoPtr() const;
   bool IsReflectionClassInfoRO();
@@ -400,6 +380,25 @@ class MIRSymbol {
   bool operator<(const MIRSymbol &msym) const {
     return nameStrIdx < msym.nameStrIdx;
   }
+  // Please keep order of the fields, avoid paddings.
+ private:
+  TyIdx tyIdx;
+  TyIdx inferredTyIdx;
+  MIRStorageClass storageClass;
+  MIRSymKind sKind;
+  bool isTmp;
+  bool needForwDecl;  // addrof of this symbol used in initialization, NOT serialized
+  bool isDeleted;     // tell if it is deleted, NOT serialized
+  bool instrumented;  // a local ref pointer instrumented by RC opt, NOT serialized
+  bool isImported;
+  StIdx stIdx;
+  TypeAttrs typeAttrs;
+  GStrIdx nameStrIdx;
+  SymbolType value;
+  static GStrIdx reflectClassNameIdx;
+  static GStrIdx reflectMethodNameIdx;
+  static GStrIdx reflectFieldNameIdx;
+
 };
 
 class MIRSymbolTable {

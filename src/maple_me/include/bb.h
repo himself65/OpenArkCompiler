@@ -47,7 +47,8 @@ enum BBAttr {
   kBBIsCatch,        // bb is start of catch handler
   kBBIsJavaFinally,  // bb is start of finally handler
   kBBArtificial,     // bb is inserted by maple_me
-  kBBIsInLoop        // Is bb in a loop body
+  kBBIsInLoop,       // Is bb in a loop body
+  kBBIsInLoopForEA   // For EA use
 };
 
 struct BBId {
@@ -103,6 +104,7 @@ constexpr uint32 kBBAttrIsCatch = (1U << kBBIsCatch);
 constexpr uint32 kBBAttrIsJavaFinally = (1U << kBBIsJavaFinally);
 constexpr uint32 kBBAttrArtificial = (1U << kBBArtificial);
 constexpr uint32 kBBAttrIsInLoop = (1U << kBBIsInLoop);
+constexpr uint32 kBBAttrIsInLoopForEA = (1 << kBBIsInLoopForEA);
 constexpr uint32 kBBVectorInitialSize = 2;
 using StmtNodes = PtrListRef<StmtNode>;
 using MeStmts = PtrListRef<MeStmt>;

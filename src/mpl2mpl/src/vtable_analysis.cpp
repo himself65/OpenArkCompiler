@@ -472,5 +472,4 @@ void VtableAnalysis::ReplaceInterfaceInvoke(CallNode *stmt) {
   stmt->GetNopnd().insert(stmt->GetNopnd().begin(), resolveNode);
   stmt->SetNumOpnds(stmt->GetNumOpnds() + 1);
 }
-
 }  // namespace maple

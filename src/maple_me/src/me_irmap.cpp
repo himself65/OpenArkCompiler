@@ -46,7 +46,7 @@ void MeIRMap::Dump() {
       if (GetDumpStmtNum()) {
         LogInfo::MapleLogger() << "(" << i++ << ") ";
       }
-      mestmt.EmitStmt(*GetSSATab()).Dump(GetMIRModule(), 0);
+      mestmt.EmitStmt(*GetSSATab()).Dump(*GetMIRModule(), 0);
       mestmt.Dump(this);
     }
   }

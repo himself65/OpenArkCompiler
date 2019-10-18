@@ -194,6 +194,12 @@ class Dominance : public AnalysisResult {
 
  protected:
   MapleAllocator domAllocator;  // stores the analysis results
+
+  void PostOrderWalk(BB &bb, int32 &pid, std::vector<bool> &visitedMap);
+  BB *Intersect(BB &bb1, const BB &bb2);
+  bool CommonEntryBBIsPred(const BB &bb);
+  void PdomPostOrderWalk(BB &bb, int32 &pid, std::vector<bool> &visitedMap);
+  BB *PdomIntersect(BB &bb1, const BB &bb2);
  private:
   MapleAllocator tmpAllocator;  // can be freed after dominator computation
   MapleVector<BB*> &bbVec;
@@ -214,13 +220,6 @@ class Dominance : public AnalysisResult {
   MapleVector<MapleSet<BBId>> pdomChildren;  // index is bb id; for pdom tree
   MapleVector<BBId> pdtPreOrder;             // ordering of the BBs in a preorder traversal of the post-dominator tree
   MapleVector<uint32> pdtDfn;                // gives position of each BB in pdt_preorder
-
- protected:
-  void PostOrderWalk(BB &bb, int32 &pid, std::vector<bool> &visitedMap);
-  BB *Intersect(BB &bb1, const BB &bb2);
-  bool CommonEntryBBIsPred(const BB &bb);
-  void PdomPostOrderWalk(BB &bb, int32 &pid, std::vector<bool> &visitedMap);
-  BB *PdomIntersect(BB &bb1, const BB &bb2);
 };
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_DOMINANCE_H

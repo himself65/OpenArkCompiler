@@ -438,6 +438,10 @@ class MeFunction : public FuncEmit {
     hints = num;
   }
 
+  MemPool *GetMemPool() {
+    return memPool;
+  }
+
   void PartialInit(bool isSecondPass);
 
  private:

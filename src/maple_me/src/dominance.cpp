@@ -111,7 +111,7 @@ void Dominance::ComputeDomFrontiers() {
     if (bb == nullptr || bb == &commonExitBB) {
       continue;
     }
-    if (bb->GetPred().size() < 2) {
+    if (bb->GetPred().size() < kBBVectorInitialSize) {
       continue;
     }
     for (BB *pre : bb->GetPred()) {
@@ -269,7 +269,7 @@ void Dominance::ComputePdomFrontiers() {
     if (bb == nullptr || bb == &commonEntryBB) {
       continue;
     }
-    if (bb->GetSucc().size() < 2) {
+    if (bb->GetSucc().size() < kBBVectorInitialSize) {
       continue;
     }
     for (BB *suc : bb->GetSucc()) {

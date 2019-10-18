@@ -88,7 +88,7 @@ void MIRFunction::Dump(bool withoutBody) {
     LogInfo::MapleLogger() << "# [WARNING] skipped dumping because codeMemPool is nullptr " << std::endl;
   } else if (GetBody() && !withoutBody && fnSt->GetStorageClass() != kScExtern) {
     ResetInfoPrinted();  // this ensures funcinfo will be printed
-    GetBody()->Dump(module, 0, module->GetFlavor() < kMmpl ? GetSymTab() : nullptr,
+    GetBody()->Dump(*module, 0, module->GetFlavor() < kMmpl ? GetSymTab() : nullptr,
                     module->GetFlavor() < kMmpl ? GetPregTab() : nullptr, false, true);  // Dump body
   } else {
     LogInfo::MapleLogger() << std::endl;

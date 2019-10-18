@@ -159,6 +159,10 @@ class OriginalSt {
     return versionsIndex;
   }
 
+  const MapleVector<size_t> &GetVersionsIndex() const {
+    return versionsIndex;
+  }
+
   size_t GetZeroVersionIndex() const {
     return zeroVersionIndex;
   }

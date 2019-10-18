@@ -314,7 +314,7 @@ void MeCFG::FixMirCFG() {
           sym = func.GetMirFunc()->GetLocalOrGlobalSymbol(dassStmt->GetStIdx());
         }
         if (sym == nullptr || sym->GetType()->GetPrimType() != PTY_ref || !sym->IsLocal()) {
-           continue;
+          continue;
         }
         if (FindUse(*stmt, sym->GetStIdx())) {
           func.GetMirFunc()->IncTempCount();
@@ -653,7 +653,7 @@ void MeCFG::Verify() {
     if (bb->GetKind() == kBBCondGoto) {
       if (!bb->GetAttributes(kBBAttrIsTry) && !bb->GetAttributes(kBBAttrWontExit)) {
         ASSERT(bb->GetStmtNodes().rbegin().base().d() != nullptr, "runtime check error");
-        ASSERT(bb->GetSucc().size() == 2, "runtime check error");
+        ASSERT(bb->GetSucc().size() == kBBVectorInitialSize, "runtime check error");
       }
       ASSERT(bb->GetSucc(1)->GetBBLabel() == static_cast<CondGotoNode&>(bb->GetStmtNodes().back()).GetOffset(),
              "runtime check error");
@@ -690,7 +690,7 @@ void MeCFG::VerifyLabels(void) {
       ASSERT(
           func.GetLabelBBIdMap()[(LabelIdx) static_cast<CondGotoNode&>(stmtNodes.back()).GetOffset()]->GetBBLabel() ==
               (LabelIdx) static_cast<CondGotoNode&>(stmtNodes.back()).GetOffset(),
-              "undefined label in conditional branch");
+          "undefined label in conditional branch");
     } else if (mirBB->GetKind() == kBBSwitch) {
       SwitchNode &switchStmt = static_cast<SwitchNode&>(stmtNodes.back());
       LabelIdx targetLabIdx = switchStmt.GetDefaultLabel();
@@ -840,7 +840,7 @@ void MeCFG::DumpToFile(const std::string &prefix, bool dumpInStrs) {
         if (ContainsConststr(&stmt)) {
           continue;
         }
-        stmt.Dump(&(func.GetMIRModule()), 1);
+        stmt.Dump(func.GetMIRModule(), 1);
       }
       cfgFile << "}\"];\n";
     }

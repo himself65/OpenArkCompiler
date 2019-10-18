@@ -231,5 +231,4 @@ void JavaEHLowerer::ProcessFunc(MIRFunction *func) {
   BlockNode *newBody = DoLowerBlock(func->GetBody());
   func->SetBody(newBody);
 }
-
 }  // namespace maple

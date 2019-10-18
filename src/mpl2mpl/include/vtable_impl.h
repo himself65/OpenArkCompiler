@@ -59,6 +59,5 @@ class DoVtableImpl : public ModulePhase {
     return nullptr;
   }
 };
-
 }  // namespace maple
 #endif  // MPL2MPL_INCLUDE_VTABLE_IMPL_H

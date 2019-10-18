@@ -19,7 +19,6 @@
 #include "mir_preg.h"
 #include "parser_opt.h"
 #include "mir_builder.h"
-
 namespace maple {
 class BinaryMplImport {
   using CallSite = std::pair<CallInfo*, PUIdx>;

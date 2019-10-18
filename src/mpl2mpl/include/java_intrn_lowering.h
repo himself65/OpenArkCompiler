@@ -51,6 +51,5 @@ class DoJavaIntrnLowering : public ModulePhase {
     return nullptr;
   }
 };
-
 }  // namespace maple
 #endif  // MPL2MPL_INCLUDE_JAVA_INTRN_LOWERING_H
