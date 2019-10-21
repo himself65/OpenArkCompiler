@@ -23,22 +23,22 @@
 #include "dominance.h"
 
 namespace maple {
-class MeSSA : public maple::SSA, public AnalysisResult {
+class MeSSA : public SSA, public AnalysisResult {
  public:
-  explicit MeSSA(MeFunction *func, Dominance *dom, MemPool *memPool);
-  ~MeSSA() {}
+  MeSSA(MeFunction *func, Dominance *dom, MemPool *memPool);
+  ~MeSSA() = default;
 
   void CollectDefBBs(std::map<OStIdx, std::set<BBId>> &ostDefBBs);
   void BuildSSA();
   void InsertPhiNode();
-  void RenameBB(BB*);
+  void RenameBB(BB&);
   bool VerifySSA();
   std::string PhaseName() const {
     return "ssa";
   }
 
  private:
-  bool VerifySSAOpnd(BaseNode *node);
+  bool VerifySSAOpnd(BaseNode &node);
   MeFunction *func;
   Dominance *dom;
 };
@@ -47,7 +47,7 @@ class MeDoSSA : public MeFuncPhase {
  public:
   explicit MeDoSSA(MePhaseID id) : MeFuncPhase(id) {}
 
-  ~MeDoSSA() {}
+  ~MeDoSSA() = default;
 
   AnalysisResult *Run(MeFunction *ir, MeFuncResultMgr *m, ModuleResultMgr *mrm) override;
   std::string PhaseName() const override {

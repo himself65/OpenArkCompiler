@@ -203,8 +203,8 @@ void CheckCastGenerator::GenCheckCast(BaseNode *stmt) {
   }
   BaseNode *opnd = callNode->Opnd(0);
   ASSERT(opnd->GetOpCode() == OP_dread || opnd->GetOpCode() == OP_regread || opnd->GetOpCode() == OP_iread ||
-             opnd->GetOpCode() == OP_retype,
-         "unknown calltype! check it!");
+         opnd->GetOpCode() == OP_retype, "unknown calltype! check it!");
+
   MIRType *fromType = nullptr;
   if (opnd->GetOpCode() == OP_dread) {
     fromType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(
@@ -241,9 +241,10 @@ void CheckCastGenerator::GenCheckCast(BaseNode *stmt) {
       fromType = GlobalTables::GetTypeTable().GetTypeTable()[PTY_ptr];
     }
   }
-  ASSERT((fromType->GetPrimType() == maple::PTY_ptr || fromType->GetPrimType() == maple::PTY_ref) &&
-         (GlobalTables::GetTypeTable().GetTypeFromTyIdx(callNode->GetTyIdx())->GetPrimType() == maple::PTY_ptr ||
-          GlobalTables::GetTypeTable().GetTypeFromTyIdx(callNode->GetTyIdx())->GetPrimType() == maple::PTY_ref),
+  ASSERT((fromType->GetPrimType() == maple::PTY_ptr || fromType->GetPrimType() == maple::PTY_ref),
+         "unknown fromType! check it!");
+  ASSERT(GlobalTables::GetTypeTable().GetTypeFromTyIdx(callNode->GetTyIdx())->GetPrimType() == maple::PTY_ptr ||
+          GlobalTables::GetTypeTable().GetTypeFromTyIdx(callNode->GetTyIdx())->GetPrimType() == maple::PTY_ref,
          "unknown fromType! check it!");
   const size_t callNodeNretSize1 = callNode->GetReturnVec().size();
   CHECK_FATAL(callNodeNretSize1 > 0, "container check");

@@ -302,6 +302,5 @@ class MIRParser {
   // common func
   void SetSrcPos(StmtNodePtr stmt, uint32 mplNum);
 };
-
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_MIR_PARSER_H

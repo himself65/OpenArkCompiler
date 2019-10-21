@@ -63,6 +63,5 @@ class JavaEHLowererPhase : public ModulePhase {
     return nullptr;
   }
 };
-
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_JAVA_EH_LOWER_H

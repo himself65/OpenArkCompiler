@@ -30,7 +30,8 @@ void MIRConst::Dump() const {
 
 void MIRIntConst::Dump() const {
   MIRConst::Dump();
-  if (value <= 1024) {
+  constexpr int64 kValThreshold = 1024;
+  if (value <= kValThreshold) {
     LogInfo::MapleLogger() << value;
   } else {
     LogInfo::MapleLogger() << std::hex << "0x" << value << std::dec;
@@ -174,11 +175,12 @@ void MIRDoubleConst::Dump() const {
 }
 
 void MIRFloat128Const::Dump() const {
+  constexpr int kFieldWidth = 16;
   MIRConst::Dump();
   std::ios::fmtflags f(LogInfo::MapleLogger().flags());
   LogInfo::MapleLogger().setf(std::ios::uppercase);
-  LogInfo::MapleLogger() << "0xL" << std::hex << std::setfill('0') << std::setw(16) << value[0] << std::setfill('0')
-                         << std::setw(16) << value[1];
+  LogInfo::MapleLogger() << "0xL" << std::hex << std::setfill('0') << std::setw(kFieldWidth) << value[0] << std::setfill('0')
+                         << std::setw(kFieldWidth) << value[1];
   LogInfo::MapleLogger().flags(f);
 }
 
@@ -243,6 +245,5 @@ bool MIRStr16Const::operator==(MIRConst &rhs) const {
   }
   return (GetType() == rhs.GetType() && value == rhsCs->value);
 }
-
 }  // namespace maple
 #endif  // MIR_FEATURE_FULL

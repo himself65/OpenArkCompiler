@@ -132,6 +132,5 @@ class BinaryMplExport {
   void ExpandFourBuffSize();
 };
 
-
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_BIN_MPL_EXPORT_H

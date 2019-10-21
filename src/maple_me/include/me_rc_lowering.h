@@ -23,6 +23,7 @@
 namespace maple {
 class RCLowering {
  public:
+
   RCLowering(MeFunction &f, KlassHierarchy &kh)
       : func(f),
         mirModule(f.GetMIRModule()),
@@ -38,26 +39,14 @@ class RCLowering {
   void PostRCLower();
   void Finish();
   void FastBBLower(BB &bb);
+
   std::string PhaseName() const {
     return "rclowering";
   }
 
- private:
-  MeFunction &func;
-  MIRModule &mirModule;
-  IRMap &irMap;
-  SSATab &ssaTab;
-  KlassHierarchy &klassHierarchy;
-  std::vector<MeStmt*> rets{};  // std::vector of return statement
-  unsigned int tmpCount = 0;
-  std::map<OStIdx, VarMeExpr*> cleanUpVars{};
-  std::map<OStIdx, OriginalSt*> varOstMap{};
-  bool needSpecialHandleException = false;
-  std::set<MeExpr*> gcMallocObjects{};
-  // used to store initialized map, help to optimize dec ref in first assignment
-  std::unordered_map<MeExpr*, MapleSet<FieldID>*> initializedFields{};
-
-  void BBLower(BB *bb);
+  void MarkLocalRefVar();
+  void MarkAllRefOpnds();
+  void BBLower(BB &bb);
   void CreateCleanupIntrinsics();
   void HandleArguments();
   void InitRCFunc();
@@ -74,17 +63,24 @@ class RCLowering {
   IntrinsiccallMeStmt *GetVarRHSHandleStmt(MeStmt &stmt);
   IntrinsiccallMeStmt *GetIvarRHSHandleStmt(MeStmt &stmt);
   MIRIntrinsicID PrepareVolatileCall(MeStmt &stmt, MIRIntrinsicID index = INTRN_UNDEFINED);
-  IntrinsiccallMeStmt *CreateRCIntrinsic(MIRIntrinsicID intrnID, MeStmt &stmt, std::vector<MeExpr*> opnds,
+  IntrinsiccallMeStmt *CreateRCIntrinsic(MIRIntrinsicID intrnID, MeStmt &stmt, std::vector<MeExpr*> &opnds,
                                          bool assigned = false);
   void InitializedObjectFields(MeStmt &stmt);
   bool IsInitialized(IvarMeExpr &ivar);
   void PreprocessAssignMeStmt(MeStmt &stmt);
   void HandleAssignMeStmtRHS(MeStmt &stmt);
   void HandleAssignMeStmtRegLHS(MeStmt &stmt);
+  void HandleAssignToGlobalVar(MeStmt &stmt);
+  void HandleAssignToLocalVar(MeStmt &stmt, MeExpr *pendingDec);
   void HandleAssignMeStmtVarLHS(MeStmt &stmt, MeExpr *pendingDec);
   void HandleAssignMeStmtIvarLHS(MeStmt &stmt);
   void HandleCallAssignedMeStmt(MeStmt &stmt, MeExpr *pendingDec);
+  void IntroduceRegRetIntoCallAssigned(MeStmt &stmt);
+  void HandleRetOfCallAssignedMeStmt(MeStmt &stmt, MeExpr &pendingDec);
   void HandleReturnVar(RetMeStmt &ret);
+  void HandleReturnGlobal(RetMeStmt &ret);
+  void HandleReturnRegread(RetMeStmt &ret);
+  void HandleReturnFormal(RetMeStmt &ret);
   void HandleReturnIvar(RetMeStmt &ret);
   void HandleReturnReg(RetMeStmt &ret);
   void HandleReturnWithCleanup();
@@ -94,8 +90,21 @@ class RCLowering {
   MIRIntrinsicID SelectWriteBarrier(MeStmt &stmt);
 
  private:
+  MeFunction &func;
+  MIRModule &mirModule;
+  IRMap &irMap;
+  SSATab &ssaTab;
+  KlassHierarchy &klassHierarchy;
+  std::vector<MeStmt*> rets{};  // std::vector of return statement
+  unsigned int tmpCount = 0;
   std::set<MIRSymbol*> assignedPtrSym;
   std::set<VarMeExpr*> tmpLocalRefVars;
+  std::map<OStIdx, VarMeExpr*> cleanUpVars{};
+  std::map<OStIdx, OriginalSt*> varOStMap{};
+  bool needSpecialHandleException = false;
+  std::set<MeExpr*> gcMallocObjects{};
+  // used to store initialized map, help to optimize dec ref in first assignment
+  std::unordered_map<MeExpr*, MapleSet<FieldID>*> initializedFields{};
 };
 
 class MeDoRCLowering : public MeFuncPhase {
@@ -103,7 +112,9 @@ class MeDoRCLowering : public MeFuncPhase {
   explicit MeDoRCLowering(MePhaseID id) : MeFuncPhase(id) {}
 
   virtual ~MeDoRCLowering() = default;
+
   AnalysisResult *Run(MeFunction*, MeFuncResultMgr*, ModuleResultMgr*) override;
+
   std::string PhaseName() const override {
     return "rclowering";
   }

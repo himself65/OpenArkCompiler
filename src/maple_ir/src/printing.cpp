@@ -20,7 +20,6 @@
 constexpr int kIndentunit = 2;  // number of blank chars of each indentation
 
 namespace maple {
-
 std::string const kBlankString = "                                                                                ";
 
 void PrintIndentation(int32 indent) {
@@ -51,10 +50,11 @@ void PrintString(const std::string &str) {
           break;
       }
     } else {
-      LogInfo::MapleLogger() << "\\x" << std::hex << std::setfill('0') << std::setw(2) << (unsigned int)c << std::dec;
+      constexpr int kFieldWidth = 2;
+      LogInfo::MapleLogger() << "\\x" << std::hex << std::setfill('0') << std::setw(kFieldWidth)
+                             << (unsigned int)c << std::dec;
     }
   }
   LogInfo::MapleLogger() << "\"";
 }
-
 }  // namespace maple

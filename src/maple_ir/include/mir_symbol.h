@@ -546,6 +546,5 @@ class MIRLabelTable {
   MapleMap<GStrIdx, LabelIdx> strIdxToLabIdxMap;
   MapleVector<GStrIdx> labelTable;  // map label idx to label name
 };
-
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_MIR_SYMBOL_H

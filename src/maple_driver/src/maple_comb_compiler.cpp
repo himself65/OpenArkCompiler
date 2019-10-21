@@ -84,7 +84,7 @@ MeOption *MapleCombCompiler::MakeMeOptions(const MplOptions &options, maple::Mem
     }
     switch (opt.Index()) {
       case kMeSkipPhases:
-        meOption->SplitPhases(opt.Args(), meOption->GetSkipPhases());
+        meOption->SplitSkipPhases(opt.Args());
         break;
       case kMeRange:
         meOption->useRange = true;

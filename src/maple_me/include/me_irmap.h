@@ -28,7 +28,7 @@ class MeIRMap : public IRMap {
     SetDumpStmtNum(MeOption::stmtNum);
   }
 
-  ~MeIRMap() {}
+  ~MeIRMap() = default;
 
   BB *GetBB(BBId id) override {
     return func.GetBBFromID(id);
@@ -43,8 +43,8 @@ class MeIRMap : public IRMap {
   void EmitBB(BB&, BlockNode&);
   void EmitBBStmts(BB&, BlockNode&);
 
-  MeFunction *GetFunc() const {
-    return &func;
+  MeFunction &GetFunc() const {
+    return func;
   }
 
  private:
@@ -55,7 +55,7 @@ class MeDoIRMap : public MeFuncPhase {
  public:
   explicit MeDoIRMap(MePhaseID id) : MeFuncPhase(id) {}
 
-  ~MeDoIRMap() {}
+  ~MeDoIRMap() = default;
 
   AnalysisResult *Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) override;
   std::string PhaseName() const override {

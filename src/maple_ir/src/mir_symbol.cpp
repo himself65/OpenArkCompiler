@@ -23,9 +23,8 @@
 #include "native_stub_func.h"
 #include "literal_str_name.h"
 
-using namespace NameMangler;
-
 namespace maple {
+using namespace NameMangler;
 
 void MIRSymbol::SetNameStrIdx(const std::string &name) {
   nameStrIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(name);
@@ -382,5 +381,4 @@ void MIRPregTable::DumpRef(int32 indent) {
     LogInfo::MapleLogger() << "\n";
   }
 }
-
 }  // namespace maple

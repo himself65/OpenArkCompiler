@@ -737,5 +737,4 @@ std::string MIRLexer::GetTokenString() const {
       return temp;
   }
 }
-
 }  // namespace maple

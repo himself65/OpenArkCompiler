@@ -51,15 +51,15 @@ void IRMap::BuildPhiMeNode(BB &bb) {
     OriginalSt *origst = phi.first;
     VersionSt *verSt = phi.second.GetResult();
     if (origst->IsPregOst()) {
-      MeRegPhiNode *phimenode = NewInPool<MeRegPhiNode>();
+      MeRegPhiNode *phiMeNode = NewInPool<MeRegPhiNode>();
       RegMeExpr *medef = GetOrCreateRegFromVerSt(*verSt);
-      phimenode->UpdateLHS(*medef);
-      phimenode->SetDefBB(&bb);
+      phiMeNode->UpdateLHS(*medef);
+      phiMeNode->SetDefBB(&bb);
       // build phi operands
       for (VersionSt *opnd : phi.second.GetPhiOpns()) {
-        phimenode->GetOpnds().push_back(GetOrCreateRegFromVerSt(*opnd));
+        phiMeNode->GetOpnds().push_back(GetOrCreateRegFromVerSt(*opnd));
       }
-      bb.GetMeregphiList().insert(std::make_pair(medef->GetOstIdx(), phimenode));
+      bb.GetMeregphiList().insert(std::make_pair(medef->GetOstIdx(), phiMeNode));
     } else {
       MeVarPhiNode *phimenode = NewInPool<MeVarPhiNode>();
       VarMeExpr *medef = GetOrCreateVarFromVerSt(*verSt);
@@ -107,7 +107,7 @@ VarMeExpr *IRMap::CreateNewGlobalTmp(GStrIdx strIdx, PrimType ptyp) {
   MIRSymbol *st =
       mirModule.GetMIRBuilder()->CreateSymbol((TyIdx)ptyp, strIdx, kStVar, kScGlobal, nullptr, kScopeGlobal);
   st->SetIsTmp(true);
-  OriginalSt *oSt = ssaTab.CreateSymbolOriginalSt(st, 0, 0);
+  OriginalSt *oSt = ssaTab.CreateSymbolOriginalSt(*st, 0, 0);
   VarMeExpr *varx = New<VarMeExpr>(&irMapAlloc, exprID++, oSt->GetIndex(), oSt->GetZeroVersionIndex());
   varx->InitBase(OP_dread, ptyp, 0);
   return varx;
@@ -117,10 +117,10 @@ VarMeExpr *IRMap::CreateNewLocalRefVarTmp(GStrIdx strIdx, TyIdx tIdx) {
   MIRSymbol *st =
       mirModule.GetMIRBuilder()->CreateSymbol(tIdx, strIdx, kStVar, kScAuto, mirModule.CurFunction(), kScopeLocal);
   st->SetInstrumented();
-  OriginalSt *oSt = ssaTab.CreateSymbolOriginalSt(st, mirModule.CurFunction()->GetPuidx(), 0);
+  OriginalSt *oSt = ssaTab.CreateSymbolOriginalSt(*st, mirModule.CurFunction()->GetPuidx(), 0);
   oSt->SetZeroVersionIndex(verst2MeExprTable.size());
   verst2MeExprTable.push_back(nullptr);
-  oSt->GetVersionsIndex().push_back(oSt->GetZeroVersionIndex());
+  oSt->PushbackVersionIndex(oSt->GetZeroVersionIndex());
   VarMeExpr *newlocalrefvar = New<VarMeExpr>(&irMapAlloc, exprID++, oSt->GetIndex(), verst2MeExprTable.size());
   verst2MeExprTable.push_back(newlocalrefvar);
   newlocalrefvar->InitBase(OP_dread, PTY_ref, 0);
@@ -315,9 +315,9 @@ IvarMeExpr *IRMap::BuildLHSIvarFromIassMeStmt(IassignMeStmt &iassignMeStmt) {
 void IRMap::BuildChiList(MeStmt &meStmt, MapleMap<OStIdx, MayDefNode> &mayDefNodes,
                          MapleMap<OStIdx, ChiMeNode*> &outList) {
   for (auto it = mayDefNodes.begin(); it != mayDefNodes.end(); it++) {
-    MayDefNode &maydefnode = it->second;
-    VersionSt *opndst = maydefnode.GetOpnd();
-    VersionSt *resst = maydefnode.GetResult();
+    MayDefNode &maydefNode = it->second;
+    VersionSt *opndst = maydefNode.GetOpnd();
+    VersionSt *resst = maydefNode.GetResult();
     ChiMeNode *chimestmt = New<ChiMeNode>(&meStmt);
     chimestmt->SetRHS(GetOrCreateVarFromVerSt(*opndst));
     VarMeExpr *lhs = GetOrCreateVarFromVerSt(*resst);
@@ -390,7 +390,7 @@ MeStmt *IRMap::BuildMeStmtWithNoSSAPart(StmtNode &stmt) {
 }
 
 MeStmt *IRMap::BuildMeStmt(StmtNode &stmt) {
-  AccessSSANodes *ssaPart = ssaTab.GetStmtsSSAPart().SSAPartOf(&stmt);
+  AccessSSANodes *ssaPart = ssaTab.GetStmtsSSAPart().SSAPartOf(stmt);
   if (ssaPart == nullptr) {
     return BuildMeStmtWithNoSSAPart(stmt);
   }
@@ -525,8 +525,8 @@ MeStmt *IRMap::BuildMeStmt(StmtNode &stmt) {
   }
 }
 
-void IRMap::BuildMuList(MapleMap<OStIdx, MayUseNode> &mayuselist, MapleMap<OStIdx, VarMeExpr*> &mulist) {
-  for (std::pair<OStIdx, MayUseNode> mapitem : mayuselist) {
+void IRMap::BuildMuList(MapleMap<OStIdx, MayUseNode> &mayuseList, MapleMap<OStIdx, VarMeExpr*> &mulist) {
+  for (std::pair<OStIdx, MayUseNode> mapitem : mayuseList) {
     MayUseNode &mayusenode = mapitem.second;
     VersionSt *verSt = mayusenode.GetOpnd();
     VarMeExpr *varmeexpr = GetOrCreateVarFromVerSt(*verSt);
@@ -535,7 +535,7 @@ void IRMap::BuildMuList(MapleMap<OStIdx, MayUseNode> &mayuselist, MapleMap<OStId
 }
 
 MeExpr *IRMap::BuildExpr(BaseNode &mirNode) {
-  MeExpr *retmeexpr = nullptr;
+  MeExpr *retMeExpr = nullptr;
   Opcode op = mirNode.GetOpCode();
   switch (op) {
     case OP_addrof: {
@@ -545,7 +545,7 @@ MeExpr *IRMap::BuildExpr(BaseNode &mirNode) {
       AddrofMeExpr addrofme(kInvalidExprID, oSt->GetIndex());
       addrofme.InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
       addrofme.SetFieldID(addrofnode.GetFieldID());
-      retmeexpr = HashMeExpr(addrofme);
+      retMeExpr = HashMeExpr(addrofme);
       break;
     }
     case OP_dread: {
@@ -559,7 +559,7 @@ MeExpr *IRMap::BuildExpr(BaseNode &mirNode) {
             GlobalTables::GetTypeTable().GetTypeFromTyIdx(verSt->GetOrigSt()->GetTyIdx())->GetPrimType());
         varmeexpr->SetFieldID(addrofnode.GetFieldID());
       }
-      retmeexpr = varmeexpr;
+      retMeExpr = varmeexpr;
       break;
     }
     case OP_regread: {
@@ -567,7 +567,7 @@ MeExpr *IRMap::BuildExpr(BaseNode &mirNode) {
       VersionSt *verSt = regnode.GetSSAVar();
       RegMeExpr *regmeexpr = GetOrCreateRegFromVerSt(*verSt);
       regmeexpr->InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
-      retmeexpr = regmeexpr;
+      retMeExpr = regmeexpr;
       break;
     }
     case OP_addroffunc: {
@@ -575,7 +575,7 @@ MeExpr *IRMap::BuildExpr(BaseNode &mirNode) {
       PUIdx puidx = addfuncnode.GetPUIdx();
       AddroffuncMeExpr addrfuncme(kInvalidExprID, puidx);
       addrfuncme.InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
-      retmeexpr = HashMeExpr(addrfuncme);
+      retMeExpr = HashMeExpr(addrfuncme);
       break;
     }
     case OP_gcmalloc:
@@ -584,14 +584,14 @@ MeExpr *IRMap::BuildExpr(BaseNode &mirNode) {
       TyIdx tyidx = gcmallocnode.GetTyIdx();
       GcmallocMeExpr gcmallocme(kInvalidExprID, tyidx);
       gcmallocme.InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
-      retmeexpr = HashMeExpr(gcmallocme);
+      retMeExpr = HashMeExpr(gcmallocme);
       break;
     }
     case OP_sizeoftype: {
       SizeoftypeNode &sizeoftypenode = static_cast<SizeoftypeNode&>(mirNode);
       SizeoftypeMeExpr sizemeexpr(kInvalidExprID, sizeoftypenode.GetTyIdx());
       sizemeexpr.InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
-      retmeexpr = HashMeExpr(sizemeexpr);
+      retMeExpr = HashMeExpr(sizemeexpr);
       break;
     }
     case OP_fieldsdist: {
@@ -599,7 +599,7 @@ MeExpr *IRMap::BuildExpr(BaseNode &mirNode) {
       FieldsDistMeExpr fieldsDistExpr(kInvalidExprID, fieldsDistNode.GetTyIdx(), fieldsDistNode.GetFiledID1(),
                                       fieldsDistNode.GetFiledID2());
       fieldsDistExpr.InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
-      retmeexpr = HashMeExpr(fieldsDistExpr);
+      retMeExpr = HashMeExpr(fieldsDistExpr);
       break;
     }
     case OP_iread: {
@@ -614,28 +614,28 @@ MeExpr *IRMap::BuildExpr(BaseNode &mirNode) {
         VarMeExpr *varmeexpr = GetOrCreateVarFromVerSt(*verSt);
         ivarmeexpr.SetMuVal(varmeexpr);
       }
-      retmeexpr = HashMeExpr(ivarmeexpr);
-      ASSERT(static_cast<IvarMeExpr*>(retmeexpr)->GetMu() != nullptr,
+      retMeExpr = HashMeExpr(ivarmeexpr);
+      ASSERT(static_cast<IvarMeExpr*>(retMeExpr)->GetMu() != nullptr,
              "BuildExpr: ivar node cannot have mu == nullptr");
       break;
     }
     case OP_constval: {
       ConstvalNode &constnode = static_cast<ConstvalNode&>(mirNode);
-      retmeexpr = CreateConstMeExpr(constnode.GetPrimType(), *constnode.GetConstVal());
+      retMeExpr = CreateConstMeExpr(constnode.GetPrimType(), *constnode.GetConstVal());
       break;
     }
     case OP_conststr: {
       ConststrNode &constnode = static_cast<ConststrNode&>(mirNode);
       ConststrMeExpr conststrmeexpr(kInvalidExprID, constnode.GetStrIdx());
       conststrmeexpr.InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
-      retmeexpr = HashMeExpr(conststrmeexpr);
+      retMeExpr = HashMeExpr(conststrmeexpr);
       break;
     }
     case OP_conststr16: {
       Conststr16Node &constnode = static_cast<Conststr16Node&>(mirNode);
       Conststr16MeExpr conststrmeexpr(kInvalidExprID, constnode.GetStrIdx());
       conststrmeexpr.InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
-      retmeexpr = HashMeExpr(conststrmeexpr);
+      retMeExpr = HashMeExpr(conststrmeexpr);
       break;
     }
     case OP_eq:
@@ -653,8 +653,8 @@ MeExpr *IRMap::BuildExpr(BaseNode &mirNode) {
       opmeexpr.SetOpnd(1, BuildExpr(*cmpnode.Opnd(1)));
       opmeexpr.InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
       opmeexpr.SetOpndType(cmpnode.GetOpndType());
-      retmeexpr = HashMeExpr(opmeexpr);
-      static_cast<OpMeExpr*>(retmeexpr)->SetOpndType(cmpnode.GetOpndType());
+      retMeExpr = HashMeExpr(opmeexpr);
+      static_cast<OpMeExpr*>(retMeExpr)->SetOpndType(cmpnode.GetOpndType());
       break;
     }
     case OP_ceil:
@@ -666,7 +666,7 @@ MeExpr *IRMap::BuildExpr(BaseNode &mirNode) {
       opmeexpr.SetOpnd(0, BuildExpr(*tycvtnode.Opnd(0)));
       opmeexpr.InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
       opmeexpr.SetOpndType(tycvtnode.FromType());
-      retmeexpr = HashMeExpr(opmeexpr);
+      retMeExpr = HashMeExpr(opmeexpr);
       break;
     }
     case OP_retype: {
@@ -676,7 +676,7 @@ MeExpr *IRMap::BuildExpr(BaseNode &mirNode) {
       opmeexpr.InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
       opmeexpr.SetOpndType(tycvtnode.FromType());
       opmeexpr.SetTyIdx(tycvtnode.GetTyIdx());
-      retmeexpr = HashMeExpr(opmeexpr);
+      retMeExpr = HashMeExpr(opmeexpr);
       break;
     }
     case OP_abs:
@@ -691,7 +691,7 @@ MeExpr *IRMap::BuildExpr(BaseNode &mirNode) {
       UnaryNode &unnode = static_cast<UnaryNode&>(mirNode);
       opmeexpr.SetOpnd(0, BuildExpr(*unnode.Opnd(0)));
       opmeexpr.InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
-      retmeexpr = HashMeExpr(opmeexpr);
+      retMeExpr = HashMeExpr(opmeexpr);
       break;
     }
     case OP_iaddrof: {
@@ -701,7 +701,7 @@ MeExpr *IRMap::BuildExpr(BaseNode &mirNode) {
       opmeexpr.SetFieldID(unnode.GetFieldID());
       opmeexpr.SetOpnd(0, BuildExpr(*unnode.Opnd(0)));
       opmeexpr.InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
-      retmeexpr = HashMeExpr(opmeexpr);
+      retMeExpr = HashMeExpr(opmeexpr);
       break;
     }
     case OP_sext:
@@ -713,7 +713,7 @@ MeExpr *IRMap::BuildExpr(BaseNode &mirNode) {
       opmeexpr.SetBitsOffSet(extnode.GetBitsOffset());
       opmeexpr.SetBitsSize(extnode.GetBitsSize());
       opmeexpr.InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
-      retmeexpr = HashMeExpr(opmeexpr);
+      retMeExpr = HashMeExpr(opmeexpr);
       break;
     }
     case OP_gcmallocjarray:
@@ -721,9 +721,9 @@ MeExpr *IRMap::BuildExpr(BaseNode &mirNode) {
       OpMeExpr opmeexpr(kInvalidExprID);
       JarrayMallocNode &gcnode = static_cast<JarrayMallocNode&>(mirNode);
       opmeexpr.SetOpnd(0, BuildExpr(*gcnode.Opnd(0)));
-      opmeexpr.GetTyIdx() = gcnode.GetTyIdx();
+      opmeexpr.SetTyIdx(gcnode.GetTyIdx());
       opmeexpr.InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
-      retmeexpr = HashMeExpr(opmeexpr);
+      retMeExpr = HashMeExpr(opmeexpr);
       break;
     }
     case OP_resolveinterfacefunc:
@@ -734,7 +734,7 @@ MeExpr *IRMap::BuildExpr(BaseNode &mirNode) {
       opmeexpr.SetOpnd(1, BuildExpr(*rsnode.Opnd(1)));
       opmeexpr.SetFieldID(rsnode.GetPuIdx());
       opmeexpr.InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
-      retmeexpr = HashMeExpr(opmeexpr);
+      retMeExpr = HashMeExpr(opmeexpr);
       break;
     }
     case OP_sub:
@@ -757,7 +757,7 @@ MeExpr *IRMap::BuildExpr(BaseNode &mirNode) {
       opmeexpr.SetOpnd(0, BuildExpr(*bnode.Opnd(0)));
       opmeexpr.SetOpnd(1, BuildExpr(*bnode.Opnd(1)));
       opmeexpr.InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
-      retmeexpr = HashMeExpr(opmeexpr);
+      retMeExpr = HashMeExpr(opmeexpr);
       break;
     }
     case OP_select: {
@@ -767,7 +767,7 @@ MeExpr *IRMap::BuildExpr(BaseNode &mirNode) {
       opmeexpr.SetOpnd(1, BuildExpr(*bnode.Opnd(1)));
       opmeexpr.SetOpnd(2, BuildExpr(*bnode.Opnd(2)));
       opmeexpr.InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
-      retmeexpr = HashMeExpr(opmeexpr);
+      retMeExpr = HashMeExpr(opmeexpr);
       break;
     }
     case OP_array: {
@@ -777,7 +777,7 @@ MeExpr *IRMap::BuildExpr(BaseNode &mirNode) {
         arrmeexpr.GetOpnds().push_back(BuildExpr(*arrnode.Opnd(i)));
       }
       arrmeexpr.InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
-      retmeexpr = HashMeExpr(arrmeexpr);
+      retMeExpr = HashMeExpr(arrmeexpr);
       break;
     }
     case OP_intrinsicop: {
@@ -788,7 +788,7 @@ MeExpr *IRMap::BuildExpr(BaseNode &mirNode) {
         narymeexpr.GetOpnds().push_back(BuildExpr(*intrinnode.Opnd(i)));
       }
       narymeexpr.InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
-      retmeexpr = HashMeExpr(narymeexpr);
+      retMeExpr = HashMeExpr(narymeexpr);
       break;
     }
     case OP_intrinsicopwithtype: {
@@ -799,30 +799,26 @@ MeExpr *IRMap::BuildExpr(BaseNode &mirNode) {
         narymeexpr.GetOpnds().push_back(BuildExpr(*intrinnode.Opnd(i)));
       }
       narymeexpr.InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
-      retmeexpr = HashMeExpr(narymeexpr);
+      retMeExpr = HashMeExpr(narymeexpr);
       break;
     }
     default:
       ASSERT(false, "NIY BuildExpe");
   }
-  return retmeexpr;
+  return retMeExpr;
 }
 
 void IRMap::PutToBucket(uint32 hashidx, MeExpr &meExpr) {
   MeExpr *headexpr = hashTable[hashidx];
-  if (headexpr == nullptr) {
-    hashTable[hashidx] = &meExpr;
-  } else {
+  if (headexpr != nullptr) {
     meExpr.SetNext(headexpr);
-    hashTable[hashidx] = &meExpr;
   }
+  hashTable[hashidx] = &meExpr;
 }
 
-/*
-   Check if two IvarMeExpr are identical.
-   If ivar_use is the first use of the same ivar coming from an iassign
-   (ivar_def), then update its mu: ivar_def->mu = ivar_use->mu.
- */
+  // Check if two IvarMeExpr are identical.
+  // If ivar_use is the first use of the same ivar coming from an iassign
+  // (ivar_def), then update its mu: ivar_def->mu = ivar_use->mu.
 static bool AreIvarIdentical(IvarMeExpr &ivarUse, IvarMeExpr &ivarDef) {
   if (ivarDef.GetBase()->GetExprID() != ivarUse.GetBase()->GetExprID()) {
     return false;
@@ -849,8 +845,7 @@ static bool AreIvarIdentical(IvarMeExpr &ivarUse, IvarMeExpr &ivarDef) {
         // this can happen due to use of placement new
         return false;
       }
-      for (auto xit = iass->GetChiList()->begin(); xit != iass->GetChiList()->end();
-           xit++) {
+      for (auto xit = iass->GetChiList()->begin(); xit != iass->GetChiList()->end(); xit++) {
         ChiMeNode *chi = xit->second;
         if (chi->GetLHS()->GetExprID() == ivarUse.GetMu()->GetExprID()) {
           ivarDef.SetMuVal(ivarUse.GetMu());
@@ -916,39 +911,39 @@ MeExpr *IRMap::HashMeExpr(MeExpr &meExpr) {
       return newconstmeexpr;
     }
     case kMeOpConststr: {
-      ConststrMeExpr &constmeexpr = static_cast<ConststrMeExpr&>(meExpr);
-      ConststrMeExpr *itexpr = static_cast<ConststrMeExpr*>(hashTable[hidx]);
-      UStrIdx strIdx = constmeexpr.GetStrIdx();
-      while (itexpr != nullptr) {
-        if (itexpr->GetMeOp() != kMeOpConststr) {
-          itexpr = static_cast<ConststrMeExpr*>(itexpr->GetNext());
+      ConststrMeExpr &constMeExpr = static_cast<ConststrMeExpr&>(meExpr);
+      ConststrMeExpr *itExpr = static_cast<ConststrMeExpr*>(hashTable[hidx]);
+      UStrIdx strIdx = constMeExpr.GetStrIdx();
+      while (itExpr != nullptr) {
+        if (itExpr->GetMeOp() != kMeOpConststr) {
+          itExpr = static_cast<ConststrMeExpr*>(itExpr->GetNext());
           continue;
         }
-        UStrIdx itstridx = itexpr->GetStrIdx();
-        if (itstridx == strIdx) {
-          return itexpr;
+        UStrIdx itStrIdx = itExpr->GetStrIdx();
+        if (itStrIdx == strIdx) {
+          return itExpr;
         }
-        itexpr = static_cast<ConststrMeExpr*>(itexpr->GetNext());
+        itExpr = static_cast<ConststrMeExpr*>(itExpr->GetNext());
       }
-      ConststrMeExpr *newconstmeexpr = New<ConststrMeExpr>(exprID++, strIdx);
-      newconstmeexpr->InitBase(meExpr.GetOp(), meExpr.GetPrimType(), meExpr.GetNumOpnds());
-      PutToBucket(hidx, *newconstmeexpr);
-      return newconstmeexpr;
+      ConststrMeExpr *newConstMeExpr = New<ConststrMeExpr>(exprID++, strIdx);
+      newConstMeExpr->InitBase(meExpr.GetOp(), meExpr.GetPrimType(), meExpr.GetNumOpnds());
+      PutToBucket(hidx, *newConstMeExpr);
+      return newConstMeExpr;
     }
     case kMeOpConststr16: {
-      Conststr16MeExpr &constmeexpr = static_cast<Conststr16MeExpr&>(meExpr);
-      Conststr16MeExpr *itexpr = static_cast<Conststr16MeExpr*>(hashTable[hidx]);
-      U16StrIdx strIdx = constmeexpr.GetStrIdx();
-      while (itexpr != nullptr) {
-        if (itexpr->GetMeOp() != kMeOpConststr16) {
-          itexpr = static_cast<Conststr16MeExpr*>(itexpr->GetNext());
+      Conststr16MeExpr &constMeExpr = static_cast<Conststr16MeExpr&>(meExpr);
+      Conststr16MeExpr *itExpr = static_cast<Conststr16MeExpr*>(hashTable[hidx]);
+      U16StrIdx strIdx = constMeExpr.GetStrIdx();
+      while (itExpr != nullptr) {
+        if (itExpr->GetMeOp() != kMeOpConststr16) {
+          itExpr = static_cast<Conststr16MeExpr*>(itExpr->GetNext());
           continue;
         }
-        U16StrIdx itstridx = itexpr->GetStrIdx();
+        U16StrIdx itstridx = itExpr->GetStrIdx();
         if (itstridx == strIdx) {
-          return itexpr;
+          return itExpr;
         }
-        itexpr = static_cast<Conststr16MeExpr*>(itexpr->GetNext());
+        itExpr = static_cast<Conststr16MeExpr*>(itExpr->GetNext());
       }
       Conststr16MeExpr *newconstmeexpr = New<Conststr16MeExpr>(exprID++, strIdx);
       newconstmeexpr->InitBase(meExpr.GetOp(), meExpr.GetPrimType(), meExpr.GetNumOpnds());
@@ -1063,30 +1058,30 @@ MeExpr *IRMap::HashMeExpr(MeExpr &meExpr) {
 
 // replace meExpr with repexpr. meExpr must be a kid of origexpr
 // return repexpr's parent if replaced, otherwise return nullptr
-MeExpr *IRMap::ReplaceMeExprExpr(MeExpr &origExpr, MeExpr &meExpr, MeExpr &repexpr) {
+MeExpr *IRMap::ReplaceMeExprExpr(MeExpr &origExpr, MeExpr &meExpr, MeExpr &repExpr) {
   if (origExpr.IsLeaf()) {
     return &origExpr;
   }
   switch (origExpr.GetMeOp()) {
     case kMeOpOp: {
-      OpMeExpr &opmeexpr = static_cast<OpMeExpr&>(origExpr);
-      OpMeExpr newmeexpr(opmeexpr, kInvalidExprID);
+      OpMeExpr &opMeExpr = static_cast<OpMeExpr&>(origExpr);
+      OpMeExpr newMeExpr(opMeExpr, kInvalidExprID);
       bool needRehash = false;
       for (uint32 i = 0; i < kOpndNumOfOpMeExpr; i++) {
-        if (!opmeexpr.GetOpnd(i)) {
+        if (!opMeExpr.GetOpnd(i)) {
           continue;
         }
-        if (opmeexpr.GetOpnd(i) == &meExpr) {
+        if (opMeExpr.GetOpnd(i) == &meExpr) {
           needRehash = true;
-          newmeexpr.SetOpnd(i, &repexpr);
-        } else if (!opmeexpr.GetOpnd(i)->IsLeaf()) {
-          newmeexpr.SetOpnd(i, ReplaceMeExprExpr(*newmeexpr.GetOpnd(i), meExpr, repexpr));
-          if (newmeexpr.GetOpnd(i) != opmeexpr.GetOpnd(i)) {
+          newMeExpr.SetOpnd(i, &repExpr);
+        } else if (!opMeExpr.GetOpnd(i)->IsLeaf()) {
+          newMeExpr.SetOpnd(i, ReplaceMeExprExpr(*newMeExpr.GetOpnd(i), meExpr, repExpr));
+          if (newMeExpr.GetOpnd(i) != opMeExpr.GetOpnd(i)) {
             needRehash = true;
           }
         }
       }
-      return needRehash ? HashMeExpr(newmeexpr) : &origExpr;
+      return needRehash ? HashMeExpr(newMeExpr) : &origExpr;
     }
     case kMeOpNary: {
       NaryMeExpr &narymeexpr = static_cast<NaryMeExpr&>(origExpr);
@@ -1096,10 +1091,10 @@ MeExpr *IRMap::ReplaceMeExprExpr(MeExpr &origExpr, MeExpr &meExpr, MeExpr &repex
       for (size_t i = 0; i < opnds.size(); i++) {
         MeExpr *opnd = opnds[i];
         if (opnd == &meExpr) {
-          newmeexpr.SetOpnd(i, &repexpr);
+          newmeexpr.SetOpnd(i, &repExpr);
           needRehash = true;
         } else if (!opnd->IsLeaf()) {
-          newmeexpr.SetOpnd(i, ReplaceMeExprExpr(*newmeexpr.GetOpnd(i), meExpr, repexpr));
+          newmeexpr.SetOpnd(i, ReplaceMeExprExpr(*newmeexpr.GetOpnd(i), meExpr, repExpr));
           if (newmeexpr.GetOpnd(i) != opnd) {
             needRehash = true;
           }
@@ -1112,10 +1107,10 @@ MeExpr *IRMap::ReplaceMeExprExpr(MeExpr &origExpr, MeExpr &meExpr, MeExpr &repex
       IvarMeExpr newmeexpr(kInvalidExprID, ivarexpr);
       bool needRehash = false;
       if (ivarexpr.GetBase() == &meExpr) {
-        newmeexpr.SetBase(&repexpr);
+        newmeexpr.SetBase(&repExpr);
         needRehash = true;
       } else if (!ivarexpr.GetBase()->IsLeaf()) {
-        newmeexpr.SetBase(ReplaceMeExprExpr(*newmeexpr.GetBase(), meExpr, repexpr));
+        newmeexpr.SetBase(ReplaceMeExprExpr(*newmeexpr.GetBase(), meExpr, repExpr));
         if (newmeexpr.GetBase() != ivarexpr.GetBase()) {
           needRehash = true;
         }
@@ -1280,17 +1275,17 @@ BB *IRMap::GetFalseBrBB(CondGotoMeStmt &condgoto) {
   }
 }
 
-MeExpr *IRMap::CreateConstMeExpr(PrimType ptyp, MIRConst &mirconst) {
-  ConstMeExpr constmeexpr(kInvalidExprID, &mirconst);
-  constmeexpr.SetOp(OP_constval);
-  constmeexpr.SetPtyp(ptyp);
-  return HashMeExpr(constmeexpr);
+MeExpr *IRMap::CreateConstMeExpr(PrimType ptyp, MIRConst &mirConst) {
+  ConstMeExpr constMeExpr(kInvalidExprID, &mirConst);
+  constMeExpr.SetOp(OP_constval);
+  constMeExpr.SetPtyp(ptyp);
+  return HashMeExpr(constMeExpr);
 }
 
 MeExpr *IRMap::CreateIntConstMeExpr(int64 value, PrimType ptyp) {
-  MIRIntConst *intconst =
+  MIRIntConst *intConst =
       mirModule.GetMemPool()->New<MIRIntConst>(value, GlobalTables::GetTypeTable().GetPrimType(ptyp));
-  return CreateConstMeExpr(ptyp, *intconst);
+  return CreateConstMeExpr(ptyp, *intConst);
 }
 
 MeExpr *IRMap::CreateMeExprBinary(Opcode op, PrimType ptyp, MeExpr &expr0, MeExpr &expr1) {
@@ -1354,7 +1349,7 @@ IntrinsiccallMeStmt *IRMap::CreateIntrinsicCallAssignedMeStmt(MIRIntrinsicID idx
 }
 
 MeExpr *IRMap::CreateAddrofMeExprFromNewSymbol(MIRSymbol &st, PUIdx puidx) {
-  OriginalSt *baseOst = ssaTab.CreateSymbolOriginalSt(&st, puidx, 0);
+  OriginalSt *baseOst = ssaTab.CreateSymbolOriginalSt(st, puidx, 0);
   AddrofMeExpr addrofme(kInvalidExprID, baseOst->GetIndex());
   addrofme.SetOp(OP_addrof);
   addrofme.SetPtyp(PTY_ptr);

@@ -391,11 +391,11 @@ bool MIRParser::ParsePragmaElement(MIRPragmaElement *elem) {
     case TK_i8:
     case TK_i16:
     case TK_i32:
-      elem->SetI32Val((int32)lexer.GetTheIntVal());
+      elem->SetI32Val(static_cast<int32>(lexer.GetTheIntVal()));
       break;
     case TK_u16:
     case TK_ref:
-      elem->SetU64Val((uint64)lexer.GetTheIntVal());
+      elem->SetU64Val(static_cast<uint64>(lexer.GetTheIntVal()));
       break;
     case TK_i64:
     case TK_retype:
@@ -836,7 +836,18 @@ bool MIRParser::ParseStructType(TyIdx &styidx) {
   if (!ParseFields(structType)) {
     return false;
   }
-  styidx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&structType);
+  if (styidx != 0) {
+    MIRType *prevType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(styidx);
+    ASSERT(prevType->GetKind() == kTypeStruct || prevType->GetKind() == kTypeStructIncomplete,
+           "type kind should be consistent.");
+    if (static_cast<MIRStructType*>(prevType)->IsIncomplete() && !(structType.IsIncomplete())) {
+      structType.SetNameStrIdx(prevType->GetNameStrIdx());
+      structType.SetTypeIndex(styidx);
+      GlobalTables::GetTypeTable().SetTypeWithTyIdx(styidx, structType.CopyMIRTypeNode());
+    }
+  } else {
+    styidx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&structType);
+  }
   lexer.NextToken();
   return true;
 }
@@ -856,16 +867,27 @@ bool MIRParser::ParseClassType(TyIdx &styidx) {
   if (!ParseFields(classType)) {
     return false;
   }
-  styidx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&classType);
-  // set up classTyIdx for methods
-  for (size_t i = 0; i < classType.GetMethods().size(); i++) {
-    StIdx stidx = classType.GetMethodsElement(i).first;
-    MIRSymbol *st = GlobalTables::GetGsymTable().GetSymbolFromStidx(stidx.Idx());
-    ASSERT(st->GetSKind() == kStFunc, "unexpected st->sKind");
-    st->GetFunction()->GetClassTyidx() = styidx;
+  if (styidx != 0) {
+    MIRType *prevType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(styidx);
+    ASSERT(prevType->GetKind() == kTypeClass || prevType->GetKind() == kTypeClassIncomplete,
+           "type kind should be consistent.");
+    if (static_cast<MIRClassType*>(prevType)->IsIncomplete() && !(classType.IsIncomplete())) {
+      classType.SetNameStrIdx(prevType->GetNameStrIdx());
+      classType.SetTypeIndex(styidx);
+      GlobalTables::GetTypeTable().SetTypeWithTyIdx(styidx, classType.CopyMIRTypeNode());
+    }
+  } else {
+    styidx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&classType);
+    // set up classTyIdx for methods
+    for (size_t i = 0; i < classType.GetMethods().size(); i++) {
+      StIdx stidx = classType.GetMethodsElement(i).first;
+      MIRSymbol *st = GlobalTables::GetGsymTable().GetSymbolFromStidx(stidx.Idx());
+      ASSERT(st->GetSKind() == kStFunc, "unexpected st->sKind");
+      st->GetFunction()->GetClassTyidx() = styidx;
+    }
+    mod.AddClass(styidx);
   }
   lexer.NextToken();
-  mod.AddClass(styidx);
   return true;
 }
 
@@ -888,16 +910,27 @@ bool MIRParser::ParseInterfaceType(TyIdx &styidx) {
   if (!ParseFields(interfaceType)) {
     return false;
   }
-  styidx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&interfaceType);
-  // set up classTyIdx for methods
-  for (size_t i = 0; i < interfaceType.GetMethods().size(); i++) {
-    StIdx stidx = interfaceType.GetMethodsElement(i).first;
-    MIRSymbol *st = GlobalTables::GetGsymTable().GetSymbolFromStidx(stidx.Idx());
-    ASSERT(st != nullptr, "st is null");
-    ASSERT(st->GetSKind() == kStFunc, "unexpected st->sKind");
-    st->GetFunction()->GetClassTyidx() = styidx;
+  if (styidx != 0) {
+    MIRType *prevType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(styidx);
+    ASSERT(prevType->GetKind() == kTypeInterface || prevType->GetKind() == kTypeInterfaceIncomplete,
+           "type kind should be consistent.");
+    if (static_cast<MIRInterfaceType*>(prevType)->IsIncomplete() && !(interfaceType.IsIncomplete())) {
+      interfaceType.SetNameStrIdx(prevType->GetNameStrIdx());
+      interfaceType.SetTypeIndex(styidx);
+      GlobalTables::GetTypeTable().SetTypeWithTyIdx(styidx, interfaceType.CopyMIRTypeNode());
+    }
+  } else {
+    styidx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&interfaceType);
+    // set up classTyIdx for methods
+    for (size_t i = 0; i < interfaceType.GetMethods().size(); i++) {
+      StIdx stidx = interfaceType.GetMethodsElement(i).first;
+      MIRSymbol *st = GlobalTables::GetGsymTable().GetSymbolFromStidx(stidx.Idx());
+      ASSERT(st != nullptr, "st is null");
+      ASSERT(st->GetSKind() == kStFunc, "unexpected st->sKind");
+      st->GetFunction()->GetClassTyidx() = styidx;
+    }
+    mod.AddClass(styidx);
   }
-  mod.AddClass(styidx);
   lexer.NextToken();
   return true;
 }
@@ -1461,7 +1494,7 @@ bool MIRParser::ParseTypedef() {
   // at this point,if prev_tyidx is not zero, this type name has been
   // forward-referenced
   tokenKind = lexer.NextToken();
-  tyIdx = TyIdx(0);
+  tyIdx = prevTyIdx;
   if (IsPrimitiveType(tokenKind)) {
     if (!ParsePrimType(tyIdx)) {
       Error("expect primitive type after typedef but get ");
@@ -1470,6 +1503,9 @@ bool MIRParser::ParseTypedef() {
   } else if (!ParseDerivedType(tyIdx, kTypeUnknown)) {
     Error("error passing derived type at ");
     return false;
+  }
+  if (prevTyIdx != 0) {
+    return true;
   }
   // for class/interface types, prev_tyidx could also be set during processing
   // so we check again right before SetGStrIdxToTyIdx
@@ -1490,12 +1526,6 @@ bool MIRParser::ParseTypedef() {
       GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->SetNameStrIdx(strIdx);
     }
   }
-  if (prevTyIdx != 0 && prevTyIdx != tyIdx) {
-    // replace all uses of prev_tyidx by tyIdx in type_table_
-    typeDefIdxMap[prevTyIdx] = tyIdx;  // record the real tydix
-    // remove prev_tyidx from classlist
-    mod.RemoveClass(prevTyIdx);
-  }
   // Merge class or interface type at the cross-module level
   ASSERT(GlobalTables::GetTypeTable().GetTypeTable().empty() == false, "container check");
   MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
@@ -1504,19 +1534,6 @@ bool MIRParser::ParseTypedef() {
     prevTyIdx = GlobalTables::GetTypeNameTable().GetTyidxFromGstrIdx(strIdx);
     if (prevTyIdx == 0) {
       GlobalTables::GetTypeNameTable().SetGStrIdxToTyIdx(strIdx, tyIdx);
-    } else {
-      MIRStructType *structType = static_cast<MIRStructType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx));
-      MIRStructType *prevSType = static_cast<MIRStructType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(prevTyIdx));
-      if (!structType->IsIncomplete()) {
-        if (prevSType->IsIncomplete()) {
-          // New definition is strong and previous definition is weak.
-          GlobalTables::GetTypeNameTable().SetGStrIdxToTyIdx(strIdx, tyIdx);
-        } else if (!prevSType->IsIncomplete() && !structType->IsIncomplete()) {
-          // Both are strong, something must be wrong
-          Error("redefined class/interface type name");
-          return false;
-        }
-      }
     }
     // setup eh root type
     MIRType *ehType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
@@ -1678,7 +1695,8 @@ bool MIRParser::ParseDeclareVar(MIRSymbol *symbol) {
   }
   if (symbol->GetStorageClass() == kScExtern && symbol->IsStatic()) {
     const std::string &staticFieldName = symbol->GetName();
-    size_t pos = staticFieldName.find(NameMangler::kClassNameSplitterStr) + 3;
+    constexpr int kPosOffset = 3;
+    size_t pos = staticFieldName.find(NameMangler::kClassNameSplitterStr) + kPosOffset;
     if (pos != 0 && pos != std::string::npos) {
       std::string className = staticFieldName.substr(0, pos);
       MIRSymbol *classSt =
@@ -2798,5 +2816,4 @@ void MIRParser::EmitWarning(const std::string &fileName) {
   }
   WARN(kLncWarn, "%s \n%s\n", fileName.c_str(), GetWarning().c_str());
 }
-
 }  // namespace maple

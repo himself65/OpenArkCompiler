@@ -2851,5 +2851,4 @@ void MIRParser::SetSrcPos(StmtNodePtr stmt, uint32 mplNum) {
   stmt->GetSrcPos().SetLineNum(lastLineNum);
   stmt->GetSrcPos().SetMplLineNum(mplNum);
 }
-
 }  // namespace maple

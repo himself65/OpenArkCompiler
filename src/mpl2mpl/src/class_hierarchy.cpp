@@ -57,8 +57,8 @@ Klass::Klass(MIRStructType *type, MapleAllocator *alc)
       isPrivateInnerAndNoSubClassFlag(false),
       hasNativeMethods(false),
       needDecoupling(true) {
-  ASSERT((type != nullptr) && (type->GetKind() == kTypeClass || type->GetKind() == kTypeInterface),
-         "runtime check error");
+  ASSERT(type != nullptr, "type is nullptr in Klass::Klass!");
+  ASSERT(type->GetKind() == kTypeClass || type->GetKind() == kTypeInterface, "runtime check error");
 }
 
 void Klass::DumpKlassMethods() const {
@@ -227,9 +227,9 @@ void Klass::CountVirtMethTopDown(const KlassHierarchy *kh) {
     superAndImplClasses->push_back(superKlass);
   }
   // Initialize strIdx2CandidateMap based on the superclass methods
-  for (Klass * const &superAndImplClasse : *superAndImplClasses) {
-    ASSERT(superAndImplClasse, "Not a valid super class of interface");
-    for (auto const &pair : superAndImplClasse->strIdx2CandidateMap) {
+  for (Klass * const &superAndImplClass : *superAndImplClasses) {
+    ASSERT(superAndImplClass, "Not a valid super class of interface");
+    for (auto const &pair : superAndImplClass->strIdx2CandidateMap) {
       stridx = pair.first;
       pvec = pair.second;
       ASSERT(pvec->size() == 1, "Expect exactly one method definition from parent class");
@@ -245,7 +245,8 @@ void Klass::CountVirtMethTopDown(const KlassHierarchy *kh) {
         // Interfaces implemented methods override, need to determine the inherit relation.
         // class method can override interface method, interface method can override its parent's methods
         vec = strIdx2CandidateMap[stridx];
-        ASSERT(vec && vec->size() == 1, "Expect exactly one method definition from parent class");
+        ASSERT(vec != nullptr, "nullptr check!");
+        ASSERT(vec->size() == 1, "Expect exactly one method definition from parent class");
         Klass *parentKlass = kh->GetKlassFromFunc((*vec)[0]);
         Klass *childKlass = kh->GetKlassFromFunc((*pvec)[0]);
         CHECK_FATAL(childKlass != nullptr, "childKlass is null in Klass::CountVirtMethTopDown");
@@ -266,7 +267,8 @@ void Klass::CountVirtMethTopDown(const KlassHierarchy *kh) {
     if (strIdx2CandidateMap.find(stridx) != strIdx2CandidateMap.end()) {
       // Override the method coming from parent
       vec = strIdx2CandidateMap[stridx];
-      ASSERT(vec && vec->size() == 1, "Expect exactly one method definition from parent class");
+      ASSERT(vec != nullptr, "nullptr check!");
+      ASSERT(vec->size() == 1, "Expect exactly one method definition from parent class");
       (*vec)[0] = method;
     } else {
       // Newly declared and defined
@@ -528,7 +530,7 @@ void KlassHierarchy::AddKlassRelationAndMethods() {
     } else {
       // Class
       MIRClassType *ctype = klass->GetMIRClassType();
-      ASSERT(ctype, "null ptr check");
+      ASSERT(ctype != nullptr, "null ptr check");
       // Add interface relationship
       for (TyIdx const &intfTyIdx : ctype->GetInerfaceImplemented()) {
         Klass *intfKlass = GetKlassFromTyIdx(intfTyIdx);

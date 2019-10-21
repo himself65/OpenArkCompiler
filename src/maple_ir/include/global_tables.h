@@ -623,6 +623,5 @@ class GlobalTables {
     u16StringTable.Init();
   }
 };
-
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_GLOBAL_TABLES_H

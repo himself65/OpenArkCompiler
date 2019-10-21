@@ -105,6 +105,5 @@ class MIRLower {
   MIRBuilder *mirBuilder;
   uint32 lowerPhase;
 };
-
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_MIR_LOWER_H

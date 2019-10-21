@@ -129,7 +129,7 @@ class OriginalSt {
   }
 
   bool IsSymbolOst() const {
-    return (ostType == kSymbolOst);
+    return ostType == kSymbolOst;
   }
 
   bool IsPregOst() const {
@@ -144,7 +144,7 @@ class OriginalSt {
     this->indirectLev = idl;
   }
 
-  ~OriginalSt(){};
+  ~OriginalSt() = default;
 
   OStIdx GetIndex() const {
     return index;
@@ -155,12 +155,11 @@ class OriginalSt {
     return versionsIndex.at(version);
   }
 
-  MapleVector<size_t> &GetVersionsIndex() {
-    return versionsIndex;
-  }
-
   const MapleVector<size_t> &GetVersionsIndex() const {
     return versionsIndex;
+  }
+  void PushbackVersionIndex(size_t index) {
+    versionsIndex.push_back(index);
   }
 
   size_t GetZeroVersionIndex() const {
@@ -191,7 +190,7 @@ class OriginalSt {
     return ignoreRC;
   }
 
-  bool IsAddressTaken() {
+  bool IsAddressTaken() const {
     return addressTaken;
   }
 
@@ -203,16 +202,16 @@ class OriginalSt {
     epreLocalRefVar = epreLocalrefvarPara;
   }
 
-  PUIdx GetPuIdx() {
-    return puIdx;
-  }
-
   PUIdx GetPuIdx() const {
     return puIdx;
   }
 
  private:
-  enum OSTType { kUnkonwnOst, kSymbolOst, kPregOst } ostType;
+  enum OSTType {
+    kUnkonwnOst,
+    kSymbolOst,
+    kPregOst
+  } ostType;
 
   OStIdx index;                       // index number in originalStVector
   MapleVector<size_t> versionsIndex;  // the i-th element refers the index of versionst in versionst table
@@ -239,7 +238,7 @@ class OriginalSt {
 class OriginalStTable {
  public:
   OriginalStTable(MemPool &memPool, MIRModule &mod);
-  ~OriginalStTable() {}
+  ~OriginalStTable() = default;
 
   OriginalSt *FindOrCreateSymbolOriginalSt(MIRSymbol &mirSt, PUIdx puIdx, FieldID fld);
   OriginalSt *FindOrCreatePregOriginalSt(PregIdx pregIdx, PUIdx puIdx);
@@ -301,13 +300,13 @@ class OriginalStTable {
   MapleAllocator alloc;
   MIRModule &mirModule;
   MapleVector<OriginalSt*> originalStVector;  // the vector that map a OriginalSt's index to its pointer
-  MapleUnorderedMap<MIRSymbol*, OStIdx>
-      mirSt2Ost;  // mir symbol to original table, this only exists for no-original variables.
+  // mir symbol to original table, this only exists for no-original variables.
+  MapleUnorderedMap<MIRSymbol*, OStIdx> mirSt2Ost;
   MapleUnorderedMap<PregIdx, OStIdx> preg2Ost;
-  MapleMap<TyIdx, OStIdx>
-      pType2Ost;  // mir type to virtual variables in original table. this only exists for no-original variables.
-  MapleMap<std::pair<BaseNode*, uint32>, OStIdx>
-      malloc2Ost;  // malloc info to virtual variables in original table. this only exists for no-original variables.
+  // mir type to virtual variables in original table. this only exists for no-original variables.
+  MapleMap<TyIdx, OStIdx> pType2Ost;
+  // malloc info to virtual variables in original table. this only exists for no-original variables.
+  MapleMap<std::pair<BaseNode*, uint32>, OStIdx> malloc2Ost;
   MapleMap<uint32, OStIdx> thisField2Ost;  // field of this_memory to virtual variables in original table.
   OStIdx virtuaLostUnkownMem;
   OStIdx virtuaLostConstMem;

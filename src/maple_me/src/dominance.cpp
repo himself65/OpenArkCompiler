@@ -17,7 +17,7 @@
 
 /* ================= for Dominance ================= */
 namespace maple {
-void Dominance::PostOrderWalk(BB &bb, int32 &pid, std::vector<bool> &visitedMap) {
+void Dominance::PostOrderWalk(const BB &bb, int32 &pid, std::vector<bool> &visitedMap) {
   ASSERT(bb.GetBBId().idx < visitedMap.size(), "index out of range in Dominance::PostOrderWalk");
   if (visitedMap[bb.GetBBId().idx]) {
     return;
@@ -62,7 +62,7 @@ BB *Dominance::Intersect(BB &bb1, const BB &bb2) {
   return ptrBB1;
 }
 
-bool Dominance::CommonEntryBBIsPred(const BB &bb) {
+bool Dominance::CommonEntryBBIsPred(const BB &bb) const {
   for (BB *suc : GetCommonEntryBB().GetSucc()) {
     if (suc == &bb) {
       return true;

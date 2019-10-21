@@ -509,5 +509,4 @@ void MIRModule::RemoveClass(TyIdx t) {
 void MIRModule::SetFuncInfoPrinted() const {
   CurFunction()->SetInfoPrinted();
 }
-
 }  // namespace maple

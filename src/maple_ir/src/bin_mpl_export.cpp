@@ -24,7 +24,6 @@
 #include "factory.h"
 
 namespace {
-
 using namespace maple;
 
 using OutputConstFactory = FunctionFactory<MIRConstKind, void, MIRConst*, BinaryMplExport*>;
@@ -288,11 +287,9 @@ void InitOutputTypeFactory() {
   RegisterFactoryFunction<OutputTypeFactory>(kTypeInterfaceIncomplete, OutputTypeInterface);
   RegisterFactoryFunction<OutputTypeFactory>(kTypeConstString, OutputTypeConstString);
 }
-
 };  // namespace
 
 namespace maple {
-
 int BinaryMplExport::typeMarkOffset = 0;
 
 BinaryMplExport::BinaryMplExport(MIRModule &md) : mod(md) {
@@ -773,6 +770,5 @@ void BinaryMplExport::OutputType(const TyIdx &tyIdx) {
     ASSERT(false, "Type's kind not yet implemented: %d", ty->GetKind());
   }
 }
-
 
 }  // namespace maple

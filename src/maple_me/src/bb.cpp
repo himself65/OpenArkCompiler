@@ -101,14 +101,14 @@ void BB::Dump(MIRModule *mod) {
   }
 }
 
-void BB::DumpPhi(const MIRModule *mod) {
+void BB::DumpPhi(MIRModule *mod) {
   for (auto phiIt = phiList.begin(); phiIt != phiList.end(); phiIt++) {
     (*phiIt).second.Dump(mod);
   }
 }
 
-const PhiNode *BB::PhiofVerStInserted(VersionSt *vsym) {
-  auto phiit = phiList.find(vsym->GetOrigSt());
+const PhiNode *BB::PhiofVerStInserted(VersionSt &vsym) {
+  auto phiit = phiList.find(vsym.GetOrigSt());
   return (phiit != phiList.end()) ? &(*phiit).second : nullptr;
 }
 
@@ -120,7 +120,7 @@ void BB::InsertPhi(MapleAllocator *alloc, VersionSt *vsym) {
   phiList.insert(std::make_pair(vsym->GetOrigSt(), phiNode));
 }
 
-bool BB::IsInList(MapleVector<BB*> &bblist) const {
+bool BB::IsInList(const MapleVector<BB*> &bblist) const {
   for (auto it = bblist.begin(); it != bblist.end(); it++) {
     if (*it == this) {
       return true;
@@ -152,17 +152,14 @@ void BB::RemoveBBFromPred(BB *bb) {
   ASSERT(index != -1, "-1 is a very large number in BB::RemoveBBFromPred");
   for (auto phiIt = phiList.begin(); phiIt != phiList.end(); phiIt++) {
     ASSERT((*phiIt).second.GetPhiOpns().size() > index, "index out of range in BB::RemoveBBFromPred");
-
     (*phiIt).second.GetPhiOpns().erase((*phiIt).second.GetPhiOpns().cbegin() + index);
   }
   for (auto phiIt = mevarPhiList.begin(); phiIt != mevarPhiList.end(); phiIt++) {
     ASSERT((*phiIt).second->GetOpnds().size() > index, "index out of range in BB::RemoveBBFromPred");
-
     (*phiIt).second->GetOpnds().erase((*phiIt).second->GetOpnds().cbegin() + index);
   }
   for (auto phiIt = meregPhiList.begin(); phiIt != meregPhiList.end(); phiIt++) {
     ASSERT((*phiIt).second->GetOpnds().size() > index, "index out of range in BB::RemoveBBFromPred");
-
     (*phiIt).second->GetOpnds().erase((*phiIt).second->GetOpnds().cbegin() + index);
   }
 }
@@ -189,7 +186,7 @@ void BB::PrependMeStmt(MeStmt *meStmt) {
 
 // if the bb contains only one stmt other than comment, return that stmt
 // otherwise return nullptr
-StmtNode *BB::GetTheOnlyStmtNode() {
+StmtNode *BB::GetTheOnlyStmtNode() const {
   StmtNode *onlyStmtNode = nullptr;
   for (auto &stmtNode : stmtNodeList) {
     if (stmtNode.GetOpCode() == OP_comment) {
@@ -265,7 +262,7 @@ void BB::ReplaceSuccOfCommonEntryBB(const BB *old, BB *newSucc) {
   return;
 }
 
-void BB::FindReachableBBs(std::vector<bool> &visitedBBs) {
+void BB::FindReachableBBs(std::vector<bool> &visitedBBs) const {
   CHECK_FATAL(GetBBId().idx < visitedBBs.size(), "out of range in BB::FindReachableBBs");
   if (visitedBBs[GetBBId().idx]) {
     return;
@@ -276,7 +273,7 @@ void BB::FindReachableBBs(std::vector<bool> &visitedBBs) {
   }
 }
 
-void BB::FindWillExitBBs(std::vector<bool> &visitedBBs) {
+void BB::FindWillExitBBs(std::vector<bool> &visitedBBs) const {
   CHECK_FATAL(GetBBId().idx < visitedBBs.size(), "out of range in BB::FindReachableBBs");
   if (visitedBBs[GetBBId().idx]) {
     return;

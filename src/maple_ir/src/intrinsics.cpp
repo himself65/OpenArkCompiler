@@ -142,5 +142,4 @@ MIRType *IntrinDesc::GetArgType(uint32 index) const {
 MIRType *IntrinDesc::GetReturnType() const {
   return GetTypeFromArgTy(argTypes[0]);
 }
-
 }  // namespace maple

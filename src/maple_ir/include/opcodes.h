@@ -23,6 +23,5 @@ enum Opcode : std::uint8_t {
 #undef OPCODE
   kOpLast,
 };
-
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_OPCODES_H

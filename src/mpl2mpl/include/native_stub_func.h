@@ -41,6 +41,7 @@ class NativeFuncProperty {
   NativeFuncProperty() {
     jniType = kJniTypeNormal;
   }
+  ~NativeFuncProperty() = default;
 
  private:
   std::string javaFunc;

@@ -31,7 +31,13 @@ class VersionStTable;
 class OriginalSt;
 class VersionSt {
  public:
-  enum DefType { kDassign, kRegassign, kPhi, kMayDef, kMustDef };
+  enum DefType {
+    kDassign,
+    kRegassign,
+    kPhi,
+    kMayDef,
+    kMustDef
+  };
 
   VersionSt(size_t index, uint32 version, OriginalSt *ost)
       : index(index),
@@ -43,7 +49,7 @@ class VersionSt {
         live(false),
         isReturn(false) {}
 
-  ~VersionSt() {}
+  ~VersionSt() = default;
 
   size_t GetIndex() const {
     return index;
@@ -56,11 +62,13 @@ class VersionSt {
   void SetDefBB(BB *defbb) {
     defBB = defbb;
   }
+
   const BB *GetDefBB() const {
     return defBB;
   }
 
-  void DumpDefStmt(const MIRModule *mod);
+  void DumpDefStmt(const MIRModule *mod) const;
+
   bool IsLive() const {
     return live;
   }
@@ -85,7 +93,7 @@ class VersionSt {
     live = false;
   }
 
-  OStIdx GetOrigIdx() {
+  OStIdx GetOrigIdx() const {
     return ost->GetIndex();
   }
 
@@ -97,7 +105,7 @@ class VersionSt {
     this->ost = ost;
   }
 
-  maple::DassignNode *GetDassignNode() {
+  maple::DassignNode *GetDassignNode() const {
     return defStmt.dassign;
   }
 
@@ -105,7 +113,7 @@ class VersionSt {
     defStmt.dassign = dassignNode;
   }
 
-  maple::RegassignNode *GetRegassignNode() {
+  maple::RegassignNode *GetRegassignNode() const {
     return defStmt.regassign;
   }
 
@@ -113,7 +121,7 @@ class VersionSt {
     defStmt.regassign = regAssignNode;
   }
 
-  maple::PhiNode *GetPhi() {
+  maple::PhiNode *GetPhi() const {
     return defStmt.phi;
   }
 
@@ -121,7 +129,7 @@ class VersionSt {
     defStmt.phi = phiNode;
   }
 
-  MayDefNode *GetMayDef() {
+  MayDefNode *GetMayDef() const {
     return defStmt.mayDef;
   }
 
@@ -129,7 +137,7 @@ class VersionSt {
     defStmt.mayDef = mayDefNode;
   }
 
-  MustDefNode *GetMustDef() {
+  MustDefNode *GetMustDef() const {
     return defStmt.mustDef;
   }
 
@@ -141,20 +149,21 @@ class VersionSt {
     return isReturn;
   }
 
-  void Dump(const MIRModule *mod, bool omitname = false) {
-    if (!omitname) {
+  void Dump(const MIRModule *mod, bool omitName = false) const {
+    if (!omitName) {
       ost->Dump();
     }
     LogInfo::MapleLogger() << "(" << version << ")";
-  };
+  }
+
   bool DefByMayDef() const {
     return defType == kMayDef;
   }
 
  private:
-  size_t index;     // index number in versionst_table_;
+  size_t index;     // index number in versionst_table_
   int version;      // starts from 0 for each symbol
-  OriginalSt *ost;  // the index of related originalst in originalst_table;
+  OriginalSt *ost;  // the index of related originalst in originalst_table
   BB *defBB;
   DefType defType;
 
@@ -174,12 +183,12 @@ class VersionStTable {
  public:
   explicit VersionStTable(MemPool *vstMp) : vstAlloc(vstMp), versionStVector(vstAlloc.Adapter()) {}
 
-  ~VersionStTable() {}
+  ~VersionStTable() = default;
 
   VersionSt *CreateVersionSt(OriginalSt *ost, size_t version);
   VersionSt *FindOrCreateVersionSt(OriginalSt *ost, size_t version);
-  VersionSt *GetVersionStFromID(size_t id, bool checkfirst = false) {
-    if (checkfirst && id >= versionStVector.size()) {
+  VersionSt *GetVersionStFromID(size_t id, bool checkFirst = false) const {
+    if (checkFirst && id >= versionStVector.size()) {
       return nullptr;
     }
     ASSERT(id < versionStVector.size(), "symbol table index out of range");
@@ -204,7 +213,7 @@ class VersionStTable {
     return versionStVector.size();
   }
 
-  VersionSt *GetVersionStVectorItem(size_t index) {
+  VersionSt *GetVersionStVectorItem(size_t index) const {
     CHECK_FATAL(index < versionStVector.size(), "out of range");
     return versionStVector[index];
   }
@@ -218,11 +227,11 @@ class VersionStTable {
     return vstAlloc;
   }
 
-  void Dump(MIRModule *mod);
+  void Dump(MIRModule *mod) const;
 
  private:
   MapleAllocator vstAlloc;                   // this stores versionStVector
-  MapleVector<VersionSt*> versionStVector;  // the vector that map a versionst's index to its pointer
+  MapleVector<VersionSt*> versionStVector;   // the vector that map a versionst's index to its pointer
 };
-}  // namespace maple
+}       // namespace maple
 #endif  // MAPLE_ME_INCLUDE_VER_SYMBOL_H

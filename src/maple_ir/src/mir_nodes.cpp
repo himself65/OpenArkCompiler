@@ -1818,5 +1818,4 @@ bool IcallNode::Verify() const {
 bool IntrinsiccallNode::Verify() const {
   return VerifyOpnds();
 }
-
 }  // namespace maple

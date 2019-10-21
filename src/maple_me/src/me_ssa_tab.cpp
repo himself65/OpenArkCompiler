@@ -36,7 +36,7 @@ AnalysisResult *MeDoSSATab::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResu
   for (auto bIt = func->valid_begin(); bIt != eIt; ++bIt) {
     auto *bb = *bIt;
     for (auto &stmt : bb->GetStmtNodes()) {
-      ssaTab->CreateSSAStmt(&stmt, bb);  // this adds the SSANodes for exprs
+      ssaTab->CreateSSAStmt(stmt, *bb);  // this adds the SSANodes for exprs
     }
   }
   if (DEBUGFUNC(func)) {

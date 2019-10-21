@@ -20,7 +20,6 @@
 #include "error_code.h"
 
 namespace mapleOption {
-
 enum ArgStatus { kArgNone, kArgOk, kArgIllegal };
 
 enum BuildType { kBuildTypeAll, kBuildTypeDebug, kBuildTypeRelease };
@@ -252,11 +251,10 @@ class OptionParser {
                             std::vector<mapleOption::Option> &inputOption,  const std::string &exeName);
   const bool CheckOpt(const std::string option, std::string &lastKey, bool &isLastMatch,
                       std::vector<mapleOption::Option> &inputOption, const std::string &exeName);
-  void InsertOption(const char *opt, Descriptor usage);
+  void InsertOption(const std::string &opt, Descriptor usage);
 
   const bool CheckSpecialOption(const std::string &option, std::string &key, std::string &value);
 };
-
 }  // namespace mapleOption
 
 #endif  // MAPLE_UTIL_INCLUDE_OPTION_PARSER_H

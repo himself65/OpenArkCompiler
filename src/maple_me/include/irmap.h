@@ -23,10 +23,10 @@
 namespace maple {
 class IRMap : public AnalysisResult {
  public:
-  IRMap(SSATab &ssatab, Dominance &dom, MemPool &memPool, MemPool &tmpMemPool, uint32 hashTableSize)
+  IRMap(SSATab &ssaTab, Dominance &dom, MemPool &memPool, MemPool &tmpMemPool, uint32 hashTableSize)
       : AnalysisResult(&memPool),
-        ssaTab(ssatab),
-        mirModule(ssatab.GetModule()),
+        ssaTab(ssaTab),
+        mirModule(ssaTab.GetModule()),
         dom(dom),
         irMapAlloc(&memPool),
         tempAlloc(&tmpMemPool),
@@ -36,11 +36,11 @@ class IRMap : public AnalysisResult {
         regMeExprTable(irMapAlloc.Adapter()),
         curBB(nullptr) {}
 
-  virtual ~IRMap() {}
+  virtual ~IRMap() = default;
 
   virtual BB *GetBB(BBId id) = 0;
   virtual BB *GetBBForLabIdx(LabelIdx lidx, PUIdx pidx = 0) = 0;
-  Dominance *GetDominance() {
+  Dominance *GetDominance() const {
     return &dom;
   }
 
@@ -64,9 +64,8 @@ class IRMap : public AnalysisResult {
   RegMeExpr *CreateRegMeExprVersion(const OriginalSt&);
   RegMeExpr *CreateRegMeExprVersion(const RegMeExpr&);
   MeExpr *ReplaceMeExprExpr(MeExpr&, MeExpr&, MeExpr&);
-  bool ReplaceMeExprStmtOpnd(uint32, MeStmt&, MeExpr&, MeExpr&);
   bool ReplaceMeExprStmt(MeStmt&, MeExpr&, MeExpr&);
-  MeExpr *GetMeExprByVerID(uint32 verid) {
+  MeExpr *GetMeExprByVerID(uint32 verid) const {
     return verst2MeExprTable[verid];
   }
 
@@ -202,14 +201,16 @@ class IRMap : public AnalysisResult {
   Dominance &dom;
   MapleAllocator irMapAlloc;
   MapleAllocator tempAlloc;
-  int32 exprID = 0;                                    // for allocating exprid_ in MeExpr
+  int32 exprID = 0;                                // for allocating exprid_ in MeExpr
   uint32 mapHashLength;                            // size of hashTable
   MapleVector<MeExpr*> hashTable;                  // the value number hash table
   MapleVector<MeExpr*> verst2MeExprTable;          // map versionst to MeExpr.
   MapleVector<RegMeExpr*> regMeExprTable;          // record all the regmeexpr created by ssapre
-  bool needAnotherPass = false;                            // set to true if CFG has changed
+  bool needAnotherPass = false;                    // set to true if CFG has changed
   bool dumpStmtNum = false;
   BB *curBB;  // current maple_me::BB being visited
+
+  bool ReplaceMeExprStmtOpnd(uint32, MeStmt&, MeExpr&, MeExpr&);
 };
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_IRMAP_H

@@ -166,6 +166,5 @@ inline bool IsConstValue(TokenKind tk) {
 inline bool IsConstAddrExpr(TokenKind tk) {
   return tk == TK_addrof || tk == TK_addroffunc || tk == TK_conststr || tk == TK_conststr16;
 }
-
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_LEXER_H

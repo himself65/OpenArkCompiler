@@ -152,22 +152,23 @@ struct ClassMetadata {
   void *iTable;  // iTable of current class, used for virtual call, will insert the content into classinfo
   void *vTable;  // vTable of current class, used for interface call, will insert the content into classinfo
   void *gctib; // for rc
-  ClassMetadataRO *classInfoRo;
+
+  union {
+    ClassMetadataRO *classinforo64; // ifndef USE_32BIT_REF
+    struct {
+      uint32_t classinforo32;       // ifdef USE_32BIT_REF
+      uint32_t padding;
+    };
+  };
 
   union {
     intptr_t initState;    // if class is not initialized
-    void *staticFields;    // if class is already initialized
   }; // class init state, this field must be accessed atomically.
 };
 
 static inline intptr_t ClassMetadataOffsetOfInitFlag() {
   ClassMetadata *base = reinterpret_cast<ClassMetadata*>(0);
   return reinterpret_cast<intptr_t>(&(base->initState));
-}
-
-static inline intptr_t ClassMetadataOffsetOfStaticFields() {
-  ClassMetadata *base = reinterpret_cast<ClassMetadata*>(0);
-  return reinterpret_cast<intptr_t>(&(base->staticFields));
 }
 
 #ifdef __cplusplus

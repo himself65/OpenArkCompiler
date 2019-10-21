@@ -64,8 +64,9 @@ void MIRFunction::Dump(bool withoutBody) {
           LogInfo::MapleLogger() << "reg %" << symbol->GetPreg()->GetPregNo() << " ";
         }
       }
+      constexpr int kIndent = 2;
       MIRType *ty = GetNthParamType(i);
-      ty->Dump(2);
+      ty->Dump(kIndent);
       TypeAttrs tA = GetNthParamAttr(i);
       tA.DumpAttributes();
       if (i != (argSize - 1)) {
@@ -179,8 +180,9 @@ void MIRFunction::DumpFuncBody(int32 indent) {
       PrintIndentation(indent + 1);
       LogInfo::MapleLogger() << "funcinfo {\n";
       size_t size = funcInfo.size();
+      constexpr int kIndentOffset = 2;
       for (size_t i = 0; i < size; i++) {
-        PrintIndentation(indent + 2);
+        PrintIndentation(indent + kIndentOffset);
         LogInfo::MapleLogger() << "@" << GlobalTables::GetStrTable().GetStringFromStrIdx(funcInfo[i].first) << " ";
         if (!funcInfoIsString[i]) {
           LogInfo::MapleLogger() << funcInfo[i].second;

@@ -24,7 +24,6 @@
 #endif  // MIR_FEATURE_FULL
 
 namespace maple {
-
 constexpr int kTypeHashLength = 12289;  // hash length for mirtype, ref: planetmath.org/goodhashtableprimes
 
 class FieldAttrs;
