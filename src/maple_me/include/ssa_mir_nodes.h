@@ -176,21 +176,21 @@ class AccessSSANodes {
     CHECK_FATAL(false, "No ssaVar");
   }
 
-  virtual void DumpMayDefNodes(const MIRModule *mod) const {
+  virtual void DumpMayDefNodes(const MIRModule &mod) const {
     for (auto mayDefNode : GetMayDefNodes()) {
-      mayDefNode.second.Dump(mod);
+      mayDefNode.second.Dump(&mod);
     }
   }
 
-  virtual void DumpMayUseNodes(const MIRModule *mod) const {
+  virtual void DumpMayUseNodes(const MIRModule &mod) const {
     for (std::pair<OStIdx, MayUseNode> mapItem : GetMayUseNodes()) {
-      mapItem.second.Dump(mod);
+      mapItem.second.Dump(&mod);
     }
   }
 
-  virtual void DumpMustDefNodes(const MIRModule *mod) const {
+  virtual void DumpMustDefNodes(const MIRModule &mod) const {
     for (MustDefNode mustDefNode : GetMustDefNodes()) {
-      mustDefNode.Dump(mod);
+      mustDefNode.Dump(&mod);
     }
   }
 
@@ -398,19 +398,19 @@ class StmtsSSAPart {
 
   ~StmtsSSAPart() {}
 
-  AccessSSANodes *SSAPartOf(const StmtNode *s) {
-    return ssaPart[s->GetStmtID()];
+  AccessSSANodes *SSAPartOf(const StmtNode &s) {
+    return ssaPart[s.GetStmtID()];
   }
 
   template <class T>
-  void SetSSAPartOf(const StmtNode *s, T *p) {
-    ssaPart[s->GetStmtID()] = static_cast<AccessSSANodes *>(p);
+  void SetSSAPartOf(const StmtNode &s, T *p) {
+    ssaPart[s.GetStmtID()] = static_cast<AccessSSANodes *>(p);
   }
 
-  void SetSSAPartOf(const StmtNode *s, VersionSt *vst) {
+  void SetSSAPartOf(const StmtNode &s, VersionSt *vst) {
     VersionStPart *vStSSAPart = GetSSAPartMp()->New<VersionStPart>();
     vStSSAPart->SetSSAVar(vst);
-    ssaPart[s->GetStmtID()] = vStSSAPart;
+    ssaPart[s.GetStmtID()] = vStSSAPart;
   }
 
   MemPool *GetSSAPartMp() {
@@ -513,21 +513,21 @@ class RegreadSSANode : public RegreadNode {
   VersionSt *ssaVar;
 };
 
-void GenericSSAPrint(MIRModule *mod, const StmtNode *stmtNode, int32 indent, StmtsSSAPart *stmtsSsaprt);
-void SSAGenericInsertMayUseNode(const StmtNode *stmtNode, VersionSt *usesym, StmtsSSAPart *stmtsSsaprt);
-void SSAGenericInsertMayDefNode(const StmtNode *stmtNode, VersionSt *vst, StmtNode *s, StmtsSSAPart *stmtsSsaprt);
-MapleMap<OStIdx, MayUseNode> *SSAGenericGetMayUseNode(const StmtNode *stmtNode, StmtsSSAPart *stmtsSsaprt);
-MapleMap<OStIdx, MayDefNode> *SSAGenericGetMayDefNodes(const StmtNode *stmtNode, StmtsSSAPart *stmtsSsaprt);
-MapleMap<OStIdx, MayDefNode> *SSAGenericGetMayDefsFromVersionSt(VersionSt *sym, StmtsSSAPart *ssapart);
-MapleVector<MustDefNode> *SSAGenericGetMustDefNode(const StmtNode *stmtNode, StmtsSSAPart *stmtsSsaprt);
-bool HasMayUseDefPart(const StmtNode *stmtNode);
-bool HasMayDefPart(const StmtNode *stmtNode);
-bool HasMayUsePart(const StmtNode *stmtNode);
-bool HasMayUseOpnd(const BaseNode *baseNode, SSATab *func);
-bool HasMayDef(const StmtNode *stmtNode, SSATab *func);
-inline bool HasMallocOpnd(const BaseNode *x) {
-  return x->GetOpCode() == OP_malloc || x->GetOpCode() == OP_gcmalloc || x->GetOpCode() == OP_gcmallocjarray ||
-         x->GetOpCode() == OP_alloca;
+void GenericSSAPrint(MIRModule &mod, const StmtNode &stmtNode, int32 indent, StmtsSSAPart &stmtsSsaprt);
+void SSAGenericInsertMayUseNode(const StmtNode &stmtNode, VersionSt &usesym, StmtsSSAPart &stmtsSsaprt);
+void SSAGenericInsertMayDefNode(const StmtNode &stmtNode, VersionSt &vst, StmtNode &s, StmtsSSAPart &stmtsSsaprt);
+MapleMap<OStIdx, MayUseNode> &SSAGenericGetMayUseNode(const StmtNode &stmtNode, StmtsSSAPart &stmtsSsaprt);
+MapleMap<OStIdx, MayDefNode> &SSAGenericGetMayDefNodes(const StmtNode &stmtNode, StmtsSSAPart &stmtsSsaprt);
+MapleMap<OStIdx, MayDefNode> *SSAGenericGetMayDefsFromVersionSt(VersionSt &sym, StmtsSSAPart &ssapart);
+MapleVector<MustDefNode> &SSAGenericGetMustDefNode(const StmtNode &stmtNode, StmtsSSAPart &stmtsSsaprt);
+bool HasMayUseDefPart(const StmtNode &stmtNode);
+bool HasMayDefPart(const StmtNode &stmtNode);
+bool HasMayUsePart(const StmtNode &stmtNode);
+bool HasMayUseOpnd(const BaseNode &baseNode, SSATab &func);
+bool HasMayDef(const StmtNode &stmtNode, SSATab &func);
+inline bool HasMallocOpnd(const BaseNode &x) {
+  return x.GetOpCode() == OP_malloc || x.GetOpCode() == OP_gcmalloc || x.GetOpCode() == OP_gcmallocjarray ||
+         x.GetOpCode() == OP_alloca;
 }
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_SSA_MIR_NODES_H

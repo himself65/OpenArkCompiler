@@ -25,7 +25,6 @@
 #include "mir_builder.h"
 
 namespace maple {
-
 uint8 BinaryMplImport::Read() {
   CHECK_FATAL(bufI < buf.size(), "Index out of bound in BinaryMplImport::Read()");
   return buf[bufI++];
@@ -892,5 +891,4 @@ bool BinaryMplImport::Import(const std::string &fname, bool readSymbols, bool re
   SetupEHRootType();
   return true;
 }
-
 }  // namespace maple

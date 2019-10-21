@@ -89,19 +89,19 @@ void MeIRMap::EmitBB(BB &bb, BlockNode &curblk) {
 
 AnalysisResult *MeDoIRMap::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) {
   Dominance *dom = static_cast<Dominance*>(m->GetAnalysisResult(MeFuncPhase_DOMINANCE, func));
-  ASSERT(dom, "dominance phase has problem");
+  ASSERT(dom != nullptr, "dominance phase has problem");
   MemPool *irMapMemPool = NewMemPool();
-  MeIRMap *irmap = irMapMemPool->New<MeIRMap>(*func, *dom, *irMapMemPool, *NewMemPool());
-  func->SetIRMap(irmap);
+  MeIRMap *irMap = irMapMemPool->New<MeIRMap>(*func, *dom, *irMapMemPool, *NewMemPool());
+  func->SetIRMap(irMap);
 #if DEBUG
-  g_irmap = irmap;
+  g_irmap = irMap;
 #endif
   std::vector<bool> bbIRMapProcessed(func->NumBBs(), false);
-  irmap->BuildBB(*func->GetCommonEntryBB(), bbIRMapProcessed);
+  irMap->BuildBB(*func->GetCommonEntryBB(), bbIRMapProcessed);
   if (DEBUGFUNC(func)) {
-    irmap->Dump();
+    irMap->Dump();
   }
-  irmap->GetTempAlloc().SetMemPool(nullptr);
+  irMap->GetTempAlloc().SetMemPool(nullptr);
   // delete input IR code for current function
   MIRFunction *mirFunc = func->GetMirFunc();
   mempoolctrler.DeleteMemPool(mirFunc->GetCodeMempool());
@@ -122,6 +122,6 @@ AnalysisResult *MeDoIRMap::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResul
   }
 #endif
   mempoolctrler.DeleteMemPool(func->GetMeSSATab()->GetVersionStTable().GetVSTAlloc().GetMemPool());
-  return irmap;
+  return irMap;
 }
 }  // namespace maple

@@ -16,7 +16,6 @@
 #define MAPLE_IR_INCLUDE_CFG_PRIMITIVE_TYPES_H
 
 namespace maple {
-
 // Declaration of enum PrimType
 #define LOAD_ALGO_PRIMARY_TYPE
 enum PrimType {
@@ -26,8 +25,6 @@ enum PrimType {
   PTY_end,              // PrimType end
 #undef PRIMTYPE
 };
-
-
 
 constexpr PrimType kPtyInvalid = PTY_begin;
 // just for test, no primitive type for derived SIMD types to be defined
@@ -47,7 +44,6 @@ struct PrimitiveTypeProperty {
 };
 
 const PrimitiveTypeProperty &GetPrimitiveTypeProperty(PrimType pType);
-
 } // namespace maple
 
 #endif  // MAPLE_IR_INCLUDE_CFG_PRIMITIVE_TYPES_H

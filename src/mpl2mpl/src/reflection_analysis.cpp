@@ -475,7 +475,7 @@ static bool IsSameType(TyIdx tyIdx1, TyIdx tyIdx2) {
 
 MIRSymbol *ReflectionAnalysis::GetSymbol(GStrIdx strIdx, TyIdx tyIdx) {
   MIRSymbol *st = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(strIdx);
-  if (st && st->GetSKind() == kStVar && IsSameType(st->GetTyIdx(), tyIdx)) {
+  if (st != nullptr && st->GetSKind() == kStVar && IsSameType(st->GetTyIdx(), tyIdx)) {
     return st;
   }
   return nullptr;
@@ -856,8 +856,10 @@ MIRSymbol *ReflectionAnalysis::GenFieldsMetaData(const Klass *klass) {
       mirBuilder.AddAddrofFieldConst(*fieldsInfoType, *newconst, fieldID++, *gvarSt);
     } else {
       // Offset of the instance field, we fill the index of fields here and let CG to fill in.
+      MIRClassType *mirClassType = klass->GetMIRClassType();
+      ASSERT(mirClassType != nullptr, "GetMIRClassType() returns null");
       FieldID fldID = mirBuilder.GetStructFieldIDFromNameAndTypeParentFirstFoundInChild(
-          klass->GetMIRClassType(), originFieldname.c_str(), fieldP.second.first);
+          *mirClassType, originFieldname.c_str(), fieldP.second.first);
       mirBuilder.AddIntFieldConst(*fieldsInfoType, *newconst, fieldID++, fldID);
     }
     // @modifier

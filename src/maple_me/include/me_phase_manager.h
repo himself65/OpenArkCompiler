@@ -44,8 +44,8 @@ class MeFuncPhaseManager : public PhaseManager {
 
   void RunFuncPhase(MeFunction *func, MeFuncPhase *phase);
   void RegisterFuncPhases();
-  void AddPhases(std::unordered_set<std::string> &skipPhases);
-  void AddPhasesNoDefault(std::vector<std::string> &phases);
+  void AddPhases(const std::unordered_set<std::string> &skipPhases);
+  void AddPhasesNoDefault(const std::vector<std::string> &phases);
   void SetMePhase(MePhaseType mephase) {
     mePhaseType = mephase;
   }
@@ -54,11 +54,11 @@ class MeFuncPhaseManager : public PhaseManager {
     modResMgr = mrm;
   }
 
-  void Run(MIRFunction *mirfunc, uint64 rangenum, const std::string &meinput);
+  void Run(MIRFunction *mirFunc, uint64 rangeNum, const std::string &meInput);
   void IPACleanUp(MeFunction *mirfunc);
   void Run() override {}
 
-  MeFuncResultMgr *GetAnalysisResultManager(void) {
+  MeFuncResultMgr *GetAnalysisResultManager() {
     return &arFuncManager;
   }
 
@@ -80,7 +80,7 @@ class MeFuncPhaseManager : public PhaseManager {
     timePhases = phs;
   }
 
-  bool isIPA() {
+  bool IsIPA() const {
     return ipa;
   }
 

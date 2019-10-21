@@ -485,5 +485,4 @@ bool MIRLower::ShouldOptArrayMrt(const MIRFunction *func) {
   ASSERT(func != nullptr, "func is null");
   return (MIRLower::kSetArrayHotFunc.find(func->GetName()) != MIRLower::kSetArrayHotFunc.end());
 }
-
 }  // namespace maple

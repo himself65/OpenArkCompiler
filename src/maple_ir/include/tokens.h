@@ -59,6 +59,5 @@ enum TokenKind {
   kTkString,     // a literal string enclosed between "
   kTkEof
 };
-
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_TOKENS_H

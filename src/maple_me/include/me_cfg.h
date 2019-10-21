@@ -20,31 +20,31 @@
 namespace maple {
 class MeCFG {
  public:
-  MeCFG(MeFunction &f) : func(f) {}
+  explicit MeCFG(MeFunction &f) : func(f) {}
 
 
-  ~MeCFG() {}
+  ~MeCFG() = default;
 
   void BuildMirCFG();
   void FixMirCFG();
   void ConvertPhis2IdentityAssigns(BB &meBB);
   void UnreachCodeAnalysis(bool updatePhi = false);
   void WontExitAnalysis();
-  void Verify();
+  void Verify() const;
   void VerifyLabels();
   void Dump();
   void DumpToFile(const std::string &prefix, bool dumpInStrs = false);
   void AddAuxilaryBB();
-  bool FindExprUse(BaseNode &expr, StIdx stIdx);
-  bool FindUse(StmtNode &stmt, StIdx stid);
-  bool FindDef(StmtNode &stmt, StIdx stid);
-  bool HasNoOccBetween(StmtNode &from, StmtNode &to, StIdx stIdx);
+  bool FindExprUse(const BaseNode &expr, StIdx stIdx) const;
+  bool FindUse(const StmtNode &stmt, StIdx stid) const;
+  bool FindDef(const StmtNode &stmt, StIdx stid) const;
+  bool HasNoOccBetween(StmtNode &from, const StmtNode &to, StIdx stIdx) const;
 
-  MeFunction &GetFunc() {
+  const MeFunction &GetFunc() {
     return func;
   }
 
-  bool GetHasDoWhile() {
+  bool GetHasDoWhile() const {
     return hasDoWhile;
   }
 

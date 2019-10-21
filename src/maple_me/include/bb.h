@@ -171,6 +171,7 @@ class BB {
 
   void Dump(MIRModule *mod);
   void DumpHeader(MIRModule *mod);
+  void DumpPhi(MIRModule* mod);
   void DumpBBAttribute(MIRModule *mod);
   std::string StrAttribute() const;
   void InsertBefore(BB *bb);  // insert this before bb in optimizer bb list
@@ -181,11 +182,11 @@ class BB {
   }
 
   // This is to help new bb to keep some flags from original bb after logically splitting.
-  void CopyFlagsAfterSplit(const BB *bb) {
-    bb->GetAttributes(kBBAttrIsTry) ? SetAttributes(kBBAttrIsTry) : ClearAttributes(kBBAttrIsTry);
-    bb->GetAttributes(kBBAttrIsTryEnd) ? SetAttributes(kBBAttrIsTryEnd) : ClearAttributes(kBBAttrIsTryEnd);
-    bb->GetAttributes(kBBAttrIsExit) ? SetAttributes(kBBAttrIsExit) : ClearAttributes(kBBAttrIsExit);
-    bb->GetAttributes(kBBAttrWontExit) ? SetAttributes(kBBAttrWontExit) : ClearAttributes(kBBAttrWontExit);
+  void CopyFlagsAfterSplit(const BB &bb) {
+    bb.GetAttributes(kBBAttrIsTry) ? SetAttributes(kBBAttrIsTry) : ClearAttributes(kBBAttrIsTry);
+    bb.GetAttributes(kBBAttrIsTryEnd) ? SetAttributes(kBBAttrIsTryEnd) : ClearAttributes(kBBAttrIsTryEnd);
+    bb.GetAttributes(kBBAttrIsExit) ? SetAttributes(kBBAttrIsExit) : ClearAttributes(kBBAttrIsExit);
+    bb.GetAttributes(kBBAttrWontExit) ? SetAttributes(kBBAttrWontExit) : ClearAttributes(kBBAttrWontExit);
   }
 
   BBId GetBBId() const {
@@ -200,7 +201,7 @@ class BB {
     return id.idx;
   }
 
-  StmtNode *GetTheOnlyStmtNode();
+  StmtNode *GetTheOnlyStmtNode() const;
   bool IsEmpty() const {
     return stmtNodeList.empty();
   }
@@ -223,7 +224,7 @@ class BB {
 
   void SetFirstMe(MeStmt *stmt);
   void SetLastMe(MeStmt *stmt);
-  bool IsInList(MapleVector<BB*> &) const;
+  bool IsInList(const MapleVector<BB*>&) const;
   bool IsPredBB(BB *bb) const {
     // if this is a pred of bb return true;
     // otherwise return false;
@@ -261,11 +262,10 @@ class BB {
     RemoveBBFromSucc(succBB);
   }
 
-  void FindReachableBBs(std::vector<bool> &);
-  void FindWillExitBBs(std::vector<bool> &);
-  const PhiNode *PhiofVerStInserted(VersionSt *vsym);
+  void FindReachableBBs(std::vector<bool>&) const;
+  void FindWillExitBBs(std::vector<bool>&) const;
+  const PhiNode *PhiofVerStInserted(VersionSt &vsym);
   void InsertPhi(MapleAllocator *alloc, VersionSt *vsym);
-  void DumpPhi(const MIRModule*);
   bool IsMeStmtEmpty() const {
     return meStmtList.empty();
   }
@@ -297,7 +297,7 @@ class BB {
     return meStmtList;
   }
 
-  virtual ~BB(){};
+  virtual ~BB() = default;
 
   const LabelIdx GetBBLabel() const {
     return bbLabel;

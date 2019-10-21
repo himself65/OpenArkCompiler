@@ -121,7 +121,8 @@ void ClassInit::ProcessFunc(MIRFunction *func) {
         CHECK_FATAL(intrinsicCall->GetTyIdx().GetIdx() < GlobalTables::GetTypeTable().GetTypeTable().size(),
                     "index out of range");
         MIRType *classType = GlobalTables::GetTypeTable().GetTypeTable()[intrinsicCall->GetTyIdx().GetIdx()];
-        CHECK_FATAL(classType && classType->GetNameStrIdx() != 0, "symbol name is null for type index %d",
+        ASSERT(classType != nullptr, "null ptr check!");
+        CHECK_FATAL(classType->GetNameStrIdx() != 0, "symbol name is null for type index %d",
                     intrinsicCall->GetTyIdx().GetIdx());
         const std::string &className = GlobalTables::GetStrTable().GetStringFromStrIdx(classType->GetNameStrIdx());
         Klass *klass = klassHierarchy->GetKlassFromName(className);

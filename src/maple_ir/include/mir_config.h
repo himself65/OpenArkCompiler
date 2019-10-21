@@ -90,6 +90,5 @@ namespace maple {
 // Note: fix size definition cannot handle arbitary long MIR lines, such
 // as those array initialization lines.
 constexpr int kMirMaxLineSize = 3072;  // a max of 3K characters per line initially
-
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_MIR_CONFIG_H

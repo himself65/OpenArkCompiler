@@ -17,6 +17,7 @@
 #include "mempool.h"
 #include "mempool_allocator.h"
 #include "mpl_logging.h"
+#include "types_def.h"
 
 namespace maple {
 // This uses the Weighted Quick Union with Path Compression algorithm.

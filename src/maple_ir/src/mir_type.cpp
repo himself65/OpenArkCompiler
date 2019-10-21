@@ -26,7 +26,6 @@
 #if MIR_FEATURE_FULL
 
 namespace maple {
-
 #define LOAD_PRIMARY_TYPE_PROPERTY
 #include "prim_types.def"
 
@@ -1475,6 +1474,5 @@ FieldAttrs GenericAttrs::ConvertToFieldAttrs() {
   }
   return attr;
 }
-
 }  // namespace maple
 #endif  // MIR_FEATURE_FULL

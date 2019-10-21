@@ -33,11 +33,10 @@
 //            the original fallthru
 //    (3) For goto curBB see if goto target can be placed as next.
 // 5. do step 3 for nextBB until all bbs are laid out
-
 namespace maple {
 static void CreateGoto(BB &bb, MeFunction &func, BB &fallthru) {
   if (fallthru.GetBBLabel() == 0) {
-    func.CreateBBLabel(&fallthru);
+    func.CreateBBLabel(fallthru);
   }
   if (func.GetIRMap() != nullptr) {
     GotoNode stmt(OP_goto);
@@ -286,7 +285,7 @@ start_:
     newTargetBB = brTargetBB->GetSucc(1);
   }
   if (newTargetBB->GetBBLabel() == 0) {
-    func.CreateBBLabel(newTargetBB);
+    func.CreateBBLabel(*newTargetBB);
   }
   LabelIdx newTargetLabel = newTargetBB->GetBBLabel();
   if (func.GetIRMap() != nullptr) {
@@ -447,8 +446,8 @@ AnalysisResult *MeDoBBLayout::Run(MeFunction *func, MeFuncResultMgr *m, ModuleRe
       }
       ASSERT(!(isTry && bbLayout->GetTryOutstanding()), "cannot emit another try if last try has not been ended");
       if (nextBB->GetAttributes(kBBAttrIsTryEnd)) {
-        ASSERT(func->GetEndTryBB2TryBB()[nextBB] == nextBB ||
-               bbLayout->IsBBLaidOut(func->GetEndTryBB2TryBB()[nextBB]->GetBBId()),
+        ASSERT(func->GetTryBBFromEndTryBB(nextBB) == nextBB ||
+               bbLayout->IsBBLaidOut(func->GetTryBBFromEndTryBB(nextBB)->GetBBId()),
                "cannot emit endtry bb before its corresponding try bb");
       }
     }
@@ -461,7 +460,7 @@ AnalysisResult *MeDoBBLayout::Run(MeFunction *func, MeFuncResultMgr *m, ModuleRe
       if (brTargetBB != fallthru && fallthru->GetPred().size() > 1 && bbLayout->BBCanBeMoved(*brTargetBB, *bb)) {
         // flip the sense of the condgoto and lay out brTargetBB right here
         if (fallthru->GetBBLabel() == 0) {
-          func->CreateBBLabel(fallthru);
+          func->CreateBBLabel(*fallthru);
         }
         if (func->GetIRMap() != nullptr) {
           CondGotoMeStmt &condGotoMeStmt = static_cast<CondGotoMeStmt&>(bb->GetMeStmts().back());
@@ -490,7 +489,7 @@ AnalysisResult *MeDoBBLayout::Run(MeFunction *func, MeFuncResultMgr *m, ModuleRe
           newFallthru->SetKind(kBBGoto);
           bbLayout->SetNewBBInLayout();
           if (fallthru->GetBBLabel() == 0) {
-            func->CreateBBLabel(fallthru);
+            func->CreateBBLabel(*fallthru);
           }
           if (func->GetIRMap() != nullptr) {
             GotoNode stmt(OP_goto);

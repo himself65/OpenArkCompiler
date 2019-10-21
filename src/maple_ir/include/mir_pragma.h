@@ -266,6 +266,5 @@ class MIRPragma {
   int32 paramNum;  // paramNum th param in function, -1 not for param annotation
   MapleVector<MIRPragmaElement*> elementVec;
 };
-
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_MIR_PRAGMA_H

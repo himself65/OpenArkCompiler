@@ -34,19 +34,19 @@ class SSATab : public AnalysisResult {
 
   ~SSATab() {}
 
-  BaseNode *CreateSSAExpr(BaseNode *expr);
-  void CreateSSAStmt(StmtNode *stmt, const BB *curbb, bool ignoreCallassignedDefs = false);
+  BaseNode *CreateSSAExpr(BaseNode &expr);
+  void CreateSSAStmt(StmtNode &stmt, const BB &curbb, bool ignoreCallassignedDefs = false);
   VersionSt *GetVerSt(size_t verIdx) {
     return versionStTable.GetVersionStFromID(verIdx);
   }
 
   // following are handles to methods in originalStTable
-  OriginalSt *CreateSymbolOriginalSt(MIRSymbol *mirSt, PUIdx puIdx, FieldID fld) {
-    return originalStTable.CreateSymbolOriginalSt(*mirSt, puIdx, fld);
+  OriginalSt *CreateSymbolOriginalSt(MIRSymbol &mirSt, PUIdx puIdx, FieldID fld) {
+    return originalStTable.CreateSymbolOriginalSt(mirSt, puIdx, fld);
   }
 
-  OriginalSt *FindOrCreateSymbolOriginalSt(MIRSymbol *mirSt, PUIdx puIdx, FieldID fld) {
-    return originalStTable.FindOrCreateSymbolOriginalSt(*mirSt, puIdx, fld);
+  OriginalSt *FindOrCreateSymbolOriginalSt(MIRSymbol &mirSt, PUIdx puIdx, FieldID fld) {
+    return originalStTable.FindOrCreateSymbolOriginalSt(mirSt, puIdx, fld);
   }
 
   const OriginalSt *GetOriginalStFromID(OStIdx id) {
@@ -59,8 +59,8 @@ class SSATab : public AnalysisResult {
     return ost;
   }
 
-  MIRSymbol *GetMIRSymbolFromOriginalSt(const OriginalSt *ost) {
-    return originalStTable.GetMIRSymbolFromOriginalSt(*ost);
+  MIRSymbol *GetMIRSymbolFromOriginalSt(const OriginalSt &ost) {
+    return originalStTable.GetMIRSymbolFromOriginalSt(ost);
   }
 
   MIRSymbol *GetMIRSymbolFromID(OStIdx id) {

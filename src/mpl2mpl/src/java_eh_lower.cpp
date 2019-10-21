@@ -94,6 +94,7 @@ BaseNode *JavaEHLowerer::DoLowerDiv(BinaryNode *expr, BlockNode *blknode) {
 }
 
 BaseNode *JavaEHLowerer::DoLowerExpr(BaseNode *expr, BlockNode *curblk) {
+  ASSERT(expr != nullptr, "null ptr check!");
   for (size_t i = 0; i < expr->NumOpnds(); i++) {
     expr->SetOpnd(DoLowerExpr(expr->Opnd(i), curblk), i);
   }

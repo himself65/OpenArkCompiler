@@ -139,6 +139,5 @@ class BinaryMplImport {
   void SkipTotalSize();
   void ImportFieldsOfStructType(FieldVector &fields, uint32 methodSize);
 };
-
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_BIN_MPL_IMPORT_H

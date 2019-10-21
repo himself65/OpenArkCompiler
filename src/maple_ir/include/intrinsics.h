@@ -149,6 +149,5 @@ struct IntrinDesc {
   static MIRType *GetOrCreateJSValueType();
   static IntrinDesc intrinTable[INTRN_LAST + 1];
 };
-
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_INTRINSICS_H

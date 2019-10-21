@@ -25,6 +25,5 @@ enum ParserOptions: uint8 {
   kWithProfileInfo = 0x4,
   kParseOptFunc = 0x08,  // parse optimized function mpl file
 };
-
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_PARSER_OPT_H

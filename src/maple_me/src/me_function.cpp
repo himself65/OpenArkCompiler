@@ -434,11 +434,11 @@ BB *MeFunction::NewBasicBlock() {
 }
 
 // new a basic block and insert before position
-BB *MeFunction::InsertNewBasicBlock(BB *position) {
+BB *MeFunction::InsertNewBasicBlock(BB &position) {
   BB *newbb = memPool->New<BB>(&alloc, &versAlloc, BBId(nextBBId++));
 
-  auto bIt = std::find(begin(), end(), position);
-  auto idx = position->GetBBId().idx;
+  auto bIt = std::find(begin(), end(), &position);
+  auto idx = position.GetBBId().idx;
   auto newIt = bbVec.insert(bIt, newbb);
   auto eIt = end();
   // update bb's idx
@@ -451,10 +451,10 @@ BB *MeFunction::InsertNewBasicBlock(BB *position) {
   return newbb;
 }
 
-void MeFunction::DeleteBasicBlock(const BB *bb) {
-  ASSERT(bbVec[bb->GetBBId().idx] == bb, "runtime check error");
+void MeFunction::DeleteBasicBlock(const BB &bb) {
+  ASSERT(bbVec[bb.GetBBId().idx] == &bb, "runtime check error");
   /* update first_bb_ and last_bb if needed */
-  bbVec.at(bb->GetBBId().idx) = nullptr;
+  bbVec.at(bb.GetBBId().idx) = nullptr;
 }
 
 /* get next bb in bbVec */
@@ -482,28 +482,27 @@ BB *MeFunction::PrevBB(const BB *bb) {
 }
 
 /* clone stmtnode in orig bb to newBB */
-void MeFunction::CloneBasicBlock(BB *newBB, BB *orig) {
-  if (orig == nullptr || orig->IsEmpty()) {
+void MeFunction::CloneBasicBlock(BB &newBB, BB &orig) {
+  if (orig.IsEmpty()) {
     return;
   }
-  for (auto &stmt : orig->GetStmtNodes()) {
+  for (auto &stmt : orig.GetStmtNodes()) {
     StmtNode *newStmt = static_cast<StmtNode*>(stmt.CloneTree(mirModule.GetCurFuncCodeMPAllocator()));
-    ASSERT(newStmt != nullptr, "null ptr check");
     newStmt->SetNext(nullptr);
     newStmt->SetPrev(nullptr);
-    newBB->AddStmtNode(newStmt);
+    newBB.AddStmtNode(newStmt);
     if (meSSATab != nullptr) {
-      meSSATab->CreateSSAStmt(newStmt, newBB);
+      meSSATab->CreateSSAStmt(*newStmt, newBB);
     }
   }
 }
 
 /* Split BB at split_point */
-BB *MeFunction::SplitBB(BB *bb, StmtNode *splitPoint, BB *newBB) {
+BB *MeFunction::SplitBB(BB &bb, StmtNode &splitPoint, BB *newBB) {
   if (newBB == nullptr){
     newBB = memPool->New<BB>(&alloc, &versAlloc, BBId(nextBBId++));
   }
-  StmtNode *newBBStart = splitPoint->GetNext();
+  StmtNode *newBBStart = splitPoint.GetNext();
   // Fix Stmt in BB.
   if (newBBStart != nullptr) {
     newBBStart->SetPrev(nullptr);
@@ -511,18 +510,18 @@ BB *MeFunction::SplitBB(BB *bb, StmtNode *splitPoint, BB *newBB) {
       StmtNode *nextStmt = stmt->GetNext();
       newBB->AddStmtNode(stmt);
       if (meSSATab != nullptr) {
-        meSSATab->CreateSSAStmt(stmt, newBB);
+        meSSATab->CreateSSAStmt(*stmt, *newBB);
       }
       stmt = nextStmt;
     }
   }
-  bb->SetLast(splitPoint);
-  splitPoint->SetNext(nullptr);
+  bb.SetLast(&splitPoint);
+  splitPoint.SetNext(nullptr);
   // Fix BB in CFG
-  newBB->SetKind(bb->GetKind());
-  bb->SetKind(kBBFallthru);
-  auto bIt = std::find(begin(), end(), bb);
-  auto idx = bb->GetBBId().idx;
+  newBB->SetKind(bb.GetKind());
+  bb.SetKind(kBBFallthru);
+  auto bIt = std::find(begin(), end(), &bb);
+  auto idx = bb.GetBBId().idx;
   auto newIt = bbVec.insert(++bIt, newBB);
   auto eIt = end();
   // update bb's idx
@@ -535,38 +534,38 @@ BB *MeFunction::SplitBB(BB *bb, StmtNode *splitPoint, BB *newBB) {
   // Special Case: commonExitBB is orig bb's succ
   auto *commonExitBB = *common_exit();
   for (size_t i = 0; i < commonExitBB->GetPred().size(); i++) {
-    if (commonExitBB->GetPred(i) == bb) {
+    if (commonExitBB->GetPred(i) == &bb) {
       commonExitBB->SetPred(i, newBB);
       break;
     }
   }
-  for (size_t i = 0; i < bb->GetSucc().size(); i++) {
-    BB *succ = bb->GetSucc(i);
-    succ->ReplacePred(bb, newBB);
+  for (size_t i = 0; i < bb.GetSucc().size(); i++) {
+    BB *succ = bb.GetSucc(i);
+    succ->ReplacePred(&bb, newBB);
   }
-  bb->GetSucc().clear();
-  bb->GetSucc().push_back(newBB);
-  newBB->GetPred().push_back(bb);
+  bb.GetSucc().clear();
+  bb.GetSucc().push_back(newBB);
+  newBB->GetPred().push_back(&bb);
   // Setup flags
   newBB->CopyFlagsAfterSplit(bb);
   if (newBB->GetAttributes(kBBAttrIsTryEnd)) {
-    endTryBB2TryBB[newBB] = endTryBB2TryBB[bb];
-    endTryBB2TryBB[bb] = nullptr;
-    bb->ClearAttributes(kBBAttrIsTryEnd);
+    endTryBB2TryBB[newBB] = endTryBB2TryBB[&bb];
+    endTryBB2TryBB[&bb] = nullptr;
+    bb.ClearAttributes(kBBAttrIsTryEnd);
   }
-  bb->ClearAttributes(kBBAttrIsExit);
+  bb.ClearAttributes(kBBAttrIsExit);
   return newBB;
 }
 
 /* create label for bb */
-void MeFunction::CreateBBLabel(BB *bb) {
-  if (bb->GetBBLabel() != 0) {
+void MeFunction::CreateBBLabel(BB &bb) {
+  if (bb.GetBBLabel() != 0) {
     return;
   }
   LabelIdx label = mirModule.CurFunction()->GetLabelTab()->CreateLabelWithPrefix('m');
   mirModule.CurFunction()->GetLabelTab()->AddToStringLabelMap(label);
-  bb->SetBBLabel(label);
-  labelBBIdMap.insert(std::make_pair(label, bb));
+  bb.SetBBLabel(label);
+  labelBBIdMap.insert(std::make_pair(label, &bb));
 }
 
 // Recognize the following kind of simple pattern and remove corresponding EH edges

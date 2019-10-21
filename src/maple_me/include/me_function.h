@@ -308,15 +308,15 @@ class MeFunction : public FuncEmit {
   }
 
   BB *NewBasicBlock();
-  BB *InsertNewBasicBlock(BB *position);
-  void DeleteBasicBlock(const BB *bb);
+  BB *InsertNewBasicBlock(BB &position);
+  void DeleteBasicBlock(const BB &bb);
   BB *NextBB(const BB *bb);
   BB *PrevBB(const BB *bb);
   /* create label for bb */
-  void CreateBBLabel(BB *bb);
+  void CreateBBLabel(BB &bb);
   /* clone stmtnodes from orig to newbb */
-  void CloneBasicBlock(BB *newbb, BB *orig);
-  BB *SplitBB(BB *bb, StmtNode *splitPoint, BB *newBB = nullptr);
+  void CloneBasicBlock(BB &newbb, BB &orig);
+  BB *SplitBB(BB &bb, StmtNode &splitPoint, BB *newBB = nullptr);
   const bool HasException() const {
     return hasEH;
   }
@@ -386,16 +386,19 @@ class MeFunction : public FuncEmit {
     irmap = currIRMap;
   }
 
-  MapleUnorderedMap<BB*, StmtNode*> &GetBBTryNodeMap() {
+  const MapleUnorderedMap<BB*, StmtNode*> &GetBBTryNodeMap() {
     return bbTryNodeMap;
   }
 
-  MapleUnorderedMap<BB*, BB*> &GetEndTryBB2TryBB() {
+  const MapleUnorderedMap<BB*, BB*> &GetEndTryBB2TryBB() {
     return endTryBB2TryBB;
   }
-
-  BB *GetEndTryBB(BB *endTry) {
-    return endTryBB2TryBB[endTry];
+  const BB* GetTryBBFromEndTryBB(BB *endTryBB) const {
+    auto it = endTryBB2TryBB.find(endTryBB);
+    return it == endTryBB2TryBB.end() ? nullptr : it->second;
+  }
+  void SetTryBBByOtherEndTryBB(BB *endTryBB, BB *otherTryBB) {
+    endTryBB2TryBB[endTryBB] = endTryBB2TryBB[otherTryBB];
   }
 
   MeCFG *GetTheCfg() {
@@ -417,9 +420,11 @@ class MeFunction : public FuncEmit {
   void SetNextBBId(uint32 currNextBBId) {
     nextBBId = currNextBBId;
   }
-
-  uint32 &GetNextBBId() {
+  uint32 GetNextBBId() {
     return nextBBId;
+  }
+  void DecNextBBId() {
+    --nextBBId;
   }
 
   uint32 GetRegNum() const {

@@ -141,8 +141,8 @@ BaseNode &OpMeExpr::EmitExpr(SSATab &ssaTab) {
     case OP_cmpl:
     case OP_cmpg:
     case OP_cmp: {
-      CompareNode *cmpNode =
-          ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<CompareNode>(Opcode(GetOp()), PrimType(GetPrimType()));
+      CompareNode *cmpNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<CompareNode>(
+          Opcode(GetOp()), PrimType(GetPrimType()));
       cmpNode->SetBOpnd(&opnds[0]->EmitExpr(ssaTab), 0);
       cmpNode->SetBOpnd(&opnds[1]->EmitExpr(ssaTab), 1);
       cmpNode->SetOpndType(opndType);
@@ -172,8 +172,8 @@ BaseNode &OpMeExpr::EmitExpr(SSATab &ssaTab) {
       return *unode;
     }
     case OP_select: {
-      TernaryNode *ternaryNode =
-          ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<TernaryNode>(Opcode(GetOp()), PrimType(GetPrimType()));
+      TernaryNode *ternaryNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<TernaryNode>(
+          Opcode(GetOp()), PrimType(GetPrimType()));
       ternaryNode->SetOpnd(&opnds[0]->EmitExpr(ssaTab), 0);
       ternaryNode->SetOpnd(&opnds[1]->EmitExpr(ssaTab), 1);
       ternaryNode->SetOpnd(&opnds[2]->EmitExpr(ssaTab), 2);
@@ -183,14 +183,15 @@ BaseNode &OpMeExpr::EmitExpr(SSATab &ssaTab) {
     case OP_cvt:
     case OP_floor:
     case OP_trunc: {
-      TypeCvtNode *cvtNode =
-          ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<TypeCvtNode>(Opcode(GetOp()), PrimType(GetPrimType()));
+      TypeCvtNode *cvtNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<TypeCvtNode>(
+          Opcode(GetOp()), PrimType(GetPrimType()));
       cvtNode->SetOpnd(&opnds[0]->EmitExpr(ssaTab));
       cvtNode->SetFromType(opndType);
       return *cvtNode;
     }
     case OP_retype: {
-      RetypeNode *cvtNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<RetypeNode>(PrimType(GetPrimType()));
+      RetypeNode *cvtNode =
+          ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<RetypeNode>(PrimType(GetPrimType()));
       cvtNode->SetOpnd(&opnds[0]->EmitExpr(ssaTab));
       cvtNode->SetFromType(opndType);
       cvtNode->SetTyIdx(tyIdx);
@@ -301,18 +302,18 @@ StmtNode &MaydassignMeStmt::EmitStmt(SSATab &ssaTab) {
   return *dassignStmt;
 }
 
-void MeStmt::EmitCallReturnVector(SSATab *ssaTab, CallReturnVector *nrets) {
+void MeStmt::EmitCallReturnVector(SSATab &ssaTab, CallReturnVector &nrets) {
   MapleVector<MustDefMeNode> *mustDefs = GetMustDefList();
   if (mustDefs == nullptr || mustDefs->empty()) {
     return;
   }
   MeExpr *meExpr = mustDefs->front().GetLHS();
   if (meExpr->GetMeOp() == kMeOpVar) {
-    const OriginalSt *ost = ssaTab->GetOriginalStFromID(static_cast<VarMeExpr*>(meExpr)->GetOStIdx());
+    const OriginalSt *ost = ssaTab.GetOriginalStFromID(static_cast<VarMeExpr*>(meExpr)->GetOStIdx());
     MIRSymbol *symbol = ost->GetMIRSymbol();
-    nrets->push_back(CallReturnPair(symbol->GetStIdx(), RegFieldPair(0, 0)));
+    nrets.push_back(CallReturnPair(symbol->GetStIdx(), RegFieldPair(0, 0)));
   } else if (meExpr->GetMeOp() == kMeOpReg) {
-    nrets->push_back(CallReturnPair(StIdx(), RegFieldPair(0, static_cast<RegMeExpr*>(meExpr)->GetRegIdx())));
+    nrets.push_back(CallReturnPair(StIdx(), RegFieldPair(0, static_cast<RegMeExpr*>(meExpr)->GetRegIdx())));
   }
 }
 
@@ -339,7 +340,7 @@ StmtNode &CallMeStmt::EmitStmt(SSATab &ssaTab) {
     callNode->SetNumOpnds(callNode->GetNopndSize());
     callNode->SetSrcPos(GetSrcPosition());
     if (kOpcodeInfo.IsCallAssigned(GetOp())) {
-      EmitCallReturnVector(&ssaTab, &callNode->GetReturnVec());
+      EmitCallReturnVector(ssaTab, callNode->GetReturnVec());
       for (size_t j = 0; j < callNode->GetReturnVec().size(); j++) {
         CallReturnPair retPair = callNode->GetReturnVec()[j];
         if (!retPair.second.IsReg()) {
@@ -363,7 +364,7 @@ StmtNode &CallMeStmt::EmitStmt(SSATab &ssaTab) {
     icallNode->SetNumOpnds(icallNode->GetNopndSize());
     icallNode->SetSrcPos(GetSrcPosition());
     if (kOpcodeInfo.IsCallAssigned(GetOp())) {
-      EmitCallReturnVector(&ssaTab, &icallNode->GetReturnVec());
+      EmitCallReturnVector(ssaTab, icallNode->GetReturnVec());
       icallNode->SetRetTyIdx(TyIdx(PTY_void));
       for (size_t j = 0; j < icallNode->GetReturnVec().size(); j++) {
         CallReturnPair retPair = icallNode->GetReturnVec()[j];
@@ -396,7 +397,7 @@ StmtNode &IcallMeStmt::EmitStmt(SSATab &ssaTab) {
   icallNode->SetNumOpnds(icallNode->GetNopndSize());
   icallNode->SetSrcPos(GetSrcPosition());
   if (kOpcodeInfo.IsCallAssigned(GetOp())) {
-    EmitCallReturnVector(&ssaTab, &icallNode->GetReturnVec());
+    EmitCallReturnVector(ssaTab, icallNode->GetReturnVec());
     icallNode->SetRetTyIdx(TyIdx(PTY_void));
     for (size_t j = 0; j < icallNode->GetReturnVec().size(); j++) {
       CallReturnPair retPair = icallNode->GetReturnVec()[j];
@@ -431,7 +432,7 @@ StmtNode &IntrinsiccallMeStmt::EmitStmt(SSATab &ssaTab) {
   callNode->SetNumOpnds(callNode->GetNopndSize());
   callNode->SetSrcPos(GetSrcPosition());
   if (kOpcodeInfo.IsCallAssigned(GetOp())) {
-    EmitCallReturnVector(&ssaTab, &callNode->GetReturnVec());
+    EmitCallReturnVector(ssaTab, callNode->GetReturnVec());
     for (size_t j = 0; j < callNode->GetReturnVec().size(); j++) {
       CallReturnPair retPair = callNode->GetReturnVec()[j];
       if (!retPair.second.IsReg()) {

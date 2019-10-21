@@ -21,6 +21,5 @@ enum MIRIntrinsicID {
 #include "intrinsics.def"
 #undef DEF_MIR_INTRINSIC
 };
-
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_INTRINSIC_OP_H

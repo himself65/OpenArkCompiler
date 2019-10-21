@@ -16,6 +16,7 @@
 #include <iostream>
 #include <typeinfo>
 #include <sys/stat.h>
+#include <climits>
 #include "mpl_timer.h"
 #include "mir_function.h"
 #include "mir_parser.h"

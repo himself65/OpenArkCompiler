@@ -109,7 +109,7 @@ void MUIDReplacement::CollectFuncAndDataFromKlasses() {
         if (vMethodPair != nullptr) {
           MIRSymbol *funcSymbol = GlobalTables::GetGsymTable().GetSymbolFromStidx(vMethodPair->first.Idx());
           MIRFunction *mirFunc = funcSymbol->GetFunction();
-          if (mirFunc && mirFunc->GetBody() == nullptr && !mirFunc->IsAbstract()) {
+          if (mirFunc != nullptr && mirFunc->GetBody() == nullptr && !mirFunc->IsAbstract()) {
             AddUndefFunc(mirFunc);
           }
         }

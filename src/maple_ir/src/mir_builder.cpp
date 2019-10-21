@@ -51,76 +51,71 @@ void MIRBuilder::AddAddroffuncFieldConst(const MIRStructType &structType, MIRAgg
 
 // fieldID is continuously being updated during traversal;
 // when the field is found, its field id is returned via fieldID
-bool MIRBuilder::TraverseToNamedField(MIRStructType *structType, GStrIdx nameIdx, uint32 &fieldID) {
+bool MIRBuilder::TraverseToNamedField(MIRStructType &structType, GStrIdx nameIdx, uint32 &fieldID) {
   TyIdx tid(0);
   return TraverseToNamedFieldWithTypeAndMatchStyle(structType, nameIdx, tid, fieldID, kMatchAnyField);
 }
 
-bool MIRBuilder::IsOfSameType(MIRType *type1, MIRType *type2) {
-  ASSERT(type1 != nullptr, "type1 is null");
-  ASSERT(type2 != nullptr, "type2 is null");
-  if (type2->GetKind() != type1->GetKind()) {
+bool MIRBuilder::IsOfSameType(MIRType &type1, MIRType &type2) {
+  if (type2.GetKind() != type1.GetKind()) {
     return false;
   }
-  switch (type1->GetKind()) {
+  switch (type1.GetKind()) {
     case kTypeScalar: {
-      return (type1->GetTypeIndex() == type2->GetTypeIndex());
+      return (type1.GetTypeIndex() == type2.GetTypeIndex());
     }
     case kTypePointer: {
-      MIRPtrType *ptrType = static_cast<MIRPtrType*>(type1);
-      MIRPtrType *ptrTypeIt = static_cast<MIRPtrType*>(type2);
-      if (ptrType->GetPointedTyIdx() == ptrTypeIt->GetPointedTyIdx()) {
+      MIRPtrType &ptrType = static_cast<MIRPtrType&>(type1);
+      MIRPtrType &ptrTypeIt = static_cast<MIRPtrType&>(type2);
+      if (ptrType.GetPointedTyIdx() == ptrTypeIt.GetPointedTyIdx()) {
         return true;
       } else {
-        return IsOfSameType(GlobalTables::GetTypeTable().GetTypeFromTyIdx(ptrType->GetPointedTyIdx()),
-                            GlobalTables::GetTypeTable().GetTypeFromTyIdx(ptrTypeIt->GetPointedTyIdx()));
+        return IsOfSameType(*GlobalTables::GetTypeTable().GetTypeFromTyIdx(ptrType.GetPointedTyIdx()),
+                            *GlobalTables::GetTypeTable().GetTypeFromTyIdx(ptrTypeIt.GetPointedTyIdx()));
       }
     }
     case kTypeJArray: {
-      MIRJarrayType *atype1 = static_cast<MIRJarrayType*>(type1);
-      MIRJarrayType *atype2 = static_cast<MIRJarrayType*>(type2);
-      if (atype1->GetDim() != atype2->GetDim()) {
+      MIRJarrayType &atype1 = static_cast<MIRJarrayType&>(type1);
+      MIRJarrayType &atype2 = static_cast<MIRJarrayType&>(type2);
+      if (atype1.GetDim() != atype2.GetDim()) {
         return false;
       }
-      return IsOfSameType(atype1->GetElemType(), atype2->GetElemType());
+      return IsOfSameType(*atype1.GetElemType(), *atype2.GetElemType());
     }
     default: {
-      return type1->GetTypeIndex() == type2->GetTypeIndex();
+      return type1.GetTypeIndex() == type2.GetTypeIndex();
     }
   }
 }
 
 // traverse parent first but match self first.
-void MIRBuilder::TraverseToNamedFieldWithType(MIRStructType *structType, GStrIdx nameIdx, TyIdx typeIdx,
+void MIRBuilder::TraverseToNamedFieldWithType(MIRStructType &structType, GStrIdx nameIdx, TyIdx typeIdx,
                                               uint32 &fieldID, uint32 &idx) {
-  if (structType == nullptr) {
-    return;
-  }
-  if (structType->IsIncomplete()) {
-    incompleteTypeRefedSet.insert(structType->GetTypeIndex());
+  if (structType.IsIncomplete()) {
+    incompleteTypeRefedSet.insert(structType.GetTypeIndex());
   }
   // process parent
-  if (structType->GetKind() == kTypeClass || structType->GetKind() == kTypeClassIncomplete) {
-    MIRClassType *classType = static_cast<MIRClassType*>(structType);
-    MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(classType->GetParentTyIdx());
+  if (structType.GetKind() == kTypeClass || structType.GetKind() == kTypeClassIncomplete) {
+    MIRClassType &classType = static_cast<MIRClassType&>(structType);
+    MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(classType.GetParentTyIdx());
     MIRStructType *parentType = static_cast<MIRStructType*>(type);
     if (parentType != nullptr) {
       fieldID++;
-      TraverseToNamedFieldWithType(parentType, nameIdx, typeIdx, fieldID, idx);
+      TraverseToNamedFieldWithType(*parentType, nameIdx, typeIdx, fieldID, idx);
     }
   }
-  for (uint32 fieldIdx = 0; fieldIdx < structType->GetFieldsSize(); fieldIdx++) {
+  for (uint32 fieldIdx = 0; fieldIdx < structType.GetFieldsSize(); fieldIdx++) {
     fieldID++;
-    TyIdx fieldTyIdx = structType->GetFieldsElemt(fieldIdx).second.first;
+    TyIdx fieldTyIdx = structType.GetFieldsElemt(fieldIdx).second.first;
     MIRType *fieldType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(fieldTyIdx);
-    if (structType->GetFieldsElemt(fieldIdx).first == nameIdx) {
+    if (structType.GetFieldsElemt(fieldIdx).first == nameIdx) {
       if ((typeIdx == 0 || fieldTyIdx == typeIdx)) {
         idx = fieldID;
         continue;
       }
       // for pointer type, check their pointed type
       MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(typeIdx);
-      if (IsOfSameType(type, fieldType)) {
+      if (IsOfSameType(*type, *fieldType)) {
         idx = fieldID;
       }
     }
@@ -129,7 +124,7 @@ void MIRBuilder::TraverseToNamedFieldWithType(MIRStructType *structType, GStrIdx
         fieldType->GetKind() == kTypeClass || fieldType->GetKind() == kTypeClassIncomplete ||
         fieldType->GetKind() == kTypeInterface || fieldType->GetKind() == kTypeInterfaceIncomplete) {
       MIRStructType *subStructType = static_cast<MIRStructType*>(fieldType);
-      TraverseToNamedFieldWithType(subStructType, nameIdx, typeIdx, fieldID, idx);
+      TraverseToNamedFieldWithType(*subStructType, nameIdx, typeIdx, fieldID, idx);
     }
   }
 }
@@ -143,19 +138,16 @@ void MIRBuilder::TraverseToNamedFieldWithType(MIRStructType *structType, GStrIdx
 //             2: match any field
 //             4: traverse parent first
 //          0xc: do not match but traverse to update fieldID, traverse parent first, found in child
-bool MIRBuilder::TraverseToNamedFieldWithTypeAndMatchStyle(MIRStructType *structType, GStrIdx nameIdx, TyIdx typeIdx,
+bool MIRBuilder::TraverseToNamedFieldWithTypeAndMatchStyle(MIRStructType &structType, GStrIdx nameIdx, TyIdx typeIdx,
                                                            uint32 &fieldID, unsigned int matchStyle) {
-  if (structType == nullptr) {
-    return false;
-  }
-  if (structType->IsIncomplete()) {
-    incompleteTypeRefedSet.insert(structType->GetTypeIndex());
+  if (structType.IsIncomplete()) {
+    incompleteTypeRefedSet.insert(structType.GetTypeIndex());
   }
   if (matchStyle & kParentFirst) {
     // process parent
-    if (structType->GetKind() == kTypeClass || structType->GetKind() == kTypeClassIncomplete) {
-      MIRClassType *classType = static_cast<MIRClassType*>(structType);
-      MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(classType->GetParentTyIdx());
+    if (structType.GetKind() == kTypeClass || structType.GetKind() == kTypeClassIncomplete) {
+      MIRClassType &classType = static_cast<MIRClassType&>(structType);
+      MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(classType.GetParentTyIdx());
       MIRStructType *parentType = static_cast<MIRStructType*>(type);
       if (parentType != nullptr) {
         fieldID++;
@@ -164,9 +156,9 @@ bool MIRBuilder::TraverseToNamedFieldWithTypeAndMatchStyle(MIRStructType *struct
           uint32 idxBackup = nameIdx.GetIdx();
           nameIdx.SetIdx(0);
           // do not match but traverse to update fieldID, traverse parent first
-          TraverseToNamedFieldWithTypeAndMatchStyle(parentType, nameIdx, typeIdx, fieldID, matchStyle);
+          TraverseToNamedFieldWithTypeAndMatchStyle(*parentType, nameIdx, typeIdx, fieldID, matchStyle);
           nameIdx.SetIdx(idxBackup);
-        } else if (TraverseToNamedFieldWithTypeAndMatchStyle(parentType, nameIdx, typeIdx, fieldID, matchStyle)) {
+        } else if (TraverseToNamedFieldWithTypeAndMatchStyle(*parentType, nameIdx, typeIdx, fieldID, matchStyle)) {
           return true;
         }
       }
@@ -174,18 +166,18 @@ bool MIRBuilder::TraverseToNamedFieldWithTypeAndMatchStyle(MIRStructType *struct
       return false;
     }
   }
-  for (uint32 fieldIdx = 0; fieldIdx < structType->GetFieldsSize(); fieldIdx++) {
+  for (uint32 fieldIdx = 0; fieldIdx < structType.GetFieldsSize(); fieldIdx++) {
     fieldID++;
-    TyIdx fieldTyIdx = structType->GetFieldsElemt(fieldIdx).second.first;
+    TyIdx fieldTyIdx = structType.GetFieldsElemt(fieldIdx).second.first;
     MIRType *fieldType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(fieldTyIdx);
     ASSERT(fieldType != nullptr, "fieldType is null");
-    if (matchStyle && structType->GetFieldsElemt(fieldIdx).first == nameIdx) {
+    if (matchStyle && structType.GetFieldsElemt(fieldIdx).first == nameIdx) {
       if ((typeIdx == 0 || fieldTyIdx == typeIdx)) {
         return true;
       }
       // for pointer type, check their pointed type
       MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(typeIdx);
-      if (IsOfSameType(type, fieldType)) {
+      if (IsOfSameType(*type, *fieldType)) {
         return true;
       }
     }
@@ -194,7 +186,7 @@ bool MIRBuilder::TraverseToNamedFieldWithTypeAndMatchStyle(MIRStructType *struct
         fieldType->GetKind() == kTypeClass || fieldType->GetKind() == kTypeClassIncomplete ||
         fieldType->GetKind() == kTypeInterface || fieldType->GetKind() == kTypeInterfaceIncomplete) {
       MIRStructType *subStructType = static_cast<MIRStructType*>(fieldType);
-      if (TraverseToNamedFieldWithTypeAndMatchStyle(subStructType, nameIdx, typeIdx, fieldID, style)) {
+      if (TraverseToNamedFieldWithTypeAndMatchStyle(*subStructType, nameIdx, typeIdx, fieldID, style)) {
         return true;
       }
     }
@@ -202,9 +194,9 @@ bool MIRBuilder::TraverseToNamedFieldWithTypeAndMatchStyle(MIRStructType *struct
   return false;
 }
 
-FieldID MIRBuilder::GetStructFieldIDFromNameAndType(MIRType *type, const std::string &name, TyIdx idx,
+FieldID MIRBuilder::GetStructFieldIDFromNameAndType(MIRType &type, const std::string &name, TyIdx idx,
                                                     unsigned int matchStyle) {
-  MIRStructType *structType = static_cast<MIRStructType*>(type);
+  MIRStructType &structType = static_cast<MIRStructType&>(type);
   uint32 fieldID = 0;
   GStrIdx strIdx = GetStringIndex(name);
   if (TraverseToNamedFieldWithTypeAndMatchStyle(structType, strIdx, idx, fieldID, matchStyle)) {
@@ -213,42 +205,42 @@ FieldID MIRBuilder::GetStructFieldIDFromNameAndType(MIRType *type, const std::st
   return 0;
 }
 
-FieldID MIRBuilder::GetStructFieldIDFromNameAndType(MIRType *type, const std::string &name, TyIdx idx) {
+FieldID MIRBuilder::GetStructFieldIDFromNameAndType(MIRType &type, const std::string &name, TyIdx idx) {
   return GetStructFieldIDFromNameAndType(type, name, idx, kMatchAnyField);
 }
 
-FieldID MIRBuilder::GetStructFieldIDFromNameAndTypeParentFirst(MIRType *type, const std::string &name, TyIdx idx) {
+FieldID MIRBuilder::GetStructFieldIDFromNameAndTypeParentFirst(MIRType &type, const std::string &name, TyIdx idx) {
   return GetStructFieldIDFromNameAndType(type, name, idx, kParentFirst);
 }
 
-FieldID MIRBuilder::GetStructFieldIDFromNameAndTypeParentFirstFoundInChild(MIRType *type, const std::string &name,
+FieldID MIRBuilder::GetStructFieldIDFromNameAndTypeParentFirstFoundInChild(MIRType &type, const std::string &name,
                                                                            TyIdx idx) {
   // do not match but traverse to update fieldid, traverse parent first, found in child
   return GetStructFieldIDFromNameAndType(type, name, idx, (kFoundInChild | kParentFirst | kUpdateFieldID));
 }
 
-FieldID MIRBuilder::GetStructFieldIDFromFieldName(MIRType *type, const std::string &name) {
+FieldID MIRBuilder::GetStructFieldIDFromFieldName(MIRType &type, const std::string &name) {
   return GetStructFieldIDFromNameAndType(type, name, TyIdx(0), kMatchAnyField);
 }
 
 FieldID MIRBuilder::GetStructFieldIDFromFieldNameParentFirst(MIRType *type, const std::string &name) {
-  return GetStructFieldIDFromNameAndType(type, name, TyIdx(0), kParentFirst);
+  if (type == nullptr) {
+    return 0;
+  }
+  return GetStructFieldIDFromNameAndType(*type, name, TyIdx(0), kParentFirst);
 }
 
-void MIRBuilder::SetStructFieldIDFromFieldName(MIRType *structtype, const std::string &name, GStrIdx newStrIdx,
-                                               const MIRType *newFieldType) {
-  MIRStructType *structType = static_cast<MIRStructType*>(structtype);
-  CHECK_FATAL(structtype != nullptr, "structType is null");
+void MIRBuilder::SetStructFieldIDFromFieldName(MIRType &structtype, const std::string &name, GStrIdx newStrIdx,
+                                               const MIRType &newFieldType) {
+  MIRStructType &structType = static_cast<MIRStructType&>(structtype);
   uint32 fieldID = 0;
   GStrIdx strIdx = GetStringIndex(name);
   while (true) {
-    if (structType->GetElemStrIdx(fieldID) == strIdx) {
+    if (structType.GetElemStrIdx(fieldID) == strIdx) {
       if (newStrIdx != 0) {
-        structType->SetElemStrIdx(fieldID, newStrIdx);
+        structType.SetElemStrIdx(fieldID, newStrIdx);
       }
-      if (newFieldType) {
-        structType->SetElemtTyIdx(fieldID, newFieldType->GetTypeIndex());
-      }
+      structType.SetElemtTyIdx(fieldID, newFieldType.GetTypeIndex());
       return;
     }
     fieldID++;

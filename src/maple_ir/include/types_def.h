@@ -22,7 +22,6 @@
 #include <cstddef>
 
 namespace maple {
-
 // Let's keep the following definitions so that existing code will continue to work.
 using int8 = std::int8_t;
 using int16 = std::int16_t;
@@ -270,6 +269,5 @@ class U16StrIdx {  // user string table index (from the conststr opcode)
  private:
   uint32 idx;
 };
-
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_TYPES_DEF_H

@@ -1013,6 +1013,5 @@ class MIRFunction {
   // funcname + types of args, no type of retv
   GStrIdx signatureStrIdx;
 };
-
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_MIR_FUNCTION_H

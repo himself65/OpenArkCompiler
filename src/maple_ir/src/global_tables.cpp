@@ -315,6 +315,5 @@ GlobalTables GlobalTables::globalTables;
 GlobalTables &GlobalTables::GetGlobalTables() {
   return globalTables;
 }
-
 }  // namespace maple
 #endif  // MIR_FEATURE_FULL

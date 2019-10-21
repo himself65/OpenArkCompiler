@@ -18,7 +18,6 @@
 #include "cfg_primitive_types.h"
 
 namespace maple {
-
 class PrimitiveType {
  public:
   PrimitiveType(PrimType type) {
@@ -61,6 +60,5 @@ class PrimitiveType {
  private:
   const PrimitiveTypeProperty *property;
 };
-
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_PRIM_TYPES_H
