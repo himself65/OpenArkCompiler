@@ -22,17 +22,17 @@
 // phi operands.
 namespace maple {
 // accumulate the BBs that are in the iterated dominance frontiers of bb in
-// the set dfset, visiting each BB only once
-void MeSSAUpdate::GetIterDomFrontier(const BB &bb, MapleSet<BBId> &dfset, std::vector<bool> &visitedMap) {
+// the set dfSet, visiting each BB only once
+void MeSSAUpdate::GetIterDomFrontier(const BB &bb, MapleSet<BBId> &dfSet, std::vector<bool> &visitedMap) {
   CHECK_FATAL(bb.GetBBId().idx < visitedMap.size(), "index out of range in MeSSAUpdate::GetIterDomFrontier");
   if (visitedMap[bb.GetBBId().idx]) {
     return;
   }
   visitedMap[bb.GetBBId().idx] = true;
-  for (BBId frontierbbid : dom.GetDomFrontier(bb.GetBBId().idx)) {
-    dfset.insert(frontierbbid);
-    BB *frontierbb = func.GetBBFromID(frontierbbid);
-    GetIterDomFrontier(*frontierbb, dfset, visitedMap);
+  for (BBId frontierBBId : dom.GetDomFrontier(bb.GetBBId().idx)) {
+    dfSet.insert(frontierBBId);
+    BB *frontierBB = func.GetBBFromID(frontierBBId);
+    GetIterDomFrontier(*frontierBB, dfSet, visitedMap);
   }
 }
 
@@ -42,12 +42,12 @@ void MeSSAUpdate::InsertPhis() {
   for (; it != updateCands.end(); it++) {
     std::vector<bool> visitedMap(func.GetAllBBs().size(), false);
     dfSet.clear();
-    for (BBId bbid : *it->second) {
-      GetIterDomFrontier(*func.GetBBFromID(bbid), dfSet, visitedMap);
+    for (BBId bbId : *it->second) {
+      GetIterDomFrontier(*func.GetBBFromID(bbId), dfSet, visitedMap);
     }
-    for (BBId bbid : dfSet) {
+    for (BBId bbId : dfSet) {
       // insert a phi node
-      BB *bb = func.GetBBFromID(bbid);
+      BB *bb = func.GetBBFromID(bbId);
       ASSERT(bb != nullptr, "null ptr check");
       MapleMap<OStIdx, MeVarPhiNode*>::iterator phiListIt = bb->GetMevarPhiList().find(it->first);
       if (phiListIt != bb->GetMevarPhiList().end()) {
@@ -66,7 +66,7 @@ void MeSSAUpdate::InsertPhis() {
 
 void MeSSAUpdate::RenamePhi(BB &bb) {
   MapleMap<OStIdx, MapleStack<VarMeExpr*>*>::iterator it1 = renameStacks.begin();
-  for (; it1 != renameStacks.end(); it1++) {
+  for (; it1 != renameStacks.end(); ++it1) {
     MapleMap<OStIdx, MeVarPhiNode*>::iterator it2 = bb.GetMevarPhiList().find(it1->first);
     if (it2 != bb.GetMevarPhiList().end()) {
       // if there is existing phi result node
@@ -76,7 +76,7 @@ void MeSSAUpdate::RenamePhi(BB &bb) {
         // create a new VarMeExpr defined by this phi
         irMap.SetExprID(irMap.GetExprID() + 1);
         VarMeExpr *newvar = irMap.New<VarMeExpr>(&irMap.GetIRMapAlloc(), irMap.GetExprID(), it2->first,
-                                                  irMap.GetVerst2MeExprTableSize());
+                                                 irMap.GetVerst2MeExprTableSize());
         newvar->InitBase(OP_dread, PTY_ref, 0);
         newvar->SetFieldID(0);
         irMap.PushBackVerst2MeExprTable(newvar);
@@ -92,25 +92,25 @@ void MeSSAUpdate::RenamePhi(BB &bb) {
 }
 
 // changed has been initialized to false by caller
-MeExpr *MeSSAUpdate::RenameExpr(MeExpr &meexpr, bool &changed) {
+MeExpr *MeSSAUpdate::RenameExpr(MeExpr &meExpr, bool &changed) {
   bool needRehash = false;
-  switch (meexpr.GetMeOp()) {
+  switch (meExpr.GetMeOp()) {
     case kMeOpVar: {
-      VarMeExpr &varExpr = static_cast<VarMeExpr&>(meexpr);
+      VarMeExpr &varExpr = static_cast<VarMeExpr&>(meExpr);
       MapleMap<OStIdx, MapleStack<VarMeExpr*>*>::iterator it1 = renameStacks.find(varExpr.GetOStIdx());
       if (it1 == renameStacks.end()) {
-        return &meexpr;
+        return &meExpr;
       }
       MapleStack<VarMeExpr*> *renameStack = it1->second;
       VarMeExpr *curvar = renameStack->top();
       if (&varExpr == curvar) {
-        return &meexpr;
+        return &meExpr;
       }
       changed = true;
       return curvar;
     }
     case kMeOpIvar: {
-      IvarMeExpr &ivarMeExpr = static_cast<IvarMeExpr&>(meexpr);
+      IvarMeExpr &ivarMeExpr = static_cast<IvarMeExpr&>(meExpr);
       IvarMeExpr newMeExpr(kInvalidExprID);
       newMeExpr.SetBase(RenameExpr(*ivarMeExpr.GetBase(), needRehash));
       if (needRehash) {
@@ -121,10 +121,10 @@ MeExpr *MeSSAUpdate::RenameExpr(MeExpr &meexpr, bool &changed) {
         newMeExpr.SetMuVal(ivarMeExpr.GetMu());
         return irMap.HashMeExpr(newMeExpr);
       }
-      return &meexpr;
+      return &meExpr;
     }
     case kMeOpOp: {
-      OpMeExpr &meOpExpr = static_cast<OpMeExpr&>(meexpr);
+      OpMeExpr &meOpExpr = static_cast<OpMeExpr&>(meExpr);
       OpMeExpr newMeExpr(kInvalidExprID);
       newMeExpr.SetOpnd(0, RenameExpr(*meOpExpr.GetOpnd(0), needRehash));
       if (meOpExpr.GetOpnd(1)) {
@@ -143,10 +143,10 @@ MeExpr *MeSSAUpdate::RenameExpr(MeExpr &meexpr, bool &changed) {
         newMeExpr.InitBase(meOpExpr.GetOp(), meOpExpr.GetPrimType(), meOpExpr.GetNumOpnds());
         return irMap.HashMeExpr(newMeExpr);
       }
-      return &meexpr;
+      return &meExpr;
     }
     case kMeOpNary: {
-      NaryMeExpr &naryMeExpr = static_cast<NaryMeExpr&>(meexpr);
+      NaryMeExpr &naryMeExpr = static_cast<NaryMeExpr&>(meExpr);
       NaryMeExpr newMeExpr(&irMap.GetIRMapAlloc(), kInvalidExprID, naryMeExpr.GetTyIdx(), naryMeExpr.GetIntrinsic(),
                            naryMeExpr.GetBoundCheck());
       for (size_t i = 0; i < naryMeExpr.GetOpnds().size(); i++) {
@@ -154,13 +154,13 @@ MeExpr *MeSSAUpdate::RenameExpr(MeExpr &meexpr, bool &changed) {
       }
       if (needRehash) {
         changed = true;
-        newMeExpr.InitBase(meexpr.GetOp(), meexpr.GetPrimType(), meexpr.GetNumOpnds());
+        newMeExpr.InitBase(meExpr.GetOp(), meExpr.GetPrimType(), meExpr.GetNumOpnds());
         return irMap.HashMeExpr(newMeExpr);
       }
-      return &meexpr;
+      return &meExpr;
     }
     default:
-      return &meexpr;
+      return &meExpr;
   }
 }
 
@@ -187,10 +187,7 @@ void MeSSAUpdate::RenameStmts(BB &bb) {
       lhsvar = stmt.GetVarLHS();
     } else if (kOpcodeInfo.IsCallAssigned(stmt.GetOp())) {
       MapleVector<MustDefMeNode> *mustDefList = stmt.GetMustDefList();
-      if (mustDefList->empty()) {
-        continue;
-      }
-      if (mustDefList->front().GetLHS()->GetMeOp() != kMeOpVar) {
+      if (mustDefList->empty() || mustDefList->front().GetLHS()->GetMeOp() != kMeOpVar) {
         continue;
       }
       lhsvar = static_cast<VarMeExpr*>(mustDefList->front().GetLHS());
@@ -239,7 +236,7 @@ void MeSSAUpdate::RenameBB(BB &bb) {
   // when backing up the dominator tree
   std::map<OStIdx, uint32> origStackSize((std::less<OStIdx>()));
   MapleMap<OStIdx, MapleStack<VarMeExpr*>*>::iterator it = renameStacks.begin();
-  for (; it != renameStacks.end(); it++) {
+  for (; it != renameStacks.end(); ++it) {
     origStackSize[it->first] = it->second->size();
   }
   RenamePhi(bb);
@@ -252,7 +249,7 @@ void MeSSAUpdate::RenameBB(BB &bb) {
   }
   // pop stacks back to where they were at entry to this BB
   it = renameStacks.begin();
-  for (; it != renameStacks.end(); it++) {
+  for (; it != renameStacks.end(); ++it) {
     while (it->second->size() > origStackSize[it->first]) {
       it->second->pop();
     }

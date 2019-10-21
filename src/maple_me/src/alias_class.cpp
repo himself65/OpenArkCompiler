@@ -32,13 +32,13 @@ static inline bool IsPotentialAddress(PrimType ptyp) {
 }
 static inline bool OriginalStIsZeroLevAndAuto(const OriginalSt &ost) {
   if (ost.GetIndirectLev() == 0 && ost.IsSymbolOst()) {
-    MIRSymbol *sym = ost.GetMIRSymbol();
+    const MIRSymbol *sym = ost.GetMIRSymbol();
     return sym->GetStorageClass() == kScAuto || sym->GetStorageClass() == kScFormal;
   }
   return false;
 }
 
-bool AliasClass::CallHasNoSideEffectOrPrivateDefEffect(CallNode &stmt, FuncAttrKind attrKind) {
+bool AliasClass::CallHasNoSideEffectOrPrivateDefEffect(const CallNode &stmt, FuncAttrKind attrKind) const {
   ASSERT(attrKind == FUNCATTR_nosideeffect || attrKind == FUNCATTR_noprivate_defeffect, "Not supportted attrKind");
   MIRFunction *callee = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(stmt.GetPUIdx());
   bool hasAttr = false;
@@ -50,18 +50,19 @@ bool AliasClass::CallHasNoSideEffectOrPrivateDefEffect(CallNode &stmt, FuncAttrK
   return hasAttr;
 }
 
-bool AliasClass::CallHasSideEffect(CallNode &stmt) {
+bool AliasClass::CallHasSideEffect(const CallNode &stmt) const {
   return calleeHasSideEffect ? true : !CallHasNoSideEffectOrPrivateDefEffect(stmt, FUNCATTR_nosideeffect);
 }
 
-bool AliasClass::CallHasNoPrivateDefEffect(CallNode &stmt) {
+bool AliasClass::CallHasNoPrivateDefEffect(const CallNode &stmt) const {
   return calleeHasSideEffect ? false : CallHasNoSideEffectOrPrivateDefEffect(stmt, FUNCATTR_noprivate_defeffect);
 }
 
 // here starts pass 1 code
 AliasElem *AliasClass::FindOrCreateAliasElem(OriginalSt &ost) {
   OStIdx ostIdx = ost.GetIndex();
-  CHECK_FATAL(ostIdx.idx > 0 && ostIdx.idx < osym2Elem.size(), "Invalid ost index");
+  CHECK_FATAL(ostIdx.idx > 0, "Invalid ost index");
+  CHECK_FATAL(ostIdx.idx < osym2Elem.size(), "Index out of range");
   AliasElem *aelem = osym2Elem[ostIdx.idx];
   if (aelem != nullptr) {
     return aelem;
@@ -94,7 +95,7 @@ AliasElem *AliasClass::FindOrCreateExtraLevAliasElem(BaseNode &expr, TyIdx tyIdx
     return nullptr;
   }
   OriginalSt *newOst = GetAliasAnalysisTable()->FindOrCreateExtraLevOriginalSt(ae->GetOriginalSt(), tyIdx, fieldId);
-  CHECK_FATAL(newOst, "null ptr check");
+  CHECK_FATAL(newOst != nullptr, "null ptr check");
   if (newOst->GetIndex().idx == osym2Elem.size()) {
     osym2Elem.push_back(nullptr);
     ssaTab.GetVersionStTable().CreateVersionSt(newOst, kInitVersion);
@@ -107,12 +108,12 @@ AliasElem *AliasClass::CreateAliasElemsExpr(BaseNode &expr) {
     case OP_addrof: {
       AddrofSSANode &addrof = static_cast<AddrofSSANode&>(expr);
       FindOrCreateAliasElem(*addrof.GetSSAVar()->GetOrigSt());
-      OriginalSt *newost =
+      OriginalSt *newOst =
           GetAliasAnalysisTable()->FindOrCreateAddrofSymbolOriginalSt(*addrof.GetSSAVar()->GetOrigSt());
-      if (newost->GetIndex().idx == osym2Elem.size()) {
+      if (newOst->GetIndex().idx == osym2Elem.size()) {
         osym2Elem.push_back(nullptr);
       }
-      return FindOrCreateAliasElem(*newost);
+      return FindOrCreateAliasElem(*newOst);
     }
     case OP_dread: {
       AddrofSSANode &dread = static_cast<AddrofSSANode&>(expr);
@@ -294,13 +295,13 @@ void AliasClass::DumpAssignSets() {
     if (aliasElem->GetAssignSet() == nullptr) {
       LogInfo::MapleLogger() << "Alone: ";
       aliasElem->Dump(mirModule);
-      LogInfo::MapleLogger() << std::endl;
+      LogInfo::MapleLogger() << '\n';
     } else {
       LogInfo::MapleLogger() << "Members of assign set " << aliasElem->GetClassID() << ": ";
       for (uint elemID : *(aliasElem->GetAssignSet())) {
         id2Elem[elemID]->Dump(mirModule);
       }
-      LogInfo::MapleLogger() << std::endl;
+      LogInfo::MapleLogger() << '\n';
     }
   }
 }
@@ -584,13 +585,13 @@ void AliasClass::DumpClassSets() {
     if (aliaselem->GetClassSet() == nullptr) {
       LogInfo::MapleLogger() << "Alone: ";
       aliaselem->Dump(mirModule);
-      LogInfo::MapleLogger() << std::endl;
+      LogInfo::MapleLogger() << '\n';
     } else {
       LogInfo::MapleLogger() << "Members of alias class " << aliaselem->GetClassID() << ": ";
       for (uint elemID : *(aliaselem->GetClassSet())) {
         id2Elem[elemID]->Dump(mirModule);
       }
-      LogInfo::MapleLogger() << std::endl;
+      LogInfo::MapleLogger() << '\n';
     }
   }
 }
@@ -701,8 +702,7 @@ void AliasClass::InsertReturnOpndMayUse(const StmtNode &stmt) {
 void AliasClass::InsertMayUseAll(const StmtNode &stmt) {
   MapleMap<OStIdx, MayUseNode> &mayUseNodes = SSAGenericGetMayUseNode(stmt, ssaTab.GetStmtsSSAPart());
   for (AliasElem *ae : id2Elem) {
-    if (ae->GetOriginalSt().GetIndirectLev() >= 0 &&
-        !ae->GetOriginalSt().IsPregOst()) {
+    if (ae->GetOriginalSt().GetIndirectLev() >= 0 && !ae->GetOriginalSt().IsPregOst()) {
       mayUseNodes.insert(std::make_pair(
           ae->GetOriginalSt().GetIndex(),
           MayUseNode(ssaTab.GetVersionStTable().GetVersionStFromID(ae->GetOriginalSt().GetZeroVersionIndex()))));
@@ -743,7 +743,7 @@ void AliasClass::InsertMayDefDassign(StmtNode &stmt, BBId bbID) {
   InsertMayDefNode(mayDefOsts, mayDefNodes, stmt, bbID);
 }
 
-bool AliasClass::IsEquivalentField(TyIdx tyIdxA, FieldID fldA, TyIdx tyIdxB, FieldID fldB) {
+bool AliasClass::IsEquivalentField(TyIdx tyIdxA, FieldID fldA, TyIdx tyIdxB, FieldID fldB) const {
   if (tyIdxA != tyIdxB) {
     (void)klassHierarchy->UpdateFieldID(tyIdxA, tyIdxB, fldA);
   }

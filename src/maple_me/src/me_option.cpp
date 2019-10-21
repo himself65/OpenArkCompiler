@@ -40,7 +40,7 @@ bool MeOption::lessThrowAlias = true;
 bool MeOption::finalFieldAlias = false;
 bool MeOption::regreadAtReturn = true;
 
-void MeOption::SplitPhases(const std::string &str, std::unordered_set<std::string> &set) {
+void MeOption::SplitPhases(const std::string &str, std::unordered_set<std::string> &set) const {
   std::string s{str};
 
   if (s.compare("*") == 0) {
@@ -50,7 +50,7 @@ void MeOption::SplitPhases(const std::string &str, std::unordered_set<std::strin
   StringUtils::Split(s, set, ',');
 }
 
-void MeOption::GetRange(const std::string &str) {
+void MeOption::GetRange(const std::string &str) const {
   std::string s{str};
   size_t comma = s.find_first_of(",", 0);
   if (comma != std::string::npos) {
@@ -58,7 +58,7 @@ void MeOption::GetRange(const std::string &str) {
     range[1] = std::stoul(s.substr(comma + 1, std::string::npos - (comma + 1)), nullptr);
   }
   if (range[0] > range[1]) {
-    LogInfo::MapleLogger(kLlErr) << "invalid values for --range=" << range[0] << "," << range[1] << std::endl;
+    LogInfo::MapleLogger(kLlErr) << "invalid values for --range=" << range[0] << "," << range[1] << '\n';
     ASSERT(false, "GetRange exit");
   }
 }

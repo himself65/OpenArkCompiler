@@ -29,7 +29,6 @@ class Options {
   bool ParseOptions(int argc, char **argv, std::string &fileName);
   ~Options() {}
 
-  void DumpUsage();
   void DumpOptions();
   std::vector<std::string> &GetSequence() {
     return phaseSeq;

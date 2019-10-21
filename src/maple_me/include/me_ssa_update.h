@@ -46,10 +46,10 @@ class MeSSAUpdate {
   MapleAllocator ssaUpdateAlloc;
   MapleMap<OStIdx, MapleSet<BBId>*> &updateCands;
   MapleMap<OStIdx, MapleStack<VarMeExpr*>*> renameStacks;
-  void GetIterDomFrontier(const BB &bb, MapleSet<BBId> &dfset, std::vector<bool> &visitedMap);
+  void GetIterDomFrontier(const BB &bb, MapleSet<BBId> &dfSet, std::vector<bool> &visitedMap);
   void InsertPhis();
   void RenamePhi(BB &bb);
-  MeExpr *RenameExpr(MeExpr &meexpr, bool &changed);
+  MeExpr *RenameExpr(MeExpr &meExpr, bool &changed);
   void RenameStmts(BB &bb);
   void RenamePhiOpndsInSucc(BB &bb);
   void RenameBB(BB &bb);

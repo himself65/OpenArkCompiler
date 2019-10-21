@@ -40,22 +40,14 @@ class IRMap : public AnalysisResult {
 
   virtual BB *GetBB(BBId id) = 0;
   virtual BB *GetBBForLabIdx(LabelIdx lidx, PUIdx pidx = 0) = 0;
-  Dominance *GetDominance() const {
-    return &dom;
+  Dominance &GetDominance() {
+    return dom;
   }
 
   MeExpr *HashMeExpr(MeExpr &meExpr);
-  void PutToBucket(uint32, MeExpr&);
   void BuildBB(BB &bb, std::vector<bool> &bbIRMapProcessed);
-  void BuildAssertMeStmt(NaryMeExpr&);
-  MeStmt *BuildMeStmtWithNoSSAPart(StmtNode &stmt);
-  MeStmt *BuildMeStmt(StmtNode&);
   MeExpr *BuildExpr(BaseNode&);
-  MeExpr *BuildLHSVar(const VersionSt &verSt, DassignMeStmt &defMeStmt, DassignNode &dassign);
-  MeExpr *BuildLHSReg(const VersionSt &verSt, RegassignMeStmt &defMeStmt, const RegassignNode &regassign);
-  IvarMeExpr *BuildLHSIvar(MeExpr &baseAddr, IassignMeStmt &iassignMeStmt, FieldID fieldID);
   IvarMeExpr *BuildLHSIvarFromIassMeStmt(IassignMeStmt &iassignMeStmt);
-  RegMeExpr *CreateRefRegMeExpr(MIRSymbol&);
   RegMeExpr *CreateRegRefMeExpr(MeExpr&);
   RegMeExpr *CreateRegRefMeExpr(MIRType&);
   VarMeExpr *CreateVarMeExprVersion(const VarMeExpr&);
@@ -69,9 +61,7 @@ class IRMap : public AnalysisResult {
     return verst2MeExprTable[verid];
   }
 
-  VarMeExpr *GetOrCreateVarFromVerSt(const VersionSt &verSt);
   VarMeExpr *GetOrCreateZeroVersionVarMeExpr(const OriginalSt &oSt);
-  RegMeExpr *GetOrCreateRegFromVerSt(const VersionSt &verSt);
   MeExpr *GetMeExpr(size_t index) {
     ASSERT(index < verst2MeExprTable.size(), "index out of range");
     MeExpr *meExpr = verst2MeExprTable.at(index);
@@ -86,33 +76,18 @@ class IRMap : public AnalysisResult {
   DassignMeStmt *CreateDassignMeStmt(MeExpr&, MeExpr&, BB&);
   RegassignMeStmt *CreateRegassignMeStmt(MeExpr&, MeExpr&, BB&);
   void InsertMeStmtBefore(BB&, MeStmt&, MeStmt&);
-  void BuildChiList(MeStmt&, MapleMap<OStIdx, MayDefNode> &, MapleMap<OStIdx, ChiMeNode*> &);
-  void BuildMustDefList(MeStmt &meStmt, MapleVector<MustDefNode> &, MapleVector<MustDefMeNode> &);
-  void BuildMuList(MapleMap<OStIdx, MayUseNode> &, MapleMap<OStIdx, VarMeExpr*> &);
-  void BuildPhiMeNode(BB&);
-  VersionSt *GetVerSt(size_t veridx) const {
-    return ssaTab.GetVerSt(veridx);
-  }
 
   MeRegPhiNode *CreateMeRegPhi(RegMeExpr&);
   MeVarPhiNode *CreateMeVarPhi(VarMeExpr&);
-  bool Verify();  // iterate hash table and check with meexpr_table
-  BB *GetFalseBrBB(CondGotoMeStmt&);
-  std::string PhaseName() const {
-    return "irmap";
-  }
 
   virtual void Dump() = 0;
-  virtual void SetCurFunction(BB &bb) {}
+  virtual void SetCurFunction(const BB &bb) {}
 
   MeExpr *CreateIntConstMeExpr(int64, PrimType);
   MeExpr *CreateConstMeExpr(PrimType, MIRConst&);
   MeExpr *CreateMeExprBinary(Opcode, PrimType, MeExpr&, MeExpr&);
   MeExpr *CreateMeExprSelect(PrimType, MeExpr&, MeExpr&, MeExpr&);
-  MeExpr *CreateMeExprCompare(Opcode, PrimType, PrimType, MeExpr&, MeExpr&);
-  MeExpr *CreateMeExprIntrinsiciop1(MIRIntrinsicID, PrimType, MeExpr&);
   MeExpr *CreateMeExprTypeCvt(PrimType, PrimType, MeExpr&);
-  MeExpr *CreateAddrofMeExprFromNewSymbol(MIRSymbol&, PUIdx);
   IntrinsiccallMeStmt *CreateIntrinsicCallMeStmt(MIRIntrinsicID idx, std::vector<MeExpr*> &opnds,
                                                  TyIdx tyidx = TyIdx());
   IntrinsiccallMeStmt *CreateIntrinsicCallAssignedMeStmt(MIRIntrinsicID idx, std::vector<MeExpr*> &opnds, MeExpr *ret,
@@ -127,26 +102,21 @@ class IRMap : public AnalysisResult {
     return irMapAlloc.GetMemPool()->New<T>(std::forward<Arguments>(args)...);
   }
 
-  SSATab *GetSSATab() const {
-    return &ssaTab;
+  SSATab &GetSSATab() {
+    return ssaTab;
   }
-
-  MIRModule *GetMIRModule() const {
-    return &mirModule;
+  const SSATab &GetSSATab() const {
+    return ssaTab;
   }
-
-  const MapleAllocator &GetIRMapAlloc() const {
-    return irMapAlloc;
+  MIRModule &GetMIRModule() {
+    return mirModule;
   }
-
+  const MIRModule &GetMIRModule() const {
+    return mirModule;
+  }
   MapleAllocator &GetIRMapAlloc() {
     return irMapAlloc;
   }
-
-  const MapleAllocator &GetTmpAlloc() const {
-    return tempAlloc;
-  }
-
   MapleAllocator &GetTempAlloc() {
     return tempAlloc;
   }
@@ -154,7 +124,6 @@ class IRMap : public AnalysisResult {
   int32 GetExprID() const {
     return exprID;
   }
-
   void SetExprID(int32 id) {
     exprID = id;
   }
@@ -162,27 +131,24 @@ class IRMap : public AnalysisResult {
   const MapleVector<MeExpr*> &GetVerst2MeExprTable() const {
     return verst2MeExprTable;
   }
-
   MeExpr *GetVerst2MeExprTableItem(int i) {
     return verst2MeExprTable[i];
   }
-
   size_t GetVerst2MeExprTableSize() const {
     return verst2MeExprTable.size();
   }
-
   void PushBackVerst2MeExprTable(MeExpr *item) {
     verst2MeExprTable.push_back(item);
   }
 
-  MapleVector<RegMeExpr*> &GetRegMeExprTable() {
+  const MapleVector<RegMeExpr*> &GetRegMeExprTable() const {
     return regMeExprTable;
   }
+
 
   void SetNeedAnotherPass(bool need) {
     needAnotherPass = need;
   }
-
   bool GetNeedAnotherPass() const {
     return needAnotherPass;
   }
@@ -190,7 +156,6 @@ class IRMap : public AnalysisResult {
   bool GetDumpStmtNum() const {
     return dumpStmtNum;
   }
-
   void SetDumpStmtNum(bool num) {
     dumpStmtNum = num;
   }
@@ -211,6 +176,22 @@ class IRMap : public AnalysisResult {
   BB *curBB;  // current maple_me::BB being visited
 
   bool ReplaceMeExprStmtOpnd(uint32, MeStmt&, MeExpr&, MeExpr&);
+  MeExpr *BuildLHSVar(const VersionSt &verSt, DassignMeStmt &defMeStmt);
+  void PutToBucket(uint32, MeExpr&);
+  MeStmt *BuildMeStmtWithNoSSAPart(StmtNode &stmt);
+  MeStmt *BuildMeStmt(StmtNode&);
+  MeExpr *BuildLHSReg(const VersionSt &verSt, RegassignMeStmt &defMeStmt, const RegassignNode &regassign);
+  IvarMeExpr *BuildLHSIvar(MeExpr &baseAddr, IassignMeStmt &iassignMeStmt, FieldID fieldID);
+  RegMeExpr *CreateRefRegMeExpr(const MIRSymbol&);
+  MeExpr *CreateMeExprCompare(Opcode, PrimType, PrimType, MeExpr&, MeExpr&);
+  MeExpr *CreateAddrofMeExprFromNewSymbol(MIRSymbol&, PUIdx);
+  VarMeExpr *GetOrCreateVarFromVerSt(const VersionSt &verSt);
+  RegMeExpr *GetOrCreateRegFromVerSt(const VersionSt &verSt);
+  void BuildChiList(MeStmt&, MapleMap<OStIdx, MayDefNode> &, MapleMap<OStIdx, ChiMeNode*> &);
+  void BuildMustDefList(MeStmt &meStmt, MapleVector<MustDefNode> &, MapleVector<MustDefMeNode> &);
+  void BuildMuList(MapleMap<OStIdx, MayUseNode> &, MapleMap<OStIdx, VarMeExpr*> &);
+  void BuildPhiMeNode(BB&);
+  BB *GetFalseBrBB(CondGotoMeStmt&);
 };
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_IRMAP_H

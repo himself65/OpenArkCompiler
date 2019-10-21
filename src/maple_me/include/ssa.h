@@ -18,10 +18,6 @@
 #include "mir_module.h"
 #include "mir_nodes.h"
 
-namespace {
-  constexpr maple::uint32 kPhiNodeOpndNum = 2;
-}
-
 namespace maple {
 class BB;
 class VersionSt;
@@ -30,7 +26,7 @@ class VersionStTable;
 class SSATab;
 class PhiNode {
  public:
-  PhiNode(MapleAllocator *alloc, VersionSt *vsym) : result(vsym), phiOpnds(kPhiNodeOpndNum, nullptr, alloc->Adapter()) {
+  PhiNode(MapleAllocator *alloc, VersionSt *vsym) : result(vsym), phiOpnds(kNumOpnds, nullptr, alloc->Adapter()) {
     phiOpnds.pop_back();
     phiOpnds.pop_back();
   }
@@ -39,7 +35,7 @@ class PhiNode {
 
   void Dump(const MIRModule *mod);
 
-  VersionSt *GetResult() const {
+  VersionSt *GetResult() {
     return result;
   }
 
@@ -51,7 +47,7 @@ class PhiNode {
     return phiOpnds;
   }
 
-  VersionSt *GetPhiOpnd(size_t index) const {
+  VersionSt *GetPhiOpnd(size_t index) {
     ASSERT(index < phiOpnds.size(), "out of range in PhiNode::GetPhiOpnd");
     return phiOpnds.at(index);
   }
@@ -67,6 +63,7 @@ class PhiNode {
 
  private:
   VersionSt *result;
+  static constexpr uint32 kNumOpnds = 2;
   MapleVector<VersionSt*> phiOpnds;
 };
 
@@ -121,7 +118,7 @@ class SSA {
     bbRenamed[idx] = isRenamed;
   }
 
-  SSATab *GetSSATab() const {
+  SSATab *GetSSATab() {
     return ssaTab;
   }
 

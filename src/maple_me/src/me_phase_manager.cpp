@@ -118,8 +118,8 @@ void MeFuncPhaseManager::Run(MIRFunction *mirFunc, uint64 rangeNum, const std::s
   MeFunction func(&mirModule, mirFunc, funcMP, versMP, meInput);
   func.PartialInit(false);
 #if DEBUG
-  g_mirmodule = &mirModule;
-  g_func = &func;
+  globalMIRModule = &mirModule;
+  globalFunc = &func;
 #endif
   func.Prepare(rangeNum);
   if (ipa) {

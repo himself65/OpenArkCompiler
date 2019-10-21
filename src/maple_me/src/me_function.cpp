@@ -26,10 +26,10 @@
 
 namespace maple {
 #if DEBUG
-MIRModule *g_mirmodule = nullptr;
-MeFunction *g_func = nullptr;
-MeIRMap *g_irmap = nullptr;
-SSATab *g_ssatab = nullptr;
+MIRModule *globalMIRModule = nullptr;
+MeFunction *globalFunc = nullptr;
+MeIRMap *globalIRMap = nullptr;
+SSATab *globalSSATab = nullptr;
 #endif
 void MeFunction::PartialInit(bool isSecondPass) {
   theCFG = nullptr;
@@ -49,7 +49,7 @@ void MeFunction::PartialInit(bool isSecondPass) {
 }
 
 
-void MeFunction::Dump(bool DumpSimpIr) {
+void MeFunction::Dump(bool DumpSimpIr) const {
   LogInfo::MapleLogger() << ">>>>> Dump IR for Function " << mirFunc->GetName() << "<<<<<\n";
   if (irmap == nullptr || DumpSimpIr) {
     return;
@@ -78,7 +78,7 @@ void MeFunction::SetTryBlockInfo(const StmtNode *nextStmt, StmtNode *tryStmt, BB
 }
 
 void MeFunction::CreateBasicBlocks() {
-  if (mirModule.CurFunction()->IsEmpty()) {
+  if (CurFunction()->IsEmpty()) {
     if (!MeOption::quiet) {
       LogInfo::MapleLogger() << "function is empty, cfg is nullptr\n";
     }
@@ -91,7 +91,7 @@ void MeFunction::CreateBasicBlocks() {
   commonExitBB->SetAttributes(kBBAttrIsExit);
   auto *firstBB = NewBasicBlock();
   firstBB->SetAttributes(kBBAttrIsEntry);
-  StmtNode *nextStmt = mirModule.CurFunction()->GetBody()->GetFirst();
+  StmtNode *nextStmt = CurFunction()->GetBody()->GetFirst();
   ASSERT(nextStmt != nullptr, "function has no statement");
   BB *curBB = firstBB;
   StmtNode *tryStmt = nullptr;  // record current try stmt for map<bb, try_stmt>
@@ -287,12 +287,12 @@ void MeFunction::CreateBasicBlocks() {
         const MapleVector<TyIdx> &exceptiontyidxvec = catchNode->GetExceptionTyIdxVec();
         for (size_t i = 0; i < exceptiontyidxvec.size(); i++) {
           MIRType *eType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(exceptiontyidxvec[i]);
-          ASSERT(eType != nullptr && (eType->GetPrimType() == maple::PTY_ptr || eType->GetPrimType() == maple::PTY_ref),
+          ASSERT(eType != nullptr && (eType->GetPrimType() == PTY_ptr || eType->GetPrimType() == PTY_ref),
                  "wrong exception type");
           MIRPtrType *epType = static_cast<MIRPtrType*>(eType);
           MIRType *pointType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(epType->GetPointedTyIdx());
           const std::string &ename = GlobalTables::GetStrTable().GetStringFromStrIdx(pointType->GetNameStrIdx());
-          if ((pointType->GetPrimType() == maple::PTY_void) || (ename.compare("Ljava/lang/Throwable;") == 0) ||
+          if ((pointType->GetPrimType() == PTY_void) || (ename.compare("Ljava/lang/Throwable;") == 0) ||
               (ename.compare("Ljava/lang/Exception;") == 0)) {
             // "Ljava/lang/Exception;" is risk to set isJavaFinally because it
             // only deal with "throw exception". if throw error,  it's wrong
@@ -379,10 +379,8 @@ void MeFunction::CreateBasicBlocks() {
       }
     }
   } while (nextStmt != nullptr);
-  ASSERT(tryStmt == nullptr,
-         "unclosed try");    // tryandendtry should be one-one mapping
-  ASSERT(lastTryBB == nullptr,
-         "unclosed tryBB");  // tryandendtry should be one-one mapping
+  ASSERT(tryStmt == nullptr, "unclosed try");    // tryandendtry should be one-one mapping
+  ASSERT(lastTryBB == nullptr, "unclosed tryBB");  // tryandendtry should be one-one mapping
   auto *lastBB = curBB;
   if (lastBB->IsEmpty()) {
     // insert a return statement
@@ -398,15 +396,15 @@ void MeFunction::CreateBasicBlocks() {
 
 void MeFunction::Prepare(unsigned long rangeNum) {
   if (!MeOption::quiet) {
-    LogInfo::MapleLogger() << "---Preparing Function  < " << mirModule.CurFunction()->GetName() << " > [" << rangeNum
+    LogInfo::MapleLogger() << "---Preparing Function  < " << CurFunction()->GetName() << " > [" << rangeNum
                            << "] ---\n";
   }
   /* lower first */
-  MIRLower mirLowerer(mirModule, mirModule.CurFunction());
+  MIRLower mirLowerer(mirModule, CurFunction());
   mirLowerer.Init();
   mirLowerer.SetLowerME();
   mirLowerer.SetLowerExpandArray();
-  mirLowerer.LowerFunc(mirModule.CurFunction());
+  mirLowerer.LowerFunc(CurFunction());
   CreateBasicBlocks();
   if (NumBBs() == 0) {
     /* there's no basicblock generated */
@@ -422,7 +420,7 @@ void MeFunction::Prepare(unsigned long rangeNum) {
   theCFG->Verify();
 }
 
-void MeFunction::Verify() {
+void MeFunction::Verify() const {
   theCFG->Verify();
   theCFG->VerifyLabels();
 }
@@ -434,12 +432,12 @@ BB *MeFunction::NewBasicBlock() {
 }
 
 // new a basic block and insert before position
-BB *MeFunction::InsertNewBasicBlock(BB &position) {
-  BB *newbb = memPool->New<BB>(&alloc, &versAlloc, BBId(nextBBId++));
+BB *MeFunction::InsertNewBasicBlock(const BB &position) {
+  BB *newBB = memPool->New<BB>(&alloc, &versAlloc, BBId(nextBBId++));
 
   auto bIt = std::find(begin(), end(), &position);
   auto idx = position.GetBBId().idx;
-  auto newIt = bbVec.insert(bIt, newbb);
+  auto newIt = bbVec.insert(bIt, newBB);
   auto eIt = end();
   // update bb's idx
   for (auto it = newIt; it != eIt; ++it) {
@@ -448,7 +446,7 @@ BB *MeFunction::InsertNewBasicBlock(BB &position) {
     }
     idx++;
   }
-  return newbb;
+  return newBB;
 }
 
 void MeFunction::DeleteBasicBlock(const BB &bb) {
@@ -482,11 +480,11 @@ BB *MeFunction::PrevBB(const BB *bb) {
 }
 
 /* clone stmtnode in orig bb to newBB */
-void MeFunction::CloneBasicBlock(BB &newBB, BB &orig) {
+void MeFunction::CloneBasicBlock(BB &newBB, const BB &orig) {
   if (orig.IsEmpty()) {
     return;
   }
-  for (auto &stmt : orig.GetStmtNodes()) {
+  for (const auto &stmt : orig.GetStmtNodes()) {
     StmtNode *newStmt = static_cast<StmtNode*>(stmt.CloneTree(mirModule.GetCurFuncCodeMPAllocator()));
     newStmt->SetNext(nullptr);
     newStmt->SetPrev(nullptr);
@@ -498,7 +496,7 @@ void MeFunction::CloneBasicBlock(BB &newBB, BB &orig) {
 }
 
 /* Split BB at split_point */
-BB *MeFunction::SplitBB(BB &bb, StmtNode &splitPoint, BB *newBB) {
+BB &MeFunction::SplitBB(BB &bb, StmtNode &splitPoint, BB *newBB) {
   if (newBB == nullptr){
     newBB = memPool->New<BB>(&alloc, &versAlloc, BBId(nextBBId++));
   }
@@ -554,7 +552,7 @@ BB *MeFunction::SplitBB(BB &bb, StmtNode &splitPoint, BB *newBB) {
     bb.ClearAttributes(kBBAttrIsTryEnd);
   }
   bb.ClearAttributes(kBBAttrIsExit);
-  return newBB;
+  return *newBB;
 }
 
 /* create label for bb */
@@ -570,10 +568,10 @@ void MeFunction::CreateBBLabel(BB &bb) {
 
 // Recognize the following kind of simple pattern and remove corresponding EH edges
 // @label78044   catch { <* void> }
-//  dassign %Reg0_R524935 0 (regread ptr %%thrownval)
-//  syncexit (dread ref %Reg8_R460958)
-//  endtry
-//  throw (dread ptr %Reg0_R524935)
+// dassign %Reg0_R524935 0 (regread ptr %%thrownval)
+// syncexit (dread ref %Reg8_R460958)
+// endtry
+// throw (dread ptr %Reg0_R524935)
 void MeFunction::RemoveEhEdgesInSyncRegion() {
   if (endTryBB2TryBB.size() != 1) {
     return;

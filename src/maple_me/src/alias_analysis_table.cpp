@@ -15,7 +15,11 @@
 #include "alias_analysis_table.h"
 using namespace maple;
 OriginalSt *AliasAnalysisTable::GetPrevLevelNode(const OriginalSt &ost) {
-  return prevLevelNode[ost.GetIndex()];
+  auto it = prevLevelNode.find(ost.GetIndex());
+  if (it != prevLevelNode.end()) {
+    return it->second;
+  }
+  return nullptr;
 }
 
 MapleVector<OriginalSt*> *AliasAnalysisTable::GetNextLevelNodes(const OriginalSt &ost) {
@@ -29,7 +33,7 @@ MapleVector<OriginalSt*> *AliasAnalysisTable::GetNextLevelNodes(const OriginalSt
   return findNode->second;
 }
 
-OriginalSt *AliasAnalysisTable::FindOrCreateAddrofSymbolOriginalSt(const OriginalSt &ost) {
+OriginalSt *AliasAnalysisTable::FindOrCreateAddrofSymbolOriginalSt(OriginalSt &ost) {
   if (prevLevelNode.find(ost.GetIndex()) != prevLevelNode.end()) {
     return prevLevelNode[ost.GetIndex()];
   }
@@ -112,7 +116,7 @@ OriginalSt *AliasAnalysisTable::FindExtraLevOriginalSt(const MapleVector<Origina
   return nullptr;
 }
 
-OriginalSt *AliasAnalysisTable::FindOrCreateDiffFieldOriginalSt(const OriginalSt &ost, FieldID fld) {
+OriginalSt *AliasAnalysisTable::FindOrCreateDiffFieldOriginalSt(OriginalSt &ost, FieldID fld) {
   OriginalSt *parentOst = prevLevelNode[ost.GetIndex()];
   if (parentOst == nullptr) {
     ASSERT(ost.IsSymbolOst(), "only SymbolOriginalSt expected");

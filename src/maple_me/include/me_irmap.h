@@ -35,18 +35,21 @@ class MeIRMap : public IRMap {
   }
 
   BB *GetBBForLabIdx(LabelIdx lidx, PUIdx pidx = 0) override {
-    return func.GetLabelBBIdMap()[lidx];
+    return func.GetLabelBBAt(lidx);
   }
 
-  void DumpBB(BB &bb);
+  void DumpBB(const BB &bb);
   void Dump() override;
-  void EmitBB(BB&, BlockNode&);
-  void EmitBBStmts(BB&, BlockNode&);
+  void EmitBB(const BB&, BlockNode&);
+  void EmitBBStmts(const BB&, BlockNode&);
 
-  MeFunction &GetFunc() const {
+  MeFunction &GetFunc() {
     return func;
   }
 
+  std::string PhaseName() const {
+    return "irmap";
+  }
  private:
   MeFunction &func;
 };

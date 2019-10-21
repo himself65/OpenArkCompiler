@@ -35,11 +35,11 @@ bool HasMayUsePart(const StmtNode &stmtNode) {
          HasMayUseDefPart(stmtNode);
 }
 
-void GenericSSAPrint(MIRModule &mod, const StmtNode &stmtNode, int32 indent, StmtsSSAPart &stmtsSsaprt) {
+void GenericSSAPrint(MIRModule &mod, const StmtNode &stmtNode, int32 indent, StmtsSSAPart &stmtsSSAPart) {
   stmtNode.Dump(mod, indent);
   // print SSAPart
   Opcode op = stmtNode.GetOpCode();
-  AccessSSANodes *ssaPart = stmtsSsaprt.SSAPartOf(stmtNode);
+  AccessSSANodes *ssaPart = stmtsSSAPart.SSAPartOf(stmtNode);
   switch (op) {
     case OP_maydassign:
     case OP_dassign: {
@@ -61,7 +61,7 @@ void GenericSSAPrint(MIRModule &mod, const StmtNode &stmtNode, int32 indent, Stm
     case OP_retsub:
     case OP_return: {
       ssaPart->DumpMayUseNodes(mod);
-      mod.GetOut() << std::endl;
+      mod.GetOut() << '\n';
       return;
     }
     default: {
@@ -71,7 +71,7 @@ void GenericSSAPrint(MIRModule &mod, const StmtNode &stmtNode, int32 indent, Stm
         ssaPart->DumpMayDefNodes(mod);
       } else if (HasMayUseDefPart(stmtNode)) {
         ssaPart->DumpMayUseNodes(mod);
-        mod.GetOut() << std::endl;
+        mod.GetOut() << '\n';
         ssaPart->DumpMayDefNodes(mod);
       }
       return;
@@ -79,25 +79,25 @@ void GenericSSAPrint(MIRModule &mod, const StmtNode &stmtNode, int32 indent, Stm
   }
 }
 
-void SSAGenericInsertMayUseNode(const StmtNode &stmtNode, VersionSt &mayUse, StmtsSSAPart &stmtsSsaprt) {
-  MapleMap<OStIdx, MayUseNode> &mayUseNodes = SSAGenericGetMayUseNode(stmtNode, stmtsSsaprt);
+void SSAGenericInsertMayUseNode(const StmtNode &stmtNode, VersionSt &mayUse, StmtsSSAPart &stmtsSSAPart) {
+  MapleMap<OStIdx, MayUseNode> &mayUseNodes = SSAGenericGetMayUseNode(stmtNode, stmtsSSAPart);
   mayUseNodes.insert(std::make_pair(mayUse.GetOrigSt()->GetIndex(), MayUseNode(&mayUse)));
 }
 
-MapleMap<OStIdx, MayUseNode> &SSAGenericGetMayUseNode(const StmtNode &stmtNode, StmtsSSAPart &stmtsSsaprt) {
-  return stmtsSsaprt.SSAPartOf(stmtNode)->GetMayUseNodes();
+MapleMap<OStIdx, MayUseNode> &SSAGenericGetMayUseNode(const StmtNode &stmtNode, StmtsSSAPart &stmtsSSAPart) {
+  return stmtsSSAPart.SSAPartOf(stmtNode)->GetMayUseNodes();
 }
 
-void SSAGenericInsertMayDefNode(const StmtNode &stmtNode, VersionSt &vst, StmtNode &s, StmtsSSAPart &stmtsSsaprt) {
-  MapleMap<OStIdx, MayDefNode> &mayDefNodes = SSAGenericGetMayDefNodes(stmtNode, stmtsSsaprt);
+void SSAGenericInsertMayDefNode(const StmtNode &stmtNode, VersionSt &vst, StmtNode &s, StmtsSSAPart &stmtsSSAPart) {
+  MapleMap<OStIdx, MayDefNode> &mayDefNodes = SSAGenericGetMayDefNodes(stmtNode, stmtsSSAPart);
   mayDefNodes.insert(std::make_pair(vst.GetOrigSt()->GetIndex(), MayDefNode(&vst, &s)));
 }
 
-MapleMap<OStIdx, MayDefNode> &SSAGenericGetMayDefNodes(const StmtNode &stmtNode, StmtsSSAPart &stmtsSsaprt) {
-  return stmtsSsaprt.SSAPartOf(stmtNode)->GetMayDefNodes();
+MapleMap<OStIdx, MayDefNode> &SSAGenericGetMayDefNodes(const StmtNode &stmtNode, StmtsSSAPart &stmtsSSAPart) {
+  return stmtsSSAPart.SSAPartOf(stmtNode)->GetMayDefNodes();
 }
 
-static MapleMap<OStIdx, MayDefNode> *SSAGenericGetMayDefsFromVersionSt(VersionSt &vst, StmtsSSAPart &ssapart,
+static MapleMap<OStIdx, MayDefNode> *SSAGenericGetMayDefsFromVersionSt(VersionSt &vst, StmtsSSAPart &stmtsSSAPart,
                                                                        std::unordered_set<VersionSt*> &visited) {
   if (vst.IsInitVersion() || visited.find(&vst) != visited.end()) {
     return nullptr;
@@ -107,25 +107,25 @@ static MapleMap<OStIdx, MayDefNode> *SSAGenericGetMayDefsFromVersionSt(VersionSt
     PhiNode *phi = vst.GetPhi();
     for (size_t i = 0; i < phi->GetPhiOpns().size(); i++) {
       VersionSt *vsym = phi->GetPhiOpnd(i);
-      MapleMap<OStIdx, MayDefNode> *mayDefs = SSAGenericGetMayDefsFromVersionSt(*vsym, ssapart, visited);
+      MapleMap<OStIdx, MayDefNode> *mayDefs = SSAGenericGetMayDefsFromVersionSt(*vsym, stmtsSSAPart, visited);
       if (mayDefs != nullptr) {
         return mayDefs;
       }
     }
   } else if (vst.GetDefType() == VersionSt::kMayDef) {
     MayDefNode *maydef = vst.GetMayDef();
-    return &SSAGenericGetMayDefNodes(*maydef->GetStmt(), ssapart);
+    return &SSAGenericGetMayDefNodes(*maydef->GetStmt(), stmtsSSAPart);
   }
   return nullptr;
 }
 
-MapleMap<OStIdx, MayDefNode> *SSAGenericGetMayDefsFromVersionSt(VersionSt &sym, StmtsSSAPart &ssapart) {
+MapleMap<OStIdx, MayDefNode> *SSAGenericGetMayDefsFromVersionSt(VersionSt &sym, StmtsSSAPart &stmtsSSAPart) {
   std::unordered_set<VersionSt*> visited;
-  return SSAGenericGetMayDefsFromVersionSt(sym, ssapart, visited);
+  return SSAGenericGetMayDefsFromVersionSt(sym, stmtsSSAPart, visited);
 }
 
-MapleVector<MustDefNode> &SSAGenericGetMustDefNode(const StmtNode &stmtNode, StmtsSSAPart &stmtsSsaprt) {
-  return stmtsSsaprt.SSAPartOf(stmtNode)->GetMustDefNodes();
+MapleVector<MustDefNode> &SSAGenericGetMustDefNode(const StmtNode &stmtNode, StmtsSSAPart &stmtsSSAPart) {
+  return stmtsSSAPart.SSAPartOf(stmtNode)->GetMustDefNodes();
 }
 
 bool HasMayUseOpnd(const BaseNode &baseNode, SSATab &func) {

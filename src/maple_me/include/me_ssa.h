@@ -32,13 +32,13 @@ class MeSSA : public SSA, public AnalysisResult {
   void BuildSSA();
   void InsertPhiNode();
   void RenameBB(BB&);
-  bool VerifySSA();
+  bool VerifySSA() const;
   std::string PhaseName() const {
     return "ssa";
   }
 
  private:
-  bool VerifySSAOpnd(BaseNode &node);
+  bool VerifySSAOpnd(const BaseNode &node) const;
   MeFunction *func;
   Dominance *dom;
 };

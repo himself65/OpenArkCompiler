@@ -18,6 +18,7 @@
 #include "ssa_mir_nodes.h"
 
 namespace maple {
+VersionSt VersionStTable::dummyVST(0, 0, nullptr);
 void VersionSt::DumpDefStmt(const MIRModule *mod) const {
   if (version <= 0) {
     return;
@@ -77,7 +78,7 @@ void VersionStTable::Dump(MIRModule *mod) const {
       LogInfo::MapleLogger() << " defined BB" << vst->GetDefBB()->GetBBId().idx << ": ";
       vst->DumpDefStmt(mod);
     } else {
-      LogInfo::MapleLogger() << std::endl;
+      LogInfo::MapleLogger() << '\n';
     }
   }
   mod->GetOut() << "=======end version st table===========\n";

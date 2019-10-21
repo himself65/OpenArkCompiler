@@ -34,7 +34,7 @@ class AliasElem {
         classSet(nullptr),
         assignSet(nullptr) {}
 
-  ~AliasElem() {}
+  ~AliasElem() = default;
 
   void Dump(MIRModule &mod) const;
 
@@ -42,7 +42,10 @@ class AliasElem {
     return id;
   }
 
-  OriginalSt &GetOriginalSt() const {
+  OriginalSt &GetOriginalSt() {
+    return ost;
+  }
+  const OriginalSt &GetOriginalSt() const {
     return ost;
   }
 
@@ -107,7 +110,7 @@ class AliasClass : public AnalysisResult {
         klassHierarchy(kh),
         aliasAnalysisTable(nullptr) {}
 
-  ~AliasClass() {}
+  ~AliasClass() = default;
 
   AliasAnalysisTable *GetAliasAnalysisTable() {
     if (aliasAnalysisTable == nullptr) {
@@ -176,9 +179,9 @@ class AliasClass : public AnalysisResult {
   bool calleeHasSideEffect;
   KlassHierarchy *klassHierarchy;
   AliasAnalysisTable *aliasAnalysisTable;
-  bool CallHasNoSideEffectOrPrivateDefEffect(CallNode &stmt, FuncAttrKind attrKind);
-  bool CallHasSideEffect(CallNode &stmt);
-  bool CallHasNoPrivateDefEffect(CallNode &stmt);
+  bool CallHasNoSideEffectOrPrivateDefEffect(const CallNode &stmt, FuncAttrKind attrKind) const;
+  bool CallHasSideEffect(const CallNode &stmt) const;
+  bool CallHasNoPrivateDefEffect(const CallNode &stmt) const;
   AliasElem *FindOrCreateAliasElem(OriginalSt &ost);
   AliasElem *FindOrCreateExtraLevAliasElem(BaseNode &expr, TyIdx tyIdx, FieldID fieldId);
   AliasElem *CreateAliasElemsExpr(BaseNode &expr);
@@ -203,7 +206,7 @@ class AliasClass : public AnalysisResult {
   void InsertMayDefNode(std::set<OriginalSt*> &mayDefOsts, MapleMap<OStIdx, MayDefNode> &mayDefNodes, StmtNode &stmt,
                         BBId bbid);
   void InsertMayDefDassign(StmtNode &stmt, BBId bbid);
-  bool IsEquivalentField(TyIdx tyIdxA, FieldID fldA, TyIdx tyIdxB, FieldID fldB);
+  bool IsEquivalentField(TyIdx tyIdxA, FieldID fldA, TyIdx tyIdxB, FieldID fldB) const;
   void CollectMayDefForIassign(StmtNode &stmt, std::set<OriginalSt*> &mayDefOsts);
   void InsertMayDefNodeExcludeFinalOst(std::set<OriginalSt*> &mayDefOsts, MapleMap<OStIdx, MayDefNode> &mayDefNodes,
                                        StmtNode &stmt, BBId bbid);

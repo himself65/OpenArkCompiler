@@ -38,7 +38,7 @@ void RCLowering::Prepare() {
   MIRFunction *mirFunction = func.GetMirFunc();
   ASSERT(mirFunction->GetModule()->CurFunction() == mirFunction, "unexpected CurFunction");
   if (DEBUGFUNC((&func))) {
-    LogInfo::MapleLogger() << "Handling function " << mirFunction->GetName() << std::endl;
+    LogInfo::MapleLogger() << "Handling function " << mirFunction->GetName() << '\n';
   }
 }
 
@@ -139,7 +139,7 @@ MIRIntrinsicID RCLowering::PrepareVolatileCall(MeStmt &stmt, MIRIntrinsicID intr
 
 IntrinsiccallMeStmt *RCLowering::GetVarRHSHandleStmt(MeStmt &stmt) {
   VarMeExpr *var = static_cast<VarMeExpr*>(stmt.GetRHS());
-  MIRSymbol *sym = ssaTab.GetMIRSymbolFromID(var->GetOStIdx());
+  const MIRSymbol *sym = ssaTab.GetMIRSymbolFromID(var->GetOStIdx());
   if (!sym->IsGlobal() || sym->IsFinal()) {
     return nullptr;
   }
@@ -222,7 +222,7 @@ void RCLowering::HandleCallAssignedMeStmt(MeStmt &stmt, MeExpr *pendingDec) {
   if (lhs->GetMeOp() != kMeOpVar) {
     return;
   }
-  const OriginalSt *ost = ssaTab.GetOriginalStFromID(static_cast<VarMeExpr*>(lhs)->GetOStIdx());
+  OriginalSt *ost = ssaTab.GetOriginalStFromID(static_cast<VarMeExpr*>(lhs)->GetOStIdx());
   if (!ost->IsSymbolOst()) {
     return;
   }
@@ -279,7 +279,7 @@ bool RCLowering::RCFirst(MeExpr &rhs) {
     return static_cast<ConstMeExpr&>(rhs).IsZero();
   } else if (rhs.GetMeOp() == kMeOpVar) {
     VarMeExpr &rhsVar = static_cast<VarMeExpr&>(rhs);
-    MIRSymbol *sym = ssaTab.GetMIRSymbolFromID(rhsVar.GetOStIdx());
+    const MIRSymbol *sym = ssaTab.GetMIRSymbolFromID(rhsVar.GetOStIdx());
     return sym->IsLocal();
   }
   return rhs.GetMeOp() == kMeOpReg;
@@ -813,7 +813,7 @@ void RCLowering::PostRCLower() {
 
 void RCLowering::Finish() {
   if (DEBUGFUNC((&func))) {
-    LogInfo::MapleLogger() << "\n============== After RC LOWERING =============" << std::endl;
+    LogInfo::MapleLogger() << "\n============== After RC LOWERING =============" << '\n';
     func.Dump(false);
   }
 }

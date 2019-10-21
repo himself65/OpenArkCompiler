@@ -19,7 +19,7 @@
 #include "orig_symbol.h"
 
 namespace maple {
-bool VarMeExpr::IsValidVerIdx(SSATab &ssaTab) {
+bool VarMeExpr::IsValidVerIdx(SSATab &ssaTab) const {
   const OriginalSt *ost = ssaTab.GetOriginalStFromID(ostIdx);
   if (ost == nullptr || !ost->IsSymbolOst()) {
     return false;
@@ -127,7 +127,7 @@ BaseNode &OpMeExpr::EmitExpr(SSATab &ssaTab) {
     case OP_sub: {
       BinaryNode *binaryNode =
           ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<BinaryNode>(Opcode(GetOp()),
-                                                                               PrimType(GetPrimType()));
+                                                                              PrimType(GetPrimType()));
       binaryNode->SetBOpnd(&opnds[0]->EmitExpr(ssaTab), 0);
       binaryNode->SetBOpnd(&opnds[1]->EmitExpr(ssaTab), 1);
       return *binaryNode;
@@ -174,9 +174,10 @@ BaseNode &OpMeExpr::EmitExpr(SSATab &ssaTab) {
     case OP_select: {
       TernaryNode *ternaryNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<TernaryNode>(
           Opcode(GetOp()), PrimType(GetPrimType()));
-      ternaryNode->SetOpnd(&opnds[0]->EmitExpr(ssaTab), 0);
-      ternaryNode->SetOpnd(&opnds[1]->EmitExpr(ssaTab), 1);
-      ternaryNode->SetOpnd(&opnds[2]->EmitExpr(ssaTab), 2);
+      constexpr size_t kOpndNumOfTernary = 3;
+      for (size_t i = 0; i < kOpndNumOfTernary; i++) {
+        ternaryNode->SetOpnd(&opnds[i]->EmitExpr(ssaTab), i);
+      }
       return *ternaryNode;
     }
     case OP_ceil:
@@ -309,7 +310,7 @@ void MeStmt::EmitCallReturnVector(SSATab &ssaTab, CallReturnVector &nrets) {
   }
   MeExpr *meExpr = mustDefs->front().GetLHS();
   if (meExpr->GetMeOp() == kMeOpVar) {
-    const OriginalSt *ost = ssaTab.GetOriginalStFromID(static_cast<VarMeExpr*>(meExpr)->GetOStIdx());
+    OriginalSt *ost = ssaTab.GetOriginalStFromID(static_cast<VarMeExpr*>(meExpr)->GetOStIdx());
     MIRSymbol *symbol = ost->GetMIRSymbol();
     nrets.push_back(CallReturnPair(symbol->GetStIdx(), RegFieldPair(0, 0)));
   } else if (meExpr->GetMeOp() == kMeOpReg) {

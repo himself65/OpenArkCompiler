@@ -71,7 +71,11 @@ class OriginalSt {
     return GlobalTables::GetGsymTable().GetModule()->CurFunction()->GetPregTab()->PregFromPregIdx(symOrPreg.pregIdx);
   }
 
-  MIRSymbol *GetMIRSymbol() const {
+  const MIRSymbol *GetMIRSymbol() const {
+    ASSERT(ostType == kSymbolOst, "OriginalSt must be SymbolOst");
+    return symOrPreg.mirSt;
+  }
+  MIRSymbol *GetMIRSymbol() {
     ASSERT(ostType == kSymbolOst, "OriginalSt must be SymbolOst");
     return symOrPreg.mirSt;
   }
@@ -245,7 +249,14 @@ class OriginalStTable {
   OriginalSt *CreateSymbolOriginalSt(MIRSymbol &mirSt, PUIdx pidx, FieldID fld);
   OriginalSt *CreatePregOriginalSt(PregIdx pregIdx, PUIdx puIdx);
   OriginalSt *FindSymbolOriginalSt(MIRSymbol &mirSt);
-  const OriginalSt *GetOriginalStFromID(OStIdx id, bool checkfirst = false) {
+  const OriginalSt *GetOriginalStFromID(OStIdx id, bool checkfirst = false) const {
+    if (checkfirst && id.idx >= originalStVector.size()) {
+      return nullptr;
+    }
+    ASSERT(id.idx < originalStVector.size(), "symbol table index out of range");
+    return originalStVector[id.idx];
+  }
+  OriginalSt *GetOriginalStFromID(OStIdx id, bool checkfirst = false) {
     if (checkfirst && id.idx >= originalStVector.size()) {
       return nullptr;
     }
@@ -257,11 +268,18 @@ class OriginalStTable {
     return originalStVector.size();
   }
 
-  MIRSymbol *GetMIRSymbolFromOriginalSt(const OriginalSt &ost) const {
+  const MIRSymbol *GetMIRSymbolFromOriginalSt(const OriginalSt &ost) const {
+    ASSERT(ost.IsRealSymbol(), "runtime check error");
+    return ost.GetMIRSymbol();
+  }
+  MIRSymbol *GetMIRSymbolFromOriginalSt(OriginalSt &ost) {
     ASSERT(ost.IsRealSymbol(), "runtime check error");
     return ost.GetMIRSymbol();
   }
 
+  const MIRSymbol *GetMIRSymbolFromID(OStIdx id) const {
+    return GetMIRSymbolFromOriginalSt(*GetOriginalStFromID(id, false));
+  }
   MIRSymbol *GetMIRSymbolFromID(OStIdx id) {
     return GetMIRSymbolFromOriginalSt(*GetOriginalStFromID(id, false));
   }
@@ -301,7 +319,7 @@ class OriginalStTable {
   MIRModule &mirModule;
   MapleVector<OriginalSt*> originalStVector;  // the vector that map a OriginalSt's index to its pointer
   // mir symbol to original table, this only exists for no-original variables.
-  MapleUnorderedMap<MIRSymbol*, OStIdx> mirSt2Ost;
+  MapleUnorderedMap<const MIRSymbol*, OStIdx> mirSt2Ost;
   MapleUnorderedMap<PregIdx, OStIdx> preg2Ost;
   // mir type to virtual variables in original table. this only exists for no-original variables.
   MapleMap<TyIdx, OStIdx> pType2Ost;

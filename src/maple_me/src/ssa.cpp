@@ -47,8 +47,7 @@ VersionSt *SSA::CreateNewVersion(VersionSt &vsym, BB &defBB) {
 }
 
 void SSA::RenamePhi(BB &bb) {
-  MapleMap<OriginalSt*, PhiNode>::iterator phiIt;
-  for (phiIt = bb.GetPhiList().begin(); phiIt != bb.GetPhiList().end(); phiIt++) {
+  for (auto phiIt = bb.GetPhiList().begin(); phiIt != bb.GetPhiList().end(); phiIt++) {
     VersionSt *vsym = (*phiIt).second.GetResult();
     // It shows that this BB has been renamed.
     if (vsym->GetVersion() > 0) {
@@ -343,6 +342,6 @@ void PhiNode::Dump(const MIRModule *mod) {
       LogInfo::MapleLogger() << ',';
     }
   }
-  LogInfo::MapleLogger() << ")" << std::endl;
+  LogInfo::MapleLogger() << ")" << '\n';
 }
 }  // namespace maple

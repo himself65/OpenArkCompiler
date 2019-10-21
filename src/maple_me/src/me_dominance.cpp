@@ -22,7 +22,7 @@
 // the reverse CFG(The CFG with its edges reversed) is always useful,
 // so we also generates the above two structures on the reverse CFG.
 namespace maple {
-AnalysisResult *MeDoDominance::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) {
+AnalysisResult *MeDoDominance::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, ModuleResultMgr *moduleResMgr) {
   MemPool *memPool = NewMemPool();
   Dominance *dom = memPool->New<Dominance>(*memPool, *NewMemPool(), func->GetAllBBs(),
                                            *func->GetCommonEntryBB(), *func->GetCommonExitBB());

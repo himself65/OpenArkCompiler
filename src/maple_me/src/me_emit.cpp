@@ -60,7 +60,7 @@ AnalysisResult *MeDoEmit::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResult
       }
     }
     if (DEBUGFUNC(func)) {
-      LogInfo::MapleLogger() << "\n==============after meemit =============" << std::endl;
+      LogInfo::MapleLogger() << "\n==============after meemit =============" << '\n';
       func->GetMirFunc()->Dump();
     }
     if (DEBUGFUNC(func)) {

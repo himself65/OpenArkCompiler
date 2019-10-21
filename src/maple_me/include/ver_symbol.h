@@ -97,50 +97,62 @@ class VersionSt {
     return ost->GetIndex();
   }
 
-  OriginalSt *GetOrigSt() const {
+  const OriginalSt *GetOrigSt() const {
     return ost;
   }
-
+  OriginalSt *GetOrigSt() {
+    return ost;
+  }
   void SetOrigSt(OriginalSt *ost) {
     this->ost = ost;
   }
 
-  maple::DassignNode *GetDassignNode() const {
+  const DassignNode *GetDassignNode() const {
     return defStmt.dassign;
   }
-
-  void SetDassignNode(maple::DassignNode *dassignNode) {
+  DassignNode *GetDassignNode() {
+    return defStmt.dassign;
+  }
+  void SetDassignNode(DassignNode *dassignNode) {
     defStmt.dassign = dassignNode;
   }
 
-  maple::RegassignNode *GetRegassignNode() const {
+  RegassignNode *GetRegassignNode() {
     return defStmt.regassign;
   }
-
-  void SetRegassignNode(maple::RegassignNode *regAssignNode) {
+  const RegassignNode *GetRegassignNode() const {
+    return defStmt.regassign;
+  }
+  void SetRegassignNode(RegassignNode *regAssignNode) {
     defStmt.regassign = regAssignNode;
   }
 
-  maple::PhiNode *GetPhi() const {
+  const PhiNode *GetPhi() const {
     return defStmt.phi;
   }
-
-  void SetPhi(maple::PhiNode *phiNode) {
+  PhiNode *GetPhi() {
+    return defStmt.phi;
+  }
+  void SetPhi(PhiNode *phiNode) {
     defStmt.phi = phiNode;
   }
 
-  MayDefNode *GetMayDef() const {
+  const MayDefNode *GetMayDef() const {
     return defStmt.mayDef;
   }
-
+  MayDefNode *GetMayDef() {
+    return defStmt.mayDef;
+  }
   void SetMayDef(MayDefNode *mayDefNode) {
     defStmt.mayDef = mayDefNode;
   }
 
-  MustDefNode *GetMustDef() const {
+  const MustDefNode *GetMustDef() const {
     return defStmt.mustDef;
   }
-
+  MustDefNode *GetMustDef() {
+    return defStmt.mustDef;
+  }
   void SetMustDef(MustDefNode *mustDefNode) {
     defStmt.mustDef = mustDefNode;
   }
@@ -168,9 +180,9 @@ class VersionSt {
   DefType defType;
 
   union DefStmt {
-    maple::DassignNode *dassign;
-    maple::RegassignNode *regassign;
-    maple::PhiNode *phi;
+    DassignNode *dassign;
+    RegassignNode *regassign;
+    PhiNode *phi;
     MayDefNode *mayDef;
     MustDefNode *mustDef;
   } defStmt;  // only valid after SSA
@@ -196,11 +208,10 @@ class VersionStTable {
   }
 
   VersionSt &GetDummyVersionSt() {
-    static VersionSt dummyVST(0, 0, nullptr);
     return dummyVST;
   }
 
-  VersionSt *CreateVSymbol(const VersionSt *vst, size_t version) {
+  VersionSt *CreateVSymbol(VersionSt *vst, size_t version) {
     OriginalSt *ost = vst->GetOrigSt();
     return CreateVersionSt(ost, version);
   }
@@ -232,6 +243,7 @@ class VersionStTable {
  private:
   MapleAllocator vstAlloc;                   // this stores versionStVector
   MapleVector<VersionSt*> versionStVector;   // the vector that map a versionst's index to its pointer
+  static VersionSt dummyVST;
 };
 }       // namespace maple
 #endif  // MAPLE_ME_INCLUDE_VER_SYMBOL_H
