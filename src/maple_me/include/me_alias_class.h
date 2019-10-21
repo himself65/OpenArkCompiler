@@ -27,6 +27,10 @@ class MeAliasClass : public AliasClass {
         func(func) {}
 
   virtual ~MeAliasClass() = default;
+  void DoAliasAnalysis();
+  std::string PhaseName() const {
+    return "aliasclass";
+  }
 
  private:
   MeFunction &func;

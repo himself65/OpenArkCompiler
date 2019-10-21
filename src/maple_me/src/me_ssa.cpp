@@ -104,7 +104,7 @@ void MeSSA::InsertPhiNode() {
   CollectDefBBs(ost2DefBBs);
   OriginalStTable *otable = &func->GetMeSSATab()->GetOriginalStTable();
   for (size_t i = 1; i < otable->Size(); i++) {
-    const OriginalSt *ost = otable->GetOriginalStFromID(OStIdx(i));
+    OriginalSt *ost = otable->GetOriginalStFromID(OStIdx(i));
     VersionSt *vst = func->GetMeSSATab()->GetVersionStTable().GetVersionStFromID(ost->GetZeroVersionIndex(), true);
     CHECK_FATAL(vst != nullptr, "null ptr check");
     if (ost2DefBBs[ost->GetIndex()].empty()) {
@@ -134,7 +134,7 @@ void MeSSA::InsertPhiNode() {
           if (DEBUGFUNC(func)) {
             ost->Dump();
             LogInfo::MapleLogger() << " Defined In: BB" << defBB->GetBBId().idx << " Insert Phi Here: BB"
-                                   << dfBB->GetBBId().idx << std::endl;
+                                   << dfBB->GetBBId().idx << '\n';
           }
         }
       }
@@ -179,17 +179,17 @@ void MeSSA::RenameBB(BB &bb) {
   }
 }
 
-bool MeSSA::VerifySSAOpnd(BaseNode &node) {
+bool MeSSA::VerifySSAOpnd(const BaseNode &node) const {
   Opcode op = node.GetOpCode();
   size_t vtableSize = func->GetMeSSATab()->GetVersionStTable().GetVersionStVectorSize();
   if (op == OP_dread || op == OP_addrof) {
-    AddrofSSANode &addrofSSANode = static_cast<AddrofSSANode&>(node);
-    VersionSt *verSt = addrofSSANode.GetSSAVar();
+    const AddrofSSANode &addrofSSANode = static_cast<const AddrofSSANode&>(node);
+    const VersionSt *verSt = addrofSSANode.GetSSAVar();
     CHECK_FATAL(verSt->GetIndex() < vtableSize, "runtime check error");
     return true;
   } else if (op == OP_regread) {
-    RegreadSSANode &regNode = static_cast<RegreadSSANode&>(node);
-    VersionSt *verSt = regNode.GetSSAVar();
+    const RegreadSSANode &regNode = static_cast<const RegreadSSANode&>(node);
+    const VersionSt *verSt = regNode.GetSSAVar();
     CHECK_FATAL(verSt->GetIndex() < vtableSize, "runtime check error");
     return true;
   }
@@ -199,11 +199,7 @@ bool MeSSA::VerifySSAOpnd(BaseNode &node) {
   return true;
 }
 
-bool MeSSA::VerifySSA() {
-  VersionStTable *versionStTable = &func->GetMeSSATab()->GetVersionStTable();
-  if (!versionStTable->Verify()) {
-    return false;
-  }
+bool MeSSA::VerifySSA() const {
   size_t vtableSize = func->GetMeSSATab()->GetVersionStTable().GetVersionStVectorSize();
   auto eIt = func->valid_end();
   for (auto bIt = func->valid_begin(); bIt != eIt; ++bIt) {

@@ -325,26 +325,26 @@ class MIRSymbol {
     return GetName().compare("__eh_index__") == 0;
   }
 
-  bool HasAddrOfValues();
+  bool HasAddrOfValues() const;
   bool IsLiteral() const;
   bool IsLiteralPtr() const;
   bool PointsToConstString() const;
   bool IsConstString() const;
-  bool IsClassInitBridge();
+  bool IsClassInitBridge() const;
   bool IsReflectionStrTab() const;
   bool IsReflectionHashTabBucket() const;
-  bool IsReflectionInfo();
+  bool IsReflectionInfo() const;
   bool IsReflectionFieldsInfo() const;
   bool IsReflectionFieldsInfoCompact() const;
-  bool IsReflectionSuperclassInfo();
+  bool IsReflectionSuperclassInfo() const;
   bool IsReflectionClassInfo() const;
   bool IsReflectionArrayClassInfo() const;
   bool IsReflectionClassInfoPtr() const;
-  bool IsReflectionClassInfoRO();
-  bool IsITabConflictInfo();
-  bool IsVTabInfo();
-  bool IsITabInfo();
-  bool IsReflectionPrimitiveClassInfo();
+  bool IsReflectionClassInfoRO() const;
+  bool IsITabConflictInfo() const;
+  bool IsVTabInfo() const;
+  bool IsITabInfo() const;
+  bool IsReflectionPrimitiveClassInfo() const;
   bool IsReflectionMethodsInfo() const;
   bool IsReflectionMethodsInfoCompact() const;
   bool IsRegJNITab() const;
@@ -364,11 +364,11 @@ class MIRSymbol {
   bool IsMuidDataDefMuidTab() const;
   bool IsMuidDataUndefMuidTab() const;
   bool IsMuidRangeTab() const;
-  bool IsGctibSym();
-  bool IsPrimordialObject();
-  bool IgnoreRC();
+  bool IsGctibSym() const;
+  bool IsPrimordialObject() const;
+  bool IgnoreRC() const;
   void Dump(bool isLocal, int32 indent, bool suppressinit = false) const;
-  void DumpAsLiteralVar(int32 indent);
+  void DumpAsLiteralVar(int32 indent) const;
   bool operator==(const MIRSymbol &msym) const {
     return nameStrIdx == msym.nameStrIdx;
   }

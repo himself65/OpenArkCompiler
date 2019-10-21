@@ -158,6 +158,7 @@ class MeExpr {
   virtual uint32 GetHashIndex() const {
     return 0;
   }
+  bool IsAllOpndsIdentical(const MeExpr &meExpr) const;
 
  private:
   Opcode op;
@@ -201,7 +202,7 @@ class VarMeExpr final : public MeExpr {
   void Dump(IRMap*, int32 indent = 0) const override;
   bool IsUseSameSymbol(const MeExpr &) const override;
   BaseNode &EmitExpr(SSATab &) override;
-  bool IsValidVerIdx(SSATab &ssaTab);
+  bool IsValidVerIdx(SSATab &ssaTab) const;
   void SetDefByStmt(MeStmt &defStmt) override {
     defBy = kDefByStmt;
     def.defStmt = &defStmt;
@@ -330,13 +331,13 @@ class VarMeExpr final : public MeExpr {
 class MeVarPhiNode {
  public:
   explicit MeVarPhiNode(MapleAllocator *alloc)
-      : lhs(nullptr), opnds(2, nullptr, alloc->Adapter()), isLive(true), defBB(nullptr) {
+      : lhs(nullptr), opnds(kOprandNumBinary, nullptr, alloc->Adapter()), isLive(true), defBB(nullptr) {
     opnds.pop_back();
     opnds.pop_back();
   }
 
   MeVarPhiNode(VarMeExpr *var, MapleAllocator *alloc)
-      : lhs(var), opnds(2, nullptr, alloc->Adapter()), isLive(true), defBB(nullptr) {
+      : lhs(var), opnds(kOprandNumBinary, nullptr, alloc->Adapter()), isLive(true), defBB(nullptr) {
     var->SetDefPhi(*this);
     var->SetDefBy(kDefByPhi);
     opnds.pop_back();
@@ -506,7 +507,7 @@ class RegMeExpr : public MeExpr {
 class MeRegPhiNode {
  public:
   explicit MeRegPhiNode(MapleAllocator *alloc)
-      : lhs(nullptr), opnds(2, nullptr, alloc->Adapter()), isLive(true), defBB(nullptr) {
+      : lhs(nullptr), opnds(kOprandNumBinary, nullptr, alloc->Adapter()), isLive(true), defBB(nullptr) {
     opnds.pop_back();
     opnds.pop_back();
   }
@@ -622,7 +623,8 @@ class ConststrMeExpr : public MeExpr {
   }
 
   uint32 GetHashIndex() const {
-    return strIdx.GetIdx() << 6;
+    constexpr uint32 kConststrHashShift = 6;
+    return strIdx.GetIdx() << kConststrHashShift;
   }
 
  private:
@@ -642,7 +644,8 @@ class Conststr16MeExpr : public MeExpr {
   }
 
   uint32 GetHashIndex() const {
-    return strIdx.GetIdx() << 6;
+    constexpr uint32 kConststr16HashShift = 6;
+    return strIdx.GetIdx() << kConststr16HashShift;
   }
 
  private:
@@ -662,7 +665,8 @@ class SizeoftypeMeExpr : public MeExpr {
   }
 
   uint32 GetHashIndex() const {
-    return tyIdx.GetIdx() << 5;
+    constexpr uint32 kSizeoftypeHashShift = 5;
+    return tyIdx.GetIdx() << kSizeoftypeHashShift;
   }
 
  private:
@@ -691,7 +695,9 @@ class FieldsDistMeExpr : public MeExpr {
   }
 
   uint32 GetHashIndex() const {
-    return (tyIdx.GetIdx() << 10) + (static_cast<uint32>(fieldID1) << 5) + fieldID2;
+    constexpr uint32 kFieldsDistHashShift = 5;
+    constexpr uint32 kTyIdxShiftFactor = 10;
+    return (tyIdx.GetIdx() << kTyIdxShiftFactor) + (static_cast<uint32>(fieldID1) << kFieldsDistHashShift) + fieldID2;
   }
 
  private:
@@ -723,7 +729,8 @@ class AddrofMeExpr : public MeExpr {
   }
 
   uint32 GetHashIndex() const override {
-    return ostIdx.idx << 4;
+    constexpr uint32 kAddrofHashShift = 4;
+    return ostIdx.idx << kAddrofHashShift;
   }
 
  private:
@@ -745,7 +752,8 @@ class AddroffuncMeExpr : public MeExpr {
   }
 
   uint32 GetHashIndex() const {
-    return puIdx << 5;
+    constexpr uint32 kAddroffuncHashShift = 5;
+    return puIdx << kAddroffuncHashShift;
   }
 
  private:
@@ -766,14 +774,14 @@ class GcmallocMeExpr : public MeExpr {
   }
 
   uint32 GetHashIndex() const {
-    return tyIdx.GetIdx() << 4;
+    constexpr uint32 kGcmallocHashShift = 4;
+    return tyIdx.GetIdx() << kGcmallocHashShift;
   }
 
  private:
   TyIdx tyIdx;
 };
 
-constexpr int kOpndNumOfOpMeExpr = 3;
 class OpMeExpr : public MeExpr {
  public:
   explicit OpMeExpr(int32 exprID) : MeExpr(exprID, kMeOpOp), tyIdx(TyIdx(0)) {}
@@ -794,17 +802,17 @@ class OpMeExpr : public MeExpr {
   OpMeExpr(const OpMeExpr &) = delete;
   OpMeExpr &operator=(const OpMeExpr &) = delete;
 
-  bool IsIdentical(const OpMeExpr &meexpr);
+  bool IsIdentical(const OpMeExpr &meexpr) const;
   void Dump(IRMap*, int32 indent = 0) const override;
   bool IsUseSameSymbol(const MeExpr &) const override;
   BaseNode &EmitExpr(SSATab &) override;
   MeExpr *GetOpnd(size_t i) const override {
-    CHECK_FATAL(i < kOpndNumOfOpMeExpr, "OpMeExpr cannot have more than 3 operands");
+    CHECK_FATAL(i < kOprandNumTernary, "OpMeExpr cannot have more than 3 operands");
     return opnds[i];
   }
 
   void SetOpnd(uint32 idx, MeExpr *opndsVal) {
-    CHECK_FATAL(idx < kOpndNumOfOpMeExpr, "out of range in  OpMeExpr::SetOpnd");
+    CHECK_FATAL(idx < kOprandNumTernary, "out of range in  OpMeExpr::SetOpnd");
     opnds[idx] = opndsVal;
   }
 
@@ -850,18 +858,18 @@ class OpMeExpr : public MeExpr {
 
   uint32 GetHashIndex() const override {
     uint32 hashIdx = static_cast<uint32>(GetOp());
+    constexpr uint32 kOpMeHashShift = 3;
     for (auto &opnd : opnds) {
       if (opnd == nullptr) {
         break;
       }
-
-      hashIdx += static_cast<uint32>(opnd->GetExprID()) << 3;
+      hashIdx += static_cast<uint32>(opnd->GetExprID()) << kOpMeHashShift;
     }
     return hashIdx;
   }
 
  private:
-  std::array<MeExpr*, kOpndNumOfOpMeExpr> opnds = { nullptr }; // kid
+  std::array<MeExpr*, kOprandNumTernary> opnds = { nullptr }; // kid
   PrimType opndType = kPtyInvalid;                           // from type
   uint8 bitsOffset = 0;
   uint8 bitsSize = 0;
@@ -880,7 +888,7 @@ class IvarMeExpr : public MeExpr {
         fieldID(0),
         maybeNull(true),
         mu(nullptr) {
-    SetNumOpnds(1);
+    SetNumOpnds(kOprandNumNary);
   }
 
   IvarMeExpr(int32 exprid, const IvarMeExpr &ivarme)
@@ -973,7 +981,8 @@ class IvarMeExpr : public MeExpr {
   }
 
   uint32 GetHashIndex() const override {
-    return static_cast<uint32>(OP_iread) + fieldID + (static_cast<uint32>(base->GetExprID()) << 4);
+    constexpr uint32 kIvarHashShift = 4;
+    return static_cast<uint32>(OP_iread) + fieldID + (static_cast<uint32>(base->GetExprID()) << kIvarHashShift);
   }
 
  private:
@@ -1049,8 +1058,9 @@ class NaryMeExpr : public MeExpr {
 
   uint32 GetHashIndex() const override {
     auto hashIdx = static_cast<uint32>(GetOp());
+    constexpr uint32 kNaryHashShift = 3;
     for (uint32 i = 0; i < GetNumOpnds(); i++) {
-      hashIdx += static_cast<uint32>(opnds[i]->GetExprID()) << 3;
+      hashIdx += static_cast<uint32>(opnds[i]->GetExprID()) << kNaryHashShift;
     }
     return hashIdx;
   }
@@ -1428,7 +1438,7 @@ class DassignMeStmt : public MeStmt {
   ~DassignMeStmt() = default;
 
   size_t NumMeStmtOpnds() const {
-    return 1;
+    return kOprandNumNary;
   }
 
   MeExpr *GetOpnd(size_t) const {
@@ -1553,7 +1563,7 @@ class RegassignMeStmt : public MeStmt {
   ~RegassignMeStmt() = default;
 
   size_t NumMeStmtOpnds() const {
-    return 1;
+    return kOprandNumNary;
   }
 
   MeExpr *GetOpnd(size_t) const {
@@ -1619,7 +1629,7 @@ class MaydassignMeStmt : public MeStmt {
   ~MaydassignMeStmt() = default;
 
   size_t NumMeStmtOpnds() const {
-    return 1;
+    return kOprandNumNary;
   }
 
   MeExpr *GetOpnd(size_t) const {
@@ -1743,7 +1753,7 @@ class IassignMeStmt : public MeStmt {
   }
 
   size_t NumMeStmtOpnds() const {
-    return 2;
+    return kOprandNumBinary;
   }
 
   MeExpr *GetOpnd(size_t idx) const {
@@ -2250,7 +2260,7 @@ class UnaryMeStmt : public MeStmt {
   virtual ~UnaryMeStmt() = default;
 
   size_t NumMeStmtOpnds() const {
-    return 1;
+    return kOprandNumNary;
   }
 
   MeExpr *GetOpnd(size_t idx) const {
@@ -2460,7 +2470,7 @@ class ThrowMeStmt : public WithMuMeStmt {
   ~ThrowMeStmt() = default;
 
   size_t NumMeStmtOpnds() const {
-    return 1;
+    return kOprandNumNary;
   }
 
   MeExpr *GetOpnd(size_t idx) const {
@@ -2537,12 +2547,12 @@ class AssertMeStmt : public MeStmt {
   }
 
   void SetOpnd(uint32 i, MeExpr *opnd) {
-    CHECK_FATAL(i < 2, "AssertMeStmt has two opnds");
+    CHECK_FATAL(i < kOprandNumBinary, "AssertMeStmt has two opnds");
     opnds[i] = opnd;
   }
 
   MeExpr *GetOpnd(size_t i) const {
-    CHECK_FATAL(i < 2, "AssertMeStmt has two opnds");
+    CHECK_FATAL(i < kOprandNumBinary, "AssertMeStmt has two opnds");
     return opnds[i];
   }
 
@@ -2550,7 +2560,7 @@ class AssertMeStmt : public MeStmt {
   StmtNode &EmitStmt(SSATab &ssatab);
 
  private:
-  MeExpr *opnds[2];
+  MeExpr *opnds[kOprandNumBinary];
   AssertMeStmt &operator=(const AssertMeStmt &assmestmt) {
     if (&assmestmt == this) {
       return *this;

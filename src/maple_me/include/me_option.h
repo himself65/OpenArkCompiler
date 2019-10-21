@@ -28,7 +28,6 @@ class MeOption {
   void ParseOptions(int argc, char **argv, std::string &fileName);
   ~MeOption() = default;
 
-  void DumpUsage();
   static bool DumpPhase(const std::string &phase);
   static std::unordered_set<std::string> dumpPhases;
   enum Level {
@@ -54,11 +53,11 @@ class MeOption {
   static bool lessThrowAlias;
   static bool finalFieldAlias;
   static bool regreadAtReturn;
-  void SplitPhases(const std::string &str, std::unordered_set<std::string> &set);
+  void SplitPhases(const std::string &str, std::unordered_set<std::string> &set) const;
   void SplitSkipPhases(const std::string &str) {
     SplitPhases(str, skipPhases);
   }
-  void GetRange(const std::string &str);
+  void GetRange(const std::string &str) const;
 
   const std::unordered_set<std::string> &GetSkipPhases() const {
     return skipPhases;
@@ -72,7 +71,7 @@ class MeOption {
 #ifndef DEBUGFUNC
 #define DEBUGFUNC(f)                                                         \
   (MeOption::dumpPhases.find(PhaseName()) != MeOption::dumpPhases.end() && \
-   (MeOption::dumpFunc.compare("*") == 0 || f->GetName().find(MeOption::dumpFunc.c_str()) != std::string::npos))
+   (MeOption::dumpFunc.compare("*") == 0 || f->GetName().find(MeOption::dumpFunc) != std::string::npos))
 #endif
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_ME_OPTION_H

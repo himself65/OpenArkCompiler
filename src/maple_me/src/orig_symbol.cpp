@@ -67,13 +67,13 @@ void OriginalStTable::Dump() {
 }
 
 OriginalSt *OriginalStTable::FindOrCreateSymbolOriginalSt(MIRSymbol &mirst, PUIdx pidx, FieldID fld) {
-  MapleUnorderedMap<MIRSymbol*, OStIdx>::iterator it = mirSt2Ost.find(&mirst);
+  MapleUnorderedMap<const MIRSymbol*, OStIdx>::iterator it = mirSt2Ost.find(&mirst);
   if (it == mirSt2Ost.end()) {
     // create a new OriginalSt
     return CreateSymbolOriginalSt(mirst, pidx, fld);
   }
-  CHECK(it->second.idx < originalStVector.size(),
-        "index out of range in OriginalStTable::FindOrCreateSymbolOriginalSt");
+  CHECK_FATAL(it->second.idx < originalStVector.size(),
+              "index out of range in OriginalStTable::FindOrCreateSymbolOriginalSt");
   return originalStVector[it->second.idx];
 }
 
@@ -113,7 +113,7 @@ OriginalSt *OriginalStTable::CreatePregOriginalSt(PregIdx regidx, PUIdx pidx) {
 }
 
 OriginalSt *OriginalStTable::FindSymbolOriginalSt(MIRSymbol &mirst) {
-  MapleUnorderedMap<MIRSymbol*, OStIdx>::iterator it = mirSt2Ost.find(&mirst);
+  MapleUnorderedMap<const MIRSymbol*, OStIdx>::iterator it = mirSt2Ost.find(&mirst);
   if (it == mirSt2Ost.end()) {
     return nullptr;
   } else {

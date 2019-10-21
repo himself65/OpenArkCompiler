@@ -107,7 +107,7 @@ void Dominance::ComputeDominance() {
 
 // Figure 5 in "A Simple, Fast Dominance Algorithm" by Keith Cooper et al.
 void Dominance::ComputeDomFrontiers() {
-  for (BB *bb : bbVec) {
+  for (const BB *bb : bbVec) {
     if (bb == nullptr || bb == &commonExitBB) {
       continue;
     }
@@ -125,7 +125,7 @@ void Dominance::ComputeDomFrontiers() {
 }
 
 void Dominance::ComputeDomChildren() {
-  for (BB *bb : bbVec) {
+  for (const BB *bb : bbVec) {
     if (bb == nullptr) {
       continue;
     }
@@ -155,24 +155,24 @@ void Dominance::ComputeDtDfn() {
 }
 
 // true if b1 dominates b2
-bool Dominance::Dominate(const BB &b1, BB &b2) {
-  if (&b1 == &b2) {
+bool Dominance::Dominate(const BB &bb1, BB &bb2) {
+  if (&bb1 == &bb2) {
     return true;
   }
-  CHECK_FATAL(b2.GetBBId().idx < doms.size(), "index out of range in Dominance::Dominate ");
-  if (doms[b2.GetBBId().idx] == nullptr) {
+  CHECK_FATAL(bb2.GetBBId().idx < doms.size(), "index out of range in Dominance::Dominate ");
+  if (doms[bb2.GetBBId().idx] == nullptr) {
     return false;
   }
-  BB *imdom = &b2;
+  BB *immediateDom = &bb2;
   do {
-    if (imdom == nullptr) {
+    if (immediateDom == nullptr) {
       return false;
     }
-    imdom = doms[imdom->GetBBId().idx];
-    if (imdom == &b1) {
+    immediateDom = doms[immediateDom->GetBBId().idx];
+    if (immediateDom == &bb1) {
       return true;
     }
-  } while (imdom != &commonEntryBB);
+  } while (immediateDom != &commonEntryBB);
   return false;
 }
 
@@ -265,7 +265,7 @@ void Dominance::ComputePostDominance() {
 
 // Figure 5 in "A Simple, Fast Dominance Algorithm" by Keith Cooper et al.
 void Dominance::ComputePdomFrontiers() {
-  for (BB *bb : bbVec) {
+  for (const BB *bb : bbVec) {
     if (bb == nullptr || bb == &commonEntryBB) {
       continue;
     }
@@ -284,14 +284,11 @@ void Dominance::ComputePdomFrontiers() {
 }
 
 void Dominance::ComputePdomChildren() {
-  for (BB *bb : bbVec) {
-    if (bb == nullptr) {
+  for (const BB *bb : bbVec) {
+    if (bb == nullptr || pdoms[bb->GetBBId().idx] == nullptr) {
       continue;
     }
-    if (pdoms[bb->GetBBId().idx] == nullptr) {
-      continue;
-    }
-    BB *parent = pdoms[bb->GetBBId().idx];
+    const BB *parent = pdoms[bb->GetBBId().idx];
     if (parent == bb) {
       continue;
     }
@@ -308,27 +305,27 @@ void Dominance::ComputePdtPreorder(const BB &bb, size_t &num) {
 }
 
 void Dominance::ComputePdtDfn() {
-  for (size_t i = 0; i < pdtPreOrder.size(); i++) {
+  for (uint32 i = 0; i < pdtPreOrder.size(); i++) {
     pdtDfn[pdtPreOrder[i].idx] = i;
   }
 }
 
 // true if b1 postdominates b2
-bool Dominance::PostDominate(const BB &b1, BB &b2) {
-  if (&b1 == &b2) {
+bool Dominance::PostDominate(const BB &bb1, BB &bb2) {
+  if (&bb1 == &bb2) {
     return true;
   }
-  CHECK_FATAL(b2.GetBBId().idx < pdoms.size(), "index out of range in Dominance::PostDominate");
-  if (pdoms[b2.GetBBId().idx] == nullptr) {
+  CHECK_FATAL(bb2.GetBBId().idx < pdoms.size(), "index out of range in Dominance::PostDominate");
+  if (pdoms[bb2.GetBBId().idx] == nullptr) {
     return false;
   }
-  BB *impdom = &b2;
+  BB *impdom = &bb2;
   do {
     if (impdom == nullptr) {
       return false;
     }
     impdom = pdoms[impdom->GetBBId().idx];
-    if (impdom == &b1) {
+    if (impdom == &bb1) {
       return true;
     }
   } while (impdom != &commonExitBB);
@@ -349,14 +346,13 @@ void Dominance::DumpDoms() {
     for (BBId id : domChildren[bb->GetBBId().idx]) {
       LogInfo::MapleLogger() << id.idx << " ";
     }
-    LogInfo::MapleLogger() << "]" << std::endl;
+    LogInfo::MapleLogger() << "]\n";
   }
-  LogInfo::MapleLogger() << std::endl;
-  LogInfo::MapleLogger() << "preorder traversal of dominator tree:";
+  LogInfo::MapleLogger() << "\npreorder traversal of dominator tree:";
   for (BBId id : dtPreOrder) {
     LogInfo::MapleLogger() << id.idx << " ";
   }
-  LogInfo::MapleLogger() << std::endl << std::endl;
+  LogInfo::MapleLogger() << "\n\n";
 }
 
 void Dominance::DumpPdoms() {
@@ -373,13 +369,13 @@ void Dominance::DumpPdoms() {
     for (BBId id : pdomChildren[bb->GetBBId().idx]) {
       LogInfo::MapleLogger() << id.idx << " ";
     }
-    LogInfo::MapleLogger() << "]" << std::endl;
+    LogInfo::MapleLogger() << "]\n";
   }
-  LogInfo::MapleLogger() << std::endl;
+  LogInfo::MapleLogger() << "\n";
   LogInfo::MapleLogger() << "preorder traversal of post-dominator tree:";
   for (BBId id : pdtPreOrder) {
     LogInfo::MapleLogger() << id.idx << " ";
   }
-  LogInfo::MapleLogger() << std::endl << std::endl;
+  LogInfo::MapleLogger() << "\n\n";
 }
 }  // namespace maple

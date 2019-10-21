@@ -30,7 +30,7 @@ void MIRSymbol::SetNameStrIdx(const std::string &name) {
   nameStrIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(name);
 }
 
-bool MIRSymbol::HasAddrOfValues() {
+bool MIRSymbol::HasAddrOfValues() const {
   return (GetName().find(VTAB_PREFIX_STR) == 0 || GetName().find(ITAB_PREFIX_STR) == 0 ||
           GetName().find(kVtabOffsetTabStr) == 0 || IsClassInitBridge() || IsReflectionInfo() ||
           IsReflectionHashTabBucket() || IsReflectionStrTab() || IsITabConflictInfo() || IsRegJNITab() ||
@@ -145,7 +145,7 @@ bool MIRSymbol::IsMuidRangeTab() const {
   return (GetName().find(kMuidRangeTabPrefixStr) == 0);
 }
 
-bool MIRSymbol::IsClassInitBridge() {
+bool MIRSymbol::IsClassInitBridge() const {
   return (GetName().find(CLASS_INIT_BRIDGE_PREFIX_STR) == 0);
 }
 
@@ -153,7 +153,7 @@ bool MIRSymbol::IsReflectionHashTabBucket() const {
   return (GetName().compare(0, strlen(kMuidClassMetadataBucketPrefixStr), kMuidClassMetadataBucketPrefixStr) == 0);
 }
 
-bool MIRSymbol::IsReflectionInfo() {
+bool MIRSymbol::IsReflectionInfo() const {
   return (IsReflectionClassInfo() || IsReflectionClassInfoRO() || IsReflectionFieldsInfo() ||
           IsReflectionFieldsInfoCompact() || IsReflectionMethodsInfo() || IsReflectionPrimitiveClassInfo() ||
           IsReflectionSuperclassInfo() || IsReflectionMethodsInfoCompact());
@@ -167,7 +167,7 @@ bool MIRSymbol::IsReflectionFieldsInfoCompact() const {
   return (GetName().find(kFieldsInfoCompactPrefixStr) == 0);
 }
 
-bool MIRSymbol::IsReflectionSuperclassInfo() {
+bool MIRSymbol::IsReflectionSuperclassInfo() const {
   return (GetName().find(SUPERCLASSINFO_PREFIX_STR) == 0);
 }
 
@@ -183,23 +183,23 @@ bool MIRSymbol::IsReflectionClassInfoPtr() const {
   return (GetName().find(kClassINfoPtrPrefixStr) == 0);
 }
 
-bool MIRSymbol::IsReflectionClassInfoRO() {
+bool MIRSymbol::IsReflectionClassInfoRO() const {
   return (GetName().find(CLASSINFO_RO_PREFIX_STR) == 0);
 }
 
-bool MIRSymbol::IsITabConflictInfo() {
+bool MIRSymbol::IsITabConflictInfo() const {
   return (GetName().find(ITAB_CONFLICT_PREFIX_STR) == 0);
 }
 
-bool MIRSymbol::IsVTabInfo() {
+bool MIRSymbol::IsVTabInfo() const {
   return (GetName().find(VTAB_PREFIX_STR) == 0);
 }
 
-bool MIRSymbol::IsITabInfo() {
+bool MIRSymbol::IsITabInfo() const {
   return (GetName().find(ITAB_PREFIX_STR) == 0);
 }
 
-bool MIRSymbol::IsReflectionPrimitiveClassInfo() {
+bool MIRSymbol::IsReflectionPrimitiveClassInfo() const {
   return (GetName().find(PRIMITIVECLASSINFO_PREFIX_STR) == 0);
 }
 
@@ -211,11 +211,11 @@ bool MIRSymbol::IsReflectionMethodsInfoCompact() const {
   return (GetName().find(kMethodsInfoCompactPrefixStr) == 0);
 }
 
-bool MIRSymbol::IsPrimordialObject() {
+bool MIRSymbol::IsPrimordialObject() const {
   return IsReflectionClassInfo() || IsReflectionPrimitiveClassInfo();
 }
 
-bool MIRSymbol::IsGctibSym() {
+bool MIRSymbol::IsGctibSym() const {
   return (GetName().find(GCTIB_PREFIX_STR) == 0);
 }
 
@@ -225,7 +225,7 @@ bool MIRSymbol::IsGctibSym() {
 GStrIdx MIRSymbol::reflectClassNameIdx;
 GStrIdx MIRSymbol::reflectMethodNameIdx;
 GStrIdx MIRSymbol::reflectFieldNameIdx;
-bool MIRSymbol::IgnoreRC() {
+bool MIRSymbol::IgnoreRC() const {
   if (isDeleted || GetAttr(ATTR_rcunowned)) {
     return true;
   }
@@ -311,7 +311,7 @@ void MIRSymbol::Dump(bool isLocal, int32 indent, bool suppressinit) const {
   LogInfo::MapleLogger() << std::endl;
 }
 
-void MIRSymbol::DumpAsLiteralVar(int32 indent) {
+void MIRSymbol::DumpAsLiteralVar(int32 indent) const {
   if (IsLiteral()) {
     LogInfo::MapleLogger() << GetName();
   }

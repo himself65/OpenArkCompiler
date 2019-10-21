@@ -48,7 +48,7 @@ void IRMap::BuildBB(BB &bb, std::vector<bool> &bbIRMapProcessed) {
 
 void IRMap::BuildPhiMeNode(BB &bb) {
   for (auto phi : bb.GetPhiList()) {
-    OriginalSt *origst = phi.first;
+    const OriginalSt *origst = phi.first;
     VersionSt *verSt = phi.second.GetResult();
     if (origst->IsPregOst()) {
       MeRegPhiNode *phiMeNode = NewInPool<MeRegPhiNode>();
@@ -143,7 +143,7 @@ RegMeExpr *IRMap::CreateRegMeExprVersion(const RegMeExpr &origExpr) {
   return regreadexpr;
 }
 
-RegMeExpr *IRMap::CreateRefRegMeExpr(MIRSymbol &mirSt) {
+RegMeExpr *IRMap::CreateRefRegMeExpr(const MIRSymbol &mirSt) {
   MIRFunction *mirfunc = mirModule.CurFunction();
   MIRType *sttype = mirSt.GetType();
   PrimType ptyp = sttype->GetPrimType();
@@ -231,7 +231,7 @@ VarMeExpr *IRMap::GetOrCreateVarFromVerSt(const VersionSt &verSt) {
   if (meExpr != nullptr) {
     return static_cast<VarMeExpr*>(meExpr);
   }
-  OriginalSt *oSt = verSt.GetOrigSt();
+  const OriginalSt *oSt = verSt.GetOrigSt();
   ASSERT(oSt->IsSymbolOst(), "GetOrCreateVarFromVerSt: wrong ost_type");
   VarMeExpr *varx = New<VarMeExpr>(&irMapAlloc, exprID++, oSt->GetIndex(), vindex);
   ASSERT(!GlobalTables::GetTypeTable().GetTypeTable().empty(), "container check");
@@ -268,7 +268,7 @@ RegMeExpr *IRMap::GetOrCreateRegFromVerSt(const VersionSt &verSt) {
   if (meExpr != nullptr) {
     return static_cast<RegMeExpr*>(meExpr);
   }
-  OriginalSt *oSt = verSt.GetOrigSt();
+  const OriginalSt *oSt = verSt.GetOrigSt();
   ASSERT(oSt->IsPregOst(), "GetOrCreateRegFromVerSt: PregOST expected");
   RegMeExpr *regx =
       NewInPool<RegMeExpr>(exprID++, oSt->GetPregIdx(), mirModule.CurFunction()->GetPuidx(), oSt->GetIndex(), vindex);
@@ -278,7 +278,7 @@ RegMeExpr *IRMap::GetOrCreateRegFromVerSt(const VersionSt &verSt) {
   return regx;
 }
 
-MeExpr *IRMap::BuildLHSVar(const VersionSt &verSt, DassignMeStmt &defMeStmt, DassignNode &dassign) {
+MeExpr *IRMap::BuildLHSVar(const VersionSt &verSt, DassignMeStmt &defMeStmt) {
   VarMeExpr *medef = GetOrCreateVarFromVerSt(verSt);
   medef->SetDefStmt(&defMeStmt);
   medef->SetDefBy(kDefByStmt);
@@ -400,7 +400,7 @@ MeStmt *IRMap::BuildMeStmt(StmtNode &stmt) {
       DassignMeStmt *meStmt = NewInPool<DassignMeStmt>(&stmt);
       DassignNode &dassiNode = static_cast<DassignNode&>(stmt);
       meStmt->SetRHS(BuildExpr(*dassiNode.GetRHS()));
-      VarMeExpr *varlhs = static_cast<VarMeExpr*>(BuildLHSVar(*ssaPart->GetSSAVar(), *meStmt, dassiNode));
+      VarMeExpr *varlhs = static_cast<VarMeExpr*>(BuildLHSVar(*ssaPart->GetSSAVar(), *meStmt));
       meStmt->SetLHS(varlhs);
       BuildChiList(*meStmt, ssaPart->GetMayDefNodes(), *meStmt->GetChiList());
       return meStmt;
@@ -1067,7 +1067,7 @@ MeExpr *IRMap::ReplaceMeExprExpr(MeExpr &origExpr, MeExpr &meExpr, MeExpr &repEx
       OpMeExpr &opMeExpr = static_cast<OpMeExpr&>(origExpr);
       OpMeExpr newMeExpr(opMeExpr, kInvalidExprID);
       bool needRehash = false;
-      for (uint32 i = 0; i < kOpndNumOfOpMeExpr; i++) {
+      for (uint32 i = 0; i < kOprandNumTernary; i++) {
         if (!opMeExpr.GetOpnd(i)) {
           continue;
         }
@@ -1292,7 +1292,7 @@ MeExpr *IRMap::CreateMeExprBinary(Opcode op, PrimType ptyp, MeExpr &expr0, MeExp
   OpMeExpr opmeexpr(kInvalidExprID);
   opmeexpr.SetOpnd(0, &expr0);
   opmeexpr.SetOpnd(1, &expr1);
-  opmeexpr.InitBase(op, ptyp, 2);
+  opmeexpr.InitBase(op, ptyp, kOprandNumBinary);
   return HashMeExpr(opmeexpr);
 }
 
@@ -1301,7 +1301,7 @@ MeExpr *IRMap::CreateMeExprSelect(PrimType ptyp, MeExpr &expr0, MeExpr &expr1, M
   opmeexpr.SetOpnd(0, &expr0);
   opmeexpr.SetOpnd(1, &expr1);
   opmeexpr.SetOpnd(2, &expr2);
-  opmeexpr.InitBase(OP_select, ptyp, 3);
+  opmeexpr.InitBase(OP_select, ptyp, kOprandNumTernary);
   return HashMeExpr(opmeexpr);
 }
 
@@ -1309,7 +1309,7 @@ MeExpr *IRMap::CreateMeExprCompare(Opcode op, PrimType resptyp, PrimType opndpty
   OpMeExpr opmeexpr(kInvalidExprID);
   opmeexpr.SetOpnd(0, &opnd0);
   opmeexpr.SetOpnd(1, &opnd1);
-  opmeexpr.InitBase(op, resptyp, 2);
+  opmeexpr.InitBase(op, resptyp, kOprandNumBinary);
   opmeexpr.SetOpndType(opndptyp);
   MeExpr *retmeexpr = HashMeExpr(opmeexpr);
   static_cast<OpMeExpr*>(retmeexpr)->SetOpndType(opndptyp);
@@ -1319,7 +1319,7 @@ MeExpr *IRMap::CreateMeExprCompare(Opcode op, PrimType resptyp, PrimType opndpty
 MeExpr *IRMap::CreateMeExprTypeCvt(PrimType ptyp, PrimType opndptyp, MeExpr &opnd0) {
   OpMeExpr opmeexpr(kInvalidExprID);
   opmeexpr.SetOpnd(0, &opnd0);
-  opmeexpr.InitBase(OP_cvt, ptyp, 1);
+  opmeexpr.InitBase(OP_cvt, ptyp, kOprandNumNary);
   opmeexpr.SetOpndType(opndptyp);
   return HashMeExpr(opmeexpr);
 }

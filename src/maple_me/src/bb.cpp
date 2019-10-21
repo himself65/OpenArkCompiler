@@ -38,7 +38,7 @@ std::string BB::StrAttribute() const {
     case kBBInvalid:
       return "invalid";
     default:
-      CHECK_FATAL(false, "NYI");
+      CHECK_FATAL(false, "not yet implemented");
   }
   return "NYI";
 }
@@ -77,12 +77,12 @@ void BB::DumpHeader(MIRModule *mod) {
   DumpBBAttribute(mod);
   mod->GetOut() << "]===============\n";
   mod->GetOut() << "preds: ";
-  for (auto it = pred.begin(); it != pred.end(); it++) {
-    mod->GetOut() << (*it)->GetBBId().idx << " ";
+  for (const auto &predElement : pred) {
+    mod->GetOut() << predElement->GetBBId().idx << " ";
   }
   mod->GetOut() << "\nsuccs: ";
-  for (auto it = succ.begin(); it != succ.end(); it++) {
-    mod->GetOut() << (*it)->GetBBId().idx << " ";
+  for (const auto &succElement : succ) {
+    mod->GetOut() << succElement->GetBBId().idx << " ";
   }
   mod->GetOut() << "\n";
   if (bbLabel != 0) {
@@ -102,48 +102,47 @@ void BB::Dump(MIRModule *mod) {
 }
 
 void BB::DumpPhi(MIRModule *mod) {
-  for (auto phiIt = phiList.begin(); phiIt != phiList.end(); phiIt++) {
-    (*phiIt).second.Dump(mod);
+  for (auto &phi : phiList) {
+    phi.second.Dump(mod);
   }
 }
 
-const PhiNode *BB::PhiofVerStInserted(VersionSt &vsym) {
-  auto phiit = phiList.find(vsym.GetOrigSt());
-  return (phiit != phiList.end()) ? &(*phiit).second : nullptr;
+const PhiNode *BB::PhiofVerStInserted(const VersionSt &versionSt) const {
+  auto phiIt = phiList.find(versionSt.GetOrigSt());
+  return (phiIt != phiList.end()) ? &(phiIt->second) : nullptr;
 }
 
-void BB::InsertPhi(MapleAllocator *alloc, VersionSt *vsym) {
-  PhiNode phiNode(alloc, vsym);
+void BB::InsertPhi(MapleAllocator *alloc, VersionSt *versionSt) {
+  PhiNode phiNode(alloc, versionSt);
   for (auto prevIt = pred.begin(); prevIt != pred.end(); prevIt++) {
-    phiNode.GetPhiOpns().push_back(vsym);
+    phiNode.GetPhiOpns().push_back(versionSt);
   }
-  phiList.insert(std::make_pair(vsym->GetOrigSt(), phiNode));
+  phiList.insert(std::make_pair(versionSt->GetOrigSt(), phiNode));
 }
 
-bool BB::IsInList(const MapleVector<BB*> &bblist) const {
-  for (auto it = bblist.begin(); it != bblist.end(); it++) {
-    if (*it == this) {
+bool BB::IsInList(const MapleVector<BB*> &bbList) const {
+  for (const auto &bb : bbList) {
+    if (bb == this) {
       return true;
     }
   }
   return false;
 }
 
-// remove the given bb from the BB vector bvec; nothing done if not found
-int BB::RemoveBBFromVector(MapleVector<BB*> &bvec) {
+// remove the given bb from the BB vector bbVec; nothing done if not found
+int BB::RemoveBBFromVector(MapleVector<BB*> &bbVec) const {
   size_t i = 0;
-  while (i < bvec.size()) {
-    if (bvec[i] == this) {
+  while (i < bbVec.size()) {
+    if (bbVec[i] == this) {
       break;
     }
     i++;
   }
-  if (i == bvec.size()) {
+  if (i == bbVec.size()) {
     // bb not in the vector
     return -1;
   }
-
-  bvec.erase(bvec.cbegin() + i);
+  bbVec.erase(bbVec.cbegin() + i);
   return i;
 }
 
@@ -192,14 +191,11 @@ StmtNode *BB::GetTheOnlyStmtNode() const {
     if (stmtNode.GetOpCode() == OP_comment) {
       continue;
     }
-
     if (onlyStmtNode != nullptr) {
       return nullptr;
     }
-
     onlyStmtNode = &stmtNode;
   }
-
   return onlyStmtNode;
 }
 
@@ -228,38 +224,35 @@ void BB::RemoveLastStmt() {
 /* replace pred with newbb to keep position and
  * add this as succ of newpred */
 void BB::ReplacePred(const BB *old, BB *newPred) {
-  for (size_t i = 0; i < pred.size(); i++) {
-    if (pred[i] == old) {
-      pred[i] = newPred;
+  for (auto &predElement : pred) {
+    if (predElement == old) {
+      predElement = newPred;
       newPred->succ.push_back(this);
       break;
     }
   }
-  return;
 }
 
 /* replace succ in current position with newsucc
  * and add this as pred of newsucc */
 void BB::ReplaceSucc(const BB *old, BB *newSucc) {
-  for (size_t i = 0; i < succ.size(); i++) {
-    if (succ[i] == old) {
-      succ[i] = newSucc;
+  for (auto &succElement : succ) {
+    if (succElement == old) {
+      succElement = newSucc;
       newSucc->pred.push_back(this);
       break;
     }
   }
-  return;
 }
 
-/* this is common_entry_bb, so newsucc's pred_ is left as is */
+/* this is common_entry_bb, so newsucc's pred is left as is */
 void BB::ReplaceSuccOfCommonEntryBB(const BB *old, BB *newSucc) {
-  for (size_t i = 0; i < succ.size(); i++) {
-    if (succ[i] == old) {
-      succ[i] = newSucc;
+  for (auto &succElement : succ) {
+    if (succElement == old) {
+      succElement = newSucc;
       break;
     }
   }
-  return;
 }
 
 void BB::FindReachableBBs(std::vector<bool> &visitedBBs) const {
@@ -343,9 +336,8 @@ void BB::ReplaceMeStmt(MeStmt *stmt, MeStmt *newStmt) {
 }
 
 void BB::DumpMeVarPhiList(IRMap *irMap) {
-  auto phiIt = mevarPhiList.begin();
   int count = 0;
-  for (; phiIt != mevarPhiList.end(); phiIt++) {
+  for (auto phiIt = mevarPhiList.begin(); phiIt != mevarPhiList.end(); phiIt++) {
     (*phiIt).second->Dump(irMap);
     int dumpVsyNum = DumpOptions::GetDumpVsyNum();
     if (dumpVsyNum > 0 && ++count >= dumpVsyNum) {
@@ -356,8 +348,7 @@ void BB::DumpMeVarPhiList(IRMap *irMap) {
 }
 
 void BB::DumpMeRegPhiList(IRMap *irMap) {
-  auto phiIt = meregPhiList.begin();
-  for (; phiIt != meregPhiList.end(); phiIt++) {
+  for (auto phiIt = meregPhiList.begin(); phiIt != meregPhiList.end(); phiIt++) {
     (*phiIt).second->Dump(irMap);
   }
 }

@@ -49,10 +49,10 @@ class BBLayout : public AnalysisResult {
 
   void OptimizeBranchTarget(BB &bb);
   bool BBEmptyAndFallthru(const BB &bb);
-  bool BBContainsOnlyGoto(BB &bb);
-  bool BBContainsOnlyCondGoto(BB &bb);
-  bool HasSameBranchCond(BB &bb1, BB &bb2);
-  bool BBCanBeMoved(BB &fromBB, const BB &toAfterBB);
+  bool BBContainsOnlyGoto(const BB &bb) const;
+  bool BBContainsOnlyCondGoto(const BB &bb) const;
+  bool HasSameBranchCond(BB &bb1, BB &bb2) const;
+  bool BBCanBeMoved(const BB &fromBB, const BB &toAfterBB) const;
   void AddBB(BB &bb);
   BB *GetFallThruBBSkippingEmpty(BB &bb);
   void ResolveUnconditionalFallThru(BB &bb, BB &nextBB);
@@ -61,7 +61,7 @@ class BBLayout : public AnalysisResult {
     return layoutBBs;
   }
 
-  const bool NewBBInLayout() const {
+  const bool IsNewBBInLayout() const {
     return bbCreated;
   }
 

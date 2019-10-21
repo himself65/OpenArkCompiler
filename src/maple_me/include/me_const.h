@@ -22,6 +22,6 @@
 #include <string>
 
 namespace maple {
-const static std::string kStrThisPointer = "_this";
+const std::string kStrThisPointer = "_this";
 }
 #endif  // MAPLE_ME_INCLUDE_ME_CONST_H

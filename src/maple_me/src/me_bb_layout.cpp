@@ -67,7 +67,7 @@ bool BBLayout::BBEmptyAndFallthru(const BB &bb) {
 }
 
 // Return true if bb only has conditonal branch stmt except comment
-bool BBLayout::BBContainsOnlyCondGoto(BB &bb) {
+bool BBLayout::BBContainsOnlyCondGoto(const BB &bb) const {
   if (bb.GetAttributes(kBBAttrIsTryEnd)) {
     return false;
   }
@@ -82,7 +82,7 @@ bool BBLayout::BBContainsOnlyCondGoto(BB &bb) {
           return false;
         }
       }
-      return (meStmts.back().IsCondBr());
+      return meStmts.back().IsCondBr();
     } else {
       StmtNode *stmt = bb.GetStmtNodes().begin().d();
       if (stmt == nullptr) {
@@ -94,7 +94,7 @@ bool BBLayout::BBContainsOnlyCondGoto(BB &bb) {
           return false;
         }
       }
-      return (bb.GetStmtNodes().back().IsCondBr());
+      return bb.GetStmtNodes().back().IsCondBr();
     }
   }
   return false;
@@ -134,7 +134,7 @@ static Opcode GetOppositeOp(Opcode opc1) {
   return opc;
 }
 
-bool BBLayout::BBContainsOnlyGoto(BB &bb) {
+bool BBLayout::BBContainsOnlyGoto(const BB &bb) const {
   if (bb.GetAttributes(kBBAttrIsTryEnd)) {
     return false;
   }
@@ -175,7 +175,7 @@ bool BBLayout::BBContainsOnlyGoto(BB &bb) {
 //   toafter_bb are both not in try block.
 // The other case is fromBB has one predecessor and one successor and
 // contains only goto stmt.
-bool BBLayout::BBCanBeMoved(BB &fromBB, const BB &toAfterBB) {
+bool BBLayout::BBCanBeMoved(const BB &fromBB, const BB &toAfterBB) const {
   if (fromBB.GetPred().size() > 1) {
     return false;
   }
@@ -191,7 +191,7 @@ bool BBLayout::BBCanBeMoved(BB &fromBB, const BB &toAfterBB) {
 
 // Return true if bb1 and bb2 has the branch conditon.such as
 // bb1 : brfalse (a > 3)  bb2: brfalse (a > 3)/ brtrue (a <= 3)
-bool BBLayout::HasSameBranchCond(BB &bb1, BB &bb2) {
+bool BBLayout::HasSameBranchCond(BB &bb1, BB &bb2) const {
   if (func.GetIRMap() != nullptr) {
     CondGotoMeStmt &meStmt1 = static_cast<CondGotoMeStmt&>(bb1.GetMeStmts().back());
     CondGotoMeStmt &meStmt2 = static_cast<CondGotoMeStmt&>(bb2.GetMeStmts().back());
@@ -267,10 +267,7 @@ void BBLayout::OptimizeBranchTarget(BB &bb) {
   }
 start_:
   ASSERT(!bb.GetSucc().empty(), "container check");
-  BB *brTargetBB = bb.GetSucc(0);
-  if (bb.GetKind() == kBBCondGoto) {
-    brTargetBB = bb.GetSucc(1);
-  }
+  BB *brTargetBB = bb.GetKind() == kBBCondGoto ? bb.GetSucc(1) : bb.GetSucc(0);
   if (brTargetBB->GetAttributes(kBBAttrWontExit)) {
     return;
   }
@@ -327,10 +324,9 @@ start_:
 }
 
 void BBLayout::AddBB(BB &bb) {
-  CHECK_FATAL(bb.GetBBId().idx < laidOut.size(), "index oout of range in BBLayout::AddBB");
+  CHECK_FATAL(bb.GetBBId().idx < laidOut.size(), "index out of range in BBLayout::AddBB");
   ASSERT(!laidOut[bb.GetBBId().idx], "AddBB: bb already laid out");
   layoutBBs.push_back(&bb);
-  CHECK_FATAL(bb.GetBBId().idx < laidOut.size(), "index out of range in BBLayout::AddBB");
   laidOut[bb.GetBBId().idx] = true;
   if (DEBUGFUNC((&func))) {
     LogInfo::MapleLogger() << "bb id " << bb.GetBBId().idx << " kind is " << bb.StrAttribute();
@@ -355,7 +351,7 @@ void BBLayout::AddBB(BB &bb) {
     }
   }
   if (DEBUGFUNC((&func))) {
-    LogInfo::MapleLogger() << std::endl;
+    LogInfo::MapleLogger() << '\n';
   }
   return;
 }
@@ -365,10 +361,7 @@ BB *BBLayout::GetFallThruBBSkippingEmpty(BB &bb) {
   ASSERT(!bb.GetSucc().empty(), "container check");
   BB *fallthru = bb.GetSucc().front();
   do {
-    if (fallthru->GetPred().size() > 1) {
-      return fallthru;
-    }
-    if (fallthru->GetAttributes(kBBAttrIsTryEnd)) {
+    if (fallthru->GetPred().size() > 1 || fallthru->GetAttributes(kBBAttrIsTryEnd)) {
       return fallthru;
     }
     if (func.GetIRMap() != nullptr) {
@@ -510,7 +503,7 @@ AnalysisResult *MeDoBBLayout::Run(MeFunction *func, MeFuncResultMgr *m, ModuleRe
           newFallthru->GetSucc().push_back(fallthru);
           newFallthru->SetFrequency(fallthru->GetFrequency());
           if (DEBUGFUNC(func)) {
-            LogInfo::MapleLogger() << "Created fallthru and goto original fallthru" << std::endl;
+            LogInfo::MapleLogger() << "Created fallthru and goto original fallthru" << '\n';
           }
           bbLayout->AddBB(*newFallthru);
           bbLayout->OptimizeBranchTarget(*newFallthru);
@@ -544,7 +537,7 @@ AnalysisResult *MeDoBBLayout::Run(MeFunction *func, MeFuncResultMgr *m, ModuleRe
     }
     bb = nextBB;
   }
-  if (bbLayout->NewBBInLayout()) {
+  if (bbLayout->IsNewBBInLayout()) {
     m->InvalidAnalysisResult(MeFuncPhase_DOMINANCE, func);
   }
   if (DEBUGFUNC(func)) {

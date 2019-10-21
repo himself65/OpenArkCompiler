@@ -16,7 +16,7 @@
 #include "mir_function.h"
 
 namespace maple {
-void FuncEmit::EmitLabelForBB(MIRFunction &func, BB &bb) {
+void FuncEmit::EmitLabelForBB(MIRFunction &func, BB &bb) const {
   ASSERT(bb.GetBBLabel() != 0, "Should have a label");
   // create labelnode
   LabelNode *label = func.GetCodeMempool()->New<LabelNode>();
@@ -56,7 +56,7 @@ static void ConvertMaydassign(BB &bb) {
 }
 
 // Inserting BBs in bblist into func's body.
-void FuncEmit::EmitBeforeHSSA(MIRFunction &func, const MapleVector<BB*> &bbList) {
+void FuncEmit::EmitBeforeHSSA(MIRFunction &func, const MapleVector<BB*> &bbList) const {
   StmtNode *lastStmt = nullptr;       /* last stmt of previous bb */
   func.GetBody()->SetFirst(nullptr); /* reset body first stmt */
   func.GetBody()->SetLast(nullptr);

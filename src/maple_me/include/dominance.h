@@ -50,7 +50,7 @@ class Dominance : public AnalysisResult {
   void ComputeDomChildren();
   void ComputeDtPreorder(const BB &bb, size_t &num);
   void ComputeDtDfn();
-  bool Dominate(const BB &b1, BB &b2);  // true if b1 dominates b2
+  bool Dominate(const BB &bb1, BB &bb2);  // true if bb1 dominates bb2
   void DumpDoms();
   void PdomGenPostOrderID();
   void ComputePostDominance();
@@ -58,7 +58,7 @@ class Dominance : public AnalysisResult {
   void ComputePdomChildren();
   void ComputePdtPreorder(const BB &bb, size_t &num);
   void ComputePdtDfn();
-  bool PostDominate(const BB &b1, BB &b2);  // true if b1 postdominates b2
+  bool PostDominate(const BB &bb1, BB &bb2);  // true if bb1 postdominates bb2
   void DumpPdoms();
 
   const MapleVector<BB*> &GetBBVec() const {
@@ -73,7 +73,7 @@ class Dominance : public AnalysisResult {
     return bbVec.size();
   }
 
-  BB *GetBBAt(uint i) const {
+  BB *GetBBAt(size_t i) const {
     return bbVec[i];
   }
 
@@ -93,7 +93,7 @@ class Dominance : public AnalysisResult {
     return reversePostOrder;
   }
 
-  const MapleVector<BB*> &Getdoms() const {
+  const MapleVector<BB*> &GetDoms() const {
     return doms;
   }
 
@@ -101,7 +101,7 @@ class Dominance : public AnalysisResult {
     return dtPreOrder;
   }
 
-  BBId &GetDtPreOrderItem(size_t idx) {
+  BBId GetDtPreOrderItem(size_t idx) const {
     return dtPreOrder[idx];
   }
 
@@ -130,7 +130,7 @@ class Dominance : public AnalysisResult {
   }
 
   void ResizePdtPreOrder(int n) {
-    return pdtPreOrder.resize(n);
+    pdtPreOrder.resize(n);
   }
 
   BBId GetPdtPreOrderItem(size_t idx) const {

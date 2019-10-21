@@ -42,6 +42,46 @@ bool MeAliasClass::HasWriteToStaticFinal() const {
   return false;
 }
 
+void MeAliasClass::DoAliasAnalysis() {
+  auto eIt = func.valid_end();
+  for (auto bIt = func.valid_begin(); bIt != eIt; ++bIt) {
+    for (auto &stmt : (*bIt)->GetStmtNodes()) {
+      ApplyUnionForCopies(stmt);
+    }
+  }
+  CreateAssignSets();
+  if (DEBUGFUNC((&func))) {
+    DumpAssignSets();
+  }
+  ReinitUnionFind();
+  if (MeOption::noSteensgaard) {
+    UnionAllPointedTos();
+  } else {
+    ApplyUnionForPointedTos();
+    UnionForNotAllDefsSeen();
+  }
+  // TBAA
+  if (!MeOption::noTBAA) {
+    ReconstructAliasGroups();
+  }
+  CreateClassSets();
+  if (DEBUGFUNC((&func))) {
+    DumpClassSets();
+  }
+  // pass 2 through the program statements
+  if (DEBUGFUNC((&func))) {
+    LogInfo::MapleLogger() << "\n============ Alias Classification Pass 2 ============" << '\n';
+  }
+
+  eIt = func.valid_end();
+  for (auto bIt = func.valid_begin(); bIt != eIt; ++bIt) {
+    auto *bb = *bIt;
+    for (auto &stmt : bb->GetStmtNodes()) {
+      GenericInsertMayDefUse(stmt, bb->GetBBId());
+    }
+  }
+}
+
 AnalysisResult *MeDoAliasClass::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) {
   MPLTimer timer;
   timer.Start();
@@ -53,49 +93,13 @@ AnalysisResult *MeDoAliasClass::Run(MeFunction *func, MeFuncResultMgr *m, Module
       MeOption::finalFieldAlias, MeOption::ignoreIPA, DEBUGFUNC(func), MeOption::setCalleeHasSideEffect, kh);
   // pass 1 through the program statements
   if (DEBUGFUNC(func)) {
-    LogInfo::MapleLogger() << "\n============ Alias Classification Pass 1 ============" << std::endl;
+    LogInfo::MapleLogger() << "\n============ Alias Classification Pass 1 ============" << '\n';
   }
-  auto eIt = func->valid_end();
-  for (auto bIt = func->valid_begin(); bIt != eIt; ++bIt) {
-    for (auto &stmt : (*bIt)->GetStmtNodes()) {
-      aliasClass->ApplyUnionForCopies(stmt);
-    }
-  }
-  aliasClass->CreateAssignSets();
-  if (DEBUGFUNC(func)) {
-    aliasClass->DumpAssignSets();
-  }
-  aliasClass->ReinitUnionFind();
-  if (MeOption::noSteensgaard) {
-    aliasClass->UnionAllPointedTos();
-  } else {
-    aliasClass->ApplyUnionForPointedTos();
-    aliasClass->UnionForNotAllDefsSeen();
-  }
-  // TBAA
-  if (!MeOption::noTBAA) {
-    aliasClass->ReconstructAliasGroups();
-  }
-  aliasClass->CreateClassSets();
-  if (DEBUGFUNC(func)) {
-    aliasClass->DumpClassSets();
-  }
-  // pass 2 through the program statements
-  if (DEBUGFUNC(func)) {
-    LogInfo::MapleLogger() << "\n============ Alias Classification Pass 2 ============" << std::endl;
-  }
-
-  eIt = func->valid_end();
-  for (auto bIt = func->valid_begin(); bIt != eIt; ++bIt) {
-    auto *bb = *bIt;
-    for (auto &stmt : bb->GetStmtNodes()) {
-      aliasClass->GenericInsertMayDefUse(stmt, bb->GetBBId());
-    }
-  }
+  aliasClass->DoAliasAnalysis();
   timer.Stop();
   if (DEBUGFUNC(func)) {
     LogInfo::MapleLogger() << "ssaTab + aliasClass passes consume cumulatively " << timer.Elapsed() << "seconds "
-                           << std::endl;
+                           << '\n';
   }
   return aliasClass;
 }

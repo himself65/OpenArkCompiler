@@ -22,25 +22,23 @@ class MeCFG {
  public:
   explicit MeCFG(MeFunction &f) : func(f) {}
 
-
   ~MeCFG() = default;
 
   void BuildMirCFG();
   void FixMirCFG();
-  void ConvertPhis2IdentityAssigns(BB &meBB);
+  void ConvertPhis2IdentityAssigns(BB &meBB) const;
   void UnreachCodeAnalysis(bool updatePhi = false);
   void WontExitAnalysis();
   void Verify() const;
-  void VerifyLabels();
-  void Dump();
-  void DumpToFile(const std::string &prefix, bool dumpInStrs = false);
-  void AddAuxilaryBB();
+  void VerifyLabels() const;
+  void Dump() const;
+  void DumpToFile(const std::string &prefix, bool dumpInStrs = false) const;
   bool FindExprUse(const BaseNode &expr, StIdx stIdx) const;
-  bool FindUse(const StmtNode &stmt, StIdx stid) const;
-  bool FindDef(const StmtNode &stmt, StIdx stid) const;
+  bool FindUse(const StmtNode &stmt, StIdx stIdx) const;
+  bool FindDef(const StmtNode &stmt, StIdx stIdx) const;
   bool HasNoOccBetween(StmtNode &from, const StmtNode &to, StIdx stIdx) const;
 
-  const MeFunction &GetFunc() {
+  const MeFunction &GetFunc() const {
     return func;
   }
 
