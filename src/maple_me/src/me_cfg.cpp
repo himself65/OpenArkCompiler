@@ -320,7 +320,7 @@ void MeCFG::FixMirCFG() {
           func.GetMirFunc()->IncTempCount();
           std::string tempStr = std::string("tempRet").append(std::to_string(func.GetMirFunc()->GetTempCount()));
           MIRBuilder *builder = func.GetMirFunc()->GetModule()->GetMIRBuilder();
-          MIRSymbol *targetSt = builder->GetOrCreateLocalDecl(tempStr.c_str(), sym->GetType());
+          MIRSymbol *targetSt = builder->GetOrCreateLocalDecl(tempStr.c_str(), *sym->GetType());
           targetSt->ResetIsDeleted();
           if (stmt->GetOpCode() == OP_dassign) {
             BaseNode *rhs = static_cast<DassignNode*>(stmt)->GetRHS();

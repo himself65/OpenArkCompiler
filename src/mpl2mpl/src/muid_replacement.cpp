@@ -852,7 +852,7 @@ void MUIDReplacement::ReplaceDirectInvokeOrAddroffunc(MIRFunction *currentFunc, 
     currentFunc->GetBody()->InsertBefore(stmt, funcPtrPregAssign);
     readFuncPtr = builder->CreateExprRegread(PTY_ptr, funcPtrPreg);
   } else {
-    funcPtrSym = builder->GetOrCreateLocalDecl(kMuidSymPtrStr, GlobalTables::GetTypeTable().GetVoidPtr());
+    funcPtrSym = builder->GetOrCreateLocalDecl(kMuidSymPtrStr, *GlobalTables::GetTypeTable().GetVoidPtr());
     DassignNode *addrNode = builder->CreateStmtDassign(funcPtrSym, 0, ireadPtrExpr);
     currentFunc->GetBody()->InsertBefore(stmt, addrNode);
     readFuncPtr = builder->CreateExprDread(funcPtrSym);
@@ -919,7 +919,7 @@ void MUIDReplacement::ReplaceDassign(MIRFunction *currentFunc, DassignNode *dass
     currentFunc->GetBody()->InsertBefore(dassignNode, symPtrPregAssign);
     destExpr = builder->CreateExprRegread(PTY_ptr, symPtrPreg);
   } else {
-    symPtrSym = builder->GetOrCreateLocalDecl(kMuidFuncPtrStr, mVoidPtr);
+    symPtrSym = builder->GetOrCreateLocalDecl(kMuidFuncPtrStr, *mVoidPtr);
     DassignNode *addrNode = builder->CreateStmtDassign(symPtrSym, 0, ireadPtrExpr);
     currentFunc->GetBody()->InsertBefore(dassignNode, addrNode);
     destExpr = builder->CreateExprDread(symPtrSym);

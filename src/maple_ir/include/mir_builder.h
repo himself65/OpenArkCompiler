@@ -95,7 +95,7 @@ class MIRBuilder {
   }
 
   MIRFunction *GetOrCreateFunction(const std::string&, TyIdx);
-  MIRFunction *GetFunctionFromSymbol(MIRSymbol *funcst) const;
+  MIRFunction *GetFunctionFromSymbol(const MIRSymbol &funcst) const;
   MIRFunction *GetFunctionFromStidx(StIdx stIdx);
   MIRFunction *GetFunctionFromName(const std::string&);
   // For compiler-generated metadata struct
@@ -132,14 +132,14 @@ class MIRBuilder {
   }
 
   MIRSymbol *GetSymbolFromEnclosingScope(StIdx stIdx);
-  virtual MIRSymbol *GetOrCreateLocalDecl(const std::string &str, MIRType *type);
+  virtual MIRSymbol *GetOrCreateLocalDecl(const std::string &str, MIRType &type);
   MIRSymbol *GetLocalDecl(const std::string &str);
-  MIRSymbol *CreateLocalDecl(const std::string &str, const MIRType *type);
+  MIRSymbol *CreateLocalDecl(const std::string &str, const MIRType &type);
   MIRSymbol *GetOrCreateGlobalDecl(const std::string &str, const MIRType *type);
   MIRSymbol *GetGlobalDecl(const std::string &str);
   MIRSymbol *GetDecl(const std::string &str);
   MIRSymbol *CreateGlobalDecl(const std::string &str, const MIRType *type, MIRStorageClass sc = kScGlobal);
-  MIRSymbol *GetOrCreateDeclInFunc(const std::string &str, const MIRType *type, MIRFunction *func);
+  MIRSymbol *GetOrCreateDeclInFunc(const std::string &str, const MIRType &type, MIRFunction &func);
   // for creating Expression
   ConstvalNode *CreateIntConst(int64, PrimType);
   ConstvalNode *CreateFloatConst(float val);
@@ -279,8 +279,9 @@ class MIRBuilder {
   virtual MapleAllocator *GetCurrentFuncCodeMpAllocator();
 
  private:
-  MIRSymbol *GetOrCreateDecl(const std::string &str, const MIRType *type, MIRFunction *func, bool isLocal,
-                             bool &created);
+  MIRSymbol *GetOrCreateGlobalDecl(const std::string &str, const TyIdx &tyIdx, bool &created) const;
+  MIRSymbol *GetOrCreateLocalDecl(const std::string &str, const TyIdx &tyIdx, MIRSymbolTable &symbolTable,
+                                  bool &created) const;
   bool IsValidCallReturn(const MIRSymbol &ret) const {
     return ret.GetStorageClass() == kScAuto || ret.GetStorageClass() == kScFormal ||
            ret.GetStorageClass() == kScExtern || ret.GetStorageClass() == kScGlobal;

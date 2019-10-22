@@ -820,7 +820,7 @@ void RCLowering::Finish() {
 
 OriginalSt *RCLowering::RetrieveOSt(const std::string &name, bool isLocalrefvar) const {
   MIRSymbol *backupSym = mirModule.GetMIRBuilder()->GetOrCreateLocalDecl(
-      name, GlobalTables::GetTypeTable().GetTypeFromTyIdx(TyIdx(PTY_ptr)));  // use PTY_ptr for temp
+      name, *GlobalTables::GetTypeTable().GetTypeFromTyIdx(TyIdx(PTY_ptr)));  // use PTY_ptr for temp
   backupSym->SetIsTmp(true);
   if (isLocalrefvar) {
     backupSym->SetLocalRefVar();
