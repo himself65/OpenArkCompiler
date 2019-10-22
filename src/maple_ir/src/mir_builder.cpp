@@ -274,63 +274,64 @@ MIRFunction *MIRBuilder::GetOrCreateFunction(const std::string &str, TyIdx retTy
   return fn;
 }
 
-MIRFunction *MIRBuilder::GetFunctionFromSymbol(MIRSymbol *funcSymbol) const {
-  if (!funcSymbol) {
-    return nullptr;
-  }
-  ASSERT(funcSymbol->GetSKind() == kStFunc, "Symbol %s is not a function symbol", funcSymbol->GetName().c_str());
-  return funcSymbol->GetFunction();
+MIRFunction *MIRBuilder::GetFunctionFromSymbol(const MIRSymbol &funcSymbol) const {
+  ASSERT(funcSymbol.GetSKind() == kStFunc, "Symbol %s is not a function symbol", funcSymbol.GetName().c_str());
+  return funcSymbol.GetFunction();
 }
 
 MIRFunction *MIRBuilder::GetFunctionFromName(const std::string &str) {
-  return GetFunctionFromSymbol(
-      GlobalTables::GetGsymTable().GetSymbolFromStrIdx(GlobalTables::GetStrTable().GetStrIdxFromName(str)));
+  auto *funcSymbol =
+      GlobalTables::GetGsymTable().GetSymbolFromStrIdx(GlobalTables::GetStrTable().GetStrIdxFromName(str));
+  return funcSymbol != nullptr ? GetFunctionFromSymbol(*funcSymbol) : nullptr;
 }
 
 MIRFunction *MIRBuilder::GetFunctionFromStidx(StIdx stIdx) {
-  return GetFunctionFromSymbol(GlobalTables::GetGsymTable().GetSymbolFromStidx(stIdx.Idx()));
+  auto *funcSymbol = GlobalTables::GetGsymTable().GetSymbolFromStidx(stIdx.Idx());
+  return funcSymbol != nullptr ? GetFunctionFromSymbol(*funcSymbol) : nullptr;
 }
 
-MIRSymbol *MIRBuilder::GetOrCreateDecl(const std::string &str, const MIRType *type, MIRFunction *func, bool isLocal,
-                                       bool &created) {
-  MIRSymbolTable *symbolTable = nullptr;
-  if (isLocal) {
-    if (func) {
-      symbolTable = func->GetSymTab();
-    } else {
-      MIRFunction *currentFunctionInner = GetCurrentFunction();
-      CHECK_FATAL(currentFunctionInner != nullptr, "null ptr check");
-      symbolTable = currentFunctionInner->GetSymTab();
-    }
-    ASSERT(symbolTable != nullptr, "symbol_table is null in MIRBuilder::GetOrCreateDecl");
-  }
+MIRSymbol *MIRBuilder::GetOrCreateGlobalDecl(const std::string &str, const TyIdx &tyIdx, bool &created) const {
   GStrIdx strIdx = GetStringIndex(str);
   if (strIdx != 0) {
-    StIdx stidx =
-        isLocal ? symbolTable->GetStIdxFromStrIdx(strIdx) : GlobalTables::GetGsymTable().GetStIdxFromStrIdx(strIdx);
+    StIdx stidx = GlobalTables::GetGsymTable().GetStIdxFromStrIdx(strIdx);
     if (stidx.Idx() != 0) {
       created = false;
-      return isLocal ? symbolTable->GetSymbolFromStIdx(stidx.Idx())
-                     : GlobalTables::GetGsymTable().GetSymbolFromStidx(stidx.Idx());
+      return GlobalTables::GetGsymTable().GetSymbolFromStidx(stidx.Idx());
     }
   }
   created = true;
   strIdx = GetOrCreateStringIndex(str);
-  MIRSymbol *st =
-      isLocal ? symbolTable->CreateSymbol(kScopeLocal) : GlobalTables::GetGsymTable().CreateSymbol(kScopeGlobal);
+  MIRSymbol *st = GlobalTables::GetGsymTable().CreateSymbol(kScopeGlobal);
   st->SetNameStrIdx(strIdx);
-  st->SetTyIdx(type->GetTypeIndex());
-  if (isLocal) {
-    (void)symbolTable->AddToStringSymbolMap(st);
-  } else {
-    (void)GlobalTables::GetGsymTable().AddToStringSymbolMap(st);
-  }
+  st->SetTyIdx(tyIdx);
+  (void)GlobalTables::GetGsymTable().AddToStringSymbolMap(st);
   return st;
 }
 
-MIRSymbol *MIRBuilder::GetOrCreateDeclInFunc(const std::string &str, const MIRType *type, MIRFunction *func) {
+MIRSymbol *MIRBuilder::GetOrCreateLocalDecl(const std::string &str, const TyIdx &tyIdx, MIRSymbolTable &symbolTable,
+                                            bool &created) const {
+  GStrIdx strIdx = GetStringIndex(str);
+  if (strIdx != 0) {
+    StIdx stidx = symbolTable.GetStIdxFromStrIdx(strIdx);
+    if (stidx.Idx() != 0) {
+      created = false;
+      return symbolTable.GetSymbolFromStIdx(stidx.Idx());
+    }
+  }
+  created = true;
+  strIdx = GetOrCreateStringIndex(str);
+  MIRSymbol *st = symbolTable.CreateSymbol(kScopeLocal);
+  st->SetNameStrIdx(strIdx);
+  st->SetTyIdx(tyIdx);
+  (void)symbolTable.AddToStringSymbolMap(st);
+  return st;
+}
+
+MIRSymbol *MIRBuilder::GetOrCreateDeclInFunc(const std::string &str, const MIRType &type, MIRFunction &func) {
+  MIRSymbolTable *symbolTable = func.GetSymTab();
+  ASSERT(symbolTable != nullptr, "symbol_table is null");
   bool isCreated = false;
-  MIRSymbol *st = GetOrCreateDecl(str, type, func, true, isCreated);
+  MIRSymbol *st = GetOrCreateLocalDecl(str, type.GetTypeIndex(), *symbolTable, isCreated);
   if (isCreated) {
     st->SetStorageClass(kScAuto);
     st->SetSKind(kStVar);
@@ -338,25 +339,20 @@ MIRSymbol *MIRBuilder::GetOrCreateDeclInFunc(const std::string &str, const MIRTy
   return st;
 }
 
-MIRSymbol *MIRBuilder::GetOrCreateLocalDecl(const std::string &str, MIRType *type) {
-  bool isCreated = false;
-  MIRSymbol *st = GetOrCreateDecl(str, type, nullptr, true, isCreated);
-  ASSERT(st != nullptr, "st is null");
-  if (isCreated) {
-    st->SetStorageClass(kScAuto);
-    st->SetSKind(kStVar);
-  }
-  return st;
+MIRSymbol *MIRBuilder::GetOrCreateLocalDecl(const std::string &str, MIRType &type) {
+  MIRFunction *currentFunc = GetCurrentFunction();
+  CHECK_FATAL(currentFunc != nullptr, "null ptr check");
+  return GetOrCreateDeclInFunc(str, type, *currentFunc);
 }
 
-MIRSymbol *MIRBuilder::CreateLocalDecl(const std::string &str, const MIRType *type) {
+MIRSymbol *MIRBuilder::CreateLocalDecl(const std::string &str, const MIRType &type) {
   GStrIdx stridx = GetOrCreateStringIndex(str);
   MIRFunction *currentFunctionInner = GetCurrentFunction();
   CHECK_FATAL(currentFunctionInner != nullptr, "null ptr check");
   MIRSymbolTable *symbolTable = currentFunctionInner->GetSymTab();
   MIRSymbol *st = symbolTable->CreateSymbol(kScopeLocal);
   st->SetNameStrIdx(stridx);
-  st->SetTyIdx(type->GetTypeIndex());
+  st->SetTyIdx(type.GetTypeIndex());
   (void)symbolTable->AddToStringSymbolMap(st);
   st->SetStorageClass(kScAuto);
   st->SetSKind(kStVar);
@@ -418,7 +414,7 @@ MIRSymbol *MIRBuilder::CreateGlobalDecl(const std::string &str, const MIRType *t
 
 MIRSymbol *MIRBuilder::GetOrCreateGlobalDecl(const std::string &str, const MIRType *type) {
   bool isCreated = false;
-  MIRSymbol *st = GetOrCreateDecl(str, type, nullptr, false, isCreated);
+  MIRSymbol *st = GetOrCreateGlobalDecl(str, type->GetTypeIndex(), isCreated);
   if (isCreated) {
     st->SetStorageClass(kScGlobal);
     st->SetSKind(kStVar);
