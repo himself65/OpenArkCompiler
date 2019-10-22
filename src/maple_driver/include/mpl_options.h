@@ -147,9 +147,8 @@ class MplOptions {
   void AddOption(const mapleOption::Option &option);
   void UpdateOptLevel(OptimizationLevel level);
   ErrorCode UpdateExtraOptionOpt(const std::string &args);
-  ErrorCode AppendDefaultOptions(const std::string &exeName, MplOption *mplOptions, unsigned int length);
+  ErrorCode AppendDefaultOptions(const std::string &exeName, MplOption mplOptions[], unsigned int length);
   void UpdateRunningExe(const std::string &args);
 };
-
 }  // namespace maple
 #endif  // MAPLE_DRIVER_INCLUDE_MPL_OPTIONS_H

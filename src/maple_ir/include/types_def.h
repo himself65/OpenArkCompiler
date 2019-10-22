@@ -269,7 +269,7 @@ class U16StrIdx {  // user string table index (from the conststr opcode)
  private:
   uint32 idx;
 };
-constexpr int kOprandNumNary = 1;
+constexpr int kOprandNumUnary = 1;
 constexpr int kOprandNumBinary = 2;
 constexpr int kOprandNumTernary = 3;
 }  // namespace maple

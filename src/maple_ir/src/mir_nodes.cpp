@@ -771,15 +771,15 @@ void MultiwayNode::Dump(const MIRModule &mod, int32 indent) const {
 
 void UnaryStmtNode::DumpOpnd(const MIRModule &mod, int indent) const {
   LogInfo::MapleLogger() << " (";
-  uopnd->Dump(mod, indent);
+  uOpnd->Dump(mod, indent);
   LogInfo::MapleLogger() << ")";
 }
 
 void UnaryStmtNode::Dump(const MIRModule &mod, int32 indent) const {
   StmtNode::DumpBase(mod, indent);
   LogInfo::MapleLogger() << " (";
-  if (uopnd) {
-    uopnd->Dump(mod, indent);
+  if (uOpnd) {
+    uOpnd->Dump(mod, indent);
   }
   LogInfo::MapleLogger() << ")" << std::endl;
 }
@@ -1288,9 +1288,8 @@ inline MIRTypeKind GetTypeKind(TyIdx tyIdx) {
 
 inline MIRType *GetPointedMIRType(TyIdx tyIdx) {
   MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
-  ASSERT(type != nullptr, "null ptr check");
-  MIRPtrType *ptrType = dynamic_cast<MIRPtrType*>(type);
-  ASSERT(ptrType != nullptr, "null pointer check");
+  CHECK_FATAL(type->GetKind() == kTypePointer, "TyIdx: %d is not pointer type", tyIdx.GetIdx());
+  MIRPtrType *ptrType = static_cast<MIRPtrType*>(type);
   return ptrType->GetPointedType();
 }
 
@@ -1477,7 +1476,7 @@ bool IreadNode::Verify() const {
       LogInfo::MapleLogger() << "\n#Error:If field-id is not 0, then type must specify pointer to a structure\n";
     } else {
       MIRType *type = GetPointedMIRType(tyIdx);
-      MIRStructType *stty = dynamic_cast<MIRStructType*>(type);
+      MIRStructType *stty = static_cast<MIRStructType*>(type);
       if (GetOpCode() == OP_iread && stty->GetFieldsSize() != 0) {
         if (IsStructureTypeKind(GetFieldTypeKind(stty, fieldID))) {
           if (GetPrimType() != PTY_agg) {
@@ -1648,8 +1647,7 @@ bool AddrofNode::Verify() const {
     if (fieldID != 0 && structVerf) {
       MIRSymbol *var = theModule->CurFunction()->GetLocalOrGlobalSymbol(GetStIdx());
       MIRType *type = var->GetType();
-      MIRStructType *stty = dynamic_cast<MIRStructType*>(type);
-      ASSERT(stty != nullptr, "null pointer check");
+      MIRStructType *stty = static_cast<MIRStructType*>(type);
       if (IsStructureTypeKind(GetFieldTypeKind(stty, fieldID))) {
         if (GetPrimType() != PTY_agg) {
           pTypeVerf = false;

@@ -17,7 +17,6 @@
 #include "default_options.h"
 
 namespace maple {
-static MplOption kDefaultOptions[] = {};
 const std::string Jbc2MplCompiler::GetBinName() const {
   return kBinNameJbc2mpl;
 }
@@ -29,14 +28,7 @@ const std::vector<std::string> Jbc2MplCompiler::GetBinNames() const {
 }
 
 const DefaultOption Jbc2MplCompiler::GetDefaultOptions(const MplOptions &options) {
-  DefaultOption defaultOptions;
-  if (options.optimizationLevel == kO0 && options.setDefaultLevel) {
-    defaultOptions.mplOptions = kJbc2mplDefaultOptionsO0;
-    defaultOptions.length = sizeof(kJbc2mplDefaultOptionsO0) / sizeof(MplOption);
-  } else {
-    defaultOptions.mplOptions = kDefaultOptions;
-    defaultOptions.length = sizeof(kDefaultOptions) / sizeof(MplOption);
-  }
+  DefaultOption defaultOptions = { nullptr, 0 };
   return defaultOptions;
 }
 
@@ -49,5 +41,4 @@ const std::unordered_set<std::string> Jbc2MplCompiler::GetFinalOutputs(const Mpl
   finalOutputs.insert(mplOptions.outputFolder + mplOptions.outputName + ".mpl");
   return finalOutputs;
 }
-
 }  // namespace maple

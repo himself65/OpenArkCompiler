@@ -27,6 +27,5 @@ enum ErrorCode {
   kErrorCompileFail,
   kErrorNotImplement
 };
-
 }  // namespace maple
 #endif  // MAPLE_UTIL_INCLUDE_ERROR_CODE_H

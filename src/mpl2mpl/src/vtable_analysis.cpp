@@ -370,6 +370,7 @@ void VtableAnalysis::ReplaceSuperclassInvoke(CallNode *stmt) {
   MIRFunction *callee = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(stmt->GetPUIdx());
   Klass *klass = klassHierarchy->GetKlassFromFunc(callee);
 
+  CHECK_FATAL(klass != nullptr, "Klass not found");
   MapleVector<MIRFunction*> *cands = klass->GetCandidates(callee->GetBaseFuncNameWithTypeStrIdx());
   // continue to search its implinterfaces
   if (cands == nullptr) {

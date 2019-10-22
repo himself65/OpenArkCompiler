@@ -27,7 +27,6 @@
 #include "mpl_logging.h"
 #include "string_utils.h"
 
-using namespace std;
 namespace maple {
 class SafeExe {
  public:
@@ -91,6 +90,5 @@ class SafeExe {
 #endif
   }
 };
-
 }  // namespace maple
 #endif  // MAPLE_DRIVER_INCLUDE_SAFE_EXE_H

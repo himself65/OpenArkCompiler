@@ -15,6 +15,10 @@
 #ifndef MAPLE_UTIL_INCLUDE_MPL_UTILS_H
 #define MAPLE_UTIL_INCLUDE_MPL_UTILS_H
 
+namespace {
+  constexpr int digitIndex = 10;
+}
+
 namespace maple {
 class Utils {
  public:
@@ -22,14 +26,13 @@ class Utils {
     if (c >= '0' && c <= '9') {
       return (c - '0');
     } else if (c >= 'A' && c <= 'F') {
-      return (c - 'A' + 10);
+      return (c - 'A' + digitIndex);
     } else if (c >= 'a' && c <= 'f') {
-      return (c - 'a' + 10);
+      return (c - 'a' + digitIndex);
     } else {
       return 0;
     }
   }
 };
-
 }  // namespace maple
 #endif  // MAPLE_UTIL_INCLUDE_MPL_UTILS_H

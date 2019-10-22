@@ -157,12 +157,13 @@ struct ClassMetadata {
     ClassMetadataRO *classinforo64; // ifndef USE_32BIT_REF
     struct {
       uint32_t classinforo32;       // ifdef USE_32BIT_REF
-      uint32_t padding;
+      uint32_t cacheFalseClass;
     };
   };
 
   union {
     intptr_t initState;    // if class is not initialized
+    void *cacheTrueClass;
   }; // class init state, this field must be accessed atomically.
 };
 

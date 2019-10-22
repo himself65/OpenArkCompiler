@@ -347,8 +347,7 @@ MIRSymbol *MIRBuilder::GetOrCreateLocalDecl(const std::string &str, MIRType &typ
 
 MIRSymbol *MIRBuilder::CreateLocalDecl(const std::string &str, const MIRType &type) {
   GStrIdx stridx = GetOrCreateStringIndex(str);
-  MIRFunction *currentFunctionInner = GetCurrentFunction();
-  CHECK_FATAL(currentFunctionInner != nullptr, "null ptr check");
+  MIRFunction *currentFunctionInner = GetCurrentFunctionNotNull();
   MIRSymbolTable *symbolTable = currentFunctionInner->GetSymTab();
   MIRSymbol *st = symbolTable->CreateSymbol(kScopeLocal);
   st->SetNameStrIdx(stridx);
@@ -371,8 +370,7 @@ MIRSymbol *MIRBuilder::GetGlobalDecl(const std::string &str) {
 }
 
 MIRSymbol *MIRBuilder::GetLocalDecl(const std::string &str) {
-  MIRFunction *currentFunctionInner = GetCurrentFunction();
-  CHECK_FATAL(currentFunctionInner != nullptr, "null ptr check");
+  MIRFunction *currentFunctionInner = GetCurrentFunctionNotNull();
   MIRSymbolTable *symbolTable = currentFunctionInner->GetSymTab();
   GStrIdx strIdx = GetStringIndex(str);
   if (strIdx != 0) {
@@ -390,8 +388,9 @@ MIRSymbol *MIRBuilder::GetDecl(const std::string &str) {
   MIRSymbol *sym = nullptr;
   if (stridx != 0) {
     // try to find the decl in local scope first
-    if (GetCurrentFunction()) {
-      sym = GetCurrentFunction()->GetSymTab()->GetSymbolFromStrIdx(stridx);
+    MIRFunction *currentFunctionInner = GetCurrentFunction();
+    if (currentFunctionInner != nullptr) {
+      sym = currentFunctionInner->GetSymTab()->GetSymbolFromStrIdx(stridx);
     }
     if (sym == nullptr) {
       sym = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(stridx);
@@ -431,32 +430,28 @@ MIRSymbol *MIRBuilder::GetOrCreateGlobalDecl(const std::string &str, const MIRTy
 }
 
 ConstvalNode *MIRBuilder::CreateIntConst(int64 val, PrimType pty) {
-  MIRFunction *currentFunctionInner = GetCurrentFunction();
-  ASSERT(currentFunctionInner != nullptr, "null ptr check");
+  MIRFunction *currentFunctionInner = GetCurrentFunctionNotNull();
   MIRIntConst *mirConst =
       currentFunctionInner->GetDataMemPool()->New<MIRIntConst>(val, GlobalTables::GetTypeTable().GetPrimType(pty));
   return GetCurrentFuncCodeMp()->New<ConstvalNode>(pty, mirConst);
 }
 
 ConstvalNode *MIRBuilder::CreateFloatConst(float val) {
-  MIRFunction *currentFunctionInner = GetCurrentFunction();
-  ASSERT(currentFunctionInner != nullptr, "null ptr check");
+  MIRFunction *currentFunctionInner = GetCurrentFunctionNotNull();
   MIRFloatConst *mirConst = currentFunctionInner->GetDataMemPool()->New<MIRFloatConst>(
       val, GlobalTables::GetTypeTable().GetPrimType(PTY_f32));
   return GetCurrentFuncCodeMp()->New<ConstvalNode>(PTY_f32, mirConst);
 }
 
 ConstvalNode *MIRBuilder::CreateDoubleConst(double val) {
-  MIRFunction *currentFunctionInner = GetCurrentFunction();
-  ASSERT(currentFunctionInner != nullptr, "null ptr check");
+  MIRFunction *currentFunctionInner = GetCurrentFunctionNotNull();
   MIRDoubleConst *mirConst = currentFunctionInner->GetDataMemPool()->New<MIRDoubleConst>(
       val, GlobalTables::GetTypeTable().GetPrimType(PTY_f64));
   return GetCurrentFuncCodeMp()->New<ConstvalNode>(PTY_f64, mirConst);
 }
 
 ConstvalNode *MIRBuilder::CreateFloat128Const(const uint64 *val) {
-  MIRFunction *currentFunctionInner = GetCurrentFunction();
-  ASSERT(currentFunctionInner != nullptr, "null ptr check");
+  MIRFunction *currentFunctionInner = GetCurrentFunctionNotNull();
   MIRFloat128Const *mirConst = currentFunctionInner->GetDataMemPool()->New<MIRFloat128Const>(
       val, GlobalTables::GetTypeTable().GetPrimType(PTY_f128));
   return GetCurrentFuncCodeMp()->New<ConstvalNode>(PTY_f128, mirConst);
@@ -469,8 +464,7 @@ ConstvalNode *MIRBuilder::GetConstInt(MemPool *memPool, int i) {
 
 ConstvalNode *MIRBuilder::CreateAddrofConst(BaseNode *e) {
   ASSERT(e->GetOpCode() == OP_addrof, "illegal op for addrof const");
-  MIRFunction *currentFunctionInner = GetCurrentFunction();
-  ASSERT(currentFunctionInner != nullptr, "null ptr check");
+  MIRFunction *currentFunctionInner = GetCurrentFunctionNotNull();
 
   // determine the type of 'e' and create a pointer type, accordingly
   AddrofNode *aNode = static_cast<AddrofNode*>(e);
@@ -527,8 +521,7 @@ MIRSymbol *MIRBuilder::GetSymbolFromEnclosingScope(StIdx stIdx) {
     return nullptr;
   }
   if (stIdx.Islocal()) {
-    MIRFunction *fun = GetCurrentFunction();
-    ASSERT(fun != nullptr, "null ptr check");
+    MIRFunction *fun = GetCurrentFunctionNotNull();
     MIRSymbol *st = fun->GetSymTab()->GetSymbolFromStIdx(stIdx.Idx());
     if (st != nullptr) {
       return st;
@@ -1070,8 +1063,7 @@ CatchNode *MIRBuilder::CreateStmtCatch(const MapleVector<TyIdx> &tyIdxVec) {
 
 LabelIdx MIRBuilder::GetOrCreateMIRLabel(const std::string &name) {
   GStrIdx stridx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(name);
-  MIRFunction *currentFunctionInner = GetCurrentFunction();
-  ASSERT(currentFunctionInner != nullptr, "null ptr check");
+  MIRFunction *currentFunctionInner = GetCurrentFunctionNotNull();
   LabelIdx labidx = currentFunctionInner->GetLabelTab()->GetStIdxFromStrIdx(stridx);
   if (labidx == 0) {
     labidx = currentFunctionInner->GetLabelTab()->CreateLabel();
@@ -1096,8 +1088,7 @@ StmtNode *MIRBuilder::CreateStmtComment(const std::string &cmnt) {
 }
 
 void MIRBuilder::AddStmtInCurrentFunctionBody(StmtNode *stmt) {
-  MIRFunction *fun = GetCurrentFunction();
-  ASSERT(fun != nullptr, "null ptr check");
+  MIRFunction *fun = GetCurrentFunctionNotNull();
   stmt->GetSrcPos().CondSetLineNum(lineNum);
   fun->GetBody()->AddStatement(stmt);
 }

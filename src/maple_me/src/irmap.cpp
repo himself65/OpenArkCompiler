@@ -782,9 +782,9 @@ MeExpr *IRMap::BuildExpr(BaseNode &mirNode) {
     }
     case OP_intrinsicop: {
       IntrinsicopNode &intrinnode = static_cast<IntrinsicopNode&>(mirNode);
-      size_t numopnds = intrinnode.NumOpnds();
+      size_t numOpnds = intrinnode.NumOpnds();
       NaryMeExpr narymeexpr(&tempAlloc, kInvalidExprID, TyIdx(0), intrinnode.GetIntrinsic(), false);
-      for (size_t i = 0; i < numopnds; i++) {
+      for (size_t i = 0; i < numOpnds; i++) {
         narymeexpr.GetOpnds().push_back(BuildExpr(*intrinnode.Opnd(i)));
       }
       narymeexpr.InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
@@ -793,9 +793,9 @@ MeExpr *IRMap::BuildExpr(BaseNode &mirNode) {
     }
     case OP_intrinsicopwithtype: {
       IntrinsicopNode &intrinnode = static_cast<IntrinsicopNode&>(mirNode);
-      size_t numopnds = intrinnode.NumOpnds();
+      size_t numOpnds = intrinnode.NumOpnds();
       NaryMeExpr narymeexpr(&irMapAlloc, kInvalidExprID, intrinnode.GetTyIdx(), intrinnode.GetIntrinsic(), false);
-      for (size_t i = 0; i < numopnds; i++) {
+      for (size_t i = 0; i < numOpnds; i++) {
         narymeexpr.GetOpnds().push_back(BuildExpr(*intrinnode.Opnd(i)));
       }
       narymeexpr.InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
@@ -1319,7 +1319,7 @@ MeExpr *IRMap::CreateMeExprCompare(Opcode op, PrimType resptyp, PrimType opndpty
 MeExpr *IRMap::CreateMeExprTypeCvt(PrimType ptyp, PrimType opndptyp, MeExpr &opnd0) {
   OpMeExpr opmeexpr(kInvalidExprID);
   opmeexpr.SetOpnd(0, &opnd0);
-  opmeexpr.InitBase(OP_cvt, ptyp, kOprandNumNary);
+  opmeexpr.InitBase(OP_cvt, ptyp, kOprandNumUnary);
   opmeexpr.SetOpndType(opndptyp);
   return HashMeExpr(opmeexpr);
 }

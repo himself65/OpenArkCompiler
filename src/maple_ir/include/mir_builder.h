@@ -56,8 +56,13 @@ class MIRBuilder {
     mirModule->SetCurFunction(fun);
   }
 
-  virtual MIRFunction *GetCurrentFunction(void) const {
+  virtual MIRFunction *GetCurrentFunction() const {
     return mirModule->CurFunction();
+  }
+  MIRFunction *GetCurrentFunctionNotNull() const {
+    MIRFunction *func = GetCurrentFunction();
+    CHECK_FATAL(func != nullptr, "nullptr check");
+    return func;
   }
 
   MIRModule *GetMirModule() const {

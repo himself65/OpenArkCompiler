@@ -972,7 +972,7 @@ BaseNode *MUIDReplacement::ReplaceDreadExpr(MIRFunction *currentFunc, StmtNode *
     return nullptr;
   }
   size_t i = 0;
-  UnaryNode *uopnd = nullptr;
+  UnaryNode *uOpnd = nullptr;
   BinaryNode *bopnds = nullptr;
   TernaryNode *topnds = nullptr;
   switch (expr->GetOpCode()) {
@@ -989,8 +989,8 @@ BaseNode *MUIDReplacement::ReplaceDreadExpr(MIRFunction *currentFunc, StmtNode *
     }
     default: {
       if (expr->IsUnaryNode()) {
-        uopnd = static_cast<UnaryNode*>(expr);
-        uopnd->SetOpnd(ReplaceDreadExpr(currentFunc, stmt, uopnd->Opnd()), i);
+        uOpnd = static_cast<UnaryNode*>(expr);
+        uOpnd->SetOpnd(ReplaceDreadExpr(currentFunc, stmt, uOpnd->Opnd()), i);
       } else if (expr->IsBinaryNode()) {
         bopnds = static_cast<BinaryNode*>(expr);
         for (i = 0; i < bopnds->NumOpnds(); i++) {

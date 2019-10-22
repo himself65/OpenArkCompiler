@@ -27,7 +27,6 @@ install: mapleall
 	$(shell cp -rf $(MAPLE_ROOT)/src/bin/java2jar $(MAPLE_ROOT)/out/bin/)
 	$(shell cp -rf $(MAPLE_ROOT)/src/bin/jbc2mpl $(MAPLE_ROOT)/out/bin/)
 	$(shell cp -rf $(MAPLE_ROOT)/src/bin/mplcg $(MAPLE_ROOT)/out/bin/)
-	$(shell cp -rf $(MAPLE_ROOT)/out/bin/maple $(MAPLE_ROOT)/src/bin/)
 
 .PHONY: clean
 clean:

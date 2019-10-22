@@ -888,7 +888,7 @@ class IvarMeExpr : public MeExpr {
         fieldID(0),
         maybeNull(true),
         mu(nullptr) {
-    SetNumOpnds(kOprandNumNary);
+    SetNumOpnds(kOprandNumUnary);
   }
 
   IvarMeExpr(int32 exprid, const IvarMeExpr &ivarme)
@@ -1438,7 +1438,7 @@ class DassignMeStmt : public MeStmt {
   ~DassignMeStmt() = default;
 
   size_t NumMeStmtOpnds() const {
-    return kOprandNumNary;
+    return kOprandNumUnary;
   }
 
   MeExpr *GetOpnd(size_t) const {
@@ -1563,7 +1563,7 @@ class RegassignMeStmt : public MeStmt {
   ~RegassignMeStmt() = default;
 
   size_t NumMeStmtOpnds() const {
-    return kOprandNumNary;
+    return kOprandNumUnary;
   }
 
   MeExpr *GetOpnd(size_t) const {
@@ -1629,7 +1629,7 @@ class MaydassignMeStmt : public MeStmt {
   ~MaydassignMeStmt() = default;
 
   size_t NumMeStmtOpnds() const {
-    return kOprandNumNary;
+    return kOprandNumUnary;
   }
 
   MeExpr *GetOpnd(size_t) const {
@@ -2260,7 +2260,7 @@ class UnaryMeStmt : public MeStmt {
   virtual ~UnaryMeStmt() = default;
 
   size_t NumMeStmtOpnds() const {
-    return kOprandNumNary;
+    return kOprandNumUnary;
   }
 
   MeExpr *GetOpnd(size_t idx) const {
@@ -2470,7 +2470,7 @@ class ThrowMeStmt : public WithMuMeStmt {
   ~ThrowMeStmt() = default;
 
   size_t NumMeStmtOpnds() const {
-    return kOprandNumNary;
+    return kOprandNumUnary;
   }
 
   MeExpr *GetOpnd(size_t idx) const {

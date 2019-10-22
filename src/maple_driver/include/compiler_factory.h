@@ -43,6 +43,5 @@ class CompilerFactory {
   CompilerSelector *compilerSelector;
   MIRModule *theModule;
 };
-
 }  // namespace maple
 #endif  // MAPLE_DRIVER_INCLUDE_COMPILER_FACTORY_H

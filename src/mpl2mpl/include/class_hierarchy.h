@@ -79,7 +79,7 @@ class Klass {
   void DumpKlassSuperKlasses() const;
   void DumpKlassSubKlasses() const;
   void DumpKlassMethods() const;
-  bool IsVirtualMethod(const MIRFunction *func) const;
+  bool IsVirtualMethod(const MIRFunction &func) const;
 
  public:
   Klass(MIRStructType *type, MapleAllocator *alc);

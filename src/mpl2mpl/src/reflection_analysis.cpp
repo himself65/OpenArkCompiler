@@ -25,7 +25,6 @@
 #include "mir_builder.h"
 #include "name_mangler.h"
 #include "itab_util.h"
-#include "zlib.h"
 #include "string_utils.h"
 
 // Reflection metadata
