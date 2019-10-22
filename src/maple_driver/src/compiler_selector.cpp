@@ -60,5 +60,4 @@ const ErrorCode CompilerSelectorImpl::Select(const SupportedCompilers &supported
   }
   return selected.empty() ? ErrorCode::kErrorToolNotFound : ErrorCode::kErrorNoError;
 }
-
 }  // namespace maple

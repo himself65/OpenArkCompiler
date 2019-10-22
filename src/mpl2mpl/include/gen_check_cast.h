@@ -37,6 +37,8 @@ class CheckCastGenerator : public FuncOptimizeImpl {
 
  private:
   MIRType *pointerObjType = nullptr;
+  MIRType *pointerClassMetaType = nullptr;
+  MIRType *classinfoType = nullptr;
   MIRFunction *throwCastException = nullptr;
   MIRFunction *checkCastingNoArray = nullptr;
   MIRFunction *checkCastingArray = nullptr;

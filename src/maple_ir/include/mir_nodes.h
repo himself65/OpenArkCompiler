@@ -68,22 +68,22 @@ class BaseNode {
   explicit BaseNode(Opcode o) {
     op = o;
     ptyp = kPtyInvalid;
-    typeflag = 0;
-    numopnds = 0;
+    typeFlag = 0;
+    numOpnds = 0;
   }
 
-  BaseNode(Opcode o, uint8 numopr) {
+  BaseNode(Opcode o, uint8 numOpr) {
     op = o;
     ptyp = kPtyInvalid;
-    typeflag = 0;
-    numopnds = numopr;
+    typeFlag = 0;
+    numOpnds = numOpr;
   }
 
-  BaseNode(const Opcode o, const PrimType typ, uint8 numopr) {
+  BaseNode(const Opcode o, const PrimType typ, uint8 numOpr) {
     op = o;
     ptyp = typ;
-    typeflag = 0;
-    numopnds = numopr;
+    typeFlag = 0;
+    numOpnds = numOpr;
   }
 
   virtual ~BaseNode() = default;
@@ -110,15 +110,15 @@ class BaseNode {
   const char *GetOpName() const;
   bool MayThrowException(void);
   virtual uint8 NumOpnds(void) const {
-    return numopnds;
+    return numOpnds;
   }
 
   uint8 GetNumOpnds() const {
-    return numopnds;
+    return numOpnds;
   }
 
   void SetNumOpnds(uint8 num) {
-    numopnds = num;
+    numOpnds = num;
   }
 
   Opcode GetOpCode() const {
@@ -177,8 +177,8 @@ class BaseNode {
  protected:
   Opcode op;
   PrimType ptyp;
-  uint8 typeflag;  // a flag to speed up type related operations in the VM
-  uint8 numopnds;  // only used for N-ary operators, switch and rangegoto
+  uint8 typeFlag;  // a flag to speed up type related operations in the VM
+  uint8 numOpnds;  // only used for N-ary operators, switch and rangegoto
                    // operands immediately before each node
 };
 
@@ -718,19 +718,19 @@ class ResolveFuncNode : public BinaryNode {
 
 class TernaryNode : public BaseNode {
  public:
-  explicit TernaryNode(Opcode o) : BaseNode(o, 3) {
+  explicit TernaryNode(Opcode o) : BaseNode(o, kOprandNumTernary) {
     topnd[0] = nullptr;
     topnd[1] = nullptr;
     topnd[2] = nullptr;
   }
 
-  TernaryNode(Opcode o, PrimType typ) : BaseNode(o, typ, 3) {
+  TernaryNode(Opcode o, PrimType typ) : BaseNode(o, typ, kOprandNumTernary) {
     topnd[0] = nullptr;
     topnd[1] = nullptr;
     topnd[2] = nullptr;
   }
 
-  TernaryNode(Opcode o, PrimType typ, BaseNode *e0, BaseNode *e1, BaseNode *e2) : BaseNode(o, typ, 3) {
+  TernaryNode(Opcode o, PrimType typ, BaseNode *e0, BaseNode *e1, BaseNode *e2) : BaseNode(o, typ, kOprandNumTernary) {
     topnd[0] = e0;
     topnd[1] = e1;
     topnd[2] = e2;
@@ -755,11 +755,11 @@ class TernaryNode : public BaseNode {
   }
 
   uint8 NumOpnds(void) const {
-    return 3;
+    return kOprandNumTernary;
   }
 
   void SetOpnd(BaseNode *node, size_t i = 0) {
-    CHECK_FATAL(i < 3, "array index out of range");
+    CHECK_FATAL(i < kOprandNumTernary, "array index out of range");
     topnd[i] = node;
   }
 
@@ -768,7 +768,7 @@ class TernaryNode : public BaseNode {
   }
 
  private:
-  BaseNode *topnd[3];
+  BaseNode *topnd[kOprandNumTernary];
 };
 
 class NaryOpnds {
@@ -821,7 +821,7 @@ class NaryNode : public BaseNode, public NaryOpnds {
   NaryNode(const MIRModule *mod, Opcode o, PrimType typ) : NaryNode(mod->CurFuncCodeMemPoolAllocator(), o, typ) {}
 
   NaryNode(MapleAllocator *allocator, const NaryNode *node)
-      : BaseNode(node->GetOpCode(), node->GetPrimType(), node->numopnds), NaryOpnds(allocator) {}
+      : BaseNode(node->GetOpCode(), node->GetPrimType(), node->numOpnds), NaryOpnds(allocator) {}
 
   NaryNode(const MIRModule *mod, const NaryNode *node) : NaryNode(mod->CurFuncCodeMemPoolAllocator(), node) {}
 
@@ -844,7 +844,7 @@ class NaryNode : public BaseNode, public NaryOpnds {
   }
 
   uint8 NumOpnds(void) const {
-    ASSERT(numopnds == GetNopndSize(), "NaryNode has wrong numopnds field");
+    ASSERT(numOpnds == GetNopndSize(), "NaryNode has wrong numOpnds field");
     return GetNopndSize();
   }
 
@@ -1086,10 +1086,7 @@ class FieldsDistNode : public BaseNode {
 
 class ArrayNode : public NaryNode {
  public:
-  explicit ArrayNode(MapleAllocator *allocator) : NaryNode(allocator, OP_array) {
-    numopnds = 0;
-    boundsCheck = true;
-  }
+  ArrayNode(MapleAllocator *allocator) : NaryNode(allocator, OP_array), boundsCheck(true) {}
 
   explicit ArrayNode(const MIRModule *mod) : ArrayNode(mod->CurFuncCodeMemPoolAllocator()) {}
 
@@ -1118,7 +1115,7 @@ class ArrayNode : public NaryNode {
   bool IsSameBase(ArrayNode*);
 
   uint8 NumOpnds(void) const {
-    ASSERT(numopnds == GetNopndSize(), "ArrayNode has wrong numopnds field");
+    ASSERT(numOpnds == GetNopndSize(), "ArrayNode has wrong numOpnds field");
     return GetNopndSize();
   }
 
@@ -1385,11 +1382,11 @@ class StmtNode : public BaseNode, public PtrListNodeBase<StmtNode> {
     stmtIDNext++;
   }
 
-  StmtNode(Opcode o, uint8 numopr) : BaseNode(o, numopr), PtrListNodeBase(), stmtID(stmtIDNext) {
+  StmtNode(Opcode o, uint8 numOpr) : BaseNode(o, numOpr), PtrListNodeBase(), stmtID(stmtIDNext) {
     stmtIDNext++;
   }
 
-  StmtNode(Opcode o, PrimType typ, uint8 numopr) : BaseNode(o, typ, numopr), PtrListNodeBase(), stmtID(stmtIDNext) {
+  StmtNode(Opcode o, PrimType typ, uint8 numOpr) : BaseNode(o, typ, numOpr), PtrListNodeBase(), stmtID(stmtIDNext) {
     stmtIDNext++;
   }
 
@@ -1446,7 +1443,7 @@ class IassignNode : public StmtNode {
 
   IassignNode(TyIdx tyIdx, FieldID fieldID, BaseNode *addrOpnd, BaseNode *rhsOpnd)
       : StmtNode(OP_iassign), tyIdx(tyIdx), fieldID(fieldID), addrExpr(addrOpnd), rhs(rhsOpnd) {
-    SetNumOpnds(2);
+    SetNumOpnds(kOprandNumBinary);
   }
 
   ~IassignNode() = default;
@@ -1735,7 +1732,7 @@ class SwitchNode : public StmtNode {
   SwitchNode(const MIRModule *mod, LabelIdx label) : SwitchNode(mod->CurFuncCodeMemPoolAllocator(), label) {}
 
   SwitchNode(MapleAllocator *allocator, const SwitchNode *node)
-      : StmtNode(node->GetOpCode(), node->GetPrimType(), node->numopnds),
+      : StmtNode(node->GetOpCode(), node->GetPrimType(), node->numOpnds),
         switchOpnd(nullptr),
         defaultLabel(node->GetDefaultLabel()),
         switchTable(allocator->Adapter()) {}
@@ -1821,7 +1818,7 @@ class MultiwayNode : public StmtNode {
   MultiwayNode(const MIRModule *mod, LabelIdx label) : MultiwayNode(mod->CurFuncCodeMemPoolAllocator(), label) {}
 
   MultiwayNode(MapleAllocator *allocator, const MultiwayNode *node)
-      : StmtNode(node->GetOpCode(), node->GetPrimType(), node->numopnds),
+      : StmtNode(node->GetOpCode(), node->GetPrimType(), node->numOpnds),
         multiWayOpnd(nullptr),
         defaultLabel(node->defaultLabel),
         multiWayTable(allocator->Adapter()) {}
@@ -1879,11 +1876,11 @@ class MultiwayNode : public StmtNode {
 // eval, throw, free, decref, incref, decrefreset, assertnonnull
 class UnaryStmtNode : public StmtNode {
  public:
-  explicit UnaryStmtNode(Opcode o) : StmtNode(o, 1), uopnd(nullptr) {}
+  explicit UnaryStmtNode(Opcode o) : StmtNode(o, 1), uOpnd(nullptr) {}
 
-  UnaryStmtNode(Opcode o, PrimType typ) : StmtNode(o, typ, 1), uopnd(nullptr) {}
+  UnaryStmtNode(Opcode o, PrimType typ) : StmtNode(o, typ, 1), uOpnd(nullptr) {}
 
-  UnaryStmtNode(Opcode o, PrimType typ, BaseNode *opnd) : StmtNode(o, typ, 1), uopnd(opnd) {}
+  UnaryStmtNode(Opcode o, PrimType typ, BaseNode *opnd) : StmtNode(o, typ, 1), uOpnd(opnd) {}
 
   virtual ~UnaryStmtNode() = default;
 
@@ -1892,13 +1889,13 @@ class UnaryStmtNode : public StmtNode {
   void DumpOpnd(const MIRModule &mod, int32 indent) const;
 
   bool Verify() const {
-    return uopnd->Verify();
+    return uOpnd->Verify();
   }
 
   UnaryStmtNode *CloneTree(MapleAllocator &allocator) const {
     UnaryStmtNode *nd = allocator.GetMemPool()->New<UnaryStmtNode>(*this);
     nd->SetStmtID(stmtIDNext++);
-    nd->SetOpnd(uopnd->CloneTree(allocator));
+    nd->SetOpnd(uOpnd->CloneTree(allocator));
     return nd;
   }
 
@@ -1916,16 +1913,16 @@ class UnaryStmtNode : public StmtNode {
 
   BaseNode *Opnd(size_t i = 0) const {
     ASSERT(i == 0, "Unary operand");
-    return uopnd;
+    return uOpnd;
   }
 
   void SetOpnd(BaseNode *node, size_t i = 0) {
     ASSERT(i == 0, "Unary operand");
-    uopnd = node;
+    uOpnd = node;
   }
 
  private:
-  BaseNode *uopnd;
+  BaseNode *uOpnd;
 };
 
 // dassign, maydassign
@@ -2048,7 +2045,7 @@ class CondGotoNode : public UnaryStmtNode {
   explicit CondGotoNode(Opcode o) : CondGotoNode(o, 0, nullptr) {}
 
   CondGotoNode(Opcode o, uint32 offset, BaseNode *opnd) : UnaryStmtNode(o, kPtyInvalid, opnd), offset(offset) {
-    SetNumOpnds(1);
+    SetNumOpnds(kOprandNumUnary);
   }
 
   ~CondGotoNode() = default;
@@ -2237,7 +2234,7 @@ class BlockNode : public StmtNode {
 class IfStmtNode : public UnaryStmtNode {
  public:
   IfStmtNode() : UnaryStmtNode(OP_if), thenPart(nullptr), elsePart(nullptr) {
-    numopnds = 2;
+    numOpnds = kOprandNumBinary;
   }
 
   ~IfStmtNode() = default;
@@ -2262,11 +2259,11 @@ class IfStmtNode : public UnaryStmtNode {
     } else if (i == 1) {
       return thenPart;
     } else if (i == 2) {
-      ASSERT(elsePart != nullptr, "IfStmtNode has wrong numopnds field, the elsePart is nullptr");
-      ASSERT(numopnds == 3, "IfStmtNode has wrong numopnds field, the elsePart is nullptr");
+      ASSERT(elsePart != nullptr, "IfStmtNode has wrong numOpnds field, the elsePart is nullptr");
+      ASSERT(numOpnds == kOprandNumTernary, "IfStmtNode has wrong numOpnds field, the elsePart is nullptr");
       return elsePart;
     }
-    ASSERT(false, "IfStmtNode has wrong numopnds field: %u", NumOpnds());
+    ASSERT(false, "IfStmtNode has wrong numOpnds field: %u", NumOpnds());
     return nullptr;
   }
 
@@ -2287,7 +2284,7 @@ class IfStmtNode : public UnaryStmtNode {
   }
 
   uint8 NumOpnds(void) const {
-    return numopnds;
+    return numOpnds;
   }
 
  private:
@@ -2299,7 +2296,7 @@ class IfStmtNode : public UnaryStmtNode {
 class WhileStmtNode : public UnaryStmtNode {
  public:
   explicit WhileStmtNode(Opcode o) : UnaryStmtNode(o), body(nullptr) {
-    SetNumOpnds(2);
+    SetNumOpnds(kOprandNumBinary);
   }
 
   ~WhileStmtNode() = default;
@@ -2451,7 +2448,7 @@ class DoloopNode : public StmtNode {
 class ForeachelemNode : public StmtNode {
  public:
   ForeachelemNode() : StmtNode(OP_foreachelem), loopBody(nullptr) {
-    SetNumOpnds(1);
+    SetNumOpnds(kOprandNumUnary);
   }
 
   ~ForeachelemNode() = default;
@@ -2485,7 +2482,7 @@ class ForeachelemNode : public StmtNode {
   }
 
   uint8 NumOpnds(void) const {
-    return numopnds;
+    return numOpnds;
   }
 
   void Dump(const MIRModule &mod, int32 indent) const;
@@ -2610,7 +2607,7 @@ class NaryStmtNode : public StmtNode, public NaryOpnds {
   NaryStmtNode(const MIRModule *mod, Opcode o) : NaryStmtNode(mod->CurFuncCodeMemPoolAllocator(), o) {}
 
   NaryStmtNode(MapleAllocator *allocator, const NaryStmtNode *node)
-      : StmtNode(node->GetOpCode(), node->GetPrimType(), node->numopnds), NaryOpnds(allocator) {}
+      : StmtNode(node->GetOpCode(), node->GetPrimType(), node->numOpnds), NaryOpnds(allocator) {}
 
   NaryStmtNode(const MIRModule *mod, const NaryStmtNode *node)
       : NaryStmtNode(mod->CurFuncCodeMemPoolAllocator(), node) {}
@@ -2641,7 +2638,7 @@ class NaryStmtNode : public StmtNode, public NaryOpnds {
   }
 
   uint8 NumOpnds(void) const {
-    ASSERT(numopnds == GetNopndSize(), "NaryStmtNode has wrong numopnds field");
+    ASSERT(numOpnds == GetNopndSize(), "NaryStmtNode has wrong numOpnds field");
     return GetNopndSize();
   }
 
@@ -2759,7 +2756,7 @@ class CallNode : public NaryStmtNode {
   }
 
   uint8 NumOpnds(void) const {
-    ASSERT(numopnds == GetNopndSize(), "CallNode has wrong numopnds field");
+    ASSERT(numOpnds == GetNopndSize(), "CallNode has wrong numOpnds field");
     return GetNopndSize();
   }
 
@@ -2781,12 +2778,12 @@ class IcallNode : public NaryStmtNode {
  public:
   IcallNode(MapleAllocator *allocator, Opcode o)
       : NaryStmtNode(allocator, o), retTyIdx(0), returnValues(allocator->Adapter()) {
-    SetNumOpnds(1);
+    SetNumOpnds(kOprandNumUnary);
   }
 
   IcallNode(MapleAllocator *allocator, Opcode o, TyIdx idx)
       : NaryStmtNode(allocator, o), retTyIdx(idx), returnValues(allocator->Adapter()) {
-    SetNumOpnds(1);
+    SetNumOpnds(kOprandNumUnary);
   }
 
   IcallNode(const MIRModule *mod, Opcode o) : IcallNode(mod->CurFuncCodeMemPoolAllocator(), o) {}
@@ -2838,7 +2835,7 @@ class IcallNode : public NaryStmtNode {
   }
 
   uint8 NumOpnds(void) const {
-    ASSERT(numopnds == GetNopndSize(), "IcallNode has wrong numopnds field");
+    ASSERT(numOpnds == GetNopndSize(), "IcallNode has wrong numOpnds field");
     return GetNopndSize();
   }
 
@@ -2928,7 +2925,7 @@ class IntrinsiccallNode : public NaryStmtNode {
   }
 
   uint8 NumOpnds(void) const {
-    ASSERT(numopnds == GetNopndSize(), "IntrinsiccallNode has wrong numopnds field");
+    ASSERT(numOpnds == GetNopndSize(), "IntrinsiccallNode has wrong numOpnds field");
     return GetNopndSize();
   }
 
@@ -3052,7 +3049,7 @@ class CommentNode : public StmtNode {
   CommentNode(const MIRModule *mod, const std::string &cmt) : CommentNode(mod->CurFuncCodeMemPoolAllocator(), cmt) {}
 
   CommentNode(MapleAllocator *allocator, const CommentNode *node)
-      : StmtNode(node->GetOpCode(), node->GetPrimType(), node->numopnds),
+      : StmtNode(node->GetOpCode(), node->GetPrimType(), node->numOpnds),
         comment(node->comment, allocator->GetMemPool()) {}
 
   CommentNode(const MIRModule *mod, const CommentNode *node) : CommentNode(mod->CurFuncCodeMemPoolAllocator(), node) {}

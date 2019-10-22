@@ -51,7 +51,7 @@ class PhaseManager {
         return GetPhase(GetPhaseId(it));
       }
     }
-    MIR_WARNING("not a valid phase");
+    CHECK_FATAL(false, "not a valid phase");
     return nullptr;
   }
 
@@ -64,11 +64,11 @@ class PhaseManager {
   }
 
   virtual void Run() {
-    MIR_ASSERT(false && "should not run here");
+    CHECK_FATAL(false, "should not run here");
   }
 
   virtual ModuleResultMgr *GetModResultMgr() {
-    MIR_ASSERT(false && "should not run here");
+    CHECK_FATAL(false, "should not run here");
     return nullptr;
   }
 

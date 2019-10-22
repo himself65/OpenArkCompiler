@@ -68,6 +68,5 @@ class StringUtils {
  private:
   static std::regex kCommandInjectionRegex;
 };
-
 }  // namespace maple
 #endif  // MAPLE_UTIL_INCLUDE_STRING_UTILS_H

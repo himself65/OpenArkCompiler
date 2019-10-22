@@ -16,10 +16,6 @@
 #define MAPLE_DRIVER_INCLUDE_DEFAULT_OPTIONS_H
 
 namespace maple {
-// O0 jbc2mpl options
-static MplOption kJbc2mplDefaultOptionsO0[] = {
-#include "default/O0_options_jbc2mpl.def"
-};
 // O0 ME options
 static MplOption kMeDefaultOptionsO0[] = {
 #include "default/O0_options_me.def"
@@ -32,6 +28,5 @@ static MplOption kMpl2MplDefaultOptionsO0[] = {
 static MplOption kMplcgDefaultOptionsO0[] = {
 #include "default/O0_options_mplcg.def"
 };
-
 }  // namespace maple
 #endif  // MAPLE_DRIVER_INCLUDE_DEFAULT_OPTIONS_H

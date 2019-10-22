@@ -343,7 +343,7 @@ class StringTable {
 
   void Init() {
     // initialize 0th entry of stringTable with an empty string
-    T *ptr = new (std::nothrow) T;
+    T *ptr = new T;
     CHECK_FATAL(ptr != nullptr, "null ptr check");
     stringTable.push_back(ptr);
   }
@@ -367,8 +367,7 @@ class StringTable {
     U strIdx = GetStrIdxFromName(str);
     if (strIdx == 0) {
       strIdx.SetIdx(stringTable.size());
-      T *newStr = new (std::nothrow) T(str);
-      CHECK_FATAL(newStr != nullptr, "null ptr check");
+      T *newStr = new T(str);
       stringTable.push_back(newStr);
       stringTableMap[newStr] = strIdx;
     }

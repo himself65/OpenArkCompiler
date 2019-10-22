@@ -19,6 +19,7 @@
 #include "mpl_logging.h"
 
 using namespace maple;
+
 #define ADD_COMPILER(NAME, CLASSNAME)        \
   do {                                       \
     Insert((NAME), new (CLASSNAME)((NAME))); \
@@ -29,7 +30,11 @@ CompilerFactory &CompilerFactory::GetInstance() {
 }
 
 CompilerFactory::CompilerFactory() : theModule(nullptr) {
-#include "supported_compilers.def"
+  // Supported compilers
+  ADD_COMPILER("jbc2mpl" ,Jbc2MplCompiler)
+  ADD_COMPILER("me" ,MapleCombCompiler)
+  ADD_COMPILER("mpl2mpl" ,MapleCombCompiler)
+  ADD_COMPILER("mplcg" ,MplcgCompiler)
   compilerSelector = new CompilerSelectorImpl();
 }
 

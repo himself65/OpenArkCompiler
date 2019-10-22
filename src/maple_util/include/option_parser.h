@@ -141,7 +141,7 @@ class Option {
   Option(Descriptor desc, const std::string &optionKey, const std::string &args)
       : descriptor(desc), optionKey(optionKey), args(args) {}
 
-  ~Option() {}
+  ~Option() = default;
 
   const unsigned int Index() const {
     return descriptor.index;
@@ -212,7 +212,7 @@ class OptionParser {
  public:
   explicit OptionParser(const Descriptor usage[]);
 
-  ~OptionParser() {}
+  ~OptionParser() = default;
 
   const maple::ErrorCode Parse(int argc, char **argv);
 
@@ -251,7 +251,12 @@ class OptionParser {
                             std::vector<mapleOption::Option> &inputOption,  const std::string &exeName);
   const bool CheckOpt(const std::string option, std::string &lastKey, bool &isLastMatch,
                       std::vector<mapleOption::Option> &inputOption, const std::string &exeName);
-  void InsertOption(const std::string &opt, Descriptor usage);
+
+  void InsertOption(const std::string &opt, const Descriptor &usage) {
+    if (usage.IsEnabledForCurrentBuild()) {
+      usages.insert(make_pair(opt, usage));
+    }
+  }
 
   const bool CheckSpecialOption(const std::string &option, std::string &key, std::string &value);
 };

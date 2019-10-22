@@ -277,6 +277,5 @@ class LogInfo {
     else                                                         \
       exit(1);                                                   \
   } while (0)
-
 }  // namespace maple
 #endif  // MAPLE_UTIL_INCLUDE_MPL_LOGGING_H

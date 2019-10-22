@@ -158,7 +158,7 @@ Klass *Klass::GetSuperKlass() const {
       return *superKlasses.begin();
     default:
       LogInfo::MapleLogger() << GetKlassName() << std::endl;
-      ASSERT(false, "GetSuperKlass expects less than one super class");
+      CHECK_FATAL(false, "GetSuperKlass expects less than one super class");
       return nullptr;
   }
 }
@@ -205,9 +205,9 @@ MIRFunction *Klass::GetUniqueMethod(GStrIdx mnameNoklassStridx) const {
   return nullptr;
 }
 
-bool Klass::IsVirtualMethod(const MIRFunction *func) const {
+bool Klass::IsVirtualMethod(const MIRFunction &func) const {
   // May add other checking conditions in future
-  return (func->GetAttr(FUNCATTR_virtual) && !func->GetAttr(FUNCATTR_private) && !func->GetAttr(FUNCATTR_abstract));
+  return (func.GetAttr(FUNCATTR_virtual) && !func.GetAttr(FUNCATTR_private) && !func.GetAttr(FUNCATTR_abstract));
 }
 
 void Klass::CountVirtMethTopDown(const KlassHierarchy *kh) {
@@ -259,7 +259,8 @@ void Klass::CountVirtMethTopDown(const KlassHierarchy *kh) {
   }
   // Initialize mstridx2count_map based on the current class methods
   for (MIRFunction * const &method : methods) {
-    if (!IsVirtualMethod(method)) {
+    ASSERT(method != nullptr, "null ptr check!");
+    if (!IsVirtualMethod(*method)) {
       continue;
     }
 
@@ -386,7 +387,7 @@ int KlassHierarchy::GetFieldIDOffsetBetweenClasses(const Klass &super, const Kla
   const Klass *basePtr = &base;
   while (basePtr != superPtr) {
     basePtr = basePtr->GetSuperKlass();
-    ASSERT(basePtr != nullptr, "null ptr check");
+    CHECK_FATAL(basePtr != nullptr, "null ptr check");
     offset++;
   }
   return offset;

@@ -127,7 +127,7 @@ void ClassInit::ProcessFunc(MIRFunction *func) {
         const std::string &className = GlobalTables::GetStrTable().GetStringFromStrIdx(classType->GetNameStrIdx());
         Klass *klass = klassHierarchy->GetKlassFromName(className);
         bool doClinitCheck = false;
-        if (!klass) {
+        if (klass == nullptr) {
           WARN(kLncWarn, "ClassInit::ProcessFunc: Skip INCOMPLETE type %s", className.c_str());
           doClinitCheck = true;
         } else {

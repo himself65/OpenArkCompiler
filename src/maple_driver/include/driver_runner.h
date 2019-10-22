@@ -27,6 +27,7 @@ extern const char *kMe;
 
 namespace maple {
 
+enum OptLevel { kLevelO0, kLevelO1, kLevelO2 };
 
 class DriverRunner final {
  public:
@@ -87,8 +88,8 @@ class DriverRunner final {
   bool IsFramework() const;
   std::string GetPostfix() const;
   void InitPhases(InterleavedManager &mgr, std::vector<std::string> &phases) const;
-  void AddPhases(InterleavedManager &mgr, std::vector<std::string> &phases, const PhaseManager *phaseManager) const;
-  void AddPhase(std::vector<std::string> &phases, std::string phase, const PhaseManager *phaseManager) const;
+  void AddPhases(InterleavedManager &mgr, std::vector<std::string> &phases, const PhaseManager &phaseManager) const;
+  void AddPhase(std::vector<std::string> &phases, std::string phase, const PhaseManager &phaseManager) const;
 
 };
 

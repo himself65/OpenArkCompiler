@@ -20,22 +20,23 @@
 
 using namespace mapleOption;
 namespace maple {
-// build flag -DMAPLE_PRODUCT_EXECUTABLE
-#ifndef MAPLE_PRODUCT_EXECUTABLE
-#define MAPLE_PRODUCT_EXECUTABLE ""
-#endif
 const int Compiler::Exe(const MplOptions &mplOptions, const std::string &options) const {
   const std::string binPath = FileUtils::ConvertPathIfNeeded(this->GetBinPath(mplOptions) + this->GetBinName());
   return SafeExe::Exe(binPath, options);
 }
 
 const std::string Compiler::GetBinPath(const MplOptions &mplOptions) const {
-  auto binPath = std::string(MAPLE_PRODUCT_EXECUTABLE);
+  std::string binPath;
+#ifdef MAPLE_PRODUCT_EXECUTABLE  // build flag -DMAPLE_PRODUCT_EXECUTABLE
+  binPath = std::string(MAPLE_PRODUCT_EXECUTABLE);
   if (binPath.empty()) {
     binPath = mplOptions.exeFolder;
   } else {
     binPath = binPath + FileSeperator::kFileSeperatorChar;
   }
+#else
+  binPath = mplOptions.exeFolder;
+#endif
   return binPath;
 }
 
@@ -51,7 +52,7 @@ ErrorCode Compiler::Compile(const MplOptions &options, MIRModulePtr &theModule) 
     return ErrorCode::kErrorCompileFail;
   }
   timer.Stop();
-  LogInfo::MapleLogger() << this->GetName() + " consumed " << timer.Elapsed() << "s" << std::endl;
+  LogInfo::MapleLogger() << (this->GetName() + " consumed ") << timer.Elapsed() << "s" << std::endl;
   return ErrorCode::kErrorNoError;
 }
 
@@ -155,5 +156,4 @@ const std::string Compiler::AppendOptimization(const MplOptions &options, const 
   }
   return optionStr + " " + options.OptimizationLevelStr();
 }
-
 }  // namespace maple

@@ -815,7 +815,6 @@ const static mapleOption::Descriptor USAGES[] = {
     "  --no-quiet\n",
     "mplcg",
     { { nullptr } } },
-  // End
 
   { kUnknown,
     0,
@@ -830,6 +829,5 @@ const static mapleOption::Descriptor USAGES[] = {
     "",
     { { nullptr } } }
 };
-
 }  // namespace maple
 #endif  // MAPLE_DRIVER_INCLUDE_USAGES_H
