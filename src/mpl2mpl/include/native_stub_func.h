@@ -90,16 +90,16 @@ class GenericNativeStubFunc : public FuncOptimizeImpl {
     "MCC_CallSlowNative0", "MCC_CallSlowNative1", "MCC_CallSlowNative2", "MCC_CallSlowNative3", "MCC_CallSlowNative4",
     "MCC_CallSlowNative5", "MCC_CallSlowNative6", "MCC_CallSlowNative7", "MCC_CallSlowNative8"
   };
-  MIRFunction *GetOrCreateDefaultNativeFunc(MIRFunction *stubFunc);
-  void GenericRegisteredNativeFuncCall(MIRFunction *func, const MIRFunction *nativeFunc, MapleVector<BaseNode*> &args,
-                                       const MIRSymbol *ret, bool needNativeCall, CallNode *prevNativeFuncCall,
-                                       CallNode *postNativeFuncCall);
-  StmtNode *CreateNativeWrapperCallNode(MIRFunction *func, BaseNode *funcPtr, MapleVector<BaseNode*> &args,
+  MIRFunction &GetOrCreateDefaultNativeFunc(MIRFunction &stubFunc);
+  void GenericRegisteredNativeFuncCall(MIRFunction &func, const MIRFunction &nativeFunc, MapleVector<BaseNode*> &args,
+                                       const MIRSymbol *ret, bool needNativeCall, CallNode &prevNativeFuncCall,
+                                       CallNode &postNativeFuncCall);
+  StmtNode *CreateNativeWrapperCallNode(MIRFunction &func, BaseNode *funcPtr, MapleVector<BaseNode*> &args,
                                         const MIRSymbol *ret);
-  void GenericNativeWrapperFuncCall(MIRFunction *func, const MIRFunction *nativeFunc, MapleVector<BaseNode*> &args,
+  void GenericNativeWrapperFuncCall(MIRFunction &func, const MIRFunction &nativeFunc, MapleVector<BaseNode*> &args,
                                     const MIRSymbol *ret);
   void GenericHelperFuncDecl();
-  void GenericRegTabEntry(const MIRFunction *func);
+  void GenericRegTabEntry(const MIRFunction &func);
   void GenericRegTableEntryType();
   void GenericRegTable();
   void GenericRegFuncTabEntryType();

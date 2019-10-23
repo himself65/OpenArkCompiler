@@ -305,24 +305,24 @@ class ReflectionAnalysis : public AnalysisResult {
                         std::unordered_map<uint32, std::string> &baseNameMap,
                         std::unordered_map<uint32, std::string> &fullNameMap);
   void GenAllFieldHash(std::vector<std::pair<FieldPair, uint16>> &fieldV);
-  void GeneAnnotation(std::map<int, int> &idxNumMap, std::string &annoArr, MIRClassType *classType,
+  void GeneAnnotation(std::map<int, int> &idxNumMap, std::string &annoArr, MIRClassType &classType,
                       PragmaKind paragKind, const std::string &paragName, TyIdx fieldTypeIdx,
                       std::map<int, int> *paramNumArray = nullptr, int *paramIndex = nullptr);
-  void SetAnnoFieldConst(const MIRStructType *metadataRoType, MIRAggConst &newConst, uint32 fieldID,
+  void SetAnnoFieldConst(const MIRStructType &metadataRoType, MIRAggConst &newConst, uint32 fieldID,
                          std::map<int, int> &idxNumMap, const std::string &annoArr);
   bool IsAnonymousClass(const std::string &annotationString);
-  bool IsPrivateClass(MIRClassType *classType);
-  bool IsStaticClass(MIRClassType *classType);
-  void CheckPrivateInnerAndNoSubClass(Klass *clazz, const std::string &annoArr);
+  bool IsPrivateClass(MIRClassType &classType);
+  bool IsStaticClass(MIRClassType &classType);
+  void CheckPrivateInnerAndNoSubClass(Klass &clazz, const std::string &annoArr);
   void ConvertMapleClassName(const std::string &mplClassName, std::string &javaDsp);
   static void ConvertMethodSig(std::string &signature);
   int GetDeflateStringIdx(const std::string &subStr);
   uint32 GetAnnoCstrIndex(std::map<int, int> &idxNumMap, const std::string &annoArr);
-  int16 GetMethodInVtabIndex(const Klass *clazz, const MIRFunction *func);
-  void GetSignatureTypeNames(const char *signature, std::vector<std::string> &typeNames);
-  MIRSymbol *GetClinitFuncSymbol(const Klass *klass);
-  int SolveAnnotation(MIRClassType *classType, MIRFunction *func);
-  uint32 GetTypeNameIdxFromType(MIRType *type, const Klass *klass, const std::string &fieldName);
+  int16 GetMethodInVtabIndex(const Klass &clazz, const MIRFunction &func);
+  void GetSignatureTypeNames(const std::string &signature, std::vector<std::string> &typeNames);
+  MIRSymbol *GetClinitFuncSymbol(const Klass &klass);
+  int SolveAnnotation(MIRClassType &classType, MIRFunction &func);
+  uint32 GetTypeNameIdxFromType(MIRType &type, const Klass &klass, const std::string &fieldName);
 
  private:
   MIRModule *mirModule;

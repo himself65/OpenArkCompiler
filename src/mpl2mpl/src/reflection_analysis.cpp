@@ -200,12 +200,12 @@ uint32 GetClassAccessFlags(MIRClassType *classType) {
   return 0;
 }
 
-bool ReflectionAnalysis::IsStaticClass(MIRClassType *classType) {
-  return GetClassAccessFlags(classType) & 0x00000008;  // #  Modifier_Static 0x00000008;
+bool ReflectionAnalysis::IsStaticClass(MIRClassType &classType) {
+  return GetClassAccessFlags(&classType) & 0x00000008;  // #  Modifier_Static 0x00000008;
 }
 
-bool ReflectionAnalysis::IsPrivateClass(MIRClassType *classType) {
-  return GetClassAccessFlags(classType) & 0x00000002;  // #  Modifier_Private 0x00000002;
+bool ReflectionAnalysis::IsPrivateClass(MIRClassType &classType) {
+  return GetClassAccessFlags(&classType) & 0x00000002;  // #  Modifier_Private 0x00000002;
 }
 
 static inline GStrIdx GetOrCreateGStrIdxFromName(const std::string &name) {
@@ -229,16 +229,16 @@ static std::string GetSignatureFromFullName(const std::string &fullname) {
   }
 }
 
-int ReflectionAnalysis::SolveAnnotation(MIRClassType *classType, MIRFunction *func) {
+int ReflectionAnalysis::SolveAnnotation(MIRClassType &classType, MIRFunction &func) {
   std::string annoArray1;
   std::map<int, int> idxNumMap;
-  GeneAnnotation(idxNumMap, annoArray1, classType, kPragmaFunc, func->GetName(), invalidIdx);
+  GeneAnnotation(idxNumMap, annoArray1, classType, kPragmaFunc, func.GetName(), invalidIdx);
   // Parameter annotation.
   std::string annoArray2;
   std::map<int, int> paramNumArray;
   int paramIndex = 0;
   std::map<int, int> paramIdxNumMap;
-  GeneAnnotation(paramIdxNumMap, annoArray2, classType, kPragmaParam, func->GetName(), invalidIdx, &paramNumArray,
+  GeneAnnotation(paramIdxNumMap, annoArray2, classType, kPragmaParam, func.GetName(), invalidIdx, &paramNumArray,
                  &paramIndex);
   std::string subStr = "";
   if (idxNumMap.empty() && paramIdxNumMap.empty()) {
@@ -268,16 +268,16 @@ int ReflectionAnalysis::SolveAnnotation(MIRClassType *classType, MIRFunction *fu
   return GetDeflateStringIdx(subStr);
 }
 
-uint32 ReflectionAnalysis::GetTypeNameIdxFromType(MIRType *type, const Klass *klass, const std::string &fieldname) {
+uint32 ReflectionAnalysis::GetTypeNameIdxFromType(MIRType &type, const Klass &klass, const std::string &fieldname) {
   uint32 typeNameIdx = 0;
-  switch (type->GetKind()) {
+  switch (type.GetKind()) {
     case kTypeScalar: {
-      std::string name(GetPrimTypeJavaName(type->GetPrimType()));
+      std::string name(GetPrimTypeJavaName(type.GetPrimType()));
       typeNameIdx = FindOrInsertReflectString(name);
       break;
     }
     case kTypePointer: {
-      MIRType *ptype = static_cast<MIRPtrType*>(type)->GetPointedType();
+      MIRType *ptype = static_cast<MIRPtrType*>(&type)->GetPointedType();
       if (ptype->GetKind() == kTypeArray || ptype->GetKind() == kTypeJArray) {
         CHECK_FATAL(dynamic_cast<MIRJarrayType*>(ptype) != nullptr, "null ptr check");
         std::string javaName = dynamic_cast<MIRJarrayType*>(ptype)->GetJavaName();
@@ -292,31 +292,32 @@ uint32 ReflectionAnalysis::GetTypeNameIdxFromType(MIRType *type, const Klass *kl
         NameMangler::DecodeMapleNameToJavaDescriptor(javaName, klassJavaDescriptor);
         typeNameIdx = FindOrInsertReflectString(klassJavaDescriptor);
       } else {
-        CHECK_FATAL(false, "In class %s: field %s 's type is UNKNOWN", klass->GetKlassName().c_str(),
+        CHECK_FATAL(false, "In class %s: field %s 's type is UNKNOWN", klass.GetKlassName().c_str(),
                     fieldname.c_str());
       }
       break;
     }
     default: {
-      CHECK_FATAL(false, "In class %s: field %s 's type is UNKNOWN", klass->GetKlassName().c_str(), fieldname.c_str());
+      CHECK_FATAL(false, "In class %s: field %s 's type is UNKNOWN", klass.GetKlassName().c_str(), fieldname.c_str());
     }
   }
   return typeNameIdx;
 }
 
-void ReflectionAnalysis::CheckPrivateInnerAndNoSubClass(Klass *clazz, const std::string &annoArr) {
+void ReflectionAnalysis::CheckPrivateInnerAndNoSubClass(Klass &clazz, const std::string &annoArr) {
   // LMain_24A_3B  `EC!`VL!24!LMain_3B!`IC!`AF!4!2!name!23!A!
   size_t pos = annoArr.find(kInnerClassPrefix, 0);
   if (pos == std::string::npos) {
     return;
   }
-  if (!IsPrivateClass(clazz->GetMIRClassType())) {
+  ASSERT(clazz.GetMIRClassType() != nullptr, "null ptr check!");
+  if (!IsPrivateClass(*clazz.GetMIRClassType())) {
     return;  // Check private.
   }
-  if (clazz->HasSubKlass()) {
-    clazz->SetPrivateInnerAndNoSubClass(false);
+  if (clazz.HasSubKlass()) {
+    clazz.SetPrivateInnerAndNoSubClass(false);
   } else {
-    clazz->SetPrivateInnerAndNoSubClass(true);
+    clazz.SetPrivateInnerAndNoSubClass(true);
   }
 }
 
@@ -521,13 +522,13 @@ bool RtRetentionPolicyCheck(const MIRSymbol *clInfo) {
   return false;
 }
 
-int16 ReflectionAnalysis::GetMethodInVtabIndex(const Klass *klass, const MIRFunction *func) {
+int16 ReflectionAnalysis::GetMethodInVtabIndex(const Klass &klass, const MIRFunction &func) {
   int methodInVtabIndex = 0;
   bool findMethod = false;
-  MIRClassType *classType = klass->GetMIRClassType();
+  MIRClassType *classType = klass.GetMIRClassType();
   MIRSymbol *vtableSymbol = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(
-      GlobalTables::GetStrTable().GetStrIdxFromName(VTAB_PREFIX_STR + klass->GetKlassName()));
-  if (klass->IsClass() && vtableSymbol != nullptr) {
+      GlobalTables::GetStrTable().GetStrIdxFromName(VTAB_PREFIX_STR + klass.GetKlassName()));
+  if (klass.IsClass() && vtableSymbol != nullptr) {
     MIRAggConst *vtableConst = dynamic_cast<MIRAggConst*>(vtableSymbol->GetKonst());
     for (MIRConstPtr &node : vtableConst->GetConstVec()) {
       if (node->GetKind() == kConstAddrofFunc) {
@@ -539,19 +540,19 @@ int16 ReflectionAnalysis::GetMethodInVtabIndex(const Klass *klass, const MIRFunc
         // interface) in the vtable.  Therefore, we cannot compare methods by
         // their GetNameStrIdx() (which includes package+class+method+descriptor),
         // because otherwise we may not find the exact method.
-        if (func->GetBaseFuncNameWithTypeStrIdx() == vtableFunc->GetBaseFuncNameWithTypeStrIdx()) {
+        if (func.GetBaseFuncNameWithTypeStrIdx() == vtableFunc->GetBaseFuncNameWithTypeStrIdx()) {
           findMethod = true;
           break;
         }
       }
       methodInVtabIndex++;
     }
-  } else if (klass->IsInterface()) {
+  } else if (klass.IsInterface()) {
     methodInVtabIndex = 0;
     for (MethodPair &methodPair : classType->GetMethods()) {
       MIRSymbol *currSym = GlobalTables::GetGsymTable().GetSymbolFromStidx(methodPair.first.Idx());
       MIRFunction *currFunc = currSym->GetFunction();
-      if (func->GetNameStrIdx() == currFunc->GetNameStrIdx()) {
+      if (func.GetNameStrIdx() == currFunc->GetNameStrIdx()) {
         findMethod = true;
         break;
       }
@@ -569,10 +570,10 @@ int16 ReflectionAnalysis::GetMethodInVtabIndex(const Klass *klass, const MIRFunc
   return static_cast<int16>(methodInVtabIndex);
 }
 
-void ReflectionAnalysis::GetSignatureTypeNames(const char *signature, std::vector<std::string> &typeNames) {
-  int sigLen = strlen(signature);
+void ReflectionAnalysis::GetSignatureTypeNames(const std::string &signature, std::vector<std::string> &typeNames) {
+  int sigLen = signature.length();
   int i = 0;
-  const char *methodSignature = signature;
+  const char *methodSignature = signature.c_str();
   i++;
   while (i < sigLen && methodSignature[i] != ')') {
     std::string descriptor;
@@ -690,7 +691,8 @@ MIRSymbol *ReflectionAnalysis::GenMethodsMetaData(const Klass *klass) {
     uint16 hash = func->GetHashCode();
     flag |= (hash << kNoHashBits);  // hash 10 bit
     // @method_in_vtable_index
-    uint32 methodInVtabIndex = static_cast<uint32>(static_cast<int32>(GetMethodInVtabIndex(klass, func)));
+    uint32 methodInVtabIndex = 0u;
+    methodInVtabIndex = static_cast<uint32>(static_cast<int32>(GetMethodInVtabIndex(*klass, *func)));
     methodInVtabIndex &= 0xFFFF;
     mirBuilder.AddIntFieldConst(*methodsInfoType, *newconst, fieldID++, methodInVtabIndex);
 
@@ -720,7 +722,8 @@ MIRSymbol *ReflectionAnalysis::GenMethodsMetaData(const Klass *klass) {
     uint32 signatureIdx = FindOrInsertReflectString(signature);
     mirBuilder.AddIntFieldConst(*methodsInfoType, *newconst, fieldID++, signatureIdx);
     // @annotation
-    int annotationIdx = SolveAnnotation(classType, func);
+    int annotationIdx = 0;
+    annotationIdx = SolveAnnotation(*classType, *func);
     mirBuilder.AddIntFieldConst(*methodsInfoType, *newconst, fieldID++, annotationIdx);
     mirBuilder.AddIntFieldConst(*methodsInfoType, *newconst, fieldID++, flag);
     // @argsize: Number of arguments.
@@ -866,7 +869,8 @@ MIRSymbol *ReflectionAnalysis::GenFieldsMetaData(const Klass *klass) {
     mirBuilder.AddIntFieldConst(*fieldsInfoType, *newconst, fieldID++, GetFieldModifier(fa));
     ConvertFieldName(fieldname, staticfield);
     uint32 fieldname32Idx = FindOrInsertReflectString(fieldname);
-    uint32 typeNameIdx = GetTypeNameIdxFromType(ty, klass, fieldname);
+    uint32 typeNameIdx = 0u;
+    typeNameIdx = GetTypeNameIdxFromType(*ty, *klass, fieldname);
     // @flag
     uint16 hash = GetFieldHash(fieldHashvec, fieldP);
     uint16 flag = (hash << kNoHashBits);  // Hash 10 bit.
@@ -882,7 +886,7 @@ MIRSymbol *ReflectionAnalysis::GenFieldsMetaData(const Klass *klass) {
     //  @annotation
     std::string annoArr;
     std::map<int, int> idxNumMap;
-    GeneAnnotation(idxNumMap, annoArr, classType, kPragmaVar, fieldname, ty->GetTypeIndex());
+    GeneAnnotation(idxNumMap, annoArr, *classType, kPragmaVar, fieldname, ty->GetTypeIndex());
     uint32 annotationIdx = GetAnnoCstrIndex(idxNumMap, annoArr);
     mirBuilder.AddIntFieldConst(*fieldsInfoType, *newconst, fieldID++, annotationIdx);
     //  @declaring class
@@ -1103,8 +1107,8 @@ uint32 ReflectionAnalysis::FindOrInsertReflectString(const std::string &str) {
   return ReflectionAnalysis::FindOrInsertRepeatString(str, false, hotType);
 }
 
-MIRSymbol *ReflectionAnalysis::GetClinitFuncSymbol(const Klass *klass) {
-  MIRClassType *classType = klass->GetMIRClassType();
+MIRSymbol *ReflectionAnalysis::GetClinitFuncSymbol(const Klass &klass) {
+  MIRClassType *classType = klass.GetMIRClassType();
   if (!classType || classType->GetMethods().empty()) {
     return nullptr;
   }
@@ -1124,6 +1128,7 @@ MIRSymbol *ReflectionAnalysis::GetClinitFuncSymbol(const Klass *klass) {
 void ReflectionAnalysis::GenClassMetaData(Klass *klass) {
   ASSERT(klass != nullptr, "null ptr check!");
   MIRClassType *classType = klass->GetMIRClassType();
+  ASSERT(classType != nullptr, "null ptr check!");
   if (!classType->IsLocal()) {
     // External class.
     return;
@@ -1145,6 +1150,7 @@ void ReflectionAnalysis::GenClassMetaData(Klass *klass) {
   uint32 fieldID = 1;
   // @classname
   uint32 nameIdx = FindOrInsertReflectString(klassJavaDescriptor);
+  ASSERT(classMetadataROType != nullptr, "null ptr check!");
   mirBuilder.AddIntFieldConst(*classMetadataROType, *newconst, fieldID++, nameIdx);
   // @iFields: All instance fields.
   int numOfFields = 0;
@@ -1217,9 +1223,9 @@ void ReflectionAnalysis::GenClassMetaData(Klass *klass) {
   // Do annotation.
   std::string annoArray;
   std::map<int, int> idxNumMap;
-  GeneAnnotation(idxNumMap, annoArray, classType, kPragmaClass, klass->GetKlassName(), invalidIdx);
+  GeneAnnotation(idxNumMap, annoArray, *classType, kPragmaClass, klass->GetKlassName(), invalidIdx);
   bool isAnonymous = IsAnonymousClass(annoArray);
-  CheckPrivateInnerAndNoSubClass(klass, annoArray);
+  CheckPrivateInnerAndNoSubClass(*klass, annoArray);
 
 #ifndef USE_32BIT_REF
   // @flag
@@ -1237,9 +1243,9 @@ void ReflectionAnalysis::GenClassMetaData(Klass *klass) {
   uint32 modifier = GetClassAccessFlags(classType);
   mirBuilder.AddIntFieldConst(*classMetadataROType, *newconst, fieldID++, modifier);
   // @annotation: Set annotation field.
-  SetAnnoFieldConst(classMetadataROType, *newconst, fieldID++, idxNumMap, annoArray);
+  SetAnnoFieldConst(*classMetadataROType, *newconst, fieldID++, idxNumMap, annoArray);
   // @ClinitFuncAddr
-  MIRSymbol *clinitFuncSym = GetClinitFuncSymbol(klass);
+  MIRSymbol *clinitFuncSym = GetClinitFuncSymbol(*klass);
   if (clinitFuncSym != nullptr) {
     mirBuilder.AddAddroffuncFieldConst(*classMetadataROType, *newconst, fieldID++, *clinitFuncSym);
   } else {
@@ -1318,13 +1324,13 @@ void ReflectionAnalysis::GenClassMetaData(Klass *klass) {
   classTab.push_back(classSt);
 }
 
-void ReflectionAnalysis::SetAnnoFieldConst(const MIRStructType *metadataRoType, MIRAggConst &newconst, uint32 fieldid,
+void ReflectionAnalysis::SetAnnoFieldConst(const MIRStructType &metadataRoType, MIRAggConst &newconst, uint32 fieldid,
                                            std::map<int, int> &idxNumMap, const std::string &annoArr) {
   size_t annoNum = idxNumMap.size();
   if (annoNum == 0) {
     std::string subStr = "0!0";
     uint32 signatureIdx = FindOrInsertReflectString(subStr);
-    mirBuilder.AddIntFieldConst(*metadataRoType, newconst, fieldid, signatureIdx);
+    mirBuilder.AddIntFieldConst(metadataRoType, newconst, fieldid, signatureIdx);
   } else {
     std::string subStr = std::to_string(annoNum);
     subStr += "!";
@@ -1334,17 +1340,17 @@ void ReflectionAnalysis::SetAnnoFieldConst(const MIRStructType *metadataRoType, 
     });
     subStr += annoArr;
     uint32 signatureIdx = GetDeflateStringIdx(subStr);
-    mirBuilder.AddIntFieldConst(*metadataRoType, newconst, fieldid, signatureIdx);
+    mirBuilder.AddIntFieldConst(metadataRoType, newconst, fieldid, signatureIdx);
   }
 }
 
 
-void ReflectionAnalysis::GeneAnnotation(std::map<int, int> &idxNumMap, std::string &annoArr, MIRClassType *classType,
+void ReflectionAnalysis::GeneAnnotation(std::map<int, int> &idxNumMap, std::string &annoArr, MIRClassType &classType,
                                         PragmaKind paragKind, const std::string &paragName, TyIdx fieldTypeIdx,
                                         std::map<int, int> *paramnumArray, int *paramIndex) {
   int annoNum = 0;
   std::string cmpString = "";
-  for (MIRPragma *prag : classType->GetPragmVec()) {
+  for (MIRPragma *prag : classType.GetPragmVec()) {
     if (paragKind == kPragmaVar) {
       cmpString = NameMangler::DecodeName(GlobalTables::GetStrTable().GetStringFromStrIdx(prag->GetStrIdx()));
     } else {
@@ -1372,7 +1378,7 @@ void ReflectionAnalysis::GeneAnnotation(std::map<int, int> &idxNumMap, std::stri
       ReflectionAnalysis::CompressHighFrequencyStr(klassJavaDescriptor);
       annoArr += klassJavaDescriptor;
       annoArr += "!";
-      if (paramnumArray) {
+      if (paramnumArray != nullptr) {
         CHECK_FATAL(paramIndex, "null ptr check");
         (*paramnumArray)[(*paramIndex)++] = prag->GetParamNum();
       }
