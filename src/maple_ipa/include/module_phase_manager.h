@@ -68,6 +68,5 @@ class ModulePhaseManager : public PhaseManager {
   MIRModule &mirModule;
   ModuleResultMgr *arModuleMgr; /* module level analysis result */
 };
-
 }  // namespace maple
 #endif  // MAPLE_IPA_INCLUDE_MODULE_PHASE_MANAGER_H

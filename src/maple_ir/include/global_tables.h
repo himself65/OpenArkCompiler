@@ -424,7 +424,7 @@ class STypeNameTable {
     return gStrIdxToTyIdxMap;
   }
 
-  TyIdx GetTyidxFromGstrIdx(GStrIdx idx) const {
+  TyIdx GetTyIdxFromGStrIdx(GStrIdx idx) const {
     auto it = gStrIdxToTyIdxMap.find(idx);
     if (it == gStrIdxToTyIdxMap.end()) {
       return TyIdx(0);

@@ -135,7 +135,7 @@ static constexpr const char kBindingProtectedRegionStr[] = "__BindingProtectRegi
 extern bool doCompression;
 
 // Return the input string if the compression is not on; otherwise, return its compressed version
-std::string GetInternalNameLiteral(const char *name);
+std::string GetInternalNameLiteral(const std::string &name);
 std::string GetOriginalNameLiteral(const char *name);
 
 std::string EncodeName(const std::string &name);

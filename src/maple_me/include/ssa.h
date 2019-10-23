@@ -43,7 +43,7 @@ class PhiNode {
     result = resultPara;
   }
 
-  MapleVector<VersionSt*> &GetPhiOpns() {
+  MapleVector<VersionSt*> &GetPhiOpnds() {
     return phiOpnds;
   }
 
@@ -57,7 +57,7 @@ class PhiNode {
     phiOpnds[index] = opnd;
   }
 
-  void SetPhiOpns(MapleVector<VersionSt*> phiOpndsPara) {
+  void SetPhiOpnds(MapleVector<VersionSt*> phiOpndsPara) {
     phiOpnds = phiOpndsPara;
   }
 

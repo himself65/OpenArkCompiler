@@ -1122,6 +1122,7 @@ MIRSymbol *ReflectionAnalysis::GetClinitFuncSymbol(const Klass *klass) {
 }
 
 void ReflectionAnalysis::GenClassMetaData(Klass *klass) {
+  ASSERT(klass != nullptr, "null ptr check!");
   MIRClassType *classType = klass->GetMIRClassType();
   if (!classType->IsLocal()) {
     // External class.
@@ -1299,7 +1300,7 @@ void ReflectionAnalysis::GenClassMetaData(Klass *klass) {
   mirBuilder.AddAddrofFieldConst(*classMetadataType, *newconst, fieldID++, *classMetadataROSymbolType);
   // Set default value to class initialization state.
   // If this class and its parents do not have clinit, we do not clinit-check for this class.
-  if (klassh->NeedClinitCheckRecursively(klass)) {
+  if (klassh->NeedClinitCheckRecursively(*klass)) {
     MIRType *ptrType = GlobalTables::GetTypeTable().GetPtr();
     MIRSymbol *classInitProtectRegion = mirBuilder.GetOrCreateSymbol(
         ptrType->GetTypeIndex(), kClassInitProtectRegionStr, kStVar, kScExtern, nullptr, kScopeGlobal, true);

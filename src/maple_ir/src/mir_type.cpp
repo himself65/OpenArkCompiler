@@ -502,7 +502,7 @@ MIRStructType *MIRJarrayType::GetParentType() {
   if (parentTyIdx == 0) {
     GStrIdx jloStrIdx = GlobalTables::GetStrTable().GetStrIdxFromName(
         NameMangler::GetInternalNameLiteral(NameMangler::kJavaLangObjectStr));
-    parentTyIdx = GlobalTables::GetTypeNameTable().GetTyidxFromGstrIdx(jloStrIdx);
+    parentTyIdx = GlobalTables::GetTypeNameTable().GetTyIdxFromGStrIdx(jloStrIdx);
     ASSERT((parentTyIdx != 0), "cannot find type for java.lang.Object");
   }
   return static_cast<MIRStructType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(parentTyIdx));

@@ -68,18 +68,7 @@ class MIRLexer {
     return theDoubleVal;
   }
 
-  MapleVector<std::string> &GetSeenComments() {
-    return seenComments;
-  }
-
   std::string GetTokenString() const;  // for error reporting purpose
-  void SetFile(std::ifstream *file) {
-    airFile = file;
-  }
-
-  std::ifstream *GetFile() const {
-    return airFile;
-  }
 
  private:
   MIRModule *module;
@@ -144,6 +133,14 @@ class MIRLexer {
   inline char GetNextCurrentCharWithUpperCheck() {
     curIdx++;
     return curIdx < currentLineSize ? line[curIdx] : 0;
+  }
+
+  void SetFile(std::ifstream *file) {
+    airFile = file;
+  }
+
+  std::ifstream *GetFile() const {
+    return airFile;
   }
 };
 

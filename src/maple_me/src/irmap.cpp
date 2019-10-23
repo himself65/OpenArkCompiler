@@ -56,7 +56,7 @@ void IRMap::BuildPhiMeNode(BB &bb) {
       phiMeNode->UpdateLHS(*medef);
       phiMeNode->SetDefBB(&bb);
       // build phi operands
-      for (VersionSt *opnd : phi.second.GetPhiOpns()) {
+      for (VersionSt *opnd : phi.second.GetPhiOpnds()) {
         phiMeNode->GetOpnds().push_back(GetOrCreateRegFromVerSt(*opnd));
       }
       bb.GetMeregphiList().insert(std::make_pair(medef->GetOstIdx(), phiMeNode));
@@ -66,7 +66,7 @@ void IRMap::BuildPhiMeNode(BB &bb) {
       phimenode->UpdateLHS(*medef);
       phimenode->SetDefBB(&bb);
       // build phi operands
-      for (VersionSt *opnd : phi.second.GetPhiOpns()) {
+      for (VersionSt *opnd : phi.second.GetPhiOpnds()) {
         phimenode->GetOpnds().push_back(GetOrCreateVarFromVerSt(*opnd));
       }
       bb.GetMevarPhiList().insert(std::make_pair(medef->GetOStIdx(), phimenode));
@@ -609,7 +609,7 @@ MeExpr *IRMap::BuildExpr(BaseNode &mirNode) {
       ivarmeexpr.SetTyIdx(ireadnode.GetTyIdx());
       ivarmeexpr.SetBase(BuildExpr(*ireadnode.Opnd(0)));
       ivarmeexpr.InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
-      VersionSt *verSt = ireadnode.GetMayUse().GetOpnd();
+      VersionSt *verSt = ireadnode.GetSSAVar();
       if (verSt != nullptr) {
         VarMeExpr *varmeexpr = GetOrCreateVarFromVerSt(*verSt);
         ivarmeexpr.SetMuVal(varmeexpr);

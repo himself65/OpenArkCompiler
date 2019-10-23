@@ -23,16 +23,17 @@
 
 using namespace maple;
 #if MIR_FEATURE_FULL
-void ConstantFoldModule(maple::MIRModule *module) {
-  MapleVector<maple::MIRFunction*> &funcList = module->GetFunctionList();
+void ConstantFoldModule(maple::MIRModule &module) {
+  MapleVector<maple::MIRFunction*> &funcList = module.GetFunctionList();
   for (auto it = funcList.begin(); it != funcList.end(); it++) {
     maple::MIRFunction *curfun = *it;
-    module->SetCurFunction(curfun);
+    module.SetCurFunction(curfun);
   }
 }
 
 int main(int argc, char **argv) {
-  if (argc < 2) {
+  constexpr int judgeNumber = 2;
+  if (argc < judgeNumber) {
     MIR_PRINTF(
         "usage: ./irbuild [i|e] <any number of mpl files>\n\n"
         "The optional 'i' flag will convert the binary mplt input file to ascii\n\n"
@@ -43,17 +44,17 @@ int main(int argc, char **argv) {
   maple::int32 i = 1;
   if (argv[1][0] == 'i' && argv[1][1] == '\0') {
     flag = 'i';
-    i = 2;
+    i = judgeNumber;
   } else if (argv[1][0] == 'e' && argv[1][1] == '\0') {
     flag = 'e';
-    i = 2;
+    i = judgeNumber;
   }
   while (i < argc) {
     maple::MIRModule module{ argv[i] };
     if (flag == '\0') {
       maple::MIRParser theparser(module);
       if (theparser.ParseMIR()) {
-        ConstantFoldModule(&module);
+        ConstantFoldModule(module);
         module.OutputAsciiMpl(".irb");
       } else {
         theparser.EmitError(module.GetFileName().c_str());
@@ -62,7 +63,7 @@ int main(int argc, char **argv) {
     } else if (flag == 'e') {
       maple::MIRParser theparser(module);
       if (theparser.ParseMIR()) {
-        ConstantFoldModule(&module);
+        ConstantFoldModule(module);
         BinaryMplt binmplt(module);
         std::string modid = module.GetFileName();
         binmplt.Export("bin." + modid);

@@ -47,6 +47,5 @@ class ModulePhase : public Phase {
  private:
   ModulePhaseID phaseID;
 };
-
 }  // namespace maple
 #endif  // MAPLE_IPA_INCLUDE_MODULE_PHASE_H

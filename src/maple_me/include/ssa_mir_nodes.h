@@ -168,6 +168,10 @@ class AccessSSANodes {
     CHECK_FATAL(false, "No ssaVar");
   }
 
+  virtual void SetSSAVar(VersionSt &vst) {
+    CHECK_FATAL(false, "No ssaVar");
+  }
+
   virtual void DumpMayDefNodes(const MIRModule &mod) const {
     for (const auto &mayDefNode : GetMayDefNodes()) {
       mayDefNode.second.Dump(&mod);
@@ -272,8 +276,8 @@ class MayDefPartWithVersionSt : public AccessSSANodes {
     return ssaVar;
   }
 
-  void SetSSAVar(VersionSt *ssaVarPara) {
-    ssaVar = ssaVarPara;
+  void SetSSAVar(VersionSt &ssaVarPara) override {
+    ssaVar = &ssaVarPara;
   }
 
  private:
@@ -294,8 +298,8 @@ class VersionStPart : public AccessSSANodes {
     return ssaVar;
   }
 
-  void SetSSAVar(VersionSt *ssaVarPara) {
-    ssaVar = ssaVarPara;
+  void SetSSAVar(VersionSt &ssaVarPara) override {
+    ssaVar = &ssaVarPara;
   }
 
  private:
@@ -396,7 +400,7 @@ class StmtsSSAPart {
 
   void SetSSAPartOf(const StmtNode &s, VersionSt *vst) {
     VersionStPart *vStSSAPart = GetSSAPartMp()->New<VersionStPart>();
-    vStSSAPart->SetSSAVar(vst);
+    vStSSAPart->SetSSAVar(*vst);
     ssaPart[s.GetStmtID()] = vStSSAPart;
   }
 
@@ -451,7 +455,7 @@ class AddrofSSANode : public AddrofNode {
 
 class IreadSSANode : public IreadNode {
  public:
-  IreadSSANode(MapleAllocator *alloc, IreadNode *inode) : IreadNode(inode->GetOpCode()), mayUse(nullptr) {
+  IreadSSANode(MapleAllocator *alloc, IreadNode *inode) : IreadNode(inode->GetOpCode()), ssaVar(nullptr) {
     SetPrimType(inode->GetPrimType());
     tyIdx = inode->GetTyIdx();
     fieldID = inode->GetFieldID();
@@ -461,18 +465,22 @@ class IreadSSANode : public IreadNode {
   ~IreadSSANode() = default;
 
   void Dump(const MIRModule &mod, int32 indent) const {
-    if (mayUse.GetOpnd() != nullptr) {
-      mayUse.Dump(&mod);
+    if (ssaVar != nullptr) {
+      ssaVar->Dump(&mod, true);
     }
     IreadNode::Dump(mod, indent);
   }
 
-  MayUseNode &GetMayUse() {
-    return mayUse;
+  VersionSt *GetSSAVar() {
+    return ssaVar;
+  }
+
+  void SetSSAVar(VersionSt *ssaVarPara) {
+    ssaVar = ssaVarPara;
   }
 
  private:
-  MayUseNode mayUse;
+  VersionSt *ssaVar;
 };
 
 class RegreadSSANode : public RegreadNode {

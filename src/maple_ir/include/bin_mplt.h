@@ -50,7 +50,7 @@ class BinaryMplt {
     return binExport;
   }
 
-  std::string &GetImportFileName() {
+  const std::string &GetImportFileName() const {
     return importFileName;
   }
 

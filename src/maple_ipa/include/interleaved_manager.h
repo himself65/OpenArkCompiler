@@ -18,7 +18,6 @@
 #include "module_phase_manager.h"
 
 namespace maple {
-
 class InterleavedManager {
  public:
   InterleavedManager(MemPool *memPool, MIRModule *mirm, std::string input, bool timer)
@@ -72,6 +71,5 @@ class InterleavedManager {
 
   void InitSupportPhaseManagers();
 };
-
 }  // namespace maple
 #endif  // MAPLE_IPA_INCLUDE_INTERLEAVED_MANAGER_H

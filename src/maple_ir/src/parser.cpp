@@ -46,7 +46,7 @@ MIRFunction *MIRParser::CreateDummyFunction() {
   func->SetPuidxOrigin(func->GetPuidx());
   MIRType *returnType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(TyIdx(PTY_void));
   func->SetReturnTyIdx(returnType->GetTypeIndex());
-  func->SetClassTyIdx(0);
+  func->SetClassTyIdx(0U);
   func->SetBaseClassFuncNames(strIdx);
   funcSt->SetFunction(func);
   return func;
@@ -883,7 +883,7 @@ bool MIRParser::ParseClassType(TyIdx &styidx) {
       StIdx stidx = classType.GetMethodsElement(i).first;
       MIRSymbol *st = GlobalTables::GetGsymTable().GetSymbolFromStidx(stidx.Idx());
       ASSERT(st->GetSKind() == kStFunc, "unexpected st->sKind");
-      st->GetFunction()->GetClassTyidx() = styidx;
+      st->GetFunction()->SetClassTyIdx(styidx);
     }
     mod.AddClass(styidx);
   }
@@ -927,7 +927,7 @@ bool MIRParser::ParseInterfaceType(TyIdx &styidx) {
       MIRSymbol *st = GlobalTables::GetGsymTable().GetSymbolFromStidx(stidx.Idx());
       ASSERT(st != nullptr, "st is null");
       ASSERT(st->GetSKind() == kStFunc, "unexpected st->sKind");
-      st->GetFunction()->GetClassTyidx() = styidx;
+      st->GetFunction()->SetClassTyIdx(styidx);
     }
     mod.AddClass(styidx);
   }
@@ -1130,7 +1130,7 @@ bool MIRParser::ParseDefinedTypename(TyIdx &definedTyIdx, MIRTypeKind kind) {
       }
     }
   } else {
-    definedTyIdx = mod.CurFunction()->GetTypeNameTable()->GetTyIdxFromGStrIdx(strIdx);
+    definedTyIdx = mod.CurFunction()->GetTyIdxFromGStrIdx(strIdx);
     if (definedTyIdx == 0) {
       MIRTypeByName nameType(strIdx);
       definedTyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&nameType);
@@ -1481,7 +1481,7 @@ bool MIRParser::ParseTypedef() {
       Error("A global type must use global type name ");
       return false;
     }
-    prevTyIdx = mod.CurFunction()->GetTypeNameTable()->GetTyIdxFromGStrIdx(strIdx);
+    prevTyIdx = mod.CurFunction()->GetTyIdxFromGStrIdx(strIdx);
     if (prevTyIdx != 0) {
       MIRType *prevType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(prevTyIdx);
       prevStructType = dynamic_cast<MIRStructType*>(prevType);
@@ -1510,8 +1510,8 @@ bool MIRParser::ParseTypedef() {
   // for class/interface types, prev_tyidx could also be set during processing
   // so we check again right before SetGStrIdxToTyIdx
   if (isLocal) {
-    prevTyIdx = mod.CurFunction()->GetTypeNameTable()->GetTyIdxFromGStrIdx(strIdx);
-    mod.CurFunction()->GetTypeNameTable()->SetGStrIdxToTyIdx(strIdx, tyIdx);
+    prevTyIdx = mod.CurFunction()->GetTyIdxFromGStrIdx(strIdx);
+    mod.CurFunction()->SetGStrIdxToTyIdx(strIdx, tyIdx);
     ASSERT(GlobalTables::GetTypeTable().GetTypeTable().empty() == false, "container check");
     if (GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->GetNameStrIdx() == 0) {
       GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->SetNameStrIdx(strIdx);
@@ -1531,7 +1531,7 @@ bool MIRParser::ParseTypedef() {
   MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
   if (!isLocal && (type->GetKind() == kTypeClass || type->GetKind() == kTypeClassIncomplete ||
                    type->GetKind() == kTypeInterface || type->GetKind() == kTypeInterfaceIncomplete)) {
-    prevTyIdx = GlobalTables::GetTypeNameTable().GetTyidxFromGstrIdx(strIdx);
+    prevTyIdx = GlobalTables::GetTypeNameTable().GetTyIdxFromGStrIdx(strIdx);
     if (prevTyIdx == 0) {
       GlobalTables::GetTypeNameTable().SetGStrIdxToTyIdx(strIdx, tyIdx);
     }
@@ -1640,7 +1640,7 @@ bool MIRParser::ParseDeclareReg(MIRSymbol *symbol, MIRFunction *func) {
   }
   if (GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->HasTypeParam()) {
     symbol->SetAttr(ATTR_generic);
-    mod.CurFunction()->GetFuncAttrs().SetAttr(FUNCATTR_generic);
+    mod.CurFunction()->SetAttr(FUNCATTR_generic);
   }
   return true;
 }
@@ -1709,7 +1709,7 @@ bool MIRParser::ParseDeclareVar(MIRSymbol *symbol) {
   if (GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->HasTypeParam()) {
     symbol->SetAttr(ATTR_generic);
     if (isLocal) {
-      mod.CurFunction()->GetFuncAttrs().SetAttr(FUNCATTR_generic);
+      mod.CurFunction()->SetAttr(FUNCATTR_generic);
     }
   }
   tk = lexer.GetTokenKind();
@@ -1859,12 +1859,9 @@ bool MIRParser::ParseFunction(uint32 fileIdx) {
     // Skip attribute checking
     func = funcSymbol->GetFunction();
     func->ClearFormals();
-    func->GetArgumentsTyIdx().clear();
-    func->GetArgumentsAttrs().clear();
-    func->SetSymTab(mod.GetMemPool()->New<MIRSymbolTable>(&mod.GetMPAllocator()));
-    func->SetPregTab(mod.GetMemPool()->New<MIRPregTable>(&mod, &mod.GetMPAllocator()));
-    func->SetTypeNameTab(mod.GetMemPool()->New<MIRTypeNameTable>(&mod.GetMPAllocator()));
-    func->SetLabelTab(mod.GetMemPool()->New<MIRLabelTable>(&mod.GetMPAllocator()));
+    func->ClearArgumentsTyIdx();
+    func->ClearArgumentsAttrs();
+    func->Init();
     // update with current attr
     if (funcAttrs.GetAttrFlag()) {
       if (func->IsIpaSeen()) {
@@ -1901,7 +1898,7 @@ bool MIRParser::ParseFunction(uint32 fileIdx) {
     func->SetPuidx(GlobalTables::GetFunctionTable().GetFuncTable().size());
     GlobalTables::GetFunctionTable().GetFuncTable().push_back(func);
     funcSymbol->SetFunction(func);
-    func->GetFuncAttrs() = funcAttrs;
+    func->SetFuncAttrs(funcAttrs);
   }
   func->SetFileIndex(fileIdx);
   curFunc = func;
@@ -1937,7 +1934,7 @@ bool MIRParser::ParseFunction(uint32 fileIdx) {
     func->GetSrcPosition().SetLineNum(firstLineNum);
     func->GetSrcPosition().SetFileNum(lastFileNum);
     // check if any local type name is undefined
-    for (auto it : func->GetTypeNameTab()->GetGStrIdxToTyIdxMap()) {
+    for (auto it : func->GetGStrIdxToTyIdxMap()) {
       MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(it.second);
       if (type->GetKind() == kTypeByName) {
         std::string strStream;
@@ -2120,12 +2117,12 @@ bool MIRParser::ParseFuncInfo(void) {
     tokenKind = lexer.NextToken();
     if (tokenKind == kTkIntconst) {
       uint32 fieldVal = lexer.GetTheIntVal();
-      func->GetInfoVector().push_back(MIRInfoPair(strIdx, fieldVal));
-      func->InfoIsString().push_back(false);
+      func->PushbackMIRInfo(MIRInfoPair(strIdx, fieldVal));
+      func->PushbackIsString(false);
     } else if (tokenKind == kTkString) {
       GStrIdx literalStrIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName());
-      func->GetInfoVector().push_back(MIRInfoPair(strIdx, literalStrIdx.GetIdx()));
-      func->InfoIsString().push_back(true);
+      func->PushbackMIRInfo(MIRInfoPair(strIdx, literalStrIdx.GetIdx()));
+      func->PushbackIsString(true);
     } else {
       Error("illegal value after funcinfo field name at ");
       return false;
@@ -2331,7 +2328,7 @@ bool MIRParser::ParseMIRForFunc() {
     return false;
   }
   if ((this->options & kParseOptFunc) && curFunc) {
-    curFunc->GetFuncAttrs().SetAttr(FUNCATTR_optimized);
+    curFunc->SetAttr(FUNCATTR_optimized);
     mod.AddOptFuncs(curFunc);
   }
   return true;

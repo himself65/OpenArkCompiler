@@ -84,11 +84,11 @@ class MIRTypeNameTable {
 
   ~MIRTypeNameTable() = default;
 
-  MapleMap<GStrIdx, TyIdx> &GetGStrIdxToTyIdxMap() {
+  const MapleMap<GStrIdx, TyIdx> &GetGStrIdxToTyIdxMap() const {
     return gStrIdxToTyIdxMap;
   }
 
-  TyIdx GetTyIdxFromGStrIdx(GStrIdx idx) {
+  TyIdx GetTyIdxFromGStrIdx(GStrIdx idx) const {
     auto it = gStrIdxToTyIdxMap.find(idx);
     if (it == gStrIdxToTyIdxMap.end()) {
       return TyIdx(0);

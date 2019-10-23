@@ -1438,7 +1438,7 @@ void MIRParser::ParseStmtBlockForSeenComment(BlockNodePtr blk, uint32 mplNum) {
       SetSrcPos(cmnt, mplNum);
       blk->AddStatement(cmnt);
     }
-    lexer.GetSeenComments().clear();
+    lexer.seenComments.clear();
   }
 }
 

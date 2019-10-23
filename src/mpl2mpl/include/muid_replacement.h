@@ -98,6 +98,12 @@ class MUIDReplacement : public FuncOptimizeImpl {
   std::map<MUID, SymIdxPair> funcUndefMap;
   std::map<MUID, SymIdxPair> dataUndefMap;
   std::map<MUID, uint32> defMuidIdxMap;
+  enum LazyBindingOption : uint32 {
+    kNoLazyBinding = 0,
+    kConservativeLazyBinding = 1,
+    kRadicalLazyBinding = 2
+  };
+
   void GenericTables();
   void GenericFuncDefTable();
   void GenericDataDefTable();

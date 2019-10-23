@@ -115,7 +115,7 @@ const PhiNode *BB::PhiofVerStInserted(const VersionSt &versionSt) const {
 void BB::InsertPhi(MapleAllocator *alloc, VersionSt *versionSt) {
   PhiNode phiNode(alloc, versionSt);
   for (auto prevIt = pred.begin(); prevIt != pred.end(); prevIt++) {
-    phiNode.GetPhiOpns().push_back(versionSt);
+    phiNode.GetPhiOpnds().push_back(versionSt);
   }
   phiList.insert(std::make_pair(versionSt->GetOrigSt(), phiNode));
 }
@@ -150,8 +150,8 @@ void BB::RemoveBBFromPred(BB *bb) {
   int index = bb->RemoveBBFromVector(pred);
   ASSERT(index != -1, "-1 is a very large number in BB::RemoveBBFromPred");
   for (auto phiIt = phiList.begin(); phiIt != phiList.end(); phiIt++) {
-    ASSERT((*phiIt).second.GetPhiOpns().size() > index, "index out of range in BB::RemoveBBFromPred");
-    (*phiIt).second.GetPhiOpns().erase((*phiIt).second.GetPhiOpns().cbegin() + index);
+    ASSERT((*phiIt).second.GetPhiOpnds().size() > index, "index out of range in BB::RemoveBBFromPred");
+    (*phiIt).second.GetPhiOpnds().erase((*phiIt).second.GetPhiOpnds().cbegin() + index);
   }
   for (auto phiIt = mevarPhiList.begin(); phiIt != mevarPhiList.end(); phiIt++) {
     ASSERT((*phiIt).second->GetOpnds().size() > index, "index out of range in BB::RemoveBBFromPred");
