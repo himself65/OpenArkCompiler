@@ -120,7 +120,7 @@ void InterleavedManager::DumpTimers() {
   for (const auto &lapse : timeVec) {
     LogInfo::MapleLogger() << std::left << std::setw(25) << lapse.first << std::setw(10) << std::right << std::fixed
                            << std::setprecision(2) << (100.0 * lapse.second / total) << "%" << std::setw(10)
-                           << (lapse.second / 1000) << "ms" << std::endl;
+                           << (lapse.second / 1000) << "ms" << "\n";
   }
   LogInfo::MapleLogger() << "================================================\n";
   LogInfo::MapleLogger().flags(f);

@@ -147,7 +147,6 @@ class PhaseManager {
     }
     return total;
   }
-
  protected:
   std::string managerName;
   MapleAllocator allocator;

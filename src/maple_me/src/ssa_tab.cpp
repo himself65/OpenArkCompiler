@@ -81,7 +81,7 @@ void SSATab::CreateSSAStmt(StmtNode &stmt, const BB &curbb, bool ignoreCallassig
 
       OriginalSt *ost = FindOrCreateSymbolOriginalSt(*st, mirModule.CurFunction()->GetPuidx(), dnode.GetFieldID());
       VersionSt *vst = versionStTable.FindOrCreateVersionSt(ost, kInitVersion);
-      theSSAPart->SetSSAVar(vst);
+      theSSAPart->SetSSAVar(*vst);
       // if the rhs may throw exception, we insert MayDef of the lhs var
       if (stmt.GetOpCode() == OP_maydassign) {
         theSSAPart->InsertMayDefNode(theSSAPart->GetSSAVar(), &dnode);

@@ -120,5 +120,4 @@ void ModulePhaseManager::Emit(const char *passName) {
   outFileName = outFileName.append(kDotMplStr);
   mirModule.DumpToFile(outFileName);
 }
-
 }  // namespace maple

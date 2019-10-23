@@ -62,112 +62,59 @@ void SSA::RenamePhi(BB &bb) {
 
 void SSA::RenameDefs(StmtNode &stmt, BB &defBB) {
   Opcode opcode = stmt.GetOpCode();
-  switch (opcode) {
-    case OP_regassign: {
-      RegassignNode &regNode = static_cast<RegassignNode&>(stmt);
-      if (regNode.GetRegIdx() < 0) {
-        return;
-      }
-      VersionSt *theSSAPart = ssaTab->GetStmtsSSAPart().SSAPartOf(stmt)->GetSSAVar();
-      VersionSt *newVersionSym = CreateNewVersion(*theSSAPart, defBB);
-      newVersionSym->SetDefType(VersionSt::kRegassign);
-      newVersionSym->SetRegassignNode(&regNode);
-      ssaTab->GetStmtsSSAPart().SetSSAPartOf(stmt, newVersionSym);
+  if (opcode == OP_regassign) {
+    RegassignNode &regNode = static_cast<RegassignNode&>(stmt);
+    if (regNode.GetRegIdx() < 0) {
       return;
     }
-    case OP_dassign: {
-      DassignNode &dnode = static_cast<DassignNode&>(stmt);
-      MayDefPartWithVersionSt *theSSAPart =
-          static_cast<MayDefPartWithVersionSt*>(ssaTab->GetStmtsSSAPart().SSAPartOf(stmt));
-      VersionSt *newVersionSym = CreateNewVersion(*theSSAPart->GetSSAVar(), defBB);
-      theSSAPart->SetSSAVar(newVersionSym);
-      newVersionSym->SetDefType(VersionSt::kDassign);
-      newVersionSym->SetDassignNode(&dnode);
+    AccessSSANodes *theSSAPart = ssaTab->GetStmtsSSAPart().SSAPartOf(stmt);
+    VersionSt *newVersionSym = CreateNewVersion(*(theSSAPart->GetSSAVar()), defBB);
+    newVersionSym->SetDefType(VersionSt::kRegassign);
+    newVersionSym->SetRegassignNode(&regNode);
+    theSSAPart->SetSSAVar(*newVersionSym);
+    return;
+  } else if (opcode == OP_dassign) {
+    AccessSSANodes *theSSAPart = ssaTab->GetStmtsSSAPart().SSAPartOf(stmt);
+    VersionSt *newVersionSym = CreateNewVersion(*theSSAPart->GetSSAVar(), defBB);
+    newVersionSym->SetDefType(VersionSt::kDassign);
+    newVersionSym->SetDassignNode(static_cast<DassignNode*>(&stmt));
+    theSSAPart->SetSSAVar(*newVersionSym);
+  }
+  if (HasMayDefPart(stmt)) {
+    MapleMap<OStIdx, MayDefNode> &mayDefList = SSAGenericGetMayDefNodes(stmt, ssaTab->GetStmtsSSAPart());
+    for (auto it = mayDefList.begin(); it != mayDefList.end(); it++) {
+      MayDefNode &mayDef = it->second;
+      VersionSt *vsym = mayDef.GetResult();
+      ASSERT(vsym->GetOrigIdx().idx < vstStacks.size(), "index out of range in SSA::RenameMayDefs");
+      mayDef.SetOpnd(vstStacks[vsym->GetOrigIdx().idx]->top());
+      VersionSt *newVersionSym = CreateNewVersion(*vsym, defBB);
+      mayDef.SetResult(newVersionSym);
+      newVersionSym->SetDefType(VersionSt::kMayDef);
+      newVersionSym->SetMayDef(&mayDef);
     }
-    // intentional fall though
-    case OP_call:
-    case OP_virtualcall:
-    case OP_virtualicall:
-    case OP_superclasscall:
-    case OP_interfacecall:
-    case OP_interfaceicall:
-    case OP_customcall:
-    case OP_polymorphiccall:
-    case OP_icall:
-    case OP_intrinsiccall:
-    case OP_xintrinsiccall:
-    case OP_intrinsiccallwithtype:
-    case OP_callassigned:
-    case OP_virtualcallassigned:
-    case OP_virtualicallassigned:
-    case OP_superclasscallassigned:
-    case OP_interfacecallassigned:
-    case OP_interfaceicallassigned:
-    case OP_customcallassigned:
-    case OP_polymorphiccallassigned:
-    case OP_icallassigned:
-    case OP_intrinsiccallassigned:
-    case OP_xintrinsiccallassigned:
-    case OP_intrinsiccallwithtypeassigned:
-    case OP_syncenter:
-    case OP_syncexit:
-    case OP_maydassign:
-    case OP_iassign: {
-      MapleMap<OStIdx, MayDefNode> &mayDefList = SSAGenericGetMayDefNodes(stmt, ssaTab->GetStmtsSSAPart());
-      for (auto it = mayDefList.begin(); it != mayDefList.end(); it++) {
-        MayDefNode &mayDef = it->second;
-        VersionSt *vsym = mayDef.GetResult();
-        ASSERT(vsym->GetOrigIdx().idx < vstStacks.size(), "index out of range in SSA::RenameMayDefs");
-        mayDef.SetOpnd(vstStacks[vsym->GetOrigIdx().idx]->top());
-        VersionSt *newVersionSym = CreateNewVersion(*vsym, defBB);
-        mayDef.SetResult(newVersionSym);
-        newVersionSym->SetDefType(VersionSt::kMayDef);
-        newVersionSym->SetMayDef(&mayDef);
-      }
-      return;
-    }
-    default:
-      return;
   }
 }
 
 void SSA::RenameMustDefs(const StmtNode &stmt, BB &defBB) {
   Opcode opcode = stmt.GetOpCode();
-  switch (opcode) {
-    case OP_callassigned:
-    case OP_virtualcallassigned:
-    case OP_virtualicallassigned:
-    case OP_superclasscallassigned:
-    case OP_interfacecallassigned:
-    case OP_interfaceicallassigned:
-    case OP_customcallassigned:
-    case OP_polymorphiccallassigned:
-    case OP_icallassigned:
-    case OP_intrinsiccallassigned:
-    case OP_xintrinsiccallassigned:
-    case OP_intrinsiccallwithtypeassigned: {
-      MapleVector<MustDefNode> &mustDefs = SSAGenericGetMustDefNode(stmt, ssaTab->GetStmtsSSAPart());
-      MapleVector<MustDefNode>::iterator it = mustDefs.begin();
-      for (; it != mustDefs.end(); it++) {
-        VersionSt *newVersionSym = CreateNewVersion(*(*it).GetResult(), defBB);
-        (*it).SetResult(newVersionSym);
-        newVersionSym->SetDefType(VersionSt::kMustDef);
-        newVersionSym->SetMustDef(&(*it));
-      }
-      return;
+  if (kOpcodeInfo.IsCallAssigned(opcode)) {
+    MapleVector<MustDefNode> &mustDefs = SSAGenericGetMustDefNode(stmt, ssaTab->GetStmtsSSAPart());
+    for (MustDefNode &mustDefNode : mustDefs) {
+      VersionSt *newVersionSym = CreateNewVersion(*mustDefNode.GetResult(), defBB);
+      mustDefNode.SetResult(newVersionSym);
+      newVersionSym->SetDefType(VersionSt::kMustDef);
+      newVersionSym->SetMustDef(&(mustDefNode));
     }
-    default:
-      return;
   }
 }
 
 void SSA::RenameMayUses(BaseNode &node) {
   if (node.GetOpCode() == OP_iread) {
     IreadSSANode &iread = static_cast<IreadSSANode&>(node);
-    VersionSt *vsym = iread.GetMayUse().GetOpnd();
+    VersionSt *vsym = iread.GetSSAVar();
     CHECK_FATAL(vsym != nullptr, "SSA::RenameMayUses: iread has no mayUse opnd");
     ASSERT(vsym->GetOrigIdx().idx < vstStacks.size(), "index out of range in SSA::RenameMayUses");
-    iread.GetMayUse().SetOpnd(vstStacks[vsym->GetOrigIdx().idx]->top());
+    iread.SetSSAVar(vstStacks[vsym->GetOrigIdx().idx]->top());
     return;
   }
   MapleMap<OStIdx, MayUseNode> &mayUseList =
@@ -208,108 +155,11 @@ void SSA::RenameExpr(BaseNode &expr) {
 }
 
 void SSA::RenameUses(StmtNode &stmt) {
-  Opcode opcode = stmt.GetOpCode();
-  switch (opcode) {
-    case OP_brfalse:
-    case OP_brtrue: {
-      RenameExpr(*stmt.Opnd(0));
-      break;
-    }
-    case OP_return: {
-      NaryStmtNode &retNode = static_cast<NaryStmtNode&>(stmt);
-      BaseNode *retValue = retNode.NumOpnds() == 0 ? nullptr : retNode.Opnd(0);
-      RenameMayUses(stmt);
-      if (retValue != nullptr) {
-        RenameExpr(*retValue);
-      }
-      break;
-    }
-    case OP_call:
-    case OP_virtualcall:
-    case OP_virtualicall:
-    case OP_superclasscall:
-    case OP_interfacecall:
-    case OP_interfaceicall:
-    case OP_customcall:
-    case OP_polymorphiccall:
-    case OP_icall:
-    case OP_intrinsiccall:
-    case OP_xintrinsiccall:
-    case OP_intrinsiccallwithtype:
-    case OP_callassigned:
-    case OP_virtualcallassigned:
-    case OP_virtualicallassigned:
-    case OP_superclasscallassigned:
-    case OP_interfacecallassigned:
-    case OP_interfaceicallassigned:
-    case OP_customcallassigned:
-    case OP_polymorphiccallassigned:
-    case OP_icallassigned:
-    case OP_intrinsiccallassigned:
-    case OP_xintrinsiccallassigned:
-    case OP_intrinsiccallwithtypeassigned:
-    case OP_syncenter:
-    case OP_syncexit: {
-      RenameMayUses(stmt);
-      for (size_t i = 0; i < stmt.NumOpnds(); i++) {
-        BaseNode *argExpr = stmt.Opnd(i);
-        RenameExpr(*argExpr);
-      }
-      break;
-    }
-    case OP_maydassign:
-    case OP_dassign: {
-      DassignNode &dnode = static_cast<DassignNode&>(stmt);
-      RenameExpr(*dnode.GetRHS());
-      break;
-    }
-    case OP_regassign: {
-      RegassignNode &rnode = static_cast<RegassignNode&>(stmt);
-      if (rnode.GetRegIdx() < 0) {
-        return;
-      }
-      RenameExpr(*rnode.Opnd(0));
-      break;
-    }
-    case OP_iassign: {
-      IassignNode &inode = static_cast<IassignNode&>(stmt);
-      RenameExpr(*inode.Opnd(0));
-      RenameExpr(*inode.GetRHS());
-      break;
-    }
-    case OP_throw:
-      RenameMayUses(stmt);
-    //  fallthrough;
-    case OP_assertnonnull:
-    case OP_eval:
-    case OP_free:
-    case OP_switch: {
-      BaseNode *argExpr = stmt.Opnd(0);
-      RenameExpr(*argExpr);
-      break;
-    }
-    case OP_gosub:
-    case OP_retsub:
-      RenameMayUses(stmt);
-      break;
-    case OP_comment:
-    case OP_label:
-    case OP_goto:
-    case OP_jstry:
-    case OP_jscatch:
-    case OP_finally:
-    case OP_endtry:
-    case OP_cleanuptry:
-    case OP_try:
-    case OP_catch:
-    case OP_membaracquire:
-    case OP_membarrelease:
-    case OP_membarstoreload:
-    case OP_membarstorestore:
-      break;
-    default:
-      CHECK_FATAL(false, "NYI");
-      break;
+  if (HasMayUsePart(stmt)) {
+    RenameMayUses(stmt);
+  }
+  for (int i = 0; i < stmt.NumOpnds(); i++) {
+    RenameExpr(*stmt.Opnd(i));
   }
 }
 
@@ -336,9 +186,9 @@ void SSA::RenamePhiUseInSucc(BB &bb) {
 void PhiNode::Dump(const MIRModule *mod) {
   GetResult()->Dump(mod);
   LogInfo::MapleLogger() << " = PHI(";
-  for (size_t i = 0; i < GetPhiOpns().size(); i++) {
+  for (size_t i = 0; i < GetPhiOpnds().size(); i++) {
     GetPhiOpnd(i)->Dump(mod);
-    if (i < GetPhiOpns().size() - 1) {
+    if (i < GetPhiOpnds().size() - 1) {
       LogInfo::MapleLogger() << ',';
     }
   }

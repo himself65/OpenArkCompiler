@@ -46,7 +46,7 @@ class CheckCastGenerator : public FuncOptimizeImpl {
   void InitTypes();
   void InitFuncs();
   void GenAllCheckCast();
-  void GenCheckCast(BaseNode *stmt);
+  void GenCheckCast(BaseNode &stmt);
   BaseNode *GetObjectShadow(BaseNode *opnd);
   MIRSymbol *GetOrCreateClassInfoSymbol(const std::string &className);
 };

@@ -33,9 +33,9 @@ class ClassInit : public FuncOptimizeImpl {
   void ProcessFunc(MIRFunction *func) override;
 
  private:
-  void GenClassInitCheckProfile(MIRFunction *func, MIRSymbol *classinfo, StmtNode *clinit) const;
-  void GenPreClassInitCheck(MIRFunction *func, const MIRSymbol *classinfo, StmtNode *clinit);
-  void GenPostClassInitCheck(MIRFunction *func, const MIRSymbol *classinfo, StmtNode *clinit);
+  void GenClassInitCheckProfile(MIRFunction &func, MIRSymbol &classinfo, StmtNode *clinit) const;
+  void GenPreClassInitCheck(MIRFunction &func, const MIRSymbol &classinfo, StmtNode *clinit);
+  void GenPostClassInitCheck(MIRFunction &func, const MIRSymbol &classinfo, StmtNode *clinit);
   MIRSymbol *GetClassInfo(const std::string &classname);
   bool CanRemoveClinitCheck(const std::string &clinitClassname);
 };

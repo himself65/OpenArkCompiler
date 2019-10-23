@@ -475,7 +475,7 @@ void MeCFG::ConvertPhis2IdentityAssigns(BB &meBB) const {
               &func.GetMeSSATab()->GetStmtsSSAPart().GetSSAPartAlloc()));
       MayDefPartWithVersionSt *theSSAPart =
           static_cast<MayDefPartWithVersionSt*>(func.GetMeSSATab()->GetStmtsSSAPart().SSAPartOf(*dassign));
-      theSSAPart->SetSSAVar((*phiIt).second.GetResult());
+      theSSAPart->SetSSAVar(*((*phiIt).second.GetResult()));
       meBB.PrependStmtNode(dassign);
     }
     phiIt++;

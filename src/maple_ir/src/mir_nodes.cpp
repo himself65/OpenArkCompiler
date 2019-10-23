@@ -1035,7 +1035,7 @@ void BlockNode::Dump(const MIRModule &mod, int32 indent, const MIRSymbolTable *t
     mod.CurFunction()->DumpFuncBody(indent);
     if (theSymTab != nullptr) {
       // print the locally declared type names
-      for (auto it : mod.CurFunction()->GetTypeNameTab()->GetGStrIdxToTyIdxMap()) {
+      for (auto it : mod.CurFunction()->GetGStrIdxToTyIdxMap()) {
         const std::string &name = GlobalTables::GetStrTable().GetStringFromStrIdx(it.first);
         MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(it.second);
         PrintIndentation(indent + 1);

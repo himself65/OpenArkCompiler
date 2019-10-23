@@ -485,12 +485,10 @@ class MIRAggConst : public MIRConst {
     CHECK_FATAL(index < constVec.size(), "index out of range");
     return constVec[index];
   }
-
   void SetConstVecItem(uint32 index, MIRConst *mirConst) {
     CHECK_FATAL(index < constVec.size(), "index out of range");
     constVec[index] = mirConst;
   }
-
   void PushBack(MIRConst *elem) {
     constVec.push_back(elem);
   }
@@ -511,17 +509,23 @@ class MIRStConst : public MIRConst {
     SetKind(kConstStConst);
   }
 
-  MapleVector<MIRSymbol*> &GetStVec() {
+  const MapleVector<MIRSymbol*> &GetStVec() const {
     return stVec;
   }
+  void PushbackSt(MIRSymbol *sym) {
+    stVec.push_back(sym);
+  }
 
-  MIRSymbol *GetStVecItem(size_t index) {
+  const MIRSymbol *GetStVecItem(size_t index) const {
     CHECK_FATAL(index < stVec.size(), "array index out of range");
     return stVec[index];
   }
 
-  MapleVector<uint32> &GetStOffsetVec() {
+  const MapleVector<uint32> &GetStOffsetVec() const {
     return stOffsetVec;
+  }
+  void PushbackStOffset(uint32 offset) {
+    stOffsetVec.push_back(offset);
   }
 
   uint32 GetStOffsetVecItem(size_t index) const {

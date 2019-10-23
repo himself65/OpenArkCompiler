@@ -609,9 +609,8 @@ void AliasClass::InsertMayUseExpr(BaseNode &expr) {
     rhsAe = FindOrCreateDummyNADSAe();
   }
   IreadSSANode &ireadNode = static_cast<IreadSSANode&>(expr);
-  ireadNode.GetMayUse().SetOpnd(
-      ssaTab.GetVersionStTable().GetVersionStFromID(rhsAe->GetOriginalSt().GetZeroVersionIndex()));
-  ASSERT(ireadNode.GetMayUse().GetOpnd() != nullptr, "AliasClass::InsertMayUseExpr(): iread cannot have empty mayuse");
+  ireadNode.SetSSAVar(ssaTab.GetVersionStTable().GetVersionStFromID(rhsAe->GetOriginalSt().GetZeroVersionIndex()));
+  ASSERT(ireadNode.GetSSAVar() != nullptr, "AliasClass::InsertMayUseExpr(): iread cannot have empty mayuse");
 }
 
 // collect the mayUses caused by globalsAffectedByCalls.

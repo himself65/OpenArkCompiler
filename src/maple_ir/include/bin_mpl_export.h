@@ -76,19 +76,19 @@ class BinaryMplExport {
   virtual ~BinaryMplExport() {}
 
   void Export(const std::string &fname);
-  void WriteContentField(int fieldNum, uint64 *fieldStartP);
+  void WriteContentField(int fieldNum, uint64 &fieldStartP);
   void WriteStrField(uint64 contentIdx);
   void WriteTypeField(uint64 contentIdx);
   void Init();
   void OutputConst(MIRConst *c);
-  void OutputConstBase(const MIRConst *c);
+  void OutputConstBase(const MIRConst &c);
   void OutputStr(const GStrIdx &gstr);
   void OutputUsrStr(UStrIdx ustr);
-  void OutputTypePairs(MIRInstantVectorType *typ);
-  void OutputTypeBase(const MIRType *type);
+  void OutputTypePairs(MIRInstantVectorType &typ);
+  void OutputTypeBase(const MIRType &type);
   void OutputType(const TyIdx &tyIdx);
   void OutputTypeAttrs(const TypeAttrs &ta);
-  void OutputPragmaElement(const MIRPragmaElement *e);
+  void OutputPragmaElement(const MIRPragmaElement &e);
   void OutputPragma(const MIRPragma *p);
   void OutputFieldPair(const FieldPair &fp);
   void OutputMethodPair(const MethodPair &memPool);
@@ -101,7 +101,7 @@ class BinaryMplExport {
   void OutputPragmaVec(const std::vector<MIRPragma*> &pragmaVec);
   void OutputClassTypeData(MIRClassType *type);
   void OutputInterfaceTypeData(MIRInterfaceType *type);
-  void OutputSymbol(MIRSymbol *sym);
+  void OutputSymbol(const MIRSymbol *sym);
   void OutputFunction(PUIdx puIdx);
   void OutWords(uint8 *typeTagged, int64 targetTag, uint16 size);
   void Write(uint8 b);
@@ -126,7 +126,7 @@ class BinaryMplExport {
   std::unordered_map<MIRFunction*, int64> funcMark;
   std::string importFileName;
   std::unordered_map<UStrIdx, int64, UStrIdxHash> uStrMark;
-  std::unordered_map<MIRSymbol*, int64> symMark;
+  std::unordered_map<const MIRSymbol*, int64> symMark;
   std::unordered_map<MIRType*, int64> typMark;
   static int typeMarkOffset;  // offset of mark (tag in binmplimport) resulting from duplicated function
   void ExpandFourBuffSize();

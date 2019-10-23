@@ -32,33 +32,34 @@ bool ClassInit::CanRemoveClinitCheck(const std::string &clinitClassname) {
 }
 
 #undef CLINIT_CHECK
-void ClassInit::GenClassInitCheckProfile(MIRFunction *func, MIRSymbol *classinfo, StmtNode *clinit) const {
+void ClassInit::GenClassInitCheckProfile(MIRFunction &func, MIRSymbol &classinfo, StmtNode *clinit) const {
 #ifdef CLINIT_CHECK
   GenPreClassInitCheck(func, classinfo, clinit);
   GenPostClassInitCheck(func, classinfo, clinit);
 #endif  // CLINIT_CHECK
 }
 
-void ClassInit::GenPreClassInitCheck(MIRFunction *func, const MIRSymbol *classinfo, StmtNode *clinit) {
+void ClassInit::GenPreClassInitCheck(MIRFunction &func, const MIRSymbol &classinfo, StmtNode *clinit) {
   MIRFunction *preClinit = builder->GetOrCreateFunction(kMCCPreClinitCheck, (TyIdx)(PTY_void));
-  BaseNode *classInfoNode = builder->CreateExprAddrof(0, classinfo);
+  BaseNode *classInfoNode = builder->CreateExprAddrof(0, &classinfo);
   MapleVector<BaseNode*> args(builder->GetCurrentFuncCodeMpAllocator()->Adapter());
   args.push_back(classInfoNode);
   CallNode *callPreclinit = builder->CreateStmtCall(preClinit->GetPuidx(), args);
-  func->GetBody()->InsertBefore(clinit, callPreclinit);
+  func.GetBody()->InsertBefore(clinit, callPreclinit);
 }
 
-void ClassInit::GenPostClassInitCheck(MIRFunction *func, const MIRSymbol *classinfo, StmtNode *clinit) {
+void ClassInit::GenPostClassInitCheck(MIRFunction &func, const MIRSymbol &classinfo, StmtNode *clinit) {
   MIRFunction *postClinit = builder->GetOrCreateFunction(kMCCPostClinitCheck, (TyIdx)(PTY_void));
-  BaseNode *classInfoNode = builder->CreateExprAddrof(0, classinfo);
+  BaseNode *classInfoNode = builder->CreateExprAddrof(0, &classinfo);
   MapleVector<BaseNode*> args(builder->GetCurrentFuncCodeMpAllocator()->Adapter());
   args.push_back(classInfoNode);
   CallNode *callPostclinit = builder->CreateStmtCall(postClinit->GetPuidx(), args);
-  func->GetBody()->InsertAfter(clinit, callPostclinit);
+  func.GetBody()->InsertAfter(clinit, callPostclinit);
 }
 
 void ClassInit::ProcessFunc(MIRFunction *func) {
   // No field will be involved in critical native funcs.
+  ASSERT(func != nullptr, "null ptr check!");
   if (func->IsEmpty() || func->GetAttr(FUNCATTR_critical_native)) {
     return;
   }
@@ -105,7 +106,8 @@ void ClassInit::ProcessFunc(MIRFunction *func) {
         args.push_back(classInfoNode);
         StmtNode *intrinsicCall = builder->CreateStmtIntrinsicCall(INTRN_MPL_CLINIT_CHECK, args);
         func->GetBody()->InsertFirst(intrinsicCall);
-        GenClassInitCheckProfile(func, classInfo, intrinsicCall);
+        ASSERT(classInfo != nullptr, "null ptr check!");
+        GenClassInitCheckProfile(*func, *classInfo, intrinsicCall);
       }
     }
   }
@@ -131,7 +133,7 @@ void ClassInit::ProcessFunc(MIRFunction *func) {
           WARN(kLncWarn, "ClassInit::ProcessFunc: Skip INCOMPLETE type %s", className.c_str());
           doClinitCheck = true;
         } else {
-          doClinitCheck = !CanRemoveClinitCheck(className) && klassHierarchy->NeedClinitCheckRecursively(klass);
+          doClinitCheck = !CanRemoveClinitCheck(className) && klassHierarchy->NeedClinitCheckRecursively(*klass);
         }
         if (doClinitCheck) {
           MIRSymbol *classInfo = GetClassInfo(className);
@@ -144,7 +146,8 @@ void ClassInit::ProcessFunc(MIRFunction *func) {
             LogInfo::MapleLogger() << "\t- low-cost clinit - lower JAVA_CLINIT_CHECK " << className << " in "
                                    << func->GetName() << "()" << std::endl;
           }
-          GenClassInitCheckProfile(func, classInfo, mplIntrinsicCall);
+          ASSERT(classInfo != nullptr, "null ptr check!");
+          GenClassInitCheckProfile(*func, *classInfo, mplIntrinsicCall);
         } else {
           func->GetBody()->RemoveStmt(stmt);
         }

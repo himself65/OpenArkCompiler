@@ -184,6 +184,5 @@ class AnalysisResultManager {
   MapleMap<analysisResultKey, AnalysisResult*> analysisResults;
   MapleMap<PhaseIDT, PhaseT*> analysisPhases;
 };
-
 }  // namespace maple
 #endif  // MAPLE_PHASE_INCLUDE_PHASE_H

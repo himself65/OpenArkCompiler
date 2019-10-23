@@ -43,8 +43,8 @@ GN下载地址：https://archive.softwareheritage.org/browse/content/sha1_git:2d
 将GN和Ninja可执行程序放置到openarkcompiler/tools目录，然后修改这两个文件为可执行:
 ```
 cd openarkcompiler/tools
-chmod 777 gn
-chmod 777 ninja
+chmod 775 gn
+chmod 775 ninja
 ```
 
 打开openarkcompiler/Makefile文件，将GN和NINJA两个变量配置为GN和Ninja可执行程序所在路径。例如：

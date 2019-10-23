@@ -31,8 +31,8 @@ inline bool OpCodeNoFallThrough(const Opcode opCode) {
          opCode == OP_retsub;
 }
 
-inline bool IfStmtNoFallThrough(const IfStmtNode *ifStmt) {
-  return OpCodeNoFallThrough(ifStmt->GetThenPart()->GetLast()->GetOpCode());
+inline bool IfStmtNoFallThrough(const IfStmtNode &ifStmt) {
+  return OpCodeNoFallThrough(ifStmt.GetThenPart()->GetLast()->GetOpCode());
 }
 
 class MIRLower {
@@ -40,7 +40,7 @@ class MIRLower {
   static const std::set<std::string> kSetArrayHotFunc;
 
  public:
-  explicit MIRLower(MIRModule &mod, MIRFunction *f) : mirModule(mod), mirFunc(f), mirBuilder(nullptr), lowerPhase(0) {}
+  MIRLower(MIRModule &mod, MIRFunction *f) : mirModule(mod), mirFunc(f), mirBuilder(nullptr), lowerPhase(0) {}
 
   virtual ~MIRLower() {}
 
@@ -52,21 +52,21 @@ class MIRLower {
     mirBuilder = mirModule.GetMemPool()->New<MIRBuilder>(&mirModule);
   }
 
-  virtual BlockNode *LowerIfStmt(IfStmtNode *ifStmt, bool recursive);
-  virtual BlockNode *LowerWhileStmt(WhileStmtNode*);
-  BlockNode *LowerDowhileStmt(WhileStmtNode*);
-  BlockNode *LowerDoloopStmt(DoloopNode*);
-  BlockNode *LowerBlock(BlockNode*);
-  void LowerBrCondition(BlockNode *block);
-  void LowerFunc(MIRFunction *func);
-  void ExpandArrayMrt(MIRFunction *func);
-  static bool ShouldOptArrayMrt(const MIRFunction *func);
-  IfStmtNode *ExpandArrayMrtIfBlock(IfStmtNode *node);
-  WhileStmtNode *ExpandArrayMrtWhileBlock(WhileStmtNode *node);
-  DoloopNode *ExpandArrayMrtDoloopBlock(DoloopNode *node);
-  ForeachelemNode *ExpandArrayMrtForeachelemBlock(ForeachelemNode *node);
-  BlockNode *ExpandArrayMrtBlock(BlockNode *block);
-  void AddArrayMrtMpl(BaseNode *exp, BlockNode *newblk);
+  virtual BlockNode *LowerIfStmt(IfStmtNode &ifStmt, bool recursive);
+  virtual BlockNode *LowerWhileStmt(WhileStmtNode&);
+  BlockNode *LowerDowhileStmt(WhileStmtNode&);
+  BlockNode *LowerDoloopStmt(DoloopNode&);
+  BlockNode *LowerBlock(BlockNode&);
+  void LowerBrCondition(BlockNode &block);
+  void LowerFunc(MIRFunction &func);
+  void ExpandArrayMrt(MIRFunction &func);
+  static bool ShouldOptArrayMrt(const MIRFunction &func);
+  IfStmtNode *ExpandArrayMrtIfBlock(IfStmtNode &node);
+  WhileStmtNode *ExpandArrayMrtWhileBlock(WhileStmtNode &node);
+  DoloopNode *ExpandArrayMrtDoloopBlock(DoloopNode &node);
+  ForeachelemNode *ExpandArrayMrtForeachelemBlock(ForeachelemNode &node);
+  BlockNode *ExpandArrayMrtBlock(BlockNode &block);
+  void AddArrayMrtMpl(BaseNode &exp, BlockNode &newblk);
   void SetLowerME() {
     lowerPhase |= LOWERME;
   }

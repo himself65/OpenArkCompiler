@@ -404,7 +404,8 @@ void MeFunction::Prepare(unsigned long rangeNum) {
   mirLowerer.Init();
   mirLowerer.SetLowerME();
   mirLowerer.SetLowerExpandArray();
-  mirLowerer.LowerFunc(CurFunction());
+  ASSERT(CurFunction() != nullptr, "nullptr check");
+  mirLowerer.LowerFunc(*CurFunction());
   CreateBasicBlocks();
   if (NumBBs() == 0) {
     /* there's no basicblock generated */
