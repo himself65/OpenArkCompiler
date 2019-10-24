@@ -52,7 +52,7 @@ void VtableImpl::ProcessFunc(MIRFunction *func) {
         MIRFunction *callee = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(callNode->GetPUIdx());
         MemPool *currentFuncCodeMempool = builder->GetCurrentFuncCodeMp();
         IcallNode *icallNode =
-            currentFuncCodeMempool->New<IcallNode>(builder->GetCurrentFuncCodeMpAllocator(), OP_icallassigned);
+            currentFuncCodeMempool->New<IcallNode>(*builder->GetCurrentFuncCodeMpAllocator(), OP_icallassigned);
         icallNode->SetReturnVec(callNode->GetReturnVec());
         icallNode->SetRetTyIdx(callee->GetReturnTyIdx());
         icallNode->SetSrcPos(callNode->GetSrcPos());
@@ -113,7 +113,7 @@ void VtableImpl::ReplaceResolveInterface(StmtNode *stmt, const ResolveFuncNode *
   BaseNode *addrNode = builder->CreateExprBinary(OP_add, GlobalTables::GetTypeTable().GetPtr(),
                                                  builder->CreateExprRegread(PTY_ptr, pregItabAddress), offsetNode);
   BaseNode *readFuncPtr = builder->CreateExprIread(
-      compactPtrType, GlobalTables::GetTypeTable().GetOrCreatePointerType(compactPtrType), 0, addrNode);
+      compactPtrType, GlobalTables::GetTypeTable().GetOrCreatePointerType(*compactPtrType), 0, addrNode);
   PregIdx pregFuncPtr = currFunc->GetPregTab()->CreatePreg(compactPtrPrim);
   RegassignNode *funcPtrAssign = builder->CreateStmtRegassign(compactPtrPrim, pregFuncPtr, readFuncPtr);
   currFunc->GetBody()->InsertBefore(stmt, funcPtrAssign);

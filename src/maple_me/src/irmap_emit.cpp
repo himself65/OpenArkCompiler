@@ -233,14 +233,14 @@ BaseNode &NaryMeExpr::EmitExpr(SSATab &ssaTab) {
   NaryOpnds *nopndPart = nullptr;
   if (GetOp() == OP_array) {
     ArrayNode *arrayNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<ArrayNode>(
-        &(ssaTab.GetModule()), PrimType(GetPrimType()), tyIdx);
+        ssaTab.GetModule(), PrimType(GetPrimType()), tyIdx);
     arrayNode->SetNumOpnds(GetNumOpnds());
     arrayNode->SetBoundsCheck(GetBoundCheck());
     nopndPart = arrayNode;
     nodeToReturn = arrayNode;
   } else {
     IntrinsicopNode *intrinNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<IntrinsicopNode>(
-        &(ssaTab.GetModule()), GetOp(), PrimType(GetPrimType()), tyIdx);
+        ssaTab.GetModule(), GetOp(), PrimType(GetPrimType()), tyIdx);
     intrinNode->SetNumOpnds(GetNumOpnds());
     intrinNode->SetIntrinsic(intrinsic);
     nopndPart = intrinNode;
@@ -331,7 +331,7 @@ StmtNode &IassignMeStmt::EmitStmt(SSATab &ssaTab) {
 StmtNode &CallMeStmt::EmitStmt(SSATab &ssaTab) {
   if (GetOp() != OP_icall && GetOp() != OP_icallassigned) {
     CallNode *callNode =
-        ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<CallNode>(&(ssaTab.GetModule()), Opcode(GetOp()));
+        ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<CallNode>(ssaTab.GetModule(), Opcode(GetOp()));
     callNode->SetPUIdx(puIdx);
     callNode->SetTyIdx(tyIdx);
     callNode->GetNopnd().resize(NumMeStmtOpnds());
@@ -357,7 +357,7 @@ StmtNode &CallMeStmt::EmitStmt(SSATab &ssaTab) {
     return *callNode;
   } else {
     IcallNode *icallNode =
-        ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<IcallNode>(&(ssaTab.GetModule()), Opcode(GetOp()));
+        ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<IcallNode>(ssaTab.GetModule(), Opcode(GetOp()));
     icallNode->GetNopnd().resize(NumMeStmtOpnds());
     for (size_t i = 0; i < NumMeStmtOpnds(); i++) {
       icallNode->SetOpnd(&GetOpnd(i)->EmitExpr(ssaTab), i);
@@ -390,7 +390,7 @@ StmtNode &CallMeStmt::EmitStmt(SSATab &ssaTab) {
 
 StmtNode &IcallMeStmt::EmitStmt(SSATab &ssaTab) {
   IcallNode *icallNode =
-      ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<IcallNode>(&(ssaTab.GetModule()), Opcode(GetOp()));
+      ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<IcallNode>(ssaTab.GetModule(), Opcode(GetOp()));
   icallNode->GetNopnd().resize(NumMeStmtOpnds());
   for (size_t i = 0; i < NumMeStmtOpnds(); i++) {
     icallNode->SetOpnd(&GetOpnd(i)->EmitExpr(ssaTab), i);
@@ -422,7 +422,7 @@ StmtNode &IcallMeStmt::EmitStmt(SSATab &ssaTab) {
 
 StmtNode &IntrinsiccallMeStmt::EmitStmt(SSATab &ssaTab) {
   IntrinsiccallNode *callNode =
-      ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<IntrinsiccallNode>(&(ssaTab.GetModule()),
+      ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<IntrinsiccallNode>(ssaTab.GetModule(),
                                                                                   Opcode(GetOp()));
   callNode->SetIntrinsic(intrinsic);
   callNode->SetTyIdx(tyIdx);
@@ -451,7 +451,7 @@ StmtNode &IntrinsiccallMeStmt::EmitStmt(SSATab &ssaTab) {
 
 StmtNode &NaryMeStmt::EmitStmt(SSATab &ssaTab) {
   NaryStmtNode *naryStmt =
-      ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<NaryStmtNode>(&(ssaTab.GetModule()), Opcode(GetOp()));
+      ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<NaryStmtNode>(ssaTab.GetModule(), Opcode(GetOp()));
   naryStmt->GetNopnd().resize(NumMeStmtOpnds());
   for (size_t i = 0; i < NumMeStmtOpnds(); i++) {
     naryStmt->SetOpnd(&opnds[i]->EmitExpr(ssaTab), i);
@@ -492,7 +492,7 @@ StmtNode &JsTryMeStmt::EmitStmt(SSATab &ssaTab) {
 }
 
 StmtNode &TryMeStmt::EmitStmt(SSATab &ssaTab) {
-  TryNode *tryNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<TryNode>(&(ssaTab.GetModule()));
+  TryNode *tryNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<TryNode>(ssaTab.GetModule());
   tryNode->ResizeOffsets(offsets.size());
   for (size_t i = 0; i < offsets.size(); i++) {
     tryNode->SetOffset(offsets[i], i);
@@ -502,14 +502,14 @@ StmtNode &TryMeStmt::EmitStmt(SSATab &ssaTab) {
 }
 
 StmtNode &CatchMeStmt::EmitStmt(SSATab &ssaTab) {
-  CatchNode *catchNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<CatchNode>(&(ssaTab.GetModule()));
+  CatchNode *catchNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<CatchNode>(ssaTab.GetModule());
   catchNode->SetExceptionTyIdxVec(exceptionTyIdxVec);
   catchNode->SetSrcPos(GetSrcPosition());
   return *catchNode;
 }
 
 StmtNode &SwitchMeStmt::EmitStmt(SSATab &ssaTab) {
-  SwitchNode *switchNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<SwitchNode>(&(ssaTab.GetModule()));
+  SwitchNode *switchNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<SwitchNode>(ssaTab.GetModule());
   switchNode->SetDefaultLabel(defaultLabel);
   switchNode->SetSwitchTable(switchTable);
   switchNode->SetSwitchOpnd(&GetOpnd()->EmitExpr(ssaTab));
@@ -519,7 +519,7 @@ StmtNode &SwitchMeStmt::EmitStmt(SSATab &ssaTab) {
 
 StmtNode &CommentMeStmt::EmitStmt(SSATab &ssaTab) {
   CommentNode *commentNode =
-      ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<CommentNode>(&(ssaTab.GetModule()));
+      ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<CommentNode>(ssaTab.GetModule());
   commentNode->SetComment(comment);
   commentNode->SetSrcPos(GetSrcPosition());
   return *commentNode;

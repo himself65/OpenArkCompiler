@@ -19,15 +19,15 @@
 #include "mempool_allocator.h"
 #include "stdio.h"
 #include <fstream>
+#include "mir_module.h"
 
 namespace maple {
-class MIRModule;
 class MIRParser;
 class MIRLexer {
   friend MIRParser;
 
  public:
-  explicit MIRLexer(MIRModule *mod);
+  explicit MIRLexer(MIRModule &mod);
   ~MIRLexer() {
     airFile = nullptr;
     if (airFileInternal.is_open()) {
@@ -35,7 +35,7 @@ class MIRLexer {
     }
   }
 
-  void PrepareForFile(const char *filename);
+  void PrepareForFile(const std::string &filename);
   void PrepareForString(const std::string &src);
   TokenKind NextToken(void);
   TokenKind LexToken();
@@ -71,7 +71,7 @@ class MIRLexer {
   std::string GetTokenString() const;  // for error reporting purpose
 
  private:
-  MIRModule *module;
+  MIRModule &module;
   // for storing the different types of constant values
   int64 theIntVal;  // also indicates preg number under kTkPreg
   float theFloatVal;

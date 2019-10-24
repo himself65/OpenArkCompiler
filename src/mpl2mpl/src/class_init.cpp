@@ -160,7 +160,7 @@ void ClassInit::ProcessFunc(MIRFunction *func) {
 MIRSymbol *ClassInit::GetClassInfo(const std::string &classname) {
   const std::string &classInfoName = CLASSINFO_PREFIX_STR + classname;
   MIRType *classInfoType =
-      GlobalTables::GetTypeTable().GetOrCreateClassType(NameMangler::kClassMetadataTypeName, GetModule());
+      GlobalTables::GetTypeTable().GetOrCreateClassType(NameMangler::kClassMetadataTypeName, *GetModule());
   MIRSymbol *classInfo = builder->GetOrCreateGlobalDecl(classInfoName.c_str(), classInfoType);
   Klass *klass = klassHierarchy->GetKlassFromName(classname);
   if (klass == nullptr || !klass->GetMIRStructType()->IsLocal()) {

@@ -110,25 +110,25 @@ BaseNode *JavaEHLowerer::DoLowerExpr(BaseNode *expr, BlockNode *curblk) {
   }
 }
 
-void JavaEHLowerer::DoLowerBoundaryCheck(IntrinsiccallNode *intrincall, BlockNode *newblk) {
-  const size_t intrincallNopndSize = intrincall->GetNopndSize();
+void JavaEHLowerer::DoLowerBoundaryCheck(IntrinsiccallNode &intrincall, BlockNode &newblk) {
+  const size_t intrincallNopndSize = intrincall.GetNopndSize();
   CHECK_FATAL(intrincallNopndSize > 0, "null ptr check");
-  BaseNode *opnd0 = intrincall->GetNopndAt(0);
+  BaseNode *opnd0 = intrincall.GetNopndAt(0);
   CondGotoNode *brFalseStmt = GetModule()->CurFuncCodeMemPool()->New<CondGotoNode>(OP_brfalse);
-  brFalseStmt->SetOpnd(DoLowerExpr(opnd0, newblk));
-  brFalseStmt->SetSrcPos(intrincall->GetSrcPos());
+  brFalseStmt->SetOpnd(DoLowerExpr(opnd0, &newblk));
+  brFalseStmt->SetSrcPos(intrincall.GetSrcPos());
   LabelIdx lbidx = GetModule()->CurFunction()->GetLabelTab()->CreateLabel();
   GetModule()->CurFunction()->GetLabelTab()->AddToStringLabelMap(lbidx);
   brFalseStmt->SetOffset(lbidx);
-  newblk->AddStatement(brFalseStmt);
+  newblk.AddStatement(brFalseStmt);
   LabelNode *labStmt = GetModule()->CurFuncCodeMemPool()->New<LabelNode>();
   labStmt->SetLabelIdx(lbidx);
   MIRFunction *func =
       GetModule()->GetMIRBuilder()->GetOrCreateFunction(strMCCThrowArrayIndexOutOfBoundsException, TyIdx(PTY_void));
   MapleVector<BaseNode*> args(GetModule()->GetMIRBuilder()->GetCurrentFuncCodeMpAllocator()->Adapter());
   CallNode *callStmt = GetModule()->GetMIRBuilder()->CreateStmtCall(func->GetPuidx(), args);
-  newblk->AddStatement(callStmt);
-  newblk->AddStatement(labStmt);
+  newblk.AddStatement(callStmt);
+  newblk.AddStatement(labStmt);
 }
 
 BlockNode *JavaEHLowerer::DoLowerBlock(BlockNode *block) {
@@ -206,7 +206,7 @@ BlockNode *JavaEHLowerer::DoLowerBlock(BlockNode *block) {
       case OP_intrinsiccall: {
         IntrinsiccallNode *intrinCall = static_cast<IntrinsiccallNode*>(stmt);
         if (intrinCall->GetIntrinsic() == INTRN_MPL_BOUNDARY_CHECK) {
-          DoLowerBoundaryCheck(intrinCall, newBlock);
+          DoLowerBoundaryCheck(*intrinCall, *newBlock);
           break;
         }
         //  fallthrough;

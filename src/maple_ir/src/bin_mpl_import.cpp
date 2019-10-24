@@ -283,7 +283,7 @@ void BinaryMplImport::ImportMethodPair(MethodPair &memPool) {
   } else {
     funcSt = GlobalTables::GetGsymTable().CreateSymbol(kScopeGlobal);
     funcSt->SetNameStrIdx(stridx);
-    GlobalTables::GetGsymTable().AddToStringSymbolMap(funcSt);
+    GlobalTables::GetGsymTable().AddToStringSymbolMap(*funcSt);
     funcSt->SetStorageClass(kScText);
     funcSt->SetSKind(kStFunc);
     funcSt->SetTyIdx(funcTyidx);

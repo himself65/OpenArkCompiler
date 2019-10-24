@@ -154,6 +154,5 @@ class PhaseManager {
   MapleVector<PhaseID> phaseSequences;
   MapleVector<long> phaseTimers;
 };
-
 }  // namespace maple
 #endif  // MAPLE_PHASE_INCLUDE_PHASE_MANAGER_H
