@@ -144,12 +144,12 @@ std::string DecodeName(const std::string &name);
 std::string DecodeName(const char *name);
 void DecodeMapleNameToJavaDescriptor(const std::string &nameIn, std::string &nameOut);
 
-std::string NativeJavaName(const char *name, bool overloaded = true);
+std::string NativeJavaName(const char *name, bool overLoaded = true);
 
 __attribute__((visibility("default"))) unsigned UTF16ToUTF8(std::string &str, const std::u16string &str16,
-                                                            unsigned short num = 0, bool isbigendian = false);
+                                                            unsigned short num = 0, bool isBigEndian = false);
 __attribute__((visibility("default"))) unsigned UTF8ToUTF16(std::u16string &str16, const std::string &str,
-                                                            unsigned short num = 0, bool isbigendian = false);
+                                                            unsigned short num = 0, bool isBigEndian = false);
 void GetUnsignedLeb128Encode(std::vector<uint8_t> &dest, uint32_t value);
 uint32_t GetUnsignedLeb128Decode(const uint8_t **data);
 uint64_t GetUleb128Encode(uint64_t val);

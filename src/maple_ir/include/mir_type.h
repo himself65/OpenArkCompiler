@@ -476,6 +476,43 @@ class MIRType {
     return false;
   }
 
+  bool IsMIRPtrType() const {
+    return (typeKind == kTypePointer);
+  }
+
+  bool IsMIRStructType() const {
+    return ((typeKind == kTypeStruct) || (typeKind == kTypeStructIncomplete));
+  }
+
+  bool IsMIRClassType() const {
+    return ((typeKind == kTypeClass) || (typeKind == kTypeClassIncomplete));
+  }
+
+  bool IsMIRInterfaceType() const {
+    return ((typeKind == kTypeInterface) || (typeKind == kTypeInterfaceIncomplete));
+  }
+
+  bool IsInstanceOfMIRStructType() const {
+    return (IsMIRStructType() || IsMIRClassType() || IsMIRInterfaceType());
+  }
+
+  bool IsMIRJarrayType() const {
+    return (typeKind == kTypeJArray);
+  }
+
+  bool IsMIRFuncType() const {
+    return (typeKind == kTypeFunction);
+  }
+
+  bool IsScalarType() const {
+    return (typeKind == kTypeScalar);
+  }
+
+  bool IsIncomplete() const {
+    return ((typeKind == kTypeStructIncomplete) || (typeKind == kTypeClassIncomplete) ||
+            (typeKind == kTypeInterfaceIncomplete));
+  }
+
   virtual bool ValidateClassOrInterface(const char *className, bool noWarning);
   const std::string &GetName(void) const;
   virtual std::string GetMplTypeName() const;

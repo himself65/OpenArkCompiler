@@ -37,9 +37,9 @@ CheckCastGenerator::CheckCastGenerator(MIRModule *mod, KlassHierarchy *kh, bool 
 
 
 void CheckCastGenerator::InitTypes() {
-  pointerObjType = GlobalTables::GetTypeTable().GetOrCreatePointerType(WKTypes::Util::GetJavaLangObjectType());
-  classinfoType = GlobalTables::GetTypeTable().GetOrCreateClassType(NameMangler::kClassMetadataTypeName, GetModule());
-  pointerClassMetaType = GlobalTables::GetTypeTable().GetOrCreatePointerType(classinfoType);
+  pointerObjType = GlobalTables::GetTypeTable().GetOrCreatePointerType(*WKTypes::Util::GetJavaLangObjectType());
+  classinfoType = GlobalTables::GetTypeTable().GetOrCreateClassType(NameMangler::kClassMetadataTypeName, *GetModule());
+  pointerClassMetaType = GlobalTables::GetTypeTable().GetOrCreatePointerType(*classinfoType);
 }
 
 void CheckCastGenerator::InitFuncs() {

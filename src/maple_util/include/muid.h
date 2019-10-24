@@ -120,7 +120,7 @@ struct MUID {
 
 void MuidInit(MuidContext *status);
 void MuidDecode(MuidContext *status, const void *data, uint64_t size);
-void MuidEncode(unsigned char *result, MuidContext *status, bool use64bit = false);
+void MuidEncode(unsigned char *result, MuidContext *status, bool use64Bit = false);
 
 MUID GetMUID(const std::string &symbolName, bool forSystem = true);
 #endif

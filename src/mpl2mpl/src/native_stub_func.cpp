@@ -28,9 +28,9 @@ namespace maple {
 GenericNativeStubFunc::GenericNativeStubFunc(MIRModule *mod, KlassHierarchy *kh, bool dump)
     : FuncOptimizeImpl(mod, kh, dump) {
   MIRType *jstrType = GlobalTables::GetTypeTable().GetOrCreateClassType(
-      NameMangler::GetInternalNameLiteral(NameMangler::kJavaLangStringStr).c_str(), mod);
+      NameMangler::GetInternalNameLiteral(NameMangler::kJavaLangStringStr), *mod);
   MIRPtrType *jstrPointerType =
-      static_cast<MIRPtrType*>(GlobalTables::GetTypeTable().GetOrCreatePointerType(jstrType, PTY_ref));
+      static_cast<MIRPtrType*>(GlobalTables::GetTypeTable().GetOrCreatePointerType(*jstrType, PTY_ref));
   jstrPointerTypeIdx = jstrPointerType->GetTypeIndex();
   GenericRegTableEntryType();
   GenericHelperFuncDecl();
@@ -288,7 +288,7 @@ void GenericNativeStubFunc::ProcessFunc(MIRFunction *func) {
 
 void GenericNativeStubFunc::GenericRegFuncTabEntryType() {
   MIRArrayType *arrayType =
-      GlobalTables::GetTypeTable().GetOrCreateArrayType(GlobalTables::GetTypeTable().GetVoidPtr(), 0);
+      GlobalTables::GetTypeTable().GetOrCreateArrayType(*GlobalTables::GetTypeTable().GetVoidPtr(), 0);
   regFuncTabConst = GetModule()->GetMemPool()->New<MIRAggConst>(GetModule(), arrayType);
   std::string regFuncTab = NameMangler::kRegJNIFuncTabPrefixStr + GetModule()->GetFileNameAsPostfix();
   regFuncSymbol = builder->CreateSymbol(regFuncTabConst->GetType()->GetTypeIndex(), regFuncTab.c_str(), kStVar,
@@ -351,7 +351,7 @@ void GenericNativeStubFunc::GenericRegisteredNativeFuncCall(MIRFunction &func, c
   arrayExpr->SetBoundsCheck(false);
   MIRType *elemType = static_cast<MIRArrayType*>(regArrayType)->GetElemType();
   BaseNode *ireadExpr =
-      builder->CreateExprIread(elemType, GlobalTables::GetTypeTable().GetOrCreatePointerType(elemType), 0, arrayExpr);
+      builder->CreateExprIread(elemType, GlobalTables::GetTypeTable().GetOrCreatePointerType(*elemType), 0, arrayExpr);
   // assign registered func ptr to a preg.
   auto funcptrPreg = func.GetPregTab()->CreatePreg(PTY_ptr);
   RegassignNode *funcptrAssign = builder->CreateStmtRegassign(PTY_ptr, funcptrPreg, ireadExpr);
@@ -420,7 +420,7 @@ void GenericNativeStubFunc::GenericRegisteredNativeFuncCall(MIRFunction &func, c
       // Rewrite reg_jni_func_tab with current funcIdx_ptr(weak/strong symbol address)
       auto nativeMethodPtr = builder->CreateExprRegread(PTY_ptr, funcptrPreg);
       IassignNode *nativeFuncTableEntry = builder->CreateStmtIassign(
-          GlobalTables::GetTypeTable().GetOrCreatePointerType(elemType), 0, arrayExpr, nativeMethodPtr);
+          GlobalTables::GetTypeTable().GetOrCreatePointerType(*elemType), 0, arrayExpr, nativeMethodPtr);
       subIfStmt->GetThenPart()->AddStatement(nativeFuncTableEntry);
       // Add if-statement to function body
       if (!needNativeCall) {
@@ -480,7 +480,7 @@ void GenericNativeStubFunc::GenericRegisteredNativeFuncCall(MIRFunction &func, c
     return;
   }
   // Without native wrapper
-  IcallNode *icall = func.GetCodeMempool()->New<IcallNode>(GetModule(), OP_icallassigned);
+  IcallNode *icall = func.GetCodeMempool()->New<IcallNode>(*GetModule(), OP_icallassigned);
   icall->SetNumOpnds(args.size() + 1);
   icall->GetNopnd().resize(icall->GetNumOpnds());
   icall->SetReturnVec(nrets);
@@ -518,7 +518,7 @@ StmtNode *GenericNativeStubFunc::CreateNativeWrapperCallNode(MIRFunction &func, 
   // if num_of_args < 8
   constexpr size_t kNumOfArgs = 8;
   if (func.GetAttr(FUNCATTR_critical_native) && args.size() < kNumOfArgs) {
-    IcallNode *icall = func.GetCodeMempool()->New<IcallNode>(GetModule(), OP_icallassigned);
+    IcallNode *icall = func.GetCodeMempool()->New<IcallNode>(*GetModule(), OP_icallassigned);
     CallReturnVector nrets(func.GetCodeMempoolAllocator()->Adapter());
     if (ret != nullptr) {
       CHECK_FATAL((ret->GetStorageClass() == kScAuto || ret->GetStorageClass() == kScFormal ||
@@ -566,7 +566,7 @@ void GenericNativeStubFunc::GenericNativeWrapperFuncCall(MIRFunction &func, cons
 void GenericNativeStubFunc::GenericRegTableEntryType() {
   // Use MIRIntType instead of MIRStructType in RegTableEntry
   MIRArrayType *arrayType =
-      GlobalTables::GetTypeTable().GetOrCreateArrayType(GlobalTables::GetTypeTable().GetVoidPtr(), 0);
+      GlobalTables::GetTypeTable().GetOrCreateArrayType(*GlobalTables::GetTypeTable().GetVoidPtr(), 0);
   regTableConst = GetModule()->GetMemPool()->New<MIRAggConst>(GetModule(), arrayType);
 }
 

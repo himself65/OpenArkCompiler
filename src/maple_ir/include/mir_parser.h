@@ -28,7 +28,7 @@ using BlockNodePtr = BlockNode*;
 class MIRParser {
  public:
   explicit MIRParser(MIRModule &md)
-      : lexer(&md),
+      : lexer(md),
         mod(md),
         options(kKeepFirst),
         definedLabels(mod.GetMPAllocator().Adapter()),
@@ -48,8 +48,8 @@ class MIRParser {
   ~MIRParser() {}
 
   MIRPreg *CreateMirPreg(uint32 pregNo) const;
-  PregIdx LookupOrCreatePregIdx(uint32 pregNo, bool isref, MIRFunction *curfunc);
-  void ResetMaxPregNo(MIRFunction*);
+  PregIdx LookupOrCreatePregIdx(uint32 pregNo, bool isref, MIRFunction &curfunc);
+  void ResetMaxPregNo(MIRFunction&);
   MIRFunction *CreateDummyFunction();
   void ResetCurrentFunction() {
     mod.SetCurFunction(dummyFunction);
@@ -73,7 +73,7 @@ class MIRParser {
   bool ParseDeclaredSt(StIdx&);
   bool ParseDeclaredFunc(PUIdx&);
   bool ParseTypeAttrs(TypeAttrs&);
-  bool ParseVarTypeAttrs(MIRSymbol *st);
+  bool ParseVarTypeAttrs(MIRSymbol &st);
   bool CheckAlignTk();
   bool ParseAlignAttrs(TypeAttrs &tA);
   bool ParseFieldAttrs(FieldAttrs &tA);
@@ -83,9 +83,9 @@ class MIRParser {
   bool ParseFarrayType(TyIdx &tyIdx);
   bool ParseArrayType(TyIdx &tyIdx);
   bool ParseBitFieldType(TyIdx &tyIdx);
-  bool ParsePragmaElement(MIRPragmaElement *elem);
-  bool ParsePragmaElementForArray(MIRPragmaElement *elem);
-  bool ParsePragmaElementForAnnotation(MIRPragmaElement *elem);
+  bool ParsePragmaElement(MIRPragmaElement &lem);
+  bool ParsePragmaElementForArray(MIRPragmaElement &elem);
+  bool ParsePragmaElementForAnnotation(MIRPragmaElement &elem);
   bool ParsePragma(MIRStructType &type);
   bool ParseFields(MIRStructType &type);
   bool ParseStructType(TyIdx &tyIdx);
@@ -103,12 +103,12 @@ class MIRParser {
   bool ParsePseudoReg(PrimType pty, PregIdx &pregIdx);
   bool ParseRefPseudoReg(PregIdx&);
   bool ParseStmtBlock(BlockNodePtr &blk);
-  bool ParsePrototype(MIRFunction *fn, MIRSymbol *funcSt, TyIdx &funcTyIdx);
+  bool ParsePrototype(MIRFunction &fn, MIRSymbol &funcSt, TyIdx &funcTyIdx);
   bool ParseFunction(uint32 fileIdx = 0);
-  bool ParseStorageClass(MIRSymbol *st) const;
-  bool ParseDeclareVar(MIRSymbol*);
-  bool ParseDeclareReg(MIRSymbol*, MIRFunction*);
-  bool ParsePrototypeRemaining(MIRFunction*, std::vector<TyIdx> &, std::vector<TypeAttrs>&, bool&);
+  bool ParseStorageClass(MIRSymbol &st) const;
+  bool ParseDeclareVar(MIRSymbol&);
+  bool ParseDeclareReg(MIRSymbol&, MIRFunction&);
+  bool ParsePrototypeRemaining(MIRFunction&, std::vector<TyIdx> &, std::vector<TypeAttrs>&, bool&);
 
   // Stmt Parser
   bool ParseStmtDassign(StmtNodePtr &stmt);
@@ -193,7 +193,7 @@ class MIRParser {
   bool ParseExprIntrinsicop(BaseNodePtr &expr);
 
   bool ParseTypedef();
-  bool ParseJavaClassInterface(MIRSymbol*, bool);
+  bool ParseJavaClassInterface(MIRSymbol&, bool);
   bool ParseIntrinsicId(IntrinsicopNode*);
   void Error(const std::string&);
   void Warning(const std::string&);
@@ -205,9 +205,9 @@ class MIRParser {
   bool ParseFuncInfo(void);
   void PrepareParsingMIR();
   bool ParseMIR(uint32 fileIdx = 0, uint32 option = 0, bool isIpa = false, bool isComb = false);
-  bool ParseMIR(std::ifstream*);  // the main entry point
-  bool ParseMPLT(std::ifstream*, const std::string&);
-  bool ParseMPLTStandalone(std::ifstream *mpltfile, const std::string &importfilename);
+  bool ParseMIR(std::ifstream&);  // the main entry point
+  bool ParseMPLT(std::ifstream&, const std::string&);
+  bool ParseMPLTStandalone(std::ifstream &mpltfile, const std::string &importfilename);
   bool ParseTypeFromString(const std::string&, TyIdx&);
   void EmitError(const std::string&);
   void EmitWarning(const std::string&);

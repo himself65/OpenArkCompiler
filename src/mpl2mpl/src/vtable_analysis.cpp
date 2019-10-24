@@ -313,7 +313,7 @@ void VtableAnalysis::GenItableDefinition(const Klass *klass) {
 
 void VtableAnalysis::GenTableSymbol(const std::string &prefix, const std::string klassName, MIRAggConst *newconst) {
   size_t arraySize = newconst->GetConstVec().size();
-  MIRArrayType *arrayType = GlobalTables::GetTypeTable().GetOrCreateArrayType(voidPtrType, arraySize);
+  MIRArrayType *arrayType = GlobalTables::GetTypeTable().GetOrCreateArrayType(*voidPtrType, arraySize);
   MIRSymbol *vtabSt = builder->CreateGlobalDecl((prefix + klassName).c_str(), arrayType);
   if (klassName == NameMangler::GetInternalNameLiteral(NameMangler::kJavaLangObjectStr)) {
     vtabSt->SetStorageClass(kScGlobal);
@@ -400,7 +400,7 @@ void VtableAnalysis::ReplaceSuperclassInvoke(CallNode *stmt) {
 
 void VtableAnalysis::ReplacePolymorphicInvoke(CallNode *stmt) {
   IntrinsiccallNode *intrinCall =
-      GetModule()->CurFuncCodeMemPool()->New<IntrinsiccallNode>(GetModule(), OP_xintrinsiccallassigned);
+      GetModule()->CurFuncCodeMemPool()->New<IntrinsiccallNode>(*GetModule(), OP_xintrinsiccallassigned);
   intrinCall->SetIntrinsic(INTRN_JAVA_POLYMORPHIC_CALL);
   intrinCall->SetNumOpnds(stmt->GetNumOpnds());
   intrinCall->SetReturnVec(stmt->GetReturnVec());
@@ -412,7 +412,7 @@ BaseNode *VtableAnalysis::GenVtabItabBaseAddr(BaseNode *obj, bool isVirtual) {
   BaseNode *classInfoAddress = ReflectionAnalysis::GenClassInfoAddr(obj, builder);
   MIRStructType *classMetadataType = static_cast<MIRStructType*>(
       GlobalTables::GetTypeTable().GetTypeFromTyIdx(ReflectionAnalysis::GetClassMetaDataTyIdx()));
-  return builder->CreateExprIread(voidPtrType, GlobalTables::GetTypeTable().GetOrCreatePointerType(classMetadataType),
+  return builder->CreateExprIread(voidPtrType, GlobalTables::GetTypeTable().GetOrCreatePointerType(*classMetadataType),
                                   (isVirtual ? KLASS_VTAB_FIELDID : KLASS_ITAB_FIELDID), classInfoAddress);
 }
 
@@ -455,7 +455,7 @@ void VtableAnalysis::ReplaceVirtualInvoke(CallNode *stmt) {
       builder->CreateExprBinary(OP_add, GlobalTables::GetTypeTable().GetPtr(), tabBaseAddress, offsetNode);
   BaseNode *readFuncPtr = builder->CreateExprIread(
       GlobalTables::GetTypeTable().GetCompactPtr(),
-      GlobalTables::GetTypeTable().GetOrCreatePointerType(GlobalTables::GetTypeTable().GetCompactPtr()), 0, addrNode);
+      GlobalTables::GetTypeTable().GetOrCreatePointerType(*GlobalTables::GetTypeTable().GetCompactPtr()), 0, addrNode);
   stmt->SetOpCode(OP_virtualicallassigned);
   stmt->GetNopnd().insert(stmt->GetNopnd().begin(), readFuncPtr);
   stmt->SetNumOpnds(stmt->GetNumOpnds() + 1);

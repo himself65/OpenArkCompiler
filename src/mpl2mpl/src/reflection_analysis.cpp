@@ -100,14 +100,14 @@ BaseNode *ReflectionAnalysis::GenClassInfoAddr(BaseNode *obj, MIRBuilder *builde
   BaseNode *classinfoAddress = nullptr;
   if (objectType != nullptr && objectType->GetKind() != kTypeClassIncomplete) {
     classinfoAddress = builder->CreateExprIread(GlobalTables::GetTypeTable().GetRef(),
-                                                GlobalTables::GetTypeTable().GetOrCreatePointerType(objectType),
+                                                GlobalTables::GetTypeTable().GetOrCreatePointerType(*objectType),
                                                 OBJ_KLASS_FIELDID, obj);
   } else {
     // If java.lang.Object type is not defined, fall back to use the classinfo struct to retrieve the first field.
     MIRStructType *classMetadataType = static_cast<MIRStructType*>(
         GlobalTables::GetTypeTable().GetTypeFromTyIdx(ReflectionAnalysis::classMetadataTyIdx));
     classinfoAddress = builder->CreateExprIread(GlobalTables::GetTypeTable().GetRef(),
-                                                GlobalTables::GetTypeTable().GetOrCreatePointerType(classMetadataType),
+                                                GlobalTables::GetTypeTable().GetOrCreatePointerType(*classMetadataType),
                                                 METADATA_KLASS_FIELDID, obj);
   }
   return classinfoAddress;
@@ -486,7 +486,7 @@ MIRSymbol *ReflectionAnalysis::CreateSymbol(GStrIdx strIdx, TyIdx tyIdx) {
   st->SetStorageClass(kScGlobal);
   st->SetSKind(kStVar);
   st->SetNameStrIdx(strIdx);
-  GlobalTables::GetGsymTable().AddToStringSymbolMap(st);
+  GlobalTables::GetGsymTable().AddToStringSymbolMap(*st);
   st->SetAttr(ATTR_public);
   st->SetTyIdx(tyIdx);
   return st;
@@ -658,7 +658,7 @@ MIRSymbol *ReflectionAnalysis::GenMethodsMetaData(const Klass *klass) {
   size_t arraySize = classType->GetMethods().size();
   MIRStructType *methodsInfoType =
       static_cast<MIRStructType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(methodsInfoTyIdx));
-  MIRArrayType *arraytype = GlobalTables::GetTypeTable().GetOrCreateArrayType(methodsInfoType, arraySize);
+  MIRArrayType *arraytype = GlobalTables::GetTypeTable().GetOrCreateArrayType(*methodsInfoType, arraySize);
   MIRAggConst *aggconst = mirModule->GetMemPool()->New<MIRAggConst>(mirModule, arraytype);
   std::vector<std::pair<MethodPair*, int>> methodinfoVec;
   for (MethodPair &methodPair : classType->GetMethods()) {
@@ -746,7 +746,7 @@ MIRSymbol *ReflectionAnalysis::GenSuperClassMetaData(const Klass *klass, std::li
   size_t size = superClassList.size();
   MIRStructType *superclassMetadataType =
       static_cast<MIRStructType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(superclassMetadataTyIdx));
-  MIRArrayType *arrayType = GlobalTables::GetTypeTable().GetOrCreateArrayType(superclassMetadataType, size);
+  MIRArrayType *arrayType = GlobalTables::GetTypeTable().GetOrCreateArrayType(*superclassMetadataType, size);
   MIRAggConst *aggconst = mirModule->GetMemPool()->New<MIRAggConst>(mirModule, arrayType);
   for (auto it = superClassList.begin(); it != superClassList.end(); ++it) {
     MIRSymbol *dklassSt = GetOrCreateSymbol(CLASSINFO_PREFIX_STR + (*it)->GetKlassName(), classMetadataTyIdx);
@@ -789,7 +789,7 @@ MIRSymbol *ReflectionAnalysis::GenFieldsMetaData(const Klass *klass) {
   }
   MIRStructType *fieldsInfoType =
       static_cast<MIRStructType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(fieldsInfoTyIdx));
-  MIRArrayType *arraytype = GlobalTables::GetTypeTable().GetOrCreateArrayType(fieldsInfoType, size);
+  MIRArrayType *arraytype = GlobalTables::GetTypeTable().GetOrCreateArrayType(*fieldsInfoType, size);
   MIRAggConst *aggconst = mirModule->GetMemPool()->New<MIRAggConst>(mirModule, arraytype);
   std::vector<std::pair<FieldPair, uint16>> fieldHashvec(size);
   size_t i = 0;
@@ -1487,92 +1487,92 @@ void ReflectionAnalysis::GenMetadataType(MIRModule *mirModule) {
   MIRType *typeU64 = GlobalTables::GetTypeTable().GetUInt64();
   MIRType *typeVoidPtr = GlobalTables::GetTypeTable().GetVoidPtr();
   MIRStructType classMetadataType(kTypeStruct);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&classMetadataType, kShadowStr, GetRefFieldType(&mirBuilder));
-  GlobalTables::GetTypeTable().AddFieldToStructType(&classMetadataType, kMonitorStr, typeI32);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&classMetadataType, kClassloaderStr, typeU16);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&classMetadataType, kObjsizeStr, typeU16);
+  GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataType, kShadowStr, *GetRefFieldType(&mirBuilder));
+  GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataType, kMonitorStr, *typeI32);
+  GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataType, kClassloaderStr, *typeU16);
+  GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataType, kObjsizeStr, *typeU16);
 #ifdef USE_32BIT_REF
-  GlobalTables::GetTypeTable().AddFieldToStructType(&classMetadataType, kFlagStr, typeU16);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&classMetadataType, kNumofsuperclassesStr, typeU16);
+  GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataType, kFlagStr, *typeU16);
+  GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataType, kNumofsuperclassesStr, *typeU16);
 #endif  // USE_32BIT_REF
-  GlobalTables::GetTypeTable().AddFieldToStructType(&classMetadataType, kItabStr, typeVoidPtr);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&classMetadataType, kVtabStr, typeVoidPtr);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&classMetadataType, kGctibStr, typeVoidPtr);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&classMetadataType, kClassinforoStr, typeVoidPtr);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&classMetadataType, kClinitbridgeStr, typeVoidPtr);
+  GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataType, kItabStr, *typeVoidPtr);
+  GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataType, kVtabStr, *typeVoidPtr);
+  GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataType, kGctibStr, *typeVoidPtr);
+  GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataType, kClassinforoStr, *typeVoidPtr);
+  GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataType, kClinitbridgeStr, *typeVoidPtr);
   classMetadataTyIdx = GenMetaStructType(mirModule, classMetadataType, kClassMetadataTypeName);
   MIRStructType classMetadataROType(kTypeStruct);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&classMetadataROType, kClassnameStr, typeVoidPtr);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&classMetadataROType, kIfieldsStr, typeVoidPtr);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&classMetadataROType, kMethodsStr, typeVoidPtr);
+  GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataROType, kClassnameStr, *typeVoidPtr);
+  GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataROType, kIfieldsStr, *typeVoidPtr);
+  GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataROType, kMethodsStr, *typeVoidPtr);
   // For array, this is component class; For primitive type, this is nullptr;
   // For general class, this is superclass (only one superclass), this is a pointer to a superclass&interface array.
-  GlobalTables::GetTypeTable().AddFieldToStructType(&classMetadataROType, kSuperclassOrComponentclassStr, typeVoidPtr);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&classMetadataROType, kNumoffieldsStr, typeU16);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&classMetadataROType, kNumofmethodsStr, typeU16);
+  GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataROType, kSuperclassOrComponentclassStr, *typeVoidPtr);
+  GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataROType, kNumoffieldsStr, *typeU16);
+  GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataROType, kNumofmethodsStr, *typeU16);
 #ifndef USE_32BIT_REF
-  GlobalTables::GetTypeTable().AddFieldToStructType(&classMetadataROType, kFlagStr, typeU16);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&classMetadataROType, kNumofsuperclassesStr, typeU16);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&classMetadataROType, kPaddingStr, typeU32);
+  GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataROType, kFlagStr, *typeU16);
+  GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataROType, kNumofsuperclassesStr, *typeU16);
+  GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataROType, kPaddingStr, *typeU32);
 #endif  // USE_32BIT_REF
-  GlobalTables::GetTypeTable().AddFieldToStructType(&classMetadataROType, kModStr, typeI32);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&classMetadataROType, kAnnotationStr, typeI32);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&classMetadataROType, kClinitAddrStr, typeI32);
+  GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataROType, kModStr, *typeI32);
+  GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataROType, kAnnotationStr, *typeI32);
+  GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataROType, kClinitAddrStr, *typeI32);
   classMetadataRoTyIdx = GenMetaStructType(mirModule, classMetadataROType, kClassMetadataRoTypeName);
   // MethodInfoType.
   MIRStructType methodInfoType(kTypeStruct);
 #ifdef USE_32BIT_REF
-  GlobalTables::GetTypeTable().AddFieldToStructType(&methodInfoType, kMethodInVtabIndexStr, typeI32);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&methodInfoType, kDeclaringclassStr, typeI32);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&methodInfoType, kAddrStr, typeI32);
+  GlobalTables::GetTypeTable().AddFieldToStructType(methodInfoType, kMethodInVtabIndexStr, *typeI32);
+  GlobalTables::GetTypeTable().AddFieldToStructType(methodInfoType, kDeclaringclassStr, *typeI32);
+  GlobalTables::GetTypeTable().AddFieldToStructType(methodInfoType, kAddrStr, *typeI32);
 #else
-  GlobalTables::GetTypeTable().AddFieldToStructType(&methodInfoType, kMethodInVtabIndexStr, typeI64);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&methodInfoType, kDeclaringclassStr, typeI64);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&methodInfoType, kAddrStr, typeI64);
+  GlobalTables::GetTypeTable().AddFieldToStructType(methodInfoType, kMethodInVtabIndexStr, *typeI64);
+  GlobalTables::GetTypeTable().AddFieldToStructType(methodInfoType, kDeclaringclassStr, *typeI64);
+  GlobalTables::GetTypeTable().AddFieldToStructType(methodInfoType, kAddrStr, *typeI64);
 #endif
-  GlobalTables::GetTypeTable().AddFieldToStructType(&methodInfoType, kModStr, typeI32);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&methodInfoType, kMethodnameStr, typeI32);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&methodInfoType, kSignaturenameStr, typeI32);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&methodInfoType, kAnnotationvalueStr, typeI32);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&methodInfoType, kFlagStr, typeU16);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&methodInfoType, kArgsizeStr, typeU16);
+  GlobalTables::GetTypeTable().AddFieldToStructType(methodInfoType, kModStr, *typeI32);
+  GlobalTables::GetTypeTable().AddFieldToStructType(methodInfoType, kMethodnameStr, *typeI32);
+  GlobalTables::GetTypeTable().AddFieldToStructType(methodInfoType, kSignaturenameStr, *typeI32);
+  GlobalTables::GetTypeTable().AddFieldToStructType(methodInfoType, kAnnotationvalueStr, *typeI32);
+  GlobalTables::GetTypeTable().AddFieldToStructType(methodInfoType, kFlagStr, *typeU16);
+  GlobalTables::GetTypeTable().AddFieldToStructType(methodInfoType, kArgsizeStr, *typeU16);
 #ifndef USE_32BIT_REF
-  GlobalTables::GetTypeTable().AddFieldToStructType(&methodInfoType, kPaddingStr, typeU32);
+  GlobalTables::GetTypeTable().AddFieldToStructType(methodInfoType, kPaddingStr, *typeU32);
 #endif  // USE_32BIT_REF
   methodsInfoTyIdx = GenMetaStructType(mirModule, methodInfoType, kMethodInfoTypeName);
   // MethodInfoCompactType.
   MIRStructType methodInfoCompactType(kTypeStruct);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&methodInfoCompactType, kMethodInVtabIndexStr, typeI32);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&methodInfoCompactType, kAddrStr, typeI32);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&methodInfoCompactType, kLebPadding0Str, typeU8);
+  GlobalTables::GetTypeTable().AddFieldToStructType(methodInfoCompactType, kMethodInVtabIndexStr, *typeI32);
+  GlobalTables::GetTypeTable().AddFieldToStructType(methodInfoCompactType, kAddrStr, *typeI32);
+  GlobalTables::GetTypeTable().AddFieldToStructType(methodInfoCompactType, kLebPadding0Str, *typeU8);
   methodsInfoCompactTyIdx = GenMetaStructType(mirModule, methodInfoCompactType, kMethodInfoCompactTypeName);
   // FieldInfoType.
   MIRStructType fieldInfoType(kTypeStruct);
 #ifndef USE_32BIT_REF
-  GlobalTables::GetTypeTable().AddFieldToStructType(&fieldInfoType, kOffsetStr, typeU64);
+  GlobalTables::GetTypeTable().AddFieldToStructType(fieldInfoType, kOffsetStr, *typeU64);
 #else
-  GlobalTables::GetTypeTable().AddFieldToStructType(&fieldInfoType, kOffsetStr, typeI32);
+  GlobalTables::GetTypeTable().AddFieldToStructType(fieldInfoType, kOffsetStr, *typeI32);
 #endif  // USE_32BIT_REF
-  GlobalTables::GetTypeTable().AddFieldToStructType(&fieldInfoType, kModStr, typeU32);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&fieldInfoType, kFlagStr, typeU16);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&fieldInfoType, kIndexStr, typeU16);
+  GlobalTables::GetTypeTable().AddFieldToStructType(fieldInfoType, kModStr, *typeU32);
+  GlobalTables::GetTypeTable().AddFieldToStructType(fieldInfoType, kFlagStr, *typeU16);
+  GlobalTables::GetTypeTable().AddFieldToStructType(fieldInfoType, kIndexStr, *typeU16);
 #ifndef USE_32BIT_REF
-  GlobalTables::GetTypeTable().AddFieldToStructType(&fieldInfoType, kTypeNameStr, typeI64);
+  GlobalTables::GetTypeTable().AddFieldToStructType(fieldInfoType, kTypeNameStr, *typeI64);
 #else
-  GlobalTables::GetTypeTable().AddFieldToStructType(&fieldInfoType, kTypeNameStr, typeI32);
+  GlobalTables::GetTypeTable().AddFieldToStructType(fieldInfoType, kTypeNameStr, *typeI32);
 #endif  // USE_32BIT_REF
-  GlobalTables::GetTypeTable().AddFieldToStructType(&fieldInfoType, kFieldnameStr, typeU32);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&fieldInfoType, kAnnotationStr, typeU32);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&fieldInfoType, kDeclaringclassStr, GetRefFieldType(&mirBuilder));
+  GlobalTables::GetTypeTable().AddFieldToStructType(fieldInfoType, kFieldnameStr, *typeU32);
+  GlobalTables::GetTypeTable().AddFieldToStructType(fieldInfoType, kAnnotationStr, *typeU32);
+  GlobalTables::GetTypeTable().AddFieldToStructType(fieldInfoType, kDeclaringclassStr, *GetRefFieldType(&mirBuilder));
   fieldsInfoTyIdx = GenMetaStructType(mirModule, fieldInfoType, kFieldInfoTypeName);
   // FieldInfoType Compact.
   MIRStructType fieldInfoCompactType(kTypeStruct);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&fieldInfoCompactType, kOffsetStr, typeU32);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&fieldInfoCompactType, kLebPadding0Str, typeU8);
+  GlobalTables::GetTypeTable().AddFieldToStructType(fieldInfoCompactType, kOffsetStr, *typeU32);
+  GlobalTables::GetTypeTable().AddFieldToStructType(fieldInfoCompactType, kLebPadding0Str, *typeU8);
   fieldsInfoCompactTyIdx = GenMetaStructType(mirModule, fieldInfoCompactType, kFieldInfoCompactTypeName);
   // SuperClassMetaType.
   MIRStructType superclassMetadataType(kTypeStruct);
-  GlobalTables::GetTypeTable().AddFieldToStructType(&superclassMetadataType, kSuperclassinfoStr, typeVoidPtr);
+  GlobalTables::GetTypeTable().AddFieldToStructType(superclassMetadataType, kSuperclassinfoStr, *typeVoidPtr);
   superclassMetadataTyIdx = GenMetaStructType(mirModule, superclassMetadataType, kSuperclassMetadataTypeName);
 }
 
@@ -1587,7 +1587,7 @@ void ReflectionAnalysis::GenClassHashMetaData() {
   }
   std::string bucketName = NameMangler::kMuidClassMetadataBucketPrefixStr + mirModule->GetFileNameAsPostfix();
   size_t bucketArraySize = classTab.size();
-  MIRArrayType *bucketArraytype = GlobalTables::GetTypeTable().GetOrCreateArrayType(type, bucketArraySize);
+  MIRArrayType *bucketArraytype = GlobalTables::GetTypeTable().GetOrCreateArrayType(*type, bucketArraySize);
   MIRSymbol *bucketSt = GetOrCreateSymbol(bucketName, bucketArraytype->GetTypeIndex(), true);
   MIRAggConst *bucketAggconst = mirModule->GetMemPool()->New<MIRAggConst>(mirModule, bucketArraytype);
   if (bucketAggconst == nullptr) {
@@ -1611,7 +1611,7 @@ static void ReflectionAnalysisGenStrTab(MIRModule *mirModule, const std::string 
     return;
   }
   MIRArrayType *strtabType =
-      GlobalTables::GetTypeTable().GetOrCreateArrayType(GlobalTables::GetTypeTable().GetUInt8(), strtabSize);
+      GlobalTables::GetTypeTable().GetOrCreateArrayType(*GlobalTables::GetTypeTable().GetUInt8(), strtabSize);
   MIRSymbol *strtabSt = mirBuilder.CreateGlobalDecl(strtabName.c_str(), strtabType);
   MIRAggConst *strtabAggconst = mirModule->GetMemPool()->New<MIRAggConst>(mirModule, strtabType);
   if (strtabAggconst == nullptr) {

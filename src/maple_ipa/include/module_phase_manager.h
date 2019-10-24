@@ -61,7 +61,7 @@ class ModulePhaseManager : public PhaseManager {
   }
 
   void Run() override;
-  void Emit(const char *passName);
+  void Emit(const std::string &passName);
 
  private:
   bool timePhases;
