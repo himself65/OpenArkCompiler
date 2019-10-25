@@ -16,6 +16,7 @@
 #define MAPLE_PHASE_INCLUDE_PHASE_MANAGER_H
 #include <iomanip>
 #include "phase.h"
+#include "module_phase.h"
 
 namespace maple {
 class PhaseManager {
@@ -44,16 +45,31 @@ class PhaseManager {
     registeredPhases[id] = p;
   }
 
+  Phase *GetPhaseFromName(const char *pname) {
+    for (auto it = RegPhaseBegin(); it != RegPhaseEnd(); it++) {
+      if (GetPhaseName(it) == pname) {
+        return GetPhase(GetPhaseId(it));
+      }
+    }
+    CHECK_FATAL(false, "not a valid phase");
+    return nullptr;
+  }
+
   Phase *GetPhase(PhaseID id) {
     if (registeredPhases.find(id) != registeredPhases.end()) {
       return registeredPhases[id];
     }
-    MIR_WARNING("not a valid phase");
+    CHECK_FATAL(false, "not a valid phase");
     return nullptr;
   }
 
   virtual void Run() {
-    MIR_ASSERT(false && "should not run here");
+    CHECK_FATAL(false, "should not run here");
+  }
+
+  virtual ModuleResultMgr *GetModResultMgr() {
+    CHECK_FATAL(false, "should not run here");
+    return nullptr;
   }
 
   MapleAllocator *GetMemAllocator() {
@@ -131,7 +147,6 @@ class PhaseManager {
     }
     return total;
   }
-
  protected:
   std::string managerName;
   MapleAllocator allocator;
@@ -139,6 +154,5 @@ class PhaseManager {
   MapleVector<PhaseID> phaseSequences;
   MapleVector<long> phaseTimers;
 };
-
 }  // namespace maple
 #endif  // MAPLE_PHASE_INCLUDE_PHASE_MANAGER_H

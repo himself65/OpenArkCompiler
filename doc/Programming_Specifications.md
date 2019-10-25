@@ -1069,7 +1069,7 @@ FIXME 注释一般用来描述已知缺陷
 头文件应当职责单一。头文件过于复杂，依赖过于复杂还是导致编译时间过长的主要原因。
 
 ### <a name="a5-1-1"></a>建议5.1.1 每一个.cpp文件应有一个对应的.h文件，用于声明需要对外公开的类与接口
-通常情况下，每个.cpp文件都有一个相应的.h，用于放置对外提供的函数声明、宏定义、类型定义等。
+通常情况下，每个.cpp文件都有一个相应的.h，用于放置对外提供的函数声明、宏定义、类型定义等。另外，可根据实际情况添加对应的.inline.h文件优化代码。
 如果一个.cpp文件不需要对外公布任何接口，则其就不应当存在。
 例外：__程序的入口（如main函数所在的文件），单元测试代码，动态库代码。__
 
@@ -1575,7 +1575,7 @@ int main(void) {
 说明：如果用户不定义，编译器默认会生成拷贝构造函数和拷贝赋值操作符， 移动构造和移动赋值操作符（移动语义的函数C++11以后才有）。
 如果我们不要使用拷贝构造函数，或者赋值操作符，请明确拒绝：
 
-1. 将拷贝构造函数或者赋值操作符设置为private，并且不实现：
+1.将拷贝构造函数或者赋值操作符设置为private，并且不实现：
 
 ```cpp
 class Foo {
@@ -1584,12 +1584,20 @@ class Foo {
   Foo& operator=(const Foo&);
 };
 ```
-2. 使用C++11提供的delete, 请参见后面现代C++的相关章节。
-3. 静态方法类，禁用构造函数，防止创建实例
+2.使用C++11提供的delete:
 
 ```cpp
-class Helper
-{
+// 同时禁止, 使用C++11的delete
+class Foo {
+ public:
+  Foo(Foo&&) = delete;
+  Foo& operator=(Foo&&) = delete;
+};
+```
+3.静态方法类，禁用构造函数，防止创建实例
+
+```cpp
+class Helper {
  public:
   static bool DoSomething();
 
@@ -1597,25 +1605,26 @@ class Helper
   Helper();
 };
 ```
-4. 单例类，禁用构造函数，拷贝构造函数，防止创建实例
+4.单例类，禁用构造函数，拷贝构造函数，防止创建实例
 
 ```cpp
 class Foo {
  private:
-  static Foo *instance_;
+  static Foo *instance;
   Foo() {}
   Foo(const Foo &a);
   Foo& operator=(const Foo &a);
  public:
-  static Foo &instance() {
-    if (!instance_)
-      instance_ = new Foo();
-    return *instance_;
+  static Foo &Instance() {
+    if (!instance) {
+      instance = new Foo();
+    }
+    return *instance;
   }
 };
 ```
 
-5. 析构函数通过裸指针释放资源的，禁用拷贝构造、拷贝赋值，防止重复释放
+5.析构函数通过裸指针释放资源的，禁用拷贝构造、拷贝赋值，防止重复释放
 
 ```cpp
 class Foo {
@@ -1633,8 +1642,7 @@ class Foo {
   }
 };
 
-
-Foo* Foo::instance_ = nullptr;
+Foo* Foo::instance = nullptr;
 ```
 
 ### <a name="r7-1-4"></a>规则7.1.4 拷贝构造和拷贝赋值操作符应该是成对出现或者禁止

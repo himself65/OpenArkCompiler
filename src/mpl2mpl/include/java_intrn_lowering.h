@@ -31,9 +31,9 @@ class JavaIntrnLowering : public FuncOptimizeImpl {
 
  private:
   void ProcessStmt(StmtNode *stmt) override;
-  void ProcessJavaIntrnMerge(StmtNode *assignNode, const IntrinsicopNode *intrinNode);
+  void ProcessJavaIntrnMerge(StmtNode &assignNode, const IntrinsicopNode &intrinNode);
   BaseNode *JavaIntrnMergeToCvtType(PrimType dtyp, PrimType styp, BaseNode *src);
-  void ProcessJavaIntrnFillNewArray(IntrinsiccallNode *intrinCall);
+  void ProcessJavaIntrnFillNewArray(IntrinsiccallNode &intrinCall);
 };
 
 class DoJavaIntrnLowering : public ModulePhase {
@@ -51,6 +51,5 @@ class DoJavaIntrnLowering : public ModulePhase {
     return nullptr;
   }
 };
-
 }  // namespace maple
 #endif  // MPL2MPL_INCLUDE_JAVA_INTRN_LOWERING_H

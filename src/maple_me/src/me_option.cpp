@@ -22,25 +22,25 @@
 using namespace maple;
 using namespace mapleOption;
 
-std::unordered_set<std::string> MeOptions::dumpPhases = {};
-bool MeOptions::dumpAfter = false;
-std::string MeOptions::dumpFunc = "*";
-unsigned long MeOptions::range[2] = { 0, 0 };
-bool MeOptions::useRange = false;
-bool MeOptions::quiet = false;
-bool MeOptions::setCalleeHasSideEffect = false;
-bool MeOptions::noSteensgaard = false;
-bool MeOptions::noTBAA = false;
-uint8 MeOptions::aliasAnalysisLevel = 3;
-bool MeOptions::noDot = false;
-bool MeOptions::stmtNum = false;
-uint8 MeOptions::optLevel = 0;
-bool MeOptions::ignoreIPA = true;
-bool MeOptions::lessThrowAlias = true;
-bool MeOptions::finalFieldAlias = false;
-bool MeOptions::regreadAtReturn = true;
+std::unordered_set<std::string> MeOption::dumpPhases = {};
+bool MeOption::dumpAfter = false;
+std::string MeOption::dumpFunc = "*";
+unsigned long MeOption::range[kRangeArrayLen] = { 0, 0 };
+bool MeOption::useRange = false;
+bool MeOption::quiet = false;
+bool MeOption::setCalleeHasSideEffect = false;
+bool MeOption::noSteensgaard = false;
+bool MeOption::noTBAA = false;
+uint8 MeOption::aliasAnalysisLevel = 3;
+bool MeOption::noDot = false;
+bool MeOption::stmtNum = false;
+uint8 MeOption::optLevel = 0;
+bool MeOption::ignoreIPA = true;
+bool MeOption::lessThrowAlias = true;
+bool MeOption::finalFieldAlias = false;
+bool MeOption::regreadAtReturn = true;
 
-void MeOptions::SplitPhases(const char *str, std::unordered_set<std::string> &set) {
+void MeOption::SplitPhases(const std::string &str, std::unordered_set<std::string> &set) const {
   std::string s{str};
 
   if (s.compare("*") == 0) {
@@ -50,20 +50,20 @@ void MeOptions::SplitPhases(const char *str, std::unordered_set<std::string> &se
   StringUtils::Split(s, set, ',');
 }
 
-void MeOptions::GetRange(const char *str) {
-  std::string s = str;
+void MeOption::GetRange(const std::string &str) const {
+  std::string s{str};
   size_t comma = s.find_first_of(",", 0);
   if (comma != std::string::npos) {
     range[0] = std::stoul(s.substr(0, comma), nullptr);
     range[1] = std::stoul(s.substr(comma + 1, std::string::npos - (comma + 1)), nullptr);
   }
   if (range[0] > range[1]) {
-    LogInfo::MapleLogger(kLlErr) << "invalid values for --range=" << range[0] << "," << range[1] << std::endl;
+    LogInfo::MapleLogger(kLlErr) << "invalid values for --range=" << range[0] << "," << range[1] << '\n';
     ASSERT(false, "GetRange exit");
   }
 }
 
-bool MeOptions::DumpPhase(const std::string &phase) {
+bool MeOption::DumpPhase(const std::string &phase) {
   if (phase == "") {
     return false;
   }

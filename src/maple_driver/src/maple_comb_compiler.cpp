@@ -59,19 +59,19 @@ void MapleCombCompiler::PrintCommand(const MplOptions &options) const {
     } else {
       runStr += "mpl2mpl";
     }
-  }
-  auto inputMpl2mplOptions = options.exeOptions.find(kBinNameMpl2mpl);
-  for (auto &opt : inputMpl2mplOptions->second) {
-    connectSym = opt.Args() != "" ? "=" : "";
-    optionStr += " --" + opt.OptionKey() + connectSym + opt.Args();
+    auto inputMpl2mplOptions = options.exeOptions.find(kBinNameMpl2mpl);
+    for (auto &opt : inputMpl2mplOptions->second) {
+      connectSym = opt.Args() != "" ? "=" : "";
+      optionStr += " --" + opt.OptionKey() + connectSym + opt.Args();
+    }
   }
   optionStr += "\"";
   LogInfo::MapleLogger() << "Starting:" << options.exeFolder << "maple " << runStr << " " << optionStr << " "
                          << GetInputFileName(options) << options.printCommandStr << std::endl;
 }
 
-MeOptions *MapleCombCompiler::MakeMeOptions(const MplOptions &options, maple::MemPool *optMp) {
-  MeOptions *meOption = new MeOptions(optMp);
+MeOption *MapleCombCompiler::MakeMeOptions(const MplOptions &options, maple::MemPool &optMp) {
+  MeOption *meOption = new MeOption(optMp);
   auto inputMeOptions = options.exeOptions.find(kBinNameMe);
   if (inputMeOptions == options.exeOptions.end()) {
     LogInfo::MapleLogger() << "no me input options" << std::endl;
@@ -84,11 +84,11 @@ MeOptions *MapleCombCompiler::MakeMeOptions(const MplOptions &options, maple::Me
     }
     switch (opt.Index()) {
       case kMeSkipPhases:
-        meOption->SplitPhases(opt.Args().c_str(), meOption->GetSkipPhases());
+        meOption->SplitSkipPhases(opt.Args());
         break;
       case kMeRange:
         meOption->useRange = true;
-        meOption->GetRange(opt.Args().c_str());
+        meOption->GetRange(opt.Args());
         break;
       case kMeDumpAfter:
         meOption->dumpAfter = true;
@@ -97,7 +97,7 @@ MeOptions *MapleCombCompiler::MakeMeOptions(const MplOptions &options, maple::Me
         meOption->dumpFunc = opt.Args();
         break;
       case kMeDumpPhases:
-        meOption->SplitPhases(opt.Args().c_str(), meOption->dumpPhases);
+        meOption->SplitPhases(opt.Args(), meOption->dumpPhases);
         break;
       case kMeQuiet:
         meOption->quiet = true;
@@ -113,26 +113,26 @@ MeOptions *MapleCombCompiler::MakeMeOptions(const MplOptions &options, maple::Me
         break;
       case kAliasAnalysisLevel:
         meOption->aliasAnalysisLevel = std::stoul(opt.Args(), nullptr);
-        if (meOption->aliasAnalysisLevel > 3) {
-          meOption->aliasAnalysisLevel = 3;
+        if (meOption->aliasAnalysisLevel > MeOption::LEVEL_THREE) {
+          meOption->aliasAnalysisLevel = MeOption::LEVEL_THREE;
         }
         switch (meOption->aliasAnalysisLevel) {
-          case 3:
+          case MeOption::LEVEL_THREE:
             meOption->setCalleeHasSideEffect = false;
             meOption->noSteensgaard = false;
             meOption->noTBAA = false;
             break;
-          case 0:
+          case MeOption::LEVEL_ZERO:
             meOption->setCalleeHasSideEffect = true;
             meOption->noSteensgaard = true;
             meOption->noTBAA = true;
             break;
-          case 1:
+          case MeOption::LEVEL_ONE:
             meOption->setCalleeHasSideEffect = false;
             meOption->noSteensgaard = false;
             meOption->noTBAA = true;
             break;
-          case 2:
+          case MeOption::LEVEL_TWO:
             meOption->setCalleeHasSideEffect = false;
             meOption->noSteensgaard = true;
             meOption->noTBAA = false;
@@ -164,7 +164,7 @@ MeOptions *MapleCombCompiler::MakeMeOptions(const MplOptions &options, maple::Me
   return meOption;
 }
 
-Options *MapleCombCompiler::MakeMpl2MplOptions(const MplOptions &options, maple::MemPool *optMp) {
+Options *MapleCombCompiler::MakeMpl2MplOptions(const MplOptions &options, maple::MemPool &optMp) {
   Options *mpl2mplOption = new Options(optMp);
   auto inputOptions = options.exeOptions.find(kBinNameMpl2mpl);
   if (inputOptions == options.exeOptions.end()) {
@@ -240,23 +240,22 @@ ErrorCode MapleCombCompiler::Compile(const MplOptions &options, MIRModulePtr &th
   MemPool *optMp = mempoolctrler.NewMemPool("maplecomb mempool");
   std::string fileName = GetInputFileName(options);
   theModule = new MIRModule(fileName.c_str());
-  int nErr = 0;
-  MeOptions *meOptions = nullptr;
+  MeOption *meOptions = nullptr;
   Options *mpl2mplOptions = nullptr;
   auto iterMe = std::find(options.runningExes.begin(), options.runningExes.end(), kBinNameMe);
   if (iterMe != options.runningExes.end()) {
-    meOptions = MakeMeOptions(options, optMp);
+    meOptions = MakeMeOptions(options, *optMp);
   }
   auto iterMpl2Mpl = std::find(options.runningExes.begin(), options.runningExes.end(), kBinNameMpl2mpl);
   if (iterMpl2Mpl != options.runningExes.end()) {
-    mpl2mplOptions = MakeMpl2MplOptions(options, optMp);
+    mpl2mplOptions = MakeMpl2MplOptions(options, *optMp);
   }
 
   LogInfo::MapleLogger() << "Starting mpl2mpl&mplme" << std::endl;
   PrintCommand(options);
   DriverRunner runner(theModule, options.runningExes, mpl2mplOptions, fileName, meOptions, fileName, fileName, optMp,
                       options.timePhases, options.genMemPl);
-  nErr = runner.Run();
+  int nErr = runner.Run();
 
   if (mpl2mplOptions != nullptr) {
     delete mpl2mplOptions;

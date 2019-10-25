@@ -79,7 +79,7 @@ class Klass {
   void DumpKlassSuperKlasses() const;
   void DumpKlassSubKlasses() const;
   void DumpKlassMethods() const;
-  bool IsVirtualMethod(const MIRFunction *func) const;
+  bool IsVirtualMethod(const MIRFunction &func) const;
 
  public:
   Klass(MIRStructType *type, MapleAllocator *alc);
@@ -98,7 +98,7 @@ class Klass {
   // Return true if found in the member methods
   bool IsKlassMethod(const MIRFunction *func) const;
   // Return MIRFunction if has method
-  const MIRFunction *HasMethod(const char *funcname);
+  const MIRFunction *HasMethod(const std::string &funcname);
   const MapleList<MIRFunction*> &GetMethods() const {
     return methods;
   }
@@ -271,9 +271,9 @@ class Klass {
     strIdx2Method.insert({ func->GetBaseFuncNameWithTypeStrIdx(), func });
   }
 
-  void DelMethod(const MIRFunction *func);
+  void DelMethod(const MIRFunction &func);
   // Collect the virtual methods from parent class and interfaces
-  void CountVirtMethTopDown(const KlassHierarchy *kh);
+  void CountVirtMethTopDown(const KlassHierarchy &kh);
   // Count the virtual methods for subclasses and merge with itself
   void CountVirtMethBottomUp();
   void Dump() const;
@@ -288,15 +288,15 @@ class WKTypes {
   static void Init();
   class Util {
    public:
-    static bool MayRefString(const BaseNode *n, MIRType *type);
-    static bool MayRefMeta(const BaseNode *n, MIRType *type);
-    static bool MayNotRefCyclicly(const BaseNode *n, MIRType *type);
+    static bool MayRefString(const BaseNode &n, MIRType &type);
+    static bool MayRefMeta(const BaseNode &n, MIRType &type);
+    static bool MayNotRefCyclicly(const BaseNode &n, MIRType &type);
     static MIRType *GetJavaLangObjectType() {
       return javalangObject;
     }
 
    private:
-    static bool NotCyclicType(MIRType *type, std::set<MIRType*> &workList);
+    static bool NotCyclicType(MIRType &type, std::set<MIRType*> &workList);
   };
 
  private:
@@ -329,7 +329,7 @@ class KlassHierarchy : public AnalysisResult {
   Klass *GetKlassFromTyIdx(TyIdx tyidx) const;
   Klass *GetKlassFromFunc(const MIRFunction *func) const;
   Klass *GetKlassFromName(const std::string &name) const;
-  Klass *GetKlassFromLiteral(const char *name) const;
+  Klass *GetKlassFromLiteral(const std::string &name) const;
   const MapleMap<GStrIdx, Klass*> &GetKlasses() const {
     return strIdx2KlassMap;
   }
@@ -342,8 +342,9 @@ class KlassHierarchy : public AnalysisResult {
   bool IsSuperKlass(const Klass *super, const Klass *base) const;
   bool IsSuperKlassForInterface(const Klass *super, Klass *base) const;
   bool IsInterfaceImplemented(Klass *interface, const Klass *base) const;
+  bool UpdateFieldID(TyIdx baseTypeIdx, TyIdx targetTypeIdx, FieldID &fldID) const;
   // return true if class, its super or interfaces have at least one clinit function
-  bool NeedClinitCheckRecursively(Klass *kl);
+  bool NeedClinitCheckRecursively(Klass &kl);
   void TopologicalSortKlasses();
   void MarkClassFlags();
   void CountVirtualMethods();
@@ -376,12 +377,12 @@ class KlassHierarchy : public AnalysisResult {
   // Connect all class<->interface edges based on Depth-First Search
   void UpdateImplementedInterfaces();
   // Get a vector of parent class and implementing interface
-  void GetParentKlasses(const Klass *klass, std::vector<Klass*> &parentKlasses) const;
+  void GetParentKlasses(const Klass &klass, std::vector<Klass*> &parentKlasses) const;
   // Get a vector of child class and implemented class
-  void GetChildKlasses(const Klass *klass, std::vector<Klass*> &childKlasses) const;
-  void ExceptionFlagProp(Klass *klass);
-  Klass *AddClassFlag(const char *name, uint32 flag);
+  void GetChildKlasses(const Klass &klass, std::vector<Klass*> &childKlasses) const;
+  void ExceptionFlagProp(Klass &klass);
+  Klass *AddClassFlag(const std::string &name, uint32 flag);
+  int GetFieldIDOffsetBetweenClasses(const Klass &super, const Klass &base) const;
 };
-
 }  // namespace maple
 #endif  // MPL2MPL_INCLUDE_CLASS_HIERARCHY_H

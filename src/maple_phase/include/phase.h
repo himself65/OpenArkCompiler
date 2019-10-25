@@ -110,7 +110,6 @@ class AnalysisResultManager {
     }
 
     PhaseT *anaPhase = GetAnalysisPhase(id);
-    ASSERT(anaPhase != nullptr, "anaphse is null in AnalysisResultManager::GetAnalysisResult");
     if (std::string(anaPhase->PhaseName()) != Options::skipPhase) {
       AnalysisResult *result = anaPhase->Run(ir, this);
       // allow invoke phases whose return value is nullptr using GetAnalysisResult
@@ -170,10 +169,9 @@ class AnalysisResultManager {
   PhaseT *GetAnalysisPhase(PhaseIDT id) {
     if (analysisPhases.find(id) != analysisPhases.end()) {
       return analysisPhases[id];
-    } else {
-      ASSERT(false, "Invalid analysis phase");
-      return nullptr;
     }
+    CHECK_FATAL(false, "Invalid analysis phase");
+    return nullptr;
   }
 
   void ClearAnalysisPhase() {
@@ -186,6 +184,5 @@ class AnalysisResultManager {
   MapleMap<analysisResultKey, AnalysisResult*> analysisResults;
   MapleMap<PhaseIDT, PhaseT*> analysisPhases;
 };
-
 }  // namespace maple
 #endif  // MAPLE_PHASE_INCLUDE_PHASE_H

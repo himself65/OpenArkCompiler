@@ -20,12 +20,11 @@
 namespace maple {
 class FuncEmit {
  public:
-  void EmitBeforeHSSA(MIRFunction *func, const MapleVector<BB*> &bbList);
+  void EmitBeforeHSSA(MIRFunction &func, const MapleVector<BB*> &bbList) const;
   virtual ~FuncEmit() = default;
 
  private:
-  void EmitLabelForBB(MIRFunction *func, BB *bb);
+  void EmitLabelForBB(MIRFunction &func, BB &bb) const;
 };
-
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_FUNC_EMIT_H

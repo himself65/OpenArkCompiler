@@ -17,6 +17,7 @@
 #include "mempool.h"
 #include "mempool_allocator.h"
 #include "mpl_logging.h"
+#include "types_def.h"
 
 namespace maple {
 // This uses the Weighted Quick Union with Path Compression algorithm.
@@ -27,11 +28,11 @@ namespace maple {
 // id.
 class UnionFind {
  public:
-  explicit UnionFind(maple::MemPool *memPool)
-      : ufAlloc(memPool), num(0), id(ufAlloc.Adapter()), sz(ufAlloc.Adapter()) {}
+  explicit UnionFind(MemPool &memPool)
+      : ufAlloc(&memPool), num(0), id(ufAlloc.Adapter()), sz(ufAlloc.Adapter()) {}
 
-  UnionFind(maple::MemPool *memPool, maple::uint32 siz)
-      : ufAlloc(memPool), num(siz), id(siz, 0, ufAlloc.Adapter()), sz(siz, 0, ufAlloc.Adapter()) {
+  UnionFind(MemPool &memPool, uint32 siz)
+      : ufAlloc(&memPool), num(siz), id(siz, 0, ufAlloc.Adapter()), sz(siz, 0, ufAlloc.Adapter()) {
     Reinit();
   }
 
@@ -101,15 +102,14 @@ class UnionFind {
   }
 
  private:
-  maple::MapleAllocator ufAlloc;
+  MapleAllocator ufAlloc;
   uint num;                     // the population size; can continue to increase
-  maple::MapleVector<uint> id;  // array index is id of each population member;
+  MapleVector<uint> id;  // array index is id of each population member;
   // value is id of the root member of its class;
   // the member is a root if its value is itself;
   // as its root changes, will keep updating so as to
   // maintain a flat tree
-  maple::MapleVector<uint> sz;  // gives number of elements in the tree rooted there
+  MapleVector<uint> sz;  // gives number of elements in the tree rooted there
 };
-
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_UNION_FIND_H

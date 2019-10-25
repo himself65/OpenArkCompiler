@@ -106,7 +106,7 @@ void ModulePhaseManager::Run() {
   }
 }
 
-void ModulePhaseManager::Emit(const char *passName) {
+void ModulePhaseManager::Emit(const std::string &passName) {
   // Form output file name.
   std::string outFileName;
   std::string moduleFileName = mirModule.GetFileName();
@@ -120,5 +120,4 @@ void ModulePhaseManager::Emit(const char *passName) {
   outFileName = outFileName.append(kDotMplStr);
   mirModule.DumpToFile(outFileName);
 }
-
 }  // namespace maple

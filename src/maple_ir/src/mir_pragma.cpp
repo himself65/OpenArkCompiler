@@ -154,7 +154,7 @@ MIRPragmaElement *MIRPragma::GetPragmaElemFromSignature(const std::string &signa
       case 1: {
         MIRPragmaElement *etmp = mod->GetMemPool()->New<MIRPragmaElement>(mod);
         etmp->SetType(kValueArray);
-        elemStack.top()->PushSubElemVec(etmp);
+        elemStack.top()->PushSubElemVec(*etmp);
         elemStack.push(etmp);
         break;
       }
@@ -162,16 +162,16 @@ MIRPragmaElement *MIRPragma::GetPragmaElemFromSignature(const std::string &signa
         MIRPragmaElement *etmp = mod->GetMemPool()->New<MIRPragmaElement>(mod);
         etmp->SetType(kValueType);
         std::string typeStr = signature.substr(start, end - start);
-        etmp->SetU64Val((uint64)GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(typeStr).GetIdx());
-        elemStack.top()->PushSubElemVec(etmp);
+        etmp->SetU64Val(static_cast<uint64>(GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(typeStr).GetIdx()));
+        elemStack.top()->PushSubElemVec(*etmp);
         break;
       }
       case 3: {
         MIRPragmaElement *etmp = mod->GetMemPool()->New<MIRPragmaElement>(mod);
         etmp->SetType(kValueType);
         std::string typeStr = signature.substr(start, end - start) + ";";
-        etmp->SetU64Val((uint64)GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(typeStr).GetIdx());
-        elemStack.top()->PushSubElemVec(etmp);
+        etmp->SetU64Val(static_cast<uint64>(GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(typeStr).GetIdx()));
+        elemStack.top()->PushSubElemVec(*etmp);
         break;
       }
       case 4:
@@ -192,6 +192,9 @@ MIRPragmaElement *MIRPragma::GetPragmaElemFromSignature(const std::string &signa
 }
 
 void MIRPragmaElement::Dump(int indent) {
+  constexpr int kIndentOffset = 2;
+  constexpr int kFloatPrec = 7;
+  constexpr int kDoublePrec = 16;
   GStrIdx gStrIdx;
   std::string str = GetKind(valueType);
   switch (valueType) {
@@ -211,12 +214,12 @@ void MIRPragmaElement::Dump(int indent) {
       LogInfo::MapleLogger() << str.c_str() << " " << val.j;
       break;
     case kValueFloat:
-      LogInfo::MapleLogger() << std::setiosflags(std::ios::scientific) << str.c_str() << " " << std::setprecision(7)
-                             << val.f << "f";
+      LogInfo::MapleLogger() << std::setiosflags(std::ios::scientific) << str.c_str() << " "
+                             << std::setprecision(kFloatPrec) << val.f << "f";
       break;
     case kValueDouble:
-      LogInfo::MapleLogger() << std::setiosflags(std::ios::scientific) << str.c_str() << " " << std::setprecision(16)
-                             << val.d;
+      LogInfo::MapleLogger() << std::setiosflags(std::ios::scientific) << str.c_str() << " "
+                             << std::setprecision(kDoublePrec) << val.d;
       break;
     case kValueMethodType:
       LogInfo::MapleLogger() << str.c_str() << " $" << std::hex << "0x" << val.u << std::dec;
@@ -258,9 +261,9 @@ void MIRPragmaElement::Dump(int indent) {
         size_t i = 0;
         while (i < num) {
           if (num > 1) {
-            PrintIndentation(indent + 2);
+            PrintIndentation(indent + kIndentOffset);
           }
-          subElemVec[i]->Dump(indent + 2);
+          subElemVec[i]->Dump(indent + kIndentOffset);
           if (i != num - 1) {
             LogInfo::MapleLogger() << "," << std::endl;
           }
@@ -283,12 +286,12 @@ void MIRPragmaElement::Dump(int indent) {
         size_t i = 0;
         while (i < num) {
           if (num > 1) {
-            PrintIndentation(indent + 2);
+            PrintIndentation(indent + kIndentOffset);
           }
           LogInfo::MapleLogger() << "@"
                                  << GlobalTables::GetStrTable().GetStringFromStrIdx(subElemVec[i]->nameStrIdx).c_str()
                                  << " ";
-          subElemVec[i]->Dump(indent + 2);
+          subElemVec[i]->Dump(indent + kIndentOffset);
           if (i != num - 1) {
             LogInfo::MapleLogger() << "," << std::endl;
           }
@@ -358,5 +361,4 @@ void MIRPragma::Dump(int indent) {
   LogInfo::MapleLogger() << "}";
   return;
 }
-
 }  // namespace maple

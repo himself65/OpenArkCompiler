@@ -16,19 +16,18 @@
 #include <iostream>
 
 /* ================= for Dominance ================= */
-
 namespace maple {
-void Dominance::PostOrderWalk(BB *bb, int32 &pid, std::vector<bool> &visitedMap) {
-  ASSERT(bb->GetBBId().idx < visitedMap.size(), "index out of range in Dominance::PostOrderWalk");
-  if (visitedMap[bb->GetBBId().idx]) {
+void Dominance::PostOrderWalk(const BB &bb, int32 &pid, std::vector<bool> &visitedMap) {
+  ASSERT(bb.GetBBId().idx < visitedMap.size(), "index out of range in Dominance::PostOrderWalk");
+  if (visitedMap[bb.GetBBId().idx]) {
     return;
   }
-  visitedMap[bb->GetBBId().idx] = true;
-  for (BB *suc : bb->GetSucc()) {
-    PostOrderWalk(suc, pid, visitedMap);
+  visitedMap[bb.GetBBId().idx] = true;
+  for (BB *suc : bb.GetSucc()) {
+    PostOrderWalk(*suc, pid, visitedMap);
   }
-  ASSERT(bb->GetBBId().idx < postOrderIDVec.size(), "index out of range in Dominance::PostOrderWalk");
-  postOrderIDVec[bb->GetBBId().idx] = pid++;
+  ASSERT(bb.GetBBId().idx < postOrderIDVec.size(), "index out of range in Dominance::PostOrderWalk");
+  postOrderIDVec[bb.GetBBId().idx] = pid++;
   return;
 }
 
@@ -49,21 +48,23 @@ void Dominance::GenPostOrderID() {
   }
 }
 
-BB *Dominance::Intersect(BB *bb1, const BB *bb2) {
-  while (bb1 != bb2) {
-    while (postOrderIDVec[bb1->GetBBId().idx] < postOrderIDVec[bb2->GetBBId().idx]) {
-      bb1 = doms[bb1->GetBBId().idx];
+BB *Dominance::Intersect(BB &bb1, const BB &bb2) {
+  auto *ptrBB1 = &bb1;
+  auto *ptrBB2 = &bb2;
+  while (ptrBB1 != ptrBB2) {
+    while (postOrderIDVec[ptrBB1->GetBBId().idx] < postOrderIDVec[ptrBB2->GetBBId().idx]) {
+      ptrBB1 = doms[ptrBB1->GetBBId().idx];
     }
-    while (postOrderIDVec[bb2->GetBBId().idx] < postOrderIDVec[bb1->GetBBId().idx]) {
-      bb2 = doms[bb2->GetBBId().idx];
+    while (postOrderIDVec[ptrBB2->GetBBId().idx] < postOrderIDVec[ptrBB1->GetBBId().idx]) {
+      ptrBB2 = doms[ptrBB2->GetBBId().idx];
     }
   }
-  return bb1;
+  return ptrBB1;
 }
 
-bool Dominance::CommonEntryBBIsPred(const BB *bb) {
-  for (BB *suc : GetCommonEntryBB()->GetSucc()) {
-    if (suc == bb) {
+bool Dominance::CommonEntryBBIsPred(const BB &bb) const {
+  for (BB *suc : GetCommonEntryBB().GetSucc()) {
+    if (suc == &bb) {
       return true;
     }
   }
@@ -72,15 +73,15 @@ bool Dominance::CommonEntryBBIsPred(const BB *bb) {
 
 // Figure 3 in "A Simple, Fast Dominance Algorithm" by Keith Cooper et al.
 void Dominance::ComputeDominance() {
-  doms.at(commonEntryBB->GetBBId().idx) = commonEntryBB;
+  doms.at(commonEntryBB.GetBBId().idx) = &commonEntryBB;
   bool changed = false;
   do {
     changed = false;
     for (size_t i = 1; i < reversePostOrder.size(); i++) {
       BB *bb = reversePostOrder[i];
       BB *pre = nullptr;
-      if (CommonEntryBBIsPred(bb) || bb->GetPred().empty()) {
-        pre = commonEntryBB;
+      if (CommonEntryBBIsPred(*bb) || bb->GetPred().empty()) {
+        pre = &commonEntryBB;
       } else {
         pre = bb->GetPred(0);
       }
@@ -93,7 +94,7 @@ void Dominance::ComputeDominance() {
       for (; j < bb->GetPred().size(); j++) {
         pre = bb->GetPred(j);
         if (doms[pre->GetBBId().idx] != nullptr && pre != bb) {
-          newIDom = Intersect(pre, newIDom);
+          newIDom = Intersect(*pre, *newIDom);
         }
       }
       if (doms[bb->GetBBId().idx] != newIDom) {
@@ -106,16 +107,16 @@ void Dominance::ComputeDominance() {
 
 // Figure 5 in "A Simple, Fast Dominance Algorithm" by Keith Cooper et al.
 void Dominance::ComputeDomFrontiers() {
-  for (BB *bb : bbVec) {
-    if (bb == nullptr || bb == commonExitBB) {
+  for (const BB *bb : bbVec) {
+    if (bb == nullptr || bb == &commonExitBB) {
       continue;
     }
-    if (bb->GetPred().size() < 2) {
+    if (bb->GetPred().size() < kBBVectorInitialSize) {
       continue;
     }
     for (BB *pre : bb->GetPred()) {
       BB *runner = pre;
-      while (runner != doms[bb->GetBBId().idx] && runner != commonEntryBB) {
+      while (runner != doms[bb->GetBBId().idx] && runner != &commonEntryBB) {
         domFrontier[runner->GetBBId().idx].insert(bb->GetBBId());
         runner = doms[runner->GetBBId().idx];
       }
@@ -124,7 +125,7 @@ void Dominance::ComputeDomFrontiers() {
 }
 
 void Dominance::ComputeDomChildren() {
-  for (BB *bb : bbVec) {
+  for (const BB *bb : bbVec) {
     if (bb == nullptr) {
       continue;
     }
@@ -139,11 +140,11 @@ void Dominance::ComputeDomChildren() {
   }
 }
 
-void Dominance::ComputeDtPreorder(const BB *bb, size_t &num) {
+void Dominance::ComputeDtPreorder(const BB &bb, size_t &num) {
   CHECK_FATAL(num < dtPreOrder.size(), "index out of range in Dominance::ComputeDtPreorder");
-  dtPreOrder[num++] = bb->GetBBId();
-  for (BBId k : domChildren[bb->GetBBId().idx]) {
-    ComputeDtPreorder(bbVec[k.idx], num);
+  dtPreOrder[num++] = bb.GetBBId();
+  for (BBId k : domChildren[bb.GetBBId().idx]) {
+    ComputeDtPreorder(*bbVec[k.idx], num);
   }
 }
 
@@ -154,42 +155,42 @@ void Dominance::ComputeDtDfn() {
 }
 
 // true if b1 dominates b2
-bool Dominance::Dominate(const BB *b1, BB *b2) {
-  if (b1 == b2) {
+bool Dominance::Dominate(const BB &bb1, BB &bb2) {
+  if (&bb1 == &bb2) {
     return true;
   }
-  CHECK_FATAL(b2->GetBBId().idx < doms.size(), "index out of range in Dominance::Dominate ");
-  if (doms[b2->GetBBId().idx] == nullptr) {
+  CHECK_FATAL(bb2.GetBBId().idx < doms.size(), "index out of range in Dominance::Dominate ");
+  if (doms[bb2.GetBBId().idx] == nullptr) {
     return false;
   }
-  BB *imdom = b2;
+  BB *immediateDom = &bb2;
   do {
-    if (imdom == nullptr) {
+    if (immediateDom == nullptr) {
       return false;
     }
-    imdom = doms[imdom->GetBBId().idx];
-    if (imdom == b1) {
+    immediateDom = doms[immediateDom->GetBBId().idx];
+    if (immediateDom == &bb1) {
       return true;
     }
-  } while (imdom != commonEntryBB);
+  } while (immediateDom != &commonEntryBB);
   return false;
 }
 
 /* ================= for PostDominance ================= */
-void Dominance::PdomPostOrderWalk(BB *bb, int32 &pid, std::vector<bool> &visitedMap) {
-  ASSERT(bb->GetBBId().idx < visitedMap.size(), "index out of range in  Dominance::PdomPostOrderWalk");
-  if (bbVec[bb->GetBBId().idx] == nullptr) {
+void Dominance::PdomPostOrderWalk(BB &bb, int32 &pid, std::vector<bool> &visitedMap) {
+  ASSERT(bb.GetBBId().idx < visitedMap.size(), "index out of range in  Dominance::PdomPostOrderWalk");
+  if (bbVec[bb.GetBBId().idx] == nullptr) {
     return;
   }
-  if (visitedMap[bb->GetBBId().idx]) {
+  if (visitedMap[bb.GetBBId().idx]) {
     return;
   }
-  visitedMap[bb->GetBBId().idx] = true;
-  for (BB *pre : bb->GetPred()) {
-    PdomPostOrderWalk(pre, pid, visitedMap);
+  visitedMap[bb.GetBBId().idx] = true;
+  for (BB *pre : bb.GetPred()) {
+    PdomPostOrderWalk(*pre, pid, visitedMap);
   }
-  CHECK_FATAL(bb->GetBBId().idx < pdomPostOrderIDVec.size(), "index out of range in  Dominance::PdomPostOrderWalk");
-  pdomPostOrderIDVec[bb->GetBBId().idx] = pid++;
+  CHECK_FATAL(bb.GetBBId().idx < pdomPostOrderIDVec.size(), "index out of range in  Dominance::PdomPostOrderWalk");
+  pdomPostOrderIDVec[bb.GetBBId().idx] = pid++;
   return;
 }
 
@@ -210,21 +211,23 @@ void Dominance::PdomGenPostOrderID() {
   }
 }
 
-BB *Dominance::PdomIntersect(BB *bb1, const BB *bb2) {
-  while (bb1 != bb2) {
-    while (pdomPostOrderIDVec[bb1->GetBBId().idx] < pdomPostOrderIDVec[bb2->GetBBId().idx]) {
-      bb1 = pdoms[bb1->GetBBId().idx];
+BB *Dominance::PdomIntersect(BB &bb1, const BB &bb2) {
+  auto *ptrBB1 = &bb1;
+  auto *ptrBB2 = &bb2;
+  while (ptrBB1 != ptrBB2) {
+    while (pdomPostOrderIDVec[ptrBB1->GetBBId().idx] < pdomPostOrderIDVec[ptrBB2->GetBBId().idx]) {
+      ptrBB1 = pdoms[ptrBB1->GetBBId().idx];
     }
-    while (pdomPostOrderIDVec[bb2->GetBBId().idx] < pdomPostOrderIDVec[bb1->GetBBId().idx]) {
-      bb2 = pdoms[bb2->GetBBId().idx];
+    while (pdomPostOrderIDVec[ptrBB2->GetBBId().idx] < pdomPostOrderIDVec[ptrBB1->GetBBId().idx]) {
+      ptrBB2 = pdoms[ptrBB2->GetBBId().idx];
     }
   }
-  return bb1;
+  return ptrBB1;
 }
 
 // Figure 3 in "A Simple, Fast Dominance Algorithm" by Keith Cooper et al.
 void Dominance::ComputePostDominance() {
-  pdoms.at(commonExitBB->GetBBId().idx) = commonExitBB;
+  pdoms.at(commonExitBB.GetBBId().idx) = &commonExitBB;
   bool changed = false;
   do {
     changed = false;
@@ -232,7 +235,7 @@ void Dominance::ComputePostDominance() {
       BB *bb = pdomReversePostOrder[i];
       BB *suc = nullptr;
       if (bb->GetAttributes(kBBAttrIsExit) || bb->GetSucc().empty()) {
-        suc = commonExitBB;
+        suc = &commonExitBB;
       } else {
         suc = bb->GetSucc(0);
       }
@@ -242,13 +245,13 @@ void Dominance::ComputePostDominance() {
         j++;
       }
       if (pdoms[suc->GetBBId().idx] == nullptr) {
-        suc = commonExitBB;
+        suc = &commonExitBB;
       }
       BB *newIDom = suc;
       for (; j < bb->GetSucc().size(); j++) {
         suc = bb->GetSucc(j);
         if (pdoms[suc->GetBBId().idx] != nullptr && suc != bb) {
-          newIDom = PdomIntersect(suc, newIDom);
+          newIDom = PdomIntersect(*suc, *newIDom);
         }
       }
       if (pdoms[bb->GetBBId().idx] != newIDom) {
@@ -262,16 +265,16 @@ void Dominance::ComputePostDominance() {
 
 // Figure 5 in "A Simple, Fast Dominance Algorithm" by Keith Cooper et al.
 void Dominance::ComputePdomFrontiers() {
-  for (BB *bb : bbVec) {
-    if (bb == nullptr || bb == commonEntryBB) {
+  for (const BB *bb : bbVec) {
+    if (bb == nullptr || bb == &commonEntryBB) {
       continue;
     }
-    if (bb->GetSucc().size() < 2) {
+    if (bb->GetSucc().size() < kBBVectorInitialSize) {
       continue;
     }
     for (BB *suc : bb->GetSucc()) {
       BB *runner = suc;
-      while (runner != pdoms[bb->GetBBId().idx] && runner != commonEntryBB) {
+      while (runner != pdoms[bb->GetBBId().idx] && runner != &commonEntryBB) {
         pdomFrontier[runner->GetBBId().idx].insert(bb->GetBBId());
         ASSERT(pdoms[runner->GetBBId().idx] != nullptr, "ComputePdomFrontiers: pdoms[] is nullptr");
         runner = pdoms[runner->GetBBId().idx];
@@ -281,14 +284,11 @@ void Dominance::ComputePdomFrontiers() {
 }
 
 void Dominance::ComputePdomChildren() {
-  for (BB *bb : bbVec) {
-    if (bb == nullptr) {
+  for (const BB *bb : bbVec) {
+    if (bb == nullptr || pdoms[bb->GetBBId().idx] == nullptr) {
       continue;
     }
-    if (pdoms[bb->GetBBId().idx] == nullptr) {
-      continue;
-    }
-    BB *parent = pdoms[bb->GetBBId().idx];
+    const BB *parent = pdoms[bb->GetBBId().idx];
     if (parent == bb) {
       continue;
     }
@@ -296,39 +296,39 @@ void Dominance::ComputePdomChildren() {
   }
 }
 
-void Dominance::ComputePdtPreorder(const BB *bb, size_t &num) {
+void Dominance::ComputePdtPreorder(const BB &bb, size_t &num) {
   ASSERT(num < pdtPreOrder.size(), "index out of range in Dominance::ComputePdtPreOrder");
-  pdtPreOrder[num++] = bb->GetBBId();
-  for (BBId k : pdomChildren[bb->GetBBId().idx]) {
-    ComputePdtPreorder(bbVec[k.idx], num);
+  pdtPreOrder[num++] = bb.GetBBId();
+  for (BBId k : pdomChildren[bb.GetBBId().idx]) {
+    ComputePdtPreorder(*bbVec[k.idx], num);
   }
 }
 
 void Dominance::ComputePdtDfn() {
-  for (size_t i = 0; i < pdtPreOrder.size(); i++) {
+  for (uint32 i = 0; i < pdtPreOrder.size(); i++) {
     pdtDfn[pdtPreOrder[i].idx] = i;
   }
 }
 
 // true if b1 postdominates b2
-bool Dominance::PostDominate(const BB *b1, BB *b2) {
-  if (b1 == b2) {
+bool Dominance::PostDominate(const BB &bb1, BB &bb2) {
+  if (&bb1 == &bb2) {
     return true;
   }
-  CHECK_FATAL(b2->GetBBId().idx < pdoms.size(), "index out of range in Dominance::PostDominate");
-  if (pdoms[b2->GetBBId().idx] == nullptr) {
+  CHECK_FATAL(bb2.GetBBId().idx < pdoms.size(), "index out of range in Dominance::PostDominate");
+  if (pdoms[bb2.GetBBId().idx] == nullptr) {
     return false;
   }
-  BB *impdom = b2;
+  BB *impdom = &bb2;
   do {
     if (impdom == nullptr) {
       return false;
     }
     impdom = pdoms[impdom->GetBBId().idx];
-    if (impdom == b1) {
+    if (impdom == &bb1) {
       return true;
     }
-  } while (impdom != commonExitBB);
+  } while (impdom != &commonExitBB);
   return false;
 }
 
@@ -346,14 +346,13 @@ void Dominance::DumpDoms() {
     for (BBId id : domChildren[bb->GetBBId().idx]) {
       LogInfo::MapleLogger() << id.idx << " ";
     }
-    LogInfo::MapleLogger() << "]" << std::endl;
+    LogInfo::MapleLogger() << "]\n";
   }
-  LogInfo::MapleLogger() << std::endl;
-  LogInfo::MapleLogger() << "preorder traversal of dominator tree:";
+  LogInfo::MapleLogger() << "\npreorder traversal of dominator tree:";
   for (BBId id : dtPreOrder) {
     LogInfo::MapleLogger() << id.idx << " ";
   }
-  LogInfo::MapleLogger() << std::endl << std::endl;
+  LogInfo::MapleLogger() << "\n\n";
 }
 
 void Dominance::DumpPdoms() {
@@ -370,14 +369,13 @@ void Dominance::DumpPdoms() {
     for (BBId id : pdomChildren[bb->GetBBId().idx]) {
       LogInfo::MapleLogger() << id.idx << " ";
     }
-    LogInfo::MapleLogger() << "]" << std::endl;
+    LogInfo::MapleLogger() << "]\n";
   }
-  LogInfo::MapleLogger() << std::endl;
+  LogInfo::MapleLogger() << "\n";
   LogInfo::MapleLogger() << "preorder traversal of post-dominator tree:";
   for (BBId id : pdtPreOrder) {
     LogInfo::MapleLogger() << id.idx << " ";
   }
-  LogInfo::MapleLogger() << std::endl << std::endl;
+  LogInfo::MapleLogger() << "\n\n";
 }
-
 }  // namespace maple

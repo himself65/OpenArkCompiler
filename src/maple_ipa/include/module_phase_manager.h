@@ -52,7 +52,7 @@ class ModulePhaseManager : public PhaseManager {
   // Add module phases which are going to be run
   void AddModulePhases(std::vector<std::string> &phases);
   void RunModulePhases() const;
-  ModuleResultMgr *GetModResultMgr() {
+  ModuleResultMgr *GetModResultMgr() override {
     return arModuleMgr;
   }
 
@@ -61,13 +61,12 @@ class ModulePhaseManager : public PhaseManager {
   }
 
   void Run() override;
-  void Emit(const char *passName);
+  void Emit(const std::string &passName);
 
  private:
   bool timePhases;
   MIRModule &mirModule;
   ModuleResultMgr *arModuleMgr; /* module level analysis result */
 };
-
 }  // namespace maple
 #endif  // MAPLE_IPA_INCLUDE_MODULE_PHASE_MANAGER_H

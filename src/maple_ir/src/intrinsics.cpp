@@ -45,15 +45,15 @@ MIRType *IntrinDesc::GetOrCreateJSValueType() {
   payloadFields.push_back(
       FieldPair(ptr, TyIdxFieldAttrPair(GlobalTables::GetTypeTable().GetVoidPtr()->GetTypeIndex(), FieldAttrs())));
   FieldVector parentFields;
-  MIRType *payloadType =
-      GlobalTables::GetTypeTable().GetOrCreateUnionType("payload_type", payloadFields, parentFields, mirModule);
+  MIRType *payloadType = GlobalTables::GetTypeTable().GetOrCreateUnionType("payload_type", payloadFields,
+                                                                           parentFields, *mirModule);
   FieldVector sFields;
   GStrIdx payload = jsBuilder->GetOrCreateStringIndex("payload");
   GStrIdx tag = jsBuilder->GetOrCreateStringIndex("tag");
   sFields.push_back(FieldPair(payload, TyIdxFieldAttrPair(payloadType->GetTypeIndex(), FieldAttrs())));
   sFields.push_back(
       FieldPair(tag, TyIdxFieldAttrPair(GlobalTables::GetTypeTable().GetUInt32()->GetTypeIndex(), FieldAttrs())));
-  MIRType *sType = GlobalTables::GetTypeTable().GetOrCreateStructType("s_type", sFields, parentFields, mirModule);
+  MIRType *sType = GlobalTables::GetTypeTable().GetOrCreateStructType("s_type", sFields, parentFields, *mirModule);
   CHECK_FATAL(sType != nullptr, "can't get struct type, check it!");
   FieldVector jsValLayoutFields;
   GStrIdx asBits = jsBuilder->GetOrCreateStringIndex("asBits");
@@ -67,8 +67,9 @@ MIRType *IntrinDesc::GetOrCreateJSValueType() {
       FieldPair(asDouble, TyIdxFieldAttrPair(GlobalTables::GetTypeTable().GetDouble()->GetTypeIndex(), FieldAttrs())));
   jsValLayoutFields.push_back(
       FieldPair(asPtr, TyIdxFieldAttrPair(GlobalTables::GetTypeTable().GetVoidPtr()->GetTypeIndex(), FieldAttrs())));
-  MIRType *jsValLayoutType = GlobalTables::GetTypeTable().GetOrCreateUnionType("jsval_layout_type", jsValLayoutFields,
-                                                                               parentFields, mirModule);
+  MIRType *jsValLayoutType = GlobalTables::GetTypeTable().GetOrCreateUnionType("jsval_layout_type",
+                                                                               jsValLayoutFields,
+                                                                               parentFields, *mirModule);
   return jsValLayoutType;
 }
 
@@ -142,5 +143,4 @@ MIRType *IntrinDesc::GetArgType(uint32 index) const {
 MIRType *IntrinDesc::GetReturnType() const {
   return GetTypeFromArgTy(argTypes[0]);
 }
-
 }  // namespace maple

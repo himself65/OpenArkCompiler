@@ -15,12 +15,12 @@
 #include "orig_symbol.h"
 
 namespace maple {
-bool OriginalSt::Equal(const OriginalSt *ost) const {
+bool OriginalSt::Equal(const OriginalSt &ost) const {
   if (IsSymbolOst()) {
-    return (ost && symOrPreg.mirSt == ost->symOrPreg.mirSt && fieldID == ost->GetFieldID() &&
-            GetIndirectLev() == ost->GetIndirectLev());
+    return (symOrPreg.mirSt == ost.symOrPreg.mirSt && fieldID == ost.GetFieldID() &&
+            GetIndirectLev() == ost.GetIndirectLev());
   } else if (IsPregOst()) {
-    return (ost && symOrPreg.pregIdx == ost->symOrPreg.pregIdx && GetIndirectLev() == ost->GetIndirectLev());
+    return (symOrPreg.pregIdx == ost.symOrPreg.pregIdx && GetIndirectLev() == ost.GetIndirectLev());
   }
   return false;
 }
@@ -43,8 +43,8 @@ void OriginalSt::Dump() const {
   }
 }
 
-OriginalStTable::OriginalStTable(MemPool *memPool, MIRModule *mod)
-    : alloc(memPool),
+OriginalStTable::OriginalStTable(MemPool &memPool, MIRModule &mod)
+    : alloc(&memPool),
       mirModule(mod),
       originalStVector(alloc.Adapter()),
       mirSt2Ost(alloc.Adapter()),
@@ -58,22 +58,22 @@ OriginalStTable::OriginalStTable(MemPool *memPool, MIRModule *mod)
 }
 
 void OriginalStTable::Dump() {
-  mirModule->GetOut() << "==========original st table===========\n";
+  mirModule.GetOut() << "==========original st table===========\n";
   for (size_t i = 1; i < Size(); i++) {
-    OriginalSt *verst = GetOriginalStFromID(OStIdx(i));
+    const OriginalSt *verst = GetOriginalStFromID(OStIdx(i));
     verst->Dump();
   }
-  mirModule->GetOut() << "\n=======end original st table===========\n";
+  mirModule.GetOut() << "\n=======end original st table===========\n";
 }
 
-OriginalSt *OriginalStTable::FindOrCreateSymbolOriginalSt(MIRSymbol *mirst, PUIdx pidx, FieldID fld) {
-  MapleUnorderedMap<MIRSymbol*, OStIdx>::iterator it = mirSt2Ost.find(mirst);
+OriginalSt *OriginalStTable::FindOrCreateSymbolOriginalSt(MIRSymbol &mirst, PUIdx pidx, FieldID fld) {
+  MapleUnorderedMap<const MIRSymbol*, OStIdx>::iterator it = mirSt2Ost.find(&mirst);
   if (it == mirSt2Ost.end()) {
     // create a new OriginalSt
     return CreateSymbolOriginalSt(mirst, pidx, fld);
   }
-  CHECK(it->second.idx < originalStVector.size(),
-        "index out of range in OriginalStTable::FindOrCreateSymbolOriginalSt");
+  CHECK_FATAL(it->second.idx < originalStVector.size(),
+              "index out of range in OriginalStTable::FindOrCreateSymbolOriginalSt");
   return originalStVector[it->second.idx];
 }
 
@@ -82,28 +82,28 @@ OriginalSt *OriginalStTable::FindOrCreatePregOriginalSt(PregIdx regidx, PUIdx pi
   return (it == preg2Ost.end()) ? CreatePregOriginalSt(regidx, pidx) : originalStVector.at(it->second.idx);
 }
 
-OriginalSt *OriginalStTable::CreateSymbolOriginalSt(MIRSymbol *mirst, PUIdx pidx, FieldID fld) {
-  OriginalSt *ost = alloc.GetMemPool()->New<OriginalSt>(originalStVector.size(), mirst, pidx, fld, &alloc);
+OriginalSt *OriginalStTable::CreateSymbolOriginalSt(MIRSymbol &mirst, PUIdx pidx, FieldID fld) {
+  OriginalSt *ost = alloc.GetMemPool()->New<OriginalSt>(originalStVector.size(), mirst, pidx, fld, alloc);
   if (fld == 0) {
-    ost->SetTyIdx(mirst->GetTyIdx());
-    ost->SetIsFinal(mirst->IsFinal());
-    ost->SetIsPrivate(mirst->IsPrivate());
+    ost->SetTyIdx(mirst.GetTyIdx());
+    ost->SetIsFinal(mirst.IsFinal());
+    ost->SetIsPrivate(mirst.IsPrivate());
   } else {
     MIRStructType *structType =
-        dynamic_cast<MIRStructType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(mirst->GetTyIdx()));
+        static_cast<MIRStructType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(mirst.GetTyIdx()));
     ASSERT(structType, "CreateSymbolOriginalSt: non-zero fieldID for non-structure");
     ost->SetTyIdx(structType->GetFieldTyIdx(fld));
     FieldAttrs fattrs = structType->GetFieldAttrs(fld);
-    ost->SetIsFinal(fattrs.GetAttr(FLDATTR_final) && !mirModule->CurFunction()->IsConstructor());
+    ost->SetIsFinal(fattrs.GetAttr(FLDATTR_final) && !mirModule.CurFunction()->IsConstructor());
     ost->SetIsPrivate(fattrs.GetAttr(FLDATTR_private));
   }
   originalStVector.push_back(ost);
-  mirSt2Ost[mirst] = ost->GetIndex();
+  mirSt2Ost[&mirst] = ost->GetIndex();
   return ost;
 }
 
 OriginalSt *OriginalStTable::CreatePregOriginalSt(PregIdx regidx, PUIdx pidx) {
-  OriginalSt *ost = alloc.GetMemPool()->New<OriginalSt>(originalStVector.size(), regidx, pidx, &alloc);
+  OriginalSt *ost = alloc.GetMemPool()->New<OriginalSt>(originalStVector.size(), regidx, pidx, alloc);
   ost->SetTyIdx((regidx < 0)
                     ? TyIdx(PTY_unknown)
                     : GlobalTables::GetTypeTable().GetPrimType(ost->GetMIRPreg()->GetPrimType())->GetTypeIndex());
@@ -112,8 +112,8 @@ OriginalSt *OriginalStTable::CreatePregOriginalSt(PregIdx regidx, PUIdx pidx) {
   return ost;
 }
 
-OriginalSt *OriginalStTable::FindSymbolOriginalSt(MIRSymbol *mirst) {
-  MapleUnorderedMap<MIRSymbol*, OStIdx>::iterator it = mirSt2Ost.find(mirst);
+OriginalSt *OriginalStTable::FindSymbolOriginalSt(MIRSymbol &mirst) {
+  MapleUnorderedMap<const MIRSymbol*, OStIdx>::iterator it = mirSt2Ost.find(&mirst);
   if (it == mirSt2Ost.end()) {
     return nullptr;
   } else {
@@ -122,5 +122,4 @@ OriginalSt *OriginalStTable::FindSymbolOriginalSt(MIRSymbol *mirst) {
     return originalStVector[it->second.idx];
   }
 }
-
 }  // namespace maple

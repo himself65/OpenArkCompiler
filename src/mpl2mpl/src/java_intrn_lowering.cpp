@@ -52,7 +52,7 @@ void JavaIntrnLowering::ProcessStmt(StmtNode *stmt) {
       if (rhs != nullptr && rhs->GetOpCode() == OP_intrinsicop) {
         IntrinsicopNode *intrinNode = static_cast<IntrinsicopNode*>(rhs);
         if (intrinNode->GetIntrinsic() == INTRN_JAVA_MERGE) {
-          ProcessJavaIntrnMerge(stmt, intrinNode);
+          ProcessJavaIntrnMerge(*stmt, *intrinNode);
         }
       }
       break;
@@ -60,7 +60,7 @@ void JavaIntrnLowering::ProcessStmt(StmtNode *stmt) {
     case OP_intrinsiccallwithtypeassigned: {
       IntrinsiccallNode *intrinCall = static_cast<IntrinsiccallNode*>(stmt);
       if (intrinCall->GetIntrinsic() == INTRN_JAVA_FILL_NEW_ARRAY) {
-        ProcessJavaIntrnFillNewArray(intrinCall);
+        ProcessJavaIntrnFillNewArray(*intrinCall);
       }
       break;
     }
@@ -70,26 +70,26 @@ void JavaIntrnLowering::ProcessStmt(StmtNode *stmt) {
 }
 
 
-void JavaIntrnLowering::ProcessJavaIntrnMerge(StmtNode *assignNode, const IntrinsicopNode *intrinNode) {
-  CHECK_FATAL(intrinNode->GetNumOpnds() == 1, "invalid JAVA_MERGE intrinsic node");
+void JavaIntrnLowering::ProcessJavaIntrnMerge(StmtNode &assignNode, const IntrinsicopNode &intrinNode) {
+  CHECK_FATAL(intrinNode.GetNumOpnds() == 1, "invalid JAVA_MERGE intrinsic node");
   PrimType destType;
   DassignNode *dassign = nullptr;
   RegassignNode *regassign = nullptr;
-  if (assignNode->GetOpCode() == OP_dassign) {
-    dassign = static_cast<DassignNode*>(assignNode);
+  if (assignNode.GetOpCode() == OP_dassign) {
+    dassign = static_cast<DassignNode*>(&assignNode);
     MIRSymbol *dest = currFunc->GetLocalOrGlobalSymbol(dassign->GetStIdx());
     destType = dest->GetType()->GetPrimType();
   } else {
-    regassign = static_cast<RegassignNode*>(assignNode);
+    regassign = static_cast<RegassignNode*>(&assignNode);
     destType = regassign->GetPrimType();
   }
-  BaseNode *resNode = intrinNode->Opnd(0);
+  BaseNode *resNode = intrinNode.Opnd(0);
   CHECK_FATAL(resNode != nullptr, "null ptr check");
   PrimType srcType = resNode->GetPrimType();
   if (destType != srcType) {
     resNode = JavaIntrnMergeToCvtType(destType, srcType, resNode);
   }
-  if (assignNode->GetOpCode() == OP_dassign) {
+  if (assignNode.GetOpCode() == OP_dassign) {
     CHECK_FATAL(dassign != nullptr, "null ptr check");
     dassign->SetRHS(resNode);
   } else {
@@ -114,18 +114,18 @@ BaseNode *JavaIntrnLowering::JavaIntrnMergeToCvtType(PrimType destType, PrimType
   MIRType *fromType = GlobalTables::GetTypeTable().GetPrimType(srcType);
   if (IsPrimitiveInteger(srcType) && IsPrimitiveFloat(destType)) {
     if (GetPrimTypeBitSize(srcType) == GetPrimTypeBitSize(destType)) {
-      return builder->CreateExprRetype(toType, fromType, src);
+      return builder->CreateExprRetype(*toType, *fromType, src);
     } else {
-      return builder->CreateExprTypeCvt(OP_cvt, toType, fromType, src);
+      return builder->CreateExprTypeCvt(OP_cvt, *toType, *fromType, src);
     }
   } else if (IsPrimitiveInteger(srcType) && IsPrimitiveInteger(destType)) {
     if (GetPrimTypeBitSize(srcType) >= GetPrimTypeBitSize(destType)) {
       if (destType == PTY_u1) {  // e.g., type _Bool.
-        return builder->CreateExprCompare(OP_ne, toType, fromType, src, builder->CreateIntConst(0, srcType));
+        return builder->CreateExprCompare(OP_ne, *toType, *fromType, src, builder->CreateIntConst(0, srcType));
       } else if (GetPrimTypeBitSize(srcType) > GetPrimTypeBitSize(destType)) {
-        return builder->CreateExprTypeCvt(OP_cvt, toType, fromType, src);
+        return builder->CreateExprTypeCvt(OP_cvt, *toType, *fromType, src);
       } else if (IsSignedInteger(srcType) != IsSignedInteger(destType)) {
-        return builder->CreateExprTypeCvt(OP_cvt, toType, fromType, src);
+        return builder->CreateExprTypeCvt(OP_cvt, *toType, *fromType, src);
       } else {
         src->SetPrimType(destType);
         return src;
@@ -133,7 +133,7 @@ BaseNode *JavaIntrnLowering::JavaIntrnMergeToCvtType(PrimType destType, PrimType
       // Force type cvt here because we currently do not run constant folding
       // or contanst propagation before CG. We may revisit this decision later.
     } else if (GetPrimTypeBitSize(srcType) < GetPrimTypeBitSize(destType)) {
-      return builder->CreateExprTypeCvt(OP_cvt, toType, fromType, src);
+      return builder->CreateExprTypeCvt(OP_cvt, *toType, *fromType, src);
     } else if (IsConstvalZero(src)) {
       return builder->CreateIntConst(0, destType);
     } else {
@@ -144,10 +144,10 @@ BaseNode *JavaIntrnLowering::JavaIntrnMergeToCvtType(PrimType destType, PrimType
   }
 }
 
-void JavaIntrnLowering::ProcessJavaIntrnFillNewArray(IntrinsiccallNode *intrinCall) {
+void JavaIntrnLowering::ProcessJavaIntrnFillNewArray(IntrinsiccallNode &intrinCall) {
   // First create a new array.
-  CHECK_FATAL(intrinCall->GetReturnVec().size() == 1, "INTRN_JAVA_FILL_NEW_ARRAY should have 1 return value");
-  CallReturnPair retPair = intrinCall->GetCallReturnPair(0);
+  CHECK_FATAL(intrinCall.GetReturnVec().size() == 1, "INTRN_JAVA_FILL_NEW_ARRAY should have 1 return value");
+  CallReturnPair retPair = intrinCall.GetCallReturnPair(0);
   bool isReg = retPair.second.IsReg();
   MIRType *retType = nullptr;
   if (!isReg) {
@@ -161,31 +161,31 @@ void JavaIntrnLowering::ProcessJavaIntrnFillNewArray(IntrinsiccallNode *intrinCa
   }
   CHECK_FATAL(retType->GetKind() == kTypePointer, "Return type of INTRN_JAVA_FILL_NEW_ARRAY should point to a Jarray");
   MIRType *arrayType = static_cast<MIRPtrType*>(retType)->GetPointedType();
-  BaseNode *lenNode = builder->CreateIntConst(intrinCall->NumOpnds(), PTY_i32);
-  JarrayMallocNode *newArrayNode = builder->CreateExprJarrayMalloc(OP_gcmallocjarray, retType, arrayType, lenNode);
+  BaseNode *lenNode = builder->CreateIntConst(intrinCall.NumOpnds(), PTY_i32);
+  JarrayMallocNode *newArrayNode = builder->CreateExprJarrayMalloc(OP_gcmallocjarray, *retType, *arrayType, lenNode);
   // Then fill each array element one by one.
   BaseNode *addrExpr = nullptr;
   StmtNode *assignStmt = nullptr;
   if (!isReg) {
     MIRSymbol *retSym = currFunc->GetLocalOrGlobalSymbol(retPair.first);
-    assignStmt = builder->CreateStmtDassign(retSym, retPair.second.GetFieldID(), newArrayNode);
-    currFunc->GetBody()->ReplaceStmt1WithStmt2(intrinCall, assignStmt);
-    addrExpr = builder->CreateExprDread(retSym);
+    assignStmt = builder->CreateStmtDassign(*retSym, retPair.second.GetFieldID(), newArrayNode);
+    currFunc->GetBody()->ReplaceStmt1WithStmt2(&intrinCall, assignStmt);
+    addrExpr = builder->CreateExprDread(*retSym);
   } else {
     PregIdx pregidx = retPair.second.GetPregIdx();
     MIRPreg *mirpreg = currFunc->GetPregTab()->PregFromPregIdx(pregidx);
     assignStmt = builder->CreateStmtRegassign(mirpreg->GetPrimType(), pregidx, newArrayNode);
-    currFunc->GetBody()->ReplaceStmt1WithStmt2(intrinCall, assignStmt);
+    currFunc->GetBody()->ReplaceStmt1WithStmt2(&intrinCall, assignStmt);
     addrExpr = builder->CreateExprRegread(mirpreg->GetPrimType(), pregidx);
   }
+  assignStmt->SetSrcPos(intrinCall.GetSrcPos());
   StmtNode *stmt = assignStmt;
-  for (int i = 0; i < intrinCall->NumOpnds(); i++) {
-    ArrayNode *arrayexpr = builder->CreateExprArray(arrayType, addrExpr, builder->CreateIntConst(i, PTY_i32));
+  for (int i = 0; i < intrinCall.NumOpnds(); i++) {
+    ArrayNode *arrayexpr = builder->CreateExprArray(*arrayType, addrExpr, builder->CreateIntConst(i, PTY_i32));
     arrayexpr->SetBoundsCheck(false);
-    StmtNode *storeStmt = builder->CreateStmtIassign(retType, 0, arrayexpr, intrinCall->Opnd(i));
+    StmtNode *storeStmt = builder->CreateStmtIassign(*retType, 0, arrayexpr, intrinCall.Opnd(i));
     currFunc->GetBody()->InsertAfter(stmt, storeStmt);
     stmt = storeStmt;
   }
 }
-
 }  // namespace maple

@@ -60,26 +60,9 @@ class UStrIdxHash {
 };
 
 class TypeTable {
- private:
-  using MIRTypePtr = MIRType*;
-  struct Hash {
-    uint32 operator()(const MIRTypePtr &ty) const {
-      return ty->GetHashIndex();
-    }
-  };
-
-  struct Equal {
-    uint32 operator()(const MIRTypePtr &tx, const MIRTypePtr &ty) const {
-      return tx->EqualTo(*ty);
-    }
-  };
-
-  std::unordered_set<MIRTypePtr, Hash, Equal> typeHashTable;
-
  public:
   static MIRType *voidPtrType;
 
- public:
   TypeTable();
   TypeTable(const TypeTable&) = delete;
   TypeTable &operator=(const TypeTable&) = delete;
@@ -270,48 +253,61 @@ class TypeTable {
 
   // Get or Create derived types.
   MIRType *GetOrCreatePointerType(TyIdx pointedTyIdx, PrimType pty = PTY_ptr);
-  MIRType *GetOrCreatePointerType(const MIRType *pointTo, PrimType pty = PTY_ptr);
-  MIRType *GetPointedTypeIfApplicable(MIRType *type) const;
+  MIRType *GetOrCreatePointerType(const MIRType &pointTo, PrimType pty = PTY_ptr);
+  MIRType *GetPointedTypeIfApplicable(MIRType &type) const;
   MIRType *GetVoidPtr() const {
     ASSERT(voidPtrType != nullptr, "voidPtrType should not be null");
     return voidPtrType;
   }
 
-  MIRArrayType *GetOrCreateArrayType(const MIRType *elem, uint8 dim, const uint32 *sizeArray);
-  MIRArrayType *GetOrCreateArrayType(const MIRType *elem, uint32 size);  // For one dimention array
-  MIRType *GetOrCreateFarrayType(const MIRType *elem);
-  MIRType *GetOrCreateJarrayType(const MIRType *elem);
-  MIRType *GetOrCreateFunctionType(MIRModule *module, TyIdx, const std::vector<TyIdx> &, const std::vector<TypeAttrs> &,
+  MIRArrayType *GetOrCreateArrayType(const MIRType &elem, uint8 dim, const uint32 *sizeArray);
+  MIRArrayType *GetOrCreateArrayType(const MIRType &elem, uint32 size);  // For one dimention array
+  MIRType *GetOrCreateFarrayType(const MIRType &elem);
+  MIRType *GetOrCreateJarrayType(const MIRType &elem);
+  MIRType *GetOrCreateFunctionType(MIRModule &module, TyIdx, const std::vector<TyIdx>&, const std::vector<TypeAttrs>&,
                                    bool isVarg = false, bool isSimpCreate = false);
-  MIRType *GetOrCreateStructType(const char *name, const FieldVector &fields, const FieldVector &prntFields,
-                                 MIRModule *module) {
+  MIRType *GetOrCreateStructType(const std::string &name, const FieldVector &fields, const FieldVector &prntFields,
+                                 MIRModule &module) {
     return GetOrCreateStructOrUnion(name, fields, prntFields, module);
   }
 
-  MIRType *GetOrCreateUnionType(const char *name, const FieldVector &fields, const FieldVector &parentFields,
-                                MIRModule *module) {
+  MIRType *GetOrCreateUnionType(const std::string &name, const FieldVector &fields, const FieldVector &parentFields,
+                                MIRModule &module) {
     return GetOrCreateStructOrUnion(name, fields, parentFields, module, false);
   }
 
-  MIRType *GetOrCreateClassType(const char *name, MIRModule *module) {
+  MIRType *GetOrCreateClassType(const std::string &name, MIRModule &module) {
     return GetOrCreateClassOrInterface(name, module, true);
   }
 
-  MIRType *GetOrCreateInterfaceType(const char *name, MIRModule *module) {
+  MIRType *GetOrCreateInterfaceType(const std::string &name, MIRModule &module) {
     return GetOrCreateClassOrInterface(name, module, false);
   }
 
-  void PushIntoFieldVector(FieldVector *fields, const char *name, MIRType *type);
-  void AddFieldToStructType(MIRStructType *structType, const char *fieldName, MIRType *fieldType);
+  void PushIntoFieldVector(FieldVector &fields, const std::string &name, MIRType &type);
+  void AddFieldToStructType(MIRStructType &structType, const std::string &fieldName, MIRType &fieldType);
 
  private:
+  using MIRTypePtr = MIRType*;
+  struct Hash {
+    uint32 operator()(const MIRTypePtr &ty) const {
+      return ty->GetHashIndex();
+    }
+  };
+
+  struct Equal {
+    uint32 operator()(const MIRTypePtr &tx, const MIRTypePtr &ty) const {
+      return tx->EqualTo(*ty);
+    }
+  };
+
+  std::unordered_set<MIRTypePtr, Hash, Equal> typeHashTable;
   std::vector<MIRType*> typeTable;
 
- private:
-  MIRType *CreateType(MIRType *oldType);
-  MIRType *GetOrCreateStructOrUnion(const char *name, const FieldVector &fields, const FieldVector &prntFields,
-                                    MIRModule *module, bool forStruct = true);
-  MIRType *GetOrCreateClassOrInterface(const char *name, MIRModule *module, bool forClass);
+  MIRType *CreateType(MIRType &oldType);
+  MIRType *GetOrCreateStructOrUnion(const std::string &name, const FieldVector &fields, const FieldVector &prntFields,
+                                    MIRModule &module, bool forStruct = true);
+  MIRType *GetOrCreateClassOrInterface(const std::string &name, MIRModule &module, bool forClass);
 };
 
 class StrPtrHash {
@@ -338,7 +334,7 @@ class StrPtrEqual {
 
 // T can be std::string or std::u16string
 // U can be GStrIdx, UStrIdx_t, or u16stridx_t
-template <typename T, typename U>  // T can be std::string or std::u16string
+template <typename T, typename U>
 class StringTable {
  public:
   StringTable &operator = (const StringTable &) = delete;
@@ -347,7 +343,7 @@ class StringTable {
 
   void Init() {
     // initialize 0th entry of stringTable with an empty string
-    T *ptr = new (std::nothrow) T;
+    T *ptr = new T;
     CHECK_FATAL(ptr != nullptr, "null ptr check");
     stringTable.push_back(ptr);
   }
@@ -371,8 +367,7 @@ class StringTable {
     U strIdx = GetStrIdxFromName(str);
     if (strIdx == 0) {
       strIdx.SetIdx(stringTable.size());
-      T *newStr = new (std::nothrow) T(str);
-      CHECK_FATAL(newStr != nullptr, "null ptr check");
+      T *newStr = new T(str);
       stringTable.push_back(newStr);
       stringTableMap[newStr] = strIdx;
     }
@@ -429,7 +424,7 @@ class STypeNameTable {
     return gStrIdxToTyIdxMap;
   }
 
-  TyIdx GetTyidxFromGstrIdx(GStrIdx idx) const {
+  TyIdx GetTyIdxFromGStrIdx(GStrIdx idx) const {
     auto it = gStrIdxToTyIdxMap.find(idx);
     if (it == gStrIdxToTyIdxMap.end()) {
       return TyIdx(0);
@@ -520,8 +515,8 @@ class GSymbolTable {
   }
 
   MIRSymbol *CreateSymbol(uint8 scopeID);
-  bool AddToStringSymbolMap(const MIRSymbol *st);
-  bool RemoveFromStringSymbolMap(const MIRSymbol *st);
+  bool AddToStringSymbolMap(const MIRSymbol &st);
+  bool RemoveFromStringSymbolMap(const MIRSymbol &st);
   void Dump(bool islocal, int32 indent = 0) const;
 
  private:
@@ -627,6 +622,5 @@ class GlobalTables {
     u16StringTable.Init();
   }
 };
-
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_GLOBAL_TABLES_H

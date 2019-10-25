@@ -18,33 +18,31 @@
 #include "me_phase.h"
 
 namespace maple {
-class MirCFG {
+class MeCFG {
  public:
-  explicit MirCFG(MeFunction *f) : func(f), hasDoWhile(false) {}
+  explicit MeCFG(MeFunction &f) : func(f) {}
 
-
-  ~MirCFG() {}
+  ~MeCFG() = default;
 
   void BuildMirCFG();
   void FixMirCFG();
-  void ConvertPhis2IdentityAssigns(BB *meBB);
+  void ConvertPhis2IdentityAssigns(BB &meBB) const;
   void UnreachCodeAnalysis(bool updatePhi = false);
   void WontExitAnalysis();
-  void Verify();
-  void VerifyLabels();
-  void Dump();
-  void DumpToFile(const char *prefix, bool dumpInStrs = false);
-  void AddAuxilaryBB();
-  bool FindExprUse(BaseNode *expr, StIdx stIdx);
-  bool FindUse(StmtNode *stmt, StIdx stid);
-  bool FindDef(StmtNode *stmt, StIdx stid);
-  bool HasNoOccBetween(StmtNode *from, StmtNode *to, StIdx stIdx);
+  void Verify() const;
+  void VerifyLabels() const;
+  void Dump() const;
+  void DumpToFile(const std::string &prefix, bool dumpInStrs = false) const;
+  bool FindExprUse(const BaseNode &expr, StIdx stIdx) const;
+  bool FindUse(const StmtNode &stmt, StIdx stIdx) const;
+  bool FindDef(const StmtNode &stmt, StIdx stIdx) const;
+  bool HasNoOccBetween(StmtNode &from, const StmtNode &to, StIdx stIdx) const;
 
-  MeFunction *GetFunc() {
+  const MeFunction &GetFunc() const {
     return func;
   }
 
-  bool GetHasDoWhile() {
+  bool GetHasDoWhile() const {
     return hasDoWhile;
   }
 
@@ -53,9 +51,8 @@ class MirCFG {
   }
 
  private:
-  MeFunction *func;
-  bool hasDoWhile;
+  MeFunction &func;
+  bool hasDoWhile = false;
 };
-
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_ME_CFG_H

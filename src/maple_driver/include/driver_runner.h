@@ -27,11 +27,12 @@ extern const char *kMe;
 
 namespace maple {
 
+enum OptLevel { kLevelO0, kLevelO1, kLevelO2 };
 
 class DriverRunner final {
  public:
   DriverRunner(MIRModule *theModule, const std::vector<std::string> &exeNames, Options *mpl2mplOptions,
-               std::string mpl2mplInput, MeOptions *meOptions, std::string meInput, std::string actualInput,
+               std::string mpl2mplInput, MeOption *meOptions, std::string meInput, std::string actualInput,
                MemPool *optMp, bool timePhases = false,
                bool genMemPl = false)
       : theModule(theModule),
@@ -63,7 +64,7 @@ class DriverRunner final {
     this->mpl2mplInput = mpl2mplInput;
   }
 
-  void SetMeInfo(MeOptions *meOptions, const std::string &meInput) {
+  void SetMeInfo(MeOption *meOptions, const std::string &meInput) {
     this->meOptions = meOptions;
     this->meInput = meInput;
   }
@@ -74,7 +75,7 @@ class DriverRunner final {
   std::vector<std::string> exeNames;
   Options *mpl2mplOptions = nullptr;
   std::string mpl2mplInput;
-  MeOptions *meOptions = nullptr;
+  MeOption *meOptions = nullptr;
   std::string meInput;
   std::string actualInput;
   MemPool *optMp;
@@ -87,8 +88,8 @@ class DriverRunner final {
   bool IsFramework() const;
   std::string GetPostfix() const;
   void InitPhases(InterleavedManager &mgr, std::vector<std::string> &phases) const;
-  void AddPhases(InterleavedManager &mgr, std::vector<std::string> &phases, const PhaseManager *phaseManager) const;
-  void AddPhase(std::vector<std::string> &phases, std::string phase, const PhaseManager *phaseManager) const;
+  void AddPhases(InterleavedManager &mgr, std::vector<std::string> &phases, const PhaseManager &phaseManager) const;
+  void AddPhase(std::vector<std::string> &phases, std::string phase, const PhaseManager &phaseManager) const;
 
 };
 

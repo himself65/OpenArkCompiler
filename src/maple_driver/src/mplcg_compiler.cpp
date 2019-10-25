@@ -19,17 +19,11 @@
 
 using namespace maple;
 
-static MplOption kDefaultOptions[] = {};
-
 const DefaultOption MplcgCompiler::GetDefaultOptions(const MplOptions &options) {
-  DefaultOption defaultOptions;
+  DefaultOption defaultOptions = { nullptr, 0 };
   if (options.optimizationLevel == kO0 && options.setDefaultLevel) {
     defaultOptions.mplOptions = kMplcgDefaultOptionsO0;
     defaultOptions.length = sizeof(kMplcgDefaultOptionsO0) / sizeof(MplOption);
-  }
-  else {
-    defaultOptions.mplOptions = kDefaultOptions;
-    defaultOptions.length = sizeof(kDefaultOptions) / sizeof(MplOption);
   }
   return defaultOptions;
 }

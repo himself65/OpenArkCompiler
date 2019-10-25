@@ -17,9 +17,6 @@
 #include "string_utils.h"
 
 namespace maple {
-// Use char[] since getenv receives char* as parameter
-static constexpr char kMapleRoot[] = "MAPLE_ROOT";
-
 const std::string FileUtils::GetFileName(const std::string &filePath, const bool isWithExtension) {
   std::string fullFileName = StringUtils::GetStrAfterLast(filePath, FileSeperator::kFileSeperatorStr);
   if (isWithExtension) {
@@ -61,5 +58,4 @@ const std::string FileUtils::AppendMapleRootIfNeeded(bool needRootPath, const st
   }
   return strStream.str();
 }
-
 }  // namespace maple

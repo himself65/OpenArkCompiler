@@ -24,11 +24,6 @@
 #include "mir_parser.h"
 
 namespace maple {
-// build flag -DMAPLE_ROOT
-#ifndef MAPLE_ROOT
-#define MAPLE_ROOT ""
-#endif
-
 static constexpr char kBinNameJbc2mpl[] = "jbc2mpl";
 static constexpr char kBinNameMe[] = "me";
 static constexpr char kBinNameMpl2mpl[] = "mpl2mpl";
@@ -129,8 +124,8 @@ class MapleCombCompiler : public Compiler {
   const std::unordered_set<std::string> GetFinalOutputs(const MplOptions &mplOptions) const;
 
  private:
-  MeOptions *MakeMeOptions(const MplOptions &options, MemPool *optmp);
-  Options *MakeMpl2MplOptions(const MplOptions &options, MemPool *optmp);
+  MeOption *MakeMeOptions(const MplOptions &options, MemPool &optmp);
+  Options *MakeMpl2MplOptions(const MplOptions &options, MemPool &optmp);
   std::string realRunningExe;
 };
 

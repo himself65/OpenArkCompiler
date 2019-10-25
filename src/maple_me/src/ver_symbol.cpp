@@ -18,13 +18,14 @@
 #include "ssa_mir_nodes.h"
 
 namespace maple {
-void VersionSt::DumpDefStmt(const MIRModule *mod) {
+VersionSt VersionStTable::dummyVST(0, 0, nullptr);
+void VersionSt::DumpDefStmt(const MIRModule *mod) const {
   if (version <= 0) {
     return;
   }
   switch (defType) {
     case kDassign:
-      defStmt.dassign->Dump(mod, 0);
+      defStmt.dassign->Dump(*mod, 0);
       return;
     case kPhi:
       defStmt.phi->Dump(mod);
@@ -35,16 +36,19 @@ void VersionSt::DumpDefStmt(const MIRModule *mod) {
     case kMustDef:
       defStmt.mustDef->Dump(mod);
       return;
+    case kRegassign:
+      defStmt.dassign->Dump(*mod, 0);
     default:
-      ASSERT(false, "NYI");
+      ASSERT(false, "not yet implement");
   }
 }
 
 VersionSt *VersionStTable::CreateVersionSt(OriginalSt *ost, size_t version) {
+  ASSERT(ost != nullptr, "nullptr check");
   ASSERT(ost->GetVersionsIndex().size() == version, "ssa version need to be created incrementally!");
   VersionSt *vst = vstAlloc.GetMemPool()->New<VersionSt>(versionStVector.size(), version, ost);
   versionStVector.push_back(vst);
-  ost->GetVersionsIndex().push_back(vst->GetIndex());
+  ost->PushbackVersionIndex(vst->GetIndex());
   if (version == kInitVersion) {
     ost->SetZeroVersionIndex(vst->GetIndex());
   }
@@ -54,27 +58,29 @@ VersionSt *VersionStTable::CreateVersionSt(OriginalSt *ost, size_t version) {
 
 VersionSt *VersionStTable::FindOrCreateVersionSt(OriginalSt *ost, size_t version) {
   // this version already exists...
+  ASSERT(ost != nullptr, "nullptr check");
   if (ost->GetVersionsIndex().size() > version) {
-    ASSERT(versionStVector.size() > ost->GetVersionIndex(version), "versionStVector out of range");
-    return versionStVector.at(ost->GetVersionIndex(version));
+    size_t versionIndex = ost->GetVersionIndex(version);
+    ASSERT(versionStVector.size() > versionIndex, "versionStVector out of range");
+    return versionStVector.at(versionIndex);
   } else {
-    return (CreateVersionSt(ost, version));
+    return CreateVersionSt(ost, version);
   }
 }
 
-void VersionStTable::Dump(MIRModule *mod) {
+void VersionStTable::Dump(MIRModule *mod) const {
+  ASSERT(mod != nullptr, "nullptr check");
   LogInfo::MapleLogger() << "=======version st table entries=======\n";
   for (size_t i = 1; i < versionStVector.size(); i++) {
-    VersionSt *vst = versionStVector[i];
+    const VersionSt *vst = versionStVector[i];
     vst->Dump(mod);
     if (vst->GetVersion() > 0) {
       LogInfo::MapleLogger() << " defined BB" << vst->GetDefBB()->GetBBId().idx << ": ";
       vst->DumpDefStmt(mod);
     } else {
-      LogInfo::MapleLogger() << std::endl;
+      LogInfo::MapleLogger() << '\n';
     }
   }
   mod->GetOut() << "=======end version st table===========\n";
 }
-
 }  // namespace maple

@@ -28,6 +28,11 @@ enum : uint8 {
   kBinInitConst = 2,
   kBinSymbol = 3,
   kBinFunction = 4,
+  kBinEaCgNode,
+  kBinEaCgActNode,
+  kBinEaCgFieldNode,
+  kBinEaCgRefNode,
+  kBinEaCgObjNode,
   kBinCallinfo = 5,
   kBinKindTypeScalar = 6,
   kBinKindTypeByName = 7,
@@ -57,6 +62,8 @@ enum : uint8 {
   kBinTypeStart = 31,
   kBinCgStart = 32,
   kBinSeStart = 33,
+  kBinEaCgStart,
+  kBinEaStart,
   kBinFinish = 34,
   kStartMethod = 35,
 };
@@ -69,34 +76,34 @@ class BinaryMplExport {
   virtual ~BinaryMplExport() {}
 
   void Export(const std::string &fname);
-  void WriteContentField(int fieldNum, uint64 *fieldStartP);
+  void WriteContentField(int fieldNum, uint64 &fieldStartP);
   void WriteStrField(uint64 contentIdx);
   void WriteTypeField(uint64 contentIdx);
   void Init();
   void OutputConst(MIRConst *c);
-  void OutputConstBase(const MIRConst *c);
+  void OutputConstBase(const MIRConst &c);
   void OutputStr(const GStrIdx &gstr);
   void OutputUsrStr(UStrIdx ustr);
-  void OutputTypePairs(MIRInstantVectorType *typ);
-  void OutputTypeBase(const MIRType *type);
+  void OutputTypePairs(MIRInstantVectorType &typ);
+  void OutputTypeBase(const MIRType &type);
   void OutputType(const TyIdx &tyIdx);
   void OutputTypeAttrs(const TypeAttrs &ta);
-  void OutputPragmaElement(const MIRPragmaElement *e);
-  void OutputPragma(const MIRPragma *p);
+  void OutputPragmaElement(const MIRPragmaElement &e);
+  void OutputPragma(const MIRPragma &p);
   void OutputFieldPair(const FieldPair &fp);
   void OutputMethodPair(const MethodPair &memPool);
   void OutputFieldsOfStruct(const FieldVector &fields);
   void OutputMethodsOfStruct(const MethodVector &methods);
-  void OutputStructTypeData(MIRStructType *type);
+  void OutputStructTypeData(MIRStructType &type);
   void OutputImplementedInterfaces(const std::vector<TyIdx> &interfaces);
   void OutputInfoIsString(const std::vector<bool> &infoIsString);
   void OutputInfo(const std::vector<MIRInfoPair> &info, const std::vector<bool> &infoIsString);
   void OutputPragmaVec(const std::vector<MIRPragma*> &pragmaVec);
-  void OutputClassTypeData(MIRClassType *type);
-  void OutputInterfaceTypeData(MIRInterfaceType *type);
-  void OutputSymbol(MIRSymbol *sym);
+  void OutputClassTypeData(MIRClassType &type);
+  void OutputInterfaceTypeData(MIRInterfaceType &type);
+  void OutputSymbol(const MIRSymbol *sym);
   void OutputFunction(PUIdx puIdx);
-  void OutWords(uint8 *typeTagged, int64 targetTag, uint16 size);
+  void OutWords(uint8 &typeTagged, int64 targetTag, uint16 size);
   void Write(uint8 b);
   void WriteInt(int32 x);
   uint8 Read();
@@ -119,12 +126,11 @@ class BinaryMplExport {
   std::unordered_map<MIRFunction*, int64> funcMark;
   std::string importFileName;
   std::unordered_map<UStrIdx, int64, UStrIdxHash> uStrMark;
-  std::unordered_map<MIRSymbol*, int64> symMark;
+  std::unordered_map<const MIRSymbol*, int64> symMark;
   std::unordered_map<MIRType*, int64> typMark;
   static int typeMarkOffset;  // offset of mark (tag in binmplimport) resulting from duplicated function
   void ExpandFourBuffSize();
 };
-
 
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_BIN_MPL_EXPORT_H

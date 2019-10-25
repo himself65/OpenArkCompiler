@@ -17,37 +17,37 @@
 #include "mir_builder.h"
 
 namespace maple {
-void MeIRMap::DumpBB(BB *bb) {
+void MeIRMap::DumpBB(const BB &bb) {
   int i = 0;
-  for (auto &mestmt : bb->GetMeStmts()) {
+  for (const auto &meStmt : bb.GetMeStmts()) {
     if (GetDumpStmtNum()) {
       LogInfo::MapleLogger() << "(" << i++ << ") ";
     }
-    mestmt.Dump(this);
+    meStmt.Dump(this);
   }
 }
 
 void MeIRMap::Dump() {
   // back up mempool and use a new mempool every time
   // we dump IRMap, restore the mempool afterwards
-  MIRFunction *mirFunction = func->GetMirFunc();
+  MIRFunction *mirFunction = func.GetMirFunc();
   MemPool *backup = mirFunction->GetCodeMempool();
   mirFunction->SetMemPool(mempoolctrler.NewMemPool("IR Dump"));
   LogInfo::MapleLogger() << "===================Me IR dump==================\n";
-  auto eIt = func->valid_end();
-  for (auto bIt = func->valid_begin(); bIt != eIt; ++bIt) {
+  auto eIt = func.valid_end();
+  for (auto bIt = func.valid_begin(); bIt != eIt; ++bIt) {
     auto *bb = *bIt;
-    bb->DumpHeader(GetMIRModule());
+    bb->DumpHeader(&GetMIRModule());
     LogInfo::MapleLogger() << "frequency : " << bb->GetFrequency() << "\n";
     bb->DumpMeVarPhiList(this);
     bb->DumpMeRegPhiList(this);
     int i = 0;
-    for (auto &mestmt : bb->GetMeStmts()) {
+    for (auto &meStmt : bb->GetMeStmts()) {
       if (GetDumpStmtNum()) {
         LogInfo::MapleLogger() << "(" << i++ << ") ";
       }
-      mestmt.EmitStmt(GetSSATab())->Dump(GetMIRModule(), 0);
-      mestmt.Dump(this);
+      meStmt.EmitStmt(GetSSATab()).Dump(GetMIRModule(), 0);
+      meStmt.Dump(this);
     }
   }
   mempoolctrler.DeleteMemPool(mirFunction->GetCodeMempool());
@@ -55,56 +55,53 @@ void MeIRMap::Dump() {
 }
 
 // this function only emits statement
-void MeIRMap::EmitBBStmts(BB *bb, BlockNode *curblk) {
-  ASSERT(curblk != nullptr, "null ptr check");
-  auto &meStmts = bb->GetMeStmts();
-  for (auto &mestmt : meStmts) {
+void MeIRMap::EmitBBStmts(const BB &bb, BlockNode &curblk) {
+  auto &meStmts = bb.GetMeStmts();
+  for (auto &meStmt : meStmts) {
     if (!GetNeedAnotherPass()) {
-      if (mestmt.GetOp() == OP_interfaceicall || mestmt.GetOp() == OP_virtualicall) {
-        mestmt.SetOp(OP_icall);
-      } else if (mestmt.GetOp() == OP_interfaceicallassigned || mestmt.GetOp() == OP_virtualicallassigned) {
-        mestmt.SetOp(OP_icallassigned);
+      if (meStmt.GetOp() == OP_interfaceicall || meStmt.GetOp() == OP_virtualicall) {
+        meStmt.SetOp(OP_icall);
+      } else if (meStmt.GetOp() == OP_interfaceicallassigned || meStmt.GetOp() == OP_virtualicallassigned) {
+        meStmt.SetOp(OP_icallassigned);
       }
     }
-    StmtNode *stmt = mestmt.EmitStmt(GetSSATab());
-    ASSERT(stmt != nullptr, "null ptr check");
-    curblk->AddStatement(stmt);
+    StmtNode &stmt = meStmt.EmitStmt(GetSSATab());
+    curblk.AddStatement(&stmt);
   }
 }
 
-void MeIRMap::EmitBB(BB *bb, BlockNode *curblk) {
-  ASSERT(curblk != nullptr, "null ptr check");
+void MeIRMap::EmitBB(const BB &bb, BlockNode &curblk) {
   // emit head. label
-  LabelIdx labidx = bb->GetBBLabel();
+  LabelIdx labidx = bb.GetBBLabel();
   if (labidx != 0) {
     // not a empty bb
-    LabelNode *lbnode = GetSSATab()->mirModule.CurFunction()->GetCodeMempool()->New<LabelNode>();
+    LabelNode *lbnode = GetSSATab().GetModule().CurFunction()->GetCodeMempool()->New<LabelNode>();
     lbnode->SetLabelIdx(labidx);
-    curblk->AddStatement(lbnode);
+    curblk.AddStatement(lbnode);
   }
   EmitBBStmts(bb, curblk);
-  if (bb->GetAttributes(kBBAttrIsTryEnd)) {
+  if (bb.GetAttributes(kBBAttrIsTryEnd)) {
     /* generate op_endtry */
-    StmtNode *endtry = GetSSATab()->mirModule.CurFunction()->GetCodeMempool()->New<StmtNode>(OP_endtry);
-    curblk->AddStatement(endtry);
+    StmtNode *endtry = GetSSATab().GetModule().CurFunction()->GetCodeMempool()->New<StmtNode>(OP_endtry);
+    curblk.AddStatement(endtry);
   }
 }
 
 AnalysisResult *MeDoIRMap::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) {
   Dominance *dom = static_cast<Dominance*>(m->GetAnalysisResult(MeFuncPhase_DOMINANCE, func));
-  ASSERT(dom, "dominance phase has problem");
+  ASSERT(dom != nullptr, "dominance phase has problem");
   MemPool *irMapMemPool = NewMemPool();
-  MeIRMap *irmap = irMapMemPool->New<MeIRMap>(func, dom, irMapMemPool, NewMemPool());
-  func->SetIRMap(irmap);
+  MeIRMap *irMap = irMapMemPool->New<MeIRMap>(*func, *dom, *irMapMemPool, *NewMemPool());
+  func->SetIRMap(irMap);
 #if DEBUG
-  g_irmap = irmap;
+  globalIRMap = irMap;
 #endif
   std::vector<bool> bbIRMapProcessed(func->NumBBs(), false);
-  irmap->BuildBB(func->GetCommonEntryBB(), bbIRMapProcessed);
+  irMap->BuildBB(*func->GetCommonEntryBB(), bbIRMapProcessed);
   if (DEBUGFUNC(func)) {
-    irmap->Dump();
+    irMap->Dump();
   }
-  irmap->GetTempAlloc().SetMemPool(nullptr);
+  irMap->GetTempAlloc().SetMemPool(nullptr);
   // delete input IR code for current function
   MIRFunction *mirFunc = func->GetMirFunc();
   mempoolctrler.DeleteMemPool(mirFunc->GetCodeMempool());
@@ -119,13 +116,12 @@ AnalysisResult *MeDoIRMap::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResul
   auto eIt = func->valid_end();
   for (auto bIt = func->valid_begin(); bIt != eIt; ++bIt) {
     auto *bb = *bIt;
-    bb->GetPhiList().clear();
+    bb->ClearPhiList();
     bb->SetFirst(nullptr);
     bb->SetLast(nullptr);
   }
 #endif
   mempoolctrler.DeleteMemPool(func->GetMeSSATab()->GetVersionStTable().GetVSTAlloc().GetMemPool());
-  return irmap;
+  return irMap;
 }
-
 }  // namespace maple

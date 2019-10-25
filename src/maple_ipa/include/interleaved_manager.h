@@ -18,7 +18,6 @@
 #include "module_phase_manager.h"
 
 namespace maple {
-
 class InterleavedManager {
  public:
   InterleavedManager(MemPool *memPool, MIRModule *mirm, std::string input, bool timer)
@@ -52,7 +51,10 @@ class InterleavedManager {
   }
 
   void AddPhases(std::vector<std::string> &phases, bool isModulePhase, bool timePhases = false, bool genMpl = false);
+  void AddIPAPhases(std::vector<std::string> &phases, bool timePhases = false, bool genMpl = false);
   void Run();
+  void IPARun(MeFuncPhaseManager&);
+
   PhaseManager *AccessPhaseManager(int i) const {
     return phaseManagers.at(i);
   }
@@ -69,6 +71,5 @@ class InterleavedManager {
 
   void InitSupportPhaseManagers();
 };
-
 }  // namespace maple
 #endif  // MAPLE_IPA_INCLUDE_INTERLEAVED_MANAGER_H

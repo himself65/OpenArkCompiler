@@ -19,7 +19,7 @@
 
 namespace maple {
 static constexpr int kNumOfMCCParas = 5;
-enum CallKind { kVirtual = 1, kNoVirtual = 2};
+enum CallKind { kStaticCall = 0, kVirtualCall = 1, kSuperCall = 2};
 
 #ifdef USE_32BIT_REF
 static constexpr char kInterfaceMethod[] = "MCC_getFuncPtrFromItab";
@@ -59,6 +59,5 @@ class DoVtableImpl : public ModulePhase {
     return nullptr;
   }
 };
-
 }  // namespace maple
 #endif  // MPL2MPL_INCLUDE_VTABLE_IMPL_H

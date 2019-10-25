@@ -88,31 +88,8 @@ inline void *MRTGetAddressFromMetaRefOffset(MetaRefOffset *pOffset) {
   return reinterpret_cast<void*>(reinterpret_cast<char*>(pOffset) + (*pOffset));
 }
 
-struct FieldInfo {
-  AddrOffset offset;
-  uint32_t mod;
-  uint16_t flag;
-  uint16_t index;
-  AddrOffset typeName;
-  int32_t fieldName;
-  int32_t annotation;
-  int64_t declaringClass;
-};
-
-struct MethodInfo {
-  AddrOffset methodInVtabIndex;
-  AddrOffset addr;
-  AddrOffset declaringClass;
-  uint32_t mod;
-  int32_t methodName;
-  int32_t signatureName;
-  int32_t annotationValue;
-  uint16_t flag;
-  uint16_t argSize;
-#ifndef USE_32BIT_REF
-  uint32_t paddind;
-#endif
-};
+// MethodMeta defined in MethodMeta.h
+// FieldMeta  defined in FieldMeta.h
 
 // MethodDesc contains MethodMetadata and stack map
 struct MethodDesc {
@@ -175,22 +152,24 @@ struct ClassMetadata {
   void *iTable;  // iTable of current class, used for virtual call, will insert the content into classinfo
   void *vTable;  // vTable of current class, used for interface call, will insert the content into classinfo
   void *gctib; // for rc
-  ClassMetadataRO *classInfoRo;
+
+  union {
+    ClassMetadataRO *classinforo64; // ifndef USE_32BIT_REF
+    struct {
+      uint32_t classinforo32;       // ifdef USE_32BIT_REF
+      uint32_t cacheFalseClass;
+    };
+  };
 
   union {
     intptr_t initState;    // if class is not initialized
-    void *staticFields;    // if class is already initialized
+    void *cacheTrueClass;
   }; // class init state, this field must be accessed atomically.
 };
 
 static inline intptr_t ClassMetadataOffsetOfInitFlag() {
   ClassMetadata *base = reinterpret_cast<ClassMetadata*>(0);
   return reinterpret_cast<intptr_t>(&(base->initState));
-}
-
-static inline intptr_t ClassMetadataOffsetOfStaticFields() {
-  ClassMetadata *base = reinterpret_cast<ClassMetadata*>(0);
-  return reinterpret_cast<intptr_t>(&(base->staticFields));
 }
 
 #ifdef __cplusplus

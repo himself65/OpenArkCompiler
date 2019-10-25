@@ -17,7 +17,6 @@
 #include "class_hierarchy.h"
 
 namespace maple {
-
 // +1 is needed here because our field id starts with 0 pointing to the struct itself
 #define OBJ_KLASS_FIELDID (static_cast<uint32>(ClassProperty::kShadow) + 1)
 #define METADATA_KLASS_FIELDID (static_cast<uint32>(ClassProperty::kShadow) + 1)
@@ -306,24 +305,24 @@ class ReflectionAnalysis : public AnalysisResult {
                         std::unordered_map<uint32, std::string> &baseNameMap,
                         std::unordered_map<uint32, std::string> &fullNameMap);
   void GenAllFieldHash(std::vector<std::pair<FieldPair, uint16>> &fieldV);
-  void GeneAnnotation(std::map<int, int> &idxNumMap, std::string &annoArr, MIRClassType *classType,
+  void GeneAnnotation(std::map<int, int> &idxNumMap, std::string &annoArr, MIRClassType &classType,
                       PragmaKind paragKind, const std::string &paragName, TyIdx fieldTypeIdx,
                       std::map<int, int> *paramNumArray = nullptr, int *paramIndex = nullptr);
-  void SetAnnoFieldConst(const MIRStructType *metadataRoType, MIRAggConst *newConst, uint32 fieldID,
+  void SetAnnoFieldConst(const MIRStructType &metadataRoType, MIRAggConst &newConst, uint32 fieldID,
                          std::map<int, int> &idxNumMap, const std::string &annoArr);
   bool IsAnonymousClass(const std::string &annotationString);
-  bool IsPrivateClass(MIRClassType *classType);
-  bool IsStaticClass(MIRClassType *classType);
-  void CheckPrivateInnerAndNoSubClass(Klass *clazz, const std::string &annoArr);
+  bool IsPrivateClass(MIRClassType &classType);
+  bool IsStaticClass(MIRClassType &classType);
+  void CheckPrivateInnerAndNoSubClass(Klass &clazz, const std::string &annoArr);
   void ConvertMapleClassName(const std::string &mplClassName, std::string &javaDsp);
   static void ConvertMethodSig(std::string &signature);
   int GetDeflateStringIdx(const std::string &subStr);
   uint32 GetAnnoCstrIndex(std::map<int, int> &idxNumMap, const std::string &annoArr);
-  int16 GetMethodInVtabIndex(const Klass *clazz, const MIRFunction *func);
-  void GetSignatureTypeNames(const char *signature, std::vector<std::string> &typeNames);
-  MIRSymbol *GetClinitFuncSymbol(const Klass *klass);
-  int SolveAnnotation(MIRClassType *classType, MIRFunction *func);
-  uint32 GetTypeNameIdxFromType(MIRType *type, const Klass *klass, const std::string &fieldName);
+  int16 GetMethodInVtabIndex(const Klass &clazz, const MIRFunction &func);
+  void GetSignatureTypeNames(const std::string &signature, std::vector<std::string> &typeNames);
+  MIRSymbol *GetClinitFuncSymbol(const Klass &klass);
+  int SolveAnnotation(MIRClassType &classType, MIRFunction &func);
+  uint32 GetTypeNameIdxFromType(MIRType &type, const Klass &klass, const std::string &fieldName);
 
  private:
   MIRModule *mirModule;
@@ -349,6 +348,7 @@ class ReflectionAnalysis : public AnalysisResult {
   static std::string strTabRunHot;
   static bool strTabInited;
   static TyIdx invalidIdx;
+  static constexpr uint16 kNoHashBits = 6u;
 };
 
 class DoReflectionAnalysis : public ModulePhase {
@@ -362,6 +362,5 @@ class DoReflectionAnalysis : public ModulePhase {
     return "reflectionanalysis";
   }
 };
-
 }  // namespace maple
 #endif  // MPL2MPL_INCLUDE_REFLECTION_ANALYSIS_H

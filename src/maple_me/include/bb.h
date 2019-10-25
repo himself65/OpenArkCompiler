@@ -47,13 +47,14 @@ enum BBAttr {
   kBBIsCatch,        // bb is start of catch handler
   kBBIsJavaFinally,  // bb is start of finally handler
   kBBArtificial,     // bb is inserted by maple_me
-  kBBIsInLoop        // Is bb in a loop body
+  kBBIsInLoop,       // Is bb in a loop body
+  kBBIsInLoopForEA   // For EA use
 };
 
 struct BBId {
-  size_t idx;
+  size_t idx = 0;
 
-  BBId() : idx(0) {}
+  BBId() = default;
 
   explicit BBId(size_t i) : idx(i) {}
 
@@ -71,11 +72,9 @@ struct BBId {
 };
 
 struct OStIdx {
-  size_t idx;
+  size_t idx = 0;
 
-  OStIdx() {
-    idx = 0;
-  }
+  OStIdx() = default;
 
   explicit OStIdx(size_t i) : idx(i) {}
 
@@ -103,9 +102,11 @@ constexpr uint32 kBBAttrIsCatch = (1U << kBBIsCatch);
 constexpr uint32 kBBAttrIsJavaFinally = (1U << kBBIsJavaFinally);
 constexpr uint32 kBBAttrArtificial = (1U << kBBArtificial);
 constexpr uint32 kBBAttrIsInLoop = (1U << kBBIsInLoop);
+constexpr uint32 kBBAttrIsInLoopForEA = (1 << kBBIsInLoopForEA);
 constexpr uint32 kBBVectorInitialSize = 2;
 using StmtNodes = PtrListRef<StmtNode>;
 using MeStmts = PtrListRef<MeStmt>;
+
 class BB {
  public:
   BB(MapleAllocator *alloc, MapleAllocator *versAlloc, BBId id)
@@ -125,7 +126,7 @@ class BB {
     succ.pop_back();
   }
 
-  BB(MapleAllocator *alloc, MapleAllocator *versAlloc, BBId id, StmtNode *fstmt, StmtNode *lstmt)
+  BB(MapleAllocator *alloc, MapleAllocator *versAlloc, BBId id, StmtNode *firstStmt, StmtNode *lastStmt)
       : id(id),
         bbLabel(0),
         pred(kBBVectorInitialSize, nullptr, alloc->Adapter()),
@@ -136,7 +137,7 @@ class BB {
         frequency(0),
         kind(kBBUnknown),
         attributes(0),
-        stmtNodeList(fstmt, lstmt) {
+        stmtNodeList(firstStmt, lastStmt) {
     pred.pop_back();
     pred.pop_back();
     succ.pop_back();
@@ -169,9 +170,10 @@ class BB {
 
   void Dump(MIRModule *mod);
   void DumpHeader(MIRModule *mod);
+  void DumpPhi(MIRModule* mod);
   void DumpBBAttribute(MIRModule *mod);
   std::string StrAttribute() const;
-  void InsertBefore(BB *bb);  // insert this before bb in optimizer bb list
+
   void AddPredBB(BB *predVal) {
     ASSERT(predVal != nullptr, "null ptr check");
     pred.push_back(predVal);
@@ -179,11 +181,11 @@ class BB {
   }
 
   // This is to help new bb to keep some flags from original bb after logically splitting.
-  void CopyFlagsAfterSplit(const BB *bb) {
-    bb->GetAttributes(kBBAttrIsTry) ? SetAttributes(kBBAttrIsTry) : ClearAttributes(kBBAttrIsTry);
-    bb->GetAttributes(kBBAttrIsTryEnd) ? SetAttributes(kBBAttrIsTryEnd) : ClearAttributes(kBBAttrIsTryEnd);
-    bb->GetAttributes(kBBAttrIsExit) ? SetAttributes(kBBAttrIsExit) : ClearAttributes(kBBAttrIsExit);
-    bb->GetAttributes(kBBAttrWontExit) ? SetAttributes(kBBAttrWontExit) : ClearAttributes(kBBAttrWontExit);
+  void CopyFlagsAfterSplit(const BB &bb) {
+    bb.GetAttributes(kBBAttrIsTry) ? SetAttributes(kBBAttrIsTry) : ClearAttributes(kBBAttrIsTry);
+    bb.GetAttributes(kBBAttrIsTryEnd) ? SetAttributes(kBBAttrIsTryEnd) : ClearAttributes(kBBAttrIsTryEnd);
+    bb.GetAttributes(kBBAttrIsExit) ? SetAttributes(kBBAttrIsExit) : ClearAttributes(kBBAttrIsExit);
+    bb.GetAttributes(kBBAttrWontExit) ? SetAttributes(kBBAttrWontExit) : ClearAttributes(kBBAttrWontExit);
   }
 
   BBId GetBBId() const {
@@ -195,10 +197,10 @@ class BB {
   }
 
   uint32 UintID() const {
-    return id.idx;
+    return static_cast<uint32>(id.idx);
   }
 
-  StmtNode *GetTheOnlyStmtNode();
+  StmtNode *GetTheOnlyStmtNode() const;
   bool IsEmpty() const {
     return stmtNodeList.empty();
   }
@@ -211,16 +213,24 @@ class BB {
     stmtNodeList.update_back(stmt);
   }
 
+  StmtNode *GetFirst() {
+    return &(stmtNodeList.front());
+  }
+
+  StmtNode *GetLast() {
+    return &(stmtNodeList.back());
+  }
+
   void SetFirstMe(MeStmt *stmt);
   void SetLastMe(MeStmt *stmt);
-  bool IsInList(MapleVector<BB*> &) const;
-  bool IsPredBB(BB *bb) const {
+  bool IsInList(const MapleVector<BB*> &bbList) const;
+  bool IsPredBB(const BB *bb) const {
     // if this is a pred of bb return true;
     // otherwise return false;
     return IsInList(bb->pred);
   }
 
-  bool IsSuccBB(BB *bb) const {
+  bool IsSuccBB(const BB *bb) const {
     return IsInList(bb->succ);
   }
 
@@ -238,9 +248,10 @@ class BB {
   void RemoveLastStmt();
   void InsertStmtBefore(StmtNode *stmt, StmtNode *newStmt);
   void ReplaceStmt(StmtNode *stmt, StmtNode *newStmt);
-  int RemoveBBFromVector(MapleVector<BB*> &);
+  int RemoveBBFromVector(MapleVector<BB*> &bbVec) const;
   void RemoveBBFromPred(BB *bb);
   void RemoveBBFromSucc(BB *bb);
+
   void RemovePred(BB *predBB) {
     predBB->RemoveBBFromSucc(this);
     RemoveBBFromPred(predBB);
@@ -251,15 +262,14 @@ class BB {
     RemoveBBFromSucc(succBB);
   }
 
-  void FindReachableBBs(std::vector<bool> &);
-  void FindWillExitBBs(std::vector<bool> &);
-  PhiNode *PhiofVerStInserted(VersionSt *vsym);
-  void InsertPhi(MapleAllocator *alloc, VersionSt *vsym);
-  void DumpPhi(const MIRModule*);
   bool IsMeStmtEmpty() const {
     return meStmtList.empty();
   }
 
+  void FindReachableBBs(std::vector<bool> &visitedBBs) const;
+  void FindWillExitBBs(std::vector<bool> &visitedBBs) const;
+  const PhiNode *PhiofVerStInserted(const VersionSt &versionSt) const;
+  void InsertPhi(MapleAllocator *alloc, VersionSt *versionSt);
   void PrependMeStmt(MeStmt *meStmt);
   void RemoveMeStmt(MeStmt *meStmt);
   void AddMeStmtFirst(MeStmt *meStmt);
@@ -287,9 +297,9 @@ class BB {
     return meStmtList;
   }
 
-  virtual ~BB(){};
+  virtual ~BB() = default;
 
-  const LabelIdx GetBBLabel() const {
+  LabelIdx GetBBLabel() const {
     return bbLabel;
   }
 
@@ -297,7 +307,7 @@ class BB {
     bbLabel = idx;
   }
 
-  const uint32 &GetFrequency() const {
+  uint32 GetFrequency() const {
     return frequency;
   }
 
@@ -305,15 +315,19 @@ class BB {
     frequency = f;
   }
 
-  const BBKind GetKind() const {
+  BBKind GetKind() const {
     return kind;
   }
 
-  void SetKind(BBKind ind) {
-    kind = ind;
+  void SetKind(BBKind bbKind) {
+    kind = bbKind;
   }
 
   MapleVector<BB*> &GetPred() {
+    return pred;
+  }
+
+  const MapleVector<BB*> &GetPred() const {
     return pred;
   }
 
@@ -355,19 +369,29 @@ class BB {
     succ[cnt] = ss;
   }
 
-  MapleMap<OriginalSt*, PhiNode> &GetPhiList() {
+  const MapleMap<const OriginalSt*, PhiNode> &GetPhiList() const {
     return phiList;
   }
-
-  const MapleMap<OStIdx, MeVarPhiNode*> &GetMevarPhiList() const {
-    return mevarPhiList;
+  MapleMap<const OriginalSt*, PhiNode> &GetPhiList() {
+    return phiList;
+  }
+  void ClearPhiList() {
+    phiList.clear();
   }
 
   MapleMap<OStIdx, MeVarPhiNode*> &GetMevarPhiList() {
     return mevarPhiList;
   }
 
+  const MapleMap<OStIdx, MeVarPhiNode*> &GetMevarPhiList() const {
+    return mevarPhiList;
+  }
+
   MapleMap<OStIdx, MeRegPhiNode*> &GetMeregphiList() {
+    return meregPhiList;
+  }
+
+  const MapleMap<OStIdx, MeRegPhiNode*> &GetMeregphiList() const {
     return meregPhiList;
   }
 
@@ -376,7 +400,7 @@ class BB {
   LabelIdx bbLabel;       // the BB's label
   MapleVector<BB*> pred;  // predecessor list
   MapleVector<BB*> succ;  // successor list
-  MapleMap<OriginalSt*, PhiNode> phiList;
+  MapleMap<const OriginalSt*, PhiNode> phiList;
   MapleMap<OStIdx, MeVarPhiNode*> mevarPhiList;
   MapleMap<OStIdx, MeRegPhiNode*> meregPhiList;
   uint32 frequency;
@@ -385,11 +409,9 @@ class BB {
   StmtNodes stmtNodeList;
   MeStmts meStmtList;
 };
-
 }  // namespace maple
 
 namespace std {
-
 template <>
 struct hash<maple::BBId> {
   size_t operator()(const maple::BBId &x) const {
@@ -403,7 +425,6 @@ struct hash<maple::OStIdx> {
     return x.idx;
   }
 };
-
 }  // namespace std
 
 #endif  // MAPLE_ME_INCLUDE_BB_H

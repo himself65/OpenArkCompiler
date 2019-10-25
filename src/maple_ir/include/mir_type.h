@@ -24,7 +24,6 @@
 #endif  // MIR_FEATURE_FULL
 
 namespace maple {
-
 constexpr int kTypeHashLength = 12289;  // hash length for mirtype, ref: planetmath.org/goodhashtableprimes
 
 class FieldAttrs;
@@ -401,6 +400,9 @@ class MIRType {
   virtual void Dump(int indent, bool dontUseName = false) const;
   virtual void DumpAsCxx(int indent) const;
   virtual bool EqualTo(const MIRType &mirType) const;
+  virtual bool IsStructType() {
+    return false;
+  }
   virtual MIRType *CopyMIRTypeNode() const {
     return new MIRType(*this);
   }
@@ -475,6 +477,43 @@ class MIRType {
 
   virtual bool HasTypeParam() const {
     return false;
+  }
+
+  bool IsMIRPtrType() const {
+    return (typeKind == kTypePointer);
+  }
+
+  bool IsMIRStructType() const {
+    return ((typeKind == kTypeStruct) || (typeKind == kTypeStructIncomplete));
+  }
+
+  bool IsMIRClassType() const {
+    return ((typeKind == kTypeClass) || (typeKind == kTypeClassIncomplete));
+  }
+
+  bool IsMIRInterfaceType() const {
+    return ((typeKind == kTypeInterface) || (typeKind == kTypeInterfaceIncomplete));
+  }
+
+  bool IsInstanceOfMIRStructType() const {
+    return (IsMIRStructType() || IsMIRClassType() || IsMIRInterfaceType());
+  }
+
+  bool IsMIRJarrayType() const {
+    return (typeKind == kTypeJArray);
+  }
+
+  bool IsMIRFuncType() const {
+    return (typeKind == kTypeFunction);
+  }
+
+  bool IsScalarType() const {
+    return (typeKind == kTypeScalar);
+  }
+
+  bool IsIncomplete() const {
+    return ((typeKind == kTypeStructIncomplete) || (typeKind == kTypeClassIncomplete) ||
+            (typeKind == kTypeInterfaceIncomplete));
   }
 
   virtual bool ValidateClassOrInterface(const char *className, bool noWarning);
@@ -710,6 +749,10 @@ class MIRStructType : public MIRType {
         hasVolatileFieldSet(false) {}
 
   ~MIRStructType() {}
+
+  bool IsStructType() override {
+    return true;
+  }
 
   FieldVector &GetFields() {
     return fields;

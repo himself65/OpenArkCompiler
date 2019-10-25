@@ -25,6 +25,8 @@ DEF_MIR_INTRINSIC(MPL_GET_VTAB_FUNC,\
                   "MCC_getFuncPtrFromVtab", kIntrnUndef, kArgTyA64, kArgTyDynany, kArgTyDynany, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
 DEF_MIR_INTRINSIC(MPL_READ_OVTABLE_ENTRY,\
                   "__mpl_const_offset", INTRNISPURE, kArgTyA32, kArgTyDynany, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
+DEF_MIR_INTRINSIC(MPL_READ_OVTABLE_ENTRY_LAZY,\
+                  "__mpl_const_offset_lazy", INTRNNOSIDEEFFECT, kArgTyA32, kArgTyDynany, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
 DEF_MIR_INTRINSIC(MPL_READ_OVTABLE_ENTRY_VTAB_LAZY,\
                   "__mpl_const_offset_vtab_lazy", INTRNISPURE, kArgTyA32, kArgTyDynany, kArgTyDynany, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
 DEF_MIR_INTRINSIC(MPL_READ_OVTABLE_ENTRY_FIELD_LAZY,\
@@ -43,6 +45,8 @@ DEF_MIR_INTRINSIC(MCCLoadRefSVol,\
                   "MCC_LoadVolatileStaticField", INTRNISRC | INTRNNOSIDEEFFECT, kArgTyVoid, kArgTyRef)
 DEF_MIR_INTRINSIC(MCCLoadRefS,\
                   "MCC_LoadRefStatic", INTRNISRC | INTRNNOSIDEEFFECT, kArgTyVoid, kArgTyRef)
+DEF_MIR_INTRINSIC(MCCSetObjectPermanent,\
+                  "MCC_SetObjectPermanent", INTRNISRC | INTRNNOSIDEEFFECT, kArgTyVoid, kArgTyRef)
 
 // start of RC Intrinsics with two parameters
 DEF_MIR_INTRINSIC(MCCIncDecRef,\
@@ -108,6 +112,9 @@ DEF_MIR_INTRINSIC(MPL_MEMSET_LOCALVAR,\
                   "", kIntrnUndef, kArgTyPtr, kArgTyU32, kArgTyU8, kArgTyU32, kArgTyUndef, kArgTyUndef, kArgTyUndef)
 DEF_MIR_INTRINSIC(MPL_SET_CLASS,\
                   "", kIntrnUndef, kArgTyPtr, kArgTyPtr, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
+DEF_MIR_INTRINSIC(MPL_CLEANUP_NORETESCOBJS,\
+                  "__mpl_cleanup_noretescobjs", INTRNISJAVA | INTRNNOSIDEEFFECT, kArgTyUndef, kArgTyRef, kArgTyRef,\
+                  kArgTyRef, kArgTyRef, kArgTyRef, kArgTyRef)
 #include "intrinsic_java.def"
 DEF_MIR_INTRINSIC(LAST,\
                   nullptr, kIntrnUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)

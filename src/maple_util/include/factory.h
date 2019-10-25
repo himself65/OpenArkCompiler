@@ -19,7 +19,6 @@
 #include <functional>
 
 namespace maple {
-
 template <typename TKey, typename TObject, typename... TArgs>
 class ObjectFactory {
   using PtrObject = std::unique_ptr<TObject>;
@@ -59,8 +58,6 @@ class ObjectFactory {
   ObjectFactory(const ObjectFactory&&) = delete;
   ObjectFactory &operator=(const ObjectFactory&) = delete;
   ObjectFactory &operator=(const ObjectFactory&&) = delete;
-
- private:
   CreatorHolder objectCreator;
 };
 
@@ -112,8 +109,6 @@ class FunctionFactory {
   FunctionFactory(const FunctionFactory&&) = delete;
   FunctionFactory &operator=(const FunctionFactory&) = delete;
   FunctionFactory &operator=(const FunctionFactory&&) = delete;
-
- private:
   FuncHolder funcCreator;
 };
 
@@ -126,7 +121,6 @@ template <typename TFactory>
 inline auto CreateProductFunction(const typename TFactory::Key &key) -> typename TFactory::Value {
   return TFactory::ins().Create(key);
 }
-
 }  // namespace maple
 
 #endif  // MAPLE_UTIL_INCLUDE_FACTORY_H

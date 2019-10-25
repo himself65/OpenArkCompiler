@@ -52,14 +52,14 @@ void VtableImpl::ProcessFunc(MIRFunction *func) {
         MIRFunction *callee = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(callNode->GetPUIdx());
         MemPool *currentFuncCodeMempool = builder->GetCurrentFuncCodeMp();
         IcallNode *icallNode =
-            currentFuncCodeMempool->New<IcallNode>(builder->GetCurrentFuncCodeMpAllocator(), OP_icallassigned);
+            currentFuncCodeMempool->New<IcallNode>(*builder->GetCurrentFuncCodeMpAllocator(), OP_icallassigned);
         icallNode->SetReturnVec(callNode->GetReturnVec());
         icallNode->SetRetTyIdx(callee->GetReturnTyIdx());
         icallNode->SetSrcPos(callNode->GetSrcPos());
         icallNode->GetNopnd().resize(callNode->GetNopndSize());
         icallNode->SetNumOpnds(icallNode->GetNopndSize());
         for (size_t i = 0; i < callNode->GetNopndSize(); i++) {
-          icallNode->SetOpnd(callNode->GetNopndAt(i)->CloneTree(builder->GetCurrentFuncCodeMpAllocator()), i);
+          icallNode->SetOpnd(callNode->GetNopndAt(i)->CloneTree(mirModule->GetCurFuncCodeMPAllocator()), i);
         }
         currFunc->GetBody()->ReplaceStmt1WithStmt2(stmt, icallNode);
         stmt = icallNode;
@@ -110,10 +110,10 @@ void VtableImpl::ReplaceResolveInterface(StmtNode *stmt, const ResolveFuncNode *
   MIRType *compactPtrType = GlobalTables::GetTypeTable().GetCompactPtr();
   PrimType compactPtrPrim = compactPtrType->GetPrimType();
   BaseNode *offsetNode = builder->CreateIntConst(hashCode * kTabEntrySize, PTY_u32);
-  BaseNode *addrNode = builder->CreateExprBinary(OP_add, GlobalTables::GetTypeTable().GetPtr(),
+  BaseNode *addrNode = builder->CreateExprBinary(OP_add, *GlobalTables::GetTypeTable().GetPtr(),
                                                  builder->CreateExprRegread(PTY_ptr, pregItabAddress), offsetNode);
   BaseNode *readFuncPtr = builder->CreateExprIread(
-      compactPtrType, GlobalTables::GetTypeTable().GetOrCreatePointerType(compactPtrType), 0, addrNode);
+      *compactPtrType, *GlobalTables::GetTypeTable().GetOrCreatePointerType(*compactPtrType), 0, addrNode);
   PregIdx pregFuncPtr = currFunc->GetPregTab()->CreatePreg(compactPtrPrim);
   RegassignNode *funcPtrAssign = builder->CreateStmtRegassign(compactPtrPrim, pregFuncPtr, readFuncPtr);
   currFunc->GetBody()->InsertBefore(stmt, funcPtrAssign);
@@ -132,7 +132,7 @@ void VtableImpl::ReplaceResolveInterface(StmtNode *stmt, const ResolveFuncNode *
   opnds.push_back(signatureNode);
   StmtNode *mccCallStmt =
       builder->CreateStmtCallRegassigned(mccItabFunc->GetPuidx(), opnds, pregFuncPtr, OP_callassigned);
-  BaseNode *checkExpr = builder->CreateExprCompare(OP_eq, GlobalTables::GetTypeTable().GetUInt1(), compactPtrType,
+  BaseNode *checkExpr = builder->CreateExprCompare(OP_eq, *GlobalTables::GetTypeTable().GetUInt1(), *compactPtrType,
                                                    builder->CreateExprRegread(compactPtrPrim, pregFuncPtr),
                                                    builder->CreateIntConst(0, compactPtrPrim));
   IfStmtNode *ifStmt = static_cast<IfStmtNode*>(builder->CreateStmtIf(checkExpr));
@@ -148,5 +148,4 @@ void VtableImpl::ReplaceResolveInterface(StmtNode *stmt, const ResolveFuncNode *
     icall->SetNOpndAt(0, builder->CreateExprRegread(compactPtrPrim, pregFuncPtr));
   }
 }
-
 }  // namespace maple

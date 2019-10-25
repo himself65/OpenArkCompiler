@@ -31,6 +31,8 @@ src_libmplir = [
   "src/bin_mpl_export.cpp",
 ]
 
+src_irbuild = [ "src/driver.cpp" ]
+
 configs = [ "${MAPLEALL_ROOT}:mapleallcompilecfg" ]
 
 cflags_cc += [ "-DSTORE_BACK_VTABLE_REF_AFTER_LOAD=1" ]
@@ -41,4 +43,20 @@ static_library("libmplir") {
   output_dir = "${root_out_dir}/lib/${HOST_ARCH}"
   libs = []
   libs += [ "${OPENSOURCE_DEPS}/libmplutil.a" ]
+}
+
+executable("irbuild") {
+  sources = src_irbuild
+  include_dirs = include_directories
+  deps = [
+    ":libmplir",
+    "${MAPLEALL_ROOT}/huawei_secure_c:libHWSecureC",
+    "${MAPLEALL_ROOT}/mpl2mpl:libmpl2mpl",
+  ]
+  libs = []
+  libs += [
+    "${OPENSOURCE_DEPS}/libmplphase.a",
+    "${OPENSOURCE_DEPS}/libmempool.a",
+    "${OPENSOURCE_DEPS}/libmaple_driverutil.a",
+  ]
 }

@@ -169,19 +169,20 @@ class LogInfo {
     fclose(outStream);
   }
 
-  void SetLogDevice(FILE *stream) {
-    outStream = stream;
+  void SetLogDevice(FILE &stream) {
+    outStream = &stream;
   }
 
   void SetLogMode(LogMode lm) {
     outMode = lm;
   }
 
-  void EmitLogForDevelop(enum LogTags tag, enum LogLevel ll, const char *file, const char *func, int line,
-                         const char *fmt, ...);
+  void EmitLogForDevelop(enum LogTags tag, enum LogLevel ll, const std::string &file, const std::string &func,
+                         int line, const char *fmt, ...);
   void EmitLogForUser(enum LogNumberCode num, enum LogLevel ll, const char *fmt, ...) const;
   void EmitLogForUser(enum LogNumberCode num, enum LogLevel ll, const std::string &message) const;
-  void EmitErrorMessage(const char *cond, const char *file, unsigned int line, const char *fmt, ...) const;
+  void EmitErrorMessage(const std::string &cond, const std::string &file, unsigned int line,
+                        const char *fmt, ...) const;
 
  private:
   FILE *outStream;
@@ -277,6 +278,5 @@ class LogInfo {
     else                                                         \
       exit(1);                                                   \
   } while (0)
-
 }  // namespace maple
 #endif  // MAPLE_UTIL_INCLUDE_MPL_LOGGING_H

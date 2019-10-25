@@ -19,7 +19,6 @@
 #include "mir_preg.h"
 #include "parser_opt.h"
 #include "mir_builder.h"
-
 namespace maple {
 class BinaryMplImport {
   using CallSite = std::pair<CallInfo*, PUIdx>;
@@ -76,8 +75,8 @@ class BinaryMplImport {
   void Reset();
   MIRSymbol *GetOrCreateSymbol(const TyIdx &tyIdx, const GStrIdx &strIdx, MIRSymKind mclass, MIRStorageClass sclass,
                                MIRFunction *func, uint8 scpID);
-  MIRType *InsertInTypeTables(MIRType *ptype);
-  void InsertInHashTable(MIRType *ptype);
+  MIRType &InsertInTypeTables(MIRType &ptype);
+  void InsertInHashTable(MIRType &ptype);
   void SetupEHRootType();
   void UpdateMethodSymbols();
   void ImportConstBase(MIRConstKind &kind, MIRTypePtr &type, uint32 &fieldID);
@@ -98,14 +97,14 @@ class BinaryMplImport {
   void ImportFieldPair(FieldPair &fp);
   void ImportMethodPair(MethodPair &memPool);
   void ImportMethodsOfStructType(MethodVector &methods);
-  void ImportStructTypeData(MIRStructType *type);
+  void ImportStructTypeData(MIRStructType &type);
   void ImportInterfacesOfClassType(std::vector<TyIdx> &interfaces);
   void ImportInfoIsStringOfClassType(std::vector<bool> &infoIsString);
   void ImportInfoOfClassType(std::vector<bool> &infoIsString, std::vector<MIRInfoPair> &infos);
   void ImportPragmaOfClassType(std::vector<MIRPragma*> &pragmas);
-  void SetClassTyidxOfMethods(MIRStructType *type);
-  void ImportClassTypeData(MIRClassType *type);
-  void ImportInterfaceTypeData(MIRInterfaceType *type);
+  void SetClassTyidxOfMethods(MIRStructType &type);
+  void ImportClassTypeData(MIRClassType &type);
+  void ImportInterfaceTypeData(MIRInterfaceType &type);
   PUIdx ImportFunction();
   MIRSymbol *InSymbol(MIRFunction *func);
   void InWord(int64 targetTag, uint8 **typeTagged, uint16 frameSize);
@@ -140,6 +139,5 @@ class BinaryMplImport {
   void SkipTotalSize();
   void ImportFieldsOfStructType(FieldVector &fields, uint32 methodSize);
 };
-
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_BIN_MPL_IMPORT_H

@@ -31,7 +31,13 @@ class VersionStTable;
 class OriginalSt;
 class VersionSt {
  public:
-  enum DefType { kDassign, kRegassign, kPhi, kMayDef, kMustDef };
+  enum DefType {
+    kDassign,
+    kRegassign,
+    kPhi,
+    kMayDef,
+    kMustDef
+  };
 
   VersionSt(size_t index, uint32 version, OriginalSt *ost)
       : index(index),
@@ -43,7 +49,7 @@ class VersionSt {
         live(false),
         isReturn(false) {}
 
-  ~VersionSt() {}
+  ~VersionSt() = default;
 
   size_t GetIndex() const {
     return index;
@@ -61,7 +67,8 @@ class VersionSt {
     return defBB;
   }
 
-  void DumpDefStmt(const MIRModule *mod);
+  void DumpDefStmt(const MIRModule *mod) const;
+
   bool IsLive() const {
     return live;
   }
@@ -86,54 +93,66 @@ class VersionSt {
     live = false;
   }
 
-  OStIdx GetOrigIdx() {
+  OStIdx GetOrigIdx() const {
     return ost->GetIndex();
   }
 
-  OriginalSt *GetOrigSt() const {
+  const OriginalSt *GetOrigSt() const {
     return ost;
   }
-
+  OriginalSt *GetOrigSt() {
+    return ost;
+  }
   void SetOrigSt(OriginalSt *ost) {
     this->ost = ost;
   }
 
-  maple::DassignNode *GetDassignNode() {
+  const DassignNode *GetDassignNode() const {
     return defStmt.dassign;
   }
-
-  void SetDassignNode(maple::DassignNode *dassignNode) {
+  DassignNode *GetDassignNode() {
+    return defStmt.dassign;
+  }
+  void SetDassignNode(DassignNode *dassignNode) {
     defStmt.dassign = dassignNode;
   }
 
-  maple::RegassignNode *GetRegassignNode() {
+  RegassignNode *GetRegassignNode() {
     return defStmt.regassign;
   }
-
-  void SetRegassignNode(maple::RegassignNode *regAssignNode) {
+  const RegassignNode *GetRegassignNode() const {
+    return defStmt.regassign;
+  }
+  void SetRegassignNode(RegassignNode *regAssignNode) {
     defStmt.regassign = regAssignNode;
   }
 
-  maple::PhiNode *GetPhi() {
+  const PhiNode *GetPhi() const {
     return defStmt.phi;
   }
-
-  void SetPhi(maple::PhiNode *phiNode) {
+  PhiNode *GetPhi() {
+    return defStmt.phi;
+  }
+  void SetPhi(PhiNode *phiNode) {
     defStmt.phi = phiNode;
   }
 
+  const MayDefNode *GetMayDef() const {
+    return defStmt.mayDef;
+  }
   MayDefNode *GetMayDef() {
     return defStmt.mayDef;
   }
-
   void SetMayDef(MayDefNode *mayDefNode) {
     defStmt.mayDef = mayDefNode;
   }
 
+  const MustDefNode *GetMustDef() const {
+    return defStmt.mustDef;
+  }
   MustDefNode *GetMustDef() {
     return defStmt.mustDef;
   }
-
   void SetMustDef(MustDefNode *mustDefNode) {
     defStmt.mustDef = mustDefNode;
   }
@@ -142,27 +161,28 @@ class VersionSt {
     return isReturn;
   }
 
-  void Dump(const MIRModule *mod, bool omitname = false) {
-    if (!omitname) {
+  void Dump(const MIRModule *mod, bool omitName = false) const {
+    if (!omitName) {
       ost->Dump();
     }
     LogInfo::MapleLogger() << "(" << version << ")";
-  };
+  }
+
   bool DefByMayDef() const {
     return defType == kMayDef;
   }
 
  private:
-  size_t index;     // index number in versionst_table_;
+  size_t index;     // index number in versionst_table_
   int version;      // starts from 0 for each symbol
-  OriginalSt *ost;  // the index of related originalst in originalst_table;
+  OriginalSt *ost;  // the index of related originalst in originalst_table
   BB *defBB;
   DefType defType;
 
   union DefStmt {
-    maple::DassignNode *dassign;
-    maple::RegassignNode *regassign;
-    maple::PhiNode *phi;
+    DassignNode *dassign;
+    RegassignNode *regassign;
+    PhiNode *phi;
     MayDefNode *mayDef;
     MustDefNode *mustDef;
   } defStmt;  // only valid after SSA
@@ -175,12 +195,12 @@ class VersionStTable {
  public:
   explicit VersionStTable(MemPool *vstMp) : vstAlloc(vstMp), versionStVector(vstAlloc.Adapter()) {}
 
-  ~VersionStTable() {}
+  ~VersionStTable() = default;
 
   VersionSt *CreateVersionSt(OriginalSt *ost, size_t version);
   VersionSt *FindOrCreateVersionSt(OriginalSt *ost, size_t version);
-  VersionSt *GetVersionStFromID(size_t id, bool checkfirst = false) {
-    if (checkfirst && id >= versionStVector.size()) {
+  VersionSt *GetVersionStFromID(size_t id, bool checkFirst = false) const {
+    if (checkFirst && id >= versionStVector.size()) {
       return nullptr;
     }
     ASSERT(id < versionStVector.size(), "symbol table index out of range");
@@ -188,11 +208,10 @@ class VersionStTable {
   }
 
   VersionSt &GetDummyVersionSt() {
-    static VersionSt dummyVST(0, 0, nullptr);
     return dummyVST;
   }
 
-  VersionSt *CreateVSymbol(const VersionSt *vst, size_t version) {
+  VersionSt *CreateVSymbol(VersionSt *vst, size_t version) {
     OriginalSt *ost = vst->GetOrigSt();
     return CreateVersionSt(ost, version);
   }
@@ -205,7 +224,7 @@ class VersionStTable {
     return versionStVector.size();
   }
 
-  VersionSt *GetVersionStVectorItem(size_t index) {
+  VersionSt *GetVersionStVectorItem(size_t index) const {
     CHECK_FATAL(index < versionStVector.size(), "out of range");
     return versionStVector[index];
   }
@@ -219,12 +238,12 @@ class VersionStTable {
     return vstAlloc;
   }
 
-  void Dump(MIRModule *mod);
+  void Dump(MIRModule *mod) const;
 
  private:
   MapleAllocator vstAlloc;                   // this stores versionStVector
-  MapleVector<VersionSt*> versionStVector;  // the vector that map a versionst's index to its pointer
+  MapleVector<VersionSt*> versionStVector;   // the vector that map a versionst's index to its pointer
+  static VersionSt dummyVST;
 };
-
-}  // namespace maple
+}       // namespace maple
 #endif  // MAPLE_ME_INCLUDE_VER_SYMBOL_H

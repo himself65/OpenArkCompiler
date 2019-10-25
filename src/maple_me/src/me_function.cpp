@@ -26,10 +26,10 @@
 
 namespace maple {
 #if DEBUG
-MIRModule *g_mirmodule = nullptr;
-MeFunction *g_func = nullptr;
-MeIRMap *g_irmap = nullptr;
-SSATab *g_ssatab = nullptr;
+MIRModule *globalMIRModule = nullptr;
+MeFunction *globalFunc = nullptr;
+MeIRMap *globalIRMap = nullptr;
+SSATab *globalSSATab = nullptr;
 #endif
 void MeFunction::PartialInit(bool isSecondPass) {
   theCFG = nullptr;
@@ -49,7 +49,7 @@ void MeFunction::PartialInit(bool isSecondPass) {
 }
 
 
-void MeFunction::Dump(bool DumpSimpIr) {
+void MeFunction::Dump(bool DumpSimpIr) const {
   LogInfo::MapleLogger() << ">>>>> Dump IR for Function " << mirFunc->GetName() << "<<<<<\n";
   if (irmap == nullptr || DumpSimpIr) {
     return;
@@ -78,8 +78,8 @@ void MeFunction::SetTryBlockInfo(const StmtNode *nextStmt, StmtNode *tryStmt, BB
 }
 
 void MeFunction::CreateBasicBlocks() {
-  if (mirModule.CurFunction()->IsEmpty()) {
-    if (!MeOptions::quiet) {
+  if (CurFunction()->IsEmpty()) {
+    if (!MeOption::quiet) {
       LogInfo::MapleLogger() << "function is empty, cfg is nullptr\n";
     }
     return;
@@ -91,7 +91,7 @@ void MeFunction::CreateBasicBlocks() {
   commonExitBB->SetAttributes(kBBAttrIsExit);
   auto *firstBB = NewBasicBlock();
   firstBB->SetAttributes(kBBAttrIsEntry);
-  StmtNode *nextStmt = mirModule.CurFunction()->GetBody()->GetFirst();
+  StmtNode *nextStmt = CurFunction()->GetBody()->GetFirst();
   ASSERT(nextStmt != nullptr, "function has no statement");
   BB *curBB = firstBB;
   StmtNode *tryStmt = nullptr;  // record current try stmt for map<bb, try_stmt>
@@ -287,12 +287,12 @@ void MeFunction::CreateBasicBlocks() {
         const MapleVector<TyIdx> &exceptiontyidxvec = catchNode->GetExceptionTyIdxVec();
         for (size_t i = 0; i < exceptiontyidxvec.size(); i++) {
           MIRType *eType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(exceptiontyidxvec[i]);
-          ASSERT(eType != nullptr && (eType->GetPrimType() == maple::PTY_ptr || eType->GetPrimType() == maple::PTY_ref),
+          ASSERT(eType != nullptr && (eType->GetPrimType() == PTY_ptr || eType->GetPrimType() == PTY_ref),
                  "wrong exception type");
           MIRPtrType *epType = static_cast<MIRPtrType*>(eType);
           MIRType *pointType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(epType->GetPointedTyIdx());
           const std::string &ename = GlobalTables::GetStrTable().GetStringFromStrIdx(pointType->GetNameStrIdx());
-          if ((pointType->GetPrimType() == maple::PTY_void) || (ename.compare("Ljava/lang/Throwable;") == 0) ||
+          if ((pointType->GetPrimType() == PTY_void) || (ename.compare("Ljava/lang/Throwable;") == 0) ||
               (ename.compare("Ljava/lang/Exception;") == 0)) {
             // "Ljava/lang/Exception;" is risk to set isJavaFinally because it
             // only deal with "throw exception". if throw error,  it's wrong
@@ -379,10 +379,8 @@ void MeFunction::CreateBasicBlocks() {
       }
     }
   } while (nextStmt != nullptr);
-  ASSERT(tryStmt == nullptr,
-         "unclosed try");    // tryandendtry should be one-one mapping
-  ASSERT(lastTryBB == nullptr,
-         "unclosed tryBB");  // tryandendtry should be one-one mapping
+  ASSERT(tryStmt == nullptr, "unclosed try");    // tryandendtry should be one-one mapping
+  ASSERT(lastTryBB == nullptr, "unclosed tryBB");  // tryandendtry should be one-one mapping
   auto *lastBB = curBB;
   if (lastBB->IsEmpty()) {
     // insert a return statement
@@ -397,23 +395,24 @@ void MeFunction::CreateBasicBlocks() {
 }
 
 void MeFunction::Prepare(unsigned long rangeNum) {
-  if (!MeOptions::quiet) {
-    LogInfo::MapleLogger() << "---Preparing Function  < " << mirModule.CurFunction()->GetName() << " > [" << rangeNum
+  if (!MeOption::quiet) {
+    LogInfo::MapleLogger() << "---Preparing Function  < " << CurFunction()->GetName() << " > [" << rangeNum
                            << "] ---\n";
   }
   /* lower first */
-  MIRLower mirLowerer(mirModule, mirModule.CurFunction());
+  MIRLower mirLowerer(mirModule, CurFunction());
   mirLowerer.Init();
   mirLowerer.SetLowerME();
   mirLowerer.SetLowerExpandArray();
-  mirLowerer.LowerFunc(mirModule.CurFunction());
+  ASSERT(CurFunction() != nullptr, "nullptr check");
+  mirLowerer.LowerFunc(*CurFunction());
   CreateBasicBlocks();
   if (NumBBs() == 0) {
     /* there's no basicblock generated */
     return;
   }
   RemoveEhEdgesInSyncRegion();
-  theCFG = memPool->New<MirCFG>(this);
+  theCFG = memPool->New<MeCFG>(*this);
   theCFG->BuildMirCFG();
   theCFG->FixMirCFG();
   theCFG->VerifyLabels();
@@ -422,7 +421,7 @@ void MeFunction::Prepare(unsigned long rangeNum) {
   theCFG->Verify();
 }
 
-void MeFunction::Verify() {
+void MeFunction::Verify() const {
   theCFG->Verify();
   theCFG->VerifyLabels();
 }
@@ -434,12 +433,12 @@ BB *MeFunction::NewBasicBlock() {
 }
 
 // new a basic block and insert before position
-BB *MeFunction::InsertNewBasicBlock(BB *position) {
-  BB *newbb = memPool->New<BB>(&alloc, &versAlloc, BBId(nextBBId++));
+BB *MeFunction::InsertNewBasicBlock(const BB &position) {
+  BB *newBB = memPool->New<BB>(&alloc, &versAlloc, BBId(nextBBId++));
 
-  auto bIt = std::find(begin(), end(), position);
-  auto idx = position->GetBBId().idx;
-  auto newIt = bbVec.insert(bIt, newbb);
+  auto bIt = std::find(begin(), end(), &position);
+  auto idx = position.GetBBId().idx;
+  auto newIt = bbVec.insert(bIt, newBB);
   auto eIt = end();
   // update bb's idx
   for (auto it = newIt; it != eIt; ++it) {
@@ -448,13 +447,13 @@ BB *MeFunction::InsertNewBasicBlock(BB *position) {
     }
     idx++;
   }
-  return newbb;
+  return newBB;
 }
 
-void MeFunction::DeleteBasicBlock(const BB *bb) {
-  ASSERT(bbVec[bb->GetBBId().idx] == bb, "runtime check error");
+void MeFunction::DeleteBasicBlock(const BB &bb) {
+  ASSERT(bbVec[bb.GetBBId().idx] == &bb, "runtime check error");
   /* update first_bb_ and last_bb if needed */
-  bbVec.at(bb->GetBBId().idx) = nullptr;
+  bbVec.at(bb.GetBBId().idx) = nullptr;
 }
 
 /* get next bb in bbVec */
@@ -482,26 +481,27 @@ BB *MeFunction::PrevBB(const BB *bb) {
 }
 
 /* clone stmtnode in orig bb to newBB */
-void MeFunction::CloneBasicBlock(BB *newBB, BB *orig) {
-  if (orig == nullptr || orig->IsEmpty()) {
+void MeFunction::CloneBasicBlock(BB &newBB, const BB &orig) {
+  if (orig.IsEmpty()) {
     return;
   }
-  for (auto &stmt : orig->GetStmtNodes()) {
-    StmtNode *newStmt = static_cast<StmtNode*>(stmt.CloneTree(mirModule.CurFuncCodeMemPoolAllocator()));
-    ASSERT(newStmt != nullptr, "null ptr check");
+  for (const auto &stmt : orig.GetStmtNodes()) {
+    StmtNode *newStmt = static_cast<StmtNode*>(stmt.CloneTree(mirModule.GetCurFuncCodeMPAllocator()));
     newStmt->SetNext(nullptr);
     newStmt->SetPrev(nullptr);
-    newBB->AddStmtNode(newStmt);
+    newBB.AddStmtNode(newStmt);
     if (meSSATab != nullptr) {
-      meSSATab->CreateSSAStmt(newStmt, newBB);
+      meSSATab->CreateSSAStmt(*newStmt, newBB);
     }
   }
 }
 
 /* Split BB at split_point */
-BB *MeFunction::SplitBB(BB *bb, StmtNode *splitPoint) {
-  BB *newBB = memPool->New<BB>(&alloc, &versAlloc, BBId(nextBBId++));
-  StmtNode *newBBStart = splitPoint->GetNext();
+BB &MeFunction::SplitBB(BB &bb, StmtNode &splitPoint, BB *newBB) {
+  if (newBB == nullptr){
+    newBB = memPool->New<BB>(&alloc, &versAlloc, BBId(nextBBId++));
+  }
+  StmtNode *newBBStart = splitPoint.GetNext();
   // Fix Stmt in BB.
   if (newBBStart != nullptr) {
     newBBStart->SetPrev(nullptr);
@@ -509,18 +509,18 @@ BB *MeFunction::SplitBB(BB *bb, StmtNode *splitPoint) {
       StmtNode *nextStmt = stmt->GetNext();
       newBB->AddStmtNode(stmt);
       if (meSSATab != nullptr) {
-        meSSATab->CreateSSAStmt(stmt, newBB);
+        meSSATab->CreateSSAStmt(*stmt, *newBB);
       }
       stmt = nextStmt;
     }
   }
-  bb->SetLast(splitPoint);
-  splitPoint->SetNext(nullptr);
+  bb.SetLast(&splitPoint);
+  splitPoint.SetNext(nullptr);
   // Fix BB in CFG
-  newBB->SetKind(bb->GetKind());
-  bb->SetKind(kBBFallthru);
-  auto bIt = std::find(begin(), end(), bb);
-  auto idx = bb->GetBBId().idx;
+  newBB->SetKind(bb.GetKind());
+  bb.SetKind(kBBFallthru);
+  auto bIt = std::find(begin(), end(), &bb);
+  auto idx = bb.GetBBId().idx;
   auto newIt = bbVec.insert(++bIt, newBB);
   auto eIt = end();
   // update bb's idx
@@ -533,46 +533,46 @@ BB *MeFunction::SplitBB(BB *bb, StmtNode *splitPoint) {
   // Special Case: commonExitBB is orig bb's succ
   auto *commonExitBB = *common_exit();
   for (size_t i = 0; i < commonExitBB->GetPred().size(); i++) {
-    if (commonExitBB->GetPred(i) == bb) {
+    if (commonExitBB->GetPred(i) == &bb) {
       commonExitBB->SetPred(i, newBB);
       break;
     }
   }
-  for (size_t i = 0; i < bb->GetSucc().size(); i++) {
-    BB *succ = bb->GetSucc(i);
-    succ->ReplacePred(bb, newBB);
+  for (size_t i = 0; i < bb.GetSucc().size(); i++) {
+    BB *succ = bb.GetSucc(i);
+    succ->ReplacePred(&bb, newBB);
   }
-  bb->GetSucc().clear();
-  bb->GetSucc().push_back(newBB);
-  newBB->GetPred().push_back(bb);
+  bb.GetSucc().clear();
+  bb.GetSucc().push_back(newBB);
+  newBB->GetPred().push_back(&bb);
   // Setup flags
   newBB->CopyFlagsAfterSplit(bb);
   if (newBB->GetAttributes(kBBAttrIsTryEnd)) {
-    endTryBB2TryBB[newBB] = endTryBB2TryBB[bb];
-    endTryBB2TryBB[bb] = nullptr;
-    bb->ClearAttributes(kBBAttrIsTryEnd);
+    endTryBB2TryBB[newBB] = endTryBB2TryBB[&bb];
+    endTryBB2TryBB[&bb] = nullptr;
+    bb.ClearAttributes(kBBAttrIsTryEnd);
   }
-  bb->ClearAttributes(kBBAttrIsExit);
-  return newBB;
+  bb.ClearAttributes(kBBAttrIsExit);
+  return *newBB;
 }
 
 /* create label for bb */
-void MeFunction::CreateBBLabel(BB *bb) {
-  if (bb->GetBBLabel() != 0) {
+void MeFunction::CreateBBLabel(BB &bb) {
+  if (bb.GetBBLabel() != 0) {
     return;
   }
   LabelIdx label = mirModule.CurFunction()->GetLabelTab()->CreateLabelWithPrefix('m');
   mirModule.CurFunction()->GetLabelTab()->AddToStringLabelMap(label);
-  bb->SetBBLabel(label);
-  labelBBIdMap.insert(std::make_pair(label, bb));
+  bb.SetBBLabel(label);
+  labelBBIdMap.insert(std::make_pair(label, &bb));
 }
 
 // Recognize the following kind of simple pattern and remove corresponding EH edges
 // @label78044   catch { <* void> }
-//  dassign %Reg0_R524935 0 (regread ptr %%thrownval)
-//  syncexit (dread ref %Reg8_R460958)
-//  endtry
-//  throw (dread ptr %Reg0_R524935)
+// dassign %Reg0_R524935 0 (regread ptr %%thrownval)
+// syncexit (dread ref %Reg8_R460958)
+// endtry
+// throw (dread ptr %Reg0_R524935)
 void MeFunction::RemoveEhEdgesInSyncRegion() {
   if (endTryBB2TryBB.size() != 1) {
     return;
@@ -608,5 +608,4 @@ void MeFunction::RemoveEhEdgesInSyncRegion() {
     }
   }
 }
-
 }  // namespace maple

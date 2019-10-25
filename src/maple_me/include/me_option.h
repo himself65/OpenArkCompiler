@@ -18,20 +18,27 @@
 #include "mempool.h"
 #include "mempool_allocator.h"
 #include "types_def.h"
+#include <string>
 
 namespace maple {
-class MeOptions {
+class MeOption {
  public:
-  explicit MeOptions(MemPool *memPool) : optionAlloc(memPool) {}
+  explicit MeOption(MemPool &memPool) : optionAlloc(&memPool) {}
 
   void ParseOptions(int argc, char **argv, std::string &fileName);
-  ~MeOptions() {}
+  ~MeOption() = default;
 
-  void DumpUsage();
   static bool DumpPhase(const std::string &phase);
   static std::unordered_set<std::string> dumpPhases;
+  enum Level {
+    LEVEL_ZERO = 0,
+    LEVEL_ONE = 1,
+    LEVEL_TWO = 2,
+    LEVEL_THREE = 3
+  };
   static bool dumpAfter;
-  static unsigned long range[2];
+  static constexpr int kRangeArrayLen = 2;
+  static unsigned long range[kRangeArrayLen];
   static bool useRange;
   static std::string dumpFunc;
   static bool quiet;
@@ -46,10 +53,13 @@ class MeOptions {
   static bool lessThrowAlias;
   static bool finalFieldAlias;
   static bool regreadAtReturn;
-  void SplitPhases(const char *str, std::unordered_set<std::string> &set);
-  void GetRange(const char *str);
+  void SplitPhases(const std::string &str, std::unordered_set<std::string> &set) const;
+  void SplitSkipPhases(const std::string &str) {
+    SplitPhases(str, skipPhases);
+  }
+  void GetRange(const std::string &str) const;
 
-  std::unordered_set<std::string> &GetSkipPhases() {
+  const std::unordered_set<std::string> &GetSkipPhases() const {
     return skipPhases;
   }
 
@@ -60,9 +70,8 @@ class MeOptions {
 
 #ifndef DEBUGFUNC
 #define DEBUGFUNC(f)                                                         \
-  (MeOptions::dumpPhases.find(PhaseName()) != MeOptions::dumpPhases.end() && \
-   (MeOptions::dumpFunc.compare("*") == 0 || f->GetName().find(MeOptions::dumpFunc.c_str()) != std::string::npos))
+  (MeOption::dumpPhases.find(PhaseName()) != MeOption::dumpPhases.end() && \
+   (MeOption::dumpFunc.compare("*") == 0 || f->GetName().find(MeOption::dumpFunc) != std::string::npos))
 #endif
-
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_ME_OPTION_H

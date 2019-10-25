@@ -37,7 +37,7 @@ class MeFuncPhase : public Phase {
  public:
   explicit MeFuncPhase(MePhaseID id) : Phase() {
     phaseID = id;
-    prevPhaseName = ""; /* init prev_phasename is nullptr */
+    prevPhaseName = ""; // init prev_phasename is nullptr
     isCFGChanged = false;
   }
 
@@ -75,9 +75,8 @@ class MeFuncPhase : public Phase {
 
  private:
   MePhaseID phaseID;
-  std::string prevPhaseName; /* used in filename for emit */
+  std::string prevPhaseName; // used in filename for emit
   bool isCFGChanged;         // is this phase changed CFG
 };
-
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_ME_PHASE_H

@@ -22,15 +22,13 @@
 #include "types_def.h"
 
 namespace maple {
-
 class Options {
  public:
-  explicit Options(maple::MemPool *memPool) : optionAlloc(memPool) {}
+  explicit Options(maple::MemPool &memPool) : optionAlloc(&memPool) {}
 
   bool ParseOptions(int argc, char **argv, std::string &fileName);
   ~Options() {}
 
-  void DumpUsage();
   void DumpOptions();
   std::vector<std::string> &GetSequence() {
     return phaseSeq;
@@ -63,7 +61,6 @@ class Options {
   MapleAllocator optionAlloc;
   std::vector<std::string> phaseSeq;
 };
-
 }  // namespace maple
 #ifndef TRACE_PHASE
 #define TRACE_PHASE (Options::dumpPhase.compare(PhaseName()) == 0)

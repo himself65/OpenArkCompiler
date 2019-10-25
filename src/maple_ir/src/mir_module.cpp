@@ -38,11 +38,8 @@ MIRModule::MIRModule(const char *fn)
       externStructTypeSet(std::less<TyIdx>(), memPoolAllocator.Adapter()),
       symbolSet(std::less<StIdx>(), memPoolAllocator.Adapter()),
       symbolDefOrder(memPoolAllocator.Adapter()),
-      someSymbolNeedForwDecl(false),
       out(LogInfo::MapleLogger()),
-      entryFuncName(""),
       fileName(fn),
-      throwableTyIdx(0),
       fileInfo(memPoolAllocator.Adapter()),
       fileInfoIsString(memPoolAllocator.Adapter()),
       fileData(memPoolAllocator.Adapter()),
@@ -50,26 +47,12 @@ MIRModule::MIRModule(const char *fn)
       importFiles(memPoolAllocator.Adapter()),
       importPaths(memPoolAllocator.Adapter()),
       classList(memPoolAllocator.Adapter()),
-      entryFunc(nullptr),
-      floatNum(0),
       optimizedFuncs(memPoolAllocator.Adapter()),
-      rcNotNeedingLock(memPoolAllocator.Adapter()),
       puIdxFieldInitializedMap(std::less<PUIdx>(), memPoolAllocator.Adapter()) {
-  flavor = kFlavorUnknown;
-  srcLang = kSrcLangUnknown;
-  id = 0xffff;
-  globalMemSize = 0;
-  globalBlkMap = nullptr;
-  globalWordsTypeTagged = nullptr;
-  globalWordsRefCounted = nullptr;
-  numFuncs = 0;
-  withProfileInfo = false;
   GlobalTables::GetGsymTable().SetModule(this);
   typeNameTab = memPool->New<MIRTypeNameTable>(&memPoolAllocator);
   mirBuilder = memPool->New<MIRBuilder>(this);
   IntrinDesc::InitMIRModule(this);
-  binMplt = nullptr;
-  curFunction = nullptr;
 }
 
 MIRModule::~MIRModule() {
@@ -79,16 +62,16 @@ MIRModule::~MIRModule() {
   }
 }
 
-MIRFunction *MIRModule::CurFunction(void) const {
-  return curFunction;
-}
-
 MemPool *MIRModule::CurFuncCodeMemPool(void) const {
   return CurFunction()->GetCodeMempool();
 }
 
 MapleAllocator *MIRModule::CurFuncCodeMemPoolAllocator(void) const {
   return curFunction->GetCodeMempoolAllocator();
+}
+
+MapleAllocator &MIRModule::GetCurFuncCodeMPAllocator(void) const {
+  return curFunction->GetCodeMPAllocator();
 }
 
 void MIRModule::AddExternStructType(TyIdx tyIdx) {
@@ -113,7 +96,7 @@ void MIRModule::AddSymbol(const MIRSymbol *s) {
   AddSymbol(s->GetStIdx());
 }
 
-void MIRModule::DumpGlobals(bool emitStructureType) {
+void MIRModule::DumpGlobals(bool emitStructureType) const {
   if (flavor != kFlavorUnknown) {
     LogInfo::MapleLogger() << "flavor " << flavor << std::endl;
   }
@@ -285,12 +268,12 @@ void MIRModule::DumpGlobals(bool emitStructureType) {
   }
 }
 
-void MIRModule::Dump(bool emitStructureType) {
+void MIRModule::Dump(bool emitStructureType) const {
   DumpGlobals(emitStructureType);
   DumpFunctionList();
 }
 
-void MIRModule::DumpGlobalArraySymbol() {
+void MIRModule::DumpGlobalArraySymbol() const {
   MapleSet<StIdx>::iterator sit = symbolSet.begin();
   for (; sit != symbolSet.end(); sit++) {
     MIRSymbol *s = GlobalTables::GetGsymTable().GetSymbolFromStidx((*sit).Idx());
@@ -302,7 +285,7 @@ void MIRModule::DumpGlobalArraySymbol() {
   }
 }
 
-void MIRModule::Emit(const std::string &outfileName) {
+void MIRModule::Emit(const std::string &outfileName) const {
   std::ofstream file;
   // Change cout's buffer to file.
   std::streambuf *backup = LogInfo::MapleLogger().rdbuf();
@@ -317,7 +300,7 @@ void MIRModule::Emit(const std::string &outfileName) {
   file.close();
 }
 
-void MIRModule::DumpFunctionList(bool skipBody) {
+void MIRModule::DumpFunctionList(bool skipBody) const {
   for (auto it = functionList.begin(); it != functionList.end(); it++) {
     (*it)->Dump(skipBody);
   }
@@ -348,11 +331,12 @@ void MIRModule::OutputFunctionListAsciiMpl(const char *phaseName) {
   return;
 }
 
-void MIRModule::DumpToFile(const std::string &fileNameStr, bool emitStructureType) {
+void MIRModule::DumpToFile(const std::string &fileNameStr, bool emitStructureType) const {
   std::ofstream file;
   file.open(fileNameStr.c_str(), std::ios::trunc);
   if (!file.is_open()) {
-    std::cerr << "Cannot open " << fileNameStr << std::endl;
+    ERR(kLncErr, "Cannot open %s", fileNameStr.c_str());
+    return;
   }
   // Change cout's buffer to file.
   std::streambuf *backup = LogInfo::MapleLogger().rdbuf();
@@ -362,7 +346,7 @@ void MIRModule::DumpToFile(const std::string &fileNameStr, bool emitStructureTyp
   LogInfo::MapleLogger().rdbuf(backup);
 }
 
-void MIRModule::DumpInlineCandidateToFile(const std::string &fileNameStr) {
+void MIRModule::DumpInlineCandidateToFile(const std::string &fileNameStr) const {
   if (optimizedFuncs.empty()) {
     return;
   }
@@ -381,7 +365,7 @@ void MIRModule::DumpInlineCandidateToFile(const std::string &fileNameStr) {
 }
 
 // This is not efficient. Only used in debug mode for now.
-const std::string &MIRModule::GetFileNameFromFileNum(uint32 fileNum) {
+const std::string &MIRModule::GetFileNameFromFileNum(uint32 fileNum) const {
   GStrIdx nameIdx = GStrIdx(0);
   for (auto &info : srcFileInfo) {
     if (info.second == fileNum) {
@@ -392,7 +376,7 @@ const std::string &MIRModule::GetFileNameFromFileNum(uint32 fileNum) {
 }
 
 
-void MIRModule::DumpClassToFile(const char *path) {
+void MIRModule::DumpClassToFile(const char *path) const {
   ASSERT(path != nullptr, "null ptr check");
   std::string spath(path);
   spath.append("/");
@@ -505,5 +489,4 @@ void MIRModule::RemoveClass(TyIdx t) {
 void MIRModule::SetFuncInfoPrinted() const {
   CurFunction()->SetInfoPrinted();
 }
-
 }  // namespace maple

@@ -19,17 +19,16 @@
 #include "mpl_logging.h"
 
 namespace maple {
-
 template <typename T>
 class PtrListNodeBase {
  public:
   PtrListNodeBase() = default;
   ~PtrListNodeBase() = default;
-  T *GetPrev() {
+  T *GetPrev() const {
     return prev;
   }
 
-  T *GetNext() {
+  T *GetNext() const {
     return next;
   }
 
@@ -71,7 +70,7 @@ class ReversePtrListRefIterator {
     return (*this);
   }
 
-  ~ReversePtrListRefIterator() {}
+  ~ReversePtrListRefIterator() = default;
 
   T base() const {
     return current;
@@ -202,7 +201,7 @@ class PtrListRef {
 
   PtrListRef(pointer _First, pointer _Last) : first(_First), last(_Last == nullptr ? _First : _Last) {}
 
-  ~PtrListRef() {}
+  ~PtrListRef() = default;
 
   iterator begin() {
     return iterator(this->first);
@@ -406,7 +405,7 @@ class PtrListRef {
       this->last = nullptr;
     } else if (_Where == this->begin()) {
       this->first = _Where->GetNext();
-      ASSERT(this->first, "null ptr check");
+      ASSERT(this->first != nullptr, "null ptr check");
       this->first->SetPrev(nullptr);
     } else if (_Where == this->rbegin().base()) {
       pop_back();

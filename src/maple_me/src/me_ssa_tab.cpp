@@ -17,34 +17,31 @@
 #include "mpl_timer.h"
 
 // allocate the data structure to store SSA information
-
 namespace maple {
 AnalysisResult *MeDoSSATab::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) {
   MPLTimer timer;
   timer.Start();
   if (DEBUGFUNC(func)) {
-    LogInfo::MapleLogger() << "\n============== SSA and AA preparation =============" << std::endl;
+    LogInfo::MapleLogger() << "\n============== SSA and AA preparation =============" << '\n';
   }
   MemPool *memPool = NewMemPool();
   // allocate ssaTab including its SSAPart to store SSA information for statements
   SSATab *ssaTab = memPool->New<SSATab>(memPool, func->GetVersMp(), &func->GetMIRModule());
   func->SetMeSSATab(ssaTab);
 #if DEBUG
-  g_ssatab = ssaTab;
+  globalSSATab = ssaTab;
 #endif
   // pass through the program statements
-  auto eIt = func->valid_end();
-  for (auto bIt = func->valid_begin(); bIt != eIt; ++bIt) {
+  for (auto bIt = func->valid_begin(); bIt != func->valid_end(); ++bIt) {
     auto *bb = *bIt;
     for (auto &stmt : bb->GetStmtNodes()) {
-      ssaTab->CreateSSAStmt(&stmt, bb);  // this adds the SSANodes for exprs
+      ssaTab->CreateSSAStmt(stmt, *bb);  // this adds the SSANodes for exprs
     }
   }
   if (DEBUGFUNC(func)) {
     timer.Stop();
-    LogInfo::MapleLogger() << "ssaTab consumes cumulatively " << timer.Elapsed() << "seconds " << std::endl;
+    LogInfo::MapleLogger() << "ssaTab consumes cumulatively " << timer.Elapsed() << "seconds " << '\n';
   }
   return ssaTab;
 }
-
 }  // namespace maple

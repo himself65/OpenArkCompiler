@@ -19,35 +19,26 @@
 
 namespace maple {
 class BBLayout : public AnalysisResult {
- private:
-  MeFunction *func;
-  MapleAllocator layoutAlloc;
-  MapleVector<BB*> layoutBBs;  // gives the determined layout order
-  BBId curBBId;                // to index into func->bb_vec_ to return the next BB
-  bool bbCreated;              // new create bb will change mefunction::bb_vec_ and
-  // related analysis result
-  MapleVector<bool> laidOut;  // indexed by bbid to tell if has been laid out
-  bool tryOutstanding;        // true if a try laid out but not its endtry
  public:
-  BBLayout(MemPool *memPool, MeFunction *f)
-      : AnalysisResult(memPool),
+  BBLayout(MemPool &memPool, MeFunction &f)
+      : AnalysisResult(&memPool),
         func(f),
-        layoutAlloc(memPool),
+        layoutAlloc(&memPool),
         layoutBBs(layoutAlloc.Adapter()),
         curBBId(0),
         bbCreated(false),
-        laidOut(func->GetAllBBs().size(), false, layoutAlloc.Adapter()),
+        laidOut(func.GetAllBBs().size(), false, layoutAlloc.Adapter()),
         tryOutstanding(false) {
-    laidOut[func->GetCommonEntryBB()->GetBBId().idx] = true;
-    laidOut[func->GetCommonExitBB()->GetBBId().idx] = true;
+    laidOut[func.GetCommonEntryBB()->GetBBId().idx] = true;
+    laidOut[func.GetCommonExitBB()->GetBBId().idx] = true;
   }
 
   virtual ~BBLayout() = default;
   BB *NextBB() {
     // return the next BB following strictly program input order
     curBBId.idx++;
-    while (curBBId.idx < func->GetAllBBs().size()) {
-      BB *nextBB = func->GetBBFromID(curBBId);
+    while (curBBId.idx < func.GetAllBBs().size()) {
+      BB *nextBB = func.GetBBFromID(curBBId);
       if (nextBB != nullptr && !laidOut[nextBB->GetBBId().idx]) {
         return nextBB;
       }
@@ -56,21 +47,21 @@ class BBLayout : public AnalysisResult {
     return nullptr;
   }
 
-  void OptimizeBranchTarget(BB *bb);
-  bool BBEmptyAndFallthru(const BB *bb);
-  bool BBContainsOnlyGoto(BB *bb);
-  bool BBContainsOnlyCondGoto(BB *bb);
-  bool HasSameBranchCond(BB *bb1, BB *bb2);
-  bool BBCanBeMoved(BB *fromBB, const BB *toAfterBB);
-  void AddBB(BB *bb);
-  BB *GetFallThruBBSkippingEmpty(BB *bb);
-  void ResolveUnconditionalFallThru(BB *bb, BB *nextBB);
-  void ChangeToFallthruFromGoto(BB *bb);
+  void OptimizeBranchTarget(BB &bb);
+  bool BBEmptyAndFallthru(const BB &bb);
+  bool BBContainsOnlyGoto(const BB &bb) const;
+  bool BBContainsOnlyCondGoto(const BB &bb) const;
+  bool HasSameBranchCond(BB &bb1, BB &bb2) const;
+  bool BBCanBeMoved(const BB &fromBB, const BB &toAfterBB) const;
+  void AddBB(BB &bb);
+  BB *GetFallThruBBSkippingEmpty(BB &bb);
+  void ResolveUnconditionalFallThru(BB &bb, BB &nextBB);
+  void ChangeToFallthruFromGoto(BB &bb);
   const MapleVector<BB*> &GetBBs() const {
     return layoutBBs;
   }
 
-  const bool NewBBInLayout() const {
+  const bool IsNewBBInLayout() const {
     return bbCreated;
   }
 
@@ -97,6 +88,15 @@ class BBLayout : public AnalysisResult {
   std::string PhaseName() const {
     return "bblayout";
   }
+ private:
+  MeFunction &func;
+  MapleAllocator layoutAlloc;
+  MapleVector<BB*> layoutBBs;  // gives the determined layout order
+  BBId curBBId;                // to index into func.bb_vec_ to return the next BB
+  bool bbCreated;              // new create bb will change mefunction::bb_vec_ and
+  // related analysis result
+  MapleVector<bool> laidOut;  // indexed by bbid to tell if has been laid out
+  bool tryOutstanding;        // true if a try laid out but not its endtry
 };
 
 class MeDoBBLayout : public MeFuncPhase {
@@ -109,6 +109,5 @@ class MeDoBBLayout : public MeFuncPhase {
     return "bblayout";
   }
 };
-
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_ME_BB_LAYOUT_H

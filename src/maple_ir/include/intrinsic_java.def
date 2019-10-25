@@ -25,6 +25,8 @@ DEF_MIR_INTRINSIC(JAVA_CONST_CLASS,\
                   "__java_const_class", INTRNISJAVA, kArgTyDynany, kArgTyDynany, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
 DEF_MIR_INTRINSIC(JAVA_INSTANCE_OF,\
                   "__java_instance_of", INTRNISJAVA, kArgTyU1, kArgTyDynany, kArgTyDynany, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
+DEF_MIR_INTRINSIC(JAVA_ISASSIGNABLEFROM,\
+                  "__java_isAssignableFrom", INTRNISJAVA, kArgTyU1, kArgTyDynany, kArgTyDynany, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
 DEF_MIR_INTRINSIC(JAVA_MERGE,\
                   "__java_merge", INTRNISJAVA, kArgTyPtr, kArgTyDynany, kArgTyDynany, kArgTyDynany, kArgTyDynany, kArgTyDynany, kArgTyUndef)
 DEF_MIR_INTRINSIC(JAVA_CLINIT_CHECK,\

@@ -76,6 +76,5 @@ class DoVtableAnalysis : public ModulePhase {
     return nullptr;
   }
 };
-
 }  // namespace maple
 #endif  // MPL2MPL_INCLUDE_VTABLE_ANALYSIS_H

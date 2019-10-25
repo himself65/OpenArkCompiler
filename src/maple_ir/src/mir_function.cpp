@@ -64,8 +64,9 @@ void MIRFunction::Dump(bool withoutBody) {
           LogInfo::MapleLogger() << "reg %" << symbol->GetPreg()->GetPregNo() << " ";
         }
       }
+      constexpr int kIndent = 2;
       MIRType *ty = GetNthParamType(i);
-      ty->Dump(2);
+      ty->Dump(kIndent);
       TypeAttrs tA = GetNthParamAttr(i);
       tA.DumpAttributes();
       if (i != (argSize - 1)) {
@@ -88,7 +89,7 @@ void MIRFunction::Dump(bool withoutBody) {
     LogInfo::MapleLogger() << "# [WARNING] skipped dumping because codeMemPool is nullptr " << std::endl;
   } else if (GetBody() && !withoutBody && fnSt->GetStorageClass() != kScExtern) {
     ResetInfoPrinted();  // this ensures funcinfo will be printed
-    GetBody()->Dump(module, 0, module->GetFlavor() < kMmpl ? GetSymTab() : nullptr,
+    GetBody()->Dump(*module, 0, module->GetFlavor() < kMmpl ? GetSymTab() : nullptr,
                     module->GetFlavor() < kMmpl ? GetPregTab() : nullptr, false, true);  // Dump body
   } else {
     LogInfo::MapleLogger() << std::endl;
@@ -100,25 +101,25 @@ void MIRFunction::Dump(bool withoutBody) {
 void MIRFunction::DumpUpFormal(int32 indent) const {
   PrintIndentation(indent + 1);
   LogInfo::MapleLogger() << "upformalsize " << static_cast<uint32>(GetUpFormalSize()) << std::endl;
-  if (GetLocalWordsTypeTagged() != nullptr) {
+  if (localWordsTypeTagged != nullptr) {
     PrintIndentation(indent + 1);
     LogInfo::MapleLogger() << "formalwordstypetagged = [ ";
-    uint32 *p = const_cast<uint32*>(reinterpret_cast<const uint32*>(GetLocalWordsTypeTagged()));
+    uint32 *p = const_cast<uint32*>(reinterpret_cast<const uint32*>(localWordsTypeTagged));
     LogInfo::MapleLogger() << std::hex;
     while (p < const_cast<uint32*>(reinterpret_cast<const uint32*>(
-                   GetLocalWordsTypeTagged() + BlockSize2BitVectorSize(GetUpFormalSize())))) {
+                   localWordsTypeTagged + BlockSize2BitVectorSize(GetUpFormalSize())))) {
       LogInfo::MapleLogger() << std::hex << "0x" << *p << " ";
       p++;
     }
     LogInfo::MapleLogger() << std::dec << "]\n";
   }
-  if (GetFormalWordsRefCounted() != nullptr) {
+  if (formalWordsRefCounted != nullptr) {
     PrintIndentation(indent + 1);
     LogInfo::MapleLogger() << "formalwordsrefcounted = [ ";
-    uint32 *p = const_cast<uint32*>(reinterpret_cast<const uint32*>(GetFormalWordsRefCounted()));
+    uint32 *p = const_cast<uint32*>(reinterpret_cast<const uint32*>(formalWordsRefCounted));
     LogInfo::MapleLogger() << std::hex;
     while (p < const_cast<uint32*>(reinterpret_cast<const uint32*>(
-                   GetFormalWordsRefCounted() + BlockSize2BitVectorSize(GetUpFormalSize())))) {
+                   formalWordsRefCounted + BlockSize2BitVectorSize(GetUpFormalSize())))) {
       LogInfo::MapleLogger() << std::hex << "0x" << *p << " ";
       p++;
     }
@@ -129,25 +130,25 @@ void MIRFunction::DumpUpFormal(int32 indent) const {
 void MIRFunction::DumpFrame(int32 indent) const {
   PrintIndentation(indent + 1);
   LogInfo::MapleLogger() << "framesize " << GetFrameSize() << std::endl;
-  if (GetLocalWordsTypeTagged() != nullptr) {
+  if (localWordsTypeTagged != nullptr) {
     PrintIndentation(indent + 1);
     LogInfo::MapleLogger() << "localwordstypetagged = [ ";
-    uint32 *p = const_cast<uint32*>(reinterpret_cast<const uint32*>(GetLocalWordsTypeTagged()));
+    uint32 *p = const_cast<uint32*>(reinterpret_cast<const uint32*>(localWordsTypeTagged));
     LogInfo::MapleLogger() << std::hex;
     while (p < const_cast<uint32*>(reinterpret_cast<const uint32*>(
-                   GetLocalWordsTypeTagged() + BlockSize2BitVectorSize(GetFrameSize())))) {
+                   localWordsTypeTagged + BlockSize2BitVectorSize(GetFrameSize())))) {
       LogInfo::MapleLogger() << std::hex << "0x" << *p << " ";
       p++;
     }
     LogInfo::MapleLogger() << std::dec << "]\n";
   }
-  if (GetLocalWordsRefCounted() != nullptr) {
+  if (localWordsRefCounted != nullptr) {
     PrintIndentation(indent + 1);
     LogInfo::MapleLogger() << "localwordsrefcounted = [ ";
-    uint32 *p = const_cast<uint32*>(reinterpret_cast<const uint32*>(GetLocalWordsRefCounted()));
+    uint32 *p = const_cast<uint32*>(reinterpret_cast<const uint32*>(localWordsRefCounted));
     LogInfo::MapleLogger() << std::hex;
     while (p < const_cast<uint32*>(reinterpret_cast<const uint32*>(
-                   GetLocalWordsRefCounted() + BlockSize2BitVectorSize(GetFrameSize())))) {
+                   localWordsRefCounted + BlockSize2BitVectorSize(GetFrameSize())))) {
       LogInfo::MapleLogger() << std::hex << "0x" << *p << " ";
       p++;
     }
@@ -174,13 +175,14 @@ void MIRFunction::DumpFuncBody(int32 indent) {
       LogInfo::MapleLogger() << "funcsize " << GetFuncSize() << std::endl;
     }
     if (!GetInfoVector().empty()) {
-      MIRInfoVector funcInfo = GetInfoVector();
+      const MIRInfoVector &funcInfo = GetInfoVector();
       MapleVector<bool> funcInfoIsString = InfoIsString();
       PrintIndentation(indent + 1);
       LogInfo::MapleLogger() << "funcinfo {\n";
       size_t size = funcInfo.size();
+      constexpr int kIndentOffset = 2;
       for (size_t i = 0; i < size; i++) {
-        PrintIndentation(indent + 2);
+        PrintIndentation(indent + kIndentOffset);
         LogInfo::MapleLogger() << "@" << GlobalTables::GetStrTable().GetStringFromStrIdx(funcInfo[i].first) << " ";
         if (!funcInfoIsString[i]) {
           LogInfo::MapleLogger() << funcInfo[i].second;
@@ -307,7 +309,7 @@ void MIRFunction::NewBody() {
   MIRPregTable *oldPregTable = GetPregTab();
   MIRTypeNameTable *oldTypenameTable = typeNameTab;
   MIRLabelTable *oldLabelTable = GetLabelTab();
-  SetSymTab(dataMemPool->New<MIRSymbolTable>(&dataMPAllocator));
+  symTab = dataMemPool->New<MIRSymbolTable>(&dataMPAllocator);
   SetPregTab(dataMemPool->New<MIRPregTable>(module, &dataMPAllocator));
   typeNameTab = dataMemPool->New<MIRTypeNameTable>(&dataMPAllocator);
   SetLabelTab(dataMemPool->New<MIRLabelTable>(&dataMPAllocator));

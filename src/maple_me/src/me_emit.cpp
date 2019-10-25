@@ -19,17 +19,17 @@
 
 namespace maple {
 /* emit IR to specified file */
-AnalysisResult *MeDoEmission::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) {
+AnalysisResult *MeDoEmit::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) {
   bool emitHssaOrAfter = (func->GetIRMap() != nullptr);
   if (func->NumBBs() > 0) {
     /* generate bblist after layout (bb physical position) */
-    if (!MeOptions::quiet) {
-      ASSERT(m->GetAnalysisPhase(MeFuncPhase_BBLAYOUT), "null ptr check");
+    if (!MeOption::quiet) {
+      CHECK_FATAL(m->GetAnalysisPhase(MeFuncPhase_BBLAYOUT) != nullptr, "null ptr check");
       LogInfo::MapleLogger() << "===== Check/run Depended Phase [ "
                              << m->GetAnalysisPhase(MeFuncPhase_BBLAYOUT)->PhaseName() << " ]=====\n";
     }
     BBLayout *layoutBBs = static_cast<BBLayout*>(m->GetAnalysisResult(MeFuncPhase_BBLAYOUT, func));
-    if (!MeOptions::quiet) {
+    if (!MeOption::quiet) {
       LogInfo::MapleLogger() << "===== Depended Phase ended =====\n";
     }
     ASSERT(layoutBBs != nullptr, "layout phase has problem");
@@ -51,27 +51,17 @@ AnalysisResult *MeDoEmission::Run(MeFunction *func, MeFuncResultMgr *m, ModuleRe
       }
       for (BB *bb : layoutBBs->GetBBs()) {
         ASSERT(bb != nullptr, "null ptr check");
-        func->GetIRMap()->EmitBB(bb, mirFunction->GetBody());
+        func->GetIRMap()->EmitBB(*bb, *mirFunction->GetBody());
       }
     } else {
-      func->EmitBeforeHSSA(func->GetMirFunc(), layoutBBs->GetBBs());
+      auto *mirFunc = func->GetMirFunc();
+      if (mirFunc != nullptr) {
+        func->EmitBeforeHSSA(*mirFunc, layoutBBs->GetBBs());
+      }
     }
     if (DEBUGFUNC(func)) {
-      LogInfo::MapleLogger() << "\n==============after meemit =============" << std::endl;
+      LogInfo::MapleLogger() << "\n==============after meemit =============" << '\n';
       func->GetMirFunc()->Dump();
-      LogInfo::MapleLogger() << "\nRC operations do not need locking" << std::endl;
-      auto eIt = func->valid_end();
-      for (auto bIt = func->valid_begin(); bIt != eIt; ++bIt) {
-        BB *bb = *bIt;
-        for (auto &stmt : bb->GetStmtNodes()) {
-          if (func->GetMIRModule().GetRcNoNeedingLock().find(stmt.GetStmtID()) !=
-              func->GetMIRModule().GetRcNoNeedingLock().end()) {
-            LogInfo::MapleLogger() << func->GetMIRModule().GetFileNameFromFileNum(stmt.GetSrcPos().FileNum()) << ":"
-                                   << stmt.GetSrcPos().LineNum() << "\t";
-            stmt.Dump(&func->GetMIRModule(), 0);
-          }
-        }
-      }
     }
     if (DEBUGFUNC(func)) {
       func->GetTheCfg()->DumpToFile("emit", true);
@@ -79,5 +69,4 @@ AnalysisResult *MeDoEmission::Run(MeFunction *func, MeFuncResultMgr *m, ModuleRe
   }
   return nullptr;
 }
-
 }  // namespace maple

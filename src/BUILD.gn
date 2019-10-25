@@ -1,7 +1,7 @@
 config("mapleallcompilecfg") {
   cflags_cc = []
   cflags_cc += [
-    "-std=c++11",
+    "-std=c++14",
     "-Werror",
   ]
 
@@ -18,7 +18,7 @@ config("mapleallcompilecfg") {
     ldflags = []
     ldflags += [
       "-fPIC",
-      "-std=c++11",
+      "-std=c++14",
       "-rdynamic",
       "-lpthread",
       "-Wl,-z,relro",
@@ -32,5 +32,6 @@ config("mapleallcompilecfg") {
 group("mapleall") {
   deps = [
     "${MAPLEALL_ROOT}/maple_driver:maple",
+    "${MAPLEALL_ROOT}/maple_ir:irbuild",
   ]
 }

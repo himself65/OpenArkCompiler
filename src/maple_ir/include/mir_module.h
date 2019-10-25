@@ -67,6 +67,7 @@ class MIRDoubleConst;
 class MIRBuilder;
 class DebugInfo;
 class BinaryMplt;
+class EAConnectionGraph;
 using MIRInfoPair = std::pair<GStrIdx, uint32>;
 using MIRInfoVector = MapleVector<MIRInfoPair>;
 using MIRDataPair = std::pair<GStrIdx, std::vector<uint8>>;
@@ -77,21 +78,17 @@ struct EncodedValue {
 };
 
 class MIRTypeNameTable {
- private:
-  MapleAllocator *mAllocator;
-  MapleMap<GStrIdx, TyIdx> gStrIdxToTyIdxMap;
-
  public:
   explicit MIRTypeNameTable(MapleAllocator *allocator)
       : mAllocator(allocator), gStrIdxToTyIdxMap(std::less<GStrIdx>(), mAllocator->Adapter()) {}
 
   ~MIRTypeNameTable() = default;
 
-  MapleMap<GStrIdx, TyIdx> &GetGStrIdxToTyIdxMap() {
+  const MapleMap<GStrIdx, TyIdx> &GetGStrIdxToTyIdxMap() const {
     return gStrIdxToTyIdxMap;
   }
 
-  TyIdx GetTyIdxFromGStrIdx(GStrIdx idx) {
+  TyIdx GetTyIdxFromGStrIdx(GStrIdx idx) const {
     auto it = gStrIdxToTyIdxMap.find(idx);
     if (it == gStrIdxToTyIdxMap.end()) {
       return TyIdx(0);
@@ -106,6 +103,10 @@ class MIRTypeNameTable {
   size_t Size() const {
     return gStrIdxToTyIdxMap.size();
   }
+ private:
+  MapleAllocator *mAllocator;
+  MapleMap<GStrIdx, TyIdx> gStrIdxToTyIdxMap;
+
 };
 
 class MIRModule {
@@ -121,7 +122,6 @@ class MIRModule {
   const MemPool *GetMemPool() const {
     return memPool;
   }
-
   MemPool *GetMemPool() {
     return memPool;
   }
@@ -129,7 +129,6 @@ class MIRModule {
   const MapleAllocator &GetMPAllocator() const {
     return memPoolAllocator;
   }
-
   MapleAllocator &GetMPAllocator() {
     return memPoolAllocator;
   }
@@ -137,17 +136,15 @@ class MIRModule {
   const MapleVector<MIRFunction*> &GetFunctionList() const {
     return functionList;
   }
-
   MapleVector<MIRFunction*> &GetFunctionList() {
     return functionList;
   }
 
-  const MIRFunction *GetFunctionList(int cnt) const {
+  const MIRFunction *GetFunction(int cnt) const {
     CHECK_FATAL(cnt < functionList.size(), "array index out of range");
     return functionList[cnt];
   }
-
-  MIRFunction *GetFunctionList(int cnt) {
+  MIRFunction *GetFunction(int cnt) {
     CHECK_FATAL(cnt < functionList.size(), "array index out of range");
     return functionList[cnt];
   }
@@ -156,22 +153,28 @@ class MIRModule {
     return compilationList;
   }
 
-  MapleVector<std::string> &GetImportedMplt() {
+  const MapleVector<std::string> &GetImportedMplt() const {
     return importedMplt;
+  }
+  void PushbackImportedMplt(std::string importFileName) {
+    importedMplt.push_back(std::move(importFileName));
   }
 
   MIRTypeNameTable *GetTypeNameTab() {
     return typeNameTab;
   }
 
-  MapleVector<GStrIdx> &GetTypeDefOrder() {
+  const MapleVector<GStrIdx> &GetTypeDefOrder() const {
     return typeDefOrder;
+  }
+  void PushbackTypeDefOrder(GStrIdx gstrIdx) {
+    typeDefOrder.push_back(gstrIdx);
   }
 
   void AddClass(TyIdx t);
   void RemoveClass(TyIdx t);
 
-  inline void SetCurFunction(MIRFunction * const f) {
+  void SetCurFunction(MIRFunction *f) {
     curFunction = f;
   }
 
@@ -179,25 +182,21 @@ class MIRModule {
     return srcLang;
   }
 
-  MapleSet<TyIdx> &GetExternStructTypeSet() {
-    return externStructTypeSet;
-  }
-
-  MapleSet<StIdx> &GetSymbolSet() {
+  const MapleSet<StIdx> &GetSymbolSet() const {
     return symbolSet;
-  }
-
-  MapleVector<StIdx> &GetSymbolDefOrder() {
-    return symbolDefOrder;
   }
 
   void SetSomeSymbolNeedForDecl(bool s) {
     someSymbolNeedForwDecl = s;
   }
 
-  MIRFunction *CurFunction(void) const;
+  MIRFunction *CurFunction(void) const {
+    return curFunction;
+  }
+
   MemPool *CurFuncCodeMemPool(void) const;
   MapleAllocator *CurFuncCodeMemPoolAllocator(void) const;
+  MapleAllocator &GetCurFuncCodeMPAllocator(void) const;
   void AddExternStructType(TyIdx tyIdx);
   void AddExternStructType(const MIRType *t);
   void AddSymbol(StIdx stIdx);
@@ -207,26 +206,18 @@ class MIRModule {
     compilationList.push_back(pf);
   }
 
-  MIRFloatConst *GetOrCreateFloatConst(float);     // get the const from float_const_table_ or create a new one
-  MIRDoubleConst *GetOrCreateDoubleConst(double);  // get the const from double_const_table_ or create a new one
-  void InitInfo();
-  void DumpInfo();
-  void DumpGlobals(bool emitStructureType = true);
-  void Dump(bool emitStructureType = true);
-  void DumpToFile(const std::string &fileNameStr, bool emitStructureType = true);
-  void DumpInlineCandidateToFile(const std::string &fileNameStr);
-  const std::string &GetFileNameFromFileNum(uint32 fileNum);
+  void DumpGlobals(bool emitStructureType = true) const;
+  void Dump(bool emitStructureType = true) const;
+  void DumpToFile(const std::string &fileNameStr, bool emitStructureType = true) const;
+  void DumpInlineCandidateToFile(const std::string &fileNameStr) const;
+  const std::string &GetFileNameFromFileNum(uint32 fileNum) const;
 
-  void DumpClassToFile(const char *path);
-  void DumpFunctionList(bool skipBody = false);
-  void DumpGlobalArraySymbol();
-  void Emit(const std::string &outfileName);
+  void DumpClassToFile(const char *path) const;
+  void DumpFunctionList(bool skipBody = false) const;
+  void DumpGlobalArraySymbol() const;
+  void Emit(const std::string &outfileName) const;
   uint32 GetAndIncFloatNum() {
     return floatNum++;
-  }
-
-  MIRFunction *GetLastFunction() const {
-    return functionList.back();
   }
 
   void SetEntryFunction(MIRFunction *f) {
@@ -258,16 +249,16 @@ class MIRModule {
     return srcLang == kSrcLangC || srcLang == kSrcLangCPlusPlus;
   }
 
-  inline void addSuperCall(const std::string &func) {
+  void addSuperCall(const std::string &func) {
     superCallSet.insert(func);
   }
 
-  inline bool findSuperCall(const std::string &func) {
+  bool findSuperCall(const std::string &func) const {
     return superCallSet.find(func) != superCallSet.end();
   }
 
   void SetFuncInfoPrinted() const;
-  size_t GetOptFuncsSize() {
+  size_t GetOptFuncsSize() const {
     return optimizedFuncs.size();
   }
 
@@ -275,12 +266,11 @@ class MIRModule {
     return optimizedFuncs.push_back(func);
   }
 
-  MapleSet<uint32> &GetRcNoNeedingLock() {
-    return rcNotNeedingLock;
-  }
-
-  MapleMap<PUIdx, MapleSet<FieldID>*> &GetPuIdxFieldInitializedMap() {
+  const MapleMap<PUIdx, MapleSet<FieldID>*> &GetPuIdxFieldInitializedMap() const {
     return puIdxFieldInitializedMap;
+  }
+  void SetPuIdxFieldSet(PUIdx puIdx, MapleSet<FieldID> *fieldIDSet) {
+    puIdxFieldInitializedMap[puIdx] = fieldIDSet;
   }
 
   MapleSet<FieldID> *GetPUIdxFieldInitializedMapItem(PUIdx first) {
@@ -298,27 +288,20 @@ class MIRModule {
   const std::string &GetEntryFuncName() const {
     return entryFuncName;
   }
-
-  std::string &GetEntryFuncName() {
-    return entryFuncName;
+  void SetEntryFuncName(std::string entryFunctionName) {
+    entryFuncName = std::move(entryFunctionName);
   }
 
-  void SetEntryFuncName(const std::string &entryFunctionName) {
-    entryFuncName = entryFunctionName;
-  }
-
-  const TyIdx &GetThrowableTyIdx() const {
+  TyIdx GetThrowableTyIdx() const {
     return throwableTyIdx;
   }
-
   void SetThrowableTyIdx(TyIdx throwableTypeIndex) {
     throwableTyIdx = throwableTypeIndex;
   }
 
-  bool GetWithProfileInfo() {
+  bool GetWithProfileInfo() const {
     return withProfileInfo;
   }
-
   void SetWithProfileInfo(bool withProfInfo) {
     withProfileInfo = withProfInfo;
   }
@@ -326,39 +309,54 @@ class MIRModule {
   BinaryMplt *GetBinMplt() {
     return binMplt;
   }
-
   void SetBinMplt(BinaryMplt *binaryMplt) {
     binMplt = binaryMplt;
   }
 
-  MIRInfoVector &GetFileInfo() {
-    return fileInfo;
+  bool IsInIPA() const {
+    return inIPA;
+  }
+  void SetInIPA(bool isInIPA) {
+    inIPA = isInIPA;
   }
 
+  const MIRInfoVector &GetFileInfo() const {
+    return fileInfo;
+  }
+  void PushFileInfoPair(MIRInfoPair pair) {
+    fileInfo.push_back(pair);
+  }
   void SetFileInfo(MIRInfoVector fileInf) {
     fileInfo = fileInf;
   }
 
-  MapleVector<bool> &GetFileInfoIsString() {
+  const MapleVector<bool> &GetFileInfoIsString() const {
     return fileInfoIsString;
   }
-
   void SetFileInfoIsString(MapleVector<bool> fileInfoIsStr) {
     fileInfoIsString = fileInfoIsStr;
   }
-
-  MIRDataVector &GetFileData() {
-    return fileData;
+  void PushFileInfoIsString(bool isString) {
+    fileInfoIsString.push_back(isString);
   }
 
-  MIRInfoVector &GetSrcFileInfo() {
+  const MIRDataVector &GetFileData() const {
+    return fileData;
+  }
+  void PushbackFileData(MIRDataPair pair) {
+    fileData.push_back(pair);
+  }
+
+  const MIRInfoVector &GetSrcFileInfo() const {
     return srcFileInfo;
+  }
+  void PushbackFileInfo(const MIRInfoPair &pair) {
+    srcFileInfo.push_back(pair);
   }
 
   const MIRFlavor &GetFlavor() const {
     return flavor;
   }
-
   void SetFlavor(MIRFlavor flv) {
     flavor = flv;
   }
@@ -371,10 +369,9 @@ class MIRModule {
     id = num;
   }
 
-  uint32 GetGlobalMemSize() {
+  uint32 GetGlobalMemSize() const {
     return globalMemSize;
   }
-
   void SetGlobalMemSize(uint32 globalMemberSize) {
     globalMemSize = globalMemberSize;
   }
@@ -382,7 +379,6 @@ class MIRModule {
   uint8 *GetGlobalBlockMap() {
     return globalBlkMap;
   }
-
   void SetGlobalBlockMap(uint8 *globalBlockMap) {
     globalBlkMap = globalBlockMap;
   }
@@ -390,7 +386,6 @@ class MIRModule {
   uint8 *GetGlobalWordsTypeTagged() {
     return globalWordsTypeTagged;
   }
-
   void SetGlobalWordsTypeTagged(uint8 *globalWordsTyTagged) {
     globalWordsTypeTagged = globalWordsTyTagged;
   }
@@ -398,7 +393,6 @@ class MIRModule {
   uint8 *GetGlobalWordsRefCounted() {
     return globalWordsRefCounted;
   }
-
   void SetGlobalWordsRefCounted(uint8 *counted) {
     globalWordsRefCounted = counted;
   }
@@ -411,19 +405,19 @@ class MIRModule {
     return importFiles;
   }
 
-  MapleVector<GStrIdx> &GetImportPaths() {
-    return importPaths;
+  void PushbackImportPath(GStrIdx path) {
+    importPaths.push_back(path);
   }
 
-  MapleSet<uint32> &GetClassList() {
+  const MapleSet<uint32> &GetClassList() const {
     return classList;
   }
 
-  std::map<PUIdx, std::vector<CallSite>> &GetMethod2TargetMap() {
+  const std::map<PUIdx, std::vector<CallSite>> &GetMethod2TargetMap() const {
     return method2TargetMap;
   }
 
-  std::vector<CallSite> &GetMemFromMethod2TargetMap(const PUIdx methodPuIdx) {
+  std::vector<CallSite> &GetMemFromMethod2TargetMap(PUIdx methodPuIdx) {
     return method2TargetMap[methodPuIdx];
   }
 
@@ -431,24 +425,29 @@ class MIRModule {
     method2TargetMap = map;
   }
 
-  void AddMemToMethod2TargetMap(const PUIdx idx, const std::vector<CallSite> &callSite) {
+  void AddMemToMethod2TargetMap(PUIdx idx, const std::vector<CallSite> &callSite) {
     method2TargetMap[idx] = callSite;
   }
 
-  std::map<PUIdx, std::unordered_set<uint64>> &GetMethod2TargetHash() {
-    return method2TargetHash;
+  bool HasTargetHash(PUIdx idx, uint64 key) const {
+    auto it = method2TargetHash.find(idx);
+    if (it == method2TargetHash.end()) {
+        return false;
+    }
+    return it->second.find(key) != it->second.end();
   }
-
-  std::unordered_set<uint64> &GetValueFromMethod2TargetHash(const PUIdx idx) {
-    return method2TargetHash[idx];
+  void InsertTargetHash(PUIdx idx, uint64 key) {
+    method2TargetHash[idx].insert(key);
   }
-
-  void SetMethod2TargetHash(const std::map<PUIdx, std::unordered_set<uint64>> &map) {
-    method2TargetHash = map;
-  }
-
-  void AddValueToMethod2TargetHash(const PUIdx idx, const std::unordered_set<uint64> &value) {
+  void AddValueToMethod2TargetHash(PUIdx idx, const std::unordered_set<uint64> &value) {
     method2TargetHash[idx] = value;
+  }
+
+  const std::map<GStrIdx, EAConnectionGraph*> &GetEASummary() const {
+    return eaSummary;
+  }
+  void SetEAConnectionGraph(GStrIdx funcNameIdx, EAConnectionGraph *eaCg) {
+    eaSummary[funcNameIdx] = eaCg;
   }
 
  private:
@@ -464,50 +463,51 @@ class MIRModule {
   MapleSet<TyIdx> externStructTypeSet;
   MapleSet<StIdx> symbolSet;
   MapleVector<StIdx> symbolDefOrder;
-  bool someSymbolNeedForwDecl;  // some symbols' addressses used in initialization
+  bool someSymbolNeedForwDecl = false;  // some symbols' addressses used in initialization
 
   std::ostream &out;
   MIRBuilder *mirBuilder;
-  std::string entryFuncName;  // name of the entry function
+  std::string entryFuncName = "";  // name of the entry function
   std::string fileName;
-  TyIdx throwableTyIdx;  // a special type that is the base of java exception type. only used for java
-  bool withProfileInfo;
+  TyIdx throwableTyIdx{0};  // a special type that is the base of java exception type. only used for java
+  bool withProfileInfo = false;
   // for cg in mplt
-  BinaryMplt *binMplt;
+  BinaryMplt *binMplt = nullptr;
+  bool inIPA = false;
   MIRInfoVector fileInfo;              // store info provided under fileInfo keyword
   MapleVector<bool> fileInfoIsString;  // tells if an entry has string value
   MIRDataVector fileData;
   MIRInfoVector srcFileInfo;  // store info provided under srcFileInfo keyword
-  MIRFlavor flavor;
-  MIRSrcLang srcLang;  // the source language
-  uint16 id;
-  uint32 globalMemSize;  // size of storage space for all global variables
-  uint8 *globalBlkMap;   // the memory map of the block containing all the
+  MIRFlavor flavor = kFlavorUnknown;
+  MIRSrcLang srcLang = kSrcLangUnknown;  // the source language
+  uint16 id = 0xffff;
+  uint32 globalMemSize = 0;  // size of storage space for all global variables
+  uint8 *globalBlkMap = nullptr;   // the memory map of the block containing all the
   // globals, for specifying static initializations
-  uint8 *globalWordsTypeTagged;  // bit vector where the Nth bit tells whether
+  uint8 *globalWordsTypeTagged = nullptr;  // bit vector where the Nth bit tells whether
   // the Nth word in globalBlkMap has typetag;
   // if yes, the typetag is the N+1th word; the
   // bitvector's size is given by
   // BlockSize2BitvectorSize(globalMemSize)
-  uint8 *globalWordsRefCounted;  // bit vector where the Nth bit tells whether
+  uint8 *globalWordsRefCounted = nullptr;  // bit vector where the Nth bit tells whether
   // the Nth word points to a reference-counted
   // dynamic memory block; the bitvector's size
   // is given by BlockSize2BitvectorSize(globalMemSize)
-  uint32 numFuncs;  // because puIdx 0 is reserved, numFuncs is also the highest puIdx
+  uint32 numFuncs = 0;  // because puIdx 0 is reserved, numFuncs is also the highest puIdx
   MapleVector<GStrIdx> importFiles;
   MapleVector<GStrIdx> importPaths;
   MapleSet<uint32> classList;
 
   std::map<PUIdx, std::vector<CallSite>> method2TargetMap;
   std::map<PUIdx, std::unordered_set<uint64>> method2TargetHash;
+  std::map<GStrIdx, EAConnectionGraph*> eaSummary;
 
-  MIRFunction *entryFunc;
-  uint32 floatNum;
-  MIRFunction *curFunction;
+  MIRFunction *entryFunc = nullptr;
+  uint32 floatNum = 0;
+  MIRFunction *curFunction = nullptr;
   MapleVector<MIRFunction*> optimizedFuncs;
   // Add the field for decouple optimization
   std::unordered_set<std::string> superCallSet;
-  MapleSet<uint32> rcNotNeedingLock;  // set of stmtID's which does incref/decref to an object not escaping
   // record all the fields that are initialized in the constructor. module scope,
   // if puIdx doesn't appear in this map, it writes to all field id
   // if puIdx appears in the map, but it's corresponding MapleSet is nullptr, it writes nothing fieldID

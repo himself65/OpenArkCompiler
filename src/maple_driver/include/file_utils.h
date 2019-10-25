@@ -26,6 +26,8 @@ const static std::string kFileSeperatorStr = kFileSeperatorLinuxStyleStr;
 }  // namespace FileSeperator
 
 namespace maple {
+// Use char[] since getenv receives char* as parameter
+static constexpr char kMapleRoot[] = "MAPLE_ROOT";
 class FileUtils {
  public:
   const static std::string GetFileName(const std::string &filePath, const bool isWithExtension);
@@ -37,6 +39,5 @@ class FileUtils {
                                                    const std::string &defaultRoot =
                                                    ("." + FileSeperator::kFileSeperatorStr));
 };
-
 }  // namespace maple
 #endif  // MAPLE_DRIVER_INCLUDE_FILE_UTILS_H

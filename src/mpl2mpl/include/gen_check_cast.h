@@ -37,6 +37,8 @@ class CheckCastGenerator : public FuncOptimizeImpl {
 
  private:
   MIRType *pointerObjType = nullptr;
+  MIRType *pointerClassMetaType = nullptr;
+  MIRType *classinfoType = nullptr;
   MIRFunction *throwCastException = nullptr;
   MIRFunction *checkCastingNoArray = nullptr;
   MIRFunction *checkCastingArray = nullptr;
@@ -44,11 +46,9 @@ class CheckCastGenerator : public FuncOptimizeImpl {
   void InitTypes();
   void InitFuncs();
   void GenAllCheckCast();
-  void GenCheckCast(BaseNode *stmt);
+  void GenCheckCast(BaseNode &stmt);
   BaseNode *GetObjectShadow(BaseNode *opnd);
   MIRSymbol *GetOrCreateClassInfoSymbol(const std::string &className);
-  bool FindUseExpr(BaseNode *node, StIdx idx);
-  bool FindUse(StIdx idx);
 };
 
 class DoCheckCastGeneration : public ModulePhase {
@@ -66,7 +66,6 @@ class DoCheckCastGeneration : public ModulePhase {
     return nullptr;
   }
 };
-
 
 }  // namespace maple
 #endif  // MPL2MPL_INCLUDE_GEN_CHECK_CAST_H

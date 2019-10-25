@@ -50,7 +50,7 @@ class BinaryMplt {
     return binExport;
   }
 
-  std::string &GetImportFileName() {
+  const std::string &GetImportFileName() const {
     return importFileName;
   }
 
@@ -60,6 +60,5 @@ class BinaryMplt {
   BinaryMplExport binExport;
   std::string importFileName;
 };
-
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_BIN_MPLT_H

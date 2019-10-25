@@ -35,7 +35,8 @@ class MeFuncPhaseManager : public PhaseManager {
         modResMgr(mrm),
         mePhaseType(kMePhaseInvalid),
         genMempool(false),
-        timePhases(false) {}
+        timePhases(false),
+        ipa(false) {}
 
   ~MeFuncPhaseManager() {
     arFuncManager.InvalidAllResults();
@@ -43,8 +44,8 @@ class MeFuncPhaseManager : public PhaseManager {
 
   void RunFuncPhase(MeFunction *func, MeFuncPhase *phase);
   void RegisterFuncPhases();
-  void AddPhases(std::unordered_set<std::string> &skipPhases);
-  void AddPhasesNoDefault(std::vector<std::string> &phases);
+  void AddPhases(const std::unordered_set<std::string> &skipPhases);
+  void AddPhasesNoDefault(const std::vector<std::string> &phases);
   void SetMePhase(MePhaseType mephase) {
     mePhaseType = mephase;
   }
@@ -53,14 +54,15 @@ class MeFuncPhaseManager : public PhaseManager {
     modResMgr = mrm;
   }
 
-  void Run(MIRFunction *mirfunc, uint64 rangenum, const std::string &meinput);
+  void Run(MIRFunction *mirFunc, uint64 rangeNum, const std::string &meInput);
+  void IPACleanUp(MeFunction *mirfunc);
   void Run() override {}
 
-  MeFuncResultMgr *GetAnalysisResultManager(void) {
+  MeFuncResultMgr *GetAnalysisResultManager() {
     return &arFuncManager;
   }
 
-  ModuleResultMgr *GetModResultMgr() {
+  ModuleResultMgr *GetModResultMgr() override {
     return modResMgr;
   }
 
@@ -78,6 +80,14 @@ class MeFuncPhaseManager : public PhaseManager {
     timePhases = phs;
   }
 
+  bool IsIPA() const {
+    return ipa;
+  }
+
+  void SetIPA(bool ipaVal) {
+    ipa = ipaVal;
+  }
+
  private:
   /* analysis phase result manager */
   MeFuncResultMgr arFuncManager;
@@ -86,7 +96,7 @@ class MeFuncPhaseManager : public PhaseManager {
   MePhaseType mePhaseType;
   bool genMempool;
   bool timePhases;
+  bool ipa;
 };
-
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_ME_PHASE_MANAGER_H

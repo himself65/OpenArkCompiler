@@ -53,9 +53,9 @@ BaseNode *JavaEHLowerer::DoLowerDiv(BinaryNode *expr, BlockNode *blknode) {
       } else {
         MIRSymbol *divOpndSymbol = mirBuilder->CreateSymbol(TyIdx(ptype), opnd1name.c_str(), kStVar, kScAuto,
                                                             GetModule()->CurFunction(), kScopeLocal);
-        DassignNode *dssDivNode = mirBuilder->CreateStmtDassign(divOpndSymbol, 0, divOpnd);
+        DassignNode *dssDivNode = mirBuilder->CreateStmtDassign(*divOpndSymbol, 0, divOpnd);
         blknode->AddStatement(dssDivNode);
-        divOpnd = mirBuilder->CreateExprDread(divOpndSymbol);
+        divOpnd = mirBuilder->CreateExprDread(*divOpndSymbol);
       }
       expr->SetBOpnd(divOpnd, 1);
     }
@@ -71,13 +71,13 @@ BaseNode *JavaEHLowerer::DoLowerDiv(BinaryNode *expr, BlockNode *blknode) {
       MIRSymbol *divResSymbol = mirBuilder->CreateSymbol(TyIdx(ptype), resName.c_str(), kStVar, kScAuto,
                                                          GetModule()->CurFunction(), kScopeLocal);
       // Put expr result to dssnode.
-      divStmt = mirBuilder->CreateStmtDassign(divResSymbol, 0, expr);
-      retExprNode = GetModule()->GetMIRBuilder()->CreateExprDread(divResSymbol, 0);
+      divStmt = mirBuilder->CreateStmtDassign(*divResSymbol, 0, expr);
+      retExprNode = GetModule()->GetMIRBuilder()->CreateExprDread(*divResSymbol, 0);
     }
     // Check if the second operand of the div expression is 0.
     // Inser if statement for high level ir.
-    CompareNode *cmpNode = mirBuilder->CreateExprCompare(OP_eq, GlobalTables::GetTypeTable().GetInt32(),
-                                                         GlobalTables::GetTypeTable().GetTypeFromTyIdx((TyIdx)ptype),
+    CompareNode *cmpNode = mirBuilder->CreateExprCompare(OP_eq, *GlobalTables::GetTypeTable().GetInt32(),
+                                                         *GlobalTables::GetTypeTable().GetTypeFromTyIdx((TyIdx)ptype),
                                                          divOpnd, mirBuilder->CreateIntConst(0, ptype));
     IfStmtNode *ifStmtNode = mirBuilder->CreateStmtIf(cmpNode);
     blknode->AddStatement(ifStmtNode);
@@ -94,6 +94,7 @@ BaseNode *JavaEHLowerer::DoLowerDiv(BinaryNode *expr, BlockNode *blknode) {
 }
 
 BaseNode *JavaEHLowerer::DoLowerExpr(BaseNode *expr, BlockNode *curblk) {
+  ASSERT(expr != nullptr, "null ptr check!");
   for (size_t i = 0; i < expr->NumOpnds(); i++) {
     expr->SetOpnd(DoLowerExpr(expr->Opnd(i), curblk), i);
   }
@@ -109,25 +110,25 @@ BaseNode *JavaEHLowerer::DoLowerExpr(BaseNode *expr, BlockNode *curblk) {
   }
 }
 
-void JavaEHLowerer::DoLowerBoundaryCheck(IntrinsiccallNode *intrincall, BlockNode *newblk) {
-  const size_t intrincallNopndSize = intrincall->GetNopndSize();
+void JavaEHLowerer::DoLowerBoundaryCheck(IntrinsiccallNode &intrincall, BlockNode &newblk) {
+  const size_t intrincallNopndSize = intrincall.GetNopndSize();
   CHECK_FATAL(intrincallNopndSize > 0, "null ptr check");
-  BaseNode *opnd0 = intrincall->GetNopndAt(0);
+  BaseNode *opnd0 = intrincall.GetNopndAt(0);
   CondGotoNode *brFalseStmt = GetModule()->CurFuncCodeMemPool()->New<CondGotoNode>(OP_brfalse);
-  brFalseStmt->SetOpnd(DoLowerExpr(opnd0, newblk));
-  brFalseStmt->SetSrcPos(intrincall->GetSrcPos());
+  brFalseStmt->SetOpnd(DoLowerExpr(opnd0, &newblk));
+  brFalseStmt->SetSrcPos(intrincall.GetSrcPos());
   LabelIdx lbidx = GetModule()->CurFunction()->GetLabelTab()->CreateLabel();
   GetModule()->CurFunction()->GetLabelTab()->AddToStringLabelMap(lbidx);
   brFalseStmt->SetOffset(lbidx);
-  newblk->AddStatement(brFalseStmt);
+  newblk.AddStatement(brFalseStmt);
   LabelNode *labStmt = GetModule()->CurFuncCodeMemPool()->New<LabelNode>();
   labStmt->SetLabelIdx(lbidx);
   MIRFunction *func =
       GetModule()->GetMIRBuilder()->GetOrCreateFunction(strMCCThrowArrayIndexOutOfBoundsException, TyIdx(PTY_void));
   MapleVector<BaseNode*> args(GetModule()->GetMIRBuilder()->GetCurrentFuncCodeMpAllocator()->Adapter());
   CallNode *callStmt = GetModule()->GetMIRBuilder()->CreateStmtCall(func->GetPuidx(), args);
-  newblk->AddStatement(callStmt);
-  newblk->AddStatement(labStmt);
+  newblk.AddStatement(callStmt);
+  newblk.AddStatement(labStmt);
 }
 
 BlockNode *JavaEHLowerer::DoLowerBlock(BlockNode *block) {
@@ -205,7 +206,7 @@ BlockNode *JavaEHLowerer::DoLowerBlock(BlockNode *block) {
       case OP_intrinsiccall: {
         IntrinsiccallNode *intrinCall = static_cast<IntrinsiccallNode*>(stmt);
         if (intrinCall->GetIntrinsic() == INTRN_MPL_BOUNDARY_CHECK) {
-          DoLowerBoundaryCheck(intrinCall, newBlock);
+          DoLowerBoundaryCheck(*intrinCall, *newBlock);
           break;
         }
         //  fallthrough;
@@ -231,5 +232,4 @@ void JavaEHLowerer::ProcessFunc(MIRFunction *func) {
   BlockNode *newBody = DoLowerBlock(func->GetBody());
   func->SetBody(newBody);
 }
-
 }  // namespace maple

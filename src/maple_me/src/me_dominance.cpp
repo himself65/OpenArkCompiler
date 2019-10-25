@@ -21,18 +21,17 @@
 // For some backward data-flow problems, such as LiveOut,
 // the reverse CFG(The CFG with its edges reversed) is always useful,
 // so we also generates the above two structures on the reverse CFG.
-
 namespace maple {
-AnalysisResult *MeDoDominance::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) {
+AnalysisResult *MeDoDominance::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, ModuleResultMgr *moduleResMgr) {
   MemPool *memPool = NewMemPool();
-  Dominance *dom = memPool->New<Dominance>(memPool, NewMemPool(), (MapleVector<BB*> *)&func->GetAllBBs(),
-                                           func->GetCommonEntryBB(), func->GetCommonExitBB());
+  Dominance *dom = memPool->New<Dominance>(*memPool, *NewMemPool(), func->GetAllBBs(),
+                                           *func->GetCommonEntryBB(), *func->GetCommonExitBB());
   dom->GenPostOrderID();
   dom->ComputeDominance();
   dom->ComputeDomFrontiers();
   dom->ComputeDomChildren();
   size_t num = 0;
-  dom->ComputeDtPreorder(func->GetCommonEntryBB(), num);
+  dom->ComputeDtPreorder(*func->GetCommonEntryBB(), num);
   dom->GetDtPreOrder().resize(num);
   dom->ComputeDtDfn();
   dom->PdomGenPostOrderID();
@@ -40,8 +39,8 @@ AnalysisResult *MeDoDominance::Run(MeFunction *func, MeFuncResultMgr *m, ModuleR
   dom->ComputePdomFrontiers();
   dom->ComputePdomChildren();
   num = 0;
-  dom->ComputePdtPreorder(func->GetCommonExitBB(), num);
-  dom->GetPdtPreOrder().resize(num);
+  dom->ComputePdtPreorder(*func->GetCommonExitBB(), num);
+  dom->ResizePdtPreOrder(num);
   dom->ComputePdtDfn();
   if (DEBUGFUNC(func)) {
     LogInfo::MapleLogger() << "-----------------Dump dominance info and postdominance info---------\n";
@@ -50,5 +49,4 @@ AnalysisResult *MeDoDominance::Run(MeFunction *func, MeFuncResultMgr *m, ModuleR
   }
   return dom;
 }
-
 }  // namespace maple

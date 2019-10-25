@@ -24,11 +24,11 @@ class MeDoDominance : public MeFuncPhase {
   explicit MeDoDominance(MePhaseID id) : MeFuncPhase(id) {}
 
   virtual ~MeDoDominance() = default;
-  AnalysisResult *Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) override;
+  AnalysisResult *Run(MeFunction *func, MeFuncResultMgr *funcResMgr, ModuleResultMgr *moduleResMgr) override;
+
   std::string PhaseName() const override {
     return "dominance";
   }
 };
-
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_ME_DOMINANCE_H

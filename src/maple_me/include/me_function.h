@@ -28,23 +28,19 @@
 #include "me_ssa.h"
 
 namespace maple {
-class MirCFG;
+class MeCFG;
 class MeIRMap;
 #if DEBUG
-extern MIRModule *g_mirmodule;
-extern MeFunction *g_func;
-extern MeIRMap *g_irmap;
-extern SSATab *g_ssatab;
+extern MIRModule *globalMIRModule;
+extern MeFunction *globalFunc;
+extern MeIRMap *globalIRMap;
+extern SSATab *globalSSATab;
 #endif
 
 template <typename Iterator>
 class FilterIterator {
-  using FilterFunc = std::function<bool(Iterator)>;
-  static bool FilterNone(Iterator) {
-    return true;
-  }
-
  public:
+  using FilterFunc = std::function<bool(Iterator)>;
   using iterator_category = typename std::iterator_traits<Iterator>::iterator_category;
   using value_type = typename std::iterator_traits<Iterator>::value_type;
   using difference_type = typename std::iterator_traits<Iterator>::difference_type;
@@ -61,11 +57,11 @@ class FilterIterator {
     }
   }
 
+  ~FilterIterator() = default;
+
   Iterator base() const {
     return iterator;
   }
-
-  ~FilterIterator() = default;
 
   reference operator*() const {
     return *iterator;
@@ -114,6 +110,9 @@ class FilterIterator {
   }
 
  private:
+  static bool FilterNone(Iterator) {
+    return true;
+  }
   Iterator iterator;
   FilterFunc func = FilterIterator::FilterNone;
 };
@@ -159,21 +158,13 @@ class MeFunction : public FuncEmit {
         versAlloc(versMemPool),
         mirModule(*mod),
         mirFunc(func),
-        nextBBId(0),
         labelBBIdMap(alloc.Adapter()),
         bbVec(alloc.Adapter()),
-        theCFG(nullptr),
-        meSSATab(nullptr),
-        irmap(nullptr),
         bbTryNodeMap(alloc.Adapter()),
         endTryBB2TryBB(alloc.Adapter()),
-        fileName(fileName),
-        regNum(0),
-        hints(0),
-        hasEH(false),
-        secondPass(false) {}
+        fileName(fileName) {}
 
-  virtual ~MeFunction() {}
+  virtual ~MeFunction() = default;
 
   using value_type = BBPtrHolder::value_type;
   using size_type = BBPtrHolder::size_type;
@@ -190,11 +181,9 @@ class MeFunction : public FuncEmit {
   iterator begin() {
     return bbVec.begin();
   }
-
   const_iterator begin() const {
     return bbVec.begin();
   }
-
   const_iterator cbegin() const {
     return bbVec.cbegin();
   }
@@ -202,11 +191,9 @@ class MeFunction : public FuncEmit {
   iterator end() {
     return bbVec.end();
   }
-
   const_iterator end() const {
     return bbVec.end();
   }
-
   const_iterator cend() const {
     return bbVec.cend();
   }
@@ -214,11 +201,9 @@ class MeFunction : public FuncEmit {
   reverse_iterator rbegin() {
     return bbVec.rbegin();
   }
-
   const_reverse_iterator rbegin() const {
     return bbVec.rbegin();
   }
-
   const_reverse_iterator crbegin() const {
     return bbVec.crbegin();
   }
@@ -226,11 +211,9 @@ class MeFunction : public FuncEmit {
   reverse_iterator rend() {
     return bbVec.rend();
   }
-
   const_reverse_iterator rend() const {
     return bbVec.rend();
   }
-
   const_reverse_iterator crend() const {
     return bbVec.crend();
   }
@@ -281,7 +264,7 @@ class MeFunction : public FuncEmit {
   }
 
   const_iterator context_begin() const {
-    return (++(++begin()));
+    return ++(++begin());
   }
 
   const_iterator context_end() const {
@@ -289,35 +272,35 @@ class MeFunction : public FuncEmit {
   }
 
   const_iterator common_exit() const {
-    return (++begin());
+    return ++begin();
   }
 
-  uint32 NumBBs(void) const {
+  uint32 NumBBs() const {
     return nextBBId;
   }
 
-  void Dump(bool DumpSimpIr = false);
+  void Dump(bool DumpSimpIr = false) const;
   virtual void Prepare(unsigned long rangeNum);
-  void Verify();
+  void Verify() const;
   const std::string &GetName() const {
     return mirModule.CurFunction()->GetName();
   }
 
-  VersionSt *GetVerSt(size_t veridx) {
+  VersionSt *GetVerSt(size_t veridx) const {
     return meSSATab->GetVerSt(veridx);
   }
 
   BB *NewBasicBlock();
-  BB *InsertNewBasicBlock(BB *position);
-  void DeleteBasicBlock(const BB *bb);
+  BB *InsertNewBasicBlock(const BB &position);
+  void DeleteBasicBlock(const BB &bb);
   BB *NextBB(const BB *bb);
   BB *PrevBB(const BB *bb);
   /* create label for bb */
-  void CreateBBLabel(BB *bb);
-  /* clone stmtnodes from orig to newbb */
-  void CloneBasicBlock(BB *newbb, BB *orig);
-  BB *SplitBB(BB *bb, StmtNode *splitPoint);
-  const bool HasException() const {
+  void CreateBBLabel(BB &bb);
+  /* clone stmtnodes from orig to newBB */
+  void CloneBasicBlock(BB &newBB, const BB &orig);
+  BB &SplitBB(BB &bb, StmtNode &splitPoint, BB *newBB = nullptr);
+  bool HasException() const {
     return hasEH;
   }
 
@@ -333,8 +316,21 @@ class MeFunction : public FuncEmit {
     return alloc;
   }
 
-  MapleUnorderedMap<LabelIdx, BB*> &GetLabelBBIdMap() {
+  const MapleUnorderedMap<LabelIdx, BB*> &GetLabelBBIdMap() const {
     return labelBBIdMap;
+  }
+  BB *GetLabelBBAt(LabelIdx idx) {
+    auto it = labelBBIdMap.find(idx);
+    if (it != labelBBIdMap.end()) {
+      return it->second;
+    }
+    return nullptr;
+  }
+  void SetLabelBBAt(LabelIdx idx, BB *bb) {
+    labelBBIdMap[idx] = bb;
+  }
+  void EraseLabelBBAt(LabelIdx idx) {
+    labelBBIdMap.erase(idx);
   }
 
   MapleVector<BB*> &GetAllBBs() {
@@ -349,7 +345,6 @@ class MeFunction : public FuncEmit {
   SSATab *GetMeSSATab() {
     return meSSATab;
   }
-
   void SetMeSSATab(SSATab *currMessaTab) {
     meSSATab = currMessaTab;
   }
@@ -386,27 +381,30 @@ class MeFunction : public FuncEmit {
     irmap = currIRMap;
   }
 
-  MapleUnorderedMap<BB*, StmtNode*> &GetBBTryNodeMap() {
+  const MapleUnorderedMap<BB*, StmtNode*> &GetBBTryNodeMap() const {
     return bbTryNodeMap;
   }
 
-  MapleUnorderedMap<BB*, BB*> &GetEndTryBB2TryBB() {
+  const MapleUnorderedMap<BB*, BB*> &GetEndTryBB2TryBB() const {
     return endTryBB2TryBB;
   }
-
-  BB *GetEndTryBB(BB *endTry) {
-    return endTryBB2TryBB[endTry];
+  const BB* GetTryBBFromEndTryBB(BB *endTryBB) const {
+    auto it = endTryBB2TryBB.find(endTryBB);
+    return it == endTryBB2TryBB.end() ? nullptr : it->second;
+  }
+  void SetTryBBByOtherEndTryBB(BB *endTryBB, BB *otherTryBB) {
+    endTryBB2TryBB[endTryBB] = endTryBB2TryBB[otherTryBB];
   }
 
-  MirCFG *GetTheCfg() {
+  MeCFG *GetTheCfg() {
     return theCFG;
   }
 
-  void SetTheCfg(MirCFG *currTheCfg) {
+  void SetTheCfg(MeCFG *currTheCfg) {
     theCFG = currTheCfg;
   }
 
-  bool GetSecondPass() {
+  bool GetSecondPass() const {
     return secondPass;
   }
 
@@ -416,6 +414,12 @@ class MeFunction : public FuncEmit {
 
   void SetNextBBId(uint32 currNextBBId) {
     nextBBId = currNextBBId;
+  }
+  uint32 GetNextBBId() const {
+    return nextBBId;
+  }
+  void DecNextBBId() {
+    --nextBBId;
   }
 
   uint32 GetRegNum() const {
@@ -434,12 +438,19 @@ class MeFunction : public FuncEmit {
     hints = num;
   }
 
+  MemPool *GetMemPool() {
+    return memPool;
+  }
+
   void PartialInit(bool isSecondPass);
 
  private:
   void CreateBasicBlocks();
   void SetTryBlockInfo(const StmtNode *nextStmt, StmtNode *tryStmt, BB *lastTryBB, BB *curBB, BB *newBB);
   void RemoveEhEdgesInSyncRegion();
+  MIRFunction *CurFunction(void) const {
+    return mirModule.CurFunction();
+  }
 
   MemPool *memPool;
   MapleAllocator alloc;
@@ -447,22 +458,21 @@ class MeFunction : public FuncEmit {
   MapleAllocator versAlloc;
   MIRModule &mirModule;
   MIRFunction *mirFunc;
-  uint32 nextBBId;
+  uint32 nextBBId = 0;
   /* mempool */
   MapleUnorderedMap<LabelIdx, BB*> labelBBIdMap;
   BBPtrHolder bbVec;
-  MirCFG *theCFG;
-  SSATab *meSSATab;
-  MeIRMap *irmap;
+  MeCFG *theCFG = nullptr;
+  SSATab *meSSATab = nullptr;
+  MeIRMap *irmap = nullptr;
   MapleUnorderedMap<BB*, StmtNode*> bbTryNodeMap;  // maps isTry bb to its try stmt
   MapleUnorderedMap<BB*, BB*> endTryBB2TryBB;      // maps endtry bb to its try bb
   /* input */
   std::string fileName;
-  uint32 regNum;    // count virtual registers
-  uint32 hints;
-  bool hasEH;       /* current has try statement */
-  bool secondPass;  // second pass for the same function
+  uint32 regNum = 0;    // count virtual registers
+  uint32 hints = 0;
+  bool hasEH = false;       /* current has try statement */
+  bool secondPass = false;  // second pass for the same function
 };
-
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_ME_FUNCTION_H

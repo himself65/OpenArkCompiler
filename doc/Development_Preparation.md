@@ -40,7 +40,14 @@ GN_AR_COMPILER = "${MAPLE_ROOT}/tools/clang_llvm-8.0.0-x86_64-linux-gnu-ubuntu-1
 Ninja下载地址：https://github.com/ninja-build/ninja/releases
 GN下载地址：https://archive.softwareheritage.org/browse/content/sha1_git:2dc0d5b26caef44f467de8120b26f8aad8b878be/raw/?filename=gn
 
-将GN和Ninja可执行程序放置到openarkcompiler/tools目录，打开openarkcompiler/Makefile文件，将GN和NINJA两个变量配置为GN和Ninja可执行程序所在路径。例如：
+将GN和Ninja可执行程序放置到openarkcompiler/tools目录，然后修改这两个文件为可执行:
+```
+cd openarkcompiler/tools
+chmod 775 gn
+chmod 775 ninja
+```
+
+打开openarkcompiler/Makefile文件，将GN和NINJA两个变量配置为GN和Ninja可执行程序所在路径。例如：
 
 ```
 GN := ${MAPLE_ROOT}/tools/gn/gn

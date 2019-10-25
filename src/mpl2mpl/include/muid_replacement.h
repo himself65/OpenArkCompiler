@@ -98,28 +98,34 @@ class MUIDReplacement : public FuncOptimizeImpl {
   std::map<MUID, SymIdxPair> funcUndefMap;
   std::map<MUID, SymIdxPair> dataUndefMap;
   std::map<MUID, uint32> defMuidIdxMap;
+  enum LazyBindingOption : uint32 {
+    kNoLazyBinding = 0,
+    kConservativeLazyBinding = 1,
+    kRadicalLazyBinding = 2
+  };
+
   void GenericTables();
   void GenericFuncDefTable();
   void GenericDataDefTable();
   void GenericUnifiedUndefTable();
   void GenericRangeTable();
-  uint32 FindIndexFromDefTable(const MIRSymbol *mirSymbol, bool isFunc);
-  uint32 FindIndexFromUndefTable(const MIRSymbol *mirSymbol, bool isFunc);
+  uint32 FindIndexFromDefTable(const MIRSymbol &mirSymbol, bool isFunc);
+  uint32 FindIndexFromUndefTable(const MIRSymbol &mirSymbol, bool isFunc);
   void ReplaceAddroffuncConst(MIRConst *&entry, uint32 fieldId, bool isVtab);
   void ReplaceFuncTable(const std::string &name);
   void ReplaceAddrofConst(MIRConst *&entry);
   void ReplaceDataTable(const std::string &name);
-  void ReplaceDirectInvokeOrAddroffunc(MIRFunction *currentFunc, StmtNode *stmt);
-  void ReplaceDassign(MIRFunction *currentFunc, DassignNode *dassignNode);
+  void ReplaceDirectInvokeOrAddroffunc(MIRFunction &currentFunc, StmtNode &stmt);
+  void ReplaceDassign(MIRFunction &currentFunc, DassignNode &dassignNode);
   void ReplaceDreadStmt(MIRFunction *currentFunc, StmtNode *stmt);
   void ClearVtabItab(const std::string &name);
   BaseNode *ReplaceDreadExpr(MIRFunction *currentFunc, StmtNode *stmt, BaseNode *expr);
-  BaseNode *ReplaceDread(MIRFunction *currentFunc, StmtNode *stmt, BaseNode *opnd);
-  void CollectDread(MIRFunction *currentFunc, StmtNode *stmt, BaseNode *opnd);
+  BaseNode *ReplaceDread(MIRFunction &currentFunc, StmtNode *stmt, BaseNode *opnd);
+  void CollectDread(MIRFunction &currentFunc, StmtNode &stmt, BaseNode &opnd);
   void DumpMUIDFile(bool isFunc);
   void ReplaceStmts();
   void GenericGlobalRootList();
-  void CollectImplicitUndefClassInfo(StmtNode *stmt);
+  void CollectImplicitUndefClassInfo(StmtNode &stmt);
   void CollectFuncAndDataFromKlasses();
   void CollectFuncAndDataFromGlobalTab();
   void CollectFuncAndDataFromFuncList();
@@ -173,6 +179,5 @@ class DoMUIDReplacement : public ModulePhase {
     return nullptr;
   }
 };
-
 }  // namespace maple
 #endif  // MPL2MPL_INCLUDE_MUID_REPLACEMENT_H

@@ -158,10 +158,10 @@ int MplOptions::Parse(int argc, char **argv) {
     this->UpdateOptLevel(kO0);
     this->setDefaultLevel = true;
     this->UpdateRunningExe("dex2mpl");
-    AppendDefaultOptions(kBinNameMe, kMeDefaultOptionsO0,
-                         sizeof(kMeDefaultOptionsO0) / sizeof(MplOption));
-    AppendDefaultOptions(kBinNameMpl2mpl, kMpl2MplDefaultOptionsO0,
-                         sizeof(kMpl2MplDefaultOptionsO0) / sizeof(MplOption));
+    ret = AppendDefaultOptions(kBinNameMe, kMeDefaultOptionsO0,
+                               sizeof(kMeDefaultOptionsO0) / sizeof(MplOption));
+    ret = AppendDefaultOptions(kBinNameMpl2mpl, kMpl2MplDefaultOptionsO0,
+                               sizeof(kMpl2MplDefaultOptionsO0) / sizeof(MplOption));
     this->UpdateRunningExe("mplcg");
   }
   return ret;
@@ -237,7 +237,7 @@ void MplOptions::UpdateOptLevel(OptimizationLevel level) {
   this->optimizationLevel = level;
 }
 
-ErrorCode MplOptions::AppendDefaultOptions(const std::string &exeName, MplOption *mplOptions, unsigned int length) {
+ErrorCode MplOptions::AppendDefaultOptions(const std::string &exeName, MplOption mplOptions[], unsigned int length) {
   bool ret = true;
   auto &exeOption = exeOptions[exeName];
   for (unsigned int i = 0; i < length; i++) {
@@ -264,43 +264,27 @@ ErrorCode MplOptions::UpdateExtraOptionOpt(const std::string &args) {
   }
   auto settingExe = runningExes.begin();
   for (const auto &tempIt : temp) {
-    bool ret = true;
-
     std::vector<std::string> tmpArgs;
     // Split options with ' '
     StringUtils::Split(tempIt, tmpArgs, ' ');
     auto &exeOption = exeOptions[*settingExe];
+    ErrorCode ret = optionParser->HandleInputArgs(tmpArgs, *settingExe, exeOption);
+    if (ret != ErrorCode::kErrorNoError) {
+      return ret;
+    }
+    // Fill extraOption
     // For compiler bins called by system()
     auto &extraOption = extras[*settingExe];
-    for (const auto &argsIt : tmpArgs) {
+    for (size_t i = 0; i < exeOption.size(); i++) {
       MplOption mplOption;
-      // If "=" is not in the string, indicates that it is an option without value
-      if (argsIt.find("=") == std::string::npos) {
-        if (!argsIt.empty()) {
-          // Set key only
-          mplOption.init(argsIt, "", " ", false, "");
-          ret &= optionParser->SetOption(argsIt, "", *settingExe, exeOption);
-        } else {
-          continue;
-        }
+      if (exeOption[i].Args() != "") {
+        mplOption.init("-" + exeOption[i].OptionKey(), exeOption[i].Args(), "=", false, "");
       } else {
-        // If "=" is in the string, indicates that it is an option with value
-        std::vector<std::string> arg;
-        StringUtils::Split(argsIt, arg, '=');
-        if (arg.size() > 1) {
-          // Set key and value
-          mplOption.init(arg.at(0), arg.at(1), "=", false, "");
-          ret &= optionParser->SetOption(arg.at(0), arg.at(1), *settingExe, exeOption);
-        } else {
-          WARN(kLncWarn, "warning no args after \'=\' for " + arg.at(0));
-          continue;
-        }
+        mplOption.init("-" + exeOption[i].OptionKey(), "", " ", false, "");
       }
       extraOption.push_back(mplOption);
     }
-    if (!ret) {
-      return ErrorCode::kErrorInvalidParameter;
-    }
+
     settingExe++;
   }
   return ErrorCode::kErrorNoError;
@@ -316,5 +300,4 @@ void MplOptions::UpdateRunningExe(const std::string &args) {
     }
   }
 }
-
 }  // namespace maple

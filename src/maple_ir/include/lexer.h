@@ -19,15 +19,15 @@
 #include "mempool_allocator.h"
 #include "stdio.h"
 #include <fstream>
+#include "mir_module.h"
 
 namespace maple {
-class MIRModule;
 class MIRParser;
 class MIRLexer {
   friend MIRParser;
 
  public:
-  explicit MIRLexer(MIRModule *mod);
+  explicit MIRLexer(MIRModule &mod);
   ~MIRLexer() {
     airFile = nullptr;
     if (airFileInternal.is_open()) {
@@ -35,7 +35,7 @@ class MIRLexer {
     }
   }
 
-  void PrepareForFile(const char *filename);
+  void PrepareForFile(const std::string &filename);
   void PrepareForString(const std::string &src);
   TokenKind NextToken(void);
   TokenKind LexToken();
@@ -68,21 +68,10 @@ class MIRLexer {
     return theDoubleVal;
   }
 
-  MapleVector<std::string> &GetSeenComments() {
-    return seenComments;
-  }
-
   std::string GetTokenString() const;  // for error reporting purpose
-  void SetFile(std::ifstream *file) {
-    airFile = file;
-  }
-
-  std::ifstream *GetFile() const {
-    return airFile;
-  }
 
  private:
-  MIRModule *module;
+  MIRModule &module;
   // for storing the different types of constant values
   int64 theIntVal;  // also indicates preg number under kTkPreg
   float theFloatVal;
@@ -145,6 +134,14 @@ class MIRLexer {
     curIdx++;
     return curIdx < currentLineSize ? line[curIdx] : 0;
   }
+
+  void SetFile(std::ifstream *file) {
+    airFile = file;
+  }
+
+  std::ifstream *GetFile() const {
+    return airFile;
+  }
 };
 
 inline bool IsPrimitiveType(TokenKind tk) {
@@ -166,6 +163,5 @@ inline bool IsConstValue(TokenKind tk) {
 inline bool IsConstAddrExpr(TokenKind tk) {
   return tk == TK_addrof || tk == TK_addroffunc || tk == TK_conststr || tk == TK_conststr16;
 }
-
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_LEXER_H

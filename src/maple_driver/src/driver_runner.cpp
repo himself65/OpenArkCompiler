@@ -16,6 +16,7 @@
 #include <iostream>
 #include <typeinfo>
 #include <sys/stat.h>
+#include <climits>
 #include "mpl_timer.h"
 #include "mir_function.h"
 #include "mir_parser.h"
@@ -55,7 +56,6 @@ const char *kMe = "me";
   }
 
 namespace maple {
-
 int DriverRunner::Run() {
   CHECK_MODULE(1);
 
@@ -74,7 +74,6 @@ int DriverRunner::Run() {
   std::string outputFile = baseName.append(GetPostfix());
 
   bool parsed = ParseInput(outputFile, originBaseName);
-
   if (parsed) {
     if (mpl2mplOptions || meOptions) {
       std::string vtableImplFile = originBaseName;
@@ -165,30 +164,30 @@ void DriverRunner::InitPhases(InterleavedManager &mgr, std::vector<std::string> 
 
   for (std::string phase : phases) {
     auto temp = mgr.GetSupportPhaseManager(phase);
-
     if (temp != nullptr) {
       if (temp != curManager) {
-        AddPhases(mgr, curPhases, curManager);
+        if (curManager != nullptr) {
+          AddPhases(mgr, curPhases, *curManager);
+        }
         curManager = temp;
         curPhases.clear();
       }
 
-      AddPhase(curPhases, phase, curManager);
+      CHECK_FATAL(curManager != nullptr, "Invalid phase manager");
+      AddPhase(curPhases, phase, *curManager);
     }
   }
 
-  AddPhases(mgr, curPhases, curManager);
+  if (curManager != nullptr) {
+    AddPhases(mgr, curPhases, *curManager);
+  }
 }
 
 void DriverRunner::AddPhases(InterleavedManager &mgr, std::vector<std::string> &phases,
-                             const PhaseManager *phaseManager) const {
-  if (phaseManager == nullptr) {
-    return;
-  }
-
-  if (typeid(*phaseManager) == typeid(ModulePhaseManager)) {
+                             const PhaseManager &phaseManager) const {
+  if (typeid(phaseManager) == typeid(ModulePhaseManager)) {
     mgr.AddPhases(phases, true, timePhases);
-  } else if (typeid(*phaseManager) == typeid(MeFuncPhaseManager)) {
+  } else if (typeid(phaseManager) == typeid(MeFuncPhaseManager)) {
     mgr.AddPhases(phases, false, timePhases, genMemPl);
   } else {
     CHECK_FATAL(false, "Should not reach here, phases should be handled");
@@ -196,14 +195,12 @@ void DriverRunner::AddPhases(InterleavedManager &mgr, std::vector<std::string> &
 }
 
 void DriverRunner::AddPhase(std::vector<std::string> &phases, std::string phase,
-                            const PhaseManager *phaseManager) const {
-  CHECK_FATAL(phaseManager != nullptr, "Invalid phase manager");
-
-  if (typeid(*phaseManager) == typeid(ModulePhaseManager)) {
+                            const PhaseManager &phaseManager) const {
+  if (typeid(phaseManager) == typeid(ModulePhaseManager)) {
     if (mpl2mplOptions && Options::skipPhase.compare(phase) != 0) {
       phases.push_back(phase);
     }
-  } else if (typeid(*phaseManager) == typeid(MeFuncPhaseManager)) {
+  } else if (typeid(phaseManager) == typeid(MeFuncPhaseManager)) {
     if (meOptions && meOptions->GetSkipPhases().find(phase) == meOptions->GetSkipPhases().end()) {
       phases.push_back(phase);
     }
@@ -211,6 +208,5 @@ void DriverRunner::AddPhase(std::vector<std::string> &phases, std::string phase,
     CHECK_FATAL(false, "Should not reach here, phase should be handled");
   }
 }
-
 
 }  // namespace maple

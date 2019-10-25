@@ -27,17 +27,13 @@
 
 using namespace maple;
 
+
 void InterleavedManager::AddPhases(std::vector<std::string> &phases, bool isModulePhase, bool timePhases, bool genMpl) {
   ModuleResultMgr *mrm = nullptr;
   if (!phaseManagers.empty()) {
     // ModuleResult such class hierarchy need to be carried on
-    ModulePhaseManager *mpm = dynamic_cast<ModulePhaseManager*>(phaseManagers[phaseManagers.size() - 1]);
-    MeFuncPhaseManager *mepm = dynamic_cast<MeFuncPhaseManager*>(phaseManagers[phaseManagers.size() - 1]);
-    if (mpm != nullptr) {
-      mrm = mpm->GetModResultMgr();
-    } else if (mepm != nullptr) {
-      mrm = mepm->GetModResultMgr();
-    }
+    PhaseManager *pm = phaseManagers.back();
+    mrm = pm->GetModResultMgr();
   }
 
   if (isModulePhase) {
@@ -62,6 +58,7 @@ void InterleavedManager::AddPhases(std::vector<std::string> &phases, bool isModu
   }
 }
 
+
 void InterleavedManager::Run() {
   for (PhaseManager * const &pm : phaseManagers) {
     if (pm == nullptr) {
@@ -82,7 +79,7 @@ void InterleavedManager::Run() {
         compList = &mirModule.GetFunctionList();
       }
       for (MIRFunction *func : *compList) {
-        if (MeOptions::useRange && (rangeNum < MeOptions::range[0] || rangeNum > MeOptions::range[1])) {
+        if (MeOption::useRange && (rangeNum < MeOption::range[0] || rangeNum > MeOption::range[1])) {
           rangeNum++;
           continue;
         }
@@ -123,7 +120,7 @@ void InterleavedManager::DumpTimers() {
   for (const auto &lapse : timeVec) {
     LogInfo::MapleLogger() << std::left << std::setw(25) << lapse.first << std::setw(10) << std::right << std::fixed
                            << std::setprecision(2) << (100.0 * lapse.second / total) << "%" << std::setw(10)
-                           << (lapse.second / 1000) << "ms" << std::endl;
+                           << (lapse.second / 1000) << "ms" << "\n";
   }
   LogInfo::MapleLogger() << "================================================\n";
   LogInfo::MapleLogger().flags(f);

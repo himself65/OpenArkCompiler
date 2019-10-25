@@ -26,8 +26,8 @@
 #endif
 #include "mpl_logging.h"
 #include "string_utils.h"
+#include "securec.h"
 
-using namespace std;
 namespace maple {
 class SafeExe {
  public:
@@ -55,12 +55,14 @@ class SafeExe {
     }
     tmpArgs.insert(tmpArgs.begin(), cmd);
     // extra space for exe name and args
-    const char **argv = new const char* [tmpArgs.size() + 1];
+    char **argv = new char* [tmpArgs.size() + 1];
     // argv[0] is program name
-    argv[0] = cmd.c_str();
     // copy args
     for (int j = 0;  j < tmpArgs.size();  ++j) {
-       argv[j] = tmpArgs[j].c_str();
+       int strLength = tmpArgs[j].size();
+       argv[j] = new char[strLength + 1];
+       strncpy_s(argv[j], strLength + 1, tmpArgs[j].c_str(), strLength);
+       argv[j][strLength] = '\0';
     }
     // end of arguments sentinel is NULL
     argv[tmpArgs.size()] = NULL;
@@ -68,7 +70,10 @@ class SafeExe {
     if (pid == 0) {
       // child process
       fflush(NULL);
-      if (execv(cmd.c_str(), (char **)argv) < 0) {
+      if (execv(cmd.c_str(), argv) < 0) {
+        for (int j = 0;  j < tmpArgs.size();  ++j) {
+          delete [] argv[j];
+        }
         delete [] argv;
         exit(1);
       }
@@ -84,6 +89,9 @@ class SafeExe {
         ret = ErrorCode::kErrorCompileFail;
       }
     }
+    for (int j = 0;  j < tmpArgs.size();  ++j) {
+      delete [] argv[j];
+    }
     delete [] argv;
     return ret;
 #else
@@ -91,6 +99,5 @@ class SafeExe {
 #endif
   }
 };
-
 }  // namespace maple
 #endif  // MAPLE_DRIVER_INCLUDE_SAFE_EXE_H

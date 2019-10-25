@@ -57,26 +57,6 @@ class MIRSymbol {
     MIRPreg *preg;  // the MIRSymKind must be kStPreg
   };
 
-  // Please keep order of the fields, avoid paddings.
- private:
-  TyIdx tyIdx;
-  TyIdx inferredTyIdx;
-  MIRStorageClass storageClass;
-  MIRSymKind sKind;
-  bool isTmp;
-  bool needForwDecl;  // addrof of this symbol used in initialization, NOT serialized
-  bool isDeleted;     // tell if it is deleted, NOT serialized
-  bool instrumented;  // a local ref pointer instrumented by RC opt, NOT serialized
-  bool isImported;
-  StIdx stIdx;
-  TypeAttrs typeAttrs;
-  GStrIdx nameStrIdx;
-  SymbolType value;
-  static GStrIdx reflectClassNameIdx;
-  static GStrIdx reflectMethodNameIdx;
-  static GStrIdx reflectFieldNameIdx;
-
- public:
   MIRSymbol()
       : tyIdx(0),
         inferredTyIdx(kInitTyIdx),
@@ -345,26 +325,26 @@ class MIRSymbol {
     return GetName().compare("__eh_index__") == 0;
   }
 
-  bool HasAddrOfValues();
+  bool HasAddrOfValues() const;
   bool IsLiteral() const;
   bool IsLiteralPtr() const;
   bool PointsToConstString() const;
   bool IsConstString() const;
-  bool IsClassInitBridge();
+  bool IsClassInitBridge() const;
   bool IsReflectionStrTab() const;
   bool IsReflectionHashTabBucket() const;
-  bool IsReflectionInfo();
+  bool IsReflectionInfo() const;
   bool IsReflectionFieldsInfo() const;
   bool IsReflectionFieldsInfoCompact() const;
-  bool IsReflectionSuperclassInfo();
-  bool IsReflectionClassInfo();
+  bool IsReflectionSuperclassInfo() const;
+  bool IsReflectionClassInfo() const;
   bool IsReflectionArrayClassInfo() const;
   bool IsReflectionClassInfoPtr() const;
-  bool IsReflectionClassInfoRO();
-  bool IsITabConflictInfo();
-  bool IsVTabInfo();
-  bool IsITabInfo();
-  bool IsReflectionPrimitiveClassInfo();
+  bool IsReflectionClassInfoRO() const;
+  bool IsITabConflictInfo() const;
+  bool IsVTabInfo() const;
+  bool IsITabInfo() const;
+  bool IsReflectionPrimitiveClassInfo() const;
   bool IsReflectionMethodsInfo() const;
   bool IsReflectionMethodsInfoCompact() const;
   bool IsRegJNITab() const;
@@ -384,11 +364,11 @@ class MIRSymbol {
   bool IsMuidDataDefMuidTab() const;
   bool IsMuidDataUndefMuidTab() const;
   bool IsMuidRangeTab() const;
-  bool IsGctibSym();
-  bool IsPrimordialObject();
-  bool IgnoreRC();
+  bool IsGctibSym() const;
+  bool IsPrimordialObject() const;
+  bool IgnoreRC() const;
   void Dump(bool isLocal, int32 indent, bool suppressinit = false) const;
-  void DumpAsLiteralVar(int32 indent);
+  void DumpAsLiteralVar(int32 indent) const;
   bool operator==(const MIRSymbol &msym) const {
     return nameStrIdx == msym.nameStrIdx;
   }
@@ -400,6 +380,25 @@ class MIRSymbol {
   bool operator<(const MIRSymbol &msym) const {
     return nameStrIdx < msym.nameStrIdx;
   }
+  // Please keep order of the fields, avoid paddings.
+ private:
+  TyIdx tyIdx;
+  TyIdx inferredTyIdx;
+  MIRStorageClass storageClass;
+  MIRSymKind sKind;
+  bool isTmp;
+  bool needForwDecl;  // addrof of this symbol used in initialization, NOT serialized
+  bool isDeleted;     // tell if it is deleted, NOT serialized
+  bool instrumented;  // a local ref pointer instrumented by RC opt, NOT serialized
+  bool isImported;
+  StIdx stIdx;
+  TypeAttrs typeAttrs;
+  GStrIdx nameStrIdx;
+  SymbolType value;
+  static GStrIdx reflectClassNameIdx;
+  static GStrIdx reflectMethodNameIdx;
+  static GStrIdx reflectFieldNameIdx;
+
 };
 
 class MIRSymbolTable {
@@ -533,12 +532,19 @@ class MIRLabelTable {
     labelTable[idx] = strIdx;
   }
 
+  MapleVector<GStrIdx> GetLabelTable() {
+    return labelTable;
+  }
+
+  MapleMap<GStrIdx, LabelIdx> &GetStrIdxToLabelIdxMap() {
+    return strIdxToLabIdxMap;
+  }
+
  private:
   static constexpr uint32 kDummyLabel = 0;
   MapleAllocator *mAllocator;
   MapleMap<GStrIdx, LabelIdx> strIdxToLabIdxMap;
   MapleVector<GStrIdx> labelTable;  // map label idx to label name
 };
-
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_MIR_SYMBOL_H

@@ -135,7 +135,7 @@ static constexpr const char kBindingProtectedRegionStr[] = "__BindingProtectRegi
 extern bool doCompression;
 
 // Return the input string if the compression is not on; otherwise, return its compressed version
-std::string GetInternalNameLiteral(const char *name);
+std::string GetInternalNameLiteral(const std::string &name);
 std::string GetOriginalNameLiteral(const char *name);
 
 std::string EncodeName(const std::string &name);
@@ -144,12 +144,12 @@ std::string DecodeName(const std::string &name);
 std::string DecodeName(const char *name);
 void DecodeMapleNameToJavaDescriptor(const std::string &nameIn, std::string &nameOut);
 
-std::string NativeJavaName(const char *name, bool overloaded = true);
+std::string NativeJavaName(const char *name, bool overLoaded = true);
 
 __attribute__((visibility("default"))) unsigned UTF16ToUTF8(std::string &str, const std::u16string &str16,
-                                                            unsigned short num = 0, bool isbigendian = false);
+                                                            unsigned short num = 0, bool isBigEndian = false);
 __attribute__((visibility("default"))) unsigned UTF8ToUTF16(std::u16string &str16, const std::string &str,
-                                                            unsigned short num = 0, bool isbigendian = false);
+                                                            unsigned short num = 0, bool isBigEndian = false);
 void GetUnsignedLeb128Encode(std::vector<uint8_t> &dest, uint32_t value);
 uint32_t GetUnsignedLeb128Decode(const uint8_t **data);
 uint64_t GetUleb128Encode(uint64_t val);
@@ -158,6 +158,7 @@ uint64_t GetUleb128Decode(uint64_t val);
 int64_t  GetSleb128Decode(uint64_t val);
 size_t GetUleb128Size(uint64_t val);
 size_t GetSleb128Size(int32_t val);
+bool NeedConvertUTF16(const std::string &str8);
 
 } // namespace NameMangler
 

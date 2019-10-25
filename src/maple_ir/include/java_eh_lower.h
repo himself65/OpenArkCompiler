@@ -42,7 +42,7 @@ class JavaEHLowerer : public FuncOptimizeImpl {
     return DoLowerDiv(expr, blkNode);
   }
 
-  void DoLowerBoundaryCheck(IntrinsiccallNode*, BlockNode*);
+  void DoLowerBoundaryCheck(IntrinsiccallNode&, BlockNode&);
 
   uint32 divSTIndex;  // The index of divide operand and result.
   bool useRegTmp;     // Use register to save temp variable or not.
@@ -63,6 +63,5 @@ class JavaEHLowererPhase : public ModulePhase {
     return nullptr;
   }
 };
-
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_JAVA_EH_LOWER_H

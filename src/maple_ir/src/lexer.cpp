@@ -61,12 +61,12 @@ int MIRLexer::ReadALine() {
   return currentLineSize;
 }
 
-MIRLexer::MIRLexer(MIRModule *mod)
+MIRLexer::MIRLexer(MIRModule &mod)
     : module(mod),
       theIntVal(0),
       theFloatVal(0.0f),
       theDoubleVal(0),
-      seenComments(mod->GetMPAllocator().Adapter()),
+      seenComments(mod.GetMPAllocator().Adapter()),
       airFile(nullptr),
       lineBufSize(0),
       currentLineSize(0),
@@ -74,7 +74,7 @@ MIRLexer::MIRLexer(MIRModule *mod)
       lineNum(0),
       kind(kTkInvalid),
       name(""),
-      keywordMap(mod->GetMPAllocator().Adapter()) {
+      keywordMap(mod.GetMPAllocator().Adapter()) {
   // initialize keywordMap
   keywordMap.clear();
 #define KEYWORD(STR)            \
@@ -87,10 +87,10 @@ MIRLexer::MIRLexer(MIRModule *mod)
 #undef KEYWORD
 }
 
-void MIRLexer::PrepareForFile(const char *filename) {
+void MIRLexer::PrepareForFile(const std::string &filename) {
   // open MIR file
   airFileInternal.open(filename);
-  CHECK_FATAL(airFileInternal.is_open(), "cannot open MIR file %s\n", filename);
+  CHECK_FATAL(airFileInternal.is_open(), "cannot open MIR file %s\n", &filename);
 
   airFile = &airFileInternal;
   // try to read the first line
@@ -737,5 +737,4 @@ std::string MIRLexer::GetTokenString() const {
       return temp;
   }
 }
-
 }  // namespace maple

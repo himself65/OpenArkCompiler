@@ -19,43 +19,40 @@
 #include "me_irmap.h"
 
 namespace maple {
-class SSAUpdate {
+class MeSSAUpdate {
  public:
-  SSAUpdate &operator=(const SSAUpdate &p) = default;
-  SSAUpdate(const SSAUpdate &p) = default;
-  SSAUpdate(MeFunction *f, SSATab *stab, Dominance *d, MapleMap<OStIdx, MapleSet<BBId>*> *cands, MemPool *mp)
+  MeSSAUpdate(MeFunction &f, SSATab &stab, Dominance &d, MapleMap<OStIdx, MapleSet<BBId>*> &cands, MemPool &mp)
       : func(f),
-        irMap(f->GetIRMap()),
+        irMap(*f.GetIRMap()),
         ssaTab(stab),
         dom(d),
         ssaUpdateMp(mp),
-        ssaUpdateAlloc(ssaUpdateMp),
+        ssaUpdateAlloc(&mp),
         updateCands(cands),
         renameStacks(std::less<OStIdx>(), ssaUpdateAlloc.Adapter()) {}
 
-  ~SSAUpdate() {
-    mempoolctrler.DeleteMemPool(ssaUpdateMp);
+  ~MeSSAUpdate() {
+    mempoolctrler.DeleteMemPool(&ssaUpdateMp);
   }
 
   void Run();
 
  private:
-  MeFunction *func;
-  IRMap *irMap;
-  SSATab *ssaTab;
-  Dominance *dom;
-  MemPool *ssaUpdateMp;
+  MeFunction &func;
+  IRMap &irMap;
+  SSATab &ssaTab;
+  Dominance &dom;
+  MemPool &ssaUpdateMp;
   MapleAllocator ssaUpdateAlloc;
-  MapleMap<OStIdx, MapleSet<BBId>*> *updateCands;
+  MapleMap<OStIdx, MapleSet<BBId>*> &updateCands;
   MapleMap<OStIdx, MapleStack<VarMeExpr*>*> renameStacks;
-  void GetIterDomFrontier(const BB *bb, MapleSet<BBId> *dfset, std::vector<bool> &visitedMap);
+  void GetIterDomFrontier(const BB &bb, MapleSet<BBId> &dfSet, std::vector<bool> &visitedMap);
   void InsertPhis();
-  void RenamePhi(BB *bb);
-  MeExpr *RenameExpr(MeExpr *meexpr, bool &changed);
-  void RenameStmts(BB *bb);
-  void RenamePhiOpndsInSucc(BB *bb);
-  void RenameBB(BB *bb);
+  void RenamePhi(BB &bb);
+  MeExpr *RenameExpr(MeExpr &meExpr, bool &changed);
+  void RenameStmts(BB &bb);
+  void RenamePhiOpndsInSucc(BB &bb);
+  void RenameBB(BB &bb);
 };
-
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_ME_SSA_UPDATE_H

@@ -21,24 +21,28 @@
 namespace maple {
 class MeAliasClass : public AliasClass {
  public:
-  MeAliasClass(MemPool *memPool, MIRModule *mod, SSATab *ssaTab, MeFunction *func, bool lessAliasAtThrow,
+  MeAliasClass(MemPool &memPool, MIRModule &mod, SSATab &ssaTab, MeFunction &func, bool lessAliasAtThrow,
                bool finalFieldHasAlias, bool ignoreIPA, bool debug, bool setCalleeHasSideEffect, KlassHierarchy *kh)
       : AliasClass(memPool, mod, ssaTab, lessAliasAtThrow, finalFieldHasAlias, ignoreIPA, setCalleeHasSideEffect, kh),
         func(func) {}
 
   virtual ~MeAliasClass() = default;
-
- private:
-  MeFunction *func;
-  BB *GetBB(BBId id) {
-    if (func->GetAllBBs().size() < id.idx) {
-      return nullptr;
-    }
-    return func->GetBBFromID(id);
+  void DoAliasAnalysis();
+  std::string PhaseName() const {
+    return "aliasclass";
   }
 
-  bool InConstructorLikeFunc() const {
-    return func->GetMirFunc()->IsConstructor() || HasWriteToStaticFinal();
+ private:
+  MeFunction &func;
+  BB *GetBB(BBId id) override {
+    if (func.GetAllBBs().size() < id.idx) {
+      return nullptr;
+    }
+    return func.GetBBFromID(id);
+  }
+
+  bool InConstructorLikeFunc() const override {
+    return func.GetMirFunc()->IsConstructor() || HasWriteToStaticFinal();
   }
 
   bool HasWriteToStaticFinal() const;
@@ -54,6 +58,5 @@ class MeDoAliasClass : public MeFuncPhase {
     return "aliasclass";
   }
 };
-
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_ME_ALIAS_CLASS_H

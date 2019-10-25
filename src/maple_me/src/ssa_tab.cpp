@@ -24,75 +24,74 @@
 // by allocating the larger SSANodes.  Statement nodes' SSA information is
 // stored in class SSATab's StmtsSSAPart, which has an array of pointers indexed
 // by the stmtID field of each statement node.
-
 namespace maple {
-BaseNode *SSATab::CreateSSAExpr(BaseNode *expr) {
-  if (expr->GetOpCode() == OP_addrof || expr->GetOpCode() == OP_dread) {
-    AddrofNode *addrofNode = static_cast<AddrofNode*>(expr);
-    AddrofSSANode *ssaNode = mirModule.CurFunction()->GetCodeMemPool()->New<AddrofSSANode>(addrofNode);
+BaseNode *SSATab::CreateSSAExpr(BaseNode &expr) {
+  if (expr.GetOpCode() == OP_addrof || expr.GetOpCode() == OP_dread) {
+    AddrofNode &addrofNode = static_cast<AddrofNode&>(expr);
+    AddrofSSANode *ssaNode = mirModule.CurFunction()->GetCodeMemPool()->New<AddrofSSANode>(&addrofNode);
     MIRSymbol *st = mirModule.CurFunction()->GetLocalOrGlobalSymbol(ssaNode->GetStIdx());
-    OriginalSt *ost = FindOrCreateSymbolOriginalSt(st, mirModule.CurFunction()->GetPuidx(), ssaNode->GetFieldID());
+    OriginalSt *ost = FindOrCreateSymbolOriginalSt(*st, mirModule.CurFunction()->GetPuidx(), ssaNode->GetFieldID());
     VersionSt *vst = versionStTable.FindOrCreateVersionSt(ost, kInitVersion);
     ssaNode->SetSSAVar(vst);
     return ssaNode;
-  } else if (expr->GetOpCode() == OP_regread) {
-    RegreadNode *rreadNode = static_cast<RegreadNode*>(expr);
-    RegreadSSANode *ssaNode = mirModule.CurFunction()->GetCodeMemPool()->New<RegreadSSANode>(rreadNode);
+  } else if (expr.GetOpCode() == OP_regread) {
+    RegreadNode &rreadNode = static_cast<RegreadNode&>(expr);
+    RegreadSSANode *ssaNode = mirModule.CurFunction()->GetCodeMemPool()->New<RegreadSSANode>(&rreadNode);
     OriginalSt *ost =
         originalStTable.FindOrCreatePregOriginalSt(ssaNode->GetRegIdx(), mirModule.CurFunction()->GetPuidx());
     VersionSt *vst = versionStTable.FindOrCreateVersionSt(ost, kInitVersion);
     ssaNode->SetSSAVar(vst);
     return ssaNode;
-  } else if (expr->GetOpCode() == OP_iread) {
-    IreadNode *ireadNode = static_cast<IreadNode*>(expr);
+  } else if (expr.GetOpCode() == OP_iread) {
+    IreadNode &ireadNode = static_cast<IreadNode&>(expr);
     IreadSSANode *ssaNode = mirModule.CurFunction()->GetCodeMempool()->New<IreadSSANode>(
-        mirModule.CurFuncCodeMemPoolAllocator(), ireadNode);
-    BaseNode *newOpnd = CreateSSAExpr(expr->Opnd(0));
+        mirModule.CurFuncCodeMemPoolAllocator(), &ireadNode);
+    BaseNode *newOpnd = CreateSSAExpr(*expr.Opnd(0));
     if (newOpnd != nullptr) {
       ssaNode->SetOpnd(newOpnd, 0);
     }
     return ssaNode;
   } else {
-    for (size_t i = 0; i < expr->NumOpnds(); i++) {
-      BaseNode *newOpnd = CreateSSAExpr(expr->Opnd(i));
+    for (size_t i = 0; i < expr.NumOpnds(); i++) {
+      BaseNode *newOpnd = CreateSSAExpr(*expr.Opnd(i));
       if (newOpnd != nullptr) {
-        expr->SetOpnd(newOpnd, i);
+        expr.SetOpnd(newOpnd, i);
       }
     }
     return nullptr;
   }
 }
 
-void SSATab::CreateSSAStmt(StmtNode *stmt, const BB *curbb, bool ignoreCallassignedDefs) {
-  for (size_t i = 0; i < stmt->NumOpnds(); i++) {
-    BaseNode *newOpnd = CreateSSAExpr(stmt->Opnd(i));
+void SSATab::CreateSSAStmt(StmtNode &stmt, const BB &curbb, bool ignoreCallassignedDefs) {
+  for (size_t i = 0; i < stmt.NumOpnds(); i++) {
+    BaseNode *newOpnd = CreateSSAExpr(*stmt.Opnd(i));
     if (newOpnd != nullptr) {
-      stmt->SetOpnd(newOpnd, i);
+      stmt.SetOpnd(newOpnd, i);
     }
   }
-  switch (stmt->GetOpCode()) {
+  switch (stmt.GetOpCode()) {
     case OP_maydassign:
     case OP_dassign: {
       MayDefPartWithVersionSt *theSSAPart =
           stmtsSSAPart.GetSSAPartMp()->New<MayDefPartWithVersionSt>(&stmtsSSAPart.GetSSAPartAlloc());
       stmtsSSAPart.SetSSAPartOf(stmt, theSSAPart);
-      DassignNode *dnode = dynamic_cast<DassignNode*>(stmt);
-      MIRSymbol *st = mirModule.CurFunction()->GetLocalOrGlobalSymbol(dnode->GetStIdx());
+      DassignNode &dnode = static_cast<DassignNode&>(stmt);
+      MIRSymbol *st = mirModule.CurFunction()->GetLocalOrGlobalSymbol(dnode.GetStIdx());
       CHECK_FATAL(st != nullptr, "null ptr check");
 
-      OriginalSt *ost = FindOrCreateSymbolOriginalSt(st, mirModule.CurFunction()->GetPuidx(), dnode->GetFieldID());
+      OriginalSt *ost = FindOrCreateSymbolOriginalSt(*st, mirModule.CurFunction()->GetPuidx(), dnode.GetFieldID());
       VersionSt *vst = versionStTable.FindOrCreateVersionSt(ost, kInitVersion);
-      theSSAPart->SetSSAVar(vst);
+      theSSAPart->SetSSAVar(*vst);
       // if the rhs may throw exception, we insert MayDef of the lhs var
-      if (stmt->GetOpCode() == OP_maydassign) {
-        theSSAPart->InsertMayDefNode(theSSAPart->GetSSAVar(), dnode);
+      if (stmt.GetOpCode() == OP_maydassign) {
+        theSSAPart->InsertMayDefNode(theSSAPart->GetSSAVar(), &dnode);
       }
       return;
     }
     case OP_regassign: {
-      RegassignNode *regNode = static_cast<RegassignNode*>(stmt);
+      RegassignNode &regNode = static_cast<RegassignNode&>(stmt);
       OriginalSt *ost =
-          originalStTable.FindOrCreatePregOriginalSt(regNode->GetRegIdx(), mirModule.CurFunction()->GetPuidx());
+          originalStTable.FindOrCreatePregOriginalSt(regNode.GetRegIdx(), mirModule.CurFunction()->GetPuidx());
       VersionSt *vst = versionStTable.FindOrCreateVersionSt(ost, kInitVersion);
       stmtsSSAPart.SetSSAPartOf(stmt, vst);
       return;
@@ -112,13 +111,13 @@ void SSATab::CreateSSAStmt(StmtNode *stmt, const BB *curbb, bool ignoreCallassig
       stmtsSSAPart.SetSSAPartOf(stmt, stmtsSSAPart.GetSSAPartMp()->New<MayDefPart>(&stmtsSSAPart.GetSSAPartAlloc()));
       return;
     default: {
-      if (kOpcodeInfo.IsCallAssigned(stmt->GetOpCode())) {
+      if (kOpcodeInfo.IsCallAssigned(stmt.GetOpCode())) {
         MayDefMayUseMustDefPart *theSSAPart =
             stmtsSSAPart.GetSSAPartMp()->New<MayDefMayUseMustDefPart>(&stmtsSSAPart.GetSSAPartAlloc());
         stmtsSSAPart.SetSSAPartOf(stmt, theSSAPart);
         // insert the mustdefs
-        CallReturnVector *nrets = static_cast<NaryStmtNode*>(stmt)->GetCallReturnVector();
-        ASSERT(nrets != nullptr, "CreateSSAStmt: failed to retrieve call return vector");
+        CallReturnVector *nrets = static_cast<NaryStmtNode&>(stmt).GetCallReturnVector();
+        CHECK_FATAL(nrets != nullptr, "CreateSSAStmt: failed to retrieve call return vector");
         if (nrets->empty()) {
           return;
         }
@@ -128,15 +127,15 @@ void SSATab::CreateSSAStmt(StmtNode *stmt, const BB *curbb, bool ignoreCallassig
             MIRSymbolTable *symtab = mirModule.CurFunction()->GetSymTab();
             MIRSymbol *st = symtab->GetSymbolFromStIdx(stidx.Idx());
             OriginalSt *ost =
-                FindOrCreateSymbolOriginalSt(st, mirModule.CurFunction()->GetPuidx(), retPair.second.GetFieldID());
+                FindOrCreateSymbolOriginalSt(*st, mirModule.CurFunction()->GetPuidx(), retPair.second.GetFieldID());
             VersionSt *vst = versionStTable.FindOrCreateVersionSt(ost, kInitVersion);
-            theSSAPart->InsertMustDefNode(vst, stmt);
+            theSSAPart->InsertMustDefNode(vst, &stmt);
           } else {
             ASSERT(false, "NYI");
           }
         }
         return;
-      } else if (kOpcodeInfo.IsCall(stmt->GetOpCode())) {
+      } else if (kOpcodeInfo.IsCall(stmt.GetOpCode())) {
         stmtsSSAPart.SetSSAPartOf(stmt,
                                   stmtsSSAPart.GetSSAPartMp()->New<MayDefMayUsePart>(&stmtsSSAPart.GetSSAPartAlloc()));
         return;
@@ -145,5 +144,4 @@ void SSATab::CreateSSAStmt(StmtNode *stmt, const BB *curbb, bool ignoreCallassig
   }
   return;
 }
-
 }  // namespace maple

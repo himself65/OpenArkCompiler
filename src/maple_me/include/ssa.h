@@ -26,11 +26,12 @@ class VersionStTable;
 class SSATab;
 class PhiNode {
  public:
-  PhiNode(MapleAllocator *alloc, VersionSt *vsym) : result(vsym), phiOpnds(2, nullptr, alloc->Adapter()) {
+  PhiNode(MapleAllocator &alloc, VersionSt &vsym) : result(&vsym), phiOpnds(kNumOpnds, nullptr, alloc.Adapter()) {
     phiOpnds.pop_back();
     phiOpnds.pop_back();
-  };
-  ~PhiNode() {}
+  }
+
+  ~PhiNode() = default;
 
   void Dump(const MIRModule *mod);
 
@@ -38,11 +39,11 @@ class PhiNode {
     return result;
   }
 
-  void SetResult(VersionSt *resultPara) {
-    result = resultPara;
+  void SetResult(VersionSt &resultPara) {
+    result = &resultPara;
   }
 
-  MapleVector<VersionSt*> &GetPhiOpns() {
+  MapleVector<VersionSt*> &GetPhiOpnds() {
     return phiOpnds;
   }
 
@@ -51,59 +52,63 @@ class PhiNode {
     return phiOpnds.at(index);
   }
 
-  void SetPhiOpnd(size_t index, VersionSt *opnd) {
+  void SetPhiOpnd(size_t index, VersionSt &opnd) {
     CHECK_FATAL(index < phiOpnds.size(), "out of range in PhiNode::SetPhiOpnd");
-    phiOpnds[index] = opnd;
+    phiOpnds[index] = &opnd;
   }
 
-  void SetPhiOpns(MapleVector<VersionSt*> phiOpndsPara) {
+  void SetPhiOpnds(MapleVector<VersionSt*> phiOpndsPara) {
     phiOpnds = phiOpndsPara;
   }
 
  private:
   VersionSt *result;
+  static constexpr uint32 kNumOpnds = 2;
   MapleVector<VersionSt*> phiOpnds;
 };
 
 class SSA {
  public:
-  SSA(MemPool *memPool, SSATab *stab)
-      : ssaAlloc(memPool),
+  SSA(MemPool &memPool, SSATab &stab)
+      : ssaAlloc(&memPool),
         vstStacks(ssaAlloc.Adapter()),
         vstVersions(ssaAlloc.Adapter()),
         bbRenamed(ssaAlloc.Adapter()),
-        ssaTab(stab) {}
+        ssaTab(&stab) {}
 
-  virtual ~SSA() {}
+  virtual ~SSA() = default;
 
-  void InitRenameStack(OriginalStTable*, size_t, VersionStTable&);
-  VersionSt *CreateNewVersion(VersionSt *vsym, BB *defBB);
-  void RenamePhi(BB *bb);
-  void RenameDefs(StmtNode *stmt, BB *defBB);
-  void RenameMustDefs(const StmtNode *stmt, BB *defBB);
-  void RenameExpr(BaseNode *expr);
-  void RenameUses(StmtNode *stmt);
-  void RenamePhiUseInSucc(BB *bb);
-  void RenameMayUses(BaseNode *node);
+  void InitRenameStack(OriginalStTable&, size_t, VersionStTable&);
+  VersionSt *CreateNewVersion(VersionSt &vsym, BB &defBB);
+  void RenamePhi(BB &bb);
+  void RenameDefs(StmtNode &stmt, BB &defBB);
+  void RenameMustDefs(const StmtNode &stmt, BB &defBB);
+  void RenameExpr(BaseNode &expr);
+  void RenameUses(StmtNode &stmt);
+  void RenamePhiUseInSucc(BB &bb);
+  void RenameMayUses(BaseNode &node);
 
-  const MapleAllocator &GetSsaAlloc() const {
+  MapleAllocator &GetSSAAlloc() {
     return ssaAlloc;
   }
 
-  MapleVector<MapleStack<VersionSt*>*> &GetVstStacks() {
+  const MapleVector<MapleStack<VersionSt*>*> &GetVstStacks() const {
     return vstStacks;
   }
 
-  MapleStack<VersionSt*> *GetVstStack(size_t idx) {
+  const MapleStack<VersionSt*> *GetVstStack(size_t idx) const {
     ASSERT(idx < vstStacks.size(), "out of range of vstStacks");
     return vstStacks.at(idx);
+  }
+  void PopVersionSt(size_t idx) {
+    vstStacks.at(idx)->pop();
   }
 
   MapleVector<bool> &GetBBsRenamed() {
     return bbRenamed;
   }
 
-  bool GetBBRenamed(size_t idx) {
+  bool GetBBRenamed(size_t idx) const {
     ASSERT(idx < bbRenamed.size(), "BBId out of range");
     return bbRenamed.at(idx);
   }
@@ -119,11 +124,10 @@ class SSA {
 
  private:
   MapleAllocator ssaAlloc;
-  MapleVector<MapleStack<VersionSt*>*> vstStacks;  // rename stack for variable versions
-  MapleVector<int32> vstVersions;                    //  maxium version for variables
-  MapleVector<bool> bbRenamed;                       //   indicate bb is renamed or not
+  MapleVector<MapleStack<VersionSt*>*> vstStacks;    // rename stack for variable versions
+  MapleVector<int32> vstVersions;                    // maxium version for variables
+  MapleVector<bool> bbRenamed;                       // indicate bb is renamed or not
   SSATab *ssaTab;
 };
-
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_SSA_H

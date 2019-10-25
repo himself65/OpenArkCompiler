@@ -33,48 +33,47 @@
 //            the original fallthru
 //    (3) For goto curBB see if goto target can be placed as next.
 // 5. do step 3 for nextBB until all bbs are laid out
-
 namespace maple {
-static void CreateGoto(BB *bb, MeFunction *func, BB *fallthru) {
-  if (fallthru->GetBBLabel() == 0) {
-    func->CreateBBLabel(fallthru);
+static void CreateGoto(BB &bb, MeFunction &func, BB &fallthru) {
+  if (fallthru.GetBBLabel() == 0) {
+    func.CreateBBLabel(fallthru);
   }
-  if (func->GetIRMap() != nullptr) {
+  if (func.GetIRMap() != nullptr) {
     GotoNode stmt(OP_goto);
-    GotoMeStmt *newGoto = func->GetIRMap()->New<GotoMeStmt>(&stmt);
-    newGoto->SetOffset(fallthru->GetBBLabel());
-    bb->AddMeStmtLast(newGoto);
+    GotoMeStmt *newGoto = func.GetIRMap()->New<GotoMeStmt>(&stmt);
+    newGoto->SetOffset(fallthru.GetBBLabel());
+    bb.AddMeStmtLast(newGoto);
   } else {
-    GotoNode *newGoto = func->GetMirFunc()->GetCodeMempool()->New<GotoNode>(OP_goto);
-    newGoto->SetOffset(fallthru->GetBBLabel());
-    bb->AddStmtNode(newGoto);
+    GotoNode *newGoto = func.GetMirFunc()->GetCodeMempool()->New<GotoNode>(OP_goto);
+    newGoto->SetOffset(fallthru.GetBBLabel());
+    bb.AddStmtNode(newGoto);
   }
-  bb->SetKind(kBBGoto);
+  bb.SetKind(kBBGoto);
 }
 
 // return true if bb is empty and its kind is fallthru.
-bool BBLayout::BBEmptyAndFallthru(const BB *bb) {
-  if (bb->GetAttributes(kBBAttrIsTryEnd)) {
+bool BBLayout::BBEmptyAndFallthru(const BB &bb) {
+  if (bb.GetAttributes(kBBAttrIsTryEnd)) {
     return false;
   }
-  if (bb->GetKind() == kBBFallthru) {
-    if (func->GetIRMap() != nullptr) {
-      return bb->IsMeStmtEmpty();
+  if (bb.GetKind() == kBBFallthru) {
+    if (func.GetIRMap() != nullptr) {
+      return bb.IsMeStmtEmpty();
     } else {
-      return bb->IsEmpty();
+      return bb.IsEmpty();
     }
   }
   return false;
 }
 
 // Return true if bb only has conditonal branch stmt except comment
-bool BBLayout::BBContainsOnlyCondGoto(BB *bb) {
-  if (bb->GetAttributes(kBBAttrIsTryEnd)) {
+bool BBLayout::BBContainsOnlyCondGoto(const BB &bb) const {
+  if (bb.GetAttributes(kBBAttrIsTryEnd)) {
     return false;
   }
-  if (bb->GetKind() == kBBCondGoto) {
-    if (func->GetIRMap() != nullptr) {
-      auto &meStmts = bb->GetMeStmts();
+  if (bb.GetKind() == kBBCondGoto) {
+    if (func.GetIRMap() != nullptr) {
+      auto &meStmts = bb.GetMeStmts();
       if (meStmts.empty()) {
         return false;
       }
@@ -83,19 +82,19 @@ bool BBLayout::BBContainsOnlyCondGoto(BB *bb) {
           return false;
         }
       }
-      return (meStmts.back().IsCondBr());
+      return meStmts.back().IsCondBr();
     } else {
-      StmtNode *stmt = bb->GetStmtNodes().begin().d();
+      StmtNode *stmt = bb.GetStmtNodes().begin().d();
       if (stmt == nullptr) {
         return false;
       }
-      auto &stmtNodes = bb->GetStmtNodes();
+      auto &stmtNodes = bb.GetStmtNodes();
       for (auto itStmt = stmtNodes.begin(); itStmt != stmtNodes.rbegin().base(); ++itStmt) {
         if (!itStmt->IsCondBr() && itStmt->GetOpCode() != OP_comment) {
           return false;
         }
       }
-      return (bb->GetStmtNodes().back().IsCondBr());
+      return bb.GetStmtNodes().back().IsCondBr();
     }
   }
   return false;
@@ -135,13 +134,13 @@ static Opcode GetOppositeOp(Opcode opc1) {
   return opc;
 }
 
-bool BBLayout::BBContainsOnlyGoto(BB *bb) {
-  if (bb->GetAttributes(kBBAttrIsTryEnd)) {
+bool BBLayout::BBContainsOnlyGoto(const BB &bb) const {
+  if (bb.GetAttributes(kBBAttrIsTryEnd)) {
     return false;
   }
-  if (bb->GetKind() == kBBGoto) {
-    if (func->GetIRMap() != nullptr) {
-      auto &meStmts = bb->GetMeStmts();
+  if (bb.GetKind() == kBBGoto) {
+    if (func.GetIRMap() != nullptr) {
+      auto &meStmts = bb.GetMeStmts();
       if (meStmts.empty()) {
         return false;
       }
@@ -152,18 +151,18 @@ bool BBLayout::BBContainsOnlyGoto(BB *bb) {
       }
       return meStmts.back().GetOp() == OP_goto;
     } else {
-      StmtNode *stmt = bb->GetStmtNodes().begin().d();
+      StmtNode *stmt = bb.GetStmtNodes().begin().d();
       if (stmt == nullptr) {
         return false;
       }
 
-      auto &stmtNodes = bb->GetStmtNodes();
+      auto &stmtNodes = bb.GetStmtNodes();
       for (auto itStmt = stmtNodes.begin(); itStmt != stmtNodes.rbegin().base(); ++itStmt) {
         if (itStmt->GetOpCode() != OP_goto && itStmt->GetOpCode() != OP_comment) {
           return false;
         }
       }
-      return bb->GetStmtNodes().back().GetOpCode() == OP_goto;
+      return bb.GetStmtNodes().back().GetOpCode() == OP_goto;
     }
   }
   return false;
@@ -176,26 +175,26 @@ bool BBLayout::BBContainsOnlyGoto(BB *bb) {
 //   toafter_bb are both not in try block.
 // The other case is fromBB has one predecessor and one successor and
 // contains only goto stmt.
-bool BBLayout::BBCanBeMoved(BB *fromBB, const BB *toAfterBB) {
-  if (fromBB->GetPred().size() > 1) {
+bool BBLayout::BBCanBeMoved(const BB &fromBB, const BB &toAfterBB) const {
+  if (fromBB.GetPred().size() > 1) {
     return false;
   }
-  if (laidOut[fromBB->GetBBId().idx]) {
+  if (laidOut[fromBB.GetBBId().idx]) {
     return false;
   }
-  if (fromBB->GetAttributes(kBBAttrArtificial) ||
-      (!fromBB->GetAttributes(kBBAttrIsTry) && !toAfterBB->GetAttributes(kBBAttrIsTry))) {
-    return fromBB->GetSucc().size() == 1;
+  if (fromBB.GetAttributes(kBBAttrArtificial) ||
+      (!fromBB.GetAttributes(kBBAttrIsTry) && !toAfterBB.GetAttributes(kBBAttrIsTry))) {
+    return fromBB.GetSucc().size() == 1;
   }
   return BBContainsOnlyGoto(fromBB);
 }
 
 // Return true if bb1 and bb2 has the branch conditon.such as
 // bb1 : brfalse (a > 3)  bb2: brfalse (a > 3)/ brtrue (a <= 3)
-bool BBLayout::HasSameBranchCond(BB *bb1, BB *bb2) {
-  if (func->GetIRMap() != nullptr) {
-    CondGotoMeStmt &meStmt1 = static_cast<CondGotoMeStmt&>(bb1->GetMeStmts().back());
-    CondGotoMeStmt &meStmt2 = static_cast<CondGotoMeStmt&>(bb2->GetMeStmts().back());
+bool BBLayout::HasSameBranchCond(BB &bb1, BB &bb2) const {
+  if (func.GetIRMap() != nullptr) {
+    CondGotoMeStmt &meStmt1 = static_cast<CondGotoMeStmt&>(bb1.GetMeStmts().back());
+    CondGotoMeStmt &meStmt2 = static_cast<CondGotoMeStmt&>(bb2.GetMeStmts().back());
     MeExpr *expr1 = meStmt1.GetOpnd();
     MeExpr *expr2 = meStmt2.GetOpnd();
     // Compare the opcode.
@@ -218,8 +217,8 @@ bool BBLayout::HasSameBranchCond(BB *bb1, BB *bb2) {
       return false;
     }
   } else {
-    CondGotoNode &stmt1 = static_cast<CondGotoNode&>(bb1->GetStmtNodes().back());
-    CondGotoNode &stmt2 = static_cast<CondGotoNode&>(bb2->GetStmtNodes().back());
+    CondGotoNode &stmt1 = static_cast<CondGotoNode&>(bb1.GetStmtNodes().back());
+    CondGotoNode &stmt2 = static_cast<CondGotoNode&>(bb2.GetStmtNodes().back());
     if (stmt1.GetOpCode() != stmt2.GetOpCode() && stmt1.GetOpCode() != GetOppositeOp(stmt2.GetOpCode())) {
       return false;
     }
@@ -248,9 +247,9 @@ bool BBLayout::HasSameBranchCond(BB *bb1, BB *bb2) {
 // (2) bb's last statement is a conditonal branch, if the branch target is a BB with a single
 // condtioal branch statement and has the same condtion as bb's last statement, optimize the
 // branch target to the eventual target.
-void BBLayout::OptimizeBranchTarget(BB *bb) {
-  if (func->GetIRMap() != nullptr) {
-    auto &meStmts = bb->GetMeStmts();
+void BBLayout::OptimizeBranchTarget(BB &bb) {
+  if (func.GetIRMap() != nullptr) {
+    auto &meStmts = bb.GetMeStmts();
     if (meStmts.empty()) {
       return;
     }
@@ -258,7 +257,7 @@ void BBLayout::OptimizeBranchTarget(BB *bb) {
       return;
     }
   } else {
-    auto &stmtNodes = bb->GetStmtNodes();
+    auto &stmtNodes = bb.GetStmtNodes();
     if (stmtNodes.rbegin().base().d() == nullptr) {
       return;
     }
@@ -267,17 +266,14 @@ void BBLayout::OptimizeBranchTarget(BB *bb) {
     }
   }
 start_:
-  ASSERT(!bb->GetSucc().empty(), "container check");
-  BB *brTargetBB = bb->GetSucc(0);
-  if (bb->GetKind() == kBBCondGoto) {
-    brTargetBB = bb->GetSucc(1);
-  }
+  ASSERT(!bb.GetSucc().empty(), "container check");
+  BB *brTargetBB = bb.GetKind() == kBBCondGoto ? bb.GetSucc(1) : bb.GetSucc(0);
   if (brTargetBB->GetAttributes(kBBAttrWontExit)) {
     return;
   }
-  if (!BBContainsOnlyGoto(brTargetBB) && !BBEmptyAndFallthru(brTargetBB) &&
-      !(bb->GetKind() == kBBCondGoto && brTargetBB->GetKind() == kBBCondGoto && bb != brTargetBB &&
-        BBContainsOnlyCondGoto(brTargetBB) && HasSameBranchCond(bb, brTargetBB))) {
+  if (!BBContainsOnlyGoto(*brTargetBB) && !BBEmptyAndFallthru(*brTargetBB) &&
+      !(bb.GetKind() == kBBCondGoto && brTargetBB->GetKind() == kBBCondGoto && &bb != brTargetBB &&
+        BBContainsOnlyCondGoto(*brTargetBB) && HasSameBranchCond(bb, *brTargetBB))) {
     return;
   }
   // optimize stmt
@@ -286,11 +282,11 @@ start_:
     newTargetBB = brTargetBB->GetSucc(1);
   }
   if (newTargetBB->GetBBLabel() == 0) {
-    func->CreateBBLabel(newTargetBB);
+    func.CreateBBLabel(*newTargetBB);
   }
   LabelIdx newTargetLabel = newTargetBB->GetBBLabel();
-  if (func->GetIRMap() != nullptr) {
-    auto &lastStmt = bb->GetMeStmts().back();
+  if (func.GetIRMap() != nullptr) {
+    auto &lastStmt = bb.GetMeStmts().back();
     if (lastStmt.GetOp() == OP_goto) {
       GotoMeStmt &gotoMeStmt = static_cast<GotoMeStmt&>(lastStmt);
       ASSERT(brTargetBB->GetBBLabel() == gotoMeStmt.GetOffset(), "OptimizeBranchTarget: wrong branch target BB");
@@ -301,7 +297,7 @@ start_:
       gotoMeStmt.SetOffset(newTargetLabel);
     }
   } else {
-    StmtNode &lastStmt = bb->GetStmtNodes().back();
+    StmtNode &lastStmt = bb.GetStmtNodes().back();
     if (lastStmt.GetOpCode() == OP_goto) {
       GotoNode &gotoNode = static_cast<GotoNode&>(lastStmt);
       ASSERT(brTargetBB->GetBBLabel() == gotoNode.GetOffset(), "OptimizeBranchTarget: wrong branch target BB");
@@ -313,13 +309,13 @@ start_:
     }
   }
   // update CFG
-  if (bb->GetKind() == kBBCondGoto) {
-    bb->SetSucc(1, newTargetBB);
+  if (bb.GetKind() == kBBCondGoto) {
+    bb.SetSucc(1, newTargetBB);
   } else {
-    bb->SetSucc(0, newTargetBB);
+    bb.SetSucc(0, newTargetBB);
   }
-  newTargetBB->GetPred().push_back(bb);
-  bb->RemoveBBFromVector(brTargetBB->GetPred());
+  newTargetBB->GetPred().push_back(&bb);
+  bb.RemoveBBFromVector(brTargetBB->GetPred());
   if (brTargetBB->GetPred().empty() && !laidOut[brTargetBB->GetBBId().idx]) {
     laidOut[brTargetBB->GetBBId().idx] = true;
     brTargetBB->RemoveBBFromVector(newTargetBB->GetPred());
@@ -327,52 +323,48 @@ start_:
   goto start_;  // repeat until no more opportunity
 }
 
-void BBLayout::AddBB(BB *bb) {
-  CHECK_FATAL(bb->GetBBId().idx < laidOut.size(), "index oout of range in BBLayout::AddBB");
-  ASSERT(!laidOut[bb->GetBBId().idx], "AddBB: bb already laid out");
-  layoutBBs.push_back(bb);
-  CHECK_FATAL(bb->GetBBId().idx < laidOut.size(), "index out of range in BBLayout::AddBB");
-  laidOut[bb->GetBBId().idx] = true;
-  if (DEBUGFUNC(func)) {
-    LogInfo::MapleLogger() << "bb id " << bb->GetBBId().idx << " kind is " << bb->StrAttribute();
+void BBLayout::AddBB(BB &bb) {
+  CHECK_FATAL(bb.GetBBId().idx < laidOut.size(), "index out of range in BBLayout::AddBB");
+  ASSERT(!laidOut[bb.GetBBId().idx], "AddBB: bb already laid out");
+  layoutBBs.push_back(&bb);
+  laidOut[bb.GetBBId().idx] = true;
+  if (DEBUGFUNC((&func))) {
+    LogInfo::MapleLogger() << "bb id " << bb.GetBBId().idx << " kind is " << bb.StrAttribute();
   }
   bool isTry = false;
-  if (func->GetIRMap() != nullptr) {
-    isTry = !bb->GetMeStmts().empty() && bb->GetMeStmts().front().GetOp() == OP_try;
+  if (func.GetIRMap() != nullptr) {
+    isTry = !bb.GetMeStmts().empty() && bb.GetMeStmts().front().GetOp() == OP_try;
   } else {
-    isTry = !bb->GetStmtNodes().empty() && bb->GetStmtNodes().front().GetOpCode() == OP_try;
+    isTry = !bb.GetStmtNodes().empty() && bb.GetStmtNodes().front().GetOpCode() == OP_try;
   }
   if (isTry) {
     ASSERT(!tryOutstanding, "BBLayout::AddBB: cannot lay out another try without ending the last one");
     tryOutstanding = true;
-    if (DEBUGFUNC(func)) {
+    if (DEBUGFUNC((&func))) {
       LogInfo::MapleLogger() << " try";
     }
   }
-  if (bb->GetAttributes(kBBAttrIsTryEnd) && func->GetMIRModule().IsJavaModule()) {
+  if (bb.GetAttributes(kBBAttrIsTryEnd) && func.GetMIRModule().IsJavaModule()) {
     tryOutstanding = false;
-    if (DEBUGFUNC(func)) {
+    if (DEBUGFUNC((&func))) {
       LogInfo::MapleLogger() << " endtry";
     }
   }
-  if (DEBUGFUNC(func)) {
-    LogInfo::MapleLogger() << std::endl;
+  if (DEBUGFUNC((&func))) {
+    LogInfo::MapleLogger() << '\n';
   }
   return;
 }
 
-BB *BBLayout::GetFallThruBBSkippingEmpty(BB *bb) {
-  ASSERT(bb->GetKind() == kBBFallthru || bb->GetKind() == kBBCondGoto, "GetFallThruSkippingEmpty: unexpected BB kind");
-  ASSERT(!bb->GetSucc().empty(), "container check");
-  BB *fallthru = bb->GetSucc().front();
+BB *BBLayout::GetFallThruBBSkippingEmpty(BB &bb) {
+  ASSERT(bb.GetKind() == kBBFallthru || bb.GetKind() == kBBCondGoto, "GetFallThruSkippingEmpty: unexpected BB kind");
+  ASSERT(!bb.GetSucc().empty(), "container check");
+  BB *fallthru = bb.GetSucc().front();
   do {
-    if (fallthru->GetPred().size() > 1) {
+    if (fallthru->GetPred().size() > 1 || fallthru->GetAttributes(kBBAttrIsTryEnd)) {
       return fallthru;
     }
-    if (fallthru->GetAttributes(kBBAttrIsTryEnd)) {
-      return fallthru;
-    }
-    if (func->GetIRMap() != nullptr) {
+    if (func.GetIRMap() != nullptr) {
       if (!fallthru->IsMeStmtEmpty()) {
         return fallthru;
       }
@@ -382,42 +374,42 @@ BB *BBLayout::GetFallThruBBSkippingEmpty(BB *bb) {
       }
     }
     laidOut[fallthru->GetBBId().idx] = true;
-    fallthru->RemoveBBFromPred(bb);
+    fallthru->RemoveBBFromPred(&bb);
     BB *oldFallthru = fallthru;
     fallthru = oldFallthru->GetSucc().front();
-    bb->ReplaceSucc(oldFallthru, fallthru);
+    bb.ReplaceSucc(oldFallthru, fallthru);
   } while (true);
 }
 
 // bb end with a goto statement; remove the goto stmt if its target
 // is its fallthru nextBB.
-void BBLayout::ChangeToFallthruFromGoto(BB *bb) {
-  ASSERT(bb->GetKind() == kBBGoto, "ChangeToFallthruFromGoto: unexpected BB kind");
-  if (func->GetIRMap() != nullptr) {
-    bb->RemoveMeStmt(to_ptr(bb->GetMeStmts().rbegin()));
+void BBLayout::ChangeToFallthruFromGoto(BB &bb) {
+  ASSERT(bb.GetKind() == kBBGoto, "ChangeToFallthruFromGoto: unexpected BB kind");
+  if (func.GetIRMap() != nullptr) {
+    bb.RemoveMeStmt(to_ptr(bb.GetMeStmts().rbegin()));
   } else {
-    bb->RemoveLastStmt();
+    bb.RemoveLastStmt();
   }
-  bb->SetKind(kBBFallthru);
+  bb.SetKind(kBBFallthru);
 }
 
 // bb does not end with a branch statement; if its fallthru is not nextBB,
 // perform the fix by either laying out the fallthru immediately or adding a goto
-void BBLayout::ResolveUnconditionalFallThru(BB *bb, BB *nextBB) {
-  ASSERT(bb->GetKind() == kBBFallthru || bb->GetKind() == kBBGoto, "ResolveUnconditionalFallThru: unexpected BB kind");
-  if (bb->GetKind() == kBBGoto) {
+void BBLayout::ResolveUnconditionalFallThru(BB &bb, BB &nextBB) {
+  ASSERT(bb.GetKind() == kBBFallthru || bb.GetKind() == kBBGoto, "ResolveUnconditionalFallThru: unexpected BB kind");
+  if (bb.GetKind() == kBBGoto) {
     return;
   }
-  ASSERT(bb->GetAttributes(kBBAttrIsTry) || bb->GetAttributes(kBBAttrWontExit) || bb->GetSucc().size() == 1,
+  ASSERT(bb.GetAttributes(kBBAttrIsTry) || bb.GetAttributes(kBBAttrWontExit) || bb.GetSucc().size() == 1,
          "runtime check error");
   BB *fallthru = GetFallThruBBSkippingEmpty(bb);
-  if (fallthru != nextBB) {
-    if (BBCanBeMoved(fallthru, bb)) {
-      AddBB(fallthru);
-      ResolveUnconditionalFallThru(fallthru, nextBB);
-      OptimizeBranchTarget(fallthru);
+  if (fallthru != &nextBB) {
+    if (BBCanBeMoved(*fallthru, bb)) {
+      AddBB(*fallthru);
+      ResolveUnconditionalFallThru(*fallthru, nextBB);
+      OptimizeBranchTarget(*fallthru);
     } else {
-      CreateGoto(bb, func, fallthru);
+      CreateGoto(bb, func, *fallthru);
       OptimizeBranchTarget(bb);
     }
   }
@@ -426,14 +418,14 @@ void BBLayout::ResolveUnconditionalFallThru(BB *bb, BB *nextBB) {
 AnalysisResult *MeDoBBLayout::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) {
   // mempool used in analysisresult
   MemPool *layoutMp = NewMemPool();
-  BBLayout *bbLayout = layoutMp->New<BBLayout>(layoutMp, func);
+  BBLayout *bbLayout = layoutMp->New<BBLayout>(*layoutMp, *func);
   // assume common_entry_bb is always bb 0
   ASSERT(func->front() == func->GetCommonEntryBB(), "assume bb[0] is the commont entry bb");
   BB *bb = func->GetFirstBB();
   while (bb != nullptr) {
-    bbLayout->AddBB(bb);
+    bbLayout->AddBB(*bb);
     if (bb->GetKind() == kBBCondGoto || bb->GetKind() == kBBGoto) {
-      bbLayout->OptimizeBranchTarget(bb);
+      bbLayout->OptimizeBranchTarget(*bb);
     }
     BB *nextBB = bbLayout->NextBB();
     if (nextBB != nullptr) {
@@ -447,21 +439,21 @@ AnalysisResult *MeDoBBLayout::Run(MeFunction *func, MeFuncResultMgr *m, ModuleRe
       }
       ASSERT(!(isTry && bbLayout->GetTryOutstanding()), "cannot emit another try if last try has not been ended");
       if (nextBB->GetAttributes(kBBAttrIsTryEnd)) {
-        ASSERT(func->GetEndTryBB2TryBB()[nextBB] == nextBB ||
-               bbLayout->IsBBLaidOut(func->GetEndTryBB2TryBB()[nextBB]->GetBBId()),
+        ASSERT(func->GetTryBBFromEndTryBB(nextBB) == nextBB ||
+               bbLayout->IsBBLaidOut(func->GetTryBBFromEndTryBB(nextBB)->GetBBId()),
                "cannot emit endtry bb before its corresponding try bb");
       }
     }
     // based on nextBB, may need to fix current bb's fall-thru
     if (bb->GetKind() == kBBFallthru) {
-      bbLayout->ResolveUnconditionalFallThru(bb, nextBB);
+      bbLayout->ResolveUnconditionalFallThru(*bb, *nextBB);
     } else if (bb->GetKind() == kBBCondGoto) {
-      BB *fallthru = bbLayout->GetFallThruBBSkippingEmpty(bb);
+      BB *fallthru = bbLayout->GetFallThruBBSkippingEmpty(*bb);
       BB *brTargetBB = bb->GetSucc(1);
-      if (brTargetBB != fallthru && fallthru->GetPred().size() > 1 && bbLayout->BBCanBeMoved(brTargetBB, bb)) {
+      if (brTargetBB != fallthru && fallthru->GetPred().size() > 1 && bbLayout->BBCanBeMoved(*brTargetBB, *bb)) {
         // flip the sense of the condgoto and lay out brTargetBB right here
         if (fallthru->GetBBLabel() == 0) {
-          func->CreateBBLabel(fallthru);
+          func->CreateBBLabel(*fallthru);
         }
         if (func->GetIRMap() != nullptr) {
           CondGotoMeStmt &condGotoMeStmt = static_cast<CondGotoMeStmt&>(bb->GetMeStmts().back());
@@ -474,14 +466,14 @@ AnalysisResult *MeDoBBLayout::Run(MeFunction *func, MeFuncResultMgr *m, ModuleRe
           condGotoNode.SetOffset(fallthru->GetBBLabel());
           condGotoNode.SetOpCode((condGotoNode.GetOpCode() == OP_brtrue) ? OP_brfalse : OP_brtrue);
         }
-        bbLayout->AddBB(brTargetBB);
-        bbLayout->ResolveUnconditionalFallThru(brTargetBB, nextBB);
-        bbLayout->OptimizeBranchTarget(brTargetBB);
+        bbLayout->AddBB(*brTargetBB);
+        bbLayout->ResolveUnconditionalFallThru(*brTargetBB, *nextBB);
+        bbLayout->OptimizeBranchTarget(*brTargetBB);
       } else if (fallthru != nextBB) {
-        if (bbLayout->BBCanBeMoved(fallthru, bb)) {
-          bbLayout->AddBB(fallthru);
-          bbLayout->ResolveUnconditionalFallThru(fallthru, nextBB);
-          bbLayout->OptimizeBranchTarget(fallthru);
+        if (bbLayout->BBCanBeMoved(*fallthru, *bb)) {
+          bbLayout->AddBB(*fallthru);
+          bbLayout->ResolveUnconditionalFallThru(*fallthru, *nextBB);
+          bbLayout->OptimizeBranchTarget(*fallthru);
         } else {
           // create a new fallthru that contains a goto to the original fallthru
           BB *newFallthru = func->NewBasicBlock();
@@ -490,7 +482,7 @@ AnalysisResult *MeDoBBLayout::Run(MeFunction *func, MeFuncResultMgr *m, ModuleRe
           newFallthru->SetKind(kBBGoto);
           bbLayout->SetNewBBInLayout();
           if (fallthru->GetBBLabel() == 0) {
-            func->CreateBBLabel(fallthru);
+            func->CreateBBLabel(*fallthru);
           }
           if (func->GetIRMap() != nullptr) {
             GotoNode stmt(OP_goto);
@@ -511,10 +503,10 @@ AnalysisResult *MeDoBBLayout::Run(MeFunction *func, MeFuncResultMgr *m, ModuleRe
           newFallthru->GetSucc().push_back(fallthru);
           newFallthru->SetFrequency(fallthru->GetFrequency());
           if (DEBUGFUNC(func)) {
-            LogInfo::MapleLogger() << "Created fallthru and goto original fallthru" << std::endl;
+            LogInfo::MapleLogger() << "Created fallthru and goto original fallthru" << '\n';
           }
-          bbLayout->AddBB(newFallthru);
-          bbLayout->OptimizeBranchTarget(newFallthru);
+          bbLayout->AddBB(*newFallthru);
+          bbLayout->OptimizeBranchTarget(*newFallthru);
         }
       }
     }
@@ -523,20 +515,20 @@ AnalysisResult *MeDoBBLayout::Run(MeFunction *func, MeFuncResultMgr *m, ModuleRe
       BB *gotoTarget = bb->GetSucc().front();
       CHECK_FATAL(gotoTarget != nullptr, "null ptr check");
 
-      if (gotoTarget != nextBB && bbLayout->BBCanBeMoved(gotoTarget, bb)) {
-        bbLayout->AddBB(gotoTarget);
-        bbLayout->ChangeToFallthruFromGoto(bb);
-        bbLayout->ResolveUnconditionalFallThru(gotoTarget, nextBB);
-        bbLayout->OptimizeBranchTarget(gotoTarget);
+      if (gotoTarget != nextBB && bbLayout->BBCanBeMoved(*gotoTarget, *bb)) {
+        bbLayout->AddBB(*gotoTarget);
+        bbLayout->ChangeToFallthruFromGoto(*bb);
+        bbLayout->ResolveUnconditionalFallThru(*gotoTarget, *nextBB);
+        bbLayout->OptimizeBranchTarget(*gotoTarget);
       } else if (gotoTarget->GetKind() == kBBCondGoto && gotoTarget->GetPred().size() == 1) {
         BB *targetNext = gotoTarget->GetSucc().front();
-        if (targetNext != nextBB && bbLayout->BBCanBeMoved(targetNext, bb)) {
-          bbLayout->AddBB(gotoTarget);
-          bbLayout->ChangeToFallthruFromGoto(bb);
-          bbLayout->OptimizeBranchTarget(gotoTarget);
-          bbLayout->AddBB(targetNext);
-          bbLayout->ResolveUnconditionalFallThru(targetNext, nextBB);
-          bbLayout->OptimizeBranchTarget(targetNext);
+        if (targetNext != nextBB && bbLayout->BBCanBeMoved(*targetNext, *bb)) {
+          bbLayout->AddBB(*gotoTarget);
+          bbLayout->ChangeToFallthruFromGoto(*bb);
+          bbLayout->OptimizeBranchTarget(*gotoTarget);
+          bbLayout->AddBB(*targetNext);
+          bbLayout->ResolveUnconditionalFallThru(*targetNext, *nextBB);
+          bbLayout->OptimizeBranchTarget(*targetNext);
         }
       }
     }
@@ -545,7 +537,7 @@ AnalysisResult *MeDoBBLayout::Run(MeFunction *func, MeFuncResultMgr *m, ModuleRe
     }
     bb = nextBB;
   }
-  if (bbLayout->NewBBInLayout()) {
+  if (bbLayout->IsNewBBInLayout()) {
     m->InvalidAnalysisResult(MeFuncPhase_DOMINANCE, func);
   }
   if (DEBUGFUNC(func)) {
@@ -553,5 +545,4 @@ AnalysisResult *MeDoBBLayout::Run(MeFunction *func, MeFuncResultMgr *m, ModuleRe
   }
   return bbLayout;
 }
-
 }  // namespace maple

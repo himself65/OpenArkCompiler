@@ -78,8 +78,8 @@ class MIRPragmaElement {
 
   ~MIRPragmaElement() = default;
   void Dump(int indent);
-  void PushSubElemVec(MIRPragmaElement *elem) {
-    subElemVec.push_back(elem);
+  void PushSubElemVec(MIRPragmaElement &elem) {
+    subElemVec.push_back(&elem);
   }
 
   const MapleVector<MIRPragmaElement*> &GetSubElemVec() const {
@@ -188,8 +188,8 @@ class MIRPragma {
   ~MIRPragma() = default;
   MIRPragmaElement *GetPragmaElemFromSignature(const std::string &signature);
   void Dump(int indent);
-  void PushElementVector(MIRPragmaElement *elem) {
-    elementVec.push_back(elem);
+  void PushElementVector(MIRPragmaElement &elem) {
+    elementVec.push_back(&elem);
   }
 
   void ClearElementVector() {
@@ -266,6 +266,5 @@ class MIRPragma {
   int32 paramNum;  // paramNum th param in function, -1 not for param annotation
   MapleVector<MIRPragmaElement*> elementVec;
 };
-
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_MIR_PRAGMA_H
