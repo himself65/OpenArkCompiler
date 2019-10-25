@@ -158,6 +158,7 @@ uint64_t GetUleb128Decode(uint64_t val);
 int64_t  GetSleb128Decode(uint64_t val);
 size_t GetUleb128Size(uint64_t val);
 size_t GetSleb128Size(int32_t val);
+bool NeedConvertUTF16(const std::string &str8);
 
 } // namespace NameMangler
 
