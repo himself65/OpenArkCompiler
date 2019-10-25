@@ -400,6 +400,9 @@ class MIRType {
   virtual void Dump(int indent, bool dontUseName = false) const;
   virtual void DumpAsCxx(int indent) const;
   virtual bool EqualTo(const MIRType &mirType) const;
+  virtual bool IsStructType() {
+    return false;
+  }
   virtual MIRType *CopyMIRTypeNode() const {
     return new MIRType(*this);
   }
@@ -746,6 +749,10 @@ class MIRStructType : public MIRType {
         hasVolatileFieldSet(false) {}
 
   ~MIRStructType() {}
+
+  bool IsStructType() override {
+    return true;
+  }
 
   FieldVector &GetFields() {
     return fields;
