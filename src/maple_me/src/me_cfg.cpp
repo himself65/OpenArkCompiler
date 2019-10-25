@@ -324,7 +324,7 @@ void MeCFG::FixMirCFG() {
           targetSt->ResetIsDeleted();
           if (stmt->GetOpCode() == OP_dassign) {
             BaseNode *rhs = static_cast<DassignNode*>(stmt)->GetRHS();
-            StmtNode *dassign = builder->CreateStmtDassign(targetSt, 0, rhs);
+            StmtNode *dassign = builder->CreateStmtDassign(*targetSt, 0, rhs);
             bb->ReplaceStmt(stmt, dassign);
             stmt = dassign;
           } else {
@@ -333,7 +333,7 @@ void MeCFG::FixMirCFG() {
             retPair.first = targetSt->GetStIdx();
             cnode->SetReturnPair(retPair, 0);
           }
-          StmtNode *dassign = builder->CreateStmtDassign(sym, 0, builder->CreateExprDread(targetSt));
+          StmtNode *dassign = builder->CreateStmtDassign(*sym, 0, builder->CreateExprDread(*targetSt));
           if (stmt->GetNext() != nullptr) {
             bb->InsertStmtBefore(stmt->GetNext(), dassign);
           } else {
@@ -466,10 +466,10 @@ void MeCFG::ConvertPhis2IdentityAssigns(BB &meBB) const {
     if (ost->IsSymbolOst() && ost->GetIndirectLev() == 0) {
       const MIRSymbol *st = ost->GetMIRSymbol();
       MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(st->GetTyIdx());
-      AddrofNode *dread = func.GetMIRModule().GetMIRBuilder()->CreateDread(st, GetRegPrimType(type->GetPrimType()));
+      AddrofNode *dread = func.GetMIRModule().GetMIRBuilder()->CreateDread(*st, GetRegPrimType(type->GetPrimType()));
       AddrofSSANode *dread2 = func.GetMirFunc()->GetCodeMemPool()->New<AddrofSSANode>(dread);
       dread2->SetSSAVar((*phiIt).second.GetPhiOpnd(0));
-      DassignNode *dassign = func.GetMIRModule().GetMIRBuilder()->CreateStmtDassign(st, 0, dread2);
+      DassignNode *dassign = func.GetMIRModule().GetMIRBuilder()->CreateStmtDassign(*st, 0, dread2);
       func.GetMeSSATab()->GetStmtsSSAPart().SetSSAPartOf(
           *dassign, func.GetMeSSATab()->GetStmtsSSAPart().GetSSAPartMp()->New<MayDefPartWithVersionSt>(
               &func.GetMeSSATab()->GetStmtsSSAPart().GetSSAPartAlloc()));

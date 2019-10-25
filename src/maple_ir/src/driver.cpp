@@ -26,8 +26,8 @@ using namespace maple;
 void ConstantFoldModule(maple::MIRModule &module) {
   MapleVector<maple::MIRFunction*> &funcList = module.GetFunctionList();
   for (auto it = funcList.begin(); it != funcList.end(); it++) {
-    maple::MIRFunction *curfun = *it;
-    module.SetCurFunction(curfun);
+    maple::MIRFunction *curFunc = *it;
+    module.SetCurFunction(curFunc);
   }
 }
 
@@ -52,32 +52,32 @@ int main(int argc, char **argv) {
   while (i < argc) {
     maple::MIRModule module{ argv[i] };
     if (flag == '\0') {
-      maple::MIRParser theparser(module);
-      if (theparser.ParseMIR()) {
+      maple::MIRParser theParser(module);
+      if (theParser.ParseMIR()) {
         ConstantFoldModule(module);
         module.OutputAsciiMpl(".irb");
       } else {
-        theparser.EmitError(module.GetFileName().c_str());
+        theParser.EmitError(module.GetFileName().c_str());
         return 1;
       }
     } else if (flag == 'e') {
-      maple::MIRParser theparser(module);
-      if (theparser.ParseMIR()) {
+      maple::MIRParser theParser(module);
+      if (theParser.ParseMIR()) {
         ConstantFoldModule(module);
-        BinaryMplt binmplt(module);
-        std::string modid = module.GetFileName();
-        binmplt.Export("bin." + modid);
+        BinaryMplt binMplt(module);
+        std::string modID = module.GetFileName();
+        binMplt.Export("bin." + modID);
       } else {
-        theparser.EmitError(module.GetFileName().c_str());
+        theParser.EmitError(module.GetFileName().c_str());
         return 1;
       }
     } else if (flag == 'i') {
       module.SetFlavor(kFeProduced);
       module.SetSrcLang(kSrcLangJava);
-      BinaryMplImport binmplt(module);
-      binmplt.SetImported(false);
-      std::string modid = module.GetFileName();
-      binmplt.Import(modid, true);
+      BinaryMplImport binMplt(module);
+      binMplt.SetImported(false);
+      std::string modID = module.GetFileName();
+      binMplt.Import(modID, true);
       module.OutputAsciiMpl(".irb");
     }
     i++;

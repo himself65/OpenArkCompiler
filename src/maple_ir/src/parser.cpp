@@ -458,7 +458,7 @@ bool MIRParser::ParsePragmaElementForArray(MIRPragmaElement &elem) {
       Error("parsing pragma error type ");
       return false;
     }
-    elem.PushSubElemVec(e0);
+    elem.PushSubElemVec(*e0);
     tk = lexer.NextToken();
     if (tk != kTkComa && tk != kTkRbrack) {
       Error("parsing pragma error: expecting , or ] but get ");
@@ -511,7 +511,7 @@ bool MIRParser::ParsePragmaElementForAnnotation(MIRPragmaElement &elem) {
       Error("parsing pragma error type ");
       return false;
     }
-    elem.PushSubElemVec(e0);
+    elem.PushSubElemVec(*e0);
     tk = lexer.NextToken();
     if (tk != kTkComa && tk != kTkRbrack) {
       Error("parsing pragma error: expecting , or ] but get ");
@@ -569,7 +569,7 @@ bool MIRParser::ParsePragma(MIRStructType &type) {
       Error("parsing pragma error type ");
       return false;
     }
-    p->PushElementVector(e);
+    p->PushElementVector(*e);
     tk = lexer.NextToken();
     if (tk != kTkRbrace && tk != kTkComa) {
       Error("parsing pragma error syntax ");
@@ -1514,7 +1514,7 @@ bool MIRParser::ParseTypedef() {
   } else {
     prevTyIdx = mod.GetTypeNameTab()->GetTyIdxFromGStrIdx(strIdx);
     mod.GetTypeNameTab()->SetGStrIdxToTyIdx(strIdx, tyIdx);
-    mod.GetTypeDefOrder().push_back(strIdx);
+    mod.PushbackTypeDefOrder(strIdx);
     ASSERT(GlobalTables::GetTypeTable().GetTypeTable().empty() == false, "container check");
     if (GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->GetNameStrIdx() == 0) {
       GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->SetNameStrIdx(strIdx);
@@ -1954,7 +1954,7 @@ bool MIRParser::ParseInitValue(MIRConstPtr &theConst, TyIdx tyIdx) {
       }
       lexer.NextToken();
     } else if (IsConstAddrExpr(tokenKind)) {
-      if (!ParseConstAddrLeafExpr(mirConst, type)) {
+      if (!ParseConstAddrLeafExpr(mirConst, *type)) {
         Error("ParseInitValue expect const addr expr");
         return false;
       }
@@ -1985,7 +1985,7 @@ bool MIRParser::ParseInitValue(MIRConstPtr &theConst, TyIdx tyIdx) {
           }
           lexer.NextToken();
         } else if (IsConstAddrExpr(tokenKind)) {
-          if (!ParseConstAddrLeafExpr(subConst, type)) {
+          if (!ParseConstAddrLeafExpr(subConst, *type)) {
             Error("ParseInitValue expect const addr expr");
             return false;
           }
@@ -2059,7 +2059,7 @@ bool MIRParser::ParseInitValue(MIRConstPtr &theConst, TyIdx tyIdx) {
           }
           lexer.NextToken();
         } else if (IsConstAddrExpr(tokenKind)) {
-          if (!ParseConstAddrLeafExpr(subConst, type)) {
+          if (!ParseConstAddrLeafExpr(subConst, *type)) {
             Error("ParseInitValue expect const addr expr");
             return false;
           }
@@ -2512,12 +2512,12 @@ bool MIRParser::ParseMIRForFileInfo() {
     tk = lexer.NextToken();
     if (tk == kTkIntconst) {
       uint32 fieldval = lexer.GetTheIntVal();
-      mod.GetFileInfo().push_back(MIRInfoPair(stridx, fieldval));
-      mod.GetFileInfoIsString().push_back(false);
+      mod.PushFileInfoPair(MIRInfoPair(stridx, fieldval));
+      mod.PushFileInfoIsString(false);
     } else if (tk == kTkString) {
       GStrIdx litstridx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName());
-      mod.GetFileInfo().push_back(MIRInfoPair(stridx, litstridx.GetIdx()));
-      mod.GetFileInfoIsString().push_back(true);
+      mod.PushFileInfoPair(MIRInfoPair(stridx, litstridx.GetIdx()));
+      mod.PushFileInfoIsString(true);
     } else {
       Error("illegal value after fileInfo field name at ");
       return false;
@@ -2554,7 +2554,7 @@ bool MIRParser::ParseMIRForFileData() {
       data.push_back(fieldval);
       tk = lexer.NextToken();
     }
-    mod.GetFileData().push_back(MIRDataPair(stridx, data));
+    mod.PushbackFileData(MIRDataPair(stridx, data));
     if (tk == kTkComa) {
       tk = lexer.NextToken();
     } else if (tk == kTkRbrace) {
@@ -2581,7 +2581,7 @@ bool MIRParser::ParseMIRForSrcFileInfo() {
     tk = lexer.NextToken();
     if (tk == kTkString) {
       GStrIdx stridx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName());
-      mod.GetSrcFileInfo().push_back(MIRInfoPair(stridx, fieldval));
+      mod.PushbackFileInfo(MIRInfoPair(stridx, fieldval));
     } else {
       Error("illegal value after srcfileinfo field name at ");
       return false;
@@ -2654,7 +2654,7 @@ bool MIRParser::ParseMIRForImport() {
   auto it = mod.GetImportFiles().begin();
   mod.GetImportFiles().insert(it, strIdx);
   // record the imported file for later reading summary info, if exists
-  mod.GetImportedMplt().push_back(importFileName);
+  mod.PushbackImportedMplt(importFileName);
   lexer.NextToken();
   return true;
 }
@@ -2666,7 +2666,7 @@ bool MIRParser::ParseMIRForImportPath() {
     return false;
   }
   GStrIdx litStrIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName());
-  mod.GetImportPaths().push_back(litStrIdx);
+  mod.PushbackImportPath(litStrIdx);
   lexer.NextToken();
   return true;
 }

@@ -1067,7 +1067,7 @@ MeExpr *IRMap::ReplaceMeExprExpr(MeExpr &origExpr, MeExpr &meExpr, MeExpr &repEx
       OpMeExpr &opMeExpr = static_cast<OpMeExpr&>(origExpr);
       OpMeExpr newMeExpr(opMeExpr, kInvalidExprID);
       bool needRehash = false;
-      for (uint32 i = 0; i < kOprandNumTernary; i++) {
+      for (uint32 i = 0; i < kOperandNumTernary; i++) {
         if (!opMeExpr.GetOpnd(i)) {
           continue;
         }
@@ -1292,7 +1292,7 @@ MeExpr *IRMap::CreateMeExprBinary(Opcode op, PrimType ptyp, MeExpr &expr0, MeExp
   OpMeExpr opmeexpr(kInvalidExprID);
   opmeexpr.SetOpnd(0, &expr0);
   opmeexpr.SetOpnd(1, &expr1);
-  opmeexpr.InitBase(op, ptyp, kOprandNumBinary);
+  opmeexpr.InitBase(op, ptyp, kOperandNumBinary);
   return HashMeExpr(opmeexpr);
 }
 
@@ -1301,7 +1301,7 @@ MeExpr *IRMap::CreateMeExprSelect(PrimType ptyp, MeExpr &expr0, MeExpr &expr1, M
   opmeexpr.SetOpnd(0, &expr0);
   opmeexpr.SetOpnd(1, &expr1);
   opmeexpr.SetOpnd(2, &expr2);
-  opmeexpr.InitBase(OP_select, ptyp, kOprandNumTernary);
+  opmeexpr.InitBase(OP_select, ptyp, kOperandNumTernary);
   return HashMeExpr(opmeexpr);
 }
 
@@ -1309,7 +1309,7 @@ MeExpr *IRMap::CreateMeExprCompare(Opcode op, PrimType resptyp, PrimType opndpty
   OpMeExpr opmeexpr(kInvalidExprID);
   opmeexpr.SetOpnd(0, &opnd0);
   opmeexpr.SetOpnd(1, &opnd1);
-  opmeexpr.InitBase(op, resptyp, kOprandNumBinary);
+  opmeexpr.InitBase(op, resptyp, kOperandNumBinary);
   opmeexpr.SetOpndType(opndptyp);
   MeExpr *retmeexpr = HashMeExpr(opmeexpr);
   static_cast<OpMeExpr*>(retmeexpr)->SetOpndType(opndptyp);
@@ -1319,7 +1319,7 @@ MeExpr *IRMap::CreateMeExprCompare(Opcode op, PrimType resptyp, PrimType opndpty
 MeExpr *IRMap::CreateMeExprTypeCvt(PrimType ptyp, PrimType opndptyp, MeExpr &opnd0) {
   OpMeExpr opmeexpr(kInvalidExprID);
   opmeexpr.SetOpnd(0, &opnd0);
-  opmeexpr.InitBase(OP_cvt, ptyp, kOprandNumUnary);
+  opmeexpr.InitBase(OP_cvt, ptyp, kOperandNumUnary);
   opmeexpr.SetOpndType(opndptyp);
   return HashMeExpr(opmeexpr);
 }

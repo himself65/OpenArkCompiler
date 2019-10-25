@@ -148,7 +148,7 @@ MIRType *TypeTable::GetOrCreateStructOrUnion(const std::string &name, const Fiel
   TyIdx tyidx = GetOrCreateMIRType(&type);
   // Global?
   module.GetTypeNameTab()->SetGStrIdxToTyIdx(stridx, tyidx);
-  module.GetTypeDefOrder().push_back(stridx);
+  module.PushbackTypeDefOrder(stridx);
   ASSERT(tyidx.GetIdx() < typeTable.size(), "index out of range in TypeTable::GetOrCreateStructOrUnion");
   return typeTable.at(tyidx.GetIdx());
 }
@@ -169,7 +169,7 @@ MIRType *TypeTable::GetOrCreateClassOrInterface(const std::string &name, MIRModu
       MIRInterfaceType type(kTypeInterfaceIncomplete, stridx);  // for interface type
       tyidx = GetOrCreateMIRType(&type);
     }
-    module.GetTypeDefOrder().push_back(stridx);
+    module.PushbackTypeDefOrder(stridx);
     module.GetTypeNameTab()->SetGStrIdxToTyIdx(stridx, tyidx);
     if (typeTable[tyidx.GetIdx()]->GetNameStrIdx() == 0) {
       typeTable[tyidx.GetIdx()]->SetNameStrIdx(stridx);

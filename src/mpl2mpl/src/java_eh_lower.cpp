@@ -53,9 +53,9 @@ BaseNode *JavaEHLowerer::DoLowerDiv(BinaryNode *expr, BlockNode *blknode) {
       } else {
         MIRSymbol *divOpndSymbol = mirBuilder->CreateSymbol(TyIdx(ptype), opnd1name.c_str(), kStVar, kScAuto,
                                                             GetModule()->CurFunction(), kScopeLocal);
-        DassignNode *dssDivNode = mirBuilder->CreateStmtDassign(divOpndSymbol, 0, divOpnd);
+        DassignNode *dssDivNode = mirBuilder->CreateStmtDassign(*divOpndSymbol, 0, divOpnd);
         blknode->AddStatement(dssDivNode);
-        divOpnd = mirBuilder->CreateExprDread(divOpndSymbol);
+        divOpnd = mirBuilder->CreateExprDread(*divOpndSymbol);
       }
       expr->SetBOpnd(divOpnd, 1);
     }
@@ -71,13 +71,13 @@ BaseNode *JavaEHLowerer::DoLowerDiv(BinaryNode *expr, BlockNode *blknode) {
       MIRSymbol *divResSymbol = mirBuilder->CreateSymbol(TyIdx(ptype), resName.c_str(), kStVar, kScAuto,
                                                          GetModule()->CurFunction(), kScopeLocal);
       // Put expr result to dssnode.
-      divStmt = mirBuilder->CreateStmtDassign(divResSymbol, 0, expr);
-      retExprNode = GetModule()->GetMIRBuilder()->CreateExprDread(divResSymbol, 0);
+      divStmt = mirBuilder->CreateStmtDassign(*divResSymbol, 0, expr);
+      retExprNode = GetModule()->GetMIRBuilder()->CreateExprDread(*divResSymbol, 0);
     }
     // Check if the second operand of the div expression is 0.
     // Inser if statement for high level ir.
-    CompareNode *cmpNode = mirBuilder->CreateExprCompare(OP_eq, GlobalTables::GetTypeTable().GetInt32(),
-                                                         GlobalTables::GetTypeTable().GetTypeFromTyIdx((TyIdx)ptype),
+    CompareNode *cmpNode = mirBuilder->CreateExprCompare(OP_eq, *GlobalTables::GetTypeTable().GetInt32(),
+                                                         *GlobalTables::GetTypeTable().GetTypeFromTyIdx((TyIdx)ptype),
                                                          divOpnd, mirBuilder->CreateIntConst(0, ptype));
     IfStmtNode *ifStmtNode = mirBuilder->CreateStmtIf(cmpNode);
     blknode->AddStatement(ifStmtNode);

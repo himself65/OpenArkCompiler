@@ -412,7 +412,7 @@ BaseNode *VtableAnalysis::GenVtabItabBaseAddr(BaseNode *obj, bool isVirtual) {
   BaseNode *classInfoAddress = ReflectionAnalysis::GenClassInfoAddr(obj, builder);
   MIRStructType *classMetadataType = static_cast<MIRStructType*>(
       GlobalTables::GetTypeTable().GetTypeFromTyIdx(ReflectionAnalysis::GetClassMetaDataTyIdx()));
-  return builder->CreateExprIread(voidPtrType, GlobalTables::GetTypeTable().GetOrCreatePointerType(*classMetadataType),
+  return builder->CreateExprIread(*voidPtrType, *GlobalTables::GetTypeTable().GetOrCreatePointerType(*classMetadataType),
                                   (isVirtual ? KLASS_VTAB_FIELDID : KLASS_ITAB_FIELDID), classInfoAddress);
 }
 
@@ -452,10 +452,10 @@ void VtableAnalysis::ReplaceVirtualInvoke(CallNode *stmt) {
   CHECK_FATAL(!stmt->GetNopnd().empty(), "container check");
   BaseNode *tabBaseAddress = GenVtabItabBaseAddr(stmt->GetNopndAt(0), true);
   BaseNode *addrNode =
-      builder->CreateExprBinary(OP_add, GlobalTables::GetTypeTable().GetPtr(), tabBaseAddress, offsetNode);
+      builder->CreateExprBinary(OP_add, *GlobalTables::GetTypeTable().GetPtr(), tabBaseAddress, offsetNode);
   BaseNode *readFuncPtr = builder->CreateExprIread(
-      GlobalTables::GetTypeTable().GetCompactPtr(),
-      GlobalTables::GetTypeTable().GetOrCreatePointerType(*GlobalTables::GetTypeTable().GetCompactPtr()), 0, addrNode);
+      *GlobalTables::GetTypeTable().GetCompactPtr(),
+      *GlobalTables::GetTypeTable().GetOrCreatePointerType(*GlobalTables::GetTypeTable().GetCompactPtr()), 0, addrNode);
   stmt->SetOpCode(OP_virtualicallassigned);
   stmt->GetNopnd().insert(stmt->GetNopnd().begin(), readFuncPtr);
   stmt->SetNumOpnds(stmt->GetNumOpnds() + 1);

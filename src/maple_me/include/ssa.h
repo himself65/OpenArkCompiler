@@ -26,7 +26,7 @@ class VersionStTable;
 class SSATab;
 class PhiNode {
  public:
-  PhiNode(MapleAllocator *alloc, VersionSt *vsym) : result(vsym), phiOpnds(kNumOpnds, nullptr, alloc->Adapter()) {
+  PhiNode(MapleAllocator &alloc, VersionSt &vsym) : result(&vsym), phiOpnds(kNumOpnds, nullptr, alloc.Adapter()) {
     phiOpnds.pop_back();
     phiOpnds.pop_back();
   }
@@ -39,8 +39,8 @@ class PhiNode {
     return result;
   }
 
-  void SetResult(VersionSt *resultPara) {
-    result = resultPara;
+  void SetResult(VersionSt &resultPara) {
+    result = &resultPara;
   }
 
   MapleVector<VersionSt*> &GetPhiOpnds() {
@@ -52,9 +52,9 @@ class PhiNode {
     return phiOpnds.at(index);
   }
 
-  void SetPhiOpnd(size_t index, VersionSt *opnd) {
+  void SetPhiOpnd(size_t index, VersionSt &opnd) {
     CHECK_FATAL(index < phiOpnds.size(), "out of range in PhiNode::SetPhiOpnd");
-    phiOpnds[index] = opnd;
+    phiOpnds[index] = &opnd;
   }
 
   void SetPhiOpnds(MapleVector<VersionSt*> phiOpndsPara) {
@@ -69,12 +69,12 @@ class PhiNode {
 
 class SSA {
  public:
-  SSA(MemPool *memPool, SSATab *stab)
-      : ssaAlloc(memPool),
+  SSA(MemPool &memPool, SSATab &stab)
+      : ssaAlloc(&memPool),
         vstStacks(ssaAlloc.Adapter()),
         vstVersions(ssaAlloc.Adapter()),
         bbRenamed(ssaAlloc.Adapter()),
-        ssaTab(stab) {}
+        ssaTab(&stab) {}
 
   virtual ~SSA() = default;
 

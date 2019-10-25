@@ -149,7 +149,7 @@ bool MIRParser::ParseStmtIassignoff(StmtNodePtr &stmt) {
     Error("expect offset but get ");
     return false;
   }
-  iassignoff->offset = lexer.GetTheIntVal();
+  iassignoff->SetOffset(lexer.GetTheIntVal());
   lexer.NextToken();
   BaseNode *addr = nullptr;
   BaseNode *rhs = nullptr;
@@ -2055,7 +2055,7 @@ bool MIRParser::ParseExprDepositbits(BaseNodePtr &expr) {
   return true;
 }
 
-bool MIRParser::ParseExprIreadIaddrof(IreadNode *expr) {
+bool MIRParser::ParseExprIreadIaddrof(IreadNode &expr) {
   // syntax : iread/iaddrof <prim-type> <type> <field-id> (<addr-expr>)
   if (!IsPrimitiveType(lexer.NextToken())) {
     Error("expect primitive type but get ");
@@ -2065,22 +2065,22 @@ bool MIRParser::ParseExprIreadIaddrof(IreadNode *expr) {
   if (!ParsePrimType(tyidx)) {
     return false;
   }
-  expr->SetPrimType(GlobalTables::GetTypeTable().GetPrimTypeFromTyIdx(tyidx));
+  expr.SetPrimType(GlobalTables::GetTypeTable().GetPrimTypeFromTyIdx(tyidx));
   tyidx = TyIdx(0);
   if (!ParseDerivedType(tyidx)) {
     Error("ParseExprIreadIaddrof failed when paring derived type");
     return false;
   }
-  expr->SetTyIdx(tyidx);
+  expr.SetTyIdx(tyidx);
   if (lexer.GetTokenKind() == kTkIntconst) {
-    expr->SetFieldID(lexer.theIntVal);
+    expr.SetFieldID(lexer.theIntVal);
     lexer.NextToken();
   }
   BaseNode *opnd0 = nullptr;
   if (!ParseExprOneOperand(opnd0)) {
     return false;
   }
-  expr->SetOpnd(opnd0);
+  expr.SetOpnd(opnd0);
   lexer.NextToken();
   return true;
 }
@@ -2088,7 +2088,7 @@ bool MIRParser::ParseExprIreadIaddrof(IreadNode *expr) {
 bool MIRParser::ParseExprIread(BaseNodePtr &expr) {
   // syntax : iread <prim-type> <type> <field-id> (<addr-expr>)
   IreadNode *iexpr = mod.CurFuncCodeMemPool()->New<IreadNode>(OP_iread);
-  if (!ParseExprIreadIaddrof(iexpr)) {
+  if (!ParseExprIreadIaddrof(*iexpr)) {
     Error("ParseExprIread failed when trying to parse addof");
     return false;
   }
@@ -2099,7 +2099,7 @@ bool MIRParser::ParseExprIread(BaseNodePtr &expr) {
 bool MIRParser::ParseExprIaddrof(BaseNodePtr &expr) {
   // syntax : iaddrof <prim-type> <type> <field-id> (<addr-expr>)
   IreadNode *iexpr = mod.CurFuncCodeMemPool()->New<IreadNode>(OP_iaddrof);
-  if (!ParseExprIreadIaddrof(iexpr)) {
+  if (!ParseExprIreadIaddrof(*iexpr)) {
     Error("ParseExprIaddrof failed when trying to parse addof");
     return false;
   }
@@ -2529,13 +2529,13 @@ bool MIRParser::ParseExprArray(BaseNodePtr &expr) {
   return true;
 }
 
-bool MIRParser::ParseIntrinsicId(IntrinsicopNode *intrnopnode) {
+bool MIRParser::ParseIntrinsicId(IntrinsicopNode &intrnopnode) {
   MIRIntrinsicID intrinid = GetIntrinsicId(lexer.GetTokenKind());
   if (intrinid <= INTRN_UNDEFINED || intrinid >= INTRN_LAST) {
     Error("wrong intrinsic id ");
     return false;
   }
-  intrnopnode->SetIntrinsic(intrinid);
+  intrnopnode.SetIntrinsic(intrinid);
   return true;
 }
 
@@ -2565,7 +2565,7 @@ bool MIRParser::ParseExprIntrinsicop(BaseNodePtr &expr) {
   IntrinsicopNode *intrnopnode = mod.CurFuncCodeMemPool()->New<IntrinsicopNode>(
       mod, opCode, GlobalTables::GetTypeTable().GetPrimTypeFromTyIdx(pTyIdx), tyIdx);
   expr = intrnopnode;
-  if (!ParseIntrinsicId(intrnopnode)) {
+  if (!ParseIntrinsicId(*intrnopnode)) {
     return false;
   }
   // number of operand can not be zero
@@ -2609,7 +2609,7 @@ bool MIRParser::ParseScalarValue(MIRConstPtr &stype, MIRType *type) {
   return true;
 }
 
-bool MIRParser::ParseConstAddrLeafExpr(MIRConstPtr &cexpr, MIRType *type) {
+bool MIRParser::ParseConstAddrLeafExpr(MIRConstPtr &cexpr, MIRType &type) {
   BaseNode *expr = nullptr;
   if (!ParseExpression(expr)) {
     return false;

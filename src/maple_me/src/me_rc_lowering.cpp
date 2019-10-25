@@ -70,7 +70,7 @@ void RCLowering::MarkAllRefOpnds() {
         continue;
       }
       if (lhsRef->GetMeOp() == kMeOpVar) {
-        VarMeExpr *var = static_cast<VarMeExpr*>(lhsRef);
+        auto *var = static_cast<VarMeExpr*>(lhsRef);
         cleanUpVars[var->GetOStIdx()] = var;
         ssaTab.UpdateVarOstMap(var->GetOStIdx(), varOStMap);
       }
@@ -138,7 +138,7 @@ MIRIntrinsicID RCLowering::PrepareVolatileCall(MeStmt &stmt, MIRIntrinsicID intr
 }
 
 IntrinsiccallMeStmt *RCLowering::GetVarRHSHandleStmt(MeStmt &stmt) {
-  VarMeExpr *var = static_cast<VarMeExpr*>(stmt.GetRHS());
+  auto *var = static_cast<VarMeExpr*>(stmt.GetRHS());
   const MIRSymbol *sym = ssaTab.GetMIRSymbolFromID(var->GetOStIdx());
   if (!sym->IsGlobal() || sym->IsFinal()) {
     return nullptr;
@@ -157,7 +157,7 @@ IntrinsiccallMeStmt *RCLowering::GetVarRHSHandleStmt(MeStmt &stmt) {
 }
 
 IntrinsiccallMeStmt *RCLowering::GetIvarRHSHandleStmt(MeStmt &stmt) {
-  IvarMeExpr *ivar = static_cast<IvarMeExpr*>(stmt.GetRHS());
+  auto *ivar = static_cast<IvarMeExpr*>(stmt.GetRHS());
   if (ivar->IsFinal()) {
     return nullptr;
   }
@@ -221,7 +221,7 @@ void RCLowering::HandleCallAssignedMeStmt(MeStmt &stmt, MeExpr *pendingDec) {
   if (lhs->GetMeOp() != kMeOpVar) {
     return;
   }
-  OriginalSt *ost = ssaTab.GetOriginalStFromID(static_cast<VarMeExpr*>(lhs)->GetOStIdx());
+  auto *ost = ssaTab.GetOriginalStFromID(static_cast<VarMeExpr*>(lhs)->GetOStIdx());
   if (!ost->IsSymbolOst()) {
     return;
   }
@@ -275,7 +275,7 @@ bool RCLowering::RCFirst(MeExpr &rhs) {
   if (rhs.GetMeOp() == kMeOpConst) {
     return static_cast<ConstMeExpr&>(rhs).IsZero();
   } else if (rhs.GetMeOp() == kMeOpVar) {
-    VarMeExpr &rhsVar = static_cast<VarMeExpr&>(rhs);
+    auto &rhsVar = static_cast<VarMeExpr&>(rhs);
     const MIRSymbol *sym = ssaTab.GetMIRSymbolFromID(rhsVar.GetOStIdx());
     return sym->IsLocal();
   }
@@ -400,20 +400,20 @@ bool RCLowering::IsInitialized(IvarMeExpr &ivar) {
     return true;
   }
   MIRType *baseType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ivar.GetTyIdx());
-  ASSERT(dynamic_cast<MIRPtrType*>(baseType), "unexpected type");
-  MIRType *ptype = static_cast<MIRPtrType*>(baseType)->GetPointedType();
+  ASSERT(dynamic_cast<MIRPtrType*>(baseType) != nullptr, "unexpected type");
+  auto *ptype = static_cast<MIRPtrType*>(baseType)->GetPointedType();
   MIRClassType *classType = dynamic_cast<MIRClassType*>(ptype);
   return classType == nullptr || !classType->IsOwnField(fieldID);
 }
 
 void RCLowering::HandleAssignMeStmtIvarLHS(MeStmt &stmt) {
-  IassignMeStmt &iassign = static_cast<IassignMeStmt&>(stmt);
+  auto &iassign = static_cast<IassignMeStmt&>(stmt);
   IvarMeExpr *lhsInner = iassign.GetLHSVal();
   FieldID fieldID = lhsInner->GetFieldID();
   MIRType *baseType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(lhsInner->GetTyIdx());
-  ASSERT(dynamic_cast<MIRPtrType*>(baseType), "unexpected type");
-  MIRType *ptype = static_cast<MIRPtrType*>(baseType)->GetPointedType();
-  MIRClassType *classType = dynamic_cast<MIRClassType*>(ptype);
+  ASSERT(dynamic_cast<MIRPtrType*>(baseType) != nullptr, "unexpected type");
+  auto *ptype = static_cast<MIRPtrType*>(baseType)->GetPointedType();
+  auto *classType = dynamic_cast<MIRClassType*>(ptype);
   // skip RC operation if the field is unowned
   if (classType != nullptr && classType->IsFieldRCUnownedRef(fieldID)) {
     return;
@@ -507,7 +507,7 @@ void RCLowering::InitializedObjectFields(MeStmt &stmt) {
   if (stmt.GetOp() != OP_callassigned) {
     return;
   }
-  CallMeStmt &call = static_cast<CallMeStmt&>(stmt);
+  auto &call = static_cast<CallMeStmt&>(stmt);
   MIRFunction *callee = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(call.GetPUIdx());
   if (call.NumMeStmtOpnds() == 0 || call.GetOpnd(0)->GetMeOp() != kMeOpVar) {
     return;
@@ -567,7 +567,7 @@ IntrinsiccallMeStmt *FindCleanupIntrinsic(MeStmt &ret) {
   auto &meStmts = ret.GetBB()->GetMeStmts();
   for (auto iter = meStmts.rbegin(); iter != meStmts.rend(); ++iter) {
     if (CheckOp(to_ptr(iter), OP_intrinsiccall)) {
-      IntrinsiccallMeStmt *intrinsicCall = static_cast<IntrinsiccallMeStmt*>(to_ptr(iter));
+      auto *intrinsicCall = static_cast<IntrinsiccallMeStmt*>(to_ptr(iter));
       if (intrinsicCall->GetIntrinsic() == INTRN_MPL_CLEANUP_LOCALREFVARS) {
         return intrinsicCall;
       }
@@ -577,7 +577,7 @@ IntrinsiccallMeStmt *FindCleanupIntrinsic(MeStmt &ret) {
 }
 
 void RCLowering::HandleReturnVar(RetMeStmt &ret) {
-  VarMeExpr *retVar = static_cast<VarMeExpr*>(ret.GetOpnd(0));
+  auto *retVar = static_cast<VarMeExpr*>(ret.GetOpnd(0));
   CHECK_FATAL(retVar != nullptr, "retVal null ptr check");
   MIRSymbol *sym = ssaTab.GetMIRSymbolFromID(retVar->GetOStIdx());
   if (sym != nullptr && sym->IgnoreRC()) {
@@ -600,7 +600,7 @@ void RCLowering::HandleReturnVar(RetMeStmt &ret) {
 void RCLowering::HandleReturnGlobal(RetMeStmt &ret) {
   BB *bb = ret.GetBB();
   CHECK_FATAL(bb != nullptr, "bb null ptr check");
-  VarMeExpr *retVar = static_cast<VarMeExpr*>(ret.GetOpnd(0));
+  auto *retVar = static_cast<VarMeExpr*>(ret.GetOpnd(0));
   CHECK_FATAL(retVar != nullptr, "retVal null ptr check");
   std::vector<MeExpr*> opnds = { irMap.CreateAddrofMeExpr(*retVar) };
   IntrinsiccallMeStmt *loadCall = CreateRCIntrinsic(INTRN_MCCLoadRefS, ret, opnds, true);
@@ -611,7 +611,7 @@ void RCLowering::HandleReturnGlobal(RetMeStmt &ret) {
 void RCLowering::HandleReturnRegread(RetMeStmt &ret) {
   BB *bb = ret.GetBB();
   CHECK_FATAL(bb != nullptr, "bb null ptr check");
-  VarMeExpr *retVar = static_cast<VarMeExpr*>(ret.GetOpnd(0));
+  auto *retVar = static_cast<VarMeExpr*>(ret.GetOpnd(0));
   CHECK_FATAL(retVar != nullptr, "retVal null ptr check");
   IntrinsiccallMeStmt *cleanup = FindCleanupIntrinsic(ret);
   if (cleanup == nullptr) {
@@ -635,7 +635,7 @@ void RCLowering::HandleReturnRegread(RetMeStmt &ret) {
 void RCLowering::HandleReturnFormal(RetMeStmt &ret) {
   BB *bb = ret.GetBB();
   CHECK_FATAL(bb != nullptr, "bb null ptr check");
-  VarMeExpr *retVar = static_cast<VarMeExpr*>(ret.GetOpnd(0));
+  auto *retVar = static_cast<VarMeExpr*>(ret.GetOpnd(0));
   CHECK_FATAL(retVar != nullptr, "retVal null ptr check");
   std::vector<MeExpr*> opnds = { retVar };
   IntrinsiccallMeStmt *increfStmt = CreateRCIntrinsic(INTRN_MCCIncRef, ret, opnds, true);
@@ -650,7 +650,7 @@ void RCLowering::HandleReturnFormal(RetMeStmt &ret) {
 
 void RCLowering::HandleReturnIvar(RetMeStmt &ret) {
   // insert calls
-  IvarMeExpr *retIvar = static_cast<IvarMeExpr*>(ret.GetOpnd(0));
+  auto *retIvar = static_cast<IvarMeExpr*>(ret.GetOpnd(0));
   if (retIvar->IsVolatile()) {
     std::vector<MeExpr*> opnds = { &retIvar->GetBase()->GetAddrExprBase(), irMap.CreateAddrofMeExpr(*retIvar) };
     IntrinsiccallMeStmt *loadCall = CreateRCIntrinsic(PrepareVolatileCall(ret, INTRN_MCCLoadRefVol), ret, opnds, true);
@@ -669,7 +669,7 @@ void RCLowering::HandleReturnReg(RetMeStmt &ret) {
    * if the register with ref value is defined by callassigned or gcmalloc
    * return incref should have been delegated and not needed.
    */
-  RegMeExpr *regRet = static_cast<RegMeExpr*>(ret.GetOpnd(0));
+  auto *regRet = static_cast<RegMeExpr*>(ret.GetOpnd(0));
   if (regRet->GetDefBy() == kDefByMustDef) {
     return;
   }
@@ -688,7 +688,7 @@ void RCLowering::HandleReturnReg(RetMeStmt &ret) {
 
 void RCLowering::HandleReturnWithCleanup() {
   for (auto *stmt : rets) {
-    RetMeStmt *ret = static_cast<RetMeStmt*>(stmt);
+    auto *ret = static_cast<RetMeStmt*>(stmt);
     IntrinsiccallMeStmt *cleanup = FindCleanupIntrinsic(*ret);
     if (cleanup != nullptr && !tmpLocalRefVars.empty()) {  // new localrefvar introduced in this phase
       for (auto tmpVar : tmpLocalRefVars) {
@@ -728,7 +728,7 @@ void RCLowering::HandleReturnNeedBackup() {
    * temp with the temp being returned
    */
   for (auto *stmt : rets) {
-    RetMeStmt *ret = static_cast<RetMeStmt*>(stmt);
+    auto *ret = static_cast<RetMeStmt*>(stmt);
     if (ret->NumMeStmtOpnds() == 0) {
       continue;
     }
@@ -834,10 +834,10 @@ VarMeExpr *RCLowering::CreateNewTmpVarMeExpr(bool isLocalrefvar) {
 }
 
 AnalysisResult *MeDoRCLowering::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) {
-  KlassHierarchy *kh = static_cast<KlassHierarchy*>(mrm->GetAnalysisResult(MoPhase_CHA, &func->GetMIRModule()));
+  auto *kh = static_cast<KlassHierarchy*>(mrm->GetAnalysisResult(MoPhase_CHA, &func->GetMIRModule()));
   ASSERT(kh != nullptr, "KlassHierarchy has problem");
   if (func->GetIRMap() == nullptr) {
-    MeIRMap *hmap = static_cast<MeIRMap*>(m->GetAnalysisResult(MeFuncPhase_IRMAP, func));
+    auto *hmap = static_cast<MeIRMap*>(m->GetAnalysisResult(MeFuncPhase_IRMAP, func));
     CHECK_FATAL(hmap != nullptr, "hssamap has problem");
     func->SetIRMap(hmap);
   }

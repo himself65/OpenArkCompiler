@@ -26,7 +26,7 @@ void MIRBuilder::AddIntFieldConst(const MIRStructType &sType, MIRAggConst &newCo
 // This is for compiler-generated metadata 1-level struct
 void MIRBuilder::AddAddrofFieldConst(const MIRStructType &structType, MIRAggConst &newConst, uint32 fieldID,
                                      const MIRSymbol &fieldSymbol) {
-  AddrofNode *fieldExpr = CreateExprAddrof(0, &fieldSymbol, mirModule->GetMemPool());
+  AddrofNode *fieldExpr = CreateExprAddrof(0, fieldSymbol, mirModule->GetMemPool());
   MIRConst *fieldConst = mirModule->GetMemPool()->New<MIRAddrofConst>(fieldExpr->GetStIdx(), fieldExpr->GetFieldID(),
                                                                       structType.GetElemType(fieldID - 1));
   fieldConst->SetFieldID(fieldID);
@@ -411,9 +411,9 @@ MIRSymbol *MIRBuilder::CreateGlobalDecl(const std::string &str, const MIRType *t
   return st;
 }
 
-MIRSymbol *MIRBuilder::GetOrCreateGlobalDecl(const std::string &str, const MIRType *type) {
+MIRSymbol *MIRBuilder::GetOrCreateGlobalDecl(const std::string &str, const MIRType &type) {
   bool isCreated = false;
-  MIRSymbol *st = GetOrCreateGlobalDecl(str, type->GetTypeIndex(), isCreated);
+  MIRSymbol *st = GetOrCreateGlobalDecl(str, type.GetTypeIndex(), isCreated);
   if (isCreated) {
     st->SetStorageClass(kScGlobal);
     st->SetSKind(kStVar);
@@ -457,42 +457,42 @@ ConstvalNode *MIRBuilder::CreateFloat128Const(const uint64 *val) {
   return GetCurrentFuncCodeMp()->New<ConstvalNode>(PTY_f128, mirConst);
 }
 
-ConstvalNode *MIRBuilder::GetConstInt(MemPool *memPool, int i) {
-  MIRIntConst *mirConst = memPool->New<MIRIntConst>(i, GlobalTables::GetTypeTable().GetInt64());
-  return memPool->New<ConstvalNode>(PTY_i32, mirConst);
+ConstvalNode *MIRBuilder::GetConstInt(MemPool &memPool, int i) {
+  MIRIntConst *mirConst = memPool.New<MIRIntConst>(i, GlobalTables::GetTypeTable().GetInt64());
+  return memPool.New<ConstvalNode>(PTY_i32, mirConst);
 }
 
-ConstvalNode *MIRBuilder::CreateAddrofConst(BaseNode *e) {
-  ASSERT(e->GetOpCode() == OP_addrof, "illegal op for addrof const");
+ConstvalNode *MIRBuilder::CreateAddrofConst(BaseNode &e) {
+  ASSERT(e.GetOpCode() == OP_addrof, "illegal op for addrof const");
   MIRFunction *currentFunctionInner = GetCurrentFunctionNotNull();
 
   // determine the type of 'e' and create a pointer type, accordingly
-  AddrofNode *aNode = static_cast<AddrofNode*>(e);
-  MIRSymbol *var = currentFunctionInner->GetLocalOrGlobalSymbol(aNode->GetStIdx());
+  AddrofNode &aNode = static_cast<AddrofNode&>(e);
+  MIRSymbol *var = currentFunctionInner->GetLocalOrGlobalSymbol(aNode.GetStIdx());
   TyIdx ptyIdx = var->GetTyIdx();
   MIRPtrType ptrType(ptyIdx);
   ptyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&ptrType);
   MIRType *exprty = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ptyIdx);
-  MIRAddrofConst *temp = mirModule->GetMemPool()->New<MIRAddrofConst>(aNode->GetStIdx(), aNode->GetFieldID(), exprty);
+  MIRAddrofConst *temp = mirModule->GetMemPool()->New<MIRAddrofConst>(aNode.GetStIdx(), aNode.GetFieldID(), exprty);
   return GetCurrentFuncCodeMp()->New<ConstvalNode>(PTY_ptr, temp);
 }
 
-ConstvalNode *MIRBuilder::CreateAddroffuncConst(const BaseNode *e) {
-  ASSERT(e->GetOpCode() == OP_addroffunc, "illegal op for addroffunc const");
+ConstvalNode *MIRBuilder::CreateAddroffuncConst(const BaseNode &e) {
+  ASSERT(e.GetOpCode() == OP_addroffunc, "illegal op for addroffunc const");
 
-  const AddroffuncNode *aNode = static_cast<const AddroffuncNode*>(e);
-  MIRFunction *f = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(aNode->GetPUIdx());
+  const AddroffuncNode &aNode = static_cast<const AddroffuncNode&>(e);
+  MIRFunction *f = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(aNode.GetPUIdx());
   TyIdx ptyIdx = f->GetFuncSymbol()->GetTyIdx();
   MIRPtrType ptrType(ptyIdx);
   ptyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&ptrType);
   MIRType *exprty = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ptyIdx);
-  MIRAddroffuncConst *mirConst = mirModule->GetMemPool()->New<MIRAddroffuncConst>(aNode->GetPUIdx(), exprty);
+  MIRAddroffuncConst *mirConst = mirModule->GetMemPool()->New<MIRAddroffuncConst>(aNode.GetPUIdx(), exprty);
   return GetCurrentFuncCodeMp()->New<ConstvalNode>(PTY_ptr, mirConst);
 }
 
-ConstvalNode *MIRBuilder::CreateStrConst(const BaseNode *e) {
-  ASSERT(e->GetOpCode() == OP_conststr, "illegal op for conststr const");
-  UStrIdx strIdx = static_cast<const ConststrNode*>(e)->GetStrIdx();
+ConstvalNode *MIRBuilder::CreateStrConst(const BaseNode &e) {
+  ASSERT(e.GetOpCode() == OP_conststr, "illegal op for conststr const");
+  UStrIdx strIdx = static_cast<const ConststrNode&>(e).GetStrIdx();
   CHECK_FATAL(PTY_u8 < GlobalTables::GetTypeTable().GetTypeTable().size(),
               "index is out of range in MIRBuilder::CreateStrConst");
   TyIdx ptyidx = GlobalTables::GetTypeTable().GetTypeFromTyIdx(TyIdx(PTY_u8))->GetTypeIndex();
@@ -503,9 +503,9 @@ ConstvalNode *MIRBuilder::CreateStrConst(const BaseNode *e) {
   return GetCurrentFuncCodeMp()->New<ConstvalNode>(PTY_ptr, mirConst);
 }
 
-ConstvalNode *MIRBuilder::CreateStr16Const(const BaseNode *e) {
-  ASSERT(e->GetOpCode() == OP_conststr16, "illegal op for conststr16 const");
-  U16StrIdx strIdx = static_cast<const Conststr16Node*>(e)->GetStrIdx();
+ConstvalNode *MIRBuilder::CreateStr16Const(const BaseNode &e) {
+  ASSERT(e.GetOpCode() == OP_conststr16, "illegal op for conststr16 const");
+  U16StrIdx strIdx = static_cast<const Conststr16Node&>(e).GetStrIdx();
   CHECK_FATAL(PTY_u16 < GlobalTables::GetTypeTable().GetTypeTable().size(),
               "index out of range in MIRBuilder::CreateStr16Const");
   TyIdx ptyIdx = GlobalTables::GetTypeTable().GetTypeFromTyIdx(TyIdx(PTY_u16))->GetTypeIndex();
@@ -531,13 +531,13 @@ MIRSymbol *MIRBuilder::GetSymbolFromEnclosingScope(StIdx stIdx) {
 }
 
 MIRSymbol *MIRBuilder::GetSymbol(TyIdx tyIdx, const std::string &name, MIRSymKind mClass, MIRStorageClass sClass,
-                                 MIRFunction *func, uint8 scpID, bool sameType = false) {
-  return GetSymbol(tyIdx, GetOrCreateStringIndex(name), mClass, sClass, func, scpID, sameType);
+                                 uint8 scpID, bool sameType = false) {
+  return GetSymbol(tyIdx, GetOrCreateStringIndex(name), mClass, sClass, scpID, sameType);
 }
 
 // when sametype is true, it means match everything the of the symbol
 MIRSymbol *MIRBuilder::GetSymbol(TyIdx tyIdx, GStrIdx strIdx, MIRSymKind mClass, MIRStorageClass sClass,
-                                 MIRFunction *func, uint8 scpID, bool sameType = false) {
+                                 uint8 scpID, bool sameType = false) {
   if (scpID != kScopeGlobal) {
     ERR(kLncErr, "not yet implemented");
     return nullptr;
@@ -569,7 +569,7 @@ MIRSymbol *MIRBuilder::GetOrCreateSymbol(TyIdx tyIdx, const std::string &name, M
 
 MIRSymbol *MIRBuilder::GetOrCreateSymbol(TyIdx tyIdx, GStrIdx strIdx, MIRSymKind mClass, MIRStorageClass sClass,
                                          MIRFunction *func, uint8 scpID, bool sameType = false) {
-  if (MIRSymbol *st = GetSymbol(tyIdx, strIdx, mClass, sClass, func, scpID, sameType)) {
+  if (MIRSymbol *st = GetSymbol(tyIdx, strIdx, mClass, sClass, scpID, sameType)) {
     return st;
   }
   return CreateSymbol(tyIdx, strIdx, mClass, sClass, func, scpID);
@@ -603,18 +603,18 @@ MIRSymbol *MIRBuilder::CreateSymbol(TyIdx tyIdx, GStrIdx strIdx, MIRSymKind mCla
   return st;
 }
 
-MIRSymbol *MIRBuilder::CreatePregFormalSymbol(TyIdx tyIdx, PregIdx pRegIdx, MIRFunction *func) {
-  MIRSymbol *st = func->GetSymTab()->CreateSymbol(kScopeLocal);
+MIRSymbol *MIRBuilder::CreatePregFormalSymbol(TyIdx tyIdx, PregIdx pRegIdx, MIRFunction &func) {
+  MIRSymbol *st = func.GetSymTab()->CreateSymbol(kScopeLocal);
   CHECK_FATAL(st != nullptr, "Failed to create MIRSymbol");
   st->SetStorageClass(kScFormal);
   st->SetSKind(kStPreg);
   st->SetTyIdx(tyIdx);
-  MIRPregTable *pRegTab = func->GetPregTab();
+  MIRPregTable *pRegTab = func.GetPregTab();
   st->SetPreg(pRegTab->PregFromPregIdx(pRegIdx));
   return st;
 }
 
-MIRFunction *MIRBuilder::CreateFunction(const std::string &name, const MIRType *returnType, const ArgVector &arguments,
+MIRFunction *MIRBuilder::CreateFunction(const std::string &name, const MIRType &returnType, const ArgVector &arguments,
                                         bool isVarg, bool createBody) {
   MIRSymbol *funcSymbol = GlobalTables::GetGsymTable().CreateSymbol(kScopeGlobal);
   CHECK_FATAL(funcSymbol != nullptr, "Failed to create MIRSymbol");
@@ -644,7 +644,7 @@ MIRFunction *MIRBuilder::CreateFunction(const std::string &name, const MIRType *
     funcVecAttrs.push_back(TypeAttrs());
   }
   funcSymbol->SetTyIdx(GlobalTables::GetTypeTable().GetOrCreateFunctionType(
-      *mirModule, returnType->GetTypeIndex(), funcVecType, funcVecAttrs, isVarg)->GetTypeIndex());
+      *mirModule, returnType.GetTypeIndex(), funcVecType, funcVecAttrs, isVarg)->GetTypeIndex());
   MIRFuncType *funcType = dynamic_cast<MIRFuncType*>(funcSymbol->GetType());
   fn->SetMIRFuncType(funcType);
   funcSymbol->SetFunction(fn);
@@ -667,16 +667,16 @@ MIRFunction *MIRBuilder::CreateFunction(const StIdx stIdx, bool addToTable) {
   return fn;
 }
 
-SizeoftypeNode *MIRBuilder::CreateExprSizeoftype(const MIRType *type) {
-  return GetCurrentFuncCodeMp()->New<SizeoftypeNode>(PTY_u32, type->GetTypeIndex());
+SizeoftypeNode *MIRBuilder::CreateExprSizeoftype(const MIRType &type) {
+  return GetCurrentFuncCodeMp()->New<SizeoftypeNode>(PTY_u32, type.GetTypeIndex());
 }
 
-FieldsDistNode *MIRBuilder::CreateExprFieldsDist(const MIRType *type, FieldID field1, FieldID field2) {
-  return GetCurrentFuncCodeMp()->New<FieldsDistNode>(PTY_i32, type->GetTypeIndex(), field1, field2);
+FieldsDistNode *MIRBuilder::CreateExprFieldsDist(const MIRType &type, FieldID field1, FieldID field2) {
+  return GetCurrentFuncCodeMp()->New<FieldsDistNode>(PTY_i32, type.GetTypeIndex(), field1, field2);
 }
 
-AddrofNode *MIRBuilder::CreateExprAddrof(FieldID fieldID, const MIRSymbol *symbol, MemPool *memPool) {
-  return CreateExprAddrof(fieldID, symbol->GetStIdx(), memPool);
+AddrofNode *MIRBuilder::CreateExprAddrof(FieldID fieldID, const MIRSymbol &symbol, MemPool *memPool) {
+  return CreateExprAddrof(fieldID, symbol.GetStIdx(), memPool);
 }
 
 AddrofNode *MIRBuilder::CreateExprAddrof(FieldID fieldID, StIdx symbolStIdx, MemPool *memPool) {
@@ -693,11 +693,11 @@ AddroffuncNode *MIRBuilder::CreateExprAddroffunc(PUIdx puIdx, MemPool *memPool) 
   return memPool->New<AddroffuncNode>(PTY_ptr, puIdx);
 }
 
-AddrofNode *MIRBuilder::CreateExprDread(const MIRType *type, FieldID fieldID, const MIRSymbol *symbol) {
-  AddrofNode *drn = GetCurrentFuncCodeMp()->New<AddrofNode>(OP_dread, kPtyInvalid, symbol->GetStIdx(), fieldID);
-  CHECK(type->GetTypeIndex().GetIdx() < GlobalTables::GetTypeTable().GetTypeTable().size(),
+AddrofNode *MIRBuilder::CreateExprDread(const MIRType &type, FieldID fieldID, const MIRSymbol &symbol) {
+  AddrofNode *drn = GetCurrentFuncCodeMp()->New<AddrofNode>(OP_dread, kPtyInvalid, symbol.GetStIdx(), fieldID);
+  CHECK(type.GetTypeIndex().GetIdx() < GlobalTables::GetTypeTable().GetTypeTable().size(),
         "index out of range in MIRBuilder::CreateExprDread");
-  drn->SetPrimType(GlobalTables::GetTypeTable().GetPrimTypeFromTyIdx(type->GetTypeIndex()));
+  drn->SetPrimType(GlobalTables::GetTypeTable().GetPrimTypeFromTyIdx(type.GetTypeIndex()));
   return drn;
 }
 
@@ -705,11 +705,11 @@ RegreadNode *MIRBuilder::CreateExprRegread(PrimType pty, PregIdx regIdx) {
   return GetCurrentFuncCodeMp()->New<RegreadNode>(pty, regIdx);
 }
 
-AddrofNode *MIRBuilder::CreateExprDread(MIRType *type, MIRSymbol *symbol) {
+AddrofNode *MIRBuilder::CreateExprDread(MIRType &type, MIRSymbol &symbol) {
   return CreateExprDread(type, 0, symbol);
 }
 
-AddrofNode *MIRBuilder::CreateExprDread(MIRSymbol *symbol, uint16 fieldID) {
+AddrofNode *MIRBuilder::CreateExprDread(MIRSymbol &symbol, uint16 fieldID) {
   if (fieldID == 0) {
     return CreateExprDread(symbol);
   }
@@ -717,8 +717,8 @@ AddrofNode *MIRBuilder::CreateExprDread(MIRSymbol *symbol, uint16 fieldID) {
   return nullptr;
 }
 
-AddrofNode *MIRBuilder::CreateExprDread(MIRSymbol *symbol) {
-  return CreateExprDread(symbol->GetType(), 0, symbol);
+AddrofNode *MIRBuilder::CreateExprDread(MIRSymbol &symbol) {
+  return CreateExprDread(*symbol.GetType(), 0, symbol);
 }
 
 AddrofNode *MIRBuilder::CreateExprDread(PregIdx pregID, PrimType pty) {
@@ -727,15 +727,15 @@ AddrofNode *MIRBuilder::CreateExprDread(PregIdx pregID, PrimType pty) {
   return dread;
 }
 
-IreadNode *MIRBuilder::CreateExprIread(const MIRType *returnType, const MIRType *ptrType, FieldID fieldID,
+IreadNode *MIRBuilder::CreateExprIread(const MIRType &returnType, const MIRType &ptrType, FieldID fieldID,
                                        BaseNode *addr) {
-  TyIdx returnTypeIdx = returnType->GetTypeIndex();
+  TyIdx returnTypeIdx = returnType.GetTypeIndex();
   ASSERT(returnTypeIdx.GetIdx() < GlobalTables::GetTypeTable().GetTypeTable().size(),
          "index out of range in MIRBuilder::CreateExprIread");
-  ASSERT(fieldID != 0 || ptrType->GetPrimType() != PTY_agg,
+  ASSERT(fieldID != 0 || ptrType.GetPrimType() != PTY_agg,
          "Error: Fieldid should not be 0 when trying to iread a field from type ");
   PrimType type = GlobalTables::GetTypeTable().GetPrimTypeFromTyIdx(returnTypeIdx);
-  return GetCurrentFuncCodeMp()->New<IreadNode>(OP_iread, type, ptrType->GetTypeIndex(), fieldID, addr);
+  return GetCurrentFuncCodeMp()->New<IreadNode>(OP_iread, type, ptrType.GetTypeIndex(), fieldID, addr);
 }
 
 IreadoffNode *MIRBuilder::CreateExprIreadoff(PrimType pty, int32 offset, BaseNode *opnd0) {
@@ -746,7 +746,7 @@ IreadFPoffNode *MIRBuilder::CreateExprIreadFPoff(PrimType pty, int32 offset) {
   return GetCurrentFuncCodeMp()->New<IreadFPoffNode>(pty, offset);
 }
 
-IaddrofNode *MIRBuilder::CreateExprIaddrof(const MIRType *returnType, const MIRType *ptrType, FieldID fieldID,
+IaddrofNode *MIRBuilder::CreateExprIaddrof(const MIRType &returnType, const MIRType &ptrType, FieldID fieldID,
                                            BaseNode *addr) {
   IaddrofNode *iAddrOfNode = CreateExprIread(returnType, ptrType, fieldID, addr);
   iAddrOfNode->SetOpCode(OP_iaddrof);
@@ -757,49 +757,49 @@ IaddrofNode *MIRBuilder::CreateExprIaddrof(PrimType returnTypePty, TyIdx ptrType
   return GetCurrentFuncCodeMp()->New<IreadNode>(OP_iaddrof, returnTypePty, ptrTypeIdx, fieldID, addr);
 }
 
-UnaryNode *MIRBuilder::CreateExprUnary(Opcode opcode, const MIRType *type, BaseNode *opnd) {
-  return GetCurrentFuncCodeMp()->New<UnaryNode>(opcode, type->GetPrimType(), opnd);
+UnaryNode *MIRBuilder::CreateExprUnary(Opcode opcode, const MIRType &type, BaseNode *opnd) {
+  return GetCurrentFuncCodeMp()->New<UnaryNode>(opcode, type.GetPrimType(), opnd);
 }
 
-GCMallocNode *MIRBuilder::CreateExprGCMalloc(Opcode opcode, const MIRType *ptype, const MIRType *type) {
-  return GetCurrentFuncCodeMp()->New<GCMallocNode>(opcode, ptype->GetPrimType(), type->GetTypeIndex());
+GCMallocNode *MIRBuilder::CreateExprGCMalloc(Opcode opcode, const MIRType &ptype, const MIRType &type) {
+  return GetCurrentFuncCodeMp()->New<GCMallocNode>(opcode, ptype.GetPrimType(), type.GetTypeIndex());
 }
 
-JarrayMallocNode *MIRBuilder::CreateExprJarrayMalloc(Opcode opcode, const MIRType *ptype, const MIRType *type,
+JarrayMallocNode *MIRBuilder::CreateExprJarrayMalloc(Opcode opcode, const MIRType &ptype, const MIRType &type,
                                                      BaseNode *opnd) {
-  return GetCurrentFuncCodeMp()->New<JarrayMallocNode>(opcode, ptype->GetPrimType(), type->GetTypeIndex(), opnd);
+  return GetCurrentFuncCodeMp()->New<JarrayMallocNode>(opcode, ptype.GetPrimType(), type.GetTypeIndex(), opnd);
 }
 
-TypeCvtNode *MIRBuilder::CreateExprTypeCvt(Opcode o, const MIRType *type, const MIRType *fromType, BaseNode *opnd) {
-  return GetCurrentFuncCodeMp()->New<TypeCvtNode>(o, type->GetPrimType(), fromType->GetPrimType(), opnd);
+TypeCvtNode *MIRBuilder::CreateExprTypeCvt(Opcode o, const MIRType &type, const MIRType &fromType, BaseNode *opnd) {
+  return GetCurrentFuncCodeMp()->New<TypeCvtNode>(o, type.GetPrimType(), fromType.GetPrimType(), opnd);
 }
 
-ExtractbitsNode *MIRBuilder::CreateExprExtractbits(Opcode o, const MIRType *type, uint32 bOffset, uint32 bsize,
+ExtractbitsNode *MIRBuilder::CreateExprExtractbits(Opcode o, const MIRType &type, uint32 bOffset, uint32 bsize,
                                                    BaseNode *opnd) {
-  return GetCurrentFuncCodeMp()->New<ExtractbitsNode>(o, type->GetPrimType(), bOffset, bsize, opnd);
+  return GetCurrentFuncCodeMp()->New<ExtractbitsNode>(o, type.GetPrimType(), bOffset, bsize, opnd);
 }
 
-RetypeNode *MIRBuilder::CreateExprRetype(const MIRType *type, const MIRType *fromType, BaseNode *opnd) {
-  return GetCurrentFuncCodeMp()->New<RetypeNode>(type->GetPrimType(), fromType->GetPrimType(),
-                                                 type->GetTypeIndex(), opnd);
+RetypeNode *MIRBuilder::CreateExprRetype(const MIRType &type, const MIRType &fromType, BaseNode *opnd) {
+  return GetCurrentFuncCodeMp()->New<RetypeNode>(type.GetPrimType(), fromType.GetPrimType(),
+                                                 type.GetTypeIndex(), opnd);
 }
 
-BinaryNode *MIRBuilder::CreateExprBinary(Opcode opcode, const MIRType *type, BaseNode *opnd0, BaseNode *opnd1) {
-  return GetCurrentFuncCodeMp()->New<BinaryNode>(opcode, type->GetPrimType(), opnd0, opnd1);
+BinaryNode *MIRBuilder::CreateExprBinary(Opcode opcode, const MIRType &type, BaseNode *opnd0, BaseNode *opnd1) {
+  return GetCurrentFuncCodeMp()->New<BinaryNode>(opcode, type.GetPrimType(), opnd0, opnd1);
 }
 
-TernaryNode *MIRBuilder::CreateExprTernary(Opcode opcode, const MIRType *type, BaseNode *opnd0, BaseNode *opnd1,
+TernaryNode *MIRBuilder::CreateExprTernary(Opcode opcode, const MIRType &type, BaseNode *opnd0, BaseNode *opnd1,
                                            BaseNode *opnd2) {
-  return GetCurrentFuncCodeMp()->New<TernaryNode>(opcode, type->GetPrimType(), opnd0, opnd1, opnd2);
+  return GetCurrentFuncCodeMp()->New<TernaryNode>(opcode, type.GetPrimType(), opnd0, opnd1, opnd2);
 }
 
-CompareNode *MIRBuilder::CreateExprCompare(Opcode opcode, const MIRType *type, const MIRType *opndType, BaseNode *opnd0,
+CompareNode *MIRBuilder::CreateExprCompare(Opcode opcode, const MIRType &type, const MIRType &opndType, BaseNode *opnd0,
                                            BaseNode *opnd1) {
-  return GetCurrentFuncCodeMp()->New<CompareNode>(opcode, type->GetPrimType(), opndType->GetPrimType(), opnd0, opnd1);
+  return GetCurrentFuncCodeMp()->New<CompareNode>(opcode, type.GetPrimType(), opndType.GetPrimType(), opnd0, opnd1);
 }
 
-ArrayNode *MIRBuilder::CreateExprArray(const MIRType *arrayType) {
-  MIRType *addrType = GlobalTables::GetTypeTable().GetOrCreatePointerType(*arrayType);
+ArrayNode *MIRBuilder::CreateExprArray(const MIRType &arrayType) {
+  MIRType *addrType = GlobalTables::GetTypeTable().GetOrCreatePointerType(arrayType);
   ASSERT(addrType != nullptr, "addrType is null");
   ArrayNode *arrayNode = GetCurrentFuncCodeMp()->New<ArrayNode>(*GetCurrentFuncCodeMpAllocator(),
                                                                 addrType->GetPrimType(), addrType->GetTypeIndex());
@@ -807,35 +807,35 @@ ArrayNode *MIRBuilder::CreateExprArray(const MIRType *arrayType) {
   return arrayNode;
 }
 
-ArrayNode *MIRBuilder::CreateExprArray(const MIRType *arrayType, BaseNode *op) {
+ArrayNode *MIRBuilder::CreateExprArray(const MIRType &arrayType, BaseNode *op) {
   ArrayNode *arrayNode = CreateExprArray(arrayType);
   arrayNode->GetNopnd().push_back(op);
   arrayNode->SetNumOpnds(1);
   return arrayNode;
 }
 
-ArrayNode *MIRBuilder::CreateExprArray(const MIRType *arrayType, BaseNode *op1, BaseNode *op2) {
+ArrayNode *MIRBuilder::CreateExprArray(const MIRType &arrayType, BaseNode *op1, BaseNode *op2) {
   ArrayNode *arrayNode = CreateExprArray(arrayType, op1);
   arrayNode->GetNopnd().push_back(op2);
   arrayNode->SetNumOpnds(2);
   return arrayNode;
 }
 
-IntrinsicopNode *MIRBuilder::CreateExprIntrinsicop(MIRIntrinsicID idx, Opcode opCode, const MIRType *type,
+IntrinsicopNode *MIRBuilder::CreateExprIntrinsicop(MIRIntrinsicID idx, Opcode opCode, const MIRType &type,
                                                    const MapleVector<BaseNode*> &ops) {
   IntrinsicopNode *expr =
-      GetCurrentFuncCodeMp()->New<IntrinsicopNode>(*GetCurrentFuncCodeMpAllocator(), opCode, type->GetPrimType());
+      GetCurrentFuncCodeMp()->New<IntrinsicopNode>(*GetCurrentFuncCodeMpAllocator(), opCode, type.GetPrimType());
   expr->SetIntrinsic(idx);
   expr->SetNOpnd(ops);
   expr->SetNumOpnds(ops.size());
   if (opCode == OP_intrinsicopwithtype) {
-    expr->SetTyIdx(type->GetTypeIndex());
+    expr->SetTyIdx(type.GetTypeIndex());
   }
   return expr;
 }
 
-DassignNode *MIRBuilder::CreateStmtDassign(const MIRSymbol *symbol, FieldID fieldID, BaseNode *src) {
-  return GetCurrentFuncCodeMp()->New<DassignNode>(src, symbol->GetStIdx(), fieldID);
+DassignNode *MIRBuilder::CreateStmtDassign(const MIRSymbol &symbol, FieldID fieldID, BaseNode *src) {
+  return GetCurrentFuncCodeMp()->New<DassignNode>(src, symbol.GetStIdx(), fieldID);
 }
 
 RegassignNode *MIRBuilder::CreateStmtRegassign(PrimType pty, PregIdx regIdx, BaseNode *src) {
@@ -846,8 +846,8 @@ DassignNode *MIRBuilder::CreateStmtDassign(StIdx sIdx, FieldID fieldID, BaseNode
   return GetCurrentFuncCodeMp()->New<DassignNode>(src, sIdx, fieldID);
 }
 
-IassignNode *MIRBuilder::CreateStmtIassign(const MIRType *type, FieldID fieldID, BaseNode *addr, BaseNode *src) {
-  return GetCurrentFuncCodeMp()->New<IassignNode>(type->GetTypeIndex(), fieldID, addr, src);
+IassignNode *MIRBuilder::CreateStmtIassign(const MIRType &type, FieldID fieldID, BaseNode *addr, BaseNode *src) {
+  return GetCurrentFuncCodeMp()->New<IassignNode>(type.GetTypeIndex(), fieldID, addr, src);
 }
 
 IassignoffNode *MIRBuilder::CreateStmtIassignoff(PrimType pty, int32 offset, BaseNode *addr, BaseNode *src) {
@@ -1072,9 +1072,9 @@ LabelIdx MIRBuilder::GetOrCreateMIRLabel(const std::string &name) {
   return labidx;
 }
 
-LabelIdx MIRBuilder::CreateLabIdx(MIRFunction *mirFunc) {
-  LabelIdx lidx = mirFunc->GetLabelTab()->CreateLabel();
-  mirFunc->GetLabelTab()->AddToStringLabelMap(lidx);
+LabelIdx MIRBuilder::CreateLabIdx(MIRFunction &mirFunc) {
+  LabelIdx lidx = mirFunc.GetLabelTab()->CreateLabel();
+  mirFunc.GetLabelTab()->AddToStringLabelMap(lidx);
   return lidx;
 }
 
@@ -1086,18 +1086,18 @@ StmtNode *MIRBuilder::CreateStmtComment(const std::string &cmnt) {
   return GetCurrentFuncCodeMp()->New<CommentNode>(*GetCurrentFuncCodeMpAllocator(), cmnt);
 }
 
-void MIRBuilder::AddStmtInCurrentFunctionBody(StmtNode *stmt) {
+void MIRBuilder::AddStmtInCurrentFunctionBody(StmtNode &stmt) {
   MIRFunction *fun = GetCurrentFunctionNotNull();
-  stmt->GetSrcPos().CondSetLineNum(lineNum);
-  fun->GetBody()->AddStatement(stmt);
+  stmt.GetSrcPos().CondSetLineNum(lineNum);
+  fun->GetBody()->AddStatement(&stmt);
 }
 
-AddrofNode *MIRBuilder::CreateAddrof(const MIRSymbol *st, PrimType pty) {
-  return GetCurrentFuncCodeMp()->New<AddrofNode>(OP_addrof, pty, st->GetStIdx(), 0);
+AddrofNode *MIRBuilder::CreateAddrof(const MIRSymbol &st, PrimType pty) {
+  return GetCurrentFuncCodeMp()->New<AddrofNode>(OP_addrof, pty, st.GetStIdx(), 0);
 }
 
-AddrofNode *MIRBuilder::CreateDread(const MIRSymbol *st, PrimType pty) {
-  return GetCurrentFuncCodeMp()->New<AddrofNode>(OP_dread, pty, st->GetStIdx(), 0);
+AddrofNode *MIRBuilder::CreateDread(const MIRSymbol &st, PrimType pty) {
+  return GetCurrentFuncCodeMp()->New<AddrofNode>(OP_dread, pty, st.GetStIdx(), 0);
 }
 
 CondGotoNode *MIRBuilder::CreateStmtCondGoto(BaseNode *cond, Opcode op, LabelIdx labIdx) {

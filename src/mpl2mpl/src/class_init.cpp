@@ -41,7 +41,7 @@ void ClassInit::GenClassInitCheckProfile(MIRFunction &func, MIRSymbol &classinfo
 
 void ClassInit::GenPreClassInitCheck(MIRFunction &func, const MIRSymbol &classinfo, StmtNode *clinit) {
   MIRFunction *preClinit = builder->GetOrCreateFunction(kMCCPreClinitCheck, (TyIdx)(PTY_void));
-  BaseNode *classInfoNode = builder->CreateExprAddrof(0, &classinfo);
+  BaseNode *classInfoNode = builder->CreateExprAddrof(0, classinfo);
   MapleVector<BaseNode*> args(builder->GetCurrentFuncCodeMpAllocator()->Adapter());
   args.push_back(classInfoNode);
   CallNode *callPreclinit = builder->CreateStmtCall(preClinit->GetPuidx(), args);
@@ -50,7 +50,7 @@ void ClassInit::GenPreClassInitCheck(MIRFunction &func, const MIRSymbol &classin
 
 void ClassInit::GenPostClassInitCheck(MIRFunction &func, const MIRSymbol &classinfo, StmtNode *clinit) {
   MIRFunction *postClinit = builder->GetOrCreateFunction(kMCCPostClinitCheck, (TyIdx)(PTY_void));
-  BaseNode *classInfoNode = builder->CreateExprAddrof(0, &classinfo);
+  BaseNode *classInfoNode = builder->CreateExprAddrof(0, classinfo);
   MapleVector<BaseNode*> args(builder->GetCurrentFuncCodeMpAllocator()->Adapter());
   args.push_back(classInfoNode);
   CallNode *callPostclinit = builder->CreateStmtCall(postClinit->GetPuidx(), args);
@@ -97,7 +97,7 @@ void ClassInit::ProcessFunc(MIRFunction *func) {
       CHECK_FATAL(klass != nullptr, "klass is nullptr in ClassInit::ProcessFunc");
       if (klass->GetClinit() && func != klass->GetClinit()) {
         MIRSymbol *classInfo = GetClassInfo(className);
-        BaseNode *classInfoNode = builder->CreateExprAddrof(0, classInfo);
+        BaseNode *classInfoNode = builder->CreateExprAddrof(0, *classInfo);
         if (trace) {
           LogInfo::MapleLogger() << "\t- low-cost clinit - insert check in static method " << func->GetName()
                                  << "clasname " << className << std::endl;
@@ -137,7 +137,7 @@ void ClassInit::ProcessFunc(MIRFunction *func) {
         }
         if (doClinitCheck) {
           MIRSymbol *classInfo = GetClassInfo(className);
-          AddrofNode *classInfoNode = builder->CreateExprAddrof(0, classInfo);
+          AddrofNode *classInfoNode = builder->CreateExprAddrof(0, *classInfo);
           MapleVector<BaseNode*> args(builder->GetCurrentFuncCodeMpAllocator()->Adapter());
           args.push_back(classInfoNode);
           StmtNode *mplIntrinsicCall = builder->CreateStmtIntrinsicCall(INTRN_MPL_CLINIT_CHECK, args);
@@ -161,7 +161,7 @@ MIRSymbol *ClassInit::GetClassInfo(const std::string &classname) {
   const std::string &classInfoName = CLASSINFO_PREFIX_STR + classname;
   MIRType *classInfoType =
       GlobalTables::GetTypeTable().GetOrCreateClassType(NameMangler::kClassMetadataTypeName, *GetModule());
-  MIRSymbol *classInfo = builder->GetOrCreateGlobalDecl(classInfoName.c_str(), classInfoType);
+  MIRSymbol *classInfo = builder->GetOrCreateGlobalDecl(classInfoName.c_str(), *classInfoType);
   Klass *klass = klassHierarchy->GetKlassFromName(classname);
   if (klass == nullptr || !klass->GetMIRStructType()->IsLocal()) {
     classInfo->SetStorageClass(kScExtern);

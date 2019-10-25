@@ -826,7 +826,7 @@ void MUIDReplacement::ReplaceDirectInvokeOrAddroffunc(MIRFunction &currentFunc, 
 
     std::string moduleName = GetModule()->GetFileNameAsPostfix();
     std::string baseName = calleeFunc->GetBaseClassName();
-    baseExpr = builder->CreateExprAddrof(0, funcDefTabSym, GetModule()->GetMemPool());
+    baseExpr = builder->CreateExprAddrof(0, *funcDefTabSym, GetModule()->GetMemPool());
     ASSERT(calleeFunc->GetFuncSymbol() != nullptr, "null ptr check!");
     index = FindIndexFromDefTable(*(calleeFunc->GetFuncSymbol()), true);
     arrayType = static_cast<MIRArrayType*>(funcDefTabSym->GetType());
@@ -836,18 +836,18 @@ void MUIDReplacement::ReplaceDirectInvokeOrAddroffunc(MIRFunction &currentFunc, 
     std::string commentLabel = NameMangler::kMarkMuidFuncUndefStr + calleeFunc->GetName();
     currentFunc.GetBody()->InsertBefore(&stmt, builder->CreateStmtComment(commentLabel.c_str()));
 
-    baseExpr = builder->CreateExprAddrof(0, funcUndefTabSym, GetModule()->GetMemPool());
+    baseExpr = builder->CreateExprAddrof(0, *funcUndefTabSym, GetModule()->GetMemPool());
     ASSERT(calleeFunc->GetFuncSymbol() != nullptr, "null ptr check!");
     index = FindIndexFromUndefTable(*(calleeFunc->GetFuncSymbol()), true);
     arrayType = static_cast<MIRArrayType*>(funcUndefTabSym->GetType());
   }
   ConstvalNode *offsetExpr = builder->CreateIntConst(index, PTY_i64);
-  ArrayNode *arrayExpr = builder->CreateExprArray(arrayType, baseExpr, offsetExpr);
+  ArrayNode *arrayExpr = builder->CreateExprArray(*arrayType, baseExpr, offsetExpr);
   arrayExpr->SetBoundsCheck(false);
   MIRType *elemType = arrayType->GetElemType();
   BaseNode *ireadPtrExpr =
-      builder->CreateExprIread(GlobalTables::GetTypeTable().GetVoidPtr(),
-                               GlobalTables::GetTypeTable().GetOrCreatePointerType(*elemType), 1, arrayExpr);
+      builder->CreateExprIread(*GlobalTables::GetTypeTable().GetVoidPtr(),
+                               *GlobalTables::GetTypeTable().GetOrCreatePointerType(*elemType), 1, arrayExpr);
   PregIdx funcPtrPreg = 0;
   MIRSymbol *funcPtrSym = nullptr;
   BaseNode *readFuncPtr = nullptr;
@@ -858,9 +858,9 @@ void MUIDReplacement::ReplaceDirectInvokeOrAddroffunc(MIRFunction &currentFunc, 
     readFuncPtr = builder->CreateExprRegread(PTY_ptr, funcPtrPreg);
   } else {
     funcPtrSym = builder->GetOrCreateLocalDecl(kMuidSymPtrStr, *GlobalTables::GetTypeTable().GetVoidPtr());
-    DassignNode *addrNode = builder->CreateStmtDassign(funcPtrSym, 0, ireadPtrExpr);
+    DassignNode *addrNode = builder->CreateStmtDassign(*funcPtrSym, 0, ireadPtrExpr);
     currentFunc.GetBody()->InsertBefore(&stmt, addrNode);
-    readFuncPtr = builder->CreateExprDread(funcPtrSym);
+    readFuncPtr = builder->CreateExprDread(*funcPtrSym);
   }
   if (callNode != nullptr) {
     // Create icallNode to replace callNode
@@ -899,23 +899,23 @@ void MUIDReplacement::ReplaceDassign(MIRFunction &currentFunc, DassignNode &dass
   MIRArrayType *arrayType = nullptr;
   if (mirSymbol->GetStorageClass() != kScExtern) {
     // Local static member is accessed through dataDefTab
-    baseExpr = builder->CreateExprAddrof(0, dataDefTabSym);
+    baseExpr = builder->CreateExprAddrof(0, *dataDefTabSym);
     index = FindIndexFromDefTable(*mirSymbol, false);
     arrayType = static_cast<MIRArrayType*>(dataDefTabSym->GetType());
   } else {
     // External static member is accessed through dataUndefTab
-    baseExpr = builder->CreateExprAddrof(0, dataUndefTabSym);
+    baseExpr = builder->CreateExprAddrof(0, *dataUndefTabSym);
     index = FindIndexFromUndefTable(*mirSymbol, false);
     arrayType = static_cast<MIRArrayType*>(dataUndefTabSym->GetType());
   }
   ConstvalNode *offsetExpr = builder->CreateIntConst(index, PTY_i64);
-  ArrayNode *arrayExpr = builder->CreateExprArray(arrayType, baseExpr, offsetExpr);
+  ArrayNode *arrayExpr = builder->CreateExprArray(*arrayType, baseExpr, offsetExpr);
   arrayExpr->SetBoundsCheck(false);
   MIRType *elemType = arrayType->GetElemType();
   MIRType *mVoidPtr = GlobalTables::GetTypeTable().GetVoidPtr();
   CHECK_FATAL(mVoidPtr != nullptr, "null ptr check");
   BaseNode *ireadPtrExpr =
-      builder->CreateExprIread(mVoidPtr, GlobalTables::GetTypeTable().GetOrCreatePointerType(*elemType), 1, arrayExpr);
+      builder->CreateExprIread(*mVoidPtr, *GlobalTables::GetTypeTable().GetOrCreatePointerType(*elemType), 1, arrayExpr);
   PregIdx symPtrPreg = 0;
   MIRSymbol *symPtrSym = nullptr;
   BaseNode *destExpr = nullptr;
@@ -926,13 +926,13 @@ void MUIDReplacement::ReplaceDassign(MIRFunction &currentFunc, DassignNode &dass
     destExpr = builder->CreateExprRegread(PTY_ptr, symPtrPreg);
   } else {
     symPtrSym = builder->GetOrCreateLocalDecl(kMuidFuncPtrStr, *mVoidPtr);
-    DassignNode *addrNode = builder->CreateStmtDassign(symPtrSym, 0, ireadPtrExpr);
+    DassignNode *addrNode = builder->CreateStmtDassign(*symPtrSym, 0, ireadPtrExpr);
     currentFunc.GetBody()->InsertBefore(&dassignNode, addrNode);
-    destExpr = builder->CreateExprDread(symPtrSym);
+    destExpr = builder->CreateExprDread(*symPtrSym);
   }
   // Replace dassignNode with iassignNode
   MIRType *destPtrType = GlobalTables::GetTypeTable().GetOrCreatePointerType(*mirSymbol->GetType());
-  StmtNode *iassignNode = builder->CreateStmtIassign(destPtrType, 0, destExpr, dassignNode.Opnd(0));
+  StmtNode *iassignNode = builder->CreateStmtIassign(*destPtrType, 0, destExpr, dassignNode.Opnd(0));
   currentFunc.GetBody()->ReplaceStmt1WithStmt2(&dassignNode, iassignNode);
 }
 
@@ -1031,28 +1031,28 @@ BaseNode *MUIDReplacement::ReplaceDread(MIRFunction &currentFunc, StmtNode *stmt
   MIRArrayType *arrayType = nullptr;
   if (mirSymbol->GetStorageClass() != kScExtern) {
     // Local static member is accessed through dataDefTab
-    baseExpr = builder->CreateExprAddrof(0, dataDefTabSym);
+    baseExpr = builder->CreateExprAddrof(0, *dataDefTabSym);
     index = FindIndexFromDefTable(*mirSymbol, false);
     arrayType = static_cast<MIRArrayType*>(dataDefTabSym->GetType());
   } else {
     // External static member is accessed through dataUndefTab
-    baseExpr = builder->CreateExprAddrof(0, dataUndefTabSym);
+    baseExpr = builder->CreateExprAddrof(0, *dataUndefTabSym);
     index = FindIndexFromUndefTable(*mirSymbol, false);
     arrayType = static_cast<MIRArrayType*>(dataUndefTabSym->GetType());
   }
   ConstvalNode *offsetExpr = builder->CreateIntConst(index, PTY_i64);
-  ArrayNode *arrayExpr = builder->CreateExprArray(arrayType, baseExpr, offsetExpr);
+  ArrayNode *arrayExpr = builder->CreateExprArray(*arrayType, baseExpr, offsetExpr);
   arrayExpr->SetBoundsCheck(false);
   MIRType *elemType = arrayType->GetElemType();
   BaseNode *ireadPtrExpr =
-      builder->CreateExprIread(GlobalTables::GetTypeTable().GetVoidPtr(),
-                               GlobalTables::GetTypeTable().GetOrCreatePointerType(*elemType), 1, arrayExpr);
+      builder->CreateExprIread(*GlobalTables::GetTypeTable().GetVoidPtr(),
+                               *GlobalTables::GetTypeTable().GetOrCreatePointerType(*elemType), 1, arrayExpr);
   if (opnd->GetOpCode() == OP_addrof) {
     return ireadPtrExpr;
   }
   MIRType *destType = mirSymbol->GetType();
   MIRType *destPtrType = GlobalTables::GetTypeTable().GetOrCreatePointerType(*destType);
-  return builder->CreateExprIread(destType, destPtrType, 0, ireadPtrExpr);
+  return builder->CreateExprIread(*destType, *destPtrType, 0, ireadPtrExpr);
 }
 
 void MUIDReplacement::ProcessFunc(MIRFunction *func) {

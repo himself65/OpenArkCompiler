@@ -129,7 +129,6 @@ BlockNode *MIRLower::LowerWhileStmt(WhileStmtNode &whileStmt) {
   LabelNode *lableStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
   lableStmt->SetLabelIdx(bodyLableIdx);
   blk->AddStatement(lableStmt);
-  ASSERT(whileStmt.GetBody(), "null ptr check");
   blk->AppendStatementsFromBlock(whileStmt.GetBody());
   CondGotoNode *brTrueStmt = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(OP_brtrue);
   brTrueStmt->SetOpnd(whileStmt.Opnd()->CloneTree(mirModule.GetCurFuncCodeMPAllocator()));
@@ -183,7 +182,6 @@ BlockNode *MIRLower::LowerDoloopStmt(DoloopNode &doloop) {
   LabelNode *labelStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
   labelStmt->SetLabelIdx(bodyLabelIdx);
   blk->AddStatement(labelStmt);
-  ASSERT(doloop.GetDoBody(), "null ptr check ");
   blk->AppendStatementsFromBlock(doloop.GetDoBody());
   if (doloop.IsPreg()) {
     PregIdx regIdx = (PregIdx)doloop.GetDoVarStIdx().FullIdx();
@@ -236,7 +234,6 @@ BlockNode *MIRLower::LowerDowhileStmt(WhileStmtNode &doWhileStmt) {
   LabelNode *labelStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
   labelStmt->SetLabelIdx(lIdx);
   blk->AddStatement(labelStmt);
-  ASSERT(doWhileStmt.GetBody(), "null ptr check ");
   blk->AppendStatementsFromBlock(doWhileStmt.GetBody());
   CondGotoNode *brTrueStmt = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(OP_brtrue);
   brTrueStmt->SetOpnd(doWhileStmt.Opnd());
@@ -259,7 +256,7 @@ BlockNode *MIRLower::LowerBlock(BlockNode &block) {
     switch (stmt->GetOpCode()) {
       case OP_if:
         tmp = LowerIfStmt(static_cast<IfStmtNode&>(*stmt), true);
-        ASSERT(tmp, "null ptr check");
+        ASSERT(tmp != nullptr, "null ptr check");
         newBlock->AppendStatementsFromBlock(tmp);
         break;
       case OP_while:
@@ -273,7 +270,7 @@ BlockNode *MIRLower::LowerBlock(BlockNode &block) {
         break;
       case OP_block:
         tmp = LowerBlock(static_cast<BlockNode&>(*stmt));
-        ASSERT(tmp, "null ptr check ");
+        ASSERT(tmp != nullptr, "null ptr check ");
         newBlock->AppendStatementsFromBlock(tmp);
         break;
       default:
@@ -295,9 +292,9 @@ void MIRLower::LowerBrCondition(BlockNode &block) {
     StmtNode *stmt = nextStmt;
     nextStmt = stmt->GetNext();
     if (stmt->IsCondBr()) {
-      CondGotoNode *condGoto = static_cast<CondGotoNode*>(stmt);
+      auto *condGoto = static_cast<CondGotoNode*>(stmt);
       if (condGoto->Opnd()->GetOpCode() == OP_cand || condGoto->Opnd()->GetOpCode() == OP_cior) {
-        BinaryNode *cond = static_cast<BinaryNode*>(condGoto->Opnd());
+        auto *cond = static_cast<BinaryNode*>(condGoto->Opnd());
         if ((stmt->GetOpCode() == OP_brfalse && cond->GetOpCode() == OP_cand) ||
             (stmt->GetOpCode() == OP_brtrue && cond->GetOpCode() == OP_cior)) {
           // short-circuit target label is same as original condGoto stmt
@@ -385,7 +382,7 @@ void MIRLower::AddArrayMrtMpl(BaseNode &exp, BlockNode &newBlock) {
     AddArrayMrtMpl(*exp.Opnd(i), newBlock);
   }
   if (exp.GetOpCode() == OP_array) {
-    ArrayNode *arrayNode = static_cast<ArrayNode*>(&exp);
+    auto *arrayNode = static_cast<ArrayNode*>(&exp);
     if (arrayNode->GetBoundsCheck()) {
       BaseNode *arrAddr = arrayNode->Opnd(0);
       BaseNode *index = arrayNode->Opnd(1);
@@ -395,24 +392,24 @@ void MIRLower::AddArrayMrtMpl(BaseNode &exp, BlockNode &newBlock) {
       newBlock.AddStatement(nullCheck);
 #if DO_LT_0_CHECK
       ConstvalNode *indexZero = builder->GetConstUInt32(0);
-      CompareNode *lessZero = builder->CreateExprCompare(OP_lt, GlobalTables::GetTypeTable().GetUInt1(),
-                                                         GlobalTables::GetTypeTable().GetUInt32(), index, indexZero);
+      CompareNode *lessZero = builder->CreateExprCompare(OP_lt, *GlobalTables::GetTypeTable().GetUInt1(),
+                                                         *GlobalTables::GetTypeTable().GetUInt32(), index, indexZero);
 #endif
       MIRType *infoLenType = GlobalTables::GetTypeTable().GetInt32();
       MapleVector<BaseNode*> arguments(builder->GetCurrentFuncCodeMpAllocator()->Adapter());
       arguments.push_back(arrAddr);
       BaseNode *arrLen = builder->CreateExprIntrinsicop(INTRN_JAVA_ARRAY_LENGTH, OP_intrinsicop,
-                                                        infoLenType, arguments);
+                                                        *infoLenType, arguments);
       BaseNode *cpmIndex = index;
       if (arrLen->GetPrimType() != index->GetPrimType()) {
-        cpmIndex = builder->CreateExprTypeCvt(OP_cvt, infoLenType, indexType, index);
+        cpmIndex = builder->CreateExprTypeCvt(OP_cvt, *infoLenType, *indexType, index);
       }
-      CompareNode *largeLen = builder->CreateExprCompare(OP_ge, GlobalTables::GetTypeTable().GetUInt1(),
-                                                         GlobalTables::GetTypeTable().GetUInt32(), cpmIndex, arrLen);
+      CompareNode *largeLen = builder->CreateExprCompare(OP_ge, *GlobalTables::GetTypeTable().GetUInt1(),
+                                                         *GlobalTables::GetTypeTable().GetUInt32(), cpmIndex, arrLen);
       // maybe should use cior
 #if DO_LT_0_CHECK
       BinaryNode *indexCon =
-          builder->CreateExprBinary(OP_lior, GlobalTables::GetTypeTable().GetUInt1(), lessZero, largeLen);
+          builder->CreateExprBinary(OP_lior, *GlobalTables::GetTypeTable().GetUInt1(), lessZero, largeLen);
 #endif
       MapleVector<BaseNode*> args(builder->GetCurrentFuncCodeMpAllocator()->Adapter());
 #if DO_LT_0_CHECK
