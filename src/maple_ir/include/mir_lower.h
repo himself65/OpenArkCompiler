@@ -39,12 +39,11 @@ class MIRLower {
  public:
   static const std::set<std::string> kSetArrayHotFunc;
 
- public:
   MIRLower(MIRModule &mod, MIRFunction *f) : mirModule(mod), mirFunc(f), mirBuilder(nullptr), lowerPhase(0) {}
 
-  virtual ~MIRLower() {}
+  virtual ~MIRLower() = default;
 
-  MIRFunction *GetMirFunc() {
+  MIRFunction *GetMirFunc() const {
     return mirFunc;
   }
 

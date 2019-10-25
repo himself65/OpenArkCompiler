@@ -68,7 +68,7 @@ class MIRParser {
   PrimType GetPrimitiveType(TokenKind tk) const;
   MIRIntrinsicID GetIntrinsicId(TokenKind tk) const;
   bool ParseScalarValue(MIRConstPtr&, MIRType*);
-  bool ParseConstAddrLeafExpr(MIRConstPtr&, MIRType*);
+  bool ParseConstAddrLeafExpr(MIRConstPtr&, MIRType&);
   bool ParseInitValue(MIRConstPtr&, TyIdx);
   bool ParseDeclaredSt(StIdx&);
   bool ParseDeclaredFunc(PUIdx&);
@@ -173,7 +173,7 @@ class MIRParser {
   bool ParseExprConststr16(BaseNodePtr &expr);
   bool ParseExprSizeoftype(BaseNodePtr &expr);
   bool ParseExprFieldsDist(BaseNodePtr &expr);
-  bool ParseExprIreadIaddrof(IreadNode *expr);
+  bool ParseExprIreadIaddrof(IreadNode &expr);
   bool ParseExprIread(BaseNodePtr &expr);
   bool ParseExprIreadoff(BaseNodePtr &expr);
   bool ParseExprIreadFPoff(BaseNodePtr &expr);
@@ -194,7 +194,7 @@ class MIRParser {
 
   bool ParseTypedef();
   bool ParseJavaClassInterface(MIRSymbol&, bool);
-  bool ParseIntrinsicId(IntrinsicopNode*);
+  bool ParseIntrinsicId(IntrinsicopNode&);
   void Error(const std::string&);
   void Warning(const std::string&);
   void FixupForwardReferencedTypeByMap();

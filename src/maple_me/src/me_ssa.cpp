@@ -144,7 +144,7 @@ void MeSSA::InsertPhiNode() {
 }
 
 MeSSA::MeSSA(MeFunction *func, Dominance *dom, MemPool *memPool)
-    : SSA(memPool, func->GetMeSSATab()), AnalysisResult(memPool), func(func), dom(dom) {}
+    : SSA(*memPool, *func->GetMeSSATab()), AnalysisResult(memPool), func(func), dom(dom) {}
 
 void MeSSA::RenameBB(BB &bb) {
   if (GetBBRenamed(bb.GetBBId().idx)) {

@@ -110,10 +110,10 @@ void VtableImpl::ReplaceResolveInterface(StmtNode *stmt, const ResolveFuncNode *
   MIRType *compactPtrType = GlobalTables::GetTypeTable().GetCompactPtr();
   PrimType compactPtrPrim = compactPtrType->GetPrimType();
   BaseNode *offsetNode = builder->CreateIntConst(hashCode * kTabEntrySize, PTY_u32);
-  BaseNode *addrNode = builder->CreateExprBinary(OP_add, GlobalTables::GetTypeTable().GetPtr(),
+  BaseNode *addrNode = builder->CreateExprBinary(OP_add, *GlobalTables::GetTypeTable().GetPtr(),
                                                  builder->CreateExprRegread(PTY_ptr, pregItabAddress), offsetNode);
   BaseNode *readFuncPtr = builder->CreateExprIread(
-      compactPtrType, GlobalTables::GetTypeTable().GetOrCreatePointerType(*compactPtrType), 0, addrNode);
+      *compactPtrType, *GlobalTables::GetTypeTable().GetOrCreatePointerType(*compactPtrType), 0, addrNode);
   PregIdx pregFuncPtr = currFunc->GetPregTab()->CreatePreg(compactPtrPrim);
   RegassignNode *funcPtrAssign = builder->CreateStmtRegassign(compactPtrPrim, pregFuncPtr, readFuncPtr);
   currFunc->GetBody()->InsertBefore(stmt, funcPtrAssign);
@@ -132,7 +132,7 @@ void VtableImpl::ReplaceResolveInterface(StmtNode *stmt, const ResolveFuncNode *
   opnds.push_back(signatureNode);
   StmtNode *mccCallStmt =
       builder->CreateStmtCallRegassigned(mccItabFunc->GetPuidx(), opnds, pregFuncPtr, OP_callassigned);
-  BaseNode *checkExpr = builder->CreateExprCompare(OP_eq, GlobalTables::GetTypeTable().GetUInt1(), compactPtrType,
+  BaseNode *checkExpr = builder->CreateExprCompare(OP_eq, *GlobalTables::GetTypeTable().GetUInt1(), *compactPtrType,
                                                    builder->CreateExprRegread(compactPtrPrim, pregFuncPtr),
                                                    builder->CreateIntConst(0, compactPtrPrim));
   IfStmtNode *ifStmt = static_cast<IfStmtNode*>(builder->CreateStmtIf(checkExpr));

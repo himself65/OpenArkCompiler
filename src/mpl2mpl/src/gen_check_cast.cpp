@@ -104,7 +104,7 @@ void CheckCastGenerator::GenCheckCast(BaseNode &stmt) {
         if (callNode->GetNopndAt(0)->GetPrimType() != PTY_ref && callNode->GetNopndAt(0)->GetPrimType() != PTY_ptr) {
           // If source = Ljava_2Flang_2FObject_3B, sub = primitive type then throw CastException.
           MIRSymbol *classSt = GetOrCreateClassInfoSymbol(checkKlass->GetKlassName());
-          BaseNode *valueExpr = builder->CreateExprAddrof(0, classSt);
+          BaseNode *valueExpr = builder->CreateExprAddrof(0, *classSt);
           MapleVector<BaseNode*> args(builder->GetCurrentFuncCodeMpAllocator()->Adapter());
           args.push_back(valueExpr);
           args.push_back(callNode->GetNopndAt(0));
@@ -114,21 +114,21 @@ void CheckCastGenerator::GenCheckCast(BaseNode &stmt) {
         }
       } else {
         MIRSymbol *classSt = GetOrCreateClassInfoSymbol(checkKlass->GetKlassName());
-        BaseNode *valueExpr = builder->CreateExprAddrof(0, classSt);
+        BaseNode *valueExpr = builder->CreateExprAddrof(0, *classSt);
         BaseNode *nullPtr = builder->CreateIntConst(0, PTY_ptr);
         const size_t callNodeNopndSize2 = callNode->GetNopndSize();
         CHECK_FATAL(callNodeNopndSize2 > 0, "container check");
         BaseNode *cond =
-            builder->CreateExprCompare(OP_ne, GlobalTables::GetTypeTable().GetUInt1(),
-                                       GlobalTables::GetTypeTable().GetPtr(), callNode->GetNopndAt(0), nullPtr);
+            builder->CreateExprCompare(OP_ne, *GlobalTables::GetTypeTable().GetUInt1(),
+                                       *GlobalTables::GetTypeTable().GetPtr(), callNode->GetNopndAt(0), nullPtr);
         IfStmtNode *ifStmt = static_cast<IfStmtNode*>(builder->CreateStmtIf(cond));
         MIRType *mVoidPtr = GlobalTables::GetTypeTable().GetVoidPtr();
         CHECK_FATAL(mVoidPtr != nullptr, "builder->GetVoidPtr() is null in CheckCastGenerator::GenCheckCast");
         BaseNode *opnd = callNode->GetNopndAt(0);
         BaseNode *ireadExpr = GetObjectShadow(opnd);
 
-        BaseNode *innerCond = builder->CreateExprCompare(OP_ne, GlobalTables::GetTypeTable().GetUInt1(),
-                                                         GlobalTables::GetTypeTable().GetPtr(), valueExpr, ireadExpr);
+        BaseNode *innerCond = builder->CreateExprCompare(OP_ne, *GlobalTables::GetTypeTable().GetUInt1(),
+                                                         *GlobalTables::GetTypeTable().GetPtr(), valueExpr, ireadExpr);
         IfStmtNode *innerIfStmt = static_cast<IfStmtNode *>(builder->CreateStmtIf(innerCond));
         MapleVector<BaseNode*> args(builder->GetCurrentFuncCodeMpAllocator()->Adapter());
         args.push_back(valueExpr);
@@ -164,7 +164,7 @@ void CheckCastGenerator::GenCheckCast(BaseNode &stmt) {
         } else {
           elemClassSt = GetOrCreateClassInfoSymbol(elementName);
         }
-        BaseNode *valueExpr = builder->CreateExprAddrof(0, elemClassSt);
+        BaseNode *valueExpr = builder->CreateExprAddrof(0, *elemClassSt);
         UStrIdx stridx = GlobalTables::GetUStrTable().GetOrCreateStrIdxFromName(jarrayType->GetJavaName());
         ConststrNode *signatureNode = currFunc->GetCodeMempool()->New<ConststrNode>(stridx);
         signatureNode->SetPrimType(PTY_ptr);
@@ -269,7 +269,8 @@ void CheckCastGenerator::GenAllCheckCast() {
 BaseNode *CheckCastGenerator::GetObjectShadow(BaseNode *opnd) {
   FieldID fieldID = builder->GetStructFieldIDFromFieldNameParentFirst(WKTypes::Util::GetJavaLangObjectType(),
                                                                       NameMangler::kShadowClassName);
-  BaseNode *ireadExpr = builder->CreateExprIread(GlobalTables::GetTypeTable().GetPtr(), pointerObjType, fieldID, opnd);
+  BaseNode *ireadExpr =
+      builder->CreateExprIread(*GlobalTables::GetTypeTable().GetPtr(), *pointerObjType, fieldID, opnd);
   return ireadExpr;
 }
 

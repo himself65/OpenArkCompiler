@@ -405,7 +405,7 @@ class PtrListRef {
       this->last = nullptr;
     } else if (_Where == this->begin()) {
       this->first = _Where->GetNext();
-      ASSERT(this->first, "null ptr check");
+      ASSERT(this->first != nullptr, "null ptr check");
       this->first->SetPrev(nullptr);
     } else if (_Where == this->rbegin().base()) {
       pop_back();

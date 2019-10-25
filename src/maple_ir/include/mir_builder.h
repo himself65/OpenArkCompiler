@@ -129,7 +129,7 @@ class MIRBuilder {
     return fun->GetFormal(index);
   }
 
-  MIRFunction *CreateFunction(const std::string &name, const MIRType *returnType, const ArgVector &arguments,
+  MIRFunction *CreateFunction(const std::string &name, const MIRType &returnType, const ArgVector &arguments,
                               bool isvarg = false, bool createBody = true);
   MIRFunction *CreateFunction(const StIdx stIdx, bool addToTable = true);
   virtual void UpdateFunction(MIRFunction *func, MIRType *returnType, const ArgVector &arguments) {
@@ -140,7 +140,7 @@ class MIRBuilder {
   virtual MIRSymbol *GetOrCreateLocalDecl(const std::string &str, MIRType &type);
   MIRSymbol *GetLocalDecl(const std::string &str);
   MIRSymbol *CreateLocalDecl(const std::string &str, const MIRType &type);
-  MIRSymbol *GetOrCreateGlobalDecl(const std::string &str, const MIRType *type);
+  MIRSymbol *GetOrCreateGlobalDecl(const std::string &str, const MIRType &type);
   MIRSymbol *GetGlobalDecl(const std::string &str);
   MIRSymbol *GetDecl(const std::string &str);
   MIRSymbol *CreateGlobalDecl(const std::string &str, const MIRType *type, MIRStorageClass sc = kScGlobal);
@@ -150,7 +150,7 @@ class MIRBuilder {
   ConstvalNode *CreateFloatConst(float val);
   ConstvalNode *CreateDoubleConst(double val);
   ConstvalNode *CreateFloat128Const(const uint64 *val);
-  ConstvalNode *GetConstInt(MemPool *memPool, int i);
+  ConstvalNode *GetConstInt(MemPool &memPool, int i);
   ConstvalNode *GetConstInt(int i) {
     return CreateIntConst(i, PTY_i32);
   }
@@ -176,41 +176,41 @@ class MIRBuilder {
   }
 
   ConstvalNode *GetConstArray(MIRType*, BaseNode*, uint32 length);
-  ConstvalNode *CreateAddrofConst(BaseNode*);
-  ConstvalNode *CreateAddroffuncConst(const BaseNode*);
-  ConstvalNode *CreateStrConst(const BaseNode*);
-  ConstvalNode *CreateStr16Const(const BaseNode*);
-  SizeoftypeNode *CreateExprSizeoftype(const MIRType *type);
-  FieldsDistNode *CreateExprFieldsDist(const MIRType *type, FieldID field1, FieldID field2);
-  AddrofNode *CreateExprAddrof(FieldID fieldID, const MIRSymbol *symbol, MemPool *memPool = nullptr);
+  ConstvalNode *CreateAddrofConst(BaseNode&);
+  ConstvalNode *CreateAddroffuncConst(const BaseNode&);
+  ConstvalNode *CreateStrConst(const BaseNode&);
+  ConstvalNode *CreateStr16Const(const BaseNode&);
+  SizeoftypeNode *CreateExprSizeoftype(const MIRType &type);
+  FieldsDistNode *CreateExprFieldsDist(const MIRType &type, FieldID field1, FieldID field2);
+  AddrofNode *CreateExprAddrof(FieldID fieldID, const MIRSymbol &symbol, MemPool *memPool = nullptr);
   AddrofNode *CreateExprAddrof(FieldID fieldID, StIdx symbolStIdx, MemPool *memPool = nullptr);
   AddroffuncNode *CreateExprAddroffunc(PUIdx, MemPool *memPool = nullptr);
-  AddrofNode *CreateExprDread(const MIRType *type, FieldID fieldID, const MIRSymbol *symbol);
-  virtual AddrofNode *CreateExprDread(MIRType *type, MIRSymbol *symbol);
-  virtual AddrofNode *CreateExprDread(MIRSymbol *symbol);
+  AddrofNode *CreateExprDread(const MIRType &type, FieldID fieldID, const MIRSymbol &symbol);
+  virtual AddrofNode *CreateExprDread(MIRType &type, MIRSymbol &symbol);
+  virtual AddrofNode *CreateExprDread(MIRSymbol &symbol);
   AddrofNode *CreateExprDread(PregIdx pregID, PrimType pty);
-  AddrofNode *CreateExprDread(MIRSymbol*, uint16);
+  AddrofNode *CreateExprDread(MIRSymbol&, uint16);
   RegreadNode *CreateExprRegread(PrimType pty, PregIdx regIdx);
-  IreadNode *CreateExprIread(const MIRType *returnType, const MIRType *ptrType, FieldID fieldID, BaseNode *addr);
+  IreadNode *CreateExprIread(const MIRType &returnType, const MIRType &ptrType, FieldID fieldID, BaseNode *addr);
   IreadNode *CreateExprIread(TyIdx *returnTypeIdx, TyIdx *ptrTypeIdx, FieldID fieldID, BaseNode *addr);
   IreadoffNode *CreateExprIreadoff(PrimType pty, int32 offset, BaseNode *opnd0);
   IreadFPoffNode *CreateExprIreadFPoff(PrimType pty, int32 offset);
-  IaddrofNode *CreateExprIaddrof(const MIRType *returnType, const MIRType *ptrType, FieldID fieldID, BaseNode *addr);
+  IaddrofNode *CreateExprIaddrof(const MIRType &returnType, const MIRType &ptrType, FieldID fieldID, BaseNode *addr);
   IaddrofNode *CreateExprIaddrof(PrimType returnTypePty, TyIdx ptrTypeIdx, FieldID fieldID, BaseNode *addr);
-  BinaryNode *CreateExprBinary(Opcode opcode, const MIRType *type, BaseNode *opnd0, BaseNode *opnd1);
-  TernaryNode *CreateExprTernary(Opcode opcode, const MIRType *type, BaseNode *opnd0, BaseNode *opnd1, BaseNode *opnd2);
-  CompareNode *CreateExprCompare(Opcode opcode, const MIRType *type, const MIRType *opndType, BaseNode *opnd0,
+  BinaryNode *CreateExprBinary(Opcode opcode, const MIRType &type, BaseNode *opnd0, BaseNode *opnd1);
+  TernaryNode *CreateExprTernary(Opcode opcode, const MIRType &type, BaseNode *opnd0, BaseNode *opnd1, BaseNode *opnd2);
+  CompareNode *CreateExprCompare(Opcode opcode, const MIRType &type, const MIRType &opndType, BaseNode *opnd0,
                                  BaseNode *opnd1);
-  UnaryNode *CreateExprUnary(Opcode opcode, const MIRType *type, BaseNode *opnd);
-  GCMallocNode *CreateExprGCMalloc(Opcode opcode, const MIRType *ptype, const MIRType *type);
-  JarrayMallocNode *CreateExprJarrayMalloc(Opcode opcode, const MIRType *ptype, const MIRType *type, BaseNode *opnd);
-  TypeCvtNode *CreateExprTypeCvt(Opcode o, const MIRType *type, const MIRType *fromtype, BaseNode *opnd);
-  ExtractbitsNode *CreateExprExtractbits(Opcode o, const MIRType *type, uint32 bOffset, uint32 bsize, BaseNode *opnd);
-  RetypeNode *CreateExprRetype(const MIRType *type, const MIRType *fromType, BaseNode *opnd);
-  ArrayNode *CreateExprArray(const MIRType *arrayType);
-  ArrayNode *CreateExprArray(const MIRType *arrayType, BaseNode *op);
-  ArrayNode *CreateExprArray(const MIRType *arrayType, BaseNode *op1, BaseNode *op2);
-  IntrinsicopNode *CreateExprIntrinsicop(MIRIntrinsicID idx, Opcode opCode, const MIRType *type,
+  UnaryNode *CreateExprUnary(Opcode opcode, const MIRType &type, BaseNode *opnd);
+  GCMallocNode *CreateExprGCMalloc(Opcode opcode, const MIRType &ptype, const MIRType &type);
+  JarrayMallocNode *CreateExprJarrayMalloc(Opcode opcode, const MIRType &ptype, const MIRType &type, BaseNode *opnd);
+  TypeCvtNode *CreateExprTypeCvt(Opcode o, const MIRType &type, const MIRType &fromtype, BaseNode *opnd);
+  ExtractbitsNode *CreateExprExtractbits(Opcode o, const MIRType &type, uint32 bOffset, uint32 bsize, BaseNode *opnd);
+  RetypeNode *CreateExprRetype(const MIRType &type, const MIRType &fromType, BaseNode *opnd);
+  ArrayNode *CreateExprArray(const MIRType &arrayType);
+  ArrayNode *CreateExprArray(const MIRType &arrayType, BaseNode *op);
+  ArrayNode *CreateExprArray(const MIRType &arrayType, BaseNode *op1, BaseNode *op2);
+  IntrinsicopNode *CreateExprIntrinsicop(MIRIntrinsicID idx, Opcode opCode, const MIRType &type,
                                          const MapleVector<BaseNode*> &ops);
   // for creating Statement.
   NaryStmtNode *CreateStmtReturn(BaseNode *rVal);
@@ -218,10 +218,10 @@ class MIRBuilder {
   NaryStmtNode *CreateStmtNary(Opcode op, const MapleVector<BaseNode*> &rVals);
   UnaryStmtNode *CreateStmtUnary(Opcode op, BaseNode *rVal);
   UnaryStmtNode *CreateStmtThrow(BaseNode *rVal);
-  DassignNode *CreateStmtDassign(const MIRSymbol *var, FieldID fieldID, BaseNode *src);
+  DassignNode *CreateStmtDassign(const MIRSymbol &var, FieldID fieldID, BaseNode *src);
   DassignNode *CreateStmtDassign(StIdx sIdx, FieldID fieldID, BaseNode *src);
   RegassignNode *CreateStmtRegassign(PrimType pty, PregIdx regIdx, BaseNode *src);
-  IassignNode *CreateStmtIassign(const MIRType *type, FieldID fieldID, BaseNode *addr, BaseNode *src);
+  IassignNode *CreateStmtIassign(const MIRType &type, FieldID fieldID, BaseNode *addr, BaseNode *src);
   IassignoffNode *CreateStmtIassignoff(PrimType pty, int32 offset, BaseNode *opnd0, BaseNode *src);
   IassignFPoffNode *CreateStmtIassignFPoff(PrimType pty, int32 offset, BaseNode *src);
   CallNode *CreateStmtCall(PUIdx puIdx, const MapleVector<BaseNode*> &args, Opcode opCode = OP_call);
@@ -264,22 +264,22 @@ class MIRBuilder {
   TryNode *CreateStmtTry(const MapleVector<LabelIdx> &cLabIdxs);
   CatchNode *CreateStmtCatch(const MapleVector<TyIdx> &tyIdxVec);
   LabelIdx GetOrCreateMIRLabel(const std::string &name);
-  LabelIdx CreateLabIdx(MIRFunction *mirfunc);
+  LabelIdx CreateLabIdx(MIRFunction &mirfunc);
   LabelNode *CreateStmtLabel(LabelIdx labIdx);
   StmtNode *CreateStmtComment(const std::string &cmnt);
   CondGotoNode *CreateStmtCondGoto(BaseNode *cond, Opcode op, LabelIdx labIdx);
-  void AddStmtInCurrentFunctionBody(StmtNode *stmt);
-  MIRSymbol *GetSymbol(TyIdx, const std::string&, MIRSymKind, MIRStorageClass, MIRFunction*, uint8, bool);
-  MIRSymbol *GetSymbol(TyIdx, GStrIdx, MIRSymKind, MIRStorageClass, MIRFunction*, uint8, bool);
+  void AddStmtInCurrentFunctionBody(StmtNode &stmt);
+  MIRSymbol *GetSymbol(TyIdx, const std::string&, MIRSymKind, MIRStorageClass, uint8, bool);
+  MIRSymbol *GetSymbol(TyIdx, GStrIdx, MIRSymKind, MIRStorageClass, uint8, bool);
   MIRSymbol *GetOrCreateSymbol(TyIdx, const std::string&, MIRSymKind, MIRStorageClass, MIRFunction*, uint8, bool);
   MIRSymbol *GetOrCreateSymbol(TyIdx, GStrIdx, MIRSymKind, MIRStorageClass, MIRFunction*, uint8, bool);
-  MIRSymbol *CreatePregFormalSymbol(TyIdx, PregIdx, MIRFunction*);
+  MIRSymbol *CreatePregFormalSymbol(TyIdx, PregIdx, MIRFunction&);
   // for creating symbol
   MIRSymbol *CreateSymbol(TyIdx, const std::string&, MIRSymKind, MIRStorageClass, MIRFunction*, uint8);
   MIRSymbol *CreateSymbol(TyIdx, GStrIdx, MIRSymKind, MIRStorageClass, MIRFunction*, uint8);
   // for creating nodes
-  AddrofNode *CreateAddrof(const MIRSymbol *st, PrimType pty = PTY_ptr);
-  AddrofNode *CreateDread(const MIRSymbol *st, PrimType pty);
+  AddrofNode *CreateAddrof(const MIRSymbol &st, PrimType pty = PTY_ptr);
+  AddrofNode *CreateDread(const MIRSymbol &st, PrimType pty);
   virtual MemPool *GetCurrentFuncCodeMp();
   virtual MapleAllocator *GetCurrentFuncCodeMpAllocator();
 

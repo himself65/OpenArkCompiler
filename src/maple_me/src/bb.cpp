@@ -113,7 +113,7 @@ const PhiNode *BB::PhiofVerStInserted(const VersionSt &versionSt) const {
 }
 
 void BB::InsertPhi(MapleAllocator *alloc, VersionSt *versionSt) {
-  PhiNode phiNode(alloc, versionSt);
+  PhiNode phiNode(*alloc, *versionSt);
   for (auto prevIt = pred.begin(); prevIt != pred.end(); prevIt++) {
     phiNode.GetPhiOpnds().push_back(versionSt);
   }

@@ -229,7 +229,7 @@ MIRPragmaElement *BinaryMplImport::ImportPragmaElement() {
   }
   int64 size = ReadNum();
   for (int64 i = 0; i < size; i++) {
-    element->PushSubElemVec(ImportPragmaElement());
+    element->PushSubElemVec(*ImportPragmaElement());
   }
   return element;
 }
@@ -244,7 +244,7 @@ MIRPragma *BinaryMplImport::ImportPragma() {
   p->SetParamNum(ReadNum());
   int64 size = ReadNum();
   for (int64 i = 0; i < size; i++) {
-    p->PushElementVector(ImportPragmaElement());
+    p->PushElementVector(*ImportPragmaElement());
   }
   return p;
 }
@@ -705,7 +705,7 @@ MIRType &BinaryMplImport::InsertInTypeTables(MIRType &type) {
       if (IsObject(*resultTypePtr)) {
         mod.GetTypeNameTab()->SetGStrIdxToTyIdx(stridx, tyIdx);
         mod.AddClass(tyIdx);
-        mod.GetTypeDefOrder().push_back(stridx);
+        mod.PushbackTypeDefOrder(stridx);
         if (!IsIncomplete(*resultTypePtr)) {
           GlobalTables::GetTypeNameTable().SetGStrIdxToTyIdx(stridx, tyIdx);
         }

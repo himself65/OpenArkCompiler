@@ -27,6 +27,7 @@
 namespace maple {
 class MIRPregTable;
 class TypeTable;
+
 struct RegFieldPair {
  public:
   RegFieldPair() : fieldID(0), pregIdx(0) {}
@@ -103,7 +104,7 @@ class BaseNode {
     LogInfo::MapleLogger() << std::endl;
   }
 
-  virtual uint8 SizeOfInstr() {
+  virtual uint8 SizeOfInstr() const {
     return kOpcodeInfo.GetTableItemAt(GetOpCode()).instrucSize;
   }
 
@@ -146,7 +147,7 @@ class BaseNode {
     ASSERT(0, "This should not happen");
   }
 
-  virtual bool IsLeaf(void) {
+  virtual bool IsLeaf(void) const {
     return true;
   }
 
@@ -158,11 +159,11 @@ class BaseNode {
     return nullptr;
   }
 
-  virtual bool IsUnaryNode(void) {
+  virtual bool IsUnaryNode(void) const {
     return false;
   }
 
-  virtual bool IsBinaryNode(void) {
+  virtual bool IsBinaryNode(void) const {
     return false;
   }
 
@@ -215,11 +216,11 @@ class UnaryNode : public BaseNode {
     uOpnd = node;
   }
 
-  bool IsLeaf(void) {
+  bool IsLeaf(void) const {
     return false;
   }
 
-  bool IsUnaryNode(void) {
+  bool IsUnaryNode(void) const {
     return true;
   }
 
@@ -520,26 +521,26 @@ class BinaryOpnds {
   virtual void Dump(const MIRModule &mod, int32 indent) const;
 
   BaseNode *GetBOpnd(int32 i) const {
-    CHECK_FATAL(i >= 0 && i < 2, "Invalid operand idx in BinaryOpnds");
+    CHECK_FATAL(i >= 0 && i < kOperandNumBinary, "Invalid operand idx in BinaryOpnds");
     return bOpnd[i];
   }
 
   void SetBOpnd(BaseNode *node, int32 i) {
-    CHECK_FATAL(i >= 0 && i < 2, "Invalid operand idx in BinaryOpnds");
+    CHECK_FATAL(i >= 0 && i < kOperandNumBinary, "Invalid operand idx in BinaryOpnds");
     bOpnd[i] = node;
   }
 
  private:
-  BaseNode *bOpnd[2];
+  BaseNode *bOpnd[kOperandNumBinary];
 };
 
 class BinaryNode : public BaseNode, public BinaryOpnds {
  public:
-  explicit BinaryNode(Opcode o) : BaseNode(o, 2) {}
+  explicit BinaryNode(Opcode o) : BaseNode(o, kOperandNumBinary) {}
 
-  BinaryNode(Opcode o, PrimType typ) : BaseNode(o, typ, 2) {}
+  BinaryNode(Opcode o, PrimType typ) : BaseNode(o, typ, kOperandNumBinary) {}
 
-  BinaryNode(Opcode o, PrimType typ, BaseNode *l, BaseNode *r) : BaseNode(o, typ, 2) {
+  BinaryNode(Opcode o, PrimType typ, BaseNode *l, BaseNode *r) : BaseNode(o, typ, kOperandNumBinary) {
     SetBOpnd(l, 0);
     SetBOpnd(r, 1);
   }
@@ -573,24 +574,24 @@ class BinaryNode : public BaseNode, public BinaryOpnds {
   }
 
   BaseNode *Opnd(size_t i) const {
-    ASSERT(i < 2, "invalid operand idx in BinaryNode");
+    ASSERT(i < kOperandNumBinary, "invalid operand idx in BinaryNode");
     ASSERT(i >= 0, "invalid operand idx in BinaryNode");
     return GetBOpnd(i);
   }
 
   uint8 NumOpnds(void) const {
-    return 2;
+    return kOperandNumBinary;
   }
 
   void SetOpnd(BaseNode *node, size_t i = 0) {
     SetBOpnd(node, i);
   }
 
-  bool IsLeaf(void) {
+  bool IsLeaf(void) const {
     return false;
   }
 
-  bool IsBinaryNode(void) {
+  bool IsBinaryNode(void) const {
     return true;
   }
 };
@@ -718,19 +719,19 @@ class ResolveFuncNode : public BinaryNode {
 
 class TernaryNode : public BaseNode {
  public:
-  explicit TernaryNode(Opcode o) : BaseNode(o, kOprandNumTernary) {
+  explicit TernaryNode(Opcode o) : BaseNode(o, kOperandNumTernary) {
     topnd[0] = nullptr;
     topnd[1] = nullptr;
     topnd[2] = nullptr;
   }
 
-  TernaryNode(Opcode o, PrimType typ) : BaseNode(o, typ, kOprandNumTernary) {
+  TernaryNode(Opcode o, PrimType typ) : BaseNode(o, typ, kOperandNumTernary) {
     topnd[0] = nullptr;
     topnd[1] = nullptr;
     topnd[2] = nullptr;
   }
 
-  TernaryNode(Opcode o, PrimType typ, BaseNode *e0, BaseNode *e1, BaseNode *e2) : BaseNode(o, typ, kOprandNumTernary) {
+  TernaryNode(Opcode o, PrimType typ, BaseNode *e0, BaseNode *e1, BaseNode *e2) : BaseNode(o, typ, kOperandNumTernary) {
     topnd[0] = e0;
     topnd[1] = e1;
     topnd[2] = e2;
@@ -750,25 +751,25 @@ class TernaryNode : public BaseNode {
   }
 
   BaseNode *Opnd(size_t i) const {
-    CHECK_FATAL(i < 3, "array index out of range");
+    CHECK_FATAL(i < kOperandNumTernary, "array index out of range");
     return topnd[i];
   }
 
   uint8 NumOpnds(void) const {
-    return kOprandNumTernary;
+    return kOperandNumTernary;
   }
 
   void SetOpnd(BaseNode *node, size_t i = 0) {
-    CHECK_FATAL(i < kOprandNumTernary, "array index out of range");
+    CHECK_FATAL(i < kOperandNumTernary, "array index out of range");
     topnd[i] = node;
   }
 
-  bool IsLeaf(void) {
+  bool IsLeaf(void) const {
     return false;
   }
 
  private:
-  BaseNode *topnd[kOprandNumTernary];
+  BaseNode *topnd[kOperandNumTernary];
 };
 
 class NaryOpnds {
@@ -853,7 +854,7 @@ class NaryNode : public BaseNode, public NaryOpnds {
     SetNOpndAt(i, node);
   }
 
-  bool IsLeaf(void) {
+  bool IsLeaf(void) const {
     return false;
   }
 
@@ -864,10 +865,10 @@ class NaryNode : public BaseNode, public NaryOpnds {
 
 class IntrinsicopNode : public NaryNode {
  public:
-  explicit IntrinsicopNode(MapleAllocator &allocator, Opcode o, TyIdx typeIdx = TyIdx())
+  IntrinsicopNode(MapleAllocator &allocator, Opcode o, TyIdx typeIdx = TyIdx())
       : NaryNode(allocator, o), intrinsic(INTRN_UNDEFINED), tyIdx(typeIdx) {}
 
-  explicit IntrinsicopNode(const MIRModule &mod, Opcode o, TyIdx typeIdx = TyIdx())
+  IntrinsicopNode(const MIRModule &mod, Opcode o, TyIdx typeIdx = TyIdx())
       : IntrinsicopNode(mod.GetCurFuncCodeMPAllocator(), o, typeIdx) {}
 
   IntrinsicopNode(MapleAllocator &allocator, Opcode o, PrimType typ, TyIdx typeIdx = TyIdx())
@@ -914,9 +915,8 @@ class IntrinsicopNode : public NaryNode {
     tyIdx = idx;
   }
 
-  MIRIntrinsicID intrinsic;
-
  private:
+  MIRIntrinsicID intrinsic;
   TyIdx tyIdx;
 };
 
@@ -1209,9 +1209,9 @@ using DreadNode = AddrofNode;
 
 class RegreadNode : public BaseNode {
  public:
-  explicit RegreadNode() : BaseNode(OP_regread), regIdx(0) {}
+  RegreadNode() : BaseNode(OP_regread), regIdx(0) {}
 
-  RegreadNode(PregIdx pIdx) : BaseNode(OP_regread), regIdx(pIdx) {}
+  explicit RegreadNode(PregIdx pIdx) : BaseNode(OP_regread), regIdx(pIdx) {}
 
   RegreadNode(PrimType primType, PregIdx pIdx) : RegreadNode(pIdx) {
     ptyp = primType;
@@ -1443,7 +1443,7 @@ class IassignNode : public StmtNode {
 
   IassignNode(TyIdx tyIdx, FieldID fieldID, BaseNode *addrOpnd, BaseNode *rhsOpnd)
       : StmtNode(OP_iassign), tyIdx(tyIdx), fieldID(fieldID), addrExpr(addrOpnd), rhs(rhsOpnd) {
-    SetNumOpnds(kOprandNumBinary);
+    SetNumOpnds(kOperandNumBinary);
   }
 
   ~IassignNode() = default;
@@ -1472,7 +1472,7 @@ class IassignNode : public StmtNode {
   }
 
   uint8 NumOpnds(void) const {
-    return 2;
+    return kOperandNumBinary;
   }
 
   void SetOpnd(BaseNode *node, size_t i) {
@@ -1595,7 +1595,7 @@ class TryNode : public StmtNode {
  public:
   explicit TryNode(MapleAllocator &allocator) : StmtNode(OP_try), offsets(allocator.Adapter()) {}
 
-  TryNode(const MapleVector<LabelIdx> &offsets) : StmtNode(OP_try), offsets(offsets) {}
+  explicit TryNode(const MapleVector<LabelIdx> &offsets) : StmtNode(OP_try), offsets(offsets) {}
 
   explicit TryNode(const MIRModule &mod) : TryNode(mod.GetCurFuncCodeMPAllocator()) {}
 
@@ -1663,7 +1663,7 @@ class CatchNode : public StmtNode {
  public:
   explicit CatchNode(MapleAllocator &allocator) : StmtNode(OP_catch), exceptionTyIdxVec(allocator.Adapter()) {}
 
-  CatchNode(const MapleVector<TyIdx> &tyIdxVec)
+  explicit CatchNode(const MapleVector<TyIdx> &tyIdxVec)
       : StmtNode(OP_catch), exceptionTyIdxVec(tyIdxVec) {}
 
   explicit CatchNode(const MIRModule &mod) : CatchNode(mod.GetCurFuncCodeMPAllocator()) {}
@@ -1789,7 +1789,7 @@ class SwitchNode : public StmtNode {
     return switchTable;
   }
 
-  CasePair GetCasePair(size_t idx) {
+  CasePair GetCasePair(size_t idx) const {
     ASSERT(idx < switchTable.size(), "out of range in SwitchNode::GetCasePair");
     return switchTable.at(idx);
   }
@@ -1899,7 +1899,7 @@ class UnaryStmtNode : public StmtNode {
     return nd;
   }
 
-  bool IsLeaf(void) {
+  bool IsLeaf(void) const {
     return false;
   }
 
@@ -2045,7 +2045,7 @@ class CondGotoNode : public UnaryStmtNode {
   explicit CondGotoNode(Opcode o) : CondGotoNode(o, 0, nullptr) {}
 
   CondGotoNode(Opcode o, uint32 offset, BaseNode *opnd) : UnaryStmtNode(o, kPtyInvalid, opnd), offset(offset) {
-    SetNumOpnds(kOprandNumUnary);
+    SetNumOpnds(kOperandNumUnary);
   }
 
   ~CondGotoNode() = default;
@@ -2116,7 +2116,7 @@ class RangegotoNode : public UnaryStmtNode {
     rangegotoTable.push_back(SmallCasePair(tag, idx));
   }
 
-  int32 GetTagOffset() {
+  int32 GetTagOffset() const {
     return tagOffset;
   }
 
@@ -2234,7 +2234,7 @@ class BlockNode : public StmtNode {
 class IfStmtNode : public UnaryStmtNode {
  public:
   IfStmtNode() : UnaryStmtNode(OP_if), thenPart(nullptr), elsePart(nullptr) {
-    numOpnds = kOprandNumBinary;
+    numOpnds = kOperandNumBinary;
   }
 
   ~IfStmtNode() = default;
@@ -2260,7 +2260,7 @@ class IfStmtNode : public UnaryStmtNode {
       return thenPart;
     } else if (i == 2) {
       ASSERT(elsePart != nullptr, "IfStmtNode has wrong numOpnds field, the elsePart is nullptr");
-      ASSERT(numOpnds == kOprandNumTernary, "IfStmtNode has wrong numOpnds field, the elsePart is nullptr");
+      ASSERT(numOpnds == kOperandNumTernary, "IfStmtNode has wrong numOpnds field, the elsePart is nullptr");
       return elsePart;
     }
     ASSERT(false, "IfStmtNode has wrong numOpnds field: %u", NumOpnds());
@@ -2296,7 +2296,7 @@ class IfStmtNode : public UnaryStmtNode {
 class WhileStmtNode : public UnaryStmtNode {
  public:
   explicit WhileStmtNode(Opcode o) : UnaryStmtNode(o), body(nullptr) {
-    SetNumOpnds(kOprandNumBinary);
+    SetNumOpnds(kOperandNumBinary);
   }
 
   ~WhileStmtNode() = default;
@@ -2329,7 +2329,7 @@ class DoloopNode : public StmtNode {
   DoloopNode() : DoloopNode(StIdx(), false, nullptr, nullptr, nullptr, nullptr) {}
 
   DoloopNode(StIdx doVarStIdx, bool isPReg, BaseNode *startExp, BaseNode *contExp, BaseNode *incrExp, BlockNode *doBody)
-      : StmtNode(OP_doloop, 4),
+      : StmtNode(OP_doloop, kOperandNumDoloop),
         doVarStIdx(doVarStIdx),
         isPreg(isPReg),
         startExpr(startExp),
@@ -2419,7 +2419,7 @@ class DoloopNode : public StmtNode {
   }
 
   uint8 NumOpnds(void) const {
-    return 4;
+    return kOperandNumDoloop;
   }
 
   void SetOpnd(BaseNode *node, size_t i) {
@@ -2437,6 +2437,7 @@ class DoloopNode : public StmtNode {
   }
 
  private:
+  static constexpr int kOperandNumDoloop = 4;
   StIdx doVarStIdx;  // must be local; cast to PregIdx for preg
   bool isPreg;
   BaseNode *startExpr;
@@ -2448,7 +2449,7 @@ class DoloopNode : public StmtNode {
 class ForeachelemNode : public StmtNode {
  public:
   ForeachelemNode() : StmtNode(OP_foreachelem), loopBody(nullptr) {
-    SetNumOpnds(kOprandNumUnary);
+    SetNumOpnds(kOperandNumUnary);
   }
 
   ~ForeachelemNode() = default;
@@ -2503,7 +2504,7 @@ class ForeachelemNode : public StmtNode {
 // used by assertge, assertlt
 class BinaryStmtNode : public StmtNode, public BinaryOpnds {
  public:
-  explicit BinaryStmtNode(Opcode o) : StmtNode(o, 2) {}
+  explicit BinaryStmtNode(Opcode o) : StmtNode(o, kOperandNumBinary) {}
 
   ~BinaryStmtNode() = default;
 
@@ -2518,28 +2519,26 @@ class BinaryStmtNode : public StmtNode, public BinaryOpnds {
   }
 
   BaseNode *Opnd(size_t i) const {
-    ASSERT(i < 2, "Invalid operand idx in BinaryStmtNode");
+    ASSERT(i < kOperandNumBinary, "Invalid operand idx in BinaryStmtNode");
     ASSERT(i >= 0, "Invalid operand idx in BinaryStmtNode");
     return GetBOpnd(i);
   }
 
   uint8 NumOpnds(void) const {
-    return 2;
+    return kOperandNumBinary;
   }
 
   void SetOpnd(BaseNode *node, size_t i) {
     SetBOpnd(node, i);
   }
 
-  bool IsLeaf(void) {
+  bool IsLeaf(void) const {
     return false;
   }
 };
 
 class IassignoffNode : public BinaryStmtNode {
  public:
-  int32 offset;
-
   IassignoffNode() : BinaryStmtNode(OP_iassignoff), offset(0) {}
 
   explicit IassignoffNode(int32 ofst) : BinaryStmtNode(OP_iassignoff), offset(ofst) {}
@@ -2562,6 +2561,17 @@ class IassignoffNode : public BinaryStmtNode {
     nd->SetBOpnd(GetBOpnd(1)->CloneTree(allocator), 1);
     return nd;
   }
+
+  int32 GetOffset() const {
+    return offset;
+  }
+
+  void SetOffset(int32 newOffset) {
+    offset = newOffset;
+  }
+
+ private:
+  int32 offset;
 };
 
 class IassignFPoffNode : public UnaryStmtNode {
@@ -2732,7 +2742,7 @@ class CallNode : public NaryStmtNode {
     return returnValues;
   }
 
-  CallReturnPair GetReturnPair(size_t idx) {
+  CallReturnPair GetReturnPair(size_t idx) const {
     ASSERT(idx < returnValues.size(), "out of range in CallNode::GetReturnPair");
     return returnValues.at(idx);
   }
@@ -2778,12 +2788,12 @@ class IcallNode : public NaryStmtNode {
  public:
   IcallNode(MapleAllocator &allocator, Opcode o)
       : NaryStmtNode(allocator, o), retTyIdx(0), returnValues(allocator.Adapter()) {
-    SetNumOpnds(kOprandNumUnary);
+    SetNumOpnds(kOperandNumUnary);
   }
 
   IcallNode(MapleAllocator &allocator, Opcode o, TyIdx idx)
       : NaryStmtNode(allocator, o), retTyIdx(idx), returnValues(allocator.Adapter()) {
-    SetNumOpnds(kOprandNumUnary);
+    SetNumOpnds(kOperandNumUnary);
   }
 
   IcallNode(const MIRModule &mod, Opcode o) : IcallNode(mod.GetCurFuncCodeMPAllocator(), o) {}

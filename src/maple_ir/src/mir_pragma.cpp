@@ -154,7 +154,7 @@ MIRPragmaElement *MIRPragma::GetPragmaElemFromSignature(const std::string &signa
       case 1: {
         MIRPragmaElement *etmp = mod->GetMemPool()->New<MIRPragmaElement>(mod);
         etmp->SetType(kValueArray);
-        elemStack.top()->PushSubElemVec(etmp);
+        elemStack.top()->PushSubElemVec(*etmp);
         elemStack.push(etmp);
         break;
       }
@@ -163,7 +163,7 @@ MIRPragmaElement *MIRPragma::GetPragmaElemFromSignature(const std::string &signa
         etmp->SetType(kValueType);
         std::string typeStr = signature.substr(start, end - start);
         etmp->SetU64Val(static_cast<uint64>(GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(typeStr).GetIdx()));
-        elemStack.top()->PushSubElemVec(etmp);
+        elemStack.top()->PushSubElemVec(*etmp);
         break;
       }
       case 3: {
@@ -171,7 +171,7 @@ MIRPragmaElement *MIRPragma::GetPragmaElemFromSignature(const std::string &signa
         etmp->SetType(kValueType);
         std::string typeStr = signature.substr(start, end - start) + ";";
         etmp->SetU64Val(static_cast<uint64>(GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(typeStr).GetIdx()));
-        elemStack.top()->PushSubElemVec(etmp);
+        elemStack.top()->PushSubElemVec(*etmp);
         break;
       }
       case 4:

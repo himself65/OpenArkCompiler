@@ -54,7 +54,7 @@ void SSA::RenamePhi(BB &bb) {
       return;
     }
     VersionSt *newVersionSym = CreateNewVersion(*vsym, bb);
-    (*phiIt).second.SetResult(newVersionSym);
+    (*phiIt).second.SetResult(*newVersionSym);
     newVersionSym->SetDefType(VersionSt::kPhi);
     newVersionSym->SetPhi(&(*phiIt).second);
   }
@@ -178,7 +178,7 @@ void SSA::RenamePhiUseInSucc(BB &bb) {
     for (auto phiIt = succBB->GetPhiList().begin(); phiIt != succBB->GetPhiList().end(); phiIt++) {
       PhiNode &phiNode = phiIt->second;
       ASSERT(phiNode.GetPhiOpnd(index)->GetOrigIdx().idx < vstStacks.size(), "out of range SSA::RenamePhiUseInSucc");
-      phiNode.SetPhiOpnd(index, vstStacks.at(phiNode.GetPhiOpnd(index)->GetOrigIdx().idx)->top());
+      phiNode.SetPhiOpnd(index, *vstStacks.at(phiNode.GetPhiOpnd(index)->GetOrigIdx().idx)->top());
     }
   }
 }

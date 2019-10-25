@@ -99,15 +99,15 @@ BaseNode *ReflectionAnalysis::GenClassInfoAddr(BaseNode *obj, MIRBuilder *builde
   MIRClassType *objectType = static_cast<MIRClassType*>(WKTypes::Util::GetJavaLangObjectType());
   BaseNode *classinfoAddress = nullptr;
   if (objectType != nullptr && objectType->GetKind() != kTypeClassIncomplete) {
-    classinfoAddress = builder->CreateExprIread(GlobalTables::GetTypeTable().GetRef(),
-                                                GlobalTables::GetTypeTable().GetOrCreatePointerType(*objectType),
+    classinfoAddress = builder->CreateExprIread(*GlobalTables::GetTypeTable().GetRef(),
+                                                *GlobalTables::GetTypeTable().GetOrCreatePointerType(*objectType),
                                                 OBJ_KLASS_FIELDID, obj);
   } else {
     // If java.lang.Object type is not defined, fall back to use the classinfo struct to retrieve the first field.
     MIRStructType *classMetadataType = static_cast<MIRStructType*>(
         GlobalTables::GetTypeTable().GetTypeFromTyIdx(ReflectionAnalysis::classMetadataTyIdx));
-    classinfoAddress = builder->CreateExprIread(GlobalTables::GetTypeTable().GetRef(),
-                                                GlobalTables::GetTypeTable().GetOrCreatePointerType(*classMetadataType),
+    classinfoAddress = builder->CreateExprIread(*GlobalTables::GetTypeTable().GetRef(),
+                                                *GlobalTables::GetTypeTable().GetOrCreatePointerType(*classMetadataType),
                                                 METADATA_KLASS_FIELDID, obj);
   }
   return classinfoAddress;
@@ -1315,7 +1315,7 @@ void ReflectionAnalysis::GenClassMetaData(Klass *klass) {
   } else {
     MIRType *clinitState = GlobalTables::GetTypeTable().GetUInt64();
     // The class initialization state is modified to classStateInitialized.
-    MIRSymbol *classInfo = mirBuilder.GetOrCreateGlobalDecl(kClassStateInitializedStr, clinitState);
+    MIRSymbol *classInfo = mirBuilder.GetOrCreateGlobalDecl(kClassStateInitializedStr, *clinitState);
     mirBuilder.AddAddrofFieldConst(*classMetadataType, *newconst, fieldID++, *classInfo);
   }
   // Finally generate class metadata here.
@@ -1454,7 +1454,7 @@ TyIdx ReflectionAnalysis::GenMetaStructType(MIRModule *mirModule, MIRStructType 
   TyIdx tyidx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&metatype);
   // Global?
   mirModule->GetTypeNameTab()->SetGStrIdxToTyIdx(stridx, tyidx);
-  mirModule->GetTypeDefOrder().push_back(stridx);
+  mirModule->PushbackTypeDefOrder(stridx);
   const size_t globalTypeTableSize = GlobalTables::GetTypeTable().GetTypeTable().size();
   CHECK_FATAL(globalTypeTableSize > tyidx.GetIdx(), "null ptr check");
   if (GlobalTables::GetTypeTable().GetTypeTable()[tyidx.GetIdx()]->GetNameStrIdx() == 0) {
@@ -1594,7 +1594,7 @@ void ReflectionAnalysis::GenClassHashMetaData() {
     return;
   }
   for (MIRSymbol *classSt : classTab) {
-    AddrofNode *classExpr = mirBuilder.CreateExprAddrof(0, classSt);
+    AddrofNode *classExpr = mirBuilder.CreateExprAddrof(0, *classSt);
     MIRType *ptrType = GlobalTables::GetTypeTable().GetTypeTable()[PTY_ptr];
     MIRConst *classConst =
         mirModule->GetMemPool()->New<MIRAddrofConst>(classExpr->GetStIdx(), classExpr->GetFieldID(), ptrType);
