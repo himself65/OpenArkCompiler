@@ -1129,13 +1129,13 @@ class ArrayNode : public NaryNode {
     return nd;
   }
 
-  MIRType *GetArrayType(TypeTable *tt) const;
+  MIRType *GetArrayType(TypeTable &tt) const;
 
   BaseNode *GetIndex(size_t i) {
     return Opnd(i + 1);
   }
 
-  BaseNode *GetDim(const MIRModule *mod, TypeTable *tt, int i);
+  BaseNode *GetDim(const MIRModule &mod, TypeTable &tt, int i);
   BaseNode *GetBase() {
     return Opnd(0);
   }
@@ -1173,7 +1173,7 @@ class AddrofNode : public BaseNode {
 
   virtual void Dump(const MIRModule &mod, int32 indent) const;
   bool Verify() const;
-  bool CheckNode(const MIRModule *mod) const;
+  bool CheckNode(const MIRModule &mod) const;
 
   AddrofNode *CloneTree(MapleAllocator &allocator) const {
     return allocator.GetMemPool()->New<AddrofNode>(*this);
@@ -1395,8 +1395,8 @@ class StmtNode : public BaseNode, public PtrListNodeBase<StmtNode> {
   void DumpBase(const MIRModule &mod, int32 indent) const;
   void Dump(const MIRModule &mod, int32 indent) const;
   void Dump(const MIRModule &mod) const;
-  void InsertAfterThis(StmtNode *pos);
-  void InsertBeforeThis(StmtNode *pos);
+  void InsertAfterThis(StmtNode &pos);
+  void InsertBeforeThis(StmtNode &pos);
 
   virtual StmtNode *CloneTree(MapleAllocator &allocator) const {
     StmtNode *s = allocator.GetMemPool()->New<StmtNode>(*this);
@@ -2141,16 +2141,16 @@ class BlockNode : public StmtNode {
   }
 
   void AddStatement(StmtNode *stmt);
-  void AppendStatementsFromBlock(BlockNode *blk);
+  void AppendStatementsFromBlock(BlockNode &blk);
   void InsertFirst(StmtNode *stmt);  // Insert stmt as the first
   void InsertLast(StmtNode *stmt);   // Insert stmt as the last
-  void ReplaceStmtWithBlock(StmtNode *stmtNode, BlockNode *blk);
+  void ReplaceStmtWithBlock(StmtNode *stmtNode, BlockNode &blk);
   void ReplaceStmt1WithStmt2(StmtNode *stmtNode1, StmtNode *stmtNode2);
   void RemoveStmt(StmtNode *stmtNode2);
   void InsertBefore(StmtNode *stmtNode1, StmtNode *stmtNode2);  // Insert ss2 before ss1 in current block.
   void InsertAfter(StmtNode *stmtNode1, StmtNode *stmtNode2);   // Insert ss2 after ss1 in current block.
-  void InsertBlockAfter(BlockNode *inblock,
-                        StmtNode *stmt1);  // insert all the stmts in inblock to the current block after stmt1
+  // insert all the stmts in inblock to the current block after stmt1
+  void InsertBlockAfter(BlockNode &inblock, StmtNode *stmt1);
   void Dump(const MIRModule &mod, int32 indent, const MIRSymbolTable *theSymTab, MIRPregTable *thePregTab,
             bool withInfo, bool isFuncbody) const;
   bool Verify() const;
@@ -2172,8 +2172,8 @@ class BlockNode : public StmtNode {
     return blk;
   }
 
-  BlockNode *CloneTreeWithSrcPosition(const MIRModule *mod) {
-    MapleAllocator &allocator = mod->GetCurFuncCodeMPAllocator();
+  BlockNode *CloneTreeWithSrcPosition(const MIRModule &mod) {
+    MapleAllocator &allocator = mod.GetCurFuncCodeMPAllocator();
     BlockNode *blk = allocator.GetMemPool()->New<BlockNode>();
     blk->SetStmtID(stmtIDNext++);
     for (auto &stmt : stmtNodeList) {

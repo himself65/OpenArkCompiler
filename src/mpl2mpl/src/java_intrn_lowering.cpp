@@ -25,42 +25,39 @@
 //    Turn it into a jarray malloc and jarray element-wise assignment
 
 namespace maple {
-inline bool IsConstvalZero(BaseNode *n) {
-  return (n->GetOpCode() == OP_constval && static_cast<ConstvalNode*>(n)->GetConstVal()->IsZero());
+inline bool IsConstvalZero(BaseNode &n) {
+  return (n.GetOpCode() == OP_constval && static_cast<ConstvalNode*>(&n)->GetConstVal()->IsZero());
 }
 
 JavaIntrnLowering::JavaIntrnLowering(MIRModule *mod, KlassHierarchy *kh, bool dump) : FuncOptimizeImpl(mod, kh, dump) {
 }
 
 
-void JavaIntrnLowering::ProcessStmt(StmtNode *stmt) {
-  if (stmt == nullptr) {
-    return;
-  }
-  Opcode opcode = stmt->GetOpCode();
+void JavaIntrnLowering::ProcessStmt(StmtNode &stmt) {
+  Opcode opcode = stmt.GetOpCode();
   switch (opcode) {
     case OP_dassign:
     case OP_regassign: {
       BaseNode *rhs = nullptr;
       if (opcode == OP_dassign) {
-        DassignNode *dassign = static_cast<DassignNode*>(stmt);
-        rhs = dassign->GetRHS();
+        DassignNode &dassign = static_cast<DassignNode&>(stmt);
+        rhs = dassign.GetRHS();
       } else {
-        RegassignNode *regassign = static_cast<RegassignNode*>(stmt);
-        rhs = regassign->GetRHS();
+        RegassignNode &regassign = static_cast<RegassignNode&>(stmt);
+        rhs = regassign.GetRHS();
       }
       if (rhs != nullptr && rhs->GetOpCode() == OP_intrinsicop) {
         IntrinsicopNode *intrinNode = static_cast<IntrinsicopNode*>(rhs);
         if (intrinNode->GetIntrinsic() == INTRN_JAVA_MERGE) {
-          ProcessJavaIntrnMerge(*stmt, *intrinNode);
+          ProcessJavaIntrnMerge(stmt, *intrinNode);
         }
       }
       break;
     }
     case OP_intrinsiccallwithtypeassigned: {
-      IntrinsiccallNode *intrinCall = static_cast<IntrinsiccallNode*>(stmt);
-      if (intrinCall->GetIntrinsic() == INTRN_JAVA_FILL_NEW_ARRAY) {
-        ProcessJavaIntrnFillNewArray(*intrinCall);
+      IntrinsiccallNode &intrinCall = static_cast<IntrinsiccallNode&>(stmt);
+      if (intrinCall.GetIntrinsic() == INTRN_JAVA_FILL_NEW_ARRAY) {
+        ProcessJavaIntrnFillNewArray(intrinCall);
       }
       break;
     }
@@ -134,7 +131,7 @@ BaseNode *JavaIntrnLowering::JavaIntrnMergeToCvtType(PrimType destType, PrimType
       // or contanst propagation before CG. We may revisit this decision later.
     } else if (GetPrimTypeBitSize(srcType) < GetPrimTypeBitSize(destType)) {
       return builder->CreateExprTypeCvt(OP_cvt, *toType, *fromType, src);
-    } else if (IsConstvalZero(src)) {
+    } else if (IsConstvalZero(*src)) {
       return builder->CreateIntConst(0, destType);
     } else {
       CHECK_FATAL(false, "NYI. Don't know what to do");

@@ -37,10 +37,7 @@ void MIRFunction::Dump(bool withoutBody) {
   // class and interface decls.  these has nothing in formals
   // they do have paramtypelist_. this can not skip ones without args
   // but for them at least the func decls are valid
-  if (GetParamSize() != formals.size()) {
-    return;
-  }
-  if (GetAttr(FUNCATTR_optimized)) {
+  if (GetParamSize() != formals.size() || GetAttr(FUNCATTR_optimized)) {
     return;
   }
   // save the module's curfunction and set it to the one currently Dump()ing
@@ -48,8 +45,7 @@ void MIRFunction::Dump(bool withoutBody) {
   module->SetCurFunction(this);
   MIRSymbol *fnSt = GlobalTables::GetGsymTable().GetSymbolFromStidx(symbolTableIdx.Idx());
   ASSERT(fnSt != nullptr, "fnSt MIRSymbol is null");
-  LogInfo::MapleLogger() << "func "
-                         << "&" << fnSt->GetName();
+  LogInfo::MapleLogger() << "func " << "&" << fnSt->GetName();
   funcAttrs.DumpAttributes();
   if (module->GetFlavor() < kMmpl) {
     LogInfo::MapleLogger() << " (";
@@ -286,14 +282,13 @@ MIRSymbol *MIRFunction::GetLocalOrGlobalSymbol(const StIdx &idx, bool checkFirst
                        : GlobalTables::GetGsymTable().GetSymbolFromStidx(idx.Idx(), checkFirst);
 }
 
-MIRType *MIRFunction::GetNodeType(BaseNode *node) {
-  ASSERT(node != nullptr, "node cannot be nullptr");
-  if (node->GetOpCode() == OP_dread) {
-    MIRSymbol *sym = GetLocalOrGlobalSymbol(static_cast<DreadNode*>(node)->GetStIdx());
+MIRType *MIRFunction::GetNodeType(BaseNode &node) {
+  if (node.GetOpCode() == OP_dread) {
+    MIRSymbol *sym = GetLocalOrGlobalSymbol(static_cast<DreadNode&>(node).GetStIdx());
     return GlobalTables::GetTypeTable().GetTypeFromTyIdx(sym->GetTyIdx());
-  } else if (node->GetOpCode() == OP_regread) {
-    RegreadNode *nodeReg = static_cast<RegreadNode*>(node);
-    MIRPreg *pReg = GetPregTab()->PregFromPregIdx(nodeReg->GetRegIdx());
+  } else if (node.GetOpCode() == OP_regread) {
+    RegreadNode &nodeReg = static_cast<RegreadNode&>(node);
+    MIRPreg *pReg = GetPregTab()->PregFromPregIdx(nodeReg.GetRegIdx());
     if (pReg->GetPrimType() == PTY_ref) {
       return pReg->GetMIRType();
     }

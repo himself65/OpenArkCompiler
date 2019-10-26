@@ -1151,7 +1151,9 @@ void MUIDReplacement::GenericTables() {
   // When MapleLinker is enabled, MUIDReplacement becomes the last
   // phase that updates the reflection string table, thus the table
   // is emitted here.
-  ReflectionAnalysis::GenStrTab(GetModule());
+  MIRModule *mirModule = GetModule();
+  ASSERT(mirModule != nullptr, "null ptr check!");
+  ReflectionAnalysis::GenStrTab(*mirModule);
   // Replace undef entries in vtab/itab/reflectionMetaData
   for (Klass *klass : klassHierarchy->GetTopoSortedKlasses()) {
     ReplaceDataTable(SUPERCLASSINFO_PREFIX_STR + klass->GetKlassName());

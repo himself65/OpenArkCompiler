@@ -124,19 +124,19 @@ class MIRPregTable {
     return idx;
   }
 
-  PregIdx CreateRefPreg(MIRType *mirType) {
-    ASSERT(mirType->GetPrimType() == PTY_ref, "only ref type needed");
-    PregIdx idx = CreatePreg(mirType->GetPrimType());
-    pregTable[idx]->SetMIRType(mirType);
+  PregIdx CreateRefPreg(MIRType &mirType) {
+    ASSERT(mirType.GetPrimType() == PTY_ref, "only ref type needed");
+    PregIdx idx = CreatePreg(mirType.GetPrimType());
+    pregTable[idx]->SetMIRType(&mirType);
     return idx;
   }
 
-  PregIdx CreateRefPreg(MIRPreg *mirPreg) {
+  PregIdx CreateRefPreg(MIRPreg &mirPreg) {
     uint32 index = pregIndex++;
-    MIRPreg *preg = mAllocator->GetMemPool()->New<MIRPreg>(index, mirPreg->GetMIRType());
-    preg->SetPrimType(mirPreg->GetPrimType());
-    preg->SetMIRType(mirPreg->GetMIRType());
-    preg->SetNeedRC(mirPreg->NeedRC());
+    MIRPreg *preg = mAllocator->GetMemPool()->New<MIRPreg>(index, mirPreg.GetMIRType());
+    preg->SetPrimType(mirPreg.GetPrimType());
+    preg->SetMIRType(mirPreg.GetMIRType());
+    preg->SetNeedRC(mirPreg.NeedRC());
     PregIdx idx = pregTable.size();
     ASSERT(idx < 0xffff, "will has problem if over 16 bits");
     pregTable.push_back(preg);

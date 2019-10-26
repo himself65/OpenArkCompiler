@@ -1453,7 +1453,7 @@ bool MIRParser::ParseStmtBlockForVar(TokenKind stmtTK) {
   if (!ParseDeclareVar(*st)) {
     return false;
   }
-  if (!fn->GetSymTab()->AddToStringSymbolMap(st)) {
+  if (!fn->GetSymTab()->AddToStringSymbolMap(*st)) {
     Error("duplicate declare symbol parse function ");
     return false;
   }
@@ -1810,7 +1810,7 @@ bool MIRParser::ParseExprDread(BaseNodePtr &expr) {
   } else {
     dexpr->SetFieldID(0);
   }
-  if (!dexpr->CheckNode(&mod)) {
+  if (!dexpr->CheckNode(mod)) {
     Error("dread is not legal");
     return false;
   }

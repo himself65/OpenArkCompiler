@@ -673,7 +673,9 @@ void GenericNativeStubFunc::Finish() {
   }
   if (!Options::mapleLinker) {
     // If use maplelinker, we postpone this generation to MUIDReplacement
-    ReflectionAnalysis::GenStrTab(GetModule());
+    MIRModule *mirModule = GetModule();
+    ASSERT(mirModule != nullptr, "null ptr check!");
+    ReflectionAnalysis::GenStrTab(*mirModule);
   }
 }
 }  // namespace maple

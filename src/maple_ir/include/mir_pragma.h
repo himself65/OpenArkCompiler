@@ -70,8 +70,8 @@ enum PragmaValueType {
 
 class MIRPragmaElement {
  public:
-  explicit MIRPragmaElement(MIRModule *m)
-      : nameStrIdx(0), typeStrIdx(0), valueType(kValueNull), subElemVec(m->GetMPAllocator().Adapter()) {
+  explicit MIRPragmaElement(MIRModule &m)
+      : nameStrIdx(0), typeStrIdx(0), valueType(kValueNull), subElemVec(m.GetMPAllocator().Adapter()) {
     val.u = 0;
     subElemVec.clear();
   }
@@ -175,15 +175,15 @@ class MIRPragmaElement {
 
 class MIRPragma {
  public:
-  explicit MIRPragma(MIRModule *m)
-      : mod(m),
+  explicit MIRPragma(MIRModule &m)
+      : mod(&m),
         pragmaKind(kPragmaUnknown),
         visibility(0),
         strIdx(0),
         tyIdx(0),
         tyIdxEx(0),
         paramNum(-1),
-        elementVec(m->GetMPAllocator().Adapter()) {}
+        elementVec(m.GetMPAllocator().Adapter()) {}
 
   ~MIRPragma() = default;
   MIRPragmaElement *GetPragmaElemFromSignature(const std::string &signature);

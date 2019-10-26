@@ -584,19 +584,21 @@ void KlassHierarchy::TagThrowableKlasses() {
   }
 }
 
-static void CollectImplInterfaces(const Klass *klass, std::set<Klass*> &implInterfaceSet) {
-  for (Klass *superKlass : klass->GetSuperKlasses()) {
+static void CollectImplInterfaces(const Klass &klass, std::set<Klass*> &implInterfaceSet) {
+  for (Klass *superKlass : klass.GetSuperKlasses()) {
     if (implInterfaceSet.find(superKlass) == implInterfaceSet.end()) {
+      ASSERT(superKlass != nullptr, "null ptr check!");
       if (superKlass->IsInterface()) {
         implInterfaceSet.insert(superKlass);
       }
-      CollectImplInterfaces(superKlass, implInterfaceSet);
+      CollectImplInterfaces(*superKlass, implInterfaceSet);
     }
   }
-  for (Klass *interfaceKlass : klass->GetImplInterfaces()) {
+  for (Klass *interfaceKlass : klass.GetImplInterfaces()) {
     if (implInterfaceSet.find(interfaceKlass) == implInterfaceSet.end()) {
       implInterfaceSet.insert(interfaceKlass);
-      CollectImplInterfaces(interfaceKlass, implInterfaceSet);
+      ASSERT(interfaceKlass != nullptr, "null ptr check!");
+      CollectImplInterfaces(*interfaceKlass, implInterfaceSet);
     }
   }
 }
@@ -604,10 +606,10 @@ static void CollectImplInterfaces(const Klass *klass, std::set<Klass*> &implInte
 void KlassHierarchy::UpdateImplementedInterfaces() {
   for (auto const &pair : strIdx2KlassMap) {
     Klass *klass = pair.second;
-    ASSERT(klass, "null ptr check");
+    ASSERT(klass != nullptr, "null ptr check");
     if (!klass->IsInterface()) {
       std::set<Klass*> implInterfaceSet;
-      CollectImplInterfaces(klass, implInterfaceSet);
+      CollectImplInterfaces(*klass, implInterfaceSet);
       for (auto interface : implInterfaceSet) {
         // Add missing parent interface to class link
         interface->AddImplKlass(klass);
@@ -791,7 +793,7 @@ MIRType *WKTypes::javalangrefAccessibleObject;
 MIRType *WKTypes::javalangrefMember;
 MIRType *WKTypes::javalangrefField;
 MIRType *WKTypes::javalangrefConstructor;
-inline static MIRType *GetMIRTypeFromName(const char *name) {
+inline static MIRType *GetMIRTypeFromName(const std::string &name) {
   GStrIdx gStrIdx = GlobalTables::GetStrTable().GetStrIdxFromName(NameMangler::GetInternalNameLiteral(name));
   return GlobalTables::GetTypeTable().GetTypeFromTyIdx(GlobalTables::GetTypeNameTable().GetTyIdxFromGStrIdx(gStrIdx));
 }

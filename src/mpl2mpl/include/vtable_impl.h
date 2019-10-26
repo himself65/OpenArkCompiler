@@ -41,7 +41,7 @@ class VtableImpl : public FuncOptimizeImpl {
   MIRModule *mirModule;
   KlassHierarchy *klassHierarchy;
   MIRFunction *mccItabFunc;
-  void ReplaceResolveInterface(StmtNode *stmt, const ResolveFuncNode *resolveNode);
+  void ReplaceResolveInterface(StmtNode &stmt, const ResolveFuncNode &resolveNode);
 };
 
 class DoVtableImpl : public ModulePhase {

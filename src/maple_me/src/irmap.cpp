@@ -148,7 +148,7 @@ RegMeExpr *IRMap::CreateRefRegMeExpr(const MIRSymbol &mirSt) {
   MIRType *sttype = mirSt.GetType();
   PrimType ptyp = sttype->GetPrimType();
   ASSERT(ptyp == PTY_ref, "only PTY_ref needed");
-  PregIdx regidx = mirfunc->GetPregTab()->CreateRefPreg(sttype);
+  PregIdx regidx = mirfunc->GetPregTab()->CreateRefPreg(*sttype);
   ASSERT(regidx <= 0xffff, "register oversized");
   MIRPreg *preg = mirfunc->GetPregTab()->PregFromPregIdx(regidx);
   if (!mirSt.IgnoreRC()) {
@@ -174,7 +174,7 @@ RegMeExpr *IRMap::CreateRegMeExpr(PrimType ptyp) {
 
 RegMeExpr *IRMap::CreateRegRefMeExpr(MIRType &mirType) {
   MIRFunction *mirfunc = mirModule.CurFunction();
-  PregIdx regidx = mirfunc->GetPregTab()->CreateRefPreg(&mirType);
+  PregIdx regidx = mirfunc->GetPregTab()->CreateRefPreg(mirType);
   ASSERT(regidx <= 0xffff, "register oversized");
   OriginalSt *oSt = ssaTab.GetOriginalStTable().CreatePregOriginalSt(regidx, mirfunc->GetPuidx());
   RegMeExpr *regreadexpr = NewInPool<RegMeExpr>(exprID++, regidx, mirfunc->GetPuidx(), oSt->GetIndex(), 0);

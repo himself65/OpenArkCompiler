@@ -348,7 +348,7 @@ bool MIRParser::ParseBitFieldType(TyIdx &fieldTyIdx) {
     return false;
   }
   ASSERT(lexer.GetTheIntVal() <= 0xFFU, "lexer.theIntVal is larger than max uint8 bitsize value.");
-  uint8 bitSize = lexer.GetTheIntVal() & 0xFFU;
+  uint8 bitSize = static_cast<uint8>(lexer.GetTheIntVal()) & 0xFFU;
   PrimType primType = GetPrimitiveType(lexer.NextToken());
   if (primType == kPtyInvalid) {
     Error("expect primitive type but get ");
@@ -452,7 +452,7 @@ bool MIRParser::ParsePragmaElementForArray(MIRPragmaElement &elem) {
     return false;
   }
   for (int64 i = 0; i < size; i++) {
-    MIRPragmaElement *e0 = mod.GetMemPool()->New<MIRPragmaElement>(&mod);
+    MIRPragmaElement *e0 = mod.GetMemPool()->New<MIRPragmaElement>(mod);
     tk = lexer.NextToken();
     if (!ParsePragmaElement(*e0)) {
       Error("parsing pragma error type ");
@@ -499,7 +499,7 @@ bool MIRParser::ParsePragmaElementForAnnotation(MIRPragmaElement &elem) {
     return false;
   }
   for (int i = 0; i < size; i++) {
-    MIRPragmaElement *e0 = mod.GetMemPool()->New<MIRPragmaElement>(&mod);
+    MIRPragmaElement *e0 = mod.GetMemPool()->New<MIRPragmaElement>(mod);
     tk = lexer.NextToken();
     if (tk != TK_label) {
       Error("parsing pragma error: expecting @ but get ");
@@ -522,7 +522,7 @@ bool MIRParser::ParsePragmaElementForAnnotation(MIRPragmaElement &elem) {
 }
 
 bool MIRParser::ParsePragma(MIRStructType &type) {
-  MIRPragma *p = mod.GetMemPool()->New<MIRPragma>(&mod);
+  MIRPragma *p = mod.GetMemPool()->New<MIRPragma>(mod);
   p->SetVisibility(lexer.GetTheIntVal());
   TokenKind tk = lexer.NextToken();
 
@@ -562,7 +562,7 @@ bool MIRParser::ParsePragma(MIRStructType &type) {
   }
   tk = lexer.NextToken();
   while (tk != kTkRbrace) {
-    MIRPragmaElement *e = mod.GetMemPool()->New<MIRPragmaElement>(&mod);
+    MIRPragmaElement *e = mod.GetMemPool()->New<MIRPragmaElement>(mod);
     e->SetNameStrIdx(GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName()));
     tk = lexer.NextToken();
     if (!ParsePragmaElement(*e)) {
@@ -759,7 +759,7 @@ bool MIRParser::ParseFields(MIRStructType &type) {
     // tyIdx does not work. Calling EqualTo does not work either.
     MIRFuncType *funcType = static_cast<MIRFuncType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(funcTyidx));
     fn->SetMIRFuncType(funcType);
-    fn->SetReturnStruct(GlobalTables::GetTypeTable().GetTypeFromTyIdx(funcType->GetRetTyIdx()));
+    fn->SetReturnStruct(*GlobalTables::GetTypeTable().GetTypeFromTyIdx(funcType->GetRetTyIdx()));
     funcSymbol->SetTyIdx(funcTyidx);
     MethodPair p = MethodPair(funcSymbol->GetStIdx(), TyidxFuncAttrPair(funcTyidx, FuncAttrs(tA)));
     type.GetMethods().push_back(p);
@@ -1769,7 +1769,7 @@ bool MIRParser::ParsePrototype(MIRFunction &func, MIRSymbol &funcSymbol, TyIdx &
           Error("ParseFunction expect scalar value");
           return false;
         }
-        (void)func.GetSymTab()->AddToStringSymbolMap(symbol);
+        (void)func.GetSymTab()->AddToStringSymbolMap(*symbol);
         func.AddFormal(symbol);
         vecType.push_back(symbol->GetTyIdx());
         vecAttrs.push_back(symbol->GetAttrs());
@@ -1786,7 +1786,7 @@ bool MIRParser::ParsePrototype(MIRFunction &func, MIRSymbol &funcSymbol, TyIdx &
     return false;
   }
   MIRType *retType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
-  func.SetReturnStruct(retType);
+  func.SetReturnStruct(*retType);
   MIRType *funcType =
       GlobalTables::GetTypeTable().GetOrCreateFunctionType(mod, tyIdx, vecType, vecAttrs, varArgs, true);
   funcTyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(funcType);
@@ -2205,7 +2205,7 @@ static void GenJStringType(MIRModule &module) {
 bool MIRParser::ParseMIR(std::ifstream &mplfile) {
   std::ifstream *origFile = lexer.GetFile();
   // parse mplfile
-  lexer.SetFile(&mplfile);
+  lexer.SetFile(mplfile);
   // try to read the first line
   if (lexer.ReadALine() < 0) {
     lexer.lineNum = 0;
@@ -2215,7 +2215,7 @@ bool MIRParser::ParseMIR(std::ifstream &mplfile) {
   // for optimized functions file
   bool status = ParseMIR(0, kParseOptFunc);
   // restore airFile
-  lexer.SetFile(origFile);
+  lexer.SetFile(*origFile);
   return status;
 }
 
@@ -2690,7 +2690,7 @@ bool MIRParser::ParseMPLT(std::ifstream &mpltFile, const std::string &importFile
   // set up to read next line from the import file
   lexer.curIdx = 0;
   lexer.currentLineSize = 0;
-  lexer.SetFile(&mpltFile);
+  lexer.SetFile(mpltFile);
   lexer.lineNum = 0;
   mod.SetFileName(importFileName);
   bool atEof = false;
@@ -2729,7 +2729,7 @@ bool MIRParser::ParseMPLT(std::ifstream &mpltFile, const std::string &importFile
   lexer.curIdx = 0;  // to force reading new line
   lexer.currentLineSize = 0;
   lexer.lineNum = lineNumSave;
-  lexer.SetFile(airFileSave);
+  lexer.SetFile(*airFileSave);
   mod.SetFileName(modFileNameSave);
   return true;
 }
@@ -2781,7 +2781,7 @@ bool MIRParser::ParsePrototypeRemaining(MIRFunction &func, std::vector<TyIdx> &v
         Error("ParseFunction expect scalar value");
         return false;
       }
-      (void)func.GetSymTab()->AddToStringSymbolMap(symbol);
+      (void)func.GetSymTab()->AddToStringSymbolMap(*symbol);
     }
     func.AddFormal(symbol);
     vecTyIdx.push_back(symbol->GetTyIdx());

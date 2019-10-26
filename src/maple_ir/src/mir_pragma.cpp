@@ -19,6 +19,17 @@
 #include "printing.h"
 #include "maple_string.h"
 
+namespace  {
+enum Status {
+  kStop = 0,
+  kStartWithSubvec = 1,
+  kNormalTypeStrEndWithSemicolon = 2,
+  kNormalTypeStrEndWithSubvecNeedSemicolon = 3,
+  kEndWithSubvec = 4,
+  kIgnoreAndContinue = 5
+};
+}
+
 namespace maple {
 static std::string GetKind(PragmaValueType kind) {
   switch (kind) {
@@ -75,7 +86,7 @@ static std::string GetKind(PragmaValueType kind) {
 //     start         end    start        end
 static void GetTypeStr(const std::string &str, uint32 &start, uint32 &end, uint32 &status) {
   uint32 i = start;
-  status = 0;
+  status = kStop;
   while (str[i] == '[') {
     i++;
   }
@@ -91,7 +102,7 @@ static void GetTypeStr(const std::string &str, uint32 &start, uint32 &end, uint3
     case 'F':
     case 'D':
     case 'V':
-      status = 2;
+      status = kNormalTypeStrEndWithSemicolon;
       end = i + 1;
       break;
     case 'L':
@@ -99,11 +110,11 @@ static void GetTypeStr(const std::string &str, uint32 &start, uint32 &end, uint3
       // Lfoo; or Lfoo<...>;
       while (i < str.length()) {
         if (str[i] == ';') {
-          status = 2;
+          status = kNormalTypeStrEndWithSemicolon;
           end = i + 1;
           break;
         } else if (str[i] == '<') {
-          status = 3;
+          status = kNormalTypeStrEndWithSubvecNeedSemicolon;
           end = i;
           break;
         } else {
@@ -112,16 +123,16 @@ static void GetTypeStr(const std::string &str, uint32 &start, uint32 &end, uint3
       }
       break;
     case '<':
-      status = 1;
+      status = kStartWithSubvec;
       end = i + 1;
       break;
     case '>':
-      status = 4;
+      status = kEndWithSubvec;
       end = i + 1;
       break;
     case ';':
       // continue cases
-      status = 5;
+      status = kIgnoreAndContinue;
       end = i + 1;
       break;
     default:
@@ -136,7 +147,7 @@ MIRPragmaElement *MIRPragma::GetPragmaElemFromSignature(const std::string &signa
     return nullptr;
   }
   std::stack<MIRPragmaElement*> elemStack;
-  MIRPragmaElement *elem = mod->GetMemPool()->New<MIRPragmaElement>(mod);
+  MIRPragmaElement *elem = mod->GetMemPool()->New<MIRPragmaElement>(*mod);
   elem->SetType(kValueArray);
   elemStack.push(elem);
   uint32 status = 0;
@@ -149,38 +160,38 @@ MIRPragmaElement *MIRPragma::GetPragmaElemFromSignature(const std::string &signa
     GetTypeStr(signature, start, end, status);
     // status: 0:stop/1:start_subvec/2:normal/3:normal+';'/4:end_subvec/5:ignore_and_continue
     switch (status) {
-      case 0:
+      case kStop:
         return elem;
-      case 1: {
-        MIRPragmaElement *etmp = mod->GetMemPool()->New<MIRPragmaElement>(mod);
+      case kStartWithSubvec: {
+        MIRPragmaElement *etmp = mod->GetMemPool()->New<MIRPragmaElement>(*mod);
         etmp->SetType(kValueArray);
         elemStack.top()->PushSubElemVec(*etmp);
         elemStack.push(etmp);
         break;
       }
-      case 2: {
-        MIRPragmaElement *etmp = mod->GetMemPool()->New<MIRPragmaElement>(mod);
+      case kNormalTypeStrEndWithSemicolon: {
+        MIRPragmaElement *etmp = mod->GetMemPool()->New<MIRPragmaElement>(*mod);
         etmp->SetType(kValueType);
         std::string typeStr = signature.substr(start, end - start);
         etmp->SetU64Val(static_cast<uint64>(GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(typeStr).GetIdx()));
         elemStack.top()->PushSubElemVec(*etmp);
         break;
       }
-      case 3: {
-        MIRPragmaElement *etmp = mod->GetMemPool()->New<MIRPragmaElement>(mod);
+      case kNormalTypeStrEndWithSubvecNeedSemicolon: {
+        MIRPragmaElement *etmp = mod->GetMemPool()->New<MIRPragmaElement>(*mod);
         etmp->SetType(kValueType);
         std::string typeStr = signature.substr(start, end - start) + ";";
         etmp->SetU64Val(static_cast<uint64>(GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(typeStr).GetIdx()));
         elemStack.top()->PushSubElemVec(*etmp);
         break;
       }
-      case 4:
+      case kEndWithSubvec:
         if (elemStack.empty()) {  // Invalid annotation signature format
           return nullptr;
         }
         elemStack.pop();
         break;
-      case 5:
+      case kIgnoreAndContinue:
         break;
       default:
         ASSERT(false, "unexpected status");

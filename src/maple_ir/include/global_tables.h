@@ -24,13 +24,9 @@
 #include "mir_module.h"
 #include "name_mangler.h"
 #include "mir_type.h"
+#include "mir_const.h"
 
 namespace maple {
-class MIRType;
-class TypeAttrs;
-class FieldAttrs;
-class MIRStructType;
-class MIRArrayType;
 using TyIdxFieldAttrPair = std::pair<TyIdx, FieldAttrs>;
 using FieldPair = std::pair<GStrIdx, TyIdxFieldAttrPair>;
 using FieldVector = std::vector<FieldPair>;
@@ -461,7 +457,6 @@ class FunctionTable {
   std::vector<MIRFunction*> funcTable;  // index is PUIdx
 };
 
-class MIRSymbol;
 class GSymbolTable {
  public:
   GSymbolTable();
@@ -528,7 +523,6 @@ class GSymbolTable {
   std::vector<MIRSymbol*> symbolTable;  // map symbol idx to symbol node
 };
 
-class MIRConst;
 class ConstPool {
  public:
   std::unordered_map<std::u16string, MIRSymbol*> &GetConstU16StringPool() {

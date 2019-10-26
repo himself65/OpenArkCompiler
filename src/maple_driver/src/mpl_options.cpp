@@ -84,6 +84,18 @@ int MplOptions::Parse(int argc, char **argv) {
         INFO(kLncInfo, kMapleDriverVersion);
         return ErrorCode::kErrorExitHelp;
       }
+      case kMeOpt:
+        ret = UpdatePhaseOption(opt.Args(), kBinNameMe);
+        if (ret != ErrorCode::kErrorNoError) {
+          return ret;
+        }
+        break;
+      case kMpl2MplOpt:
+        ret = UpdatePhaseOption(opt.Args(), kBinNameMpl2mpl);
+        if (ret != ErrorCode::kErrorNoError) {
+          return ret;
+        }
+        break;
       case kMeHelp:
         optionParser->PrintUsage("me");
         return ErrorCode::kErrorExitHelp;
@@ -253,6 +265,30 @@ ErrorCode MplOptions::AppendDefaultOptions(const std::string &exeName, MplOption
   return ErrorCode::kErrorNoError;
 }
 
+ErrorCode MplOptions::UpdatePhaseOption(const std::string &args, const std::string &exeName) {
+  std::vector<std::string> tmpArgs;
+  // Split options with ' '
+  StringUtils::Split(args, tmpArgs, ' ');
+  auto &exeOption = exeOptions[exeName];
+  ErrorCode ret = optionParser->HandleInputArgs(tmpArgs, exeName, exeOption);
+  if (ret != ErrorCode::kErrorNoError) {
+    return ret;
+  }
+  // Fill extraOption
+  // For compiler bins called by system()
+  auto &extraOption = extras[exeName];
+  for (size_t i = 0; i < exeOption.size(); i++) {
+    MplOption mplOption;
+    if (exeOption[i].Args() != "") {
+      mplOption.init("-" + exeOption[i].OptionKey(), exeOption[i].Args(), "=", false, "");
+    } else {
+      mplOption.init("-" + exeOption[i].OptionKey(), "", " ", false, "");
+    }
+    extraOption.push_back(mplOption);
+  }
+  return ret;
+}
+
 ErrorCode MplOptions::UpdateExtraOptionOpt(const std::string &args) {
   std::vector<std::string> temp;
   StringUtils::Split(args, temp, ':');
@@ -264,27 +300,10 @@ ErrorCode MplOptions::UpdateExtraOptionOpt(const std::string &args) {
   }
   auto settingExe = runningExes.begin();
   for (const auto &tempIt : temp) {
-    std::vector<std::string> tmpArgs;
-    // Split options with ' '
-    StringUtils::Split(tempIt, tmpArgs, ' ');
-    auto &exeOption = exeOptions[*settingExe];
-    ErrorCode ret = optionParser->HandleInputArgs(tmpArgs, *settingExe, exeOption);
+    ErrorCode ret = UpdatePhaseOption(tempIt, *settingExe);
     if (ret != ErrorCode::kErrorNoError) {
       return ret;
     }
-    // Fill extraOption
-    // For compiler bins called by system()
-    auto &extraOption = extras[*settingExe];
-    for (size_t i = 0; i < exeOption.size(); i++) {
-      MplOption mplOption;
-      if (exeOption[i].Args() != "") {
-        mplOption.init("-" + exeOption[i].OptionKey(), exeOption[i].Args(), "=", false, "");
-      } else {
-        mplOption.init("-" + exeOption[i].OptionKey(), "", " ", false, "");
-      }
-      extraOption.push_back(mplOption);
-    }
-
     settingExe++;
   }
   return ErrorCode::kErrorNoError;
