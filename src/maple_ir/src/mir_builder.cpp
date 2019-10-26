@@ -323,7 +323,7 @@ MIRSymbol *MIRBuilder::GetOrCreateLocalDecl(const std::string &str, const TyIdx 
   MIRSymbol *st = symbolTable.CreateSymbol(kScopeLocal);
   st->SetNameStrIdx(strIdx);
   st->SetTyIdx(tyIdx);
-  (void)symbolTable.AddToStringSymbolMap(st);
+  (void)symbolTable.AddToStringSymbolMap(*st);
   return st;
 }
 
@@ -352,7 +352,7 @@ MIRSymbol *MIRBuilder::CreateLocalDecl(const std::string &str, const MIRType &ty
   MIRSymbol *st = symbolTable->CreateSymbol(kScopeLocal);
   st->SetNameStrIdx(stridx);
   st->SetTyIdx(type.GetTypeIndex());
-  (void)symbolTable->AddToStringSymbolMap(st);
+  (void)symbolTable->AddToStringSymbolMap(*st);
   st->SetStorageClass(kScAuto);
   st->SetSKind(kStVar);
   return st;
@@ -596,7 +596,7 @@ MIRSymbol *MIRBuilder::CreateSymbol(TyIdx tyIdx, GStrIdx strIdx, MIRSymKind mCla
   st->SetNameStrIdx(strIdx);
   st->SetTyIdx(tyIdx);
   if (func) {
-    (void)func->GetSymTab()->AddToStringSymbolMap(st);
+    (void)func->GetSymTab()->AddToStringSymbolMap(*st);
   } else {
     (void)GlobalTables::GetGsymTable().AddToStringSymbolMap(*st);
   }
@@ -638,7 +638,7 @@ MIRFunction *MIRBuilder::CreateFunction(const std::string &name, const MIRType &
     argSymbol->SetTyIdx(ty->GetTypeIndex());
     argSymbol->SetStorageClass(kScFormal);
     argSymbol->SetSKind(kStVar);
-    (void)fn->GetSymTab()->AddToStringSymbolMap(argSymbol);
+    (void)fn->GetSymTab()->AddToStringSymbolMap(*argSymbol);
     fn->AddFormal(argSymbol);
     funcVecType.push_back(ty->GetTypeIndex());
     funcVecAttrs.push_back(TypeAttrs());

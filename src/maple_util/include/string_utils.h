@@ -29,7 +29,7 @@ class StringUtils {
       return;
     }
 
-    std::stringstream strStream(src);
+    std::stringstream strStream(src + delim);
     std::string item;
     while (std::getline(strStream, item, delim)) {
       container.emplace_back(item);

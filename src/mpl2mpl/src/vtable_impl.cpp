@@ -41,8 +41,9 @@ void VtableImpl::ProcessFunc(MIRFunction *func) {
       case OP_regassign: {
         RegassignNode *regassign = static_cast<RegassignNode*>(stmt);
         BaseNode *rhs = regassign->Opnd();
+        ASSERT(rhs != nullptr, "null ptr check!");
         if (rhs->GetOpCode() == maple::OP_resolveinterfacefunc) {
-          ReplaceResolveInterface(stmt, static_cast<ResolveFuncNode*>(rhs));
+          ReplaceResolveInterface(*stmt, *(static_cast<ResolveFuncNode*>(rhs)));
         }
         break;
       }
@@ -68,8 +69,9 @@ void VtableImpl::ProcessFunc(MIRFunction *func) {
       case OP_icallassigned: {
         IcallNode *icall = static_cast<IcallNode*>(stmt);
         BaseNode *firstParm = icall->GetNopndAt(0);
+        ASSERT(firstParm != nullptr, "null ptr check!");
         if (firstParm->GetOpCode() == maple::OP_resolveinterfacefunc) {
-          ReplaceResolveInterface(stmt, static_cast<ResolveFuncNode*>(firstParm));
+          ReplaceResolveInterface(*stmt, *(static_cast<ResolveFuncNode*>(firstParm)));
         }
         break;
       }
@@ -98,14 +100,15 @@ void VtableImpl::ProcessFunc(MIRFunction *func) {
 }
 
 
-void VtableImpl::ReplaceResolveInterface(StmtNode *stmt, const ResolveFuncNode *resolveNode) {
-  std::string signature = VtableAnalysis::DecodeBaseNameWithType(
-      GlobalTables::GetFunctionTable().GetFunctionFromPuidx(resolveNode->GetPuIdx()));
+void VtableImpl::ReplaceResolveInterface(StmtNode &stmt, const ResolveFuncNode &resolveNode) {
+  MIRFunction *func = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(resolveNode.GetPuIdx());
+  ASSERT(func != nullptr, "null ptr check!");
+  std::string signature = VtableAnalysis::DecodeBaseNameWithType(*func);
   int64 hashCode = GetHashIndex(signature.c_str());
   PregIdx pregItabAddress = currFunc->GetPregTab()->CreatePreg(PTY_ptr);
   RegassignNode *itabAddressAssign =
-      builder->CreateStmtRegassign(PTY_ptr, pregItabAddress, resolveNode->GetTabBaseAddr());
-  currFunc->GetBody()->InsertBefore(stmt, itabAddressAssign);
+      builder->CreateStmtRegassign(PTY_ptr, pregItabAddress, resolveNode.GetTabBaseAddr());
+  currFunc->GetBody()->InsertBefore(&stmt, itabAddressAssign);
   // read funcvalue
   MIRType *compactPtrType = GlobalTables::GetTypeTable().GetCompactPtr();
   PrimType compactPtrPrim = compactPtrType->GetPrimType();
@@ -116,7 +119,7 @@ void VtableImpl::ReplaceResolveInterface(StmtNode *stmt, const ResolveFuncNode *
       *compactPtrType, *GlobalTables::GetTypeTable().GetOrCreatePointerType(*compactPtrType), 0, addrNode);
   PregIdx pregFuncPtr = currFunc->GetPregTab()->CreatePreg(compactPtrPrim);
   RegassignNode *funcPtrAssign = builder->CreateStmtRegassign(compactPtrPrim, pregFuncPtr, readFuncPtr);
-  currFunc->GetBody()->InsertBefore(stmt, funcPtrAssign);
+  currFunc->GetBody()->InsertBefore(&stmt, funcPtrAssign);
   // In case not found in the fast path, fall to the slow path
   uint64 secondHashCode = GetSecondHashIndex(signature.c_str());
   MapleAllocator *currentFuncMpAllocator = builder->GetCurrentFuncCodeMpAllocator();
@@ -137,12 +140,12 @@ void VtableImpl::ReplaceResolveInterface(StmtNode *stmt, const ResolveFuncNode *
                                                    builder->CreateIntConst(0, compactPtrPrim));
   IfStmtNode *ifStmt = static_cast<IfStmtNode*>(builder->CreateStmtIf(checkExpr));
   ifStmt->GetThenPart()->AddStatement(mccCallStmt);
-  currFunc->GetBody()->InsertBefore(stmt, ifStmt);
-  if (stmt->GetOpCode() == OP_regassign) {
-    RegassignNode *regAssign = static_cast<RegassignNode*>(stmt);
+  currFunc->GetBody()->InsertBefore(&stmt, ifStmt);
+  if (stmt.GetOpCode() == OP_regassign) {
+    RegassignNode *regAssign = static_cast<RegassignNode*>(&stmt);
     regAssign->SetOpnd(builder->CreateExprRegread(compactPtrPrim, pregFuncPtr));
   } else {
-    IcallNode *icall = static_cast<IcallNode*>(stmt);
+    IcallNode *icall = static_cast<IcallNode*>(&stmt);
     const size_t nopndSize = icall->GetNopndSize();
     CHECK_FATAL(nopndSize > 0, "container check");
     icall->SetNOpndAt(0, builder->CreateExprRegread(compactPtrPrim, pregFuncPtr));

@@ -310,17 +310,17 @@ const std::string &MIRType::GetName(void) const {
   return GlobalTables::GetStrTable().GetStringFromStrIdx(nameStrIdx);
 }
 
-bool MIRType::ValidateClassOrInterface(const char *className, bool noWarning) {
+bool MIRType::ValidateClassOrInterface(const std::string &className, bool noWarning) {
   if (primType == maple::PTY_agg && (typeKind == maple::kTypeClass || typeKind == maple::kTypeInterface) &&
       nameStrIdx.GetIdx()) {
     return true;
   } else {
     if (!noWarning) {
-      int len = strlen(className);
+      int len = className.size();
       constexpr int minClassNameLen = 4;
       constexpr char suffix[] = "_3B";
       int suffixLen = std::strlen(suffix);
-      if (len > minClassNameLen && strncmp(className + len - suffixLen, suffix, suffixLen) == 0) {
+      if (len > minClassNameLen && strncmp(className.c_str() + len - suffixLen, suffix, suffixLen) == 0) {
         LogInfo::MapleLogger(kLlErr) << "error: missing proper mplt file for " << className << std::endl;
       } else {
         LogInfo::MapleLogger(kLlErr) << "internal error: type is not java class or interface "
@@ -650,9 +650,9 @@ FieldID MIRClassType::GetLastFieldID() const {
   return fieldID;
 }
 
-static void DumpClassOrInterfaceInfo(const MIRStructType *type, int indent) {
-  const std::vector<MIRInfoPair> &info = type->GetInfo();
-  std::vector<bool> infoIsString = type->GetIsStringInfo();
+static void DumpClassOrInterfaceInfo(const MIRStructType &type, int indent) {
+  const std::vector<MIRInfoPair> &info = type.GetInfo();
+  std::vector<bool> infoIsString = type.GetIsStringInfo();
   size_t size = info.size();
   for (size_t i = 0; i < size; i++) {
     LogInfo::MapleLogger() << std::endl;
@@ -956,7 +956,7 @@ void MIRClassType::Dump(int indent, bool dontUseName) const {
     LogInfo::MapleLogger() << " ";
   }
   LogInfo::MapleLogger() << "{";
-  DumpClassOrInterfaceInfo(this, indent);
+  DumpClassOrInterfaceInfo(*this, indent);
   bool hasFieldMethodOrInterface = !(fields.empty() && parentFields.empty() && staticFields.empty() &&
                                      methods.empty() && interfacesImplemented.empty());
   DumpInfoPragmaStaticValue(info, pragmaVec, staticValue, indent, hasFieldMethodOrInterface);
@@ -988,7 +988,7 @@ void MIRInterfaceType::Dump(int indent, bool dontUseName) const {
     LogInfo::MapleLogger() << " ";
   }
   LogInfo::MapleLogger() << " {";
-  DumpClassOrInterfaceInfo(this, indent);
+  DumpClassOrInterfaceInfo(*this, indent);
   bool hasFieldOrMethod = !(fields.empty() && staticFields.empty() && parentFields.empty() && methods.empty());
   DumpInfoPragmaStaticValue(info, pragmaVec, staticValue, indent, hasFieldOrMethod);
   DumpFieldsAndMethods(indent, !methods.empty());

@@ -217,7 +217,7 @@ UStrIdx BinaryMplImport::ImportUsrStr() {
 }
 
 MIRPragmaElement *BinaryMplImport::ImportPragmaElement() {
-  MIRPragmaElement *element = mod.GetMemPool()->New<MIRPragmaElement>(&mod);
+  MIRPragmaElement *element = mod.GetMemPool()->New<MIRPragmaElement>(mod);
   element->SetNameStrIdx(ImportStr());
   element->SetTypeStrIdx(ImportStr());
   element->SetType((PragmaValueType)ReadNum());
@@ -235,7 +235,7 @@ MIRPragmaElement *BinaryMplImport::ImportPragmaElement() {
 }
 
 MIRPragma *BinaryMplImport::ImportPragma() {
-  MIRPragma *p = mod.GetMemPool()->New<MIRPragma>(&mod);
+  MIRPragma *p = mod.GetMemPool()->New<MIRPragma>(mod);
   p->SetKind(static_cast<PragmaKind>(ReadNum()));
   p->SetVisibility(ReadNum());
   p->SetStrIdx(ImportStr());
@@ -312,7 +312,7 @@ void BinaryMplImport::UpdateMethodSymbols() {
     ASSERT(fn != nullptr, "fn is null");
     MIRFuncType *funcType = static_cast<MIRFuncType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(sym->GetTyIdx()));
     fn->SetMIRFuncType(funcType);
-    fn->SetReturnStruct(GlobalTables::GetTypeTable().GetTypeFromTyIdx(funcType->GetRetTyIdx()));
+    fn->SetReturnStruct(*GlobalTables::GetTypeTable().GetTypeFromTyIdx(funcType->GetRetTyIdx()));
   }
 }
 
@@ -693,7 +693,8 @@ MIRType &BinaryMplImport::InsertInTypeTables(MIRType &type) {
       GlobalTables::GetTypeTable().SetTypeWithTyIdx(prevTyIdx, type.CopyMIRTypeNode());
       resultTypePtr = GlobalTables::GetTypeTable().GetTypeFromTyIdx(prevTyIdx);
       if (!IsIncomplete(*resultTypePtr)) {
-        GlobalTables::GetTypeNameTable().SetGStrIdxToTyIdx(resultTypePtr->GetNameStrIdx(), resultTypePtr->GetTypeIndex());
+        GlobalTables::GetTypeNameTable().SetGStrIdxToTyIdx(resultTypePtr->GetNameStrIdx(),
+                                                           resultTypePtr->GetTypeIndex());
       }
     }
   } else {

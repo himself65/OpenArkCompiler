@@ -398,7 +398,6 @@ class MIRSymbol {
   static GStrIdx reflectClassNameIdx;
   static GStrIdx reflectMethodNameIdx;
   static GStrIdx reflectFieldNameIdx;
-
 };
 
 class MIRSymbolTable {
@@ -408,7 +407,7 @@ class MIRSymbolTable {
     symbolTable.push_back(static_cast<MIRSymbol*>(nullptr));
   }
 
-  ~MIRSymbolTable() {}
+  ~MIRSymbolTable() = default;
 
   bool IsValidIdx(uint32 idx) const {
     return idx < symbolTable.size();
@@ -432,15 +431,15 @@ class MIRSymbolTable {
   bool AddStOutside(MIRSymbol *sym) {
     sym->SetStIdx(StIdx(sym->GetScopeIdx(), symbolTable.size()));
     symbolTable.push_back(sym);
-    return AddToStringSymbolMap(sym);
+    return AddToStringSymbolMap(*sym);
   }
 
-  bool AddToStringSymbolMap(const MIRSymbol *st) {
-    GStrIdx strIdx = st->GetNameStrIdx();
+  bool AddToStringSymbolMap(const MIRSymbol &st) {
+    GStrIdx strIdx = st.GetNameStrIdx();
     if (strIdxToStIdxMap[strIdx].FullIdx() != 0) {
       return false;
     }
-    strIdxToStIdxMap[strIdx] = st->GetStIdx();
+    strIdxToStIdxMap[strIdx] = st.GetStIdx();
     return true;
   }
 

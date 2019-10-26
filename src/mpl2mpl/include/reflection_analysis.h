@@ -216,9 +216,9 @@ static constexpr uint64 kMethodAbstract = 0x00000010;
     break;
 class ReflectionAnalysis : public AnalysisResult {
  public:
-  static void GenStrTab(MIRModule *mirmodule);
+  static void GenStrTab(MIRModule &mirmodule);
   static uint32 FindOrInsertRepeatString(const std::string &str, bool isHot = false, uint8 hotType = kLayoutUnused);
-  static BaseNode *GenClassInfoAddr(BaseNode *obj, MIRBuilder *builder);
+  static BaseNode *GenClassInfoAddr(BaseNode *obj, MIRBuilder &builder);
   ReflectionAnalysis(MIRModule *mod, MemPool *memPool, KlassHierarchy *kh, MIRBuilder &builder)
       : AnalysisResult(memPool),
         mirModule(mod),
@@ -279,26 +279,26 @@ class ReflectionAnalysis : public AnalysisResult {
   MIRSymbol *GetSymbol(const std::string &name, TyIdx tyIdx);
   MIRSymbol *CreateSymbol(GStrIdx strIdx, TyIdx tyIdx);
   MIRSymbol *GetSymbol(GStrIdx strIdx, TyIdx tyIdx);
-  void GenClassMetaData(Klass *klass);
-  std::string GetAnnoValueWithoutArray(const MIRPragmaElement *annoElem);
+  void GenClassMetaData(Klass &klass);
+  std::string GetAnnoValueWithoutArray(const MIRPragmaElement &annoElem);
   void CompressHighFrequencyStr(std::string &s);
   std::string GetArrayValue(MapleVector<MIRPragmaElement*> subElemVector, bool isSN = false);
   std::string GetAnnotationValue(MapleVector<MIRPragmaElement*> subElemVector, GStrIdx typeStrIdx);
-  MIRSymbol *GenSuperClassMetaData(const Klass *klass, std::list<Klass*> superClassList);
-  MIRSymbol *GenFieldsMetaData(const Klass *klass);
-  MIRSymbol *GenMethodsMetaData(const Klass *klass);
-  static void GenMetadataType(MIRModule *mirModule);
-  static MIRType *GetRefFieldType(MIRBuilder *mirBuilder);
-  static TyIdx GenMetaStructType(MIRModule *mirModule, MIRStructType &metaType, const std::string &str);
+  MIRSymbol *GenSuperClassMetaData(const Klass &klass, std::list<Klass*> superClassList);
+  MIRSymbol *GenFieldsMetaData(const Klass &klass);
+  MIRSymbol *GenMethodsMetaData(const Klass &klass);
+  static void GenMetadataType(MIRModule &mirModule);
+  static MIRType *GetRefFieldType(MIRBuilder &mirBuilder);
+  static TyIdx GenMetaStructType(MIRModule &mirModule, MIRStructType &metaType, const std::string &str);
   int64 GetHashIndex(const std::string &strname);
-  static void GenHotClassNameString(const Klass *klass);
+  static void GenHotClassNameString(const Klass &klass);
   uint32 FindOrInsertReflectString(const std::string &str);
   static void InitReflectString();
   int64 BKDRHash(const std::string &strname, uint32 seed);
   void GenClassHashMetaData();
   void MarkWeakMethods();
   void Run();
-  bool VtableFunc(const MIRFunction *func) const;
+  bool VtableFunc(const MIRFunction &func) const;
   void GenPrimitiveClass();
   bool RootClassDefined();  // wether current module defines root classes
   void GenAllMethodHash(std::vector<std::pair<MethodPair*, int>> &methodInfoVec,

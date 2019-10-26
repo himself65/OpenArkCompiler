@@ -43,7 +43,7 @@ class BinaryMplImport {
     }
   }
 
-  uint64 GetBufI() {
+  uint64 GetBufI() const {
     return bufI;
   }
 
@@ -51,16 +51,16 @@ class BinaryMplImport {
     bufI = bufIVal;
   }
 
-  bool IsBufEmpty() {
+  bool IsBufEmpty() const {
     return buf.empty();
   }
 
-  size_t GetBufSize() {
+  size_t GetBufSize() const {
     return buf.size();
   }
 
-  int32 GetContent(int64 key) {
-    return content[key];
+  int32 GetContent(int64 key) const {
+    return content.at(key);
   }
 
   void SetImported(bool importedVal) {
@@ -107,7 +107,6 @@ class BinaryMplImport {
   void ImportInterfaceTypeData(MIRInterfaceType &type);
   PUIdx ImportFunction();
   MIRSymbol *InSymbol(MIRFunction *func);
-  void InWord(int64 targetTag, uint8 **typeTagged, uint16 frameSize);
   void ReadFileAt(const std::string &modid, int32 offset);
   uint8 Read();
   int32 ReadInt();

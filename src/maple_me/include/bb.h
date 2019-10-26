@@ -224,14 +224,14 @@ class BB {
   void SetFirstMe(MeStmt *stmt);
   void SetLastMe(MeStmt *stmt);
   bool IsInList(const MapleVector<BB*> &bbList) const;
-  bool IsPredBB(const BB *bb) const {
+  bool IsPredBB(const BB &bb) const {
     // if this is a pred of bb return true;
     // otherwise return false;
-    return IsInList(bb->pred);
+    return IsInList(bb.pred);
   }
 
-  bool IsSuccBB(const BB *bb) const {
-    return IsInList(bb->succ);
+  bool IsSuccBB(const BB &bb) const {
+    return IsInList(bb.succ);
   }
 
   void AddSuccBB(BB *succPara) {

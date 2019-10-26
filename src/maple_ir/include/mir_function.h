@@ -26,8 +26,6 @@
 
 
 namespace maple {
-class BlockNode;
-class SrcPosition;
 enum MIRFuncProp {
   kFuncPropNone,
   kFuncPropHasCall,      // the function has call
@@ -101,7 +99,7 @@ class MIRFunction {
     eacg = nullptr;
   }
 
-  ~MIRFunction() {}
+  ~MIRFunction() = default;
 
   void Init() {
     // Initially allocate symTab and pregTab on the module mempool for storing
@@ -498,8 +496,8 @@ class MIRFunction {
     return flag & FUNCNEVERRETURN;
   }
 
-  void SetReturnStruct(MIRType *retType) {
-    switch (retType->GetKind()) {
+  void SetReturnStruct(MIRType &retType) {
+    switch (retType.GetKind()) {
       case kTypeUnion:
       case kTypeStruct:
       case kTypeStructIncomplete:
@@ -539,7 +537,7 @@ class MIRFunction {
     return classTyIdx.GetIdx();
   }
 
-  MIRType *GetNodeType(BaseNode *node);
+  MIRType *GetNodeType(BaseNode &node);
   void SetUpGDBEnv();
   void ResetGDBEnv();
   MemPool *GetCodeMempool() {

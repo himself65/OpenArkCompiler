@@ -63,9 +63,8 @@ bool BaseNode::MayThrowException() {
   return false;
 }
 
-bool AddrofNode::CheckNode(const MIRModule *mod) const {
-  ASSERT(mod != nullptr, "mod is null");
-  MIRSymbol *st = mod->CurFunction()->GetLocalOrGlobalSymbol(GetStIdx());
+bool AddrofNode::CheckNode(const MIRModule &mod) const {
+  MIRSymbol *st = mod.CurFunction()->GetLocalOrGlobalSymbol(GetStIdx());
   MIRType *ty = st->GetType();
   switch (ty->GetKind()) {
     case kTypeScalar: {
@@ -141,9 +140,8 @@ void BlockNode::AddStatement(StmtNode *stmt) {
   stmtNodeList.push_back(stmt);
 }
 
-void BlockNode::AppendStatementsFromBlock(BlockNode *blk) {
-  ASSERT(blk != nullptr, "null ptr check");
-  stmtNodeList.splice(stmtNodeList.end(), blk->GetStmtNodes());
+void BlockNode::AppendStatementsFromBlock(BlockNode &blk) {
+  stmtNodeList.splice(stmtNodeList.end(), blk.GetStmtNodes());
 }
 
 /// Insert stmt as the first
@@ -158,10 +156,10 @@ void BlockNode::InsertLast(StmtNode *stmt) {
   stmtNodeList.push_back(stmt);
 }
 
-void BlockNode::ReplaceStmtWithBlock(StmtNode *stmtNode, BlockNode *blk) {
-  stmtNodeList.splice(stmtNode, blk->GetStmtNodes());
+void BlockNode::ReplaceStmtWithBlock(StmtNode *stmtNode, BlockNode &blk) {
+  stmtNodeList.splice(stmtNode, blk.GetStmtNodes());
   stmtNodeList.erase(stmtNode);
-  stmtNode->SetNext(blk->GetLast()->GetNext());
+  stmtNode->SetNext(blk.GetLast()->GetNext());
 }
 
 void BlockNode::ReplaceStmt1WithStmt2(StmtNode *stmtNode1, StmtNode *stmtNode2) {
@@ -194,10 +192,10 @@ void BlockNode::InsertAfter(StmtNode *stmtNode1, StmtNode *stmtNode2) {
 }
 
 // insert all the stmts in inblock to the current block after stmt1
-void BlockNode::InsertBlockAfter(BlockNode *inblock, StmtNode *stmt1) {
+void BlockNode::InsertBlockAfter(BlockNode &inblock, StmtNode *stmt1) {
   ASSERT(stmt1 != nullptr, "null ptr check");
-  ASSERT(!inblock->IsEmpty(), "NYI");
-  stmtNodeList.splice(stmt1, inblock->GetStmtNodes());
+  ASSERT(!inblock.IsEmpty(), "NYI");
+  stmtNodeList.splice(stmt1, inblock.GetStmtNodes());
 }
 
 void BaseNode::DumpBase(const MIRModule &mod, int32 indent) const {
@@ -415,16 +413,16 @@ void NaryNode::Dump(const MIRModule &mod, int32 indent) const {
   NaryOpnds::Dump(mod, indent);
 }
 
-MIRType *ArrayNode::GetArrayType(TypeTable *tt) const {
-  MIRPtrType *pointType = MIR_DYN_CAST(tt->GetTypeFromTyIdx(tyIdx), MIRPtrType*);
+MIRType *ArrayNode::GetArrayType(TypeTable &tt) const {
+  MIRPtrType *pointType = MIR_DYN_CAST(tt.GetTypeFromTyIdx(tyIdx), MIRPtrType*);
   ASSERT(pointType != nullptr, "expect array type pointer");
-  return tt->GetTypeFromTyIdx(pointType->GetPointedTyIdx());
+  return tt.GetTypeFromTyIdx(pointType->GetPointedTyIdx());
 }
 
-BaseNode *ArrayNode::GetDim(const MIRModule *mod, TypeTable *tt, int i) {
+BaseNode *ArrayNode::GetDim(const MIRModule &mod, TypeTable &tt, int i) {
   MIRArrayType *arrayType = static_cast<MIRArrayType*>(GetArrayType(tt));
-  MIRConst *mirConst = mod->CurFuncCodeMemPool()->New<MIRConst>(tt->GetTypeFromTyIdx(arrayType->GetElemTyIdx()));
-  return mod->CurFuncCodeMemPool()->New<ConstvalNode>(mirConst);
+  MIRConst *mirConst = mod.CurFuncCodeMemPool()->New<MIRConst>(tt.GetTypeFromTyIdx(arrayType->GetElemTyIdx()));
+  return mod.CurFuncCodeMemPool()->New<ConstvalNode>(mirConst);
 }
 
 void ArrayNode::Dump(const MIRModule &mod, int32 indent) const {
@@ -576,25 +574,23 @@ StmtNode *StmtNode::GetRealNext() {
 }
 
 // insert this before pos
-void StmtNode::InsertAfterThis(StmtNode *pos) {
-  ASSERT(pos != nullptr, "null ptr check");
-  this->SetNext(pos);
-  if (pos->GetPrev()) {
-    this->SetPrev(pos->GetPrev());
-    pos->GetPrev()->SetNext(this);
+void StmtNode::InsertAfterThis(StmtNode &pos) {
+  this->SetNext(&pos);
+  if (pos.GetPrev()) {
+    this->SetPrev(pos.GetPrev());
+    pos.GetPrev()->SetNext(this);
   }
-  pos->SetPrev(this);
+  pos.SetPrev(this);
 }
 
 // insert stmtnode after pos
-void StmtNode::InsertBeforeThis(StmtNode *pos) {
-  ASSERT(pos != nullptr, "null ptr check");
-  this->SetPrev(pos);
-  if (pos->GetNext()) {
-    this->SetNext(pos->GetNext());
-    pos->GetNext()->SetPrev(this);
+void StmtNode::InsertBeforeThis(StmtNode &pos) {
+  this->SetPrev(&pos);
+  if (pos.GetNext()) {
+    this->SetNext(pos.GetNext());
+    pos.GetNext()->SetPrev(this);
   }
-  pos->SetNext(this);
+  pos.SetNext(this);
 }
 
 void DassignNode::Dump(const MIRModule &mod, int32 indent) const {
@@ -1033,7 +1029,7 @@ void BlockNode::Dump(const MIRModule &mod, int32 indent, const MIRSymbolTable *t
   // output puid for debugging purpose
   if (isFuncbody) {
     mod.CurFunction()->DumpFuncBody(indent);
-    if (theSymTab != nullptr) {
+    if (theSymTab != nullptr && thePregTab != nullptr) {
       // print the locally declared type names
       for (auto it : mod.CurFunction()->GetGStrIdxToTyIdxMap()) {
         const std::string &name = GlobalTables::GetStrTable().GetStringFromStrIdx(it.first);
@@ -1094,8 +1090,8 @@ void CommentNode::Dump(const MIRModule &mod, int32 indent) const {
 }
 
 // mirnode verification support
-bool ExcludeSmallIntTypeVerify(const BaseNode *opnd) {
-  switch (opnd->GetPrimType()) {
+bool ExcludeSmallIntTypeVerify(const BaseNode &opnd) {
+  switch (opnd.GetPrimType()) {
     case PTY_u1:
     case PTY_i8:
     case PTY_u8:
@@ -1108,22 +1104,21 @@ bool ExcludeSmallIntTypeVerify(const BaseNode *opnd) {
   return true;
 }
 
-bool ArithTypeVerify(const BaseNode *opnd) {
-  ASSERT(opnd != nullptr, "null ptr check");
+bool ArithTypeVerify(const BaseNode &opnd) {
   bool verifyResult = ExcludeSmallIntTypeVerify(opnd);
   if (!verifyResult) {
     LogInfo::MapleLogger() << "\n#Error:u1,i8,u8,i16,u16 should not be used as types of arithmetic operations\n";
-    opnd->Dump(*theModule);
+    opnd.Dump(*theModule);
   }
   return verifyResult;
 }
 
-inline bool ReadTypeVerify(const BaseNode *opnd) {
+inline bool ReadTypeVerify(const BaseNode &opnd) {
   bool verifyResult = ExcludeSmallIntTypeVerify(opnd);
   if (!verifyResult) {
     LogInfo::MapleLogger()
         << "\n#Error:u1,i8,u8,i16,u16 should not be used as result types for dread/iread/regread/ireadoff/ireadfpoff\n";
-    opnd->Dump(*theModule);
+    opnd.Dump(*theModule);
   }
   return verifyResult;
 }
@@ -1179,10 +1174,8 @@ inline bool BinaryTypeVerify(PrimType ptyp) {
   return ArithResTypeVerify(ptyp) || IsPrimitiveDynType(ptyp);
 }
 
-inline bool BinaryGenericVerify(const BaseNode *bOpnd0, const BaseNode *bOpnd1) {
-  ASSERT(bOpnd0 != nullptr, "null ptr check");
-  ASSERT(bOpnd1 != nullptr, "null ptr check");
-  return bOpnd0->Verify() && bOpnd1->Verify() && ArithTypeVerify(bOpnd0) && ArithTypeVerify(bOpnd1);
+inline bool BinaryGenericVerify(const BaseNode &bOpnd0, const BaseNode &bOpnd1) {
+  return bOpnd0.Verify() && bOpnd1.Verify() && ArithTypeVerify(bOpnd0) && ArithTypeVerify(bOpnd1);
 }
 
 inline bool CompareTypeVerify(PrimType pType) {
@@ -1205,8 +1198,8 @@ enum PTYGroup {
   kPTYGOthers
 };
 
-uint8 GetCompGroupID(const BaseNode *opnd) {
-  switch (opnd->GetPrimType()) {
+uint8 GetCompGroupID(const BaseNode &opnd) {
+  switch (opnd.GetPrimType()) {
     case PTY_i32:
     case PTY_u32:
     case PTY_a32:
@@ -1244,18 +1237,18 @@ uint8 GetCompGroupID(const BaseNode *opnd) {
   Refer to C11 Language Specification.
   $ 6.3.1.8 Usual arithmetic conversions
  */
-bool CompatibleTypeVerify(const BaseNode *opnd1, const BaseNode *opnd2) {
+bool CompatibleTypeVerify(const BaseNode &opnd1, const BaseNode &opnd2) {
   uint8 groupID1 = GetCompGroupID(opnd1);
   uint8 groupID2 = GetCompGroupID(opnd2);
-  Opcode opCode2 = opnd2->GetOpCode();
+  Opcode opCode2 = opnd2.GetOpCode();
   bool verifyResult = groupID1 == groupID2;
   if (opCode2 == OP_gcmallocjarray || opCode2 == OP_gcpermallocjarray) {
     verifyResult = groupID1 == kPTYGi32u32a32;
   }
   if (!verifyResult) {
     LogInfo::MapleLogger() << "\n#Error:incompatible operand types :\n";
-    opnd1->Dump(*theModule);
-    opnd2->Dump(*theModule);
+    opnd1.Dump(*theModule);
+    opnd2.Dump(*theModule);
   }
   return verifyResult;
 }
@@ -1400,7 +1393,7 @@ inline bool BinaryStrictSignVerify0(const BaseNode *bOpnd0, const BaseNode *bOpn
 }
 
 bool BinaryStrictSignVerify1(const BaseNode *bOpnd0, const BaseNode *bOpnd1, const BaseNode *res) {
-  if (GetCompGroupID(res) == kPTYGDynall) {
+  if (GetCompGroupID(*res) == kPTYGDynall) {
     return BinaryStrictSignVerify0(bOpnd0, res) && BinaryStrictSignVerify0(bOpnd1, res) &&
            BinaryStrictSignVerify0(bOpnd0, bOpnd1);
   }
@@ -1424,11 +1417,11 @@ bool UnaryNode::Verify() const {
   }
   bool opndTypeVerf = true;
   if (GetOpCode() != OP_lnot) {
-    opndTypeVerf = ArithTypeVerify(uOpnd);
+    opndTypeVerf = ArithTypeVerify(*uOpnd);
   }
   // When an opcode only specifies one type, check for compatibility
   // between the operands and the result-type.
-  bool compVerf = CompatibleTypeVerify(uOpnd, this);
+  bool compVerf = CompatibleTypeVerify(*uOpnd, *this);
   bool opndExprVerf = uOpnd->Verify();
   return resTypeVerf && opndTypeVerf && compVerf && opndExprVerf;
 }
@@ -1450,7 +1443,7 @@ bool TypeCvtNode::Verify() const {
 
 bool IreadNode::Verify() const {
   bool addrExprVerf = Opnd()->Verify();
-  bool pTypeVerf = ReadTypeVerify(this);
+  bool pTypeVerf = ReadTypeVerify(*this);
   bool structVerf = true;
   if (GetTypeKind(tyIdx) != kTypePointer) {
     LogInfo::MapleLogger() << "\n#Error:<type> must be a pointer type\n";
@@ -1491,24 +1484,24 @@ bool IreadNode::Verify() const {
 }
 
 bool RegreadNode::Verify() const {
-  bool pTypeVerf = ReadTypeVerify(this);
+  bool pTypeVerf = ReadTypeVerify(*this);
   return pTypeVerf;
 }
 
 bool IreadoffNode::Verify() const {
-  bool pTypeVerf = ReadTypeVerify(this);
+  bool pTypeVerf = ReadTypeVerify(*this);
   return pTypeVerf;
 }
 
 bool IreadFPoffNode::Verify() const {
-  bool pTypeVerf = ReadTypeVerify(this);
+  bool pTypeVerf = ReadTypeVerify(*this);
   return pTypeVerf;
 }
 
 bool ExtractbitsNode::Verify() const {
   bool opndExprVerf = Opnd()->Verify();
-  bool opndTypeVerf = ArithTypeVerify(Opnd());
-  bool compVerf = CompatibleTypeVerify(Opnd(), this);
+  bool opndTypeVerf = ArithTypeVerify(*Opnd());
+  bool compVerf = CompatibleTypeVerify(*Opnd(), *this);
   bool resTypeVerf = UnaryTypeVerify0(GetPrimType());
   constexpr int kNumBitsInByte = 8;
   bool opnd0SizeVerf = (kNumBitsInByte * GetPrimTypeSize(Opnd()->GetPrimType()) >= bitsSize);
@@ -1520,7 +1513,7 @@ bool ExtractbitsNode::Verify() const {
 }
 
 bool BinaryNode::Verify() const {
-  bool opndsVerf = BinaryGenericVerify(GetBOpnd(0), GetBOpnd(1));
+  bool opndsVerf = BinaryGenericVerify(*GetBOpnd(0), *GetBOpnd(1));
   bool resTypeVerf = BinaryTypeVerify(GetPrimType());
   if (!resTypeVerf && theModule->IsCModule()) {
     if ((IsAddress(GetBOpnd(0)->GetPrimType()) && !IsAddress(GetBOpnd(1)->GetPrimType())) ||
@@ -1543,8 +1536,8 @@ bool BinaryNode::Verify() const {
            "be in [i32,u32,i64,u64,f32,f64,dynamic-type]\n";
     this->Dump(*theModule);
   }
-  bool comp0Verf = CompatibleTypeVerify(GetBOpnd(0), this);
-  bool comp1Verf = CompatibleTypeVerify(GetBOpnd(1), this);
+  bool comp0Verf = CompatibleTypeVerify(*GetBOpnd(0), *this);
+  bool comp1Verf = CompatibleTypeVerify(*GetBOpnd(1), *this);
   bool signVerf = true;
   bool typeVerf = resTypeVerf && comp0Verf && comp1Verf;
   if (typeVerf) {
@@ -1561,8 +1554,8 @@ bool BinaryNode::Verify() const {
 }
 
 bool CompareNode::Verify() const {
-  bool opndsVerf = BinaryGenericVerify(GetBOpnd(0), GetBOpnd(1));
-  bool compVerf = CompatibleTypeVerify(GetBOpnd(0), GetBOpnd(1));
+  bool opndsVerf = BinaryGenericVerify(*GetBOpnd(0), *GetBOpnd(1));
+  bool compVerf = CompatibleTypeVerify(*GetBOpnd(0), *GetBOpnd(1));
   bool resTypeVerf = CompareTypeVerify(GetPrimType());
   if (!resTypeVerf) {
     this->Dump(*theModule);
@@ -1579,7 +1572,7 @@ bool CompareNode::Verify() const {
 }
 
 bool DepositbitsNode::Verify() const {
-  bool opndsVerf = BinaryGenericVerify(GetBOpnd(0), GetBOpnd(1));
+  bool opndsVerf = BinaryGenericVerify(*GetBOpnd(0), *GetBOpnd(1));
   bool resTypeVerf = IntTypeVerify(GetPrimType());
   constexpr int kNumBitsInByte = 8;
   bool opnd0SizeVerf = (kNumBitsInByte * GetPrimTypeSize(GetBOpnd(0)->GetPrimType()) >= bitsSize);
@@ -1594,8 +1587,8 @@ bool IntrinsicopNode::Verify() const {
 }
 
 bool TernaryNode::Verify() const {
-  bool comp1Verf = CompatibleTypeVerify(topnd[1], this);
-  bool comp2Verf = CompatibleTypeVerify(topnd[2], this);
+  bool comp1Verf = CompatibleTypeVerify(*topnd[1], *this);
+  bool comp2Verf = CompatibleTypeVerify(*topnd[2], *this);
   bool opnd0TypeVerf = IsPrimitiveInteger(topnd[0]->GetPrimType());
   if (!opnd0TypeVerf) {
     LogInfo::MapleLogger() << "\n#Error:select-opnd0 must be of integer type\n";
@@ -1637,7 +1630,7 @@ bool AddrofNode::Verify() const {
   bool pTypeVerf = true;
   bool structVerf = IsStructureVerify(fieldID, GetStIdx());
   if (GetOpCode() == OP_dread) {
-    pTypeVerf = ReadTypeVerify(this);
+    pTypeVerf = ReadTypeVerify(*this);
     if (fieldID == 0 && IsStructureTypeKind(GetTypeKind(GetStIdx()))) {
       if (GetPrimType() != PTY_agg) {
         pTypeVerf = false;
@@ -1703,19 +1696,19 @@ bool IassignNode::Verify() const {
 bool IassignoffNode::Verify() const {
   bool addrVerf = GetBOpnd(0)->Verify();
   bool rhsVerf = GetBOpnd(1)->Verify();
-  bool compVerf = CompatibleTypeVerify(this, GetBOpnd(1));
+  bool compVerf = CompatibleTypeVerify(*this, *GetBOpnd(1));
   return addrVerf && rhsVerf && compVerf;
 }
 
 bool IassignFPoffNode::Verify() const {
   bool rhsVerf = Opnd()->Verify();
-  bool compVerf = CompatibleTypeVerify(this, Opnd());
+  bool compVerf = CompatibleTypeVerify(*this, *Opnd());
   return rhsVerf && compVerf;
 }
 
 bool RegassignNode::Verify() const {
   bool rhsVerf = Opnd()->Verify();
-  bool compVerf = CompatibleTypeVerify(this, Opnd());
+  bool compVerf = CompatibleTypeVerify(*this, *Opnd());
   return rhsVerf && compVerf;
 }
 
@@ -1739,7 +1732,7 @@ bool SwitchNode::Verify() const {
 }
 
 bool BinaryStmtNode::Verify() const {
-  return GetBOpnd(0)->Verify() && GetBOpnd(1)->Verify() && CompatibleTypeVerify(GetBOpnd(0), GetBOpnd(1)) &&
+  return GetBOpnd(0)->Verify() && GetBOpnd(1)->Verify() && CompatibleTypeVerify(*GetBOpnd(0), *GetBOpnd(1)) &&
          BinaryStrictSignVerify0(GetBOpnd(0), GetBOpnd(1));
 }
 

@@ -516,7 +516,7 @@ class MIRType {
             (typeKind == kTypeInterfaceIncomplete));
   }
 
-  virtual bool ValidateClassOrInterface(const char *className, bool noWarning);
+  virtual bool ValidateClassOrInterface(const std::string &className, bool noWarning);
   const std::string &GetName(void) const;
   virtual std::string GetMplTypeName() const;
   virtual std::string GetCompactMplTypeName() const;

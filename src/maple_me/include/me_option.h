@@ -31,10 +31,10 @@ class MeOption {
   static bool DumpPhase(const std::string &phase);
   static std::unordered_set<std::string> dumpPhases;
   enum Level {
-    LEVEL_ZERO = 0,
-    LEVEL_ONE = 1,
-    LEVEL_TWO = 2,
-    LEVEL_THREE = 3
+    kLevelZero = 0,
+    kLevelOne = 1,
+    kLevelTwo = 2,
+    kLevelThree = 3
   };
   static bool dumpAfter;
   static constexpr int kRangeArrayLen = 2;

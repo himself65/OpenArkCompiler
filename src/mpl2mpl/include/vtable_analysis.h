@@ -32,33 +32,31 @@ class VtableAnalysis : public FuncOptimizeImpl {
  public:
   VtableAnalysis(MIRModule *mod, KlassHierarchy *kh, bool dump);
   ~VtableAnalysis() {}
-
+  static std::string DecodeBaseNameWithType(const MIRFunction &func);
   void ProcessFunc(MIRFunction *func) override;
   FuncOptimizeImpl *Clone() override {
     return new (std::nothrow) VtableAnalysis(*this);
   }
-
-  static std::string DecodeBaseNameWithType(const MIRFunction *func);
 
  private:
   std::unordered_map<PUIdx, int> puidxToVtabIndex;
   MIRType *voidPtrType;
   MIRIntConst *zeroConst;
   MIRIntConst *oneConst;
-  bool IsVtableCandidate(const MIRFunction *func) const;
-  bool CheckOverrideForCrossPackage(const MIRFunction *baseMethod, const MIRFunction *currMethod) const;
-  void AddMethodToTable(MethodPtrVector &methodTable, MethodPair *methodpair);
-  void GenVtableList(const Klass *klass);
+  bool IsVtableCandidate(const MIRFunction &func) const;
+  bool CheckOverrideForCrossPackage(const MIRFunction &baseMethod, const MIRFunction &currMethod) const;
+  void AddMethodToTable(MethodPtrVector &methodTable, MethodPair &methodpair);
+  void GenVtableList(const Klass &klass);
   void DumpVtableList(const Klass *klass) const;
-  void GenTableSymbol(const std::string &prefix, const std::string klassName, MIRAggConst *newconst);
-  void GenVtableDefinition(const Klass *klass);
-  void GenItableDefinition(const Klass *klass);
+  void GenTableSymbol(const std::string &prefix, const std::string klassName, MIRAggConst &newconst);
+  void GenVtableDefinition(const Klass &klass);
+  void GenItableDefinition(const Klass &klass);
 
   BaseNode *GenVtabItabBaseAddr(BaseNode *obj, bool isVirtual);
-  void ReplaceVirtualInvoke(CallNode *stmt);
-  void ReplaceInterfaceInvoke(CallNode *stmt);
-  void ReplaceSuperclassInvoke(CallNode *stmt);
-  void ReplacePolymorphicInvoke(CallNode *stmt);
+  void ReplaceVirtualInvoke(CallNode &stmt);
+  void ReplaceInterfaceInvoke(CallNode &stmt);
+  void ReplaceSuperclassInvoke(CallNode &stmt);
+  void ReplacePolymorphicInvoke(CallNode &stmt);
 };
 
 class DoVtableAnalysis : public ModulePhase {

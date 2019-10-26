@@ -135,8 +135,8 @@ class MIRLexer {
     return curIdx < currentLineSize ? line[curIdx] : 0;
   }
 
-  void SetFile(std::ifstream *file) {
-    airFile = file;
+  void SetFile(std::ifstream &file) {
+    airFile = &file;
   }
 
   std::ifstream *GetFile() const {

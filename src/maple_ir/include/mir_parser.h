@@ -41,6 +41,7 @@ class MIRParser {
         paramParseLocalType(false),
         paramIsIPA(false),
         paramIsComb(false),
+        paramTokenKind(kTkInvalid),
         paramOpForStmt(kOpUndef),
         paramTokenKindForStmt(kTkInvalid),
         paramCurrFuncForParseStmtBlock(nullptr) {}

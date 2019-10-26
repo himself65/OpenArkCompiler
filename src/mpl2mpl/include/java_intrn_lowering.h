@@ -30,7 +30,7 @@ class JavaIntrnLowering : public FuncOptimizeImpl {
   }
 
  private:
-  void ProcessStmt(StmtNode *stmt) override;
+  void ProcessStmt(StmtNode &stmt) override;
   void ProcessJavaIntrnMerge(StmtNode &assignNode, const IntrinsicopNode &intrinNode);
   BaseNode *JavaIntrnMergeToCvtType(PrimType dtyp, PrimType styp, BaseNode *src);
   void ProcessJavaIntrnFillNewArray(IntrinsiccallNode &intrinCall);

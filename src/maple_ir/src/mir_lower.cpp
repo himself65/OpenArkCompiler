@@ -47,7 +47,7 @@ BlockNode *MIRLower::LowerIfStmt(IfStmtNode &ifStmt, bool recursive) {
     (void)mirModule.CurFunction()->GetLabelTab()->AddToStringLabelMap(lableIdx);
     brFalseStmt->SetOffset(lableIdx);
     blk->AddStatement(brFalseStmt);
-    blk->AppendStatementsFromBlock(ifStmt.GetThenPart());
+    blk->AppendStatementsFromBlock(*ifStmt.GetThenPart());
     LabelNode *lableStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
     lableStmt->SetLabelIdx(lableIdx);
     blk->AddStatement(lableStmt);
@@ -62,7 +62,7 @@ BlockNode *MIRLower::LowerIfStmt(IfStmtNode &ifStmt, bool recursive) {
     mirModule.CurFunction()->GetLabelTab()->AddToStringLabelMap(lableIdx);
     brTrueStmt->SetOffset(lableIdx);
     blk->AddStatement(brTrueStmt);
-    blk->AppendStatementsFromBlock(ifStmt.GetElsePart());
+    blk->AppendStatementsFromBlock(*ifStmt.GetElsePart());
     LabelNode *lableStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
     lableStmt->SetLabelIdx(lableIdx);
     blk->AddStatement(lableStmt);
@@ -80,7 +80,7 @@ BlockNode *MIRLower::LowerIfStmt(IfStmtNode &ifStmt, bool recursive) {
     (void)mirModule.CurFunction()->GetLabelTab()->AddToStringLabelMap(lIdx);
     brFalseStmt->SetOffset(lIdx);
     blk->AddStatement(brFalseStmt);
-    blk->AppendStatementsFromBlock(ifStmt.GetThenPart());
+    blk->AppendStatementsFromBlock(*ifStmt.GetThenPart());
     ASSERT(ifStmt.GetThenPart()->GetLast()->GetOpCode() != OP_brtrue, "then or else block should not end with brtrue");
     ASSERT(ifStmt.GetThenPart()->GetLast()->GetOpCode() != OP_brfalse,
            "then or else block should not end with brfalse");
@@ -96,7 +96,7 @@ BlockNode *MIRLower::LowerIfStmt(IfStmtNode &ifStmt, bool recursive) {
     LabelNode *lableStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
     lableStmt->SetLabelIdx(lIdx);
     blk->AddStatement(lableStmt);
-    blk->AppendStatementsFromBlock(ifStmt.GetElsePart());
+    blk->AppendStatementsFromBlock(*ifStmt.GetElsePart());
     if (fallThroughFromThen) {
       lableStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
       lableStmt->SetLabelIdx(gotoLableIdx);
@@ -129,7 +129,7 @@ BlockNode *MIRLower::LowerWhileStmt(WhileStmtNode &whileStmt) {
   LabelNode *lableStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
   lableStmt->SetLabelIdx(bodyLableIdx);
   blk->AddStatement(lableStmt);
-  blk->AppendStatementsFromBlock(whileStmt.GetBody());
+  blk->AppendStatementsFromBlock(*whileStmt.GetBody());
   CondGotoNode *brTrueStmt = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(OP_brtrue);
   brTrueStmt->SetOpnd(whileStmt.Opnd()->CloneTree(mirModule.GetCurFuncCodeMPAllocator()));
   brTrueStmt->SetOffset(bodyLableIdx);
@@ -182,7 +182,7 @@ BlockNode *MIRLower::LowerDoloopStmt(DoloopNode &doloop) {
   LabelNode *labelStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
   labelStmt->SetLabelIdx(bodyLabelIdx);
   blk->AddStatement(labelStmt);
-  blk->AppendStatementsFromBlock(doloop.GetDoBody());
+  blk->AppendStatementsFromBlock(*doloop.GetDoBody());
   if (doloop.IsPreg()) {
     PregIdx regIdx = (PregIdx)doloop.GetDoVarStIdx().FullIdx();
     MIRPreg *mirPreg = mirModule.CurFunction()->GetPregTab()->PregFromPregIdx(regIdx);
@@ -234,7 +234,7 @@ BlockNode *MIRLower::LowerDowhileStmt(WhileStmtNode &doWhileStmt) {
   LabelNode *labelStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
   labelStmt->SetLabelIdx(lIdx);
   blk->AddStatement(labelStmt);
-  blk->AppendStatementsFromBlock(doWhileStmt.GetBody());
+  blk->AppendStatementsFromBlock(*doWhileStmt.GetBody());
   CondGotoNode *brTrueStmt = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(OP_brtrue);
   brTrueStmt->SetOpnd(doWhileStmt.Opnd());
   brTrueStmt->SetOffset(lIdx);
@@ -257,21 +257,21 @@ BlockNode *MIRLower::LowerBlock(BlockNode &block) {
       case OP_if:
         tmp = LowerIfStmt(static_cast<IfStmtNode&>(*stmt), true);
         ASSERT(tmp != nullptr, "null ptr check");
-        newBlock->AppendStatementsFromBlock(tmp);
+        newBlock->AppendStatementsFromBlock(*tmp);
         break;
       case OP_while:
-        newBlock->AppendStatementsFromBlock(LowerWhileStmt(static_cast<WhileStmtNode&>(*stmt)));
+        newBlock->AppendStatementsFromBlock(*LowerWhileStmt(static_cast<WhileStmtNode&>(*stmt)));
         break;
       case OP_dowhile:
-        newBlock->AppendStatementsFromBlock(LowerDowhileStmt(static_cast<WhileStmtNode&>(*stmt)));
+        newBlock->AppendStatementsFromBlock(*LowerDowhileStmt(static_cast<WhileStmtNode&>(*stmt)));
         break;
       case OP_doloop:
-        newBlock->AppendStatementsFromBlock(LowerDoloopStmt(static_cast<DoloopNode&>(*stmt)));
+        newBlock->AppendStatementsFromBlock(*LowerDoloopStmt(static_cast<DoloopNode&>(*stmt)));
         break;
       case OP_block:
         tmp = LowerBlock(static_cast<BlockNode&>(*stmt));
         ASSERT(tmp != nullptr, "null ptr check ");
-        newBlock->AppendStatementsFromBlock(tmp);
+        newBlock->AppendStatementsFromBlock(*tmp);
         break;
       default:
         newBlock->AddStatement(stmt);

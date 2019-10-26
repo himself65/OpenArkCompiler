@@ -34,12 +34,13 @@ void FuncEmit::EmitLabelForBB(MIRFunction &func, BB &bb) const {
     }
     // "first" points to the first non-comment statement, or nullptr
     if (first != nullptr) {
-      label->InsertAfterThis(first);
+      label->InsertAfterThis(*first);
       if (first == bb.GetStmtNodes().begin().d()) {
         bb.SetFirst(label);
       }
     } else {
-      label->InsertBeforeThis(firstPrev);
+      ASSERT(firstPrev != nullptr, "check func's stmt");
+      label->InsertBeforeThis(*firstPrev);
       if (firstPrev == bb.GetStmtNodes().rbegin().base().d()) {
         bb.SetLast(label);
       }
@@ -81,7 +82,7 @@ void FuncEmit::EmitBeforeHSSA(MIRFunction &func, const MapleVector<BB*> &bbList)
       /* generate op_endtry andd added to next, it could be in an empty bb. */
       StmtNode *endtry = func.GetCodeMempool()->New<StmtNode>(OP_endtry);
       CHECK_FATAL(lastStmt != nullptr, "EmitBeforeHSSA: shouldn't insert before a null stmt");
-      endtry->InsertBeforeThis(lastStmt);
+      endtry->InsertBeforeThis(*lastStmt);
       lastStmt = endtry;
     }
   }

@@ -35,14 +35,13 @@ class JavaEHLowerer : public FuncOptimizeImpl {
   void ProcessFunc(MIRFunction *func) override;
 
  private:
-  BlockNode *DoLowerBlock(BlockNode*);
-  BaseNode *DoLowerExpr(BaseNode*, BlockNode*);
-  BaseNode *DoLowerDiv(BinaryNode*, BlockNode*);
-  BaseNode *DoLowerRem(BinaryNode *expr, BlockNode *blkNode) {
-    return DoLowerDiv(expr, blkNode);
-  }
-
+  BlockNode *DoLowerBlock(BlockNode&);
+  BaseNode *DoLowerExpr(BaseNode&, BlockNode&);
+  BaseNode *DoLowerDiv(BinaryNode&, BlockNode&);
   void DoLowerBoundaryCheck(IntrinsiccallNode&, BlockNode&);
+  BaseNode *DoLowerRem(BinaryNode *expr, BlockNode *blkNode) {
+    return DoLowerDiv(*expr, *blkNode);
+  }
 
   uint32 divSTIndex;  // The index of divide operand and result.
   bool useRegTmp;     // Use register to save temp variable or not.
