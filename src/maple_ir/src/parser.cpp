@@ -1943,18 +1943,17 @@ bool MIRParser::ParseFunction(uint32 fileIdx) {
 
 bool MIRParser::ParseInitValue(MIRConstPtr &theConst, TyIdx tyIdx) {
   TokenKind tokenKind = lexer.GetTokenKind();
-  MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
-  ASSERT(type != nullptr, "type is null");
+  MIRType &type = *GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
   if (tokenKind != kTkLbrack) {  // scalar
     MIRConst *mirConst = nullptr;
     if (IsConstValue(tokenKind)) {
-      if (!ParseScalarValue(mirConst, type)) {
+      if (!ParseScalarValue(mirConst, &type)) {
         Error("ParseInitValue expect scalar value");
         return false;
       }
       lexer.NextToken();
     } else if (IsConstAddrExpr(tokenKind)) {
-      if (!ParseConstAddrLeafExpr(mirConst, *type)) {
+      if (!ParseConstAddrLeafExpr(mirConst, type)) {
         Error("ParseInitValue expect const addr expr");
         return false;
       }
@@ -1964,10 +1963,10 @@ bool MIRParser::ParseInitValue(MIRConstPtr &theConst, TyIdx tyIdx) {
     }
     theConst = mirConst;
   } else {  // aggregates
-    if (type->GetKind() == kTypeArray) {
-      MIRArrayType *arrayType = static_cast<MIRArrayType*>(type);
-      MIRType *elemType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(arrayType->GetElemTyIdx());
-      MIRAggConst *newConst = mod.GetMemPool()->New<MIRAggConst>(&mod, type);
+    if (type.GetKind() == kTypeArray) {
+      MIRArrayType &arrayType = static_cast<MIRArrayType&>(type);
+      MIRType *elemType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(arrayType.GetElemTyIdx());
+      MIRAggConst *newConst = mod.GetMemPool()->New<MIRAggConst>(mod, type);
       theConst = newConst;
       MapleVector<MIRConst*> &constVec = newConst->GetConstVec();
       tokenKind = lexer.NextToken();
@@ -1985,21 +1984,21 @@ bool MIRParser::ParseInitValue(MIRConstPtr &theConst, TyIdx tyIdx) {
           }
           lexer.NextToken();
         } else if (IsConstAddrExpr(tokenKind)) {
-          if (!ParseConstAddrLeafExpr(subConst, *type)) {
+          if (!ParseConstAddrLeafExpr(subConst, type)) {
             Error("ParseInitValue expect const addr expr");
             return false;
           }
         } else if (tokenKind == kTkLbrack) {
-          if (elemType->GetKind() == kTypeStruct && arrayType->GetDim() == 1) {
-            if (!ParseInitValue(subConst, arrayType->GetElemTyIdx())) {
+          if (elemType->GetKind() == kTypeStruct && arrayType.GetDim() == 1) {
+            if (!ParseInitValue(subConst, arrayType.GetElemTyIdx())) {
               Error("initializaton value wrong when parsing structure array ");
               return false;
             }
           } else {
             std::vector<uint32> sizeSubArray;
-            ASSERT(arrayType->GetDim() > 1, "array dim must large then 1");
-            for (uint16 i = 1; i < arrayType->GetDim(); i++) {
-              sizeSubArray.push_back(arrayType->GetSizeArrayItem(i));
+            ASSERT(arrayType.GetDim() > 1, "array dim must large then 1");
+            for (uint16 i = 1; i < arrayType.GetDim(); i++) {
+              sizeSubArray.push_back(arrayType.GetSizeArrayItem(i));
             }
             MIRArrayType subArraytype(elemType->GetTypeIndex(), sizeSubArray);
             TyIdx arrayTyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&subArraytype);
@@ -2024,8 +2023,8 @@ bool MIRParser::ParseInitValue(MIRConstPtr &theConst, TyIdx tyIdx) {
         }
       } while (tokenKind != kTkRbrack);
       lexer.NextToken();
-    } else if (type->GetKind() == kTypeStruct) {
-      MIRAggConst *newConst = mod.GetMemPool()->New<MIRAggConst>(&mod, type);
+    } else if (type.GetKind() == kTypeStruct) {
+      MIRAggConst *newConst = mod.GetMemPool()->New<MIRAggConst>(mod, type);
       uint32 theFieldID;
       TyIdx fieldTyIdx;
       theConst = newConst;
@@ -2045,7 +2044,7 @@ bool MIRParser::ParseInitValue(MIRConstPtr &theConst, TyIdx tyIdx) {
           Error("expect = after field ID in struct initialization but get ");
           return false;
         }
-        fieldTyIdx = static_cast<MIRStructType*>(type)->GetFieldTyIdx(theFieldID);
+        fieldTyIdx = static_cast<MIRStructType&>(type).GetFieldTyIdx(theFieldID);
         if (fieldTyIdx == 0) {
           Error("field ID out of range at struct initialization at ");
           return false;
@@ -2059,7 +2058,7 @@ bool MIRParser::ParseInitValue(MIRConstPtr &theConst, TyIdx tyIdx) {
           }
           lexer.NextToken();
         } else if (IsConstAddrExpr(tokenKind)) {
-          if (!ParseConstAddrLeafExpr(subConst, *type)) {
+          if (!ParseConstAddrLeafExpr(subConst, type)) {
             Error("ParseInitValue expect const addr expr");
             return false;
           }

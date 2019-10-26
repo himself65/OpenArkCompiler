@@ -751,7 +751,7 @@ void MeStmt::Dump(IRMap *irMap) const {
 }
 
 // get the real next mestmt that is not a comment
-MeStmt *MeStmt::GetNextMeStmt() {
+MeStmt *MeStmt::GetNextMeStmt() const {
   MeStmt *nextMeStmt = next;
   while (nextMeStmt != nullptr && nextMeStmt->op == OP_comment) {
     nextMeStmt = nextMeStmt->next;

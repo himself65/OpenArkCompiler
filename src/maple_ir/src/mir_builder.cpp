@@ -19,7 +19,7 @@
 namespace maple {
 // This is for compiler-generated metadata 1-level struct
 void MIRBuilder::AddIntFieldConst(const MIRStructType &sType, MIRAggConst &newConst, uint32 fieldID, int64 constValue) {
-  MIRConst *fieldConst = mirModule->GetMemPool()->New<MIRIntConst>(constValue, sType.GetElemType(fieldID - 1), fieldID);
+  MIRConst *fieldConst = mirModule->GetMemPool()->New<MIRIntConst>(constValue, *sType.GetElemType(fieldID - 1), fieldID);
   newConst.GetConstVec().push_back(fieldConst);
 }
 
@@ -28,7 +28,7 @@ void MIRBuilder::AddAddrofFieldConst(const MIRStructType &structType, MIRAggCons
                                      const MIRSymbol &fieldSymbol) {
   AddrofNode *fieldExpr = CreateExprAddrof(0, fieldSymbol, mirModule->GetMemPool());
   MIRConst *fieldConst = mirModule->GetMemPool()->New<MIRAddrofConst>(fieldExpr->GetStIdx(), fieldExpr->GetFieldID(),
-                                                                      structType.GetElemType(fieldID - 1));
+                                                                      *structType.GetElemType(fieldID - 1));
   fieldConst->SetFieldID(fieldID);
   newConst.GetConstVec().push_back(fieldConst);
 }
@@ -39,12 +39,12 @@ void MIRBuilder::AddAddroffuncFieldConst(const MIRStructType &structType, MIRAgg
   MIRConst *fieldConst = nullptr;
   MIRFunction *vMethod = funcSymbol.GetFunction();
   if (vMethod->IsAbstract()) {
-    fieldConst = mirModule->GetMemPool()->New<MIRIntConst>(0, structType.GetElemType(fieldID - 1), fieldID);
+    fieldConst = mirModule->GetMemPool()->New<MIRIntConst>(0, *structType.GetElemType(fieldID - 1), fieldID);
   } else {
     AddroffuncNode *addrofFuncExpr =
         CreateExprAddroffunc(funcSymbol.GetFunction()->GetPuidx(), mirModule->GetMemPool());
     fieldConst = mirModule->GetMemPool()->New<MIRAddroffuncConst>(addrofFuncExpr->GetPUIdx(),
-                                                                  structType.GetElemType(fieldID - 1), fieldID);
+                                                                  *structType.GetElemType(fieldID - 1), fieldID);
   }
   newConst.GetConstVec().push_back(fieldConst);
 }
@@ -399,12 +399,11 @@ MIRSymbol *MIRBuilder::GetDecl(const std::string &str) {
   return sym;
 }
 
-MIRSymbol *MIRBuilder::CreateGlobalDecl(const std::string &str, const MIRType *type, MIRStorageClass sc) {
-  ASSERT(type != nullptr, "type is null");
+MIRSymbol *MIRBuilder::CreateGlobalDecl(const std::string &str, const MIRType &type, MIRStorageClass sc) {
   GStrIdx strIdx = GetOrCreateStringIndex(str);
   MIRSymbol *st = GlobalTables::GetGsymTable().CreateSymbol(kScopeGlobal);
   st->SetNameStrIdx(strIdx);
-  st->SetTyIdx(type->GetTypeIndex());
+  st->SetTyIdx(type.GetTypeIndex());
   (void)GlobalTables::GetGsymTable().AddToStringSymbolMap(*st);
   st->SetStorageClass(sc);
   st->SetSKind(kStVar);
@@ -432,33 +431,33 @@ MIRSymbol *MIRBuilder::GetOrCreateGlobalDecl(const std::string &str, const MIRTy
 ConstvalNode *MIRBuilder::CreateIntConst(int64 val, PrimType pty) {
   MIRFunction *currentFunctionInner = GetCurrentFunctionNotNull();
   MIRIntConst *mirConst =
-      currentFunctionInner->GetDataMemPool()->New<MIRIntConst>(val, GlobalTables::GetTypeTable().GetPrimType(pty));
+      currentFunctionInner->GetDataMemPool()->New<MIRIntConst>(val, *GlobalTables::GetTypeTable().GetPrimType(pty));
   return GetCurrentFuncCodeMp()->New<ConstvalNode>(pty, mirConst);
 }
 
 ConstvalNode *MIRBuilder::CreateFloatConst(float val) {
   MIRFunction *currentFunctionInner = GetCurrentFunctionNotNull();
   MIRFloatConst *mirConst = currentFunctionInner->GetDataMemPool()->New<MIRFloatConst>(
-      val, GlobalTables::GetTypeTable().GetPrimType(PTY_f32));
+      val, *GlobalTables::GetTypeTable().GetPrimType(PTY_f32));
   return GetCurrentFuncCodeMp()->New<ConstvalNode>(PTY_f32, mirConst);
 }
 
 ConstvalNode *MIRBuilder::CreateDoubleConst(double val) {
   MIRFunction *currentFunctionInner = GetCurrentFunctionNotNull();
   MIRDoubleConst *mirConst = currentFunctionInner->GetDataMemPool()->New<MIRDoubleConst>(
-      val, GlobalTables::GetTypeTable().GetPrimType(PTY_f64));
+      val, *GlobalTables::GetTypeTable().GetPrimType(PTY_f64));
   return GetCurrentFuncCodeMp()->New<ConstvalNode>(PTY_f64, mirConst);
 }
 
 ConstvalNode *MIRBuilder::CreateFloat128Const(const uint64 *val) {
   MIRFunction *currentFunctionInner = GetCurrentFunctionNotNull();
   MIRFloat128Const *mirConst = currentFunctionInner->GetDataMemPool()->New<MIRFloat128Const>(
-      val, GlobalTables::GetTypeTable().GetPrimType(PTY_f128));
+      *val, *GlobalTables::GetTypeTable().GetPrimType(PTY_f128));
   return GetCurrentFuncCodeMp()->New<ConstvalNode>(PTY_f128, mirConst);
 }
 
 ConstvalNode *MIRBuilder::GetConstInt(MemPool &memPool, int i) {
-  MIRIntConst *mirConst = memPool.New<MIRIntConst>(i, GlobalTables::GetTypeTable().GetInt64());
+  MIRIntConst *mirConst = memPool.New<MIRIntConst>(i, *GlobalTables::GetTypeTable().GetInt64());
   return memPool.New<ConstvalNode>(PTY_i32, mirConst);
 }
 
@@ -472,7 +471,7 @@ ConstvalNode *MIRBuilder::CreateAddrofConst(BaseNode &e) {
   TyIdx ptyIdx = var->GetTyIdx();
   MIRPtrType ptrType(ptyIdx);
   ptyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&ptrType);
-  MIRType *exprty = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ptyIdx);
+  MIRType &exprty = *GlobalTables::GetTypeTable().GetTypeFromTyIdx(ptyIdx);
   MIRAddrofConst *temp = mirModule->GetMemPool()->New<MIRAddrofConst>(aNode.GetStIdx(), aNode.GetFieldID(), exprty);
   return GetCurrentFuncCodeMp()->New<ConstvalNode>(PTY_ptr, temp);
 }
@@ -486,7 +485,7 @@ ConstvalNode *MIRBuilder::CreateAddroffuncConst(const BaseNode &e) {
   MIRPtrType ptrType(ptyIdx);
   ptyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&ptrType);
   MIRType *exprty = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ptyIdx);
-  MIRAddroffuncConst *mirConst = mirModule->GetMemPool()->New<MIRAddroffuncConst>(aNode.GetPUIdx(), exprty);
+  MIRAddroffuncConst *mirConst = mirModule->GetMemPool()->New<MIRAddroffuncConst>(aNode.GetPUIdx(), *exprty);
   return GetCurrentFuncCodeMp()->New<ConstvalNode>(PTY_ptr, mirConst);
 }
 
@@ -499,7 +498,7 @@ ConstvalNode *MIRBuilder::CreateStrConst(const BaseNode &e) {
   MIRPtrType ptrType(ptyidx);
   ptyidx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&ptrType);
   MIRType *exprType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ptyidx);
-  MIRStrConst *mirConst = mirModule->GetMemPool()->New<MIRStrConst>(strIdx, exprType);
+  MIRStrConst *mirConst = mirModule->GetMemPool()->New<MIRStrConst>(strIdx, *exprType);
   return GetCurrentFuncCodeMp()->New<ConstvalNode>(PTY_ptr, mirConst);
 }
 
@@ -512,7 +511,7 @@ ConstvalNode *MIRBuilder::CreateStr16Const(const BaseNode &e) {
   MIRPtrType ptrType(ptyIdx);
   ptyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&ptrType);
   MIRType *exprty = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ptyIdx);
-  MIRStr16Const *mirConst = mirModule->GetMemPool()->New<MIRStr16Const>(strIdx, exprty);
+  MIRStr16Const *mirConst = mirModule->GetMemPool()->New<MIRStr16Const>(strIdx, *exprty);
   return GetCurrentFuncCodeMp()->New<ConstvalNode>(PTY_ptr, mirConst);
 }
 

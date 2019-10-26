@@ -19,7 +19,7 @@
 #include "opcodes.h"
 
 namespace maple {
-enum MirLowerPhase { kLowerUnder, kLowerMe, kLowerExpandArray, kLowerBe, kLowerCG };
+enum MirLowerPhase : uint8 { kLowerUnder, kLowerMe, kLowerExpandArray, kLowerBe, kLowerCG };
 
 #define LOWERME (1U << kLowerMe)
 #define LOWEREXPANDARRAY (1U << kLowerExpandArray)

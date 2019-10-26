@@ -245,7 +245,7 @@ BlockNode *MIRLower::LowerDowhileStmt(WhileStmtNode &doWhileStmt) {
 BlockNode *MIRLower::LowerBlock(BlockNode &block) {
   BlockNode *newBlock = mirModule.CurFuncCodeMemPool()->New<BlockNode>();
   BlockNode *tmp = nullptr;
-  if (!block.GetFirst()) {
+  if (block.GetFirst() == nullptr) {
     return newBlock;
   }
   StmtNode *nextStmt = block.GetFirst();
@@ -284,7 +284,7 @@ BlockNode *MIRLower::LowerBlock(BlockNode &block) {
 // for lowering OP_cand and OP_cior that are top level operators in the
 // condition operand of OP_brfalse and OP_brtrue
 void MIRLower::LowerBrCondition(BlockNode &block) {
-  if (!block.GetFirst()) {
+  if (block.GetFirst() == nullptr) {
     return;
   }
   StmtNode *nextStmt = block.GetFirst();
@@ -344,31 +344,31 @@ void MIRLower::LowerFunc(MIRFunction &func) {
 }
 
 IfStmtNode *MIRLower::ExpandArrayMrtIfBlock(IfStmtNode &node) {
-  if (node.GetThenPart()) {
+  if (node.GetThenPart() != nullptr) {
     node.SetThenPart(ExpandArrayMrtBlock(*node.GetThenPart()));
   }
-  if (node.GetElsePart()) {
+  if (node.GetElsePart() != nullptr) {
     node.SetElsePart(ExpandArrayMrtBlock(*node.GetElsePart()));
   }
   return &node;
 }
 
 WhileStmtNode *MIRLower::ExpandArrayMrtWhileBlock(WhileStmtNode &node) {
-  if (node.GetBody()) {
+  if (node.GetBody() != nullptr) {
     node.SetBody(ExpandArrayMrtBlock(*node.GetBody()));
   }
   return &node;
 }
 
 DoloopNode *MIRLower::ExpandArrayMrtDoloopBlock(DoloopNode &node) {
-  if (node.GetDoBody()) {
+  if (node.GetDoBody() != nullptr) {
     node.SetDoBody(ExpandArrayMrtBlock(*node.GetDoBody()));
   }
   return &node;
 }
 
 ForeachelemNode *MIRLower::ExpandArrayMrtForeachelemBlock(ForeachelemNode &node) {
-  if (node.GetLoopBody()) {
+  if (node.GetLoopBody() != nullptr) {
     node.SetLoopBody(ExpandArrayMrtBlock(*node.GetLoopBody()));
   }
   return &node;
@@ -426,7 +426,7 @@ void MIRLower::AddArrayMrtMpl(BaseNode &exp, BlockNode &newBlock) {
 
 BlockNode *MIRLower::ExpandArrayMrtBlock(BlockNode &block) {
   BlockNode *newBlock = mirModule.CurFuncCodeMemPool()->New<BlockNode>();
-  if (!block.GetFirst()) {
+  if (block.GetFirst() == nullptr) {
     return newBlock;
   }
   StmtNode *nextStmt = block.GetFirst();

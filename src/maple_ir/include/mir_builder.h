@@ -65,8 +65,8 @@ class MIRBuilder {
     return func;
   }
 
-  MIRModule *GetMirModule() const {
-    return mirModule;
+  MIRModule &GetMirModule() const {
+    return *mirModule;
   }
 
   const MapleSet<TyIdx> &GetIncompleteTypeRefedSet() const {
@@ -143,7 +143,7 @@ class MIRBuilder {
   MIRSymbol *GetOrCreateGlobalDecl(const std::string &str, const MIRType &type);
   MIRSymbol *GetGlobalDecl(const std::string &str);
   MIRSymbol *GetDecl(const std::string &str);
-  MIRSymbol *CreateGlobalDecl(const std::string &str, const MIRType *type, MIRStorageClass sc = kScGlobal);
+  MIRSymbol *CreateGlobalDecl(const std::string &str, const MIRType &type, MIRStorageClass sc = kScGlobal);
   MIRSymbol *GetOrCreateDeclInFunc(const std::string &str, const MIRType &type, MIRFunction &func);
   // for creating Expression
   ConstvalNode *CreateIntConst(int64, PrimType);

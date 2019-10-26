@@ -111,21 +111,21 @@ MIRConst *BinaryMplImport::ImportConst(MIRFunction *func) {
 
   if (tag == kBinKindConstInt) {
     ImportConstBase(kind, type, fieldID);
-    return mod.GetMemPool()->New<MIRIntConst>(ReadNum(), type, fieldID);
+    return mod.GetMemPool()->New<MIRIntConst>(ReadNum(), *type, fieldID);
   } else if (tag == kBinKindConstAddrof) {
     ImportConstBase(kind, type, fieldID);
     MIRSymbol *sym = InSymbol(func);
     ASSERT(sym, "null ptr check");
     FieldID fi = ReadNum();
-    return memPool->New<MIRAddrofConst>(sym->GetStIdx(), fi, type);
+    return memPool->New<MIRAddrofConst>(sym->GetStIdx(), fi, *type);
   } else if (tag == kBinKindConstAddrofFunc) {
     ImportConstBase(kind, type, fieldID);
     PUIdx puidx = ImportFunction();
-    return memPool->New<MIRAddroffuncConst>(puidx, type, fieldID);
+    return memPool->New<MIRAddroffuncConst>(puidx, *type, fieldID);
   } else if (tag == kBinKindConstStr) {
     ImportConstBase(kind, type, fieldID);
     UStrIdx ustr = ImportUsrStr();
-    return memPool->New<MIRStrConst>(ustr, type, fieldID);
+    return memPool->New<MIRStrConst>(ustr, *type, fieldID);
   } else if (tag == kBinKindConstStr16) {
     ImportConstBase(kind, type, fieldID);
     Conststr16Node *cs;
@@ -139,7 +139,7 @@ MIRConst *BinaryMplImport::ImportConst(MIRFunction *func) {
     std::u16string str16;
     NameMangler::UTF8ToUTF16(str16, ostr.str());
     cs->SetStrIdx(GlobalTables::GetU16StrTable().GetOrCreateStrIdxFromName(str16));
-    return memPool->New<MIRStr16Const>(cs->GetStrIdx(), type);
+    return memPool->New<MIRStr16Const>(cs->GetStrIdx(), *type);
   } else if (tag == kBinKindConstFloat) {
     union {
       float fvalue;
@@ -158,7 +158,7 @@ MIRConst *BinaryMplImport::ImportConst(MIRFunction *func) {
     return GlobalTables::GetFpConstTable().GetOrCreateDoubleConst(value.dvalue);
   } else if (tag == kBinKindConstAgg) {
     ImportConstBase(kind, type, fieldID);
-    MIRAggConst *aggConst = mod.GetMemPool()->New<MIRAggConst>(&mod, type);
+    MIRAggConst *aggConst = mod.GetMemPool()->New<MIRAggConst>(mod, *type);
     int64 size = ReadNum();
     for (int64 i = 0; i < size; i++) {
       aggConst->GetConstVec().push_back(ImportConst(func));
@@ -166,7 +166,7 @@ MIRConst *BinaryMplImport::ImportConst(MIRFunction *func) {
     return aggConst;
   } else if (tag == kBinKindConstSt) {
     ImportConstBase(kind, type, fieldID);
-    MIRStConst *stConst = mod.GetMemPool()->New<MIRStConst>(&mod, type);
+    MIRStConst *stConst = mod.GetMemPool()->New<MIRStConst>(mod, *type);
     int64 size = ReadNum();
     for (int64 i = 0; i < size; i++) {
       stConst->PushbackSt(InSymbol(func));

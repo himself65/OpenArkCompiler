@@ -187,12 +187,12 @@ void TypeTable::AddFieldToStructType(MIRStructType &structType, const std::strin
 }
 
 void FPConstTable::PostInit() {
-  MIRType *typeFloat = GlobalTables::GetTypeTable().GetPrimType(PTY_f32);
+  MIRType &typeFloat = *GlobalTables::GetTypeTable().GetPrimType(PTY_f32);
   nanFloatConst = new MIRFloatConst(NAN, typeFloat);
   infFloatConst = new MIRFloatConst(INFINITY, typeFloat);
   minusInfFloatConst = new MIRFloatConst(-INFINITY, typeFloat);
   minusZeroFloatConst = new MIRFloatConst(-0.0, typeFloat);
-  MIRType *typeDouble = GlobalTables::GetTypeTable().GetPrimType(PTY_f64);
+  MIRType &typeDouble = *GlobalTables::GetTypeTable().GetPrimType(PTY_f64);
   nanDoubleConst = new MIRDoubleConst(NAN, typeDouble);
   infDoubleConst = new MIRDoubleConst(INFINITY, typeDouble);
   minusInfDoubleConst = new MIRDoubleConst(-INFINITY, typeDouble);
@@ -212,7 +212,7 @@ MIRFloatConst *FPConstTable::GetOrCreateFloatConst(float fval) {
   auto it = floatConstTable.find(fval);
   if (it == floatConstTable.end()) {
     // create a new one
-    MIRFloatConst *fconst = new MIRFloatConst(fval, GlobalTables::GetTypeTable().GetTypeFromTyIdx((TyIdx)PTY_f32));
+    MIRFloatConst *fconst = new MIRFloatConst(fval, *GlobalTables::GetTypeTable().GetTypeFromTyIdx((TyIdx)PTY_f32));
     floatConstTable[fval] = fconst;
     return fconst;
   } else {
@@ -233,7 +233,7 @@ MIRDoubleConst *FPConstTable::GetOrCreateDoubleConst(double fval) {
   auto it = doubleConstTable.find(fval);
   if (it == doubleConstTable.end()) {
     // create a new one
-    MIRDoubleConst *dconst = new MIRDoubleConst(fval, GlobalTables::GetTypeTable().GetTypeFromTyIdx((TyIdx)PTY_f64));
+    MIRDoubleConst *dconst = new MIRDoubleConst(fval, *GlobalTables::GetTypeTable().GetTypeFromTyIdx((TyIdx)PTY_f64));
     doubleConstTable[fval] = dconst;
     return dconst;
   } else {

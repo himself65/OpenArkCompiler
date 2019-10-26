@@ -24,12 +24,12 @@ class FuncOptimizeImpl {
   virtual ~FuncOptimizeImpl();
   // Each phase needs to implement its own Clone
   virtual FuncOptimizeImpl *Clone() = 0;
-  MIRModule *GetModule() {
-    return module;
+  MIRModule &GetMIRModule() {
+    return *module;
   }
 
-  const MIRModule *GetModule() const {
-    return module;
+  const MIRModule &GetMIRModule() const {
+    return *module;
   }
 
   virtual void ProcessFunc(MIRFunction *func);

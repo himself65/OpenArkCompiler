@@ -43,7 +43,7 @@ bool MIRIntConst::operator==(MIRConst &rhs) const {
     return true;
   }
   MIRIntConst *intConst = dynamic_cast<MIRIntConst*>(&rhs);
-  return (intConst && (intConst->GetType() == GetType()) && (intConst->value == value));
+  return (intConst && (&intConst->GetType() == &GetType()) && (intConst->value == value));
 }
 
 void MIRAddrofConst::Dump() const {
@@ -65,7 +65,7 @@ bool MIRAddrofConst::operator==(MIRConst &rhs) const {
   if (rhsA == nullptr) {
     return false;
   }
-  if (GetType() != rhs.GetType()) {
+  if (&GetType() != &rhs.GetType()) {
     return false;
   }
   return (stIdx == rhsA->stIdx && fldID == rhsA->fldID);
@@ -86,7 +86,7 @@ bool MIRAddroffuncConst::operator==(MIRConst &rhs) const {
   if (rhsAf == nullptr) {
     return false;
   }
-  return (GetType() == rhs.GetType() && puIdx == rhsAf->puIdx);
+  return (&GetType() == &rhs.GetType() && puIdx == rhsAf->puIdx);
 }
 
 bool MIRLblConst::operator==(MIRConst &rhs) const {
@@ -179,8 +179,8 @@ void MIRFloat128Const::Dump() const {
   MIRConst::Dump();
   std::ios::fmtflags f(LogInfo::MapleLogger().flags());
   LogInfo::MapleLogger().setf(std::ios::uppercase);
-  LogInfo::MapleLogger() << "0xL" << std::hex << std::setfill('0') << std::setw(kFieldWidth) << value[0] << std::setfill('0')
-                         << std::setw(kFieldWidth) << value[1];
+  LogInfo::MapleLogger() << "0xL" << std::hex << std::setfill('0') << std::setw(kFieldWidth) << value[0]
+                         << std::setfill('0') << std::setw(kFieldWidth) << value[1];
   LogInfo::MapleLogger().flags(f);
 }
 
@@ -197,14 +197,14 @@ void MIRAggConst::Dump() const {
   LogInfo::MapleLogger() << "]";
 }
 
-MIRStrConst::MIRStrConst(const std::string &str, MIRType *type)
+MIRStrConst::MIRStrConst(const std::string &str, MIRType &type)
     : MIRConst(type), value(GlobalTables::GetUStrTable().GetOrCreateStrIdxFromName(str)) {
   SetKind(kConstStrConst);
 }
 
 void MIRStrConst::Dump() const {
   MIRConst::Dump();
-  LogInfo::MapleLogger() << "conststr " << GetPrimTypeName(GetType()->GetPrimType());
+  LogInfo::MapleLogger() << "conststr " << GetPrimTypeName(GetType().GetPrimType());
   const std::string kStr = GlobalTables::GetUStrTable().GetStringFromStrIdx(value);
   PrintString(kStr);
 }
@@ -217,17 +217,17 @@ bool MIRStrConst::operator==(MIRConst &rhs) const {
   if (rhsCs == nullptr) {
     return false;
   }
-  return (GetType() == rhs.GetType() && value == rhsCs->value);
+  return (&rhs.GetType() == &GetType() && value == rhsCs->value);
 }
 
-MIRStr16Const::MIRStr16Const(const std::u16string &str, MIRType *type)
+MIRStr16Const::MIRStr16Const(const std::u16string &str, MIRType &type)
     : MIRConst(type), value(GlobalTables::GetU16StrTable().GetOrCreateStrIdxFromName(str)) {
   SetKind(kConstStr16Const);
 }
 
 void MIRStr16Const::Dump() const {
   MIRConst::Dump();
-  LogInfo::MapleLogger() << "conststr16 " << GetPrimTypeName(GetType()->GetPrimType());
+  LogInfo::MapleLogger() << "conststr16 " << GetPrimTypeName(GetType().GetPrimType());
   std::u16string str16 = GlobalTables::GetU16StrTable().GetStringFromStrIdx(value);
   // UTF-16 string are dumped as UTF-8 string in mpl to keep the printable chars in ascii form
   std::string str;
@@ -243,7 +243,7 @@ bool MIRStr16Const::operator==(MIRConst &rhs) const {
   if (rhsCs == nullptr) {
     return false;
   }
-  return (GetType() == rhs.GetType() && value == rhsCs->value);
+  return (&GetType() == &rhs.GetType() && value == rhsCs->value);
 }
 }  // namespace maple
 #endif  // MIR_FEATURE_FULL

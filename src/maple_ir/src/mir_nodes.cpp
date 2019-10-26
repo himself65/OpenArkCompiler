@@ -421,7 +421,7 @@ MIRType *ArrayNode::GetArrayType(TypeTable &tt) const {
 
 BaseNode *ArrayNode::GetDim(const MIRModule &mod, TypeTable &tt, int i) {
   MIRArrayType *arrayType = static_cast<MIRArrayType*>(GetArrayType(tt));
-  MIRConst *mirConst = mod.CurFuncCodeMemPool()->New<MIRConst>(tt.GetTypeFromTyIdx(arrayType->GetElemTyIdx()));
+  MIRConst *mirConst = mod.CurFuncCodeMemPool()->New<MIRConst>(*tt.GetTypeFromTyIdx(arrayType->GetElemTyIdx()));
   return mod.CurFuncCodeMemPool()->New<ConstvalNode>(mirConst);
 }
 
@@ -462,7 +462,7 @@ void IntrinsicopNode::Dump(const MIRModule &mod, int32 indent) const {
 }
 
 void ConstvalNode::Dump(const MIRModule &mod, int32 indent) const {
-  if (GetConstVal()->GetType()->GetKind() != kTypePointer) {
+  if (GetConstVal()->GetType().GetKind() != kTypePointer) {
     BaseNode::DumpBase(mod, 0);
     LogInfo::MapleLogger() << " ";
   }
