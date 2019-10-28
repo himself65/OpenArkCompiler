@@ -45,7 +45,7 @@ AnalysisResult *DoKlassHierarchy::Run(MIRModule *module, ModuleResultMgr *m) {
   if (KlassHierarchy::traceFlag) {
     kh->Dump();
   }
-  m->AddResult(GetPhaseID(), module, kh);
+  m->AddResult(GetPhaseID(), *module, *kh);
   return kh;
 }
 
@@ -55,7 +55,7 @@ void ModulePhaseManager::RegisterModulePhases() {
     MemPool *memPool = GetMemPool();                                               \
     ModulePhase *phase = new (memPool->Malloc(sizeof(modphase(id)))) modphase(id); \
     CHECK_FATAL(phase != nullptr, "null ptr check ");                              \
-    RegisterPhase(id, phase);                                                      \
+    RegisterPhase(id, *phase);                                                      \
     arModuleMgr->AddAnalysisPhase(id, phase);                                      \
   } while (0);
 #define MODTPHASE(id, modphase)                                                    \
@@ -63,7 +63,7 @@ void ModulePhaseManager::RegisterModulePhases() {
     MemPool *memPool = GetMemPool();                                               \
     ModulePhase *phase = new (memPool->Malloc(sizeof(modphase(id)))) modphase(id); \
     CHECK_FATAL(phase != nullptr, "null ptr check ");                              \
-    RegisterPhase(id, phase);                                                      \
+    RegisterPhase(id, *phase);                                                      \
   } while (0);
 #include "module_phases.def"
 #undef MODAPHASE

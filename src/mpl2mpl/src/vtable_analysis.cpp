@@ -29,8 +29,8 @@ VtableAnalysis::VtableAnalysis(MIRModule *mod, KlassHierarchy *kh, bool dump) : 
   voidPtrType = GlobalTables::GetTypeTable().GetVoidPtr();
   // zeroConst and oneConst are shared amony itab entries. It is safe to share them because
   // they are never removed by anybody.
-  zeroConst = GetModule()->GetMemPool()->New<MIRIntConst>(0, voidPtrType);
-  oneConst = GetModule()->GetMemPool()->New<MIRIntConst>(1, voidPtrType);
+  zeroConst = GetMIRModule().GetMemPool()->New<MIRIntConst>(0, *voidPtrType);
+  oneConst = GetMIRModule().GetMemPool()->New<MIRIntConst>(1, *voidPtrType);
   for (Klass *klass : klassHierarchy->GetTopoSortedKlasses()) {
     ASSERT(klass != nullptr, "null ptr check!");
     GenVtableList(*klass);
@@ -112,7 +112,7 @@ void VtableAnalysis::GenVtableList(const Klass &klass) {
     }
     // vtable from implemented interfaces, need to merge in. both default or none-default
     // Note, all interface methods are also virtual methods, need to be in vtable too.
-    for (TyIdx const &tyIdx : curType->GetInerfaceImplemented()) {
+    for (TyIdx const &tyIdx : curType->GetInterfaceImplemented()) {
       MIRInterfaceType *iType = static_cast<MIRInterfaceType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx));
       for (MethodPair *methodPair : iType->GetVTableMethods()) {
         MIRFunction *method = builder->GetFunctionFromStidx(methodPair->first);
@@ -160,12 +160,12 @@ void VtableAnalysis::GenVtableList(const Klass &klass) {
 
 void VtableAnalysis::GenVtableDefinition(const Klass &klass) {
   MIRStructType *curType = klass.GetMIRStructType();
-  MIRAggConst *newconst = GetModule()->GetMemPool()->New<MIRAggConst>(GetModule(), voidPtrType);
+  MIRAggConst *newconst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), *voidPtrType);
   ASSERT(newconst != nullptr, "null ptr check!");
   for (MethodPair *methodPair : curType->GetVTableMethods()) {
     MIRFunction *vtabMethod = builder->GetFunctionFromStidx(methodPair->first);
-    AddroffuncNode *addrofFuncNode = builder->CreateExprAddroffunc(vtabMethod->GetPuidx(), GetModule()->GetMemPool());
-    MIRConst *constNode = GetModule()->GetMemPool()->New<MIRAddroffuncConst>(addrofFuncNode->GetPUIdx(), voidPtrType);
+    AddroffuncNode *addrofFuncNode = builder->CreateExprAddroffunc(vtabMethod->GetPuidx(), GetMIRModule().GetMemPool());
+    MIRConst *constNode = GetMIRModule().GetMemPool()->New<MIRAddroffuncConst>(addrofFuncNode->GetPUIdx(), *voidPtrType);
     newconst->GetConstVec().push_back(constNode);
   }
   // We also need to generate vtable and itable even if the class does not
@@ -273,30 +273,30 @@ void VtableAnalysis::GenItableDefinition(const Klass &klass) {
     }
   }
   // Create the first-level itable, which is directly accessed as an array
-  MIRAggConst *firstItabEmitArray = GetModule()->GetMemPool()->New<MIRAggConst>(GetModule(), voidPtrType);
+  MIRAggConst *firstItabEmitArray = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), *voidPtrType);
   ASSERT(firstItabEmitArray != nullptr, "null ptr check!");
   for (MIRFunction *func : firstItabVec) {
     if (func != nullptr) {
       firstItabEmitArray->GetConstVec().push_back(
-          GetModule()->GetMemPool()->New<MIRAddroffuncConst>(func->GetPuidx(), voidPtrType));
+        GetMIRModule().GetMemPool()->New<MIRAddroffuncConst>(func->GetPuidx(), *voidPtrType));
     } else {
       firstItabEmitArray->GetConstVec().push_back(zeroConst);
     }
   }
   // initialize conflict solution array
   if (count != 0) {
-    MIRAggConst *secondItabEmitArray = GetModule()->GetMemPool()->New<MIRAggConst>(GetModule(), voidPtrType);
+    MIRAggConst *secondItabEmitArray = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), *voidPtrType);
     // remember count in secondItabVec
-    secondItabEmitArray->GetConstVec().push_back(GetModule()->GetMemPool()->New<MIRIntConst>(count, voidPtrType));
+    secondItabEmitArray->GetConstVec().push_back(GetMIRModule().GetMemPool()->New<MIRIntConst>(count, *voidPtrType));
     secondItabEmitArray->GetConstVec().push_back(oneConst);  // padding
     for (uint32 i = 0; i < kItabSecondHashSize; i++) {
       if (!secondItab[i] && !secondConflictFlag[i]) {
         continue;
       } else {
-        secondItabEmitArray->GetConstVec().push_back(GetModule()->GetMemPool()->New<MIRIntConst>(i, voidPtrType));
+        secondItabEmitArray->GetConstVec().push_back(GetMIRModule().GetMemPool()->New<MIRIntConst>(i, *voidPtrType));
         if (secondItab[i]) {
           secondItabEmitArray->GetConstVec().push_back(
-              GetModule()->GetMemPool()->New<MIRAddroffuncConst>(secondItab[i]->GetPuidx(), voidPtrType));
+            GetMIRModule().GetMemPool()->New<MIRAddroffuncConst>(secondItab[i]->GetPuidx(), *voidPtrType));
         } else {
           // it measn it was conflict again in the second hash
           secondItabEmitArray->GetConstVec().push_back(oneConst);
@@ -307,23 +307,23 @@ void VtableAnalysis::GenItableDefinition(const Klass &klass) {
       ASSERT(func !=  nullptr, "null ptr check!");
       const std::string &signatureName = DecodeBaseNameWithType(*func);
       uint32 nameIdx = ReflectionAnalysis::FindOrInsertRepeatString(signatureName);
-      secondItabEmitArray->GetConstVec().push_back(GetModule()->GetMemPool()->New<MIRIntConst>(nameIdx, voidPtrType));
+      secondItabEmitArray->GetConstVec().push_back(GetMIRModule().GetMemPool()->New<MIRIntConst>(nameIdx, *voidPtrType));
       secondItabEmitArray->GetConstVec().push_back(
-          GetModule()->GetMemPool()->New<MIRAddroffuncConst>(func->GetPuidx(), voidPtrType));
+        GetMIRModule().GetMemPool()->New<MIRAddroffuncConst>(func->GetPuidx(), *voidPtrType));
     }
     // Create the second-level itable, in which hashcode is looked up by binary searching
     GenTableSymbol(ITAB_CONFLICT_PREFIX_STR, klass.GetKlassName(), *secondItabEmitArray);
     // push the conflict symbol to the first-level itable
     StIdx symIdx = GlobalTables::GetGsymTable().GetStIdxFromStrIdx(
         GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(ITAB_CONFLICT_PREFIX_STR + klass.GetKlassName()));
-    firstItabEmitArray->GetConstVec().push_back(GetModule()->GetMemPool()->New<MIRAddrofConst>(symIdx, 0, voidPtrType));
+    firstItabEmitArray->GetConstVec().push_back(GetMIRModule().GetMemPool()->New<MIRAddrofConst>(symIdx, 0, *voidPtrType));
   }
   GenTableSymbol(ITAB_PREFIX_STR, klass.GetKlassName(), *firstItabEmitArray);
 }
 
 void VtableAnalysis::GenTableSymbol(const std::string &prefix, const std::string klassName, MIRAggConst &newconst) {
   size_t arraySize = newconst.GetConstVec().size();
-  MIRArrayType *arrayType = GlobalTables::GetTypeTable().GetOrCreateArrayType(*voidPtrType, arraySize);
+  MIRArrayType &arrayType = *GlobalTables::GetTypeTable().GetOrCreateArrayType(*voidPtrType, arraySize);
   MIRSymbol *vtabSt = builder->CreateGlobalDecl((prefix + klassName).c_str(), arrayType);
   if (klassName == NameMangler::GetInternalNameLiteral(NameMangler::kJavaLangObjectStr)) {
     vtabSt->SetStorageClass(kScGlobal);
@@ -345,7 +345,7 @@ void VtableAnalysis::ProcessFunc(MIRFunction *func) {
   if (func->IsEmpty()) {
     return;
   }
-  SetCurrentFunction(func);
+  SetCurrentFunction(*func);
   StmtNode *stmt = func->GetBody()->GetFirst();
   StmtNode *next = nullptr;
   while (stmt != nullptr) {
@@ -405,12 +405,12 @@ void VtableAnalysis::ReplaceSuperclassInvoke(CallNode &stmt) {
   CHECK_FATAL(actualMIRFunc, "Can not find the implementation of %s", callee->GetName().c_str());
   stmt.SetOpCode(OP_callassigned);
   stmt.SetPUIdx(actualMIRFunc->GetPuidx());
-  GetModule()->addSuperCall(actualMIRFunc->GetName());
+  GetMIRModule().addSuperCall(actualMIRFunc->GetName());
 }
 
 void VtableAnalysis::ReplacePolymorphicInvoke(CallNode &stmt) {
   IntrinsiccallNode *intrinCall =
-      GetModule()->CurFuncCodeMemPool()->New<IntrinsiccallNode>(*GetModule(), OP_xintrinsiccallassigned);
+    GetMIRModule().CurFuncCodeMemPool()->New<IntrinsiccallNode>(GetMIRModule(), OP_xintrinsiccallassigned);
   intrinCall->SetIntrinsic(INTRN_JAVA_POLYMORPHIC_CALL);
   intrinCall->SetNumOpnds(stmt.GetNumOpnds());
   intrinCall->SetReturnVec(stmt.GetReturnVec());

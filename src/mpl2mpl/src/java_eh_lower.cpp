@@ -37,8 +37,8 @@ JavaEHLowerer::JavaEHLowerer(MIRModule *mod, KlassHierarchy *kh, bool dump) : Fu
 
 BaseNode *JavaEHLowerer::DoLowerDiv(BinaryNode &expr, BlockNode &blknode) {
   PrimType ptype = expr.GetPrimType();
-  MIRBuilder *mirBuilder = GetModule()->GetMIRBuilder();
-  MIRFunction *func = GetModule()->CurFunction();
+  MIRBuilder *mirBuilder = GetMIRModule().GetMIRBuilder();
+  MIRFunction *func = GetMIRModule().CurFunction();
   if (IsPrimitiveInteger(ptype)) {
     // Store divopnd to a tmp st if not a leaf node.
     BaseNode *divOpnd = expr.Opnd(1);
@@ -52,7 +52,7 @@ BaseNode *JavaEHLowerer::DoLowerDiv(BinaryNode &expr, BlockNode &blknode) {
         divOpnd = mirBuilder->CreateExprRegread(ptype, pregIdx);
       } else {
         MIRSymbol *divOpndSymbol = mirBuilder->CreateSymbol(TyIdx(ptype), opnd1name.c_str(), kStVar, kScAuto,
-                                                            GetModule()->CurFunction(), kScopeLocal);
+                                                            GetMIRModule().CurFunction(), kScopeLocal);
         DassignNode *dssDivNode = mirBuilder->CreateStmtDassign(*divOpndSymbol, 0, divOpnd);
         blknode.AddStatement(dssDivNode);
         divOpnd = mirBuilder->CreateExprDread(*divOpndSymbol);
@@ -64,15 +64,15 @@ BaseNode *JavaEHLowerer::DoLowerDiv(BinaryNode &expr, BlockNode &blknode) {
     if (useRegTmp) {
       PregIdx resPregIdx = func->GetPregTab()->CreatePreg(ptype);
       divStmt = mirBuilder->CreateStmtRegassign(ptype, resPregIdx, &expr);
-      retExprNode = GetModule()->GetMIRBuilder()->CreateExprRegread(ptype, resPregIdx);
+      retExprNode = GetMIRModule().GetMIRBuilder()->CreateExprRegread(ptype, resPregIdx);
     } else {
       std::string resName(strDivRes);
       resName.append(std::to_string(divSTIndex++));
       MIRSymbol *divResSymbol = mirBuilder->CreateSymbol(TyIdx(ptype), resName.c_str(), kStVar, kScAuto,
-                                                         GetModule()->CurFunction(), kScopeLocal);
+                                                         GetMIRModule().CurFunction(), kScopeLocal);
       // Put expr result to dssnode.
       divStmt = mirBuilder->CreateStmtDassign(*divResSymbol, 0, &expr);
-      retExprNode = GetModule()->GetMIRBuilder()->CreateExprDread(*divResSymbol, 0);
+      retExprNode = GetMIRModule().GetMIRBuilder()->CreateExprDread(*divResSymbol, 0);
     }
     // Check if the second operand of the div expression is 0.
     // Inser if statement for high level ir.
@@ -82,7 +82,7 @@ BaseNode *JavaEHLowerer::DoLowerDiv(BinaryNode &expr, BlockNode &blknode) {
     IfStmtNode *ifStmtNode = mirBuilder->CreateStmtIf(cmpNode);
     blknode.AddStatement(ifStmtNode);
     // Call the MCC_ThrowArithmeticException() that will never return.
-    MapleVector<BaseNode*> args(GetModule()->GetMIRBuilder()->GetCurrentFuncCodeMpAllocator()->Adapter());
+    MapleVector<BaseNode*> args(GetMIRModule().GetMIRBuilder()->GetCurrentFuncCodeMpAllocator()->Adapter());
     IntrinsiccallNode *intrinCallNode = mirBuilder->CreateStmtIntrinsicCall(INTRN_JAVA_THROW_ARITHMETIC, args);
     ifStmtNode->GetThenPart()->AddStatement(intrinCallNode);
     blknode.AddStatement(divStmt);
@@ -112,25 +112,25 @@ BaseNode *JavaEHLowerer::DoLowerExpr(BaseNode &expr, BlockNode &curblk) {
 void JavaEHLowerer::DoLowerBoundaryCheck(IntrinsiccallNode &intrincall, BlockNode &newblk) {
   const size_t intrincallNopndSize = intrincall.GetNopndSize();
   CHECK_FATAL(intrincallNopndSize > 0, "null ptr check");
-  CondGotoNode *brFalseStmt = GetModule()->CurFuncCodeMemPool()->New<CondGotoNode>(OP_brfalse);
+  CondGotoNode *brFalseStmt = GetMIRModule().CurFuncCodeMemPool()->New<CondGotoNode>(OP_brfalse);
   brFalseStmt->SetOpnd(DoLowerExpr(*(intrincall.GetNopndAt(0)), newblk));
   brFalseStmt->SetSrcPos(intrincall.GetSrcPos());
-  LabelIdx lbidx = GetModule()->CurFunction()->GetLabelTab()->CreateLabel();
-  GetModule()->CurFunction()->GetLabelTab()->AddToStringLabelMap(lbidx);
+  LabelIdx lbidx = GetMIRModule().CurFunction()->GetLabelTab()->CreateLabel();
+  GetMIRModule().CurFunction()->GetLabelTab()->AddToStringLabelMap(lbidx);
   brFalseStmt->SetOffset(lbidx);
   newblk.AddStatement(brFalseStmt);
-  LabelNode *labStmt = GetModule()->CurFuncCodeMemPool()->New<LabelNode>();
+  LabelNode *labStmt = GetMIRModule().CurFuncCodeMemPool()->New<LabelNode>();
   labStmt->SetLabelIdx(lbidx);
   MIRFunction *func =
-      GetModule()->GetMIRBuilder()->GetOrCreateFunction(strMCCThrowArrayIndexOutOfBoundsException, TyIdx(PTY_void));
-  MapleVector<BaseNode*> args(GetModule()->GetMIRBuilder()->GetCurrentFuncCodeMpAllocator()->Adapter());
-  CallNode *callStmt = GetModule()->GetMIRBuilder()->CreateStmtCall(func->GetPuidx(), args);
+    GetMIRModule().GetMIRBuilder()->GetOrCreateFunction(strMCCThrowArrayIndexOutOfBoundsException, TyIdx(PTY_void));
+  MapleVector<BaseNode*> args(GetMIRModule().GetMIRBuilder()->GetCurrentFuncCodeMpAllocator()->Adapter());
+  CallNode *callStmt = GetMIRModule().GetMIRBuilder()->CreateStmtCall(func->GetPuidx(), args);
   newblk.AddStatement(callStmt);
   newblk.AddStatement(labStmt);
 }
 
 BlockNode *JavaEHLowerer::DoLowerBlock(BlockNode &block) {
-  BlockNode *newBlock = GetModule()->CurFuncCodeMemPool()->New<BlockNode>();
+  BlockNode *newBlock = GetMIRModule().CurFuncCodeMemPool()->New<BlockNode>();
   StmtNode *nextStmt = block.GetFirst();
   if (nextStmt == nullptr) {
     return newBlock;
@@ -192,10 +192,10 @@ BlockNode *JavaEHLowerer::DoLowerBlock(BlockNode &block) {
           MIRIntConst *intConst = static_cast<MIRIntConst*>(static_cast<ConstvalNode*>(opnd0)->GetConstVal());
           CHECK_FATAL(intConst->IsZero(), "can only be zero");
           MIRFunction *func =
-              GetModule()->GetMIRBuilder()->GetOrCreateFunction(strMCCThrowNullPointerException, TyIdx(PTY_void));
+            GetMIRModule().GetMIRBuilder()->GetOrCreateFunction(strMCCThrowNullPointerException, TyIdx(PTY_void));
           func->SetNoReturn();
-          MapleVector<BaseNode*> args(GetModule()->GetMIRBuilder()->GetCurrentFuncCodeMpAllocator()->Adapter());
-          CallNode *callStmt = GetModule()->GetMIRBuilder()->CreateStmtCall(func->GetPuidx(), args);
+          MapleVector<BaseNode*> args(GetMIRModule().GetMIRBuilder()->GetCurrentFuncCodeMpAllocator()->Adapter());
+          CallNode *callStmt = GetMIRModule().GetMIRBuilder()->CreateStmtCall(func->GetPuidx(), args);
           newBlock->AddStatement(callStmt);
         } else {
           tstmt->SetOpnd(opnd0, 0);
@@ -224,7 +224,7 @@ BlockNode *JavaEHLowerer::DoLowerBlock(BlockNode &block) {
 }
 
 void JavaEHLowerer::ProcessFunc(MIRFunction *func) {
-  GetModule()->SetCurFunction(func);
+  GetMIRModule().SetCurFunction(func);
   if (func->GetBody() == nullptr) {
     return;
   }

@@ -24,22 +24,22 @@ class FuncOptimizeImpl {
   virtual ~FuncOptimizeImpl();
   // Each phase needs to implement its own Clone
   virtual FuncOptimizeImpl *Clone() = 0;
-  MIRModule *GetModule() {
-    return module;
+  MIRModule &GetMIRModule() {
+    return *module;
   }
 
-  const MIRModule *GetModule() const {
-    return module;
+  const MIRModule &GetMIRModule() const {
+    return *module;
   }
 
   virtual void ProcessFunc(MIRFunction *func);
   virtual void Finish() {}
 
  protected:
-  void SetCurrentFunction(MIRFunction *func) {
-    currFunc = func;
+  void SetCurrentFunction(MIRFunction &func) {
+    currFunc = &func;
     ASSERT(builder, "builder is null in FuncOptimizeImpl::SetCurrentFunction");
-    module->SetCurFunction(func);
+    module->SetCurFunction(&func);
   }
 
   virtual void ProcessBlock(StmtNode &stmt);

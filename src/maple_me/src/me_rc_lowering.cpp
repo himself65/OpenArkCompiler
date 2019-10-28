@@ -51,10 +51,10 @@ void RCLowering::PreRCLower() {
 }
 
 void RCLowering::MarkLocalRefVar() {
-  MIRFunction *mirfunction = func.GetMirFunc();
-  size_t bsize = mirfunction->GetSymTab()->GetSymbolTableSize();
+  MIRFunction *mirFunction = func.GetMirFunc();
+  size_t bsize = mirFunction->GetSymTab()->GetSymbolTableSize();
   for (size_t i = 0; i < bsize; ++i) {
-    MIRSymbol *sym = mirfunction->GetSymTab()->GetSymbolFromStIdx(i);
+    MIRSymbol *sym = mirFunction->GetSymTab()->GetSymbolFromStIdx(i);
     if (sym != nullptr && sym->GetStorageClass() == kScAuto && !sym->IgnoreRC()) {
       sym->SetLocalRefVar();
     }
@@ -113,8 +113,8 @@ VarMeExpr *RCLowering::CreateVarMeExprFromSym(MIRSymbol &sym) const {
 }
 
 // note that RCInstrinsic creation will check the ref assignment and reuse lhs if possible
-IntrinsiccallMeStmt *RCLowering::CreateRCIntrinsic(MIRIntrinsicID intrnID, MeStmt &stmt, std::vector<MeExpr*> &opnds,
-                                                   bool assigned) {
+IntrinsiccallMeStmt *RCLowering::CreateRCIntrinsic(const MIRIntrinsicID intrnID, const MeStmt &stmt,
+                                                   std::vector<MeExpr*> &opnds, bool assigned) {
   IntrinsiccallMeStmt *intrn = nullptr;
   if (assigned) {
     MeExpr *ret = stmt.GetOp() == OP_regassign ? stmt.GetLHS() : irMap.CreateRegMeExpr(PTY_ref);
@@ -126,7 +126,7 @@ IntrinsiccallMeStmt *RCLowering::CreateRCIntrinsic(MIRIntrinsicID intrnID, MeStm
   return intrn;
 }
 
-MIRIntrinsicID RCLowering::PrepareVolatileCall(MeStmt &stmt, MIRIntrinsicID intrnId) {
+MIRIntrinsicID RCLowering::PrepareVolatileCall(const MeStmt &stmt, const MIRIntrinsicID intrnId) {
   bool isLoad = (intrnId == INTRN_MCCLoadRefSVol || intrnId == INTRN_MCCLoadWeakVol || intrnId == INTRN_MCCLoadRefVol);
   if (isLoad) {
     CheckRemove(stmt.GetNext(), OP_membaracquire);
@@ -137,7 +137,7 @@ MIRIntrinsicID RCLowering::PrepareVolatileCall(MeStmt &stmt, MIRIntrinsicID intr
   return intrnId;
 }
 
-IntrinsiccallMeStmt *RCLowering::GetVarRHSHandleStmt(MeStmt &stmt) {
+IntrinsiccallMeStmt *RCLowering::GetVarRHSHandleStmt(const MeStmt &stmt) {
   auto *var = static_cast<VarMeExpr*>(stmt.GetRHS());
   const MIRSymbol *sym = ssaTab.GetMIRSymbolFromID(var->GetOStIdx());
   if (!sym->IsGlobal() || sym->IsFinal()) {
@@ -156,7 +156,7 @@ IntrinsiccallMeStmt *RCLowering::GetVarRHSHandleStmt(MeStmt &stmt) {
   return CreateRCIntrinsic(rcCallID, stmt, opnds, true);
 }
 
-IntrinsiccallMeStmt *RCLowering::GetIvarRHSHandleStmt(MeStmt &stmt) {
+IntrinsiccallMeStmt *RCLowering::GetIvarRHSHandleStmt(const MeStmt &stmt) {
   auto *ivar = static_cast<IvarMeExpr*>(stmt.GetRHS());
   if (ivar->IsFinal()) {
     return nullptr;
@@ -402,7 +402,7 @@ bool RCLowering::IsInitialized(IvarMeExpr &ivar) {
   MIRType *baseType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ivar.GetTyIdx());
   ASSERT(dynamic_cast<MIRPtrType*>(baseType) != nullptr, "unexpected type");
   auto *ptype = static_cast<MIRPtrType*>(baseType)->GetPointedType();
-  MIRClassType *classType = dynamic_cast<MIRClassType*>(ptype);
+  auto *classType = dynamic_cast<MIRClassType*>(ptype);
   return classType == nullptr || !classType->IsOwnField(fieldID);
 }
 
@@ -457,7 +457,7 @@ void RCLowering::HandleAssignMeStmt(MeStmt &stmt, MeExpr *pendingDec) {
  * note that we are generating INTRN_MCCWriteNoRC so write_barrier is supported,
  * otherwise iassign would be enough.
  */
-MIRIntrinsicID RCLowering::SelectWriteBarrier(MeStmt &stmt) {
+MIRIntrinsicID RCLowering::SelectWriteBarrier(const MeStmt &stmt) {
   bool incWithLHS = stmt.NeedIncref();
   bool decWithLHS = stmt.NeedDecref();
   MeExpr *lhs = stmt.GetLHS();
@@ -554,16 +554,16 @@ void RCLowering::BBLower(BB &bb) {
     OriginalSt *ost =
         ssaTab.GetOriginalStTable().FindOrCreatePregOriginalSt(-kSregThrownval, func.GetMirFunc()->GetPuidx());
     ost->SetTyIdx(GlobalTables::GetTypeTable().GetPrimType(PTY_ref)->GetTypeIndex());
-    RegMeExpr *regreadExpr = irMap.CreateRegMeExprVersion(*ost);
-    regreadExpr->SetPtyp(PTY_ref);
+    RegMeExpr *regReadExpr = irMap.CreateRegMeExprVersion(*ost);
+    regReadExpr->SetPtyp(PTY_ref);
     MeStmt *firstMeStmt = to_ptr(bb.GetMeStmts().begin());
-    std::vector<MeExpr*> opnds = { regreadExpr };
+    std::vector<MeExpr*> opnds = { regReadExpr };
     IntrinsiccallMeStmt *decRefcall = CreateRCIntrinsic(INTRN_MCCDecRef, *firstMeStmt, opnds);
     bb.InsertMeStmtAfter(firstMeStmt, decRefcall);
   }
 }
 
-IntrinsiccallMeStmt *FindCleanupIntrinsic(MeStmt &ret) {
+IntrinsiccallMeStmt *FindCleanupIntrinsic(const MeStmt &ret) {
   auto &meStmts = ret.GetBB()->GetMeStmts();
   for (auto iter = meStmts.rbegin(); iter != meStmts.rend(); ++iter) {
     if (CheckOp(to_ptr(iter), OP_intrinsiccall)) {
@@ -737,8 +737,8 @@ void RCLowering::HandleReturnNeedBackup() {
       continue;
     }
     RegMeExpr *curTmp = irMap.CreateRegMeExpr(retVal->GetPrimType());
-    MeStmt *regass = irMap.CreateRegassignMeStmt(*curTmp, *retVal, *ret->GetBB());
-    ret->GetBB()->InsertMeStmtBefore(ret, regass);
+    MeStmt *regAssign = irMap.CreateRegassignMeStmt(*curTmp, *retVal, *ret->GetBB());
+    ret->GetBB()->InsertMeStmtBefore(ret, regAssign);
     ret->SetOpnd(0, curTmp);
   }
 }
@@ -760,7 +760,7 @@ void RCLowering::HandleArguments() {
    */
   MIRFunction *mirFunc = func.GetMirFunc();
   BB *firstBB = func.GetFirstBB();
-  MeStmt *firstMestmt = to_ptr(firstBB->GetMeStmts().begin());
+  MeStmt *firstMeStmt = to_ptr(firstBB->GetMeStmts().begin());
   for (size_t i = (mirFunc->IsStatic() ? 0 : 1); i < mirFunc->GetFormalCount(); ++i) {
     MIRSymbol *sym = mirFunc->GetFormal(i);
     if (sym == nullptr || sym->IgnoreRC() || (!sym->IsGlobal() && assignedPtrSym.count(sym) == 0)) {
@@ -769,10 +769,10 @@ void RCLowering::HandleArguments() {
     VarMeExpr *argVar = CreateVarMeExprFromSym(*sym);
     CHECK_FATAL(argVar != nullptr, "null ptr check");
     IntrinsiccallMeStmt *incCall = nullptr;
-    if (firstMestmt != nullptr) {
+    if (firstMeStmt != nullptr) {
       std::vector<MeExpr*> opnds = { argVar };
-      incCall = CreateRCIntrinsic(INTRN_MCCIncRef, *firstMestmt, opnds);
-      firstBB->InsertMeStmtBefore(firstMestmt, incCall);
+      incCall = CreateRCIntrinsic(INTRN_MCCIncRef, *firstMeStmt, opnds);
+      firstBB->InsertMeStmtBefore(firstMeStmt, incCall);
     }
     TypeAttrs typeAttr = mirFunc->GetNthParamAttr(i);
     typeAttr.SetAttr(ATTR_localrefvar);
@@ -800,11 +800,11 @@ void RCLowering::Finish() {
   }
 }
 
-OriginalSt *RCLowering::RetrieveOSt(const std::string &name, bool isLocalrefvar) const {
+OriginalSt *RCLowering::RetrieveOSt(const std::string &name, bool isLocalRefVar) const {
   MIRSymbol *backupSym = mirModule.GetMIRBuilder()->GetOrCreateLocalDecl(
       name, *GlobalTables::GetTypeTable().GetTypeFromTyIdx(TyIdx(PTY_ptr)));  // use PTY_ptr for temp
   backupSym->SetIsTmp(true);
-  if (isLocalrefvar) {
+  if (isLocalRefVar) {
     backupSym->SetLocalRefVar();
   }
   OriginalSt *ost = ssaTab.FindOrCreateSymbolOriginalSt(*backupSym, func.GetMirFunc()->GetPuidx(), 0);
@@ -812,9 +812,9 @@ OriginalSt *RCLowering::RetrieveOSt(const std::string &name, bool isLocalrefvar)
 }
 
 // function for creating short-lived temp
-VarMeExpr *RCLowering::CreateNewTmpVarMeExpr(bool isLocalrefvar) {
+VarMeExpr *RCLowering::CreateNewTmpVarMeExpr(bool isLocalRefVar) {
   std::string name = std::string("__RCTemp__").append(std::to_string(++tmpCount));
-  OriginalSt *ost = RetrieveOSt(name, isLocalrefvar);
+  OriginalSt *ost = RetrieveOSt(name, isLocalRefVar);
   if (ost->GetZeroVersionIndex() == 0) {
     ost->SetZeroVersionIndex(irMap.GetVerst2MeExprTableSize());
     irMap.PushBackVerst2MeExprTable(nullptr);
@@ -827,7 +827,7 @@ VarMeExpr *RCLowering::CreateNewTmpVarMeExpr(bool isLocalrefvar) {
   varMeExpr->SetFieldID(0);
   irMap.PushBackVerst2MeExprTable(varMeExpr);
   ost->PushbackVersionIndex(varMeExpr->GetVstIdx());
-  if (isLocalrefvar) {
+  if (isLocalRefVar) {
     tmpLocalRefVars.insert(varMeExpr);
   }
   return varMeExpr;

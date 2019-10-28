@@ -84,7 +84,7 @@ MIRFunction &GenericNativeStubFunc::GetOrCreateDefaultNativeFunc(MIRFunction &st
     CallNode *callGetFindNativeFunc =
         builder->CreateStmtCallAssigned(findNativeFunc->GetPuidx(), args, nullptr, OP_callassigned);
     nativeFunc->GetBody()->AddStatement(callGetFindNativeFunc);
-    GetModule()->AddFunction(nativeFunc);
+    GetMIRModule().AddFunction(nativeFunc);
     builder->SetCurrentFunction(&stubFunc);
   }
   return *nativeFunc;
@@ -110,7 +110,7 @@ void GenericNativeStubFunc::ProcessFunc(MIRFunction *func) {
       func->GetAttr(FUNCATTR_bridge)) {
     return;
   }
-  SetCurrentFunction(func);
+  SetCurrentFunction(*func);
   if (trace) {
     LogInfo::MapleLogger(kLlErr) << "Create stub func: " << func->GetName() << std::endl;
   }
@@ -287,11 +287,11 @@ void GenericNativeStubFunc::ProcessFunc(MIRFunction *func) {
 }
 
 void GenericNativeStubFunc::GenericRegFuncTabEntryType() {
-  MIRArrayType *arrayType =
-      GlobalTables::GetTypeTable().GetOrCreateArrayType(*GlobalTables::GetTypeTable().GetVoidPtr(), 0);
-  regFuncTabConst = GetModule()->GetMemPool()->New<MIRAggConst>(GetModule(), arrayType);
-  std::string regFuncTab = NameMangler::kRegJNIFuncTabPrefixStr + GetModule()->GetFileNameAsPostfix();
-  regFuncSymbol = builder->CreateSymbol(regFuncTabConst->GetType()->GetTypeIndex(), regFuncTab.c_str(), kStVar,
+  MIRArrayType &arrayType =
+      *GlobalTables::GetTypeTable().GetOrCreateArrayType(*GlobalTables::GetTypeTable().GetVoidPtr(), 0);
+  regFuncTabConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), arrayType);
+  std::string regFuncTab = NameMangler::kRegJNIFuncTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
+  regFuncSymbol = builder->CreateSymbol(regFuncTabConst->GetType().GetTypeIndex(), regFuncTab.c_str(), kStVar,
                                         kScGlobal, nullptr, kScopeGlobal);
 }
 
@@ -300,15 +300,14 @@ void GenericNativeStubFunc::GenericRegFuncTabEntry() {
   constexpr uint64 locIdxMask = 0xFF00000000000000;
   uint64 locIdx = regFuncTabConst->GetConstVec().size();
   MIRConst *newConst =
-      GetModule()->GetMemPool()->New<MIRIntConst>(static_cast<uint64>((locIdx << locIdxShift) | locIdxMask),
-                                                  GlobalTables::GetTypeTable().GetVoidPtr());
+    GetMIRModule().GetMemPool()->New<MIRIntConst>(static_cast<uint64>((locIdx << locIdxShift) | locIdxMask),
+                                                      *GlobalTables::GetTypeTable().GetVoidPtr());
   regFuncTabConst->GetConstVec().push_back(newConst);
 }
 
 void GenericNativeStubFunc::GenericRegFuncTab() {
-  MIRArrayType *arrayType = static_cast<MIRArrayType*>(regFuncTabConst->GetType());
-  ASSERT(arrayType, "Can not get arrayType from ref_func_tab");
-  arrayType->SetSizeArrayItem(0, regFuncTabConst->GetConstVec().size());
+  MIRArrayType &arrayType = static_cast<MIRArrayType&>(regFuncTabConst->GetType());
+  arrayType.SetSizeArrayItem(0, regFuncTabConst->GetConstVec().size());
   regFuncSymbol->SetKonst(regFuncTabConst);
 }
 
@@ -324,9 +323,9 @@ void GenericNativeStubFunc::GenericRegTabEntry(const MIRFunction &func) {
   uint32 classIdx = ReflectionAnalysis::FindOrInsertRepeatString(base, true);  // always used
   // Using MIRIntConst instead of MIRStruct for RegTable.
   MIRConst *baseConst =
-      GetModule()->GetMemPool()->New<MIRIntConst>(classIdx, GlobalTables::GetTypeTable().GetVoidPtr());
+    GetMIRModule().GetMemPool()->New<MIRIntConst>(classIdx, *GlobalTables::GetTypeTable().GetVoidPtr());
   regTableConst->GetConstVec().push_back(baseConst);
-  MIRConst *newConst = GetModule()->GetMemPool()->New<MIRIntConst>(nameIdx, GlobalTables::GetTypeTable().GetVoidPtr());
+  MIRConst *newConst = GetMIRModule().GetMemPool()->New<MIRIntConst>(nameIdx, *GlobalTables::GetTypeTable().GetVoidPtr());
   regTableConst->GetConstVec().push_back(newConst);
 }
 
@@ -345,12 +344,11 @@ void GenericNativeStubFunc::GenericRegisteredNativeFuncCall(MIRFunction &func, c
     nrets.push_back(CallReturnPair(ret->GetStIdx(), RegFieldPair(0, 0)));
   }
   size_t loc = regFuncTabConst->GetConstVec().size();
-  MIRArrayType *regArrayType = static_cast<MIRArrayType*>(regFuncTabConst->GetType());
+  MIRArrayType &regArrayType = static_cast<MIRArrayType&>(regFuncTabConst->GetType());
   AddrofNode *regFuncExpr = builder->CreateExprAddrof(0, *regFuncSymbol);
-  ArrayNode *arrayExpr =
-      builder->CreateExprArray(*regArrayType, regFuncExpr, builder->CreateIntConst(loc - 1, PTY_i32));
+  ArrayNode *arrayExpr = builder->CreateExprArray(regArrayType, regFuncExpr, builder->CreateIntConst(loc - 1, PTY_i32));
   arrayExpr->SetBoundsCheck(false);
-  MIRType *elemType = static_cast<MIRArrayType*>(regArrayType)->GetElemType();
+  MIRType *elemType = static_cast<MIRArrayType&>(regArrayType).GetElemType();
   BaseNode *ireadExpr =
       builder->CreateExprIread(*elemType, *GlobalTables::GetTypeTable().GetOrCreatePointerType(*elemType), 0, arrayExpr);
   // assign registered func ptr to a preg.
@@ -482,12 +480,12 @@ void GenericNativeStubFunc::GenericRegisteredNativeFuncCall(MIRFunction &func, c
     return;
   }
   // Without native wrapper
-  IcallNode *icall = func.GetCodeMempool()->New<IcallNode>(*GetModule(), OP_icallassigned);
+  IcallNode *icall = func.GetCodeMempool()->New<IcallNode>(GetMIRModule(), OP_icallassigned);
   icall->SetNumOpnds(args.size() + 1);
   icall->GetNopnd().resize(icall->GetNumOpnds());
   icall->SetReturnVec(nrets);
   for (size_t i = 1; i < icall->GetNopndSize(); i++) {
-    icall->SetNOpndAt(i, args[i - 1]->CloneTree(GetModule()->GetCurFuncCodeMPAllocator()));
+    icall->SetNOpndAt(i, args[i - 1]->CloneTree(GetMIRModule().GetCurFuncCodeMPAllocator()));
   }
   icall->SetNOpndAt(0, readFuncPtr);
   icall->SetRetTyIdx(nativeFunc.GetReturnTyIdx());
@@ -520,7 +518,7 @@ StmtNode *GenericNativeStubFunc::CreateNativeWrapperCallNode(MIRFunction &func, 
   // if num_of_args < 8
   constexpr size_t kNumOfArgs = 8;
   if (func.GetAttr(FUNCATTR_critical_native) && args.size() < kNumOfArgs) {
-    IcallNode *icall = func.GetCodeMempool()->New<IcallNode>(*GetModule(), OP_icallassigned);
+    IcallNode *icall = func.GetCodeMempool()->New<IcallNode>(GetMIRModule(), OP_icallassigned);
     CallReturnVector nrets(func.GetCodeMempoolAllocator()->Adapter());
     if (ret != nullptr) {
       CHECK_FATAL((ret->GetStorageClass() == kScAuto || ret->GetStorageClass() == kScFormal ||
@@ -532,7 +530,7 @@ StmtNode *GenericNativeStubFunc::CreateNativeWrapperCallNode(MIRFunction &func, 
     icall->GetNopnd().resize(icall->GetNumOpnds());
     icall->SetReturnVec(nrets);
     for (size_t i = 1; i < icall->GetNopndSize(); i++) {
-      icall->SetNOpndAt(i, args[i - 1]->CloneTree(GetModule()->GetCurFuncCodeMPAllocator()));
+      icall->SetNOpndAt(i, args[i - 1]->CloneTree(GetMIRModule().GetCurFuncCodeMPAllocator()));
     }
     icall->SetNOpndAt(0, funcPtr);
     icall->SetRetTyIdx(func.GetReturnTyIdx());
@@ -567,9 +565,9 @@ void GenericNativeStubFunc::GenericNativeWrapperFuncCall(MIRFunction &func, cons
 
 void GenericNativeStubFunc::GenericRegTableEntryType() {
   // Use MIRIntType instead of MIRStructType in RegTableEntry
-  MIRArrayType *arrayType =
-      GlobalTables::GetTypeTable().GetOrCreateArrayType(*GlobalTables::GetTypeTable().GetVoidPtr(), 0);
-  regTableConst = GetModule()->GetMemPool()->New<MIRAggConst>(GetModule(), arrayType);
+  MIRArrayType &arrayType =
+      *GlobalTables::GetTypeTable().GetOrCreateArrayType(*GlobalTables::GetTypeTable().GetVoidPtr(), 0);
+  regTableConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), arrayType);
 }
 
 void GenericNativeStubFunc::GenericHelperFuncDecl() {
@@ -584,26 +582,26 @@ void GenericNativeStubFunc::GenericHelperFuncDecl() {
   MRTCheckThrowPendingExceptionFunc->SetAttr(FUNCATTR_nosideeffect);
   MRTCheckThrowPendingExceptionFunc->SetBody(nullptr);
   // MRT_PreNativeCall
-  ArgVector preArgs(GetModule()->GetMPAllocator().Adapter());
+  ArgVector preArgs(GetMIRModule().GetMPAllocator().Adapter());
   preArgs.push_back(ArgPair("caller", refType));
   MRTPreNativeFunc = builder->CreateFunction(kPreNativeFunc, *voidPointerType, preArgs);
   CHECK_FATAL(MRTPreNativeFunc, "MRTPreNativeFunc is null in GenericNativeStubFunc::GenericHelperFuncDecl");
   MRTPreNativeFunc->SetBody(nullptr);
   // MRT_PostNativeCall
-  ArgVector postArgs(GetModule()->GetMPAllocator().Adapter());
+  ArgVector postArgs(GetMIRModule().GetMPAllocator().Adapter());
   postArgs.push_back(ArgPair("env", voidPointerType));
   MRTPostNativeFunc = builder->CreateFunction(kPostNativeFunc, *voidType, postArgs);
   CHECK_FATAL(MRTPostNativeFunc, "MRTPostNativeFunc is null in GenericNativeStubFunc::GenericHelperFuncDecl");
   MRTPostNativeFunc->SetBody(nullptr);
   // MRT_DecodeReference
-  ArgVector decodeArgs(GetModule()->GetMPAllocator().Adapter());
+  ArgVector decodeArgs(GetMIRModule().GetMPAllocator().Adapter());
   decodeArgs.push_back(ArgPair("obj", refType));
   MRTDecodeRefFunc = builder->CreateFunction(kDecodeRefFunc, *refType, decodeArgs);
   CHECK_FATAL(MRTDecodeRefFunc, "MRTDecodeRefFunc is null in GenericNativeStubFunc::GenericHelperFuncDecl");
   MRTDecodeRefFunc->SetAttr(FUNCATTR_nosideeffect);
   MRTDecodeRefFunc->SetBody(nullptr);
   // MCC_CallFastNative
-  ArgVector callArgs(GetModule()->GetMPAllocator().Adapter());
+  ArgVector callArgs(GetMIRModule().GetMPAllocator().Adapter());
   callArgs.push_back(ArgPair("func", voidPointerType));
   MRTCallFastNativeFunc = builder->CreateFunction(kCallFastNativeFunc, *voidPointerType, callArgs);
   CHECK_FATAL(MRTCallFastNativeFunc, "MRTCallFastNativeFunc is null in GenericNativeStubFunc::GenericHelperFuncDecl");
@@ -616,7 +614,7 @@ void GenericNativeStubFunc::GenericHelperFuncDecl() {
     MRTCallSlowNativeFunc[i]->SetBody(nullptr);
   }
   // MCC_CallFastNativeExt
-  ArgVector callExtArgs(GetModule()->GetMPAllocator().Adapter());
+  ArgVector callExtArgs(GetMIRModule().GetMPAllocator().Adapter());
   callExtArgs.push_back(ArgPair("func", voidPointerType));
   MRTCallFastNativeExtFunc = builder->CreateFunction(kCallFastNativeExtFunc, *voidPointerType, callExtArgs);
   CHECK_FATAL(MRTCallFastNativeExtFunc != nullptr,
@@ -637,10 +635,10 @@ void GenericNativeStubFunc::GenericHelperFuncDecl() {
 }
 
 void GenericNativeStubFunc::GenericRegTable() {
-  MIRArrayType *arrayType = static_cast<MIRArrayType*>(regTableConst->GetType());
-  arrayType->SetSizeArrayItem(0, regTableConst->GetConstVec().size());
-  std::string regJniTabName = NameMangler::kRegJNITabPrefixStr + GetModule()->GetFileNameAsPostfix();
-  MIRSymbol *regJNISt = builder->CreateSymbol(regTableConst->GetType()->GetTypeIndex(), regJniTabName.c_str(), kStVar,
+  MIRArrayType &arrayType = static_cast<MIRArrayType&>(regTableConst->GetType());
+  arrayType.SetSizeArrayItem(0, regTableConst->GetConstVec().size());
+  std::string regJniTabName = NameMangler::kRegJNITabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
+  MIRSymbol *regJNISt = builder->CreateSymbol(regTableConst->GetType().GetTypeIndex(), regJniTabName.c_str(), kStVar,
                                               kScGlobal, nullptr, kScopeGlobal);
   regJNISt->SetKonst(regTableConst);
 }
@@ -673,9 +671,7 @@ void GenericNativeStubFunc::Finish() {
   }
   if (!Options::mapleLinker) {
     // If use maplelinker, we postpone this generation to MUIDReplacement
-    MIRModule *mirModule = GetModule();
-    ASSERT(mirModule != nullptr, "null ptr check!");
-    ReflectionAnalysis::GenStrTab(*mirModule);
+    ReflectionAnalysis::GenStrTab(GetMIRModule());
   }
 }
 }  // namespace maple

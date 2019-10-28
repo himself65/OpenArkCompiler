@@ -1093,7 +1093,7 @@ class MeStmt {
   }
 
   virtual void Dump(IRMap*) const;
-  MeStmt *GetNextMeStmt();
+  MeStmt *GetNextMeStmt() const;
   virtual size_t NumMeStmtOpnds() const {
     return 0;
   }
@@ -1168,11 +1168,11 @@ class MeStmt {
 
   virtual void DisableNeedIncref() {}
 
-  virtual MeExpr *GetLHS() {
+  virtual MeExpr *GetLHS() const {
     return nullptr;
   }
 
-  virtual MeExpr *GetRHS() {
+  virtual MeExpr *GetRHS() const {
     return nullptr;
   }
 
@@ -1243,11 +1243,11 @@ class MeStmt {
     next = n;
   }
 
-  MeStmt *GetPrev() {
+  MeStmt *GetPrev() const {
     return prev;
   }
 
-  MeStmt *GetNext() {
+  MeStmt *GetNext() const {
     return next;
   }
 
@@ -1510,7 +1510,7 @@ class DassignMeStmt : public MeStmt {
   }
 
   void Dump(IRMap*) const;
-  MeExpr *GetLHS() {
+  MeExpr *GetLHS() const {
     return lhs;
   }
 
@@ -1518,7 +1518,7 @@ class DassignMeStmt : public MeStmt {
     lhs = value;
   }
 
-  MeExpr *GetRHS() {
+  MeExpr *GetRHS() const {
     return rhs;
   }
 
@@ -1587,11 +1587,11 @@ class RegassignMeStmt : public MeStmt {
     needIncref = false;
   }
 
-  MeExpr *GetLHS() {
+  MeExpr *GetLHS() const {
     return lhs;
   }
 
-  MeExpr *GetRHS() {
+  MeExpr *GetRHS() const {
     return rhs;
   }
 
@@ -1689,11 +1689,11 @@ class MaydassignMeStmt : public MeStmt {
   }
 
   void Dump(IRMap*) const;
-  MeExpr *GetLHS() {
+  MeExpr *GetLHS() const {
     return chiList.begin()->second->GetLHS();
   }
 
-  MeExpr *GetRHS() {
+  MeExpr *GetRHS() const {
     return rhs;
   }
 
@@ -1802,11 +1802,11 @@ class IassignMeStmt : public MeStmt {
   }
 
   void Dump(IRMap*) const;
-  MeExpr *GetLHS() {
+  MeExpr *GetLHS() const {
     return lhsVar;
   }
 
-  MeExpr *GetRHS() {
+  MeExpr *GetRHS() const {
     return rhs;
   }
 

@@ -60,10 +60,10 @@ class RCLowering {
   VarMeExpr *CreateVarMeExprFromSym(MIRSymbol &sym) const;
   // return true if the rhs is simple so we can adjust RC count before assignments
   bool RCFirst(MeExpr &rhs);
-  IntrinsiccallMeStmt *GetVarRHSHandleStmt(MeStmt &stmt);
-  IntrinsiccallMeStmt *GetIvarRHSHandleStmt(MeStmt &stmt);
-  MIRIntrinsicID PrepareVolatileCall(MeStmt &stmt, MIRIntrinsicID index = INTRN_UNDEFINED);
-  IntrinsiccallMeStmt *CreateRCIntrinsic(MIRIntrinsicID intrnID, MeStmt &stmt, std::vector<MeExpr*> &opnds,
+  IntrinsiccallMeStmt *GetVarRHSHandleStmt(const MeStmt &stmt);
+  IntrinsiccallMeStmt *GetIvarRHSHandleStmt(const MeStmt &stmt);
+  MIRIntrinsicID PrepareVolatileCall(const MeStmt &stmt, const MIRIntrinsicID index = INTRN_UNDEFINED);
+  IntrinsiccallMeStmt *CreateRCIntrinsic(const MIRIntrinsicID intrnID, const MeStmt &stmt, std::vector<MeExpr*> &opnds,
                                          bool assigned = false);
   void InitializedObjectFields(MeStmt &stmt);
   bool IsInitialized(IvarMeExpr &ivar);
@@ -87,7 +87,7 @@ class RCLowering {
   void HandleReturnNeedBackup();
   void HandleReturnStmt();
   void HandleAssignMeStmt(MeStmt &stmt, MeExpr *pendingDec);
-  MIRIntrinsicID SelectWriteBarrier(MeStmt &stmt);
+  MIRIntrinsicID SelectWriteBarrier(const MeStmt &stmt);
 
  private:
   MeFunction &func;

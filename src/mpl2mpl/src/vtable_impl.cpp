@@ -31,7 +31,7 @@ void VtableImpl::ProcessFunc(MIRFunction *func) {
   if (func->IsEmpty()) {
     return;
   }
-  SetCurrentFunction(func);
+  SetCurrentFunction(*func);
   StmtNode *stmt = func->GetBody()->GetFirst();
   StmtNode *next = nullptr;
   while (stmt != nullptr) {

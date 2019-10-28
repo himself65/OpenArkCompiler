@@ -38,7 +38,7 @@ CheckCastGenerator::CheckCastGenerator(MIRModule *mod, KlassHierarchy *kh, bool 
 
 void CheckCastGenerator::InitTypes() {
   pointerObjType = GlobalTables::GetTypeTable().GetOrCreatePointerType(*WKTypes::Util::GetJavaLangObjectType());
-  classinfoType = GlobalTables::GetTypeTable().GetOrCreateClassType(NameMangler::kClassMetadataTypeName, *GetModule());
+  classinfoType = GlobalTables::GetTypeTable().GetOrCreateClassType(NameMangler::kClassMetadataTypeName, GetMIRModule());
   pointerClassMetaType = GlobalTables::GetTypeTable().GetOrCreatePointerType(*classinfoType);
 }
 
@@ -61,7 +61,7 @@ MIRSymbol *CheckCastGenerator::GetOrCreateClassInfoSymbol(const std::string &cla
         GlobalTables::GetTypeTable().GetTypeFromTyIdx(GlobalTables::GetTypeNameTable().GetTyIdxFromGStrIdx(gStrIdx));
     MIRStorageClass sclass = (classType && static_cast<MIRClassType*>(classType)->IsLocal()) ? kScGlobal : kScExtern;
     // Creating global symbol needs synchronization.
-    classInfoSymbol = builder->CreateGlobalDecl(classInfoName.c_str(), GlobalTables::GetTypeTable().GetPtr(), sclass);
+    classInfoSymbol = builder->CreateGlobalDecl(classInfoName.c_str(), *GlobalTables::GetTypeTable().GetPtr(), sclass);
   }
   return classInfoSymbol;
 }
@@ -159,7 +159,7 @@ void CheckCastGenerator::GenCheckCast(BaseNode &stmt) {
           std::string primClassinfoName = PRIMITIVECLASSINFO_PREFIX_STR + elementName;
           elemClassSt = builder->GetGlobalDecl(primClassinfoName.c_str());
           if (elemClassSt == nullptr) {
-            elemClassSt = builder->CreateGlobalDecl(primClassinfoName.c_str(), GlobalTables::GetTypeTable().GetPtr());
+            elemClassSt = builder->CreateGlobalDecl(primClassinfoName.c_str(), *GlobalTables::GetTypeTable().GetPtr());
           }
         } else {
           elemClassSt = GetOrCreateClassInfoSymbol(elementName);
@@ -279,9 +279,9 @@ void CheckCastGenerator::ProcessFunc(MIRFunction *func) {
   if (func->IsEmpty()) {
     return;
   }
-  SetCurrentFunction(func);
+  SetCurrentFunction(*func);
   GenAllCheckCast();
-  MIRLower mirlowerer(*(GetModule()), func);
+  MIRLower mirlowerer(GetMIRModule(), func);
   mirlowerer.LowerFunc(*func);
 }
 }  // namespace maple

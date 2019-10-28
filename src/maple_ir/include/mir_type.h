@@ -1168,16 +1168,16 @@ class MIRClassType : public MIRStructType {
     parentTyIdx = idx;
   }
 
-  std::vector<TyIdx> &GetInerfaceImplemented() {
+  std::vector<TyIdx> &GetInterfaceImplemented() {
     return interfacesImplemented;
   }
 
-  const TyIdx &GetNthInerfaceImplemented(size_t i) const {
+  const TyIdx &GetNthInterfaceImplemented(size_t i) const {
     ASSERT(i < interfacesImplemented.size(), "array index out of range");
     return interfacesImplemented.at(i);
   }
 
-  void SetNthInerfaceImplemented(uint32 i, TyIdx tyIdx) {
+  void SetNthInterfaceImplemented(uint32 i, TyIdx tyIdx) {
     ASSERT(i < interfacesImplemented.size(), "array index out of range");
     interfacesImplemented.at(i) = tyIdx;
   }

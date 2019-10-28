@@ -47,7 +47,7 @@ MIRSymbol *MUIDReplacement::GetSymbolFromName(const std::string &name) {
 
 void MUIDReplacement::DumpMUIDFile(bool isFunc) {
   std::ofstream outFile;
-  const std::string &mplName = GetModule()->GetFileName();
+  const std::string &mplName = GetMIRModule().GetFileName();
   CHECK_FATAL(mplName.rfind(".mpl") != std::string::npos, "can not find .mpl");
   std::string prefix = mplName.substr(0, mplName.rfind(".mpl"));
   std::string outFileName;
@@ -142,7 +142,7 @@ void MUIDReplacement::CollectFuncAndDataFromGlobalTab() {
 
 void MUIDReplacement::CollectFuncAndDataFromFuncList() {
   // Iterate function bodies
-  for (MIRFunction *mirFunc : GetModule()->GetFunctionList()) {
+  for (MIRFunction *mirFunc : GetMIRModule().GetFunctionList()) {
     if (!mirFunc->GetBody()) {
       continue;
     }
@@ -237,7 +237,7 @@ void MUIDReplacement::CollectImplicitUndefClassInfo(StmtNode &stmt) {
     std::string classInfoName = CLASSINFO_PREFIX_STR + classType->GetName();
     MIRSymbol *classSym = GetSymbolFromName(classInfoName);
     if (classSym == nullptr) {
-      classSym = builder->CreateGlobalDecl(classInfoName.c_str(), GlobalTables::GetTypeTable().GetPtr());
+      classSym = builder->CreateGlobalDecl(classInfoName.c_str(), *GlobalTables::GetTypeTable().GetPtr());
       classSym->SetStorageClass(kScExtern);
       AddUndefData(classSym);
     }
@@ -255,15 +255,15 @@ void MUIDReplacement::GenericFuncDefTable() {
   }
   uint32 idx = 0;
   size_t arraySize = funcDefMap.size();
-  MIRArrayType *muidIdxArrayType =
-      GlobalTables::GetTypeTable().GetOrCreateArrayType(*GlobalTables::GetTypeTable().GetUInt32(), arraySize);
-  MIRAggConst *muidIdxTabConst = GetModule()->GetMemPool()->New<MIRAggConst>(GetModule(), muidIdxArrayType);
+  MIRArrayType &muidIdxArrayType =
+      *GlobalTables::GetTypeTable().GetOrCreateArrayType(*GlobalTables::GetTypeTable().GetUInt32(), arraySize);
+  MIRAggConst *muidIdxTabConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), muidIdxArrayType);
   for (auto &keyVal : funcDefMap) {
     // Fill in the real index
     keyVal.second.second = idx++;
     // Use the muid index for now. It will be back-filled once we have the whole vector.
     MIRIntConst *indexConst =
-        GetModule()->GetMemPool()->New<MIRIntConst>(keyVal.second.second, GlobalTables::GetTypeTable().GetUInt32());
+      GetMIRModule().GetMemPool()->New<MIRIntConst>(keyVal.second.second, *GlobalTables::GetTypeTable().GetUInt32());
     muidIdxTabConst->GetConstVec().push_back(indexConst);
   }
   FieldVector parentFields;
@@ -271,14 +271,14 @@ void MUIDReplacement::GenericFuncDefTable() {
   GlobalTables::GetTypeTable().PushIntoFieldVector(fields, "funcUnifiedAddr",
                                                    *GlobalTables::GetTypeTable().GetCompactPtr());
   MIRStructType *funcDefTabEntryType = static_cast<MIRStructType*>(
-      GlobalTables::GetTypeTable().GetOrCreateStructType("MUIDFuncDefTabEntry", fields, parentFields, *GetModule()));
+      GlobalTables::GetTypeTable().GetOrCreateStructType("MUIDFuncDefTabEntry", fields, parentFields, GetMIRModule()));
   FieldVector funcinffields;
   GlobalTables::GetTypeTable().PushIntoFieldVector(funcinffields, "funcSize",
                                                    *GlobalTables::GetTypeTable().GetUInt32());
   GlobalTables::GetTypeTable().PushIntoFieldVector(funcinffields, "funcName",
                                                    *GlobalTables::GetTypeTable().GetUInt32());
   MIRStructType *funcInfTabEntryType = static_cast<MIRStructType*>(GlobalTables::GetTypeTable().GetOrCreateStructType(
-      "MUIDFuncInfTabEntry", funcinffields, parentFields, *GetModule()));
+      "MUIDFuncInfTabEntry", funcinffields, parentFields, GetMIRModule()));
   FieldVector muidFields;
 #ifdef USE_64BIT_MUID
   GlobalTables::GetTypeTable().PushIntoFieldVector(muidFields, "muidLow", *GlobalTables::GetTypeTable().GetUInt32());
@@ -289,17 +289,17 @@ void MUIDReplacement::GenericFuncDefTable() {
 #endif  // USE_64BIT_MUID
   MIRStructType *funcDefMuidTabEntryType =
       static_cast<MIRStructType*>(GlobalTables::GetTypeTable().GetOrCreateStructType(
-          "MUIDFuncDefMuidTabEntry", muidFields, parentFields, *GetModule()));
-  MIRArrayType *arrayType = GlobalTables::GetTypeTable().GetOrCreateArrayType(*funcDefTabEntryType, arraySize);
-  MIRAggConst *funcDefTabConst = GetModule()->GetMemPool()->New<MIRAggConst>(GetModule(), arrayType);
-  MIRArrayType *funcInfArrayType = GlobalTables::GetTypeTable().GetOrCreateArrayType(*funcInfTabEntryType, arraySize);
-  MIRAggConst *funcInfTabConst = GetModule()->GetMemPool()->New<MIRAggConst>(GetModule(), funcInfArrayType);
-  MIRArrayType *muidArrayType = GlobalTables::GetTypeTable().GetOrCreateArrayType(*funcDefMuidTabEntryType, arraySize);
-  MIRAggConst *funcDefMuidTabConst = GetModule()->GetMemPool()->New<MIRAggConst>(GetModule(), muidArrayType);
+          "MUIDFuncDefMuidTabEntry", muidFields, parentFields, GetMIRModule()));
+  MIRArrayType &arrayType = *GlobalTables::GetTypeTable().GetOrCreateArrayType(*funcDefTabEntryType, arraySize);
+  MIRAggConst *funcDefTabConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), arrayType);
+  MIRArrayType &funcInfArrayType = *GlobalTables::GetTypeTable().GetOrCreateArrayType(*funcInfTabEntryType, arraySize);
+  MIRAggConst *funcInfTabConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), funcInfArrayType);
+  MIRArrayType &muidArrayType = *GlobalTables::GetTypeTable().GetOrCreateArrayType(*funcDefMuidTabEntryType, arraySize);
+  MIRAggConst *funcDefMuidTabConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), muidArrayType);
   // Create funcDefSet to store functions sorted by address
   std::vector<std::pair<MIRSymbol*, MUID>> funcDefArray;
   idx = 0;
-  for (MIRFunction *mirFunc : GetModule()->GetFunctionList()) {
+  for (MIRFunction *mirFunc : GetMIRModule().GetFunctionList()) {
     ASSERT(mirFunc != nullptr, "null ptr check!");
     MUID muid = GetMUID(mirFunc->GetName());
     MapleMap<MUID, SymIdxPair>::iterator iter = funcDefMap.find(muid);
@@ -314,12 +314,12 @@ void MUIDReplacement::GenericFuncDefTable() {
     if (kReflectionList.find(mirFunc->GetName()) != kReflectionList.end()) {
       constexpr uint32 kWeakFuncFlag = 0x80000000; // 0b10000000 00000000 00000000 00000000
       indexConst =
-          GetModule()->GetMemPool()->New<MIRIntConst>(kWeakFuncFlag | idx, GlobalTables::GetTypeTable().GetUInt32());
+        GetMIRModule().GetMemPool()->New<MIRIntConst>(kWeakFuncFlag | idx, *GlobalTables::GetTypeTable().GetUInt32());
     } else {
-      indexConst = GetModule()->GetMemPool()->New<MIRIntConst>(idx, GlobalTables::GetTypeTable().GetUInt32());
+      indexConst = GetMIRModule().GetMemPool()->New<MIRIntConst>(idx, *GlobalTables::GetTypeTable().GetUInt32());
     }
     uint32 muidIdx = iter->second.second;
-    muidIdxTabConst->SetConstVecItem(muidIdx, indexConst);
+    muidIdxTabConst->SetConstVecItem(muidIdx, *indexConst);
         // Store the real idx of funcdefTab, for ReplaceAddroffuncConst->FindIndexFromDefTable
     defMuidIdxMap[muid] = idx;
     idx++;
@@ -334,11 +334,11 @@ void MUIDReplacement::GenericFuncDefTable() {
   for (auto keyVal : funcDefArray) {
     MIRSymbol *funcSymbol = keyVal.first;
     MUID muid = keyVal.second;
-    MIRAggConst *entryConst = GetModule()->GetMemPool()->New<MIRAggConst>(GetModule(), funcDefTabEntryType);
+    MIRAggConst *entryConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), *funcDefTabEntryType);
     uint32 fieldID = 1;
-    MIRAggConst *funcInfEntryConst = GetModule()->GetMemPool()->New<MIRAggConst>(GetModule(), funcInfTabEntryType);
+    MIRAggConst *funcInfEntryConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), *funcInfTabEntryType);
     uint32 funcInfFieldID = 1;
-    MIRAggConst *muidEntryConst = GetModule()->GetMemPool()->New<MIRAggConst>(GetModule(), funcDefMuidTabEntryType);
+    MIRAggConst *muidEntryConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), *funcDefMuidTabEntryType);
     uint32 muidFieldID = 1;
     // To be processed by runtime
     builder->AddAddroffuncFieldConst(*funcDefTabEntryType, *entryConst, fieldID++, *funcSymbol);
@@ -354,25 +354,25 @@ void MUIDReplacement::GenericFuncDefTable() {
     mplMuidStr += muid.ToStr();
   }
   if (!funcDefTabConst->GetConstVec().empty()) {
-    std::string funcDefTabName = NameMangler::kMuidFuncDefTabPrefixStr + GetModule()->GetFileNameAsPostfix();
+    std::string funcDefTabName = NameMangler::kMuidFuncDefTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
     funcDefTabSym = builder->CreateGlobalDecl(funcDefTabName.c_str(), arrayType);
     funcDefTabSym->SetKonst(funcDefTabConst);
     funcDefTabSym->SetStorageClass(kScFstatic);
   }
   if (!funcInfTabConst->GetConstVec().empty()) {
-    std::string funcInfTabName = NameMangler::kMuidFuncInfTabPrefixStr + GetModule()->GetFileNameAsPostfix();
+    std::string funcInfTabName = NameMangler::kMuidFuncInfTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
     funcInfTabSym = builder->CreateGlobalDecl(funcInfTabName.c_str(), funcInfArrayType);
     funcInfTabSym->SetKonst(funcInfTabConst);
     funcInfTabSym->SetStorageClass(kScFstatic);
   }
   if (!funcDefMuidTabConst->GetConstVec().empty()) {
-    std::string funcDefMuidTabName = NameMangler::kMuidFuncDefMuidTabPrefixStr + GetModule()->GetFileNameAsPostfix();
+    std::string funcDefMuidTabName = NameMangler::kMuidFuncDefMuidTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
     funcDefMuidTabSym = builder->CreateGlobalDecl(funcDefMuidTabName.c_str(), muidArrayType);
     funcDefMuidTabSym->SetKonst(funcDefMuidTabConst);
     funcDefMuidTabSym->SetStorageClass(kScFstatic);
   }
   if (!muidIdxTabConst->GetConstVec().empty()) {
-    std::string muidIdxTabName = NameMangler::kMuidFuncMuidIdxTabPrefixStr + GetModule()->GetFileNameAsPostfix();
+    std::string muidIdxTabName = NameMangler::kMuidFuncMuidIdxTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
     funcMuidIdxTabSym = builder->CreateGlobalDecl(muidIdxTabName.c_str(), muidIdxArrayType);
     funcMuidIdxTabSym->SetKonst(muidIdxTabConst);
     funcMuidIdxTabSym->SetStorageClass(kScFstatic);
@@ -400,7 +400,7 @@ void MUIDReplacement::GenericDataDefTable() {
   GlobalTables::GetTypeTable().PushIntoFieldVector(fields, "dataUnifiedAddr",
                                                    *GlobalTables::GetTypeTable().GetCompactPtr());
   MIRStructType *dataDefTabEntryType = static_cast<MIRStructType*>(
-      GlobalTables::GetTypeTable().GetOrCreateStructType("MUIDDataDefTabEntry", fields, parentFields, *GetModule()));
+      GlobalTables::GetTypeTable().GetOrCreateStructType("MUIDDataDefTabEntry", fields, parentFields, GetMIRModule()));
   FieldVector muidFields;
 #ifdef USE_64BIT_MUID  // USE_64BIT_MUID
   GlobalTables::GetTypeTable().PushIntoFieldVector(muidFields, "muidLow", *GlobalTables::GetTypeTable().GetUInt32());
@@ -411,18 +411,18 @@ void MUIDReplacement::GenericDataDefTable() {
 #endif
   MIRStructType *dataDefMuidTabEntryType =
       static_cast<MIRStructType*>(GlobalTables::GetTypeTable().GetOrCreateStructType(
-          std::string("MUIDDataDefMuidTabEntry"), muidFields, parentFields, *GetModule()));
+          std::string("MUIDDataDefMuidTabEntry"), muidFields, parentFields, GetMIRModule()));
   size_t arraySize = dataDefMap.size();
-  MIRArrayType *arrayType = GlobalTables::GetTypeTable().GetOrCreateArrayType(*dataDefTabEntryType, arraySize);
-  MIRAggConst *dataDefTabConst = GetModule()->GetMemPool()->New<MIRAggConst>(GetModule(), arrayType);
-  MIRArrayType *muidArrayType = GlobalTables::GetTypeTable().GetOrCreateArrayType(*dataDefMuidTabEntryType, arraySize);
-  MIRAggConst *dataDefMuidTabConst = GetModule()->GetMemPool()->New<MIRAggConst>(GetModule(), muidArrayType);
+  MIRArrayType &arrayType = *GlobalTables::GetTypeTable().GetOrCreateArrayType(*dataDefTabEntryType, arraySize);
+  MIRAggConst *dataDefTabConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), arrayType);
+  MIRArrayType &muidArrayType = *GlobalTables::GetTypeTable().GetOrCreateArrayType(*dataDefMuidTabEntryType, arraySize);
+  MIRAggConst *dataDefMuidTabConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), muidArrayType);
   for (auto keyVal : dataDefMap) {
     MIRSymbol *mirSymbol = keyVal.second.first;
-    MIRAggConst *entryConst = GetModule()->GetMemPool()->New<MIRAggConst>(GetModule(), dataDefTabEntryType);
+    MIRAggConst *entryConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), *dataDefTabEntryType);
     uint32 fieldID = 1;
     MUID muid = keyVal.first;
-    MIRAggConst *muidEntryConst = GetModule()->GetMemPool()->New<MIRAggConst>(GetModule(), dataDefMuidTabEntryType);
+    MIRAggConst *muidEntryConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), *dataDefMuidTabEntryType);
     uint32 muidFieldID = 1;
     // Will be emitted as 0 and processed by runtime
     builder->AddAddrofFieldConst(*dataDefTabEntryType, *entryConst, fieldID++, *mirSymbol);
@@ -440,13 +440,13 @@ void MUIDReplacement::GenericDataDefTable() {
     DumpMUIDFile(false);
   }
   if (!dataDefTabConst->GetConstVec().empty()) {
-    std::string dataDefTabName = NameMangler::kMuidDataDefTabPrefixStr + GetModule()->GetFileNameAsPostfix();
+    std::string dataDefTabName = NameMangler::kMuidDataDefTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
     dataDefTabSym = builder->CreateGlobalDecl(dataDefTabName.c_str(), arrayType);
     dataDefTabSym->SetKonst(dataDefTabConst);
     dataDefTabSym->SetStorageClass(kScFstatic);
   }
   if (!dataDefMuidTabConst->GetConstVec().empty()) {
-    std::string dataDefMuidTabName = NameMangler::kMuidDataDefMuidTabPrefixStr + GetModule()->GetFileNameAsPostfix();
+    std::string dataDefMuidTabName = NameMangler::kMuidDataDefMuidTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
     dataDefMuidTabSym = builder->CreateGlobalDecl(dataDefMuidTabName.c_str(), muidArrayType);
     dataDefMuidTabSym->SetKonst(dataDefMuidTabConst);
     dataDefMuidTabSym->SetStorageClass(kScFstatic);
@@ -481,7 +481,7 @@ void MUIDReplacement::GenericUnifiedUndefTable() {
                                                    *GlobalTables::GetTypeTable().GetCompactPtr());
   MIRStructType *unifiedUndefTabEntryType =
       static_cast<MIRStructType*>(GlobalTables::GetTypeTable().GetOrCreateStructType(
-          std::string("MUIDUnifiedUndefTabEntry"), fields, parentFields, *GetModule()));
+          std::string("MUIDUnifiedUndefTabEntry"), fields, parentFields, GetMIRModule()));
   FieldVector muidFields;
 #ifdef USE_64BIT_MUID
   GlobalTables::GetTypeTable().PushIntoFieldVector(muidFields, "muidLow", *GlobalTables::GetTypeTable().GetUInt32());
@@ -492,13 +492,13 @@ void MUIDReplacement::GenericUnifiedUndefTable() {
 #endif
   MIRStructType *unifiedUndefMuidTabEntryType =
       static_cast<MIRStructType*>(GlobalTables::GetTypeTable().GetOrCreateStructType(
-          "MUIDUnifiedUndefMuidTabEntry", muidFields, parentFields, *GetModule()));
+          "MUIDUnifiedUndefMuidTabEntry", muidFields, parentFields, GetMIRModule()));
   size_t arraySize = funcUndefMap.size();
-  MIRArrayType *funcArrayType = GlobalTables::GetTypeTable().GetOrCreateArrayType(*unifiedUndefTabEntryType, arraySize);
-  MIRAggConst *funcUndefTabConst = GetModule()->GetMemPool()->New<MIRAggConst>(GetModule(), funcArrayType);
-  MIRArrayType *funcMuidArrayType =
-      GlobalTables::GetTypeTable().GetOrCreateArrayType(*unifiedUndefMuidTabEntryType, arraySize);
-  MIRAggConst *funcUndefMuidTabConst = GetModule()->GetMemPool()->New<MIRAggConst>(GetModule(), funcMuidArrayType);
+  MIRArrayType &funcArrayType = *GlobalTables::GetTypeTable().GetOrCreateArrayType(*unifiedUndefTabEntryType, arraySize);
+  MIRAggConst *funcUndefTabConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), funcArrayType);
+  MIRArrayType &funcMuidArrayType =
+      *GlobalTables::GetTypeTable().GetOrCreateArrayType(*unifiedUndefMuidTabEntryType, arraySize);
+  MIRAggConst *funcUndefMuidTabConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), funcMuidArrayType);
   for (auto keyVal : funcUndefMap) {
     MUID muid = keyVal.first;
     mplMuidStr += muid.ToStr();
@@ -507,10 +507,10 @@ void MUIDReplacement::GenericUnifiedUndefTable() {
                              << ", Function Name: " << keyVal.second.first->GetName()
                              << ", Offset: " << keyVal.second.second << std::endl;
     }
-    MIRAggConst *entryConst = GetModule()->GetMemPool()->New<MIRAggConst>(GetModule(), unifiedUndefTabEntryType);
+    MIRAggConst *entryConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), *unifiedUndefTabEntryType);
     uint32 fieldID = 1;
     MIRAggConst *muidEntryConst =
-        GetModule()->GetMemPool()->New<MIRAggConst>(GetModule(), unifiedUndefMuidTabEntryType);
+      GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), *unifiedUndefMuidTabEntryType);
     uint32 muidFieldID = 1;
     // to be filled by runtime
     builder->AddIntFieldConst(*unifiedUndefTabEntryType, *entryConst, fieldID++, 0);
@@ -520,32 +520,32 @@ void MUIDReplacement::GenericUnifiedUndefTable() {
     funcUndefMuidTabConst->GetConstVec().push_back(muidEntryConst);
   }
   if (!funcUndefTabConst->GetConstVec().empty()) {
-    std::string funcUndefTabName = NameMangler::kMuidFuncUndefTabPrefixStr + GetModule()->GetFileNameAsPostfix();
+    std::string funcUndefTabName = NameMangler::kMuidFuncUndefTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
     funcUndefTabSym = builder->CreateGlobalDecl(funcUndefTabName.c_str(), funcArrayType);
     funcUndefTabSym->SetKonst(funcUndefTabConst);
     funcUndefTabSym->SetStorageClass(kScFstatic);
   }
   if (!funcUndefMuidTabConst->GetConstVec().empty()) {
     std::string funcUndefMuidTabName =
-        NameMangler::kMuidFuncUndefMuidTabPrefixStr + GetModule()->GetFileNameAsPostfix();
+      NameMangler::kMuidFuncUndefMuidTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
     funcUndefMuidTabSym = builder->CreateGlobalDecl(funcUndefMuidTabName.c_str(), funcMuidArrayType);
     funcUndefMuidTabSym->SetKonst(funcUndefMuidTabConst);
     funcUndefMuidTabSym->SetStorageClass(kScFstatic);
   }
   // Continue to generate dataUndefTab
   arraySize = dataUndefMap.size();
-  MIRArrayType *dataArrayType = GlobalTables::GetTypeTable().GetOrCreateArrayType(*unifiedUndefTabEntryType, arraySize);
-  MIRAggConst *dataUndefTabConst = GetModule()->GetMemPool()->New<MIRAggConst>(GetModule(), dataArrayType);
-  MIRArrayType *dataMuidArrayType =
-      GlobalTables::GetTypeTable().GetOrCreateArrayType(*unifiedUndefMuidTabEntryType, arraySize);
-  MIRAggConst *dataUndefMuidTabConst = GetModule()->GetMemPool()->New<MIRAggConst>(GetModule(), dataMuidArrayType);
+  MIRArrayType &dataArrayType = *GlobalTables::GetTypeTable().GetOrCreateArrayType(*unifiedUndefTabEntryType, arraySize);
+  MIRAggConst *dataUndefTabConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), dataArrayType);
+  MIRArrayType &dataMuidArrayType =
+      *GlobalTables::GetTypeTable().GetOrCreateArrayType(*unifiedUndefMuidTabEntryType, arraySize);
+  MIRAggConst *dataUndefMuidTabConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), dataMuidArrayType);
   for (auto keyVal : dataUndefMap) {
-    MIRAggConst *entryConst = GetModule()->GetMemPool()->New<MIRAggConst>(GetModule(), unifiedUndefTabEntryType);
+    MIRAggConst *entryConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), *unifiedUndefTabEntryType);
     uint32 fieldID = 1;
     MIRSymbol *mirSymbol = keyVal.second.first;
     MUID muid = keyVal.first;
     MIRAggConst *muidEntryConst =
-        GetModule()->GetMemPool()->New<MIRAggConst>(GetModule(), unifiedUndefMuidTabEntryType);
+      GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), *unifiedUndefMuidTabEntryType);
     uint32 muidFieldID = 1;
     // Will be emitted as 0 and filled by runtime
     builder->AddAddrofFieldConst(*unifiedUndefTabEntryType, *entryConst, fieldID++, *mirSymbol);
@@ -560,14 +560,14 @@ void MUIDReplacement::GenericUnifiedUndefTable() {
     }
   }
   if (!dataUndefTabConst->GetConstVec().empty()) {
-    std::string dataUndefTabName = NameMangler::kMuidDataUndefTabPrefixStr + GetModule()->GetFileNameAsPostfix();
+    std::string dataUndefTabName = NameMangler::kMuidDataUndefTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
     dataUndefTabSym = builder->CreateGlobalDecl(dataUndefTabName.c_str(), dataArrayType);
     dataUndefTabSym->SetKonst(dataUndefTabConst);
     dataUndefTabSym->SetStorageClass(kScFstatic);
   }
   if (!dataUndefMuidTabConst->GetConstVec().empty()) {
     std::string dataUndefMuidTabName =
-        NameMangler::kMuidDataUndefMuidTabPrefixStr + GetModule()->GetFileNameAsPostfix();
+      NameMangler::kMuidDataUndefMuidTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
     dataUndefMuidTabSym = builder->CreateGlobalDecl(dataUndefMuidTabName.c_str(), dataMuidArrayType);
     dataUndefMuidTabSym->SetKonst(dataUndefMuidTabConst);
     dataUndefMuidTabSym->SetStorageClass(kScFstatic);
@@ -580,37 +580,37 @@ void MUIDReplacement::GenericRangeTable() {
   FieldVector fields;
   GlobalTables::GetTypeTable().PushIntoFieldVector(fields, "tabBegin", *GlobalTables::GetTypeTable().GetVoidPtr());
   GlobalTables::GetTypeTable().PushIntoFieldVector(fields, "tabEnd", *GlobalTables::GetTypeTable().GetVoidPtr());
-  MIRStructType *rangeTabEntryType = static_cast<MIRStructType*>(
-      GlobalTables::GetTypeTable().GetOrCreateStructType("MUIDRangeTabEntry", fields, parentFields, *GetModule()));
-  MIRArrayType *rangeArrayType = GlobalTables::GetTypeTable().GetOrCreateArrayType(*rangeTabEntryType, 0);
-  MIRAggConst *rangeTabConst = GetModule()->GetMemPool()->New<MIRAggConst>(GetModule(), rangeArrayType);
+  MIRStructType &rangeTabEntryType = static_cast<MIRStructType&>(
+      *GlobalTables::GetTypeTable().GetOrCreateStructType("MUIDRangeTabEntry", fields, parentFields, GetMIRModule()));
+  MIRArrayType &rangeArrayType = *GlobalTables::GetTypeTable().GetOrCreateArrayType(rangeTabEntryType, 0);
+  MIRAggConst *rangeTabConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), rangeArrayType);
   // First entry is reserved for a compile-time-stamp
   // Second entry is reserved for a decouple-stamp
   mplMuidStr += kMplLinkerVersionNumber;
   const std::string muidStr[2] = { mplMuidStr, mplMuidStr + GetMplMd5().ToStr() };
   for (auto &item : muidStr) {
     uint32 fieldID = 1;
-    MIRAggConst *entryConst = GetModule()->GetMemPool()->New<MIRAggConst>(GetModule(), rangeTabEntryType);
+    MIRAggConst *entryConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), rangeTabEntryType);
     MUID mplMd5 = GetMUID(item);
-    builder->AddIntFieldConst(*rangeTabEntryType, *entryConst, fieldID++, mplMd5.data.words[0]);
-    builder->AddIntFieldConst(*rangeTabEntryType, *entryConst, fieldID++, mplMd5.data.words[1]);
+    builder->AddIntFieldConst(rangeTabEntryType, *entryConst, fieldID++, mplMd5.data.words[0]);
+    builder->AddIntFieldConst(rangeTabEntryType, *entryConst, fieldID++, mplMd5.data.words[1]);
     rangeTabConst->GetConstVec().push_back(entryConst);
   }
   for (uint32 i = RangeIdx::kVtab; i < RangeIdx::kMaxNum; i++) {
     // Use an integer to mark which entry is for which table
-    MIRAggConst *entryConst = GetModule()->GetMemPool()->New<MIRAggConst>(GetModule(), rangeTabEntryType);
+    MIRAggConst *entryConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), rangeTabEntryType);
     uint32 fieldID = 1;
     if (i == RangeIdx::kGlobalRootlist) {
       MIRSymbol *st = GetSymbolFromName(NameMangler::kGcRootList);
       if (st == nullptr) {
-        builder->AddIntFieldConst(*rangeTabEntryType, *entryConst, fieldID++, 0);
-        builder->AddIntFieldConst(*rangeTabEntryType, *entryConst, fieldID++, 0);
+        builder->AddIntFieldConst(rangeTabEntryType, *entryConst, fieldID++, 0);
+        builder->AddIntFieldConst(rangeTabEntryType, *entryConst, fieldID++, 0);
         rangeTabConst->GetConstVec().push_back(entryConst);
         continue;
       }
     }
-    builder->AddIntFieldConst(*rangeTabEntryType, *entryConst, fieldID++, i);
-    builder->AddIntFieldConst(*rangeTabEntryType, *entryConst, fieldID++, i);
+    builder->AddIntFieldConst(rangeTabEntryType, *entryConst, fieldID++, i);
+    builder->AddIntFieldConst(rangeTabEntryType, *entryConst, fieldID++, i);
     rangeTabConst->GetConstVec().push_back(entryConst);
   }
   // Please refer to mrt/compiler-rt/include/mpl_linker.h for the layout
@@ -619,20 +619,20 @@ void MUIDReplacement::GenericRangeTable() {
                                         funcUndefMuidTabSym, dataDefMuidTabSym, dataUndefMuidTabSym, funcMuidIdxTabSym,
                                         funcProfileTabSym };
   for (MIRSymbol *mirSymbol : workList) {
-    MIRAggConst *entryConst = GetModule()->GetMemPool()->New<MIRAggConst>(GetModule(), rangeTabEntryType);
+    MIRAggConst *entryConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), rangeTabEntryType);
     uint32 fieldID = 1;
     if (mirSymbol != nullptr) {
-      builder->AddAddrofFieldConst(*rangeTabEntryType, *entryConst, fieldID++, *mirSymbol);
-      builder->AddAddrofFieldConst(*rangeTabEntryType, *entryConst, fieldID++, *mirSymbol);
+      builder->AddAddrofFieldConst(rangeTabEntryType, *entryConst, fieldID++, *mirSymbol);
+      builder->AddAddrofFieldConst(rangeTabEntryType, *entryConst, fieldID++, *mirSymbol);
     } else {
-      builder->AddIntFieldConst(*rangeTabEntryType, *entryConst, fieldID++, 0);
-      builder->AddIntFieldConst(*rangeTabEntryType, *entryConst, fieldID++, 0);
+      builder->AddIntFieldConst(rangeTabEntryType, *entryConst, fieldID++, 0);
+      builder->AddIntFieldConst(rangeTabEntryType, *entryConst, fieldID++, 0);
     }
     rangeTabConst->GetConstVec().push_back(entryConst);
   }
   if (!rangeTabConst->GetConstVec().empty()) {
-    rangeArrayType->SetSizeArrayItem(0, rangeTabConst->GetConstVec().size());
-    std::string rangeTabName = NameMangler::kMuidRangeTabPrefixStr + GetModule()->GetFileNameAsPostfix();
+    rangeArrayType.SetSizeArrayItem(0, rangeTabConst->GetConstVec().size());
+    std::string rangeTabName = NameMangler::kMuidRangeTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
     rangeTabSym = builder->CreateGlobalDecl(rangeTabName.c_str(), rangeArrayType);
     rangeTabSym->SetKonst(rangeTabConst);
     rangeTabSym->SetStorageClass(kScFstatic);
@@ -707,7 +707,7 @@ void MUIDReplacement::ReplaceAddroffuncConst(MIRConst *&entry, uint32 fieldId, b
   if (entry->GetKind() != kConstAddrofFunc) {
     return;
   }
-  MIRType *voidType = GlobalTables::GetTypeTable().GetVoidPtr();
+  MIRType &voidType = *GlobalTables::GetTypeTable().GetVoidPtr();
   MIRAddroffuncConst *funcAddr = static_cast<MIRAddroffuncConst*>(entry);
   MIRFunction *func = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(funcAddr->GetValue());
   ASSERT(func != nullptr, "Invalid MIRFunction");
@@ -722,17 +722,17 @@ void MUIDReplacement::ReplaceAddroffuncConst(MIRConst *&entry, uint32 fieldId, b
     // The second least significant bit is set to 1, indicating
     // this is an index into the funcDefTab
     constexpr uint64 kIdxIntoFuncDefTabFlag = 2u;
-    constNode = GetModule()->GetMemPool()->New<MIRIntConst>(((offset + 1) << kReservedBits) + kIdxIntoFuncDefTabFlag,
-                                                            voidType);
+    constNode = GetMIRModule().GetMemPool()->New<MIRIntConst>(((offset + 1) << kReservedBits) + kIdxIntoFuncDefTabFlag,
+                                                                  voidType);
   } else if (isVtab && func->IsAbstract()) {
-    MIRType *type = GlobalTables::GetTypeTable().GetVoidPtr();
-    constNode = GetModule()->GetMemPool()->New<MIRIntConst>(0, type);
+    MIRType &type = *GlobalTables::GetTypeTable().GetVoidPtr();
+    constNode = GetMIRModule().GetMemPool()->New<MIRIntConst>(0, type);
   } else {
     ASSERT(func->GetFuncSymbol() != nullptr, "null ptr check!");
     offset = FindIndexFromUndefTable(*(func->GetFuncSymbol()), true);
     // The second least significant bit is set to 0, indicating
     // this is an index into the funcUndefTab
-    constNode = GetModule()->GetMemPool()->New<MIRIntConst>((offset + 1) << kReservedBits, voidType);
+    constNode = GetMIRModule().GetMemPool()->New<MIRIntConst>((offset + 1) << kReservedBits, voidType);
   }
   if (fieldId != 0xffffffff) {
     constNode->SetFieldID(fieldId);
@@ -768,7 +768,7 @@ void MUIDReplacement::ReplaceAddrofConst(MIRConst *&entry) {
   if (entry->GetKind() != kConstAddrof) {
     return;
   }
-  MIRType *voidType = GlobalTables::GetTypeTable().GetVoidPtr();
+  MIRType &voidType = *GlobalTables::GetTypeTable().GetVoidPtr();
   MIRAddrofConst *addr = static_cast<MIRAddrofConst*>(entry);
   MIRSymbol *addrSym = GlobalTables::GetGsymTable().GetSymbolFromStidx(addr->GetSymbolIndex().Idx());
   ASSERT(addrSym != nullptr, "Invalid MIRSymbol");
@@ -779,10 +779,10 @@ void MUIDReplacement::ReplaceAddrofConst(MIRConst *&entry) {
   MIRIntConst *constNode = nullptr;
   if (addrSym->GetStorageClass() != kScExtern) {
     offset = FindIndexFromDefTable(*addrSym, false);
-    constNode = GetModule()->GetMemPool()->New<MIRIntConst>(offset | kFromDefIndexMask, voidType);
+    constNode = GetMIRModule().GetMemPool()->New<MIRIntConst>(offset | kFromDefIndexMask, voidType);
   } else {
     offset = FindIndexFromUndefTable(*addrSym, false);
-    constNode = GetModule()->GetMemPool()->New<MIRIntConst>(offset | kFromUndefIndexMask, voidType);
+    constNode = GetMIRModule().GetMemPool()->New<MIRIntConst>(offset | kFromUndefIndexMask, voidType);
   }
   entry = constNode;
 }
@@ -824,9 +824,9 @@ void MUIDReplacement::ReplaceDirectInvokeOrAddroffunc(MIRFunction &currentFunc, 
     std::string commentLabel = NameMangler::kMarkMuidFuncDefStr + calleeFunc->GetName();
     currentFunc.GetBody()->InsertBefore(&stmt, builder->CreateStmtComment(commentLabel.c_str()));
 
-    std::string moduleName = GetModule()->GetFileNameAsPostfix();
+    std::string moduleName = GetMIRModule().GetFileNameAsPostfix();
     std::string baseName = calleeFunc->GetBaseClassName();
-    baseExpr = builder->CreateExprAddrof(0, *funcDefTabSym, GetModule()->GetMemPool());
+    baseExpr = builder->CreateExprAddrof(0, *funcDefTabSym, GetMIRModule().GetMemPool());
     ASSERT(calleeFunc->GetFuncSymbol() != nullptr, "null ptr check!");
     index = FindIndexFromDefTable(*(calleeFunc->GetFuncSymbol()), true);
     arrayType = static_cast<MIRArrayType*>(funcDefTabSym->GetType());
@@ -836,7 +836,7 @@ void MUIDReplacement::ReplaceDirectInvokeOrAddroffunc(MIRFunction &currentFunc, 
     std::string commentLabel = NameMangler::kMarkMuidFuncUndefStr + calleeFunc->GetName();
     currentFunc.GetBody()->InsertBefore(&stmt, builder->CreateStmtComment(commentLabel.c_str()));
 
-    baseExpr = builder->CreateExprAddrof(0, *funcUndefTabSym, GetModule()->GetMemPool());
+    baseExpr = builder->CreateExprAddrof(0, *funcUndefTabSym, GetMIRModule().GetMemPool());
     ASSERT(calleeFunc->GetFuncSymbol() != nullptr, "null ptr check!");
     index = FindIndexFromUndefTable(*(calleeFunc->GetFuncSymbol()), true);
     arrayType = static_cast<MIRArrayType*>(funcUndefTabSym->GetType());
@@ -864,13 +864,13 @@ void MUIDReplacement::ReplaceDirectInvokeOrAddroffunc(MIRFunction &currentFunc, 
   }
   if (callNode != nullptr) {
     // Create icallNode to replace callNode
-    IcallNode *icallNode = GetModule()->CurFuncCodeMemPool()->New<IcallNode>(
-        *GetModule(), callNode->GetOpCode() == OP_call ? OP_icall : OP_icallassigned);
+    IcallNode *icallNode = GetMIRModule().CurFuncCodeMemPool()->New<IcallNode>(
+      GetMIRModule(), callNode->GetOpCode() == OP_call ? OP_icall : OP_icallassigned);
     icallNode->SetNumOpnds(callNode->GetNumOpnds() + 1);
     icallNode->GetNopnd().resize(icallNode->GetNumOpnds());
     icallNode->SetNOpndAt(0, readFuncPtr);
     for (size_t i = 1; i < icallNode->GetNopndSize(); i++) {
-      icallNode->SetNOpndAt(i, callNode->GetNopnd()[i - 1]->CloneTree(GetModule()->GetCurFuncCodeMPAllocator()));
+      icallNode->SetNOpndAt(i, callNode->GetNopnd()[i - 1]->CloneTree(GetMIRModule().GetCurFuncCodeMPAllocator()));
     }
     icallNode->SetRetTyIdx(calleeFunc->GetReturnTyIdx());
     if (callNode->GetOpCode() == OP_callassigned) {
@@ -1061,7 +1061,7 @@ void MUIDReplacement::ProcessFunc(MIRFunction *func) {
   if (isLibcore || func->IsEmpty()) {
     return;
   }
-  SetCurrentFunction(func);
+  SetCurrentFunction(*func);
   StmtNode *stmt = func->GetBody()->GetFirst();
   StmtNode *next = nullptr;
   while (stmt != nullptr) {
@@ -1085,8 +1085,8 @@ void MUIDReplacement::ProcessFunc(MIRFunction *func) {
 void MUIDReplacement::GenericGlobalRootList() {
   MIRType *voidType = GlobalTables::GetTypeTable().GetVoidPtr();
   MIRArrayType *arrayType = GlobalTables::GetTypeTable().GetOrCreateArrayType(*voidType, 0);
-  MIRAggConst *newConst = GetModule()->GetMemPool()->New<MIRAggConst>(GetModule(), arrayType);
-  for (StIdx stidx : GetModule()->GetSymbolSet()) {
+  MIRAggConst *newConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), *arrayType);
+  for (StIdx stidx : GetMIRModule().GetSymbolSet()) {
     MIRSymbol *symbol = GlobalTables::GetGsymTable().GetSymbolFromStidx(stidx.Idx());
     MIRSymKind st = symbol->GetSKind();
     MIRStorageClass sc = symbol->GetStorageClass();
@@ -1112,13 +1112,13 @@ void MUIDReplacement::GenericGlobalRootList() {
     }
     // Now it is a pointer/ref to a class.  Record it for GC scanning.
     ASSERT(PTY_ptr < GlobalTables::GetTypeTable().GetTypeTable().size(), "index out of bound");
-    MIRType *ptrType = GlobalTables::GetTypeTable().GetTypeTable()[PTY_ptr];
-    MIRConst *constNode = GetModule()->GetMemPool()->New<MIRAddrofConst>(symbol->GetStIdx(), 0, ptrType);
+    MIRType &ptrType = *GlobalTables::GetTypeTable().GetTypeTable()[PTY_ptr];
+    MIRConst *constNode = GetMIRModule().GetMemPool()->New<MIRAddrofConst>(symbol->GetStIdx(), 0, ptrType);
     newConst->GetConstVec().push_back(constNode);
   }
   std::string gcRootsName = NameMangler::kGcRootList;
   if (!newConst->GetConstVec().empty()) {
-    MIRSymbol *gcRootsSt = builder->CreateSymbol(newConst->GetType()->GetTypeIndex(), gcRootsName.c_str(), kStVar,
+    MIRSymbol *gcRootsSt = builder->CreateSymbol(newConst->GetType().GetTypeIndex(), gcRootsName.c_str(), kStVar,
                                                  kScAuto, nullptr, kScopeGlobal);
     arrayType->SetSizeArrayItem(0, newConst->GetConstVec().size());
     gcRootsSt->SetKonst(newConst);
@@ -1127,14 +1127,14 @@ void MUIDReplacement::GenericGlobalRootList() {
 
 void MUIDReplacement::GenericCompilerVersionNum() {
   MIRType *ptrType = GlobalTables::GetTypeTable().GetVoidPtr();
-  MIRArrayType *arrayType = GlobalTables::GetTypeTable().GetOrCreateArrayType(*ptrType, 0);
-  MIRAggConst *newConst = GetModule()->GetMemPool()->New<MIRAggConst>(GetModule(), arrayType);
-  MIRType *type = GlobalTables::GetTypeTable().GetInt32();
-  MIRConst *firstConst = GetModule()->GetMemPool()->New<MIRIntConst>(Version::kMajorMplVersion, type);
-  MIRConst *secondConst = GetModule()->GetMemPool()->New<MIRIntConst>(Version::kMinorCompilerVersion, type);
+  MIRArrayType &arrayType = *GlobalTables::GetTypeTable().GetOrCreateArrayType(*ptrType, 0);
+  MIRAggConst *newConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), arrayType);
+  MIRType &type = *GlobalTables::GetTypeTable().GetInt32();
+  MIRConst *firstConst = GetMIRModule().GetMemPool()->New<MIRIntConst>(Version::kMajorMplVersion, type);
+  MIRConst *secondConst = GetMIRModule().GetMemPool()->New<MIRIntConst>(Version::kMinorCompilerVersion, type);
   newConst->GetConstVec().push_back(firstConst);
   newConst->GetConstVec().push_back(secondConst);
-  std::string symName = NameMangler::kCompilerVersionNum + GetModule()->GetFileNameAsPostfix();
+  std::string symName = NameMangler::kCompilerVersionNum + GetMIRModule().GetFileNameAsPostfix();
   MIRSymbol *versionNum = builder->CreateGlobalDecl(symName.c_str(), arrayType);
   versionNum->SetKonst(newConst);
 }
@@ -1151,9 +1151,7 @@ void MUIDReplacement::GenericTables() {
   // When MapleLinker is enabled, MUIDReplacement becomes the last
   // phase that updates the reflection string table, thus the table
   // is emitted here.
-  MIRModule *mirModule = GetModule();
-  ASSERT(mirModule != nullptr, "null ptr check!");
-  ReflectionAnalysis::GenStrTab(*mirModule);
+  ReflectionAnalysis::GenStrTab(GetMIRModule());
   // Replace undef entries in vtab/itab/reflectionMetaData
   for (Klass *klass : klassHierarchy->GetTopoSortedKlasses()) {
     ReplaceDataTable(SUPERCLASSINFO_PREFIX_STR + klass->GetKlassName());

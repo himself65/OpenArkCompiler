@@ -39,7 +39,7 @@ enum MIRConstKind {
 
 class MIRConst {
  public:
-  explicit MIRConst(MIRType *type, uint32 fieldID = 0) : kind(kConstInvalid), type(type), fieldID(fieldID) {}
+  explicit MIRConst(MIRType &type, uint32 fieldID = 0) : kind(kConstInvalid), type(type), fieldID(fieldID) {}
 
   virtual ~MIRConst() {}
 
@@ -84,26 +84,26 @@ class MIRConst {
     kind = ind;
   }
 
-  MIRType *GetType() {
+  MIRType &GetType() {
     return type;
   }
 
-  const MIRType *GetType() const {
+  const MIRType &GetType() const {
     return type;
   }
 
  private:
   MIRConstKind kind;
-  MIRType *type;
+  MIRType &type;
   uint32 fieldID;
 };
 
 class MIRIntConst : public MIRConst {
  public:
   using value_type = int64;
-  MIRIntConst(int64 val, MIRType *type, uint32 fieldID = 0) : MIRConst(type, fieldID), value(val) {
-    if (!IsPrimitiveDynType(GetType()->GetPrimType())) {
-      Trunc(GetPrimTypeBitSize(GetType()->GetPrimType()));
+  MIRIntConst(int64 val, MIRType &type, uint32 fieldID = 0) : MIRConst(type, fieldID), value(val) {
+    if (!IsPrimitiveDynType(type.GetPrimType())) {
+      Trunc(GetPrimTypeBitSize(type.GetPrimType()));
     }
     SetKind(kConstInt);
   }
@@ -129,7 +129,7 @@ class MIRIntConst : public MIRConst {
       CHECK_FATAL(false, "shiftBitNum should not be less than zero");
     }
     uint32 unsignShiftBitNum = static_cast<uint32>(shiftBitNum);
-    if (IsSignedInteger(GetType()->GetPrimType())) {
+    if (IsSignedInteger(GetType().GetPrimType())) {
       value = (value << unsignShiftBitNum) >> unsignShiftBitNum;
     } else {
       value = ((static_cast<uint64>(value)) << unsignShiftBitNum) >> unsignShiftBitNum;
@@ -137,12 +137,12 @@ class MIRIntConst : public MIRConst {
   }
 
   int64 GetValueUnderType() const {
-    uint32 bitSize = GetPrimTypeBitSize(GetNonDynType(GetType()->GetPrimType()));
+    uint32 bitSize = GetPrimTypeBitSize(GetNonDynType(GetType().GetPrimType()));
     int32 shiftBitNum = 64u - bitSize;
     if (shiftBitNum < 0) {
       CHECK_FATAL(false, "shiftBitNum should not be less than zero");
     }
-    if (IsSignedInteger(GetType()->GetPrimType())) {
+    if (IsSignedInteger(GetType().GetPrimType())) {
       return static_cast<int64>(((value) << shiftBitNum) >> shiftBitNum);
     } else {
       uint64 unsignedVal = static_cast<uint64>(value);
@@ -152,18 +152,18 @@ class MIRIntConst : public MIRConst {
 
   void Dump() const;
   bool IsZero() {
-    return value == 0 && IsPrimitiveInteger(GetType()->GetPrimType());
+    return value == 0 && IsPrimitiveInteger(GetType().GetPrimType());
   }
 
   bool IsOne() {
-    return value == 1 && IsPrimitiveInteger(GetType()->GetPrimType());
+    return value == 1 && IsPrimitiveInteger(GetType().GetPrimType());
   };
   bool IsMagicNum() {
     constexpr int64 kMagicNum = 51;
-    return value == kMagicNum && IsPrimitiveInteger(GetType()->GetPrimType());
+    return value == kMagicNum && IsPrimitiveInteger(GetType().GetPrimType());
   };
   bool IsAllBitsOne() {
-    return value == -1 && IsPrimitiveInteger(GetType()->GetPrimType());
+    return value == -1 && IsPrimitiveInteger(GetType().GetPrimType());
   };
   void Neg() {
     value = -value;
@@ -185,7 +185,7 @@ class MIRIntConst : public MIRConst {
 
 class MIRAddrofConst : public MIRConst {
  public:
-  MIRAddrofConst(StIdx sy, FieldID fi, MIRType *ty) : MIRConst(ty), stIdx(sy), fldID(fi) {
+  MIRAddrofConst(StIdx sy, FieldID fi, MIRType &ty) : MIRConst(ty), stIdx(sy), fldID(fi) {
     SetKind(kConstAddrof);
   }
 
@@ -211,7 +211,7 @@ class MIRAddrofConst : public MIRConst {
 
 class MIRAddroffuncConst : public MIRConst {
  public:
-  MIRAddroffuncConst(PUIdx idx, MIRType *ty, uint32 fieldID = 0) : MIRConst(ty, fieldID), puIdx(idx) {
+  MIRAddroffuncConst(PUIdx idx, MIRType &ty, uint32 fieldID = 0) : MIRConst(ty, fieldID), puIdx(idx) {
     SetKind(kConstAddrofFunc);
   }
 
@@ -232,7 +232,7 @@ class MIRAddroffuncConst : public MIRConst {
 
 class MIRLblConst : public MIRConst {
  public:
-  MIRLblConst(LabelIdx val, MIRType *type) : MIRConst(type), value(val) {
+  MIRLblConst(LabelIdx val, MIRType &type) : MIRConst(type), value(val) {
     SetKind(kConstLblConst);
   }
 
@@ -250,11 +250,11 @@ class MIRLblConst : public MIRConst {
 
 class MIRStrConst : public MIRConst {
  public:
-  MIRStrConst(UStrIdx val, MIRType *type, uint32 fieldID = 0) : MIRConst(type, fieldID), value(val) {
+  MIRStrConst(UStrIdx val, MIRType &type, uint32 fieldID = 0) : MIRConst(type, fieldID), value(val) {
     SetKind(kConstStrConst);
   }
 
-  MIRStrConst(const std::string &str, MIRType *type);
+  MIRStrConst(const std::string &str, MIRType &type);
 
   ~MIRStrConst() {}
 
@@ -275,12 +275,11 @@ class MIRStrConst : public MIRConst {
 
 class MIRStr16Const : public MIRConst {
  public:
-  using value_type = const char*;
-  MIRStr16Const(U16StrIdx val, MIRType *type) : MIRConst(type), value(val) {
+  MIRStr16Const(U16StrIdx val, MIRType &type) : MIRConst(type), value(val) {
     SetKind(kConstStr16Const);
   }
 
-  MIRStr16Const(const std::u16string &str, MIRType *type);
+  MIRStr16Const(const std::u16string &str, MIRType &type);
 
   ~MIRStr16Const() {}
 
@@ -302,7 +301,7 @@ class MIRStr16Const : public MIRConst {
 class MIRFloatConst : public MIRConst {
  public:
   using value_type = float;
-  MIRFloatConst(float val, MIRType *type) : MIRConst(type) {
+  MIRFloatConst(float val, MIRType &type) : MIRConst(type) {
     value.floatValue = val;
     SetKind(kConstFloatConst);
   }
@@ -357,7 +356,7 @@ class MIRFloatConst : public MIRConst {
 class MIRDoubleConst : public MIRConst {
  public:
   using value_type = double;
-  MIRDoubleConst(double val, MIRType *type) : MIRConst(type) {
+  MIRDoubleConst(double val, MIRType &type) : MIRConst(type) {
     value.dValue = val;
     SetKind(kConstDoubleConst);
   }
@@ -413,9 +412,8 @@ class MIRDoubleConst : public MIRConst {
 
 class MIRFloat128Const : public MIRConst {
  public:
-  MIRFloat128Const(const uint64 *val, MIRType *type) : MIRConst(type) {
-    MIR_ASSERT(val && "val must not nullptr!");
-    value = val;
+  MIRFloat128Const(const uint64 &val, MIRType &type) : MIRConst(type) {
+    value = &val;
     SetKind(kConstFloat128Const);
   }
 
@@ -453,13 +451,8 @@ class MIRFloat128Const : public MIRConst {
 
 class MIRAggConst : public MIRConst {
  public:
-  MIRAggConst(MIRModule *mod, MIRType *type)
-      : MIRConst(type), allocator(nullptr), constVec(mod->GetMPAllocator().Adapter()) {
-    SetKind(kConstAggConst);
-  }
-
-  MIRAggConst(MIRModule *mod, MIRType *type, MemPool *memPool)
-      : MIRConst(type), allocator(memPool), constVec(allocator.Adapter()) {
+  MIRAggConst(MIRModule &mod, MIRType &type)
+      : MIRConst(type), allocator(nullptr), constVec(mod.GetMPAllocator().Adapter()) {
     SetKind(kConstAggConst);
   }
 
@@ -485,12 +478,12 @@ class MIRAggConst : public MIRConst {
     CHECK_FATAL(index < constVec.size(), "index out of range");
     return constVec[index];
   }
-  void SetConstVecItem(uint32 index, MIRConst *mirConst) {
+  void SetConstVecItem(uint32 index, MIRConst &mirConst) {
     CHECK_FATAL(index < constVec.size(), "index out of range");
-    constVec[index] = mirConst;
+    constVec[index] = &mirConst;
   }
-  void PushBack(MIRConst *elem) {
-    constVec.push_back(elem);
+  void PushBack(MIRConst &elem) {
+    constVec.push_back(&elem);
   }
 
   void Dump() const;
@@ -504,8 +497,8 @@ class MIRAggConst : public MIRConst {
 // the const has one or more symbols
 class MIRStConst : public MIRConst {
  public:
-  MIRStConst(MIRModule *mod, MIRType *type)
-      : MIRConst(type), stVec(mod->GetMPAllocator().Adapter()), stOffsetVec(mod->GetMPAllocator().Adapter()) {
+  MIRStConst(MIRModule &mod, MIRType &type)
+      : MIRConst(type), stVec(mod.GetMPAllocator().Adapter()), stOffsetVec(mod.GetMPAllocator().Adapter()) {
     SetKind(kConstStConst);
   }
 
