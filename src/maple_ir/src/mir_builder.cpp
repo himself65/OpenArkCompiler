@@ -722,7 +722,7 @@ AddrofNode *MIRBuilder::CreateExprDread(MIRSymbol &symbol) {
 
 AddrofNode *MIRBuilder::CreateExprDread(PregIdx pregID, PrimType pty) {
   AddrofNode *dread = GetCurrentFuncCodeMp()->New<AddrofNode>(OP_dread, pty);
-  dread->GetStIdx().SetFullIdx(pregID);
+  dread->SetStFullIdx(pregID);
   return dread;
 }
 

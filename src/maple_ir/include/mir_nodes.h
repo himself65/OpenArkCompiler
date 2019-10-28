@@ -1183,12 +1183,12 @@ class AddrofNode : public BaseNode {
     return stIdx;
   }
 
-  StIdx &GetStIdx() {
-    return stIdx;
+  void SetStIdx(StIdx idx) {
+    stIdx = idx;
   }
 
-  void SetStIdx(const StIdx &idx) {
-    stIdx = idx;
+  void SetStFullIdx(uint32 idx) {
+    stIdx.SetFullIdx(idx);
   }
 
   FieldID GetFieldID() const {
@@ -1750,7 +1750,7 @@ class SwitchNode : public StmtNode {
     SwitchNode *nd = allocator.GetMemPool()->New<SwitchNode>(allocator, *this);
     nd->SetSwitchOpnd(switchOpnd->CloneTree(allocator));
     for (size_t i = 0; i < switchTable.size(); i++) {
-      nd->GetSwitchTable().push_back(switchTable[i]);
+      nd->InsertCasePair(switchTable[i]);
     }
     return nd;
   }
@@ -1785,10 +1785,6 @@ class SwitchNode : public StmtNode {
     return switchTable;
   }
 
-  CaseVector &GetSwitchTable() {
-    return switchTable;
-  }
-
   CasePair GetCasePair(size_t idx) const {
     ASSERT(idx < switchTable.size(), "out of range in SwitchNode::GetCasePair");
     return switchTable.at(idx);
@@ -1797,6 +1793,19 @@ class SwitchNode : public StmtNode {
   void SetSwitchTable(CaseVector vec) {
     switchTable = vec;
   }
+
+  void InsertCasePair(CasePair pair) {
+    switchTable.push_back(pair);
+  }
+
+  void UpdateCaseLabelAt(uint32_t i, LabelIdx idx) {
+    switchTable[i] = std::make_pair(switchTable[i].first, idx);
+  }
+
+  void SortCasePair(bool func(const CasePair&, const CasePair&)) {
+    std::sort(switchTable.begin(), switchTable.end(), func);
+  }
+
  private:
   BaseNode *switchOpnd;
   LabelIdx defaultLabel;
@@ -2361,8 +2370,8 @@ class DoloopNode : public StmtNode {
     return doVarStIdx;
   }
 
-  StIdx &GetDoVarStIdx() {
-    return doVarStIdx;
+  void SetDoVarStFullIdx(uint32 idx) {
+    doVarStIdx.SetFullIdx(idx);
   }
 
   void SetIsPreg(bool isPregVal) {
