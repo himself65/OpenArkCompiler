@@ -112,7 +112,7 @@ void VtableAnalysis::GenVtableList(const Klass &klass) {
     }
     // vtable from implemented interfaces, need to merge in. both default or none-default
     // Note, all interface methods are also virtual methods, need to be in vtable too.
-    for (TyIdx const &tyIdx : curType->GetInerfaceImplemented()) {
+    for (TyIdx const &tyIdx : curType->GetInterfaceImplemented()) {
       MIRInterfaceType *iType = static_cast<MIRInterfaceType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx));
       for (MethodPair *methodPair : iType->GetVTableMethods()) {
         MIRFunction *method = builder->GetFunctionFromStidx(methodPair->first);
@@ -345,7 +345,7 @@ void VtableAnalysis::ProcessFunc(MIRFunction *func) {
   if (func->IsEmpty()) {
     return;
   }
-  SetCurrentFunction(func);
+  SetCurrentFunction(*func);
   StmtNode *stmt = func->GetBody()->GetFirst();
   StmtNode *next = nullptr;
   while (stmt != nullptr) {

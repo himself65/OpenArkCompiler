@@ -1193,7 +1193,7 @@ void ReflectionAnalysis::GenClassMetaData(Klass &klass) {
   for (Klass *superClass : klass.GetSuperKlasses()) {
     superClassList.push_back(superClass);
   }
-  for (TyIdx const kTyIdx : classType->GetInerfaceImplemented()) {
+  for (TyIdx const kTyIdx : classType->GetInterfaceImplemented()) {
     Klass *interface = klassh->GetKlassFromTyIdx(kTyIdx);
     if (interface == nullptr) {
       missingSuper = true;

@@ -36,10 +36,10 @@ class FuncOptimizeImpl {
   virtual void Finish() {}
 
  protected:
-  void SetCurrentFunction(MIRFunction *func) {
-    currFunc = func;
+  void SetCurrentFunction(MIRFunction &func) {
+    currFunc = &func;
     ASSERT(builder, "builder is null in FuncOptimizeImpl::SetCurrentFunction");
-    module->SetCurFunction(func);
+    module->SetCurFunction(&func);
   }
 
   virtual void ProcessBlock(StmtNode &stmt);

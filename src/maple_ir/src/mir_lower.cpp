@@ -18,6 +18,63 @@
 #define DO_LT_0_CHECK 1
 
 namespace maple {
+LabelIdx MIRLower::CreateCondGotoStmt(Opcode op, BlockNode &blk, const IfStmtNode &ifStmt) {
+  CondGotoNode *brStmt = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(op);
+  brStmt->SetOpnd(ifStmt.Opnd());
+  brStmt->SetSrcPos(ifStmt.GetSrcPos());
+  LabelIdx lableIdx = mirModule.CurFunction()->GetLabelTab()->CreateLabel();
+  (void)mirModule.CurFunction()->GetLabelTab()->AddToStringLabelMap(lableIdx);
+  brStmt->SetOffset(lableIdx);
+  blk.AddStatement(brStmt);
+  bool thenEmpty = ifStmt.GetThenPart() == nullptr || ifStmt.GetThenPart()->GetFirst() == nullptr;
+  if (thenEmpty) {
+    blk.AppendStatementsFromBlock(*ifStmt.GetElsePart());
+  } else {
+    blk.AppendStatementsFromBlock(*ifStmt.GetThenPart());
+  }
+  return lableIdx;
+}
+
+void MIRLower::CreateBrFalseStmt(BlockNode &blk, const IfStmtNode &ifStmt) {
+  LabelIdx labelIdx =CreateCondGotoStmt(OP_brfalse, blk, ifStmt);
+  LabelNode *lableStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
+  lableStmt->SetLabelIdx(labelIdx);
+  blk.AddStatement(lableStmt);
+}
+
+void MIRLower::CreateBrTrueStmt(BlockNode &blk, const IfStmtNode &ifStmt) {
+  LabelIdx labelIdx =CreateCondGotoStmt(OP_brtrue, blk, ifStmt);
+  LabelNode *lableStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
+  lableStmt->SetLabelIdx(labelIdx);
+  blk.AddStatement(lableStmt);
+}
+
+
+void MIRLower::CreateBrFalseAndGotoStmt(BlockNode &blk, const IfStmtNode &ifStmt) {
+  LabelIdx labelIdx =CreateCondGotoStmt(OP_brfalse, blk, ifStmt);
+  ASSERT(ifStmt.GetThenPart()->GetLast()->GetOpCode() != OP_brtrue, "then or else block should not end with brtrue");
+  ASSERT(ifStmt.GetThenPart()->GetLast()->GetOpCode() != OP_brfalse,
+         "then or else block should not end with brfalse");
+  bool fallThroughFromThen = !IfStmtNoFallThrough(ifStmt);
+  LabelIdx gotoLableIdx = 0;
+  if (fallThroughFromThen) {
+    GotoNode *gotoStmt = mirModule.CurFuncCodeMemPool()->New<GotoNode>(OP_goto);
+    gotoLableIdx = mirModule.CurFunction()->GetLabelTab()->CreateLabel();
+    (void)mirModule.CurFunction()->GetLabelTab()->AddToStringLabelMap(gotoLableIdx);
+    gotoStmt->SetOffset(gotoLableIdx);
+    blk.AddStatement(gotoStmt);
+  }
+  LabelNode *lableStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
+  lableStmt->SetLabelIdx(labelIdx);
+  blk.AddStatement(lableStmt);
+  blk.AppendStatementsFromBlock(*ifStmt.GetElsePart());
+  if (fallThroughFromThen) {
+    lableStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
+    lableStmt->SetLabelIdx(gotoLableIdx);
+    blk.AddStatement(lableStmt);
+  }
+}
+
 BlockNode *MIRLower::LowerIfStmt(IfStmtNode &ifStmt, bool recursive) {
   bool thenEmpty = ifStmt.GetThenPart() == nullptr || ifStmt.GetThenPart()->GetFirst() == nullptr;
   bool elseEmpty = ifStmt.GetElsePart() == nullptr || ifStmt.GetElsePart()->GetFirst() == nullptr;
@@ -40,32 +97,12 @@ BlockNode *MIRLower::LowerIfStmt(IfStmtNode &ifStmt, bool recursive) {
     // brfalse <cond> <endlabel>
     // <thenPart>
     // label <endlabel>
-    CondGotoNode *brFalseStmt = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(OP_brfalse);
-    brFalseStmt->SetOpnd(ifStmt.Opnd());
-    brFalseStmt->SetSrcPos(ifStmt.GetSrcPos());
-    LabelIdx lableIdx = mirModule.CurFunction()->GetLabelTab()->CreateLabel();
-    (void)mirModule.CurFunction()->GetLabelTab()->AddToStringLabelMap(lableIdx);
-    brFalseStmt->SetOffset(lableIdx);
-    blk->AddStatement(brFalseStmt);
-    blk->AppendStatementsFromBlock(*ifStmt.GetThenPart());
-    LabelNode *lableStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
-    lableStmt->SetLabelIdx(lableIdx);
-    blk->AddStatement(lableStmt);
+    CreateBrFalseStmt(*blk, ifStmt);
   } else if (thenEmpty) {
     // brtrue <cond> <endlabel>
     // <elsePart>
     // label <endlabel>
-    CondGotoNode *brTrueStmt = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(OP_brtrue);
-    brTrueStmt->SetOpnd(ifStmt.Opnd());
-    brTrueStmt->SetSrcPos(ifStmt.GetSrcPos());
-    LabelIdx lableIdx = mirModule.CurFunction()->GetLabelTab()->CreateLabel();
-    mirModule.CurFunction()->GetLabelTab()->AddToStringLabelMap(lableIdx);
-    brTrueStmt->SetOffset(lableIdx);
-    blk->AddStatement(brTrueStmt);
-    blk->AppendStatementsFromBlock(*ifStmt.GetElsePart());
-    LabelNode *lableStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
-    lableStmt->SetLabelIdx(lableIdx);
-    blk->AddStatement(lableStmt);
+    CreateBrTrueStmt(*blk, ifStmt);
   } else {
     // brfalse <cond> <elselabel>
     // <thenPart>
@@ -73,35 +110,7 @@ BlockNode *MIRLower::LowerIfStmt(IfStmtNode &ifStmt, bool recursive) {
     // label <elselabel>
     // <elsePart>
     // label <endlabel>
-    CondGotoNode *brFalseStmt = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(OP_brfalse);
-    brFalseStmt->SetOpnd(ifStmt.Opnd());
-    brFalseStmt->SetSrcPos(ifStmt.GetSrcPos());
-    LabelIdx lIdx = mirModule.CurFunction()->GetLabelTab()->CreateLabel();
-    (void)mirModule.CurFunction()->GetLabelTab()->AddToStringLabelMap(lIdx);
-    brFalseStmt->SetOffset(lIdx);
-    blk->AddStatement(brFalseStmt);
-    blk->AppendStatementsFromBlock(*ifStmt.GetThenPart());
-    ASSERT(ifStmt.GetThenPart()->GetLast()->GetOpCode() != OP_brtrue, "then or else block should not end with brtrue");
-    ASSERT(ifStmt.GetThenPart()->GetLast()->GetOpCode() != OP_brfalse,
-           "then or else block should not end with brfalse");
-    bool fallThroughFromThen = !IfStmtNoFallThrough(ifStmt);
-    LabelIdx gotoLableIdx = 0;
-    if (fallThroughFromThen) {
-      GotoNode *gotoStmt = mirModule.CurFuncCodeMemPool()->New<GotoNode>(OP_goto);
-      gotoLableIdx = mirModule.CurFunction()->GetLabelTab()->CreateLabel();
-      (void)mirModule.CurFunction()->GetLabelTab()->AddToStringLabelMap(gotoLableIdx);
-      gotoStmt->SetOffset(gotoLableIdx);
-      blk->AddStatement(gotoStmt);
-    }
-    LabelNode *lableStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
-    lableStmt->SetLabelIdx(lIdx);
-    blk->AddStatement(lableStmt);
-    blk->AppendStatementsFromBlock(*ifStmt.GetElsePart());
-    if (fallThroughFromThen) {
-      lableStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
-      lableStmt->SetLabelIdx(gotoLableIdx);
-      blk->AddStatement(lableStmt);
-    }
+    CreateBrFalseAndGotoStmt(*blk, ifStmt);
   }
   return blk;
 }

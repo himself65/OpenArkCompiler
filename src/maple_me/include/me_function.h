@@ -162,6 +162,9 @@ class MeFunction : public FuncEmit {
         bbVec(alloc.Adapter()),
         bbTryNodeMap(alloc.Adapter()),
         endTryBB2TryBB(alloc.Adapter()),
+        sccTopologicalVec(alloc.Adapter()),
+        sccOfBB(GetAllBBs().size(), nullptr, alloc.Adapter()),
+        backEdges(alloc.Adapter()),
         fileName(fileName) {}
 
   virtual ~MeFunction() = default;
@@ -444,7 +447,16 @@ class MeFunction : public FuncEmit {
 
   void PartialInit(bool isSecondPass);
 
+  const MapleVector<SCCOfBBs*> &GetSccTopologicalVec() const {
+    return sccTopologicalVec;
+  }
+  void BBTopologicalSort(SCCOfBBs *scc);
+  void BuildSCC();
  private:
+  void VerifySCC();
+  void SCCTopologicalSort(std::vector<SCCOfBBs*> &sccNodes);
+  void BuildSCCDFS(BB *bb, uint32 &visitIndex, std::vector<SCCOfBBs*> &sccNodes, std::vector<uint32> &visitedOrder,
+                   std::vector<uint32> &lowestOrder, std::vector<bool> &inStack, std::stack<uint32> &visitStack);
   void CreateBasicBlocks();
   void SetTryBlockInfo(const StmtNode *nextStmt, StmtNode *tryStmt, BB *lastTryBB, BB *curBB, BB *newBB);
   void RemoveEhEdgesInSyncRegion();
@@ -467,6 +479,11 @@ class MeFunction : public FuncEmit {
   MeIRMap *irmap = nullptr;
   MapleUnorderedMap<BB*, StmtNode*> bbTryNodeMap;  // maps isTry bb to its try stmt
   MapleUnorderedMap<BB*, BB*> endTryBB2TryBB;      // maps endtry bb to its try bb
+  // BB SCC
+  MapleVector<SCCOfBBs*> sccTopologicalVec;
+  uint32 numOfSCCs = 0;
+  MapleVector<SCCOfBBs*> sccOfBB;
+  MapleSet<std::pair<uint32, uint32>> backEdges;
   /* input */
   std::string fileName;
   uint32 regNum = 0;    // count virtual registers

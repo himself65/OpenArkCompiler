@@ -417,7 +417,7 @@ void BinaryMplImport::ImportClassTypeData(MIRClassType &type) {
   if (type.GetParentTyIdx().GetIdx() == 0) {
     type.GetParentTyIdx() = tempType;
   }
-  ImportInterfacesOfClassType(type.GetInerfaceImplemented());
+  ImportInterfacesOfClassType(type.GetInterfaceImplemented());
   ImportInfoIsStringOfClassType(type.GetInfoIsString());
   ImportInfoOfClassType(type.GetInfoIsString(), type.GetInfo());
   ImportPragmaOfClassType(type.GetPragmVec());

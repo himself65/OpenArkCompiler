@@ -279,7 +279,7 @@ void CheckCastGenerator::ProcessFunc(MIRFunction *func) {
   if (func->IsEmpty()) {
     return;
   }
-  SetCurrentFunction(func);
+  SetCurrentFunction(*func);
   GenAllCheckCast();
   MIRLower mirlowerer(GetMIRModule(), func);
   mirlowerer.LowerFunc(*func);

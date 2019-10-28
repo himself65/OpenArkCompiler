@@ -48,7 +48,7 @@ void MeFuncPhaseManager::RunFuncPhase(MeFunction *func, MeFuncPhase *phase) {
   }
   if (r != nullptr) {
     /* if phase is an analysis Phase, add result to arm */
-    arFuncManager.AddResult(phase->GetPhaseId(), func, r);
+    arFuncManager.AddResult(phase->GetPhaseId(), *func, *r);
   }
 }
 
@@ -58,13 +58,13 @@ void MeFuncPhaseManager::RegisterFuncPhases() {
   do {                                                                        \
     void *buf = GetMemAllocator()->GetMemPool()->Malloc(sizeof(mephase(id))); \
     CHECK_FATAL(buf != nullptr, "null ptr check");                            \
-    RegisterPhase(id, (new (buf) mephase(id)));                               \
+    RegisterPhase(id, *(new (buf) mephase(id)));                               \
   } while (0);
 #define FUNCAPHASE(id, mephase)                                                    \
   do {                                                                             \
     void *buf = GetMemAllocator()->GetMemPool()->Malloc(sizeof(mephase(id)));      \
     CHECK_FATAL(buf != nullptr, "null ptr check");                                 \
-    RegisterPhase(id, (new (buf) mephase(id)));                                    \
+    RegisterPhase(id, *(new (buf) mephase(id)));                                    \
     arFuncManager.AddAnalysisPhase(id, (static_cast<MeFuncPhase*>(GetPhase(id)))); \
   } while (0);
 #include "me_phases.def"

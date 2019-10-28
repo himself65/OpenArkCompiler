@@ -110,7 +110,7 @@ void GenericNativeStubFunc::ProcessFunc(MIRFunction *func) {
       func->GetAttr(FUNCATTR_bridge)) {
     return;
   }
-  SetCurrentFunction(func);
+  SetCurrentFunction(*func);
   if (trace) {
     LogInfo::MapleLogger(kLlErr) << "Create stub func: " << func->GetName() << std::endl;
   }

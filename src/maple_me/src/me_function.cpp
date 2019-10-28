@@ -608,4 +608,154 @@ void MeFunction::RemoveEhEdgesInSyncRegion() {
     }
   }
 }
+
+void MeFunction::BuildSCCDFS(BB *bb, uint32 &visitIndex, std::vector<SCCOfBBs*> &sccNodes,
+                             std::vector<uint32> &visitedOrder, std::vector<uint32> &lowestOrder,
+                             std::vector<bool> &inStack, std::stack<uint32> &visitStack) {
+  uint32 id = bb->UintID();
+  visitedOrder[id] = visitIndex;
+  lowestOrder[id] = visitIndex;
+  visitIndex++;
+  visitStack.push(id);
+  inStack[id] = true;
+
+  for (BB *succ : bb->GetSucc()){
+    if (succ == nullptr) {
+      continue;
+    }
+    uint32 succId = succ->UintID();
+    if (!visitedOrder[succId]) {
+      BuildSCCDFS(succ, visitIndex, sccNodes, visitedOrder, lowestOrder, inStack, visitStack);
+      if (lowestOrder[succId] < lowestOrder[id]) {
+        lowestOrder[id] = lowestOrder[succId];
+      }
+    } else if (inStack[succId]) {
+      backEdges.insert(std::pair<uint32, uint32>(id, succId));
+      if (visitedOrder[succId] < lowestOrder[id]) {
+        lowestOrder[id] = visitedOrder[succId];
+      }
+    }
+  }
+
+  if (visitedOrder.at(id) == lowestOrder.at(id)) {
+    SCCOfBBs *sccNode = alloc.GetMemPool()->New<SCCOfBBs>(numOfSCCs++, bb, &alloc);
+    uint32 stackTopId;
+    do {
+      stackTopId = visitStack.top();
+      visitStack.pop();
+      inStack[stackTopId] = false;
+      BB *topBB = static_cast<BB*>(GetAllBBs()[stackTopId]);
+      sccNode->AddBBNode(topBB);
+      sccOfBB[stackTopId] = sccNode;
+    } while (stackTopId != id);
+
+    sccNodes.push_back(sccNode);
+  }
+}
+
+void MeFunction::VerifySCC() {
+  for (BB *bb : GetAllBBs()) {
+    if (bb == nullptr || bb == GetCommonExitBB()) {
+      continue;
+    }
+    SCCOfBBs *scc = sccOfBB.at(bb->UintID());
+    CHECK_FATAL(scc != nullptr, "bb should belong to a scc");
+  }
+}
+
+void MeFunction::BuildSCC() {
+  std::vector<uint32> visitedOrder(GetAllBBs().size(), 0);
+  std::vector<uint32> lowestOrder(GetAllBBs().size(), 0);
+  std::vector<bool> inStack(GetAllBBs().size(), false);
+  std::vector<SCCOfBBs*> sccNodes;
+  uint32 visitIndex = 1;
+  std::stack<uint32> visitStack;
+
+  // Starting from common entry bb for DFS
+  BuildSCCDFS(GetCommonEntryBB(), visitIndex, sccNodes, visitedOrder, lowestOrder, inStack, visitStack);
+
+  for (SCCOfBBs *scc : sccNodes) {
+    scc->Verify(sccOfBB);
+    scc->SetUp(sccOfBB);
+  }
+
+  VerifySCC();
+  SCCTopologicalSort(sccNodes);
+}
+
+void MeFunction::SCCTopologicalSort(std::vector<SCCOfBBs*> &sccNodes) {
+  std::set<SCCOfBBs*> InQueue;
+  for (SCCOfBBs *node : sccNodes) {
+    if (!node->HasPred()) {
+      sccTopologicalVec.push_back(node);
+      InQueue.insert(node);
+    }
+  }
+
+  // Top-down iterates all nodes
+  for (size_t i = 0; i < sccTopologicalVec.size(); i++) {
+    SCCOfBBs *scc = sccTopologicalVec[i];
+    for (SCCOfBBs *succ : scc->GetSucc()) {
+      if (InQueue.find(succ) == InQueue.end()) {
+        // successor has not been visited
+        bool predAllVisited = true;
+        // check whether all predecessors of the current successor have been visited
+        for (SCCOfBBs *pred : succ->GetPred()) {
+          if (InQueue.find(pred) == InQueue.end()) {
+            predAllVisited = false;
+            break;
+          }
+        }
+        if (predAllVisited) {
+          sccTopologicalVec.push_back(succ);
+          InQueue.insert(succ);
+        }
+      }
+    }
+  }
+}
+
+void MeFunction::BBTopologicalSort(SCCOfBBs *scc) {
+  std::set<BB*> InQueue;
+  std::vector<BB*> bbs;
+  for (BB *bb : scc->GetBBs()) {
+    bbs.push_back(bb);
+  }
+  scc->Clear();
+  scc->AddBBNode(scc->GetEntry());
+  InQueue.insert(scc->GetEntry());
+
+  for (size_t i = 0; i < scc->GetBBs().size(); i++) {
+    BB *bb = scc->GetBBs()[i];
+    for (BB *succ : bb->GetSucc()) {
+      if (succ == nullptr) {
+        continue;
+      }
+      if (InQueue.find(succ) != InQueue.end() ||
+          std::find(bbs.begin(), bbs.end(), succ) == bbs.end()) {
+        continue;
+      }
+      bool predAllVisited = true;
+      for (BB *pred : succ->GetPred()) {
+        if (pred == nullptr) {
+          continue;
+        }
+        if (std::find(bbs.begin(), bbs.end(), pred) == bbs.end()) {
+          continue;
+        }
+        if (backEdges.find(std::pair<uint32, uint32>(pred->UintID(), succ->UintID())) != backEdges.end()) {
+          continue;
+        }
+        if (InQueue.find(pred) == InQueue.end()) {
+          predAllVisited = false;
+          break;
+        }
+      }
+      if (predAllVisited) {
+        scc->AddBBNode(succ);
+        InQueue.insert(succ);
+      }
+    }
+  }
+}
 }  // namespace maple

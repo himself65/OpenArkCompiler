@@ -103,6 +103,10 @@ class MIRLower {
   MIRFunction *mirFunc;
   MIRBuilder *mirBuilder;
   uint32 lowerPhase;
+  LabelIdx CreateCondGotoStmt(Opcode op, BlockNode &blk, const IfStmtNode &ifStmt);
+  void CreateBrFalseStmt(BlockNode &blk, const IfStmtNode &ifStmt);
+  void CreateBrTrueStmt(BlockNode &blk, const IfStmtNode &ifStmt);
+  void CreateBrFalseAndGotoStmt(BlockNode &blk, const IfStmtNode &ifStmt);
 };
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_MIR_LOWER_H

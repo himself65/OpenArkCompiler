@@ -18,14 +18,14 @@
 #include "option.h"
 
 /*
- * Class Hierarchy Anlysis
+ * Class Hierarchy Analysis
  * This phase is a foundation phase of compilation. This phase build
  * the class hierarchy for both this module and all modules it depends
  * on. So many phases rely on this phase's analysis result, such as
  * call graph, ssa and so on.
  * The main procedure shows as following.
- * A. Based on the information read from mplts, it collect all class that
- *    declared in modules. And create a Klass for each class.
+ * A. Based on the information read from mplts, it collects all class that
+ *    declared in modules. And creates a Klass for each class.
  * B. Fill class method info. Connect superclass<->subclass and
  *    interface->implementation edges.
  * C. Tag All Throwable class and its child class.
@@ -35,7 +35,7 @@
  * E. Topological Sort
  * F. Based on Topological Sort Order, for each virtual method in a class,
  *    we collect all its potential implementation. If the number of
- *    potential implementations is 1, it means all virtual call to this
+ *    potential implementations is 1, it means all virtual calls to this
  *    method can be easily devirtualized.
  */
 
@@ -181,7 +181,7 @@ bool Klass::ImplementsKlass() const {
   }
   MIRClassType *ctype = GetMIRClassType();
   ASSERT(ctype != nullptr, "null ptr check");
-  return (!ctype->GetInerfaceImplemented().empty());
+  return (!ctype->GetInterfaceImplemented().empty());
 }
 
 MapleVector<MIRFunction*> *Klass::GetCandidates(GStrIdx mnameNoklassStridx) const {
@@ -216,7 +216,7 @@ void Klass::CountVirtMethTopDown(const KlassHierarchy &kh) {
   MapleVector<Klass*> *superAndImplClasses = alloc->GetMemPool()->New<MapleVector<Klass*>>(alloc->Adapter());
   // Add default methods of interface. Add them first because they have lowest
   // priorities compared with methods defined in classes
-  for (TyIdx const &tyidx : GetMIRClassType()->GetInerfaceImplemented()) {
+  for (TyIdx const &tyidx : GetMIRClassType()->GetInterfaceImplemented()) {
     Klass *interface = kh.GetKlassFromTyIdx(tyidx);
     if (interface != nullptr) {
       superAndImplClasses->push_back(interface);
@@ -531,7 +531,7 @@ void KlassHierarchy::AddKlassRelationAndMethods() {
       MIRClassType *ctype = klass->GetMIRClassType();
       ASSERT(ctype != nullptr, "null ptr check");
       // Add interface relationship
-      for (TyIdx const &intfTyIdx : ctype->GetInerfaceImplemented()) {
+      for (TyIdx const &intfTyIdx : ctype->GetInterfaceImplemented()) {
         Klass *intfKlass = GetKlassFromTyIdx(intfTyIdx);
         if (intfKlass != nullptr) {
           intfKlass->AddImplKlass(klass);

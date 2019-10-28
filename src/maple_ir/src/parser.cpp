@@ -794,7 +794,7 @@ bool MIRParser::ParseFields(MIRStructType &type) {
         mod.AddExternStructType(tyidx);
         mod.GetTypeNameTab()->SetGStrIdxToTyIdx(strIdx, tyidx);
       }
-      classType->GetInerfaceImplemented().push_back(tyidx);
+      classType->GetInterfaceImplemented().push_back(tyidx);
     }
     if (tk == kTkComa) {
       tk = lexer.NextToken();
@@ -1386,10 +1386,10 @@ void MIRParser::FixupForwardReferencedTypeByMap() {
         if (it != typeDefIdxMap.end()) {
           classType->GetParentTyIdx() = it->second;
         }
-        for (size_t j = 0; j < classType->GetInerfaceImplemented().size(); j++) {
-          std::map<TyIdx, TyIdx>::iterator it2 = typeDefIdxMap.find(classType->GetNthInerfaceImplemented(j));
+        for (size_t j = 0; j < classType->GetInterfaceImplemented().size(); j++) {
+          std::map<TyIdx, TyIdx>::iterator it2 = typeDefIdxMap.find(classType->GetNthInterfaceImplemented(j));
           if (it2 != typeDefIdxMap.end()) {
-            classType->SetNthInerfaceImplemented(j, it2->second);
+            classType->SetNthInterfaceImplemented(j, it2->second);
           }
         }
       } else if (type->GetKind() == kTypeInterface || type->GetKind() == kTypeInterfaceIncomplete) {

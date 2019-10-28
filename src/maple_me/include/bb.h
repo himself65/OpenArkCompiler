@@ -409,6 +409,49 @@ class BB {
   StmtNodes stmtNodeList;
   MeStmts meStmtList;
 };
+class SCCOfBBs {
+ public:
+  SCCOfBBs(uint32 index, BB *bb, MapleAllocator *alloc)
+          : id(index),
+            entry(bb),
+            bbs(alloc->Adapter()),
+            predSCC(std::less<SCCOfBBs*>(), alloc->Adapter()),
+            succSCC(std::less<SCCOfBBs*>(), alloc->Adapter()) {}
+  void Dump();
+  void Verify(MapleVector<SCCOfBBs*> &sccOfBB);
+  void SetUp(MapleVector<SCCOfBBs*> &sccOfBB);
+  bool HasCycle() const;
+  void AddBBNode(BB *bb) {
+    bbs.push_back(bb);
+  }
+  void Clear() {
+    bbs.clear();
+  }
+  uint32 GetID() const {
+    return id;
+  }
+  const MapleVector<BB*> &GetBBs() const {
+    return bbs;
+  }
+  const MapleSet<SCCOfBBs*> &GetSucc() const {
+    return succSCC;
+  }
+  const MapleSet<SCCOfBBs*> &GetPred() const {
+    return predSCC;
+  }
+  bool HasPred() const {
+    return (predSCC.size() != 0);
+  }
+  BB *GetEntry() {
+    return entry;
+  }
+ private:
+  uint32 id;
+  BB *entry;
+  MapleVector<BB*> bbs;
+  MapleSet<SCCOfBBs*> predSCC;
+  MapleSet<SCCOfBBs*> succSCC;
+};
 }  // namespace maple
 
 namespace std {

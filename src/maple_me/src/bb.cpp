@@ -352,4 +352,52 @@ void BB::DumpMeRegPhiList(IRMap *irMap) {
     (*phiIt).second->Dump(irMap);
   }
 }
+
+void SCCOfBBs::Dump() {
+  std::cout << "SCC " << id << " contains" << std::endl;
+  for (BB *bb : bbs) {
+    std::cout << "bb(" << bb->UintID() << ")  ";
+  }
+  std::cout << std::endl;
+}
+
+bool SCCOfBBs::HasCycle() const {
+  CHECK_FATAL(bbs.size() > 0, "should have bbs in the scc");
+  if (bbs.size() > 1) {
+    return true;
+  }
+  BB *bb = bbs[0];
+  for (BB *succ : bb->GetSucc()) {
+    if (succ == bb) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void SCCOfBBs::Verify(MapleVector<SCCOfBBs*> &sccOfBB) {
+  CHECK_FATAL(bbs.size() > 0, "should have bbs in the scc");
+  for (BB *bb : bbs) {
+    SCCOfBBs *scc = sccOfBB.at(bb->UintID());
+    CHECK_FATAL(scc == this, "");
+  }
+}
+
+void SCCOfBBs::SetUp(MapleVector<SCCOfBBs*> &sccOfBB) {
+  for (BB *bb : bbs) {
+    for (BB *succ : bb->GetSucc()) {
+      if (succ == nullptr || sccOfBB.at(succ->UintID()) == this) {
+        continue;
+      }
+      succSCC.insert(sccOfBB[succ->UintID()]);
+    }
+
+    for (BB *pred : bb->GetPred()) {
+      if (pred == nullptr || sccOfBB.at(pred->UintID()) == this) {
+        continue;
+      }
+      predSCC.insert(sccOfBB[pred->UintID()]);
+    }
+  }
+}
 }  // namespace maple

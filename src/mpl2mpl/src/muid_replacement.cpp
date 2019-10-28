@@ -1061,7 +1061,7 @@ void MUIDReplacement::ProcessFunc(MIRFunction *func) {
   if (isLibcore || func->IsEmpty()) {
     return;
   }
-  SetCurrentFunction(func);
+  SetCurrentFunction(*func);
   StmtNode *stmt = func->GetBody()->GetFirst();
   StmtNode *next = nullptr;
   while (stmt != nullptr) {

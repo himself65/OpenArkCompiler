@@ -549,7 +549,7 @@ void BinaryMplExport::OutputPragmaVec(const std::vector<MIRPragma*> &pragmaVec) 
 
 void BinaryMplExport::OutputClassTypeData(MIRClassType &type) {
   OutputType(type.GetParentTyIdx());
-  OutputImplementedInterfaces(type.GetInerfaceImplemented());
+  OutputImplementedInterfaces(type.GetInterfaceImplemented());
   OutputInfoIsString(type.GetInfoIsString());
   OutputInfo(type.GetInfo(), type.GetInfoIsString());
   OutputPragmaVec(type.GetPragmVec());

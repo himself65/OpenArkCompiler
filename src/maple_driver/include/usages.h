@@ -16,7 +16,7 @@
 #define MAPLE_DRIVER_INCLUDE_USAGES_H
 
 namespace maple {
-enum OptionIndex {
+enum OptionIndex : uint64 {
   kUnknown,
   kHelp,
   kVersion,
