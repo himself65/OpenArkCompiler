@@ -196,7 +196,7 @@ bool MIRParser::ParseStmtDoloop(StmtNodePtr &stmt) {
   if (lexer.GetTokenKind() == kTkPreg) {
     PregIdx pregidx = LookupOrCreatePregIdx(static_cast<uint32>(lexer.GetTheIntVal()), false, *mod.CurFunction());
     doloopnode->SetIsPreg(true);
-    doloopnode->GetDoVarStIdx().SetFullIdx(pregidx);
+    doloopnode->SetDoVarStFullIdx(pregidx);
     // let other appearances handle the preg primitive type
   } else {
     StIdx stIdx;
@@ -537,7 +537,6 @@ bool MIRParser::ParseStmtSwitch(StmtNodePtr &stmt) {
   // ...
   // <intconstn>: goto <labeln>
   TokenKind tk = lexer.NextToken();
-  MapleVector<CasePair> &switchtable = switchnode->GetSwitchTable();
   std::set<int32> casesSet;
   while (tk != kTkRbrace) {
     int32 constVal = 0;
@@ -550,7 +549,7 @@ bool MIRParser::ParseStmtSwitch(StmtNodePtr &stmt) {
       Error("duplicated switch case ");
       return false;
     }
-    switchtable.push_back(CasePair(constVal, lbl));
+    switchnode->InsertCasePair(CasePair(constVal, lbl));
     casesSet.insert(constVal);
     tk = lexer.GetTokenKind();
   }
