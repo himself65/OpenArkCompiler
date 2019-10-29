@@ -55,8 +55,8 @@ class MIRBuilder {
 
   virtual ~MIRBuilder() {}
 
-  virtual void SetCurrentFunction(MIRFunction *fun) {
-    mirModule->SetCurFunction(fun);
+  virtual void SetCurrentFunction(MIRFunction &fun) {
+    mirModule->SetCurFunction(&fun);
   }
 
   virtual MIRFunction *GetCurrentFunction() const {
@@ -127,19 +127,19 @@ class MIRBuilder {
   void SetStructFieldIDFromFieldName(MIRType &structtype, const std::string &name, GStrIdx newStrIdx,
                                      const MIRType &newFieldType);
   // for creating Function.
-  MIRSymbol *GetFunctionArgument(MIRFunction *fun, uint32 index) const {
-    CHECK(index < fun->GetFormalCount(), "index out of range in GetFunctionArgument");
-    return fun->GetFormal(index);
+  MIRSymbol *GetFunctionArgument(MIRFunction &fun, uint32 index) const {
+    CHECK(index < fun.GetFormalCount(), "index out of range in GetFunctionArgument");
+    return fun.GetFormal(index);
   }
 
   MIRFunction *CreateFunction(const std::string &name, const MIRType &returnType, const ArgVector &arguments,
-                              bool isvarg = false, bool createBody = true);
-  MIRFunction *CreateFunction(const StIdx stIdx, bool addToTable = true);
-  virtual void UpdateFunction(MIRFunction *func, MIRType *returnType, const ArgVector &arguments) {
+                              bool isvarg = false, bool createBody = true) const;
+  MIRFunction *CreateFunction(const StIdx stIdx, bool addToTable = true) const;
+  virtual void UpdateFunction(MIRFunction &func, MIRType *returnType, const ArgVector &arguments) {
     return;
   }
 
-  MIRSymbol *GetSymbolFromEnclosingScope(StIdx stIdx);
+  MIRSymbol *GetSymbolFromEnclosingScope(StIdx stIdx) const;
   virtual MIRSymbol *GetOrCreateLocalDecl(const std::string &str, MIRType &type);
   MIRSymbol *GetLocalDecl(const std::string &str);
   MIRSymbol *CreateLocalDecl(const std::string &str, const MIRType &type);
@@ -178,7 +178,6 @@ class MIRBuilder {
     return CreateIntConst(i, PTY_u64);
   }
 
-  ConstvalNode *GetConstArray(MIRType*, BaseNode*, uint32 length);
   ConstvalNode *CreateAddrofConst(BaseNode&);
   ConstvalNode *CreateAddroffuncConst(const BaseNode&);
   ConstvalNode *CreateStrConst(const BaseNode&);
@@ -195,7 +194,6 @@ class MIRBuilder {
   AddrofNode *CreateExprDread(MIRSymbol&, uint16);
   RegreadNode *CreateExprRegread(PrimType pty, PregIdx regIdx);
   IreadNode *CreateExprIread(const MIRType &returnType, const MIRType &ptrType, FieldID fieldID, BaseNode *addr);
-  IreadNode *CreateExprIread(TyIdx *returnTypeIdx, TyIdx *ptrTypeIdx, FieldID fieldID, BaseNode *addr);
   IreadoffNode *CreateExprIreadoff(PrimType pty, int32 offset, BaseNode *opnd0);
   IreadFPoffNode *CreateExprIreadFPoff(PrimType pty, int32 offset);
   IaddrofNode *CreateExprIaddrof(const MIRType &returnType, const MIRType &ptrType, FieldID fieldID, BaseNode *addr);
@@ -272,14 +270,14 @@ class MIRBuilder {
   StmtNode *CreateStmtComment(const std::string &cmnt);
   CondGotoNode *CreateStmtCondGoto(BaseNode *cond, Opcode op, LabelIdx labIdx);
   void AddStmtInCurrentFunctionBody(StmtNode &stmt);
-  MIRSymbol *GetSymbol(TyIdx, const std::string&, MIRSymKind, MIRStorageClass, uint8, bool);
-  MIRSymbol *GetSymbol(TyIdx, GStrIdx, MIRSymKind, MIRStorageClass, uint8, bool);
-  MIRSymbol *GetOrCreateSymbol(TyIdx, const std::string&, MIRSymKind, MIRStorageClass, MIRFunction*, uint8, bool);
-  MIRSymbol *GetOrCreateSymbol(TyIdx, GStrIdx, MIRSymKind, MIRStorageClass, MIRFunction*, uint8, bool);
-  MIRSymbol *CreatePregFormalSymbol(TyIdx, PregIdx, MIRFunction&);
+  MIRSymbol *GetSymbol(TyIdx, const std::string&, MIRSymKind, MIRStorageClass, uint8, bool) const;
+  MIRSymbol *GetSymbol(TyIdx, GStrIdx, MIRSymKind, MIRStorageClass, uint8, bool) const;
+  MIRSymbol *GetOrCreateSymbol(TyIdx, const std::string&, MIRSymKind, MIRStorageClass, MIRFunction*, uint8, bool) const;
+  MIRSymbol *GetOrCreateSymbol(TyIdx, GStrIdx, MIRSymKind, MIRStorageClass, MIRFunction*, uint8, bool) const;
+  MIRSymbol *CreatePregFormalSymbol(TyIdx, PregIdx, MIRFunction&) const;
   // for creating symbol
-  MIRSymbol *CreateSymbol(TyIdx, const std::string&, MIRSymKind, MIRStorageClass, MIRFunction*, uint8);
-  MIRSymbol *CreateSymbol(TyIdx, GStrIdx, MIRSymKind, MIRStorageClass, MIRFunction*, uint8);
+  MIRSymbol *CreateSymbol(TyIdx, const std::string&, MIRSymKind, MIRStorageClass, MIRFunction*, uint8) const;
+  MIRSymbol *CreateSymbol(TyIdx, GStrIdx, MIRSymKind, MIRStorageClass, MIRFunction*, uint8) const;
   // for creating nodes
   AddrofNode *CreateAddrof(const MIRSymbol &st, PrimType pty = PTY_ptr);
   AddrofNode *CreateDread(const MIRSymbol &st, PrimType pty);

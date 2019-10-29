@@ -64,7 +64,7 @@ void ClassInit::ProcessFunc(MIRFunction *func) {
     return;
   }
   currFunc = func;
-  builder->SetCurrentFunction(func);
+  builder->SetCurrentFunction(*func);
   // Insert clinit check for static methods.
   MIRType *selfClassType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(func->GetClassTyIdx());
   std::string selfClassName;

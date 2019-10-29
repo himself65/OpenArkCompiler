@@ -49,7 +49,7 @@ MIRFunction &GenericNativeStubFunc::GetOrCreateDefaultNativeFunc(MIRFunction &st
   ASSERT(nativeFunc != nullptr, "null ptr check!");
   nativeFunc->GetSrcPosition().SetMplLineNum(stubFunc.GetSrcPosition().MplLineNum());
   if (nativeFunc->GetBody() == nullptr) {
-    builder->SetCurrentFunction(nativeFunc);
+    builder->SetCurrentFunction(*nativeFunc);
     nativeFunc->SetAttr(FUNCATTR_weak);
     nativeFunc->SetBody(nativeFunc->GetCodeMempool()->New<BlockNode>());
     // We would not throw exception here.
@@ -85,7 +85,7 @@ MIRFunction &GenericNativeStubFunc::GetOrCreateDefaultNativeFunc(MIRFunction &st
         builder->CreateStmtCallAssigned(findNativeFunc->GetPuidx(), args, nullptr, OP_callassigned);
     nativeFunc->GetBody()->AddStatement(callGetFindNativeFunc);
     GetMIRModule().AddFunction(nativeFunc);
-    builder->SetCurrentFunction(&stubFunc);
+    builder->SetCurrentFunction(stubFunc);
   }
   return *nativeFunc;
 }
@@ -350,7 +350,8 @@ void GenericNativeStubFunc::GenericRegisteredNativeFuncCall(MIRFunction &func, c
   arrayExpr->SetBoundsCheck(false);
   auto *elemType = static_cast<MIRArrayType&>(regArrayType).GetElemType();
   BaseNode *ireadExpr =
-      builder->CreateExprIread(*elemType, *GlobalTables::GetTypeTable().GetOrCreatePointerType(*elemType), 0, arrayExpr);
+      builder->CreateExprIread(*elemType, *GlobalTables::GetTypeTable().GetOrCreatePointerType(*elemType),
+                               0, arrayExpr);
   // assign registered func ptr to a preg.
   auto funcptrPreg = func.GetPregTab()->CreatePreg(PTY_ptr);
   RegassignNode *funcptrAssign = builder->CreateStmtRegassign(PTY_ptr, funcptrPreg, ireadExpr);

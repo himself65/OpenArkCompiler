@@ -426,7 +426,8 @@ BaseNode *VtableAnalysis::GenVtabItabBaseAddr(BaseNode *obj, bool isVirtual) {
   BaseNode *classInfoAddress = ReflectionAnalysis::GenClassInfoAddr(obj, *builder);
   auto *classMetadataType = static_cast<MIRStructType*>(
       GlobalTables::GetTypeTable().GetTypeFromTyIdx(ReflectionAnalysis::GetClassMetaDataTyIdx()));
-  return builder->CreateExprIread(*voidPtrType, *GlobalTables::GetTypeTable().GetOrCreatePointerType(*classMetadataType),
+  return builder->CreateExprIread(*voidPtrType,
+                                  *GlobalTables::GetTypeTable().GetOrCreatePointerType(*classMetadataType),
                                   (isVirtual ? KLASS_VTAB_FIELDID : KLASS_ITAB_FIELDID), classInfoAddress);
 }
 
