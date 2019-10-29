@@ -413,6 +413,32 @@ void MIRType::DumpAsCxx(int indent) const {
   }
 }
 
+bool MIRType::IsOfSameType(MIRType &type) {
+  if (typeKind != type.typeKind) {
+    return false;
+  }
+
+  if (typeKind == kTypePointer) {
+    MIRPtrType &ptrType = static_cast<MIRPtrType&>(*this);
+    MIRPtrType &ptrTypeIt = static_cast<MIRPtrType&>(type);
+    if (ptrType.GetPointedTyIdx() == ptrTypeIt.GetPointedTyIdx()) {
+      return true;
+    } else {
+      MIRType &mirTypeIt = *GlobalTables::GetTypeTable().GetTypeFromTyIdx(ptrTypeIt.GetPointedTyIdx());
+      return GlobalTables::GetTypeTable().GetTypeFromTyIdx(ptrType.GetPointedTyIdx())->IsOfSameType(mirTypeIt);
+    }
+  } else if (typeKind == kTypeJArray) {
+    MIRJarrayType &atype1 = static_cast<MIRJarrayType&>(*this);
+    MIRJarrayType &atype2 = static_cast<MIRJarrayType&>(type);
+    if (atype1.GetDim() != atype2.GetDim()) {
+      return false;
+    }
+    return atype1.GetElemType()->IsOfSameType(*atype2.GetElemType());
+  } else {
+    return tyIdx == type.tyIdx;
+  }
+}
+
 inline void DumpTypeName(GStrIdx strIdx, bool isLocal) {
   LogInfo::MapleLogger() << ((isLocal) ? "%" : "$") << GlobalTables::GetStrTable().GetStringFromStrIdx(strIdx);
 }

@@ -13,6 +13,7 @@ src_libmplir = [
   "src/global_tables.cpp",
   "src/intrinsics.cpp",
   "src/lexer.cpp",
+  "src/mir_symbol_builder.cpp",
   "src/mir_builder.cpp",
   "src/mir_const.cpp",
   "src/mir_function.cpp",

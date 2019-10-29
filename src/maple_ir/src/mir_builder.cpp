@@ -15,11 +15,13 @@
 #include "mir_builder.h"
 #include <string>
 #include <iostream>
+#include "mir_symbol_builder.h"
 
 namespace maple {
 // This is for compiler-generated metadata 1-level struct
 void MIRBuilder::AddIntFieldConst(const MIRStructType &sType, MIRAggConst &newConst, uint32 fieldID, int64 constValue) {
-  MIRConst *fieldConst = mirModule->GetMemPool()->New<MIRIntConst>(constValue, *sType.GetElemType(fieldID - 1), fieldID);
+  MIRConst *fieldConst =
+      mirModule->GetMemPool()->New<MIRIntConst>(constValue, *sType.GetElemType(fieldID - 1), fieldID);
   newConst.GetConstVec().push_back(fieldConst);
 }
 
@@ -57,35 +59,7 @@ bool MIRBuilder::TraverseToNamedField(MIRStructType &structType, GStrIdx nameIdx
 }
 
 bool MIRBuilder::IsOfSameType(MIRType &type1, MIRType &type2) {
-  if (type2.GetKind() != type1.GetKind()) {
-    return false;
-  }
-  switch (type1.GetKind()) {
-    case kTypeScalar: {
-      return (type1.GetTypeIndex() == type2.GetTypeIndex());
-    }
-    case kTypePointer: {
-      MIRPtrType &ptrType = static_cast<MIRPtrType&>(type1);
-      MIRPtrType &ptrTypeIt = static_cast<MIRPtrType&>(type2);
-      if (ptrType.GetPointedTyIdx() == ptrTypeIt.GetPointedTyIdx()) {
-        return true;
-      } else {
-        return IsOfSameType(*GlobalTables::GetTypeTable().GetTypeFromTyIdx(ptrType.GetPointedTyIdx()),
-                            *GlobalTables::GetTypeTable().GetTypeFromTyIdx(ptrTypeIt.GetPointedTyIdx()));
-      }
-    }
-    case kTypeJArray: {
-      MIRJarrayType &atype1 = static_cast<MIRJarrayType&>(type1);
-      MIRJarrayType &atype2 = static_cast<MIRJarrayType&>(type2);
-      if (atype1.GetDim() != atype2.GetDim()) {
-        return false;
-      }
-      return IsOfSameType(*atype1.GetElemType(), *atype2.GetElemType());
-    }
-    default: {
-      return type1.GetTypeIndex() == type2.GetTypeIndex();
-    }
-  }
+  return type1.IsOfSameType(type2);
 }
 
 // traverse parent first but match self first.
@@ -120,9 +94,7 @@ void MIRBuilder::TraverseToNamedFieldWithType(MIRStructType &structType, GStrIdx
       }
     }
 
-    if (fieldType->GetKind() == kTypeStruct || fieldType->GetKind() == kTypeStructIncomplete ||
-        fieldType->GetKind() == kTypeClass || fieldType->GetKind() == kTypeClassIncomplete ||
-        fieldType->GetKind() == kTypeInterface || fieldType->GetKind() == kTypeInterfaceIncomplete) {
+    if (fieldType->IsStructType()) {
       MIRStructType *subStructType = static_cast<MIRStructType*>(fieldType);
       TraverseToNamedFieldWithType(*subStructType, nameIdx, typeIdx, fieldID, idx);
     }
@@ -172,19 +144,13 @@ bool MIRBuilder::TraverseToNamedFieldWithTypeAndMatchStyle(MIRStructType &struct
     MIRType *fieldType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(fieldTyIdx);
     ASSERT(fieldType != nullptr, "fieldType is null");
     if (matchStyle && structType.GetFieldsElemt(fieldIdx).first == nameIdx) {
-      if ((typeIdx == 0 || fieldTyIdx == typeIdx)) {
-        return true;
-      }
-      // for pointer type, check their pointed type
-      MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(typeIdx);
-      if (IsOfSameType(*type, *fieldType)) {
+      if (typeIdx == 0 || fieldTyIdx == typeIdx ||
+          IsOfSameType(*GlobalTables::GetTypeTable().GetTypeFromTyIdx(typeIdx), *fieldType)) {
         return true;
       }
     }
     unsigned int style = matchStyle & kMatchAnyField;
-    if (fieldType->GetKind() == kTypeStruct || fieldType->GetKind() == kTypeStructIncomplete ||
-        fieldType->GetKind() == kTypeClass || fieldType->GetKind() == kTypeClassIncomplete ||
-        fieldType->GetKind() == kTypeInterface || fieldType->GetKind() == kTypeInterfaceIncomplete) {
+    if (fieldType->IsStructType()) {
       MIRStructType *subStructType = static_cast<MIRStructType*>(fieldType);
       if (TraverseToNamedFieldWithTypeAndMatchStyle(*subStructType, nameIdx, typeIdx, fieldID, style)) {
         return true;
@@ -290,6 +256,59 @@ MIRFunction *MIRBuilder::GetFunctionFromStidx(StIdx stIdx) {
   return funcSymbol != nullptr ? GetFunctionFromSymbol(*funcSymbol) : nullptr;
 }
 
+MIRFunction *MIRBuilder::CreateFunction(const std::string &name, const MIRType &returnType, const ArgVector &arguments,
+                                        bool isVarg, bool createBody) const {
+  MIRSymbol *funcSymbol = GlobalTables::GetGsymTable().CreateSymbol(kScopeGlobal);
+  CHECK_FATAL(funcSymbol != nullptr, "Failed to create MIRSymbol");
+  GStrIdx strIdx = GetOrCreateStringIndex(name.c_str());
+  funcSymbol->SetNameStrIdx(strIdx);
+  if (!GlobalTables::GetGsymTable().AddToStringSymbolMap(*funcSymbol)) {
+    return nullptr;
+  }
+  funcSymbol->SetStorageClass(kScText);
+  funcSymbol->SetSKind(kStFunc);
+  MIRFunction *fn = mirModule->GetMemPool()->New<MIRFunction>(mirModule, funcSymbol->GetStIdx());
+  fn->Init();
+  fn->SetPuidx(GlobalTables::GetFunctionTable().GetFuncTable().size());
+  GlobalTables::GetFunctionTable().GetFuncTable().push_back(fn);
+  std::vector<TyIdx> funcVecType;
+  std::vector<TypeAttrs> funcVecAttrs;
+  for (size_t i = 0; i < arguments.size(); i++) {
+    MIRSymbol *argSymbol = fn->GetSymTab()->CreateSymbol(kScopeLocal);
+    argSymbol->SetNameStrIdx(GetOrCreateStringIndex(arguments[i].first.c_str()));
+    MIRType *ty = arguments[i].second;
+    argSymbol->SetTyIdx(ty->GetTypeIndex());
+    argSymbol->SetStorageClass(kScFormal);
+    argSymbol->SetSKind(kStVar);
+    (void)fn->GetSymTab()->AddToStringSymbolMap(*argSymbol);
+    fn->AddFormal(argSymbol);
+    funcVecType.push_back(ty->GetTypeIndex());
+    funcVecAttrs.push_back(TypeAttrs());
+  }
+  funcSymbol->SetTyIdx(GlobalTables::GetTypeTable().GetOrCreateFunctionType(
+      *mirModule, returnType.GetTypeIndex(), funcVecType, funcVecAttrs, isVarg)->GetTypeIndex());
+  MIRFuncType *funcType = static_cast<MIRFuncType*>(funcSymbol->GetType());
+  fn->SetMIRFuncType(funcType);
+  funcSymbol->SetFunction(fn);
+  if (createBody) {
+    fn->NewBody();
+  }
+  return fn;
+}
+
+MIRFunction *MIRBuilder::CreateFunction(const StIdx stIdx, bool addToTable) const {
+  MIRFunction *fn = mirModule->GetMemPool()->New<MIRFunction>(mirModule, stIdx);
+  fn->Init();
+  fn->SetPuidx(GlobalTables::GetFunctionTable().GetFuncTable().size());
+  if (addToTable) {
+    GlobalTables::GetFunctionTable().GetFuncTable().push_back(fn);
+  }
+
+  MIRFuncType *funcType = mirModule->GetMemPool()->New<MIRFuncType>();
+  fn->SetMIRFuncType(funcType);
+  return fn;
+}
+
 MIRSymbol *MIRBuilder::GetOrCreateGlobalDecl(const std::string &str, const TyIdx &tyIdx, bool &created) const {
   GStrIdx strIdx = GetStringIndex(str);
   if (strIdx != 0) {
@@ -346,40 +365,18 @@ MIRSymbol *MIRBuilder::GetOrCreateLocalDecl(const std::string &str, MIRType &typ
 }
 
 MIRSymbol *MIRBuilder::CreateLocalDecl(const std::string &str, const MIRType &type) {
-  GStrIdx stridx = GetOrCreateStringIndex(str);
   MIRFunction *currentFunctionInner = GetCurrentFunctionNotNull();
-  MIRSymbolTable *symbolTable = currentFunctionInner->GetSymTab();
-  MIRSymbol *st = symbolTable->CreateSymbol(kScopeLocal);
-  st->SetNameStrIdx(stridx);
-  st->SetTyIdx(type.GetTypeIndex());
-  (void)symbolTable->AddToStringSymbolMap(*st);
-  st->SetStorageClass(kScAuto);
-  st->SetSKind(kStVar);
-  return st;
+  return MIRSymbolBuilder::Instance().CreateLocalDecl(*currentFunctionInner->GetSymTab(),
+                                                      GetOrCreateStringIndex(str), type);
 }
 
 MIRSymbol *MIRBuilder::GetGlobalDecl(const std::string &str) {
-  GStrIdx strIdx = GetStringIndex(str);
-  if (strIdx != 0) {
-    StIdx stidx = GlobalTables::GetGsymTable().GetStIdxFromStrIdx(strIdx);
-    if (stidx.FullIdx() != 0) {
-      return GlobalTables::GetGsymTable().GetSymbolFromStidx(stidx.Idx());
-    }
-  }
-  return nullptr;
+  return MIRSymbolBuilder::Instance().GetGlobalDecl(GetStringIndex(str));
 }
 
 MIRSymbol *MIRBuilder::GetLocalDecl(const std::string &str) {
   MIRFunction *currentFunctionInner = GetCurrentFunctionNotNull();
-  MIRSymbolTable *symbolTable = currentFunctionInner->GetSymTab();
-  GStrIdx strIdx = GetStringIndex(str);
-  if (strIdx != 0) {
-    StIdx stidx = symbolTable->GetStIdxFromStrIdx(strIdx);
-    if (stidx.FullIdx() != 0) {
-      return symbolTable->GetSymbolFromStIdx(stidx.Idx());
-    }
-  }
-  return nullptr;
+  return MIRSymbolBuilder::Instance().GetLocalDecl(*currentFunctionInner->GetSymTab(), GetStringIndex(str));
 }
 
 // search the scope hierarchy
@@ -400,14 +397,7 @@ MIRSymbol *MIRBuilder::GetDecl(const std::string &str) {
 }
 
 MIRSymbol *MIRBuilder::CreateGlobalDecl(const std::string &str, const MIRType &type, MIRStorageClass sc) {
-  GStrIdx strIdx = GetOrCreateStringIndex(str);
-  MIRSymbol *st = GlobalTables::GetGsymTable().CreateSymbol(kScopeGlobal);
-  st->SetNameStrIdx(strIdx);
-  st->SetTyIdx(type.GetTypeIndex());
-  (void)GlobalTables::GetGsymTable().AddToStringSymbolMap(*st);
-  st->SetStorageClass(sc);
-  st->SetSKind(kStVar);
-  return st;
+  return MIRSymbolBuilder::Instance().CreateGlobalDecl(GetOrCreateStringIndex(str), type, sc);
 }
 
 MIRSymbol *MIRBuilder::GetOrCreateGlobalDecl(const std::string &str, const MIRType &type) {
@@ -426,6 +416,61 @@ MIRSymbol *MIRBuilder::GetOrCreateGlobalDecl(const std::string &str, const MIRTy
     st->SetKonst(cst);
   }
   return st;
+}
+
+MIRSymbol *MIRBuilder::GetSymbolFromEnclosingScope(StIdx stIdx) const {
+  if (stIdx.FullIdx() == 0) {
+    return nullptr;
+  }
+  if (stIdx.Islocal()) {
+    MIRFunction *fun = GetCurrentFunctionNotNull();
+    MIRSymbol *st = fun->GetSymTab()->GetSymbolFromStIdx(stIdx.Idx());
+    if (st != nullptr) {
+      return st;
+    }
+  }
+  return GlobalTables::GetGsymTable().GetSymbolFromStidx(stIdx.Idx());
+}
+
+MIRSymbol *MIRBuilder::GetSymbol(TyIdx tyIdx, const std::string &name, MIRSymKind mClass, MIRStorageClass sClass,
+                                 uint8 scpID, bool sameType = false) const {
+  return GetSymbol(tyIdx, GetOrCreateStringIndex(name), mClass, sClass, scpID, sameType);
+}
+
+// when sametype is true, it means match everything the of the symbol
+MIRSymbol *MIRBuilder::GetSymbol(TyIdx tyIdx, GStrIdx strIdx, MIRSymKind mClass, MIRStorageClass sClass,
+                                 uint8 scpID, bool sameType = false) const {
+  return MIRSymbolBuilder::Instance().GetSymbol(tyIdx, strIdx, mClass, sClass, scpID, sameType);
+}
+
+MIRSymbol *MIRBuilder::GetOrCreateSymbol(TyIdx tyIdx, const std::string &name, MIRSymKind mClass,
+                                         MIRStorageClass sClass, MIRFunction *func, uint8 scpID,
+                                         bool sametype = false) const {
+  return GetOrCreateSymbol(tyIdx, GetOrCreateStringIndex(name), mClass, sClass, func, scpID, sametype);
+}
+
+MIRSymbol *MIRBuilder::GetOrCreateSymbol(TyIdx tyIdx, GStrIdx strIdx, MIRSymKind mClass, MIRStorageClass sClass,
+                                         MIRFunction *func, uint8 scpID, bool sameType = false) const {
+  if (MIRSymbol *st = GetSymbol(tyIdx, strIdx, mClass, sClass, scpID, sameType)) {
+    return st;
+  }
+  return CreateSymbol(tyIdx, strIdx, mClass, sClass, func, scpID);
+}
+
+// when func is null, create global symbol, otherwise create local symbol
+MIRSymbol *MIRBuilder::CreateSymbol(TyIdx tyIdx, const std::string &name, MIRSymKind mClass, MIRStorageClass sClass,
+                                    MIRFunction *func, uint8 scpID) const {
+  return CreateSymbol(tyIdx, GetOrCreateStringIndex(name), mClass, sClass, func, scpID);
+}
+
+// when func is null, create global symbol, otherwise create local symbol
+MIRSymbol *MIRBuilder::CreateSymbol(TyIdx tyIdx, GStrIdx strIdx, MIRSymKind mClass, MIRStorageClass sClass,
+                                    MIRFunction *func, uint8 scpID) const {
+  return MIRSymbolBuilder::Instance().CreateSymbol(tyIdx, strIdx, mClass, sClass, func, scpID);
+}
+
+MIRSymbol *MIRBuilder::CreatePregFormalSymbol(TyIdx tyIdx, PregIdx pRegIdx, MIRFunction &func) const {
+  return MIRSymbolBuilder::Instance().CreatePregFormalSymbol(tyIdx, pRegIdx, func);
 }
 
 ConstvalNode *MIRBuilder::CreateIntConst(int64 val, PrimType pty) {
@@ -466,7 +511,7 @@ ConstvalNode *MIRBuilder::CreateAddrofConst(BaseNode &e) {
   MIRFunction *currentFunctionInner = GetCurrentFunctionNotNull();
 
   // determine the type of 'e' and create a pointer type, accordingly
-  AddrofNode &aNode = static_cast<AddrofNode&>(e);
+  AddrofNode &aNode = static_cast<AddrofNode &>(e);
   MIRSymbol *var = currentFunctionInner->GetLocalOrGlobalSymbol(aNode.GetStIdx());
   TyIdx ptyIdx = var->GetTyIdx();
   MIRPtrType ptrType(ptyIdx);
@@ -479,7 +524,7 @@ ConstvalNode *MIRBuilder::CreateAddrofConst(BaseNode &e) {
 ConstvalNode *MIRBuilder::CreateAddroffuncConst(const BaseNode &e) {
   ASSERT(e.GetOpCode() == OP_addroffunc, "illegal op for addroffunc const");
 
-  const AddroffuncNode &aNode = static_cast<const AddroffuncNode&>(e);
+  const AddroffuncNode &aNode = static_cast<const AddroffuncNode &>(e);
   MIRFunction *f = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(aNode.GetPUIdx());
   TyIdx ptyIdx = f->GetFuncSymbol()->GetTyIdx();
   MIRPtrType ptrType(ptyIdx);
@@ -491,7 +536,7 @@ ConstvalNode *MIRBuilder::CreateAddroffuncConst(const BaseNode &e) {
 
 ConstvalNode *MIRBuilder::CreateStrConst(const BaseNode &e) {
   ASSERT(e.GetOpCode() == OP_conststr, "illegal op for conststr const");
-  UStrIdx strIdx = static_cast<const ConststrNode&>(e).GetStrIdx();
+  UStrIdx strIdx = static_cast<const ConststrNode &>(e).GetStrIdx();
   CHECK_FATAL(PTY_u8 < GlobalTables::GetTypeTable().GetTypeTable().size(),
               "index is out of range in MIRBuilder::CreateStrConst");
   TyIdx ptyidx = GlobalTables::GetTypeTable().GetTypeFromTyIdx(TyIdx(PTY_u8))->GetTypeIndex();
@@ -504,7 +549,7 @@ ConstvalNode *MIRBuilder::CreateStrConst(const BaseNode &e) {
 
 ConstvalNode *MIRBuilder::CreateStr16Const(const BaseNode &e) {
   ASSERT(e.GetOpCode() == OP_conststr16, "illegal op for conststr16 const");
-  U16StrIdx strIdx = static_cast<const Conststr16Node&>(e).GetStrIdx();
+  U16StrIdx strIdx = static_cast<const Conststr16Node &>(e).GetStrIdx();
   CHECK_FATAL(PTY_u16 < GlobalTables::GetTypeTable().GetTypeTable().size(),
               "index out of range in MIRBuilder::CreateStr16Const");
   TyIdx ptyIdx = GlobalTables::GetTypeTable().GetTypeFromTyIdx(TyIdx(PTY_u16))->GetTypeIndex();
@@ -513,157 +558,6 @@ ConstvalNode *MIRBuilder::CreateStr16Const(const BaseNode &e) {
   MIRType *exprty = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ptyIdx);
   MIRStr16Const *mirConst = mirModule->GetMemPool()->New<MIRStr16Const>(strIdx, *exprty);
   return GetCurrentFuncCodeMp()->New<ConstvalNode>(PTY_ptr, mirConst);
-}
-
-MIRSymbol *MIRBuilder::GetSymbolFromEnclosingScope(StIdx stIdx) {
-  if (stIdx.FullIdx() == 0) {
-    return nullptr;
-  }
-  if (stIdx.Islocal()) {
-    MIRFunction *fun = GetCurrentFunctionNotNull();
-    MIRSymbol *st = fun->GetSymTab()->GetSymbolFromStIdx(stIdx.Idx());
-    if (st != nullptr) {
-      return st;
-    }
-  }
-  return GlobalTables::GetGsymTable().GetSymbolFromStidx(stIdx.Idx());
-}
-
-MIRSymbol *MIRBuilder::GetSymbol(TyIdx tyIdx, const std::string &name, MIRSymKind mClass, MIRStorageClass sClass,
-                                 uint8 scpID, bool sameType = false) {
-  return GetSymbol(tyIdx, GetOrCreateStringIndex(name), mClass, sClass, scpID, sameType);
-}
-
-// when sametype is true, it means match everything the of the symbol
-MIRSymbol *MIRBuilder::GetSymbol(TyIdx tyIdx, GStrIdx strIdx, MIRSymKind mClass, MIRStorageClass sClass,
-                                 uint8 scpID, bool sameType = false) {
-  if (scpID != kScopeGlobal) {
-    ERR(kLncErr, "not yet implemented");
-    return nullptr;
-  }
-
-  MIRSymbol *st = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(strIdx);
-  if (st == nullptr || st->GetTyIdx() != tyIdx) {
-    return nullptr;
-  }
-
-  if (sameType) {
-    if (st->GetStorageClass() == sClass && st->GetSKind() == mClass) {
-      return st;
-    }
-    return nullptr;
-  }
-  ASSERT(mClass == st->GetSKind(),
-         "trying to create a new symbol that has the same name and GtyIdx. might cause problem");
-  ASSERT(sClass == st->GetStorageClass(),
-         "trying to create a new symbol that has the same name and tyIdx. might cause problem");
-  return st;
-}
-
-MIRSymbol *MIRBuilder::GetOrCreateSymbol(TyIdx tyIdx, const std::string &name, MIRSymKind mClass,
-                                         MIRStorageClass sClass, MIRFunction *func, uint8 scpID,
-                                         bool sametype = false) {
-  return GetOrCreateSymbol(tyIdx, GetOrCreateStringIndex(name), mClass, sClass, func, scpID, sametype);
-}
-
-MIRSymbol *MIRBuilder::GetOrCreateSymbol(TyIdx tyIdx, GStrIdx strIdx, MIRSymKind mClass, MIRStorageClass sClass,
-                                         MIRFunction *func, uint8 scpID, bool sameType = false) {
-  if (MIRSymbol *st = GetSymbol(tyIdx, strIdx, mClass, sClass, scpID, sameType)) {
-    return st;
-  }
-  return CreateSymbol(tyIdx, strIdx, mClass, sClass, func, scpID);
-}
-
-// when func is null, create global symbol, otherwise create local symbol
-MIRSymbol *MIRBuilder::CreateSymbol(TyIdx tyIdx, const std::string &name, MIRSymKind mClass, MIRStorageClass sClass,
-                                    MIRFunction *func, uint8 scpID) {
-  return CreateSymbol(tyIdx, GetOrCreateStringIndex(name), mClass, sClass, func, scpID);
-}
-
-// when func is null, create global symbol, otherwise create local symbol
-MIRSymbol *MIRBuilder::CreateSymbol(TyIdx tyIdx, GStrIdx strIdx, MIRSymKind mClass, MIRStorageClass sClass,
-                                    MIRFunction *func, uint8 scpID) {
-  MIRSymbol *st = nullptr;
-  if (func) {
-    st = func->GetSymTab()->CreateSymbol(scpID);
-  } else {
-    st = GlobalTables::GetGsymTable().CreateSymbol(scpID);
-  }
-  CHECK_FATAL(st != nullptr, "Failed to create MIRSymbol");
-  st->SetStorageClass(sClass);
-  st->SetSKind(mClass);
-  st->SetNameStrIdx(strIdx);
-  st->SetTyIdx(tyIdx);
-  if (func) {
-    (void)func->GetSymTab()->AddToStringSymbolMap(*st);
-  } else {
-    (void)GlobalTables::GetGsymTable().AddToStringSymbolMap(*st);
-  }
-  return st;
-}
-
-MIRSymbol *MIRBuilder::CreatePregFormalSymbol(TyIdx tyIdx, PregIdx pRegIdx, MIRFunction &func) {
-  MIRSymbol *st = func.GetSymTab()->CreateSymbol(kScopeLocal);
-  CHECK_FATAL(st != nullptr, "Failed to create MIRSymbol");
-  st->SetStorageClass(kScFormal);
-  st->SetSKind(kStPreg);
-  st->SetTyIdx(tyIdx);
-  MIRPregTable *pRegTab = func.GetPregTab();
-  st->SetPreg(pRegTab->PregFromPregIdx(pRegIdx));
-  return st;
-}
-
-MIRFunction *MIRBuilder::CreateFunction(const std::string &name, const MIRType &returnType, const ArgVector &arguments,
-                                        bool isVarg, bool createBody) {
-  MIRSymbol *funcSymbol = GlobalTables::GetGsymTable().CreateSymbol(kScopeGlobal);
-  CHECK_FATAL(funcSymbol != nullptr, "Failed to create MIRSymbol");
-  GStrIdx strIdx = GetOrCreateStringIndex(name.c_str());
-  funcSymbol->SetNameStrIdx(strIdx);
-  if (!GlobalTables::GetGsymTable().AddToStringSymbolMap(*funcSymbol)) {
-    return nullptr;
-  }
-  funcSymbol->SetStorageClass(kScText);
-  funcSymbol->SetSKind(kStFunc);
-  MIRFunction *fn = mirModule->GetMemPool()->New<MIRFunction>(mirModule, funcSymbol->GetStIdx());
-  fn->Init();
-  fn->SetPuidx(GlobalTables::GetFunctionTable().GetFuncTable().size());
-  GlobalTables::GetFunctionTable().GetFuncTable().push_back(fn);
-  std::vector<TyIdx> funcVecType;
-  std::vector<TypeAttrs> funcVecAttrs;
-  for (size_t i = 0; i < arguments.size(); i++) {
-    MIRSymbol *argSymbol = fn->GetSymTab()->CreateSymbol(kScopeLocal);
-    argSymbol->SetNameStrIdx(GetOrCreateStringIndex(arguments[i].first.c_str()));
-    MIRType *ty = arguments[i].second;
-    argSymbol->SetTyIdx(ty->GetTypeIndex());
-    argSymbol->SetStorageClass(kScFormal);
-    argSymbol->SetSKind(kStVar);
-    (void)fn->GetSymTab()->AddToStringSymbolMap(*argSymbol);
-    fn->AddFormal(argSymbol);
-    funcVecType.push_back(ty->GetTypeIndex());
-    funcVecAttrs.push_back(TypeAttrs());
-  }
-  funcSymbol->SetTyIdx(GlobalTables::GetTypeTable().GetOrCreateFunctionType(
-      *mirModule, returnType.GetTypeIndex(), funcVecType, funcVecAttrs, isVarg)->GetTypeIndex());
-  MIRFuncType *funcType = dynamic_cast<MIRFuncType*>(funcSymbol->GetType());
-  fn->SetMIRFuncType(funcType);
-  funcSymbol->SetFunction(fn);
-  if (createBody) {
-    fn->NewBody();
-  }
-  return fn;
-}
-
-MIRFunction *MIRBuilder::CreateFunction(const StIdx stIdx, bool addToTable) {
-  MIRFunction *fn = mirModule->GetMemPool()->New<MIRFunction>(mirModule, stIdx);
-  fn->Init();
-  fn->SetPuidx(GlobalTables::GetFunctionTable().GetFuncTable().size());
-  if (addToTable) {
-    GlobalTables::GetFunctionTable().GetFuncTable().push_back(fn);
-  }
-
-  MIRFuncType *funcType = mirModule->GetMemPool()->New<MIRFuncType>();
-  fn->SetMIRFuncType(funcType);
-  return fn;
 }
 
 SizeoftypeNode *MIRBuilder::CreateExprSizeoftype(const MIRType &type) {
@@ -1059,6 +953,26 @@ CatchNode *MIRBuilder::CreateStmtCatch(const MapleVector<TyIdx> &tyIdxVec) {
   return GetCurrentFuncCodeMp()->New<CatchNode>(tyIdxVec);
 }
 
+LabelNode *MIRBuilder::CreateStmtLabel(LabelIdx labIdx) {
+  return GetCurrentFuncCodeMp()->New<LabelNode>(labIdx);
+}
+
+StmtNode *MIRBuilder::CreateStmtComment(const std::string &cmnt) {
+  return GetCurrentFuncCodeMp()->New<CommentNode>(*GetCurrentFuncCodeMpAllocator(), cmnt);
+}
+
+AddrofNode *MIRBuilder::CreateAddrof(const MIRSymbol &st, PrimType pty) {
+  return GetCurrentFuncCodeMp()->New<AddrofNode>(OP_addrof, pty, st.GetStIdx(), 0);
+}
+
+AddrofNode *MIRBuilder::CreateDread(const MIRSymbol &st, PrimType pty) {
+  return GetCurrentFuncCodeMp()->New<AddrofNode>(OP_dread, pty, st.GetStIdx(), 0);
+}
+
+CondGotoNode *MIRBuilder::CreateStmtCondGoto(BaseNode *cond, Opcode op, LabelIdx labIdx) {
+  return GetCurrentFuncCodeMp()->New<CondGotoNode>(op, labIdx, cond);
+}
+
 LabelIdx MIRBuilder::GetOrCreateMIRLabel(const std::string &name) {
   GStrIdx stridx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(name);
   MIRFunction *currentFunctionInner = GetCurrentFunctionNotNull();
@@ -1077,30 +991,10 @@ LabelIdx MIRBuilder::CreateLabIdx(MIRFunction &mirFunc) {
   return lidx;
 }
 
-LabelNode *MIRBuilder::CreateStmtLabel(LabelIdx labIdx) {
-  return GetCurrentFuncCodeMp()->New<LabelNode>(labIdx);
-}
-
-StmtNode *MIRBuilder::CreateStmtComment(const std::string &cmnt) {
-  return GetCurrentFuncCodeMp()->New<CommentNode>(*GetCurrentFuncCodeMpAllocator(), cmnt);
-}
-
 void MIRBuilder::AddStmtInCurrentFunctionBody(StmtNode &stmt) {
   MIRFunction *fun = GetCurrentFunctionNotNull();
   stmt.GetSrcPos().CondSetLineNum(lineNum);
   fun->GetBody()->AddStatement(&stmt);
-}
-
-AddrofNode *MIRBuilder::CreateAddrof(const MIRSymbol &st, PrimType pty) {
-  return GetCurrentFuncCodeMp()->New<AddrofNode>(OP_addrof, pty, st.GetStIdx(), 0);
-}
-
-AddrofNode *MIRBuilder::CreateDread(const MIRSymbol &st, PrimType pty) {
-  return GetCurrentFuncCodeMp()->New<AddrofNode>(OP_dread, pty, st.GetStIdx(), 0);
-}
-
-CondGotoNode *MIRBuilder::CreateStmtCondGoto(BaseNode *cond, Opcode op, LabelIdx labIdx) {
-  return GetCurrentFuncCodeMp()->New<CondGotoNode>(op == OP_brtrue ? OP_brtrue : OP_brfalse, labIdx, cond);
 }
 
 MemPool *MIRBuilder::GetCurrentFuncCodeMp() {

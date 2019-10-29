@@ -495,6 +495,7 @@ class MIRType {
   }
 
   bool ValidateClassOrInterface(const std::string &className, bool noWarning) const;
+  bool IsOfSameType(MIRType &type);
   const std::string &GetName(void) const;
   virtual std::string GetMplTypeName() const;
   virtual std::string GetCompactMplTypeName() const;

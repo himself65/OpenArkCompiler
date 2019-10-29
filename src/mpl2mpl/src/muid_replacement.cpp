@@ -926,7 +926,8 @@ void MUIDReplacement::ReplaceDassign(MIRFunction &currentFunc, DassignNode &dass
   MIRType *mVoidPtr = GlobalTables::GetTypeTable().GetVoidPtr();
   CHECK_FATAL(mVoidPtr != nullptr, "null ptr check");
   BaseNode *ireadPtrExpr =
-      builder->CreateExprIread(*mVoidPtr, *GlobalTables::GetTypeTable().GetOrCreatePointerType(*elemType), 1, arrayExpr);
+      builder->CreateExprIread(*mVoidPtr, *GlobalTables::GetTypeTable().GetOrCreatePointerType(*elemType),
+                               1, arrayExpr);
   PregIdx symPtrPreg = 0;
   MIRSymbol *symPtrSym = nullptr;
   BaseNode *destExpr = nullptr;
