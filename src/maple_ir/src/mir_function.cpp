@@ -32,6 +32,39 @@ void FuncAttrs::DumpAttributes() const {
 #undef FUNC_ATTR
 }
 
+void MIRFunction::DumpFlavorLoweredThanMmpl() const {
+  LogInfo::MapleLogger() << " (";
+  // Dump arguments
+  size_t argSize = GetParamSize();
+  for (size_t i = 0; i < argSize; ++i) {
+    MIRSymbol *symbol = formals[i];
+    if (symbol != nullptr) {
+      if (symbol->GetSKind() != kStPreg) {
+        LogInfo::MapleLogger() << "var %" << symbol->GetName() << " ";
+      } else {
+        LogInfo::MapleLogger() << "reg %" << symbol->GetPreg()->GetPregNo() << " ";
+      }
+    }
+    constexpr int kIndent = 2;
+    MIRType *ty = GetNthParamType(i);
+    ty->Dump(kIndent);
+    TypeAttrs tA = GetNthParamAttr(i);
+    tA.DumpAttributes();
+    if (i != (argSize - 1)) {
+      LogInfo::MapleLogger() << ", ";
+    }
+  }
+  if (IsVarargs()) {
+    if (argSize == 0) {
+      LogInfo::MapleLogger() << "...";
+    } else {
+      LogInfo::MapleLogger() << ", ...";
+    }
+  }
+  LogInfo::MapleLogger() << ") ";
+  GetReturnType()->Dump(1);
+}
+
 void MIRFunction::Dump(bool withoutBody) {
   // skip the functions that are added during process methods in
   // class and interface decls.  these has nothing in formals
@@ -48,36 +81,7 @@ void MIRFunction::Dump(bool withoutBody) {
   LogInfo::MapleLogger() << "func " << "&" << fnSt->GetName();
   funcAttrs.DumpAttributes();
   if (module->GetFlavor() < kMmpl) {
-    LogInfo::MapleLogger() << " (";
-    // Dump arguments
-    uint32 argSize = GetParamSize();
-    for (uint32 i = 0; i < argSize; i++) {
-      MIRSymbol *symbol = formals[i];
-      if (symbol != nullptr) {
-        if (symbol->GetSKind() != kStPreg) {
-          LogInfo::MapleLogger() << "var %" << symbol->GetName() << " ";
-        } else {
-          LogInfo::MapleLogger() << "reg %" << symbol->GetPreg()->GetPregNo() << " ";
-        }
-      }
-      constexpr int kIndent = 2;
-      MIRType *ty = GetNthParamType(i);
-      ty->Dump(kIndent);
-      TypeAttrs tA = GetNthParamAttr(i);
-      tA.DumpAttributes();
-      if (i != (argSize - 1)) {
-        LogInfo::MapleLogger() << ", ";
-      }
-    }
-    if (IsVarargs()) {
-      if (argSize == 0) {
-        LogInfo::MapleLogger() << "...";
-      } else {
-        LogInfo::MapleLogger() << ", ...";
-      }
-    }
-    LogInfo::MapleLogger() << ") ";
-    GetReturnType()->Dump(1);
+    DumpFlavorLoweredThanMmpl();
   }
   // codeMemPool is nullptr, means maple_ir has been released for memory's sake
   if (codeMemPool == nullptr) {
@@ -306,7 +310,7 @@ void MIRFunction::NewBody() {
   MIRLabelTable *oldLabelTable = GetLabelTab();
   symTab = dataMemPool->New<MIRSymbolTable>(&dataMPAllocator);
   SetPregTab(dataMemPool->New<MIRPregTable>(module, &dataMPAllocator));
-  typeNameTab = dataMemPool->New<MIRTypeNameTable>(&dataMPAllocator);
+  typeNameTab = dataMemPool->New<MIRTypeNameTable>(dataMPAllocator);
   SetLabelTab(dataMemPool->New<MIRLabelTable>(&dataMPAllocator));
   if (oldSymTable != nullptr) {
     for (size_t i = 1; i < oldSymTable->GetSymbolTableSize(); i++) {

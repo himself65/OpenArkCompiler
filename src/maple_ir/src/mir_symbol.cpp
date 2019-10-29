@@ -258,14 +258,9 @@ bool MIRSymbol::IgnoreRC() const {
 }
 
 void MIRSymbol::Dump(bool isLocal, int32 indent, bool suppressinit) const {
-  if (GetStorageClass() == kScUnused) {
-    return;
-  }
-  if (GetStorageClass() == kScFormal) {
-    return;
-  }
-  // no need for symbols of extern functions, only need declarations
-  if (GetStorageClass() == kScExtern && sKind == kStFunc) {
+  // exclude unused symbols, formal symbols and extern functions
+  if (GetStorageClass() == kScUnused || GetStorageClass() == kScFormal ||
+      (GetStorageClass() == kScExtern && sKind == kStFunc)) {
     return;
   }
   if (GetTyIdx().GetIdx() >= GlobalTables::GetTypeTable().GetTypeTable().size()) {
@@ -301,14 +296,14 @@ void MIRSymbol::Dump(bool isLocal, int32 indent, bool suppressinit) const {
   typeAttrs.DumpAttributes();
   if (sKind == kStJavaClass || sKind == kStJavaInterface || GetStorageClass() == kScTypeInfoName ||
       GetStorageClass() == kScTypeInfo || GetStorageClass() == kScTypeCxxAbi) {
-    LogInfo::MapleLogger() << std::endl;
+    LogInfo::MapleLogger() << '\n';
     return;
   }
   if (IsConst() && !suppressinit && !(IsLiteral() && GetStorageClass() == kScExtern)) {
     LogInfo::MapleLogger() << " = ";
     GetKonst()->Dump();
   }
-  LogInfo::MapleLogger() << std::endl;
+  LogInfo::MapleLogger() << '\n';
 }
 
 void MIRSymbol::DumpAsLiteralVar(int32 indent) const {

@@ -65,17 +65,17 @@ class AliasElem {
     nextLevNotAllDefsSeen = allDefsSeen;
   }
 
-  const MapleSet<uint> *GetClassSet() const {
+  const MapleSet<unsigned int> *GetClassSet() const {
     return classSet;
   }
-  void AddClassToSet(uint id) {
+  void AddClassToSet(unsigned int id) {
     classSet->emplace(id);
   }
 
-  const MapleSet<uint> *GetAssignSet() const {
+  const MapleSet<unsigned int> *GetAssignSet() const {
     return assignSet;
   }
-  void AddAssignToSet(uint id) {
+  void AddAssignToSet(unsigned int id) {
     assignSet->emplace(id);
   }
 
@@ -84,8 +84,8 @@ class AliasElem {
   OriginalSt &ost;
   bool notAllDefsSeen;         // applied to current level; unused for lev -1
   bool nextLevNotAllDefsSeen;  // remember that next level's elements need to be made notAllDefsSeen
-  MapleSet<uint> *classSet;    // points to the set of members of its class; nullptr for single-member classes
-  MapleSet<uint> *assignSet;   // points to the set of members that have assignments among themselves
+  MapleSet<unsigned int> *classSet;    // points to the set of members of its class; nullptr for single-member classes
+  MapleSet<unsigned int> *assignSet;   // points to the set of members that have assignments among themselves
 };
 
 class AliasClass : public AnalysisResult {
@@ -101,7 +101,7 @@ class AliasClass : public AnalysisResult {
         osym2Elem(ssatb.GetOriginalStTableSize(), nullptr, acAlloc.Adapter()),
         id2Elem(acAlloc.Adapter()),
         notAllDefsSeenClassSetRoots(acAlloc.Adapter()),
-        globalsAffectedByCalls(std::less<uint>(), acAlloc.Adapter()),
+        globalsAffectedByCalls(std::less<unsigned int>(), acAlloc.Adapter()),
         globalsMayAffectedByClinitCheck(acAlloc.Adapter()),
         lessThrowAlias(lessThrowAliasParam),
         finalFieldAlias(finalFieldHasAlias),
@@ -144,9 +144,9 @@ class AliasClass : public AnalysisResult {
   void DumpAssignSets();
   void UnionAllPointedTos();
   void ApplyUnionForPointedTos();
-  void CollectRootIDOfNextLevelNodes(const OriginalSt &ost, std::set<uint> &rootIDOfNADSs);
+  void CollectRootIDOfNextLevelNodes(const OriginalSt &ost, std::set<unsigned int> &rootIDOfNADSs);
   void UnionForNotAllDefsSeen();
-  void CollectAliasGroups(std::map<uint, std::set<uint>> &aliasGroups);
+  void CollectAliasGroups(std::map<unsigned int, std::set<unsigned int>> &aliasGroups);
   bool AliasAccordingToType(TyIdx tyidxA, TyIdx tyidxB);
   bool AliasAccordingToFieldID(const OriginalSt &ostA, const OriginalSt &ostB);
   void ReconstructAliasGroups();
@@ -170,7 +170,7 @@ class AliasClass : public AnalysisResult {
   MapleVector<AliasElem*> osym2Elem;                    // index is OStIdx
   MapleVector<AliasElem*> id2Elem;                      // index is the id
   MapleVector<AliasElem*> notAllDefsSeenClassSetRoots;  // root of the not_all_defs_seen class sets
-  MapleSet<uint> globalsAffectedByCalls;                // set of class ids of globals
+  MapleSet<unsigned int> globalsAffectedByCalls;                // set of class ids of globals
   // aliased at calls; needed only when wholeProgramScope is true
   MapleSet<OStIdx> globalsMayAffectedByClinitCheck;
   bool lessThrowAlias;
@@ -187,7 +187,7 @@ class AliasClass : public AnalysisResult {
   AliasElem *CreateAliasElemsExpr(BaseNode &expr);
   void SetNotAllDefsSeenForMustDefs(const StmtNode &callas);
   void SetPtrOpndNextLevNADS(const BaseNode &opnd, AliasElem *ae, bool hasNoPrivateDefEffect);
-  void SetPtrOpndsNextLevNADS(uint start, uint end, MapleVector<BaseNode*> &opnds, bool hasNoPrivateDefEffect);
+  void SetPtrOpndsNextLevNADS(unsigned int start, unsigned int end, MapleVector<BaseNode*> &opnds, bool hasNoPrivateDefEffect);
   void ApplyUnionForDassignCopy(const AliasElem &lhsAe, const AliasElem *rhsAe, const BaseNode &rhs);
   AliasElem *FindOrCreateDummyNADSAe();
   void CollectMayDefForMustDefs(const StmtNode &stmt, std::set<OriginalSt*> &mayDefOsts);
@@ -217,7 +217,7 @@ class AliasClass : public AnalysisResult {
   void InsertMayDefUseIntrncall(StmtNode &stmt, BBId bbid);
   void InsertMayDefUseClinitCheck(IntrinsiccallNode &stmt, BBId bbid);
   virtual BB *GetBB(BBId id) = 0;
-  void ProcessIdsAliasWithRoot(const std::set<uint> &idsAliasWithRoot, std::vector<uint> &newGroups);
+  void ProcessIdsAliasWithRoot(const std::set<unsigned int> &idsAliasWithRoot, std::vector<unsigned int> &newGroups);
   void UpdateNextLevelNodes(std::vector<OriginalSt*> &nextLevelOsts, const AliasElem &aliasElem);
   void UnionNodes(std::vector<OriginalSt*> &nextLevelOsts);
   int GetOffset(const Klass &super, Klass &base) const;

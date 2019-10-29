@@ -580,7 +580,7 @@ bool MIRParser::ParsePragma(MIRStructType &type) {
     }
   }
   lexer.NextToken();
-  type.AddPragmaVec(p);
+  type.PushbackPragma(p);
   return true;
 }
 
@@ -632,7 +632,7 @@ bool MIRParser::ParseFields(MIRStructType &type) {
         tk = lexer.NextToken();
         if (type.GetKind() == kTypeClass || type.GetKind() == kTypeClassIncomplete ||
             type.GetKind() == kTypeInterface || type.GetKind() == kTypeInterfaceIncomplete) {
-          type.AddStaticValue(elem);
+          type.PushbackStaticValue(elem);
         } else {
           Error("parsing staticvalue error ");
           return false;
@@ -660,8 +660,8 @@ bool MIRParser::ParseFields(MIRStructType &type) {
       uint32 infoVal = (tk == kTkIntconst)
                            ? lexer.GetTheIntVal()
                            : GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName()).GetIdx();
-      type.AddInfo(MIRInfoPair(strIdx, infoVal));
-      type.AddIsStringInfo(tk != kTkIntconst);
+      type.PushbackMIRInfo(MIRInfoPair(strIdx, infoVal));
+      type.PushbackIsString(tk != kTkIntconst);
       notaType = true;
       lexer.NextToken();
     } else {
@@ -788,7 +788,7 @@ bool MIRParser::ParseFields(MIRStructType &type) {
       TyIdx tyidx = mod.GetTypeNameTab()->GetTyIdxFromGStrIdx(strIdx);
       if (tyidx == 0) {
         MIRInterfaceType interfaceType(kTypeInterfaceIncomplete);
-        interfaceType.GetNameStrIdx() = strIdx;
+        interfaceType.SetNameStrIdx(strIdx);
         tyidx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&interfaceType);
         mod.AddClass(tyidx);
         mod.AddExternStructType(tyidx);
@@ -857,7 +857,7 @@ bool MIRParser::ParseClassType(TyIdx &styidx) {
     }
   }
   MIRClassType classType(tkind);
-  classType.GetParentTyIdx() = parentTypeIdx;
+  classType.SetParentTyIdx(parentTypeIdx);
   if (!ParseFields(classType)) {
     return false;
   }
@@ -1105,14 +1105,14 @@ bool MIRParser::ParseDefinedTypename(TyIdx &definedTyIdx, MIRTypeKind kind) {
     if (definedTyIdx == 0) {
       if (kind == kTypeInterface || kind == kTypeInterfaceIncomplete) {
         MIRInterfaceType interfaceType(kTypeInterfaceIncomplete);
-        interfaceType.GetNameStrIdx() = strIdx;
+        interfaceType.SetNameStrIdx(strIdx);
         definedTyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&interfaceType);
         mod.AddClass(definedTyIdx);
         mod.AddExternStructType(definedTyIdx);
         mod.GetTypeNameTab()->SetGStrIdxToTyIdx(strIdx, definedTyIdx);
       } else if (kind == kTypeClass || kind == kTypeClassIncomplete || IsClassInterfaceTypeName(nameStr)) {
         MIRClassType classType(kTypeClassIncomplete);
-        classType.GetNameStrIdx() = strIdx;
+        classType.SetNameStrIdx(strIdx);
         definedTyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&classType);
         mod.AddClass(definedTyIdx);
         mod.AddExternStructType(definedTyIdx);
@@ -1384,7 +1384,7 @@ void MIRParser::FixupForwardReferencedTypeByMap() {
         MIRClassType *classType = static_cast<MIRClassType*>(type);
         std::map<TyIdx, TyIdx>::iterator it = typeDefIdxMap.find(classType->GetParentTyIdx());
         if (it != typeDefIdxMap.end()) {
-          classType->GetParentTyIdx() = it->second;
+          classType->SetParentTyIdx(it->second);
         }
         for (size_t j = 0; j < classType->GetInterfaceImplemented().size(); j++) {
           std::map<TyIdx, TyIdx>::iterator it2 = typeDefIdxMap.find(classType->GetNthInterfaceImplemented(j));

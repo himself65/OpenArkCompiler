@@ -126,6 +126,10 @@ int MplOptions::Parse(int argc, char **argv) {
         this->genVtableImpl = true;
         this->printCommandStr += " --genVtableImpl";
         break;
+      case kVerify:
+        this->verify = true;
+        this->printCommandStr += " --verify";
+        break;
       case kSaveTemps:
         this->isSaveTmps = true;
         StringUtils::Split(opt.Args(), this->saveFiles, ',');

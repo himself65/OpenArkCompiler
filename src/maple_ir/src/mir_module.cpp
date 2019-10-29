@@ -28,7 +28,7 @@
 
 namespace maple {
 #if MIR_FEATURE_FULL  // to avoid compilation error when MIR_FEATURE_FULL=0
-MIRModule::MIRModule(const char *fn)
+MIRModule::MIRModule(const std::string &fn)
     : memPool(mempoolctrler.NewMemPool("maple_ir mempool")),
       memPoolAllocator(memPool),
       functionList(memPoolAllocator.Adapter()),
@@ -50,7 +50,7 @@ MIRModule::MIRModule(const char *fn)
       optimizedFuncs(memPoolAllocator.Adapter()),
       puIdxFieldInitializedMap(std::less<PUIdx>(), memPoolAllocator.Adapter()) {
   GlobalTables::GetGsymTable().SetModule(this);
-  typeNameTab = memPool->New<MIRTypeNameTable>(&memPoolAllocator);
+  typeNameTab = memPool->New<MIRTypeNameTable>(memPoolAllocator);
   mirBuilder = memPool->New<MIRBuilder>(this);
   IntrinDesc::InitMIRModule(this);
 }
@@ -306,7 +306,7 @@ void MIRModule::DumpFunctionList(bool skipBody) const {
   }
 }
 
-void MIRModule::OutputFunctionListAsciiMpl(const char *phaseName) {
+void MIRModule::OutputFunctionListAsciiMpl(const std::string &phaseName) {
   std::string fileStem;
   std::string::size_type lastDot = fileName.find_last_of('.');
   if (lastDot == std::string::npos) {
@@ -376,8 +376,7 @@ const std::string &MIRModule::GetFileNameFromFileNum(uint32 fileNum) const {
 }
 
 
-void MIRModule::DumpClassToFile(const char *path) const {
-  ASSERT(path != nullptr, "null ptr check");
+void MIRModule::DumpClassToFile(const std::string &path) const {
   std::string spath(path);
   spath.append("/");
   for (auto it : typeNameTab->GetGStrIdxToTyIdxMap()) {
@@ -420,7 +419,7 @@ MIRFunction *MIRModule::FindEntryFunction() {
 // given the phase name (including '.' at beginning), output the program in the
 // module in ascii form to the file with either .mpl or .mmpl suffix, and file
 // stem from this->fileName appended with phasename
-void MIRModule::OutputAsciiMpl(const char *phaseName, bool emitStructureType) {
+void MIRModule::OutputAsciiMpl(const std::string &phaseName, bool emitStructureType) {
   std::string fileStem;
   std::string::size_type lastDot = fileName.find_last_of(".");
   if (lastDot == std::string::npos) {

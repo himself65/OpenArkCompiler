@@ -390,12 +390,12 @@ constexpr int kShiftNumOfTypeKind = 8;
 constexpr int kShiftNumOfNameStrIdx = 6;
 class MIRType {
  public:
-  MIRType(MIRTypeKind kind, PrimType pType) : typeKind(kind), primType(pType), nameIsLocal(false), nameStrIdx(0) {}
+  MIRType(MIRTypeKind kind, PrimType pType) : typeKind(kind), primType(pType), nameStrIdx(0) {}
 
   MIRType(MIRTypeKind kind, PrimType pType, GStrIdx strIdx)
-      : typeKind(kind), primType(pType), nameIsLocal(false), tyIdx(0), nameStrIdx(strIdx) {}
+      : typeKind(kind), primType(pType), nameStrIdx(strIdx) {}
 
-  virtual ~MIRType() {}
+  virtual ~MIRType() = default;
 
   virtual void Dump(int indent, bool dontUseName = false) const;
   virtual void DumpAsCxx(int indent) const;
@@ -407,62 +407,40 @@ class MIRType {
     return new MIRType(*this);
   }
 
-  PrimType GetPrimType() {
+  PrimType GetPrimType() const {
     return primType;
   }
-
-  const PrimType GetPrimType() const {
-    return primType;
-  }
-
   void SetPrimType(const PrimType pt) {
     primType = pt;
   }
 
-  TyIdx &GetTypeIndex() {
+  TyIdx GetTypeIndex() const {
     return tyIdx;
   }
-
-  const TyIdx &GetTypeIndex() const {
-    return tyIdx;
-  }
-
-  void SetTypeIndex(const TyIdx idx) {
+  void SetTypeIndex(TyIdx idx) {
     tyIdx = idx;
   }
 
-  MIRTypeKind GetKind() {
+  MIRTypeKind GetKind() const {
     return typeKind;
   }
-
-  const MIRTypeKind GetKind() const {
-    return typeKind;
-  }
-
-  void SetMIRTypeKind(const MIRTypeKind kind) {
+  void SetMIRTypeKind(MIRTypeKind kind) {
     typeKind = kind;
   }
 
   bool IsNameIsLocal() const {
     return nameIsLocal;
   }
-
   void SetNameIsLocal(bool flag) {
     nameIsLocal = flag;
   }
 
-  GStrIdx &GetNameStrIdx() {
+  GStrIdx GetNameStrIdx() const {
     return nameStrIdx;
   }
-
-  const GStrIdx &GetNameStrIdx() const {
-    return nameStrIdx;
-  }
-
   void SetNameStrIdx(GStrIdx strIdx) {
     nameStrIdx = strIdx;
   }
-
   void SetNameStrIdxItem(uint32 idx) {
     nameStrIdx.SetIdx(idx);
   }
@@ -516,7 +494,7 @@ class MIRType {
             (typeKind == kTypeInterfaceIncomplete));
   }
 
-  virtual bool ValidateClassOrInterface(const std::string &className, bool noWarning);
+  bool ValidateClassOrInterface(const std::string &className, bool noWarning) const;
   const std::string &GetName(void) const;
   virtual std::string GetMplTypeName() const;
   virtual std::string GetCompactMplTypeName() const;
@@ -529,26 +507,16 @@ class MIRType {
  protected:
   MIRTypeKind typeKind;
   PrimType primType;
-  bool nameIsLocal;  // needed when printing the type name
-  TyIdx tyIdx;
+  bool nameIsLocal = false;  // needed when printing the type name
+  TyIdx tyIdx{0};
   GStrIdx nameStrIdx;  // name in global string table
 };
 
 class MIRPtrType : public MIRType {
  public:
-  const TyIdx &GetPointedTyIdx() const {
-    return pointedTyIdx;
-  }
+  explicit MIRPtrType(TyIdx pointedTyidx) : MIRType(kTypePointer, PTY_ptr), pointedTyIdx(pointedTyidx) {}
 
-  void SetPointedTyIdx(const TyIdx idx) {
-    pointedTyIdx = idx;
-  }
-
-  bool EqualTo(const MIRType &type) const override;
-
-  explicit MIRPtrType(const TyIdx &pointedTyidx) : MIRType(kTypePointer, PTY_ptr), pointedTyIdx(pointedTyidx) {}
-
-  MIRPtrType(const TyIdx &pointedTyidx, PrimType pty) : MIRType(kTypePointer, pty), pointedTyIdx(pointedTyidx) {}
+  MIRPtrType(TyIdx pointedTyidx, PrimType pty) : MIRType(kTypePointer, pty), pointedTyIdx(pointedTyidx) {}
 
   MIRPtrType(PrimType pty, const GStrIdx &strIdx) : MIRType(kTypePointer, pty, strIdx), pointedTyIdx(TyIdx(0)) {}
 
@@ -559,6 +527,15 @@ class MIRPtrType : public MIRType {
   }
 
   MIRType *GetPointedType() const;
+
+  TyIdx GetPointedTyIdx() const {
+    return pointedTyIdx;
+  }
+  void SetPointedTyIdx(const TyIdx idx) {
+    pointedTyIdx = idx;
+  }
+
+  bool EqualTo(const MIRType &type) const override;
 
   bool HasTypeParam() const override;
 
@@ -581,10 +558,34 @@ class MIRPtrType : public MIRType {
 
 class MIRArrayType : public MIRType {
  public:
-  const TyIdx &GetElemTyIdx() const {
-    return eTyIdx;
+  MIRArrayType() : MIRType(kTypeArray, PTY_agg), eTyIdx(0), dim(0), sizeArray{ 0 } {}
+
+  explicit MIRArrayType(const MIRArrayType &pat)
+      : MIRType(kTypeArray, PTY_agg),
+        eTyIdx(pat.eTyIdx),
+        dim(pat.dim) {
+    for (int i = 0; i < dim; i++) {
+      sizeArray[i] = pat.sizeArray[i];
+    }
   }
 
+  explicit MIRArrayType(const GStrIdx strIdx) : MIRType(kTypeArray, PTY_agg, strIdx), dim(0), sizeArray{ 0 } {}
+
+  MIRArrayType(TyIdx eTyIdx, const std::vector<uint32> &sizeArray)
+      : MIRType(kTypeArray, PTY_agg),
+        eTyIdx(eTyIdx), dim(sizeArray.size()) {
+    for (int i = 0; i < kMaxArrayDim; i++) {
+      this->sizeArray[i] = (i < dim) ? sizeArray[i] : 0;
+    }
+  }
+
+  ~MIRArrayType() = default;
+
+  MIRArrayType &operator=(const MIRArrayType &p) = default;
+
+  TyIdx GetElemTyIdx() const {
+    return eTyIdx;
+  }
   void SetElemtTyIdx(const TyIdx idx) {
     eTyIdx = idx;
   }
@@ -593,40 +594,16 @@ class MIRArrayType : public MIRType {
     CHECK_FATAL((n >= 0 && n < kMaxArrayDim), "out of bound of array!");
     return sizeArray[n];
   }
-
   void SetSizeArrayItem(uint32 idx, uint32 value) {
     CHECK_FATAL((idx >= 0 && idx < kMaxArrayDim), "out of bound of array!");
     sizeArray[idx] = value;
   }
 
   bool EqualTo(const MIRType &type) const override;
-  MIRArrayType &operator=(const MIRArrayType &p) = default;
-  MIRArrayType() : MIRType(kTypeArray, PTY_agg), eTyIdx(0), dim(0), sizeArray{ 0 } {}
-
-  ~MIRArrayType() {}
-
-  explicit MIRArrayType(const MIRArrayType &pat) : MIRType(kTypeArray, PTY_agg) {
-    eTyIdx = pat.eTyIdx;
-    dim = pat.dim;
-    for (int i = 0; i < dim; i++) {
-      sizeArray[i] = pat.sizeArray[i];
-    }
-  }
-
-  MIRArrayType(const TyIdx eTyIdx, std::vector<uint32> &sizeArray) : MIRType(kTypeArray, PTY_agg) {
-    this->eTyIdx = eTyIdx;
-    dim = sizeArray.size();
-    for (int i = 0; i < kMaxArrayDim; i++) {
-      this->sizeArray[i] = (i < dim) ? sizeArray[i] : 0;
-    }
-  }
-
-  explicit MIRArrayType(const GStrIdx strIdx) : MIRType(kTypeArray, PTY_agg, strIdx), dim(0), sizeArray{ 0 } {}
 
   uint16 GetDim() const {
     return dim;
   }
-
   void SetDim(uint16 dim) {
     this->dim = dim;
   }
@@ -642,6 +619,7 @@ class MIRArrayType : public MIRType {
   }
 
   void Dump(int indent, bool dontUseName) const override;
+
   size_t GetSize() const override {
     size_t elemSize = GetElemType()->GetSize();
     if (elemSize == 0) {
@@ -676,21 +654,14 @@ class MIRArrayType : public MIRType {
 // flexible array type, must be last field of a top-level struct
 class MIRFarrayType : public MIRType {
  public:
-  const TyIdx &GetElemTyIdx() const {
-    return elemTyIdx;
-  }
+  MIRFarrayType() : MIRType(kTypeFArray, PTY_agg), elemTyIdx(TyIdx(0)) {};
 
-  void SetElemtTyIdx(const TyIdx idx) {
-    elemTyIdx = idx;
-  }
-
-  bool EqualTo(const MIRType &type) const override;
-  MIRFarrayType() : MIRType(kTypeFArray, PTY_agg), elemTyIdx(TyIdx(0)){};
   explicit MIRFarrayType(TyIdx elemTyIdx) : MIRType(kTypeFArray, PTY_agg), elemTyIdx(elemTyIdx) {}
 
   explicit MIRFarrayType(GStrIdx strIdx) : MIRType(kTypeFArray, PTY_agg, strIdx), elemTyIdx(TyIdx(0)) {}
 
   ~MIRFarrayType() = default;
+
   MIRType *CopyMIRTypeNode() const override;
   MIRType *GetElemType() const;
 
@@ -698,12 +669,21 @@ class MIRFarrayType : public MIRType {
     return GetElemType()->HasTypeParam();
   }
 
+  TyIdx GetElemTyIdx() const {
+    return elemTyIdx;
+  }
+  void SetElemtTyIdx(const TyIdx idx) {
+    elemTyIdx = idx;
+  }
+
+  bool EqualTo(const MIRType &type) const override;
   void Dump(int indent, bool dontUseName = false) const override;
 
   size_t GetHashIndex() const override {
     constexpr uint8 kIdxShift = 5;
     return ((elemTyIdx.GetIdx() << kIdxShift) + (typeKind << kShiftNumOfTypeKind)) % kTypeHashLength;
   }
+
   std::string GetMplTypeName() const override;
   std::string GetCompactMplTypeName() const override;
  private:
@@ -715,38 +695,15 @@ using MethodPair = std::pair<StIdx, TyidxFuncAttrPair>;
 using MethodVector = std::vector<MethodPair>;
 using MethodPtrVector = std::vector<MethodPair*>;
 using MIREncodedArray = std::vector<EncodedValue>;
-#define FIELDVECID2FIELDID(i) ((i) + 1)
-#define PARENTFIELDVECID2FIELDID(i) ((-(i)) - 1)
+
 // used by kTypeStruct, kTypeStructIncomplete, kTypeUnion
 class MIRStructType : public MIRType {
  public:
-  explicit MIRStructType(MIRTypeKind tkind)
-      : MIRType(tkind, PTY_agg),
-        fields(),
-        fieldInferredTyIdx(),
-        staticFields(),
-        parentFields(),
-        methods(),
-        vTableMethods(),
-        iTableMethods(),
-        isImported(false),
-        isUsed(false),
-        hasVolatileField(false),
-        hasVolatileFieldSet(false) {}
+  explicit MIRStructType(MIRTypeKind tKind)
+      : MIRType(tKind, PTY_agg) {}
 
-  MIRStructType(MIRTypeKind tkind, GStrIdx strIdx)
-      : MIRType(tkind, PTY_agg, strIdx),
-        fields(),
-        fieldInferredTyIdx(),
-        staticFields(),
-        parentFields(),
-        methods(),
-        vTableMethods(),
-        iTableMethods(),
-        isImported(false),
-        isUsed(false),
-        hasVolatileField(false),
-        hasVolatileFieldSet(false) {}
+  MIRStructType(MIRTypeKind tKind, GStrIdx strIdx)
+      : MIRType(tKind, PTY_agg, strIdx) {}
 
   ~MIRStructType() {}
 
@@ -776,7 +733,7 @@ class MIRStructType : public MIRType {
     return fields.size();
   }
 
-  std::vector<TyIdx> &GetFieldInferredTyIdx() {
+  const std::vector<TyIdx> &GetFieldInferredTyIdx() const {
     return fieldInferredTyIdx;
   }
 
@@ -814,7 +771,7 @@ class MIRStructType : public MIRType {
     return vTableMethods;
   }
 
-  MethodPair *GetVTableMethodsElemt(size_t n) const {
+  const MethodPair *GetVTableMethodsElemt(size_t n) const {
     ASSERT(n < vTableMethods.size(), "array index out of range");
     return vTableMethods.at(n);
   }
@@ -893,8 +850,8 @@ class MIRStructType : public MIRType {
     return std::find(fields.begin(), fields.end(), pair) != fields.end();
   }
 
-  virtual bool HasVolatileField() override;
-  virtual bool HasTypeParam() const override;
+  bool HasVolatileField() override;
+  bool HasTypeParam() const override;
   bool EqualTo(const MIRType &type) const override;
   MIRType *CopyMIRTypeNode() const override {
     return new MIRStructType(*this);
@@ -973,31 +930,7 @@ class MIRStructType : public MIRType {
   // only meaningful for MIRClassType and MIRInterface types
   bool IsLocal() const;
 
-  size_t GetSize() const override {
-    if (typeKind == kTypeUnion) {
-      size_t maxSize = GetElemType(0)->GetSize();
-      for (size_t i = 1; i < fields.size(); i++) {
-        size_t size = GetElemType(i)->GetSize();
-        if (size == 0) {
-          return 0;
-        }
-        if (maxSize < size) {
-          maxSize = size;
-        }
-      }
-      return maxSize;
-    } else {
-      size_t size = 0;
-      for (size_t i = 0; i < fields.size(); i++) {
-        size_t fieldSize = GetElemType(i)->GetSize();
-        if (fieldSize == 0) {
-          return 0;
-        }
-        size += fieldSize;
-      }
-      return size;
-    }
-  }
+  size_t GetSize() const override;
 
   size_t GetHashIndex() const override {
     return ((nameStrIdx.GetIdx() << kShiftNumOfNameStrIdx) + (typeKind << kShiftNumOfTypeKind)) % kTypeHashLength;
@@ -1020,12 +953,8 @@ class MIRStructType : public MIRType {
     CHECK_FATAL(false, "can not use GetInfo");
   }
 
-  virtual std::vector<MIRInfoPair> &GetInfo() {
-    CHECK_FATAL(false, "can not use GetInfo");
-  }
-
-  virtual const std::vector<bool> &GetIsStringInfo() const {
-    CHECK_FATAL(false, "can not use GetIsStringInfo");
+  virtual const std::vector<bool> &GetInfoIsString() const {
+    CHECK_FATAL(false, "can not use GetInfoIsString");
   }
 
   virtual const std::vector<MIRPragma*> &GetPragmaVec() const {
@@ -1036,39 +965,40 @@ class MIRStructType : public MIRType {
     CHECK_FATAL(false, "can not use GetStaticValue");
   }
 
-  virtual void AddInfo(const MIRInfoPair&) {
-    CHECK_FATAL(false, "can not use AddInfo");
+  virtual void PushbackMIRInfo(const MIRInfoPair &pair) {
+    CHECK_FATAL(false, "can not use PushbackMIRInfo");
   }
 
-  virtual void AddIsStringInfo(bool) {
-    CHECK_FATAL(false, "can not use AddIsStringInfo");
+  virtual void PushbackPragma(MIRPragma*) {
+    CHECK_FATAL(false, "can not use PushbackPragma");
   }
 
-  virtual void AddPragmaVec(MIRPragma*) {
-    CHECK_FATAL(false, "can not use AddPragmaVec");
+  virtual void PushbackStaticValue(EncodedValue&) {
+    CHECK_FATAL(false, "can not use PushbackStaticValue");
   }
 
-  virtual void AddStaticValue(EncodedValue&) {
-    CHECK_FATAL(false, "can not use AddStaticValue");
+  virtual void PushbackIsString(bool isString) {
+    CHECK_FATAL(false, "can not use PushbackIsString");
   }
 
   virtual FieldPair TraverseToFieldRef(FieldID &fieldID) const;
   std::string GetMplTypeName() const override;
   std::string GetCompactMplTypeName() const override;
  protected:
-  FieldVector fields;
-  std::vector<TyIdx> fieldInferredTyIdx;
-  FieldVector staticFields;
-  FieldVector parentFields;       // fields belong to the ancestors not fully defined
-  MethodVector methods;           // for the list of member function prototypes
-  MethodPtrVector vTableMethods;  // the list of implmentation for all virtual functions for this type
-  MethodPtrVector iTableMethods;  // the list of all interface functions for this type; For classes, they are
+  FieldVector fields{};
+  std::vector<TyIdx> fieldInferredTyIdx{};
+  FieldVector staticFields{};
+  FieldVector parentFields{};       // fields belong to the ancestors not fully defined
+  MethodVector methods{};           // for the list of member function prototypes
+  MethodPtrVector vTableMethods{};  // the list of implmentation for all virtual functions for this type
+  MethodPtrVector iTableMethods{};  // the list of all interface functions for this type; For classes, they are
   // implementation functions, For interfaces, they are abstact functions.
   // Weak indicates the actual definition is in another module.
-  bool isImported;
-  bool isUsed;
-  bool hasVolatileField;     // for caching computed value
-  bool hasVolatileFieldSet;  // if true, just read hasVolatileField; otherwise compute to initialize hasVolatileField
+  bool isImported = false;
+  bool isUsed = false;
+  bool hasVolatileField = false;     // for caching computed value
+  bool hasVolatileFieldSet = false;  // if true, just read hasVolatileField;
+                                     // otherwise compute to initialize hasVolatileField
  private:
   FieldPair TraverseToField(FieldID fieldID) const ;
   FieldPair TraverseToField(GStrIdx fieldStrIdx) const ;
@@ -1079,22 +1009,23 @@ class MIRStructType : public MIRType {
 // java array type, must not be nested inside another aggregate
 class MIRJarrayType : public MIRFarrayType {
  public:
-  MIRJarrayType() : parentTyIdx(0), javaNameStrIdx(0), fromPrimitive(false), dim(0) {
+  MIRJarrayType() {
     typeKind = kTypeJArray;
   };
-  ~MIRJarrayType() {}
 
   explicit MIRJarrayType(TyIdx elemTyIdx)
-      : MIRFarrayType(elemTyIdx), parentTyIdx(0), javaNameStrIdx(0), fromPrimitive(false), dim(0) {
+      : MIRFarrayType(elemTyIdx) {
     typeKind = kTypeJArray;
   }
 
   explicit MIRJarrayType(GStrIdx strIdx)
-      : MIRFarrayType(strIdx), parentTyIdx(0), javaNameStrIdx(0), fromPrimitive(false), dim(0) {
+      : MIRFarrayType(strIdx) {
     typeKind = kTypeJArray;
   }
 
-  MIRType *CopyMIRTypeNode() const {
+  ~MIRJarrayType() = default;
+
+  MIRType *CopyMIRTypeNode() const override {
     return new MIRJarrayType(*this);
   }
 
@@ -1114,82 +1045,44 @@ class MIRJarrayType : public MIRFarrayType {
     return dim;
   }
 
-  size_t GetHashIndex() const {
+  size_t GetHashIndex() const override {
     constexpr uint8 kIdxShift = 5;
     return ((GetElemTyIdx().GetIdx() << kIdxShift) + (typeKind << kShiftNumOfTypeKind)) % kTypeHashLength;
   }
 
  private:
-  TyIdx parentTyIdx;       // since Jarray is also an object, this is java.lang.Object
-  GStrIdx javaNameStrIdx;  // for internal java name of Jarray. nameStrIdx is used for other purpose
-  bool fromPrimitive;      // the lowest dimension is primitive type
-  int dim;                 // the dimension if decidable at compile time. otherwise 0
+  TyIdx parentTyIdx{0};       // since Jarray is also an object, this is java.lang.Object
+  GStrIdx javaNameStrIdx{0};  // for internal java name of Jarray. nameStrIdx is used for other purpose
+  bool fromPrimitive = false;      // the lowest dimension is primitive type
+  int dim = 0;                 // the dimension if decidable at compile time. otherwise 0
   void DetermineName();    // determine the internal name of this type
 };
 
-constexpr int kLocalFieldOffset = 1;
-constexpr int kGlobalFieldOffset = 2;
 // used by kTypeClass, kTypeClassIncomplete
 class MIRClassType : public MIRStructType {
  public:
-  explicit MIRClassType(MIRTypeKind tkind)
-      : MIRStructType(tkind),
-        parentTyIdx(0),
-        interfacesImplemented(),
-        info(),
-        infoIsString(),
-        pragmaVec(),
-        staticValue() {}
+  explicit MIRClassType(MIRTypeKind tKind)
+      : MIRStructType(tKind) {}
 
-  MIRClassType(MIRTypeKind tkind, GStrIdx strIdx)
-      : MIRStructType(tkind, strIdx),
-        parentTyIdx(0),
-        interfacesImplemented(),
-        info(),
-        infoIsString(),
-        pragmaVec(),
-        staticValue() {}
+  MIRClassType(MIRTypeKind tKind, GStrIdx strIdx)
+      : MIRStructType(tKind, strIdx) {}
 
   ~MIRClassType() = default;
+
   bool EqualTo(const MIRType &type) const override;
+
   MIRType *CopyMIRTypeNode() const override {
     return new MIRClassType(*this);
-  }
-
-  TyIdx &GetParentTyIdx() {
-    return parentTyIdx;
-  }
-
-  const TyIdx &GetParentTyIdx() const {
-    return parentTyIdx;
-  }
-
-  void SetParentTyIdx(const TyIdx idx) {
-    parentTyIdx = idx;
-  }
-
-  std::vector<TyIdx> &GetInterfaceImplemented() {
-    return interfacesImplemented;
-  }
-
-  const TyIdx &GetNthInterfaceImplemented(size_t i) const {
-    ASSERT(i < interfacesImplemented.size(), "array index out of range");
-    return interfacesImplemented.at(i);
-  }
-
-  void SetNthInterfaceImplemented(uint32 i, TyIdx tyIdx) {
-    ASSERT(i < interfacesImplemented.size(), "array index out of range");
-    interfacesImplemented.at(i) = tyIdx;
-  }
-
-  std::vector<MIRInfoPair> &GetInfo() override {
-    return info;
   }
 
   const std::vector<MIRInfoPair> &GetInfo() const override {
     return info;
   }
-
+  void PushbackMIRInfo(const MIRInfoPair &pair) override {
+    info.push_back(pair);
+  }
+  uint32 GetInfo(const std::string &infoStr) const;
+  uint32 GetInfo(GStrIdx strIdx) const;
   uint32 GetInfoSize() const {
     return info.size();
   }
@@ -1199,33 +1092,59 @@ class MIRClassType : public MIRStructType {
     return info.at(n);
   }
 
-  std::vector<bool> &GetInfoIsString() {
+  const std::vector<bool> &GetInfoIsString() const override {
     return infoIsString;
   }
-
-  const std::vector<bool> &GetInfoIsString() const {
-    return infoIsString;
+  void PushbackIsString(bool isString) override {
+    infoIsString.push_back(isString);
   }
-
   size_t GetInfoIsStringSize() const {
     return infoIsString.size();
   }
-
   bool GetInfoIsStringElemt(size_t n) const {
     ASSERT(n < infoIsString.size(), "array index out of range");
     return infoIsString.at(n);
   }
 
-  std::vector<MIRPragma*> &GetPragmVec() {
+  std::vector<MIRPragma*> &GetPragmaVec() {
     return pragmaVec;
   }
-
-  const std::vector<MIRPragma*> &GetPragmVec() const {
+  const std::vector<MIRPragma*> &GetPragmaVec() const override {
     return pragmaVec;
   }
+  void PushbackPragma(MIRPragma *pragma) override {
+    pragmaVec.push_back(pragma);
+  }
 
-  const MIREncodedArray &GetMIREncodedArray() const {
+  const MIREncodedArray &GetStaticValue() const override {
     return staticValue;
+  }
+  void PushbackStaticValue(EncodedValue &encodedValue) override {
+    staticValue.push_back(encodedValue);
+  }
+
+  TyIdx GetParentTyIdx() const {
+    return parentTyIdx;
+  }
+  void SetParentTyIdx(const TyIdx idx) {
+    parentTyIdx = idx;
+  }
+
+  std::vector<TyIdx> &GetInterfaceImplemented() {
+    return interfacesImplemented;
+  }
+
+  TyIdx GetNthInterfaceImplemented(size_t i) const {
+    ASSERT(i < interfacesImplemented.size(), "array index out of range");
+    return interfacesImplemented.at(i);
+  }
+
+  void SetNthInterfaceImplemented(uint32 i, TyIdx tyIdx) {
+    ASSERT(i < interfacesImplemented.size(), "array index out of range");
+    interfacesImplemented.at(i) = tyIdx;
+  }
+  void PushbackInterfaceImplemented(TyIdx idx) {
+    interfacesImplemented.push_back(idx);
   }
 
   void Dump(int indent, bool dontUseName = false) const override;
@@ -1236,8 +1155,8 @@ class MIRClassType : public MIRStructType {
 
   bool IsFinal() const;
   bool IsInner() const;
-  virtual bool HasVolatileField() override;
-  virtual bool HasTypeParam() const override;
+  bool HasVolatileField() override;
+  bool HasTypeParam() const override;
   virtual FieldPair TraverseToFieldRef(FieldID &fieldID) const override;
   size_t GetSize() const override;
 
@@ -1248,10 +1167,8 @@ class MIRClassType : public MIRStructType {
 
   FieldID GetFirstLocalFieldID() const;
   // return class id or superclass id accroding to input string
-  uint32 GetInfo(const std::string &infoStr) const;
   MIRClassType *GetExceptionRootType();
   bool IsExceptionType();
-  uint32 GetInfo(GStrIdx strIdx) const;
   void AddImplementedInterface(TyIdx interfaceTyIdx) {
     if (std::find(interfacesImplemented.begin(), interfacesImplemented.end(), interfaceTyIdx) !=
         interfacesImplemented.end()) {
@@ -1274,53 +1191,79 @@ class MIRClassType : public MIRStructType {
     return ((nameStrIdx.GetIdx() << kShiftNumOfNameStrIdx) + (typeKind << kShiftNumOfTypeKind)) % kTypeHashLength;
   }
 
-  const std::vector<bool> &GetIsStringInfo() const override {
-    return infoIsString;
-  }
-
-  const std::vector<MIRPragma*> &GetPragmaVec() const override {
-    return pragmaVec;
-  }
-
-  const MIREncodedArray &GetStaticValue() const override {
-    return staticValue;
-  }
-
-  void AddInfo(const MIRInfoPair &infoPair) override {
-    info.push_back(infoPair);
-  }
-
-  void AddIsStringInfo(bool isString) override {
-    infoIsString.push_back(isString);
-  }
-
-  void AddPragmaVec(MIRPragma *pragma) override {
-    pragmaVec.push_back(pragma);
-  }
-
-  void AddStaticValue(EncodedValue &encodedValue) override {
-    staticValue.push_back(encodedValue);
-  }
-
  private:
-  TyIdx parentTyIdx;
-  std::vector<TyIdx> interfacesImplemented;  // for the list of interfaces the class implements
-  std::vector<MIRInfoPair> info;
-  std::vector<bool> infoIsString;
-  std::vector<MIRPragma*> pragmaVec;
-  MIREncodedArray staticValue;  // DELETE THIS
+  TyIdx parentTyIdx{0};
+  std::vector<TyIdx> interfacesImplemented{};  // for the list of interfaces the class implements
+  std::vector<MIRInfoPair> info{};
+  std::vector<bool> infoIsString{};
+  std::vector<MIRPragma*> pragmaVec{};
+  MIREncodedArray staticValue{};  // DELETE THIS
 };
 
 // used by kTypeInterface, kTypeInterfaceIncomplete
 class MIRInterfaceType : public MIRStructType {
  public:
-  explicit MIRInterfaceType(MIRTypeKind tkind)
-      : MIRStructType(tkind), parentsTyIdx(), info(), infoIsString(), pragmaVec(), staticValue() {}
+  explicit MIRInterfaceType(MIRTypeKind tKind)
+      : MIRStructType(tKind) {}
 
-  MIRInterfaceType(MIRTypeKind tkind, GStrIdx strIdx)
-      : MIRStructType(tkind, strIdx), parentsTyIdx(), info(), infoIsString(), pragmaVec(), staticValue() {}
+  MIRInterfaceType(MIRTypeKind tKind, GStrIdx strIdx)
+      : MIRStructType(tKind, strIdx) {}
 
   ~MIRInterfaceType() = default;
+
+  bool EqualTo(const MIRType &type) const override;
+
+  MIRType *CopyMIRTypeNode() const override {
+    return new MIRInterfaceType(*this);
+  }
+
+  const std::vector<MIRInfoPair> &GetInfo() const override {
+    return info;
+  }
+  void PushbackMIRInfo(const MIRInfoPair &pair) override {
+    info.push_back(pair);
+  }
+  uint32 GetInfo(const std::string &infoStr) const;
+  uint32 GetInfo(GStrIdx strIdx) const;
+  uint32 GetInfoSize() const {
+    return info.size();
+  }
+
+  const MIRInfoPair &GetInfoElemt(size_t n) const {
+    ASSERT(n < info.size(), "array index out of range");
+    return info.at(n);
+  }
+
+  const std::vector<bool> &GetInfoIsString() const override {
+    return infoIsString;
+  }
+  void PushbackIsString(bool isString) override {
+    infoIsString.push_back(isString);
+  }
+  size_t GetInfoIsStringSize() const {
+    return infoIsString.size();
+  }
+  bool GetInfoIsStringElemt(size_t n) const {
+    ASSERT(n < infoIsString.size(), "array index out of range");
+    return infoIsString.at(n);
+  }
+
+  std::vector<MIRPragma*> &GetPragmaVec() {
+    return pragmaVec;
+  }
+  const std::vector<MIRPragma*> &GetPragmaVec() const override {
+    return pragmaVec;
+  }
+  void PushbackPragma(MIRPragma *pragma) override {
+    pragmaVec.push_back(pragma);
+  }
+
+  const MIREncodedArray &GetStaticValue() const override {
+    return staticValue;
+  }
+  void PushbackStaticValue(EncodedValue &encodedValue) override {
+    staticValue.push_back(encodedValue);
+  }
 
   std::vector<TyIdx> &GetParentsTyIdx() {
     return parentsTyIdx;
@@ -1336,70 +1279,15 @@ class MIRInterfaceType : public MIRStructType {
     parentsTyIdx[i] = tyIdx;
   }
 
-  std::vector<MIRInfoPair> &GetInfo() override {
-    return info;
-  }
-
-  const std::vector<MIRInfoPair> &GetInfo() const override {
-    return info;
-  }
-
-  size_t GetInfoSize() const {
-    return info.size();
-  }
-
-  const MIRInfoPair &GetInfoElemt(size_t n) const {
-    ASSERT(n < info.size(), "array index out of range");
-    return info.at(n);
-  }
-
-  std::vector<bool> &GetInfoIsString() {
-    return infoIsString;
-  }
-
-  const std::vector<bool> &GetInfoIsString() const {
-    return infoIsString;
-  }
-
-  size_t GetInfoIsStringSize() const {
-    return infoIsString.size();
-  }
-
-  bool GetInfoIsStringElemt(size_t n) const {
-    ASSERT(n < infoIsString.size(), "array index out of range");
-    return infoIsString.at(n);
-  }
-
-  std::vector<MIRPragma*> &GetPragmVec() {
-    return pragmaVec;
-  }
-
-  const std::vector<MIRPragma*> &GetPragmVec() const {
-    return pragmaVec;
-  }
-
-  const MIREncodedArray &GetMIREncodedArray() const {
-    return staticValue;
-  }
-
-  bool EqualTo(const MIRType &type) const override;
-  MIRType *CopyMIRTypeNode() const override {
-    return new MIRInterfaceType(*this);
-  }
-
   void Dump(int indent, bool dontUseName = false) const override;
-  virtual bool HasVolatileField() override;
-  virtual bool HasTypeParam() const override;
+  bool HasVolatileField() override;
+  bool HasTypeParam() const override;
   virtual FieldPair TraverseToFieldRef(FieldID &fieldID) const override;
   void SetComplete() override {
     typeKind = kTypeInterface;
   }
 
   size_t GetSize() const override;
-
-  // return class id or superclass id accroding to input string
-  uint32 GetInfo(const std::string &infoStr) const;
-  uint32 GetInfo(GStrIdx strIdx) const;
 
   void ClearContents() override {
     MIRStructType::ClearContents();
@@ -1414,41 +1302,14 @@ class MIRInterfaceType : public MIRStructType {
     return ((nameStrIdx.GetIdx() << kShiftNumOfNameStrIdx) + (typeKind << kShiftNumOfTypeKind)) % kTypeHashLength;
   }
 
-  const std::vector<bool> &GetIsStringInfo() const override {
-    return infoIsString;
-  }
-
-  const std::vector<MIRPragma*> &GetPragmaVec() const override {
-    return pragmaVec;
-  }
-
-  const MIREncodedArray &GetStaticValue() const override {
-    return staticValue;
-  }
-
-  void AddInfo(const MIRInfoPair &infoPair) override {
-    info.push_back(infoPair);
-  }
-
-  void AddIsStringInfo(bool isString) override {
-    infoIsString.push_back(isString);
-  }
-
-  void AddPragmaVec(MIRPragma *pragma) override {
-    pragmaVec.push_back(pragma);
-  }
-
-  void AddStaticValue(EncodedValue &encodedValue) override {
-    staticValue.push_back(encodedValue);
-  }
-
  private:
-  std::vector<TyIdx> parentsTyIdx;  // multiple inheritence
-  std::vector<MIRInfoPair> info;
-  std::vector<bool> infoIsString;
-  std::vector<MIRPragma*> pragmaVec;
-  MIREncodedArray staticValue;  // DELETE THIS
+  std::vector<TyIdx> parentsTyIdx{};  // multiple inheritence
+  std::vector<MIRInfoPair> info{};
+  std::vector<bool> infoIsString{};
+  std::vector<MIRPragma*> pragmaVec{};
+  MIREncodedArray staticValue{};  // DELETE THIS
 };
+
 
 class MIRBitFieldType : public MIRType {
  public:
@@ -1458,21 +1319,21 @@ class MIRBitFieldType : public MIRType {
 
   ~MIRBitFieldType() = default;
 
-  uint8 GetFieldSize() {
+  uint8 GetFieldSize() const {
     return fieldSize;
   }
 
-  bool EqualTo(const MIRType &type) const;
-  void Dump(int indent, bool dontUseName = false) const;
-  MIRType *CopyMIRTypeNode() const {
+  bool EqualTo(const MIRType &type) const override;
+  void Dump(int indent, bool dontUseName = false) const override;
+  MIRType *CopyMIRTypeNode() const override {
     return new MIRBitFieldType(*this);
   }
 
-  size_t GetSize() const {
+  size_t GetSize() const override {
     return 0;
   }  // size not be in bytes
 
-  size_t GetHashIndex() const {
+  size_t GetHashIndex() const override {
     return ((static_cast<uint32>(primType) << fieldSize) + (typeKind << kShiftNumOfTypeKind)) % kTypeHashLength;
   }
 
@@ -1482,55 +1343,46 @@ class MIRBitFieldType : public MIRType {
 
 class MIRFuncType : public MIRType {
  public:
-  bool EqualTo(const MIRType &type) const;
-  MIRType *CopyMIRTypeNode() const {
-    return new MIRFuncType(*this);
-  }
-
-  MIRFuncType() : MIRType(kTypeFunction, PTY_ptr), paramTypeList(), paramAttrsList(), isVarArgs(false) {}
+  MIRFuncType() : MIRType(kTypeFunction, PTY_ptr), paramTypeList(), paramAttrsList() {}
 
   MIRFuncType(TyIdx retTyIdx, const std::vector<TyIdx> &vecTy, const std::vector<TypeAttrs> &vecAt)
       : MIRType(kTypeFunction, PTY_ptr),
         retTyIdx(retTyIdx),
         paramTypeList(vecTy),
-        paramAttrsList(vecAt),
-        isVarArgs(false) {}
+        paramAttrsList(vecAt) {}
 
   explicit MIRFuncType(GStrIdx strIdx)
       : MIRType(kTypeFunction, PTY_ptr, strIdx),
         retTyIdx(TyIdx(0)),
         paramTypeList(),
-        paramAttrsList(),
-        isVarArgs(false) {}
+        paramAttrsList() {}
 
-  ~MIRFuncType() {}
+  ~MIRFuncType() = default;
 
-  void Dump(int indent, bool dontUseName = false) const;
-  size_t GetSize() const {
+  bool EqualTo(const MIRType &type) const override;
+  MIRType *CopyMIRTypeNode() const override {
+    return new MIRFuncType(*this);
+  }
+
+  void Dump(int indent, bool dontUseName = false) const override;
+  size_t GetSize() const override {
     return 0;
   }  // size unknown
 
-  const TyIdx &GetRetTyIdx() const {
+  TyIdx GetRetTyIdx() const {
     return retTyIdx;
   }
-
-  void SetRetTyIdx(const TyIdx idx) {
+  void SetRetTyIdx(TyIdx idx) {
     retTyIdx = idx;
   }
 
   std::vector<TyIdx> &GetParamTypeList() {
     return paramTypeList;
   }
-
   TyIdx GetNthParamType(size_t i) const {
     ASSERT(i < paramTypeList.size(), "array index out of range");
     return paramTypeList[i];
   }
-
-  void AddParamTypeList(const TyIdx tyIdx) {
-    paramTypeList.push_back(tyIdx);
-  }
-
   void SetParamTypeList(std::vector<TyIdx> &list) {
     paramTypeList = list;
   }
@@ -1538,30 +1390,26 @@ class MIRFuncType : public MIRType {
   std::vector<TypeAttrs> &GetParamAttrsList() {
     return paramAttrsList;
   }
-
   const TypeAttrs &GetNthParamAttrs(size_t i) const {
     ASSERT(i < paramAttrsList.size(), "array index out of range");
     return paramAttrsList[i];
   }
-
   void SetParamAttrsList(const std::vector<TypeAttrs> &list) {
     paramAttrsList = list;
   }
-
-  void SetNthParamAttrs(size_t i, TypeAttrs &attrs) {
+  void SetNthParamAttrs(size_t i, const TypeAttrs &attrs) {
     ASSERT(i < paramAttrsList.size(), "array index out of range");
     paramAttrsList[i] = attrs;
   }
 
-  bool IsVarargs() {
+  bool IsVarargs() const {
     return isVarArgs;
   }
-
   void SetVarArgs(bool flag) {
     isVarArgs = flag;
   }
 
-  size_t GetHashIndex() const {
+  size_t GetHashIndex() const override {
     constexpr uint8 kIdxShift = 6;
     size_t hidx = (retTyIdx.GetIdx() << kIdxShift) + (typeKind << kShiftNumOfTypeKind);
     size_t size = paramTypeList.size();
@@ -1573,28 +1421,28 @@ class MIRFuncType : public MIRType {
   TyIdx retTyIdx;
   std::vector<TyIdx> paramTypeList;
   std::vector<TypeAttrs> paramAttrsList;
-  bool isVarArgs;
+  bool isVarArgs = false;
 };
 
 class MIRTypeByName : public MIRType {
   // use nameStrIdx to store the name for both local and global
  public:
-  bool EqualTo(const MIRType &type) const;
+  bool EqualTo(const MIRType &type) const override;
   explicit MIRTypeByName(GStrIdx sidx) : MIRType(kTypeByName, PTY_void) {
     nameStrIdx = sidx;
   }
 
   ~MIRTypeByName() = default;
-  MIRType *CopyMIRTypeNode() const {
+  MIRType *CopyMIRTypeNode() const override {
     return new MIRTypeByName(*this);
   }
 
-  void Dump(int indent, bool dontUseName = false) const;
-  size_t GetSize() const {
+  void Dump(int indent, bool dontUseName = false) const override;
+  size_t GetSize() const override {
     return 0;
   }  // size unknown
 
-  size_t GetHashIndex() const {
+  size_t GetHashIndex() const override {
     constexpr uint8 kIdxShift = 2;
     return ((nameStrIdx.GetIdx() << kIdxShift) + nameIsLocal + (typeKind << kShiftNumOfTypeKind)) % kTypeHashLength;
   }
@@ -1607,23 +1455,23 @@ class MIRTypeParam : public MIRType {
     nameStrIdx = sidx;
   }
 
-  ~MIRTypeParam() {}
+  ~MIRTypeParam() = default;
 
-  MIRType *CopyMIRTypeNode() const {
+  MIRType *CopyMIRTypeNode() const override {
     return new MIRTypeParam(*this);
   }
 
-  bool EqualTo(const MIRType &type) const;
-  void Dump(int indent, bool dontUseName = false) const;
-  size_t GetSize() const {
+  bool EqualTo(const MIRType &type) const override;
+  void Dump(int indent, bool dontUseName = false) const override;
+  size_t GetSize() const override {
     return 0;
   }  // size unknown
 
-  bool HasTypeParam() const {
+  bool HasTypeParam() const override {
     return true;
   }
 
-  size_t GetHashIndex() const {
+  size_t GetHashIndex() const override {
     constexpr uint8 kIdxShift = 3;
     return ((nameStrIdx.GetIdx() << kIdxShift) + (typeKind << kShiftNumOfTypeKind)) % kTypeHashLength;
   }
@@ -1633,32 +1481,31 @@ using TypePair = std::pair<TyIdx, TyIdx>;
 using GenericInstantVector = std::vector<TypePair>;
 class MIRInstantVectorType : public MIRType {
  public:
-  MIRInstantVectorType() : MIRType(kTypeInstantVector, PTY_agg), instantVec() {}
+  MIRInstantVectorType() : MIRType(kTypeInstantVector, PTY_agg) {}
 
-  explicit MIRInstantVectorType(MIRTypeKind kind) : MIRType(kind, PTY_agg), instantVec() {}
+  explicit MIRInstantVectorType(MIRTypeKind kind) : MIRType(kind, PTY_agg) {}
 
-  MIRInstantVectorType(MIRTypeKind kind, GStrIdx strIdx) : MIRType(kind, PTY_agg, strIdx), instantVec() {}
+  MIRInstantVectorType(MIRTypeKind kind, GStrIdx strIdx) : MIRType(kind, PTY_agg, strIdx) {}
 
   ~MIRInstantVectorType() = default;
-  MIRType *CopyMIRTypeNode() const {
+  MIRType *CopyMIRTypeNode() const override {
     return new MIRInstantVectorType(*this);
   }
 
-  bool EqualTo(const MIRType &type) const;
-  void Dump(int indent, bool dontUseName = false) const;
-  size_t GetSize() const {
+  bool EqualTo(const MIRType &type) const override;
+  void Dump(int indent, bool dontUseName = false) const override;
+  size_t GetSize() const override {
     return 0;
   }  // size unknown
 
   GenericInstantVector &GetInstantVec() {
     return instantVec;
   }
-
   const GenericInstantVector &GetInstantVec() const {
     return instantVec;
   }
 
-  size_t GetHashIndex() const {
+  size_t GetHashIndex() const override {
     uint32 hidx = typeKind << kShiftNumOfTypeKind;
     for (TypePair typePair : instantVec) {
       hidx += (typePair.first.GetIdx() + typePair.second.GetIdx()) << 3;
@@ -1667,37 +1514,38 @@ class MIRInstantVectorType : public MIRType {
   }
 
  protected:
-  GenericInstantVector instantVec;  // in each pair, first is generic type,
-                                    // second is real type
+  GenericInstantVector instantVec{};  // in each pair, first is generic type, second is real type
 };
 
 class MIRGenericInstantType : public MIRInstantVectorType {
  public:
-  explicit MIRGenericInstantType(TyIdx genTyIdx) : MIRInstantVectorType(kTypeGenericInstant), genericTyIdx(genTyIdx) {}
+  explicit MIRGenericInstantType(TyIdx genTyIdx)
+      : MIRInstantVectorType(kTypeGenericInstant), genericTyIdx(genTyIdx) {}
 
   explicit MIRGenericInstantType(GStrIdx strIdx)
       : MIRInstantVectorType(kTypeGenericInstant, strIdx), genericTyIdx(TyIdx(0)) {}
 
   ~MIRGenericInstantType() = default;
-  MIRType *CopyMIRTypeNode() const {
+
+  MIRType *CopyMIRTypeNode() const override {
     return new MIRGenericInstantType(*this);
   }
 
-  bool EqualTo(const MIRType &type) const;
-  void Dump(int indent, bool dontUseName = false) const;
-  size_t GetSize() const {
+  bool EqualTo(const MIRType &type) const override;
+  void Dump(int indent, bool dontUseName = false) const override;
+
+  size_t GetSize() const override {
     return 0;
   }  // size unknown
 
-  const TyIdx &GetGenericTyIdx() const {
+  TyIdx GetGenericTyIdx() const {
     return genericTyIdx;
   }
-
-  void SetGenericTyIdx(const TyIdx idx) {
+  void SetGenericTyIdx(TyIdx idx) {
     genericTyIdx = idx;
   }
 
-  size_t GetHashIndex() const {
+  size_t GetHashIndex() const override {
     constexpr uint8 kIdxShift = 2;
     uint32 hidx = (genericTyIdx.GetIdx() << kIdxShift) + (typeKind << kShiftNumOfTypeKind);
     for (TypePair typePair : instantVec) {

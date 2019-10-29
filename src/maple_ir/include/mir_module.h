@@ -61,7 +61,6 @@ class MIRType;
 class MIRFunction;
 class MIRSymbol;
 class MIRSymbolTable;
-class MIRTypeNameTable;
 class MIRFloatConst;
 class MIRDoubleConst;
 class MIRBuilder;
@@ -79,8 +78,8 @@ struct EncodedValue {
 
 class MIRTypeNameTable {
  public:
-  explicit MIRTypeNameTable(MapleAllocator *allocator)
-      : mAllocator(allocator), gStrIdxToTyIdxMap(std::less<GStrIdx>(), mAllocator->Adapter()) {}
+  explicit MIRTypeNameTable(MapleAllocator &allocator)
+      : mAllocator(allocator), gStrIdxToTyIdxMap(std::less<GStrIdx>(), mAllocator.Adapter()) {}
 
   ~MIRTypeNameTable() = default;
 
@@ -104,9 +103,8 @@ class MIRTypeNameTable {
     return gStrIdxToTyIdxMap.size();
   }
  private:
-  MapleAllocator *mAllocator;
+  MapleAllocator &mAllocator;
   MapleMap<GStrIdx, TyIdx> gStrIdxToTyIdxMap;
-
 };
 
 class MIRModule {
@@ -116,7 +114,7 @@ class MIRModule {
   MIRModule(MIRModule &p) = delete;
   MIRModule &operator=(const MIRModule &module) = delete;
 
-  explicit MIRModule(const char *fn = "");
+  explicit MIRModule(const std::string &fn = "");
   ~MIRModule();
 
   const MemPool *GetMemPool() const {
@@ -212,7 +210,7 @@ class MIRModule {
   void DumpInlineCandidateToFile(const std::string &fileNameStr) const;
   const std::string &GetFileNameFromFileNum(uint32 fileNum) const;
 
-  void DumpClassToFile(const char *path) const;
+  void DumpClassToFile(const std::string &path) const;
   void DumpFunctionList(bool skipBody = false) const;
   void DumpGlobalArraySymbol() const;
   void Emit(const std::string &outfileName) const;
@@ -230,8 +228,8 @@ class MIRModule {
 
   MIRFunction *FindEntryFunction();
   uint32 GetFileinfo(GStrIdx strIdx) const;
-  void OutputAsciiMpl(const char *phaseName, bool emitStructureType = true);
-  void OutputFunctionListAsciiMpl(const char *phaseName);
+  void OutputAsciiMpl(const std::string &phaseName, bool emitStructureType = true);
+  void OutputFunctionListAsciiMpl(const std::string &phaseName);
   const std::string &GetFileName() const {
     return fileName;
   }

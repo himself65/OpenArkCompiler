@@ -132,6 +132,32 @@ struct DexFile;
 struct DexClassDef;
 struct DexClassData;
 
+static constexpr size_t PageSize = 4096;
+
+// Note there is no state to indicate a class is already initialized.
+// Any state beyond listed below is treated as initialized.
+enum ClassInitState {
+  kClassInitStateMin   = 0,
+  kClassUninitialized  = 1,
+  kClassInitializing   = 2,
+  kClassInitFailed     = 3,
+  kClassInitialized    = 4,
+  kClassInitStateMax   = 4,
+};
+
+enum SEGVAddr {
+  kSEGVAddrRangeStart            = PageSize + 0,
+
+  // Note any readable address is treated as Initialized.
+  kSEGVAddrForClassInitStateMin  = kSEGVAddrRangeStart + kClassInitStateMin,
+  kSEGVAddrForClassUninitialized = kSEGVAddrForClassInitStateMin + kClassUninitialized,
+  kSEGVAddrForClassInitializing  = kSEGVAddrForClassInitStateMin + kClassInitializing,
+  kSEGVAddrForClassInitFailed    = kSEGVAddrForClassInitStateMin + kClassInitFailed,
+  kSEGVAddrFoClassInitStateMax   = kSEGVAddrForClassInitStateMin + kClassInitStateMax,
+
+  kSEGVAddrRangeEnd,
+};
+
 struct ClassMetadata {
   // object common fields
   MetaRef shadow;  // point to classinfo of java/lang/Class
@@ -162,9 +188,22 @@ struct ClassMetadata {
   };
 
   union {
-    intptr_t initState;    // if class is not initialized
+    void *initState; // a readable address for initState means initialized
     void *cacheTrueClass;
-  }; // class init state, this field must be accessed atomically.
+  };
+
+ public:
+  bool IsInitialized();
+
+  ClassInitState GetInitState();
+  void *GetInitStateRawValue() {
+    return __atomic_load_n(&initState, __ATOMIC_ACQUIRE);
+  }
+
+  void SetInitState(ClassInitState state);
+  void SetInitStateRawValue(void *val) {
+    __atomic_store_n(&initState, val, __ATOMIC_RELEASE);
+  }
 };
 
 static inline intptr_t ClassMetadataOffsetOfInitFlag() {

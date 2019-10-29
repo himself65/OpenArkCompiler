@@ -39,8 +39,8 @@ class UnionFind {
   ~UnionFind() {
     // for the root id's, the sum of their size should be population size
 #if DEBUG
-    uint sum = 0;
-    for (uint i = 0; i < num; i++)
+    unsigned int sum = 0;
+    for (unsigned int i = 0; i < num; i++)
       if (id[i] == i) {
         // it is a root
         sum += sz[i];
@@ -50,19 +50,19 @@ class UnionFind {
   }
 
   void Reinit() {
-    for (uint i = 0; i < num; i++) {
+    for (unsigned int i = 0; i < num; i++) {
       id[i] = i;
       sz[i] = 1;
     }
   }
 
-  uint NewMember() {
+  unsigned int NewMember() {
     id.push_back(num);  // new member is its own root
     sz.push_back(1);
     return ++num;
   }
 
-  uint Root(uint i) {
+  unsigned int Root(unsigned int i) {
     while (id[i] != i) {
       id[i] = id[id[i]];  // this compresses the path
       i = id[i];
@@ -70,13 +70,13 @@ class UnionFind {
     return i;
   }
 
-  bool Find(uint p, uint q) {
+  bool Find(unsigned int p, unsigned int q) {
     return Root(p) == Root(q);
   }
 
-  void Union(uint p, uint q) {
-    uint i = Root(p);
-    uint j = Root(q);
+  void Union(unsigned int p, unsigned int q) {
+    unsigned int i = Root(p);
+    unsigned int j = Root(q);
     if (i == j) {
       return;
     }
@@ -90,26 +90,26 @@ class UnionFind {
     }
   }
 
-  uint GetElementsNumber(int i) const {
+  unsigned int GetElementsNumber(int i) const {
     ASSERT(i < sz.size(), "index out of range");
     return sz[i];
   }
 
-  bool SingleMemberClass(uint p) {
-    uint i = Root(p);
+  bool SingleMemberClass(unsigned int p) {
+    unsigned int i = Root(p);
     ASSERT(i < sz.size(), "index out of range");
     return sz[i] == 1;
   }
 
  private:
   MapleAllocator ufAlloc;
-  uint num;                     // the population size; can continue to increase
-  MapleVector<uint> id;  // array index is id of each population member;
+  unsigned int num;                     // the population size; can continue to increase
+  MapleVector<unsigned int> id;  // array index is id of each population member;
   // value is id of the root member of its class;
   // the member is a root if its value is itself;
   // as its root changes, will keep updating so as to
   // maintain a flat tree
-  MapleVector<uint> sz;  // gives number of elements in the tree rooted there
+  MapleVector<unsigned int> sz;  // gives number of elements in the tree rooted there
 };
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_UNION_FIND_H

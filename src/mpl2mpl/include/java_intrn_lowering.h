@@ -23,7 +23,7 @@ namespace maple {
 class JavaIntrnLowering : public FuncOptimizeImpl {
  public:
   JavaIntrnLowering(MIRModule *mod, KlassHierarchy *kh, bool dump);
-  ~JavaIntrnLowering() {}
+  ~JavaIntrnLowering() = default;
 
   FuncOptimizeImpl *Clone() override {
     return new JavaIntrnLowering(*this);
@@ -40,7 +40,7 @@ class DoJavaIntrnLowering : public ModulePhase {
  public:
   explicit DoJavaIntrnLowering(ModulePhaseID id) : ModulePhase(id) {}
 
-  ~DoJavaIntrnLowering() {}
+  ~DoJavaIntrnLowering() = default;
 
   std::string PhaseName() const override {
     return "javaintrnlowering";

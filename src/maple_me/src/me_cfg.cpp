@@ -453,8 +453,7 @@ void MeCFG::FixMirCFG() {
 }
 
 
-// used only after DSE because it looks at live field of VersionSt
-void MeCFG::ConvertPhis2IdentityAssigns(BB &meBB) const {
+void MeCFG::ConvertPhiList2IdentityAssigns(BB &meBB) const {
   auto phiIt = meBB.GetPhiList().begin();
   while (phiIt != meBB.GetPhiList().end()) {
     if (!(*phiIt).second.GetResult()->IsLive()) {
@@ -467,13 +466,13 @@ void MeCFG::ConvertPhis2IdentityAssigns(BB &meBB) const {
       const MIRSymbol *st = ost->GetMIRSymbol();
       MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(st->GetTyIdx());
       AddrofNode *dread = func.GetMIRModule().GetMIRBuilder()->CreateDread(*st, GetRegPrimType(type->GetPrimType()));
-      AddrofSSANode *dread2 = func.GetMirFunc()->GetCodeMemPool()->New<AddrofSSANode>(dread);
+      auto *dread2 = func.GetMirFunc()->GetCodeMemPool()->New<AddrofSSANode>(dread);
       dread2->SetSSAVar((*phiIt).second.GetPhiOpnd(0));
       DassignNode *dassign = func.GetMIRModule().GetMIRBuilder()->CreateStmtDassign(*st, 0, dread2);
       func.GetMeSSATab()->GetStmtsSSAPart().SetSSAPartOf(
           *dassign, func.GetMeSSATab()->GetStmtsSSAPart().GetSSAPartMp()->New<MayDefPartWithVersionSt>(
               &func.GetMeSSATab()->GetStmtsSSAPart().GetSSAPartAlloc()));
-      MayDefPartWithVersionSt *theSSAPart =
+      auto *theSSAPart =
           static_cast<MayDefPartWithVersionSt*>(func.GetMeSSATab()->GetStmtsSSAPart().SSAPartOf(*dassign));
       theSSAPart->SetSSAVar(*((*phiIt).second.GetResult()));
       meBB.PrependStmtNode(dassign);
@@ -481,6 +480,9 @@ void MeCFG::ConvertPhis2IdentityAssigns(BB &meBB) const {
     phiIt++;
   }
   meBB.ClearPhiList();  // delete all the phis
+}
+
+void MeCFG::ConvertMevarPhiList2IdentityAssigns(BB &meBB) const {
   auto varPhiIt = meBB.GetMevarPhiList().begin();
   while (varPhiIt != meBB.GetMevarPhiList().end()) {
     if (!(*varPhiIt).second->GetIsLive()) {
@@ -490,7 +492,7 @@ void MeCFG::ConvertPhis2IdentityAssigns(BB &meBB) const {
     // replace phi with identify assignment as it only has 1 opnd
     const OriginalSt *ost = func.GetMeSSATab()->GetOriginalStFromID(varPhiIt->first);
     if (ost->IsSymbolOst() && ost->GetIndirectLev() == 0) {
-      DassignMeStmt *dassign = func.GetIRMap()->NewInPool<DassignMeStmt>();
+      auto *dassign = func.GetIRMap()->NewInPool<DassignMeStmt>();
       MeVarPhiNode *varPhi = varPhiIt->second;
       dassign->SetLHS(varPhi->GetLHS());
       dassign->SetRHS(varPhi->GetOpnd(0));
@@ -501,6 +503,9 @@ void MeCFG::ConvertPhis2IdentityAssigns(BB &meBB) const {
     varPhiIt++;
   }
   meBB.GetMevarPhiList().clear();  // delete all the phis
+}
+
+void MeCFG::ConvertMeregphiList2IdentityAssigns(BB &meBB) const {
   auto regPhiIt = meBB.GetMeregphiList().begin();
   while (regPhiIt != meBB.GetMeregphiList().end()) {
     if (!(*regPhiIt).second->GetIsLive()) {
@@ -510,7 +515,7 @@ void MeCFG::ConvertPhis2IdentityAssigns(BB &meBB) const {
     // replace phi with identify assignment as it only has 1 opnd
     const OriginalSt *ost = func.GetMeSSATab()->GetOriginalStFromID(regPhiIt->first);
     if (ost->IsSymbolOst() && ost->GetIndirectLev() == 0) {
-      RegassignMeStmt *regass = func.GetIRMap()->New<RegassignMeStmt>();
+      auto *regass = func.GetIRMap()->New<RegassignMeStmt>();
       MeRegPhiNode *regPhi = regPhiIt->second;
       regass->SetLHS(regPhi->GetLHS());
       regass->SetRHS(regPhi->GetOpnd(0));
@@ -521,6 +526,13 @@ void MeCFG::ConvertPhis2IdentityAssigns(BB &meBB) const {
     regPhiIt++;
   }
   meBB.GetMeregphiList().clear();  // delete all the phis
+}
+
+// used only after DSE because it looks at live field of VersionSt
+void MeCFG::ConvertPhis2IdentityAssigns(BB &meBB) const {
+  ConvertPhiList2IdentityAssigns(meBB);
+  ConvertMevarPhiList2IdentityAssigns(meBB);
+  ConvertMeregphiList2IdentityAssigns(meBB);
 }
 
 // analyse the CFG to find the BBs that are not reachable from function entries
@@ -763,15 +775,7 @@ static bool ContainsConststr(const BaseNode &x) {
   return false;
 }
 
-/* generate dot file for cfg */
-void MeCFG::DumpToFile(const std::string &prefix, bool dumpInStrs) const {
-  if (MeOption::noDot) {
-    return;
-  }
-  std::ofstream cfgFile;
-  std::streambuf *coutBuf = LogInfo::MapleLogger().rdbuf(); /* keep original cout buffer */
-  std::streambuf *buf = cfgFile.rdbuf();
-  LogInfo::MapleLogger().rdbuf(buf);
+std::string MeCFG::ConstructFileNameToDump(const std::string &prefix) const {
   std::string fileName;
   if (!prefix.empty()) {
     fileName.append(prefix);
@@ -785,6 +789,51 @@ void MeCFG::DumpToFile(const std::string &prefix, bool dumpInStrs) const {
   }
   ReplaceFilename(fileName);
   fileName.append(".dot");
+  return fileName;
+}
+
+void MeCFG::DumpToFileInStrs(std::ofstream &cfgFile) const {
+  const auto &eIt = func.valid_end();
+  for (auto bIt = func.valid_begin(); bIt != eIt; ++bIt) {
+    auto *bb = *bIt;
+    if (bb->IsEmpty()) {
+      continue;
+    }
+    if (bb->GetKind() == kBBCondGoto) {
+      cfgFile << "BB" << bb->GetBBId().idx << "[shape=diamond,label= \" BB" << bb->GetBBId().idx << ":\n{ ";
+    } else {
+      cfgFile << "BB" << bb->GetBBId().idx << "[shape=box,label= \" BB" << bb->GetBBId().idx << ":\n{ ";
+    }
+    if (bb->GetBBLabel() != 0) {
+      cfgFile << "@" << func.GetMirFunc()->GetLabelName(bb->GetBBLabel()) << ":\n";
+    }
+    for (auto phiIt = bb->GetPhiList().begin(); phiIt != bb->GetPhiList().end(); phiIt++) {
+      (*phiIt).second.Dump(&(func.GetMIRModule()));
+    }
+    for (auto &stmt : bb->GetStmtNodes()) {
+      // avoid printing content that may contain " as this needs to be quoted
+      if (stmt.GetOpCode() == OP_comment) {
+        continue;
+      }
+      if (ContainsConststr(stmt)) {
+        continue;
+      }
+      stmt.Dump(func.GetMIRModule(), 1);
+    }
+    cfgFile << "}\"];\n";
+  }
+}
+
+/* generate dot file for cfg */
+void MeCFG::DumpToFile(const std::string &prefix, bool dumpInStrs) const {
+  if (MeOption::noDot) {
+    return;
+  }
+  std::ofstream cfgFile;
+  std::streambuf *coutBuf = LogInfo::MapleLogger().rdbuf(); /* keep original cout buffer */
+  std::streambuf *buf = cfgFile.rdbuf();
+  LogInfo::MapleLogger().rdbuf(buf);
+  const std::string &fileName = ConstructFileNameToDump(prefix);
   cfgFile.open(fileName.c_str(), std::ios::trunc);
   cfgFile << "digraph {\n";
   cfgFile << " # /*" << func.GetName().c_str() << " (red line is exception handler)*/\n";
@@ -817,35 +866,7 @@ void MeCFG::DumpToFile(const std::string &prefix, bool dumpInStrs) const {
   }
   /* dump instruction in each BB */
   if (dumpInStrs) {
-    eIt = func.valid_end();
-    for (auto bIt = func.valid_begin(); bIt != eIt; ++bIt) {
-      auto *bb = *bIt;
-      if (bb->IsEmpty()) {
-        continue;
-      }
-      if (bb->GetKind() == kBBCondGoto) {
-        cfgFile << "BB" << bb->GetBBId().idx << "[shape=diamond,label= \" BB" << bb->GetBBId().idx << ":\n{ ";
-      } else {
-        cfgFile << "BB" << bb->GetBBId().idx << "[shape=box,label= \" BB" << bb->GetBBId().idx << ":\n{ ";
-      }
-      if (bb->GetBBLabel() != 0) {
-        cfgFile << "@" << func.GetMirFunc()->GetLabelName(bb->GetBBLabel()) << ":\n";
-      }
-      for (auto phiIt = bb->GetPhiList().begin(); phiIt != bb->GetPhiList().end(); phiIt++) {
-        (*phiIt).second.Dump(&(func.GetMIRModule()));
-      }
-      for (auto &stmt : bb->GetStmtNodes()) {
-        // avoid printing content that may contain " as this needs to be quoted
-        if (stmt.GetOpCode() == OP_comment) {
-          continue;
-        }
-        if (ContainsConststr(stmt)) {
-          continue;
-        }
-        stmt.Dump(func.GetMIRModule(), 1);
-      }
-      cfgFile << "}\"];\n";
-    }
+    DumpToFileInStrs(cfgFile);
   }
   cfgFile << "}\n";
   cfgFile.flush();

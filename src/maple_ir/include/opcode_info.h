@@ -35,17 +35,17 @@ enum OpcodeProp {
   kOpcodePropMayThrowException,
 };
 
-constexpr unsigned long OPCODEISSTMT(1UL << kOpcodePropIsStmt);
-constexpr unsigned long OPCODEISVARSIZE(1UL << kOpcodePropIsVarSize);
-constexpr unsigned long OPCODENOTMMPL(1UL << kOpcodePropNotMMPL);
-constexpr unsigned long OPCODEISCOMPARE(1UL << kOpcodePropIsCompare);
-constexpr unsigned long OPCODEISTYPECVT(1UL << kOpcodePropIsTypeCvt);
-constexpr unsigned long OPCODEHASSSAUSE(1UL << kOpcodePropHasSSAUse);
-constexpr unsigned long OPCODEHASSSADEF(1UL << kOpcodePropHasSSADef);
-constexpr unsigned long OPCODEISCALL(1UL << kOpcodePropIsCall);
-constexpr unsigned long OPCODEISCALLASSIGNED(1UL << kOpcodePropIsCallAssigned);
-constexpr unsigned long OPCODENOTPURE(1UL << kOpcodePropNotPure);
-constexpr unsigned long OPCODEMAYTHROWEXCEPTION(1UL << kOpcodePropMayThrowException);
+constexpr unsigned long OPCODEISSTMT(1ULL << kOpcodePropIsStmt);
+constexpr unsigned long OPCODEISVARSIZE(1ULL << kOpcodePropIsVarSize);
+constexpr unsigned long OPCODENOTMMPL(1ULL << kOpcodePropNotMMPL);
+constexpr unsigned long OPCODEISCOMPARE(1ULL << kOpcodePropIsCompare);
+constexpr unsigned long OPCODEISTYPECVT(1ULL << kOpcodePropIsTypeCvt);
+constexpr unsigned long OPCODEHASSSAUSE(1ULL << kOpcodePropHasSSAUse);
+constexpr unsigned long OPCODEHASSSADEF(1ULL << kOpcodePropHasSSADef);
+constexpr unsigned long OPCODEISCALL(1ULL << kOpcodePropIsCall);
+constexpr unsigned long OPCODEISCALLASSIGNED(1ULL << kOpcodePropIsCallAssigned);
+constexpr unsigned long OPCODENOTPURE(1ULL << kOpcodePropNotPure);
+constexpr unsigned long OPCODEMAYTHROWEXCEPTION(1ULL << kOpcodePropMayThrowException);
 struct OpcodeDesc {
   uint8 instrucSize;  // size of instruction in bytes
   uint16 flag;        // stores the opcode property flags

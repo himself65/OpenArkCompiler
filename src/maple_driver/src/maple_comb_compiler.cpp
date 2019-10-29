@@ -239,7 +239,7 @@ Options *MapleCombCompiler::MakeMpl2MplOptions(const MplOptions &options, maple:
 ErrorCode MapleCombCompiler::Compile(const MplOptions &options, MIRModulePtr &theModule) {
   MemPool *optMp = mempoolctrler.NewMemPool("maplecomb mempool");
   std::string fileName = GetInputFileName(options);
-  theModule = new MIRModule(fileName.c_str());
+  theModule = new MIRModule(fileName);
   MeOption *meOptions = nullptr;
   Options *mpl2mplOptions = nullptr;
   auto iterMe = std::find(options.runningExes.begin(), options.runningExes.end(), kBinNameMe);

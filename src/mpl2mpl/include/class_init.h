@@ -24,7 +24,7 @@ static constexpr char kMCCPostClinitCheck[] = "MCC_PostClinitCheck";
 class ClassInit : public FuncOptimizeImpl {
  public:
   ClassInit(MIRModule *mod, KlassHierarchy *kh, bool dump);
-  ~ClassInit() {}
+  ~ClassInit() = default;
 
   FuncOptimizeImpl *Clone() override {
     return new (std::nothrow) ClassInit(*this);
@@ -44,7 +44,7 @@ class DoClassInit : public ModulePhase {
  public:
   explicit DoClassInit(ModulePhaseID id) : ModulePhase(id) {}
 
-  ~DoClassInit() {}
+  ~DoClassInit() = default;
 
   std::string PhaseName() const override {
     return "clinit";

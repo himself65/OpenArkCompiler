@@ -108,6 +108,7 @@ class MplOptions {
   bool timePhases;
   bool genMemPl;
   bool genVtableImpl;
+  bool verify;
   MplOptions()
       : optionParser(nullptr),
         options(UserOption()),
@@ -130,7 +131,8 @@ class MplOptions {
         debugFlag(false),
         timePhases(false),
         genMemPl(false),
-        genVtableImpl(false) {}
+        genVtableImpl(false),
+        verify(false) {}
   ~MplOptions() {
     if (optionParser != nullptr) {
       delete optionParser;

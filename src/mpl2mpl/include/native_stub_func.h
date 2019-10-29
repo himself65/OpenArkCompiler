@@ -38,16 +38,14 @@ static constexpr char kSetReliableUnwindContextFunc[] = "MCC_SetReliableUnwindCo
 
 class NativeFuncProperty {
  public:
-  NativeFuncProperty() {
-    jniType = kJniTypeNormal;
-  }
+  NativeFuncProperty() = default;
   ~NativeFuncProperty() = default;
 
  private:
   std::string javaFunc;
   std::string nativeFile;
   std::string nativeFunc;
-  int jniType;
+  int jniType = kJniTypeNormal;
 
   friend class GenericNativeStubFunc;
 };
@@ -55,7 +53,7 @@ class NativeFuncProperty {
 class GenericNativeStubFunc : public FuncOptimizeImpl {
  public:
   GenericNativeStubFunc(MIRModule *mod, KlassHierarchy *kh, bool dump);
-  ~GenericNativeStubFunc() {}
+  ~GenericNativeStubFunc() = default;
 
   void ProcessFunc(MIRFunction *func) override;
   void Finish() override;
@@ -70,13 +68,6 @@ class GenericNativeStubFunc : public FuncOptimizeImpl {
   MIRAggConst *regTableConst = nullptr;
   MIRSymbol *regFuncSymbol = nullptr;
   MIRAggConst *regFuncTabConst = nullptr;
-  bool IsStaticBindingListMode() const;
-  inline bool ReturnsJstr(TyIdx retType) {
-    return (retType == jstrPointerTypeIdx);
-  }
-
-  void InitStaticBindingMethodList();
-  bool IsStaticBindingMethod(const std::string &methodName);
   MIRFunction *MRTPreNativeFunc = nullptr;
   MIRFunction *MRTPostNativeFunc = nullptr;
   MIRFunction *MRTDecodeRefFunc = nullptr;
@@ -86,10 +77,16 @@ class GenericNativeStubFunc : public FuncOptimizeImpl {
   MIRFunction *MRTCallSlowNativeFunc[kSlownativeFuncnum] = { nullptr };  // for native func which args <=8, use x0-x7
   MIRFunction *MRTCallSlowNativeExtFunc = nullptr;
   MIRFunction *MCCSetReliableUnwindContextFunc = nullptr;
-  const std::string kCallSlowNativeFuncs[kSlownativeFuncnum] = {
+  const std::string callSlowNativeFuncs[kSlownativeFuncnum] = {
     "MCC_CallSlowNative0", "MCC_CallSlowNative1", "MCC_CallSlowNative2", "MCC_CallSlowNative3", "MCC_CallSlowNative4",
     "MCC_CallSlowNative5", "MCC_CallSlowNative6", "MCC_CallSlowNative7", "MCC_CallSlowNative8"
   };
+  bool IsStaticBindingListMode() const;
+  inline bool ReturnsJstr(TyIdx retType) {
+    return (retType == jstrPointerTypeIdx);
+  }
+  void InitStaticBindingMethodList();
+  bool IsStaticBindingMethod(const std::string &methodName);
   MIRFunction &GetOrCreateDefaultNativeFunc(MIRFunction &stubFunc);
   void GenericRegisteredNativeFuncCall(MIRFunction &func, const MIRFunction &nativeFunc, MapleVector<BaseNode*> &args,
                                        const MIRSymbol *ret, bool needNativeCall, CallNode &prevNativeFuncCall,
@@ -111,7 +108,7 @@ class DoGenericNativeStubFunc : public ModulePhase {
  public:
   explicit DoGenericNativeStubFunc(ModulePhaseID id) : ModulePhase(id) {}
 
-  ~DoGenericNativeStubFunc() {}
+  ~DoGenericNativeStubFunc() = default;
 
   std::string PhaseName() const override {
     return "GenNativeStubFunc";

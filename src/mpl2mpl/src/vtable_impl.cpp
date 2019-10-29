@@ -20,11 +20,12 @@
 // This phase is mainly to lower interfacecall into icall
 
 namespace maple {
-VtableImpl::VtableImpl(MIRModule *mod, KlassHierarchy *kh, bool dump) : FuncOptimizeImpl(mod, kh, dump) {
+VtableImpl::VtableImpl(MIRModule *mod, KlassHierarchy *kh, bool dump)
+    : FuncOptimizeImpl(mod, kh, dump),
+      mirModule(mod) {
+  klassHierarchy = kh;
   mccItabFunc = builder->GetOrCreateFunction(kInterfaceMethod, TyIdx(PTY_ptr));
   mccItabFunc->SetAttr(FUNCATTR_nosideeffect);
-  mirModule = mod;
-  klassHierarchy = kh;
 }
 
 void VtableImpl::ProcessFunc(MIRFunction *func) {
@@ -39,7 +40,7 @@ void VtableImpl::ProcessFunc(MIRFunction *func) {
     Opcode opcode = stmt->GetOpCode();
     switch (opcode) {
       case OP_regassign: {
-        RegassignNode *regassign = static_cast<RegassignNode*>(stmt);
+        auto *regassign = static_cast<RegassignNode*>(stmt);
         BaseNode *rhs = regassign->Opnd();
         ASSERT(rhs != nullptr, "null ptr check!");
         if (rhs->GetOpCode() == maple::OP_resolveinterfacefunc) {
@@ -49,7 +50,7 @@ void VtableImpl::ProcessFunc(MIRFunction *func) {
       }
       case OP_interfaceicallassigned:
       case OP_virtualicallassigned: {
-        CallNode *callNode = static_cast<CallNode*>(stmt);
+        auto *callNode = static_cast<CallNode*>(stmt);
         MIRFunction *callee = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(callNode->GetPUIdx());
         MemPool *currentFuncCodeMempool = builder->GetCurrentFuncCodeMp();
         IcallNode *icallNode =
@@ -67,7 +68,7 @@ void VtableImpl::ProcessFunc(MIRFunction *func) {
         // Fall-through
       }
       case OP_icallassigned: {
-        IcallNode *icall = static_cast<IcallNode*>(stmt);
+        auto *icall = static_cast<IcallNode*>(stmt);
         BaseNode *firstParm = icall->GetNopndAt(0);
         ASSERT(firstParm != nullptr, "null ptr check!");
         if (firstParm->GetOpCode() == maple::OP_resolveinterfacefunc) {
@@ -138,14 +139,14 @@ void VtableImpl::ReplaceResolveInterface(StmtNode &stmt, const ResolveFuncNode &
   BaseNode *checkExpr = builder->CreateExprCompare(OP_eq, *GlobalTables::GetTypeTable().GetUInt1(), *compactPtrType,
                                                    builder->CreateExprRegread(compactPtrPrim, pregFuncPtr),
                                                    builder->CreateIntConst(0, compactPtrPrim));
-  IfStmtNode *ifStmt = static_cast<IfStmtNode*>(builder->CreateStmtIf(checkExpr));
+  auto *ifStmt = static_cast<IfStmtNode*>(builder->CreateStmtIf(checkExpr));
   ifStmt->GetThenPart()->AddStatement(mccCallStmt);
   currFunc->GetBody()->InsertBefore(&stmt, ifStmt);
   if (stmt.GetOpCode() == OP_regassign) {
-    RegassignNode *regAssign = static_cast<RegassignNode*>(&stmt);
+    auto *regAssign = static_cast<RegassignNode*>(&stmt);
     regAssign->SetOpnd(builder->CreateExprRegread(compactPtrPrim, pregFuncPtr));
   } else {
-    IcallNode *icall = static_cast<IcallNode*>(&stmt);
+    auto *icall = static_cast<IcallNode*>(&stmt);
     const size_t nopndSize = icall->GetNopndSize();
     CHECK_FATAL(nopndSize > 0, "container check");
     icall->SetNOpndAt(0, builder->CreateExprRegread(compactPtrPrim, pregFuncPtr));

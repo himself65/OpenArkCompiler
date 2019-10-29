@@ -111,7 +111,7 @@ class BinaryMplExport {
   void WriteInt64(int64 x);
   void WriteNum(int64 x);
   void WriteAsciiStr(const std::string &str);
-  void Fixup(uint64 i, int32 x);
+  void Fixup(size_t i, int32 x);
   void DumpBuf(const std::string &modid);
   void AppendAt(const std::string &fname, int32 ipaIdx);
   const MIRModule &GetMIRModule() const {
