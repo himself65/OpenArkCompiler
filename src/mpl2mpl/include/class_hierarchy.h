@@ -83,7 +83,7 @@ class Klass {
 
  public:
   Klass(MIRStructType *type, MapleAllocator *alc);
-  ~Klass() {}
+  ~Klass() = default;
 
   // Return true if Klass represents an interface
   bool IsInterface() const {
@@ -246,10 +246,10 @@ class Klass {
   }
 
   // Return a vector of possible functions
-  MapleVector<MIRFunction*> *GetCandidates(GStrIdx mnameNoklassStridx) const;
+  MapleVector<MIRFunction*> *GetCandidates(GStrIdx mnameNoklassStrIdx) const;
   // Return the unique method if there is only one target virtual function.
   // Return nullptr if there are multiple targets.
-  MIRFunction *GetUniqueMethod(GStrIdx mnameNoklassStridx) const;
+  MIRFunction *GetUniqueMethod(GStrIdx mnameNoklassStrIdx) const;
   void AddSuperKlass(Klass *superclass) {
     superKlasses.push_back(superclass);
   }
@@ -322,11 +322,11 @@ class KlassHierarchy : public AnalysisResult {
  public:
   static bool traceFlag;
   KlassHierarchy(MIRModule *mirmodule, MemPool *memPool);
-  virtual ~KlassHierarchy() {}
+  virtual ~KlassHierarchy() = default;
 
   // Get a class. Return nullptr it does not exist.
-  Klass *GetKlassFromStrIdx(GStrIdx stridx) const;
-  Klass *GetKlassFromTyIdx(TyIdx tyidx) const;
+  Klass *GetKlassFromStrIdx(GStrIdx strIdx) const;
+  Klass *GetKlassFromTyIdx(TyIdx tyIdx) const;
   Klass *GetKlassFromFunc(const MIRFunction *func) const;
   Klass *GetKlassFromName(const std::string &name) const;
   Klass *GetKlassFromLiteral(const std::string &name) const;

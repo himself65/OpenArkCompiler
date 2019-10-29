@@ -83,7 +83,7 @@ class Phase {
   virtual ~Phase(){};
 
  private:
-  uint memPoolCount = 0;
+  unsigned int memPoolCount = 0;
   std::vector<MemPool*> memPools;
 };
 

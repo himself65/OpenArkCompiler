@@ -59,7 +59,8 @@ MIRSymbol *CheckCastGenerator::GetOrCreateClassInfoSymbol(const std::string &cla
     GStrIdx gStrIdx = GlobalTables::GetStrTable().GetStrIdxFromName(className);
     MIRType *classType =
         GlobalTables::GetTypeTable().GetTypeFromTyIdx(GlobalTables::GetTypeNameTable().GetTyIdxFromGStrIdx(gStrIdx));
-    MIRStorageClass sclass = (classType && static_cast<MIRClassType*>(classType)->IsLocal()) ? kScGlobal : kScExtern;
+    MIRStorageClass sclass = (classType != nullptr && static_cast<MIRClassType*>(classType)->IsLocal()) ? kScGlobal
+                                                                                                        : kScExtern;
     // Creating global symbol needs synchronization.
     classInfoSymbol = builder->CreateGlobalDecl(classInfoName.c_str(), *GlobalTables::GetTypeTable().GetPtr(), sclass);
   }
@@ -69,7 +70,7 @@ MIRSymbol *CheckCastGenerator::GetOrCreateClassInfoSymbol(const std::string &cla
 void CheckCastGenerator::GenCheckCast(BaseNode &stmt) {
   // Handle the special case like (Type)null, we don't need a checkcast.
   if (stmt.GetOpCode() == OP_intrinsiccallwithtypeassigned) {
-    IntrinsiccallNode *callNode = static_cast<IntrinsiccallNode*>(&stmt);
+    auto *callNode = static_cast<IntrinsiccallNode*>(&stmt);
     ASSERT(callNode->GetNopndSize() == 1, "array size error");
     BaseNode *opnd = callNode->Opnd(0);
     if (opnd->GetOpCode() == OP_constval) {
@@ -90,14 +91,14 @@ void CheckCastGenerator::GenCheckCast(BaseNode &stmt) {
     }
   }
   // Do type check first.
-  IntrinsiccallNode *callNode = static_cast<IntrinsiccallNode*>(&stmt);
+  auto *callNode = static_cast<IntrinsiccallNode*>(&stmt);
   ASSERT(callNode->GetNopndSize() == 1, "array size error");
   TyIdx checkTyidx = callNode->GetTyIdx();
   MIRType *checkType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(checkTyidx);
   Klass *checkKlass = klassHierarchy->GetKlassFromTyIdx(static_cast<MIRPtrType*>(checkType)->GetPointedTyIdx());
 
   {
-    if (checkKlass && strcmp("", checkKlass->GetKlassName().c_str())) {
+    if (checkKlass != nullptr && strcmp("", checkKlass->GetKlassName().c_str())) {
       if (!strcmp(checkKlass->GetKlassName().c_str(), NameMangler::kJavaLangObjectStr)) {
         const size_t callNodeNopndSize1 = callNode->GetNopndSize();
         CHECK_FATAL(callNodeNopndSize1 > 0, "container check");
@@ -121,15 +122,14 @@ void CheckCastGenerator::GenCheckCast(BaseNode &stmt) {
         BaseNode *cond =
             builder->CreateExprCompare(OP_ne, *GlobalTables::GetTypeTable().GetUInt1(),
                                        *GlobalTables::GetTypeTable().GetPtr(), callNode->GetNopndAt(0), nullPtr);
-        IfStmtNode *ifStmt = static_cast<IfStmtNode*>(builder->CreateStmtIf(cond));
+        auto *ifStmt = static_cast<IfStmtNode*>(builder->CreateStmtIf(cond));
         MIRType *mVoidPtr = GlobalTables::GetTypeTable().GetVoidPtr();
         CHECK_FATAL(mVoidPtr != nullptr, "builder->GetVoidPtr() is null in CheckCastGenerator::GenCheckCast");
         BaseNode *opnd = callNode->GetNopndAt(0);
         BaseNode *ireadExpr = GetObjectShadow(opnd);
-
         BaseNode *innerCond = builder->CreateExprCompare(OP_ne, *GlobalTables::GetTypeTable().GetUInt1(),
                                                          *GlobalTables::GetTypeTable().GetPtr(), valueExpr, ireadExpr);
-        IfStmtNode *innerIfStmt = static_cast<IfStmtNode *>(builder->CreateStmtIf(innerCond));
+        auto *innerIfStmt = static_cast<IfStmtNode*>(builder->CreateStmtIf(innerCond));
         MapleVector<BaseNode*> args(builder->GetCurrentFuncCodeMpAllocator()->Adapter());
         args.push_back(valueExpr);
         args.push_back(opnd);
@@ -143,7 +143,7 @@ void CheckCastGenerator::GenCheckCast(BaseNode &stmt) {
           GlobalTables::GetTypeTable().GetTypeFromTyIdx(static_cast<MIRPtrType*>(checkType)->GetPointedTyIdx());
       if (pointedType->GetKind() == kTypeJArray) {
         // Java array.
-        MIRJarrayType *jarrayType = static_cast<MIRJarrayType*>(pointedType);
+        auto *jarrayType = static_cast<MIRJarrayType*>(pointedType);
         std::string arrayName = jarrayType->GetJavaName();
         int dim = 0;
         while (arrayName[dim] == 'A') {
@@ -182,7 +182,7 @@ void CheckCastGenerator::GenCheckCast(BaseNode &stmt) {
         if (kd == kTypeStructIncomplete || kd == kTypeClassIncomplete || kd == kTypeInterfaceIncomplete) {
           LogInfo::MapleLogger() << "Warining: CheckCastGenerator::GenCheckCast "
                                  << GlobalTables::GetStrTable().GetStringFromStrIdx(pointedType->GetNameStrIdx())
-                                 << " INCOMPLETE " << std::endl;
+                                 << " INCOMPLETE \n";
         } else {
           CHECK_FATAL(false, "unsupport kind");
         }
@@ -195,7 +195,6 @@ void CheckCastGenerator::GenCheckCast(BaseNode &stmt) {
   BaseNode *opnd = callNode->Opnd(0);
   ASSERT(opnd->GetOpCode() == OP_dread || opnd->GetOpCode() == OP_regread || opnd->GetOpCode() == OP_iread ||
          opnd->GetOpCode() == OP_retype, "unknown calltype! check it!");
-
   MIRType *fromType = nullptr;
   if (opnd->GetOpCode() == OP_dread) {
     fromType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(
@@ -203,8 +202,8 @@ void CheckCastGenerator::GenCheckCast(BaseNode &stmt) {
   } else if (opnd->GetOpCode() == OP_retype) {
     fromType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(static_cast<RetypeNode*>(opnd)->GetTyIdx());
   } else if (opnd->GetOpCode() == OP_iread) {
-    IreadNode *irnode = static_cast<IreadNode*>(opnd);
-    MIRPtrType *ptrType = static_cast<MIRPtrType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(irnode->GetTyIdx()));
+    auto *irnode = static_cast<IreadNode*>(opnd);
+    auto *ptrType = static_cast<MIRPtrType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(irnode->GetTyIdx()));
     if (irnode->GetFieldID() != 0) {
       MIRType *pointedType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ptrType->GetPointedTyIdx());
       MIRStructType *structType = nullptr;
@@ -214,13 +213,13 @@ void CheckCastGenerator::GenCheckCast(BaseNode &stmt) {
         // It's a Jarray type. Using it's parent's field info: java.lang.Object.
         structType = static_cast<MIRJarrayType*>(pointedType)->GetParentType();
       }
-      CHECK_FATAL(structType, "null ptr check");
+      CHECK_FATAL(structType != nullptr, "null ptr check");
       fromType = structType->GetFieldType(irnode->GetFieldID());
     } else {
       fromType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ptrType->GetPointedTyIdx());
     }
   } else if (opnd->GetOpCode() == OP_regread) {
-    RegreadNode *regReadNode = static_cast<RegreadNode*>(opnd);
+    auto *regReadNode = static_cast<RegreadNode*>(opnd);
     MIRPreg *mirPreg = currFunc->GetPregTab()->PregFromPregIdx(regReadNode->GetRegIdx());
     CHECK_FATAL(mirPreg->GetPrimType() == PTY_ref || mirPreg->GetPrimType() == PTY_ptr,
                 "must be reference or ptr type for preg");
@@ -237,8 +236,7 @@ void CheckCastGenerator::GenCheckCast(BaseNode &stmt) {
   ASSERT(GlobalTables::GetTypeTable().GetTypeFromTyIdx(callNode->GetTyIdx())->GetPrimType() == maple::PTY_ptr ||
           GlobalTables::GetTypeTable().GetTypeFromTyIdx(callNode->GetTyIdx())->GetPrimType() == maple::PTY_ref,
          "unknown fromType! check it!");
-  const size_t callNodeNretSize1 = callNode->GetReturnVec().size();
-  CHECK_FATAL(callNodeNretSize1 > 0, "container check");
+  CHECK_FATAL(!callNode->GetReturnVec().empty(), "container check");
   CallReturnPair callReturnPair = callNode->GetReturnVec()[0];
   StmtNode *assignReturnTypeNode = nullptr;
   if (!callReturnPair.second.IsReg()) {
@@ -255,7 +253,7 @@ void CheckCastGenerator::GenAllCheckCast() {
   auto &stmtNodes = currFunc->GetBody()->GetStmtNodes();
   for (auto &stmt : stmtNodes) {
     if (stmt.GetOpCode() == OP_intrinsiccallwithtypeassigned || stmt.GetOpCode() == OP_intrinsiccallwithtype) {
-      IntrinsiccallNode &callNode = static_cast<IntrinsiccallNode&>(stmt);
+      auto &callNode = static_cast<IntrinsiccallNode&>(stmt);
       if (callNode.GetIntrinsic() == INTRN_JAVA_CHECK_CAST) {
         GenCheckCast(stmt);
         if (stmt.GetOpCode() == OP_intrinsiccallwithtype) {

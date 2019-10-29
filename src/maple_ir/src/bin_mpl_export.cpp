@@ -346,7 +346,8 @@ void BinaryMplExport::WriteInt64(int64 x) {
 void BinaryMplExport::WriteNum(int64 x) {
   while (x < -0x40 || x >= 0x40) {
     Write(static_cast<uint8>((static_cast<uint64>(x) & 0x7F) + 0x80));
-    x = x >> 7;
+    x = x >> 7; // This is a compress algorithm, do not cast int64 to uint64. If do so, small negtivate number like -3
+                // will occupy 9 bits and we will not get the compressed benefit.
   }
   Write((uint8)(static_cast<uint64>(x) & 0x7F));
 }
@@ -552,14 +553,14 @@ void BinaryMplExport::OutputClassTypeData(MIRClassType &type) {
   OutputImplementedInterfaces(type.GetInterfaceImplemented());
   OutputInfoIsString(type.GetInfoIsString());
   OutputInfo(type.GetInfo(), type.GetInfoIsString());
-  OutputPragmaVec(type.GetPragmVec());
+  OutputPragmaVec(type.GetPragmaVec());
 }
 
 void BinaryMplExport::OutputInterfaceTypeData(MIRInterfaceType &type) {
   OutputImplementedInterfaces(type.GetParentsTyIdx());
   OutputInfoIsString(type.GetInfoIsString());
   OutputInfo(type.GetInfo(), type.GetInfoIsString());
-  OutputPragmaVec(type.GetPragmVec());
+  OutputPragmaVec(type.GetPragmaVec());
 }
 
 void BinaryMplExport::Init() {

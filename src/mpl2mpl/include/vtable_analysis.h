@@ -31,7 +31,7 @@ static constexpr unsigned int kTabEntrySize = 8;
 class VtableAnalysis : public FuncOptimizeImpl {
  public:
   VtableAnalysis(MIRModule *mod, KlassHierarchy *kh, bool dump);
-  ~VtableAnalysis() {}
+  ~VtableAnalysis() = default;
   static std::string DecodeBaseNameWithType(const MIRFunction &func);
   void ProcessFunc(MIRFunction *func) override;
   FuncOptimizeImpl *Clone() override {
@@ -63,7 +63,7 @@ class DoVtableAnalysis : public ModulePhase {
  public:
   explicit DoVtableAnalysis(ModulePhaseID id) : ModulePhase(id) {}
 
-  ~DoVtableAnalysis() {}
+  ~DoVtableAnalysis() = default;
 
   std::string PhaseName() const override {
     return "vtableanalysis";

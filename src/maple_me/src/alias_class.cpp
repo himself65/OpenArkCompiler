@@ -186,9 +186,10 @@ void AliasClass::SetPtrOpndNextLevNADS(const BaseNode &opnd, AliasElem *ae, bool
 }
 
 // Set ae of the pointer-type opnds of a call as next_level_not_all_defines_seen
-void AliasClass::SetPtrOpndsNextLevNADS(uint start, uint end, MapleVector<BaseNode*> &opnds,
+void AliasClass::SetPtrOpndsNextLevNADS(unsigned int start, unsigned int end,
+                                        MapleVector<BaseNode*> &opnds,
                                         bool hasNoPrivateDefEffect) {
-  for (uint i = start; i < end; i++) {
+  for (unsigned int i = start; i < end; i++) {
     BaseNode *opnd = opnds[i];
     SetPtrOpndNextLevNADS(*opnd, CreateAliasElemsExpr(*opnd), hasNoPrivateDefEffect);
   }
@@ -273,12 +274,13 @@ void AliasClass::ApplyUnionForCopies(StmtNode &stmt) {
 void AliasClass::CreateAssignSets() {
   // iterate through all the alias elems
   for (AliasElem *aliasElem : id2Elem) {
-    uint id = aliasElem->GetClassID();
-    uint rootID = unionFind.Root(id);
+    unsigned int id = aliasElem->GetClassID();
+    unsigned int rootID = unionFind.Root(id);
     if (unionFind.GetElementsNumber(rootID) > 1) {
       // only root id's have assignset
       if (id2Elem[rootID]->GetAssignSet() == nullptr) {
-        id2Elem[rootID]->assignSet = acMemPool.New<MapleSet<uint>>(std::less<uint>(), acAlloc.Adapter());
+        id2Elem[rootID]->assignSet = acMemPool.New<MapleSet<unsigned int>>(std::less<unsigned int>(),
+                                                                           acAlloc.Adapter());
       }
       id2Elem[rootID]->AddAssignToSet(id);
     }
@@ -298,7 +300,7 @@ void AliasClass::DumpAssignSets() {
       LogInfo::MapleLogger() << '\n';
     } else {
       LogInfo::MapleLogger() << "Members of assign set " << aliasElem->GetClassID() << ": ";
-      for (uint elemID : *(aliasElem->GetAssignSet())) {
+      for (unsigned int elemID : *(aliasElem->GetAssignSet())) {
         id2Elem[elemID]->Dump(mirModule);
       }
       LogInfo::MapleLogger() << '\n';
@@ -320,7 +322,7 @@ void AliasClass::UnionAllPointedTos() {
 }
 
 void AliasClass::UpdateNextLevelNodes(std::vector<OriginalSt*> &nextLevelOsts, const AliasElem &aliasElem) {
-  for (uint elemID : *(aliasElem.GetAssignSet())) {
+  for (unsigned int elemID : *(aliasElem.GetAssignSet())) {
     for (OriginalSt *nextLevelNode : *(GetAliasAnalysisTable()->GetNextLevelNodes(id2Elem[elemID]->GetOriginalSt()))) {
       nextLevelOsts.push_back(nextLevelNode);
     }
@@ -354,7 +356,8 @@ void AliasClass::ApplyUnionForPointedTos() {
   }
 }
 
-void AliasClass::CollectRootIDOfNextLevelNodes(const OriginalSt &ost, std::set<uint> &rootIDOfNADSs) {
+void AliasClass::CollectRootIDOfNextLevelNodes(const OriginalSt &ost,
+                                               std::set<unsigned int> &rootIDOfNADSs) {
   for (OriginalSt *nextLevelNode : *(GetAliasAnalysisTable()->GetNextLevelNodes(ost))) {
     if (finalFieldAlias || !nextLevelNode->IsFinal()) {
       uint32 id = FindAliasElem(*nextLevelNode)->GetClassID();
@@ -364,7 +367,7 @@ void AliasClass::CollectRootIDOfNextLevelNodes(const OriginalSt &ost, std::set<u
 }
 
 void AliasClass::UnionForNotAllDefsSeen() {
-  std::set<uint> rootIDOfNADSs;
+  std::set<unsigned int> rootIDOfNADSs;
   for (AliasElem *ae : id2Elem) {
     if (ae->GetAssignSet() == nullptr) {
       if (ae->IsNotAllDefsSeen() || ae->IsNextLevNotAllDefsSeen()) {
@@ -372,10 +375,10 @@ void AliasClass::UnionForNotAllDefsSeen() {
       }
       continue;
     }
-    for (uint elemIdA : *(ae->GetAssignSet())) {
+    for (unsigned int elemIdA : *(ae->GetAssignSet())) {
       AliasElem *aeA = id2Elem[elemIdA];
       if (aeA->IsNotAllDefsSeen() || aeA->IsNextLevNotAllDefsSeen()) {
-        for (uint elemIdB : *(ae->GetAssignSet())) {
+        for (unsigned int elemIdB : *(ae->GetAssignSet())) {
           CollectRootIDOfNextLevelNodes(id2Elem[elemIdB]->GetOriginalSt(), rootIDOfNADSs);
         }
         break;
@@ -383,9 +386,9 @@ void AliasClass::UnionForNotAllDefsSeen() {
     }
   }
   if (!rootIDOfNADSs.empty()) {
-    uint elemIdA = *(rootIDOfNADSs.begin());
+    unsigned int elemIdA = *(rootIDOfNADSs.begin());
     rootIDOfNADSs.erase(rootIDOfNADSs.begin());
-    for (uint elemIdB : rootIDOfNADSs) {
+    for (unsigned int elemIdB : rootIDOfNADSs) {
       unionFind.Union(elemIdA, elemIdB);
     }
     for (AliasElem *ae : id2Elem) {
@@ -417,17 +420,17 @@ AliasElem *AliasClass::FindOrCreateDummyNADSAe() {
 
 // TBAA
 // Collect the alias groups. Each alias group is a map that maps the rootId to the ids aliasing with the root.
-void AliasClass::CollectAliasGroups(std::map<uint, std::set<uint>> &aliasGroups) {
+void AliasClass::CollectAliasGroups(std::map<unsigned int, std::set<unsigned int>> &aliasGroups) {
   // key is the root id. The set contains ids of aes that alias with the root.
   for (AliasElem *ae : id2Elem) {
-    uint id = ae->GetClassID();
-    uint rootID = unionFind.Root(id);
+    unsigned int id = ae->GetClassID();
+    unsigned int rootID = unionFind.Root(id);
     if (id == rootID) {
       continue;
     }
 
     if (aliasGroups.find(rootID) == aliasGroups.end()) {
-      std::set<uint> idsAliasWithRoot;
+      std::set<unsigned int> idsAliasWithRoot;
       aliasGroups.insert(make_pair(rootID, idsAliasWithRoot));
     }
     aliasGroups[rootID].insert(id);
@@ -502,10 +505,11 @@ bool AliasClass::AliasAccordingToFieldID(const OriginalSt &ostA, const OriginalS
   return fldA == ostB.GetFieldID();
 }
 
-void AliasClass::ProcessIdsAliasWithRoot(const std::set<uint> &idsAliasWithRoot, std::vector<uint> &newGroups) {
-  for (uint idA : idsAliasWithRoot) {
+void AliasClass::ProcessIdsAliasWithRoot(const std::set<unsigned int> &idsAliasWithRoot,
+                                         std::vector<unsigned int> &newGroups) {
+  for (unsigned int idA : idsAliasWithRoot) {
     bool unioned = false;
-    for (uint idB : newGroups) {
+    for (unsigned int idB : newGroups) {
       OriginalSt &ostA = id2Elem[idA]->GetOriginalSt();
       OriginalSt &ostB = id2Elem[idB]->GetOriginalSt();
       if (AliasAccordingToType(GetAliasAnalysisTable()->GetPrevLevelNode(ostA)->GetTyIdx(),
@@ -524,14 +528,14 @@ void AliasClass::ProcessIdsAliasWithRoot(const std::set<uint> &idsAliasWithRoot,
 
 void AliasClass::ReconstructAliasGroups() {
   // map the root id to the set contains the ae-id that alias with the root.
-  std::map<uint, std::set<uint>> aliasGroups;
+  std::map<unsigned int, std::set<unsigned int>> aliasGroups;
   CollectAliasGroups(aliasGroups);
   unionFind.Reinit();
   // kv.first is the root id. kv.second is the id the alias with the root.
   for (auto oneGroup : aliasGroups) {
-    std::vector<uint> newGroups;  // contains one id of each new alias group.
-    uint rootId = oneGroup.first;
-    std::set<uint> idsAliasWithRoot = oneGroup.second;
+    std::vector<unsigned int> newGroups;  // contains one id of each new alias group.
+    unsigned int rootId = oneGroup.first;
+    std::set<unsigned int> idsAliasWithRoot = oneGroup.second;
     newGroups.push_back(rootId);
     ProcessIdsAliasWithRoot(idsAliasWithRoot, newGroups);
   }
@@ -548,11 +552,12 @@ void AliasClass::CollectNotAllDefsSeenAes() {
 void AliasClass::CreateClassSets() {
   // iterate through all the alias elems
   for (AliasElem *aliasElem : id2Elem) {
-    uint id = aliasElem->GetClassID();
-    uint rootID = unionFind.Root(id);
+    unsigned int id = aliasElem->GetClassID();
+    unsigned int rootID = unionFind.Root(id);
     if (unionFind.GetElementsNumber(rootID) > 1) {
       if (id2Elem[rootID]->GetClassSet() == nullptr) {
-        id2Elem[rootID]->classSet = acMemPool.New<MapleSet<uint>>(std::less<uint>(), acAlloc.Adapter());
+        id2Elem[rootID]->classSet = acMemPool.New<MapleSet<unsigned int>>(std::less<unsigned int>(),
+                                                                          acAlloc.Adapter());
       }
       aliasElem->classSet = id2Elem[rootID]->classSet;
       aliasElem->AddClassToSet(id);
@@ -588,7 +593,7 @@ void AliasClass::DumpClassSets() {
       LogInfo::MapleLogger() << '\n';
     } else {
       LogInfo::MapleLogger() << "Members of alias class " << aliaselem->GetClassID() << ": ";
-      for (uint elemID : *(aliaselem->GetClassSet())) {
+      for (unsigned int elemID : *(aliaselem->GetClassSet())) {
         id2Elem[elemID]->Dump(mirModule);
       }
       LogInfo::MapleLogger() << '\n';
@@ -615,7 +620,7 @@ void AliasClass::InsertMayUseExpr(BaseNode &expr) {
 
 // collect the mayUses caused by globalsAffectedByCalls.
 void AliasClass::CollectMayUseFromGlobalsAffectedByCalls(std::set<OriginalSt*> &mayUseOsts) {
-  for (uint elemID : globalsAffectedByCalls) {
+  for (unsigned int elemID : globalsAffectedByCalls) {
     mayUseOsts.insert(&id2Elem[elemID]->GetOriginalSt());
   }
 }
@@ -627,7 +632,7 @@ void AliasClass::CollectMayUseFromNADS(std::set<OriginalSt*> &mayUseOsts) {
       // single mayUse
       mayUseOsts.insert(&notAllDefsSeenAE->GetOriginalSt());
     } else {
-      for (uint elemID : *(notAllDefsSeenAE->GetClassSet())) {
+      for (unsigned int elemID : *(notAllDefsSeenAE->GetClassSet())) {
         AliasElem *ae = id2Elem[elemID];
         if (!OriginalStIsZeroLevAndAuto(ae->GetOriginalSt())) {
           mayUseOsts.insert(&ae->GetOriginalSt());
@@ -667,7 +672,7 @@ void AliasClass::CollectPtsToOfReturnOpnd(const OriginalSt &ost, std::set<Origin
       if (indAe->GetClassSet() == nullptr) {
         mayUseOsts.insert(&indAe->GetOriginalSt());
       } else {
-        for (uint elemID : *(indAe->GetClassSet())) {
+        for (unsigned int elemID : *(indAe->GetClassSet())) {
           mayUseOsts.insert(&id2Elem[elemID]->GetOriginalSt());
         }
       }
@@ -687,7 +692,7 @@ void AliasClass::InsertReturnOpndMayUse(const StmtNode &stmt) {
       if (ae->GetAssignSet() == nullptr) {
         CollectPtsToOfReturnOpnd(ae->GetOriginalSt(), mayUseOsts);
       } else {
-        for (uint elemID : *(ae->GetAssignSet())) {
+        for (unsigned int elemID : *(ae->GetAssignSet())) {
           CollectPtsToOfReturnOpnd(id2Elem[elemID]->GetOriginalSt(), mayUseOsts);
         }
       }
@@ -715,7 +720,7 @@ void AliasClass::CollectMayDefForDassign(const StmtNode &stmt, std::set<Original
   AliasElem *lhsAe = osym2Elem.at(theSSAPart->GetSSAVar()->GetOrigIdx().idx);
   ASSERT(lhsAe != nullptr, "aliaselem of lhs should not be null");
   if (lhsAe->GetClassSet() != nullptr) {
-    for (uint elemID : *(lhsAe->GetClassSet())) {
+    for (unsigned int elemID : *(lhsAe->GetClassSet())) {
       if (elemID != lhsAe->GetClassID()) {
         OriginalSt &ostOfAliasAE = id2Elem[elemID]->GetOriginalSt();
         if (ostOfAliasAE.GetTyIdx() == lhsAe->GetOriginalSt().GetMIRSymbol()->GetTyIdx()) {
@@ -777,7 +782,7 @@ void AliasClass::CollectMayDefForIassign(StmtNode &stmt, std::set<OriginalSt*> &
     mayDefOsts.insert(&lhsAe->GetOriginalSt());
     return;
   }
-  for (uint elemID : *(lhsAe->GetClassSet())) {
+  for (unsigned int elemID : *(lhsAe->GetClassSet())) {
     AliasElem *aliasElem = id2Elem[elemID];
     OriginalSt &ostOfAliasAE = aliasElem->GetOriginalSt();
     if (aliasElem != lhsAe && OriginalStIsZeroLevAndAuto(ostOfAliasAE)) {
@@ -811,7 +816,7 @@ void AliasClass::InsertMayDefIassign(StmtNode &stmt, BBId bbID) {
 }
 
 void AliasClass::InsertMayDefUseSyncOps(StmtNode &stmt, BBId bbID) {
-  std::set<uint> aliasSet;
+  std::set<unsigned int> aliasSet;
   // collect the full alias set first
   for (size_t i = 0; i < stmt.NumOpnds(); i++) {
     BaseNode *addrBase = stmt.Opnd(i);
@@ -840,7 +845,7 @@ void AliasClass::InsertMayDefUseSyncOps(StmtNode &stmt, BBId bbID) {
   }
   // do the insertion according to aliasSet
   MayDefMayUsePart *theSSAPart = static_cast<MayDefMayUsePart*>(ssaTab.GetStmtsSSAPart().SSAPartOf(stmt));
-  for (uint elemid : aliasSet) {
+  for (unsigned int elemid : aliasSet) {
     AliasElem *aliasElem = id2Elem[elemid];
     OriginalSt &ostOfAliasAE = aliasElem->GetOriginalSt();
     if (!ostOfAliasAE.IsFinal() && !OriginalStIsZeroLevAndAuto(ostOfAliasAE)) {
@@ -862,7 +867,7 @@ void AliasClass::CollectMayDefForMustDefs(const StmtNode &stmt, std::set<Origina
     if (lhsAe->GetClassSet() == nullptr || lhsAe->IsNotAllDefsSeen()) {
       continue;
     }
-    for (uint elemID : *(lhsAe->GetClassSet())) {
+    for (unsigned int elemID : *(lhsAe->GetClassSet())) {
       AliasElem *ae = id2Elem[elemID];
       if (elemID != lhsAe->GetClassID() &&
           ae->GetOriginalSt().GetTyIdx() == lhsAe->GetOriginalSt().GetMIRSymbol()->GetTyIdx()) {
@@ -900,7 +905,7 @@ void AliasClass::CollectMayUseForCallOpnd(const StmtNode &stmt, std::set<Origina
       if (indAe->GetClassSet() == nullptr) {
         mayUseOsts.insert(&indAe->GetOriginalSt());
       } else {
-        for (uint elemID : *(indAe->GetClassSet())) {
+        for (unsigned int elemID : *(indAe->GetClassSet())) {
           mayUseOsts.insert(&id2Elem[elemID]->GetOriginalSt());
         }
       }

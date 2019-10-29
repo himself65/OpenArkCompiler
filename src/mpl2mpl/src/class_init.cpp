@@ -73,12 +73,12 @@ void ClassInit::ProcessFunc(MIRFunction *func) {
   } else {
     const std::string &funcName = func->GetName();
     size_t pos = funcName.find(NameMangler::kNameSplitterStr);
-    constexpr size_t kPrePos = 2;
-    constexpr size_t kLigalPos = 2;
+    constexpr size_t prePos = 2;
+    constexpr size_t ligalPos = 2;
     while (pos != std::string::npos &&
-           (pos >= kLigalPos && funcName[pos - 1] == '_' && funcName[pos - kPrePos] != '_')) {
-      constexpr size_t kNextPos = 3;
-      pos = funcName.find(NameMangler::kNameSplitterStr, pos + kNextPos);
+           (pos >= ligalPos && funcName[pos - 1] == '_' && funcName[pos - prePos] != '_')) {
+      constexpr size_t nextPos = 3;
+      pos = funcName.find(NameMangler::kNameSplitterStr, pos + nextPos);
     }
     selfClassName = funcName.substr(0, pos);
   }
@@ -100,7 +100,7 @@ void ClassInit::ProcessFunc(MIRFunction *func) {
         BaseNode *classInfoNode = builder->CreateExprAddrof(0, *classInfo);
         if (trace) {
           LogInfo::MapleLogger() << "\t- low-cost clinit - insert check in static method " << func->GetName()
-                                 << "clasname " << className << std::endl;
+                                 << "clasname " << className << "\n";
         }
         MapleVector<BaseNode*> args(builder->GetCurrentFuncCodeMpAllocator()->Adapter());
         args.push_back(classInfoNode);
@@ -115,7 +115,7 @@ void ClassInit::ProcessFunc(MIRFunction *func) {
   StmtNode *stmt = func->GetBody()->GetFirst();
   while (stmt != nullptr) {
     if (stmt->GetOpCode() == OP_intrinsiccallwithtype) {
-      IntrinsiccallNode *intrinsicCall = static_cast<IntrinsiccallNode*>(stmt);
+      auto *intrinsicCall = static_cast<IntrinsiccallNode*>(stmt);
       if (intrinsicCall->GetIntrinsic() == INTRN_JAVA_CLINIT_CHECK) {
         // intrinsiccallwithtype <$LTest_3B> JAVA_CLINIT_CHECK ()        -->
         // intrinsiccall MPL_CLINIT_CHECK (addrof ptr $__cinf_LTest_3B)
@@ -144,7 +144,7 @@ void ClassInit::ProcessFunc(MIRFunction *func) {
           func->GetBody()->ReplaceStmt1WithStmt2(stmt, mplIntrinsicCall);
           if (trace) {
             LogInfo::MapleLogger() << "\t- low-cost clinit - lower JAVA_CLINIT_CHECK " << className << " in "
-                                   << func->GetName() << "()" << std::endl;
+                                   << func->GetName() << "()\n";
           }
           ASSERT(classInfo != nullptr, "null ptr check!");
           GenClassInitCheckProfile(*func, *classInfo, mplIntrinsicCall);

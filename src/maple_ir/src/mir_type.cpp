@@ -310,25 +310,24 @@ const std::string &MIRType::GetName(void) const {
   return GlobalTables::GetStrTable().GetStringFromStrIdx(nameStrIdx);
 }
 
-bool MIRType::ValidateClassOrInterface(const std::string &className, bool noWarning) {
+bool MIRType::ValidateClassOrInterface(const std::string &className, bool noWarning) const {
   if (primType == maple::PTY_agg && (typeKind == maple::kTypeClass || typeKind == maple::kTypeInterface) &&
       nameStrIdx.GetIdx()) {
     return true;
-  } else {
-    if (!noWarning) {
-      int len = className.size();
-      constexpr int minClassNameLen = 4;
-      constexpr char suffix[] = "_3B";
-      int suffixLen = std::strlen(suffix);
-      if (len > minClassNameLen && strncmp(className.c_str() + len - suffixLen, suffix, suffixLen) == 0) {
-        LogInfo::MapleLogger(kLlErr) << "error: missing proper mplt file for " << className << std::endl;
-      } else {
-        LogInfo::MapleLogger(kLlErr) << "internal error: type is not java class or interface "
-                                     << className << std::endl;
-      }
-    }
-    return false;
   }
+  if (!noWarning) {
+    int len = className.size();
+    constexpr int minClassNameLen = 4;
+    constexpr char suffix[] = "_3B";
+    int suffixLen = std::strlen(suffix);
+    if (len > minClassNameLen && strncmp(className.c_str() + len - suffixLen, suffix, suffixLen) == 0) {
+      LogInfo::MapleLogger(kLlErr) << "error: missing proper mplt file for " << className << std::endl;
+    } else {
+      LogInfo::MapleLogger(kLlErr) << "internal error: type is not java class or interface "
+                                   << className << std::endl;
+    }
+  }
+  return false;
 }
 
 bool MIRType::PointsToConstString() const {
@@ -338,17 +337,15 @@ bool MIRType::PointsToConstString() const {
 std::string MIRType::GetMplTypeName() const {
   if (typeKind == kTypeScalar) {
     return GetPrimTypeName(primType);
-  } else {
-    return "";
   }
+  return "";
 }
 
 std::string MIRType::GetCompactMplTypeName() const {
   if (typeKind == kTypeScalar) {
     return GetPrimTypeJavaName(primType);
-  } else {
-    return "";
   }
+  return "";
 }
 
 void MIRType::Dump(int indent, bool dontUseName) const {
@@ -612,12 +609,6 @@ FieldID MIRClassType::GetFirstLocalFieldID() const {
   return 1;
 }
 
-// return class id or superclass id accroding to input string
-uint32 MIRClassType::GetInfo(const std::string &infoStr) const {
-  GStrIdx stridx = GlobalTables::GetStrTable().GetStrIdxFromName(infoStr);
-  return GetInfo(stridx);
-}
-
 MIRClassType *MIRClassType::GetExceptionRootType() {
   GStrIdx ehTypeNameIdx = GlobalTables::GetStrTable().GetStrIdxFromName(NameMangler::kJavaLangObjectStr);
   MIRClassType *subClassType = this;
@@ -652,7 +643,7 @@ FieldID MIRClassType::GetLastFieldID() const {
 
 static void DumpClassOrInterfaceInfo(const MIRStructType &type, int indent) {
   const std::vector<MIRInfoPair> &info = type.GetInfo();
-  std::vector<bool> infoIsString = type.GetIsStringInfo();
+  std::vector<bool> infoIsString = type.GetInfoIsString();
   size_t size = info.size();
   for (size_t i = 0; i < size; i++) {
     LogInfo::MapleLogger() << std::endl;
@@ -670,17 +661,24 @@ static void DumpClassOrInterfaceInfo(const MIRStructType &type, int indent) {
   }
 }
 
-uint32 MIRInterfaceType::GetInfo(GStrIdx strIdx) const {
-  size_t size = info.size();
-  for (size_t i = 0; i < size; i++) {
-    if (info[i].first == strIdx) {
-      return info[i].second;
+static uint32 GetInfoFromStrIdx(const std::vector<MIRInfoPair> &info, const GStrIdx &strIdx) {
+  for (MIRInfoPair infoPair : info) {
+    if (infoPair.first == strIdx) {
+      return infoPair.second;
     }
   }
-  ASSERT(false, "should not be here");
   return 0;
 }
 
+uint32 MIRInterfaceType::GetInfo(GStrIdx strIdx) const {
+  return GetInfoFromStrIdx(info, strIdx);
+}
+
+// return class id or superclass id accroding to input string
+uint32 MIRInterfaceType::GetInfo(const std::string &infoStr) const {
+  GStrIdx stridx = GlobalTables::GetStrTable().GetStrIdxFromName(infoStr);
+  return GetInfo(stridx);
+}
 size_t MIRInterfaceType::GetSize() const {
   if (parentsTyIdx.empty()) {
     return MIRStructType::GetSize();
@@ -867,6 +865,31 @@ static void DumpInterfaces(std::vector<TyIdx> interfaces, int indent) {
   }
 }
 
+size_t MIRStructType::GetSize() const {
+  if (typeKind == kTypeUnion) {
+    size_t maxSize = GetElemType(0)->GetSize();
+    for (size_t i = 1; i < fields.size(); i++) {
+      size_t size = GetElemType(i)->GetSize();
+      if (size == 0) {
+        return 0;
+      }
+      if (maxSize < size) {
+        maxSize = size;
+      }
+    }
+    return maxSize;
+  }
+  size_t size = 0;
+  for (size_t i = 0; i < fields.size(); i++) {
+    size_t fieldSize = GetElemType(i)->GetSize();
+    if (fieldSize == 0) {
+      return 0;
+    }
+    size += fieldSize;
+  }
+  return size;
+}
+
 void MIRStructType::DumpFieldsAndMethods(int indent, bool hasMethod) const {
   DumpFields(fields, indent);
   bool hasField = !fields.empty();
@@ -898,17 +921,14 @@ void MIRStructType::Dump(int indent, bool dontUseName) const {
   LogInfo::MapleLogger() << "}>";
 }
 
-static uint32 GetInfoFromStrIdx(const std::vector<MIRInfoPair> &info, const GStrIdx &strIdx) {
-  for (MIRInfoPair infoPair : info) {
-    if (infoPair.first == strIdx) {
-      return infoPair.second;
-    }
-  }
-  return 0;
-}
-
 uint32 MIRClassType::GetInfo(GStrIdx strIdx) const {
   return GetInfoFromStrIdx(info, strIdx);
+}
+
+// return class id or superclass id accroding to input string
+uint32 MIRClassType::GetInfo(const std::string &infoStr) const {
+  GStrIdx stridx = GlobalTables::GetStrTable().GetStrIdxFromName(infoStr);
+  return GetInfo(stridx);
 }
 
 bool MIRClassType::IsFinal() const {

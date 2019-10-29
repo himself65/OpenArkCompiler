@@ -360,40 +360,40 @@ void BinaryMplImport::ImportInterfacesOfClassType(std::vector<TyIdx> &interfaces
   }
 }
 
-void BinaryMplImport::ImportInfoIsStringOfClassType(std::vector<bool> &infoIsString) {
+void BinaryMplImport::ImportInfoIsStringOfStructType(MIRStructType &type) {
   int64 size = ReadNum();
-  bool isEmpty = infoIsString.empty();
+  bool isEmpty = type.GetInfoIsString().empty();
 
   for (int64 i = 0; i < size; i++) {
     bool isString = static_cast<bool>(ReadNum());
 
     if (isEmpty) {
-      infoIsString.push_back(isString);
+      type.PushbackIsString(isString);
     }
   }
 }
 
-void BinaryMplImport::ImportInfoOfClassType(std::vector<bool> &infoIsString, std::vector<MIRInfoPair> &infos) {
+void BinaryMplImport::ImportInfoOfStructType(MIRStructType &type) {
   int64 size = ReadNum();
-  bool isEmpty = infos.empty();
+  bool isEmpty = type.GetInfo().empty();
   for (int64 i = 0; i < size; i++) {
     GStrIdx idx = ImportStr();
-    int64 x = (infoIsString[i]) ? ImportStr().GetIdx() : ReadNum();
+    int64 x = (type.GetInfoIsString()[i]) ? ImportStr().GetIdx() : ReadNum();
     ASSERT(x >= 0, "ReadNum nagative, x: %d", x);
     ASSERT(x <= std::numeric_limits<uint32_t>::max(), "ReadNum too large, x: %d", x);
     if (isEmpty) {
-      infos.push_back(MIRInfoPair(idx, static_cast<uint32>(x)));
+      type.PushbackMIRInfo(MIRInfoPair(idx, static_cast<uint32>(x)));
     }
   }
 }
 
-void BinaryMplImport::ImportPragmaOfClassType(std::vector<MIRPragma*> &pragmas) {
+void BinaryMplImport::ImportPragmaOfStructType(MIRStructType &type) {
   int64 size = ReadNum();
-  bool isEmpty = pragmas.empty();
+  bool isEmpty = type.GetPragmaVec().empty();
   for (int64 i = 0; i < size; i++) {
     MIRPragma *pragma = ImportPragma();
     if (isEmpty) {
-      pragmas.push_back(pragma);
+      type.PushbackPragma(pragma);
     }
   }
 }
@@ -415,20 +415,20 @@ void BinaryMplImport::ImportClassTypeData(MIRClassType &type) {
   TyIdx tempType = ImportType();
   // Keep the parent_tyidx we first met.
   if (type.GetParentTyIdx().GetIdx() == 0) {
-    type.GetParentTyIdx() = tempType;
+    type.SetParentTyIdx(tempType);
   }
   ImportInterfacesOfClassType(type.GetInterfaceImplemented());
-  ImportInfoIsStringOfClassType(type.GetInfoIsString());
-  ImportInfoOfClassType(type.GetInfoIsString(), type.GetInfo());
-  ImportPragmaOfClassType(type.GetPragmVec());
+  ImportInfoIsStringOfStructType(type);
+  ImportInfoOfStructType(type);
+  ImportPragmaOfStructType(type);
   SetClassTyidxOfMethods(type);
 }
 
 void BinaryMplImport::ImportInterfaceTypeData(MIRInterfaceType &type) {
   ImportInterfacesOfClassType(type.GetParentsTyIdx());
-  ImportInfoIsStringOfClassType(type.GetInfoIsString());
-  ImportInfoOfClassType(type.GetInfoIsString(), type.GetInfo());
-  ImportPragmaOfClassType(type.GetPragmVec());
+  ImportInfoIsStringOfStructType(type);
+  ImportInfoOfStructType(type);
+  ImportPragmaOfStructType(type);
   SetClassTyidxOfMethods(type);
 }
 
@@ -731,7 +731,7 @@ void BinaryMplImport::SetupEHRootType() {
   }
 }
 
-MIRSymbol *BinaryMplImport::GetOrCreateSymbol(const TyIdx &tyIdx, const GStrIdx &strIdx, MIRSymKind mclass,
+MIRSymbol *BinaryMplImport::GetOrCreateSymbol(TyIdx tyIdx, GStrIdx strIdx, MIRSymKind mclass,
                                               MIRStorageClass sclass, MIRFunction *func, uint8 scpID) {
   MIRSymbol *st = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(strIdx);
   if (st != nullptr && st->GetStorageClass() == sclass && st->GetSKind() == mclass && scpID == kScopeGlobal) {
@@ -758,7 +758,6 @@ MIRSymbol *BinaryMplImport::InSymbol(MIRFunction *func) {
     symTab.push_back(sym);
     sym->SetAttrs(ImportTypeAttrs());
     sym->SetIsTmp(ReadNum() != 0);
-
     sym->SetIsImported(imported);
     if (skind == kStPreg) {
       ASSERT(false, "outing kStPreg");

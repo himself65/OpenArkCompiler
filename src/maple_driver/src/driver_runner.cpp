@@ -74,6 +74,7 @@ int DriverRunner::Run() {
   std::string outputFile = baseName.append(GetPostfix());
 
   bool parsed = ParseInput(outputFile, originBaseName);
+
   if (parsed) {
     if (mpl2mplOptions || meOptions) {
       std::string vtableImplFile = originBaseName;
@@ -131,6 +132,13 @@ bool DriverRunner::ParseInput(std::string outputFile, std::string originBaseName
   LogInfo::MapleLogger() << "Parse consumed " << timer.Elapsed() << "s" << std::endl;
 
   return parsed;
+}
+
+bool DriverRunner::VerifyModule(MIRModulePtr &mModule) const {
+  LogInfo::MapleLogger() << "========== Starting Verify Module =====================" << std::endl;
+  bool res = true;
+  LogInfo::MapleLogger() << "========== Finished Verify Module =====================" << std::endl;
+  return res;
 }
 
 void DriverRunner::ProcessMpl2mplAndMePhases(std::string outputFile, std::string vtableImplFile) const {

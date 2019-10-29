@@ -57,6 +57,7 @@ class DriverRunner final {
   int Run();
   void ReleaseOptions();
   bool ParseInput(std::string outputFile, std::string oriBasename) const;
+  bool VerifyModule(MIRModulePtr &mModule) const;
   void ProcessMpl2mplAndMePhases(std::string outputFile, std::string vtableImplFile) const;
 
   void SetMpl2mplInfo(Options *mpl2mplOptions, const std::string &mpl2mplInput) {

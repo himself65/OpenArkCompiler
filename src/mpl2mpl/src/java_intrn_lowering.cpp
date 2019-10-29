@@ -40,14 +40,14 @@ void JavaIntrnLowering::ProcessStmt(StmtNode &stmt) {
     case OP_regassign: {
       BaseNode *rhs = nullptr;
       if (opcode == OP_dassign) {
-        DassignNode &dassign = static_cast<DassignNode&>(stmt);
+        auto &dassign = static_cast<DassignNode&>(stmt);
         rhs = dassign.GetRHS();
       } else {
-        RegassignNode &regassign = static_cast<RegassignNode&>(stmt);
+        auto &regassign = static_cast<RegassignNode&>(stmt);
         rhs = regassign.GetRHS();
       }
       if (rhs != nullptr && rhs->GetOpCode() == OP_intrinsicop) {
-        IntrinsicopNode *intrinNode = static_cast<IntrinsicopNode*>(rhs);
+        auto *intrinNode = static_cast<IntrinsicopNode*>(rhs);
         if (intrinNode->GetIntrinsic() == INTRN_JAVA_MERGE) {
           ProcessJavaIntrnMerge(stmt, *intrinNode);
         }
@@ -150,11 +150,11 @@ void JavaIntrnLowering::ProcessJavaIntrnFillNewArray(IntrinsiccallNode &intrinCa
   if (!isReg) {
     retType = currFunc->GetLocalOrGlobalSymbol(retPair.first)->GetType();
   } else {
-    PregIdx pregidx = retPair.second.GetPregIdx();
-    MIRPreg *mirpreg = currFunc->GetPregTab()->PregFromPregIdx(pregidx);
-    CHECK_FATAL(mirpreg->GetPrimType() == PTY_ref || mirpreg->GetPrimType() == PTY_ptr,
+    PregIdx pregIdx = retPair.second.GetPregIdx();
+    MIRPreg *mirPreg = currFunc->GetPregTab()->PregFromPregIdx(pregIdx);
+    CHECK_FATAL(mirPreg->GetPrimType() == PTY_ref || mirPreg->GetPrimType() == PTY_ptr,
                 "Dst preg needs to be a pointer or reference type");
-    retType = mirpreg->GetMIRType();
+    retType = mirPreg->GetMIRType();
   }
   CHECK_FATAL(retType->GetKind() == kTypePointer, "Return type of INTRN_JAVA_FILL_NEW_ARRAY should point to a Jarray");
   MIRType *arrayType = static_cast<MIRPtrType*>(retType)->GetPointedType();
@@ -169,11 +169,11 @@ void JavaIntrnLowering::ProcessJavaIntrnFillNewArray(IntrinsiccallNode &intrinCa
     currFunc->GetBody()->ReplaceStmt1WithStmt2(&intrinCall, assignStmt);
     addrExpr = builder->CreateExprDread(*retSym);
   } else {
-    PregIdx pregidx = retPair.second.GetPregIdx();
-    MIRPreg *mirpreg = currFunc->GetPregTab()->PregFromPregIdx(pregidx);
-    assignStmt = builder->CreateStmtRegassign(mirpreg->GetPrimType(), pregidx, newArrayNode);
+    PregIdx pregIdx = retPair.second.GetPregIdx();
+    MIRPreg *mirPreg = currFunc->GetPregTab()->PregFromPregIdx(pregIdx);
+    assignStmt = builder->CreateStmtRegassign(mirPreg->GetPrimType(), pregIdx, newArrayNode);
     currFunc->GetBody()->ReplaceStmt1WithStmt2(&intrinCall, assignStmt);
-    addrExpr = builder->CreateExprRegread(mirpreg->GetPrimType(), pregidx);
+    addrExpr = builder->CreateExprRegread(mirPreg->GetPrimType(), pregIdx);
   }
   assignStmt->SetSrcPos(intrinCall.GetSrcPos());
   StmtNode *stmt = assignStmt;

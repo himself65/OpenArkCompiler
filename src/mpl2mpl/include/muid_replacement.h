@@ -58,7 +58,7 @@ enum RangeIdx {
 class MUIDReplacement : public FuncOptimizeImpl {
  public:
   MUIDReplacement(MIRModule *mod, KlassHierarchy *kh, bool dump);
-  ~MUIDReplacement() {}
+  ~MUIDReplacement() = default;
 
   FuncOptimizeImpl *Clone() override {
     return new (std::nothrow) MUIDReplacement(*this);
@@ -67,11 +67,11 @@ class MUIDReplacement : public FuncOptimizeImpl {
   void ProcessFunc(MIRFunction *func) override;
 
   static void SetMplMd5(MUID muid) {
-    kMplMuid = muid;
+    mplMuid = muid;
   }
 
   static MUID &GetMplMd5() {
-    return kMplMuid;
+    return mplMuid;
   }
 
  private:
@@ -90,7 +90,7 @@ class MUIDReplacement : public FuncOptimizeImpl {
   MIRSymbol *funcMuidIdxTabSym = nullptr;
   MIRSymbol *rangeTabSym = nullptr;
   MIRSymbol *funcProfileTabSym = nullptr;
-  static MUID kMplMuid;
+  static MUID mplMuid;
   std::string mplMuidStr;
   using SymIdxPair = std::pair<MIRSymbol*, uint32>;
   std::map<MUID, SymIdxPair> funcDefMap;
@@ -111,7 +111,7 @@ class MUIDReplacement : public FuncOptimizeImpl {
   void GenericRangeTable();
   uint32 FindIndexFromDefTable(const MIRSymbol &mirSymbol, bool isFunc);
   uint32 FindIndexFromUndefTable(const MIRSymbol &mirSymbol, bool isFunc);
-  void ReplaceAddroffuncConst(MIRConst *&entry, uint32 fieldId, bool isVtab);
+  void ReplaceAddroffuncConst(MIRConst *&entry, uint32 fieldID, bool isVtab);
   void ReplaceFuncTable(const std::string &name);
   void ReplaceAddrofConst(MIRConst *&entry);
   void ReplaceDataTable(const std::string &name);
@@ -155,12 +155,12 @@ class MUIDReplacement : public FuncOptimizeImpl {
 #define __MRT_MAGIC_PASTE(x, y) __MRT_MAGIC_PASTE2(x, y)
 #define __MRT_MAGIC_PASTE2(x, y) x##y
 #define CLASS_PREFIX(classname) TO_STR(__MRT_MAGIC_PASTE(CLASSINFO_PREFIX, classname)),
-  const std::unordered_set<std::string> kPreloadedClassInfo = {
+  const std::unordered_set<std::string> preloadedClassInfo = {
   };
 #undef CLASS_PREFIX
 #undef __MRT_MAGIC_PASTE2
 #undef __MRT_MAGIC_PASTE
-  const std::unordered_set<std::string> kReflectionList = {
+  const std::unordered_set<std::string> reflectionList = {
   };
 };
 
@@ -168,7 +168,7 @@ class DoMUIDReplacement : public ModulePhase {
  public:
   explicit DoMUIDReplacement(ModulePhaseID id) : ModulePhase(id) {}
 
-  ~DoMUIDReplacement() {}
+  ~DoMUIDReplacement() = default;
 
   std::string PhaseName() const override {
     return "MUIDReplacement";

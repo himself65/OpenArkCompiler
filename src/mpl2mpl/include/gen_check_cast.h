@@ -55,7 +55,7 @@ class DoCheckCastGeneration : public ModulePhase {
  public:
   explicit DoCheckCastGeneration(ModulePhaseID id) : ModulePhase(id) {}
 
-  ~DoCheckCastGeneration() {}
+  ~DoCheckCastGeneration() = default;
 
   std::string PhaseName() const override {
     return "gencheckcast";

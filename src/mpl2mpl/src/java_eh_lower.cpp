@@ -143,15 +143,16 @@ BlockNode *JavaEHLowerer::DoLowerBlock(BlockNode &block) {
 
     switch (stmt->GetOpCode()) {
       case OP_switch: {
-        SwitchNode *switchNode = static_cast<SwitchNode*>(stmt);
+        auto *switchNode = static_cast<SwitchNode*>(stmt);
         switchNode->SetSwitchOpnd(DoLowerExpr(*(switchNode->GetSwitchOpnd()), *newBlock));
         newBlock->AddStatement(switchNode);
         break;
       }
       case OP_if: {
-        IfStmtNode *ifStmtNode = static_cast<IfStmtNode*>(stmt);
+        auto *ifStmtNode = static_cast<IfStmtNode*>(stmt);
         BlockNode *thenPart = ifStmtNode->GetThenPart();
         BlockNode *elsePart = ifStmtNode->GetElsePart();
+        ASSERT(ifStmtNode->Opnd() != nullptr, "null ptr check!");
         ifStmtNode->SetOpnd(DoLowerExpr(*(ifStmtNode->Opnd()), *newBlock));
         ifStmtNode->SetThenPart(DoLowerBlock(*thenPart));
         if (elsePart != nullptr) {
@@ -162,7 +163,7 @@ BlockNode *JavaEHLowerer::DoLowerBlock(BlockNode &block) {
       }
       case OP_while:
       case OP_dowhile: {
-        WhileStmtNode *whileStmtNode = static_cast<WhileStmtNode*>(stmt);
+        auto *whileStmtNode = static_cast<WhileStmtNode*>(stmt);
         BaseNode *testOpnd = whileStmtNode->Opnd(0);
         whileStmtNode->SetOpnd(DoLowerExpr(*testOpnd, *newBlock));
         whileStmtNode->SetBody(DoLowerBlock(*(whileStmtNode->GetBody())));
@@ -170,7 +171,7 @@ BlockNode *JavaEHLowerer::DoLowerBlock(BlockNode &block) {
         break;
       }
       case OP_doloop: {
-        DoloopNode *doLoopNode = static_cast<DoloopNode*>(stmt);
+        auto *doLoopNode = static_cast<DoloopNode*>(stmt);
         doLoopNode->SetStartExpr(DoLowerExpr(*(doLoopNode->GetStartExpr()), *newBlock));
         doLoopNode->SetContExpr(DoLowerExpr(*(doLoopNode->GetCondExpr()), *newBlock));
         doLoopNode->SetIncrExpr(DoLowerExpr(*(doLoopNode->GetIncrExpr()), *newBlock));
@@ -179,17 +180,17 @@ BlockNode *JavaEHLowerer::DoLowerBlock(BlockNode &block) {
         break;
       }
       case OP_block: {
-        BlockNode *tmp = DoLowerBlock(*(static_cast<BlockNode*>(stmt)));
-        CHECK_FATAL(tmp, "null ptr check");
+        auto *tmp = DoLowerBlock(*(static_cast<BlockNode*>(stmt)));
+        CHECK_FATAL(tmp != nullptr, "null ptr check");
         newBlock->AddStatement(tmp);
         break;
       }
       case OP_throw: {
-        UnaryStmtNode *tstmt = static_cast<UnaryStmtNode*>(stmt);
+        auto *tstmt = static_cast<UnaryStmtNode*>(stmt);
         BaseNode *opnd0 = DoLowerExpr(*(tstmt->Opnd(0)), *newBlock);
         if (opnd0->GetOpCode() == OP_constval) {
           CHECK_FATAL(IsPrimitiveInteger(opnd0->GetPrimType()), "must be integer or something wrong");
-          MIRIntConst *intConst = static_cast<MIRIntConst*>(static_cast<ConstvalNode*>(opnd0)->GetConstVal());
+          auto *intConst = static_cast<MIRIntConst*>(static_cast<ConstvalNode*>(opnd0)->GetConstVal());
           CHECK_FATAL(intConst->IsZero(), "can only be zero");
           MIRFunction *func =
             GetMIRModule().GetMIRBuilder()->GetOrCreateFunction(strMCCThrowNullPointerException, TyIdx(PTY_void));
@@ -204,7 +205,7 @@ BlockNode *JavaEHLowerer::DoLowerBlock(BlockNode &block) {
         break;
       }
       case OP_intrinsiccall: {
-        IntrinsiccallNode *intrinCall = static_cast<IntrinsiccallNode*>(stmt);
+        auto *intrinCall = static_cast<IntrinsiccallNode*>(stmt);
         if (intrinCall->GetIntrinsic() == INTRN_MPL_BOUNDARY_CHECK) {
           DoLowerBoundaryCheck(*intrinCall, *newBlock);
           break;

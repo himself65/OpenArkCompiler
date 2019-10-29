@@ -18,6 +18,9 @@
 #include <utility>
 #include <vector>
 #include <map>
+#ifdef _WIN32
+#include <pthread.h>
+#endif
 #include "opcodes.h"
 #include "prim_types.h"
 #include "mir_type.h"

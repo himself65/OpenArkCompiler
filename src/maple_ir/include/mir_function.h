@@ -65,8 +65,6 @@ class MIRFunction {
       : module(mod),
         puIdx(0),
         symbolTableIdx(sidx),
-        funcType(nullptr),
-        classTyIdx(0),
         formals(mod->GetMPAllocator().Adapter()),
         retRefSym(mod->GetMPAllocator().Adapter()),
         argumentsTyIdx(mod->GetMPAllocator().Adapter()),
@@ -75,9 +73,6 @@ class MIRFunction {
         dataMPAllocator(dataMemPool),
         codeMemPool(mempoolctrler.NewMemPool("func code mempool")),
         codeMemPoolAllocator(codeMemPool),
-        body(nullptr),
-        flag(0),
-        fileIndex(0),
         info(mod->GetMPAllocator().Adapter()),
         infoIsString(mod->GetMPAllocator().Adapter()),
         aliasVarMap(std::less<GStrIdx>(), mod->GetMPAllocator().Adapter()),
@@ -107,7 +102,7 @@ class MIRFunction {
     // tables will be allocated on the local data mempool.
     symTab = module->GetMemPool()->New<MIRSymbolTable>(&module->GetMPAllocator());
     pregTab = module->GetMemPool()->New<MIRPregTable>(module, &module->GetMPAllocator());
-    typeNameTab = module->GetMemPool()->New<MIRTypeNameTable>(&module->GetMPAllocator());
+    typeNameTab = module->GetMemPool()->New<MIRTypeNameTable>(module->GetMPAllocator());
     labelTab = module->GetMemPool()->New<MIRLabelTable>(&module->GetMPAllocator());
   }
 
@@ -648,6 +643,10 @@ class MIRFunction {
     return body;
   }
 
+  const BlockNode *GetBody() const {
+    return body;
+  }
+
   void SetBody(BlockNode *node) {
     body = node;
   }
@@ -908,12 +907,12 @@ class MIRFunction {
 
  private:
   MIRModule *module;     // the module that owns this function
-  PUIdx puIdx;           // the PU index of this function
+  PUIdx puIdx = 0;           // the PU index of this function
   PUIdx puIdxOrigin;     // the original puIdx when initial generation
   StIdx symbolTableIdx;  // the symbol table index of this function
-  MIRFuncType *funcType;
+  MIRFuncType *funcType = nullptr;
   TyIdx returnTyIdx;                // the declared return type of this function
-  TyIdx classTyIdx;                 // class/interface type this function belongs to
+  TyIdx classTyIdx{0};                 // class/interface type this function belongs to
   MapleVector<MIRSymbol*> formals;  // formal parameter symbols of this function
   MapleSet<MIRSymbol*> retRefSym;
   MapleVector<TyIdx> argumentsTyIdx;  // arguments types of this function
@@ -927,12 +926,12 @@ class MIRFunction {
   MapleAllocator dataMPAllocator;
   MemPool *codeMemPool;
   MapleAllocator codeMemPoolAllocator;
-  BlockNode *body;
+  BlockNode *body = nullptr;
   SrcPosition srcPosition;
   FuncAttrs funcAttrs;
-  uint32 flag;
+  uint32 flag = 0;
   uint16 hashCode;   // for methodmetadata order
-  uint32 fileIndex;  // this function belongs to which file, used by VM for plugin manager
+  uint32 fileIndex = 0;  // this function belongs to which file, used by VM for plugin manager
   MIRInfoVector info;
   MapleVector<bool> infoIsString;               // tells if an entry has string value
   MapleMap<GStrIdx, MIRAliasVars> aliasVarMap;  // source code alias variables for debuginfo
@@ -983,6 +982,8 @@ class MIRFunction {
   GStrIdx baseFuncWithTypeStrIdx;
   // funcname + types of args, no type of retv
   GStrIdx signatureStrIdx;
+
+  void DumpFlavorLoweredThanMmpl() const;
 };
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_MIR_FUNCTION_H

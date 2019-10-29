@@ -20,7 +20,7 @@ namespace maple {
 // +1 is needed here because our field id starts with 0 pointing to the struct itself
 #define OBJ_KLASS_FIELDID (static_cast<uint32>(ClassProperty::kShadow) + 1)
 #define METADATA_KLASS_FIELDID (static_cast<uint32>(ClassProperty::kShadow) + 1)
-static constexpr bool raDebug = false;
+static constexpr bool kRADebug = false;
 static constexpr int64 kTBDValue = 0xABCD;
 static constexpr int kMaxOptimiseThreshold = 6;
 static constexpr uint32 kMethodFieldHashSize = 1022;
@@ -174,7 +174,7 @@ static constexpr uint64 kMethodNotVirtual = 0x00000001;
 static constexpr uint64 kMethodFinalize = 0x00000002;
 static constexpr uint64 kMethodMetaCompact = 0x00000004;
 static constexpr uint64 kMethodAbstract = 0x00000010;
-#define CaseCondition(ARRAYNAME, ELEM)                                                                     \
+#define CASE_CONDITION(ARRAYNAME, ELEM)                                                                     \
   case kValueInt:                                                                                          \
     ARRAYNAME += std::to_string(ELEM->GetI32Val());                                                        \
     oss.str();                                                                                             \
@@ -216,9 +216,6 @@ static constexpr uint64 kMethodAbstract = 0x00000010;
     break;
 class ReflectionAnalysis : public AnalysisResult {
  public:
-  static void GenStrTab(MIRModule &mirmodule);
-  static uint32 FindOrInsertRepeatString(const std::string &str, bool isHot = false, uint8 hotType = kLayoutUnused);
-  static BaseNode *GenClassInfoAddr(BaseNode *obj, MIRBuilder &builder);
   ReflectionAnalysis(MIRModule *mod, MemPool *memPool, KlassHierarchy *kh, MIRBuilder &builder)
       : AnalysisResult(memPool),
         mirModule(mod),
@@ -228,9 +225,10 @@ class ReflectionAnalysis : public AnalysisResult {
         classTab(allocator.Adapter()) {
     isLibcore = -1;
   }
-
-  ~ReflectionAnalysis() {}
-
+  ~ReflectionAnalysis() = default;
+  static void GenStrTab(MIRModule &mirmodule);
+  static uint32 FindOrInsertRepeatString(const std::string &str, bool isHot = false, uint8 hotType = kLayoutUnused);
+  static BaseNode *GenClassInfoAddr(BaseNode *obj, MIRBuilder &builder);
   static TyIdx GetClassMetaDataTyIdx() {
     return classMetadataTyIdx;
   }
@@ -355,7 +353,7 @@ class DoReflectionAnalysis : public ModulePhase {
  public:
   explicit DoReflectionAnalysis(ModulePhaseID id) : ModulePhase(id) {}
 
-  ~DoReflectionAnalysis() {}
+  ~DoReflectionAnalysis() = default;
 
   AnalysisResult *Run(MIRModule *module, ModuleResultMgr *m) override;
   std::string PhaseName() const override {
