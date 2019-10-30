@@ -19,16 +19,16 @@
 
 namespace maple {
 /* emit IR to specified file */
-AnalysisResult *MeDoEmit::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) {
+AnalysisResult *MeDoEmit::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, ModuleResultMgr *moduleResMgr) {
   bool emitHssaOrAfter = (func->GetIRMap() != nullptr);
   if (func->NumBBs() > 0) {
     /* generate bblist after layout (bb physical position) */
     if (!MeOption::quiet) {
-      CHECK_FATAL(m->GetAnalysisPhase(MeFuncPhase_BBLAYOUT) != nullptr, "null ptr check");
+      CHECK_FATAL(funcResMgr->GetAnalysisPhase(MeFuncPhase_BBLAYOUT) != nullptr, "null ptr check");
       LogInfo::MapleLogger() << "===== Check/run Depended Phase [ "
-                             << m->GetAnalysisPhase(MeFuncPhase_BBLAYOUT)->PhaseName() << " ]=====\n";
+                             << funcResMgr->GetAnalysisPhase(MeFuncPhase_BBLAYOUT)->PhaseName() << " ]=====\n";
     }
-    BBLayout *layoutBBs = static_cast<BBLayout*>(m->GetAnalysisResult(MeFuncPhase_BBLAYOUT, func));
+    BBLayout *layoutBBs = static_cast<BBLayout*>(funcResMgr->GetAnalysisResult(MeFuncPhase_BBLAYOUT, func));
     if (!MeOption::quiet) {
       LogInfo::MapleLogger() << "===== Depended Phase ended =====\n";
     }

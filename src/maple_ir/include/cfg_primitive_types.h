@@ -45,5 +45,4 @@ struct PrimitiveTypeProperty {
 
 const PrimitiveTypeProperty &GetPrimitiveTypeProperty(PrimType pType);
 } // namespace maple
-
 #endif  // MAPLE_IR_INCLUDE_CFG_PRIMITIVE_TYPES_H

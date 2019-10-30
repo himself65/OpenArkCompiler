@@ -450,12 +450,12 @@ class MeFunction : public FuncEmit {
   const MapleVector<SCCOfBBs*> &GetSccTopologicalVec() const {
     return sccTopologicalVec;
   }
-  void BBTopologicalSort(SCCOfBBs *scc);
+  void BBTopologicalSort(SCCOfBBs &scc);
   void BuildSCC();
  private:
   void VerifySCC();
   void SCCTopologicalSort(std::vector<SCCOfBBs*> &sccNodes);
-  void BuildSCCDFS(BB *bb, uint32 &visitIndex, std::vector<SCCOfBBs*> &sccNodes, std::vector<uint32> &visitedOrder,
+  void BuildSCCDFS(BB &bb, uint32 &visitIndex, std::vector<SCCOfBBs*> &sccNodes, std::vector<uint32> &visitedOrder,
                    std::vector<uint32> &lowestOrder, std::vector<bool> &inStack, std::stack<uint32> &visitStack);
   void CreateBasicBlocks();
   void SetTryBlockInfo(const StmtNode *nextStmt, StmtNode *tryStmt, BB *lastTryBB, BB *curBB, BB *newBB);

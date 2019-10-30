@@ -41,6 +41,7 @@ extern uint32 GetPrimTypeP2Size(PrimType primType);                       // ans
 extern const char *GetPrimTypeName(PrimType primType);
 extern const char *GetPrimTypeJavaName(PrimType primType);
 inline uint32 GetPrimTypeBitSize(PrimType primType) {
+  // 1 byte = 8 bits = 2^3 bits
   return GetPrimTypeSize(primType) << 3;
 }
 
@@ -501,8 +502,8 @@ class MIRType {
   virtual std::string GetCompactMplTypeName() const;
   virtual bool PointsToConstString() const;
   virtual size_t GetHashIndex() const {
-    constexpr uint8 kIdxShift = 2;
-    return ((static_cast<uint32>(primType) << kIdxShift) + (typeKind << kShiftNumOfTypeKind)) % kTypeHashLength;
+    constexpr uint8 idxShift = 2;
+    return ((static_cast<uint32>(primType) << idxShift) + (typeKind << kShiftNumOfTypeKind)) % kTypeHashLength;
   }
 
  protected:
@@ -544,8 +545,8 @@ class MIRPtrType : public MIRType {
   TyIdxFieldAttrPair GetPointedTyIdxFldAttrPairWithFieldID(FieldID fieldID) const;
   TyIdx GetPointedTyIdxWithFieldID(FieldID fieldID) const;
   size_t GetHashIndex() const override {
-    constexpr uint8 kIdxShift = 4;
-    return ((pointedTyIdx.GetIdx() << kIdxShift) + (typeKind << kShiftNumOfTypeKind)) % kTypeHashLength;
+    constexpr uint8 idxShift = 4;
+    return ((pointedTyIdx.GetIdx() << idxShift) + (typeKind << kShiftNumOfTypeKind)) % kTypeHashLength;
   }
 
   bool PointsToConstString() const override;
@@ -635,8 +636,8 @@ class MIRArrayType : public MIRType {
   }
 
   size_t GetHashIndex() const override {
-    constexpr uint8 kIdxShift = 2;
-    size_t hidx = (eTyIdx.GetIdx() << kIdxShift) + (typeKind << kShiftNumOfTypeKind);
+    constexpr uint8 idxShift = 2;
+    size_t hidx = (eTyIdx.GetIdx() << idxShift) + (typeKind << kShiftNumOfTypeKind);
     for (size_t i = 0; i < dim; i++) {
       CHECK_FATAL(i < kMaxArrayDim, "array index out of range");
       hidx += sizeArray[i] << i;
@@ -681,8 +682,8 @@ class MIRFarrayType : public MIRType {
   void Dump(int indent, bool dontUseName = false) const override;
 
   size_t GetHashIndex() const override {
-    constexpr uint8 kIdxShift = 5;
-    return ((elemTyIdx.GetIdx() << kIdxShift) + (typeKind << kShiftNumOfTypeKind)) % kTypeHashLength;
+    constexpr uint8 idxShift = 5;
+    return ((elemTyIdx.GetIdx() << idxShift) + (typeKind << kShiftNumOfTypeKind)) % kTypeHashLength;
   }
 
   std::string GetMplTypeName() const override;
@@ -1014,13 +1015,11 @@ class MIRJarrayType : public MIRFarrayType {
     typeKind = kTypeJArray;
   };
 
-  explicit MIRJarrayType(TyIdx elemTyIdx)
-      : MIRFarrayType(elemTyIdx) {
+  explicit MIRJarrayType(TyIdx elemTyIdx) : MIRFarrayType(elemTyIdx) {
     typeKind = kTypeJArray;
   }
 
-  explicit MIRJarrayType(GStrIdx strIdx)
-      : MIRFarrayType(strIdx) {
+  explicit MIRJarrayType(GStrIdx strIdx) : MIRFarrayType(strIdx) {
     typeKind = kTypeJArray;
   }
 
@@ -1032,6 +1031,7 @@ class MIRJarrayType : public MIRFarrayType {
 
   MIRStructType *GetParentType();
   const std::string &GetJavaName(void);
+
   bool IsPrimitiveArray() {
     if (javaNameStrIdx == 0) {
       DetermineName();
@@ -1169,7 +1169,7 @@ class MIRClassType : public MIRStructType {
   FieldID GetFirstLocalFieldID() const;
   // return class id or superclass id accroding to input string
   MIRClassType *GetExceptionRootType();
-  bool IsExceptionType();
+  bool IsExceptionType() const;
   void AddImplementedInterface(TyIdx interfaceTyIdx) {
     if (std::find(interfacesImplemented.begin(), interfacesImplemented.end(), interfaceTyIdx) !=
         interfacesImplemented.end()) {

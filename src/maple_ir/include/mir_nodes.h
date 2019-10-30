@@ -1428,7 +1428,7 @@ class StmtNode : public BaseNode, public PtrListNodeBase<StmtNode> {
     stmtID = id;
   }
 
-  StmtNode *GetRealNext();
+  StmtNode *GetRealNext() const;
 
  protected:
   SrcPosition srcPosition;
@@ -2153,7 +2153,7 @@ class BlockNode : public StmtNode {
   void AppendStatementsFromBlock(BlockNode &blk);
   void InsertFirst(StmtNode *stmt);  // Insert stmt as the first
   void InsertLast(StmtNode *stmt);   // Insert stmt as the last
-  void ReplaceStmtWithBlock(StmtNode *stmtNode, BlockNode &blk);
+  void ReplaceStmtWithBlock(StmtNode &stmtNode, BlockNode &blk);
   void ReplaceStmt1WithStmt2(StmtNode *stmtNode1, StmtNode *stmtNode2);
   void RemoveStmt(StmtNode *stmtNode2);
   void InsertBefore(StmtNode *stmtNode1, StmtNode *stmtNode2);  // Insert ss2 before ss1 in current block.

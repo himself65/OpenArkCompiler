@@ -56,10 +56,11 @@ bool BaseNode::MayThrowException() {
       return true;
     }
   }
-  for (size_t i = 0; i < NumOpnds(); i++)
+  for (size_t i = 0; i < NumOpnds(); i++) {
     if (Opnd(i)->MayThrowException()) {
       return true;
     }
+  }
   return false;
 }
 
@@ -156,10 +157,10 @@ void BlockNode::InsertLast(StmtNode *stmt) {
   stmtNodeList.push_back(stmt);
 }
 
-void BlockNode::ReplaceStmtWithBlock(StmtNode *stmtNode, BlockNode &blk) {
-  stmtNodeList.splice(stmtNode, blk.GetStmtNodes());
-  stmtNodeList.erase(stmtNode);
-  stmtNode->SetNext(blk.GetLast()->GetNext());
+void BlockNode::ReplaceStmtWithBlock(StmtNode &stmtNode, BlockNode &blk) {
+  stmtNodeList.splice(&stmtNode, blk.GetStmtNodes());
+  stmtNodeList.erase(&stmtNode);
+  stmtNode.SetNext(blk.GetLast()->GetNext());
 }
 
 void BlockNode::ReplaceStmt1WithStmt2(StmtNode *stmtNode1, StmtNode *stmtNode2) {
@@ -562,7 +563,7 @@ void StmtNode::Dump(const MIRModule &mod) const {
 }
 
 // Get the next stmt skip the comment stmt.
-StmtNode *StmtNode::GetRealNext() {
+StmtNode *StmtNode::GetRealNext() const {
   StmtNode *stmt = this->GetNext();
   while (stmt != nullptr) {
     if (stmt->GetOpCode() != OP_comment) {
@@ -599,7 +600,7 @@ void DassignNode::Dump(const MIRModule &mod, int32 indent) const {
   LogInfo::MapleLogger() << (st->IsLocal() ? " %" : " $");
   LogInfo::MapleLogger() << st->GetName() << " " << fieldID;
   LogInfo::MapleLogger() << " (";
-  if (GetRHS()) {
+  if (GetRHS() != nullptr) {
     GetRHS()->Dump(mod, indent + 1);
   } else {
     LogInfo::MapleLogger() << "/*empty-rhs*/";
@@ -1503,8 +1504,8 @@ bool ExtractbitsNode::Verify() const {
   bool opndTypeVerf = ArithTypeVerify(*Opnd());
   bool compVerf = CompatibleTypeVerify(*Opnd(), *this);
   bool resTypeVerf = UnaryTypeVerify0(GetPrimType());
-  constexpr int kNumBitsInByte = 8;
-  bool opnd0SizeVerf = (kNumBitsInByte * GetPrimTypeSize(Opnd()->GetPrimType()) >= bitsSize);
+  constexpr int numBitsInByte = 8;
+  bool opnd0SizeVerf = (numBitsInByte * GetPrimTypeSize(Opnd()->GetPrimType()) >= bitsSize);
   if (!opnd0SizeVerf) {
     LogInfo::MapleLogger()
         << "\n#Error: The operand of extractbits must be large enough to contain the specified bitfield\n";
@@ -1574,8 +1575,8 @@ bool CompareNode::Verify() const {
 bool DepositbitsNode::Verify() const {
   bool opndsVerf = BinaryGenericVerify(*GetBOpnd(0), *GetBOpnd(1));
   bool resTypeVerf = IntTypeVerify(GetPrimType());
-  constexpr int kNumBitsInByte = 8;
-  bool opnd0SizeVerf = (kNumBitsInByte * GetPrimTypeSize(GetBOpnd(0)->GetPrimType()) >= bitsSize);
+  constexpr int numBitsInByte = 8;
+  bool opnd0SizeVerf = (numBitsInByte * GetPrimTypeSize(GetBOpnd(0)->GetPrimType()) >= bitsSize);
   if (!opnd0SizeVerf) {
     LogInfo::MapleLogger() << "\n#Error:opnd0 of depositbits must be large enough to contain the specified bitfield\n";
   }
@@ -1769,10 +1770,10 @@ bool IfStmtNode::Verify() const {
   bool condVerf = Opnd()->Verify();
   bool thenVerf = true;
   bool elseVerf = true;
-  if (thenPart) {
+  if (thenPart != nullptr) {
     thenVerf = thenPart->Verify();
   }
-  if (elsePart) {
+  if (elsePart != nullptr) {
     elseVerf = elsePart->Verify();
   }
   return condVerf && thenVerf && elseVerf;
@@ -1781,7 +1782,7 @@ bool IfStmtNode::Verify() const {
 bool WhileStmtNode::Verify() const {
   bool condVerf = Opnd()->Verify();
   bool bodyVerf = true;
-  if (body) {
+  if (body != nullptr) {
     bodyVerf = body->Verify();
   }
   return condVerf && bodyVerf;

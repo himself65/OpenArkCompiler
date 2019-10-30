@@ -187,7 +187,8 @@ class AliasClass : public AnalysisResult {
   AliasElem *CreateAliasElemsExpr(BaseNode &expr);
   void SetNotAllDefsSeenForMustDefs(const StmtNode &callas);
   void SetPtrOpndNextLevNADS(const BaseNode &opnd, AliasElem *ae, bool hasNoPrivateDefEffect);
-  void SetPtrOpndsNextLevNADS(unsigned int start, unsigned int end, MapleVector<BaseNode*> &opnds, bool hasNoPrivateDefEffect);
+  void SetPtrOpndsNextLevNADS(unsigned int start, unsigned int end, MapleVector<BaseNode*> &opnds,
+                              bool hasNoPrivateDefEffect);
   void ApplyUnionForDassignCopy(const AliasElem &lhsAe, const AliasElem *rhsAe, const BaseNode &rhs);
   AliasElem *FindOrCreateDummyNADSAe();
   void CollectMayDefForMustDefs(const StmtNode &stmt, std::set<OriginalSt*> &mayDefOsts);

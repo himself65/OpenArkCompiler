@@ -47,7 +47,6 @@ enum MIRFlavor {
 
 enum MIRSrcLang { kSrcLangUnknown, kSrcLangC, kSrcLangJs, kSrcLangJava, kSrcLangCPlusPlus };
 
-
 // blksize gives the size of the memory block in bytes; there are (blksize+3)/4
 // words; 1 bit for each word, so the bit vector's length in bytes is
 // ((blksize+3)/4+7)/8
@@ -513,7 +512,6 @@ class MIRModule {
   // and writes to all field id otherwise, it writes the field ids in MapleSet
   MapleMap<PUIdx, MapleSet<FieldID>*> puIdxFieldInitializedMap;
 };
-
 #endif  // MIR_FEATURE_FULL
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_MIR_MODULE_H

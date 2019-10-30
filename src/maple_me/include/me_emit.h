@@ -24,7 +24,7 @@ class MeDoEmit : public MeFuncPhase {
   explicit MeDoEmit(MePhaseID id) : MeFuncPhase(id) {}
 
   virtual ~MeDoEmit() = default;
-  AnalysisResult *Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) override;
+  AnalysisResult *Run(MeFunction *func, MeFuncResultMgr *funcResMgr, ModuleResultMgr *moduleResMgr) override;
   std::string PhaseName() const override {
     return "emit";
   }

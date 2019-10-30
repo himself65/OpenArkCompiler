@@ -609,23 +609,23 @@ void MeFunction::RemoveEhEdgesInSyncRegion() {
   }
 }
 
-void MeFunction::BuildSCCDFS(BB *bb, uint32 &visitIndex, std::vector<SCCOfBBs*> &sccNodes,
+void MeFunction::BuildSCCDFS(BB &bb, uint32 &visitIndex, std::vector<SCCOfBBs*> &sccNodes,
                              std::vector<uint32> &visitedOrder, std::vector<uint32> &lowestOrder,
                              std::vector<bool> &inStack, std::stack<uint32> &visitStack) {
-  uint32 id = bb->UintID();
+  uint32 id = bb.UintID();
   visitedOrder[id] = visitIndex;
   lowestOrder[id] = visitIndex;
   visitIndex++;
   visitStack.push(id);
   inStack[id] = true;
 
-  for (BB *succ : bb->GetSucc()){
+  for (BB *succ : bb.GetSucc()){
     if (succ == nullptr) {
       continue;
     }
     uint32 succId = succ->UintID();
     if (!visitedOrder[succId]) {
-      BuildSCCDFS(succ, visitIndex, sccNodes, visitedOrder, lowestOrder, inStack, visitStack);
+      BuildSCCDFS(*succ, visitIndex, sccNodes, visitedOrder, lowestOrder, inStack, visitStack);
       if (lowestOrder[succId] < lowestOrder[id]) {
         lowestOrder[id] = lowestOrder[succId];
       }
@@ -638,7 +638,7 @@ void MeFunction::BuildSCCDFS(BB *bb, uint32 &visitIndex, std::vector<SCCOfBBs*> 
   }
 
   if (visitedOrder.at(id) == lowestOrder.at(id)) {
-    SCCOfBBs *sccNode = alloc.GetMemPool()->New<SCCOfBBs>(numOfSCCs++, bb, &alloc);
+    SCCOfBBs *sccNode = alloc.GetMemPool()->New<SCCOfBBs>(numOfSCCs++, &bb, &alloc);
     uint32 stackTopId;
     do {
       stackTopId = visitStack.top();
@@ -672,7 +672,7 @@ void MeFunction::BuildSCC() {
   std::stack<uint32> visitStack;
 
   // Starting from common entry bb for DFS
-  BuildSCCDFS(GetCommonEntryBB(), visitIndex, sccNodes, visitedOrder, lowestOrder, inStack, visitStack);
+  BuildSCCDFS(*GetCommonEntryBB(), visitIndex, sccNodes, visitedOrder, lowestOrder, inStack, visitStack);
 
   for (SCCOfBBs *scc : sccNodes) {
     scc->Verify(sccOfBB);
@@ -715,18 +715,18 @@ void MeFunction::SCCTopologicalSort(std::vector<SCCOfBBs*> &sccNodes) {
   }
 }
 
-void MeFunction::BBTopologicalSort(SCCOfBBs *scc) {
+void MeFunction::BBTopologicalSort(SCCOfBBs &scc) {
   std::set<BB*> InQueue;
   std::vector<BB*> bbs;
-  for (BB *bb : scc->GetBBs()) {
+  for (BB *bb : scc.GetBBs()) {
     bbs.push_back(bb);
   }
-  scc->Clear();
-  scc->AddBBNode(scc->GetEntry());
-  InQueue.insert(scc->GetEntry());
+  scc.Clear();
+  scc.AddBBNode(scc.GetEntry());
+  InQueue.insert(scc.GetEntry());
 
-  for (size_t i = 0; i < scc->GetBBs().size(); i++) {
-    BB *bb = scc->GetBBs()[i];
+  for (size_t i = 0; i < scc.GetBBs().size(); i++) {
+    BB *bb = scc.GetBBs()[i];
     for (BB *succ : bb->GetSucc()) {
       if (succ == nullptr) {
         continue;
@@ -752,7 +752,7 @@ void MeFunction::BBTopologicalSort(SCCOfBBs *scc) {
         }
       }
       if (predAllVisited) {
-        scc->AddBBNode(succ);
+        scc.AddBBNode(succ);
         InQueue.insert(succ);
       }
     }

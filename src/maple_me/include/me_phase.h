@@ -45,7 +45,8 @@ class MeFuncPhase : public Phase {
 
   // By default mrm will not be used because most ME phases do not need IPA
   // result. For those will use IPA result, this function will be overrode.
-  virtual AnalysisResult *Run(MeFunction *ir, MeFuncResultMgr *frm, ModuleResultMgr *mrm = nullptr) = 0;
+  virtual AnalysisResult *Run(MeFunction *func,
+      MeFuncResultMgr *funcResMgr, ModuleResultMgr *moduleResMgr = nullptr) = 0;
 
   const std::string &GetPreviousPhaseName() const {
     return prevPhaseName;

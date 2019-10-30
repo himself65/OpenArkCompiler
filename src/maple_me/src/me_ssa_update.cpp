@@ -75,15 +75,15 @@ void MeSSAUpdate::RenamePhi(BB &bb) {
       if (phi->GetLHS() == nullptr) {
         // create a new VarMeExpr defined by this phi
         irMap.SetExprID(irMap.GetExprID() + 1);
-        VarMeExpr *newvar = irMap.New<VarMeExpr>(&irMap.GetIRMapAlloc(), irMap.GetExprID(), it2->first,
+        VarMeExpr *newVar = irMap.New<VarMeExpr>(&irMap.GetIRMapAlloc(), irMap.GetExprID(), it2->first,
                                                  irMap.GetVerst2MeExprTableSize());
-        newvar->InitBase(OP_dread, PTY_ref, 0);
-        newvar->SetFieldID(0);
-        irMap.PushBackVerst2MeExprTable(newvar);
-        CHECK_FATAL(newvar->GetVstIdx() == irMap.GetVerst2MeExprTableSize() - 1,
+        newVar->InitBase(OP_dread, PTY_ref, 0);
+        newVar->SetFieldID(0);
+        irMap.PushBackVerst2MeExprTable(newVar);
+        CHECK_FATAL(newVar->GetVstIdx() == irMap.GetVerst2MeExprTableSize() - 1,
                     "RenamePhi: vstIdx wrongly initialized");
-        phi->UpdateLHS(*newvar);
-        it1->second->push(newvar);  // push the stack
+        phi->UpdateLHS(*newVar);
+        it1->second->push(newVar);  // push the stack
       } else {
         it1->second->push(phi->GetLHS());  // push the stack
       }
@@ -96,21 +96,21 @@ MeExpr *MeSSAUpdate::RenameExpr(MeExpr &meExpr, bool &changed) {
   bool needRehash = false;
   switch (meExpr.GetMeOp()) {
     case kMeOpVar: {
-      VarMeExpr &varExpr = static_cast<VarMeExpr&>(meExpr);
+      auto &varExpr = static_cast<VarMeExpr&>(meExpr);
       MapleMap<OStIdx, MapleStack<VarMeExpr*>*>::iterator it1 = renameStacks.find(varExpr.GetOStIdx());
       if (it1 == renameStacks.end()) {
         return &meExpr;
       }
       MapleStack<VarMeExpr*> *renameStack = it1->second;
-      VarMeExpr *curvar = renameStack->top();
-      if (&varExpr == curvar) {
+      VarMeExpr *curVar = renameStack->top();
+      if (&varExpr == curVar) {
         return &meExpr;
       }
       changed = true;
-      return curvar;
+      return curVar;
     }
     case kMeOpIvar: {
-      IvarMeExpr &ivarMeExpr = static_cast<IvarMeExpr&>(meExpr);
+      auto &ivarMeExpr = static_cast<IvarMeExpr&>(meExpr);
       IvarMeExpr newMeExpr(kInvalidExprID);
       newMeExpr.SetBase(RenameExpr(*ivarMeExpr.GetBase(), needRehash));
       if (needRehash) {
@@ -124,12 +124,12 @@ MeExpr *MeSSAUpdate::RenameExpr(MeExpr &meExpr, bool &changed) {
       return &meExpr;
     }
     case kMeOpOp: {
-      OpMeExpr &meOpExpr = static_cast<OpMeExpr&>(meExpr);
+      auto &meOpExpr = static_cast<OpMeExpr&>(meExpr);
       OpMeExpr newMeExpr(kInvalidExprID);
       newMeExpr.SetOpnd(0, RenameExpr(*meOpExpr.GetOpnd(0), needRehash));
-      if (meOpExpr.GetOpnd(1)) {
+      if (meOpExpr.GetOpnd(1) != nullptr) {
         newMeExpr.SetOpnd(1, RenameExpr(*meOpExpr.GetOpnd(1), needRehash));
-        if (meOpExpr.GetOpnd(2)) {
+        if (meOpExpr.GetOpnd(2) != nullptr) {
           newMeExpr.SetOpnd(2, RenameExpr(*meOpExpr.GetOpnd(2), needRehash));
         }
       }
@@ -146,7 +146,7 @@ MeExpr *MeSSAUpdate::RenameExpr(MeExpr &meExpr, bool &changed) {
       return &meExpr;
     }
     case kMeOpNary: {
-      NaryMeExpr &naryMeExpr = static_cast<NaryMeExpr&>(meExpr);
+      auto &naryMeExpr = static_cast<NaryMeExpr&>(meExpr);
       NaryMeExpr newMeExpr(&irMap.GetIRMapAlloc(), kInvalidExprID, naryMeExpr.GetTyIdx(), naryMeExpr.GetIntrinsic(),
                            naryMeExpr.GetBoundCheck());
       for (size_t i = 0; i < naryMeExpr.GetOpnds().size(); i++) {
@@ -176,31 +176,31 @@ void MeSSAUpdate::RenameStmts(BB &bb) {
     if (chiList != nullptr) {
       for (auto chi : *chiList) {
         MapleMap<OStIdx, MapleStack<VarMeExpr*>*>::iterator it = renameStacks.find(chi.first);
-        if (it != renameStacks.end() && chi.second) {
+        if (it != renameStacks.end() && chi.second != nullptr) {
           it->second->push(chi.second->GetLHS());
         }
       }
     }
     // process the LHS
-    VarMeExpr *lhsvar = nullptr;
+    VarMeExpr *lhsVar = nullptr;
     if (stmt.GetOp() == OP_dassign || stmt.GetOp() == OP_maydassign) {
-      lhsvar = stmt.GetVarLHS();
+      lhsVar = stmt.GetVarLHS();
     } else if (kOpcodeInfo.IsCallAssigned(stmt.GetOp())) {
       MapleVector<MustDefMeNode> *mustDefList = stmt.GetMustDefList();
       if (mustDefList->empty() || mustDefList->front().GetLHS()->GetMeOp() != kMeOpVar) {
         continue;
       }
-      lhsvar = static_cast<VarMeExpr*>(mustDefList->front().GetLHS());
+      lhsVar = static_cast<VarMeExpr*>(mustDefList->front().GetLHS());
     } else {
       continue;
     }
-    CHECK_FATAL(lhsvar != nullptr, "stmt doesn't have lhs?");
-    MapleMap<OStIdx, MapleStack<VarMeExpr*>*>::iterator it = renameStacks.find(lhsvar->GetOStIdx());
+    CHECK_FATAL(lhsVar != nullptr, "stmt doesn't have lhs?");
+    MapleMap<OStIdx, MapleStack<VarMeExpr*>*>::iterator it = renameStacks.find(lhsVar->GetOStIdx());
     if (it == renameStacks.end()) {
       continue;
     }
     MapleStack<VarMeExpr*> *renameStack = it->second;
-    renameStack->push(lhsvar);
+    renameStack->push(lhsVar);
   }
 }
 
@@ -223,9 +223,9 @@ void MeSSAUpdate::RenamePhiOpndsInSucc(BB &bb) {
       }
       MeVarPhiNode *phi = it2->second;
       MapleStack<VarMeExpr*> *renameStack = it1->second;
-      VarMeExpr *curvar = renameStack->top();
-      if (phi->GetOpnd(index) != curvar) {
-        phi->SetOpnd(index, curvar);
+      VarMeExpr *curVar = renameStack->top();
+      if (phi->GetOpnd(index) != curVar) {
+        phi->SetOpnd(index, curVar);
       }
     }
   }

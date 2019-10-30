@@ -104,7 +104,7 @@ class MeDoBBLayout : public MeFuncPhase {
   explicit MeDoBBLayout(MePhaseID id) : MeFuncPhase(id) {}
 
   virtual ~MeDoBBLayout() = default;
-  AnalysisResult *Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) override;
+  AnalysisResult *Run(MeFunction *func, MeFuncResultMgr *funcResMgr, ModuleResultMgr *moduleResMgr) override;
   std::string PhaseName() const override {
     return "bblayout";
   }

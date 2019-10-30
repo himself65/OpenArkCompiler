@@ -60,7 +60,7 @@ class MeDoIRMap : public MeFuncPhase {
 
   ~MeDoIRMap() = default;
 
-  AnalysisResult *Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) override;
+  AnalysisResult *Run(MeFunction *func, MeFuncResultMgr *funcResMgr, ModuleResultMgr *moduleResMgr) override;
   std::string PhaseName() const override {
     return "irmap";
   }
