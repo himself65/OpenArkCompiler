@@ -139,22 +139,13 @@ enum LogLevel { kLlDbg, kLlLog, kLlInfo, kLlWarn, kLlErr, kLlFatal, kLlMax };
 
 enum LogTags { kLtThread, kLtLooper, kLtAll };
 
-enum LogMode {
-  kLmSimple,
-  kLmComplex,
-
-  kLmMax
-};
+enum LogMode { kLmSimple, kLmComplex, kLmMax };
 
 enum LogNumberCode {
   kLncInfo = 0,
-
   kLncWarn = 20,
-
   kLncErr = 40,
-
   kLncFatal = 60,
-
   kLncMax = 99
 };
 
@@ -169,16 +160,6 @@ class LogInfo {
     fclose(outStream);
   }
 
-  void SetLogDevice(FILE &stream) {
-    outStream = &stream;
-  }
-
-  void SetLogMode(LogMode lm) {
-    outMode = lm;
-  }
-
-  void EmitLogForDevelop(enum LogTags tag, enum LogLevel ll, const std::string &file, const std::string &func,
-                         int line, const char *fmt, ...);
   void EmitLogForUser(enum LogNumberCode num, enum LogLevel ll, const char *fmt, ...) const;
   void EmitLogForUser(enum LogNumberCode num, enum LogLevel ll, const std::string &message) const;
   void EmitErrorMessage(const std::string &cond, const std::string &file, unsigned int line,
@@ -187,6 +168,14 @@ class LogInfo {
  private:
   FILE *outStream;
   LogMode outMode;
+  void SetLogDevice(FILE &stream) {
+    outStream = &stream;
+  }
+  void SetLogMode(LogMode lm) {
+    outMode = lm;
+  }
+  void EmitLogForDevelop(enum LogTags tag, enum LogLevel ll, const std::string &file, const std::string &func,
+                         int line, const char *fmt, ...);
 };
 
 #ifdef DEBUG

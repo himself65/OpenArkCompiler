@@ -669,8 +669,8 @@ bool MIRParser::ParseStmtMultiway(StmtNodePtr &stmt) {
     multiwaynode->AppendElemToMultiWayTable(MCasePair(static_cast<BaseNode*>(x), lblIdx));
     tk = lexer.GetTokenKind();
   }
-  const MapleVector<MCasePair> &multiwaytable = multiwaynode->GetMultiWayTable();
-  multiwaynode->SetNumOpnds(multiwaytable.size());
+  const MapleVector<MCasePair> &multiWayTable = multiwaynode->GetMultiWayTable();
+  multiwaynode->SetNumOpnds(multiWayTable.size());
   lexer.NextToken();
   return true;
 }
@@ -739,7 +739,8 @@ bool MIRParser::ParseStmtCall(StmtNodePtr &stmt) {
     case TK_interfacecallinstantassigned:
       hasinstant = true;
       break;
-    default:;
+    default:
+      break;
   }
   TyIdx polymophictyidx(0);
   if (o == OP_polymorphiccallassigned || o == OP_polymorphiccall) {
@@ -776,7 +777,7 @@ bool MIRParser::ParseStmtCall(StmtNodePtr &stmt) {
   }
   lexer.NextToken();
   CallNode *callstmt = nullptr;
-  CallinstantNode *callinstantstmt = nullptr;
+  CallinstantNode *callInstantStmt = nullptr;
   if (withtype) {
     callstmt = mod.CurFuncCodeMemPool()->New<CallNode>(mod, o);
     callstmt->SetTyIdx(polymophictyidx);
@@ -802,8 +803,8 @@ bool MIRParser::ParseStmtCall(StmtNodePtr &stmt) {
       return false;
     }
     TyIdx tyidx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&instvecty);
-    callinstantstmt = mod.CurFuncCodeMemPool()->New<CallinstantNode>(mod, o, tyidx);
-    callstmt = callinstantstmt;
+    callInstantStmt = mod.CurFuncCodeMemPool()->New<CallinstantNode>(mod, o, tyidx);
+    callstmt = callInstantStmt;
     lexer.NextToken();  // skip the >
   } else {
     callstmt = mod.CurFuncCodeMemPool()->New<CallNode>(mod, o);
@@ -824,8 +825,8 @@ bool MIRParser::ParseStmtCall(StmtNodePtr &stmt) {
       ASSERT(callstmt != nullptr, "callstmt is null in MIRParser::ParseStmtCall");
       callstmt->SetReturnVec(retsvec);
     } else {
-      ASSERT(callinstantstmt != nullptr, "callinstantstmt is null in MIRParser::ParseStmtCall");
-      callinstantstmt->SetReturnVec(retsvec);
+      ASSERT(callInstantStmt != nullptr, "callinstantstmt is null in MIRParser::ParseStmtCall");
+      callInstantStmt->SetReturnVec(retsvec);
     }
   }
   lexer.NextToken();
@@ -1853,7 +1854,7 @@ bool MIRParser::ParseExprConstval(BaseNodePtr &expr) {
   exprconst->SetPrimType(GetPrimitiveType(typeTk));
   lexer.NextToken();
   MIRConst *constval = nullptr;
-  if (!ParseScalarValue(constval, GlobalTables::GetTypeTable().GetPrimType(exprconst->GetPrimType()))) {
+  if (!ParseScalarValue(constval, *GlobalTables::GetTypeTable().GetPrimType(exprconst->GetPrimType()))) {
     Error("expect scalar type but get ");
     return false;
   }
@@ -2580,14 +2581,14 @@ bool MIRParser::ParseExprIntrinsicop(BaseNodePtr &expr) {
   return true;
 }
 
-bool MIRParser::ParseScalarValue(MIRConstPtr &stype, MIRType *type) {
-  PrimType ptp = type->GetPrimType();
+bool MIRParser::ParseScalarValue(MIRConstPtr &stype, MIRType &type) {
+  PrimType ptp = type.GetPrimType();
   if (IsPrimitiveInteger(ptp) || IsPrimitiveDynType(ptp) || ptp == PTY_gen) {
     if (lexer.GetTokenKind() != kTkIntconst) {
       Error("constant value incompatible with integer type at ");
       return false;
     }
-    stype = mod.GetMemPool()->New<MIRIntConst>(lexer.GetTheIntVal(), *type);
+    stype = mod.GetMemPool()->New<MIRIntConst>(lexer.GetTheIntVal(), type);
   } else if (ptp == PTY_f32) {
     if (lexer.GetTokenKind() != kTkFloatconst) {
       Error("constant value incompatible with single-precision float type at ");

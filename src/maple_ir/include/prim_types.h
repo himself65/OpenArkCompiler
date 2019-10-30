@@ -20,6 +20,7 @@
 namespace maple {
 class PrimitiveType {
  public:
+  // we need implicit conversion from PrimType to PrimitiveType, so there is no explicit keyword here.
   PrimitiveType(PrimType type) {
     property = &GetPrimitiveTypeProperty(type);
   }

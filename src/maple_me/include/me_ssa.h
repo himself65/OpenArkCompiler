@@ -28,19 +28,19 @@ class MeSSA : public SSA, public AnalysisResult {
   MeSSA(MeFunction *func, Dominance *dom, MemPool *memPool);
   ~MeSSA() = default;
 
-  void CollectDefBBs(std::map<OStIdx, std::set<BBId>> &ostDefBBs);
   void BuildSSA();
+  bool VerifySSA() const;
+
+ private:
+  MeFunction *func;
+  Dominance *dom;
+  bool VerifySSAOpnd(const BaseNode &node) const;
+  void CollectDefBBs(std::map<OStIdx, std::set<BBId>> &ostDefBBs);
   void InsertPhiNode();
   void RenameBB(BB&);
-  bool VerifySSA() const;
   std::string PhaseName() const {
     return "ssa";
   }
-
- private:
-  bool VerifySSAOpnd(const BaseNode &node) const;
-  MeFunction *func;
-  Dominance *dom;
 };
 
 class MeDoSSA : public MeFuncPhase {
@@ -49,7 +49,8 @@ class MeDoSSA : public MeFuncPhase {
 
   ~MeDoSSA() = default;
 
-  AnalysisResult *Run(MeFunction *ir, MeFuncResultMgr *m, ModuleResultMgr *mrm) override;
+ private:
+  AnalysisResult *Run(MeFunction *func, MeFuncResultMgr *funcResMgr, ModuleResultMgr *moduleResMgr) override;
   std::string PhaseName() const override {
     return "ssa";
   }

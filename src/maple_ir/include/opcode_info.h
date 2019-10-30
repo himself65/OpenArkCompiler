@@ -46,6 +46,7 @@ constexpr unsigned long OPCODEISCALL(1ULL << kOpcodePropIsCall);
 constexpr unsigned long OPCODEISCALLASSIGNED(1ULL << kOpcodePropIsCallAssigned);
 constexpr unsigned long OPCODENOTPURE(1ULL << kOpcodePropNotPure);
 constexpr unsigned long OPCODEMAYTHROWEXCEPTION(1ULL << kOpcodePropMayThrowException);
+
 struct OpcodeDesc {
   uint8 instrucSize;  // size of instruction in bytes
   uint16 flag;        // stores the opcode property flags

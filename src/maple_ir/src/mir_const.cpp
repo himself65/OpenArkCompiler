@@ -42,8 +42,11 @@ bool MIRIntConst::operator==(MIRConst &rhs) const {
   if (&rhs == this) {
     return true;
   }
-  MIRIntConst *intConst = dynamic_cast<MIRIntConst*>(&rhs);
-  return (intConst && (&intConst->GetType() == &GetType()) && (intConst->value == value));
+  if (GetKind() != rhs.GetKind()) {
+    return false;
+  }
+  auto &intConst = static_cast<MIRIntConst&>(rhs);
+  return ((&intConst.GetType() == &GetType()) && (intConst.value == value));
 }
 
 void MIRAddrofConst::Dump() const {
@@ -61,14 +64,14 @@ bool MIRAddrofConst::operator==(MIRConst &rhs) const {
   if (&rhs == this) {
     return true;
   }
-  MIRAddrofConst *rhsA = dynamic_cast<MIRAddrofConst*>(&rhs);
-  if (rhsA == nullptr) {
+  if (GetKind() != rhs.GetKind()) {
     return false;
   }
+  auto &rhsA = static_cast<MIRAddrofConst&>(rhs);
   if (&GetType() != &rhs.GetType()) {
     return false;
   }
-  return (stIdx == rhsA->stIdx && fldID == rhsA->fldID);
+  return (stIdx == rhsA.stIdx && fldID == rhsA.fldID);
 }
 
 void MIRAddroffuncConst::Dump() const {
@@ -82,64 +85,67 @@ bool MIRAddroffuncConst::operator==(MIRConst &rhs) const {
   if (&rhs == this) {
     return true;
   }
-  MIRAddroffuncConst *rhsAf = dynamic_cast<MIRAddroffuncConst*>(&rhs);
-  if (rhsAf == nullptr) {
+  if (GetKind() != rhs.GetKind()) {
     return false;
   }
-  return (&GetType() == &rhs.GetType() && puIdx == rhsAf->puIdx);
+  auto &rhsAf = static_cast<MIRAddroffuncConst&>(rhs);
+  return (&GetType() == &rhs.GetType() && puIdx == rhsAf.puIdx);
 }
 
 bool MIRLblConst::operator==(MIRConst &rhs) const {
   if (&rhs == this) {
     return true;
   }
-  MIRLblConst *lblConst = dynamic_cast<MIRLblConst*>(&rhs);
-  return (lblConst && (lblConst->value == value));
+  if (GetKind() != rhs.GetKind()) {
+    return false;
+  }
+  auto &lblConst = static_cast<MIRLblConst&>(rhs);
+  return (lblConst.value == value);
 }
 
 bool MIRFloatConst::operator==(MIRConst &rhs) const {
   if (&rhs == this) {
     return true;
   }
-  MIRFloatConst *floatConst = dynamic_cast<MIRFloatConst*>(&rhs);
-  if (floatConst == nullptr) {
+  if (GetKind() != rhs.GetKind()) {
     return false;
   }
-  if (std::isnan(floatConst->value.floatValue)) {
+  auto &floatConst = static_cast<MIRFloatConst&>(rhs);
+  if (std::isnan(floatConst.value.floatValue)) {
     return std::isnan(value.floatValue);
   }
   if (std::isnan(value.floatValue)) {
-    return std::isnan(floatConst->value.floatValue);
+    return std::isnan(floatConst.value.floatValue);
   }
-  return (fabs(floatConst->value.floatValue - value.floatValue) <= 1e-6);
+  return (fabs(floatConst.value.floatValue - value.floatValue) <= 1e-6);
 }
 
 bool MIRDoubleConst::operator==(MIRConst &rhs) const {
   if (&rhs == this) {
     return true;
   }
-  MIRDoubleConst *floatConst = dynamic_cast<MIRDoubleConst*>(&rhs);
-  if (floatConst == nullptr) {
+  if (GetKind() != rhs.GetKind()) {
     return false;
   }
-  if (std::isnan(floatConst->value.dValue)) {
+  auto &floatConst = static_cast<MIRDoubleConst&>(rhs);
+  if (std::isnan(floatConst.value.dValue)) {
     return std::isnan(value.dValue);
   }
   if (std::isnan(value.dValue)) {
-    return std::isnan(floatConst->value.dValue);
+    return std::isnan(floatConst.value.dValue);
   }
-  return (fabs(floatConst->value.dValue - value.dValue) <= 1e-15);
+  return (fabs(floatConst.value.dValue - value.dValue) <= 1e-15);
 }
 
 bool MIRFloat128Const::operator==(MIRConst &rhs) const {
   if (&rhs == this) {
     return true;
   }
-  MIRFloat128Const *floatConst = dynamic_cast<MIRFloat128Const*>(&rhs);
-  if (floatConst == nullptr) {
+  if (GetKind() != rhs.GetKind()) {
     return false;
   }
-  if ((value[0] == floatConst->value[0]) && (value[1] == floatConst->value[1])) {
+  auto &floatConst = static_cast<MIRFloat128Const&>(rhs);
+  if ((value[0] == floatConst.value[0]) && (value[1] == floatConst.value[1])) {
     return true;
   }
   return false;
@@ -149,15 +155,15 @@ bool MIRAggConst::operator==(MIRConst &rhs) const {
   if (&rhs == this) {
     return true;
   }
-  MIRAggConst *aggregateConst = dynamic_cast<MIRAggConst*>(&rhs);
-  if (aggregateConst == nullptr) {
+  if (GetKind() != rhs.GetKind()) {
     return false;
   }
-  if (aggregateConst->constVec.size() != constVec.size()) {
+  auto &aggregateConst = static_cast<MIRAggConst&>(rhs);
+  if (aggregateConst.constVec.size() != constVec.size()) {
     return false;
   }
   for (size_t i = 0; i < constVec.size(); ++i) {
-    if (!(*aggregateConst->constVec[i] == *constVec[i])) {
+    if (!(*aggregateConst.constVec[i] == *constVec[i])) {
       return false;
     }
   }
@@ -213,11 +219,11 @@ bool MIRStrConst::operator==(MIRConst &rhs) const {
   if (&rhs == this) {
     return true;
   }
-  MIRStrConst *rhsCs = dynamic_cast<MIRStrConst*>(&rhs);
-  if (rhsCs == nullptr) {
+  if (GetKind() != rhs.GetKind()) {
     return false;
   }
-  return (&rhs.GetType() == &GetType() && value == rhsCs->value);
+  auto &rhsCs = static_cast<MIRStrConst&>(rhs);
+  return (&rhs.GetType() == &GetType() && value == rhsCs.value);
 }
 
 MIRStr16Const::MIRStr16Const(const std::u16string &str, MIRType &type)
@@ -239,11 +245,11 @@ bool MIRStr16Const::operator==(MIRConst &rhs) const {
   if (&rhs == this) {
     return true;
   }
-  MIRStr16Const *rhsCs = dynamic_cast<MIRStr16Const*>(&rhs);
-  if (rhsCs == nullptr) {
+  if (GetKind() != rhs.GetKind()) {
     return false;
   }
-  return (&GetType() == &rhs.GetType() && value == rhsCs->value);
+  auto &rhsCs = static_cast<MIRStr16Const&>(rhs);
+  return (&GetType() == &rhs.GetType() && value == rhsCs.value);
 }
 }  // namespace maple
 #endif  // MIR_FEATURE_FULL

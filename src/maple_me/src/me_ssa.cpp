@@ -68,11 +68,11 @@ void MeSSA::CollectDefBBs(std::map<OStIdx, std::set<BBId>> &ostDefBBs) {
         MapleMap<OStIdx, MayDefNode>::iterator iter;
         for (iter = mayDefs.begin(); iter != mayDefs.end(); ++iter) {
           const OriginalSt *ost = func->GetMeSSATab()->GetOriginalStFromID(iter->first);
-          if (ost && (!ost->IsFinal() || func->GetMirFunc()->IsConstructor())) {
+          if (ost != nullptr && (!ost->IsFinal() || func->GetMirFunc()->IsConstructor())) {
             ostDefBBs[iter->first].insert(bb->GetBBId());
           } else if (stmt.GetOpCode() == OP_intrinsiccallwithtype) {
-            IntrinsiccallNode &innode = static_cast<IntrinsiccallNode&>(stmt);
-            if (innode.GetIntrinsic() == INTRN_JAVA_CLINIT_CHECK) {
+            auto &inNode = static_cast<IntrinsiccallNode&>(stmt);
+            if (inNode.GetIntrinsic() == INTRN_JAVA_CLINIT_CHECK) {
               ostDefBBs[iter->first].insert(bb->GetBBId());
             }
           }
@@ -80,7 +80,7 @@ void MeSSA::CollectDefBBs(std::map<OStIdx, std::set<BBId>> &ostDefBBs) {
         if (stmt.GetOpCode() == OP_dassign || stmt.GetOpCode() == OP_maydassign) {
           VersionSt *vst = GetSSATab()->GetStmtsSSAPart().SSAPartOf(stmt)->GetSSAVar();
           OriginalSt *ost = vst->GetOrigSt();
-          if (ost && (!ost->IsFinal() || func->GetMirFunc()->IsConstructor())) {
+          if (ost != nullptr && (!ost->IsFinal() || func->GetMirFunc()->IsConstructor())) {
             ostDefBBs[vst->GetOrigIdx()].insert(bb->GetBBId());
           }
         }
@@ -116,9 +116,9 @@ void MeSSA::InsertPhiNode() {
     }
     std::deque<BB*> *workList = new std::deque<BB*>();
     for (auto it = ost2DefBBs[ost->GetIndex()].begin(); it != ost2DefBBs[ost->GetIndex()].end(); it++) {
-      BB *defBb = func->GetAllBBs()[(*it).idx];
-      if (defBb != nullptr) {
-        workList->push_back(defBb);
+      BB *defBB = func->GetAllBBs()[(*it).idx];
+      if (defBB != nullptr) {
+        workList->push_back(defBB);
       }
     }
     while (!workList->empty()) {
@@ -128,7 +128,7 @@ void MeSSA::InsertPhiNode() {
       for (auto &bbID : dfs) {
         BB *dfBB = func->GetBBFromID(bbID);
         CHECK_FATAL(dfBB != nullptr, "null ptr check");
-        if (!dfBB->PhiofVerStInserted(*vst)) {
+        if (dfBB->PhiofVerStInserted(*vst) == nullptr) {
           workList->push_back(dfBB);
           dfBB->InsertPhi(&func->GetAlloc(), vst);
           if (DEBUGFUNC(func)) {
@@ -183,12 +183,12 @@ bool MeSSA::VerifySSAOpnd(const BaseNode &node) const {
   Opcode op = node.GetOpCode();
   size_t vtableSize = func->GetMeSSATab()->GetVersionStTable().GetVersionStVectorSize();
   if (op == OP_dread || op == OP_addrof) {
-    const AddrofSSANode &addrofSSANode = static_cast<const AddrofSSANode&>(node);
-    const VersionSt *verSt = addrofSSANode.GetSSAVar();
+    const auto &addrOfSSANode = static_cast<const AddrofSSANode&>(node);
+    const VersionSt *verSt = addrOfSSANode.GetSSAVar();
     CHECK_FATAL(verSt->GetIndex() < vtableSize, "runtime check error");
     return true;
   } else if (op == OP_regread) {
-    const RegreadSSANode &regNode = static_cast<const RegreadSSANode&>(node);
+    const auto &regNode = static_cast<const RegreadSSANode&>(node);
     const VersionSt *verSt = regNode.GetSSAVar();
     CHECK_FATAL(verSt->GetIndex() < vtableSize, "runtime check error");
     return true;
@@ -219,17 +219,17 @@ bool MeSSA::VerifySSA() const {
   return true;
 }
 
-AnalysisResult *MeDoSSA::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) {
-  Dominance *dom = static_cast<Dominance*>(m->GetAnalysisResult(MeFuncPhase_DOMINANCE, func));
+AnalysisResult *MeDoSSA::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, ModuleResultMgr *moduleResMgr) {
+  auto *dom = static_cast<Dominance*>(funcResMgr->GetAnalysisResult(MeFuncPhase_DOMINANCE, func));
   CHECK_FATAL(dom != nullptr, "dominance phase has problem");
-  SSATab *ssatab = static_cast<SSATab*>(m->GetAnalysisResult(MeFuncPhase_SSATAB, func));
-  CHECK_FATAL(ssatab != nullptr, "ssaTab phase has problem");
-  MemPool *ssamp = NewMemPool();
-  MeSSA *ssa = ssamp->New<MeSSA>(func, dom, ssamp);
+  auto *ssaTab = static_cast<SSATab*>(funcResMgr->GetAnalysisResult(MeFuncPhase_SSATAB, func));
+  CHECK_FATAL(ssaTab != nullptr, "ssaTab phase has problem");
+  MemPool *ssaMp = NewMemPool();
+  MeSSA *ssa = ssaMp->New<MeSSA>(func, dom, ssaMp);
   ssa->BuildSSA();
   ssa->VerifySSA();
   if (DEBUGFUNC(func)) {
-    ssatab->GetVersionStTable().Dump(&ssatab->GetModule());
+    ssaTab->GetVersionStTable().Dump(&ssaTab->GetModule());
   }
   return ssa;
 }

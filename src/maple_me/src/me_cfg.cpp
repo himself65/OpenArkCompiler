@@ -337,7 +337,7 @@ void MeCFG::FixMirCFG() {
           if (stmt->GetNext() != nullptr) {
             bb->InsertStmtBefore(stmt->GetNext(), dassign);
           } else {
-            ASSERT( stmt == &(bb->GetStmtNodes().back()), "just check");
+            ASSERT(stmt == &(bb->GetStmtNodes().back()), "just check");
             stmt->SetNext(dassign);
             dassign->SetPrev(stmt);
             bb->GetStmtNodes().update_back(dassign);
@@ -720,9 +720,7 @@ void MeCFG::VerifyLabels() const {
 }
 
 void MeCFG::Dump() const {
-  // BSF  Dump the cfg
-  // map<uint32, uint32> visited_map;
-  // set<uint32> visited_set;
+  // BSF Dump the cfg
   LogInfo::MapleLogger() << "####### CFG Dump: ";
   ASSERT(func.NumBBs() != 0, "size to be allocated is 0");
   bool *visitedMap = static_cast<bool*>(calloc(func.NumBBs(), sizeof(bool)));

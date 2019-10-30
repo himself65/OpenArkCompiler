@@ -412,11 +412,11 @@ class BB {
 class SCCOfBBs {
  public:
   SCCOfBBs(uint32 index, BB *bb, MapleAllocator *alloc)
-          : id(index),
-            entry(bb),
-            bbs(alloc->Adapter()),
-            predSCC(std::less<SCCOfBBs*>(), alloc->Adapter()),
-            succSCC(std::less<SCCOfBBs*>(), alloc->Adapter()) {}
+      : id(index),
+        entry(bb),
+        bbs(alloc->Adapter()),
+        predSCC(std::less<SCCOfBBs*>(), alloc->Adapter()),
+        succSCC(std::less<SCCOfBBs*>(), alloc->Adapter()) {}
   void Dump();
   void Verify(MapleVector<SCCOfBBs*> &sccOfBB);
   void SetUp(MapleVector<SCCOfBBs*> &sccOfBB);

@@ -13,7 +13,8 @@
  * See the Mulan PSL v1 for more details.
  */
 #include "alias_analysis_table.h"
-using namespace maple;
+
+namespace maple {
 OriginalSt *AliasAnalysisTable::GetPrevLevelNode(const OriginalSt &ost) {
   auto it = prevLevelNode.find(ost.GetIndex());
   if (it != prevLevelNode.end()) {
@@ -164,3 +165,4 @@ OriginalSt *AliasAnalysisTable::FindDiffFieldOriginalSt(const OriginalSt &ost, F
   MapleVector<OriginalSt*> *nextLevelOsts = GetNextLevelNodes(*parentOst);
   return FindExtraLevOriginalSt(*nextLevelOsts, fld);
 }
+}  // namespace maple

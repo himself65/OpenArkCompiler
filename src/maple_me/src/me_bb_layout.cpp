@@ -415,7 +415,7 @@ void BBLayout::ResolveUnconditionalFallThru(BB &bb, BB &nextBB) {
   }
 }
 
-AnalysisResult *MeDoBBLayout::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) {
+AnalysisResult *MeDoBBLayout::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, ModuleResultMgr *moduleResMgr) {
   // mempool used in analysisresult
   MemPool *layoutMp = NewMemPool();
   BBLayout *bbLayout = layoutMp->New<BBLayout>(*layoutMp, *func);
@@ -538,7 +538,7 @@ AnalysisResult *MeDoBBLayout::Run(MeFunction *func, MeFuncResultMgr *m, ModuleRe
     bb = nextBB;
   }
   if (bbLayout->IsNewBBInLayout()) {
-    m->InvalidAnalysisResult(MeFuncPhase_DOMINANCE, func);
+    funcResMgr->InvalidAnalysisResult(MeFuncPhase_DOMINANCE, func);
   }
   if (DEBUGFUNC(func)) {
     func->GetTheCfg()->DumpToFile("afterBBLayout", false);

@@ -82,12 +82,13 @@ void MeAliasClass::DoAliasAnalysis() {
   }
 }
 
-AnalysisResult *MeDoAliasClass::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) {
+AnalysisResult *MeDoAliasClass::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, ModuleResultMgr *moduleResMgr) {
   MPLTimer timer;
   timer.Start();
-  (void)m->GetAnalysisResult(MeFuncPhase_SSATAB, func);
+  (void)funcResMgr->GetAnalysisResult(MeFuncPhase_SSATAB, func);
   MemPool *aliasClassMp = NewMemPool();
-  KlassHierarchy *kh = static_cast<KlassHierarchy*>(mrm->GetAnalysisResult(MoPhase_CHA, &func->GetMIRModule()));
+  KlassHierarchy *kh = static_cast<KlassHierarchy*>(moduleResMgr->GetAnalysisResult(
+      MoPhase_CHA, &func->GetMIRModule()));
   MeAliasClass *aliasClass = aliasClassMp->New<MeAliasClass>(
       *aliasClassMp, func->GetMIRModule(), *func->GetMeSSATab(), *func, MeOption::lessThrowAlias,
       MeOption::finalFieldAlias, MeOption::ignoreIPA, DEBUGFUNC(func), MeOption::setCalleeHasSideEffect, kh);

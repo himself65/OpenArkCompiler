@@ -53,7 +53,7 @@ class MeDoAliasClass : public MeFuncPhase {
   explicit MeDoAliasClass(MePhaseID id) : MeFuncPhase(id) {}
 
   virtual ~MeDoAliasClass() = default;
-  AnalysisResult *Run(MeFunction *ir, MeFuncResultMgr *m, ModuleResultMgr *mrm) override;
+  AnalysisResult *Run(MeFunction *func, MeFuncResultMgr *funcResMgr, ModuleResultMgr *moduleResMgr) override;
   std::string PhaseName() const override {
     return "aliasclass";
   }

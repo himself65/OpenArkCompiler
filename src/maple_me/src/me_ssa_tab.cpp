@@ -18,7 +18,7 @@
 
 // allocate the data structure to store SSA information
 namespace maple {
-AnalysisResult *MeDoSSATab::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) {
+AnalysisResult *MeDoSSATab::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, ModuleResultMgr *moduleResMgr) {
   MPLTimer timer;
   timer.Start();
   if (DEBUGFUNC(func)) {

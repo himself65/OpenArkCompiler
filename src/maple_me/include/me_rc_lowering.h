@@ -23,7 +23,6 @@
 namespace maple {
 class RCLowering {
  public:
-
   RCLowering(MeFunction &f, KlassHierarchy &kh)
       : func(f),
         mirModule(f.GetMIRModule()),
@@ -40,16 +39,30 @@ class RCLowering {
   void Finish();
   void FastBBLower(BB &bb);
 
+ private:
+  MeFunction &func;
+  MIRModule &mirModule;
+  IRMap &irMap;
+  SSATab &ssaTab;
+  KlassHierarchy &klassHierarchy;
+  std::vector<MeStmt*> rets{};  // std::vector of return statement
+  unsigned int tmpCount = 0;
+  bool needSpecialHandleException = false;
+  std::set<MIRSymbol*> assignedPtrSym;
+  std::set<VarMeExpr*> tmpLocalRefVars;
+  std::set<MeExpr*> gcMallocObjects{};
+  std::map<OStIdx, VarMeExpr*> cleanUpVars{};
+  std::map<OStIdx, OriginalSt*> varOStMap{};
+  // used to store initialized map, help to optimize dec ref in first assignment
+  std::unordered_map<MeExpr*, MapleSet<FieldID>*> initializedFields{};
   std::string PhaseName() const {
     return "rclowering";
   }
-
   void MarkLocalRefVar();
   void MarkAllRefOpnds();
   void BBLower(BB &bb);
   void CreateCleanupIntrinsics();
   void HandleArguments();
-  void InitRCFunc();
   // create new symbol from name and return its ost
   OriginalSt *RetrieveOSt(const std::string &name, bool isLocalrefvar) const;
   /**
@@ -88,23 +101,6 @@ class RCLowering {
   void HandleReturnStmt();
   void HandleAssignMeStmt(MeStmt &stmt, MeExpr *pendingDec);
   MIRIntrinsicID SelectWriteBarrier(const MeStmt &stmt);
-
- private:
-  MeFunction &func;
-  MIRModule &mirModule;
-  IRMap &irMap;
-  SSATab &ssaTab;
-  KlassHierarchy &klassHierarchy;
-  std::vector<MeStmt*> rets{};  // std::vector of return statement
-  unsigned int tmpCount = 0;
-  std::set<MIRSymbol*> assignedPtrSym;
-  std::set<VarMeExpr*> tmpLocalRefVars;
-  std::map<OStIdx, VarMeExpr*> cleanUpVars{};
-  std::map<OStIdx, OriginalSt*> varOStMap{};
-  bool needSpecialHandleException = false;
-  std::set<MeExpr*> gcMallocObjects{};
-  // used to store initialized map, help to optimize dec ref in first assignment
-  std::unordered_map<MeExpr*, MapleSet<FieldID>*> initializedFields{};
 };
 
 class MeDoRCLowering : public MeFuncPhase {

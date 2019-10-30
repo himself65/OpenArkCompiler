@@ -39,6 +39,7 @@ class MIRParser {
         firstLineNum(0),
         maxPregNo(0),
         paramParseLocalType(false),
+        paramFileIdx(0),
         paramIsIPA(false),
         paramIsComb(false),
         paramTokenKind(kTkInvalid),
@@ -68,7 +69,7 @@ class MIRParser {
   bool IsStatement(TokenKind tk) const;
   PrimType GetPrimitiveType(TokenKind tk) const;
   MIRIntrinsicID GetIntrinsicId(TokenKind tk) const;
-  bool ParseScalarValue(MIRConstPtr&, MIRType*);
+  bool ParseScalarValue(MIRConstPtr&, MIRType&);
   bool ParseConstAddrLeafExpr(MIRConstPtr&, MIRType&);
   bool ParseInitValue(MIRConstPtr&, TyIdx);
   bool ParseDeclaredSt(StIdx&);
@@ -89,7 +90,7 @@ class MIRParser {
   bool ParsePragmaElementForAnnotation(MIRPragmaElement &elem);
   bool ParsePragma(MIRStructType &type);
   bool ParseFields(MIRStructType &type);
-  bool ParseStructType(TyIdx &tyIdx);
+  bool ParseStructType(TyIdx &styIdx);
   bool ParseClassType(TyIdx &tyIdx);
   bool ParseInterfaceType(TyIdx &tyIdx);
   bool ParseDefinedTypename(TyIdx &tyIdx, MIRTypeKind kind = kTypeUnknown);

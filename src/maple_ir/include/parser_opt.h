@@ -18,7 +18,7 @@
 
 namespace maple {
 // option bits passed into ParseMIR
-enum ParserOptions: uint8 {
+enum ParserOptions : uint8 {
   kInvalidOption = 0x0,
   kWithDbgInfo = 0x1,  // collect dbginfo
   kKeepFirst = 0x2,    // ignore second type def, not emit error
