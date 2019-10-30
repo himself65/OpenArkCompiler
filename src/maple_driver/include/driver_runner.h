@@ -93,7 +93,6 @@ class DriverRunner final {
   void AddPhase(std::vector<std::string> &phases, std::string phase, const PhaseManager &phaseManager) const;
 
 };
-
 }  // namespace maple
 
 #endif  // MAPLE_DRIVER_INCLUDE_DRIVER_RUNNER_H

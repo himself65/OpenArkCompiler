@@ -167,7 +167,8 @@ void VtableAnalysis::GenVtableDefinition(const Klass &klass) {
     MIRFunction *vtabMethod = builder->GetFunctionFromStidx(methodPair->first);
     ASSERT(vtabMethod != nullptr, "null ptr check!");
     AddroffuncNode *addrofFuncNode = builder->CreateExprAddroffunc(vtabMethod->GetPuidx(), GetMIRModule().GetMemPool());
-    MIRConst *constNode = GetMIRModule().GetMemPool()->New<MIRAddroffuncConst>(addrofFuncNode->GetPUIdx(), *voidPtrType);
+    MIRConst *constNode = GetMIRModule().GetMemPool()->New<MIRAddroffuncConst>(addrofFuncNode->GetPUIdx(),
+                                                                               *voidPtrType);
     newconst->GetConstVec().push_back(constNode);
   }
   // We also need to generate vtable and itable even if the class does not
@@ -309,7 +310,8 @@ void VtableAnalysis::GenItableDefinition(const Klass &klass) {
       ASSERT(func !=  nullptr, "null ptr check!");
       const std::string &signatureName = DecodeBaseNameWithType(*func);
       uint32 nameIdx = ReflectionAnalysis::FindOrInsertRepeatString(signatureName);
-      secondItabEmitArray->GetConstVec().push_back(GetMIRModule().GetMemPool()->New<MIRIntConst>(nameIdx, *voidPtrType));
+      secondItabEmitArray->GetConstVec().push_back(GetMIRModule().GetMemPool()->New<MIRIntConst>(nameIdx,
+                                                                                                 *voidPtrType));
       secondItabEmitArray->GetConstVec().push_back(
         GetMIRModule().GetMemPool()->New<MIRAddroffuncConst>(func->GetPuidx(), *voidPtrType));
     }
@@ -318,7 +320,8 @@ void VtableAnalysis::GenItableDefinition(const Klass &klass) {
     // push the conflict symbol to the first-level itable
     StIdx symIdx = GlobalTables::GetGsymTable().GetStIdxFromStrIdx(
         GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(ITAB_CONFLICT_PREFIX_STR + klass.GetKlassName()));
-    firstItabEmitArray->GetConstVec().push_back(GetMIRModule().GetMemPool()->New<MIRAddrofConst>(symIdx, 0, *voidPtrType));
+    firstItabEmitArray->GetConstVec().push_back(GetMIRModule().GetMemPool()->New<MIRAddrofConst>(symIdx, 0,
+                                                                                                 *voidPtrType));
   }
   GenTableSymbol(ITAB_PREFIX_STR, klass.GetKlassName(), *firstItabEmitArray);
 }

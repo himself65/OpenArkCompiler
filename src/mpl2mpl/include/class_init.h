@@ -27,7 +27,7 @@ class ClassInit : public FuncOptimizeImpl {
   ~ClassInit() = default;
 
   FuncOptimizeImpl *Clone() override {
-    return new (std::nothrow) ClassInit(*this);
+    return new ClassInit(*this);
   }
 
   void ProcessFunc(MIRFunction *func) override;

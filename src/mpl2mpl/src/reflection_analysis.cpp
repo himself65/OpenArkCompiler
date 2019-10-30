@@ -48,7 +48,7 @@ int ReflectionAnalysis::GetDeflateStringIdx(const std::string &subStr) {
   return FindOrInsertReflectString("0!" + subStr);
 }
 
-static uint32 FirstFindOrInsertRepeatString(const std::string &str, bool isHot, uint8 hotType) {
+uint32 ReflectionAnalysis::FirstFindOrInsertRepeatString(const std::string &str, bool isHot, uint8 hotType) {
   uint32 index = 0;
   constexpr uint32 lengthShift = 2u;
   auto it = ReflectionAnalysis::GetStr2IdxMap().find(str);
@@ -949,7 +949,7 @@ std::string ReflectionAnalysis::GetAnnotationValue(MapleVector<MIRPragmaElement*
       strIdx.SetIdx(arrayElem->GetU64Val());
       std::string t = GlobalTables::GetStrTable().GetStringFromStrIdx(strIdx);
       DelimeterConvert(t);
-      ReflectionAnalysis::CompressHighFrequencyStr(t);
+      CompressHighFrequencyStr(t);
       annoArray += t;
     } else if (arrayElem->GetType() == kValueBoolean || arrayElem->GetType() == kValueChar) {
       annoArray += std::to_string(arrayElem->GetU64Val());
@@ -990,7 +990,7 @@ std::string ReflectionAnalysis::GetArrayValue(MapleVector<MIRPragmaElement*> sub
     std::string javaDsp;
     ConvertMapleClassName(GlobalTables::GetStrTable().GetStringFromStrIdx(arrayElem->GetTypeStrIdx()), javaDsp);
     std::string typeStr = javaDsp;
-    ReflectionAnalysis::CompressHighFrequencyStr(typeStr);
+    CompressHighFrequencyStr(typeStr);
     annoArray += typeStr;
     annoArray += '!';
     std::string type;
@@ -1025,7 +1025,7 @@ std::string ReflectionAnalysis::GetArrayValue(MapleVector<MIRPragmaElement*> sub
       strIdx.SetIdx(arrayElem->GetU64Val());
       std::string t = GlobalTables::GetStrTable().GetStringFromStrIdx(strIdx);
       DelimeterConvert(t);
-      ReflectionAnalysis::CompressHighFrequencyStr(t);
+      CompressHighFrequencyStr(t);
       if (arrayElem->GetType() == kValueString && isSN && t.size() > kMaxOptimiseThreshold) {
         uint32 idx = ReflectionAnalysis::FindOrInsertReflectString(t);
         t = "`" + std::to_string(idx);
@@ -1375,7 +1375,7 @@ void ReflectionAnalysis::GeneAnnotation(std::map<int, int> &idxNumMap, std::stri
       std::string pregTypeString = GlobalTables::GetStrTable().GetStringFromStrIdx(gindex);
       std::string klassJavaDescriptor;
       ConvertMapleClassName(pregTypeString, klassJavaDescriptor);
-      ReflectionAnalysis::CompressHighFrequencyStr(klassJavaDescriptor);
+      CompressHighFrequencyStr(klassJavaDescriptor);
       annoArr += klassJavaDescriptor;
       annoArr += "!";
       if (paramnumArray != nullptr) {
@@ -1386,7 +1386,7 @@ void ReflectionAnalysis::GeneAnnotation(std::map<int, int> &idxNumMap, std::stri
         idxNumMap[annoNum - 1]++;
         std::string convertTmp =
             NameMangler::DecodeName(GlobalTables::GetStrTable().GetStringFromStrIdx(elem->GetNameStrIdx()));
-        ReflectionAnalysis::CompressHighFrequencyStr(convertTmp);
+        CompressHighFrequencyStr(convertTmp);
         annoArr += convertTmp;
         GStrIdx stridx;
         annoArr += "!";

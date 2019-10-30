@@ -336,9 +336,11 @@ void MUIDReplacement::GenericFuncDefTable() {
     MUID muid = keyVal.second;
     MIRAggConst *entryConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), *funcDefTabEntryType);
     uint32 fieldID = 1;
-    MIRAggConst *funcInfEntryConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), *funcInfTabEntryType);
+    MIRAggConst *funcInfEntryConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(),
+                                                                                   *funcInfTabEntryType);
     uint32 funcInfFieldID = 1;
-    MIRAggConst *muidEntryConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), *funcDefMuidTabEntryType);
+    MIRAggConst *muidEntryConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(),
+                                                                                *funcDefMuidTabEntryType);
     uint32 muidFieldID = 1;
     // To be processed by runtime
     builder->AddAddroffuncFieldConst(*funcDefTabEntryType, *entryConst, fieldID++, *funcSymbol);
@@ -422,7 +424,8 @@ void MUIDReplacement::GenericDataDefTable() {
     MIRAggConst *entryConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), *dataDefTabEntryType);
     uint32 fieldID = 1;
     MUID muid = keyVal.first;
-    MIRAggConst *muidEntryConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), *dataDefMuidTabEntryType);
+    MIRAggConst *muidEntryConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(),
+                                                                                *dataDefMuidTabEntryType);
     uint32 muidFieldID = 1;
     // Will be emitted as 0 and processed by runtime
     builder->AddAddrofFieldConst(*dataDefTabEntryType, *entryConst, fieldID++, *mirSymbol);
@@ -494,7 +497,8 @@ void MUIDReplacement::GenericUnifiedUndefTable() {
       static_cast<MIRStructType*>(GlobalTables::GetTypeTable().GetOrCreateStructType(
           "MUIDUnifiedUndefMuidTabEntry", muidFields, parentFields, GetMIRModule()));
   size_t arraySize = funcUndefMap.size();
-  MIRArrayType &funcArrayType = *GlobalTables::GetTypeTable().GetOrCreateArrayType(*unifiedUndefTabEntryType, arraySize);
+  MIRArrayType &funcArrayType = *GlobalTables::GetTypeTable().GetOrCreateArrayType(*unifiedUndefTabEntryType,
+                                                                                   arraySize);
   MIRAggConst *funcUndefTabConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), funcArrayType);
   MIRArrayType &funcMuidArrayType =
       *GlobalTables::GetTypeTable().GetOrCreateArrayType(*unifiedUndefMuidTabEntryType, arraySize);
@@ -534,7 +538,8 @@ void MUIDReplacement::GenericUnifiedUndefTable() {
   }
   // Continue to generate dataUndefTab
   arraySize = dataUndefMap.size();
-  MIRArrayType &dataArrayType = *GlobalTables::GetTypeTable().GetOrCreateArrayType(*unifiedUndefTabEntryType, arraySize);
+  MIRArrayType &dataArrayType = *GlobalTables::GetTypeTable().GetOrCreateArrayType(*unifiedUndefTabEntryType,
+                                                                                   arraySize);
   MIRAggConst *dataUndefTabConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), dataArrayType);
   MIRArrayType &dataMuidArrayType =
       *GlobalTables::GetTypeTable().GetOrCreateArrayType(*unifiedUndefMuidTabEntryType, arraySize);

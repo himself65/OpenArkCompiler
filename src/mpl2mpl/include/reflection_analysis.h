@@ -229,9 +229,37 @@ class ReflectionAnalysis : public AnalysisResult {
   static void GenStrTab(MIRModule &mirmodule);
   static uint32 FindOrInsertRepeatString(const std::string &str, bool isHot = false, uint8 hotType = kLayoutUnused);
   static BaseNode *GenClassInfoAddr(BaseNode *obj, MIRBuilder &builder);
+  void Run();
+  static void ConvertMethodSig(std::string &signature);
   static TyIdx GetClassMetaDataTyIdx() {
     return classMetadataTyIdx;
   }
+
+ private:
+  MIRModule *mirModule;
+  MapleAllocator allocator;
+  KlassHierarchy *klassh;
+  MIRBuilder &mirBuilder;
+  MapleVector<MIRSymbol*> classTab;
+  int isLibcore;
+  std::map<std::string, std::string> highFrequencyStrMap;
+  std::string reflectionMuidStr;
+  static const char *klassPtrName;
+  static TyIdx classMetadataTyIdx;
+  static TyIdx classMetadataRoTyIdx;
+  static TyIdx methodsInfoTyIdx;
+  static TyIdx methodsInfoCompactTyIdx;
+  static TyIdx fieldsInfoTyIdx;
+  static TyIdx fieldsInfoCompactTyIdx;
+  static TyIdx superclassMetadataTyIdx;
+  static std::string strTab;
+  static std::unordered_map<std::string, uint32> str2IdxMap;
+  static std::string strTabStartHot;
+  static std::string strTabBothHot;
+  static std::string strTabRunHot;
+  static bool strTabInited;
+  static TyIdx invalidIdx;
+  static constexpr uint16 kNoHashBits = 6u;
 
   static std::unordered_map<std::string, uint32> &GetStr2IdxMap() {
     return str2IdxMap;
@@ -273,6 +301,7 @@ class ReflectionAnalysis : public AnalysisResult {
     strTabRunHot += str;
   }
 
+  static uint32 FirstFindOrInsertRepeatString(const std::string &str, bool isHot, uint8 hotType);
   MIRSymbol *GetOrCreateSymbol(const std::string &name, TyIdx tyIdx, bool needInit);
   MIRSymbol *GetSymbol(const std::string &name, TyIdx tyIdx);
   MIRSymbol *CreateSymbol(GStrIdx strIdx, TyIdx tyIdx);
@@ -295,7 +324,7 @@ class ReflectionAnalysis : public AnalysisResult {
   int64 BKDRHash(const std::string &strname, uint32 seed);
   void GenClassHashMetaData();
   void MarkWeakMethods();
-  void Run();
+
   bool VtableFunc(const MIRFunction &func) const;
   void GenPrimitiveClass();
   bool RootClassDefined();  // wether current module defines root classes
@@ -313,7 +342,7 @@ class ReflectionAnalysis : public AnalysisResult {
   bool IsStaticClass(MIRClassType &classType);
   void CheckPrivateInnerAndNoSubClass(Klass &clazz, const std::string &annoArr);
   void ConvertMapleClassName(const std::string &mplClassName, std::string &javaDsp);
-  static void ConvertMethodSig(std::string &signature);
+
   int GetDeflateStringIdx(const std::string &subStr);
   uint32 GetAnnoCstrIndex(std::map<int, int> &idxNumMap, const std::string &annoArr);
   int16 GetMethodInVtabIndex(const Klass &clazz, const MIRFunction &func);
@@ -321,32 +350,6 @@ class ReflectionAnalysis : public AnalysisResult {
   MIRSymbol *GetClinitFuncSymbol(const Klass &klass);
   int SolveAnnotation(MIRClassType &classType, MIRFunction &func);
   uint32 GetTypeNameIdxFromType(MIRType &type, const Klass &klass, const std::string &fieldName);
-
- private:
-  MIRModule *mirModule;
-  MapleAllocator allocator;
-  KlassHierarchy *klassh;
-  MIRBuilder &mirBuilder;
-  MapleVector<MIRSymbol*> classTab;
-  int isLibcore;
-  std::map<std::string, std::string> highFrequencyStrMap;
-  std::string reflectionMuidStr;
-  static const char *klassPtrName;
-  static TyIdx classMetadataTyIdx;
-  static TyIdx classMetadataRoTyIdx;
-  static TyIdx methodsInfoTyIdx;
-  static TyIdx methodsInfoCompactTyIdx;
-  static TyIdx fieldsInfoTyIdx;
-  static TyIdx fieldsInfoCompactTyIdx;
-  static TyIdx superclassMetadataTyIdx;
-  static std::string strTab;
-  static std::unordered_map<std::string, uint32> str2IdxMap;
-  static std::string strTabStartHot;
-  static std::string strTabBothHot;
-  static std::string strTabRunHot;
-  static bool strTabInited;
-  static TyIdx invalidIdx;
-  static constexpr uint16 kNoHashBits = 6u;
 };
 
 class DoReflectionAnalysis : public ModulePhase {
