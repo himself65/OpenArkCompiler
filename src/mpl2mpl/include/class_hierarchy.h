@@ -47,41 +47,6 @@ class Klass {
     }
   };
 
- private:
-  // structType can be class or interface
-  MIRStructType *structType;
-  MapleAllocator *alloc;
-  // A collection of super classes.
-  // superklass is nullptr if it is not defined in the module.
-  MapleList<Klass*> superKlasses;
-  // A collection of sub classes
-  MapleSet<Klass*, KlassComparator> subKlasses;
-  // a collection of classes which implement the current interface
-  MapleSet<Klass*, KlassComparator> implKlasses;
-  // a collection of interfaces which is implemented by the current klass
-  MapleSet<Klass*, KlassComparator> implInterfaces;
-  // A collection of class member methods
-  MapleList<MIRFunction*> methods;
-  // A mapping to track every method to its baseFuncNameWithType
-  MapleMap<GStrIdx, MIRFunction*> strIdx2Method;
-  MIRFunction *clinitMethod;
-  MIRSymbol *classInitBridge;
-  // A mapping to track possible implementations for each virtual function
-  MapleMap<GStrIdx, MapleVector<MIRFunction*>*> strIdx2CandidateMap;
-  // flags of this class.
-  // Now contains whether this class is exception, reference or has finalizer.
-  uint32 flags;
-  bool isPrivateInnerAndNoSubClassFlag;
-  bool hasNativeMethods;
-  bool needDecoupling;
-  void DumpKlassImplInterfaces() const;
-  void DumpKlassImplKlasses() const;
-  void DumpKlassSuperKlasses() const;
-  void DumpKlassSubKlasses() const;
-  void DumpKlassMethods() const;
-  bool IsVirtualMethod(const MIRFunction &func) const;
-
- public:
   Klass(MIRStructType *type, MapleAllocator *alc);
   ~Klass() = default;
 
@@ -277,6 +242,40 @@ class Klass {
   // Count the virtual methods for subclasses and merge with itself
   void CountVirtMethBottomUp();
   void Dump() const;
+
+ private:
+  // structType can be class or interface
+  MIRStructType *structType;
+  MapleAllocator *alloc;
+  // A collection of super classes.
+  // superklass is nullptr if it is not defined in the module.
+  MapleList<Klass*> superKlasses;
+  // A collection of sub classes
+  MapleSet<Klass*, KlassComparator> subKlasses;
+  // a collection of classes which implement the current interface
+  MapleSet<Klass*, KlassComparator> implKlasses;
+  // a collection of interfaces which is implemented by the current klass
+  MapleSet<Klass*, KlassComparator> implInterfaces;
+  // A collection of class member methods
+  MapleList<MIRFunction*> methods;
+  // A mapping to track every method to its baseFuncNameWithType
+  MapleMap<GStrIdx, MIRFunction*> strIdx2Method;
+  MIRFunction *clinitMethod;
+  MIRSymbol *classInitBridge;
+  // A mapping to track possible implementations for each virtual function
+  MapleMap<GStrIdx, MapleVector<MIRFunction*>*> strIdx2CandidateMap;
+  // flags of this class.
+  // Now contains whether this class is exception, reference or has finalizer.
+  uint32 flags;
+  bool isPrivateInnerAndNoSubClassFlag;
+  bool hasNativeMethods;
+  bool needDecoupling;
+  void DumpKlassImplInterfaces() const;
+  void DumpKlassImplKlasses() const;
+  void DumpKlassSuperKlasses() const;
+  void DumpKlassSubKlasses() const;
+  void DumpKlassMethods() const;
+  bool IsVirtualMethod(const MIRFunction &func) const;
 };
 
 // Some well known types like java.lang.Object. They may be commonly referenced.
@@ -345,11 +344,11 @@ class KlassHierarchy : public AnalysisResult {
   bool UpdateFieldID(TyIdx baseTypeIdx, TyIdx targetTypeIdx, FieldID &fldID) const;
   // return true if class, its super or interfaces have at least one clinit function
   bool NeedClinitCheckRecursively(Klass &kl);
-  void TopologicalSortKlasses();
-  void MarkClassFlags();
+
   void CountVirtualMethods();
   void BuildHierarchy();
   void Dump() const;
+
   const MapleVector<Klass*> &GetTopoSortedKlasses() const {
     return topoWorkList;
   }
@@ -383,6 +382,8 @@ class KlassHierarchy : public AnalysisResult {
   void ExceptionFlagProp(Klass &klass);
   Klass *AddClassFlag(const std::string &name, uint32 flag);
   int GetFieldIDOffsetBetweenClasses(const Klass &super, const Klass &base) const;
+  void TopologicalSortKlasses();
+  void MarkClassFlags();
 };
 }  // namespace maple
 #endif  // MPL2MPL_INCLUDE_CLASS_HIERARCHY_H

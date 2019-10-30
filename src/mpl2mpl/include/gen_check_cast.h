@@ -30,7 +30,7 @@ class CheckCastGenerator : public FuncOptimizeImpl {
   ~CheckCastGenerator() {}
 
   FuncOptimizeImpl *Clone() override {
-    return new (std::nothrow) CheckCastGenerator(*this);
+    return new CheckCastGenerator(*this);
   }
 
   void ProcessFunc(MIRFunction *func) override;

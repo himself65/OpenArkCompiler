@@ -61,7 +61,7 @@ class MUIDReplacement : public FuncOptimizeImpl {
   ~MUIDReplacement() = default;
 
   FuncOptimizeImpl *Clone() override {
-    return new (std::nothrow) MUIDReplacement(*this);
+    return new MUIDReplacement(*this);
   }
 
   void ProcessFunc(MIRFunction *func) override;

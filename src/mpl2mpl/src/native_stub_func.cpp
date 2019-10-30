@@ -325,7 +325,8 @@ void GenericNativeStubFunc::GenericRegTabEntry(const MIRFunction &func) {
   MIRConst *baseConst =
     GetMIRModule().GetMemPool()->New<MIRIntConst>(classIdx, *GlobalTables::GetTypeTable().GetVoidPtr());
   regTableConst->GetConstVec().push_back(baseConst);
-  MIRConst *newConst = GetMIRModule().GetMemPool()->New<MIRIntConst>(nameIdx, *GlobalTables::GetTypeTable().GetVoidPtr());
+  MIRConst *newConst = GetMIRModule().GetMemPool()->New<MIRIntConst>(nameIdx,
+                                                                     *GlobalTables::GetTypeTable().GetVoidPtr());
   regTableConst->GetConstVec().push_back(newConst);
 }
 
@@ -591,7 +592,8 @@ void GenericNativeStubFunc::GenericHelperFuncDecl() {
   ArgVector postArgs(GetMIRModule().GetMPAllocator().Adapter());
   postArgs.push_back(ArgPair("env", voidPointerType));
   MRTPostNativeFunc = builder->CreateFunction(kPostNativeFunc, *voidType, postArgs);
-  CHECK_FATAL(MRTPostNativeFunc != nullptr, "MRTPostNativeFunc is null in GenericNativeStubFunc::GenericHelperFuncDecl");
+  CHECK_FATAL(MRTPostNativeFunc != nullptr,
+              "MRTPostNativeFunc is null in GenericNativeStubFunc::GenericHelperFuncDecl");
   MRTPostNativeFunc->SetBody(nullptr);
   // MRT_DecodeReference
   ArgVector decodeArgs(GetMIRModule().GetMPAllocator().Adapter());

@@ -557,7 +557,7 @@ default:                // Bad: default 未缩进
 // 假设下面第一行已经不满足行宽要求
 ```cpp
 if (currentValue > threshold &&  
-  someConditionsion) {
+    someConditionsion) {
   DoSomething();
   ...
 }
@@ -612,14 +612,10 @@ const int rank[] = {
 ```
 
 ## <a name="c3-12"></a> 指针与引用
-### <a name="a3-12-1"></a>建议3.12.1  指针类型"`*`"跟随变量名或者类型，不要两边都留有或者都没有空格
-指针命名: `*`靠左靠右都可以，但是不要两边都有或者都没有空格。
-```cpp
-int* p = nullptr;  // Good
-int *p = nullptr;  // Good
+### <a name="a3-12-1"></a>建议3.12.1  指针类型"`*`"跟随变量名，并与类型之间有一个空格
 
-int*p = nullptr;   // Bad
-int * p = nullptr; // Bad
+```cpp
+int *p = nullptr;  // Good
 ```
 
 例外：当变量被 const 修饰时，"`*`" 无法跟随变量，此时也不要跟随类型。
@@ -627,16 +623,12 @@ int * p = nullptr; // Bad
 char * const VERSION = "V100";
 ```
 
-### <a name="a3-12-2"></a>建议3.12.2  引用类型"`&`"跟随变量名或者类型，不要两边都留有或者都没有空格
-引用命名：`&`靠左靠右都可以，但是不要两边都有或者都没有空格。
+### <a name="a3-12-2"></a>建议3.12.2  引用类型"`&`"跟随变量名，并与类型之间有一个空格
+
 ```cpp
 int i = 8;
 
-int& p = i;     // Good 
 int &p = i;     // Good
-
-int & p = i;    // Bad
-int&p = i;      // Bad
 ```
 
 ## <a name="c3-13"></a> 编译预处理
@@ -861,8 +853,13 @@ class MyClass : public BaseClass {
   void SomeFunctionThatDoesNothing() {
   }
 
-  void SetVar(int var) { someVar = var; }
-  int GetVar() const { return someVar; }
+  void SetVar(int var) { 
+    someVar = var; 
+  }
+  
+  int GetVar() const { 
+    return someVar; 
+  }
 
  private:
   bool SomeInternalFunction();
@@ -1097,8 +1094,7 @@ class Foo {
 #include "Foo.h"
 
 namespace { // Good: 对内函数的声明放在.cpp文件的头部，并声明为匿名namespace或者static限制其作用域
-void Bar()
-{
+void Bar() {
 }
 }
 

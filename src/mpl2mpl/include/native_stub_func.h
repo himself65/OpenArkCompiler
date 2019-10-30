@@ -58,7 +58,7 @@ class GenericNativeStubFunc : public FuncOptimizeImpl {
   void ProcessFunc(MIRFunction *func) override;
   void Finish() override;
   FuncOptimizeImpl *Clone() override {
-    return new (std::nothrow) GenericNativeStubFunc(*this);
+    return new GenericNativeStubFunc(*this);
   }
 
  private:

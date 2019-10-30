@@ -38,7 +38,7 @@ class VtableImpl : public FuncOptimizeImpl {
 
   void ProcessFunc(MIRFunction *func) override;
   FuncOptimizeImpl *Clone() override {
-    return new (std::nothrow) VtableImpl(*this);
+    return new VtableImpl(*this);
   }
 
  private:

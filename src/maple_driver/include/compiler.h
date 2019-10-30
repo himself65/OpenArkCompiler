@@ -24,11 +24,11 @@
 #include "mir_parser.h"
 
 namespace maple {
-static constexpr char kBinNameJbc2mpl[] = "jbc2mpl";
-static constexpr char kBinNameMe[] = "me";
-static constexpr char kBinNameMpl2mpl[] = "mpl2mpl";
-static constexpr char kBinNameMplcg[] = "mplcg";
-static constexpr char kBinNameMapleComb[] = "maplecomb";
+static const std::string kBinNameJbc2mpl = "jbc2mpl";
+static const std::string kBinNameMe = "me";
+static const std::string kBinNameMpl2mpl = "mpl2mpl";
+static const std::string kBinNameMplcg = "mplcg";
+static const std::string kBinNameMapleComb = "maplecomb";
 
 class Compiler {
  public:

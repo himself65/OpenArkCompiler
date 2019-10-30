@@ -34,15 +34,8 @@ class SafeExe {
   /**
    * Current tool is for linux only
    */
-  static int Exe(const std::string &cmd, const std::string &args) {
-    LogInfo::MapleLogger() << "Starting:" << cmd << args << '\n';
-    int ret = ErrorCode::kErrorNoError;
-    if (StringUtils::HasCommandInjectionChar(cmd) || StringUtils::HasCommandInjectionChar(args)) {
-      LogInfo::MapleLogger() << "Error while Exe, cmd: " << cmd << " args: " << args << '\n';
-      return -1;
-    }
-
 #if __linux__ or __linux
+  static ErrorCode HandleCommand(const std::string &cmd, const std::string &args) {
     std::vector<std::string> tmpArgs;
     StringUtils::Split(args, tmpArgs, ' ');
     // remove ' ' in vector
@@ -67,6 +60,7 @@ class SafeExe {
     // end of arguments sentinel is NULL
     argv[tmpArgs.size()] = NULL;
     pid_t pid = fork();
+    ErrorCode ret = ErrorCode::kErrorNoError;
     if (pid == 0) {
       // child process
       fflush(NULL);
@@ -94,8 +88,21 @@ class SafeExe {
     }
     delete [] argv;
     return ret;
+  }
+#endif
+
+  static ErrorCode Exe(const std::string &cmd, const std::string &args) {
+    LogInfo::MapleLogger() << "Starting:" << cmd << args << '\n';
+    if (StringUtils::HasCommandInjectionChar(cmd) || StringUtils::HasCommandInjectionChar(args)) {
+      LogInfo::MapleLogger() << "Error while Exe, cmd: " << cmd << " args: " << args << '\n';
+      return ErrorCode::kErrorCompileFail;
+    }
+
+#if __linux__ or __linux
+    ErrorCode ret = HandleCommand(cmd, args);
+    return ret;
 #else
-    return -1;
+    return ErrorCode::kErrorNotImplement;
 #endif
   }
 };

@@ -35,7 +35,7 @@ class VtableAnalysis : public FuncOptimizeImpl {
   static std::string DecodeBaseNameWithType(const MIRFunction &func);
   void ProcessFunc(MIRFunction *func) override;
   FuncOptimizeImpl *Clone() override {
-    return new (std::nothrow) VtableAnalysis(*this);
+    return new VtableAnalysis(*this);
   }
 
  private:
