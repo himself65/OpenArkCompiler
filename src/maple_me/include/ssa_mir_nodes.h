@@ -389,8 +389,28 @@ class StmtsSSAPart {
 
   ~StmtsSSAPart() = default;
 
-  AccessSSANodes *SSAPartOf(const StmtNode &s) {
-    return ssaPart[s.GetStmtID()];
+  AccessSSANodes *SSAPartOf(const StmtNode &stmt) {
+    return ssaPart[stmt.GetStmtID()];
+  }
+
+  bool HasMayDef(const StmtNode &stmt) {
+    return kOpcodeInfo.HasSSADef(stmt.GetOpCode()) && !GetMayDefNodesOf(stmt).empty();
+  }
+
+  MapleMap<OStIdx, MayDefNode> &GetMayDefNodesOf(const StmtNode &stmt) {
+    return ssaPart[stmt.GetStmtID()]->GetMayDefNodes();
+  }
+
+  MapleMap<OStIdx, MayUseNode> &GetMayUseNodesOf(const StmtNode &stmt) {
+    return ssaPart[stmt.GetStmtID()]->GetMayUseNodes();
+  }
+
+  MapleVector<MustDefNode> &GetMustDefNodesOf(const StmtNode &stmt) {
+    return ssaPart[stmt.GetStmtID()]->GetMustDefNodes();
+  }
+
+  VersionSt *GetAssignedVarOf(const StmtNode &stmt) {
+    return ssaPart[stmt.GetStmtID()]->GetSSAVar();
   }
 
   template <class T>
@@ -516,20 +536,7 @@ class RegreadSSANode : public RegreadNode {
 };
 
 void GenericSSAPrint(MIRModule &mod, const StmtNode &stmtNode, int32 indent, StmtsSSAPart &stmtsSSAPart);
-void SSAGenericInsertMayUseNode(const StmtNode &stmtNode, VersionSt &usesym, StmtsSSAPart &stmtsSSAPart);
-void SSAGenericInsertMayDefNode(const StmtNode &stmtNode, VersionSt &vst, StmtNode &s, StmtsSSAPart &stmtsSSAPart);
-MapleMap<OStIdx, MayUseNode> &SSAGenericGetMayUseNode(const StmtNode &stmtNode, StmtsSSAPart &stmtsSSAPart);
-MapleMap<OStIdx, MayDefNode> &SSAGenericGetMayDefNodes(const StmtNode &stmtNode, StmtsSSAPart &stmtsSSAPart);
 MapleMap<OStIdx, MayDefNode> *SSAGenericGetMayDefsFromVersionSt(VersionSt &sym, StmtsSSAPart &stmtsSSAPart);
-MapleVector<MustDefNode> &SSAGenericGetMustDefNode(const StmtNode &stmtNode, StmtsSSAPart &stmtsSSAPart);
-bool HasMayUseDefPart(const StmtNode &stmtNode);
-bool HasMayDefPart(const StmtNode &stmtNode);
-bool HasMayUsePart(const StmtNode &stmtNode);
 bool HasMayUseOpnd(const BaseNode &baseNode, SSATab &func);
-bool HasMayDef(const StmtNode &stmtNode, SSATab &func);
-inline bool HasMallocOpnd(const BaseNode &x) {
-  return x.GetOpCode() == OP_malloc || x.GetOpCode() == OP_gcmalloc || x.GetOpCode() == OP_gcmallocjarray ||
-         x.GetOpCode() == OP_alloca;
-}
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_SSA_MIR_NODES_H

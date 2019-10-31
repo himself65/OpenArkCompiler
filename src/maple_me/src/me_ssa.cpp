@@ -63,8 +63,8 @@ void MeSSA::CollectDefBBs(std::map<OStIdx, std::set<BBId>> &ostDefBBs) {
   for (auto bIt = func->valid_begin(); bIt != eIt; ++bIt) {
     auto *bb = *bIt;
     for (auto &stmt : bb->GetStmtNodes()) {
-      if (HasMayDefPart(stmt)) {
-        MapleMap<OStIdx, MayDefNode> &mayDefs = SSAGenericGetMayDefNodes(stmt, GetSSATab()->GetStmtsSSAPart());
+      if (kOpcodeInfo.HasSSADef(stmt.GetOpCode())) {
+        MapleMap<OStIdx, MayDefNode> &mayDefs = GetSSATab()->GetStmtsSSAPart().GetMayDefNodesOf(stmt);
         MapleMap<OStIdx, MayDefNode>::iterator iter;
         for (iter = mayDefs.begin(); iter != mayDefs.end(); ++iter) {
           const OriginalSt *ost = func->GetMeSSATab()->GetOriginalStFromID(iter->first);
@@ -78,7 +78,7 @@ void MeSSA::CollectDefBBs(std::map<OStIdx, std::set<BBId>> &ostDefBBs) {
           }
         }
         if (stmt.GetOpCode() == OP_dassign || stmt.GetOpCode() == OP_maydassign) {
-          VersionSt *vst = GetSSATab()->GetStmtsSSAPart().SSAPartOf(stmt)->GetSSAVar();
+          VersionSt *vst = GetSSATab()->GetStmtsSSAPart().GetAssignedVarOf(stmt);
           OriginalSt *ost = vst->GetOrigSt();
           if (ost != nullptr && (!ost->IsFinal() || func->GetMirFunc()->IsConstructor())) {
             ostDefBBs[vst->GetOrigIdx()].insert(bb->GetBBId());
@@ -86,7 +86,7 @@ void MeSSA::CollectDefBBs(std::map<OStIdx, std::set<BBId>> &ostDefBBs) {
         }
       }
       if (kOpcodeInfo.IsCallAssigned(stmt.GetOpCode())) {  // Needs to handle mustDef in callassigned stmt
-        MapleVector<MustDefNode> &mustDefs = SSAGenericGetMustDefNode(stmt, GetSSATab()->GetStmtsSSAPart());
+        MapleVector<MustDefNode> &mustDefs = GetSSATab()->GetStmtsSSAPart().GetMustDefNodesOf(stmt);
         MapleVector<MustDefNode>::iterator iter;
         for (iter = mustDefs.begin(); iter != mustDefs.end(); ++iter) {
           OriginalSt *ost = iter->GetResult()->GetOrigSt();
@@ -208,7 +208,7 @@ bool MeSSA::VerifySSA() const {
     for (auto &stmt : bb->GetStmtNodes()) {
       opcode = stmt.GetOpCode();
       if (opcode == OP_dassign || opcode == OP_regassign) {
-        VersionSt *verSt = func->GetMeSSATab()->GetStmtsSSAPart().SSAPartOf(stmt)->GetSSAVar();
+        VersionSt *verSt = func->GetMeSSATab()->GetStmtsSSAPart().GetAssignedVarOf(stmt);
         CHECK_FATAL(verSt != nullptr && verSt->GetIndex() < vtableSize, "runtime check error");
       }
       for (size_t i = 0; i < stmt.NumOpnds(); i++) {

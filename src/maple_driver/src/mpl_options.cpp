@@ -22,8 +22,8 @@
 #include "option_parser.h"
 #include "string_utils.h"
 #include "usages.h"
-#include "default_options.h"
 #include "version.h"
+#include "default_options.def"
 
 using namespace mapleOption;
 
@@ -34,46 +34,44 @@ int MplOptions::Parse(int argc, char **argv) {
   this->optionParser = new OptionParser(USAGES);
   exeFolder = FileUtils::GetFileFolder(*argv);
   int ret = optionParser->Parse(argc, argv);
-  bool isOptLevelO0 = false;
-  bool isOptLevelO2 = false;
   if (ret != ErrorCode::kErrorNoError) {
     return ErrorCode::kErrorInvalidParameter;
   }
   // We should recognize O0, O2 and run options firstly to decide the real options
-  for (auto opt : optionParser->GetOptions()) {
-    switch (opt.Index()) {
-      case kOptimization0:
-        isOptLevelO0 = true;
-        isOptLevelO2 = false;
-        break;
-      case kRun:
-        this->UpdateRunningExe(opt.Args());
-        break;
-      default:
-        break;
-    }
+  ret = DecideRunType();
+  if (ret != ErrorCode::kErrorNoError) {
+    return ret;
   }
-  // Set Default options as O0
-  if (runningExes.size() == 0 && isOptLevelO0 == false && isOptLevelO2 == false) {
-    isOptLevelO0 = true;
-    isOptLevelO2 = false;
+
+  // Set default as O0
+  if (optLevelStr == "") {
+    optLevelStr = "O0";
   }
-  // Set O0 options
-  if (isOptLevelO0 == true) {
-    this->UpdateOptLevel(kO0);
-    this->setDefaultLevel = true;
-    this->UpdateRunningExe("jbc2mpl");
-    ret = AppendDefaultOptions(kBinNameMe, kMeDefaultOptionsO0, sizeof(kMeDefaultOptionsO0) / sizeof(MplOption));
+
+  // Check whether the input files are Valid
+  ret = CheckInputFileValidity();
+  if (ret != ErrorCode::kErrorNoError) {
+    return ret;
+  }
+
+  // Decide runningExes for default options(O0, O2) by input files
+  if (optLevelStr != "run") {
+    ret = DecideRunningPhases();
     if (ret != ErrorCode::kErrorNoError) {
       return ret;
     }
-    ret = AppendDefaultOptions(kBinNameMpl2mpl, kMpl2MplDefaultOptionsO0,
-                               sizeof(kMpl2MplDefaultOptionsO0) / sizeof(MplOption));
-    if (ret != ErrorCode::kErrorNoError) {
-      return ret;
-    }
-    this->UpdateRunningExe("mplcg");
   }
+
+  // Handle other options
+  ret = HandleGeneralOptions();
+  if (ret != ErrorCode::kErrorNoError) {
+    return ret;
+  }
+  return ret;
+}
+
+ErrorCode MplOptions::HandleGeneralOptions() {
+  ErrorCode ret = ErrorCode::kErrorNoError;
   for (auto opt : optionParser->GetOptions()) {
     switch (opt.Index()) {
       case kHelp: {
@@ -102,18 +100,6 @@ int MplOptions::Parse(int argc, char **argv) {
       case kMpl2MplHelp:
         optionParser->PrintUsage("mpl2mpl");
         return ErrorCode::kErrorExitHelp;
-      case kInFile: {
-        if (!Init(opt.Args())) {
-          return ErrorCode::kErrorInitFail;
-        } else {
-          // Check whether the file was readable
-          ret = CheckFileExits();
-          if (ret != ErrorCode::kErrorNoError) {
-            return ret;
-          }
-        }
-        break;
-      }
       case kCombTimePhases:
         this->timePhases = true;
         this->printCommandStr += " -time-phases";
@@ -149,8 +135,98 @@ int MplOptions::Parse(int argc, char **argv) {
         // I do not care
         break;
     }
-    this->AddOption(opt);
+    AddOption(opt);
   }
+  return ret;
+}
+
+ErrorCode MplOptions::DecideRunType() {
+  ErrorCode ret = ErrorCode::kErrorNoError;
+  for (auto opt : optionParser->GetOptions()) {
+    switch (opt.Index()) {
+      case kOptimization0:
+        ret = CheckOptLevel("O0", "run"); // O0 and run should not appear at the same time
+        if (ret != ErrorCode::kErrorNoError) {
+          return ErrorCode::kErrorInvalidParameter;
+        }
+        optLevelStr = "O0";
+        break;
+      case kRun:
+        ret = CheckOptLevel("run", "O0"); // O0(O2) and run should not appear at the same time
+        if (ret != ErrorCode::kErrorNoError) {
+          return ErrorCode::kErrorInvalidParameter;
+        }
+        ret = CheckOptLevel("run", "O2");
+        if (ret != ErrorCode::kErrorNoError) {
+          return ErrorCode::kErrorInvalidParameter;
+        }
+        optLevelStr = "run";
+        this->UpdateRunningExe(opt.Args());
+        break;
+      case kInFile: {
+        if (!Init(opt.Args())) {
+          return ErrorCode::kErrorInitFail;
+        } else {
+          // Check whether the file was readable
+          ret = CheckFileExits();
+          if (ret != ErrorCode::kErrorNoError) {
+            return ret;
+          }
+        }
+        break;
+      }
+      default:
+        break;
+    }
+  }
+  return ret;
+}
+
+ErrorCode MplOptions::DecideRunningPhases() {
+  ErrorCode ret = ErrorCode::kErrorNoError;
+  bool isNeedMapleComb = true;
+  bool isNeedMplcg = true;
+  switch (inputFileType) {
+    case InputFileType::kJar:
+    case InputFileType::kClass:
+      this->UpdateRunningExe("jbc2mpl");
+      break;
+    case InputFileType::kMpl:
+      break;
+    case InputFileType::kVtableImplMpl:
+      isNeedMapleComb = false;
+      break;
+    case InputFileType::kS:
+      isNeedMplcg = false;
+      break;
+    case InputFileType::kNone:
+      break;
+    default:
+      break;
+  }
+  if (isNeedMapleComb) {
+    if (optLevelStr == "O0") {
+      ret = AppendDefaultOptions(kBinNameMe, kMeDefaultOptionsO0, sizeof(kMeDefaultOptionsO0) / sizeof(MplOption));
+      if (ret != ErrorCode::kErrorNoError) {
+        return ret;
+      }
+      ret = AppendDefaultOptions(kBinNameMpl2mpl, kMpl2MplDefaultOptionsO0,
+                                 sizeof(kMpl2MplDefaultOptionsO0) / sizeof(MplOption));
+      if (ret != ErrorCode::kErrorNoError) {
+        return ret;
+      }
+    }
+  }
+  if (isNeedMplcg) {
+    if (optLevelStr == "O0") {
+      this->UpdateRunningExe("mplcg");
+    }
+  }
+  return ret;
+}
+
+ErrorCode MplOptions::CheckInputFileValidity() {
+  ErrorCode ret = ErrorCode::kErrorNoError;
   // Get input fileName
   if (optionParser->GetNonOptionsCount() > 0) {
     std::string optionString;
@@ -169,18 +245,20 @@ int MplOptions::Parse(int argc, char **argv) {
       ret = CheckFileExits();
     }
   }
-  // Set Default options as O0
-  if (runningExes.size() == 0) {
-    this->UpdateOptLevel(kO0);
-    this->setDefaultLevel = true;
-    this->UpdateRunningExe("dex2mpl");
-    ret = AppendDefaultOptions(kBinNameMe, kMeDefaultOptionsO0,
-                               sizeof(kMeDefaultOptionsO0) / sizeof(MplOption));
-    ret = AppendDefaultOptions(kBinNameMpl2mpl, kMpl2MplDefaultOptionsO0,
-                               sizeof(kMpl2MplDefaultOptionsO0) / sizeof(MplOption));
-    this->UpdateRunningExe("mplcg");
+  if (this->inputFiles == "") {
+    LogInfo::MapleLogger(kLlErr) << "Forget to input file? " << "\n";
+    return ErrorCode::kErrorInitFail;
   }
   return ret;
+}
+
+ErrorCode MplOptions::CheckOptLevel(const std::string &inputOpt, const std::string &filterOpt) {
+  if (optLevelStr == filterOpt) {
+    LogInfo::MapleLogger(kLlErr) << "Cannot Set " << inputOpt << " and "
+                                 << filterOpt << "at the same time!" << "\n";
+    return ErrorCode::kErrorInvalidParameter;
+  }
+  return ErrorCode::kErrorNoError;
 }
 
 ErrorCode MplOptions::CheckFileExits() {
@@ -199,8 +277,12 @@ ErrorCode MplOptions::CheckFileExits() {
 
 void MplOptions::AddOption(const mapleOption::Option &option) {
   if (option.HasExtra()) {
-    for (auto extra : option.GetExtras()) {
-      options.Insert(extra.exeName, option);
+    for (auto &extra : option.GetExtras()) {
+      auto iter = std::find(this->runningExes.begin(), this->runningExes.end(), extra.exeName);
+      if (iter == this->runningExes.end()) {
+        continue;
+      }
+      options[extra.exeName].push_back(option);
     }
   }
 }

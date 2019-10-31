@@ -80,8 +80,8 @@ void SSA::RenameDefs(StmtNode &stmt, BB &defBB) {
     newVersionSym->SetDassignNode(static_cast<DassignNode*>(&stmt));
     theSSAPart->SetSSAVar(*newVersionSym);
   }
-  if (HasMayDefPart(stmt)) {
-    MapleMap<OStIdx, MayDefNode> &mayDefList = SSAGenericGetMayDefNodes(stmt, ssaTab->GetStmtsSSAPart());
+  if (kOpcodeInfo.HasSSADef(stmt.GetOpCode())) {
+    MapleMap<OStIdx, MayDefNode> &mayDefList = ssaTab->GetStmtsSSAPart().GetMayDefNodesOf(stmt);
     for (auto it = mayDefList.begin(); it != mayDefList.end(); it++) {
       MayDefNode &mayDef = it->second;
       VersionSt *vsym = mayDef.GetResult();
@@ -98,7 +98,7 @@ void SSA::RenameDefs(StmtNode &stmt, BB &defBB) {
 void SSA::RenameMustDefs(const StmtNode &stmt, BB &defBB) {
   Opcode opcode = stmt.GetOpCode();
   if (kOpcodeInfo.IsCallAssigned(opcode)) {
-    MapleVector<MustDefNode> &mustDefs = SSAGenericGetMustDefNode(stmt, ssaTab->GetStmtsSSAPart());
+    MapleVector<MustDefNode> &mustDefs = ssaTab->GetStmtsSSAPart().GetMustDefNodesOf(stmt);
     for (MustDefNode &mustDefNode : mustDefs) {
       VersionSt *newVersionSym = CreateNewVersion(*mustDefNode.GetResult(), defBB);
       mustDefNode.SetResult(newVersionSym);
@@ -117,8 +117,7 @@ void SSA::RenameMayUses(BaseNode &node) {
     iread.SetSSAVar(vstStacks[vsym->GetOrigIdx().idx]->top());
     return;
   }
-  MapleMap<OStIdx, MayUseNode> &mayUseList =
-      SSAGenericGetMayUseNode(static_cast<StmtNode&>(node), ssaTab->GetStmtsSSAPart());
+  MapleMap<OStIdx, MayUseNode> &mayUseList = ssaTab->GetStmtsSSAPart().GetMayUseNodesOf(static_cast<StmtNode&>(node));
   MapleMap<OStIdx, MayUseNode>::iterator it = mayUseList.begin();
   for (; it != mayUseList.end(); it++) {
     MayUseNode &mayuse = it->second;
@@ -137,25 +136,20 @@ void SSA::RenameExpr(BaseNode &expr) {
     return;
   } else if (expr.GetOpCode() == OP_regread) {
     RegreadSSANode &regNode = static_cast<RegreadSSANode&>(expr);
-    if (regNode.GetRegIdx() < 0) {
-      return;
-    }
     VersionSt *vsym = regNode.GetSSAVar();
     ASSERT(vsym->GetOrigIdx().idx < vstStacks.size(), "index out of range in SSA::RenameExpr");
     regNode.SetSSAVar(vstStacks[vsym->GetOrigIdx().idx]->top());
     return;
   } else if (expr.GetOpCode() == OP_iread) {
     RenameMayUses(expr);
-    RenameExpr(*expr.Opnd(0));
-  } else {
-    for (size_t i = 0; i < expr.NumOpnds(); i++) {
-      RenameExpr(*expr.Opnd(i));
-    }
+  }
+  for (size_t i = 0; i < expr.NumOpnds(); i++) {
+    RenameExpr(*expr.Opnd(i));
   }
 }
 
 void SSA::RenameUses(StmtNode &stmt) {
-  if (HasMayUsePart(stmt)) {
+  if (kOpcodeInfo.HasSSAUse(stmt.GetOpCode())) {
     RenameMayUses(stmt);
   }
   for (int i = 0; i < stmt.NumOpnds(); i++) {

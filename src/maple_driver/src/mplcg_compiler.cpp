@@ -14,7 +14,7 @@
  */
 #include <cstdlib>
 #include "compiler.h"
-#include "default_options.h"
+#include "default_options.def"
 
 
 using namespace maple;

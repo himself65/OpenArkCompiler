@@ -43,7 +43,6 @@ std::string ReflectionAnalysis::strTabStartHot = std::string(1, '\0');
 std::string ReflectionAnalysis::strTabBothHot = std::string(1, '\0');
 std::string ReflectionAnalysis::strTabRunHot = std::string(1, '\0');
 bool ReflectionAnalysis::strTabInited = false;
-
 int ReflectionAnalysis::GetDeflateStringIdx(const std::string &subStr) {
   return FindOrInsertReflectString("0!" + subStr);
 }

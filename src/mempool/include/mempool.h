@@ -33,7 +33,7 @@ constexpr bool TRUE = true;
 #endif
 
 // Class declaration
-class MemPool;
+class MemPool;  // circular dependency exists, no other choice
 // Memory Pool controller class
 class MemPoolCtrler {
   friend MemPool;

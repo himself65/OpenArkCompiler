@@ -30,8 +30,8 @@ enum MePhaseID {
   kMePhaseMax
 };
 
-class MeFuncPhase;
-class MeFunction;
+class MeFuncPhase;  // circular dependency exists, no other choice
+class MeFunction;  // circular dependency exists, no other choice
 using MeFuncResultMgr = AnalysisResultManager<MeFunction, MePhaseID, MeFuncPhase>;
 class MeFuncPhase : public Phase {
  public:

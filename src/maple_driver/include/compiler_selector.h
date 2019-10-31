@@ -18,9 +18,9 @@
 #include <vector>
 #include "compiler.h"
 #include "error_code.h"
-#include "supported_compilers.h"
 
 namespace maple {
+using SupportedCompilers = std::unordered_map<std::string, Compiler*>;
 class CompilerSelector {
  public:
   CompilerSelector() {}
@@ -43,7 +43,7 @@ class CompilerSelectorImpl : public CompilerSelector {
                          std::vector<Compiler*> &selected) const;
 
  private:
-  Compiler *FindCompiler(const SupportedCompilers &compilers, const std::string name) const;
+  Compiler *FindCompiler(const SupportedCompilers &compilers, const std::string &name) const;
   const ErrorCode InsertCompilerIfNeeded(std::vector<Compiler*> &selected, const SupportedCompilers &compilers,
                                          const std::string name) const;
 };

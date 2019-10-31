@@ -18,10 +18,10 @@
 #include "mir_type.h"
 
 namespace maple {
-class MIRConst;
+class MIRConst;  // circular dependency exists, no other choice
 using MIRConstPtr = MIRConst*;
 #if MIR_FEATURE_FULL
-class MIRSymbol;
+class MIRSymbol;  // circular dependency exists, no other choice
 enum MIRConstKind {
   kConstInvalid,
   kConstInt,
@@ -260,7 +260,7 @@ class MIRStrConst : public MIRConst {
 
   void Dump() const;
   bool operator==(MIRConst &rhs) const;
-  UStrIdx GetValue() {
+  UStrIdx GetValue() const {
     return value;
   }
 

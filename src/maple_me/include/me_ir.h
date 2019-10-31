@@ -18,15 +18,15 @@
 #include "orig_symbol.h"
 
 namespace maple {
-class BB;
-class PhiNode;
-class MeStmt;
-class IRMap;
-class SSATab;
-class VarMeExpr;
-class RegMeExpr;
-class OriginalSt;
-class Dominance;
+class BB;  // circular dependency exists, no other choice
+class PhiNode;  // circular dependency exists, no other choice
+class MeStmt;  // circular dependency exists, no other choice
+class IRMap;  // circular dependency exists, no other choice
+class SSATab;  // circular dependency exists, no other choice
+class VarMeExpr;  // circular dependency exists, no other choice
+class RegMeExpr;  // circular dependency exists, no other choice
+class OriginalSt;  // circular dependency exists, no other choice
+class Dominance;  // circular dependency exists, no other choice
 using MeStmtPtr = MeStmt*;
 enum MeExprOp : std::uint8_t {
   kMeOpUnknown,
@@ -179,9 +179,9 @@ enum MeDefBy {
   kDefByMustDef,  // only applies to callassigned and its siblings
 };
 
-class ChiMeNode;      // forward decl
-class MustDefMeNode;  // forward decl
-class IassignMeStmt;  // forward decl
+class ChiMeNode;  // circular dependency exists, no other choice
+class MustDefMeNode;  // circular dependency exists, no other choice
+class IassignMeStmt;  // circular dependency exists, no other choice
 
 // represant dread
 class VarMeExpr final : public MeExpr {

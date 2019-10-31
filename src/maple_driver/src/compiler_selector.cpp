@@ -13,12 +13,11 @@
  * See the Mulan PSL v1 for more details.
  */
 #include "compiler_selector.h"
+#include <algorithm>
 #include "mpl_logging.h"
 
-#include <algorithm>
-
 namespace maple {
-Compiler *CompilerSelectorImpl::FindCompiler(const SupportedCompilers &compilers, const std::string name) const {
+Compiler *CompilerSelectorImpl::FindCompiler(const SupportedCompilers &compilers, const std::string &name) const {
   auto compiler = compilers.find(name);
   if (compiler != compilers.end()) {
     return compiler->second;
@@ -34,11 +33,11 @@ const ErrorCode CompilerSelectorImpl::InsertCompilerIfNeeded(std::vector<Compile
     if (std::find(selected.cbegin(), selected.cend(), compiler) == selected.cend()) {
       selected.push_back(compiler);
     }
+    return ErrorCode::kErrorNoError;
   } else {
     LogInfo::MapleLogger(kLlErr) << name << " not found!!!" << std::endl;
     return ErrorCode::kErrorToolNotFound;
   }
-  return ErrorCode::kErrorNoError;
 }
 
 const ErrorCode CompilerSelectorImpl::Select(const SupportedCompilers &supportedCompilers, const MplOptions &mplOptions,

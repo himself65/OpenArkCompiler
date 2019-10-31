@@ -46,16 +46,16 @@ const int FileUtils::Remove(const std::string &filePath) {
 }
 
 const std::string FileUtils::AppendMapleRootIfNeeded(bool needRootPath, const std::string &path,
-                                                     const std::string& defaultRoot) {
+                                                     const std::string &defaultRoot) {
   if (!needRootPath) {
     return path;
   }
-  std::stringstream strStream;
+  std::ostringstream ostrStream;
   if (getenv(kMapleRoot) == nullptr) {
-    strStream << defaultRoot << path;
+    ostrStream << defaultRoot << path;
   } else {
-    strStream << getenv(kMapleRoot) << FileSeperator::kFileSeperatorStr << path;
+    ostrStream << getenv(kMapleRoot) << FileSeperator::kFileSeperatorStr << path;
   }
-  return strStream.str();
+  return ostrStream.str();
 }
 }  // namespace maple

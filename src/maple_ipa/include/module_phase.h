@@ -28,7 +28,7 @@ enum ModulePhaseID {
   kMoPhaseMax
 };
 
-class ModulePhase;
+class ModulePhase;  // circular dependency exists, no other choice
 using ModuleResultMgr = AnalysisResultManager<MIRModule, ModulePhaseID, ModulePhase>;
 class ModulePhase : public Phase {
  public:

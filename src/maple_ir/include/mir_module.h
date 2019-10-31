@@ -29,9 +29,9 @@
 #endif  // MIR_FEATURE_FULL
 
 namespace maple {
-class CallInfo;
-class MIRModule;
-class MIRBuilder;
+class CallInfo;  // circular dependency exists, no other choice
+class MIRModule;  // circular dependency exists, no other choice
+class MIRBuilder;  // circular dependency exists, no other choice
 using MIRModulePtr = MIRModule*;
 using MIRBuilderPtr = MIRBuilder*;
 
@@ -56,16 +56,16 @@ static inline uint32 BlockSize2BitVectorSize(uint32 blkSize) {
 }
 
 #if MIR_FEATURE_FULL
-class MIRType;
-class MIRFunction;
-class MIRSymbol;
-class MIRSymbolTable;
-class MIRFloatConst;
-class MIRDoubleConst;
-class MIRBuilder;
-class DebugInfo;
-class BinaryMplt;
-class EAConnectionGraph;
+class MIRType;  // circular dependency exists, no other choice
+class MIRFunction;  // circular dependency exists, no other choice
+class MIRSymbol;  // circular dependency exists, no other choice
+class MIRSymbolTable;  // circular dependency exists, no other choice
+class MIRFloatConst;  // circular dependency exists, no other choice
+class MIRDoubleConst;  // circular dependency exists, no other choice
+class MIRBuilder;  // circular dependency exists, no other choice
+class DebugInfo;  // circular dependency exists, no other choice
+class BinaryMplt;  // circular dependency exists, no other choice
+class EAConnectionGraph;  // circular dependency exists, no other choice
 using MIRInfoPair = std::pair<GStrIdx, uint32>;
 using MIRInfoVector = MapleVector<MIRInfoPair>;
 using MIRDataPair = std::pair<GStrIdx, std::vector<uint8>>;

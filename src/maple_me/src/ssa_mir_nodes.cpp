@@ -19,22 +19,6 @@
 #include "ssa_tab.h"
 
 namespace maple {
-bool HasMayUseDefPart(const StmtNode &stmtNode) {
-  Opcode op = stmtNode.GetOpCode();
-  return kOpcodeInfo.IsCall(op) || op == OP_syncenter || op == OP_syncexit;
-}
-
-bool HasMayDefPart(const StmtNode &stmtNode) {
-  Opcode op = stmtNode.GetOpCode();
-  return op == OP_iassign || op == OP_dassign || op == OP_maydassign || HasMayUseDefPart(stmtNode);
-}
-
-bool HasMayUsePart(const StmtNode &stmtNode) {
-  Opcode op = stmtNode.GetOpCode();
-  return op == OP_iread || op == OP_throw || op == OP_gosub || op == OP_retsub || op == OP_return ||
-         HasMayUseDefPart(stmtNode);
-}
-
 void GenericSSAPrint(MIRModule &mod, const StmtNode &stmtNode, int32 indent, StmtsSSAPart &stmtsSSAPart) {
   stmtNode.Dump(mod, indent);
   // print SSAPart
@@ -69,7 +53,7 @@ void GenericSSAPrint(MIRModule &mod, const StmtNode &stmtNode, int32 indent, Stm
         ssaPart->DumpMayUseNodes(mod);
         ssaPart->DumpMustDefNodes(mod);
         ssaPart->DumpMayDefNodes(mod);
-      } else if (HasMayUseDefPart(stmtNode)) {
+      } else if (kOpcodeInfo.HasSSADef(op) && kOpcodeInfo.HasSSAUse(op)) {
         ssaPart->DumpMayUseNodes(mod);
         mod.GetOut() << '\n';
         ssaPart->DumpMayDefNodes(mod);
@@ -77,24 +61,6 @@ void GenericSSAPrint(MIRModule &mod, const StmtNode &stmtNode, int32 indent, Stm
       return;
     }
   }
-}
-
-void SSAGenericInsertMayUseNode(const StmtNode &stmtNode, VersionSt &mayUse, StmtsSSAPart &stmtsSSAPart) {
-  MapleMap<OStIdx, MayUseNode> &mayUseNodes = SSAGenericGetMayUseNode(stmtNode, stmtsSSAPart);
-  mayUseNodes.insert(std::make_pair(mayUse.GetOrigSt()->GetIndex(), MayUseNode(&mayUse)));
-}
-
-MapleMap<OStIdx, MayUseNode> &SSAGenericGetMayUseNode(const StmtNode &stmtNode, StmtsSSAPart &stmtsSSAPart) {
-  return stmtsSSAPart.SSAPartOf(stmtNode)->GetMayUseNodes();
-}
-
-void SSAGenericInsertMayDefNode(const StmtNode &stmtNode, VersionSt &vst, StmtNode &s, StmtsSSAPart &stmtsSSAPart) {
-  MapleMap<OStIdx, MayDefNode> &mayDefNodes = SSAGenericGetMayDefNodes(stmtNode, stmtsSSAPart);
-  mayDefNodes.insert(std::make_pair(vst.GetOrigSt()->GetIndex(), MayDefNode(&vst, &s)));
-}
-
-MapleMap<OStIdx, MayDefNode> &SSAGenericGetMayDefNodes(const StmtNode &stmtNode, StmtsSSAPart &stmtsSSAPart) {
-  return stmtsSSAPart.SSAPartOf(stmtNode)->GetMayDefNodes();
 }
 
 static MapleMap<OStIdx, MayDefNode> *SSAGenericGetMayDefsFromVersionSt(VersionSt &vst, StmtsSSAPart &stmtsSSAPart,
@@ -114,7 +80,7 @@ static MapleMap<OStIdx, MayDefNode> *SSAGenericGetMayDefsFromVersionSt(VersionSt
     }
   } else if (vst.GetDefType() == VersionSt::kMayDef) {
     MayDefNode *maydef = vst.GetMayDef();
-    return &SSAGenericGetMayDefNodes(*maydef->GetStmt(), stmtsSSAPart);
+    return &stmtsSSAPart.GetMayDefNodesOf(*maydef->GetStmt());
   }
   return nullptr;
 }
@@ -124,30 +90,16 @@ MapleMap<OStIdx, MayDefNode> *SSAGenericGetMayDefsFromVersionSt(VersionSt &sym, 
   return SSAGenericGetMayDefsFromVersionSt(sym, stmtsSSAPart, visited);
 }
 
-MapleVector<MustDefNode> &SSAGenericGetMustDefNode(const StmtNode &stmtNode, StmtsSSAPart &stmtsSSAPart) {
-  return stmtsSSAPart.SSAPartOf(stmtNode)->GetMustDefNodes();
-}
-
 bool HasMayUseOpnd(const BaseNode &baseNode, SSATab &func) {
   const StmtNode &stmtNode = static_cast<const StmtNode&>(baseNode);
-  if (HasMayUsePart(stmtNode)) {
-    MapleMap<OStIdx, MayUseNode> &mayUses = SSAGenericGetMayUseNode(stmtNode, func.GetStmtsSSAPart());
+  if (kOpcodeInfo.HasSSAUse(stmtNode.GetOpCode())) {
+    MapleMap<OStIdx, MayUseNode> &mayUses = func.GetStmtsSSAPart().GetMayUseNodesOf(stmtNode);
     if (!mayUses.empty()) {
       return true;
     }
   }
   for (size_t i = 0; i < baseNode.NumOpnds(); i++) {
     if (HasMayUseOpnd(*baseNode.Opnd(i), func)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-bool HasMayDef(const StmtNode &stmtNode, SSATab &func) {
-  if (HasMayDefPart(stmtNode)) {
-    MapleMap<OStIdx, MayDefNode> &mayDefs = SSAGenericGetMayDefNodes(stmtNode, func.GetStmtsSSAPart());
-    if (!mayDefs.empty()) {
       return true;
     }
   }

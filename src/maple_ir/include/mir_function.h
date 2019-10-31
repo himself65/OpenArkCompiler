@@ -52,13 +52,13 @@ constexpr uint8 kDefEffect = 0x80;
 constexpr uint8 kUseEffect = 0x40;
 constexpr uint8 kIpaSeen = 0x20;
 constexpr uint8 kPureFunc = 0x10;
-constexpr uint8 kNoUseEffect = 0x8;
+constexpr uint8 kNoDefArgEffect = 0x8;
 constexpr uint8 kNoDefEffect = 0x4;
 constexpr uint8 kNoRetNewlyAllocObj = 0x2;
 constexpr uint8 kNoThrowException = 0x1;
 
-class MeFunction;
-class EAConnectionGraph;
+class MeFunction;  // circular dependency exists, no other choice
+class EAConnectionGraph;  // circular dependency exists, no other choice
 class MIRFunction {
  public:
   MIRFunction(MIRModule *mod, const StIdx sidx)
@@ -279,9 +279,9 @@ class MIRFunction {
     if ((se & kPureFunc) == kPureFunc) {
       funcAttrs.SetAttr(FUNCATTR_pure);
     }
-    // NoUseEffect
-    if ((se & kNoUseEffect) == kNoUseEffect) {
-      funcAttrs.SetAttr(FUNCATTR_nouseeffect);
+    // NoDefArgEffect
+    if ((se & kNoDefArgEffect) == kNoDefArgEffect) {
+      funcAttrs.SetAttr(FUNCATTR_nodefargeffect);
     }
     // NoDefEffect
     if ((se & kNoDefEffect) == kNoDefEffect) {
@@ -351,8 +351,8 @@ class MIRFunction {
     return funcAttrs.GetAttr(FUNCATTR_local);
   }
 
-  bool IsNoUseEffect() const {
-    return funcAttrs.GetAttr(FUNCATTR_nouseeffect);
+  bool IsNoDefArgEffect() const {
+    return funcAttrs.GetAttr(FUNCATTR_nodefargeffect);
   }
 
   bool IsNoDefEffect() const {
@@ -387,8 +387,8 @@ class MIRFunction {
     funcAttrs.SetAttr(FUNCATTR_varargs);
   }
 
-  void SetNoUseEffect() {
-    funcAttrs.SetAttr(FUNCATTR_nouseeffect);
+  void SetNoDefArgEffect() {
+    funcAttrs.SetAttr(FUNCATTR_nodefargeffect);
   }
 
   void SetNoDefEffect() {
@@ -419,8 +419,8 @@ class MIRFunction {
     funcAttrs.SetAttr(FUNCATTR_pure);
   }
 
-  void UnsetNoUseEffect() {
-    funcAttrs.SetAttr(FUNCATTR_nouseeffect, true);
+  void UnsetNoDefArgEffect() {
+    funcAttrs.SetAttr(FUNCATTR_nodefargeffect, true);
   }
 
   void UnsetNoDefEffect() {

@@ -55,7 +55,7 @@ class MplOption {
   void init(const std::string &key, const std::string &value, const std::string &connectSymbol, bool isAppend,
             const std::string &appendSplit,
             bool needRootPath = false) {
-    CHECK_FATAL(!key.empty(), "key is empty");
+    CHECK_FATAL(!key.empty(), "MplOption got an empty key.");
 
     this->key = key;
     this->value = value;
@@ -68,32 +68,20 @@ class MplOption {
 
 struct DefaultOption {
   MplOption *mplOptions;
-  unsigned int length;
-};
-
-class UserOption : public std::map<std::string, std::vector<mapleOption::Option>> {
- public:
-  void Insert(const std::string &exeName, const mapleOption::Option &option) {
-    auto it = find(exeName);
-    if (it == end()) {
-      insert(make_pair(exeName, std::vector<mapleOption::Option>()));
-      it = find(exeName);
-    }
-    it->second.push_back(option);
-  }
+  uint32_t length;
 };
 
 class MplOptions {
  public:
   mapleOption::OptionParser *optionParser;
-  // may used future
-  UserOption options;
+  std::map<std::string, std::vector<mapleOption::Option>> options;
   std::map<std::string, std::vector<mapleOption::Option>> exeOptions;
   std::string inputFiles;
   std::string inputFolder;
   std::string outputFolder;
   std::string outputName;
   std::string exeFolder;
+  std::string optLevelStr;
   InputFileType inputFileType;
   OptimizationLevel optimizationLevel;
   bool setDefaultLevel;
@@ -111,13 +99,14 @@ class MplOptions {
   bool verify;
   MplOptions()
       : optionParser(nullptr),
-        options(UserOption()),
+        options({}),
         exeOptions({}),
         inputFiles(""),
         inputFolder(""),
         outputFolder(""),
         outputName("maple"),
         exeFolder(""),
+        optLevelStr(""),
         inputFileType(InputFileType::kNone),
         optimizationLevel(OptimizationLevel::kO2),
         setDefaultLevel(false),
@@ -145,6 +134,11 @@ class MplOptions {
 
  private:
   bool Init(const std::string &inputFile);
+  ErrorCode HandleGeneralOptions();
+  ErrorCode DecideRunType();
+  ErrorCode DecideRunningPhases();
+  ErrorCode CheckInputFileValidity();
+  ErrorCode CheckOptLevel(const std::string &inputOpt, const std::string &filterOpt);
   ErrorCode CheckFileExits();
   void AddOption(const mapleOption::Option &option);
   void UpdateOptLevel(OptimizationLevel level);

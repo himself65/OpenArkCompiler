@@ -20,7 +20,7 @@
 #include "mpl_logging.h"
 #include "driver_runner.h"
 
-using namespace maple;
+namespace maple {
 using namespace mapleOption;
 
 const std::string MapleCombCompiler::GetInputFileName(const MplOptions &options) const {
@@ -255,7 +255,7 @@ ErrorCode MapleCombCompiler::Compile(const MplOptions &options, MIRModulePtr &th
   PrintCommand(options);
   DriverRunner runner(theModule, options.runningExes, mpl2mplOptions, fileName, meOptions, fileName, fileName, optMp,
                       options.timePhases, options.genMemPl);
-  int nErr = runner.Run();
+  ErrorCode nErr = runner.Run();
 
   if (mpl2mplOptions != nullptr) {
     delete mpl2mplOptions;
@@ -266,5 +266,6 @@ ErrorCode MapleCombCompiler::Compile(const MplOptions &options, MIRModulePtr &th
     meOptions = nullptr;
   }
   mempoolctrler.DeleteMemPool(optMp);
-  return nErr == 0 ? ErrorCode::kErrorNoError : ErrorCode::kErrorCompileFail;
+  return nErr;
 }
+}  // namespace maple

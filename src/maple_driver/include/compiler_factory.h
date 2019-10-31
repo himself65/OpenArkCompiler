@@ -14,12 +14,10 @@
  */
 #ifndef MAPLE_DRIVER_INCLUDE_COMPILER_FACTORY_H
 #define MAPLE_DRIVER_INCLUDE_COMPILER_FACTORY_H
-#include <unordered_map>
 #include <unordered_set>
 #include "compiler.h"
 #include "compiler_selector.h"
 #include "error_code.h"
-#include "supported_compilers.h"
 #include "mir_module.h"
 #include "mir_parser.h"
 
