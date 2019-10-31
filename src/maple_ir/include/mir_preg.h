@@ -15,6 +15,7 @@
 #ifndef MAPLE_IR_INCLUDE_MIR_PREG_H
 #define MAPLE_IR_INCLUDE_MIR_PREG_H
 #if MIR_FEATURE_FULL
+#include <climits>
 #include "mir_module.h"
 #include "global_tables.h"
 #endif  // MIR_FEATURE_FULL
@@ -39,7 +40,7 @@ class MIRPreg {
     mirType = mType;
   }
 
-  ~MIRPreg(){};
+  ~MIRPreg() = default;
   void SetNeedRC(bool needRC = true) {
     this->needRC = needRC;
   }
@@ -97,7 +98,7 @@ class MIRPregTable {
         pregTable(allocator->Adapter()),
         module(mod),
         mAllocator(allocator) {
-    pregTable.push_back(static_cast<MIRPreg*>(nullptr));
+    pregTable.push_back(nullptr);
     specPregTable[0].SetPregNo(0);
     specPregTable[kSregSp].SetPregNo(-kSregSp);
     specPregTable[kSregFp].SetPregNo(-kSregFp);
@@ -117,7 +118,7 @@ class MIRPregTable {
     MIRPreg *preg = mAllocator->GetMemPool()->New<MIRPreg>(index);
     preg->SetPrimType(primType);
     PregIdx idx = pregTable.size();
-    ASSERT(idx < 0xffff, "will has problem if over 16 bits");
+    ASSERT(idx < USHRT_MAX, "will has problem if over 16 bits");
     pregTable.push_back(preg);
     pregNoToPregIdxMap[index] = idx;
     pregTable[idx]->SetMIRType(GlobalTables::GetTypeTable().GetPrimType(primType));
@@ -138,7 +139,7 @@ class MIRPregTable {
     preg->SetMIRType(mirPreg.GetMIRType());
     preg->SetNeedRC(mirPreg.NeedRC());
     PregIdx idx = pregTable.size();
-    ASSERT(idx < 0xffff, "will has problem if over 16 bits");
+    ASSERT(idx < USHRT_MAX, "will has problem if over 16 bits");
     pregTable.push_back(preg);
     pregNoToPregIdxMap[index] = idx;
     return idx;
@@ -155,11 +156,12 @@ class MIRPregTable {
   }
 
   void DumpRef(int32);
-  size_t Size(void) const {
+  size_t Size() const {
     return pregTable.size();
   }
 
   void AddPreg(MIRPreg *preg) {
+    CHECK_FATAL(preg != nullptr, "invalid nullptr in AddPreg");
     PregIdx idx = pregTable.size();
     pregTable.push_back(preg);
     ASSERT(pregNoToPregIdxMap.find(preg->GetPregNo()) == pregNoToPregIdxMap.end(), "The same pregno is already taken");
@@ -170,7 +172,7 @@ class MIRPregTable {
     return pregTable;
   }
 
-  MIRPreg *GetPregTableItem(uint32 index) {
+  const MIRPreg *GetPregTableItem(const uint32 index) const {
     CHECK_FATAL(index < pregTable.size(), "array index out of range");
     return pregTable[index];
   }

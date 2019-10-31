@@ -41,7 +41,7 @@ class MIRConst {
  public:
   explicit MIRConst(MIRType &type, uint32 fieldID = 0) : kind(kConstInvalid), type(type), fieldID(fieldID) {}
 
-  virtual ~MIRConst() {}
+  virtual ~MIRConst() = default;
 
   virtual void Dump() const;
 
@@ -108,7 +108,7 @@ class MIRIntConst : public MIRConst {
     SetKind(kConstInt);
   }
 
-  ~MIRIntConst() {}
+  ~MIRIntConst() = default;
 
   uint8 GetBitWidth() const {
     if (value == 0) {
@@ -189,7 +189,7 @@ class MIRAddrofConst : public MIRConst {
     SetKind(kConstAddrof);
   }
 
-  ~MIRAddrofConst() {}
+  ~MIRAddrofConst() = default;
 
   const StIdx &GetSymbolIndex() const {
     return stIdx;
@@ -215,7 +215,7 @@ class MIRAddroffuncConst : public MIRConst {
     SetKind(kConstAddrofFunc);
   }
 
-  ~MIRAddroffuncConst() {}
+  ~MIRAddroffuncConst() = default;
 
   PUIdx GetValue() const {
     return puIdx;
@@ -236,7 +236,7 @@ class MIRLblConst : public MIRConst {
     SetKind(kConstLblConst);
   }
 
-  ~MIRLblConst() {}
+  ~MIRLblConst() = default;
 
   bool operator==(MIRConst &rhs) const;
 
@@ -256,7 +256,7 @@ class MIRStrConst : public MIRConst {
 
   MIRStrConst(const std::string &str, MIRType &type);
 
-  ~MIRStrConst() {}
+  ~MIRStrConst() = default;
 
   void Dump() const;
   bool operator==(MIRConst &rhs) const;
@@ -281,7 +281,7 @@ class MIRStr16Const : public MIRConst {
 
   MIRStr16Const(const std::u16string &str, MIRType &type);
 
-  ~MIRStr16Const() {}
+  ~MIRStr16Const() = default;
 
   static PrimType GetPrimType() {
     return kPrimType;
@@ -306,7 +306,7 @@ class MIRFloatConst : public MIRConst {
     SetKind(kConstFloatConst);
   }
 
-  ~MIRFloatConst() {}
+  ~MIRFloatConst() = default;
 
   void SetFloatValue(float fvalue) {
     value.floatValue = fvalue;
@@ -361,7 +361,7 @@ class MIRDoubleConst : public MIRConst {
     SetKind(kConstDoubleConst);
   }
 
-  ~MIRDoubleConst() {}
+  ~MIRDoubleConst() = default;
 
   uint32 GetIntLow32() const {
     uint64 unsignVal = static_cast<uint64>(value.intValue);
@@ -417,7 +417,7 @@ class MIRFloat128Const : public MIRConst {
     SetKind(kConstFloat128Const);
   }
 
-  ~MIRFloat128Const() {}
+  ~MIRFloat128Const() = default;
 
   const uint64 *GetIntValue() const {
     return value;
@@ -456,7 +456,7 @@ class MIRAggConst : public MIRConst {
     SetKind(kConstAggConst);
   }
 
-  ~MIRAggConst() {}
+  ~MIRAggConst() = default;
 
   MIRConst *GetAggConstElement(unsigned int fieldidx) {
     for (size_t i = 0; i < constVec.size(); ++i) {
@@ -526,13 +526,12 @@ class MIRStConst : public MIRConst {
     return stOffsetVec[index];
   }
 
-  ~MIRStConst() {}
+  ~MIRStConst() = default;
 
  private:
   MapleVector<MIRSymbol*> stVec;    // symbols that in the st const
   MapleVector<uint32> stOffsetVec;  // symbols offset
 };
-
 #endif  // MIR_FEATURE_FULL
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_MIR_CONST_H
