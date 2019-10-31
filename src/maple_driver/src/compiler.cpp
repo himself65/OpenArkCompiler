@@ -18,71 +18,69 @@
 #include "safe_exe.h"
 #include "mpl_timer.h"
 
-using namespace mapleOption;
 namespace maple {
+using namespace mapleOption;
 const int Compiler::Exe(const MplOptions &mplOptions, const std::string &options) const {
-  const std::string binPath = FileUtils::ConvertPathIfNeeded(this->GetBinPath(mplOptions) + this->GetBinName());
+  std::ostringstream ostrStream;
+  ostrStream << GetBinPath(mplOptions) << GetBinName();
+  std::string binPath = FileUtils::ConvertPathIfNeeded(ostrStream.str());
   return SafeExe::Exe(binPath, options);
 }
 
 const std::string Compiler::GetBinPath(const MplOptions &mplOptions) const {
-  std::string binPath;
 #ifdef MAPLE_PRODUCT_EXECUTABLE  // build flag -DMAPLE_PRODUCT_EXECUTABLE
-  binPath = std::string(MAPLE_PRODUCT_EXECUTABLE);
+  std::string binPath = std::string(MAPLE_PRODUCT_EXECUTABLE);
   if (binPath.empty()) {
     binPath = mplOptions.exeFolder;
   } else {
     binPath = binPath + FileSeperator::kFileSeperatorChar;
   }
 #else
-  binPath = mplOptions.exeFolder;
+  std::string binPath = mplOptions.exeFolder;
 #endif
   return binPath;
 }
 
 ErrorCode Compiler::Compile(const MplOptions &options, MIRModulePtr &theModule) {
   MPLTimer timer = MPLTimer();
-  LogInfo::MapleLogger() << "Starting " << this->GetName() << std::endl;
+  LogInfo::MapleLogger() << "Starting " << GetName() << std::endl;
   timer.Start();
-  std::string strOption = this->MakeOption(options);
+  std::string strOption = MakeOption(options);
   if (strOption.empty()) {
     return ErrorCode::kErrorInvalidParameter;
   }
-  if (this->Exe(options, strOption) != 0) {
+  if (Exe(options, strOption) != 0) {
     return ErrorCode::kErrorCompileFail;
   }
   timer.Stop();
-  LogInfo::MapleLogger() << (this->GetName() + " consumed ") << timer.Elapsed() << "s" << std::endl;
+  LogInfo::MapleLogger() << (GetName() + " consumed ") << timer.Elapsed() << "s" << std::endl;
   return ErrorCode::kErrorNoError;
 }
 
 const std::string Compiler::MakeOption(const MplOptions &options) {
   std::map<std::string, MplOption> finalOptions;
-  auto defaultOptions = this->MakeDefaultOptions(options);
-  this->AppendDefaultOptions(finalOptions, defaultOptions);
-  for (auto binName : this->GetBinNames()) {
+  auto defaultOptions = MakeDefaultOptions(options);
+  AppendDefaultOptions(finalOptions, defaultOptions);
+  for (auto binName : GetBinNames()) {
     auto userOption = options.options.find(binName);
     if (userOption != options.options.end()) {
-      this->AppendUserOptions(finalOptions, userOption->second);
+      AppendUserOptions(finalOptions, userOption->second);
     }
   }
-  this->AppendExtraOptions(finalOptions, options.extras);
-  std::string strOption = "";
+  AppendExtraOptions(finalOptions, options.extras);
+  std::ostringstream strOption;
   for (auto finalOption : finalOptions) {
-    strOption += " " + finalOption.first + finalOption.second.connectSymbol + finalOption.second.value;
+    strOption << " " << finalOption.first << finalOption.second.connectSymbol << finalOption.second.value;
     if (options.debugFlag) {
       LogInfo::MapleLogger() << Compiler::GetName() << " options: " << finalOption.first << " "
                              << finalOption.second.value << std::endl;
     }
   }
-  strOption = this->AppendOptimization(options, strOption);
-  strOption = this->AppendSpecialOption(options, strOption);
-  strOption += " " + this->GetInputFileName(options);
+  strOption << " " << this->GetInputFileName(options);
   if (options.debugFlag) {
-    LogInfo::MapleLogger() << Compiler::GetName() << " input files: " << this->GetInputFileName(options) << std::endl;
+    LogInfo::MapleLogger() << Compiler::GetName() << " input files: " << GetInputFileName(options) << std::endl;
   }
-  strOption = FileUtils::ConvertPathIfNeeded(strOption);
-  return strOption;
+  return FileUtils::ConvertPathIfNeeded(strOption.str());
 }
 
 void Compiler::AppendDefaultOptions(std::map<std::string, MplOption> &finalOptions,
@@ -93,8 +91,8 @@ void Compiler::AppendDefaultOptions(std::map<std::string, MplOption> &finalOptio
 }
 
 void Compiler::AppendUserOptions(std::map<std::string, MplOption> &finalOptions,
-                                 const std::vector<Option> userOptions) const {
-  for (auto binName : this->GetBinNames()) {
+                                 const std::vector<Option> &userOptions) const {
+  for (auto &binName : GetBinNames()) {
     for (auto userOption : userOptions) {
       auto extra = userOption.FindExtra(binName);
       if (extra != nullptr) {
@@ -105,21 +103,21 @@ void Compiler::AppendUserOptions(std::map<std::string, MplOption> &finalOptions,
 }
 
 void Compiler::AppendExtraOptions(std::map<std::string, MplOption> &finalOptions,
-                                  std::map<std::string, std::vector<MplOption>> extraOptions) const {
-  auto binNames = this->GetBinNames();
-  for (auto binNamesIt : binNames) {
+                                  const std::map<std::string, std::vector<MplOption>> &extraOptions) const {
+  auto binNames = GetBinNames();
+  for (auto &binNamesIt : binNames) {
     auto extras = extraOptions.find(binNamesIt);
     if (extras == extraOptions.end()) {
       continue;
     }
-    for (auto secondExtras : extras->second) {
+    for (auto &secondExtras : extras->second) {
       AppendOptions(finalOptions, secondExtras.key, secondExtras.value, secondExtras.connectSymbol);
     }
   }
 }
 
 const std::map<std::string, MplOption> Compiler::MakeDefaultOptions(const MplOptions &options) {
-  auto rawDefaultOptions = this->GetDefaultOptions(options);
+  auto rawDefaultOptions = GetDefaultOptions(options);
   std::map<std::string, MplOption> defaultOptions;
   if (rawDefaultOptions.mplOptions != nullptr) {
     for (unsigned int i = 0; i < rawDefaultOptions.length; i++) {

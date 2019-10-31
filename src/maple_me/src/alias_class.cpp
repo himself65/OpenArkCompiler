@@ -157,7 +157,7 @@ AliasElem *AliasClass::CreateAliasElemsExpr(BaseNode &expr) {
 
 // when a mustDef is a pointer, set its pointees' notAllDefsSeen flag to true
 void AliasClass::SetNotAllDefsSeenForMustDefs(const StmtNode &callas) {
-  MapleVector<MustDefNode> &mustDefs = SSAGenericGetMustDefNode(callas, ssaTab.GetStmtsSSAPart());
+  MapleVector<MustDefNode> &mustDefs = ssaTab.GetStmtsSSAPart().GetMustDefNodesOf(callas);
   for (MustDefNode mustDef : mustDefs) {
     AliasElem *aliasElem = FindOrCreateAliasElem(*mustDef.GetResult()->GetOrigSt());
     aliasElem->SetNextLevNotAllDefsSeen(true);
@@ -170,7 +170,7 @@ void AliasClass::ApplyUnionForDassignCopy(const AliasElem &lhsAe, const AliasEle
     ae->SetNextLevNotAllDefsSeen(true);
     return;
   }
-  if (!IsPotentialAddress(rhs.GetPrimType()) || HasMallocOpnd(rhs) ||
+  if (!IsPotentialAddress(rhs.GetPrimType()) || kOpcodeInfo.NotPure(rhs.GetOpCode()) ||
       (rhs.GetOpCode() == OP_addrof && IsReadOnlyOst(rhsAe->GetOriginalSt()))) {
     return;
   }
@@ -204,7 +204,7 @@ void AliasClass::ApplyUnionForCopies(StmtNode &stmt) {
       ASSERT(stmt.Opnd(0) != nullptr, "nullptr check");
       AliasElem *rhsAe = CreateAliasElemsExpr(*stmt.Opnd(0));
       // LHS
-      OriginalSt *ost = ssaTab.GetStmtsSSAPart().SSAPartOf(stmt)->GetSSAVar()->GetOrigSt();
+      OriginalSt *ost = ssaTab.GetStmtsSSAPart().GetAssignedVarOf(stmt)->GetOrigSt();
       AliasElem *lhsAe = FindOrCreateAliasElem(*ost);
       ASSERT(lhsAe != nullptr, "aliaselem of lhs should not be null");
       ApplyUnionForDassignCopy(*lhsAe, rhsAe, *stmt.Opnd(0));
@@ -660,7 +660,7 @@ void AliasClass::InsertMayUseReturn(const StmtNode &stmt) {
   CollectMayUseFromNADS(mayUseOsts);
   // 2. collect mayUses caused by globals_affected_by_call.
   CollectMayUseFromGlobalsAffectedByCalls(mayUseOsts);
-  MapleMap<OStIdx, MayUseNode> &mayUseNodes = SSAGenericGetMayUseNode(stmt, ssaTab.GetStmtsSSAPart());
+  MapleMap<OStIdx, MayUseNode> &mayUseNodes = ssaTab.GetStmtsSSAPart().GetMayUseNodesOf(stmt);
   InsertMayUseNode(mayUseOsts, mayUseNodes);
 }
 
@@ -697,14 +697,14 @@ void AliasClass::InsertReturnOpndMayUse(const StmtNode &stmt) {
         }
       }
       // insert mayUses
-      MapleMap<OStIdx, MayUseNode> &mayUseNodes = SSAGenericGetMayUseNode(stmt, ssaTab.GetStmtsSSAPart());
+      MapleMap<OStIdx, MayUseNode> &mayUseNodes = ssaTab.GetStmtsSSAPart().GetMayUseNodesOf(stmt);
       InsertMayUseNode(mayUseOsts, mayUseNodes);
     }
   }
 }
 
 void AliasClass::InsertMayUseAll(const StmtNode &stmt) {
-  MapleMap<OStIdx, MayUseNode> &mayUseNodes = SSAGenericGetMayUseNode(stmt, ssaTab.GetStmtsSSAPart());
+  MapleMap<OStIdx, MayUseNode> &mayUseNodes = ssaTab.GetStmtsSSAPart().GetMayUseNodesOf(stmt);
   for (AliasElem *ae : id2Elem) {
     if (ae->GetOriginalSt().GetIndirectLev() >= 0 && !ae->GetOriginalSt().IsPregOst()) {
       mayUseNodes.insert(std::make_pair(
@@ -715,9 +715,7 @@ void AliasClass::InsertMayUseAll(const StmtNode &stmt) {
 }
 
 void AliasClass::CollectMayDefForDassign(const StmtNode &stmt, std::set<OriginalSt*> &mayDefOsts) {
-  MayDefPartWithVersionSt *theSSAPart =
-      static_cast<MayDefPartWithVersionSt*>(ssaTab.GetStmtsSSAPart().SSAPartOf(stmt));
-  AliasElem *lhsAe = osym2Elem.at(theSSAPart->GetSSAVar()->GetOrigIdx().idx);
+  AliasElem *lhsAe = osym2Elem.at(ssaTab.GetStmtsSSAPart().GetAssignedVarOf(stmt)->GetOrigIdx().idx);
   ASSERT(lhsAe != nullptr, "aliaselem of lhs should not be null");
   if (lhsAe->GetClassSet() != nullptr) {
     for (unsigned int elemID : *(lhsAe->GetClassSet())) {
@@ -743,7 +741,7 @@ void AliasClass::InsertMayDefNode(std::set<OriginalSt*> &mayDefOsts, MapleMap<OS
 void AliasClass::InsertMayDefDassign(StmtNode &stmt, BBId bbID) {
   std::set<OriginalSt*> mayDefOsts;
   CollectMayDefForDassign(stmt, mayDefOsts);
-  MapleMap<OStIdx, MayDefNode> &mayDefNodes = SSAGenericGetMayDefNodes(stmt, ssaTab.GetStmtsSSAPart());
+  MapleMap<OStIdx, MayDefNode> &mayDefNodes = ssaTab.GetStmtsSSAPart().GetMayDefNodesOf(stmt);
   InsertMayDefNode(mayDefOsts, mayDefNodes, stmt, bbID);
 }
 
@@ -806,7 +804,7 @@ void AliasClass::InsertMayDefNodeExcludeFinalOst(std::set<OriginalSt*> &mayDefOs
 void AliasClass::InsertMayDefIassign(StmtNode &stmt, BBId bbID) {
   std::set<OriginalSt*> mayDefOsts;
   CollectMayDefForIassign(stmt, mayDefOsts);
-  MapleMap<OStIdx, MayDefNode> &mayDefNodes = SSAGenericGetMayDefNodes(stmt, ssaTab.GetStmtsSSAPart());
+  MapleMap<OStIdx, MayDefNode> &mayDefNodes = ssaTab.GetStmtsSSAPart().GetMayDefNodesOf(stmt);
   if (mayDefOsts.size() == 1) {
     InsertMayDefNode(mayDefOsts, mayDefNodes, stmt, bbID);
   } else {
@@ -859,7 +857,7 @@ void AliasClass::InsertMayDefUseSyncOps(StmtNode &stmt, BBId bbID) {
 
 // collect mayDefs caused by mustDefs
 void AliasClass::CollectMayDefForMustDefs(const StmtNode &stmt, std::set<OriginalSt*> &mayDefOsts) {
-  MapleVector<MustDefNode> &mustDefs = SSAGenericGetMustDefNode(stmt, ssaTab.GetStmtsSSAPart());
+  MapleVector<MustDefNode> &mustDefs = ssaTab.GetStmtsSSAPart().GetMustDefNodesOf(stmt);
   for (MustDefNode mustDef : mustDefs) {
     VersionSt *vst = mustDef.GetResult();
     OriginalSt *ost = vst->GetOrigSt();
@@ -991,14 +989,14 @@ void AliasClass::InsertMayDefUseIntrncall(StmtNode &stmt, BBId bbID) {
 }
 
 void AliasClass::InsertMayDefUseClinitCheck(IntrinsiccallNode &stmt, BBId bbID) {
-  MayDefMayUsePart *theSSAPart = static_cast<MayDefMayUsePart*>(ssaTab.GetStmtsSSAPart().SSAPartOf(stmt));
+  MapleMap<OStIdx, MayDefNode> &mayDefNodes = ssaTab.GetStmtsSSAPart().GetMayDefNodesOf(stmt);
   for (OStIdx ostIdx : globalsMayAffectedByClinitCheck) {
     AliasElem *ae = osym2Elem[ostIdx.idx];
     OriginalSt &ostOfAE = ae->GetOriginalSt();
     std::string typeNameOfOst = ostOfAE.GetMIRSymbol()->GetName();
     std::string typeNameOfStmt = GlobalTables::GetTypeTable().GetTypeFromTyIdx(stmt.GetTyIdx())->GetName();
     if (typeNameOfOst.find(typeNameOfStmt) != std::string::npos) {
-      theSSAPart->GetMayDefNodes().insert(std::make_pair(
+      mayDefNodes.insert(std::make_pair(
           ostOfAE.GetIndex(),
           MayDefNode(ssaTab.GetVersionStTable().GetVersionStFromID(ostOfAE.GetZeroVersionIndex()), &stmt)));
     }

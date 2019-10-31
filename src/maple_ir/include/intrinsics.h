@@ -85,8 +85,8 @@ static constexpr uint32 INTRNISPURE = 1U << kIntrnIsPure;
 static constexpr uint32 INTRNNEVERRETURN = 1U << kIntrnNeverReturn;
 static constexpr uint32 INTRNATOMIC = 1U << kIntrnIsAtomic;
 static constexpr uint32 INTRNISRC = 1U << kIntrnIsRC;
-class MIRType;
-class MIRModule;
+class MIRType;  // circular dependency exists, no other choice
+class MIRModule;  // circular dependency exists, no other choice
 struct IntrinDesc {
   static constexpr int kMaxArgsNum = 7;
   const char *name;

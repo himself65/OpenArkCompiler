@@ -19,6 +19,7 @@
 #include <string>
 #include "me_option.h"
 #include "interleaved_manager.h"
+#include "error_code.h"
 
 
 extern const char *kNoFile;
@@ -54,9 +55,9 @@ class DriverRunner final {
 
   ~DriverRunner() {}
 
-  int Run();
+  ErrorCode Run();
   void ReleaseOptions();
-  bool ParseInput(std::string outputFile, std::string oriBasename) const;
+  ErrorCode ParseInput(std::string outputFile, std::string oriBasename) const;
   bool VerifyModule(MIRModulePtr &mModule) const;
   void ProcessMpl2mplAndMePhases(std::string outputFile, std::string vtableImplFile) const;
 

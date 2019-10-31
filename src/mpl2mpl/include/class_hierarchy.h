@@ -18,7 +18,7 @@
 #include "module_phase.h"
 
 namespace maple {
-class KlassHierarchy;
+class KlassHierarchy;  // circular dependency exists, no other choice
 // should be consistent with runtime
 static constexpr uint32 kClassPrim = 0x0001;
 static constexpr uint32 kClassArray = 0x0002;

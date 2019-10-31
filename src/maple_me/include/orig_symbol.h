@@ -24,7 +24,7 @@
 // symbol occurring in the code of the program being optimized.
 namespace maple {
 constexpr int kInitVersion = 0;
-class VarMeExpr;
+class VarMeExpr;  // circular dependency exists, no other choice
 class OriginalSt {
  public:
   OriginalSt(OStIdx index, MapleAllocator &alloc, bool local, bool isFormal, FieldID fieldIDPara)

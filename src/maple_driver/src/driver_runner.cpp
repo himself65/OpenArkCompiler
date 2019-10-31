@@ -56,15 +56,14 @@ const char *kMe = "me";
   }
 
 namespace maple {
-int DriverRunner::Run() {
-  CHECK_MODULE(1);
+ErrorCode DriverRunner::Run() {
+  CHECK_MODULE(ErrorCode::kErrorExit);
 
   if (exeNames.empty()) {
     LogInfo::MapleLogger() << "Fatal error: no exe specified" << std::endl;
-    return 1;
+    return ErrorCode::kErrorExit;
   }
 
-  int ret = 0;
   printOutExe = exeNames[exeNames.size() - 1];
 
   // Prepare output file
@@ -73,9 +72,9 @@ int DriverRunner::Run() {
   std::string originBaseName = baseName;
   std::string outputFile = baseName.append(GetPostfix());
 
-  bool parsed = ParseInput(outputFile, originBaseName);
+  ErrorCode ret = ParseInput(outputFile, originBaseName);
 
-  if (parsed) {
+  if (ret == ErrorCode::kErrorNoError) {
     if (mpl2mplOptions || meOptions) {
       std::string vtableImplFile = originBaseName;
       vtableImplFile.append(".VtableImpl.mpl");
@@ -84,10 +83,10 @@ int DriverRunner::Run() {
     }
 
   } else {
-    ret = 1;
+    return ErrorCode::kErrorExit;
   }
 
-  return ret;
+  return ErrorCode::kErrorNoError;
 }
 
 void DriverRunner::ReleaseOptions() {
@@ -116,22 +115,24 @@ std::string DriverRunner::GetPostfix() const {
   return postFix;
 }
 
-bool DriverRunner::ParseInput(std::string outputFile, std::string originBaseName) const {
-  CHECK_MODULE(1);
+ErrorCode DriverRunner::ParseInput(std::string outputFile, std::string originBaseName) const {
+  CHECK_MODULE(ErrorCode::kErrorExit);
 
   LogInfo::MapleLogger() << "Starting parse input" << std::endl;
   MPLTimer timer;
   timer.Start();
 
   MIRParser parser(*theModule);
+  ErrorCode ret = ErrorCode::kErrorNoError;
   bool parsed = parser.ParseMIR(0, 0, false, true);
   if (!parsed) {
+    ret = ErrorCode::kErrorExit;
     parser.EmitError(outputFile);
   }
   timer.Stop();
   LogInfo::MapleLogger() << "Parse consumed " << timer.Elapsed() << "s" << std::endl;
 
-  return parsed;
+  return ret;
 }
 
 bool DriverRunner::VerifyModule(MIRModulePtr &mModule) const {

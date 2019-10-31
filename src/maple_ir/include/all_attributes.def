@@ -40,7 +40,7 @@
   ATTR(nosideeffect)
   ATTR(pure)
   ATTR(noexcept)
-  ATTR(nouseeffect)
+  ATTR(nodefargeffect)
   ATTR(nodefeffect)
   ATTR(noret_newly_alloc_obj)
   ATTR(nothrow_exception)

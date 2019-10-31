@@ -24,6 +24,7 @@ using namespace maple;
   do {                                       \
     Insert((NAME), new (CLASSNAME)((NAME))); \
   } while (0);
+
 CompilerFactory &CompilerFactory::GetInstance() {
   static CompilerFactory instance;
   return instance;
@@ -45,7 +46,7 @@ CompilerFactory::~CompilerFactory() {
       delete it->second;
       it->second = nullptr;
     }
-    it++;
+    ++it;
   }
   supportedCompilers.clear();
   if (compilerSelector != nullptr) {
@@ -82,18 +83,23 @@ ErrorCode CompilerFactory::DeleteTmpFiles(const MplOptions &mplOptions, const st
 }
 
 ErrorCode CompilerFactory::Compile(const MplOptions &mplOptions) {
-  auto compilers = std::vector<Compiler*>();
+  std::vector<Compiler*> compilers;
   auto ret = compilerSelector->Select(supportedCompilers, mplOptions, compilers);
-  if (ret == ErrorCode::kErrorNoError) {
-    for (auto compiler : compilers) {
-      ret = compiler->Compile(mplOptions, this->theModule);
-      if (ret != ErrorCode::kErrorNoError) {
-        return ret;
-      }
-    }
-  } else {
+  if (ret != ErrorCode::kErrorNoError) {
     return ret;
   }
+
+  for (auto compiler : compilers) {
+    if (compiler == nullptr) {
+      LogInfo::MapleLogger() << "Failed! Compiler is null." << "\n";
+      return ErrorCode::kErrorCompileFail;
+    }
+    ret = compiler->Compile(mplOptions, this->theModule);
+    if (ret != ErrorCode::kErrorNoError) {
+      return ret;
+    }
+  }
+
   if (!mplOptions.isSaveTmps || !mplOptions.saveFiles.empty()) {
     auto tmpFiles = std::vector<std::string>();
     for (auto compiler : compilers) {

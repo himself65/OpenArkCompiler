@@ -28,8 +28,8 @@
 #include "me_ssa.h"
 
 namespace maple {
-class MeCFG;
-class MeIRMap;
+class MeCFG;  // circular dependency exists, no other choice
+class MeIRMap;  // circular dependency exists, no other choice
 #if DEBUG
 extern MIRModule *globalMIRModule;
 extern MeFunction *globalFunc;

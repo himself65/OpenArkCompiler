@@ -21,12 +21,12 @@
 #include "mempool_allocator.h"
 
 namespace maple {
-class MIRModule;
-class MIRType;
-class MIRFunction;
-class MIRSymbol;
-class MIRSymbolTable;
-class MIRTypeNameTable;
+class MIRModule;  // circular dependency exists, no other choice
+class MIRType;  // circular dependency exists, no other choice
+class MIRFunction;  // circular dependency exists, no other choice
+class MIRSymbol;  // circular dependency exists, no other choice
+class MIRSymbolTable;  // circular dependency exists, no other choice
+class MIRTypeNameTable;  // circular dependency exists, no other choice
 enum PragmaKind {
   kPragmaUnknown,
   kPragmaClass,

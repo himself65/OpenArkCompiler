@@ -19,11 +19,11 @@
 #include "mir_nodes.h"
 
 namespace maple {
-class BB;
-class VersionSt;
-class OriginalStTable;
-class VersionStTable;
-class SSATab;
+class BB;  // circular dependency exists, no other choice
+class VersionSt;  // circular dependency exists, no other choice
+class OriginalStTable;  // circular dependency exists, no other choice
+class VersionStTable;  // circular dependency exists, no other choice
+class SSATab;  // circular dependency exists, no other choice
 class PhiNode {
  public:
   PhiNode(MapleAllocator &alloc, VersionSt &vsym) : result(&vsym), phiOpnds(kNumOpnds, nullptr, alloc.Adapter()) {

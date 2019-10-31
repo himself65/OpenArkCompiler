@@ -14,7 +14,7 @@
  */
 #include <cstdlib>
 #include "compiler.h"
-#include "default_options.h"
+#include "default_options.def"
 
 namespace maple {
 const std::string Jbc2MplCompiler::GetBinName() const {

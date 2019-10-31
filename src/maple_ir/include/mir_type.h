@@ -26,7 +26,7 @@
 namespace maple {
 constexpr int kTypeHashLength = 12289;  // hash length for mirtype, ref: planetmath.org/goodhashtableprimes
 
-class FieldAttrs;
+class FieldAttrs;  // circular dependency exists, no other choice
 using TyIdxFieldAttrPair = std::pair<TyIdx, FieldAttrs>;
 using FieldPair = std::pair<GStrIdx, TyIdxFieldAttrPair>;
 using FieldVector = std::vector<FieldPair>;

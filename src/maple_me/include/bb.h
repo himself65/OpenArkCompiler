@@ -18,12 +18,12 @@
 #include "ssa.h"
 
 namespace maple {
-class VersionSt;
-class OriginalSt;
-class MeStmt;
-class MeVarPhiNode;
-class MeRegPhiNode;
-class IRMap;
+class VersionSt;  // circular dependency exists, no other choice
+class OriginalSt;  // circular dependency exists, no other choice
+class MeStmt;  // circular dependency exists, no other choice
+class MeVarPhiNode;  // circular dependency exists, no other choice
+class MeRegPhiNode;  // circular dependency exists, no other choice
+class IRMap;  // circular dependency exists, no other choice
 enum BBKind {
   kBBUnknown,  // uninitialized
   kBBCondGoto,

@@ -34,10 +34,10 @@ class Compiler {
  public:
   explicit Compiler(const std::string &name) : name(name) {}
 
-  virtual ~Compiler() {}
+  virtual ~Compiler() = default;
 
   virtual ErrorCode Compile(const MplOptions &options, MIRModulePtr &theModule);
-  inline const std::string &GetName() const {
+  const std::string &GetName() const {
     return name;
   }
 
@@ -45,9 +45,7 @@ class Compiler {
     return std::vector<std::string>();
   }
 
-  virtual void GetTmpFilesToDelete(const MplOptions &mplOptions, std::vector<std::string> &tempFiles) const {
-    return;
-  }
+  virtual void GetTmpFilesToDelete(const MplOptions &mplOptions, std::vector<std::string> &tempFiles) const {}
 
   virtual const std::unordered_set<std::string> GetFinalOutputs(const MplOptions &mplOptions) const {
     return std::unordered_set<std::string>();
@@ -62,11 +60,11 @@ class Compiler {
   }
 
   virtual const std::string GetInputFileName(const MplOptions &options) const {
-    std::string strOption = "";
+    std::ostringstream ss;
     for (auto const &inputFile : options.splitsInputFiles) {
-      strOption += " " + inputFile;
+      ss << " " << inputFile;
     }
-    return strOption;
+    return ss.str();
   }
 
   virtual const DefaultOption GetDefaultOptions(const MplOptions &options) {
@@ -74,7 +72,7 @@ class Compiler {
   }
 
   virtual void AppendExtraOptions(std::map<std::string, MplOption> &finalOptions,
-                                  std::map<std::string, std::vector<MplOption>> extraOptions) const;
+                                  const std::map<std::string, std::vector<MplOption>> &extraOptions) const;
   virtual const std::string AppendSpecialOption(const MplOptions &options, const std::string &optionStr) const {
     return optionStr;
   }
@@ -89,7 +87,7 @@ class Compiler {
   void AppendDefaultOptions(std::map<std::string, MplOption> &finalOptions,
                             const std::map<std::string, MplOption> &defaultOptions) const;
   void AppendUserOptions(std::map<std::string, MplOption> &finalOptions,
-                         const std::vector<mapleOption::Option> userOption) const;
+                         const std::vector<mapleOption::Option> &userOption) const;
   const std::map<std::string, MplOption> MakeDefaultOptions(const MplOptions &options);
   const int Exe(const MplOptions &mplOptions, const std::string &options) const;
   const std::string name;

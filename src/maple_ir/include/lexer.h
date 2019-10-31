@@ -22,7 +22,7 @@
 #include "mir_module.h"
 
 namespace maple {
-class MIRParser;
+class MIRParser;  // circular dependency exists, no other choice
 class MIRLexer {
   friend MIRParser;
 

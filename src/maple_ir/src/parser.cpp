@@ -1869,8 +1869,8 @@ bool MIRParser::ParseFunction(uint32 fileIdx) {
       if (func->IsNoThrowException()) {
         funcAttrs.SetAttr(FUNCATTR_nothrow_exception);
       }
-      if (func->IsNoUseEffect()) {
-        funcAttrs.SetAttr(FUNCATTR_nouseeffect);
+      if (func->IsNoDefArgEffect()) {
+        funcAttrs.SetAttr(FUNCATTR_nodefargeffect);
       }
       if (func->IsNoPrivateUseEffect()) {
         funcAttrs.SetAttr(FUNCATTR_noprivate_useeffect);

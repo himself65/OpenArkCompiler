@@ -25,8 +25,8 @@
 #include "ptr_list_ref.h"
 
 namespace maple {
-class MIRPregTable;
-class TypeTable;
+class MIRPregTable;  // circular dependency exists, no other choice
+class TypeTable;  // circular dependency exists, no other choice
 
 struct RegFieldPair {
  public:

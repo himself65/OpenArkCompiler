@@ -17,12 +17,12 @@
 #include <string>
 
 namespace FileSeperator {
-const static char kFileSeperatorLinuxStyleChar = '/';
-const static char kFileSeperatorWindowsStyleChar = '\\';
-const static char kFileSeperatorChar = kFileSeperatorLinuxStyleChar;
-const static std::string kFileSeperatorLinuxStyleStr = std::string(1, kFileSeperatorLinuxStyleChar);
-const static std::string kFileSeperatorWindowsStyleStr = std::string(1, kFileSeperatorWindowsStyleChar);
-const static std::string kFileSeperatorStr = kFileSeperatorLinuxStyleStr;
+const char kFileSeperatorLinuxStyleChar = '/';
+const char kFileSeperatorWindowsStyleChar = '\\';
+const char kFileSeperatorChar = kFileSeperatorLinuxStyleChar;
+const std::string kFileSeperatorLinuxStyleStr = std::string(1, kFileSeperatorLinuxStyleChar);
+const std::string kFileSeperatorWindowsStyleStr = std::string(1, kFileSeperatorWindowsStyleChar);
+const std::string kFileSeperatorStr = kFileSeperatorLinuxStyleStr;
 }  // namespace FileSeperator
 
 namespace maple {

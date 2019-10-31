@@ -28,7 +28,7 @@
 
 namespace maple {
 template <typename T>
-class MapleAllocatorAdapter;
+class MapleAllocatorAdapter;  // circular dependency exists, no other choice
 class MapleAllocator {
  public:
   explicit MapleAllocator(MemPool *m) : memPool(m) {}
@@ -56,7 +56,7 @@ class MapleAllocator {
 };  // MapleAllocator
 
 template <typename T>
-class MapleAllocatorAdapter;
+class MapleAllocatorAdapter;  // circular dependency exists, no other choice
 template <typename T>
 using MapleQueue = std::deque<T, MapleAllocatorAdapter<T>>;
 template <typename T>

@@ -23,12 +23,12 @@
 struct BBId;
 
 namespace maple {
-class BB;
-class PhiNode;
-class MayDefNode;
-class MustDefNode;
-class VersionStTable;
-class OriginalSt;
+class BB;  // circular dependency exists, no other choice
+class PhiNode;  // circular dependency exists, no other choice
+class MayDefNode;  // circular dependency exists, no other choice
+class MustDefNode;  // circular dependency exists, no other choice
+class VersionStTable;  // circular dependency exists, no other choice
+class OriginalSt;  // circular dependency exists, no other choice
 class VersionSt {
  public:
   enum DefType {
