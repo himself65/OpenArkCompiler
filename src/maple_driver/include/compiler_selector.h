@@ -23,9 +23,9 @@ namespace maple {
 using SupportedCompilers = std::unordered_map<std::string, Compiler*>;
 class CompilerSelector {
  public:
-  CompilerSelector() {}
+  CompilerSelector() = default;
 
-  virtual ~CompilerSelector() {}
+  virtual ~CompilerSelector() = default;
 
   virtual const ErrorCode Select(const SupportedCompilers &supportedCompilers, const MplOptions &mplOptions,
                                  std::vector<Compiler*> &selected) const {
@@ -35,12 +35,12 @@ class CompilerSelector {
 
 class CompilerSelectorImpl : public CompilerSelector {
  public:
-  CompilerSelectorImpl() {}
+  CompilerSelectorImpl() = default;
 
-  ~CompilerSelectorImpl() {}
+  ~CompilerSelectorImpl() = default;
 
   const ErrorCode Select(const SupportedCompilers &supportedCompilers, const MplOptions &mplOptions,
-                         std::vector<Compiler*> &selected) const;
+                         std::vector<Compiler*> &selected) const override;
 
  private:
   Compiler *FindCompiler(const SupportedCompilers &compilers, const std::string &name) const;

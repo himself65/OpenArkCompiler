@@ -496,26 +496,31 @@ void MeFunction::CloneBasicBlock(BB &newBB, const BB &orig) {
   }
 }
 
-/* Split BB at split_point */
-BB &MeFunction::SplitBB(BB &bb, StmtNode &splitPoint, BB *newBB) {
-  if (newBB == nullptr){
-    newBB = memPool->New<BB>(&alloc, &versAlloc, BBId(nextBBId++));
-  }
+void MeFunction::SplitBBPhysically(BB &bb, StmtNode &splitPoint, BB &newBB) {
+
   StmtNode *newBBStart = splitPoint.GetNext();
   // Fix Stmt in BB.
   if (newBBStart != nullptr) {
     newBBStart->SetPrev(nullptr);
     for (StmtNode *stmt = newBBStart; stmt != nullptr;) {
       StmtNode *nextStmt = stmt->GetNext();
-      newBB->AddStmtNode(stmt);
+      newBB.AddStmtNode(stmt);
       if (meSSATab != nullptr) {
-        meSSATab->CreateSSAStmt(*stmt, *newBB);
+        meSSATab->CreateSSAStmt(*stmt, newBB);
       }
       stmt = nextStmt;
     }
   }
   bb.SetLast(&splitPoint);
   splitPoint.SetNext(nullptr);
+}
+
+/* Split BB at split_point */
+BB &MeFunction::SplitBB(BB &bb, StmtNode &splitPoint, BB *newBB) {
+  if (newBB == nullptr) {
+    newBB = memPool->New<BB>(&alloc, &versAlloc, BBId(nextBBId++));
+  }
+  SplitBBPhysically(bb, splitPoint, *newBB);
   // Fix BB in CFG
   newBB->SetKind(bb.GetKind());
   bb.SetKind(kBBFallthru);

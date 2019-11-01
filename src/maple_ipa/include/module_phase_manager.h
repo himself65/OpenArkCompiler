@@ -50,7 +50,7 @@ class ModulePhaseManager : public PhaseManager {
   // register all module phases defined in module_phases.def
   void RegisterModulePhases();
   // Add module phases which are going to be run
-  void AddModulePhases(std::vector<std::string> &phases);
+  void AddModulePhases(const std::vector<std::string> &phases);
   void RunModulePhases() const;
   ModuleResultMgr *GetModResultMgr() override {
     return arModuleMgr;

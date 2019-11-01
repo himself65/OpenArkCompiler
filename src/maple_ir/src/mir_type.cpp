@@ -1390,10 +1390,10 @@ TyIdxFieldAttrPair MIRPtrType::GetPointedTyIdxFldAttrPairWithFieldID(FieldID fie
   if (fieldID == 0) {
     return TyIdxFieldAttrPair(pointedTyIdx, FieldAttrs());
   }
-  MIRStructType *structType =
-      dynamic_cast<MIRStructType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(pointedTyIdx));
-  ASSERT(structType != nullptr,
-         "MIRPtrType::GetPointedTyIdxWithFieldID(): cannot have non-zero fieldID for something other than a struct");
+  MIRType *pointedType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(pointedTyIdx);
+  CHECK_FATAL(pointedType->IsStructType(),
+      "MIRPtrType::GetPointedTyIdxWithFieldID(): cannot have non-zero fieldID for something other than a struct");
+  MIRStructType *structType = static_cast<MIRStructType*>(pointedType);
   return structType->GetFieldTyIdxAttrPair(fieldID);
 }
 

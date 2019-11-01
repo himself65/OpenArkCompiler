@@ -21,16 +21,12 @@
 #include "mir_function.h"
 #include "mir_parser.h"
 
-const char *kNoFile = "nofile";
-const char *kMpl2Mpl = "mpl2mpl";
-const char *kMe = "me";
-
 #define JAVALANG (theModule->IsJavaModule())
 
 #define CHECK_MODULE(errorCode...)                                              \
   do {                                                                          \
     if (theModule == nullptr) {                                                 \
-      LogInfo::MapleLogger() << "Fatal error: the module is null" << std::endl; \
+      LogInfo::MapleLogger() << "Fatal error: the module is null" << '\n';      \
       return errorCode;                                                         \
     }                                                                           \
   } while (0)
@@ -56,11 +52,17 @@ const char *kMe = "me";
   }
 
 namespace maple {
+
+const std::string mpl2Mpl = "mpl2mpl";
+const std::string mplME = "me";
+
+enum OptLevel { kLevelO0, kLevelO1, kLevelO2 };
+
 ErrorCode DriverRunner::Run() {
   CHECK_MODULE(ErrorCode::kErrorExit);
 
   if (exeNames.empty()) {
-    LogInfo::MapleLogger() << "Fatal error: no exe specified" << std::endl;
+    LogInfo::MapleLogger() << "Fatal error: no exe specified" << '\n';
     return ErrorCode::kErrorExit;
   }
 
@@ -74,24 +76,16 @@ ErrorCode DriverRunner::Run() {
 
   ErrorCode ret = ParseInput(outputFile, originBaseName);
 
-  if (ret == ErrorCode::kErrorNoError) {
-    if (mpl2mplOptions || meOptions) {
-      std::string vtableImplFile = originBaseName;
-      vtableImplFile.append(".VtableImpl.mpl");
-      originBaseName.append(".VtableImpl");
-      ProcessMpl2mplAndMePhases(outputFile, vtableImplFile);
-    }
-
-  } else {
+  if (ret != ErrorCode::kErrorNoError) {
     return ErrorCode::kErrorExit;
   }
-
+  if (mpl2mplOptions || meOptions) {
+    std::string vtableImplFile = originBaseName;
+    vtableImplFile.append(".VtableImpl.mpl");
+    originBaseName.append(".VtableImpl");
+    ProcessMpl2mplAndMePhases(outputFile, vtableImplFile);
+  }
   return ErrorCode::kErrorNoError;
-}
-
-void DriverRunner::ReleaseOptions() {
-  RELEASE(mpl2mplOptions);
-  RELEASE(meOptions);
 }
 
 bool DriverRunner::FuncOrderLessThan(const MIRFunction *left, const MIRFunction *right) {
@@ -103,22 +97,21 @@ bool DriverRunner::IsFramework() const {
 }
 
 std::string DriverRunner::GetPostfix() const {
-  std::string postFix;
-
-  if (printOutExe == kMe) {
-    postFix = ".me.mpl";
-  } else if (printOutExe == kMpl2Mpl) {
-    postFix = ".VtableImpl.mpl";
+  if (printOutExe == mplME) {
+    return ".me.mpl";
+  } else if (printOutExe == mpl2Mpl) {
+    return ".VtableImpl.mpl";
   } else {
   }
 
-  return postFix;
+  return "";
 }
 
-ErrorCode DriverRunner::ParseInput(std::string outputFile, std::string originBaseName) const {
+
+ErrorCode DriverRunner::ParseInput(const std::string &outputFile, const std::string &originBaseName) const {
   CHECK_MODULE(ErrorCode::kErrorExit);
 
-  LogInfo::MapleLogger() << "Starting parse input" << std::endl;
+  LogInfo::MapleLogger() << "Starting parse input" << '\n';
   MPLTimer timer;
   timer.Start();
 
@@ -130,23 +123,23 @@ ErrorCode DriverRunner::ParseInput(std::string outputFile, std::string originBas
     parser.EmitError(outputFile);
   }
   timer.Stop();
-  LogInfo::MapleLogger() << "Parse consumed " << timer.Elapsed() << "s" << std::endl;
+  LogInfo::MapleLogger() << "Parse consumed " << timer.Elapsed() << "s" << '\n';
 
   return ret;
 }
 
 bool DriverRunner::VerifyModule(MIRModulePtr &mModule) const {
-  LogInfo::MapleLogger() << "========== Starting Verify Module =====================" << std::endl;
+  LogInfo::MapleLogger() << "========== Starting Verify Module =====================" << '\n';
   bool res = true;
-  LogInfo::MapleLogger() << "========== Finished Verify Module =====================" << std::endl;
+  LogInfo::MapleLogger() << "========== Finished Verify Module =====================" << '\n';
   return res;
 }
 
-void DriverRunner::ProcessMpl2mplAndMePhases(std::string outputFile, std::string vtableImplFile) const {
+void DriverRunner::ProcessMpl2mplAndMePhases(const std::string &outputFile, const std::string &vtableImplFile) const {
   CHECK_MODULE();
 
   if (mpl2mplOptions || meOptions) {
-    LogInfo::MapleLogger() << "Processing mpl2mpl&mplme" << std::endl;
+    LogInfo::MapleLogger() << "Processing mpl2mpl&mplme" << '\n';
     MPLTimer timer;
     timer.Start();
 
@@ -159,11 +152,11 @@ void DriverRunner::ProcessMpl2mplAndMePhases(std::string outputFile, std::string
     theModule->Emit(vtableImplFile);
 
     timer.Stop();
-    LogInfo::MapleLogger() << "Mpl2mpl&mplme consumed " << timer.Elapsed() << "s" << std::endl;
+    LogInfo::MapleLogger() << "Mpl2mpl&mplme consumed " << timer.Elapsed() << "s" << '\n';
   }
 }
 
-void DriverRunner::InitPhases(InterleavedManager &mgr, std::vector<std::string> &phases) const {
+void DriverRunner::InitPhases(InterleavedManager &mgr, const std::vector<std::string> &phases) const {
   if (phases.empty()) {
     return;
   }
@@ -192,18 +185,19 @@ void DriverRunner::InitPhases(InterleavedManager &mgr, std::vector<std::string> 
   }
 }
 
-void DriverRunner::AddPhases(InterleavedManager &mgr, std::vector<std::string> &phases,
+void DriverRunner::AddPhases(InterleavedManager &mgr, const std::vector<std::string> &phases,
                              const PhaseManager &phaseManager) const {
-  if (typeid(phaseManager) == typeid(ModulePhaseManager)) {
+  const std::type_info &type = typeid(phaseManager);
+  if (type == typeid(ModulePhaseManager)) {
     mgr.AddPhases(phases, true, timePhases);
-  } else if (typeid(phaseManager) == typeid(MeFuncPhaseManager)) {
+  } else if (type == typeid(MeFuncPhaseManager)) {
     mgr.AddPhases(phases, false, timePhases, genMemPl);
   } else {
     CHECK_FATAL(false, "Should not reach here, phases should be handled");
   }
 }
 
-void DriverRunner::AddPhase(std::vector<std::string> &phases, std::string phase,
+void DriverRunner::AddPhase(std::vector<std::string> &phases, const std::string phase,
                             const PhaseManager &phaseManager) const {
   if (typeid(phaseManager) == typeid(ModulePhaseManager)) {
     if (mpl2mplOptions && Options::skipPhase.compare(phase) != 0) {

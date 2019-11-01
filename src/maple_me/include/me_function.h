@@ -463,6 +463,7 @@ class MeFunction : public FuncEmit {
   MIRFunction *CurFunction(void) const {
     return mirModule.CurFunction();
   }
+  void SplitBBPhysically(BB &bb, StmtNode &splitPoint, BB &newBB);
 
   MemPool *memPool;
   MapleAllocator alloc;

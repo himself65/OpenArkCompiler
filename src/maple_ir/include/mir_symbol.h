@@ -21,6 +21,7 @@
 constexpr int kScopeLocal = 2;   // the default scope level for function variables
 constexpr int kScopeGlobal = 1;  // the scope level for global variables
 
+
 namespace maple {
 enum MIRSymKind {
   kStInvalid,
@@ -85,7 +86,7 @@ class MIRSymbol {
         nameStrIdx(0),
         value({ nullptr }) {
   }
-  ~MIRSymbol() {}
+  ~MIRSymbol() = default;
 
   void SetIsTmp(bool temp) {
     isTmp = temp;
@@ -404,7 +405,7 @@ class MIRSymbolTable {
  public:
   explicit MIRSymbolTable(MapleAllocator *allocator)
       : mAllocator(allocator), strIdxToStIdxMap(mAllocator->Adapter()), symbolTable(mAllocator->Adapter()) {
-    symbolTable.push_back(static_cast<MIRSymbol*>(nullptr));
+    symbolTable.push_back(nullptr);
   }
 
   ~MIRSymbolTable() = default;
@@ -429,6 +430,9 @@ class MIRSymbolTable {
 
   // add sym from other symbol table, happens in inline
   bool AddStOutside(MIRSymbol *sym) {
+    if (sym == nullptr) {
+      return false;
+    }
     sym->SetStIdx(StIdx(sym->GetScopeIdx(), symbolTable.size()));
     symbolTable.push_back(sym);
     return AddToStringSymbolMap(*sym);
@@ -481,7 +485,7 @@ class MIRLabelTable {
     labelTable.push_back(GStrIdx(kDummyLabel));  // push dummy label index 0
   }
 
-  ~MIRLabelTable() {}
+  ~MIRLabelTable() = default;
 
   LabelIdx CreateLabel() {
     LabelIdx labelIdx = labelTable.size();

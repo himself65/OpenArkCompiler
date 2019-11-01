@@ -109,83 +109,19 @@ enum DataRefFormat {
   kDataRefBitMask    = 3,
 };
 
-template <typename INT>
-struct BaseDataRef {
-  INT refVal;
-
-  void* DecodeDataRef() const {
-    intptr_t ref = static_cast<intptr_t>(refVal);
-    intptr_t format = refVal & kDataRefBitMask;
-    switch (format) {
-      case kDataRefIsDirect: return reinterpret_cast<void*>(ref);
-      case kDataRefIsOffset: {
-        ref += reinterpret_cast<intptr_t>(this);
-        return reinterpret_cast<void*>(ref);
-      }
-      case kDataRefIsCompact: return reinterpret_cast<void*>(ref); // TODO
-      case kDataRefIsIndirect: {
-        ref += reinterpret_cast<intptr_t>(this);
-        void **pRef = reinterpret_cast<void **>(ref);
-        return *pRef;
-      }
-    }
-  }
-};
-
 // specialized for int32_t, check for out-of-boundary
-struct DataRef32 : public BaseDataRef<int32_t> {
-  void EncodeDataRef(void* ref, DataRefFormat format) {
-    intptr_t val = reinterpret_cast<intptr_t>(ref);
-    switch (format) {
-      case kDataRefIsDirect: {
-        if (INT32_MIN <= val && val <= INT32_MAX) {
-          refVal = static_cast<int32_t>(val);
-          return;
-        } else {
-          std::abort();
-        }
-      }
-      case kDataRefIsOffset:  {
-        intptr_t offset = val - reinterpret_cast<intptr_t>(this);
-        if ((offset & kDataRefBitMask) == 0 && INT32_MIN <= refVal && refVal <= INT32_MAX) {
-          refVal = static_cast<int32_t>(offset) | kDataRefIsOffset;
-          return;
-        } else {
-          std::abort();
-        }
-      }
-      case kDataRefIsCompact:
-      case kDataRefIsIndirect:  {
-        std::abort();
-      }
-    }
-  }
+struct DataRef32 {
+  // be careful when *refVal* is treated as an offset which is a signed integer actually.
+  uint32_t refVal;
+  void *DecodeDataRef() const;
+  void EncodeDataRef(void* ref, DataRefFormat format = kDataRefIsDirect);
 };
 
 // DataRef is meant to have pointer size.
-struct DataRef : public BaseDataRef<intptr_t> {
-  void EncodeDataRef(void* ref, DataRefFormat format) {
-    intptr_t val = reinterpret_cast<intptr_t>(ref);
-    switch (format) {
-      case kDataRefIsDirect: {
-        refVal = val;
-        return;
-      }
-      case kDataRefIsOffset:  {
-        intptr_t offset = val - reinterpret_cast<intptr_t>(this);
-        if ((offset & kDataRefBitMask) == 0) {
-          refVal = offset | kDataRefIsOffset;
-          return;
-        } else {
-          std::abort();
-        }
-      }
-      case kDataRefIsCompact:
-      case kDataRefIsIndirect: {
-        std::abort();
-      }
-    }
-  }
+struct DataRef {
+  void *refVal;
+  void *DecodeDataRef() const;
+  void EncodeDataRef(void *ref, DataRefFormat format = kDataRefIsDirect);
 };
 
 // MethodMeta defined in MethodMeta.h
@@ -227,10 +163,6 @@ struct ClassMetadataRO {
   int32_t annotation;
   int32_t clinitAddr;
 };
-
-struct DexFile;
-struct DexClassDef;
-struct DexClassData;
 
 static constexpr size_t PageSize = 4096;
 
@@ -280,9 +212,9 @@ struct ClassMetadata {
   void *gctib; // for rc
 
   union {
-    ClassMetadataRO *classinforo64; // ifndef USE_32BIT_REF
+    DataRef classinforo64; // ifndef USE_32BIT_REF
     struct {
-      uint32_t classinforo32;       // ifdef USE_32BIT_REF
+      DataRef32 classinforo32; // ifdef USE_32BIT_REF
       uint32_t cacheFalseClass;
     };
   };
@@ -293,6 +225,11 @@ struct ClassMetadata {
   };
 
  public:
+  static inline intptr_t OffsetOfInitState() {
+    ClassMetadata *base = nullptr;
+    return reinterpret_cast<intptr_t>(&(base->initState));
+  }
+
   bool IsInitialized();
 
   ClassInitState GetInitState();
@@ -305,11 +242,6 @@ struct ClassMetadata {
     __atomic_store_n(&initState, val, __ATOMIC_RELEASE);
   }
 };
-
-static inline intptr_t ClassMetadataOffsetOfInitFlag() {
-  ClassMetadata *base = reinterpret_cast<ClassMetadata*>(0);
-  return reinterpret_cast<intptr_t>(&(base->initState));
-}
 
 // function to set Class/Field/Method metadata's shadow field to avoid type conversion
 // Note 1: here we don't do NULL-check and type-compatibility check

@@ -22,18 +22,15 @@
 #include "error_code.h"
 
 
-extern const char *kNoFile;
-extern const char *kMpl2Mpl;
-extern const char *kMe;
-
 namespace maple {
 
-enum OptLevel { kLevelO0, kLevelO1, kLevelO2 };
+extern const std::string mpl2Mpl;
+extern const std::string mplME;
 
 class DriverRunner final {
  public:
   DriverRunner(MIRModule *theModule, const std::vector<std::string> &exeNames, Options *mpl2mplOptions,
-               std::string mpl2mplInput, MeOption *meOptions, std::string meInput, std::string actualInput,
+               std::string mpl2mplInput, MeOption *meOptions, const std::string &meInput, std::string actualInput,
                MemPool *optMp, bool timePhases = false,
                bool genMemPl = false)
       : theModule(theModule),
@@ -45,31 +42,15 @@ class DriverRunner final {
         actualInput(actualInput),
         optMp(optMp),
         timePhases(timePhases),
-        genMemPl(genMemPl) {
-  }
+        genMemPl(genMemPl) {}
 
   DriverRunner(MIRModule *theModule, const std::vector<std::string> &exeNames, std::string actualInput, MemPool *optMp,
                bool timePhases = false, bool genVtableImpl = false, bool genMemPl = false)
-      : DriverRunner(theModule, exeNames, nullptr, "", nullptr, "", actualInput, optMp, timePhases, genMemPl) {
-  }
+      : DriverRunner(theModule, exeNames, nullptr, "", nullptr, "", actualInput, optMp, timePhases, genMemPl) {}
 
-  ~DriverRunner() {}
+  ~DriverRunner() = default;
 
   ErrorCode Run();
-  void ReleaseOptions();
-  ErrorCode ParseInput(std::string outputFile, std::string oriBasename) const;
-  bool VerifyModule(MIRModulePtr &mModule) const;
-  void ProcessMpl2mplAndMePhases(std::string outputFile, std::string vtableImplFile) const;
-
-  void SetMpl2mplInfo(Options *mpl2mplOptions, const std::string &mpl2mplInput) {
-    this->mpl2mplOptions = mpl2mplOptions;
-    this->mpl2mplInput = mpl2mplInput;
-  }
-
-  void SetMeInfo(MeOption *meOptions, const std::string &meInput) {
-    this->meOptions = meOptions;
-    this->meInput = meInput;
-  }
 
 
  private:
@@ -88,10 +69,14 @@ class DriverRunner final {
   static bool FuncOrderLessThan(const MIRFunction *left, const MIRFunction *right);
 
   bool IsFramework() const;
+  bool VerifyModule(MIRModulePtr &mModule) const;
+  ErrorCode ParseInput(const std::string &outputFile, const std::string &oriBasename) const;
   std::string GetPostfix() const;
-  void InitPhases(InterleavedManager &mgr, std::vector<std::string> &phases) const;
-  void AddPhases(InterleavedManager &mgr, std::vector<std::string> &phases, const PhaseManager &phaseManager) const;
-  void AddPhase(std::vector<std::string> &phases, std::string phase, const PhaseManager &phaseManager) const;
+  void InitPhases(InterleavedManager &mgr, const std::vector<std::string> &phases) const;
+  void AddPhases(InterleavedManager &mgr, const std::vector<std::string> &phases,
+                 const PhaseManager &phaseManager) const;
+  void AddPhase(std::vector<std::string> &phases, const std::string phase, const PhaseManager &phaseManager) const;
+  void ProcessMpl2mplAndMePhases(const std::string &outputFile, const std::string &vtableImplFile) const;
 
 };
 }  // namespace maple

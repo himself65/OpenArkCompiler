@@ -28,7 +28,8 @@
 using namespace maple;
 
 
-void InterleavedManager::AddPhases(std::vector<std::string> &phases, bool isModulePhase, bool timePhases, bool genMpl) {
+void InterleavedManager::AddPhases(const std::vector<std::string> &phases, bool isModulePhase, bool timePhases,
+                                   bool genMpl) {
   ModuleResultMgr *mrm = nullptr;
   if (!phaseManagers.empty()) {
     // ModuleResult such class hierarchy need to be carried on
