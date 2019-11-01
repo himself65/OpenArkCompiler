@@ -50,7 +50,8 @@ class InterleavedManager {
     return allocator.GetMemPool();
   }
 
-  void AddPhases(std::vector<std::string> &phases, bool isModulePhase, bool timePhases = false, bool genMpl = false);
+  void AddPhases(const std::vector<std::string> &phases, bool isModulePhase, bool timePhases = false,
+                 bool genMpl = false);
   void AddIPAPhases(std::vector<std::string> &phases, bool timePhases = false, bool genMpl = false);
   void Run();
   void IPARun(MeFuncPhaseManager&);

@@ -312,6 +312,7 @@ void MIRSymbol::DumpAsLiteralVar(int32 indent) const {
   }
 }
 
+
 void MIRSymbolTable::Dump(bool isLocal, int32 indent, bool printDeleted) const {
   size_t size = symbolTable.size();
   for (size_t i = 0; i < size; i++) {

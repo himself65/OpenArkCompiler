@@ -70,7 +70,7 @@ void ModulePhaseManager::RegisterModulePhases() {
 #undef MODTPHASE
 }
 
-void ModulePhaseManager::AddModulePhases(std::vector<std::string> &phases) {
+void ModulePhaseManager::AddModulePhases(const std::vector<std::string> &phases) {
   for (std::string const &phase : phases) {
     AddPhase(phase.c_str());
   }

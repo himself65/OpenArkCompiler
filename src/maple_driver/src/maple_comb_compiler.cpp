@@ -240,31 +240,24 @@ ErrorCode MapleCombCompiler::Compile(const MplOptions &options, MIRModulePtr &th
   MemPool *optMp = mempoolctrler.NewMemPool("maplecomb mempool");
   std::string fileName = GetInputFileName(options);
   theModule = new MIRModule(fileName);
-  MeOption *meOptions = nullptr;
-  Options *mpl2mplOptions = nullptr;
+  std::unique_ptr<MeOption> meOptions;
+  std::unique_ptr<Options> mpl2mplOptions;
   auto iterMe = std::find(options.runningExes.begin(), options.runningExes.end(), kBinNameMe);
   if (iterMe != options.runningExes.end()) {
-    meOptions = MakeMeOptions(options, *optMp);
+    meOptions.reset(MakeMeOptions(options, *optMp));
   }
   auto iterMpl2Mpl = std::find(options.runningExes.begin(), options.runningExes.end(), kBinNameMpl2mpl);
   if (iterMpl2Mpl != options.runningExes.end()) {
-    mpl2mplOptions = MakeMpl2MplOptions(options, *optMp);
+    mpl2mplOptions.reset(MakeMpl2MplOptions(options, *optMp));
   }
 
   LogInfo::MapleLogger() << "Starting mpl2mpl&mplme" << std::endl;
   PrintCommand(options);
-  DriverRunner runner(theModule, options.runningExes, mpl2mplOptions, fileName, meOptions, fileName, fileName, optMp,
+  DriverRunner runner(theModule, options.runningExes, mpl2mplOptions.get(), fileName, meOptions.get(),
+                      fileName, fileName, optMp,
                       options.timePhases, options.genMemPl);
   ErrorCode nErr = runner.Run();
 
-  if (mpl2mplOptions != nullptr) {
-    delete mpl2mplOptions;
-    mpl2mplOptions = nullptr;
-  }
-  if (meOptions != nullptr) {
-    delete meOptions;
-    meOptions = nullptr;
-  }
   mempoolctrler.DeleteMemPool(optMp);
   return nErr;
 }

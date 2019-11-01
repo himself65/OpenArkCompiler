@@ -193,7 +193,9 @@ class VersionSt {
 
 class VersionStTable {
  public:
-  explicit VersionStTable(MemPool *vstMp) : vstAlloc(vstMp), versionStVector(vstAlloc.Adapter()) {}
+  explicit VersionStTable(MemPool *vstMp) : vstAlloc(vstMp), versionStVector(vstAlloc.Adapter()) {
+    versionStVector.push_back(&dummyVST);
+  }
 
   ~VersionStTable() = default;
 
