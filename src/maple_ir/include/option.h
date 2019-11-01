@@ -22,6 +22,12 @@
 #include "types_def.h"
 
 namespace maple {
+constexpr uint32 kNoDecouple = 0;
+constexpr uint32 kConservativeDecouple = 1;
+constexpr uint32 kRadicalDecouple = 2;
+constexpr uint32 kNoLazyBinding = 0;
+constexpr uint32 kLazyBindingUseConditionCall = 1;
+constexpr uint32 kLazyBindingUseSegv = 2;
 class Options {
  public:
   explicit Options(maple::MemPool &memPool) : optionAlloc(&memPool) {}
@@ -34,7 +40,7 @@ class Options {
     return phaseSeq;
   }
 
-  const char *LastPhaseName() {
+  const std::string LastPhaseName() const {
     return phaseSeq.empty() ? "noopt" : phaseSeq[phaseSeq.size() - 1].c_str();
   }
 

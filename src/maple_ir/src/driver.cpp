@@ -31,6 +31,14 @@ void ConstantFoldModule(maple::MIRModule &module) {
   }
 }
 
+/* hello.mpl
+   flavor 1
+   srclang 3
+
+   type $person <struct {@age i64,
+                      @data <* f32>}>
+   var $BOB i32 = 8
+*/
 int main(int argc, char **argv) {
   constexpr int judgeNumber = 2;
   if (argc < judgeNumber) {
@@ -84,15 +92,6 @@ int main(int argc, char **argv) {
   }
   return 0;
 }
-
-/* hello.mpl
-   flavor 1
-   srclang 3
-
-   type $person <struct {@age i64,
-                      @data <* f32>}>
-   var $BOB i32 = 8
- */
 #else
 #warning "this module is compiled without MIR_FEATURE_FULL=1 defined"
 #endif  // MIR_FEATURE_FULL

@@ -39,8 +39,8 @@ class JavaEHLowerer : public FuncOptimizeImpl {
   BaseNode *DoLowerExpr(BaseNode&, BlockNode&);
   BaseNode *DoLowerDiv(BinaryNode&, BlockNode&);
   void DoLowerBoundaryCheck(IntrinsiccallNode&, BlockNode&);
-  BaseNode *DoLowerRem(BinaryNode *expr, BlockNode *blkNode) {
-    return DoLowerDiv(*expr, *blkNode);
+  BaseNode *DoLowerRem(BinaryNode &expr, BlockNode &blkNode) {
+    return DoLowerDiv(expr, blkNode);
   }
 
   uint32 divSTIndex;  // The index of divide operand and result.

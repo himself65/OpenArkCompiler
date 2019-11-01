@@ -30,8 +30,8 @@ void MIRConst::Dump() const {
 
 void MIRIntConst::Dump() const {
   MIRConst::Dump();
-  constexpr int64 kValThreshold = 1024;
-  if (value <= kValThreshold) {
+  constexpr int64 valThreshold = 1024;
+  if (value <= valThreshold) {
     LogInfo::MapleLogger() << value;
   } else {
     LogInfo::MapleLogger() << std::hex << "0x" << value << std::dec;
@@ -181,12 +181,12 @@ void MIRDoubleConst::Dump() const {
 }
 
 void MIRFloat128Const::Dump() const {
-  constexpr int kFieldWidth = 16;
+  constexpr int fieldWidth = 16;
   MIRConst::Dump();
   std::ios::fmtflags f(LogInfo::MapleLogger().flags());
   LogInfo::MapleLogger().setf(std::ios::uppercase);
-  LogInfo::MapleLogger() << "0xL" << std::hex << std::setfill('0') << std::setw(kFieldWidth) << value[0]
-                         << std::setfill('0') << std::setw(kFieldWidth) << value[1];
+  LogInfo::MapleLogger() << "0xL" << std::hex << std::setfill('0') << std::setw(fieldWidth) << value[0]
+                         << std::setfill('0') << std::setw(fieldWidth) << value[1];
   LogInfo::MapleLogger().flags(f);
 }
 
@@ -211,8 +211,8 @@ MIRStrConst::MIRStrConst(const std::string &str, MIRType &type)
 void MIRStrConst::Dump() const {
   MIRConst::Dump();
   LogInfo::MapleLogger() << "conststr " << GetPrimTypeName(GetType().GetPrimType());
-  const std::string kStr = GlobalTables::GetUStrTable().GetStringFromStrIdx(value);
-  PrintString(kStr);
+  const std::string dumpStr = GlobalTables::GetUStrTable().GetStringFromStrIdx(value);
+  PrintString(dumpStr);
 }
 
 bool MIRStrConst::operator==(MIRConst &rhs) const {

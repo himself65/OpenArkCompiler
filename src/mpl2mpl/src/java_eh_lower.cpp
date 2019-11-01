@@ -99,10 +99,10 @@ BaseNode *JavaEHLowerer::DoLowerExpr(BaseNode &expr, BlockNode &curblk) {
   }
   switch (expr.GetOpCode()) {
     case OP_div: {
-      return DoLowerDiv(*(static_cast<BinaryNode*>(&expr)), curblk);
+      return DoLowerDiv(static_cast<BinaryNode&>(expr), curblk);
     }
     case OP_rem: {
-      return DoLowerRem(static_cast<BinaryNode*>(&expr), &curblk);
+      return DoLowerRem(static_cast<BinaryNode&>(expr), curblk);
     }
     default:
       return &expr;
