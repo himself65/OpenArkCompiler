@@ -302,7 +302,7 @@ void GenericNativeStubFunc::GenericRegFuncTabEntry() {
   MIRConst *newConst =
     GetMIRModule().GetMemPool()->New<MIRIntConst>(static_cast<uint64>((locIdx << locIdxShift) | locIdxMask),
                                                       *GlobalTables::GetTypeTable().GetVoidPtr());
-  regFuncTabConst->GetConstVec().push_back(newConst);
+  regFuncTabConst->PushBack(newConst);
 }
 
 void GenericNativeStubFunc::GenericRegFuncTab() {
@@ -324,10 +324,10 @@ void GenericNativeStubFunc::GenericRegTabEntry(const MIRFunction &func) {
   // Using MIRIntConst instead of MIRStruct for RegTable.
   MIRConst *baseConst =
     GetMIRModule().GetMemPool()->New<MIRIntConst>(classIdx, *GlobalTables::GetTypeTable().GetVoidPtr());
-  regTableConst->GetConstVec().push_back(baseConst);
+  regTableConst->PushBack(baseConst);
   MIRConst *newConst = GetMIRModule().GetMemPool()->New<MIRIntConst>(nameIdx,
                                                                      *GlobalTables::GetTypeTable().GetVoidPtr());
-  regTableConst->GetConstVec().push_back(newConst);
+  regTableConst->PushBack(newConst);
 }
 
 void GenericNativeStubFunc::GenericRegisteredNativeFuncCall(MIRFunction &func, const MIRFunction &nativeFunc,

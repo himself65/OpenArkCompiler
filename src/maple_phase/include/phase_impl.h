@@ -16,9 +16,10 @@
 #define MAPLE_PHASE_INCLUDE_PHASE_IMPL_H
 #include "class_hierarchy.h"
 #include "mir_builder.h"
+#include "mpl_scheduler.h"
 
 namespace maple {
-class FuncOptimizeImpl {
+class FuncOptimizeImpl : public MplTaskParam {
  public:
   explicit FuncOptimizeImpl(MIRModule *mod, KlassHierarchy *kh = nullptr, bool trace = false);
   virtual ~FuncOptimizeImpl();

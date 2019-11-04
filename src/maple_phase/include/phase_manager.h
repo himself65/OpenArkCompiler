@@ -21,7 +21,7 @@
 namespace maple {
 class PhaseManager {
  public:
-  PhaseManager(MemPool *memPool, const char *name)
+  PhaseManager(MemPool *memPool, const std::string &name)
       : managerName(name),
         allocator(memPool),
         registeredPhases(std::less<PhaseID>(), allocator.Adapter()),

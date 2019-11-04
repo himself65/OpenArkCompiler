@@ -115,7 +115,7 @@ MIRConst *BinaryMplImport::ImportConst(MIRFunction *func) {
   } else if (tag == kBinKindConstAddrof) {
     ImportConstBase(kind, type, fieldID);
     MIRSymbol *sym = InSymbol(func);
-    ASSERT(sym, "null ptr check");
+    ASSERT(sym != nullptr, "null ptr check");
     FieldID fi = ReadNum();
     return memPool->New<MIRAddrofConst>(sym->GetStIdx(), fi, *type);
   } else if (tag == kBinKindConstAddrofFunc) {
@@ -161,7 +161,7 @@ MIRConst *BinaryMplImport::ImportConst(MIRFunction *func) {
     MIRAggConst *aggConst = mod.GetMemPool()->New<MIRAggConst>(mod, *type);
     int64 size = ReadNum();
     for (int64 i = 0; i < size; i++) {
-      aggConst->GetConstVec().push_back(ImportConst(func));
+      aggConst->PushBack(ImportConst(func));
     }
     return aggConst;
   } else if (tag == kBinKindConstSt) {
@@ -783,7 +783,7 @@ PUIdx BinaryMplImport::ImportFunction() {
   }
   ASSERT(tag == kBinFunction, "expecting kBinFunction");
   MIRSymbol *funcSt = InSymbol(nullptr);
-  ASSERT(funcSt, "null ptr check");
+  ASSERT(funcSt != nullptr, "null ptr check");
   MIRFunction *func = nullptr;
   if (funcSt->GetFunction() == nullptr) {
     maple::MIRBuilder builder(&mod);
@@ -814,22 +814,26 @@ inline void BinaryMplImport::SkipTotalSize() {
 void BinaryMplImport::ReadStrField() {
   SkipTotalSize();
 
+  int64 tag = 0;
   int32 size = ReadInt();
   for (int64 i = 0; i < size; i++) {
     GStrIdx stridx = ImportStr();
     GlobalTables::GetConstPool().PutLiteralNameAsImported(stridx);
   }
-  ASSERT(ReadNum() == ~kBinStrStart, "pattern mismatch in Read STR");
+  tag = ReadNum();
+  ASSERT(tag == ~kBinStrStart, "pattern mismatch in Read STR");
 }
 
 void BinaryMplImport::ReadTypeField() {
   SkipTotalSize();
 
+  int64 tag = 0;
   int32 size = ReadInt();
   for (int64 i = 0; i < size; i++) {
     ImportType();
   }
-  ASSERT(ReadNum() == ~kBinTypeStart, "pattern mismatch in Read TYPE");
+  tag = ReadNum();
+  ASSERT(tag == ~kBinTypeStart, "pattern mismatch in Read TYPE");
 }
 
 void BinaryMplImport::ReadContentField() {

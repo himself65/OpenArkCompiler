@@ -208,7 +208,7 @@ class MIRFunction {
     return funcType->GetParamTypeList().size();
   }
 
-  std::vector<TyIdx> &GetParamTypes() const {
+  const std::vector<TyIdx> &GetParamTypes() const {
     return funcType->GetParamTypeList();
   }
 

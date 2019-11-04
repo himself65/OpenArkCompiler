@@ -202,10 +202,10 @@ MIRPragmaElement *MIRPragma::GetPragmaElemFromSignature(const std::string &signa
   return elem;
 }
 
-void MIRPragmaElement::Dump(int indent) {
-  constexpr int kIndentOffset = 2;
-  constexpr int kFloatPrec = 7;
-  constexpr int kDoublePrec = 16;
+void MIRPragmaElement::Dump(int indent) const {
+  constexpr int indentOffset = 2;
+  constexpr int floatPrec = 7;
+  constexpr int doublePrec = 16;
   GStrIdx gStrIdx;
   std::string str = GetKind(valueType);
   switch (valueType) {
@@ -226,11 +226,11 @@ void MIRPragmaElement::Dump(int indent) {
       break;
     case kValueFloat:
       LogInfo::MapleLogger() << std::setiosflags(std::ios::scientific) << str.c_str() << " "
-                             << std::setprecision(kFloatPrec) << val.f << "f";
+                             << std::setprecision(floatPrec) << val.f << "f";
       break;
     case kValueDouble:
       LogInfo::MapleLogger() << std::setiosflags(std::ios::scientific) << str.c_str() << " "
-                             << std::setprecision(kDoublePrec) << val.d;
+                             << std::setprecision(doublePrec) << val.d;
       break;
     case kValueMethodType:
       LogInfo::MapleLogger() << str.c_str() << " $" << std::hex << "0x" << val.u << std::dec;
@@ -272,9 +272,9 @@ void MIRPragmaElement::Dump(int indent) {
         size_t i = 0;
         while (i < num) {
           if (num > 1) {
-            PrintIndentation(indent + kIndentOffset);
+            PrintIndentation(indent + indentOffset);
           }
-          subElemVec[i]->Dump(indent + kIndentOffset);
+          subElemVec[i]->Dump(indent + indentOffset);
           if (i != num - 1) {
             LogInfo::MapleLogger() << "," << std::endl;
           }
@@ -297,12 +297,12 @@ void MIRPragmaElement::Dump(int indent) {
         size_t i = 0;
         while (i < num) {
           if (num > 1) {
-            PrintIndentation(indent + kIndentOffset);
+            PrintIndentation(indent + indentOffset);
           }
           LogInfo::MapleLogger() << "@"
                                  << GlobalTables::GetStrTable().GetStringFromStrIdx(subElemVec[i]->nameStrIdx).c_str()
                                  << " ";
-          subElemVec[i]->Dump(indent + kIndentOffset);
+          subElemVec[i]->Dump(indent + indentOffset);
           if (i != num - 1) {
             LogInfo::MapleLogger() << "," << std::endl;
           }
@@ -321,7 +321,7 @@ void MIRPragmaElement::Dump(int indent) {
   }
 }
 
-void MIRPragma::Dump(int indent) {
+void MIRPragma::Dump(int indent) const {
   LogInfo::MapleLogger() << std::endl;
   PrintIndentation(indent);
   LogInfo::MapleLogger() << "pragma " << static_cast<int>(visibility) << " ";

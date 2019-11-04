@@ -30,7 +30,7 @@ class DoKlassHierarchy : public ModulePhase {
     return "classhierarchy";
   }
 
-  virtual ~DoKlassHierarchy(){};
+  virtual ~DoKlassHierarchy() {};
 };
 
 class ModulePhaseManager : public PhaseManager {

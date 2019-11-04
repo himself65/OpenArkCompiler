@@ -22,7 +22,7 @@ namespace maple {
 void MIRBuilder::AddIntFieldConst(const MIRStructType &sType, MIRAggConst &newConst, uint32 fieldID, int64 constValue) {
   MIRConst *fieldConst =
       mirModule->GetMemPool()->New<MIRIntConst>(constValue, *sType.GetElemType(fieldID - 1), fieldID);
-  newConst.GetConstVec().push_back(fieldConst);
+  newConst.PushBack(fieldConst);
 }
 
 // This is for compiler-generated metadata 1-level struct
@@ -32,7 +32,7 @@ void MIRBuilder::AddAddrofFieldConst(const MIRStructType &structType, MIRAggCons
   MIRConst *fieldConst = mirModule->GetMemPool()->New<MIRAddrofConst>(fieldExpr->GetStIdx(), fieldExpr->GetFieldID(),
                                                                       *structType.GetElemType(fieldID - 1));
   fieldConst->SetFieldID(fieldID);
-  newConst.GetConstVec().push_back(fieldConst);
+  newConst.PushBack(fieldConst);
 }
 
 // This is for compiler-generated metadata 1-level struct
@@ -48,7 +48,7 @@ void MIRBuilder::AddAddroffuncFieldConst(const MIRStructType &structType, MIRAgg
     fieldConst = mirModule->GetMemPool()->New<MIRAddroffuncConst>(addrofFuncExpr->GetPUIdx(),
                                                                   *structType.GetElemType(fieldID - 1), fieldID);
   }
-  newConst.GetConstVec().push_back(fieldConst);
+  newConst.PushBack(fieldConst);
 }
 
 // fieldID is continuously being updated during traversal;
