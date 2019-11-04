@@ -20,6 +20,7 @@
 #include <string>
 #include <tuple>
 #include <vector>
+#include <memory>
 #include <unordered_set>
 #include <unordered_map>
 #include "file_utils.h"
@@ -37,6 +38,7 @@ enum InputFileType {
 };
 
 enum OptimizationLevel { kO0, kO1, kO2 };
+enum RunMode { kAutoRun, kCustomRun, kUnkownRun };
 
 class MplOption {
  public:
@@ -73,7 +75,7 @@ struct DefaultOption {
 
 class MplOptions {
  public:
-  mapleOption::OptionParser *optionParser;
+  std::unique_ptr<mapleOption::OptionParser> optionParser;
   std::map<std::string, std::vector<mapleOption::Option>> options;
   std::map<std::string, std::vector<mapleOption::Option>> exeOptions;
   std::string inputFiles;
@@ -81,9 +83,9 @@ class MplOptions {
   std::string outputFolder;
   std::string outputName;
   std::string exeFolder;
-  std::string optLevelStr;
   InputFileType inputFileType;
   OptimizationLevel optimizationLevel;
+  RunMode runMode;
   bool setDefaultLevel;
   bool isSaveTmps;
   std::vector<std::string> saveFiles;
@@ -106,9 +108,9 @@ class MplOptions {
         outputFolder(""),
         outputName("maple"),
         exeFolder(""),
-        optLevelStr(""),
         inputFileType(InputFileType::kNone),
-        optimizationLevel(OptimizationLevel::kO2),
+        optimizationLevel(OptimizationLevel::kO0),
+        runMode(RunMode::kUnkownRun),
         setDefaultLevel(false),
         isSaveTmps(false),
         saveFiles({}),
@@ -122,12 +124,7 @@ class MplOptions {
         genMemPl(false),
         genVtableImpl(false),
         verify(false) {}
-  ~MplOptions() {
-    if (optionParser != nullptr) {
-      delete optionParser;
-      optionParser = nullptr;
-    }
-  }
+  ~MplOptions() = default;
 
   int Parse(int argc, char **argv);
   const std::string OptimizationLevelStr() const;
@@ -138,12 +135,14 @@ class MplOptions {
   ErrorCode DecideRunType();
   ErrorCode DecideRunningPhases();
   ErrorCode CheckInputFileValidity();
-  ErrorCode CheckOptLevel(const std::string &inputOpt, const std::string &filterOpt);
+  ErrorCode CheckRunMode(RunMode mode);
   ErrorCode CheckFileExits();
   void AddOption(const mapleOption::Option &option);
   void UpdateOptLevel(OptimizationLevel level);
   ErrorCode UpdatePhaseOption(const std::string &args, const std::string &exeName);
   ErrorCode UpdateExtraOptionOpt(const std::string &args);
+  ErrorCode AppendDefaultCombOptions();
+  ErrorCode AppendDefaultCgOptions();
   ErrorCode AppendDefaultOptions(const std::string &exeName, MplOption mplOptions[], unsigned int length);
   void UpdateRunningExe(const std::string &args);
 };

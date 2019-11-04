@@ -1969,7 +1969,6 @@ bool MIRParser::ParseInitValue(MIRConstPtr &theConst, TyIdx tyIdx) {
       MIRType *elemType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(arrayType.GetElemTyIdx());
       MIRAggConst *newConst = mod.GetMemPool()->New<MIRAggConst>(mod, type);
       theConst = newConst;
-      MapleVector<MIRConst*> &constVec = newConst->GetConstVec();
       tokenKind = lexer.NextToken();
       if (tokenKind == kTkRbrack) {
         Error("illegal empty initialization for array at ");
@@ -2012,7 +2011,7 @@ bool MIRParser::ParseInitValue(MIRConstPtr &theConst, TyIdx tyIdx) {
           Error("expect const value or group of const values but get ");
           return false;
         }
-        constVec.push_back(subConst);
+        newConst->PushBack(subConst);
         // parse comma or rbrack
         tokenKind = lexer.GetTokenKind();
         if (tokenKind == kTkComa) {
@@ -2029,7 +2028,6 @@ bool MIRParser::ParseInitValue(MIRConstPtr &theConst, TyIdx tyIdx) {
       uint32 theFieldID;
       TyIdx fieldTyIdx;
       theConst = newConst;
-      MapleVector<MIRConst*> &constVec = newConst->GetConstVec();
       tokenKind = lexer.NextToken();
       if (tokenKind == kTkRbrack) {
         Error("illegal empty initialization for struct at ");
@@ -2074,7 +2072,7 @@ bool MIRParser::ParseInitValue(MIRConstPtr &theConst, TyIdx tyIdx) {
         }
         ASSERT(subConst != nullptr, "subConst is null in MIRParser::ParseInitValue");
         subConst->SetFieldID(theFieldID);
-        constVec.push_back(subConst);
+        newConst->PushBack(subConst);
         tokenKind = lexer.GetTokenKind();
         // parse comma or rbrack
         if (tokenKind == kTkComa) {

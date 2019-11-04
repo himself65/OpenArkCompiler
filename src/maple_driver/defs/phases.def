@@ -25,6 +25,7 @@ ADD_PHASE("aliasclass", true)
 ADD_PHASE("ssa", true)
 ADD_PHASE("analyzerc", true)
 ADD_PHASE("rclowering", true)
+ADD_PHASE("gclowering", true)
 ADD_PHASE("emit", true)
 // mephase end
 ADD_PHASE("GenNativeStubFunc", true)

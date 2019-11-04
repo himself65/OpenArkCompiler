@@ -732,7 +732,7 @@ MIRSymbol *ReflectionAnalysis::GenMethodsMetaData(const Klass &klass) {
     // @padding
     mirBuilder.AddIntFieldConst(methodsInfoType, *newconst, fieldID++, 0);
 #endif
-    aggconst->GetConstVec().push_back(newconst);
+    aggconst->PushBack(newconst);
   }
   MIRSymbol *methodsArraySt =
       GetOrCreateSymbol(NameMangler::kMethodsInfoPrefixStr + klass.GetKlassName(), arraytype.GetTypeIndex(), true);
@@ -752,7 +752,7 @@ MIRSymbol *ReflectionAnalysis::GenSuperClassMetaData(const Klass &klass, std::li
     MIRSymbol *dklassSt = GetOrCreateSymbol(CLASSINFO_PREFIX_STR + (*it)->GetKlassName(), classMetadataTyIdx);
     MIRAggConst *newconst = module.GetMemPool()->New<MIRAggConst>(module, superclassMetadataType);
     mirBuilder.AddAddrofFieldConst(superclassMetadataType, *newconst, 1, *dklassSt);
-    aggconst->GetConstVec().push_back(newconst);
+    aggconst->PushBack(newconst);
   }
   MIRSymbol *superclassArraySt =
       GetOrCreateSymbol(SUPERCLASSINFO_PREFIX_STR + klass.GetKlassName(), arrayType.GetTypeIndex(), true);
@@ -893,7 +893,7 @@ MIRSymbol *ReflectionAnalysis::GenFieldsMetaData(const Klass &klass) {
     //  @declaring class
     MIRSymbol *dklassSt = GetOrCreateSymbol(CLASSINFO_PREFIX_STR + klass.GetKlassName(), classMetadataTyIdx);
     mirBuilder.AddAddrofFieldConst(fieldsInfoType, *newconst, fieldID++, *dklassSt);
-    aggconst->GetConstVec().push_back(newconst);
+    aggconst->PushBack(newconst);
     idx++;
   }
   MIRSymbol *fieldsArraySt =
@@ -1598,7 +1598,7 @@ void ReflectionAnalysis::GenClassHashMetaData() {
     MIRType &ptrType = *GlobalTables::GetTypeTable().GetTypeTable()[PTY_ptr];
     MIRConst *classConst =
         module.GetMemPool()->New<MIRAddrofConst>(classExpr->GetStIdx(), classExpr->GetFieldID(), ptrType);
-    bucketAggconst->GetConstVec().push_back(classConst);
+    bucketAggconst->PushBack(classConst);
   }
   bucketSt->SetKonst(bucketAggconst);
 }
@@ -1620,7 +1620,7 @@ static void ReflectionAnalysisGenStrTab(MIRModule &mirModule, const std::string 
   strtabSt->SetStorageClass(kScFstatic);
   for (const char &c : strTab) {
     MIRConst *newconst = mirModule.GetMemPool()->New<MIRIntConst>(c, *GlobalTables::GetTypeTable().GetUInt8());
-    strtabAggconst->GetConstVec().push_back(newconst);
+    strtabAggconst->PushBack(newconst);
   }
   strtabSt->SetKonst(strtabAggconst);
 }

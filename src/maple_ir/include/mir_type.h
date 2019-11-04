@@ -1373,31 +1373,45 @@ class MIRFuncType : public MIRType {
   TyIdx GetRetTyIdx() const {
     return retTyIdx;
   }
+
   void SetRetTyIdx(TyIdx idx) {
     retTyIdx = idx;
+  }
+
+  const std::vector<TyIdx> &GetParamTypeList() const {
+    return paramTypeList;
   }
 
   std::vector<TyIdx> &GetParamTypeList() {
     return paramTypeList;
   }
+
   TyIdx GetNthParamType(size_t i) const {
     ASSERT(i < paramTypeList.size(), "array index out of range");
     return paramTypeList[i];
   }
+
   void SetParamTypeList(std::vector<TyIdx> &list) {
     paramTypeList = list;
+  }
+
+  const std::vector<TypeAttrs> &GetParamAttrsList() const {
+    return paramAttrsList;
   }
 
   std::vector<TypeAttrs> &GetParamAttrsList() {
     return paramAttrsList;
   }
+
   const TypeAttrs &GetNthParamAttrs(size_t i) const {
     ASSERT(i < paramAttrsList.size(), "array index out of range");
     return paramAttrsList[i];
   }
+
   void SetParamAttrsList(const std::vector<TypeAttrs> &list) {
     paramAttrsList = list;
   }
+
   void SetNthParamAttrs(size_t i, const TypeAttrs &attrs) {
     ASSERT(i < paramAttrsList.size(), "array index out of range");
     paramAttrsList[i] = attrs;
@@ -1406,6 +1420,7 @@ class MIRFuncType : public MIRType {
   bool IsVarargs() const {
     return isVarArgs;
   }
+
   void SetVarArgs(bool flag) {
     isVarArgs = flag;
   }

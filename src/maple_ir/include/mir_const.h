@@ -470,20 +470,30 @@ class MIRAggConst : public MIRConst {
     return nullptr;
   }
 
+  const MapleVector<MIRConst*> &GetConstVec() const {
+    return constVec;
+  }
+
   MapleVector<MIRConst*> &GetConstVec() {
     return constVec;
+  }
+
+  const MIRConstPtr &GetConstVecItem(size_t index) const {
+    CHECK_FATAL(index < constVec.size(), "index out of range");
+    return constVec[index];
   }
 
   MIRConstPtr &GetConstVecItem(size_t index) {
     CHECK_FATAL(index < constVec.size(), "index out of range");
     return constVec[index];
   }
+
   void SetConstVecItem(uint32 index, MIRConst &mirConst) {
     CHECK_FATAL(index < constVec.size(), "index out of range");
     constVec[index] = &mirConst;
   }
-  void PushBack(MIRConst &elem) {
-    constVec.push_back(&elem);
+  void PushBack(MIRConst *elem) {
+    constVec.push_back(elem);
   }
 
   void Dump() const;
