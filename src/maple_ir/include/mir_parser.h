@@ -97,7 +97,7 @@ class MIRParser {
   bool ParseTypeParam(TyIdx &tyIdx);
   bool ParsePointType(TyIdx &tyIdx);
   bool ParseFuncType(TyIdx &tyIdx);
-  bool ParseGenericInstantVector(GenericInstantVector&);
+  bool ParseGenericInstantVector(MIRInstantVectorType &insVecType);
   bool ParseDerivedType(TyIdx &tyIdx, MIRTypeKind kind = kTypeUnknown);
   bool ParseType(TyIdx &tyIdx);
   bool ParseStatement(StmtNodePtr &stmt);

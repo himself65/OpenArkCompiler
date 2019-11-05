@@ -140,7 +140,7 @@ class MapleAllocatorAdapter<void> {
     using other = MapleAllocatorAdapter<U>;
   };
 
-  explicit MapleAllocatorAdapter(MapleAllocator *currMapleAllocator) : mapleAllocator(currMapleAllocator) {}
+  explicit MapleAllocatorAdapter(MapleAllocator &currMapleAllocator) : mapleAllocator(&currMapleAllocator) {}
 
   template <typename U>
   MapleAllocatorAdapter(const MapleAllocatorAdapter<U> &other) : mapleAllocator(other.mapleAllocator) {}
@@ -170,7 +170,7 @@ class MapleAllocatorAdapter {
     using other = MapleAllocatorAdapter<U>;
   };
 
-  explicit MapleAllocatorAdapter(MapleAllocator *currMapleAllocator) : mapleAllocator(currMapleAllocator) {}
+  explicit MapleAllocatorAdapter(MapleAllocator &currMapleAllocator) : mapleAllocator(&currMapleAllocator) {}
 
   template <typename U>
   MapleAllocatorAdapter(const MapleAllocatorAdapter<U> &other) : mapleAllocator(other.mapleAllocator) {}
@@ -223,8 +223,7 @@ inline bool operator!=(const MapleAllocatorAdapter<T> &lhs, const MapleAllocator
 }
 
 inline MapleAllocatorAdapter<void> MapleAllocator::Adapter() {
-  return MapleAllocatorAdapter<void>(this);
+  return MapleAllocatorAdapter<void>(*this);
 }
-
 }  // namespace maple
 #endif  // MEMPOOL_INCLUDE_MEMPOOL_ALLOCATOR_H

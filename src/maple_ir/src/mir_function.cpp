@@ -334,14 +334,14 @@ void MIRFunction::NewBody() {
 
 void MIRFunction::SetUpGDBEnv() {
   if (codeMemPool != nullptr) {
-    mempoolctrler.DeleteMemPool(codeMemPool);
+    memPoolCtrler.DeleteMemPool(codeMemPool);
   }
-  codeMemPool = mempoolctrler.NewMemPool("tmp debug");
+  codeMemPool = memPoolCtrler.NewMemPool("tmp debug");
   codeMemPoolAllocator.SetMemPool(codeMemPool);
 }
 
 void MIRFunction::ResetGDBEnv() {
-  mempoolctrler.DeleteMemPool(codeMemPool);
+  memPoolCtrler.DeleteMemPool(codeMemPool);
   codeMemPool = nullptr;
 }
 

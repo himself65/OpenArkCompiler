@@ -165,7 +165,7 @@ MIRPragmaElement *MIRPragma::GetPragmaElemFromSignature(const std::string &signa
       case kStartWithSubvec: {
         MIRPragmaElement *etmp = mod->GetMemPool()->New<MIRPragmaElement>(*mod);
         etmp->SetType(kValueArray);
-        elemStack.top()->PushSubElemVec(*etmp);
+        elemStack.top()->SubElemVecPushBack(etmp);
         elemStack.push(etmp);
         break;
       }
@@ -174,7 +174,7 @@ MIRPragmaElement *MIRPragma::GetPragmaElemFromSignature(const std::string &signa
         etmp->SetType(kValueType);
         std::string typeStr = signature.substr(start, end - start);
         etmp->SetU64Val(static_cast<uint64>(GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(typeStr).GetIdx()));
-        elemStack.top()->PushSubElemVec(*etmp);
+        elemStack.top()->SubElemVecPushBack(etmp);
         break;
       }
       case kNormalTypeStrEndWithSubvecNeedSemicolon: {
@@ -182,7 +182,7 @@ MIRPragmaElement *MIRPragma::GetPragmaElemFromSignature(const std::string &signa
         etmp->SetType(kValueType);
         std::string typeStr = signature.substr(start, end - start) + ";";
         etmp->SetU64Val(static_cast<uint64>(GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(typeStr).GetIdx()));
-        elemStack.top()->PushSubElemVec(*etmp);
+        elemStack.top()->SubElemVecPushBack(etmp);
         break;
       }
       case kEndWithSubvec:

@@ -37,7 +37,7 @@ class MIRLexer {
 
   void PrepareForFile(const std::string &filename);
   void PrepareForString(const std::string &src);
-  TokenKind NextToken(void);
+  TokenKind NextToken();
   TokenKind LexToken();
   TokenKind GetTokenKind() const {
     return kind;

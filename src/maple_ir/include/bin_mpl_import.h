@@ -90,7 +90,7 @@ class BinaryMplImport {
   TyIdx ImportType(bool forPointedType = false);
   void ImportTypeBase(PrimType &primType, GStrIdx &strIdx, bool &nameIsLocal);
   void InSymTypeTable();
-  void ImportTypePairs(std::vector<TypePair> &tpairs);
+  void ImportTypePairs(MIRInstantVectorType &insVecType);
   TypeAttrs ImportTypeAttrs();
   MIRPragmaElement *ImportPragmaElement();
   MIRPragma *ImportPragma();

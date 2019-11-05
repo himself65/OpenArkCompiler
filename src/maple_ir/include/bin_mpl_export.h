@@ -84,7 +84,7 @@ class BinaryMplExport {
   void OutputConstBase(const MIRConst &c);
   void OutputStr(const GStrIdx &gstr);
   void OutputUsrStr(UStrIdx ustr);
-  void OutputTypePairs(MIRInstantVectorType &typ);
+  void OutputTypePairs(const MIRInstantVectorType &typ);
   void OutputTypeBase(const MIRType &type);
   void OutputType(const TyIdx &tyIdx);
   void OutputTypeAttrs(const TypeAttrs &ta);

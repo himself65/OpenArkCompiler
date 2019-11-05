@@ -67,11 +67,17 @@ bool MIRParser::ParseStmtRegassign(StmtNodePtr &stmt) {
   regassign->SetPrimType(GetPrimitiveType(lexer.GetTokenKind()));
   lexer.NextToken();
   if (lexer.GetTokenKind() == kTkSpecialreg) {
-    if (!ParseSpecialReg(regassign->GetRegIdx())) {
+    PregIdx tempPregIdx = regassign->GetRegIdx();
+    bool isSuccess = ParseSpecialReg(tempPregIdx);
+    regassign->SetRegIdx(tempPregIdx);
+    if (!isSuccess) {
       return false;
     }
   } else if (lexer.GetTokenKind() == kTkPreg) {
-    if (!ParsePseudoReg(regassign->GetPrimType(), regassign->GetRegIdx())) {
+    PregIdx tempPregIdx = regassign->GetRegIdx();
+    bool isSuccess = ParsePseudoReg(regassign->GetPrimType(), tempPregIdx);
+    regassign->SetRegIdx(tempPregIdx);
+    if (!isSuccess) {
       return false;
     }
   } else {
@@ -558,7 +564,7 @@ bool MIRParser::ParseStmtSwitch(StmtNodePtr &stmt) {
 }
 
 bool MIRParser::ParseStmtRangegoto(StmtNodePtr &stmt) {
-  RangegotoNode *rangegotonode = mod.CurFuncCodeMemPool()->New<RangegotoNode>(mod);
+  RangeGotoNode *rangegotonode = mod.CurFuncCodeMemPool()->New<RangeGotoNode>(mod);
   stmt = rangegotonode;
   lexer.NextToken();
   BaseNode *expr = nullptr;
@@ -793,7 +799,7 @@ bool MIRParser::ParseStmtCall(StmtNodePtr &stmt) {
       return false;
     }
     MIRInstantVectorType instvecty;
-    if (!ParseGenericInstantVector(instvecty.GetInstantVec())) {
+    if (!ParseGenericInstantVector(instvecty)) {
       Error("error parsing generic method instantiation at ");
       return false;
     }
@@ -1831,13 +1837,22 @@ bool MIRParser::ParseExprRegread(BaseNodePtr &expr) {
   }
   expr->SetPrimType(GlobalTables::GetTypeTable().GetPrimTypeFromTyIdx(tyidx));
   if (lexer.GetTokenKind() == kTkSpecialreg) {
-    return ParseSpecialReg(regread->GetRegIdx());
+    PregIdx tempPregIdx = regread->GetRegIdx();
+    bool isSuccess = ParseSpecialReg(tempPregIdx);
+    regread->SetRegIdx(tempPregIdx);
+    return isSuccess;
   }
   if (lexer.GetTokenKind() == kTkPreg) {
     if (expr->GetPrimType() == PTY_ptr || expr->GetPrimType() == PTY_ref) {
-      return ParseRefPseudoReg(regread->GetRegIdx());
+      PregIdx tempPregIdx = regread->GetRegIdx();
+      bool isSuccess = ParseRefPseudoReg(tempPregIdx);
+      regread->SetRegIdx(tempPregIdx);
+      return isSuccess;
     } else {
-      return ParsePseudoReg(expr->GetPrimType(), regread->GetRegIdx());
+      PregIdx tempPregIdx = regread->GetRegIdx();
+      bool isSuccess = ParsePseudoReg(expr->GetPrimType(), tempPregIdx);
+      regread->SetRegIdx(tempPregIdx);
+      return isSuccess;
     }
   }
   Error("expect special or pseudo register but get ");

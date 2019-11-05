@@ -37,13 +37,6 @@ class Compiler {
   virtual ~Compiler() = default;
 
   virtual ErrorCode Compile(const MplOptions &options, MIRModulePtr &theModule);
-  const std::string &GetName() const {
-    return name;
-  }
-
-  virtual const std::vector<std::string> GetBinNames() const {
-    return std::vector<std::string>();
-  }
 
   virtual void GetTmpFilesToDelete(const MplOptions &mplOptions, std::vector<std::string> &tempFiles) const {}
 
@@ -61,7 +54,7 @@ class Compiler {
 
   virtual const std::string GetInputFileName(const MplOptions &options) const {
     std::ostringstream ss;
-    for (auto const &inputFile : options.splitsInputFiles) {
+    for (auto const &inputFile : options.GetSplitsInputFiles()) {
       ss << " " << inputFile;
     }
     return ss.str();
@@ -71,75 +64,79 @@ class Compiler {
     return DefaultOption();
   }
 
-  virtual void AppendExtraOptions(std::map<std::string, MplOption> &finalOptions,
-                                  const std::map<std::string, std::vector<MplOption>> &extraOptions) const;
   virtual const std::string AppendSpecialOption(const MplOptions &options, const std::string &optionStr) const {
     return optionStr;
   }
 
   virtual const std::string AppendOptimization(const MplOptions &options, const std::string &optionStr) const;
+
+  virtual const std::vector<std::string> GetBinNames() const {
+    return std::vector<std::string>();
+  }
+
   const bool CanAppendOptimization(const std::string &optionStr) const;
-  void AppendOptions(std::map<std::string, MplOption> &finalOptions, const std::string &key, const std::string &value,
-                     const std::string &connectSymbol) const;
 
  private:
+  const std::string name;
   const std::string MakeOption(const MplOptions &options);
   void AppendDefaultOptions(std::map<std::string, MplOption> &finalOptions,
                             const std::map<std::string, MplOption> &defaultOptions) const;
   void AppendUserOptions(std::map<std::string, MplOption> &finalOptions,
                          const std::vector<mapleOption::Option> &userOption) const;
+  void AppendOptions(std::map<std::string, MplOption> &finalOptions, const std::string &key, const std::string &value,
+                     const std::string &connectSymbol) const;
+  void AppendExtraOptions(std::map<std::string, MplOption> &finalOptions,
+                          const std::map<std::string, std::vector<MplOption>> &extraOptions) const;
   const std::map<std::string, MplOption> MakeDefaultOptions(const MplOptions &options);
   const int Exe(const MplOptions &mplOptions, const std::string &options) const;
-  const std::string name;
+  const std::string &GetName() const {
+    return name;
+  }
 };
 
 class Jbc2MplCompiler : public Compiler {
  public:
   explicit Jbc2MplCompiler(const std::string &name) : Compiler(name) {}
 
-  ~Jbc2MplCompiler() {}
+  ~Jbc2MplCompiler() = default;
 
-  const std::vector<std::string> GetBinNames() const;
-
- protected:
-  const std::string GetBinName() const;
-  const DefaultOption GetDefaultOptions(const MplOptions &options);
-  void GetTmpFilesToDelete(const MplOptions &mplOptions, std::vector<std::string> &tempFiles) const;
-  const std::unordered_set<std::string> GetFinalOutputs(const MplOptions &mplOptions) const;
+ private:
+  const std::string GetBinName() const override;
+  const DefaultOption GetDefaultOptions(const MplOptions &options) override;
+  void GetTmpFilesToDelete(const MplOptions &mplOptions, std::vector<std::string> &tempFiles) const override;
+  const std::unordered_set<std::string> GetFinalOutputs(const MplOptions &mplOptions) const override;
+  const std::vector<std::string> GetBinNames() const override;
 };
 
 class MapleCombCompiler : public Compiler {
  public:
   explicit MapleCombCompiler(const std::string &name) : Compiler(name), realRunningExe("") {}
 
-  ~MapleCombCompiler() {}
+  ~MapleCombCompiler() = default;
 
-  ErrorCode Compile(const MplOptions &options, MIRModulePtr &theModule);
-  void PrintCommand(const MplOptions &options) const;
-  const std::string GetInputFileName(const MplOptions &options) const;
-
- protected:
-  const std::unordered_set<std::string> GetFinalOutputs(const MplOptions &mplOptions) const;
+  ErrorCode Compile(const MplOptions &options, MIRModulePtr &theModule) override;
+  void PrintCommand(const MplOptions &options) const override;
+  const std::string GetInputFileName(const MplOptions &options) const override;
 
  private:
+  std::string realRunningExe;
+  const std::unordered_set<std::string> GetFinalOutputs(const MplOptions &mplOptions) const override;
   MeOption *MakeMeOptions(const MplOptions &options, MemPool &optmp);
   Options *MakeMpl2MplOptions(const MplOptions &options, MemPool &optmp);
-  std::string realRunningExe;
 };
 
 class MplcgCompiler : public Compiler {
  public:
   explicit MplcgCompiler(const std::string &name) : Compiler(name) {}
 
-  ~MplcgCompiler() {}
+  ~MplcgCompiler() = default;
 
-  const std::string GetBinName() const;
-  const std::vector<std::string> GetBinNames() const;
 
- protected:
-  const std::string GetInputFileName(const MplOptions &options) const;
-  const DefaultOption GetDefaultOptions(const MplOptions &options);
-
+ private:
+  const std::string GetInputFileName(const MplOptions &options) const override;
+  const DefaultOption GetDefaultOptions(const MplOptions &options) override;
+  const std::string GetBinName() const override;
+  const std::vector<std::string> GetBinNames() const override;
 };
 
 }  // namespace maple

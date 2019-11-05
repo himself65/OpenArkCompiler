@@ -38,7 +38,7 @@ class AnalysisResult {
   }
 
   void EraseMemPool() {
-    mempoolctrler.DeleteMemPool(memPool);
+    memPoolCtrler.DeleteMemPool(memPool);
   }
 
   virtual ~AnalysisResult() {}
@@ -62,7 +62,7 @@ class Phase {
     ASSERT(!phaseName.empty(), "PhaseName should not be empty");
     memPoolCount++;
     std::string memPoolName = phaseName + " MemPool " + std::to_string(memPoolCount);
-    MemPool *memPool = mempoolctrler.NewMemPool(memPoolName.c_str());
+    MemPool *memPool = memPoolCtrler.NewMemPool(memPoolName.c_str());
     memPools.push_back(memPool);
     return memPool;
   }
@@ -73,7 +73,7 @@ class Phase {
       if (memPool == exclusion) {
         continue;
       }
-      mempoolctrler.DeleteMemPool(memPool);
+      memPoolCtrler.DeleteMemPool(memPool);
       memPool = nullptr;
     }
     memPools.clear();

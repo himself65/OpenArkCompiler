@@ -1685,7 +1685,7 @@ void ReflectionAnalysis::Run() {
 }
 
 AnalysisResult *DoReflectionAnalysis::Run(MIRModule *module, ModuleResultMgr *mrm) {
-  MemPool *memPool = mempoolctrler.NewMemPool("ReflectionAnalysis mempool");
+  MemPool *memPool = memPoolCtrler.NewMemPool("ReflectionAnalysis mempool");
   auto *kh = static_cast<KlassHierarchy*>(mrm->GetAnalysisResult(MoPhase_CHA, module));
   maple::MIRBuilder mirBuilder(module);
   ReflectionAnalysis *rv = memPool->New<ReflectionAnalysis>(module, memPool, kh, mirBuilder);
@@ -1694,7 +1694,7 @@ AnalysisResult *DoReflectionAnalysis::Run(MIRModule *module, ModuleResultMgr *mr
   }
   rv->Run();
   // This is a transform phase, delete mempool.
-  mempoolctrler.DeleteMemPool(memPool);
+  memPoolCtrler.DeleteMemPool(memPool);
   return nullptr;
 }
 }  // namespace maple

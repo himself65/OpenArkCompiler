@@ -631,7 +631,7 @@ FieldID MIRClassType::GetFirstLocalFieldID() const {
   } else if (parentTyIdx != 0) {
     MIRClassType *parentClassType =
         MIR_DYN_CAST(GlobalTables::GetTypeTable().GetTypeFromTyIdx(parentTyIdx), MIRClassType*);
-    ASSERT(parentClassType != nullptr, "null pointer check");
+    CHECK_FATAL(parentClassType != nullptr, "null pointer check");
     return (!parentClassType->IsLocal()) ? parentClassType->GetLastFieldID() + lastFieldIDOffset
                                          : parentClassType->GetFirstLocalFieldID() + firstLocalFieldIDOffset;
   }
@@ -1367,7 +1367,6 @@ bool MIRInterfaceType::HasTypeParam() const {
 
 FieldPair MIRClassType::TraverseToFieldRef(FieldID &fieldID) const {
   if (parentTyIdx != 0) {
-    // parent can be a struct?
     MIRClassType *parentClassType =
         MIR_DYN_CAST(GlobalTables::GetTypeTable().GetTypeFromTyIdx(parentTyIdx), MIRClassType*);
     if (parentClassType != nullptr) {

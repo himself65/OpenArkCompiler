@@ -1514,11 +1514,12 @@ class MIRInstantVectorType : public MIRType {
     return 0;
   }  // size unknown
 
-  GenericInstantVector &GetInstantVec() {
-    return instantVec;
-  }
   const GenericInstantVector &GetInstantVec() const {
     return instantVec;
+  }
+
+  void AddInstant(TypePair typePair) {
+    instantVec.push_back(typePair);
   }
 
   size_t GetHashIndex() const override {

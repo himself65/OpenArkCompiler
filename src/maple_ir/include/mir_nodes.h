@@ -1129,13 +1129,13 @@ class ArrayNode : public NaryNode {
     return nd;
   }
 
-  MIRType *GetArrayType(TypeTable &tt) const;
+  MIRType *GetArrayType(const TypeTable &tt) const;
 
   BaseNode *GetIndex(size_t i) {
     return Opnd(i + 1);
   }
 
-  BaseNode *GetDim(const MIRModule &mod, TypeTable &tt, int i);
+  BaseNode *GetDim(const MIRModule &mod, const TypeTable &tt, int i) const;
   BaseNode *GetBase() {
     return Opnd(0);
   }
@@ -1179,7 +1179,7 @@ class AddrofNode : public BaseNode {
     return allocator.GetMemPool()->New<AddrofNode>(*this);
   }
 
-  const StIdx &GetStIdx() const {
+  StIdx GetStIdx() const {
     return stIdx;
   }
 
@@ -1226,14 +1226,9 @@ class RegreadNode : public BaseNode {
     return allocator.GetMemPool()->New<RegreadNode>(*this);
   }
 
-  const PregIdx &GetRegIdx() const {
+  PregIdx GetRegIdx() const {
     return regIdx;
   }
-
-  PregIdx &GetRegIdx() {
-    return regIdx;
-  }
-
   void SetRegIdx(PregIdx reg) {
     regIdx = reg;
   }
@@ -1680,7 +1675,7 @@ class CatchNode : public StmtNode {
     return exceptionTyIdxVec[i];
   }
 
-  MapleVector<TyIdx> &GetExceptionTyIdxVec() {
+  const MapleVector<TyIdx> &GetExceptionTyIdxVec() const {
     return exceptionTyIdxVec;
   }
 
@@ -1981,11 +1976,9 @@ class DassignNode : public UnaryStmtNode {
     UnaryStmtNode::SetOpnd(rhs, 0);
   }
 
-
-  const StIdx &GetStIdx() const {
+  StIdx GetStIdx() const {
     return stIdx;
   }
-
   void SetStIdx(StIdx s) {
     stIdx = s;
   }
@@ -2032,14 +2025,9 @@ class RegassignNode : public UnaryStmtNode {
     UnaryStmtNode::SetOpnd(rhs, 0);
   }
 
-  PregIdx &GetRegIdx() {
+  PregIdx GetRegIdx() const {
     return regIdx;
   }
-
-  const PregIdx &GetRegIdx() const {
-    return regIdx;
-  }
-
   void SetRegIdx(PregIdx idx) {
     regIdx = idx;
   }
@@ -2083,29 +2071,29 @@ class CondGotoNode : public UnaryStmtNode {
 
 using SmallCasePair = std::pair<uint16, uint16>;
 using SmallCaseVector = MapleVector<SmallCasePair>;
-class RangegotoNode : public UnaryStmtNode {
+class RangeGotoNode : public UnaryStmtNode {
  public:
-  explicit RangegotoNode(MapleAllocator &allocator)
+  explicit RangeGotoNode(MapleAllocator &allocator)
       : UnaryStmtNode(OP_rangegoto), tagOffset(0), rangegotoTable(allocator.Adapter()) {}
 
-  explicit RangegotoNode(const MIRModule &mod) : RangegotoNode(mod.GetCurFuncCodeMPAllocator()) {}
+  explicit RangeGotoNode(const MIRModule &mod) : RangeGotoNode(mod.GetCurFuncCodeMPAllocator()) {}
 
-  RangegotoNode(MapleAllocator &allocator, const RangegotoNode &node)
+  RangeGotoNode(MapleAllocator &allocator, const RangeGotoNode &node)
       : UnaryStmtNode(node.GetOpCode(), node.GetPrimType()),
         tagOffset(node.tagOffset),
         rangegotoTable(allocator.Adapter()) {}
 
-  RangegotoNode(const MIRModule &mod, const RangegotoNode &node)
-      : RangegotoNode(mod.GetCurFuncCodeMPAllocator(), node) {}
+  RangeGotoNode(const MIRModule &mod, const RangeGotoNode &node)
+      : RangeGotoNode(mod.GetCurFuncCodeMPAllocator(), node) {}
 
-  RangegotoNode(RangegotoNode &node) = delete;
-  RangegotoNode &operator=(const RangegotoNode &node) = delete;
-  ~RangegotoNode() = default;
+  RangeGotoNode(RangeGotoNode &node) = delete;
+  RangeGotoNode &operator=(const RangeGotoNode &node) = delete;
+  ~RangeGotoNode() = default;
 
   void Dump(const MIRModule &mod, int32 indent) const;
   bool Verify() const;
-  RangegotoNode *CloneTree(MapleAllocator &allocator) const {
-    RangegotoNode *nd = allocator.GetMemPool()->New<RangegotoNode>(allocator, *this);
+  RangeGotoNode *CloneTree(MapleAllocator &allocator) const {
+    RangeGotoNode *nd = allocator.GetMemPool()->New<RangeGotoNode>(allocator, *this);
     nd->SetOpnd(Opnd()->CloneTree(allocator));
     for (size_t i = 0; i < rangegotoTable.size(); i++) {
       nd->rangegotoTable.push_back(rangegotoTable[i]);

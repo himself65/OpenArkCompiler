@@ -74,7 +74,7 @@ void MeFuncPhaseManager::RegisterFuncPhases() {
 
 void MeFuncPhaseManager::AddPhasesNoDefault(const std::vector<std::string> &phases) {
   for (size_t i = 0; i < phases.size(); i++) {
-    PhaseManager::AddPhase(phases[i].c_str());
+    PhaseManager::AddPhase(phases[i]);
   }
   ASSERT(phases.size() == GetPhaseSequence()->size(), "invalid phase name");
 }
@@ -83,7 +83,7 @@ void MeFuncPhaseManager::AddPhases(const std::unordered_set<std::string> &skipPh
   auto addPhase = [&](const std::string &phase) {
     std::unordered_set<std::string>::const_iterator it = skipPhases.find(phase);
     if (it == skipPhases.end()) {
-      PhaseManager::AddPhase(phase.c_str());
+      PhaseManager::AddPhase(phase);
     }
   };
   if (mePhaseType == kMePhaseMainopt) {
@@ -106,15 +106,15 @@ bool MeFuncPhaseManager::FuncFilter(const std::string &filter, const std::string
 
 void MeFuncPhaseManager::IPACleanUp(MeFunction *func) {
   GetAnalysisResultManager()->InvalidAllResults();
-  mempoolctrler.DeleteMemPool(func->GetMemPool());
+  memPoolCtrler.DeleteMemPool(func->GetMemPool());
 }
 
 void MeFuncPhaseManager::Run(MIRFunction *mirFunc, uint64 rangeNum, const std::string &meInput) {
   if (!MeOption::quiet)
     LogInfo::MapleLogger() << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>> Optimizing Function  < " << mirFunc->GetName()
                            << " id=" << mirFunc->GetPuidxOrigin() << " >---\n";
-  MemPool *funcMP = mempoolctrler.NewMemPool("maple_me per-function mempool");
-  MemPool *versMP = mempoolctrler.NewMemPool("first verst mempool");
+  MemPool *funcMP = memPoolCtrler.NewMemPool("maple_me per-function mempool");
+  MemPool *versMP = memPoolCtrler.NewMemPool("first verst mempool");
   MeFunction func(&mirModule, mirFunc, funcMP, versMP, meInput);
   func.PartialInit(false);
 #if DEBUG
@@ -164,7 +164,7 @@ void MeFuncPhaseManager::Run(MIRFunction *mirFunc, uint64 rangeNum, const std::s
       CHECK_FATAL(false, "phases in ipa will not chang cfg.");
     }
     // do all the phases start over
-    MemPool *versMemPool = mempoolctrler.NewMemPool("second verst mempool");
+    MemPool *versMemPool = memPoolCtrler.NewMemPool("second verst mempool");
     MeFunction function(&mirModule, mirFunc, funcMP, versMemPool, meInput);
     function.PartialInit(true);
     function.Prepare(rangeNum);
@@ -189,7 +189,7 @@ void MeFuncPhaseManager::Run(MIRFunction *mirFunc, uint64 rangeNum, const std::s
     GetAnalysisResultManager()->InvalidAllResults();
   }
   if (!ipa) {
-    mempoolctrler.DeleteMemPool(funcMP);
+    memPoolCtrler.DeleteMemPool(funcMP);
   }
 }
 }  // namespace maple

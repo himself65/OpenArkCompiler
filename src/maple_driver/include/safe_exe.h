@@ -36,36 +36,26 @@ class SafeExe {
    */
 #if __linux__ or __linux
   static ErrorCode HandleCommand(const std::string &cmd, const std::string &args) {
-    std::vector<std::string> tmpArgs;
-    StringUtils::Split(args, tmpArgs, ' ');
-    // remove ' ' in vector
-    for (auto iter = tmpArgs.begin(); iter != tmpArgs.end();) {
-      if (*iter == " " || *iter == "") {
-        iter = tmpArgs.erase(iter);
-      } else {
-        iter++;
-      }
-    }
-    tmpArgs.insert(tmpArgs.begin(), cmd);
+    std::vector<std::string> vectorArgs = ParseArgsVector(cmd, args);
     // extra space for exe name and args
-    char **argv = new char* [tmpArgs.size() + 1];
+    char **argv = new char*[vectorArgs.size() + 1];
     // argv[0] is program name
     // copy args
-    for (int j = 0;  j < tmpArgs.size();  ++j) {
-       int strLength = tmpArgs[j].size();
+    for (int j = 0;  j < vectorArgs.size();  ++j) {
+       int strLength = vectorArgs[j].size();
        argv[j] = new char[strLength + 1];
-       strncpy_s(argv[j], strLength + 1, tmpArgs[j].c_str(), strLength);
+       strncpy_s(argv[j], strLength + 1, vectorArgs[j].c_str(), strLength);
        argv[j][strLength] = '\0';
     }
-    // end of arguments sentinel is NULL
-    argv[tmpArgs.size()] = NULL;
+    // end of arguments sentinel is nullptr
+    argv[vectorArgs.size()] = nullptr;
     pid_t pid = fork();
     ErrorCode ret = ErrorCode::kErrorNoError;
     if (pid == 0) {
       // child process
-      fflush(NULL);
+      fflush(nullptr);
       if (execv(cmd.c_str(), argv) < 0) {
-        for (int j = 0;  j < tmpArgs.size();  ++j) {
+        for (int j = 0;  j < vectorArgs.size();  ++j) {
           delete [] argv[j];
         }
         delete [] argv;
@@ -83,7 +73,7 @@ class SafeExe {
         ret = ErrorCode::kErrorCompileFail;
       }
     }
-    for (int j = 0;  j < tmpArgs.size();  ++j) {
+    for (int j = 0;  j < vectorArgs.size();  ++j) {
       delete [] argv[j];
     }
     delete [] argv;
@@ -104,6 +94,21 @@ class SafeExe {
 #else
     return ErrorCode::kErrorNotImplement;
 #endif
+  }
+ private:
+  static std::vector<std::string> ParseArgsVector(const std::string &cmd, const std::string &args) {
+    std::vector<std::string> tmpArgs;
+    StringUtils::Split(args, tmpArgs, ' ');
+    // remove ' ' in vector
+    for (auto iter = tmpArgs.begin(); iter != tmpArgs.end();) {
+      if (*iter == " " || *iter =="") {
+        iter = tmpArgs.erase(iter);
+      } else {
+        iter++;
+      }
+    }
+    tmpArgs.insert(tmpArgs.begin(), cmd);
+    return tmpArgs;
   }
 };
 }  // namespace maple

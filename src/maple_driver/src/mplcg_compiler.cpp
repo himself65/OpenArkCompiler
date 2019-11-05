@@ -21,7 +21,7 @@ using namespace maple;
 
 const DefaultOption MplcgCompiler::GetDefaultOptions(const MplOptions &options) {
   DefaultOption defaultOptions = { nullptr, 0 };
-  if (options.optimizationLevel == kO0 && options.setDefaultLevel) {
+  if (options.GetOptimizationLevel() == kO0 && options.GetSetDefaultLevel()) {
     defaultOptions.mplOptions = kMplcgDefaultOptionsO0;
     defaultOptions.length = sizeof(kMplcgDefaultOptionsO0) / sizeof(MplOption);
   }
@@ -39,11 +39,11 @@ const std::vector<std::string> MplcgCompiler::GetBinNames() const {
 }
 
 const std::string MplcgCompiler::GetInputFileName(const MplOptions &options) const {
-  std::string::size_type idx = options.outputName.find(".VtableImpl");
-  std::string outputName = options.outputName;
+  std::string::size_type idx = options.GetOutputName().find(".VtableImpl");
+  std::string outputName = options.GetOutputName();
   if (idx != std::string::npos) {
-    outputName = options.outputName.substr(0, idx);
+    outputName = options.GetOutputName().substr(0, idx);
   }
-  return options.outputFolder + outputName + ".VtableImpl.mpl";
+  return options.GetOutputFolder() + outputName + ".VtableImpl.mpl";
 }
 

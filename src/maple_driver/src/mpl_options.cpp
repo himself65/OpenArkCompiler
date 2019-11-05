@@ -250,7 +250,7 @@ ErrorCode MplOptions::CheckFileExits() {
     std::ifstream infile;
     infile.open(fileName);
     if (infile.fail()) {
-      LogInfo::MapleLogger(kLlErr) << "Cannot open input file " << fileName << std::endl;
+      LogInfo::MapleLogger(kLlErr) << "Cannot open input file " << fileName << '\n';
       ret = ErrorCode::kErrorFileNotFound;
       return ret;
     }
@@ -314,10 +314,6 @@ const std::string MplOptions::OptimizationLevelStr() const {
   }
 }
 
-void MplOptions::UpdateOptLevel(OptimizationLevel level) {
-  this->optimizationLevel = level;
-}
-
 ErrorCode MplOptions::AppendDefaultCombOptions() {
   ErrorCode ret = ErrorCode::kErrorNoError;
   if (optimizationLevel == kO0) {
@@ -343,10 +339,9 @@ ErrorCode MplOptions::AppendDefaultCgOptions() {
 }
 
 ErrorCode MplOptions::AppendDefaultOptions(const std::string &exeName, MplOption mplOptions[], unsigned int length) {
-  bool ret = true;
   auto &exeOption = exeOptions[exeName];
   for (unsigned int i = 0; i < length; i++) {
-    ret = optionParser->SetOption(mplOptions[i].key, mplOptions[i].value, exeName, exeOption);
+    bool ret = optionParser->SetOption(mplOptions[i].GetKey(), mplOptions[i].GetValue(), exeName, exeOption);
     if (!ret) {
       return ErrorCode::kErrorInvalidParameter;
     }
@@ -376,13 +371,13 @@ ErrorCode MplOptions::UpdatePhaseOption(const std::string &args, const std::stri
   // For compiler bins called by system()
   auto &extraOption = extras[exeName];
   for (size_t i = 0; i < exeOption.size(); i++) {
-    MplOption mplOption;
     if (exeOption[i].Args() != "") {
-      mplOption.init("-" + exeOption[i].OptionKey(), exeOption[i].Args(), "=", false, "");
+      MplOption mplOption("-" + exeOption[i].OptionKey(), exeOption[i].Args(), "=", false, "");
+      extraOption.push_back(mplOption);
     } else {
-      mplOption.init("-" + exeOption[i].OptionKey(), "", " ", false, "");
+      MplOption mplOption("-" + exeOption[i].OptionKey(), "", " ", false, "");
+      extraOption.push_back(mplOption);
     }
-    extraOption.push_back(mplOption);
   }
   return ret;
 }
@@ -393,7 +388,7 @@ ErrorCode MplOptions::UpdateExtraOptionOpt(const std::string &args) {
   if (temp.size() != extras.size() && temp.size() != runningExes.size()) {
     // parameter not match ignore
     LogInfo::MapleLogger(kLlErr) << "The --run and --option are not matched, please check them.(Too many ':'?)"
-                                 << std::endl;
+                                 << '\n';
     return ErrorCode::kErrorInvalidParameter;
   }
   auto settingExe = runningExes.begin();

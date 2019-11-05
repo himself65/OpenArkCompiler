@@ -37,9 +37,9 @@ AnalysisResult *MeDoEmit::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, Mod
       ASSERT(func->GetIRMap() != nullptr, "null ptr check");
       MIRFunction *mirFunction = func->GetMirFunc();
       if (mirFunction->GetCodeMempool() != nullptr) {
-        mempoolctrler.DeleteMemPool(mirFunction->GetCodeMempool());
+        memPoolCtrler.DeleteMemPool(mirFunction->GetCodeMempool());
       }
-      mirFunction->SetCodeMemPool(mempoolctrler.NewMemPool("IR from IRMap::Emit()"));
+      mirFunction->SetCodeMemPool(memPoolCtrler.NewMemPool("IR from IRMap::Emit()"));
       mirFunction->GetCodeMPAllocator().SetMemPool(mirFunction->GetCodeMempool());
       mirFunction->SetBody(mirFunction->GetCodeMempool()->New<BlockNode>());
       // initialize is_deleted field to true; will reset when emitting Maple IR

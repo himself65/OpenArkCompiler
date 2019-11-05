@@ -533,7 +533,7 @@ TokenKind MIRLexer::GetTokenSpecial() {
   return kTkEof;
 }
 
-TokenKind MIRLexer::LexToken(void) {
+TokenKind MIRLexer::LexToken() {
   // skip spaces
   char c = GetCurrentCharWithUpperCheck();
   while (c == ' ' || c == '\t') {
@@ -554,9 +554,9 @@ TokenKind MIRLexer::LexToken(void) {
       c = GetNextCurrentCharWithUpperCheck();
     }
   }
-  char curchar = c;
+  char curChar = c;
   curIdx++;
-  switch (curchar) {
+  switch (curChar) {
     case '\n':
       return kTkNewline;
     case '(':
@@ -611,7 +611,7 @@ TokenKind MIRLexer::LexToken(void) {
       return GetTokenWithPrefixAmpersand();
     case '@':
     case '^':
-      return GetTokenWithPrefixAtOrCircumflex(curchar);
+      return GetTokenWithPrefixAtOrCircumflex(curChar);
     case '!':
       return GetTokenWithPrefixExclamation();
     case '\'':

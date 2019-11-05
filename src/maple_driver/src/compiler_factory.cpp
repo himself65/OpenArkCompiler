@@ -68,13 +68,13 @@ ErrorCode CompilerFactory::DeleteTmpFiles(const MplOptions &mplOptions, const st
   int ret = 0;
   for (auto tmpFile : tempFiles) {
     bool isSave = false;
-    for (auto saveFile : mplOptions.saveFiles) {
+    for (auto saveFile : mplOptions.GetSaveFiles()) {
       if (!saveFile.empty() && std::regex_match(tmpFile, std::regex(StringUtils::Replace(saveFile, "*", ".*?")))) {
         isSave = true;
         break;
       }
     }
-    if (!isSave && mplOptions.inputFiles.find(tmpFile) == std::string::npos &&  // not input
+    if (!isSave && mplOptions.GetInputFiles().find(tmpFile) == std::string::npos &&  // not input
         (finalOutputs.find(tmpFile) == finalOutputs.end())) {                   // not output
       ret = FileUtils::Remove(tmpFile);
     }
@@ -100,7 +100,7 @@ ErrorCode CompilerFactory::Compile(const MplOptions &mplOptions) {
     }
   }
 
-  if (!mplOptions.isSaveTmps || !mplOptions.saveFiles.empty()) {
+  if (!mplOptions.GetIsSaveTmps() || !mplOptions.GetSaveFiles().empty()) {
     auto tmpFiles = std::vector<std::string>();
     for (auto compiler : compilers) {
       compiler->GetTmpFilesToDelete(mplOptions, tmpFiles);

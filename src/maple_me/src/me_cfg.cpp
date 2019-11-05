@@ -119,7 +119,7 @@ void MeCFG::BuildMirCFG() {
         LabelIdx labelIdx = tryNode->GetOffset(j);
         ASSERT(func.GetLabelBBIdMap().find(labelIdx) != func.GetLabelBBIdMap().end(), "runtime check error");
         BB *meBB = func.GetLabelBBAt(labelIdx);
-        ASSERT(meBB != nullptr, "null ptr check");
+        CHECK_FATAL(meBB != nullptr, "null ptr check");
         ASSERT(meBB->GetAttributes(kBBAttrIsCatch), "runtime check error");
         size_t si = 0;
         if (meBB->GetAttributes(kBBAttrIsJSFinally) || meBB->GetAttributes(kBBAttrIsCatch)) {
