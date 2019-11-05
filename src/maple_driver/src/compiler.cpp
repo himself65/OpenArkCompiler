@@ -36,14 +36,14 @@ const std::string Compiler::GetBinPath(const MplOptions &mplOptions) const {
     binPath = binPath + FileSeperator::kFileSeperatorChar;
   }
 #else
-  std::string binPath = mplOptions.exeFolder;
+  std::string binPath = mplOptions.GetExeFolder();
 #endif
   return binPath;
 }
 
 ErrorCode Compiler::Compile(const MplOptions &options, MIRModulePtr &theModule) {
   MPLTimer timer = MPLTimer();
-  LogInfo::MapleLogger() << "Starting " << GetName() << std::endl;
+  LogInfo::MapleLogger() << "Starting " << GetName() << '\n';
   timer.Start();
   std::string strOption = MakeOption(options);
   if (strOption.empty()) {
@@ -53,7 +53,7 @@ ErrorCode Compiler::Compile(const MplOptions &options, MIRModulePtr &theModule) 
     return ErrorCode::kErrorCompileFail;
   }
   timer.Stop();
-  LogInfo::MapleLogger() << (GetName() + " consumed ") << timer.Elapsed() << "s" << std::endl;
+  LogInfo::MapleLogger() << (GetName() + " consumed ") << timer.Elapsed() << "s" << '\n';
   return ErrorCode::kErrorNoError;
 }
 
@@ -62,23 +62,23 @@ const std::string Compiler::MakeOption(const MplOptions &options) {
   auto defaultOptions = MakeDefaultOptions(options);
   AppendDefaultOptions(finalOptions, defaultOptions);
   for (auto binName : GetBinNames()) {
-    auto userOption = options.options.find(binName);
-    if (userOption != options.options.end()) {
+    auto userOption = options.GetOptions().find(binName);
+    if (userOption != options.GetOptions().end()) {
       AppendUserOptions(finalOptions, userOption->second);
     }
   }
-  AppendExtraOptions(finalOptions, options.extras);
+  AppendExtraOptions(finalOptions, options.GetExtras());
   std::ostringstream strOption;
   for (auto finalOption : finalOptions) {
-    strOption << " " << finalOption.first << finalOption.second.connectSymbol << finalOption.second.value;
-    if (options.debugFlag) {
+    strOption << " " << finalOption.first << finalOption.second.GetconnectSymbol() << finalOption.second.GetValue();
+    if (options.GetDebugFlag()) {
       LogInfo::MapleLogger() << Compiler::GetName() << " options: " << finalOption.first << " "
-                             << finalOption.second.value << std::endl;
+                             << finalOption.second.GetValue() << '\n';
     }
   }
   strOption << " " << this->GetInputFileName(options);
-  if (options.debugFlag) {
-    LogInfo::MapleLogger() << Compiler::GetName() << " input files: " << GetInputFileName(options) << std::endl;
+  if (options.GetDebugFlag()) {
+    LogInfo::MapleLogger() << Compiler::GetName() << " input files: " << GetInputFileName(options) << '\n';
   }
   return FileUtils::ConvertPathIfNeeded(strOption.str());
 }
@@ -111,7 +111,7 @@ void Compiler::AppendExtraOptions(std::map<std::string, MplOption> &finalOptions
       continue;
     }
     for (auto &secondExtras : extras->second) {
-      AppendOptions(finalOptions, secondExtras.key, secondExtras.value, secondExtras.connectSymbol);
+      AppendOptions(finalOptions, secondExtras.GetKey(), secondExtras.GetValue(), secondExtras.GetconnectSymbol());
     }
   }
 }
@@ -121,7 +121,7 @@ const std::map<std::string, MplOption> Compiler::MakeDefaultOptions(const MplOpt
   std::map<std::string, MplOption> defaultOptions;
   if (rawDefaultOptions.mplOptions != nullptr) {
     for (unsigned int i = 0; i < rawDefaultOptions.length; i++) {
-      defaultOptions.insert(std::make_pair(rawDefaultOptions.mplOptions[i].key, rawDefaultOptions.mplOptions[i]));
+      defaultOptions.insert(std::make_pair(rawDefaultOptions.mplOptions[i].GetKey(), rawDefaultOptions.mplOptions[i]));
     }
   }
   return defaultOptions;
@@ -131,14 +131,14 @@ void Compiler::AppendOptions(std::map<std::string, MplOption> &finalOptions, con
                              const std::string &value, const std::string &connectSymbol) const {
   auto finalOpt = finalOptions.find(key);
   if (finalOpt != finalOptions.end()) {
-    if (finalOpt->second.isAppend) {
-      finalOpt->second.value += finalOpt->second.appendSplit + value;
+    if (finalOpt->second.GetIsAppend()) {
+      std::string temp = finalOpt->second.GetValue() + finalOpt->second.GetAppendSplit() + value;
+      finalOpt->second.SetValue(temp);
     } else {
-      finalOpt->second.value = value;
+      finalOpt->second.SetValue(value);
     }
   } else {
-    MplOption option;
-    option.init(key, value, connectSymbol, false, "");
+    MplOption option(key, value, connectSymbol, false, "");
     finalOptions.insert(make_pair(key, option));
   }
 }

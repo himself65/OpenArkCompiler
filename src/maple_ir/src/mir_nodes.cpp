@@ -414,13 +414,14 @@ void NaryNode::Dump(const MIRModule &mod, int32 indent) const {
   NaryOpnds::Dump(mod, indent);
 }
 
-MIRType *ArrayNode::GetArrayType(TypeTable &tt) const {
-  MIRPtrType *pointType = MIR_DYN_CAST(tt.GetTypeFromTyIdx(tyIdx), MIRPtrType*);
-  ASSERT(pointType != nullptr, "expect array type pointer");
+MIRType *ArrayNode::GetArrayType(const TypeTable &tt) const {
+  MIRType *type = tt.GetTypeFromTyIdx(tyIdx);
+  CHECK_FATAL(type->GetKind() == kTypePointer, "expect array type pointer");
+  auto *pointType = static_cast<MIRPtrType*>(type);
   return tt.GetTypeFromTyIdx(pointType->GetPointedTyIdx());
 }
 
-BaseNode *ArrayNode::GetDim(const MIRModule &mod, TypeTable &tt, int i) {
+BaseNode *ArrayNode::GetDim(const MIRModule &mod, const TypeTable &tt, int i) const {
   MIRArrayType *arrayType = static_cast<MIRArrayType*>(GetArrayType(tt));
   MIRConst *mirConst = mod.CurFuncCodeMemPool()->New<MIRConst>(*tt.GetTypeFromTyIdx(arrayType->GetElemTyIdx()));
   return mod.CurFuncCodeMemPool()->New<ConstvalNode>(mirConst);
@@ -733,7 +734,7 @@ void SwitchNode::Dump(const MIRModule &mod, int32 indent) const {
   LogInfo::MapleLogger() << " }" << std::endl;
 }
 
-void RangegotoNode::Dump(const MIRModule &mod, int32 indent) const {
+void RangeGotoNode::Dump(const MIRModule &mod, int32 indent) const {
   StmtNode::DumpBase(mod, indent);
   LogInfo::MapleLogger() << " (";
   Opnd()->Dump(mod, indent);
@@ -1737,7 +1738,7 @@ bool BinaryStmtNode::Verify() const {
          BinaryStrictSignVerify0(GetBOpnd(0), GetBOpnd(1));
 }
 
-bool RangegotoNode::Verify() const {
+bool RangeGotoNode::Verify() const {
   bool opndExprVerf = Opnd()->Verify();
   bool opndTypeVerf = IntTypeVerify(Opnd()->GetPrimType());
   if (!opndTypeVerf) {

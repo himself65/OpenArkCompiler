@@ -78,8 +78,8 @@ class MIRPragmaElement {
 
   ~MIRPragmaElement() = default;
   void Dump(int indent) const;
-  void PushSubElemVec(MIRPragmaElement &elem) {
-    subElemVec.push_back(&elem);
+  void SubElemVecPushBack(MIRPragmaElement *elem) {
+    subElemVec.push_back(elem);
   }
 
   const MapleVector<MIRPragmaElement*> &GetSubElemVec() const {
@@ -230,6 +230,10 @@ class MIRPragma {
 
   MapleVector<MIRPragmaElement*> &GetElementVector() {
     return elementVec;
+  }
+
+  void ElementVecPushBack(MIRPragmaElement *elem) {
+    elementVec.push_back(elem);
   }
 
   void SetKind(PragmaKind kind) {

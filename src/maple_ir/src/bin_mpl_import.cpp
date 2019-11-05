@@ -115,7 +115,7 @@ MIRConst *BinaryMplImport::ImportConst(MIRFunction *func) {
   } else if (tag == kBinKindConstAddrof) {
     ImportConstBase(kind, type, fieldID);
     MIRSymbol *sym = InSymbol(func);
-    ASSERT(sym != nullptr, "null ptr check");
+    CHECK_FATAL(sym != nullptr, "null ptr check");
     FieldID fi = ReadNum();
     return memPool->New<MIRAddrofConst>(sym->GetStIdx(), fi, *type);
   } else if (tag == kBinKindConstAddrofFunc) {
@@ -169,15 +169,15 @@ MIRConst *BinaryMplImport::ImportConst(MIRFunction *func) {
     MIRStConst *stConst = mod.GetMemPool()->New<MIRStConst>(mod, *type);
     int64 size = ReadNum();
     for (int64 i = 0; i < size; i++) {
-      stConst->PushbackSt(InSymbol(func));
+      stConst->PushbackSymbolToSt(InSymbol(func));
     }
     size = ReadNum();
     for (int64 i = 0; i < size; i++) {
-      stConst->PushbackStOffset(ReadNum());
+      stConst->PushbackOffsetToSt(ReadNum());
     }
     return stConst;
   } else {
-    ASSERT(false, "Unhandled const type");
+    CHECK_FATAL(false, "Unhandled const type");
   }
   return nullptr;
 }
@@ -190,7 +190,7 @@ GStrIdx BinaryMplImport::ImportStr() {
     CHECK_FATAL(-tag < static_cast<int64>(gStrTab.size()), "index out of range in BinaryMplt::ImportStr");
     return gStrTab[-tag];
   } else {
-    ASSERT(tag == kBinString, "expecting kBinString");
+    CHECK_FATAL(tag == kBinString, "expecting kBinString");
     std::string str;
     ReadAsciiStr(str);
     GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(str);
@@ -207,7 +207,7 @@ UStrIdx BinaryMplImport::ImportUsrStr() {
     CHECK_FATAL(-tag < static_cast<int64>(uStrTab.size()), "index out of range in BinaryMplt::InUsrStr");
     return uStrTab[-tag];
   } else {
-    ASSERT(tag == kBinUsrString, "expecting kBinUsrString");
+    CHECK_FATAL(tag == kBinUsrString, "expecting kBinUsrString");
     std::string str;
     ReadAsciiStr(str);
     UStrIdx strIdx = GlobalTables::GetUStrTable().GetOrCreateStrIdxFromName(str);
@@ -229,7 +229,7 @@ MIRPragmaElement *BinaryMplImport::ImportPragmaElement() {
   }
   int64 size = ReadNum();
   for (int64 i = 0; i < size; i++) {
-    element->PushSubElemVec(*ImportPragmaElement());
+    element->SubElemVecPushBack(ImportPragmaElement());
   }
   return element;
 }
@@ -269,7 +269,7 @@ void BinaryMplImport::ImportMethodPair(MethodPair &memPool) {
   ReadAsciiStr(funcName);
   TyIdx funcTyidx = ImportType();
   int64 x = ReadNum();
-  ASSERT(x >= 0, "ReadNum error, x: %d", x);
+  CHECK_FATAL(x >= 0, "ReadNum error, x: %d", x);
   uint64 attrFlag = static_cast<uint64>(x);
 
   GStrIdx stridx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(funcName);
@@ -309,7 +309,7 @@ void BinaryMplImport::ImportMethodPair(MethodPair &memPool) {
 void BinaryMplImport::UpdateMethodSymbols() {
   for (auto sym : methodSymbols) {
     MIRFunction *fn = sym->GetFunction();
-    ASSERT(fn != nullptr, "fn is null");
+    CHECK_FATAL(fn != nullptr, "fn is null");
     MIRFuncType *funcType = static_cast<MIRFuncType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(sym->GetTyIdx()));
     fn->SetMIRFuncType(funcType);
     fn->SetReturnStruct(*GlobalTables::GetTypeTable().GetTypeFromTyIdx(funcType->GetRetTyIdx()));
@@ -379,8 +379,8 @@ void BinaryMplImport::ImportInfoOfStructType(MIRStructType &type) {
   for (int64 i = 0; i < size; i++) {
     GStrIdx idx = ImportStr();
     int64 x = (type.GetInfoIsString()[i]) ? ImportStr().GetIdx() : ReadNum();
-    ASSERT(x >= 0, "ReadNum nagative, x: %d", x);
-    ASSERT(x <= std::numeric_limits<uint32_t>::max(), "ReadNum too large, x: %d", x);
+    CHECK_FATAL(x >= 0, "ReadNum nagative, x: %d", x);
+    CHECK_FATAL(x <= std::numeric_limits<uint32_t>::max(), "ReadNum too large, x: %d", x);
     if (isEmpty) {
       type.PushbackMIRInfo(MIRInfoPair(idx, static_cast<uint32>(x)));
     }
@@ -459,13 +459,13 @@ TypeAttrs BinaryMplImport::ImportTypeAttrs() {
   return ta;
 }
 
-void BinaryMplImport::ImportTypePairs(std::vector<TypePair> &tpairs) {
+void BinaryMplImport::ImportTypePairs(MIRInstantVectorType &insVecType) {
   int64 size = ReadNum();
   for (int64 i = 0; i < size; i++) {
     TyIdx t0 = ImportType();
     TyIdx t1 = ImportType();
     TypePair tp(t0, t1);
-    tpairs.push_back(tp);
+    insVecType.AddInstant(tp);
   }
 }
 
@@ -497,7 +497,7 @@ TyIdx BinaryMplImport::ImportType(bool forPointedType) {
   if (tag == 0) {
     return TyIdx(0);
   } else if (tag < 0) {
-    ASSERT(static_cast<size_t>(-tag) < typTab.size(), "index out of bounds");
+    CHECK_FATAL(static_cast<size_t>(-tag) < typTab.size(), "index out of bounds");
     return typTab.at(-tag)->GetTypeIndex();
   }
   bool nameIsLocal = false;
@@ -588,14 +588,14 @@ TyIdx BinaryMplImport::ImportType(bool forPointedType) {
     type.SetNameIsLocal(nameIsLocal);
     MIRInstantVectorType *origType = static_cast<MIRInstantVectorType*>(&InsertInTypeTables(type));
     typTab.push_back(origType);
-    ImportTypePairs(origType->GetInstantVec());
+    ImportTypePairs(*origType);
     return origType->GetTypeIndex();
   } else if (tag == kBinKindTypeGenericInstant) {
     MIRGenericInstantType type(strIdx);
     type.SetNameIsLocal(nameIsLocal);
     MIRGenericInstantType *origType = static_cast<MIRGenericInstantType*>(&InsertInTypeTables(type));
     typTab.push_back(origType);
-    ImportTypePairs(origType->GetInstantVec());
+    ImportTypePairs(*origType);
     origType->SetGenericTyIdx(ImportType());
     return origType->GetTypeIndex();
   } else if (tag == kBinKindTypeBitField) {
@@ -650,7 +650,7 @@ TyIdx BinaryMplImport::ImportType(bool forPointedType) {
     }
     return origType.GetTypeIndex();
   } else {
-    ASSERT(false, "Unexpected binary kind");
+    CHECK_FATAL(false, "Unexpected binary kind");
   }
   return TyIdx(0);
 }
@@ -689,7 +689,7 @@ MIRType &BinaryMplImport::InsertInTypeTables(MIRType &type) {
     } else {
       // New definition wins
       type.SetTypeIndex(prevTyIdx);
-      ASSERT(GlobalTables::GetTypeTable().GetTypeTable().empty() == false, "container check");
+      CHECK_FATAL(GlobalTables::GetTypeTable().GetTypeTable().empty() == false, "container check");
       GlobalTables::GetTypeTable().SetTypeWithTyIdx(prevTyIdx, type.CopyMIRTypeNode());
       resultTypePtr = GlobalTables::GetTypeTable().GetTypeFromTyIdx(prevTyIdx);
       if (!IsIncomplete(*resultTypePtr)) {
@@ -745,10 +745,10 @@ MIRSymbol *BinaryMplImport::InSymbol(MIRFunction *func) {
   if (tag == 0) {
     return nullptr;
   } else if (tag < 0) {
-    ASSERT(static_cast<size_t>(-tag) < symTab.size(), "index out of bounds");
+    CHECK_FATAL(static_cast<size_t>(-tag) < symTab.size(), "index out of bounds");
     return symTab.at(-tag);
   } else {
-    ASSERT(tag == kBinSymbol, "expecting kBinSymbol");
+    CHECK_FATAL(tag == kBinSymbol, "expecting kBinSymbol");
     int64 scope = ReadNum();
     GStrIdx stridx = ImportStr();
     MIRSymKind skind = static_cast<MIRSymKind>(ReadNum());
@@ -760,9 +760,9 @@ MIRSymbol *BinaryMplImport::InSymbol(MIRFunction *func) {
     sym->SetIsTmp(ReadNum() != 0);
     sym->SetIsImported(imported);
     if (skind == kStPreg) {
-      ASSERT(false, "outing kStPreg");
+      CHECK_FATAL(false, "outing kStPreg");
     } else if (skind == kStConst || skind == kStVar) {
-      ASSERT(false, "outing kStConst or kStVar");
+      CHECK_FATAL(false, "outing kStConst or kStVar");
     } else if (skind == kStFunc) {
       PUIdx puidx = ImportFunction();
       TyIdx tyidx = ImportType();
@@ -778,12 +778,12 @@ PUIdx BinaryMplImport::ImportFunction() {
   if (tag == 0) {
     return 0;
   } else if (tag < 0) {
-    ASSERT(static_cast<size_t>(-tag) < funcTab.size(), "index out of bounds");
+    CHECK_FATAL(static_cast<size_t>(-tag) < funcTab.size(), "index out of bounds");
     return funcTab.at(-tag)->GetPuidx();
   }
-  ASSERT(tag == kBinFunction, "expecting kBinFunction");
+  CHECK_FATAL(tag == kBinFunction, "expecting kBinFunction");
   MIRSymbol *funcSt = InSymbol(nullptr);
-  ASSERT(funcSt != nullptr, "null ptr check");
+  CHECK_FATAL(funcSt != nullptr, "null ptr check");
   MIRFunction *func = nullptr;
   if (funcSt->GetFunction() == nullptr) {
     maple::MIRBuilder builder(&mod);
@@ -814,26 +814,26 @@ inline void BinaryMplImport::SkipTotalSize() {
 void BinaryMplImport::ReadStrField() {
   SkipTotalSize();
 
-  int64 tag = 0;
   int32 size = ReadInt();
   for (int64 i = 0; i < size; i++) {
     GStrIdx stridx = ImportStr();
     GlobalTables::GetConstPool().PutLiteralNameAsImported(stridx);
   }
+  int64 tag = 0;
   tag = ReadNum();
-  ASSERT(tag == ~kBinStrStart, "pattern mismatch in Read STR");
+  CHECK_FATAL(tag == ~kBinStrStart, "pattern mismatch in Read STR");
 }
 
 void BinaryMplImport::ReadTypeField() {
   SkipTotalSize();
 
-  int64 tag = 0;
   int32 size = ReadInt();
   for (int64 i = 0; i < size; i++) {
     ImportType();
   }
+  int64 tag = 0;
   tag = ReadNum();
-  ASSERT(tag == ~kBinTypeStart, "pattern mismatch in Read TYPE");
+  CHECK_FATAL(tag == ~kBinTypeStart, "pattern mismatch in Read TYPE");
 }
 
 void BinaryMplImport::ReadContentField() {
@@ -847,7 +847,7 @@ void BinaryMplImport::ReadContentField() {
     offset = ReadInt();
     content[item] = offset;
   }
-  ASSERT(ReadNum() == ~kBinContentStart, "pattern mismatch in Read CONTENT");
+  CHECK_FATAL(ReadNum() == ~kBinContentStart, "pattern mismatch in Read CONTENT");
 }
 
 void BinaryMplImport::Jump2NextField() {
@@ -884,7 +884,7 @@ bool BinaryMplImport::Import(const std::string &fname, bool readSymbols, bool re
         break;
       }
       default:
-        ASSERT(false, "should not run here");
+        CHECK_FATAL(false, "should not run here");
     }
     fieldID = ReadNum();
   }

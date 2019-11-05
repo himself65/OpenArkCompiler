@@ -34,7 +34,7 @@ namespace maple {
 // Manage the phases of middle and implement some maplecomb-options such as
 // skipAfter, skipFrom, quiet.
 AnalysisResult *DoKlassHierarchy::Run(MIRModule *module, ModuleResultMgr *m) {
-  MemPool *memPool = mempoolctrler.NewMemPool("classhierarchy mempool");
+  MemPool *memPool = memPoolCtrler.NewMemPool("classhierarchy mempool");
   KlassHierarchy *kh = memPool->New<KlassHierarchy>(module, memPool);
   KlassHierarchy::traceFlag = TRACE_PHASE;
   kh->BuildHierarchy();
@@ -72,7 +72,7 @@ void ModulePhaseManager::RegisterModulePhases() {
 
 void ModulePhaseManager::AddModulePhases(const std::vector<std::string> &phases) {
   for (std::string const &phase : phases) {
-    AddPhase(phase.c_str());
+    AddPhase(phase);
   }
 }
 

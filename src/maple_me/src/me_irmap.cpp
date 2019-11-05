@@ -32,7 +32,7 @@ void MeIRMap::Dump() {
   // we dump IRMap, restore the mempool afterwards
   MIRFunction *mirFunction = func.GetMirFunc();
   MemPool *backup = mirFunction->GetCodeMempool();
-  mirFunction->SetMemPool(mempoolctrler.NewMemPool("IR Dump"));
+  mirFunction->SetMemPool(memPoolCtrler.NewMemPool("IR Dump"));
   LogInfo::MapleLogger() << "===================Me IR dump==================\n";
   auto eIt = func.valid_end();
   for (auto bIt = func.valid_begin(); bIt != eIt; ++bIt) {
@@ -50,7 +50,7 @@ void MeIRMap::Dump() {
       meStmt.Dump(this);
     }
   }
-  mempoolctrler.DeleteMemPool(mirFunction->GetCodeMempool());
+  memPoolCtrler.DeleteMemPool(mirFunction->GetCodeMempool());
   mirFunction->SetMemPool(backup);
 }
 
@@ -104,7 +104,7 @@ AnalysisResult *MeDoIRMap::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, Mo
   irMap->GetTempAlloc().SetMemPool(nullptr);
   // delete input IR code for current function
   MIRFunction *mirFunc = func->GetMirFunc();
-  mempoolctrler.DeleteMemPool(mirFunc->GetCodeMempool());
+  memPoolCtrler.DeleteMemPool(mirFunc->GetCodeMempool());
   mirFunc->SetCodeMemPool(nullptr);
   // delete versionst_table
 #if MIR_FEATURE_FULL
@@ -121,7 +121,7 @@ AnalysisResult *MeDoIRMap::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, Mo
     bb->SetLast(nullptr);
   }
 #endif
-  mempoolctrler.DeleteMemPool(func->GetMeSSATab()->GetVersionStTable().GetVSTAlloc().GetMemPool());
+  memPoolCtrler.DeleteMemPool(func->GetMeSSATab()->GetVersionStTable().GetVSTAlloc().GetMemPool());
   return irMap;
 }
 }  // namespace maple

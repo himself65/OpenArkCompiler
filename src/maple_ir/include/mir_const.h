@@ -53,15 +53,15 @@ class MIRConst {
     fieldID = fieldIdx;
   }
 
-  virtual bool IsZero() {
+  virtual bool IsZero() const {
     return false;
   }
 
-  virtual bool IsOne() {
+  virtual bool IsOne() const {
     return false;
   }
 
-  virtual bool IsMagicNum() {
+  virtual bool IsMagicNum() const {
     return false;
   }
 
@@ -151,18 +151,18 @@ class MIRIntConst : public MIRConst {
   }
 
   void Dump() const;
-  bool IsZero() {
+  bool IsZero() const {
     return value == 0 && IsPrimitiveInteger(GetType().GetPrimType());
   }
 
-  bool IsOne() {
+  bool IsOne() const {
     return value == 1 && IsPrimitiveInteger(GetType().GetPrimType());
   };
-  bool IsMagicNum() {
+  bool IsMagicNum() const {
     constexpr int64 kMagicNum = 51;
     return value == kMagicNum && IsPrimitiveInteger(GetType().GetPrimType());
   };
-  bool IsAllBitsOne() {
+  bool IsAllBitsOne() const {
     return value == -1 && IsPrimitiveInteger(GetType().GetPrimType());
   };
   void Neg() {
@@ -329,14 +329,14 @@ class MIRFloatConst : public MIRConst {
   }
 
   void Dump() const;
-  bool IsZero() {
+  bool IsZero() const {
     return fabs(value.floatValue) <= 1e-6;
   }
 
-  bool IsOne() {
+  bool IsOne() const {
     return value.floatValue == 1;
   };
-  bool IsAllBitsOne() {
+  bool IsAllBitsOne() const {
     return value.floatValue == -1;
   };
   void Neg() {
@@ -386,14 +386,14 @@ class MIRDoubleConst : public MIRConst {
   }
 
   void Dump() const;
-  bool IsZero() {
+  bool IsZero() const {
     return fabs(value.dValue) <= 1e-15;
   }
 
-  bool IsOne() {
+  bool IsOne() const {
     return value.dValue == 1;
   };
-  bool IsAllBitsOne() {
+  bool IsAllBitsOne() const {
     return value.dValue == -1;
   };
   void Neg() {
@@ -427,16 +427,16 @@ class MIRFloat128Const : public MIRConst {
     return kPrimType;
   }
 
-  bool IsZero() {
+  bool IsZero() const {
     MIR_ASSERT(value && "value must not be nullptr!");
     return value[0] == 0 && value[1] == 0;
   }
 
-  bool IsOne() {
+  bool IsOne() const {
     MIR_ASSERT(value && "value must not be nullptr!");
     return value[0] == 0 && value[1] == 0x3FFF000000000000;
   };
-  bool IsAllBitsOne() {
+  bool IsAllBitsOne() const {
     MIR_ASSERT(value && "value must not be nullptr!");
     return (value[0] == 0xffffffffffffffff && value[1] == 0xffffffffffffffff);
   };
@@ -515,7 +515,7 @@ class MIRStConst : public MIRConst {
   const MapleVector<MIRSymbol*> &GetStVec() const {
     return stVec;
   }
-  void PushbackSt(MIRSymbol *sym) {
+  void PushbackSymbolToSt(MIRSymbol *sym) {
     stVec.push_back(sym);
   }
 
@@ -527,7 +527,7 @@ class MIRStConst : public MIRConst {
   const MapleVector<uint32> &GetStOffsetVec() const {
     return stOffsetVec;
   }
-  void PushbackStOffset(uint32 offset) {
+  void PushbackOffsetToSt(uint32 offset) {
     stOffsetVec.push_back(offset);
   }
 

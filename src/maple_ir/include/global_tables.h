@@ -404,8 +404,14 @@ class FPConstTable {
   void PostInit();
   std::unordered_map<float, MIRFloatConst*> floatConstTable;     // map float const value to the table;
   std::unordered_map<double, MIRDoubleConst*> doubleConstTable;  // map double const value to the table;
-  MIRFloatConst *nanFloatConst, *infFloatConst, *minusInfFloatConst, *minusZeroFloatConst;
-  MIRDoubleConst *nanDoubleConst, *infDoubleConst, *minusInfDoubleConst, *minusZeroDoubleConst;
+  MIRFloatConst *nanFloatConst = nullptr;
+  MIRFloatConst *infFloatConst = nullptr;
+  MIRFloatConst *minusInfFloatConst = nullptr;
+  MIRFloatConst *minusZeroFloatConst = nullptr;
+  MIRDoubleConst *nanDoubleConst = nullptr;
+  MIRDoubleConst *infDoubleConst = nullptr;
+  MIRDoubleConst *minusInfDoubleConst = nullptr;
+  MIRDoubleConst *minusZeroDoubleConst = nullptr;
 };
 
 // STypeNameTable is only used to store class and interface types.

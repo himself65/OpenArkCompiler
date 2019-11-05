@@ -29,12 +29,12 @@ enum MePhaseType { kMePhaseInvalid, kMePhaseMainopt, kMePhaseLno };
 class MeFuncPhaseManager : public PhaseManager {
  public:
   MeFuncPhaseManager(MemPool *memPool, MIRModule &mod, ModuleResultMgr *mrm = nullptr)
-      : PhaseManager(memPool, "mephase"),
+      : PhaseManager(*memPool, "mephase"),
         arFuncManager(GetMemAllocator()),
         mirModule(mod),
         modResMgr(mrm),
         mePhaseType(kMePhaseInvalid),
-        genMempool(false),
+        genMeMpl(false),
         timePhases(false),
         ipa(false) {}
 
@@ -68,12 +68,12 @@ class MeFuncPhaseManager : public PhaseManager {
 
   bool FuncFilter(const std::string &filter, const std::string &name);
 
-  bool GetGenMempool() {
-    return genMempool;
+  bool GetGenMeMpl() {
+    return genMeMpl;
   }
 
-  void SetGenMempool(bool pl) {
-    genMempool = pl;
+  void SetGenMeMpl(bool pl) {
+    genMeMpl = pl;
   }
 
   void SetTimePhases(bool phs) {
@@ -94,7 +94,7 @@ class MeFuncPhaseManager : public PhaseManager {
   MIRModule &mirModule;
   ModuleResultMgr *modResMgr;
   MePhaseType mePhaseType;
-  bool genMempool;
+  bool genMeMpl;
   bool timePhases;
   bool ipa;
 };

@@ -29,7 +29,7 @@
 namespace maple {
 #if MIR_FEATURE_FULL  // to avoid compilation error when MIR_FEATURE_FULL=0
 MIRModule::MIRModule(const std::string &fn)
-    : memPool(mempoolctrler.NewMemPool("maple_ir mempool")),
+    : memPool(memPoolCtrler.NewMemPool("maple_ir mempool")),
       memPoolAllocator(memPool),
       functionList(memPoolAllocator.Adapter()),
       compilationList(memPoolAllocator.Adapter()),
@@ -56,7 +56,7 @@ MIRModule::MIRModule(const std::string &fn)
 }
 
 MIRModule::~MIRModule() {
-  mempoolctrler.DeleteMemPool(memPool);
+  memPoolCtrler.DeleteMemPool(memPool);
   if (binMplt) {
     delete binMplt;
   }

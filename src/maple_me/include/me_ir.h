@@ -141,6 +141,15 @@ class MeExpr {
     return nullptr;
   }
 
+  virtual void SetOpnd(size_t idx, MeExpr *opndsVal) {
+    ASSERT(false, "Should not reach here");
+  }
+
+  virtual MeExpr *GetIdenticalExpr(MeExpr &expr) const {
+    ASSERT(false, "Should not reach here");
+    return nullptr;
+  }
+
   void UpdateDepth();                      // update the depth, suppose all sub nodes have already depth done.
   MeExpr &GetAddrExprBase();               // get the base of the address expression
   MeExpr *FindSymAppearance(OStIdx oidx);  // find the appearance of the symbol
@@ -572,11 +581,11 @@ class ConstMeExpr : public MeExpr {
   ConstMeExpr(int32 exprID, MIRConst *constValParam) : MeExpr(exprID, kMeOpConst), constVal(constValParam) {}
   ~ConstMeExpr() = default;
 
-  void Dump(IRMap*, int32 indent = 0) const;
-  BaseNode &EmitExpr(SSATab &);
+  void Dump(IRMap*, int32 indent = 0) const override;
+  BaseNode &EmitExpr(SSATab &) override;
   bool GeZero() const;
   bool GtZero() const;
-  bool IsZero() const;
+  bool IsZero() const override;
   bool IsOne() const;
   int64 GetIntValue() const;
 
@@ -584,7 +593,9 @@ class ConstMeExpr : public MeExpr {
     return constVal;
   }
 
-  uint32 GetHashIndex() const {
+  MeExpr *GetIdenticalExpr(MeExpr &expr) const override;
+
+  uint32 GetHashIndex() const override {
     if (constVal->GetKind() == kConstInt) {
       MIRIntConst *intConst = static_cast<MIRIntConst*>(constVal);
       return intConst->GetValue();
@@ -615,14 +626,15 @@ class ConststrMeExpr : public MeExpr {
 
   ~ConststrMeExpr() = default;
 
-  void Dump(IRMap*, int32 indent = 0) const;
-  BaseNode &EmitExpr(SSATab &);
+  void Dump(IRMap*, int32 indent = 0) const override;
+  BaseNode &EmitExpr(SSATab &) override;
+  MeExpr *GetIdenticalExpr(MeExpr &expr) const override;
 
   UStrIdx GetStrIdx() const {
     return strIdx;
   }
 
-  uint32 GetHashIndex() const {
+  uint32 GetHashIndex() const override {
     constexpr uint32 kConststrHashShift = 6;
     return strIdx.GetIdx() << kConststrHashShift;
   }
@@ -636,14 +648,15 @@ class Conststr16MeExpr : public MeExpr {
   Conststr16MeExpr(int32 exprID, U16StrIdx idx) : MeExpr(exprID, kMeOpConststr16), strIdx(idx) {}
   ~Conststr16MeExpr() = default;
 
-  void Dump(IRMap*, int32 indent = 0) const;
-  BaseNode &EmitExpr(SSATab &);
+  void Dump(IRMap*, int32 indent = 0) const override;
+  BaseNode &EmitExpr(SSATab &) override;
+  MeExpr *GetIdenticalExpr(MeExpr &expr) const override;
 
   U16StrIdx GetStrIdx() {
     return strIdx;
   }
 
-  uint32 GetHashIndex() const {
+  uint32 GetHashIndex() const override {
     constexpr uint32 kConststr16HashShift = 6;
     return strIdx.GetIdx() << kConststr16HashShift;
   }
@@ -657,14 +670,15 @@ class SizeoftypeMeExpr : public MeExpr {
   SizeoftypeMeExpr(int32 exprid, TyIdx idx) : MeExpr(exprid, kMeOpSizeoftype), tyIdx(idx) {}
   ~SizeoftypeMeExpr() = default;
 
-  void Dump(IRMap*, int32 indent = 0) const;
-  BaseNode &EmitExpr(SSATab &);
+  void Dump(IRMap*, int32 indent = 0) const override;
+  BaseNode &EmitExpr(SSATab &) override;
+  MeExpr *GetIdenticalExpr(MeExpr &expr) const override;
 
   TyIdx GetTyIdx() const {
     return tyIdx;
   }
 
-  uint32 GetHashIndex() const {
+  uint32 GetHashIndex() const override {
     constexpr uint32 kSizeoftypeHashShift = 5;
     return tyIdx.GetIdx() << kSizeoftypeHashShift;
   }
@@ -679,8 +693,9 @@ class FieldsDistMeExpr : public MeExpr {
       : MeExpr(exprid, kMeOpFieldsDist), tyIdx(idx), fieldID1(f1), fieldID2(f2) {}
 
   ~FieldsDistMeExpr() = default;
-  void Dump(IRMap*, int32 indent = 0) const;
-  BaseNode &EmitExpr(SSATab &);
+  void Dump(IRMap*, int32 indent = 0) const override;
+  BaseNode &EmitExpr(SSATab &) override;
+  MeExpr *GetIdenticalExpr(MeExpr &expr) const override;
 
   TyIdx GetTyIdx() const {
     return tyIdx;
@@ -694,7 +709,7 @@ class FieldsDistMeExpr : public MeExpr {
     return fieldID2;
   }
 
-  uint32 GetHashIndex() const {
+  uint32 GetHashIndex() const override {
     constexpr uint32 kFieldsDistHashShift = 5;
     constexpr uint32 kTyIdxShiftFactor = 10;
     return (tyIdx.GetIdx() << kTyIdxShiftFactor) + (static_cast<uint32>(fieldID1) << kFieldsDistHashShift) + fieldID2;
@@ -715,6 +730,7 @@ class AddrofMeExpr : public MeExpr {
   void Dump(IRMap*, int32 indent = 0) const override;
   bool IsUseSameSymbol(const MeExpr &) const override;
   BaseNode &EmitExpr(SSATab &) override;
+  MeExpr *GetIdenticalExpr(MeExpr &expr) const override;
 
   OStIdx GetOstIdx() const {
     return ostIdx;
@@ -744,14 +760,15 @@ class AddroffuncMeExpr : public MeExpr {
 
   ~AddroffuncMeExpr() = default;
 
-  void Dump(IRMap*, int32 indent = 0) const;
-  BaseNode &EmitExpr(SSATab &);
+  void Dump(IRMap*, int32 indent = 0) const override;
+  BaseNode &EmitExpr(SSATab &) override;
+  MeExpr *GetIdenticalExpr(MeExpr &expr) const override;
 
   PUIdx GetPuIdx() {
     return puIdx;
   }
 
-  uint32 GetHashIndex() const {
+  uint32 GetHashIndex() const override {
     constexpr uint32 kAddroffuncHashShift = 5;
     return puIdx << kAddroffuncHashShift;
   }
@@ -805,13 +822,14 @@ class OpMeExpr : public MeExpr {
   bool IsIdentical(const OpMeExpr &meexpr) const;
   void Dump(IRMap*, int32 indent = 0) const override;
   bool IsUseSameSymbol(const MeExpr &) const override;
+  MeExpr *GetIdenticalExpr(MeExpr &expr) const override;
   BaseNode &EmitExpr(SSATab &) override;
   MeExpr *GetOpnd(size_t i) const override {
     CHECK_FATAL(i < kOperandNumTernary, "OpMeExpr cannot have more than 3 operands");
     return opnds[i];
   }
 
-  void SetOpnd(uint32 idx, MeExpr *opndsVal) {
+  void SetOpnd(size_t idx, MeExpr *opndsVal) override {
     CHECK_FATAL(idx < kOperandNumTernary, "out of range in  OpMeExpr::SetOpnd");
     opnds[idx] = opndsVal;
   }
@@ -915,6 +933,8 @@ class IvarMeExpr : public MeExpr {
   bool IsFinal();
   bool IsRCWeak();
   bool IsUseSameSymbol(const MeExpr &) const override;
+  bool IsIdentical(IvarMeExpr &expr) const;
+  MeExpr *GetIdenticalExpr(MeExpr &expr) const override;
   MeExpr *GetOpnd(size_t idx) const override {
     ASSERT(idx == 0, "IvarMeExpr can only have 1 operand");
     return base;
@@ -1019,6 +1039,7 @@ class NaryMeExpr : public MeExpr {
   bool IsIdentical(NaryMeExpr &) const;
   bool IsUseSameSymbol(const MeExpr &) const override;
   BaseNode &EmitExpr(SSATab &) override;
+  MeExpr *GetIdenticalExpr(MeExpr &expr) const override;
   MeExpr *GetOpnd(size_t idx) const override {
     ASSERT(idx < opnds.size(), "NaryMeExpr operand out of bounds");
     return opnds[idx];
@@ -1040,7 +1061,7 @@ class NaryMeExpr : public MeExpr {
     return opnds;
   }
 
-  void SetOpnd(size_t idx, MeExpr *val) {
+  void SetOpnd(size_t idx, MeExpr *val) override {
     opnds[idx] = val;
   }
 
@@ -2517,6 +2538,10 @@ class AssertMeStmt : public MeStmt {
     CHECK(op == OP_assertge || op == OP_assertlt, "runtime check error");
   }
 
+  size_t NumMeStmtOpnds() const override {
+    return kOperandNumBinary;
+  }
+
   AssertMeStmt(const AssertMeStmt &assmestmt) : MeStmt(assmestmt.GetOp()) {
     SetOp(assmestmt.GetOp());
     opnds[0] = assmestmt.opnds[0];
@@ -2538,18 +2563,18 @@ class AssertMeStmt : public MeStmt {
     return opnds[0];
   }
 
-  void SetOpnd(uint32 i, MeExpr *opnd) {
+  void SetOpnd(uint32 i, MeExpr *opnd) override {
     CHECK_FATAL(i < kOperandNumBinary, "AssertMeStmt has two opnds");
     opnds[i] = opnd;
   }
 
-  MeExpr *GetOpnd(size_t i) const {
+  MeExpr *GetOpnd(size_t i) const override {
     CHECK_FATAL(i < kOperandNumBinary, "AssertMeStmt has two opnds");
     return opnds[i];
   }
 
-  void Dump(IRMap*) const;
-  StmtNode &EmitStmt(SSATab &ssatab);
+  void Dump(IRMap*) const override;
+  StmtNode &EmitStmt(SSATab &ssatab) override;
 
  private:
   MeExpr *opnds[kOperandNumBinary];

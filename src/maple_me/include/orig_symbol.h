@@ -80,10 +80,10 @@ class OriginalSt {
     return symOrPreg.mirSt;
   }
 
-  bool HasAttr(AttrKind x) const {
+  bool HasAttr(AttrKind attrKind) const {
     if (ostType == kSymbolOst) {
       TypeAttrs typeAttr = symOrPreg.mirSt->GetAttrs();
-      if (typeAttr.GetAttr(x)) {
+      if (typeAttr.GetAttr(attrKind)) {
         return true;
       }
     }

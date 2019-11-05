@@ -56,10 +56,10 @@ void MIRParser::ResetMaxPregNo(MIRFunction &func) {
   for (uint32 i = 0; i < func.GetFormalCount(); i++) {
     MIRSymbol *formalSt = func.GetFormal(i);
     if (formalSt->IsPreg()) {
-      uint32 pRegNo =
+      uint32 pRegNO =
           static_cast<uint32>(formalSt->GetPreg()->GetPregNo());  // no special register appears in the formals
-      if (pRegNo > maxPregNo) {
-        maxPregNo = pRegNo;
+      if (pRegNO > maxPregNo) {
+        maxPregNo = pRegNO;
       }
     }
   }
@@ -220,9 +220,9 @@ bool MIRParser::ParseSpecialReg(PregIdx &pRegIdx) {
 }
 
 bool MIRParser::ParseRefPseudoReg(PregIdx &pRegIdx) {
-  uint32 pRegNo = static_cast<uint32>(lexer.GetTheIntVal());
-  ASSERT(pRegNo <= 0xffff, "preg number must be 16 bits");
-  pRegIdx = LookupOrCreatePregIdx(pRegNo, true, *mod.CurFunction());
+  uint32 pRegNO = static_cast<uint32>(lexer.GetTheIntVal());
+  ASSERT(pRegNO <= 0xffff, "preg number must be 16 bits");
+  pRegIdx = LookupOrCreatePregIdx(pRegNO, true, *mod.CurFunction());
   lexer.NextToken();
   return true;
 }
@@ -458,7 +458,7 @@ bool MIRParser::ParsePragmaElementForArray(MIRPragmaElement &elem) {
       Error("parsing pragma error type ");
       return false;
     }
-    elem.PushSubElemVec(*e0);
+    elem.SubElemVecPushBack(e0);
     tk = lexer.NextToken();
     if (tk != kTkComa && tk != kTkRbrack) {
       Error("parsing pragma error: expecting , or ] but get ");
@@ -511,7 +511,7 @@ bool MIRParser::ParsePragmaElementForAnnotation(MIRPragmaElement &elem) {
       Error("parsing pragma error type ");
       return false;
     }
-    elem.PushSubElemVec(*e0);
+    elem.SubElemVecPushBack(e0);
     tk = lexer.NextToken();
     if (tk != kTkComa && tk != kTkRbrack) {
       Error("parsing pragma error: expecting , or ] but get ");
@@ -1254,7 +1254,7 @@ bool MIRParser::ParseFuncType(TyIdx &tyIdx) {
 // parse the generic type instantiation vector enclosed inside braces; syntax
 // is: { <type-param> = <real-type> [, <type-param> = <real-type>] }
 // where the contents enclosed in [ and ] can occur 0 or more times
-bool MIRParser::ParseGenericInstantVector(GenericInstantVector &instantVec) {
+bool MIRParser::ParseGenericInstantVector(MIRInstantVectorType &insVecType) {
   TokenKind tokenKind;
   TyIdx typeParmIdx;
   do {
@@ -1274,7 +1274,7 @@ bool MIRParser::ParseGenericInstantVector(GenericInstantVector &instantVec) {
       Error("error parsing type in generic type/function instantiation at ");
       return false;
     }
-    instantVec.push_back(TypePair(typeParmIdx, realTyIdx));
+    insVecType.AddInstant(TypePair(typeParmIdx, realTyIdx));
     tokenKind = lexer.GetTokenKind();
     if (tokenKind == kTkRbrace) {
       lexer.NextToken();  // skip the rbrace
@@ -1341,7 +1341,7 @@ bool MIRParser::ParseDerivedType(TyIdx &tyIdx, MIRTypeKind kind) {
         }
         if (lexer.GetTokenKind() == kTkLbrace) {
           MIRGenericInstantType genericinstty(tyIdx);
-          if (!ParseGenericInstantVector(genericinstty.GetInstantVec())) {
+          if (!ParseGenericInstantVector(genericinstty)) {
             Error("error parsing generic type instantiation at ");
             return false;
           }
@@ -1606,7 +1606,7 @@ bool MIRParser::ParseDeclareReg(MIRSymbol &symbol, MIRFunction &func) {
     Error("expect preg but get");
     return false;
   }
-  uint32 thePRegNo = static_cast<uint32>(lexer.GetTheIntVal());
+  uint32 thePRegNO = static_cast<uint32>(lexer.GetTheIntVal());
   lexer.NextToken();
   // parse ty
   TyIdx tyIdx(0);
@@ -1621,7 +1621,7 @@ bool MIRParser::ParseDeclareReg(MIRSymbol &symbol, MIRFunction &func) {
   }
   symbol.SetTyIdx(tyIdx);
   MIRType *mirType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
-  PregIdx pRegIdx = LookupOrCreatePregIdx(thePRegNo, mirType->GetPrimType() == PTY_ref, func);
+  PregIdx pRegIdx = LookupOrCreatePregIdx(thePRegNO, mirType->GetPrimType() == PTY_ref, func);
   MIRPregTable *pRegTab = func.GetPregTab();
   MIRPreg *preg = pRegTab->PregFromPregIdx(pRegIdx);
   preg->SetIsRef(mirType->GetPrimType() == PTY_ref);

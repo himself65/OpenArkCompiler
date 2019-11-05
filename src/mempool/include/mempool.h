@@ -65,9 +65,8 @@ class MemPoolCtrler {
     bool operator()(const MemBlock *l, const MemBlock *r) const {
       if (l->available != r->available) {
         return l->available > r->available;
-      } else {
-        return (std::uint64_t)(l->ptr) > (std::uint64_t)(r->ptr);
       }
+      return (std::uintptr_t)(l->ptr) > (std::uintptr_t)(r->ptr);
     }
   };
 
@@ -81,7 +80,7 @@ class MemPool {
   friend MemPoolCtrler;
 
  public:  // Methods
-  MemPool(MemPoolCtrler *ctl, const std::string &name) : ctrler(ctl), name(name) {
+  MemPool(MemPoolCtrler &ctl, const std::string &name) : ctrler(&ctl), name(name) {
   }
 
   ~MemPool();
@@ -90,7 +89,7 @@ class MemPool {
   void *Realloc(const void *ptr, size_t oldSize, size_t newSize);
   void Push();
   bool Pop();
-  const std::string &GetName(void) const {
+  const std::string &GetName() const {
     return name;
   }
 
@@ -134,6 +133,6 @@ class MemPool {
   std::stack<std::pair<MemPoolCtrler::MemBlock*, MemPoolCtrler::MemBlock*>> markerStack;
 };
 
-extern MemPoolCtrler mempoolctrler;
+extern MemPoolCtrler memPoolCtrler;
 }  // namespace maple
 #endif  // MEMPOOL_INCLUDE_MEMPOOL_H

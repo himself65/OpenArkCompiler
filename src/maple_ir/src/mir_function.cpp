@@ -308,10 +308,10 @@ void MIRFunction::NewBody() {
   MIRPregTable *oldPregTable = GetPregTab();
   MIRTypeNameTable *oldTypenameTable = typeNameTab;
   MIRLabelTable *oldLabelTable = GetLabelTab();
-  symTab = dataMemPool->New<MIRSymbolTable>(&dataMPAllocator);
+  symTab = dataMemPool->New<MIRSymbolTable>(dataMPAllocator);
   SetPregTab(dataMemPool->New<MIRPregTable>(module, &dataMPAllocator));
   typeNameTab = dataMemPool->New<MIRTypeNameTable>(dataMPAllocator);
-  SetLabelTab(dataMemPool->New<MIRLabelTable>(&dataMPAllocator));
+  SetLabelTab(dataMemPool->New<MIRLabelTable>(dataMPAllocator));
   if (oldSymTable != nullptr) {
     for (size_t i = 1; i < oldSymTable->GetSymbolTableSize(); i++) {
       (void)GetSymTab()->AddStOutside(oldSymTable->GetSymbolFromStIdx(i));
@@ -334,14 +334,14 @@ void MIRFunction::NewBody() {
 
 void MIRFunction::SetUpGDBEnv() {
   if (codeMemPool != nullptr) {
-    mempoolctrler.DeleteMemPool(codeMemPool);
+    memPoolCtrler.DeleteMemPool(codeMemPool);
   }
-  codeMemPool = mempoolctrler.NewMemPool("tmp debug");
+  codeMemPool = memPoolCtrler.NewMemPool("tmp debug");
   codeMemPoolAllocator.SetMemPool(codeMemPool);
 }
 
 void MIRFunction::ResetGDBEnv() {
-  mempoolctrler.DeleteMemPool(codeMemPool);
+  memPoolCtrler.DeleteMemPool(codeMemPool);
   codeMemPool = nullptr;
 }
 

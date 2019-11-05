@@ -724,12 +724,12 @@ void BinaryMplExport::AppendAt(const std::string &name, int32 offset) {
   }
 }
 
-void BinaryMplExport::OutputTypePairs(MIRInstantVectorType &type) {
+void BinaryMplExport::OutputTypePairs(const MIRInstantVectorType &type) {
   size_t size = type.GetInstantVec().size();
   WriteNum(size);
-  for (TypePair &tpair : type.GetInstantVec()) {
-    OutputType(tpair.first);
-    OutputType(tpair.second);
+  for (const TypePair &typePair : type.GetInstantVec()) {
+    OutputType(typePair.first);
+    OutputType(typePair.second);
   }
 }
 

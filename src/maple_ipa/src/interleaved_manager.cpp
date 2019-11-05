@@ -49,7 +49,7 @@ void InterleavedManager::AddPhases(const std::vector<std::string> &phases, bool 
     MeFuncPhaseManager *fpm = GetMempool()->New<MeFuncPhaseManager>(GetMempool(), mirModule, mrm);
     fpm->RegisterFuncPhases();
     if (genMpl) {
-      fpm->SetGenMempool(true);
+      fpm->SetGenMeMpl(true);
     }
     if (timePhases) {
       fpm->SetTimePhases(true);
@@ -61,7 +61,7 @@ void InterleavedManager::AddPhases(const std::vector<std::string> &phases, bool 
 
 
 void InterleavedManager::Run() {
-  for (PhaseManager * const &pm : phaseManagers) {
+  for (auto *pm : phaseManagers) {
     if (pm == nullptr) {
       continue;
     }
@@ -96,7 +96,7 @@ void InterleavedManager::Run() {
         fpm->Run(func, rangeNum, meInput);
         rangeNum++;
       }
-      if (fpm->GetGenMempool()) {
+      if (fpm->GetGenMeMpl()) {
         mirModule.Emit("comb.me.mpl");
       }
     } else {

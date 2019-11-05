@@ -89,7 +89,7 @@ bool MIRSymbol::IsCodeLayoutInfo() const {
   return (GetName().find(kFunctionLayoutStr) == 0);
 }
 
-std::string MIRSymbol::GetMuidTabName() {
+std::string MIRSymbol::GetMuidTabName() const {
   if (!IsMuidTab()) {
     return "";
   }
@@ -248,8 +248,8 @@ bool MIRSymbol::IgnoreRC() const {
   }
   // ignore ptr to types Ljava_2Flang_2FClass_3B,
   // Ljava_2Flang_2Freflect_2FMethod_3B
-  MIRPtrType *ptype = static_cast<MIRPtrType*>(type);
-  GStrIdx strIdx = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ptype->GetPointedTyIdx())->GetNameStrIdx();
+  const auto *pType = static_cast<MIRPtrType*>(type);
+  GStrIdx strIdx = GlobalTables::GetTypeTable().GetTypeFromTyIdx(pType->GetPointedTyIdx())->GetNameStrIdx();
   if (reflectClassNameIdx == 0) {
     reflectClassNameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(
         NameMangler::GetInternalNameLiteral("Ljava_2Flang_2FClass_3B"));

@@ -33,6 +33,7 @@ src_libmplmewpo = [
   "src/func_emit.cpp",
   "src/irmap.cpp",
   "src/irmap_emit.cpp",
+  "src/me_builder.cpp",
   "src/me_ir.cpp",
   "src/orig_symbol.cpp",
   "src/ssa.cpp",

@@ -43,10 +43,6 @@ class MapleString {
     return dataLength;
   }
 
-  operator char *() {
-    return data;
-  }
-
   operator const char *() const {
     return data;
   }

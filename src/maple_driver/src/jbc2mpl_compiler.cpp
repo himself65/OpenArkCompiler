@@ -33,12 +33,12 @@ const DefaultOption Jbc2MplCompiler::GetDefaultOptions(const MplOptions &options
 }
 
 void Jbc2MplCompiler::GetTmpFilesToDelete(const MplOptions &mplOptions, std::vector<std::string> &tempFiles) const {
-  tempFiles.push_back(mplOptions.outputFolder + mplOptions.outputName + ".mpl");
+  tempFiles.push_back(mplOptions.GetOutputFolder() + mplOptions.GetOutputName() + ".mpl");
 }
 
 const std::unordered_set<std::string> Jbc2MplCompiler::GetFinalOutputs(const MplOptions &mplOptions) const {
   auto finalOutputs = std::unordered_set<std::string>();
-  finalOutputs.insert(mplOptions.outputFolder + mplOptions.outputName + ".mpl");
+  finalOutputs.insert(mplOptions.GetOutputFolder() + mplOptions.GetOutputName() + ".mpl");
   return finalOutputs;
 }
 }  // namespace maple

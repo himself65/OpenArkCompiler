@@ -409,6 +409,7 @@ class BB {
   StmtNodes stmtNodeList;
   MeStmts meStmtList;
 };
+
 class SCCOfBBs {
  public:
   SCCOfBBs(uint32 index, BB *bb, MapleAllocator *alloc)
@@ -417,6 +418,7 @@ class SCCOfBBs {
         bbs(alloc->Adapter()),
         predSCC(std::less<SCCOfBBs*>(), alloc->Adapter()),
         succSCC(std::less<SCCOfBBs*>(), alloc->Adapter()) {}
+  ~SCCOfBBs() = default;
   void Dump();
   void Verify(MapleVector<SCCOfBBs*> &sccOfBB);
   void SetUp(MapleVector<SCCOfBBs*> &sccOfBB);

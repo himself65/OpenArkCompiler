@@ -33,7 +33,7 @@ class Options {
   explicit Options(maple::MemPool &memPool) : optionAlloc(&memPool) {}
 
   bool ParseOptions(int argc, char **argv, std::string &fileName);
-  ~Options() {}
+  ~Options() = default;
 
   void DumpOptions();
   std::vector<std::string> &GetSequence() {

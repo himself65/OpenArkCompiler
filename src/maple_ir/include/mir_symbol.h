@@ -116,7 +116,7 @@ class MIRSymbol {
     isImported = imported;
   }
 
-  bool GetIsImported() {
+  bool GetIsImported() const {
     return isImported;
   }
 
@@ -185,16 +185,16 @@ class MIRSymbol {
     typeAttrs.SetAttrFlag(typeAttrs.GetAttrFlag() | attr.GetAttrFlag());
   }
 
-  bool GetAttr(AttrKind x) const {
-    return typeAttrs.GetAttr(x);
+  bool GetAttr(AttrKind attrKind) const {
+    return typeAttrs.GetAttr(attrKind);
   }
 
-  void SetAttr(AttrKind x) {
-    typeAttrs.SetAttr(x);
+  void SetAttr(AttrKind attrKind) {
+    typeAttrs.SetAttr(attrKind);
   }
 
-  void ResetAttr(AttrKind x) {
-    typeAttrs.ResetAttr(x);
+  void ResetAttr(AttrKind attrKind) {
+    typeAttrs.ResetAttr(attrKind);
   }
 
   bool IsVolatile() const {
@@ -352,7 +352,7 @@ class MIRSymbol {
   bool IsRegJNIFuncTab() const;
   bool IsMuidTab() const;
   bool IsCodeLayoutInfo() const;
-  std::string GetMuidTabName();
+  std::string GetMuidTabName() const;
   bool IsMuidFuncDefTab() const;
   bool IsMuidFuncDefOrigTab() const;
   bool IsMuidFuncInfTab() const;
@@ -403,8 +403,8 @@ class MIRSymbol {
 
 class MIRSymbolTable {
  public:
-  explicit MIRSymbolTable(MapleAllocator *allocator)
-      : mAllocator(allocator), strIdxToStIdxMap(mAllocator->Adapter()), symbolTable(mAllocator->Adapter()) {
+  explicit MIRSymbolTable(MapleAllocator &allocator)
+      : mAllocator(allocator), strIdxToStIdxMap(mAllocator.Adapter()), symbolTable(mAllocator.Adapter()) {
     symbolTable.push_back(nullptr);
   }
 
@@ -423,7 +423,7 @@ class MIRSymbolTable {
   }
 
   MIRSymbol *CreateSymbol(uint8 scopeID) {
-    MIRSymbol *st = mAllocator->GetMemPool()->New<MIRSymbol>(symbolTable.size(), scopeID);
+    MIRSymbol *st = mAllocator.GetMemPool()->New<MIRSymbol>(symbolTable.size(), scopeID);
     symbolTable.push_back(st);
     return st;
   }
@@ -469,7 +469,7 @@ class MIRSymbolTable {
   }
 
  private:
-  MapleAllocator *mAllocator;
+  MapleAllocator mAllocator;
   // hash table mapping string index to st index
   MapleMap<GStrIdx, StIdx> strIdxToStIdxMap;
   // map symbol idx to symbol node
@@ -478,10 +478,10 @@ class MIRSymbolTable {
 
 class MIRLabelTable {
  public:
-  explicit MIRLabelTable(MapleAllocator *allocator)
+  explicit MIRLabelTable(MapleAllocator &allocator)
       : mAllocator(allocator),
-        strIdxToLabIdxMap(std::less<GStrIdx>(), mAllocator->Adapter()),
-        labelTable(mAllocator->Adapter()) {
+        strIdxToLabIdxMap(std::less<GStrIdx>(), mAllocator.Adapter()),
+        labelTable(mAllocator.Adapter()) {
     labelTable.push_back(GStrIdx(kDummyLabel));  // push dummy label index 0
   }
 
@@ -545,7 +545,7 @@ class MIRLabelTable {
 
  private:
   static constexpr uint32 kDummyLabel = 0;
-  MapleAllocator *mAllocator;
+  MapleAllocator mAllocator;
   MapleMap<GStrIdx, LabelIdx> strIdxToLabIdxMap;
   MapleVector<GStrIdx> labelTable;  // map label idx to label name
 };
