@@ -167,6 +167,14 @@ class BaseNode {
     return false;
   }
 
+  virtual bool IsTernaryNode() const {
+    return false;
+  }
+
+  virtual bool IsNaryNode() const {
+    return false;
+  }
+
   bool IsCondBr() const {
     return kOpcodeInfo.IsCondBr(GetOpCode());
   }
@@ -739,10 +747,10 @@ class TernaryNode : public BaseNode {
 
   ~TernaryNode() = default;
 
-  void Dump(const MIRModule &mod, int32 indent) const;
-  bool Verify() const;
+  void Dump(const MIRModule &mod, int32 indent) const override;
+  bool Verify() const override;
 
-  TernaryNode *CloneTree(MapleAllocator &allocator) const {
+  TernaryNode *CloneTree(MapleAllocator &allocator) const override {
     TernaryNode *nd = allocator.GetMemPool()->New<TernaryNode>(*this);
     nd->topnd[0] = topnd[0]->CloneTree(allocator);
     nd->topnd[1] = topnd[1]->CloneTree(allocator);
@@ -750,22 +758,26 @@ class TernaryNode : public BaseNode {
     return nd;
   }
 
-  BaseNode *Opnd(size_t i) const {
+  BaseNode *Opnd(size_t i) const override {
     CHECK_FATAL(i < kOperandNumTernary, "array index out of range");
     return topnd[i];
   }
 
-  uint8 NumOpnds(void) const {
+  uint8 NumOpnds(void) const override {
     return kOperandNumTernary;
   }
 
-  void SetOpnd(BaseNode *node, size_t i = 0) {
+  void SetOpnd(BaseNode *node, size_t i = 0) override {
     CHECK_FATAL(i < kOperandNumTernary, "array index out of range");
     topnd[i] = node;
   }
 
-  bool IsLeaf(void) const {
+  bool IsLeaf(void) const override {
     return false;
+  }
+
+  bool IsTernaryNode() const override {
+    return true;
   }
 
  private:
@@ -830,9 +842,9 @@ class NaryNode : public BaseNode, public NaryOpnds {
   NaryNode &operator=(const NaryNode &node) = delete;
   ~NaryNode() = default;
 
-  virtual void Dump(const MIRModule &mod, int32 indent) const;
+  virtual void Dump(const MIRModule &mod, int32 indent) const override;
 
-  NaryNode *CloneTree(MapleAllocator &allocator) const {
+  NaryNode *CloneTree(MapleAllocator &allocator) const override {
     NaryNode *nd = allocator.GetMemPool()->New<NaryNode>(allocator, *this);
     for (size_t i = 0; i < GetNopndSize(); i++) {
       nd->GetNopnd().push_back(GetNopndAt(i)->CloneTree(allocator));
@@ -840,25 +852,29 @@ class NaryNode : public BaseNode, public NaryOpnds {
     return nd;
   }
 
-  BaseNode *Opnd(size_t i) const {
+  BaseNode *Opnd(size_t i) const override {
     return GetNopndAt(i);
   }
 
-  uint8 NumOpnds(void) const {
+  uint8 NumOpnds(void) const override {
     ASSERT(numOpnds == GetNopndSize(), "NaryNode has wrong numOpnds field");
     return GetNopndSize();
   }
 
-  void SetOpnd(BaseNode *node, size_t i = 0) {
+  void SetOpnd(BaseNode *node, size_t i = 0) override {
     ASSERT(i < GetNopnd().size(), "array index out of range");
     SetNOpndAt(i, node);
   }
 
-  bool IsLeaf(void) const {
+  bool IsLeaf(void) const override {
     return false;
   }
 
-  bool Verify() const {
+  bool Verify() const override {
+    return true;
+  }
+
+  bool IsNaryNode() const override {
     return true;
   }
 };

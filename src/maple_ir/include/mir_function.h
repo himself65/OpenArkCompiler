@@ -100,10 +100,10 @@ class MIRFunction {
     // Initially allocate symTab and pregTab on the module mempool for storing
     // parameters. If later mirfunction turns out to be a definition, new
     // tables will be allocated on the local data mempool.
-    symTab = module->GetMemPool()->New<MIRSymbolTable>(&module->GetMPAllocator());
+    symTab = module->GetMemPool()->New<MIRSymbolTable>(module->GetMPAllocator());
     pregTab = module->GetMemPool()->New<MIRPregTable>(module, &module->GetMPAllocator());
     typeNameTab = module->GetMemPool()->New<MIRTypeNameTable>(module->GetMPAllocator());
-    labelTab = module->GetMemPool()->New<MIRLabelTable>(&module->GetMPAllocator());
+    labelTab = module->GetMemPool()->New<MIRLabelTable>(module->GetMPAllocator());
   }
 
   void Dump(bool withoutBody = false);

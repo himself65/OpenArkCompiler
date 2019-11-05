@@ -344,6 +344,54 @@ bool IvarMeExpr::IsRCWeak() {
   return false;
 }
 
+// If self is the first use of the same ivar coming from an iassign
+// (argument expr), then update its mu: expr->mu = this->mu.
+bool IvarMeExpr::IsIdentical(IvarMeExpr &expr) const {
+  if (base->GetExprID() != expr.base->GetExprID() || fieldID != expr.fieldID || tyIdx != expr.tyIdx) {
+    return false;
+  }
+
+  // check the two mu being identical
+  if (mu != expr.mu) {
+    if (mu != nullptr && expr.mu != nullptr && mu->GetDefBy() == kDefByChi && expr.mu->GetDefBy() == kDefByChi) {
+      if (mu->GetDefChi().GetBase() != nullptr && mu->GetDefChi().GetBase() == expr.mu->GetDefChi().GetBase()) {
+        return true;
+      }
+    }
+
+    if (mu != nullptr && expr.mu == nullptr && expr.GetDefStmt() != nullptr) {
+      IassignMeStmt *iass = expr.GetDefStmt();
+      if (iass->GetOp() != OP_iassign) {
+        // this can happen due to use of placement new
+        return false;
+      }
+      for (auto xit = iass->GetChiList()->begin(); xit != iass->GetChiList()->end(); ++xit) {
+        ChiMeNode *chi = xit->second;
+        if (chi->GetLHS()->GetExprID() == mu->GetExprID()) {
+          expr.SetMuVal(mu);
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  return true;
+}
+
+MeExpr *IvarMeExpr::GetIdenticalExpr(MeExpr &expr) const {
+  IvarMeExpr *ivarExpr = static_cast<IvarMeExpr*>(&expr);
+
+  while (ivarExpr != nullptr) {
+    if (ivarExpr->GetMeOp() == kMeOpIvar && IsIdentical(*ivarExpr)) {
+      return ivarExpr;
+    }
+    ivarExpr = static_cast<IvarMeExpr*>(ivarExpr->GetNext());
+  }
+
+  return nullptr;
+}
+
 BB *VarMeExpr::GetDefByBBMeStmt(Dominance &dominance, MeStmtPtr &defMeStmt) {
   switch (defBy) {
     case kDefByNo:
@@ -444,6 +492,21 @@ bool OpMeExpr::IsUseSameSymbol(const MeExpr &expr) const {
   return true;
 }
 
+MeExpr *OpMeExpr::GetIdenticalExpr(MeExpr &expr) const {
+  if (!kOpcodeInfo.NotPure(GetOp())) {
+    OpMeExpr *opExpr = static_cast<OpMeExpr*>(&expr);
+
+    while (opExpr != nullptr) {
+      if (IsIdentical(*opExpr)) {
+        return opExpr;
+      }
+      opExpr = static_cast<OpMeExpr*>(opExpr->GetNext());
+    }
+  }
+
+  return nullptr;
+}
+
 // first, make sure it's int const and return true if the int const great or eq 0
 bool ConstMeExpr::GeZero() const {
   return (GetIntValue() >= 0);
@@ -470,6 +533,115 @@ bool ConstMeExpr::IsOne() const {
 int64 ConstMeExpr::GetIntValue() const {
   CHECK_FATAL(constVal->GetKind() == kConstInt, "expect int const");
   return static_cast<MIRIntConst*>(constVal)->GetValue();
+}
+
+MeExpr *ConstMeExpr::GetIdenticalExpr(MeExpr &expr) const {
+  ConstMeExpr *constExpr = static_cast<ConstMeExpr*>(&expr);
+
+  while (constExpr != nullptr) {
+    if (constExpr->GetMeOp() == kMeOpConst && constExpr->GetPrimType() == GetPrimType() &&
+        *constExpr->GetConstVal() == *constVal) {
+      return constExpr;
+    }
+    constExpr = static_cast<ConstMeExpr*>(constExpr->GetNext());
+  }
+
+  return nullptr;
+}
+
+MeExpr *ConststrMeExpr::GetIdenticalExpr(MeExpr &expr) const {
+  ConststrMeExpr *constStrExpr = static_cast<ConststrMeExpr*>(&expr);
+
+  while (constStrExpr != nullptr) {
+    if (constStrExpr->GetMeOp() == kMeOpConststr && constStrExpr->GetStrIdx() == strIdx) {
+      return constStrExpr;
+    }
+    constStrExpr = static_cast<ConststrMeExpr*>(constStrExpr->GetNext());
+  }
+
+  return nullptr;
+}
+
+MeExpr *Conststr16MeExpr::GetIdenticalExpr(MeExpr &expr) const {
+  Conststr16MeExpr *constStr16Expr = static_cast<Conststr16MeExpr*>(&expr);
+
+  while (constStr16Expr != nullptr) {
+    if (constStr16Expr->GetMeOp() == kMeOpConststr16 && constStr16Expr->GetStrIdx() == strIdx) {
+      return constStr16Expr;
+    }
+    constStr16Expr = static_cast<Conststr16MeExpr*>(constStr16Expr->GetNext());
+  }
+
+  return nullptr;
+}
+
+MeExpr *SizeoftypeMeExpr::GetIdenticalExpr(MeExpr &expr) const {
+  SizeoftypeMeExpr *sizeoftypeExpr = static_cast<SizeoftypeMeExpr*>(&expr);
+
+  while (sizeoftypeExpr != nullptr) {
+    if (sizeoftypeExpr->GetMeOp() == kMeOpSizeoftype && sizeoftypeExpr->GetTyIdx() == tyIdx) {
+      return sizeoftypeExpr;
+    }
+    sizeoftypeExpr = static_cast<SizeoftypeMeExpr*>(sizeoftypeExpr->GetNext());
+  }
+
+  return nullptr;
+}
+
+MeExpr *FieldsDistMeExpr::GetIdenticalExpr(MeExpr &expr) const {
+  FieldsDistMeExpr *fieldsDistExpr = static_cast<FieldsDistMeExpr*>(&expr);
+
+  while (fieldsDistExpr != nullptr) {
+    if (fieldsDistExpr->GetMeOp() == kMeOpFieldsDist && fieldsDistExpr->GetTyIdx() == GetTyIdx() &&
+        fieldsDistExpr->GetFieldID1() == fieldID1 && fieldsDistExpr->GetFieldID2() == fieldID2) {
+        return fieldsDistExpr;
+    }
+    fieldsDistExpr = static_cast<FieldsDistMeExpr*>(fieldsDistExpr->GetNext());
+  }
+
+  return nullptr;
+}
+
+MeExpr *AddrofMeExpr::GetIdenticalExpr(MeExpr &expr) const {
+  AddrofMeExpr *addrofExpr = static_cast<AddrofMeExpr*>(&expr);
+
+  while (addrofExpr != nullptr) {
+    if (addrofExpr->GetMeOp() == kMeOpAddrof && addrofExpr->GetOstIdx() == GetOstIdx() &&
+        addrofExpr->GetFieldID() == fieldID) {
+      return addrofExpr;
+    }
+    addrofExpr = static_cast<AddrofMeExpr*>(addrofExpr->GetNext());
+  }
+
+  return nullptr;
+}
+
+MeExpr *NaryMeExpr::GetIdenticalExpr(MeExpr &expr) const {
+  NaryMeExpr *naryExpr = static_cast<NaryMeExpr*>(&expr);
+
+  while (naryExpr != nullptr) {
+    bool isPureIntrinsic =
+        naryExpr->GetOp() == OP_intrinsicop && IntrinDesc::intrinTable[naryExpr->GetIntrinsic()].IsPure();
+    if ((naryExpr->GetOp() == OP_array || isPureIntrinsic) && IsIdentical(*naryExpr)) {
+      return naryExpr;
+    }
+    naryExpr = static_cast<NaryMeExpr*>(naryExpr->GetNext());
+  }
+
+  return nullptr;
+}
+
+MeExpr *AddroffuncMeExpr::GetIdenticalExpr(MeExpr &expr) const {
+  AddroffuncMeExpr *addroffuncExpr = static_cast<AddroffuncMeExpr*>(&expr);
+
+  while (addroffuncExpr != nullptr) {
+    if (addroffuncExpr->GetMeOp() == kMeOpAddroffunc && addroffuncExpr->GetPuIdx() == puIdx) {
+      return addroffuncExpr;
+    }
+    addroffuncExpr = static_cast<AddroffuncMeExpr*>(addroffuncExpr->GetNext());
+  }
+
+  return nullptr;
 }
 
 void MeVarPhiNode::Dump(IRMap *irMap) const {

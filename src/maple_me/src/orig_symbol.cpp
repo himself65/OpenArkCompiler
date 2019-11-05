@@ -54,7 +54,7 @@ OriginalStTable::OriginalStTable(MemPool &memPool, MIRModule &mod)
       thisField2Ost(std::less<uint32>(), alloc.Adapter()),
       virtuaLostUnkownMem(0),
       virtuaLostConstMem(0) {
-  originalStVector.push_back(static_cast<OriginalSt*>(nullptr));
+  originalStVector.push_back(nullptr);
 }
 
 void OriginalStTable::Dump() {
@@ -89,8 +89,7 @@ OriginalSt *OriginalStTable::CreateSymbolOriginalSt(MIRSymbol &mirst, PUIdx pidx
     ost->SetIsFinal(mirst.IsFinal());
     ost->SetIsPrivate(mirst.IsPrivate());
   } else {
-    MIRStructType *structType =
-        static_cast<MIRStructType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(mirst.GetTyIdx()));
+    auto *structType = static_cast<MIRStructType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(mirst.GetTyIdx()));
     ASSERT(structType, "CreateSymbolOriginalSt: non-zero fieldID for non-structure");
     ost->SetTyIdx(structType->GetFieldTyIdx(fld));
     FieldAttrs fattrs = structType->GetFieldAttrs(fld);

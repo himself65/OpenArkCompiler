@@ -24,12 +24,12 @@ namespace maple {
 class SSATab : public AnalysisResult {
   // represent the SSA table
  public:
-  SSATab(MemPool *memPool, MemPool *versmp, MIRModule *mod)
+  SSATab(MemPool *memPool, MemPool *versMp, MIRModule *mod)
       : AnalysisResult(memPool),
         mirModule(*mod),
-        versionStTable(versmp),
+        versionStTable(*versMp),
         originalStTable(*memPool, *mod),
-        stmtsSSAPart(versmp) {}
+        stmtsSSAPart(versMp) {}
 
   ~SSATab() = default;
 
@@ -130,9 +130,9 @@ class SSATab : public AnalysisResult {
 
  private:
   MIRModule &mirModule;
-  VersionStTable versionStTable;  // this uses special versmp because it will be freed earlier
+  VersionStTable versionStTable;  // this uses special versMp because it will be freed earlier
   OriginalStTable originalStTable;
-  StmtsSSAPart stmtsSSAPart;  // this uses special versmp because it will be freed earlier
+  StmtsSSAPart stmtsSSAPart;  // this uses special versMp because it will be freed earlier
   bool wholeProgramScope = false;
 };
 }  // namespace maple

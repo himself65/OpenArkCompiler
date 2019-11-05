@@ -19,6 +19,7 @@
 #include "ssa_tab.h"
 #include "me_ir.h"
 #include "dominance.h"
+#include "me_builder.h"
 
 namespace maple {
 class IRMap : public AnalysisResult {
@@ -34,7 +35,10 @@ class IRMap : public AnalysisResult {
         hashTable(mapHashLength, nullptr, irMapAlloc.Adapter()),
         verst2MeExprTable(ssaTab.GetVersionStTableSize(), nullptr, irMapAlloc.Adapter()),
         regMeExprTable(irMapAlloc.Adapter()),
-        curBB(nullptr) {}
+        curBB(nullptr),
+        meBuilder(irMapAlloc) {
+    InitMeStmtFactory();
+  }
 
   virtual ~IRMap() = default;
 
@@ -174,6 +178,7 @@ class IRMap : public AnalysisResult {
   bool needAnotherPass = false;                    // set to true if CFG has changed
   bool dumpStmtNum = false;
   BB *curBB;  // current maple_me::BB being visited
+  MeBuilder meBuilder;
 
   bool ReplaceMeExprStmtOpnd(uint32, MeStmt&, MeExpr&, MeExpr&);
   MeExpr *BuildLHSVar(const VersionSt &verSt, DassignMeStmt &defMeStmt);
@@ -192,6 +197,20 @@ class IRMap : public AnalysisResult {
   void BuildMuList(MapleMap<OStIdx, MayUseNode> &, MapleMap<OStIdx, VarMeExpr*> &);
   void BuildPhiMeNode(BB&);
   BB *GetFalseBrBB(CondGotoMeStmt&);
+  void SetMeExprOpnds(MeExpr &meExpr, BaseNode &mirNode);
+  void InitMeStmtFactory() const;
+  MeStmt *BuildDassignMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart);
+  MeStmt *BuildRegassignMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart);
+  MeStmt *BuildIassignMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart);
+  MeStmt *BuildMaydassignMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart);
+  MeStmt *BuildCallMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart);
+  MeStmt *BuildNaryMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart);
+  MeStmt *BuildRetMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart);
+  MeStmt *BuildWithMuMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart);
+  MeStmt *BuildGosubMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart);
+  MeStmt *BuildThrowMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart);
+  MeStmt *BuildSyncMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart);
+  MeExpr *ReplaceMeExprExpr(MeExpr &origExpr, MeExpr &newExpr, size_t opndsSize, MeExpr &meExpr, MeExpr &repExpr);
 };
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_IRMAP_H

@@ -61,7 +61,7 @@ void InterleavedManager::AddPhases(const std::vector<std::string> &phases, bool 
 
 
 void InterleavedManager::Run() {
-  for (PhaseManager * const &pm : phaseManagers) {
+  for (auto *pm : phaseManagers) {
     if (pm == nullptr) {
       continue;
     }
