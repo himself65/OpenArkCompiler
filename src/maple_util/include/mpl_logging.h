@@ -222,6 +222,8 @@ class LogInfo {
     }                                                                               \
   } while (0)
 
+#define CHECK_NULL_FATAL(ptr) CHECK_FATAL(ptr != nullptr, "Failed with nullptr.")
+
 #if ENABLE_ASSERT
 #define ASSERT(cond, fmt, ...)                                                      \
   do {                                                                              \
@@ -230,8 +232,11 @@ class LogInfo {
       abort();                                                                      \
     }                                                                               \
   } while (0)
+
+#define ASSERT_NOT_NULL(ptr) ASSERT(ptr != nullptr, "Failed with nullptr.")
 #else
 #define ASSERT(cond, fmt, ...)
+#define ASSERT_NOT_NULL(ptr)
 #endif  // ENABLE_ASSERT
 
 // for user

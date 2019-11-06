@@ -78,7 +78,7 @@ MeOption *MapleCombCompiler::MakeMeOptions(const MplOptions &options, maple::Mem
     return meOption;
   }
   for (auto &opt : inputMeOptions->second) {
-    if (options.GetDebugFlag()) {
+    if (options.HasSetDebugFlag()) {
       LogInfo::MapleLogger() << "Me options: " << opt.Index() << " " << opt.OptionKey() << " " << opt.Args()
                              << '\n';
     }
@@ -172,7 +172,7 @@ Options *MapleCombCompiler::MakeMpl2MplOptions(const MplOptions &options, maple:
     return mpl2mplOption;
   }
   for (auto &opt : inputOptions->second) {
-    if (options.GetDebugFlag()) {
+    if (options.HasSetDebugFlag()) {
       LogInfo::MapleLogger() << "mpl2mpl options: " << opt.Index() << " " << opt.OptionKey() << " " << opt.Args()
                              << '\n';
     }
@@ -255,7 +255,7 @@ ErrorCode MapleCombCompiler::Compile(const MplOptions &options, MIRModulePtr &th
   PrintCommand(options);
   DriverRunner runner(theModule, options.GetRunningExes(), mpl2mplOptions.get(), fileName, meOptions.get(),
                       fileName, fileName, optMp,
-                      options.GetTimePhases(), options.GetGenMemPl());
+                      options.HasSetTimePhases(), options.HasSetGenMeMpl());
   ErrorCode nErr = runner.Run();
 
   memPoolCtrler.DeleteMemPool(optMp);

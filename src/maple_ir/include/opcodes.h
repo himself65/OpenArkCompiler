@@ -23,5 +23,19 @@ enum Opcode : std::uint8_t {
 #undef OPCODE
   kOpLast,
 };
+
+inline constexpr bool IsDAssign(Opcode code) {
+  return (code == OP_dassign || code == OP_maydassign);
+}
+
+inline constexpr bool IsCallAssigned(Opcode code) {
+  return (code == OP_callassigned || code == OP_virtualcallassigned ||
+          code == OP_virtualicallassigned || code == OP_superclasscallassigned ||
+          code == OP_interfacecallassigned || code == OP_interfaceicallassigned ||
+          code == OP_customcallassigned || code == OP_polymorphiccallassigned ||
+          code == OP_icallassigned || code == OP_intrinsiccallassigned ||
+          code == OP_xintrinsiccallassigned || code == OP_intrinsiccallwithtypeassigned);
+  }
+
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_OPCODES_H

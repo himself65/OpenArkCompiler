@@ -62,6 +62,7 @@ static constexpr char kDeclaringclassStr[] = "declaringclass";
 static constexpr char kFieldInfoTypeName[] = "__field_info__";
 static constexpr char kINFOAccessFlags[] = "INFO_access_flags";
 static constexpr char kSuperclassinfoStr[] = "superclassinfo";
+static constexpr char kFieldOffsetDataStr[] = "fieldOffsetData";
 static constexpr char kAnnotationvalueStr[] = "annotationvalue";
 static constexpr char kMethodInfoTypeName[] = "__method_info__";
 static constexpr char kClinitSuffixStr[] = "_3Cclinit_3E_7C_28_29V";
@@ -71,6 +72,7 @@ static constexpr char kClassMetadataRoTypeName[] = "__class_meta_ro__";
 static constexpr char kMethodInVtabIndexStr[] = "method_in_vtab_index";
 static constexpr char kClassStateInitializedStr[] = "classStateInitialized";
 static constexpr char kSuperclassMetadataTypeName[] = "__superclass_meta__";
+static constexpr char kFieldOffsetDataTypeName[] = "__fieldOffsetDataType__";
 static constexpr char kFieldInfoCompactTypeName[] = "__field_info_compact__";
 static constexpr char kClassInitProtectRegionStr[] = "classInitProtectRegion";
 static constexpr char kMethodInfoCompactTypeName[] = "__method_info_compact__";
@@ -146,7 +148,7 @@ enum struct MethodInfoCompact : uint32 {
 };
 
 enum struct FieldProperty : uint32 {
-  kOffset,
+  kPOffset,
   kMod,
   kFlag,
   kIndex,
@@ -157,7 +159,7 @@ enum struct FieldProperty : uint32 {
 };
 
 enum struct FieldPropertyCompact : uint32 {
-  kOffset,
+  kPOffset,
   kMod,
   kTypeName,
   kIndex,
@@ -174,6 +176,8 @@ static constexpr uint64 kMethodNotVirtual = 0x00000001;
 static constexpr uint64 kMethodFinalize = 0x00000002;
 static constexpr uint64 kMethodMetaCompact = 0x00000004;
 static constexpr uint64 kMethodAbstract = 0x00000010;
+static constexpr uint64 kFieldReadOnly = 0x00000001;
+
 #define CASE_CONDITION(ARRAYNAME, ELEM)                                                                     \
   case kValueInt:                                                                                          \
     ARRAYNAME += std::to_string(ELEM->GetI32Val());                                                        \
@@ -252,6 +256,7 @@ class ReflectionAnalysis : public AnalysisResult {
   static TyIdx fieldsInfoTyIdx;
   static TyIdx fieldsInfoCompactTyIdx;
   static TyIdx superclassMetadataTyIdx;
+  static TyIdx fieldOffsetDataTyIdx;
   static std::string strTab;
   static std::unordered_map<std::string, uint32> str2IdxMap;
   static std::string strTabStartHot;
@@ -312,6 +317,7 @@ class ReflectionAnalysis : public AnalysisResult {
   std::string GetArrayValue(MapleVector<MIRPragmaElement*> subElemVector, bool isSN = false);
   std::string GetAnnotationValue(MapleVector<MIRPragmaElement*> subElemVector, GStrIdx typeStrIdx);
   MIRSymbol *GenSuperClassMetaData(const Klass &klass, std::list<Klass*> superClassList);
+  void GenFieldOffsetData(const Klass &klass, std::vector<std::pair<FieldPair, int>> &fieldOffsetVector);
   MIRSymbol *GenFieldsMetaData(const Klass &klass);
   MIRSymbol *GenMethodsMetaData(const Klass &klass);
   static void GenMetadataType(MIRModule &mirModule);

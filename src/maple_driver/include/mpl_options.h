@@ -122,7 +122,7 @@ class MplOptions {
         printCommandStr(""),
         debugFlag(false),
         timePhases(false),
-        genMemPl(false),
+        genMeMpl(false),
         genVtableImpl(false),
         verify(false) {}
   ~MplOptions() = default;
@@ -162,11 +162,11 @@ class MplOptions {
     return optimizationLevel;
   }
 
-  const bool GetSetDefaultLevel() const {
+  bool HasSetDefaultLevel() const {
     return setDefaultLevel;
   }
 
-  const bool GetIsSaveTmps() const {
+  bool HasSetSaveTmps() const {
     return isSaveTmps;
   }
 
@@ -190,23 +190,23 @@ class MplOptions {
     return printCommandStr;
   }
 
-  const bool GetDebugFlag() const {
+  bool HasSetDebugFlag() const {
     return debugFlag;
   }
 
-  const bool GetTimePhases() const {
+  bool HasSetTimePhases() const {
     return timePhases;
   }
 
-  const bool GetGenMemPl() const {
-    return genMemPl;
+  bool HasSetGenMeMpl() const {
+    return genMeMpl;
   }
 
-  const bool GetGenVtableImpl() const {
+  bool HasSetGenVtableImpl() const {
     return genVtableImpl;
   }
 
-  const bool GetVerify() const {
+  bool HasSetVerify() const {
     return verify;
   }
 
@@ -231,7 +231,7 @@ class MplOptions {
   std::string printCommandStr;
   bool debugFlag;
   bool timePhases;
-  bool genMemPl;
+  bool genMeMpl;
   bool genVtableImpl;
   bool verify;
   bool Init(const std::string &inputFile);
@@ -239,7 +239,6 @@ class MplOptions {
   ErrorCode DecideRunType();
   ErrorCode DecideRunningPhases();
   ErrorCode CheckInputFileValidity();
-  ErrorCode CheckRunMode(RunMode mode);
   ErrorCode CheckFileExits();
   void AddOption(const mapleOption::Option &option);
   ErrorCode UpdatePhaseOption(const std::string &args, const std::string &exeName);

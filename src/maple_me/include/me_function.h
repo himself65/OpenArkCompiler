@@ -298,8 +298,8 @@ class MeFunction : public FuncEmit {
   void DeleteBasicBlock(const BB &bb);
   BB *NextBB(const BB *bb);
   BB *PrevBB(const BB *bb);
-  /* create label for bb */
-  void CreateBBLabel(BB &bb);
+  /* get or create label for bb */
+  LabelIdx GetOrCreateBBLabel(BB &bb);
   /* clone stmtnodes from orig to newBB */
   void CloneBasicBlock(BB &newBB, const BB &orig);
   BB &SplitBB(BB &bb, StmtNode &splitPoint, BB *newBB = nullptr);
@@ -460,7 +460,7 @@ class MeFunction : public FuncEmit {
   void CreateBasicBlocks();
   void SetTryBlockInfo(const StmtNode *nextStmt, StmtNode *tryStmt, BB *lastTryBB, BB *curBB, BB *newBB);
   void RemoveEhEdgesInSyncRegion();
-  MIRFunction *CurFunction(void) const {
+  MIRFunction *CurFunction() const {
     return mirModule.CurFunction();
   }
   void SplitBBPhysically(BB &bb, StmtNode &splitPoint, BB &newBB);

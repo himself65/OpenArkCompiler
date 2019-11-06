@@ -310,16 +310,18 @@ void MUIDReplacement::GenericFuncDefTable() {
     // Create muidIdxTab to store the index in funcDefTab and funcDefMuidTab
     // With muidIdxTab, we can use index sorted by muid to find the index in funcDefTab and funcDefMuidTab
     // Use the left 1 bit of muidIdx to mark wether the function is weak or not. 1 is for weak
-    MIRIntConst *indexConst = nullptr;
-    if (reflectionList.find(mirFunc->GetName()) != reflectionList.end()) {
-      constexpr uint32 weakFuncFlag = 0x80000000; // 0b10000000 00000000 00000000 00000000
-      indexConst =
-        GetMIRModule().GetMemPool()->New<MIRIntConst>(weakFuncFlag | idx, *GlobalTables::GetTypeTable().GetUInt32());
-    } else {
-      indexConst = GetMIRModule().GetMemPool()->New<MIRIntConst>(idx, *GlobalTables::GetTypeTable().GetUInt32());
-    }
     uint32 muidIdx = iter->second.second;
+    constexpr uint32 weakFuncFlag = 0x80000000; // 0b10000000 00000000 00000000 00000000
+    MIRIntConst *indexConst = static_cast<MIRIntConst*>(muidIdxTabConst->GetConstVecItem(muidIdx));
+    uint32 tempIdx = (indexConst->GetValue() & weakFuncFlag) | idx;
+    indexConst = GetMIRModule().GetMemPool()->New<MIRIntConst>(tempIdx, *GlobalTables::GetTypeTable().GetUInt32());
     muidIdxTabConst->SetConstVecItem(muidIdx, *indexConst);
+    if (reflectionList.find(mirFunc->GetName()) != reflectionList.end()) {
+      MIRIntConst *tempConst = static_cast<MIRIntConst*>(muidIdxTabConst->GetConstVecItem(idx));
+      tempIdx = weakFuncFlag | tempConst->GetValue();
+      tempConst = GetMIRModule().GetMemPool()->New<MIRIntConst>(tempIdx, *GlobalTables::GetTypeTable().GetUInt32());
+      muidIdxTabConst->SetConstVecItem(idx, *tempConst);
+    }
         // Store the real idx of funcdefTab, for ReplaceAddroffuncConst->FindIndexFromDefTable
     defMuidIdxMap[muid] = idx;
     idx++;

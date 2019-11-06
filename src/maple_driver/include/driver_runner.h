@@ -32,7 +32,7 @@ class DriverRunner final {
   DriverRunner(MIRModule *theModule, const std::vector<std::string> &exeNames, Options *mpl2mplOptions,
                std::string mpl2mplInput, MeOption *meOptions, const std::string &meInput, std::string actualInput,
                MemPool *optMp, bool timePhases = false,
-               bool genMemPl = false)
+               bool genMeMpl = false)
       : theModule(theModule),
         exeNames(exeNames),
         mpl2mplOptions(mpl2mplOptions),
@@ -42,11 +42,11 @@ class DriverRunner final {
         actualInput(actualInput),
         optMp(optMp),
         timePhases(timePhases),
-        genMemPl(genMemPl) {}
+        genMeMpl(genMeMpl) {}
 
   DriverRunner(MIRModule *theModule, const std::vector<std::string> &exeNames, std::string actualInput, MemPool *optMp,
-               bool timePhases = false, bool genVtableImpl = false, bool genMemPl = false)
-      : DriverRunner(theModule, exeNames, nullptr, "", nullptr, "", actualInput, optMp, timePhases, genMemPl) {}
+               bool timePhases = false, bool genVtableImpl = false, bool genMeMpl = false)
+      : DriverRunner(theModule, exeNames, nullptr, "", nullptr, "", actualInput, optMp, timePhases, genMeMpl) {}
 
   ~DriverRunner() = default;
 
@@ -63,7 +63,7 @@ class DriverRunner final {
   std::string actualInput;
   MemPool *optMp;
   bool timePhases = false;
-  bool genMemPl = false;
+  bool genMeMpl = false;
   std::string printOutExe;
 
   static bool FuncOrderLessThan(const MIRFunction *left, const MIRFunction *right);

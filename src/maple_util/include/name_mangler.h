@@ -88,6 +88,7 @@ static constexpr const char kMethodsInfoPrefixStr[] = "__methods_info__";
 static constexpr const char kMethodsInfoCompactPrefixStr[] = "__methods_infocompact__";
 static constexpr const char kFieldsInfoPrefixStr[] = "__fields_info__";
 static constexpr const char kFieldsInfoCompactPrefixStr[] = "__fields_infocompact__";
+static constexpr const char kFieldOffsetDataPrefixStr[] = "__fieldOffsetData__";
 static constexpr const char kRegJNITabPrefixStr[] = "__reg_jni_tab";
 static constexpr const char kRegJNIFuncTabPrefixStr[] = "__reg_jni_func_tab";
 static constexpr const char kReflectionStrtabPrefixStr[] = "__reflection_strtab";

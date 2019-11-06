@@ -100,7 +100,7 @@ ErrorCode CompilerFactory::Compile(const MplOptions &mplOptions) {
     }
   }
 
-  if (!mplOptions.GetIsSaveTmps() || !mplOptions.GetSaveFiles().empty()) {
+  if (!mplOptions.HasSetSaveTmps() || !mplOptions.GetSaveFiles().empty()) {
     auto tmpFiles = std::vector<std::string>();
     for (auto compiler : compilers) {
       compiler->GetTmpFilesToDelete(mplOptions, tmpFiles);

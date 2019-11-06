@@ -120,6 +120,7 @@ TyIdx ReflectionAnalysis::methodsInfoCompactTyIdx = TyIdx(0);
 TyIdx ReflectionAnalysis::fieldsInfoTyIdx = TyIdx(0);
 TyIdx ReflectionAnalysis::fieldsInfoCompactTyIdx = TyIdx(0);
 TyIdx ReflectionAnalysis::superclassMetadataTyIdx = TyIdx(0);
+TyIdx ReflectionAnalysis::fieldOffsetDataTyIdx = TyIdx(0);
 TyIdx ReflectionAnalysis::invalidIdx = TyIdx(-1);
 namespace {
 constexpr int kModPublic = 1;                 // 0x00000001
@@ -741,6 +742,50 @@ MIRSymbol *ReflectionAnalysis::GenMethodsMetaData(const Klass &klass) {
   return methodsArraySt;
 }
 
+void ReflectionAnalysis::GenFieldOffsetData(const Klass &klass,
+                                            std::vector<std::pair<FieldPair, int>> &fieldOffsetVector) {
+  size_t size = fieldOffsetVector.size();
+  MIRModule &module = *mirModule;
+  MIRStructType &fieldOffsetType =
+      static_cast<MIRStructType&>(*GlobalTables::GetTypeTable().GetTypeFromTyIdx(fieldOffsetDataTyIdx));
+  MIRArrayType &fieldOffsetArrayType = *GlobalTables::GetTypeTable().GetOrCreateArrayType(fieldOffsetType, size);
+  MIRAggConst *aggconst = module.GetMemPool()->New<MIRAggConst>(module, fieldOffsetArrayType);
+  for (auto &fieldinfo : fieldOffsetVector) {
+    MIRAggConst *newconst = module.GetMemPool()->New<MIRAggConst>(module, fieldOffsetType);
+    bool staticfield = (fieldinfo.second == -1);
+    FieldPair fieldP = fieldinfo.first;
+    TyIdx fieldTyidx = fieldP.second.first;
+    std::string originFieldname = GlobalTables::GetStrTable().GetStringFromStrIdx(fieldP.first);
+    if (staticfield) {
+      // Offset of the static field, we fill the global var address.
+      const GStrIdx stridx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(
+          GlobalTables::GetStrTable().GetStringFromStrIdx(fieldP.first));
+      MIRSymbol *gvarSt = GetSymbol(stridx, fieldTyidx);
+      if (gvarSt == nullptr) {
+        // If this static field is not used, the symbol will not be generated,
+        // so we just generate a weak one here.
+        gvarSt = CreateSymbol(stridx, fieldTyidx);
+        gvarSt->SetAttr(ATTR_weak);
+        gvarSt->SetAttr(ATTR_static);
+      }
+      mirBuilder.AddAddrofFieldConst(fieldOffsetType, *newconst, 1, *gvarSt);
+    } else {
+      // Offset of the instance field, we fill the index of fields here and let CG to fill in.
+      MIRClassType *mirClassType = klass.GetMIRClassType();
+      ASSERT(mirClassType != nullptr, "GetMIRClassType() returns null");
+      FieldID fldid = mirBuilder.GetStructFieldIDFromNameAndTypeParentFirstFoundInChild(
+          *mirClassType, originFieldname.c_str(), fieldP.second.first);
+      mirBuilder.AddIntFieldConst(fieldOffsetType, *newconst, 1, fldid);
+    }
+    aggconst->GetConstVec().push_back(newconst);
+  }
+  MIRSymbol *fieldsOffsetArraySt = GetOrCreateSymbol(NameMangler::kFieldOffsetDataPrefixStr + klass.GetKlassName(),
+                                                     fieldOffsetArrayType.GetTypeIndex(), true);
+  // Direct access to fieldoffset is only possible within a .so.
+  fieldsOffsetArraySt->SetStorageClass(kScFstatic);
+  fieldsOffsetArraySt->SetKonst(aggconst);
+}
+
 MIRSymbol *ReflectionAnalysis::GenSuperClassMetaData(const Klass &klass, std::list<Klass*> superClassList) {
   MIRModule &module = *mirModule;
   size_t size = superClassList.size();
@@ -827,6 +872,7 @@ MIRSymbol *ReflectionAnalysis::GenFieldsMetaData(const Klass &klass) {
     j++;
   }
   ASSERT(i == size, "In class %s: %d fields seen, BUT %d fields declared", klass.GetKlassName().c_str(), i, size);
+  GenFieldOffsetData(klass, fieldinfoVec);
   int idx = 0;
   for (auto &fieldinfo : fieldinfoVec) {
     std::vector<uint8> fieldsCompactLeb128Vec;
@@ -843,28 +889,8 @@ MIRSymbol *ReflectionAnalysis::GenFieldsMetaData(const Klass &klass) {
     reflectionMuidStr += ty->GetName();
     bool staticfield = (fieldinfo.second == -1);
     // ==== FieldMetadata ====
-    // @offset:
-    if (staticfield) {
-      // Offset of the static field, we fill the global var address.
-      const GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(
-          GlobalTables::GetStrTable().GetStringFromStrIdx(fieldP.first));
-      MIRSymbol *gvarSt = GetSymbol(strIdx, fieldTyidx);
-      if (gvarSt == nullptr) {
-        // If this static field is not used, the symbol will not be generated,
-        // so we just generate a weak one here.
-        gvarSt = CreateSymbol(strIdx, fieldTyidx);
-        gvarSt->SetAttr(ATTR_weak);
-        gvarSt->SetAttr(ATTR_static);
-      }
-      mirBuilder.AddAddrofFieldConst(fieldsInfoType, *newconst, fieldID++, *gvarSt);
-    } else {
-      // Offset of the instance field, we fill the index of fields here and let CG to fill in.
-      MIRClassType *mirClassType = klass.GetMIRClassType();
-      ASSERT(mirClassType != nullptr, "GetMIRClassType() returns null");
-      FieldID fldID = mirBuilder.GetStructFieldIDFromNameAndTypeParentFirstFoundInChild(
-          *mirClassType, originFieldname.c_str(), fieldP.second.first);
-      mirBuilder.AddIntFieldConst(fieldsInfoType, *newconst, fieldID++, fldID);
-    }
+    // @poffset:
+    mirBuilder.AddIntFieldConst(fieldsInfoType, *newconst, fieldID++, idx);
     // @modifier
     FieldAttrs fa = fieldP.second.second;
     mirBuilder.AddIntFieldConst(fieldsInfoType, *newconst, fieldID++, GetFieldModifier(fa));
@@ -875,6 +901,7 @@ MIRSymbol *ReflectionAnalysis::GenFieldsMetaData(const Klass &klass) {
     // @flag
     uint16 hash = GetFieldHash(fieldHashvec, fieldP);
     uint16 flag = (hash << kNoHashBits);  // Hash 10 bit.
+    flag |= kFieldReadOnly;
     mirBuilder.AddIntFieldConst(fieldsInfoType, *newconst, fieldID++, flag);
     // @index
     mirBuilder.AddIntFieldConst(fieldsInfoType, *newconst, fieldID++, idx);
@@ -1573,6 +1600,11 @@ void ReflectionAnalysis::GenMetadataType(MIRModule &mirModule) {
   MIRStructType superclassMetadataType(kTypeStruct);
   GlobalTables::GetTypeTable().AddFieldToStructType(superclassMetadataType, kSuperclassinfoStr, *typeVoidPtr);
   superclassMetadataTyIdx = GenMetaStructType(mirModule, superclassMetadataType, kSuperclassMetadataTypeName);
+  // FieldOffsetDataType.
+  MIRStructType fieldOffsetDataType(kTypeStruct);
+  GlobalTables::GetTypeTable().AddFieldToStructType(fieldOffsetDataType, kFieldOffsetDataStr, *typeVoidPtr);
+  fieldOffsetDataTyIdx = GenMetaStructType(mirModule, fieldOffsetDataType, kFieldOffsetDataTypeName);
+
 }
 
 void ReflectionAnalysis::GenClassHashMetaData() {

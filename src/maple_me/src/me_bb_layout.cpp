@@ -35,17 +35,15 @@
 // 5. do step 3 for nextBB until all bbs are laid out
 namespace maple {
 static void CreateGoto(BB &bb, MeFunction &func, BB &fallthru) {
-  if (fallthru.GetBBLabel() == 0) {
-    func.CreateBBLabel(fallthru);
-  }
+  LabelIdx label = func.GetOrCreateBBLabel(fallthru);
   if (func.GetIRMap() != nullptr) {
     GotoNode stmt(OP_goto);
     GotoMeStmt *newGoto = func.GetIRMap()->New<GotoMeStmt>(&stmt);
-    newGoto->SetOffset(fallthru.GetBBLabel());
+    newGoto->SetOffset(label);
     bb.AddMeStmtLast(newGoto);
   } else {
     GotoNode *newGoto = func.GetMirFunc()->GetCodeMempool()->New<GotoNode>(OP_goto);
-    newGoto->SetOffset(fallthru.GetBBLabel());
+    newGoto->SetOffset(label);
     bb.AddStmtNode(newGoto);
   }
   bb.SetKind(kBBGoto);
@@ -68,36 +66,33 @@ bool BBLayout::BBEmptyAndFallthru(const BB &bb) {
 
 // Return true if bb only has conditonal branch stmt except comment
 bool BBLayout::BBContainsOnlyCondGoto(const BB &bb) const {
-  if (bb.GetAttributes(kBBAttrIsTryEnd)) {
+  if (bb.GetKind() != kBBCondGoto || bb.GetAttributes(kBBAttrIsTryEnd)) {
     return false;
   }
-  if (bb.GetKind() == kBBCondGoto) {
-    if (func.GetIRMap() != nullptr) {
-      auto &meStmts = bb.GetMeStmts();
-      if (meStmts.empty()) {
-        return false;
-      }
-      for (auto itMeStmt = meStmts.begin(); itMeStmt != meStmts.rbegin().base(); ++itMeStmt) {
-        if (!itMeStmt->IsCondBr() && itMeStmt->GetOp() != OP_comment) {
-          return false;
-        }
-      }
-      return meStmts.back().IsCondBr();
-    } else {
-      StmtNode *stmt = bb.GetStmtNodes().begin().d();
-      if (stmt == nullptr) {
-        return false;
-      }
-      auto &stmtNodes = bb.GetStmtNodes();
-      for (auto itStmt = stmtNodes.begin(); itStmt != stmtNodes.rbegin().base(); ++itStmt) {
-        if (!itStmt->IsCondBr() && itStmt->GetOpCode() != OP_comment) {
-          return false;
-        }
-      }
-      return bb.GetStmtNodes().back().IsCondBr();
+
+  if (func.GetIRMap() != nullptr) {
+    auto &meStmts = bb.GetMeStmts();
+    if (meStmts.empty()) {
+      return false;
     }
+    for (auto itMeStmt = meStmts.begin(); itMeStmt != meStmts.rbegin().base(); ++itMeStmt) {
+      if (!itMeStmt->IsCondBr() && itMeStmt->GetOp() != OP_comment) {
+        return false;
+      }
+    }
+    return meStmts.back().IsCondBr();
+  } else {
+    auto &stmtNodes = bb.GetStmtNodes();
+    if (stmtNodes.empty()) {
+      return false;
+    }
+    for (auto itStmt = stmtNodes.begin(); itStmt != stmtNodes.rbegin().base(); ++itStmt) {
+      if (!itStmt->IsCondBr() && itStmt->GetOpCode() != OP_comment) {
+        return false;
+      }
+    }
+    return bb.GetStmtNodes().back().IsCondBr();
   }
-  return false;
 }
 
 // Return the opposite opcode for condition/compare opcode.
@@ -135,37 +130,33 @@ static Opcode GetOppositeOp(Opcode opc1) {
 }
 
 bool BBLayout::BBContainsOnlyGoto(const BB &bb) const {
-  if (bb.GetAttributes(kBBAttrIsTryEnd)) {
+  if (bb.GetKind() != kBBGoto || bb.GetAttributes(kBBAttrIsTryEnd)) {
     return false;
   }
-  if (bb.GetKind() == kBBGoto) {
-    if (func.GetIRMap() != nullptr) {
-      auto &meStmts = bb.GetMeStmts();
-      if (meStmts.empty()) {
-        return false;
-      }
-      for (auto itMeStmt = meStmts.begin(); itMeStmt != meStmts.rbegin().base(); ++itMeStmt) {
-        if (itMeStmt->GetOp() != OP_goto && itMeStmt->GetOp() != OP_comment) {
-          return false;
-        }
-      }
-      return meStmts.back().GetOp() == OP_goto;
-    } else {
-      StmtNode *stmt = bb.GetStmtNodes().begin().d();
-      if (stmt == nullptr) {
-        return false;
-      }
 
-      auto &stmtNodes = bb.GetStmtNodes();
-      for (auto itStmt = stmtNodes.begin(); itStmt != stmtNodes.rbegin().base(); ++itStmt) {
-        if (itStmt->GetOpCode() != OP_goto && itStmt->GetOpCode() != OP_comment) {
-          return false;
-        }
-      }
-      return bb.GetStmtNodes().back().GetOpCode() == OP_goto;
+  if (func.GetIRMap() != nullptr) {
+    auto &meStmts = bb.GetMeStmts();
+    if (meStmts.empty()) {
+      return false;
     }
+    for (auto itMeStmt = meStmts.begin(); itMeStmt != meStmts.rbegin().base(); ++itMeStmt) {
+      if (itMeStmt->GetOp() != OP_goto && itMeStmt->GetOp() != OP_comment) {
+        return false;
+      }
+    }
+    return meStmts.back().GetOp() == OP_goto;
+  } else {
+    auto &stmtNodes = bb.GetStmtNodes();
+    if (stmtNodes.empty()) {
+      return false;
+    }
+    for (auto itStmt = stmtNodes.begin(); itStmt != stmtNodes.rbegin().base(); ++itStmt) {
+      if (itStmt->GetOpCode() != OP_goto && itStmt->GetOpCode() != OP_comment) {
+        return false;
+      }
+    }
+    return bb.GetStmtNodes().back().GetOpCode() == OP_goto;
   }
-  return false;
 }
 
 // Return true if all the following are satisfied:
@@ -197,7 +188,7 @@ bool BBLayout::HasSameBranchCond(BB &bb1, BB &bb2) const {
     CondGotoMeStmt &meStmt2 = static_cast<CondGotoMeStmt&>(bb2.GetMeStmts().back());
     MeExpr *expr1 = meStmt1.GetOpnd();
     MeExpr *expr2 = meStmt2.GetOpnd();
-    // Compare the opcode.
+    // Compare the opcode:  brtrue/brfalse
     if (!(meStmt1.GetOp() == meStmt2.GetOp() && expr1->GetOp() == expr2->GetOp()) &&
         !(meStmt1.GetOp() == GetOppositeOp(meStmt2.GetOp()) && expr1->GetOp() == GetOppositeOp(expr2->GetOp()))) {
       return false;
@@ -258,69 +249,61 @@ void BBLayout::OptimizeBranchTarget(BB &bb) {
     }
   } else {
     auto &stmtNodes = bb.GetStmtNodes();
-    if (stmtNodes.rbegin().base().d() == nullptr) {
+    if (stmtNodes.empty()) {
       return;
     }
     if (stmtNodes.back().GetOpCode() != OP_goto && !stmtNodes.back().IsCondBr()) {
       return;
     }
   }
-start_:
-  ASSERT(!bb.GetSucc().empty(), "container check");
-  BB *brTargetBB = bb.GetKind() == kBBCondGoto ? bb.GetSucc(1) : bb.GetSucc(0);
-  if (brTargetBB->GetAttributes(kBBAttrWontExit)) {
-    return;
-  }
-  if (!BBContainsOnlyGoto(*brTargetBB) && !BBEmptyAndFallthru(*brTargetBB) &&
-      !(bb.GetKind() == kBBCondGoto && brTargetBB->GetKind() == kBBCondGoto && &bb != brTargetBB &&
-        BBContainsOnlyCondGoto(*brTargetBB) && HasSameBranchCond(bb, *brTargetBB))) {
-    return;
-  }
-  // optimize stmt
-  BB *newTargetBB = brTargetBB->GetSucc().front();
-  if (brTargetBB->GetKind() == kBBCondGoto) {
-    newTargetBB = brTargetBB->GetSucc(1);
-  }
-  if (newTargetBB->GetBBLabel() == 0) {
-    func.CreateBBLabel(*newTargetBB);
-  }
-  LabelIdx newTargetLabel = newTargetBB->GetBBLabel();
-  if (func.GetIRMap() != nullptr) {
-    auto &lastStmt = bb.GetMeStmts().back();
-    if (lastStmt.GetOp() == OP_goto) {
-      GotoMeStmt &gotoMeStmt = static_cast<GotoMeStmt&>(lastStmt);
-      ASSERT(brTargetBB->GetBBLabel() == gotoMeStmt.GetOffset(), "OptimizeBranchTarget: wrong branch target BB");
-      gotoMeStmt.SetOffset(newTargetLabel);
-    } else {
-      CondGotoMeStmt &gotoMeStmt = static_cast<CondGotoMeStmt&>(lastStmt);
-      ASSERT(brTargetBB->GetBBLabel() == gotoMeStmt.GetOffset(), "OptimizeBranchTarget: wrong branch target BB");
-      gotoMeStmt.SetOffset(newTargetLabel);
+  do {
+    ASSERT(!bb.GetSucc().empty(), "container check");
+    BB *brTargetBB = bb.GetKind() == kBBCondGoto ? bb.GetSucc(1) : bb.GetSucc(0);
+    if (brTargetBB->GetAttributes(kBBAttrWontExit)) {
+      return;
     }
-  } else {
-    StmtNode &lastStmt = bb.GetStmtNodes().back();
-    if (lastStmt.GetOpCode() == OP_goto) {
-      GotoNode &gotoNode = static_cast<GotoNode&>(lastStmt);
-      ASSERT(brTargetBB->GetBBLabel() == gotoNode.GetOffset(), "OptimizeBranchTarget: wrong branch target BB");
-      gotoNode.SetOffset(newTargetLabel);
-    } else {
-      CondGotoNode &gotoNode = static_cast<CondGotoNode&>(lastStmt);
-      ASSERT(brTargetBB->GetBBLabel() == gotoNode.GetOffset(), "OptimizeBranchTarget: wrong branch target BB");
-      gotoNode.SetOffset(newTargetLabel);
+    if (!BBContainsOnlyGoto(*brTargetBB) && !BBEmptyAndFallthru(*brTargetBB) &&
+        !(bb.GetKind() == kBBCondGoto && brTargetBB->GetKind() == kBBCondGoto && &bb != brTargetBB &&
+          BBContainsOnlyCondGoto(*brTargetBB) && HasSameBranchCond(bb, *brTargetBB))) {
+      return;
     }
-  }
-  // update CFG
-  if (bb.GetKind() == kBBCondGoto) {
-    bb.SetSucc(1, newTargetBB);
-  } else {
-    bb.SetSucc(0, newTargetBB);
-  }
-  newTargetBB->GetPred().push_back(&bb);
-  bb.RemoveBBFromVector(brTargetBB->GetPred());
-  if (brTargetBB->GetPred().empty() && !laidOut[brTargetBB->GetBBId().idx]) {
-    laidOut[brTargetBB->GetBBId().idx] = true;
-    brTargetBB->RemoveBBFromVector(newTargetBB->GetPred());
-  }
-  goto start_;  // repeat until no more opportunity
+    // optimize stmt
+    BB *newTargetBB = brTargetBB->GetSucc().front();
+    if (brTargetBB->GetKind() == kBBCondGoto) {
+      newTargetBB = brTargetBB->GetSucc(1);
+    }
+    LabelIdx newTargetLabel = func.GetOrCreateBBLabel(*newTargetBB);
+    if (func.GetIRMap() != nullptr) {
+      auto &lastStmt = bb.GetMeStmts().back();
+      if (lastStmt.GetOp() == OP_goto) {
+        GotoMeStmt &gotoMeStmt = static_cast<GotoMeStmt&>(lastStmt);
+        ASSERT(brTargetBB->GetBBLabel() == gotoMeStmt.GetOffset(), "OptimizeBranchTarget: wrong branch target BB");
+        gotoMeStmt.SetOffset(newTargetLabel);
+      } else {
+        CondGotoMeStmt &gotoMeStmt = static_cast<CondGotoMeStmt&>(lastStmt);
+        ASSERT(brTargetBB->GetBBLabel() == gotoMeStmt.GetOffset(), "OptimizeBranchTarget: wrong branch target BB");
+        gotoMeStmt.SetOffset(newTargetLabel);
+      }
+    } else {
+      StmtNode &lastStmt = bb.GetStmtNodes().back();
+      if (lastStmt.GetOpCode() == OP_goto) {
+        GotoNode &gotoNode = static_cast<GotoNode&>(lastStmt);
+        ASSERT(brTargetBB->GetBBLabel() == gotoNode.GetOffset(), "OptimizeBranchTarget: wrong branch target BB");
+        gotoNode.SetOffset(newTargetLabel);
+      } else {
+        CondGotoNode &gotoNode = static_cast<CondGotoNode&>(lastStmt);
+        ASSERT(brTargetBB->GetBBLabel() == gotoNode.GetOffset(), "OptimizeBranchTarget: wrong branch target BB");
+        gotoNode.SetOffset(newTargetLabel);
+      }
+    }
+    // update CFG
+    bb.ReplaceSucc(brTargetBB, newTargetBB);
+    bb.RemoveBBFromVector(brTargetBB->GetPred());
+    if (brTargetBB->GetPred().empty() && !laidOut[brTargetBB->GetBBId().idx]) {
+      laidOut[brTargetBB->GetBBId().idx] = true;
+      brTargetBB->RemoveBBFromVector(newTargetBB->GetPred());
+    }
+  } while (true);
 }
 
 void BBLayout::AddBB(BB &bb) {
@@ -378,6 +361,7 @@ BB *BBLayout::GetFallThruBBSkippingEmpty(BB &bb) {
     BB *oldFallthru = fallthru;
     fallthru = oldFallthru->GetSucc().front();
     bb.ReplaceSucc(oldFallthru, fallthru);
+    oldFallthru->RemoveBBFromSucc(fallthru);
   } while (true);
 }
 
@@ -452,18 +436,16 @@ AnalysisResult *MeDoBBLayout::Run(MeFunction *func, MeFuncResultMgr *funcResMgr,
       BB *brTargetBB = bb->GetSucc(1);
       if (brTargetBB != fallthru && fallthru->GetPred().size() > 1 && bbLayout->BBCanBeMoved(*brTargetBB, *bb)) {
         // flip the sense of the condgoto and lay out brTargetBB right here
-        if (fallthru->GetBBLabel() == 0) {
-          func->CreateBBLabel(*fallthru);
-        }
+        LabelIdx fallthruLabel = func->GetOrCreateBBLabel(*fallthru);
         if (func->GetIRMap() != nullptr) {
           CondGotoMeStmt &condGotoMeStmt = static_cast<CondGotoMeStmt&>(bb->GetMeStmts().back());
           ASSERT(brTargetBB->GetBBLabel() == condGotoMeStmt.GetOffset(), "bbLayout: wrong branch target BB");
-          condGotoMeStmt.SetOffset(fallthru->GetBBLabel());
+          condGotoMeStmt.SetOffset(fallthruLabel);
           condGotoMeStmt.SetOp((condGotoMeStmt.GetOp() == OP_brtrue) ? OP_brfalse : OP_brtrue);
         } else {
           CondGotoNode &condGotoNode = static_cast<CondGotoNode&>(bb->GetStmtNodes().back());
           ASSERT(brTargetBB->GetBBLabel() == condGotoNode.GetOffset(), "bbLayout: wrong branch target BB");
-          condGotoNode.SetOffset(fallthru->GetBBLabel());
+          condGotoNode.SetOffset(fallthruLabel);
           condGotoNode.SetOpCode((condGotoNode.GetOpCode() == OP_brtrue) ? OP_brfalse : OP_brtrue);
         }
         bbLayout->AddBB(*brTargetBB);
@@ -481,18 +463,16 @@ AnalysisResult *MeDoBBLayout::Run(MeFunction *func, MeFuncResultMgr *funcResMgr,
           bbLayout->AddLaidOut(false);
           newFallthru->SetKind(kBBGoto);
           bbLayout->SetNewBBInLayout();
-          if (fallthru->GetBBLabel() == 0) {
-            func->CreateBBLabel(*fallthru);
-          }
+          LabelIdx fallthruLabel = func->GetOrCreateBBLabel(*fallthru);
           if (func->GetIRMap() != nullptr) {
             GotoNode stmt(OP_goto);
             GotoMeStmt *newGoto = func->GetIRMap()->New<GotoMeStmt>(&stmt);
-            newGoto->SetOffset(fallthru->GetBBLabel());
+            newGoto->SetOffset(fallthruLabel);
             newFallthru->SetFirstMe(newGoto);
             newFallthru->SetLastMe(to_ptr(newFallthru->GetMeStmts().begin()));
           } else {
             GotoNode *newGoto = func->GetMirFunc()->GetCodeMempool()->New<GotoNode>(OP_goto);
-            newGoto->SetOffset(fallthru->GetBBLabel());
+            newGoto->SetOffset(fallthruLabel);
             newFallthru->SetFirst(newGoto);
             newFallthru->SetLast(newFallthru->GetStmtNodes().begin().d());
           }

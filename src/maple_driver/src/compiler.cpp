@@ -71,13 +71,13 @@ const std::string Compiler::MakeOption(const MplOptions &options) {
   std::ostringstream strOption;
   for (auto finalOption : finalOptions) {
     strOption << " " << finalOption.first << finalOption.second.GetconnectSymbol() << finalOption.second.GetValue();
-    if (options.GetDebugFlag()) {
+    if (options.HasSetDebugFlag()) {
       LogInfo::MapleLogger() << Compiler::GetName() << " options: " << finalOption.first << " "
                              << finalOption.second.GetValue() << '\n';
     }
   }
   strOption << " " << this->GetInputFileName(options);
-  if (options.GetDebugFlag()) {
+  if (options.HasSetDebugFlag()) {
     LogInfo::MapleLogger() << Compiler::GetName() << " input files: " << GetInputFileName(options) << '\n';
   }
   return FileUtils::ConvertPathIfNeeded(strOption.str());

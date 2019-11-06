@@ -107,7 +107,7 @@ ErrorCode MplOptions::HandleGeneralOptions() {
         this->printCommandStr += " -time-phases";
         break;
       case kGenMeMpl:
-        this->genMemPl = true;
+        this->genMeMpl = true;
         this->printCommandStr += " --genmempl";
         break;
       case kGenVtableImpl:
@@ -120,6 +120,8 @@ ErrorCode MplOptions::HandleGeneralOptions() {
         break;
       case kSaveTemps:
         this->isSaveTmps = true;
+        this->genMeMpl = true;
+        this->genVtableImpl = true;
         StringUtils::Split(opt.Args(), this->saveFiles, ',');
         this->printCommandStr += " --save-temps";
         break;
@@ -144,23 +146,24 @@ ErrorCode MplOptions::HandleGeneralOptions() {
 
 ErrorCode MplOptions::DecideRunType() {
   ErrorCode ret = ErrorCode::kErrorNoError;
+  bool runModeConflict = false;
   for (auto opt : optionParser->GetOptions()) {
     switch (opt.Index()) {
       case kOptimization0:
-        ret = CheckRunMode(RunMode::kCustomRun); // O0 and run should not appear at the same time
-        if (ret != ErrorCode::kErrorNoError) {
-          return ErrorCode::kErrorInvalidParameter;
+        if (runMode == RunMode::kCustomRun) {// O0 and run should not appear at the same time
+          runModeConflict = true;
+        } else {
+          runMode = RunMode::kAutoRun;
+          optimizationLevel = kO0;
         }
-        runMode = RunMode::kAutoRun;
-        optimizationLevel = kO0;
         break;
       case kRun:
-        ret = CheckRunMode(RunMode::kAutoRun); // O0(O2) and run should not appear at the same time
-        if (ret != ErrorCode::kErrorNoError) {
-          return ErrorCode::kErrorInvalidParameter;
+        if (runMode == RunMode::kAutoRun) {// O0 and run should not appear at the same time
+          runModeConflict = true;
+        } else {
+          runMode = RunMode::kCustomRun;
+          this->UpdateRunningExe(opt.Args());
         }
-        runMode = RunMode::kCustomRun;
-        this->UpdateRunningExe(opt.Args());
         break;
       case kInFile: {
         if (!Init(opt.Args())) {
@@ -172,6 +175,10 @@ ErrorCode MplOptions::DecideRunType() {
         break;
     }
   }
+  if (runModeConflict) {
+    LogInfo::MapleLogger(kLlErr) << "Cannot set auto mode and run mode at the same time!\n";
+    ret = ErrorCode::kErrorInvalidParameter;
+  }
   return ret;
 }
 
@@ -181,6 +188,7 @@ ErrorCode MplOptions::DecideRunningPhases() {
   bool isNeedMplcg = true;
   switch (inputFileType) {
     case InputFileType::kJar:
+      /* fall-through */
     case InputFileType::kClass:
       this->UpdateRunningExe(kBinNameJbc2mpl);
       break;
@@ -230,14 +238,6 @@ ErrorCode MplOptions::CheckInputFileValidity() {
     }
   }
   return ret;
-}
-
-ErrorCode MplOptions::CheckRunMode(RunMode mode) {
-  if (runMode == mode) {
-    LogInfo::MapleLogger(kLlErr) << "Cannot set auto mode and run mode at the same time!\n";
-    return ErrorCode::kErrorInvalidParameter;
-  }
-  return ErrorCode::kErrorNoError;
 }
 
 ErrorCode MplOptions::CheckFileExits() {

@@ -19,21 +19,19 @@
 #include "mpl_logging.h"
 #include "mir_module.h"
 #include "securec.h"
-#include "mpl_utils.h"
+#include "utils.h"
 
 namespace maple {
+
+int32_t HexCharToDigit(char c) {
+  int32_t ret = utils::ToDigit<16, int32_t>(c);
+  return (ret != INT32_MAX ? ret : 0);
+}
+
 static uint8 Char2num(char c) {
-  if (c >= '0' && c <= '9') {
-    return static_cast<uint8>(c - '0');
-  }
-  if (c >= 'A' && c <= 'F') {
-    return static_cast<uint8>(c - 'A' + 10);
-  }
-  if (c >= 'a' && c <= 'f') {
-    return static_cast<uint8>(c - 'a' + 10);
-  }
-  ASSERT(false, "not a hex value");
-  return 0;
+  uint8 ret = utils::ToDigit<16>(c);
+  ASSERT(ret != UINT8_MAX, "not a hex value");
+  return ret;
 }
 
 /* Read (next) line from the MIR (text) file, and return the read
@@ -193,10 +191,10 @@ TokenKind MIRLexer::GetHexConst(uint32 valStart, bool negative) {
     name = line.substr(valStart, curIdx - valStart);
     return kTkInvalid;
   }
-  uint64 tmp = static_cast<uint32>(Utils::HexCharToDigit(c));
+  uint64 tmp = static_cast<uint32>(HexCharToDigit(c));
   c = GetNextCurrentCharWithUpperCheck();
   while (isxdigit(c)) {
-    tmp = (tmp << 4) + static_cast<uint32>(Utils::HexCharToDigit(c));
+    tmp = (tmp << 4) + static_cast<uint32>(HexCharToDigit(c));
     c = GetNextCurrentCharWithUpperCheck();
   }
   theIntVal = static_cast<int64>(static_cast<uint64>(tmp));
@@ -215,16 +213,16 @@ TokenKind MIRLexer::GetHexConst(uint32 valStart, bool negative) {
 
 TokenKind MIRLexer::GetIntConst(uint32 valStart, bool negative) {
   char c = GetCharAtWithUpperCheck(curIdx);
-  theIntVal = Utils::HexCharToDigit(c);
+  theIntVal = HexCharToDigit(c);
   c = GetNextCurrentCharWithUpperCheck();
   if (theIntVal == 0) {  // octal
     while (isdigit(c)) {
-      theIntVal = ((static_cast<uint64>(theIntVal)) << 3) + Utils::HexCharToDigit(c);
+      theIntVal = ((static_cast<uint64>(theIntVal)) << 3) + HexCharToDigit(c);
       c = GetNextCurrentCharWithUpperCheck();
     }
   } else {
     while (isdigit(c)) {
-      theIntVal = (theIntVal * 10) + Utils::HexCharToDigit(c);
+      theIntVal = (theIntVal * 10) + HexCharToDigit(c);
       c = GetNextCurrentCharWithUpperCheck();
     }
   }
@@ -336,10 +334,10 @@ TokenKind MIRLexer::GetTokenWithPrefixPercent() {
   char c = GetCharAtWithUpperCheck(curIdx);
   if (isdigit(c)) {
     int valStart = curIdx - 1;
-    theIntVal = Utils::HexCharToDigit(c);
+    theIntVal = HexCharToDigit(c);
     c = GetNextCurrentCharWithUpperCheck();
     while (isdigit(c)) {
-      theIntVal = (theIntVal * 10) + Utils::HexCharToDigit(c);
+      theIntVal = (theIntVal * 10) + HexCharToDigit(c);
       c = GetNextCurrentCharWithUpperCheck();
     }
     name = line.substr(valStart, curIdx - valStart);

@@ -191,7 +191,7 @@ void DriverRunner::AddPhases(InterleavedManager &mgr, const std::vector<std::str
   if (type == typeid(ModulePhaseManager)) {
     mgr.AddPhases(phases, true, timePhases);
   } else if (type == typeid(MeFuncPhaseManager)) {
-    mgr.AddPhases(phases, false, timePhases, genMemPl);
+    mgr.AddPhases(phases, false, timePhases, genMeMpl);
   } else {
     CHECK_FATAL(false, "Should not reach here, phases should be handled");
   }
