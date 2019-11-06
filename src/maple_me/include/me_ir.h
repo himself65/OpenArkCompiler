@@ -1061,7 +1061,13 @@ class NaryMeExpr : public MeExpr {
     return opnds;
   }
 
+  void SetOpnds(MapleVector<MeExpr*> &newOpnds) {
+    ASSERT(newOpnds.size() == GetNumOpnds(), "inconsistent operand numbers");
+    opnds = newOpnds;
+  }
+
   void SetOpnd(size_t idx, MeExpr *val) override {
+    ASSERT(idx < opnds.size(), "out of range in NaryMeStmt::GetOpnd");
     opnds[idx] = val;
   }
 
