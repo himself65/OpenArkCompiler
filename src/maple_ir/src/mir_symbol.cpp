@@ -171,6 +171,10 @@ bool MIRSymbol::IsReflectionSuperclassInfo() const {
   return (GetName().find(SUPERCLASSINFO_PREFIX_STR) == 0);
 }
 
+bool MIRSymbol::IsReflectionFieldOffsetData() const {
+  return (GetName().find(kFieldOffsetDataPrefixStr) == 0);
+}
+
 bool MIRSymbol::IsReflectionClassInfo() const {
   return (GetName().find(CLASSINFO_PREFIX_STR) == 0);
 }

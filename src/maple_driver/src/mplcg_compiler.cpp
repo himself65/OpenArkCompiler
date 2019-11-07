@@ -21,7 +21,7 @@ using namespace maple;
 
 const DefaultOption MplcgCompiler::GetDefaultOptions(const MplOptions &options) {
   DefaultOption defaultOptions = { nullptr, 0 };
-  if (options.GetOptimizationLevel() == kO0 && options.GetSetDefaultLevel()) {
+  if (options.GetOptimizationLevel() == kO0 && options.HasSetDefaultLevel()) {
     defaultOptions.mplOptions = kMplcgDefaultOptionsO0;
     defaultOptions.length = sizeof(kMplcgDefaultOptionsO0) / sizeof(MplOption);
   }

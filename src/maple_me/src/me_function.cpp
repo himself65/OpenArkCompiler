@@ -562,14 +562,16 @@ BB &MeFunction::SplitBB(BB &bb, StmtNode &splitPoint, BB *newBB) {
 }
 
 /* create label for bb */
-void MeFunction::CreateBBLabel(BB &bb) {
-  if (bb.GetBBLabel() != 0) {
-    return;
+LabelIdx MeFunction::GetOrCreateBBLabel(BB &bb) {
+  LabelIdx label = bb.GetBBLabel();
+  if (label != 0) {
+    return label;
   }
-  LabelIdx label = mirModule.CurFunction()->GetLabelTab()->CreateLabelWithPrefix('m');
+  label = mirModule.CurFunction()->GetLabelTab()->CreateLabelWithPrefix('m');
   mirModule.CurFunction()->GetLabelTab()->AddToStringLabelMap(label);
   bb.SetBBLabel(label);
   labelBBIdMap.insert(std::make_pair(label, &bb));
+  return label;
 }
 
 // Recognize the following kind of simple pattern and remove corresponding EH edges

@@ -1,0 +1,59 @@
+/*
+ * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ *
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
+ * You can use this software according to the terms and conditions of the Mulan PSL v1.
+ * You may obtain a copy of Mulan PSL v1 at:
+ *
+ *     http://license.coscl.org.cn/MulanPSL
+ *
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
+ */
+#include <safe_cast.h>
+
+namespace maple {
+#ifdef LOAD_SAFE_CAST_FOR_ME_EXPR
+#undef LOAD_SAFE_CAST_FOR_ME_EXPR
+inline MeExprOp safe_cast_traits(const MeExpr &expr) {
+  return expr.GetMeOp();
+};
+
+template <> struct ExtractCode<VarMeExpr> {
+  enum {value = kMeOpVar};
+};
+
+template <> struct ExtractCode<OpMeExpr> {
+  enum {value = kMeOpOp};
+};
+
+template <> struct ExtractCode<NaryMeExpr> {
+  enum {value = kMeOpNary};
+};
+
+template <> struct ExtractCode<IvarMeExpr> {
+  enum {value = kMeOpIvar};
+};
+#endif
+
+#ifdef LOAD_SAFE_CAST_FOR_ME_STMT
+#undef LOAD_SAFE_CAST_FOR_ME_STMT
+inline Opcode safe_cast_traits(const MeStmt &stmt) {
+  return stmt.GetOp();
+}
+
+template <> struct ExtractCode<DassignMeStmt> {
+  enum {value = OP_dassign};
+};
+
+template <> struct ExtractCode<MaydassignMeStmt> {
+  enum {value = OP_maydassign};
+};
+
+template <> struct ExtractCode<IassignMeStmt> {
+  enum {value = OP_iassign};
+};
+#endif
+}
