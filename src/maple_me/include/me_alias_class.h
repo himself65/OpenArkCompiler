@@ -24,18 +24,16 @@ class MeAliasClass : public AliasClass {
   MeAliasClass(MemPool &memPool, MIRModule &mod, SSATab &ssaTab, MeFunction &func, bool lessAliasAtThrow,
                bool finalFieldHasAlias, bool ignoreIPA, bool debug, bool setCalleeHasSideEffect, KlassHierarchy *kh)
       : AliasClass(memPool, mod, ssaTab, lessAliasAtThrow, finalFieldHasAlias, ignoreIPA, setCalleeHasSideEffect, kh),
-        func(func) {}
+        func(func), enabledDebug(debug) {}
 
   virtual ~MeAliasClass() = default;
   void DoAliasAnalysis();
-  std::string PhaseName() const {
-    return "aliasclass";
-  }
 
  private:
   MeFunction &func;
+  bool enabledDebug;
   BB *GetBB(BBId id) override {
-    if (func.GetAllBBs().size() < id.idx) {
+    if (func.GetAllBBs().size() < id) {
       return nullptr;
     }
     return func.GetBBFromID(id);

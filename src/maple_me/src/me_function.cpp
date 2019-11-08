@@ -437,7 +437,7 @@ BB *MeFunction::InsertNewBasicBlock(const BB &position) {
   BB *newBB = memPool->New<BB>(&alloc, &versAlloc, BBId(nextBBId++));
 
   auto bIt = std::find(begin(), end(), &position);
-  auto idx = position.GetBBId().idx;
+  auto idx = position.GetBBId();
   auto newIt = bbVec.insert(bIt, newBB);
   auto eIt = end();
   // update bb's idx
@@ -451,9 +451,9 @@ BB *MeFunction::InsertNewBasicBlock(const BB &position) {
 }
 
 void MeFunction::DeleteBasicBlock(const BB &bb) {
-  ASSERT(bbVec[bb.GetBBId().idx] == &bb, "runtime check error");
+  ASSERT(bbVec[bb.GetBBId()] == &bb, "runtime check error");
   /* update first_bb_ and last_bb if needed */
-  bbVec.at(bb.GetBBId().idx) = nullptr;
+  bbVec.at(bb.GetBBId()) = nullptr;
 }
 
 /* get next bb in bbVec */
@@ -525,7 +525,7 @@ BB &MeFunction::SplitBB(BB &bb, StmtNode &splitPoint, BB *newBB) {
   newBB->SetKind(bb.GetKind());
   bb.SetKind(kBBFallthru);
   auto bIt = std::find(begin(), end(), &bb);
-  auto idx = bb.GetBBId().idx;
+  auto idx = bb.GetBBId();
   auto newIt = bbVec.insert(++bIt, newBB);
   auto eIt = end();
   // update bb's idx

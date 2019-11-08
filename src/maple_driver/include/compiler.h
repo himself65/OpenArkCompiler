@@ -24,11 +24,11 @@
 #include "mir_parser.h"
 
 namespace maple {
-static const std::string kBinNameJbc2mpl = "jbc2mpl";
-static const std::string kBinNameMe = "me";
-static const std::string kBinNameMpl2mpl = "mpl2mpl";
-static const std::string kBinNameMplcg = "mplcg";
-static const std::string kBinNameMapleComb = "maplecomb";
+extern const std::string kBinNameJbc2mpl;
+extern const std::string kBinNameMe;
+extern const std::string kBinNameMpl2mpl;
+extern const std::string kBinNameMplcg;
+extern const std::string kBinNameMapleComb;
 
 class Compiler {
  public:
@@ -40,19 +40,19 @@ class Compiler {
 
   virtual void GetTmpFilesToDelete(const MplOptions &mplOptions, std::vector<std::string> &tempFiles) const {}
 
-  virtual const std::unordered_set<std::string> GetFinalOutputs(const MplOptions &mplOptions) const {
+  virtual std::unordered_set<std::string> GetFinalOutputs(const MplOptions &mplOptions) const {
     return std::unordered_set<std::string>();
   }
 
   virtual void PrintCommand(const MplOptions &options) const {}
 
  protected:
-  virtual const std::string GetBinPath(const MplOptions &mplOptions) const;
-  virtual const std::string GetBinName() const {
+  virtual std::string GetBinPath(const MplOptions &mplOptions) const;
+  virtual std::string GetBinName() const {
     return "";
   }
 
-  virtual const std::string GetInputFileName(const MplOptions &options) const {
+  virtual std::string GetInputFileName(const MplOptions &options) const {
     std::ostringstream ss;
     for (auto const &inputFile : options.GetSplitsInputFiles()) {
       ss << " " << inputFile;
@@ -60,17 +60,17 @@ class Compiler {
     return ss.str();
   }
 
-  virtual const DefaultOption GetDefaultOptions(const MplOptions &options) {
+  virtual DefaultOption GetDefaultOptions(const MplOptions &options) {
     return DefaultOption();
   }
 
-  virtual const std::string AppendSpecialOption(const MplOptions &options, const std::string &optionStr) const {
+  virtual std::string AppendSpecialOption(const MplOptions &options, const std::string &optionStr) const {
     return optionStr;
   }
 
-  virtual const std::string AppendOptimization(const MplOptions &options, const std::string &optionStr) const;
+  virtual std::string AppendOptimization(const MplOptions &options, const std::string &optionStr) const;
 
-  virtual const std::vector<std::string> GetBinNames() const {
+  virtual std::vector<std::string> GetBinNames() const {
     return std::vector<std::string>();
   }
 
@@ -78,7 +78,7 @@ class Compiler {
 
  private:
   const std::string name;
-  const std::string MakeOption(const MplOptions &options);
+  std::string MakeOption(const MplOptions &options);
   void AppendDefaultOptions(std::map<std::string, MplOption> &finalOptions,
                             const std::map<std::string, MplOption> &defaultOptions) const;
   void AppendUserOptions(std::map<std::string, MplOption> &finalOptions,
@@ -87,8 +87,8 @@ class Compiler {
                      const std::string &connectSymbol) const;
   void AppendExtraOptions(std::map<std::string, MplOption> &finalOptions,
                           const std::map<std::string, std::vector<MplOption>> &extraOptions) const;
-  const std::map<std::string, MplOption> MakeDefaultOptions(const MplOptions &options);
-  const int Exe(const MplOptions &mplOptions, const std::string &options) const;
+  std::map<std::string, MplOption> MakeDefaultOptions(const MplOptions &options);
+  int Exe(const MplOptions &mplOptions, const std::string &options) const;
   const std::string &GetName() const {
     return name;
   }
@@ -101,11 +101,11 @@ class Jbc2MplCompiler : public Compiler {
   ~Jbc2MplCompiler() = default;
 
  private:
-  const std::string GetBinName() const override;
-  const DefaultOption GetDefaultOptions(const MplOptions &options) override;
+  std::string GetBinName() const override;
+  DefaultOption GetDefaultOptions(const MplOptions &options) override;
   void GetTmpFilesToDelete(const MplOptions &mplOptions, std::vector<std::string> &tempFiles) const override;
-  const std::unordered_set<std::string> GetFinalOutputs(const MplOptions &mplOptions) const override;
-  const std::vector<std::string> GetBinNames() const override;
+  std::unordered_set<std::string> GetFinalOutputs(const MplOptions &mplOptions) const override;
+  std::vector<std::string> GetBinNames() const override;
 };
 
 class MapleCombCompiler : public Compiler {
@@ -116,11 +116,11 @@ class MapleCombCompiler : public Compiler {
 
   ErrorCode Compile(const MplOptions &options, MIRModulePtr &theModule) override;
   void PrintCommand(const MplOptions &options) const override;
-  const std::string GetInputFileName(const MplOptions &options) const override;
+  std::string GetInputFileName(const MplOptions &options) const override;
 
  private:
   std::string realRunningExe;
-  const std::unordered_set<std::string> GetFinalOutputs(const MplOptions &mplOptions) const override;
+  std::unordered_set<std::string> GetFinalOutputs(const MplOptions &mplOptions) const override;
   MeOption *MakeMeOptions(const MplOptions &options, MemPool &optmp);
   Options *MakeMpl2MplOptions(const MplOptions &options, MemPool &optmp);
 };
@@ -133,10 +133,10 @@ class MplcgCompiler : public Compiler {
 
 
  private:
-  const std::string GetInputFileName(const MplOptions &options) const override;
-  const DefaultOption GetDefaultOptions(const MplOptions &options) override;
-  const std::string GetBinName() const override;
-  const std::vector<std::string> GetBinNames() const override;
+  std::string GetInputFileName(const MplOptions &options) const override;
+  DefaultOption GetDefaultOptions(const MplOptions &options) override;
+  std::string GetBinName() const override;
+  std::vector<std::string> GetBinNames() const override;
 };
 
 }  // namespace maple

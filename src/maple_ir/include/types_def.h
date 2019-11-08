@@ -51,7 +51,7 @@ class StIdx {  // scope nesting level + symbol table index
     u.scopeIdx.idx = i;
   }
 
-  ~StIdx() {}
+  ~StIdx() = default;
 
   uint32 Idx() const {
     return u.scopeIdx.idx;
@@ -104,171 +104,63 @@ using PregIdx = int32;
 using PregIdx16 = int16;
 using ExprIdx = int32;
 using FieldID = int32;
-class TyIdx {  // global type table index
+
+// T is integer, category is Idx kind.
+// this template is for instantiating some kinds of Idx Class such as TyIdx, GStrIdx, UStrIdx, U16StrIdx
+template <typename T, typename Category>
+class IdxTemplate {
  public:
-  TyIdx() : idx(0) {}
+  IdxTemplate() = default;
+  explicit IdxTemplate(T i) : idx(i) {}
+  IdxTemplate(const IdxTemplate&) = default;
+  IdxTemplate &operator=(const IdxTemplate&) = default;
+  ~IdxTemplate() = default;
 
-  explicit TyIdx(uint32 i) : idx(i) {}
-  TyIdx(const TyIdx&) = default;
-  TyIdx &operator=(const TyIdx&) = default;
-
-  ~TyIdx() {}
-
-  bool operator==(const TyIdx &x) const {
+  bool operator==(const IdxTemplate &x) const {
     return idx == x.idx;
   }
 
-  bool operator!=(const TyIdx &x) const {
+  bool operator!=(const IdxTemplate &x) const {
     return !(*this == x);
   }
 
-  bool operator==(const uint32 id) const {
+  bool operator==(T id) const {
     return idx == id;
   }
 
-  bool operator!=(const uint32 id) const {
+  bool operator!=(T id) const {
     return !(*this == id);
   }
 
-  bool operator<(const TyIdx &x) const {
+  bool operator<(const IdxTemplate &x) const {
     return idx < x.idx;
   }
 
-  uint32 GetIdx() const {
+  T GetIdx() const {
     return idx;
   }
 
-  void SetIdx(uint32 i) {
+  void SetIdx(T i) {
     idx = i;
   }
 
  private:
-  uint32 idx;
+  T idx = 0;
 };
+
+struct TyIdxCategory {};
+struct GStrIdxCategory {};
+struct UStrIdxCategory {};
+struct U16StrIdxCategory {};
+
+using TyIdx = IdxTemplate<uint32, TyIdxCategory>;          // global type table index
+using GStrIdx = IdxTemplate<uint32, GStrIdxCategory>;      // global string table index
+using UStrIdx = IdxTemplate<uint32, UStrIdxCategory>;      // user string table index (from the conststr opcode)
+using U16StrIdx = IdxTemplate<uint32, U16StrIdxCategory>;  // user string table index (from the conststr opcode)
 
 const TyIdx kInitTyIdx = TyIdx(0);
 const TyIdx kNoneTyIdx = TyIdx(UINT32_MAX);
-class GStrIdx {  // global string table index
- public:
-  GStrIdx() {
-    idx = 0;
-  }
 
-  explicit GStrIdx(uint32 i) : idx(i) {}
-
-  ~GStrIdx() {}
-
-  bool operator==(const GStrIdx &x) const {
-    return idx == x.idx;
-  }
-
-  bool operator!=(const GStrIdx &x) const {
-    return !(*this == x);
-  }
-
-  bool operator==(const uint32 id) const {
-    return idx == id;
-  }
-
-  bool operator!=(const uint32 id) const {
-    return !(*this == id);
-  }
-
-  bool operator<(const GStrIdx &x) const {
-    return idx < x.idx;
-  }
-
-  uint32 GetIdx() const {
-    return idx;
-  }
-
-  void SetIdx(uint32 i) {
-    idx = i;
-  }
-
- private:
-  uint32 idx;
-};
-
-class UStrIdx {  // user string table index (from the conststr opcode)
- public:
-  UStrIdx() : idx(0) {}
-
-  explicit UStrIdx(uint32 i) : idx(i) {}
-
-  ~UStrIdx() {}
-
-  bool operator==(const UStrIdx &x) const {
-    return idx == x.idx;
-  }
-
-  bool operator!=(const UStrIdx &x) const {
-    return !(*this == x);
-  }
-
-  bool operator==(const uint32 id) const {
-    return idx == id;
-  }
-
-  bool operator!=(const uint32 id) const {
-    return !(*this == id);
-  }
-
-  bool operator<(const UStrIdx &x) const {
-    return idx < x.idx;
-  }
-
-  uint32 GetIdx() const {
-    return idx;
-  }
-
-  void SetIdx(uint32 i) {
-    idx = i;
-  }
-
- private:
-  uint32 idx;
-};
-
-class U16StrIdx {  // user string table index (from the conststr opcode)
- public:
-  U16StrIdx() : idx(0) {}
-
-  explicit U16StrIdx(uint32 i) : idx(i) {}
-
-  ~U16StrIdx() {}
-
-  bool operator==(const U16StrIdx &x) const {
-    return idx == x.idx;
-  }
-
-  bool operator!=(const U16StrIdx &x) const {
-    return !(*this == x);
-  }
-
-  bool operator==(const uint32 id) const {
-    return idx == id;
-  }
-
-  bool operator!=(const uint32 id) const {
-    return !(*this == id);
-  }
-
-  bool operator<(const U16StrIdx &x) const {
-    return idx < x.idx;
-  }
-
-  uint32 GetIdx() const {
-    return idx;
-  }
-
-  void SetIdx(uint32 i) {
-    idx = i;
-  }
-
- private:
-  uint32 idx;
-};
 constexpr int kOperandNumUnary = 1;
 constexpr int kOperandNumBinary = 2;
 constexpr int kOperandNumTernary = 3;

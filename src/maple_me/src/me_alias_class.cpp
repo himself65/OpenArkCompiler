@@ -50,7 +50,7 @@ void MeAliasClass::DoAliasAnalysis() {
     }
   }
   CreateAssignSets();
-  if (DEBUGFUNC((&func))) {
+  if (enabledDebug) {
     DumpAssignSets();
   }
   ReinitUnionFind();
@@ -65,11 +65,11 @@ void MeAliasClass::DoAliasAnalysis() {
     ReconstructAliasGroups();
   }
   CreateClassSets();
-  if (DEBUGFUNC((&func))) {
+  if (enabledDebug) {
     DumpClassSets();
   }
   // pass 2 through the program statements
-  if (DEBUGFUNC((&func))) {
+  if (enabledDebug) {
     LogInfo::MapleLogger() << "\n============ Alias Classification Pass 2 ============" << '\n';
   }
 

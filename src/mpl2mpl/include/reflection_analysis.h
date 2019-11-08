@@ -22,7 +22,6 @@ namespace maple {
 #define METADATA_KLASS_FIELDID (static_cast<uint32>(ClassProperty::kShadow) + 1)
 static constexpr bool kRADebug = false;
 static constexpr int64 kTBDValue = 0xABCD;
-static constexpr int kMaxOptimiseThreshold = 6;
 static constexpr uint32 kMethodFieldHashSize = 1022;
 static constexpr uint16 kHashConflictFlag = 1023;
 
@@ -90,8 +89,9 @@ static constexpr char kReflectionAccessibleobjectPrefixStr[] = "Ljava_2Flang_2Fr
 
 static constexpr int kAnonymousClassIndex = 5;
 static constexpr char kAnonymousClassSuffix[] = "30";
-static constexpr char kAnonymousClassPrefix[] = "`IC";
-static constexpr char kInnerClassPrefix[] = "`EC";
+static constexpr char kAnonymousClassPrefix[] = "Lark/annotation/InnerClass;";
+static constexpr char kInnerClassPrefix[] = "Lark/annotation/EnclosingClass;";
+static constexpr char kArkAnnotationEnclosingClassStr[] = "Lark_2Fannotation_2FEnclosingClass_3B";
 
 // maple field index definition
 enum struct ClassRO : uint32 {
@@ -178,46 +178,6 @@ static constexpr uint64 kMethodMetaCompact = 0x00000004;
 static constexpr uint64 kMethodAbstract = 0x00000010;
 static constexpr uint64 kFieldReadOnly = 0x00000001;
 
-#define CASE_CONDITION(ARRAYNAME, ELEM)                                                                     \
-  case kValueInt:                                                                                          \
-    ARRAYNAME += std::to_string(ELEM->GetI32Val());                                                        \
-    oss.str();                                                                                             \
-    break;                                                                                                 \
-  case kValueLong:                                                                                         \
-    ARRAYNAME += std::to_string(ELEM->GetI64Val());                                                        \
-    break;                                                                                                 \
-  case kValueDouble:                                                                                       \
-    oss << tmp << std::setiosflags(std::ios::scientific) << std::setprecision(16) << ELEM->GetDoubleVal(); \
-    ARRAYNAME += oss.str();                                                                                \
-    break;                                                                                                 \
-  case kValueFloat:                                                                                        \
-    oss << tmp << std::setiosflags(std::ios::scientific) << std::setprecision(7) << ELEM->GetFloatVal();   \
-    ARRAYNAME += oss.str();                                                                                \
-    break;                                                                                                 \
-  case kValueString: {                                                                                     \
-    stridx.SetIdx(ELEM->GetU64Val());                                                                      \
-    std::string s = GlobalTables::GetStrTable().GetStringFromStrIdx(stridx);                               \
-    DelimeterConvert(s);                                                                                   \
-    ReflectionAnalysis::CompressHighFrequencyStr(s);                                                       \
-    ARRAYNAME += s;                                                                                        \
-    break;                                                                                                 \
-  }                                                                                                        \
-  case kValueEnum:                                                                                         \
-    stridx.SetIdx(ELEM->GetU64Val());                                                                      \
-    ARRAYNAME += GlobalTables::GetStrTable().GetStringFromStrIdx(stridx);                                  \
-    break;                                                                                                 \
-  case kValueBoolean:                                                                                      \
-    ARRAYNAME += std::to_string(ELEM->GetU64Val());                                                        \
-    break;                                                                                                 \
-  case kValueByte:                                                                                         \
-    ARRAYNAME += std::to_string(ELEM->GetI32Val());                                                        \
-    break;                                                                                                 \
-  case kValueShort:                                                                                        \
-    ARRAYNAME += std::to_string(ELEM->GetI32Val());                                                        \
-    break;                                                                                                 \
-  case kValueChar:                                                                                         \
-    ARRAYNAME += std::to_string(ELEM->GetU64Val());                                                        \
-    break;
 class ReflectionAnalysis : public AnalysisResult {
  public:
   ReflectionAnalysis(MIRModule *mod, MemPool *memPool, KlassHierarchy *kh, MIRBuilder &builder)
@@ -246,7 +206,6 @@ class ReflectionAnalysis : public AnalysisResult {
   MIRBuilder &mirBuilder;
   MapleVector<MIRSymbol*> classTab;
   int isLibcore;
-  std::map<std::string, std::string> highFrequencyStrMap;
   std::string reflectionMuidStr;
   static const char *klassPtrName;
   static TyIdx classMetadataTyIdx;
@@ -312,10 +271,9 @@ class ReflectionAnalysis : public AnalysisResult {
   MIRSymbol *CreateSymbol(GStrIdx strIdx, TyIdx tyIdx);
   MIRSymbol *GetSymbol(GStrIdx strIdx, TyIdx tyIdx);
   void GenClassMetaData(Klass &klass);
-  std::string GetAnnoValueWithoutArray(const MIRPragmaElement &annoElem);
-  void CompressHighFrequencyStr(std::string &s);
-  std::string GetArrayValue(MapleVector<MIRPragmaElement*> subElemVector, bool isSN = false);
-  std::string GetAnnotationValue(MapleVector<MIRPragmaElement*> subElemVector, GStrIdx typeStrIdx);
+  std::string GetAnnoValueNoArray(const MIRPragmaElement &annoElem);
+  std::string GetArrayValue(const MapleVector<MIRPragmaElement*> &subElemVector);
+  std::string GetAnnotationValue(const MapleVector<MIRPragmaElement*> &subElemVector, GStrIdx typeStrIdx);
   MIRSymbol *GenSuperClassMetaData(const Klass &klass, std::list<Klass*> superClassList);
   void GenFieldOffsetData(const Klass &klass, std::vector<std::pair<FieldPair, int>> &fieldOffsetVector);
   MIRSymbol *GenFieldsMetaData(const Klass &klass);
@@ -341,11 +299,13 @@ class ReflectionAnalysis : public AnalysisResult {
   void GeneAnnotation(std::map<int, int> &idxNumMap, std::string &annoArr, MIRClassType &classType,
                       PragmaKind paragKind, const std::string &paragName, TyIdx fieldTypeIdx,
                       std::map<int, int> *paramNumArray = nullptr, int *paramIndex = nullptr);
+  void AppendValueByType(std::string &annoArr, const MIRPragmaElement &elem);
   void SetAnnoFieldConst(const MIRStructType &metadataRoType, MIRAggConst &newConst, uint32 fieldID,
                          std::map<int, int> &idxNumMap, const std::string &annoArr);
   bool IsAnonymousClass(const std::string &annotationString);
   bool IsPrivateClass(MIRClassType &classType);
   bool IsStaticClass(MIRClassType &classType);
+  int8 JudgePara(MIRClassType &ctype);
   void CheckPrivateInnerAndNoSubClass(Klass &clazz, const std::string &annoArr);
   void ConvertMapleClassName(const std::string &mplClassName, std::string &javaDsp);
 
@@ -356,6 +316,10 @@ class ReflectionAnalysis : public AnalysisResult {
   MIRSymbol *GetClinitFuncSymbol(const Klass &klass);
   int SolveAnnotation(MIRClassType &classType, MIRFunction &func);
   uint32 GetTypeNameIdxFromType(MIRType &type, const Klass &klass, const std::string &fieldName);
+  static constexpr char annoDelimiterPrefix = '`';
+  static constexpr char annoDelimiter = '!';
+  static constexpr char annoArrayStartDelimiter = '{';
+  static constexpr char annoArrayEndDelimiter = '}';
 };
 
 class DoReflectionAnalysis : public ModulePhase {

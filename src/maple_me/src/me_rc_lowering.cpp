@@ -37,7 +37,7 @@ static inline void CheckRemove(MeStmt *stmt, const Opcode op) {
 void RCLowering::Prepare() {
   MIRFunction *mirFunction = func.GetMirFunc();
   ASSERT(mirFunction->GetModule()->CurFunction() == mirFunction, "unexpected CurFunction");
-  if (DEBUGFUNC((&func))) {
+  if (enabledDebug) {
     LogInfo::MapleLogger() << "Handling function " << mirFunction->GetName() << '\n';
   }
 }
@@ -794,7 +794,7 @@ void RCLowering::PostRCLower() {
 }
 
 void RCLowering::Finish() {
-  if (DEBUGFUNC((&func))) {
+  if (enabledDebug) {
     LogInfo::MapleLogger() << "\n============== After RC LOWERING =============" << '\n';
     func.Dump(false);
   }
@@ -842,7 +842,7 @@ AnalysisResult *MeDoRCLowering::Run(MeFunction *func, MeFuncResultMgr *funcResMg
     func->SetIRMap(hmap);
   }
   CHECK_FATAL(func->GetMeSSATab() != nullptr, "ssatab has problem");
-  RCLowering rcLowering(*func, *kh);
+  RCLowering rcLowering(*func, *kh, DEBUGFUNC(func));
 
   rcLowering.Prepare();
   rcLowering.PreRCLower();

@@ -20,20 +20,27 @@
 
 namespace maple {
 using namespace mapleOption;
-const int Compiler::Exe(const MplOptions &mplOptions, const std::string &options) const {
+
+const std::string kBinNameJbc2mpl = "jbc2mpl";
+const std::string kBinNameMe = "me";
+const std::string kBinNameMpl2mpl = "mpl2mpl";
+const std::string kBinNameMplcg = "mplcg";
+const std::string kBinNameMapleComb = "maplecomb";
+
+int Compiler::Exe(const MplOptions &mplOptions, const std::string &options) const {
   std::ostringstream ostrStream;
   ostrStream << GetBinPath(mplOptions) << GetBinName();
   std::string binPath = FileUtils::ConvertPathIfNeeded(ostrStream.str());
   return SafeExe::Exe(binPath, options);
 }
 
-const std::string Compiler::GetBinPath(const MplOptions &mplOptions) const {
+std::string Compiler::GetBinPath(const MplOptions &mplOptions) const {
 #ifdef MAPLE_PRODUCT_EXECUTABLE  // build flag -DMAPLE_PRODUCT_EXECUTABLE
   std::string binPath = std::string(MAPLE_PRODUCT_EXECUTABLE);
   if (binPath.empty()) {
     binPath = mplOptions.exeFolder;
   } else {
-    binPath = binPath + FileSeperator::kFileSeperatorChar;
+    binPath = binPath + kFileSeperatorChar;
   }
 #else
   std::string binPath = mplOptions.GetExeFolder();
@@ -57,7 +64,7 @@ ErrorCode Compiler::Compile(const MplOptions &options, MIRModulePtr &theModule) 
   return ErrorCode::kErrorNoError;
 }
 
-const std::string Compiler::MakeOption(const MplOptions &options) {
+std::string Compiler::MakeOption(const MplOptions &options) {
   std::map<std::string, MplOption> finalOptions;
   auto defaultOptions = MakeDefaultOptions(options);
   AppendDefaultOptions(finalOptions, defaultOptions);
@@ -116,7 +123,7 @@ void Compiler::AppendExtraOptions(std::map<std::string, MplOption> &finalOptions
   }
 }
 
-const std::map<std::string, MplOption> Compiler::MakeDefaultOptions(const MplOptions &options) {
+std::map<std::string, MplOption> Compiler::MakeDefaultOptions(const MplOptions &options) {
   auto rawDefaultOptions = GetDefaultOptions(options);
   std::map<std::string, MplOption> defaultOptions;
   if (rawDefaultOptions.mplOptions != nullptr) {
@@ -148,7 +155,7 @@ const bool Compiler::CanAppendOptimization(const std::string &optionStr) const {
   return false;
 }
 
-const std::string Compiler::AppendOptimization(const MplOptions &options, const std::string &optionStr) const {
+std::string Compiler::AppendOptimization(const MplOptions &options, const std::string &optionStr) const {
   if (!CanAppendOptimization(optionStr)) {
     return optionStr;
   }

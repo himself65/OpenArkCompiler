@@ -40,8 +40,8 @@ const ErrorCode CompilerSelectorImpl::InsertCompilerIfNeeded(std::vector<Compile
   }
 }
 
-const ErrorCode CompilerSelectorImpl::Select(const SupportedCompilers &supportedCompilers, const MplOptions &mplOptions,
-                                             std::vector<Compiler*> &selected) const {
+ErrorCode CompilerSelectorImpl::Select(const SupportedCompilers &supportedCompilers, const MplOptions &mplOptions,
+                                       std::vector<Compiler*> &selected) const {
   bool combPhases = false;
   if (!mplOptions.GetRunningExes().empty()) {
     for (auto runningExe : mplOptions.GetRunningExes()) {

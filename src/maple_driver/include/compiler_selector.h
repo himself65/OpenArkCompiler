@@ -27,8 +27,8 @@ class CompilerSelector {
 
   virtual ~CompilerSelector() = default;
 
-  virtual const ErrorCode Select(const SupportedCompilers &supportedCompilers, const MplOptions &mplOptions,
-                                 std::vector<Compiler*> &selected) const {
+  virtual ErrorCode Select(const SupportedCompilers &supportedCompilers, const MplOptions &mplOptions,
+                           std::vector<Compiler*> &selected) const {
     return ErrorCode::kErrorToolNotFound;
   }
 };
@@ -39,8 +39,8 @@ class CompilerSelectorImpl : public CompilerSelector {
 
   ~CompilerSelectorImpl() = default;
 
-  const ErrorCode Select(const SupportedCompilers &supportedCompilers, const MplOptions &mplOptions,
-                         std::vector<Compiler*> &selected) const override;
+  ErrorCode Select(const SupportedCompilers &supportedCompilers, const MplOptions &mplOptions,
+                   std::vector<Compiler*> &selected) const override;
 
  private:
   Compiler *FindCompiler(const SupportedCompilers &compilers, const std::string &name) const;

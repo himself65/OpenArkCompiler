@@ -170,7 +170,7 @@ bool BBLayout::BBCanBeMoved(const BB &fromBB, const BB &toAfterBB) const {
   if (fromBB.GetPred().size() > 1) {
     return false;
   }
-  if (laidOut[fromBB.GetBBId().idx]) {
+  if (laidOut[fromBB.GetBBId()]) {
     return false;
   }
   if (fromBB.GetAttributes(kBBAttrArtificial) ||
@@ -299,20 +299,20 @@ void BBLayout::OptimizeBranchTarget(BB &bb) {
     // update CFG
     bb.ReplaceSucc(brTargetBB, newTargetBB);
     bb.RemoveBBFromVector(brTargetBB->GetPred());
-    if (brTargetBB->GetPred().empty() && !laidOut[brTargetBB->GetBBId().idx]) {
-      laidOut[brTargetBB->GetBBId().idx] = true;
+    if (brTargetBB->GetPred().empty() && !laidOut[brTargetBB->GetBBId()]) {
+      laidOut[brTargetBB->GetBBId()] = true;
       brTargetBB->RemoveBBFromVector(newTargetBB->GetPred());
     }
   } while (true);
 }
 
 void BBLayout::AddBB(BB &bb) {
-  CHECK_FATAL(bb.GetBBId().idx < laidOut.size(), "index out of range in BBLayout::AddBB");
-  ASSERT(!laidOut[bb.GetBBId().idx], "AddBB: bb already laid out");
+  CHECK_FATAL(bb.GetBBId() < laidOut.size(), "index out of range in BBLayout::AddBB");
+  ASSERT(!laidOut[bb.GetBBId()], "AddBB: bb already laid out");
   layoutBBs.push_back(&bb);
-  laidOut[bb.GetBBId().idx] = true;
-  if (DEBUGFUNC((&func))) {
-    LogInfo::MapleLogger() << "bb id " << bb.GetBBId().idx << " kind is " << bb.StrAttribute();
+  laidOut[bb.GetBBId()] = true;
+  if (enabledDebug) {
+    LogInfo::MapleLogger() << "bb id " << bb.GetBBId() << " kind is " << bb.StrAttribute();
   }
   bool isTry = false;
   if (func.GetIRMap() != nullptr) {
@@ -323,17 +323,17 @@ void BBLayout::AddBB(BB &bb) {
   if (isTry) {
     ASSERT(!tryOutstanding, "BBLayout::AddBB: cannot lay out another try without ending the last one");
     tryOutstanding = true;
-    if (DEBUGFUNC((&func))) {
+    if (enabledDebug) {
       LogInfo::MapleLogger() << " try";
     }
   }
   if (bb.GetAttributes(kBBAttrIsTryEnd) && func.GetMIRModule().IsJavaModule()) {
     tryOutstanding = false;
-    if (DEBUGFUNC((&func))) {
+    if (enabledDebug) {
       LogInfo::MapleLogger() << " endtry";
     }
   }
-  if (DEBUGFUNC((&func))) {
+  if (enabledDebug) {
     LogInfo::MapleLogger() << '\n';
   }
   return;
@@ -356,7 +356,7 @@ BB *BBLayout::GetFallThruBBSkippingEmpty(BB &bb) {
         return fallthru;
       }
     }
-    laidOut[fallthru->GetBBId().idx] = true;
+    laidOut[fallthru->GetBBId()] = true;
     fallthru->RemoveBBFromPred(&bb);
     BB *oldFallthru = fallthru;
     fallthru = oldFallthru->GetSucc().front();
@@ -402,7 +402,7 @@ void BBLayout::ResolveUnconditionalFallThru(BB &bb, BB &nextBB) {
 AnalysisResult *MeDoBBLayout::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, ModuleResultMgr *moduleResMgr) {
   // mempool used in analysisresult
   MemPool *layoutMp = NewMemPool();
-  BBLayout *bbLayout = layoutMp->New<BBLayout>(*layoutMp, *func);
+  BBLayout *bbLayout = layoutMp->New<BBLayout>(*layoutMp, *func, DEBUGFUNC(func));
   // assume common_entry_bb is always bb 0
   ASSERT(func->front() == func->GetCommonEntryBB(), "assume bb[0] is the commont entry bb");
   BB *bb = func->GetFirstBB();

@@ -23,12 +23,13 @@
 namespace maple {
 class RCLowering {
  public:
-  RCLowering(MeFunction &f, KlassHierarchy &kh)
+  RCLowering(MeFunction &f, KlassHierarchy &kh, bool enabledDebug)
       : func(f),
         mirModule(f.GetMIRModule()),
         irMap(*f.GetIRMap()),
         ssaTab(*f.GetMeSSATab()),
-        klassHierarchy(kh) {}
+        klassHierarchy(kh),
+        enabledDebug(enabledDebug) {}
 
   virtual ~RCLowering() = default;
 
@@ -55,9 +56,7 @@ class RCLowering {
   std::map<OStIdx, OriginalSt*> varOStMap{};
   // used to store initialized map, help to optimize dec ref in first assignment
   std::unordered_map<MeExpr*, MapleSet<FieldID>*> initializedFields{};
-  std::string PhaseName() const {
-    return "rclowering";
-  }
+  bool enabledDebug;
   void MarkLocalRefVar();
   void MarkAllRefOpnds();
   void BBLower(BB &bb);

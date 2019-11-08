@@ -73,16 +73,16 @@ void BB::DumpBBAttribute(MIRModule *mod) {
 }
 
 void BB::DumpHeader(MIRModule *mod) {
-  mod->GetOut() << "============BB id:" << GetBBId().idx << " " << StrAttribute() << " [";
+  mod->GetOut() << "============BB id:" << GetBBId() << " " << StrAttribute() << " [";
   DumpBBAttribute(mod);
   mod->GetOut() << "]===============\n";
   mod->GetOut() << "preds: ";
   for (const auto &predElement : pred) {
-    mod->GetOut() << predElement->GetBBId().idx << " ";
+    mod->GetOut() << predElement->GetBBId() << " ";
   }
   mod->GetOut() << "\nsuccs: ";
   for (const auto &succElement : succ) {
-    mod->GetOut() << succElement->GetBBId().idx << " ";
+    mod->GetOut() << succElement->GetBBId() << " ";
   }
   mod->GetOut() << "\n";
   if (bbLabel != 0) {
@@ -256,22 +256,22 @@ void BB::ReplaceSuccOfCommonEntryBB(const BB *old, BB *newSucc) {
 }
 
 void BB::FindReachableBBs(std::vector<bool> &visitedBBs) const {
-  CHECK_FATAL(GetBBId().idx < visitedBBs.size(), "out of range in BB::FindReachableBBs");
-  if (visitedBBs[GetBBId().idx]) {
+  CHECK_FATAL(GetBBId() < visitedBBs.size(), "out of range in BB::FindReachableBBs");
+  if (visitedBBs[GetBBId()]) {
     return;
   }
-  visitedBBs[GetBBId().idx] = true;
+  visitedBBs[GetBBId()] = true;
   for (auto it = succ.begin(); it != succ.end(); ++it) {
     (*it)->FindReachableBBs(visitedBBs);
   }
 }
 
 void BB::FindWillExitBBs(std::vector<bool> &visitedBBs) const {
-  CHECK_FATAL(GetBBId().idx < visitedBBs.size(), "out of range in BB::FindReachableBBs");
-  if (visitedBBs[GetBBId().idx]) {
+  CHECK_FATAL(GetBBId() < visitedBBs.size(), "out of range in BB::FindReachableBBs");
+  if (visitedBBs[GetBBId()]) {
     return;
   }
-  visitedBBs[GetBBId().idx] = true;
+  visitedBBs[GetBBId()] = true;
   for (auto it = pred.begin(); it != pred.end(); ++it) {
     (*it)->FindWillExitBBs(visitedBBs);
   }
