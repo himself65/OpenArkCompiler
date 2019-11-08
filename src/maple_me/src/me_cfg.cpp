@@ -547,7 +547,7 @@ void MeCFG::UnreachCodeAnalysis(bool updatePhi) {
       continue;
     }
     auto *bb = *bIt;
-    uint32 idx = bb->GetBBId().idx;
+    BBId idx = bb->GetBBId();
     if (!visitedBBs[idx] && !bb->GetAttributes(kBBAttrIsEntry)) {
       bb->SetAttributes(kBBAttrWontExit);
       /* avoid redundant pred before adding to common_exit_bb's pred list */
@@ -561,7 +561,7 @@ void MeCFG::UnreachCodeAnalysis(bool updatePhi) {
         func.GetCommonExitBB()->GetPred().push_back(bb);
       }
       if (!MeOption::quiet) {
-        LogInfo::MapleLogger() << "#### BB " << bb->GetBBId().idx << " deleted because unreachable\n";
+        LogInfo::MapleLogger() << "#### BB " << bb->GetBBId() << " deleted because unreachable\n";
       }
       if (bb->GetAttributes(kBBAttrIsTryEnd)) {
         // unreachable bb has try end info
@@ -620,7 +620,7 @@ void MeCFG::WontExitAnalysis() {
       continue;
     }
     auto *bb = *bIt;
-    uint32 idx = bb->GetBBId().idx;
+    BBId idx = bb->GetBBId();
     if (!visitedBBs[idx]) {
       bb->SetAttributes(kBBAttrWontExit);
       if (!MeOption::quiet) {
@@ -655,7 +655,7 @@ void MeCFG::Verify() const {
       continue;
     }
     auto *bb = *bIt;
-    ASSERT(bb->GetBBId().idx < func.GetAllBBs().size(), "CFG Error!");
+    ASSERT(bb->GetBBId() < func.GetAllBBs().size(), "CFG Error!");
     ASSERT(func.GetBBFromID(bb->GetBBId()) == bb, "CFG Error!");
     if (bb->IsEmpty()) {
       continue;
@@ -734,15 +734,15 @@ void MeCFG::Dump() const {
         continue;
       }
       BBId id = bb->GetBBId();
-      if (visitedMap[id.idx] == true) {
+      if (visitedMap[static_cast<long>(id)] == true) {
         continue;
       }
-      LogInfo::MapleLogger() << id.idx << " ";
-      visitedMap[id.idx] = true;
+      LogInfo::MapleLogger() << id << " ";
+      visitedMap[static_cast<long>(id)] = true;
       auto it = bb->GetSucc().begin();
       while (it != bb->GetSucc().end()) {
         BB *kidBB = *it;
-        if (!visitedMap[kidBB->GetBBId().idx]) {
+        if (!visitedMap[static_cast<long>(kidBB->GetBBId())]) {
           qu.push(kidBB);
         }
         it++;
@@ -798,9 +798,9 @@ void MeCFG::DumpToFileInStrs(std::ofstream &cfgFile) const {
       continue;
     }
     if (bb->GetKind() == kBBCondGoto) {
-      cfgFile << "BB" << bb->GetBBId().idx << "[shape=diamond,label= \" BB" << bb->GetBBId().idx << ":\n{ ";
+      cfgFile << "BB" << bb->GetBBId() << "[shape=diamond,label= \" BB" << bb->GetBBId() << ":\n{ ";
     } else {
-      cfgFile << "BB" << bb->GetBBId().idx << "[shape=box,label= \" BB" << bb->GetBBId().idx << ":\n{ ";
+      cfgFile << "BB" << bb->GetBBId() << "[shape=box,label= \" BB" << bb->GetBBId() << ":\n{ ";
     }
     if (bb->GetBBLabel() != 0) {
       cfgFile << "@" << func.GetMirFunc()->GetLabelName(bb->GetBBLabel()) << ":\n";
@@ -842,14 +842,14 @@ void MeCFG::DumpToFile(const std::string &prefix, bool dumpInStrs) const {
     if (bIt == func.common_exit()) {
       /* specical case for common_exit_bb */
       for (auto it = bb->GetPred().begin(); it != bb->GetPred().end(); it++) {
-        cfgFile << "BB" << (*it)->GetBBId().idx << " -> "
-                << "BB" << bb->GetBBId().idx << "[style=dotted];\n";
+        cfgFile << "BB" << (*it)->GetBBId() << " -> "
+                << "BB" << bb->GetBBId() << "[style=dotted];\n";
       }
       continue;
     }
     for (auto it = bb->GetSucc().begin(); it != bb->GetSucc().end(); it++) {
-      cfgFile << "BB" << bb->GetBBId().idx << " -> "
-              << "BB" << (*it)->GetBBId().idx;
+      cfgFile << "BB" << bb->GetBBId() << " -> "
+              << "BB" << (*it)->GetBBId();
       if (bb == func.GetCommonEntryBB()) {
         cfgFile << "[style=dotted];\n";
         continue;

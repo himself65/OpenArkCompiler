@@ -14,6 +14,7 @@
  */
 #ifndef MAPLE_ME_INCLUDE_BB_H
 #define MAPLE_ME_INCLUDE_BB_H
+#include "mpl_number.h"
 #include "ptr_list_ref.h"
 #include "ssa.h"
 
@@ -51,25 +52,8 @@ enum BBAttr {
   kBBIsInLoopForEA   // For EA use
 };
 
-struct BBId {
-  size_t idx = 0;
-
-  BBId() = default;
-
-  explicit BBId(size_t i) : idx(i) {}
-
-  bool operator==(const BBId &x) const {
-    return idx == x.idx;
-  }
-
-  bool operator!=(const BBId &x) const {
-    return idx != x.idx;
-  }
-
-  bool operator<(const BBId &x) const {
-    return idx < x.idx;
-  }
-};
+class BB;
+using BBId = utils::Index<BB>;
 
 struct OStIdx {
   size_t idx = 0;
@@ -197,7 +181,7 @@ class BB {
   }
 
   uint32 UintID() const {
-    return static_cast<uint32>(id.idx);
+    return static_cast<uint32>(id);
   }
 
   StmtNode *GetTheOnlyStmtNode() const;
@@ -460,7 +444,7 @@ namespace std {
 template <>
 struct hash<maple::BBId> {
   size_t operator()(const maple::BBId &x) const {
-    return x.idx;
+    return x;
   }
 };
 

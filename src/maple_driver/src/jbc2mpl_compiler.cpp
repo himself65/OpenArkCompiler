@@ -17,17 +17,17 @@
 #include "default_options.def"
 
 namespace maple {
-const std::string Jbc2MplCompiler::GetBinName() const {
+std::string Jbc2MplCompiler::GetBinName() const {
   return kBinNameJbc2mpl;
 }
 
-const std::vector<std::string> Jbc2MplCompiler::GetBinNames() const {
+std::vector<std::string> Jbc2MplCompiler::GetBinNames() const {
   auto binNames = std::vector<std::string>();
   binNames.push_back(kBinNameJbc2mpl);
   return binNames;
 }
 
-const DefaultOption Jbc2MplCompiler::GetDefaultOptions(const MplOptions &options) {
+DefaultOption Jbc2MplCompiler::GetDefaultOptions(const MplOptions &options) {
   DefaultOption defaultOptions = { nullptr, 0 };
   return defaultOptions;
 }
@@ -36,7 +36,7 @@ void Jbc2MplCompiler::GetTmpFilesToDelete(const MplOptions &mplOptions, std::vec
   tempFiles.push_back(mplOptions.GetOutputFolder() + mplOptions.GetOutputName() + ".mpl");
 }
 
-const std::unordered_set<std::string> Jbc2MplCompiler::GetFinalOutputs(const MplOptions &mplOptions) const {
+std::unordered_set<std::string> Jbc2MplCompiler::GetFinalOutputs(const MplOptions &mplOptions) const {
   auto finalOutputs = std::unordered_set<std::string>();
   finalOutputs.insert(mplOptions.GetOutputFolder() + mplOptions.GetOutputName() + ".mpl");
   return finalOutputs;

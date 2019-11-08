@@ -23,7 +23,7 @@
 namespace maple {
 using namespace mapleOption;
 
-const std::string MapleCombCompiler::GetInputFileName(const MplOptions &options) const {
+std::string MapleCombCompiler::GetInputFileName(const MplOptions &options) const {
   if (options.GetInputFileType() == InputFileType::kVtableImplMpl) {
     return options.GetOutputFolder() + options.GetOutputName() + ".VtableImpl.mpl";
   } else {
@@ -32,7 +32,7 @@ const std::string MapleCombCompiler::GetInputFileName(const MplOptions &options)
 }
 
 
-const std::unordered_set<std::string> MapleCombCompiler::GetFinalOutputs(const MplOptions &mplOptions) const {
+std::unordered_set<std::string> MapleCombCompiler::GetFinalOutputs(const MplOptions &mplOptions) const {
   auto finalOutputs = std::unordered_set<std::string>();
   finalOutputs.insert(mplOptions.GetOutputFolder() + mplOptions.GetOutputName() + ".VtableImpl.mpl");
   return finalOutputs;

@@ -47,9 +47,6 @@ class MeIRMap : public IRMap {
     return func;
   }
 
-  std::string PhaseName() const {
-    return "irmap";
-  }
  private:
   MeFunction &func;
 };

@@ -26,10 +26,10 @@ using MeStmtFactory = FunctionFactory<Opcode, MeStmt*, IRMap*, StmtNode&, Access
 // the CFG to build the HSSA representation for the code in each BB
 void IRMap::BuildBB(BB &bb, std::vector<bool> &bbIRMapProcessed) {
   BBId bbid = bb.GetBBId();
-  if (bbIRMapProcessed[bbid.idx]) {
+  if (bbIRMapProcessed[bbid]) {
     return;
   }
-  bbIRMapProcessed[bbid.idx] = true;
+  bbIRMapProcessed[bbid] = true;
   curBB = &bb;
   SetCurFunction(bb);
   // iterate phi list to update the definition by phi
@@ -41,8 +41,8 @@ void IRMap::BuildBB(BB &bb, std::vector<bool> &bbIRMapProcessed) {
     }
   }
   // travesal bb's dominated tree
-  ASSERT(bbid.idx < dom.GetDomChildrenSize(), " index out of range in IRMap::BuildBB");
-  const MapleSet<BBId> &domChildren = dom.GetDomChildren(bbid.idx);
+  ASSERT(bbid < dom.GetDomChildrenSize(), " index out of range in IRMap::BuildBB");
+  const MapleSet<BBId> &domChildren = dom.GetDomChildren(bbid);
   for (auto bbit = domChildren.begin(); bbit != domChildren.end(); bbit++) {
     BBId childbbid = *bbit;
     BuildBB(*GetBB(childbbid), bbIRMapProcessed);

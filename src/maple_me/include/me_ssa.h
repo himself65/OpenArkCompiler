@@ -25,7 +25,7 @@
 namespace maple {
 class MeSSA : public SSA, public AnalysisResult {
  public:
-  MeSSA(MeFunction *func, Dominance *dom, MemPool *memPool);
+  MeSSA(MeFunction *func, Dominance *dom, MemPool *memPool, bool enabledDebug);
   ~MeSSA() = default;
 
   void BuildSSA();
@@ -38,9 +38,7 @@ class MeSSA : public SSA, public AnalysisResult {
   void CollectDefBBs(std::map<OStIdx, std::set<BBId>> &ostDefBBs);
   void InsertPhiNode();
   void RenameBB(BB&);
-  std::string PhaseName() const {
-    return "ssa";
-  }
+  bool enabledDebug;
 };
 
 class MeDoSSA : public MeFuncPhase {

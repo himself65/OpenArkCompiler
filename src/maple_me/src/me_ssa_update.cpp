@@ -24,12 +24,12 @@ namespace maple {
 // accumulate the BBs that are in the iterated dominance frontiers of bb in
 // the set dfSet, visiting each BB only once
 void MeSSAUpdate::GetIterDomFrontier(const BB &bb, MapleSet<BBId> &dfSet, std::vector<bool> &visitedMap) {
-  CHECK_FATAL(bb.GetBBId().idx < visitedMap.size(), "index out of range in MeSSAUpdate::GetIterDomFrontier");
-  if (visitedMap[bb.GetBBId().idx]) {
+  CHECK_FATAL(bb.GetBBId() < visitedMap.size(), "index out of range in MeSSAUpdate::GetIterDomFrontier");
+  if (visitedMap[bb.GetBBId()]) {
     return;
   }
-  visitedMap[bb.GetBBId().idx] = true;
-  for (BBId frontierBBId : dom.GetDomFrontier(bb.GetBBId().idx)) {
+  visitedMap[bb.GetBBId()] = true;
+  for (BBId frontierBBId : dom.GetDomFrontier(bb.GetBBId())) {
     dfSet.insert(frontierBBId);
     BB *frontierBB = func.GetBBFromID(frontierBBId);
     GetIterDomFrontier(*frontierBB, dfSet, visitedMap);
@@ -243,7 +243,7 @@ void MeSSAUpdate::RenameBB(BB &bb) {
   RenameStmts(bb);
   RenamePhiOpndsInSucc(bb);
   // recurse down dominator tree in pre-order traversal
-  const MapleSet<BBId> &children = dom.GetDomChildren(bb.GetBBId().idx);
+  const MapleSet<BBId> &children = dom.GetDomChildren(bb.GetBBId());
   for (const BBId &child : children) {
     RenameBB(*func.GetBBFromID(child));
   }
@@ -267,7 +267,7 @@ void MeSSAUpdate::Run() {
     renameStack->push(zeroVersVar);
   }
   // recurse down dominator tree in pre-order traversal
-  const MapleSet<BBId> &children = dom.GetDomChildren(func.GetCommonEntryBB()->GetBBId().idx);
+  const MapleSet<BBId> &children = dom.GetDomChildren(func.GetCommonEntryBB()->GetBBId());
   for (const BBId &child : children) {
     RenameBB(*func.GetBBFromID(child));
   }

@@ -75,7 +75,7 @@ void VersionStTable::Dump(MIRModule *mod) const {
     const VersionSt *vst = versionStVector[i];
     vst->Dump(mod);
     if (vst->GetVersion() > 0) {
-      LogInfo::MapleLogger() << " defined BB" << vst->GetDefBB()->GetBBId().idx << ": ";
+      LogInfo::MapleLogger() << " defined BB" << vst->GetDefBB()->GetBBId() << ": ";
       vst->DumpDefStmt(mod);
     } else {
       LogInfo::MapleLogger() << '\n';

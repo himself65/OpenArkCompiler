@@ -20,7 +20,7 @@
 namespace maple {
 class BBLayout : public AnalysisResult {
  public:
-  BBLayout(MemPool &memPool, MeFunction &f)
+  BBLayout(MemPool &memPool, MeFunction &f, bool enabledDebug)
       : AnalysisResult(&memPool),
         func(f),
         layoutAlloc(&memPool),
@@ -28,21 +28,22 @@ class BBLayout : public AnalysisResult {
         curBBId(0),
         bbCreated(false),
         laidOut(func.GetAllBBs().size(), false, layoutAlloc.Adapter()),
-        tryOutstanding(false) {
-    laidOut[func.GetCommonEntryBB()->GetBBId().idx] = true;
-    laidOut[func.GetCommonExitBB()->GetBBId().idx] = true;
+        tryOutstanding(false),
+        enabledDebug(enabledDebug) {
+    laidOut[func.GetCommonEntryBB()->GetBBId()] = true;
+    laidOut[func.GetCommonExitBB()->GetBBId()] = true;
   }
 
   virtual ~BBLayout() = default;
   BB *NextBB() {
     // return the next BB following strictly program input order
-    curBBId.idx++;
-    while (curBBId.idx < func.GetAllBBs().size()) {
+    curBBId++;
+    while (curBBId < func.GetAllBBs().size()) {
       BB *nextBB = func.GetBBFromID(curBBId);
-      if (nextBB != nullptr && !laidOut[nextBB->GetBBId().idx]) {
+      if (nextBB != nullptr && !laidOut[nextBB->GetBBId()]) {
         return nextBB;
       }
-      curBBId.idx++;
+      curBBId++;
     }
     return nullptr;
   }
@@ -78,16 +79,13 @@ class BBLayout : public AnalysisResult {
   }
 
   bool IsBBLaidOut(BBId bbid) const {
-    return laidOut.at(bbid.idx);
+    return laidOut.at(bbid);
   }
 
   void AddLaidOut(bool val) {
     return laidOut.push_back(val);
   }
 
-  std::string PhaseName() const {
-    return "bblayout";
-  }
  private:
   MeFunction &func;
   MapleAllocator layoutAlloc;
@@ -97,6 +95,7 @@ class BBLayout : public AnalysisResult {
   // related analysis result
   MapleVector<bool> laidOut;  // indexed by bbid to tell if has been laid out
   bool tryOutstanding;        // true if a try laid out but not its endtry
+  bool enabledDebug;
 };
 
 class MeDoBBLayout : public MeFuncPhase {

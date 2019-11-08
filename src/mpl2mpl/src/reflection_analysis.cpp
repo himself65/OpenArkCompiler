@@ -44,7 +44,7 @@ std::string ReflectionAnalysis::strTabBothHot = std::string(1, '\0');
 std::string ReflectionAnalysis::strTabRunHot = std::string(1, '\0');
 bool ReflectionAnalysis::strTabInited = false;
 int ReflectionAnalysis::GetDeflateStringIdx(const std::string &subStr) {
-  return FindOrInsertReflectString("0!" + subStr);
+  return FindOrInsertReflectString("1!" + subStr);
 }
 
 uint32 ReflectionAnalysis::FirstFindOrInsertRepeatString(const std::string &str, bool isHot, uint8 hotType) {
@@ -216,10 +216,6 @@ static bool IsFinalize(const std::string &funcName, const std::string &signature
   return funcName == "finalize" && signature == "()V";
 }
 
-static bool NeedFourBytes(PragmaValueType type) {
-  return type == kValueInt || type == kValueByte || type == kValueShort;
-}
-
 static std::string GetSignatureFromFullName(const std::string &fullname) {
   size_t pos = fullname.find("|");
   if (pos != std::string::npos) {
@@ -306,6 +302,8 @@ uint32 ReflectionAnalysis::GetTypeNameIdxFromType(MIRType &type, const Klass &kl
 
 void ReflectionAnalysis::CheckPrivateInnerAndNoSubClass(Klass &clazz, const std::string &annoArr) {
   // LMain_24A_3B  `EC!`VL!24!LMain_3B!`IC!`AF!4!2!name!23!A!
+  uint32_t idx = ReflectionAnalysis::FindOrInsertReflectString(kInnerClassPrefix);
+  std::string target = annoDelimiterPrefix + std::to_string(idx) + annoDelimiter;
   size_t pos = annoArr.find(kInnerClassPrefix, 0);
   if (pos == std::string::npos) {
     return;
@@ -407,25 +405,6 @@ uint16 GetFieldHash(std::vector<std::pair<FieldPair, uint16>> &fieldV, FieldPair
   return 0;
 }
 
-static void DelimeterConvert(std::string &str) {
-  constexpr size_t nextPos = 2;
-  size_t loc = str.find("`");
-  while (loc != std::string::npos) {
-    str.replace(loc, 1, "``");
-    loc = str.find("`", loc + nextPos);
-  }
-  loc = str.find("!");
-  while (loc != std::string::npos) {
-    str.replace(loc, 1, "`!");
-    loc = str.find("!", loc + nextPos);
-  }
-  loc = str.find("|");
-  while (loc != std::string::npos) {
-    str.replace(loc, 1, "`|");
-    loc = str.find("|", loc + nextPos);
-  }
-}
-
 bool ReflectionAnalysis::RootClassDefined() {
   if (isLibcore < 0) {
     // Check whether this module defines root classes including Class/Object/Fields/Methods.
@@ -489,12 +468,6 @@ MIRSymbol *ReflectionAnalysis::CreateSymbol(GStrIdx strIdx, TyIdx tyIdx) {
   st->SetAttr(ATTR_public);
   st->SetTyIdx(tyIdx);
   return st;
-}
-
-void ReflectionAnalysis::CompressHighFrequencyStr(std::string &s) {
-  if (highFrequencyStrMap.find(s) != highFrequencyStrMap.end()) {
-    s = ReflectionAnalysis::highFrequencyStrMap[s];
-  }
 }
 
 bool ReflectionAnalysis::VtableFunc(const MIRFunction &func) const {
@@ -933,173 +906,218 @@ MIRSymbol *ReflectionAnalysis::GenFieldsMetaData(const Klass &klass) {
 void ReflectionAnalysis::ConvertMapleClassName(const std::string &mplClassName, std::string &javaDsp) {
   // Convert classname end with _3B, 3 is strlen("_3B")
   unsigned int len = strlen(kClassSuffix);
-  if (mplClassName.size() > len && mplClassName.rfind(kClassSuffix, mplClassName.size() - len) != std::string::npos &&
-      false) {
+  if (mplClassName.size() > len && mplClassName.rfind(kClassSuffix, mplClassName.size() - len) != std::string::npos) {
     NameMangler::DecodeMapleNameToJavaDescriptor(mplClassName, javaDsp);
-    if (highFrequencyStrMap.find(javaDsp) == highFrequencyStrMap.end()) {
-      uint32 idx = ReflectionAnalysis::FindOrInsertReflectString(javaDsp);
-      javaDsp = "`" + std::to_string(idx);
-    }
   } else {
     javaDsp = mplClassName;
   }
 }
 
-std::string ReflectionAnalysis::GetAnnotationValue(MapleVector<MIRPragmaElement*> subelemVector, GStrIdx typestridx) {
-  std::string annoArray, tmp;
-  GStrIdx strIdx;
-  annoArray += '[';
-  annoArray += std::to_string(subelemVector.size());
-  annoArray += '!';
-  std::string javaDscp;
-  ConvertMapleClassName(GlobalTables::GetStrTable().GetStringFromStrIdx(typestridx), javaDscp);
-  annoArray += javaDscp;
-  for (MIRPragmaElement *arrayElem : subelemVector) {
-    annoArray += '!';
-    std::ostringstream oss3;
-    annoArray += GlobalTables::GetStrTable().GetStringFromStrIdx(arrayElem->GetNameStrIdx());
-    annoArray += '!';
-    annoArray += std::to_string(arrayElem->GetType());
-    annoArray += '!';
-    if (NeedFourBytes(arrayElem->GetType())) {
-      annoArray += std::to_string(arrayElem->GetI32Val());
-    } else if (arrayElem->GetType() == kValueLong) {
-      annoArray += std::to_string(arrayElem->GetI64Val());
-    } else if (arrayElem->GetType() == kValueDouble) {
-      oss3 << tmp << std::setiosflags(std::ios::scientific) << std::setprecision(16) << arrayElem->GetDoubleVal();
-      annoArray += oss3.str();
-    } else if (arrayElem->GetType() == kValueFloat) {
-      oss3 << tmp << std::setiosflags(std::ios::scientific) << std::setprecision(7) << arrayElem->GetFloatVal();
-      annoArray += oss3.str();
-    } else if (arrayElem->GetType() == kValueString || arrayElem->GetType() == kValueEnum) {
-      strIdx.SetIdx(arrayElem->GetU64Val());
-      std::string t = GlobalTables::GetStrTable().GetStringFromStrIdx(strIdx);
-      DelimeterConvert(t);
-      CompressHighFrequencyStr(t);
-      annoArray += t;
-    } else if (arrayElem->GetType() == kValueBoolean || arrayElem->GetType() == kValueChar) {
-      annoArray += std::to_string(arrayElem->GetU64Val());
-    } else if (arrayElem->GetType() == kValueType) {
-      strIdx.SetIdx(arrayElem->GetU64Val());
-      std::string javaDsp;
-      ConvertMapleClassName(GlobalTables::GetStrTable().GetStringFromStrIdx(strIdx), javaDsp);
-      annoArray += javaDsp;
-    } else if (arrayElem->GetType() == kValueAnnotation) {
-      annoArray += GetAnnotationValue(arrayElem->GetSubElemVec(), arrayElem->GetTypeStrIdx());
-    } else if (arrayElem->GetType() == kValueArray) {
-      annoArray += GetArrayValue(arrayElem->GetSubElemVec());
-    } else {
-      annoArray += std::to_string(arrayElem->GetU64Val());
-      annoArray += '!';
-      annoArray += GlobalTables::GetStrTable().GetStringFromStrIdx(arrayElem->GetNameStrIdx());
-      strIdx.SetIdx(arrayElem->GetU64Val());
-      annoArray += GlobalTables::GetStrTable().GetStringFromStrIdx(strIdx);
-      annoArray += '!';
+void ReflectionAnalysis::AppendValueByType(std::string &annoArr, const MIRPragmaElement &elem) {
+  std::ostringstream oss;
+  std::string tmp;
+  switch(elem.GetType()) {
+    case kValueInt:
+    case kValueByte:
+    case kValueShort:
+      annoArr += std::to_string(elem.GetI32Val());
+      break;
+    case kValueLong:
+      annoArr += std::to_string(elem.GetI64Val());
+      break;
+    case kValueDouble:
+      oss << tmp << std::setiosflags(std::ios::scientific) << std::setprecision(16) << elem.GetDoubleVal();
+      annoArr += oss.str();
+      break;
+    case kValueFloat:
+      oss << tmp << std::setiosflags(std::ios::scientific) << std::setprecision(7) << elem.GetFloatVal();
+      annoArr += oss.str();
+      break;
+    case kValueBoolean:
+    case kValueChar:
+      annoArr += std::to_string(elem.GetU64Val());
+      break;
+    default: { // kValueString kValueEnum kValueType
+      GStrIdx strIdx;
+      strIdx.SetIdx(elem.GetU64Val());
+      std::string s = GlobalTables::GetStrTable().GetStringFromStrIdx(strIdx);
+      uint32 idx = ReflectionAnalysis::FindOrInsertReflectString(s);
+      annoArr += annoDelimiterPrefix;
+      annoArr += std::to_string(idx);
     }
   }
-  annoArray += ']';
+}
+
+#define COMMON_CASE \
+case kValueInt:    \
+case kValueLong:   \
+case kValueDouble: \
+case kValueFloat:  \
+case kValueString: \
+case kValueBoolean:\
+case kValueByte:   \
+case kValueShort:  \
+case kValueChar:   \
+case kValueEnum:   \
+case kValueType:
+
+std::string ReflectionAnalysis::GetAnnotationValue(const MapleVector<MIRPragmaElement*> &subelemVector,
+                                                   GStrIdx typeStrIdx) {
+  std::string annoArray;
+  annoArray += (annoArrayStartDelimiter + std::to_string(subelemVector.size()) + annoDelimiter);
+  std::string javaDscp;
+  ConvertMapleClassName(GlobalTables::GetStrTable().GetStringFromStrIdx(typeStrIdx), javaDscp);
+  uint32_t idx = ReflectionAnalysis::FindOrInsertReflectString(javaDscp);
+  javaDscp = annoDelimiterPrefix + std::to_string(idx);
+  annoArray += javaDscp;
+  for (MIRPragmaElement *arrayElem : subelemVector) {
+    annoArray += annoDelimiter;
+    idx = FindOrInsertReflectString(GlobalTables::GetStrTable().GetStringFromStrIdx(arrayElem->GetNameStrIdx()));
+    annoArray += (annoDelimiterPrefix + std::to_string(idx) + annoDelimiter + std::to_string(arrayElem->GetType()));
+    annoArray += annoDelimiter;
+    annoArray += GetAnnoValueNoArray(*arrayElem);
+  }
+  annoArray += annoArrayEndDelimiter;
   return annoArray;
 }
 
-std::string ReflectionAnalysis::GetArrayValue(MapleVector<MIRPragmaElement*> subelemVector, bool isSN) {
+std::string ReflectionAnalysis::GetArrayValue(const MapleVector<MIRPragmaElement*> &subelemVector) {
   std::string annoArray;
   GStrIdx strIdx;
-  annoArray += '[';
-  annoArray += std::to_string(subelemVector.size());
-  annoArray += '!';
+  annoArray += (annoArrayStartDelimiter + std::to_string(subelemVector.size()) + annoDelimiter);
   if (!subelemVector.empty()) {
     annoArray += std::to_string(subelemVector[0]->GetType());
-    annoArray += '!';
+    annoArray += annoDelimiter;
   }
   for (MIRPragmaElement *arrayElem : subelemVector) {
-    std::ostringstream oss3;
     std::string javaDsp;
     ConvertMapleClassName(GlobalTables::GetStrTable().GetStringFromStrIdx(arrayElem->GetTypeStrIdx()), javaDsp);
     std::string typeStr = javaDsp;
-    CompressHighFrequencyStr(typeStr);
-    annoArray += typeStr;
-    annoArray += '!';
-    std::string type;
-    MapleVector<MIRPragmaElement*> subsubelemVector = arrayElem->GetSubElemVec();
-    if (arrayElem->GetType() == kValueAnnotation) {
-      std::ostringstream oss4;
-      oss4 << type << subsubelemVector.size();
-      annoArray += oss4.str();
-      annoArray += '!';
-      for (MIRPragmaElement *annoElem : subsubelemVector) {
-        ASSERT(annoElem != nullptr, "null ptr check!");
-        annoArray += GlobalTables::GetStrTable().GetStringFromStrIdx(annoElem->GetNameStrIdx());
-        annoArray += '!';
-        annoArray += std::to_string(annoElem->GetType());
-        annoArray += '!';
-        annoArray += GetAnnoValueWithoutArray(*annoElem);
-        annoArray += '!';
+    uint32_t idx = ReflectionAnalysis::FindOrInsertReflectString(typeStr);
+    annoArray += (annoDelimiterPrefix + std::to_string(idx) + annoDelimiter);
+    MapleVector<MIRPragmaElement*> arrayElemVector = arrayElem->GetSubElemVec();
+    switch (arrayElem->GetType()) {
+      COMMON_CASE
+        AppendValueByType(annoArray, *arrayElem);
+        break;
+      case kValueAnnotation: {
+        annoArray += std::to_string(arrayElemVector.size());
+        annoArray += annoDelimiter;
+        for (MIRPragmaElement *annoElem : arrayElemVector) {
+          std::string tt = GlobalTables::GetStrTable().GetStringFromStrIdx(annoElem->GetNameStrIdx());
+          idx = ReflectionAnalysis::FindOrInsertReflectString(tt);
+          tt = annoDelimiterPrefix + std::to_string(idx) + annoDelimiter + std::to_string(annoElem->GetType()) +
+              annoDelimiter + GetAnnoValueNoArray(*annoElem) + annoDelimiter;
+          annoArray += tt;
+        }
+        break;
       }
-    } else if (NeedFourBytes(arrayElem->GetType())) {
-      oss3 << type << arrayElem->GetI32Val();
-      annoArray += oss3.str();
-    } else if (arrayElem->GetType() == kValueLong) {
-      oss3 << type << arrayElem->GetI64Val();
-      annoArray += oss3.str();
-    } else if (arrayElem->GetType() == kValueDouble) {
-      oss3 << type << std::setiosflags(std::ios::scientific) << std::setprecision(16) << arrayElem->GetDoubleVal();
-      annoArray += oss3.str();
-    } else if (arrayElem->GetType() == kValueFloat) {
-      oss3 << type << std::setiosflags(std::ios::scientific) << std::setprecision(7) << arrayElem->GetFloatVal();
-      annoArray += oss3.str();
-    } else if (arrayElem->GetType() == kValueString || arrayElem->GetType() == kValueEnum) {
-      strIdx.SetIdx(arrayElem->GetU64Val());
-      std::string t = GlobalTables::GetStrTable().GetStringFromStrIdx(strIdx);
-      DelimeterConvert(t);
-      CompressHighFrequencyStr(t);
-      if (arrayElem->GetType() == kValueString && isSN && t.size() > kMaxOptimiseThreshold) {
-        uint32 idx = ReflectionAnalysis::FindOrInsertReflectString(t);
-        t = "`" + std::to_string(idx);
+      default: {
+        annoArray += (std::to_string(arrayElem->GetU64Val()) + annoDelimiter);
+        annoArray += GlobalTables::GetStrTable().GetStringFromStrIdx(arrayElem->GetNameStrIdx());
+        strIdx.SetIdx(arrayElem->GetU64Val());
+        annoArray += (GlobalTables::GetStrTable().GetStringFromStrIdx(strIdx) + annoDelimiter);
       }
-      annoArray += t;
-    } else if (arrayElem->GetType() == kValueBoolean || arrayElem->GetType() == kValueChar) {
-      oss3 << type << arrayElem->GetU64Val();
-      annoArray += oss3.str();
-    } else if (arrayElem->GetType() == kValueType) {
-      strIdx.SetIdx(arrayElem->GetU64Val());
-      std::string javaDspInner;
-      ConvertMapleClassName(GlobalTables::GetStrTable().GetStringFromStrIdx(strIdx), javaDspInner);
-      annoArray += javaDspInner;
-    } else {
-      oss3 << type << arrayElem->GetU64Val();
-      annoArray += oss3.str();
-      annoArray += '!';
-      annoArray += GlobalTables::GetStrTable().GetStringFromStrIdx(arrayElem->GetNameStrIdx());
-      strIdx.SetIdx(arrayElem->GetU64Val());
-      annoArray += GlobalTables::GetStrTable().GetStringFromStrIdx(strIdx);
-      annoArray += '!';
     }
   }
-  annoArray += ']';
+  annoArray += annoArrayEndDelimiter;
   return annoArray;
 }
 
-std::string ReflectionAnalysis::GetAnnoValueWithoutArray(const MIRPragmaElement &annoElem) {
-  std::ostringstream oss;
-  std::string tmp, annoArray;
-  GStrIdx stridx;
-  if (NeedFourBytes(annoElem.GetType())) {
-    annoArray += std::to_string(annoElem.GetI32Val());
-  } else if (annoElem.GetType() == kValueFloat) {
-    annoArray += std::to_string(annoElem.GetFloatVal());
-  } else if (annoElem.GetType() == kValueDouble) {
-    annoArray += std::to_string(annoElem.GetDoubleVal());
-  } else if (annoElem.GetType() == kValueLong) {
-    annoArray += std::to_string(annoElem.GetI64Val());
-  } else if (annoElem.GetType() == kValueBoolean || annoElem.GetType() == kValueChar) {
-    annoArray += std::to_string(annoElem.GetU64Val());
-  } else if (annoElem.GetType() == kValueArray) {
-    annoArray += GetArrayValue(annoElem.GetSubElemVec());
-  } else {
-    stridx.SetIdx(annoElem.GetU64Val());
-    annoArray += GlobalTables::GetStrTable().GetStringFromStrIdx(stridx);
+std::string ReflectionAnalysis::GetAnnoValueNoArray(const MIRPragmaElement &annoElem) {
+  std::string annoArray;
+  switch (annoElem.GetType()) {
+    COMMON_CASE
+      AppendValueByType(annoArray, annoElem);
+      break;
+    case kValueArray:
+      annoArray += GetArrayValue(annoElem.GetSubElemVec());
+      break;
+    case kValueAnnotation :
+      annoArray += GetAnnotationValue(annoElem.GetSubElemVec(), annoElem.GetTypeStrIdx());
+      break;
+    default: {
+      GStrIdx strIdx;
+      strIdx.SetIdx(annoElem.GetU64Val());
+      std::string javaDescriptor;
+      ConvertMapleClassName(GlobalTables::GetStrTable().GetStringFromStrIdx(strIdx), javaDescriptor);
+      uint32_t idx = ReflectionAnalysis::FindOrInsertReflectString(javaDescriptor);
+      annoArray += annoDelimiterPrefix;
+      annoArray += std::to_string(idx);
+    }
   }
   return annoArray;
+}
+
+void ReflectionAnalysis::GeneAnnotation(std::map<int, int> &idxNumMap, std::string &annoArr, MIRClassType &classType,
+                                        PragmaKind paragKind, const std::string &paragName, TyIdx fieldTypeIdx,
+                                        std::map<int, int> *paramnumArray, int *paramIndex) {
+  int annoNum = 0;
+  std::string cmpString = "";
+  for (MIRPragma *prag : classType.GetPragmaVec()) {
+    cmpString = paragKind == kPragmaVar ? NameMangler::DecodeName(GlobalTables::GetStrTable().GetStringFromStrIdx(
+        prag->GetStrIdx())) : GlobalTables::GetStrTable().GetStringFromStrIdx(prag->GetStrIdx());
+    bool validTypeFlag = false;
+    if (prag->GetTyIdxEx() == fieldTypeIdx || fieldTypeIdx == invalidIdx) {
+      validTypeFlag = true;
+    }
+    if (prag->GetKind() == paragKind && paragName == cmpString && validTypeFlag) {
+      const MapleVector<MIRPragmaElement*> &elemVector = prag->GetElementVector();
+      MIRSymbol *classInfo = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(
+          GlobalTables::GetTypeTable().GetTypeFromTyIdx(prag->GetTyIdx())->GetNameStrIdx());
+      if (classInfo != nullptr && !RtRetentionPolicyCheck(*classInfo)) {
+        continue;
+      }
+      annoNum++;
+      idxNumMap[annoNum - 1] = 0;
+      GStrIdx gindex = GlobalTables::GetTypeTable().GetTypeFromTyIdx(prag->GetTyIdx())->GetNameStrIdx();
+      std::string pregTypeString = GlobalTables::GetStrTable().GetStringFromStrIdx(gindex);
+      std::string klassJavaDescriptor;
+      ConvertMapleClassName(pregTypeString, klassJavaDescriptor);
+      uint32 idx = ReflectionAnalysis::FindOrInsertReflectString(klassJavaDescriptor);
+      annoArr += annoDelimiterPrefix;
+      annoArr += std::to_string(idx);
+      annoArr += annoDelimiter;
+      if (paramnumArray != nullptr) {
+        int8 x = JudgePara(classType);
+        CHECK_FATAL(paramIndex != nullptr, "null ptr check");
+        if (x && paragName.find(kInitFuntionStr) != std::string::npos) {
+          (*paramnumArray)[(*paramIndex)++] = prag->GetParamNum() + x;
+        } else {
+          (*paramnumArray)[(*paramIndex)++] = prag->GetParamNum();
+        }
+      }
+      for (MIRPragmaElement *elem : elemVector) {
+        idxNumMap[annoNum - 1]++;
+        std::string convertTmp =
+            NameMangler::DecodeName(GlobalTables::GetStrTable().GetStringFromStrIdx(elem->GetNameStrIdx()));
+        idx = ReflectionAnalysis::FindOrInsertReflectString(convertTmp);
+        annoArr += (annoDelimiterPrefix + std::to_string(idx) + annoDelimiter +
+            std::to_string(elem->GetType()) + annoDelimiter);
+        annoArr += GetAnnoValueNoArray(*elem);
+        annoArr += annoDelimiter;
+      }
+    }
+  }
+}
+
+uint32 ReflectionAnalysis::GetAnnoCstrIndex(std::map<int, int> &idxNumMap, const std::string &annoArr) {
+  size_t annoNum = idxNumMap.size();
+  uint32 signatureIdx = 0;
+  if (annoNum == 0) {
+    std::string subStr = "0!0";
+    signatureIdx = FindOrInsertReflectString(subStr);
+  } else {
+    std::string subStr = std::to_string(annoNum);
+    subStr += annoDelimiter;
+    std::for_each(idxNumMap.begin(), idxNumMap.end(), [&subStr](const std::pair<const int, int> p) {
+      subStr += std::to_string(p.second);
+      subStr += annoDelimiter;
+    });
+    subStr += annoArr;
+    signatureIdx = GetDeflateStringIdx(subStr);
+  }
+  return signatureIdx;
 }
 
 int64 ReflectionAnalysis::BKDRHash(const std::string &strname, uint32 seed) {
@@ -1370,97 +1388,24 @@ void ReflectionAnalysis::SetAnnoFieldConst(const MIRStructType &metadataRoType, 
   }
 }
 
-
-void ReflectionAnalysis::GeneAnnotation(std::map<int, int> &idxNumMap, std::string &annoArr, MIRClassType &classType,
-                                        PragmaKind paragKind, const std::string &paragName, TyIdx fieldTypeIdx,
-                                        std::map<int, int> *paramnumArray, int *paramIndex) {
-  int annoNum = 0;
-  std::string cmpString = "";
+int8 ReflectionAnalysis::JudgePara(MIRClassType &classType) {
   for (MIRPragma *prag : classType.GetPragmaVec()) {
-    if (paragKind == kPragmaVar) {
-      cmpString = NameMangler::DecodeName(GlobalTables::GetStrTable().GetStringFromStrIdx(prag->GetStrIdx()));
-    } else {
-      cmpString = GlobalTables::GetStrTable().GetStringFromStrIdx(prag->GetStrIdx());
-    }
-    bool validTypeFlag = false;
-    if (prag->GetTyIdxEx() == fieldTypeIdx || fieldTypeIdx == invalidIdx) {
-      validTypeFlag = true;
-    }
-    if (prag->GetKind() == paragKind && paragName == cmpString && validTypeFlag) {
-      MapleVector<MIRPragmaElement*> elemVector = prag->GetElementVector();
-      MIRSymbol *clInfo = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(
-          GlobalTables::GetTypeTable().GetTypeFromTyIdx(prag->GetTyIdx())->GetNameStrIdx());
-      if (clInfo != nullptr) {
-        if (!RtRetentionPolicyCheck(*clInfo)) {
-          continue;
-        }
-      }
-      annoNum++;
-      idxNumMap[annoNum - 1] = 0;
-      GStrIdx gindex = GlobalTables::GetTypeTable().GetTypeFromTyIdx(prag->GetTyIdx())->GetNameStrIdx();
-      std::string pregTypeString = GlobalTables::GetStrTable().GetStringFromStrIdx(gindex);
-      std::string klassJavaDescriptor;
-      ConvertMapleClassName(pregTypeString, klassJavaDescriptor);
-      CompressHighFrequencyStr(klassJavaDescriptor);
-      annoArr += klassJavaDescriptor;
-      annoArr += "!";
-      if (paramnumArray != nullptr) {
-        CHECK_FATAL(paramIndex != nullptr, "null ptr check");
-        (*paramnumArray)[(*paramIndex)++] = prag->GetParamNum();
-      }
-      for (MIRPragmaElement *elem : elemVector) {
-        idxNumMap[annoNum - 1]++;
-        std::string convertTmp =
-            NameMangler::DecodeName(GlobalTables::GetStrTable().GetStringFromStrIdx(elem->GetNameStrIdx()));
-        CompressHighFrequencyStr(convertTmp);
-        annoArr += convertTmp;
-        GStrIdx stridx;
-        annoArr += "!";
-        std::ostringstream oss;
-        std::string tmp;
-        annoArr += std::to_string(elem->GetType());
-        annoArr += "!";
-        MapleVector<MIRPragmaElement*> subelemVector = elem->GetSubElemVec();
-        switch (elem->GetType()) {
-          CASE_CONDITION(annoArr, elem) case kValueAnnotation : annoArr +=
-                                                               GetAnnotationValue(subelemVector, elem->GetTypeStrIdx());
-          break;
-          case kValueArray:
-            break;
-          default:
-            stridx.SetIdx(elem->GetU64Val());
-            std::string javaDescriptor;
-            ConvertMapleClassName(GlobalTables::GetStrTable().GetStringFromStrIdx(stridx), javaDescriptor);
-            annoArr += javaDescriptor;
-        }
-        annoArr += "!";
+    if (prag->GetKind() == kPragmaClass) {
+      if ((GlobalTables::GetTypeTable().GetTypeFromTyIdx(prag->GetTyIdx())->GetName() ==
+           kArkAnnotationEnclosingClassStr) &&
+          !IsStaticClass(classType) && (classType.GetName() != kJavaLangEnumStr)) {
+        return 1;
       }
     }
   }
-}
-
-uint32 ReflectionAnalysis::GetAnnoCstrIndex(std::map<int, int> &idxNumMap, const std::string &annoArr) {
-  size_t annoNum = idxNumMap.size();
-  uint32 signatureIdx = 0;
-  if (annoNum == 0) {
-    std::string subStr = "0!0";
-    signatureIdx = FindOrInsertReflectString(subStr);
-  } else {
-    std::string subStr = std::to_string(annoNum);
-    subStr += "!";
-    std::for_each(idxNumMap.begin(), idxNumMap.end(), [&subStr](const std::pair<const int, int> p) {
-      subStr += std::to_string(p.second);
-      subStr += "!";
-    });
-    subStr += annoArr;
-    signatureIdx = GetDeflateStringIdx(subStr);
-  }
-  return signatureIdx;
+  return 0;
 }
 
 bool ReflectionAnalysis::IsAnonymousClass(const std::string &annotationString) {
   // eg: `IC!`AF!4!0!name!30!!
-  size_t pos = annotationString.find(kAnonymousClassPrefix, 0);
+  uint32_t idx = ReflectionAnalysis::FindOrInsertReflectString(kAnonymousClassPrefix);
+  std::string target = annoDelimiterPrefix + std::to_string(idx) + annoDelimiter;
+  size_t pos = annotationString.find(target, 0);
   if (pos != std::string::npos) {
     int i = kAnonymousClassIndex;
     while (i--) {

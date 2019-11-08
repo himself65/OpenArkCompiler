@@ -341,8 +341,8 @@ class MeFunction : public FuncEmit {
   }
 
   BB *GetBBFromID(BBId bbID) {
-    ASSERT(bbID.idx < bbVec.size(), "array index out of range");
-    return bbVec.at(bbID.idx);
+    ASSERT(bbID < bbVec.size(), "array index out of range");
+    return bbVec.at(bbID);
   }
 
   SSATab *GetMeSSATab() {

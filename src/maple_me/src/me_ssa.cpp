@@ -52,7 +52,7 @@ void MeSSA::BuildSSA() {
   InitRenameStack(func->GetMeSSATab()->GetOriginalStTable(), func->GetAllBBs().size(),
                   func->GetMeSSATab()->GetVersionStTable());
   // recurse down dominator tree in pre-order traversal
-  const MapleSet<BBId> &children = dom->GetDomChildren(func->GetCommonEntryBB()->GetBBId().idx);
+  const MapleSet<BBId> &children = dom->GetDomChildren(func->GetCommonEntryBB()->GetBBId());
   for (const BBId &child : children) {
     RenameBB(*func->GetBBFromID(child));
   }
@@ -116,7 +116,7 @@ void MeSSA::InsertPhiNode() {
     }
     std::deque<BB*> *workList = new std::deque<BB*>();
     for (auto it = ost2DefBBs[ost->GetIndex()].begin(); it != ost2DefBBs[ost->GetIndex()].end(); it++) {
-      BB *defBB = func->GetAllBBs()[(*it).idx];
+      BB *defBB = func->GetAllBBs()[*it];
       if (defBB != nullptr) {
         workList->push_back(defBB);
       }
@@ -124,17 +124,17 @@ void MeSSA::InsertPhiNode() {
     while (!workList->empty()) {
       BB *defBB = workList->front();
       workList->pop_front();
-      MapleSet<BBId> &dfs = dom->GetDomFrontier(defBB->GetBBId().idx);
+      MapleSet<BBId> &dfs = dom->GetDomFrontier(defBB->GetBBId());
       for (auto &bbID : dfs) {
         BB *dfBB = func->GetBBFromID(bbID);
         CHECK_FATAL(dfBB != nullptr, "null ptr check");
         if (dfBB->PhiofVerStInserted(*vst) == nullptr) {
           workList->push_back(dfBB);
           dfBB->InsertPhi(&func->GetAlloc(), vst);
-          if (DEBUGFUNC(func)) {
+          if (enabledDebug) {
             ost->Dump();
-            LogInfo::MapleLogger() << " Defined In: BB" << defBB->GetBBId().idx << " Insert Phi Here: BB"
-                                   << dfBB->GetBBId().idx << '\n';
+            LogInfo::MapleLogger() << " Defined In: BB" << defBB->GetBBId() << " Insert Phi Here: BB"
+                                   << dfBB->GetBBId() << '\n';
           }
         }
       }
@@ -143,15 +143,15 @@ void MeSSA::InsertPhiNode() {
   }
 }
 
-MeSSA::MeSSA(MeFunction *func, Dominance *dom, MemPool *memPool)
-    : SSA(*memPool, *func->GetMeSSATab()), AnalysisResult(memPool), func(func), dom(dom) {}
+MeSSA::MeSSA(MeFunction *func, Dominance *dom, MemPool *memPool, bool enabledDebug)
+    : SSA(*memPool, *func->GetMeSSATab()), AnalysisResult(memPool), func(func), dom(dom), enabledDebug(enabledDebug) {}
 
 void MeSSA::RenameBB(BB &bb) {
-  if (GetBBRenamed(bb.GetBBId().idx)) {
+  if (GetBBRenamed(bb.GetBBId())) {
     return;
   }
 
-  SetBBRenamed(bb.GetBBId().idx, true);
+  SetBBRenamed(bb.GetBBId(), true);
 
   // record stack size for variable versions before processing rename. It is used for stack pop up.
   std::vector<uint32> oriStackSize;
@@ -167,8 +167,8 @@ void MeSSA::RenameBB(BB &bb) {
   }
   RenamePhiUseInSucc(bb);
   // Rename child in Dominator Tree.
-  ASSERT(bb.GetBBId().idx < dom->GetDomChildrenSize(), "index out of range in MeSSA::RenameBB");
-  const MapleSet<BBId> &children = dom->GetDomChildren(bb.GetBBId().idx);
+  ASSERT(bb.GetBBId() < dom->GetDomChildrenSize(), "index out of range in MeSSA::RenameBB");
+  const MapleSet<BBId> &children = dom->GetDomChildren(bb.GetBBId());
   for (const BBId &child : children) {
     RenameBB(*func->GetBBFromID(child));
   }
@@ -225,7 +225,7 @@ AnalysisResult *MeDoSSA::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, Modu
   auto *ssaTab = static_cast<SSATab*>(funcResMgr->GetAnalysisResult(MeFuncPhase_SSATAB, func));
   CHECK_FATAL(ssaTab != nullptr, "ssaTab phase has problem");
   MemPool *ssaMp = NewMemPool();
-  MeSSA *ssa = ssaMp->New<MeSSA>(func, dom, ssaMp);
+  MeSSA *ssa = ssaMp->New<MeSSA>(func, dom, ssaMp, DEBUGFUNC(func));
   ssa->BuildSSA();
   ssa->VerifySSA();
   if (DEBUGFUNC(func)) {

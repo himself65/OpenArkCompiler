@@ -16,28 +16,22 @@
 #define MAPLE_DRIVER_INCLUDE_FILE_UTILS_H
 #include <string>
 
-namespace FileSeperator {
-const char kFileSeperatorLinuxStyleChar = '/';
-const char kFileSeperatorWindowsStyleChar = '\\';
-const char kFileSeperatorChar = kFileSeperatorLinuxStyleChar;
-const std::string kFileSeperatorLinuxStyleStr = std::string(1, kFileSeperatorLinuxStyleChar);
-const std::string kFileSeperatorWindowsStyleStr = std::string(1, kFileSeperatorWindowsStyleChar);
-const std::string kFileSeperatorStr = kFileSeperatorLinuxStyleStr;
-}  // namespace FileSeperator
-
 namespace maple {
+extern const std::string kFileSeperatorStr;
+extern const char kFileSeperatorChar;
 // Use char[] since getenv receives char* as parameter
-static constexpr char kMapleRoot[] = "MAPLE_ROOT";
+constexpr char kMapleRoot[] = "MAPLE_ROOT";
+
 class FileUtils {
  public:
-  const static std::string GetFileName(const std::string &filePath, const bool isWithExtension);
-  const static std::string GetFileExtension(const std::string &filePath);
-  const static std::string GetFileFolder(const std::string &filePath);
-  const static std::string ConvertPathIfNeeded(const std::string &src);
-  const static int Remove(const std::string &filePath);
-  const static std::string AppendMapleRootIfNeeded(bool needRootPath, const std::string &path,
-                                                   const std::string &defaultRoot =
-                                                   ("." + FileSeperator::kFileSeperatorStr));
+  static std::string GetFileName(const std::string &filePath, bool isWithExtension);
+  static std::string GetFileExtension(const std::string &filePath);
+  static std::string GetFileFolder(const std::string &filePath);
+  static std::string ConvertPathIfNeeded(const std::string &src);
+  static int Remove(const std::string &filePath);
+  static std::string AppendMapleRootIfNeeded(bool needRootPath, const std::string &path,
+                                             const std::string &defaultRoot =
+                                                 ("." + kFileSeperatorStr));
 };
 }  // namespace maple
 #endif  // MAPLE_DRIVER_INCLUDE_FILE_UTILS_H

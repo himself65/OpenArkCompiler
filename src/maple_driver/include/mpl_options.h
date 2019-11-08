@@ -128,7 +128,7 @@ class MplOptions {
   ~MplOptions() = default;
 
   int Parse(int argc, char **argv);
-  const std::string OptimizationLevelStr() const;
+  std::string OptimizationLevelStr() const;
 
   const std::map<std::string, std::vector<mapleOption::Option>> &GetOptions() const {
     return options;

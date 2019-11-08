@@ -16,37 +16,48 @@
 #include <cstdio>
 #include "string_utils.h"
 
+namespace {
+const char kFileSeperatorLinuxStyleChar = '/';
+const char kFileSeperatorWindowsStyleChar = '\\';
+const std::string kFileSeperatorLinuxStyleStr = std::string(1, kFileSeperatorLinuxStyleChar);
+const std::string kFileSeperatorWindowsStyleStr = std::string(1, kFileSeperatorWindowsStyleChar);
+} // namespace
+
 namespace maple {
-const std::string FileUtils::GetFileName(const std::string &filePath, const bool isWithExtension) {
-  std::string fullFileName = StringUtils::GetStrAfterLast(filePath, FileSeperator::kFileSeperatorStr);
+const char kFileSeperatorChar = kFileSeperatorLinuxStyleChar;
+
+const std::string kFileSeperatorStr = kFileSeperatorLinuxStyleStr;
+
+std::string FileUtils::GetFileName(const std::string &filePath, bool isWithExtension) {
+  std::string fullFileName = StringUtils::GetStrAfterLast(filePath, kFileSeperatorStr);
   if (isWithExtension) {
     return fullFileName;
   }
   return StringUtils::GetStrBeforeLast(fullFileName, ".");
 }
 
-const std::string FileUtils::GetFileExtension(const std::string &filePath) {
+std::string FileUtils::GetFileExtension(const std::string &filePath) {
   return StringUtils::GetStrAfterLast(filePath, ".", true);
 }
 
-const std::string FileUtils::GetFileFolder(const std::string &filePath) {
-  std::string folder = StringUtils::GetStrBeforeLast(filePath, FileSeperator::kFileSeperatorStr, true);
-  return folder.empty() ? ("." + FileSeperator::kFileSeperatorStr) : (folder + FileSeperator::kFileSeperatorStr);
+std::string FileUtils::GetFileFolder(const std::string &filePath) {
+  std::string folder = StringUtils::GetStrBeforeLast(filePath, kFileSeperatorStr, true);
+  return folder.empty() ? ("." + kFileSeperatorStr) : (folder + kFileSeperatorStr);
 }
 
-const std::string FileUtils::ConvertPathIfNeeded(const std::string &src) {
+std::string FileUtils::ConvertPathIfNeeded(const std::string &src) {
   std::string ret = src;
-  ret = StringUtils::Replace(ret, FileSeperator::kFileSeperatorWindowsStyleStr,
-                             FileSeperator::kFileSeperatorLinuxStyleStr);
+  ret = StringUtils::Replace(ret, kFileSeperatorWindowsStyleStr,
+                             kFileSeperatorLinuxStyleStr);
   return ret;
 }
 
-const int FileUtils::Remove(const std::string &filePath) {
+int FileUtils::Remove(const std::string &filePath) {
   return remove(filePath.c_str());
 }
 
-const std::string FileUtils::AppendMapleRootIfNeeded(bool needRootPath, const std::string &path,
-                                                     const std::string &defaultRoot) {
+std::string FileUtils::AppendMapleRootIfNeeded(bool needRootPath, const std::string &path,
+                                               const std::string &defaultRoot) {
   if (!needRootPath) {
     return path;
   }
@@ -54,7 +65,7 @@ const std::string FileUtils::AppendMapleRootIfNeeded(bool needRootPath, const st
   if (getenv(kMapleRoot) == nullptr) {
     ostrStream << defaultRoot << path;
   } else {
-    ostrStream << getenv(kMapleRoot) << FileSeperator::kFileSeperatorStr << path;
+    ostrStream << getenv(kMapleRoot) << kFileSeperatorStr << path;
   }
   return ostrStream.str();
 }
