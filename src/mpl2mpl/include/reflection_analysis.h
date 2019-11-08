@@ -278,6 +278,19 @@ class ReflectionAnalysis : public AnalysisResult {
   void GenFieldOffsetData(const Klass &klass, std::vector<std::pair<FieldPair, int>> &fieldOffsetVector);
   MIRSymbol *GenFieldsMetaData(const Klass &klass);
   MIRSymbol *GenMethodsMetaData(const Klass &klass);
+  MIRSymbol *GenFieldsMeta(const Klass &klass, std::vector<std::pair<FieldPair, int>> &fieldsVector,
+                           std::vector<std::pair<FieldPair, uint16>> &fieldHashvec);
+  void GenFieldMeta(const Klass &klass, MIRStructType &fieldsInfoType, std::pair<FieldPair, int> &fieldInfo,
+                    MIRAggConst &aggConst, int idx, std::vector<std::pair<FieldPair, uint16>> &fieldHashVec);
+  MIRSymbol *GenMethodsMeta(const Klass &klass, std::vector<std::pair<MethodPair*, int>> &methodInfoVec,
+                            std::unordered_map<uint32, std::string> &baseNameMp,
+                            std::unordered_map<uint32, std::string> &fullNameMp);
+  void GenMethodMeta(const Klass &klass, MIRStructType &methodsInfoType,
+                     MIRSymbol &funcSym, MIRAggConst &aggConst,
+                     std::unordered_map<uint32, std::string> &baseNameMp,
+                     std::unordered_map<uint32, std::string> &fullNameMp);
+  uint32 GetMethodModifier(const Klass &klass, MIRFunction &func);
+  uint32 GetMethodFlag(MIRFunction &func);
   static void GenMetadataType(MIRModule &mirModule);
   static MIRType *GetRefFieldType(MIRBuilder &mirBuilder);
   static TyIdx GenMetaStructType(MIRModule &mirModule, MIRStructType &metaType, const std::string &str);
@@ -311,8 +324,8 @@ class ReflectionAnalysis : public AnalysisResult {
 
   int GetDeflateStringIdx(const std::string &subStr);
   uint32 GetAnnoCstrIndex(std::map<int, int> &idxNumMap, const std::string &annoArr);
-  int16 GetMethodInVtabIndex(const Klass &clazz, const MIRFunction &func);
-  void GetSignatureTypeNames(const std::string &signature, std::vector<std::string> &typeNames);
+  uint32 GetMethodInVtabIndex(const Klass &clazz, const MIRFunction &func);
+  void GetSignatureTypeNames(std::string &signature, std::vector<std::string> &typeNames);
   MIRSymbol *GetClinitFuncSymbol(const Klass &klass);
   int SolveAnnotation(MIRClassType &classType, MIRFunction &func);
   uint32 GetTypeNameIdxFromType(MIRType &type, const Klass &klass, const std::string &fieldName);
