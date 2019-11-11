@@ -50,7 +50,7 @@ class UnionFind {
   }
 
   void Reinit() {
-    for (unsigned int i = 0; i < num; i++) {
+    for (size_t i = 0; i < num; ++i) {
       id[i] = i;
       sz[i] = 1;
     }

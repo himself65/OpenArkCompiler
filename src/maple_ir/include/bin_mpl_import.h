@@ -24,8 +24,8 @@ class BinaryMplImport {
   using CallSite = std::pair<CallInfo*, PUIdx>;
 
  public:
-  BinaryMplImport &operator = (const BinaryMplImport &) = delete;
-  BinaryMplImport(const BinaryMplImport &) = delete;
+  BinaryMplImport &operator=(const BinaryMplImport&) = delete;
+  BinaryMplImport(const BinaryMplImport&) = delete;
   explicit BinaryMplImport(MIRModule &md) : mod(md), mirBuilder(&md) {
     imported = true;
     bufI = 0;

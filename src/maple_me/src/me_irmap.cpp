@@ -39,6 +39,7 @@ void MeIRMap::Dump() {
     auto *bb = *bIt;
     bb->DumpHeader(&GetMIRModule());
     LogInfo::MapleLogger() << "frequency : " << bb->GetFrequency() << "\n";
+    bb->DumpMeVarPaiList(this);
     bb->DumpMeVarPhiList(this);
     bb->DumpMeRegPhiList(this);
     int i = 0;
@@ -46,7 +47,9 @@ void MeIRMap::Dump() {
       if (GetDumpStmtNum()) {
         LogInfo::MapleLogger() << "(" << i++ << ") ";
       }
-      meStmt.EmitStmt(GetSSATab()).Dump(GetMIRModule(), 0);
+      if (meStmt.GetOp() != OP_paiassign) {
+        meStmt.EmitStmt(GetSSATab()).Dump(GetMIRModule(), 0);
+      }
       meStmt.Dump(this);
     }
   }
@@ -109,7 +112,7 @@ AnalysisResult *MeDoIRMap::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, Mo
   // delete versionst_table
 #if MIR_FEATURE_FULL
   // nullify all references to the versionst_table contents
-  for (size_t i = 0; i < func->GetMeSSATab()->GetVersionStTable().GetVersionStVectorSize(); i++) {
+  for (size_t i = 0; i < func->GetMeSSATab()->GetVersionStTable().GetVersionStVectorSize(); ++i) {
     func->GetMeSSATab()->GetVersionStTable().SetVersionStVectorItem(i, nullptr);
   }
   // clear BB's phi_list_ which uses versionst; nullify first_stmt_, last_stmt_

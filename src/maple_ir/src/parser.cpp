@@ -569,7 +569,7 @@ bool MIRParser::ParsePragma(MIRStructType &type) {
       Error("parsing pragma error type ");
       return false;
     }
-    p->PushElementVector(*e);
+    p->PushElementVector(e);
     tk = lexer.NextToken();
     if (tk != kTkRbrace && tk != kTkComa) {
       Error("parsing pragma error syntax ");

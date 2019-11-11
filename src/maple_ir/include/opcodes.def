@@ -15,6 +15,7 @@
 // Stmt & Notmmpl
   // storage access opcodes
   OPCODE(dassign, DassignNode, (OPCODEISSTMT | OPCODENOTMMPL | OPCODEHASSSADEF), 8)
+  OPCODE(paiassign, PaiassignNode, (OPCODEISSTMT | OPCODENOTMMPL | OPCODEHASSSADEF), 8)
   OPCODE(maydassign, DassignNode, (OPCODEISSTMT | OPCODENOTMMPL | OPCODEHASSSADEF), 8)
   OPCODE(iassign, IassignNode, (OPCODEISSTMT | OPCODENOTMMPL | OPCODEHASSSADEF), 12)
   // hierarchical control flow opcodes

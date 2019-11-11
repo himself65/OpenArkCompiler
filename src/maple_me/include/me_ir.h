@@ -265,9 +265,11 @@ class VarMeExpr final : public MeExpr {
   const MapleVector<TyIdx> &GetInferredTypeCandidates() const {
     return inferredTypeCandidates;
   }
+
   void AddInferredTypeCandidate(TyIdx idx) {
     inferredTypeCandidates.push_back(idx);
   }
+
   void ClearInferredTypeCandidates(TyIdx idx) {
     inferredTypeCandidates.clear();
   }
@@ -340,13 +342,17 @@ class VarMeExpr final : public MeExpr {
 class MeVarPhiNode {
  public:
   explicit MeVarPhiNode(MapleAllocator *alloc)
-      : lhs(nullptr), opnds(kOperandNumBinary, nullptr, alloc->Adapter()), isLive(true), defBB(nullptr) {
+      : lhs(nullptr),
+        opnds(kOperandNumBinary, nullptr, alloc->Adapter()),
+        isLive(true),
+        defBB(nullptr),
+        isPaiAdded(false) {
     opnds.pop_back();
     opnds.pop_back();
   }
 
   MeVarPhiNode(VarMeExpr *var, MapleAllocator *alloc)
-      : lhs(var), opnds(kOperandNumBinary, nullptr, alloc->Adapter()), isLive(true), defBB(nullptr) {
+      : lhs(var), opnds(kOperandNumBinary, nullptr, alloc->Adapter()), isLive(true), defBB(nullptr), isPaiAdded(false) {
     var->SetDefPhi(*this);
     var->SetDefBy(kDefByPhi);
     opnds.pop_back();
@@ -402,11 +408,20 @@ class MeVarPhiNode {
     lhs = value;
   }
 
+  void SetPaiAdded() {
+    isPaiAdded = true;
+  }
+
+  bool IsPaiAdded() const {
+    return isPaiAdded;
+  }
+
  private:
   VarMeExpr *lhs;
   MapleVector<VarMeExpr*> opnds;
   bool isLive;
   BB *defBB;  // the bb that defines this phi
+  bool isPaiAdded;
 };
 
 class RegMeExpr : public MeExpr {
@@ -1028,7 +1043,7 @@ class NaryMeExpr : public MeExpr {
         opnds(alloc->Adapter()),
         boundCheck(meexpr.boundCheck) {
     InitBase(meexpr.GetOp(), meexpr.GetPrimType(), meexpr.GetNumOpnds());
-    for (size_t i = 0; i < meexpr.opnds.size(); i++) {
+    for (size_t i = 0; i < meexpr.opnds.size(); ++i) {
       opnds.push_back(meexpr.opnds[i]);
     }
   }
@@ -1086,9 +1101,10 @@ class NaryMeExpr : public MeExpr {
   uint32 GetHashIndex() const override {
     auto hashIdx = static_cast<uint32>(GetOp());
     constexpr uint32 kNaryHashShift = 3;
-    for (uint32 i = 0; i < GetNumOpnds(); i++) {
+    for (uint32 i = 0; i < GetNumOpnds(); ++i) {
       hashIdx += static_cast<uint32>(opnds[i]->GetExprID()) << kNaryHashShift;
     }
+    hashIdx += static_cast<uint32>(boundCheck);
     return hashIdx;
   }
 
@@ -1429,7 +1445,56 @@ class MustDefMeNode {
   MeStmt *base;
   bool isLive;
 };
+class PaiassignMeStmt : public MeStmt {
+ public:
+  explicit PaiassignMeStmt(MapleAllocator *alloc)
+      : MeStmt(OP_paiassign),
+        rhs(nullptr),
+        lhs(nullptr),
+        generatedBy(nullptr),
+        isToken(false) {}
+  ~PaiassignMeStmt() = default;
 
+  void SetLHS(VarMeExpr &l) {
+    lhs = &l;
+  }
+
+  void SetRHS(VarMeExpr &r) {
+    rhs = &r;
+  }
+
+  void SetGeneratedBy(MeStmt &m) {
+    generatedBy = &m;
+  }
+
+  VarMeExpr *GetLHS() const {
+    return lhs;
+  }
+
+  VarMeExpr *GetRHS() const {
+    return rhs;
+  }
+
+  MeStmt *GetGeneratedBy() {
+    return generatedBy;
+  }
+
+  void SetIsToken(bool t) {
+    isToken = t;
+  }
+
+  bool GetIsToken() {
+    return isToken;
+  }
+
+  void Dump(IRMap*) const;
+
+ private:
+  VarMeExpr *rhs;
+  VarMeExpr *lhs;
+  MeStmt *generatedBy;
+  bool isToken;
+};
 class DassignMeStmt : public MeStmt {
  public:
   DassignMeStmt(MapleAllocator *alloc, const StmtNode *stt)
@@ -2612,9 +2677,7 @@ class DumpOptions {
   static bool simpleDump;
   static int dumpVsymNum;
 };
-
 }  // namespace maple
-
 #define LOAD_SAFE_CAST_FOR_ME_EXPR
 #define LOAD_SAFE_CAST_FOR_ME_STMT
 #include "me_safe_cast_traits.def"

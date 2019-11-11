@@ -24,7 +24,7 @@ enum Status {
   kStop = 0,
   kStartWithSubvec = 1,
   kNormalTypeStrEndWithSemicolon = 2,
-  kNormalTypeStrEndWithSubvecNeedSemicolon = 3,
+  kNormalTypeStrEndWithSubvecNeedsSemicolon = 3,
   kEndWithSubvec = 4,
   kIgnoreAndContinue = 5
 };
@@ -88,7 +88,7 @@ static void GetTypeStr(const std::string &str, uint32 &start, uint32 &end, uint3
   uint32 i = start;
   status = kStop;
   while (str[i] == '[') {
-    i++;
+    ++i;
   }
   start = i;
   end = i;
@@ -114,11 +114,11 @@ static void GetTypeStr(const std::string &str, uint32 &start, uint32 &end, uint3
           end = i + 1;
           break;
         } else if (str[i] == '<') {
-          status = kNormalTypeStrEndWithSubvecNeedSemicolon;
+          status = kNormalTypeStrEndWithSubvecNeedsSemicolon;
           end = i;
           break;
         } else {
-          i++;
+          ++i;
         }
       }
       break;
@@ -177,7 +177,7 @@ MIRPragmaElement *MIRPragma::GetPragmaElemFromSignature(const std::string &signa
         elemStack.top()->SubElemVecPushBack(etmp);
         break;
       }
-      case kNormalTypeStrEndWithSubvecNeedSemicolon: {
+      case kNormalTypeStrEndWithSubvecNeedsSemicolon: {
         MIRPragmaElement *etmp = mod->GetMemPool()->New<MIRPragmaElement>(*mod);
         etmp->SetType(kValueType);
         std::string typeStr = signature.substr(start, end - start) + ";";
@@ -278,7 +278,7 @@ void MIRPragmaElement::Dump(int indent) const {
           if (i != num - 1) {
             LogInfo::MapleLogger() << "," << std::endl;
           }
-          i++;
+          ++i;
         }
       }
       LogInfo::MapleLogger() << "]";
@@ -306,7 +306,7 @@ void MIRPragmaElement::Dump(int indent) const {
           if (i != num - 1) {
             LogInfo::MapleLogger() << "," << std::endl;
           }
-          i++;
+          ++i;
         }
       }
       LogInfo::MapleLogger() << "]";
@@ -358,7 +358,7 @@ void MIRPragma::Dump(int indent) const {
     LogInfo::MapleLogger() << "\"" << typeEx->GetMplTypeName() << "\" ";
   }
   LogInfo::MapleLogger() << "<$" << GlobalTables::GetStrTable().GetStringFromStrIdx(gStrIdx) << "> {";
-  for (size_t j = 0; j < elementVec.size(); j++) {
+  for (size_t j = 0; j < elementVec.size(); ++j) {
     LogInfo::MapleLogger() << std::endl;
     PrintIndentation(indent + 1);
     MIRPragmaElement *e = elementVec[j];
@@ -370,6 +370,5 @@ void MIRPragma::Dump(int indent) const {
     }
   }
   LogInfo::MapleLogger() << "}";
-  return;
 }
 }  // namespace maple

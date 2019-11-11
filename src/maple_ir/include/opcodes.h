@@ -36,6 +36,5 @@ inline constexpr bool IsCallAssigned(Opcode code) {
           code == OP_icallassigned || code == OP_intrinsiccallassigned ||
           code == OP_xintrinsiccallassigned || code == OP_intrinsiccallwithtypeassigned);
   }
-
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_OPCODES_H

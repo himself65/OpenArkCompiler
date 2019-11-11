@@ -285,6 +285,10 @@ void BB::SetLastMe(MeStmt *stmt) {
   meStmtList.update_back(stmt);
 }
 
+MeStmt *BB::GetLastMe() {
+  return &meStmtList.back();
+}
+
 void BB::RemoveMeStmt(MeStmt *meStmt) {
   CHECK_FATAL(meStmt != nullptr, "null ptr check");
   meStmtList.erase(meStmt);
@@ -335,6 +339,27 @@ void BB::ReplaceMeStmt(MeStmt *stmt, MeStmt *newStmt) {
   RemoveMeStmt(stmt);
 }
 
+void BB::DumpMeBB(IRMap &irMap) {
+  for(MeStmt &meStmt : GetMeStmts()) {
+    meStmt.Dump(&irMap);
+  }
+}
+
+void BB::DumpMeVarPaiList(IRMap *irMap) {
+  if (mevarPaiList.size() == 0) {
+    return;
+  }
+  std::cout << "<<<<<<<<<<<<<<  PAI Node Start >>>>>>>>>>>>>>>>>>" << '\n';
+  for (auto pair : mevarPaiList) {
+    BB *bb = pair.first;
+    std::cout << "Frome BB : " << bb->GetBBId() << '\n';
+    for (uint32 j = 0; j < pair.second.size(); ++j) {
+      pair.second.at(j)->Dump(irMap);
+    }
+  }
+  std::cout << "<<<<<<<<<<<<<<  PAI Node End >>>>>>>>>>>>>>>>>>>>" << '\n';
+}
+
 void BB::DumpMeVarPhiList(IRMap *irMap) {
   int count = 0;
   for (auto phiIt = mevarPhiList.begin(); phiIt != mevarPhiList.end(); phiIt++) {
@@ -354,11 +379,11 @@ void BB::DumpMeRegPhiList(IRMap *irMap) {
 }
 
 void SCCOfBBs::Dump() {
-  std::cout << "SCC " << id << " contains" << std::endl;
+  std::cout << "SCC " << id << " contains" << '\n';
   for (BB *bb : bbs) {
     std::cout << "bb(" << bb->UintID() << ")  ";
   }
-  std::cout << std::endl;
+  std::cout << '\n';
 }
 
 bool SCCOfBBs::HasCycle() const {

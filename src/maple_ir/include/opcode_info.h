@@ -136,7 +136,6 @@ class OpcodeTable {
  private:
   OpcodeDesc table[kOpLast];
 };
-
 extern const OpcodeTable kOpcodeInfo;
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_OPCODE_INFO_H
