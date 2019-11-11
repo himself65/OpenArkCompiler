@@ -194,7 +194,7 @@ void MIRAggConst::Dump() const {
   MIRConst::Dump();
   LogInfo::MapleLogger() << "[";
   size_t size = constVec.size();
-  for (size_t i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; ++i) {
     constVec[i]->Dump();
     if (i != size - 1) {
       LogInfo::MapleLogger() << ", ";

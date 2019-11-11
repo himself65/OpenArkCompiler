@@ -386,7 +386,7 @@ ForeachelemNode *MIRLower::ExpandArrayMrtForeachelemBlock(ForeachelemNode &node)
 void MIRLower::AddArrayMrtMpl(BaseNode &exp, BlockNode &newBlock) {
   MIRModule &mod = mirModule;
   MIRBuilder *builder = mod.GetMIRBuilder();
-  for (size_t i = 0; i < exp.NumOpnds(); i++) {
+  for (size_t i = 0; i < exp.NumOpnds(); ++i) {
     ASSERT(exp.Opnd(i) != nullptr, "nullptr check");
     AddArrayMrtMpl(*exp.Opnd(i), newBlock);
   }

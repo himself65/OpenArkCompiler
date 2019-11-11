@@ -32,11 +32,11 @@ class Options {
  public:
   explicit Options(maple::MemPool &memPool) : optionAlloc(&memPool) {}
 
-  bool ParseOptions(int argc, char **argv, std::string &fileName);
+  bool ParseOptions(int argc, char **argv, std::string &fileName) const;
   ~Options() = default;
 
-  void DumpOptions();
-  std::vector<std::string> &GetSequence() {
+  void DumpOptions() const;
+  const std::vector<std::string> &GetSequence() const {
     return phaseSeq;
   }
 

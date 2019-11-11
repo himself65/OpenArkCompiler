@@ -25,7 +25,7 @@ using namespace maple;
 #if MIR_FEATURE_FULL
 void ConstantFoldModule(maple::MIRModule &module) {
   MapleVector<maple::MIRFunction*> &funcList = module.GetFunctionList();
-  for (auto it = funcList.begin(); it != funcList.end(); it++) {
+  for (auto it = funcList.begin(); it != funcList.end(); ++it) {
     maple::MIRFunction *curFunc = *it;
     module.SetCurFunction(curFunc);
   }
@@ -88,7 +88,7 @@ int main(int argc, char **argv) {
       binMplt.Import(modID, true);
       module.OutputAsciiMpl(".irb");
     }
-    i++;
+    ++i;
   }
   return 0;
 }

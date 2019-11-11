@@ -63,8 +63,8 @@ class TypeTable {
   TypeTable(const TypeTable&) = delete;
   TypeTable &operator=(const TypeTable&) = delete;
   ~TypeTable();
-  MIRType *CreateMirType(uint32 ti) const;
-  void PutToHashTable(MIRType *mirtype);
+  MIRType *CreateMirType(uint32 primTypeIdx) const;
+  void PutToHashTable(MIRType *mirType);
 
   std::vector<MIRType*> &GetTypeTable() {
     return typeTable;
@@ -90,16 +90,16 @@ class TypeTable {
     typeTable.at(tyIdx.GetIdx()) = type;
   }
 
-  TyIdx GetOrCreateMIRType(MIRType *ptype);
+  TyIdx GetOrCreateMIRType(MIRType *pType);
 
-  uint32 GetTypeTableSize(void) const {
+  size_t GetTypeTableSize() const {
     return typeTable.size();
   }
 
   // Get primtive types.
-  MIRType *GetPrimType(PrimType ptyp) const {
-    ASSERT(ptyp < typeTable.size(), "array index out of range");
-    return typeTable.at(ptyp);
+  MIRType *GetPrimType(PrimType primType) const {
+    ASSERT(primType < typeTable.size(), "array index out of range");
+    return typeTable.at(primType);
   }
 
   MIRType *GetFloat() const {
@@ -248,8 +248,8 @@ class TypeTable {
   }
 
   // Get or Create derived types.
-  MIRType *GetOrCreatePointerType(TyIdx pointedTyIdx, PrimType pty = PTY_ptr);
-  MIRType *GetOrCreatePointerType(const MIRType &pointTo, PrimType pty = PTY_ptr);
+  MIRType *GetOrCreatePointerType(TyIdx pointedTyIdx, PrimType primType = PTY_ptr);
+  MIRType *GetOrCreatePointerType(const MIRType &pointTo, PrimType primType = PTY_ptr);
   MIRType *GetPointedTypeIfApplicable(MIRType &type) const;
   MIRType *GetVoidPtr() const {
     ASSERT(voidPtrType != nullptr, "voidPtrType should not be null");
@@ -286,13 +286,13 @@ class TypeTable {
  private:
   using MIRTypePtr = MIRType*;
   struct Hash {
-    uint32 operator()(const MIRTypePtr &ty) const {
+    size_t operator()(const MIRTypePtr &ty) const {
       return ty->GetHashIndex();
     }
   };
 
   struct Equal {
-    uint32 operator()(const MIRTypePtr &tx, const MIRTypePtr &ty) const {
+    bool operator()(const MIRTypePtr &tx, const MIRTypePtr &ty) const {
       return tx->EqualTo(*ty);
     }
   };
@@ -300,7 +300,14 @@ class TypeTable {
   std::unordered_set<MIRTypePtr, Hash, Equal> typeHashTable;
   std::vector<MIRType*> typeTable;
 
-  MIRType *CreateType(MIRType &oldType);
+  // create an entry in typeTable for the type node
+  MIRType *CreateType(MIRType &oldType) {
+    MIRType *newType = oldType.CopyMIRTypeNode();
+    newType->SetTypeIndex(TyIdx(typeTable.size()));
+    typeTable.push_back(newType);
+    return newType;
+  }
+
   MIRType *GetOrCreateStructOrUnion(const std::string &name, const FieldVector &fields, const FieldVector &prntFields,
                                     MIRModule &module, bool forStruct = true);
   MIRType *GetOrCreateClassOrInterface(const std::string &name, MIRModule &module, bool forClass);
@@ -329,26 +336,25 @@ class StrPtrEqual {
 };
 
 // T can be std::string or std::u16string
-// U can be GStrIdx, UStrIdx_t, or u16stridx_t
+// U can be GStrIdx, UStrIdx, or U16StrIdx
 template <typename T, typename U>
 class StringTable {
  public:
-  StringTable &operator = (const StringTable &) = delete;
-  StringTable(const StringTable &) = delete;
   StringTable() = default;
-
-  void Init() {
-    // initialize 0th entry of stringTable with an empty string
-    T *ptr = new T;
-    CHECK_FATAL(ptr != nullptr, "null ptr check");
-    stringTable.push_back(ptr);
-  }
+  StringTable &operator=(const StringTable&) = delete;
+  StringTable(const StringTable&) = delete;
 
   ~StringTable() {
     stringTableMap.clear();
     for (auto it : stringTable) {
       delete it;
     }
+  }
+
+  void Init() {
+    // initialize 0th entry of stringTable with an empty string
+    T *ptr = new T;
+    stringTable.push_back(ptr);
   }
 
   U GetStrIdxFromName(const T &str) const {
@@ -370,7 +376,7 @@ class StringTable {
     return strIdx;
   }
 
-  size_t StringTableSize(void) const {
+  size_t StringTableSize() const {
     return stringTable.size();
   }
 
@@ -386,10 +392,10 @@ class StringTable {
 
 class FPConstTable {
  public:
-  FPConstTable &operator=(const FPConstTable &p) = delete;
   FPConstTable(const FPConstTable &p) = delete;
-
+  FPConstTable &operator=(const FPConstTable &p) = delete;
   ~FPConstTable();
+
   MIRFloatConst *GetOrCreateFloatConst(float);     // get the const from floatConstTable or create a new one
   MIRDoubleConst *GetOrCreateDoubleConst(double);  // get the const from doubleConstTable or create a new one
 
@@ -400,7 +406,7 @@ class FPConstTable {
   }
 
  private:
-  FPConstTable() : floatConstTable(), doubleConstTable(){};
+  FPConstTable() : floatConstTable(), doubleConstTable() {};
   void PostInit();
   std::unordered_map<float, MIRFloatConst*> floatConstTable;     // map float const value to the table;
   std::unordered_map<double, MIRDoubleConst*> doubleConstTable;  // map double const value to the table;
@@ -418,17 +424,16 @@ class FPConstTable {
 // Each module maintains its own MIRTypeNameTable.
 class STypeNameTable {
  public:
-  STypeNameTable() : gStrIdxToTyIdxMap() {}
+  STypeNameTable() = default;
+  virtual ~STypeNameTable() = default;
 
-  virtual ~STypeNameTable() {}
-
-  std::unordered_map<GStrIdx, TyIdx, GStrIdxHash> &GetGStridxToTyidxMap() {
+  const std::unordered_map<GStrIdx, TyIdx, GStrIdxHash> &GetGStridxToTyidxMap() const {
     return gStrIdxToTyIdxMap;
   }
 
   TyIdx GetTyIdxFromGStrIdx(GStrIdx idx) const {
-    auto it = gStrIdxToTyIdxMap.find(idx);
-    if (it == gStrIdxToTyIdxMap.end()) {
+    const auto it = gStrIdxToTyIdxMap.find(idx);
+    if (it == gStrIdxToTyIdxMap.cend()) {
       return TyIdx(0);
     }
     return it->second;
@@ -448,7 +453,7 @@ class FunctionTable {
     funcTable.push_back(nullptr);
   }  // puIdx 0 is reserved
 
-  virtual ~FunctionTable() {}
+  virtual ~FunctionTable() = default;
 
   std::vector<MIRFunction*> &GetFuncTable() {
     return funcTable;
@@ -495,15 +500,15 @@ class GSymbolTable {
   }
 
   StIdx GetStIdxFromStrIdx(GStrIdx idx) const {
-    auto it = strIdxToStIdxMap.find(idx);
-    if (it == strIdxToStIdxMap.end()) {
+    const auto it = strIdxToStIdxMap.find(idx);
+    if (it == strIdxToStIdxMap.cend()) {
       return StIdx();
     }
     return it->second;
   }
 
-  MIRSymbol *GetSymbolFromStrIdx(GStrIdx idx, bool checkfirst = false) const {
-    return GetSymbolFromStidx(GetStIdxFromStrIdx(idx).Idx(), checkfirst);
+  MIRSymbol *GetSymbolFromStrIdx(GStrIdx idx, bool checkFirst = false) const {
+    return GetSymbolFromStidx(GetStIdxFromStrIdx(idx).Idx(), checkFirst);
   }
 
   size_t GetSymbolTableSize() const {
@@ -521,9 +526,7 @@ class GSymbolTable {
   void Dump(bool islocal, int32 indent = 0) const;
 
  private:
-  MIRModule *module;
-
- private:
+  MIRModule *module = nullptr;
   // hash table mapping string index to st index
   std::unordered_map<GStrIdx, StIdx, GStrIdxHash> strIdxToStIdxMap;
   std::vector<MIRSymbol*> symbolTable;  // map symbol idx to symbol node
@@ -605,6 +608,14 @@ class GlobalTables {
   GlobalTables &operator=(const GlobalTables &&globalTables) = delete;
 
  private:
+  GlobalTables() : fpConstTablePtr(FPConstTable::Create()) {
+    gStringTable.Init();
+    uStrTable.Init();
+    u16StringTable.Init();
+  }
+  virtual ~GlobalTables() = default;
+  static GlobalTables globalTables;
+
   TypeTable typeTable;
   STypeNameTable typeNameTable;
   FunctionTable functionTable;
@@ -614,13 +625,6 @@ class GlobalTables {
   StringTable<std::string, GStrIdx> gStringTable;
   StringTable<std::string, UStrIdx> uStrTable;
   StringTable<std::u16string, U16StrIdx> u16StringTable;
-  static GlobalTables globalTables;
-  virtual ~GlobalTables() = default;
-  GlobalTables() : fpConstTablePtr(FPConstTable::Create()) {
-    gStringTable.Init();
-    uStrTable.Init();
-    u16StringTable.Init();
-  }
 };
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_GLOBAL_TABLES_H

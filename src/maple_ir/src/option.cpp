@@ -107,7 +107,7 @@ const Descriptor kUsage[] = {
   { 0, 0, nullptr, nullptr, kBuildTypeAll, kArgCheckPolicyNone, nullptr }
 };
 
-bool Options::ParseOptions(int argc, char **argv, std::string &fileName) {
+bool Options::ParseOptions(int argc, char **argv, std::string &fileName) const {
   bool result = true;
   OptionParser optionParser(kUsage);
   int ret = optionParser.Parse(argc, argv);
@@ -195,12 +195,12 @@ bool Options::ParseOptions(int argc, char **argv, std::string &fileName) {
   return result;
 }
 
-void Options::DumpOptions() {
+void Options::DumpOptions() const {
   LogInfo::MapleLogger() << "phase sequence : \t";
   if (phaseSeq.empty()) {
     LogInfo::MapleLogger() << "default phase sequence\n";
   } else {
-    for (size_t i = 0; i < phaseSeq.size(); i++) {
+    for (size_t i = 0; i < phaseSeq.size(); ++i) {
       LogInfo::MapleLogger() << " " << phaseSeq[i].c_str();
     }
   }

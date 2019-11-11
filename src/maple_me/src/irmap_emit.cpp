@@ -175,7 +175,7 @@ BaseNode &OpMeExpr::EmitExpr(SSATab &ssaTab) {
       TernaryNode *ternaryNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<TernaryNode>(
           Opcode(GetOp()), PrimType(GetPrimType()));
       constexpr size_t kOpndNumOfTernary = 3;
-      for (size_t i = 0; i < kOpndNumOfTernary; i++) {
+      for (size_t i = 0; i < kOpndNumOfTernary; ++i) {
         ternaryNode->SetOpnd(&opnds[i]->EmitExpr(ssaTab), i);
       }
       return *ternaryNode;
@@ -246,7 +246,7 @@ BaseNode &NaryMeExpr::EmitExpr(SSATab &ssaTab) {
     nopndPart = intrinNode;
     nodeToReturn = intrinNode;
   }
-  for (auto it = GetOpnds().begin(); it != GetOpnds().end(); it++) {
+  for (auto it = GetOpnds().begin(); it != GetOpnds().end(); ++it) {
     nopndPart->GetNopnd().push_back(&(*it)->EmitExpr(ssaTab));
   }
   return *nodeToReturn;
@@ -335,14 +335,14 @@ StmtNode &CallMeStmt::EmitStmt(SSATab &ssaTab) {
     callNode->SetPUIdx(puIdx);
     callNode->SetTyIdx(tyIdx);
     callNode->GetNopnd().resize(NumMeStmtOpnds());
-    for (size_t i = 0; i < NumMeStmtOpnds(); i++) {
+    for (size_t i = 0; i < NumMeStmtOpnds(); ++i) {
       callNode->SetOpnd(&GetOpnd(i)->EmitExpr(ssaTab), i);
     }
     callNode->SetNumOpnds(callNode->GetNopndSize());
     callNode->SetSrcPos(GetSrcPosition());
     if (kOpcodeInfo.IsCallAssigned(GetOp())) {
       EmitCallReturnVector(ssaTab, callNode->GetReturnVec());
-      for (size_t j = 0; j < callNode->GetReturnVec().size(); j++) {
+      for (size_t j = 0; j < callNode->GetReturnVec().size(); ++j) {
         CallReturnPair retPair = callNode->GetReturnVec()[j];
         if (!retPair.second.IsReg()) {
           StIdx stIdx = retPair.first;
@@ -359,7 +359,7 @@ StmtNode &CallMeStmt::EmitStmt(SSATab &ssaTab) {
     IcallNode *icallNode =
         ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<IcallNode>(ssaTab.GetModule(), Opcode(GetOp()));
     icallNode->GetNopnd().resize(NumMeStmtOpnds());
-    for (size_t i = 0; i < NumMeStmtOpnds(); i++) {
+    for (size_t i = 0; i < NumMeStmtOpnds(); ++i) {
       icallNode->SetOpnd(&GetOpnd(i)->EmitExpr(ssaTab), i);
     }
     icallNode->SetNumOpnds(icallNode->GetNopndSize());
@@ -367,7 +367,7 @@ StmtNode &CallMeStmt::EmitStmt(SSATab &ssaTab) {
     if (kOpcodeInfo.IsCallAssigned(GetOp())) {
       EmitCallReturnVector(ssaTab, icallNode->GetReturnVec());
       icallNode->SetRetTyIdx(TyIdx(PTY_void));
-      for (size_t j = 0; j < icallNode->GetReturnVec().size(); j++) {
+      for (size_t j = 0; j < icallNode->GetReturnVec().size(); ++j) {
         CallReturnPair retPair = icallNode->GetReturnVec()[j];
         if (!retPair.second.IsReg()) {
           StIdx stIdx = retPair.first;
@@ -392,7 +392,7 @@ StmtNode &IcallMeStmt::EmitStmt(SSATab &ssaTab) {
   IcallNode *icallNode =
       ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<IcallNode>(ssaTab.GetModule(), Opcode(GetOp()));
   icallNode->GetNopnd().resize(NumMeStmtOpnds());
-  for (size_t i = 0; i < NumMeStmtOpnds(); i++) {
+  for (size_t i = 0; i < NumMeStmtOpnds(); ++i) {
     icallNode->SetOpnd(&GetOpnd(i)->EmitExpr(ssaTab), i);
   }
   icallNode->SetNumOpnds(icallNode->GetNopndSize());
@@ -400,7 +400,7 @@ StmtNode &IcallMeStmt::EmitStmt(SSATab &ssaTab) {
   if (kOpcodeInfo.IsCallAssigned(GetOp())) {
     EmitCallReturnVector(ssaTab, icallNode->GetReturnVec());
     icallNode->SetRetTyIdx(TyIdx(PTY_void));
-    for (size_t j = 0; j < icallNode->GetReturnVec().size(); j++) {
+    for (size_t j = 0; j < icallNode->GetReturnVec().size(); ++j) {
       CallReturnPair retPair = icallNode->GetReturnVec()[j];
       if (!retPair.second.IsReg()) {
         StIdx stIdx = retPair.first;
@@ -427,14 +427,14 @@ StmtNode &IntrinsiccallMeStmt::EmitStmt(SSATab &ssaTab) {
   callNode->SetIntrinsic(intrinsic);
   callNode->SetTyIdx(tyIdx);
   callNode->GetNopnd().resize(NumMeStmtOpnds());
-  for (size_t i = 0; i < NumMeStmtOpnds(); i++) {
+  for (size_t i = 0; i < NumMeStmtOpnds(); ++i) {
     callNode->SetOpnd(&GetOpnd(i)->EmitExpr(ssaTab), i);
   }
   callNode->SetNumOpnds(callNode->GetNopndSize());
   callNode->SetSrcPos(GetSrcPosition());
   if (kOpcodeInfo.IsCallAssigned(GetOp())) {
     EmitCallReturnVector(ssaTab, callNode->GetReturnVec());
-    for (size_t j = 0; j < callNode->GetReturnVec().size(); j++) {
+    for (size_t j = 0; j < callNode->GetReturnVec().size(); ++j) {
       CallReturnPair retPair = callNode->GetReturnVec()[j];
       if (!retPair.second.IsReg()) {
         StIdx stIdx = retPair.first;
@@ -453,7 +453,7 @@ StmtNode &NaryMeStmt::EmitStmt(SSATab &ssaTab) {
   NaryStmtNode *naryStmt =
       ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<NaryStmtNode>(ssaTab.GetModule(), Opcode(GetOp()));
   naryStmt->GetNopnd().resize(NumMeStmtOpnds());
-  for (size_t i = 0; i < NumMeStmtOpnds(); i++) {
+  for (size_t i = 0; i < NumMeStmtOpnds(); ++i) {
     naryStmt->SetOpnd(&opnds[i]->EmitExpr(ssaTab), i);
   }
   naryStmt->SetNumOpnds(naryStmt->GetNopndSize());
@@ -494,7 +494,7 @@ StmtNode &JsTryMeStmt::EmitStmt(SSATab &ssaTab) {
 StmtNode &TryMeStmt::EmitStmt(SSATab &ssaTab) {
   TryNode *tryNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<TryNode>(ssaTab.GetModule());
   tryNode->ResizeOffsets(offsets.size());
-  for (size_t i = 0; i < offsets.size(); i++) {
+  for (size_t i = 0; i < offsets.size(); ++i) {
     tryNode->SetOffset(offsets[i], i);
   }
   tryNode->SetSrcPos(GetSrcPosition());
