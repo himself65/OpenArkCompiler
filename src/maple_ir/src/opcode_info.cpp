@@ -13,7 +13,6 @@
  * See the Mulan PSL v1 for more details.
  */
 #include "opcode_info.h"
-#include "mir_nodes.h"
 
 namespace maple {
 OpcodeTable::OpcodeTable() {
@@ -26,6 +25,5 @@ OpcodeTable::OpcodeTable() {
 #undef OPCODE
   table[OP_maydassign].name = "dassign";  // maydassign is printed dassign
 }
-
 const OpcodeTable kOpcodeInfo;
 }  // namespace maple

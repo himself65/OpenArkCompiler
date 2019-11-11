@@ -19,7 +19,6 @@
 #include "name_mangler.h"
 #include "opcode_info.h"
 #include "mir_pragma.h"
-#include "mir_builder.h"
 #include "bin_mplt.h"
 #include "factory.h"
 
@@ -69,8 +68,8 @@ void OutputConstStr16(const MIRConst &constVal, BinaryMplExport &mplExport) {
   std::string str;
   NameMangler::UTF16ToUTF8(str, str16);
   mplExport.WriteNum(str.length());
-  for (uint64 i = 0; i < str.length(); i++) {
-    mplExport.Write(static_cast<uint8>(str[i]));
+  for (char c : str) {
+    mplExport.Write(static_cast<uint8>(c));
   }
 }
 
@@ -92,7 +91,7 @@ void OutputConstAgg(const MIRConst &constVal, BinaryMplExport &mplExport) {
   const auto &aggConst = static_cast<const MIRAggConst&>(constVal);
   size_t size = aggConst.GetConstVec().size();
   mplExport.WriteNum(size);
-  for (size_t i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; ++i) {
     mplExport.OutputConst(aggConst.GetConstVecItem(i));
   }
 }
@@ -103,12 +102,12 @@ void OutputConstSt(const MIRConst &constVal, BinaryMplExport &mplExport) {
   const auto &stConst = static_cast<const MIRStConst&>(constVal);
   size_t size = stConst.GetStVec().size();
   mplExport.WriteNum(size);
-  for (size_t i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; ++i) {
     mplExport.OutputSymbol(stConst.GetStVecItem(i));
   }
   size = stConst.GetStOffsetVec().size();
   mplExport.WriteNum(size);
-  for (size_t i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; ++i) {
     mplExport.WriteNum(stConst.GetStOffsetVecItem(i));
   }
 }
@@ -163,7 +162,7 @@ void OutputTypeArray(const MIRType &ty, BinaryMplExport &mplExport) {
   mplExport.WriteNum(kBinKindTypeArray);
   mplExport.OutputTypeBase(type);
   mplExport.WriteNum(type.GetDim());
-  for (int i = 0; i < type.GetDim(); i++) {
+  for (int i = 0; i < type.GetDim(); ++i) {
     mplExport.WriteNum(type.GetSizeArrayItem(i));
   }
   mplExport.OutputType(type.GetElemTyIdx());
@@ -177,12 +176,12 @@ void OutputTypeFunction(const MIRType &ty, BinaryMplExport &mplExport) {
   mplExport.WriteNum(type.IsVarargs());
   size_t size = type.GetParamTypeList().size();
   mplExport.WriteNum(size);
-  for (size_t i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; ++i) {
     mplExport.OutputType(type.GetParamTypeList()[i]);
   }
   size = type.GetParamAttrsList().size();
   mplExport.WriteNum(size);
-  for (size_t i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; ++i) {
     mplExport.OutputTypeAttrs(type.GetParamAttrsList()[i]);
   }
 }
@@ -353,7 +352,7 @@ void BinaryMplExport::WriteNum(int64 x) {
 }
 
 void BinaryMplExport::WriteAsciiStr(const std::string &str) {
-  for (size_t i = 0; i < str.size(); i++) {
+  for (size_t i = 0; i < str.size(); ++i) {
     Write(static_cast<uint8>(str[i]));
   }
   Write(0);
@@ -362,14 +361,14 @@ void BinaryMplExport::WriteAsciiStr(const std::string &str) {
 void BinaryMplExport::DumpBuf(const std::string &name) {
   FILE *f = fopen(name.c_str(), "wb");
   if (f == nullptr) {
-    LogInfo::MapleLogger(kLlErr) << "Error while creating the binary file: " << name << std::endl;
+    LogInfo::MapleLogger(kLlErr) << "Error while creating the binary file: " << name << '\n';
     FATAL(kLncFatal, "Error while creating the binary file: %s\n", name.c_str());
   }
   size_t size = buf.size();
   size_t k = fwrite(&buf[0], sizeof(uint8), size, f);
   fclose(f);
   if (k != size) {
-    LogInfo::MapleLogger(kLlErr) << "Error while writing the binary file: " << name << std::endl;
+    LogInfo::MapleLogger(kLlErr) << "Error while writing the binary file: " << name << '\n';
   }
 }
 
@@ -440,7 +439,7 @@ void BinaryMplExport::OutputPragmaElement(const MIRPragmaElement &e) {
   }
   size_t size = e.GetSubElemVec().size();
   WriteNum(size);
-  for (size_t i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; ++i) {
     OutputPragmaElement(*(e.GetSubElement(i)));
   }
 }
@@ -454,7 +453,7 @@ void BinaryMplExport::OutputPragma(const MIRPragma &p) {
   WriteNum(p.GetParamNum());
   size_t size = p.GetElementVector().size();
   WriteNum(size);
-  for (size_t i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; ++i) {
     OutputPragmaElement(*(p.GetNthElement(i)));
   }
 }
@@ -531,7 +530,7 @@ void BinaryMplExport::OutputInfoIsString(const std::vector<bool> &infoIsString) 
 void BinaryMplExport::OutputInfo(const std::vector<MIRInfoPair> &info, const std::vector<bool> &infoIsString) {
   size_t size = info.size();
   WriteNum(size);
-  for (size_t i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; ++i) {
     OutputStr(info[i].first);  // GStrIdx
     if (infoIsString[i]) {
       OutputStr(GStrIdx(info[i].second));
@@ -568,7 +567,7 @@ void BinaryMplExport::Init() {
   uStrMark[UStrIdx(0)] = 0;
   symMark[nullptr] = 0;
   funcMark[nullptr] = 0;
-  for (int32 pti = 0; pti <= static_cast<int32>(PTY_agg); pti++) {
+  for (int32 pti = 0; pti <= static_cast<int32>(PTY_agg); ++pti) {
     typMark[GlobalTables::GetTypeTable().GetTypeFromTyIdx(TyIdx(pti))] = pti;
   }
 }
@@ -638,7 +637,7 @@ void BinaryMplExport::WriteStrField(uint64 contentIdx) {
     MIRSymbol *sym = entity.second;
     if (sym->IsLiteral()) {
       OutputStr(sym->GetNameStrIdx());
-      size++;
+      ++size;
     }
   }
   Fixup(totalSizeIdx, buf.size() - totalSizeIdx);
@@ -663,7 +662,7 @@ void BinaryMplExport::WriteTypeField(uint64 contentIdx) {
       // skip imported class/interface and incomplete types
       if (!structType->IsImported() && !structType->IsIncomplete()) {
         OutputType(curTyidx);
-        size++;
+        ++size;
       }
     }
   }
@@ -711,7 +710,7 @@ void BinaryMplExport::Export(const std::string &fname) {
 void BinaryMplExport::AppendAt(const std::string &name, int32 offset) {
   FILE *f = fopen(name.c_str(), "r+b");
   if (f == nullptr) {
-    LogInfo::MapleLogger(kLlErr) << "Error while opening the binary file: " << name << std::endl;
+    LogInfo::MapleLogger(kLlErr) << "Error while opening the binary file: " << name << '\n';
     FATAL(kLncFatal, "Error while creating the binary file: %s\n", name.c_str());
   }
   int seekRet = fseek(f, (long int)offset, SEEK_SET);
@@ -720,7 +719,7 @@ void BinaryMplExport::AppendAt(const std::string &name, int32 offset) {
   size_t k = fwrite(&buf[0], sizeof(uint8), size, f);
   fclose(f);
   if (k != size) {
-    LogInfo::MapleLogger(kLlErr) << "Error while writing the binary file: " << name << std::endl;
+    LogInfo::MapleLogger(kLlErr) << "Error while writing the binary file: " << name << '\n';
   }
 }
 

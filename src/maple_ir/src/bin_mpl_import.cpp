@@ -133,7 +133,7 @@ MIRConst *BinaryMplImport::ImportConst(MIRFunction *func) {
     cs->SetPrimType(type->GetPrimType());
     int64 len = ReadNum();
     std::ostringstream ostr;
-    for (int64 i = 0; i < len; i++) {
+    for (int64 i = 0; i < len; ++i) {
       ostr << Read();
     }
     std::u16string str16;
@@ -160,7 +160,7 @@ MIRConst *BinaryMplImport::ImportConst(MIRFunction *func) {
     ImportConstBase(kind, type, fieldID);
     MIRAggConst *aggConst = mod.GetMemPool()->New<MIRAggConst>(mod, *type);
     int64 size = ReadNum();
-    for (int64 i = 0; i < size; i++) {
+    for (int64 i = 0; i < size; ++i) {
       aggConst->PushBack(ImportConst(func));
     }
     return aggConst;
@@ -168,11 +168,11 @@ MIRConst *BinaryMplImport::ImportConst(MIRFunction *func) {
     ImportConstBase(kind, type, fieldID);
     MIRStConst *stConst = mod.GetMemPool()->New<MIRStConst>(mod, *type);
     int64 size = ReadNum();
-    for (int64 i = 0; i < size; i++) {
+    for (int64 i = 0; i < size; ++i) {
       stConst->PushbackSymbolToSt(InSymbol(func));
     }
     size = ReadNum();
-    for (int64 i = 0; i < size; i++) {
+    for (int64 i = 0; i < size; ++i) {
       stConst->PushbackOffsetToSt(ReadNum());
     }
     return stConst;
@@ -228,7 +228,7 @@ MIRPragmaElement *BinaryMplImport::ImportPragmaElement() {
     element->SetU64Val(static_cast<uint64>(ReadInt64()));
   }
   int64 size = ReadNum();
-  for (int64 i = 0; i < size; i++) {
+  for (int64 i = 0; i < size; ++i) {
     element->SubElemVecPushBack(ImportPragmaElement());
   }
   return element;
@@ -243,8 +243,8 @@ MIRPragma *BinaryMplImport::ImportPragma() {
   p->SetTyIdxEx(ImportType());
   p->SetParamNum(ReadNum());
   int64 size = ReadNum();
-  for (int64 i = 0; i < size; i++) {
-    p->PushElementVector(*ImportPragmaElement());
+  for (int64 i = 0; i < size; ++i) {
+    p->PushElementVector(ImportPragmaElement());
   }
   return p;
 }
@@ -319,7 +319,7 @@ void BinaryMplImport::UpdateMethodSymbols() {
 void BinaryMplImport::ImportFieldsOfStructType(FieldVector &fields, uint32 methodSize) {
   int64 size = ReadNum();
   int64 initSize = fields.size() + methodSize;
-  for (int64 i = 0; i < size; i++) {
+  for (int64 i = 0; i < size; ++i) {
     FieldPair fp;
     ImportFieldPair(fp);
     if (initSize == 0) {
@@ -331,7 +331,7 @@ void BinaryMplImport::ImportFieldsOfStructType(FieldVector &fields, uint32 metho
 void BinaryMplImport::ImportMethodsOfStructType(MethodVector &methods) {
   int64 size = ReadNum();
   bool isEmpty = methods.empty();
-  for (int64 i = 0; i < size; i++) {
+  for (int64 i = 0; i < size; ++i) {
     MethodPair memPool;
     ImportMethodPair(memPool);
     if (isEmpty) {
@@ -352,7 +352,7 @@ void BinaryMplImport::ImportStructTypeData(MIRStructType &type) {
 void BinaryMplImport::ImportInterfacesOfClassType(std::vector<TyIdx> &interfaces) {
   int64 size = ReadNum();
   bool isEmpty = interfaces.empty();
-  for (int64 i = 0; i < size; i++) {
+  for (int64 i = 0; i < size; ++i) {
     TyIdx idx = ImportType();
     if (isEmpty) {
       interfaces.push_back(idx);
@@ -364,7 +364,7 @@ void BinaryMplImport::ImportInfoIsStringOfStructType(MIRStructType &type) {
   int64 size = ReadNum();
   bool isEmpty = type.GetInfoIsString().empty();
 
-  for (int64 i = 0; i < size; i++) {
+  for (int64 i = 0; i < size; ++i) {
     bool isString = static_cast<bool>(ReadNum());
 
     if (isEmpty) {
@@ -376,7 +376,7 @@ void BinaryMplImport::ImportInfoIsStringOfStructType(MIRStructType &type) {
 void BinaryMplImport::ImportInfoOfStructType(MIRStructType &type) {
   int64 size = ReadNum();
   bool isEmpty = type.GetInfo().empty();
-  for (int64 i = 0; i < size; i++) {
+  for (int64 i = 0; i < size; ++i) {
     GStrIdx idx = ImportStr();
     int64 x = (type.GetInfoIsString()[i]) ? ImportStr().GetIdx() : ReadNum();
     CHECK_FATAL(x >= 0, "ReadNum nagative, x: %d", x);
@@ -390,7 +390,7 @@ void BinaryMplImport::ImportInfoOfStructType(MIRStructType &type) {
 void BinaryMplImport::ImportPragmaOfStructType(MIRStructType &type) {
   int64 size = ReadNum();
   bool isEmpty = type.GetPragmaVec().empty();
-  for (int64 i = 0; i < size; i++) {
+  for (int64 i = 0; i < size; ++i) {
     MIRPragma *pragma = ImportPragma();
     if (isEmpty) {
       type.PushbackPragma(pragma);
@@ -401,7 +401,7 @@ void BinaryMplImport::ImportPragmaOfStructType(MIRStructType &type) {
 void BinaryMplImport::SetClassTyidxOfMethods(MIRStructType &type) {
   if (type.GetTypeIndex() != 0) {
     // set up classTyIdx for methods
-    for (size_t i = 0; i < type.GetMethods().size(); i++) {
+    for (size_t i = 0; i < type.GetMethods().size(); ++i) {
       StIdx stidx = type.GetMethodsElement(i).first;
       MIRSymbol *st = GlobalTables::GetGsymTable().GetSymbolFromStidx(stidx.Idx());
       CHECK_FATAL(st != nullptr, "st is null");
@@ -447,7 +447,7 @@ void BinaryMplImport::Reset() {
   uStrTab.push_back(UStrIdx(0));  // Dummy
   symTab.push_back(nullptr);      // Dummy
   funcTab.push_back(nullptr);     // Dummy
-  for (int32 pti = 0; pti <= static_cast<int32>(PTY_agg); pti++) {
+  for (int32 pti = 0; pti <= static_cast<int32>(PTY_agg); ++pti) {
     typTab.push_back(GlobalTables::GetTypeTable().GetTypeFromTyIdx(TyIdx(pti)));
   }
 }
@@ -461,7 +461,7 @@ TypeAttrs BinaryMplImport::ImportTypeAttrs() {
 
 void BinaryMplImport::ImportTypePairs(MIRInstantVectorType &insVecType) {
   int64 size = ReadNum();
-  for (int64 i = 0; i < size; i++) {
+  for (int64 i = 0; i < size; ++i) {
     TyIdx t0 = ImportType();
     TyIdx t1 = ImportType();
     TypePair tp(t0, t1);
@@ -549,7 +549,7 @@ TyIdx BinaryMplImport::ImportType(bool forPointedType) {
     type.SetNameIsLocal(nameIsLocal);
     type.SetDim(ReadNum());
     CHECK_FATAL(type.GetDim() < kMaxArrayDim, "array index out of range");
-    for (uint16 i = 0; i < type.GetDim(); i++) {
+    for (uint16 i = 0; i < type.GetDim(); ++i) {
       type.SetSizeArrayItem(i, ReadNum());
     }
     size_t idx = typTab.size();
@@ -566,11 +566,11 @@ TyIdx BinaryMplImport::ImportType(bool forPointedType) {
     type.SetRetTyIdx(ImportType());
     type.SetVarArgs(ReadNum());
     int64 size = ReadNum();
-    for (int64 i = 0; i < size; i++) {
+    for (int64 i = 0; i < size; ++i) {
       type.GetParamTypeList().push_back(ImportType());
     }
     size = ReadNum();
-    for (int64 i = 0; i < size; i++) {
+    for (int64 i = 0; i < size; ++i) {
       type.GetParamAttrsList().push_back(ImportTypeAttrs());
     }
     MIRType *origType = &InsertInTypeTables(type);
@@ -815,7 +815,7 @@ void BinaryMplImport::ReadStrField() {
   SkipTotalSize();
 
   int32 size = ReadInt();
-  for (int64 i = 0; i < size; i++) {
+  for (int64 i = 0; i < size; ++i) {
     GStrIdx stridx = ImportStr();
     GlobalTables::GetConstPool().PutLiteralNameAsImported(stridx);
   }
@@ -828,7 +828,7 @@ void BinaryMplImport::ReadTypeField() {
   SkipTotalSize();
 
   int32 size = ReadInt();
-  for (int64 i = 0; i < size; i++) {
+  for (int64 i = 0; i < size; ++i) {
     ImportType();
   }
   int64 tag = 0;
@@ -842,7 +842,7 @@ void BinaryMplImport::ReadContentField() {
   int32 size = ReadInt();
   int64 item;
   int32 offset;
-  for (int32 i = 0; i < size; i++) {
+  for (int32 i = 0; i < size; ++i) {
     item = ReadNum();
     offset = ReadInt();
     content[item] = offset;

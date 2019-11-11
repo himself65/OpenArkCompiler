@@ -41,9 +41,9 @@ class IRMap : public AnalysisResult {
   }
 
   virtual ~IRMap() = default;
-
   virtual BB *GetBB(BBId id) = 0;
   virtual BB *GetBBForLabIdx(LabelIdx lidx, PUIdx pidx = 0) = 0;
+
   Dominance &GetDominance() {
     return dom;
   }
@@ -80,7 +80,6 @@ class IRMap : public AnalysisResult {
   DassignMeStmt *CreateDassignMeStmt(MeExpr&, MeExpr&, BB&);
   RegassignMeStmt *CreateRegassignMeStmt(MeExpr&, MeExpr&, BB&);
   void InsertMeStmtBefore(BB&, MeStmt&, MeStmt&);
-
   MeRegPhiNode *CreateMeRegPhi(RegMeExpr&);
   MeVarPhiNode *CreateMeVarPhi(VarMeExpr&);
 
@@ -109,18 +108,23 @@ class IRMap : public AnalysisResult {
   SSATab &GetSSATab() {
     return ssaTab;
   }
+
   const SSATab &GetSSATab() const {
     return ssaTab;
   }
+
   MIRModule &GetMIRModule() {
     return mirModule;
   }
+
   const MIRModule &GetMIRModule() const {
     return mirModule;
   }
+
   MapleAllocator &GetIRMapAlloc() {
     return irMapAlloc;
   }
+
   MapleAllocator &GetTempAlloc() {
     return tempAlloc;
   }
@@ -128,6 +132,7 @@ class IRMap : public AnalysisResult {
   int32 GetExprID() const {
     return exprID;
   }
+
   void SetExprID(int32 id) {
     exprID = id;
   }
@@ -135,12 +140,15 @@ class IRMap : public AnalysisResult {
   const MapleVector<MeExpr*> &GetVerst2MeExprTable() const {
     return verst2MeExprTable;
   }
+
   MeExpr *GetVerst2MeExprTableItem(int i) {
     return verst2MeExprTable[i];
   }
+
   size_t GetVerst2MeExprTableSize() const {
     return verst2MeExprTable.size();
   }
+
   void PushBackVerst2MeExprTable(MeExpr *item) {
     verst2MeExprTable.push_back(item);
   }
@@ -153,6 +161,7 @@ class IRMap : public AnalysisResult {
   void SetNeedAnotherPass(bool need) {
     needAnotherPass = need;
   }
+
   bool GetNeedAnotherPass() const {
     return needAnotherPass;
   }
@@ -160,6 +169,7 @@ class IRMap : public AnalysisResult {
   bool GetDumpStmtNum() const {
     return dumpStmtNum;
   }
+
   void SetDumpStmtNum(bool num) {
     dumpStmtNum = num;
   }

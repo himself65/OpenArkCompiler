@@ -54,7 +54,7 @@ bool MeExpr::IsTheSameWorkcand(const MeExpr &expr) const {
 
 void MeExpr::UpdateDepth() {
   uint8 maxDepth = 0;
-  for (int32 i = 0; i < GetNumOpnds(); i++) {
+  for (int32 i = 0; i < GetNumOpnds(); ++i) {
     MeExpr *opnd = GetOpnd(i);
     if (opnd == nullptr) {
       continue;
@@ -176,7 +176,7 @@ bool MeExpr::CouldThrowException() const {
       return true;
     }
   }
-  for (int32 i = 0; i < GetNumOpnds(); i++) {
+  for (int32 i = 0; i < GetNumOpnds(); ++i) {
     if (GetOpnd(i)->CouldThrowException()) {
       return true;
     }
@@ -257,7 +257,7 @@ bool NaryMeExpr::IsUseSameSymbol(const MeExpr &expr) const {
   if (opnds.size() != naryMeExpr.GetOpnds().size()) {
     return false;
   }
-  for (size_t i = 0; i < opnds.size(); i++) {
+  for (size_t i = 0; i < opnds.size(); ++i) {
     if (!opnds[i]->IsUseSameSymbol(*naryMeExpr.GetOpnd(i))) {
       return false;
     }
@@ -266,7 +266,7 @@ bool NaryMeExpr::IsUseSameSymbol(const MeExpr &expr) const {
 }
 
 bool MeExpr::IsAllOpndsIdentical(const MeExpr &meExpr) const {
-  for (uint8 i = 0; i < GetNumOpnds(); i++) {
+  for (uint8 i = 0; i < GetNumOpnds(); ++i) {
     if (GetOpnd(i)->GetExprID() != meExpr.GetOpnd(i)->GetExprID()) {
       return false;
     }
@@ -475,7 +475,7 @@ bool OpMeExpr::IsUseSameSymbol(const MeExpr &expr) const {
     return false;
   }
   auto &opMeExpr = static_cast<const OpMeExpr&>(expr);
-  for (uint32 i = 0; i < kOperandNumTernary; i++) {
+  for (uint32 i = 0; i < kOperandNumTernary; ++i) {
     if (opnds[i]) {
       if (!opMeExpr.opnds[i]) {
         return false;
@@ -645,11 +645,14 @@ MeExpr *AddroffuncMeExpr::GetIdenticalExpr(MeExpr &expr) const {
 }
 
 void MeVarPhiNode::Dump(IRMap *irMap) const {
+  if (isPaiAdded) {
+    LogInfo::MapleLogger() << "PAI_ADD VAR:";
+  }
   LogInfo::MapleLogger() << "VAR:";
   irMap->GetSSATab().GetOriginalStFromID(lhs->GetOStIdx())->Dump();
   LogInfo::MapleLogger() << " mx" << lhs->GetExprID();
   LogInfo::MapleLogger() << " = MEPHI{";
-  for (size_t i = 0; i < opnds.size(); i++) {
+  for (size_t i = 0; i < opnds.size(); ++i) {
     LogInfo::MapleLogger() << "mx" << opnds[i]->GetExprID();
     if (i != opnds.size() - 1) {
       LogInfo::MapleLogger() << ",";
@@ -672,7 +675,7 @@ void MeRegPhiNode::Dump(IRMap *irMap) const {
                          << ")";
   LogInfo::MapleLogger() << " mx" << lhs->GetExprID();
   LogInfo::MapleLogger() << " = MEPHI{";
-  for (size_t i = 0; i < opnds.size(); i++) {
+  for (size_t i = 0; i < opnds.size(); ++i) {
     LogInfo::MapleLogger() << "mx" << opnds[i]->GetExprID();
     if (i != opnds.size() - 1) {
       LogInfo::MapleLogger() << ",";
@@ -815,7 +818,7 @@ void NaryMeExpr::Dump(IRMap *irMap, int32 indent) const {
     LogInfo::MapleLogger() << "INTRINOPWTY[" << intrinsic << "]";
   }
   LogInfo::MapleLogger() << " mx" << GetExprID() << '\n';
-  for (int32 i = 0; i < GetNumOpnds(); i++) {
+  for (int32 i = 0; i < GetNumOpnds(); ++i) {
     PrintIndentation(indent + 1);
     LogInfo::MapleLogger() << "opnd[" << i << "] = ";
     opnds[i]->Dump(irMap, indent + 1);
@@ -931,6 +934,16 @@ MeStmt *MeStmt::GetNextMeStmt() const {
   return nextMeStmt;
 }
 
+void PaiassignMeStmt::Dump(IRMap *irMap) const {
+  LogInfo::MapleLogger() << "||MEIR PAI|| " << kOpcodeInfo.GetTableItemAt(GetOp()).name << " ";
+  lhs->Dump(irMap);
+  LogInfo::MapleLogger() << std::endl;
+  PrintIndentation(kDefaultPrintIndentNum);
+  LogInfo::MapleLogger() << "rhs = ";
+  rhs->Dump(irMap, kDefaultPrintIndentNum);
+  LogInfo::MapleLogger() << std::endl;
+}
+
 void DassignMeStmt::Dump(IRMap *irMap) const {
   LogInfo::MapleLogger() << "||MEIR|| " << kOpcodeInfo.GetTableItemAt(GetOp()).name << " ";
   lhs->Dump(irMap);
@@ -1001,7 +1014,7 @@ void DumpMuList(IRMap *irMap, const MapleMap<OStIdx, VarMeExpr*> &muList, int32 
     } else {
       LogInfo::MapleLogger() << "mx" << (*it).second->GetExprID();
     }
-    it++;
+    ++it;
     if (it == muList.end()) {
       break;
     } else {
@@ -1057,7 +1070,7 @@ void IassignMeStmt::Dump(IRMap *irMap) const {
 }
 
 void NaryMeStmt::DumpOpnds(IRMap *irMap) const {
-  for (size_t i = 0; i < opnds.size(); i++) {
+  for (size_t i = 0; i < opnds.size(); ++i) {
     PrintIndentation(kDefaultPrintIndentNum);
     LogInfo::MapleLogger() << "opnd[" << i << "] = ";
     opnds[i]->Dump(irMap, kDefaultPrintIndentNum);
@@ -1072,7 +1085,7 @@ void NaryMeStmt::Dump(IRMap *irMap) const {
 
 void AssignedPart::DumpAssignedPart(IRMap *irMap) const {
   LogInfo::MapleLogger() << "    assignedpart: {";
-  for (auto it = mustDefList.begin(); it != mustDefList.end(); it++) {
+  for (auto it = mustDefList.begin(); it != mustDefList.end(); ++it) {
     const MeExpr *lhsvar = (*it).GetLHS();
     lhsvar->Dump(irMap);
   }
@@ -1282,7 +1295,7 @@ MeExpr *MeExpr::FindSymAppearance(OStIdx oidx) {
     }
     return nullptr;
   }
-  for (uint8 i = 0; i < GetNumOpnds(); i++) {
+  for (uint8 i = 0; i < GetNumOpnds(); ++i) {
     MeExpr *retx = GetOpnd(i)->FindSymAppearance(oidx);
     if (retx != nullptr) {
       return retx;
@@ -1299,7 +1312,7 @@ bool MeExpr::HasIvar() const {
   if (meOp == kMeOpIvar) {
     return true;
   }
-  for (uint8 i = 0; i < GetNumOpnds(); i++) {
+  for (uint8 i = 0; i < GetNumOpnds(); ++i) {
     ASSERT(GetOpnd(i) != nullptr, "null ptr check");
     if (GetOpnd(i)->HasIvar()) {
       return true;
@@ -1348,7 +1361,7 @@ MapleMap<OStIdx, ChiMeNode*> *GenericGetChiListFromVarMeExprInner(VarMeExpr &exp
   if (expr.GetDefBy() == kDefByPhi) {
     MeVarPhiNode &phime = expr.GetDefPhi();
     MapleVector<VarMeExpr*> &phiopnds = phime.GetOpnds();
-    for (auto it = phiopnds.begin(); it != phiopnds.end(); it++) {
+    for (auto it = phiopnds.begin(); it != phiopnds.end(); ++it) {
       VarMeExpr *meExpr = *it;
       MapleMap<OStIdx, ChiMeNode*> *chiList = GenericGetChiListFromVarMeExprInner(*meExpr, visited);
       if (chiList != nullptr) {

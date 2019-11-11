@@ -38,7 +38,7 @@ class BinaryMplt {
     return binImport.Import(modID, readCG, readSE);
   }
 
-  MIRModule &GetMod() {
+  const MIRModule &GetMod() const {
     return mirModule;
   }
 

@@ -41,7 +41,7 @@ class SafeExe {
     char **argv = new char*[vectorArgs.size() + 1];
     // argv[0] is program name
     // copy args
-    for (int j = 0;  j < vectorArgs.size();  ++j) {
+    for (int j = 0; j < vectorArgs.size(); ++j) {
        int strLength = vectorArgs[j].size();
        argv[j] = new char[strLength + 1];
        strncpy_s(argv[j], strLength + 1, vectorArgs[j].c_str(), strLength);
@@ -55,7 +55,7 @@ class SafeExe {
       // child process
       fflush(nullptr);
       if (execv(cmd.c_str(), argv) < 0) {
-        for (int j = 0;  j < vectorArgs.size();  ++j) {
+        for (int j = 0; j < vectorArgs.size(); ++j) {
           delete [] argv[j];
         }
         delete [] argv;
@@ -73,7 +73,7 @@ class SafeExe {
         ret = ErrorCode::kErrorCompileFail;
       }
     }
-    for (int j = 0;  j < vectorArgs.size();  ++j) {
+    for (int j = 0; j < vectorArgs.size(); ++j) {
       delete [] argv[j];
     }
     delete [] argv;
@@ -104,12 +104,12 @@ class SafeExe {
       if (*iter == " " || *iter =="") {
         iter = tmpArgs.erase(iter);
       } else {
-        iter++;
+        ++iter;
       }
     }
     tmpArgs.insert(tmpArgs.begin(), cmd);
     return tmpArgs;
   }
 };
-}  // namespace maple
-#endif  // MAPLE_DRIVER_INCLUDE_SAFE_EXE_H
+} // namespace maple
+#endif // MAPLE_DRIVER_INCLUDE_SAFE_EXE_H
