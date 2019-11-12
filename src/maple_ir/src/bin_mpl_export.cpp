@@ -177,12 +177,12 @@ void OutputTypeFunction(const MIRType &ty, BinaryMplExport &mplExport) {
   size_t size = type.GetParamTypeList().size();
   mplExport.WriteNum(size);
   for (size_t i = 0; i < size; ++i) {
-    mplExport.OutputType(type.GetParamTypeList()[i]);
+    mplExport.OutputType(type.GetNthParamType(i));
   }
   size = type.GetParamAttrsList().size();
   mplExport.WriteNum(size);
   for (size_t i = 0; i < size; ++i) {
-    mplExport.OutputTypeAttrs(type.GetParamAttrsList()[i]);
+    mplExport.OutputTypeAttrs(type.GetNthParamAttrs(i));
   }
 }
 
@@ -222,7 +222,7 @@ void OutputTypeStruct(MIRType &ty, BinaryMplExport &mplExport) {
   mplExport.OutputTypeBase(type);
   MIRTypeKind kind = ty.GetKind();
   if (type.IsImported()) {
-    CHECK_FATAL(ty.GetKind() != kTypeUnion, "must be");
+    CHECK_FATAL(ty.GetKind() != kTypeUnion, "Must be.");
     kind = kTypeStructIncomplete;
   }
   mplExport.WriteNum(kind);
@@ -404,7 +404,7 @@ void BinaryMplExport::OutputStr(const GStrIdx &gstr) {
   size_t mark = gStrMark.size();
   gStrMark[gstr] = mark;
   WriteNum(kBinString);
-  ASSERT(GlobalTables::GetStrTable().StringTableSize() != 0, "container check");
+  ASSERT(GlobalTables::GetStrTable().StringTableSize() != 0, "Container check");
   WriteAsciiStr(GlobalTables::GetStrTable().GetStringFromStrIdx(gstr));
 }
 
@@ -486,7 +486,7 @@ void BinaryMplExport::OutputFieldPair(const FieldPair &fp) {
 void BinaryMplExport::OutputMethodPair(const MethodPair &memPool) {
   // use GStrIdx instead, StIdx will be created by ImportMethodPair
   MIRSymbol *funcSt = GlobalTables::GetGsymTable().GetSymbolFromStidx(memPool.first.Idx());
-  CHECK_FATAL(funcSt != nullptr, "can't get symbol! Check it!");
+  CHECK_FATAL(funcSt != nullptr, "Pointer funcSt is nullptr, can't get symbol! Check it!");
   WriteAsciiStr(GlobalTables::GetStrTable().GetStringFromStrIdx(funcSt->GetNameStrIdx()));
   OutputType(memPool.second.first);               // TyIdx
   WriteNum(memPool.second.second.GetAttrFlag());  // FuncAttrs
@@ -584,10 +584,7 @@ void BinaryMplExport::OutputSymbol(const MIRSymbol *sym) {
     return;
   }
 
-  if (sym->GetSKind() != kStFunc) {
-    ASSERT(false, "should not be used");
-  }
-
+  ASSERT(sym->GetSKind() == kStFunc, "Should not be used");
   WriteNum(kBinSymbol);
   WriteNum(sym->GetScopeIdx());
   OutputStr(sym->GetNameStrIdx());
@@ -615,7 +612,7 @@ void BinaryMplExport::OutputFunction(PUIdx puIdx) {
 
   WriteNum(kBinFunction);
   MIRSymbol *funcSt = GlobalTables::GetGsymTable().GetSymbolFromStidx(func->GetStIdx().Idx());
-  CHECK_FATAL(funcSt != nullptr, "can't get symbol! Check it!");
+  CHECK_FATAL(funcSt != nullptr, "Pointer funcSt is nullptr, cannot get symbol! Check it!");
   OutputSymbol(funcSt);
   OutputType(func->GetReturnTyIdx());
   WriteNum(func->GetFuncAttrs().GetAttrFlag());
@@ -656,7 +653,7 @@ void BinaryMplExport::WriteTypeField(uint64 contentIdx) {
   for (uint32 tyIdx : mod.GetClassList()) {
     TyIdx curTyidx(tyIdx);
     MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(curTyidx);
-    CHECK_FATAL(type != nullptr, "can't get type, check it!");
+    CHECK_FATAL(type != nullptr, "Pointer type is nullptr, cannot get type, check it!");
     if (type->GetKind() == kTypeClass || type->GetKind() == kTypeInterface) {
       MIRStructType *structType = static_cast<MIRStructType*>(type);
       // skip imported class/interface and incomplete types
@@ -714,7 +711,7 @@ void BinaryMplExport::AppendAt(const std::string &name, int32 offset) {
     FATAL(kLncFatal, "Error while creating the binary file: %s\n", name.c_str());
   }
   int seekRet = fseek(f, (long int)offset, SEEK_SET);
-  CHECK_FATAL(seekRet == 0, "call fseek failed");
+  CHECK_FATAL(seekRet == 0, "Call fseek failed.");
   size_t size = buf.size();
   size_t k = fwrite(&buf[0], sizeof(uint8), size, f);
   fclose(f);
@@ -743,7 +740,7 @@ void BinaryMplExport::OutputType(const TyIdx &tyIdx) {
     WriteNum(0);
     return;
   }
-  CHECK_FATAL(ty != nullptr, "if get's nulltype, should have been returned!");
+  CHECK_FATAL(ty != nullptr, "If gets nulltype, should have been returned!");
   auto it = typMark.find(ty);
   if (it != typMark.end()) {
     if (ty->GetKind() != kTypeFunction) {

@@ -638,14 +638,18 @@ FieldID MIRClassType::GetFirstLocalFieldID() const {
   return 1;
 }
 
-MIRClassType *MIRClassType::GetExceptionRootType() {
+const MIRClassType *MIRClassType::GetExceptionRootType() const {
   GStrIdx ehTypeNameIdx = GlobalTables::GetStrTable().GetStrIdxFromName(NameMangler::kJavaLangObjectStr);
-  MIRClassType *subClassType = this;
+  const MIRClassType *subClassType = this;
   while (subClassType != nullptr && subClassType->nameStrIdx != ehTypeNameIdx) {
     subClassType =
-        static_cast<MIRClassType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(subClassType->parentTyIdx));
+        static_cast<const MIRClassType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(subClassType->parentTyIdx));
   }
   return subClassType;
+}
+
+MIRClassType *MIRClassType::GetExceptionRootType() {
+  return const_cast<MIRClassType*>(const_cast<const MIRClassType*>(this)->GetExceptionRootType());
 }
 
 bool MIRClassType::IsExceptionType() const {

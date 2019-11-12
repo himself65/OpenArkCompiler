@@ -50,7 +50,7 @@ void IRMap::BuildBB(BB &bb, std::vector<bool> &bbIRMapProcessed) {
 }
 
 void IRMap::BuildPhiMeNode(BB &bb) {
-  for (auto phi : bb.GetPhiList()) {
+  for (auto &phi : bb.GetPhiList()) {
     const OriginalSt *origst = phi.first;
     VersionSt *verSt = phi.second.GetResult();
     if (origst->IsPregOst()) {
@@ -104,6 +104,18 @@ MeExpr *IRMap::CreateAddrofMeExpr(MeExpr &expr) {
     opmeexpr.SetNumOpnds(1);
     return HashMeExpr(opmeexpr);
   }
+}
+
+VarMeExpr *IRMap::CreateNewVarMeExpr(OStIdx oStIdx, PrimType pType, FieldID fieldID) {
+  VarMeExpr *varMeExpr = meBuilder.BuildVarMeExpr(exprID++, oStIdx, verst2MeExprTable.size(), pType, fieldID);
+  PushBackVerst2MeExprTable(varMeExpr);
+  return varMeExpr;
+}
+
+VarMeExpr *IRMap::CreateNewVarMeExpr(OriginalSt &oSt, PrimType pType, FieldID fieldID) {
+  VarMeExpr *varMeExpr = CreateNewVarMeExpr(oSt.GetIndex(), pType, fieldID);
+  oSt.PushbackVersionIndex(varMeExpr->GetVstIdx());
+  return varMeExpr;
 }
 
 VarMeExpr *IRMap::CreateNewGlobalTmp(GStrIdx strIdx, PrimType ptyp) {
@@ -317,7 +329,7 @@ IvarMeExpr *IRMap::BuildLHSIvarFromIassMeStmt(IassignMeStmt &iassignMeStmt) {
 // build Me chilist from MayDefNode list
 void IRMap::BuildChiList(MeStmt &meStmt, MapleMap<OStIdx, MayDefNode> &mayDefNodes,
                          MapleMap<OStIdx, ChiMeNode*> &outList) {
-  for (auto it = mayDefNodes.begin(); it != mayDefNodes.end(); it++) {
+  for (auto it = mayDefNodes.begin(); it != mayDefNodes.end(); ++it) {
     MayDefNode &maydefNode = it->second;
     VersionSt *opndst = maydefNode.GetOpnd();
     VersionSt *resst = maydefNode.GetResult();
@@ -333,7 +345,7 @@ void IRMap::BuildChiList(MeStmt &meStmt, MapleMap<OStIdx, MayDefNode> &mayDefNod
 
 void IRMap::BuildMustDefList(MeStmt &meStmt, MapleVector<MustDefNode> &mustdeflist,
                              MapleVector<MustDefMeNode> &mustdefList) {
-  for (auto it = mustdeflist.begin(); it != mustdeflist.end(); it++) {
+  for (auto it = mustdeflist.begin(); it != mustdeflist.end(); ++it) {
     MustDefNode &mustdefnode = *it;
     VersionSt *verSt = mustdefnode.GetResult();
     VarMeExpr *lhs = GetOrCreateVarFromVerSt(*verSt);
@@ -372,7 +384,7 @@ MeStmt *IRMap::BuildMeStmtWithNoSSAPart(StmtNode &stmt) {
     case OP_try: {
       TryNode &tryNode = static_cast<TryNode&>(stmt);
       TryMeStmt *tryMeStmt = NewInPool<TryMeStmt>(&stmt);
-      for (size_t i = 0; i < tryNode.GetOffsetsCount(); i++) {
+      for (size_t i = 0; i < tryNode.GetOffsetsCount(); ++i) {
         tryMeStmt->OffsetsPushBack(tryNode.GetOffset(i));
       }
       return tryMeStmt;
@@ -435,7 +447,7 @@ MeStmt *IRMap::BuildCallMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart) {
   CallMeStmt *callMeStmt = NewInPool<CallMeStmt>(&stmt);
   CallNode &intrinNode = static_cast<CallNode&>(stmt);
   callMeStmt->SetPUIdx(intrinNode.GetPUIdx());
-  for (size_t i = 0; i < intrinNode.NumOpnds(); i++) {
+  for (size_t i = 0; i < intrinNode.NumOpnds(); ++i) {
     callMeStmt->GetOpnds().push_back(BuildExpr(*intrinNode.Opnd(i)));
   }
   BuildMuList(ssaPart.GetMayUseNodes(), *(callMeStmt->GetMuList()));
@@ -453,7 +465,7 @@ MeStmt *IRMap::BuildNaryMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart) {
                            ? static_cast<NaryMeStmt*>(NewInPool<IcallMeStmt>(&stmt))
                            : static_cast<NaryMeStmt*>(NewInPool<IntrinsiccallMeStmt>(&stmt));
   NaryStmtNode &naryStmtNode = static_cast<NaryStmtNode&>(stmt);
-  for (size_t i = 0; i < naryStmtNode.NumOpnds(); i++) {
+  for (size_t i = 0; i < naryStmtNode.NumOpnds(); ++i) {
     naryMeStmt->GetOpnds().push_back(BuildExpr(*naryStmtNode.Opnd(i)));
   }
   BuildMuList(ssaPart.GetMayUseNodes(), *(naryMeStmt->GetMuList()));
@@ -467,7 +479,7 @@ MeStmt *IRMap::BuildNaryMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart) {
 MeStmt *IRMap::BuildRetMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart) {
   NaryStmtNode &retStmt = static_cast<NaryStmtNode&>(stmt);
   RetMeStmt *meStmt = NewInPool<RetMeStmt>(&stmt);
-  for (size_t i = 0; i < retStmt.NumOpnds(); i++) {
+  for (size_t i = 0; i < retStmt.NumOpnds(); ++i) {
     meStmt->GetOpnds().push_back(BuildExpr(*retStmt.Opnd(i)));
   }
   BuildMuList(ssaPart.GetMayUseNodes(), *(meStmt->GetMuList()));
@@ -497,7 +509,7 @@ MeStmt *IRMap::BuildThrowMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart) {
 MeStmt *IRMap::BuildSyncMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart) {
   NaryStmtNode &naryNode = static_cast<NaryStmtNode&>(stmt);
   SyncMeStmt *naryStmt = NewInPool<SyncMeStmt>(&stmt);
-  for (size_t i = 0; i < naryNode.NumOpnds(); i++) {
+  for (size_t i = 0; i < naryNode.NumOpnds(); ++i) {
     naryStmt->GetOpnds().push_back(BuildExpr(*naryNode.Opnd(i)));
   }
   BuildMuList(ssaPart.GetMayUseNodes(), *(naryStmt->GetMuList()));
@@ -589,7 +601,7 @@ void IRMap::SetMeExprOpnds(MeExpr &meExpr, BaseNode &mirNode) {
   } else if (mirNode.IsNaryNode()) {
     NaryMeExpr &naryMeExpr = static_cast<NaryMeExpr&>(meExpr);
     NaryNode &naryNode = static_cast<NaryNode&>(mirNode);
-    for (size_t i = 0; i < naryNode.NumOpnds(); i++) {
+    for (size_t i = 0; i < naryNode.NumOpnds(); ++i) {
       naryMeExpr.GetOpnds().push_back(BuildExpr(*naryNode.Opnd(i)));
     }
   } else {
@@ -627,7 +639,7 @@ MeExpr *IRMap::HashMeExpr(MeExpr &meExpr) {
 MeExpr *IRMap::ReplaceMeExprExpr(MeExpr &origExpr, MeExpr &newExpr, size_t opndsSize, MeExpr &meExpr, MeExpr &repExpr) {
   bool needRehash = false;
 
-  for (size_t i = 0; i < opndsSize; i++) {
+  for (size_t i = 0; i < opndsSize; ++i) {
     MeExpr *origOpnd = origExpr.GetOpnd(i);
     if (origOpnd == nullptr) {
       continue;
@@ -705,7 +717,7 @@ bool IRMap::ReplaceMeExprStmt(MeStmt &meStmt, MeExpr &meExpr, MeExpr &repexpr) {
   bool isReplaced = false;
   Opcode op = meStmt.GetOp();
 
-  for (size_t i = 0; i < meStmt.NumMeStmtOpnds(); i++) {
+  for (size_t i = 0; i < meStmt.NumMeStmtOpnds(); ++i) {
     if (op == OP_intrinsiccall || op == OP_xintrinsiccall || op == OP_intrinsiccallwithtype ||
         op == OP_intrinsiccallassigned || op == OP_xintrinsiccallassigned ||
         op == OP_intrinsiccallwithtypeassigned) {

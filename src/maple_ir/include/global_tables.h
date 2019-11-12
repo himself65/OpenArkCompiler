@@ -487,8 +487,8 @@ class GSymbolTable {
     return idx < symbolTable.size();
   }
 
-  MIRSymbol *GetSymbolFromStidx(uint32 idx, bool checkfirst = false) const {
-    if (checkfirst && idx >= symbolTable.size()) {
+  MIRSymbol *GetSymbolFromStidx(uint32 idx, bool checkFirst = false) const {
+    if (checkFirst && idx >= symbolTable.size()) {
       return nullptr;
     }
     ASSERT(IsValidIdx(idx), "symbol table index out of range");

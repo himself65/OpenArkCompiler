@@ -27,7 +27,7 @@ class BinaryMplt {
 
   explicit BinaryMplt(MIRModule &md) : mirModule(md), binImport(md), binExport(md) {}
 
-  virtual ~BinaryMplt() {}
+  virtual ~BinaryMplt() = default;
 
   void Export(const std::string &suffix) {
     binExport.Export(suffix);

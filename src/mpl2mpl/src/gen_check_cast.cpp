@@ -169,7 +169,7 @@ void CheckCastGenerator::GenCheckCast(BaseNode &stmt) {
         UStrIdx stridx = GlobalTables::GetUStrTable().GetOrCreateStrIdxFromName(jarrayType->GetJavaName());
         ConststrNode *signatureNode = currFunc->GetCodeMempool()->New<ConststrNode>(stridx);
         signatureNode->SetPrimType(PTY_ptr);
-        MapleVector<BaseNode*> opnds(currFunc->GetCodeMempoolAllocator()->Adapter());
+        MapleVector<BaseNode*> opnds(currFunc->GetCodeMempoolAllocator().Adapter());
         opnds.push_back(valueExpr);
         const size_t callNodeNopndSize3 = callNode->GetNopndSize();
         CHECK_FATAL(callNodeNopndSize3 > 0, "container check");

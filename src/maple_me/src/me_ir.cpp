@@ -18,6 +18,7 @@
 #include "printing.h"
 #include "me_ssa.h"
 #include "mir_function.h"
+#include "global_tables.h"
 
 namespace maple {
 constexpr int32_t kDefaultPrintIndentNum = 5;

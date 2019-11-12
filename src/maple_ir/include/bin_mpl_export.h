@@ -28,11 +28,6 @@ enum : uint8 {
   kBinInitConst = 2,
   kBinSymbol = 3,
   kBinFunction = 4,
-  kBinEaCgNode,
-  kBinEaCgActNode,
-  kBinEaCgFieldNode,
-  kBinEaCgRefNode,
-  kBinEaCgObjNode,
   kBinCallinfo = 5,
   kBinKindTypeScalar = 6,
   kBinKindTypeByName = 7,
@@ -62,10 +57,15 @@ enum : uint8 {
   kBinTypeStart = 31,
   kBinCgStart = 32,
   kBinSeStart = 33,
-  kBinEaCgStart,
-  kBinEaStart,
   kBinFinish = 34,
   kStartMethod = 35,
+  kBinEaCgNode = 36,
+  kBinEaCgActNode = 37,
+  kBinEaCgFieldNode = 38,
+  kBinEaCgRefNode = 39,
+  kBinEaCgObjNode = 40,
+  kBinEaCgStart = 41,
+  kBinEaStart = 42,
 };
 
 // this value is used to check wether a file is a binary mplt file
@@ -73,7 +73,7 @@ constexpr int32 kMpltMagicNumber = 0xC0FFEE;
 class BinaryMplExport {
  public:
   explicit BinaryMplExport(MIRModule &md);
-  virtual ~BinaryMplExport() {}
+  virtual ~BinaryMplExport() = default;
 
   void Export(const std::string &fname);
   void WriteContentField(int fieldNum, uint64 &fieldStartP);

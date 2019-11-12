@@ -38,18 +38,18 @@ class StringUtils {
 
   static void Split(const std::string &src, std::unordered_set<std::string> &container, char delim);
 
-  const static std::string Trim(const std::string &s);
-  const static std::string Replace(const std::string &src, const std::string &target, const std::string &replacement);
-  const static std::string Append(const std::string &src, const std::string &target, const std::string &spliter);
-  const static std::string GetStrAfterLast(const std::string &src, const std::string &target,
-                                           const bool isReturnEmpty = false);
-  const static std::string GetStrBeforeLast(const std::string &src, const std::string &target,
-                                            const bool isReturnEmpty = false);
+  static std::string Trim(const std::string &s);
+  static std::string Replace(const std::string &src, const std::string &target, const std::string &replacement);
+  static std::string Append(const std::string &src, const std::string &target, const std::string &spliter);
+  static std::string GetStrAfterLast(const std::string &src, const std::string &target,
+                                     bool isReturnEmpty = false);
+  static std::string GetStrBeforeLast(const std::string &src, const std::string &target,
+                                      bool isReturnEmpty = false);
   static bool HasCommandInjectionChar(const std::string &s) {
     return std::regex_search(s, kCommandInjectionRegex);
   }
 
-  const static bool EndsWith(const std::string &str, const std::string &end) {
+  static bool EndsWith(const std::string &str, const std::string &end) {
     if (end.size() > str.size()) {
       return false;
     }
@@ -57,7 +57,7 @@ class StringUtils {
     return std::equal(end.rbegin(), end.rend(), str.rbegin());
   }
 
-  const static bool StartsWith(const std::string &str, const std::string &start) {
+  static bool StartsWith(const std::string &str, const std::string &start) {
     if (start.size() > str.size()) {
       return false;
     }

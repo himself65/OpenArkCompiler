@@ -67,7 +67,7 @@ MemPool *MIRModule::CurFuncCodeMemPool(void) const {
 }
 
 MapleAllocator *MIRModule::CurFuncCodeMemPoolAllocator(void) const {
-  return curFunction->GetCodeMempoolAllocator();
+  return &curFunction->GetCodeMempoolAllocator();
 }
 
 MapleAllocator &MIRModule::GetCurFuncCodeMPAllocator(void) const {

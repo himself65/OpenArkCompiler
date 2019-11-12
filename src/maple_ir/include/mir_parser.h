@@ -28,7 +28,10 @@ using BlockNodePtr = BlockNode*;
 class MIRParser {
  public:
   explicit MIRParser(MIRModule &md)
-      : lexer(md),
+      : paramOpForStmt(kOpUndef),
+        paramTokenKindForStmt(kTkInvalid),
+        paramCurrFuncForParseStmtBlock(nullptr),
+        lexer(md),
         mod(md),
         options(kKeepFirst),
         definedLabels(mod.GetMPAllocator().Adapter()),
@@ -42,12 +45,9 @@ class MIRParser {
         paramFileIdx(0),
         paramIsIPA(false),
         paramIsComb(false),
-        paramTokenKind(kTkInvalid),
-        paramOpForStmt(kOpUndef),
-        paramTokenKindForStmt(kTkInvalid),
-        paramCurrFuncForParseStmtBlock(nullptr) {}
+        paramTokenKind(kTkInvalid) {}
 
-  ~MIRParser() {}
+  ~MIRParser() = default;
 
   MIRPreg *CreateMirPreg(uint32 pregNo) const;
   PregIdx LookupOrCreatePregIdx(uint32 pregNo, bool isref, MIRFunction &curfunc);
@@ -201,7 +201,6 @@ class MIRParser {
   void Warning(const std::string&);
   void FixupForwardReferencedTypeByMap();
 
- public:
   const std::string &GetError();
   const std::string &GetWarning() const;
   bool ParseFuncInfo(void);
@@ -218,30 +217,6 @@ class MIRParser {
   }
 
  private:
-  MIRLexer lexer;
-  MIRModule &mod;
-  std::string message;
-  std::string warningMessage;
-  uint32 options;
-  MapleVector<bool> definedLabels;  // true if label at labidx is defined
-  MIRFunction *dummyFunction;
-  MIRFunction *curFunc;
-  uint16 lastFileNum;                    // to remember first number after LOC
-  uint32 lastLineNum;                    // to remember second number after LOC
-  uint32 firstLineNum;                   // to track function starting line
-  std::map<TyIdx, TyIdx> typeDefIdxMap;  // map previous declared tyIdx
-  uint32 maxPregNo;                      // max pregNo seen so far in current function
-
-  // param for ParseTypedef
-  bool paramParseLocalType;
-
-  // param for ParseMIR()
-  uint32 paramFileIdx;
-  bool paramIsIPA;
-  bool paramIsComb;
-  TokenKind paramTokenKind;
-  std::vector<std::string> paramImportFileList;
-
   // func ptr map for ParseMIR()
   using FuncPtrParseMIRForElem = bool (MIRParser::*)();
   static std::map<TokenKind, FuncPtrParseMIRForElem> funcPtrMapForParseMIR;
@@ -303,6 +278,30 @@ class MIRParser {
 
   // common func
   void SetSrcPos(StmtNodePtr stmt, uint32 mplNum);
+
+  MIRLexer lexer;
+  MIRModule &mod;
+  std::string message;
+  std::string warningMessage;
+  uint32 options;
+  MapleVector<bool> definedLabels;  // true if label at labidx is defined
+  MIRFunction *dummyFunction;
+  MIRFunction *curFunc;
+  uint16 lastFileNum;                    // to remember first number after LOC
+  uint32 lastLineNum;                    // to remember second number after LOC
+  uint32 firstLineNum;                   // to track function starting line
+  std::map<TyIdx, TyIdx> typeDefIdxMap;  // map previous declared tyIdx
+  uint32 maxPregNo;                      // max pregNo seen so far in current function
+
+  // param for ParseTypedef
+  bool paramParseLocalType;
+
+  // param for ParseMIR()
+  uint32 paramFileIdx;
+  bool paramIsIPA;
+  bool paramIsComb;
+  TokenKind paramTokenKind;
+  std::vector<std::string> paramImportFileList;
 };
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_MIR_PARSER_H

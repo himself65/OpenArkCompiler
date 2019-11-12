@@ -293,7 +293,7 @@ void MeCFG::FixMirCFG() {
       // 1. Split callassigned/dassign stmt to two insns if it redefine a symbole and also use
       //    the same symbol as its operand.
       for (StmtNode *stmt = to_ptr(bb->GetStmtNodes().begin()); stmt != nullptr; stmt = stmt->GetNext()) {
-        MIRSymbol *sym = nullptr;
+        const MIRSymbol *sym = nullptr;
         if (kOpcodeInfo.IsCallAssigned(stmt->GetOpCode())) {
           CallNode *cnode = static_cast<CallNode *>(stmt);
           CallReturnVector &nrets = cnode->GetReturnVec();
@@ -361,7 +361,7 @@ void MeCFG::FixMirCFG() {
         StmtNode *nextStmt = splitPoint.GetNext();
         if (nextStmt != nullptr &&
             (nextStmt->GetOpCode() == OP_dassign || kOpcodeInfo.IsCallAssigned(nextStmt->GetOpCode()))) {
-          MIRSymbol *sym = nullptr;
+          const MIRSymbol *sym = nullptr;
           if (nextStmt->GetOpCode() == OP_dassign) {
             DassignNode *dassignStmt = static_cast<DassignNode*>(nextStmt);
             const StIdx stIdx = dassignStmt->GetStIdx();

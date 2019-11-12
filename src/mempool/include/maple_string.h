@@ -35,10 +35,6 @@ class MapleString {
   MapleString(const MapleString &str);
   ~MapleString() {}
 
-  void setMemPool(MemPool *currMp) {
-    memPool = currMp;
-  }
-
   unsigned int length() const {
     return dataLength;
   }
@@ -84,7 +80,7 @@ class MapleString {
     size_t size = strlen(str);
     CHECK_FATAL(size <= UINT_MAX - 1, "str too large");
 
-    // if data is null, old_size =0, elese +1
+    // if data is null, old_size = 0, else +1
     size_t oldSize = (data == nullptr) ? 0 : (dataLength + 1);
     if (oldSize < (1 + size)) {
       data = static_cast<char*>(memPool->Realloc(data, oldSize * sizeof(char), (1 + size) * sizeof(char)));
@@ -94,7 +90,7 @@ class MapleString {
       data[0] = '\0';
       return *this;
     }
-    errno_t eNum = memcpy_s(data, (size_t)(size + 1), str, (size_t)size);
+    errno_t eNum = memcpy_s(data, size + 1, str, size);
     CHECK_FATAL(eNum == EOK, "memcpy_s failed");
     dataLength = size;
     CHECK_FATAL(data != nullptr, "null ptr check ");
@@ -115,7 +111,7 @@ class MapleString {
       data[0] = '\0';
       return *this;
     }
-    errno_t eNum = memcpy_s(data, size, str.data(), (size_t)size);
+    errno_t eNum = memcpy_s(data, size, str.data(), size);
     CHECK_FATAL(eNum == EOK, "memcpy_s failed");
     dataLength = size;
     data[dataLength] = '\0';
@@ -179,7 +175,7 @@ class MapleString {
 
     data = static_cast<char*>(
         memPool->Realloc(data, oldSize * sizeof(char), (dataLength + str.dataLength + 1) * sizeof(char)));
-    errno_t eNum = memcpy_s(data + dataLength, (size_t)str.dataLength, str.data, (size_t)str.dataLength);
+    errno_t eNum = memcpy_s(data + dataLength, str.dataLength, str.data, str.dataLength);
     CHECK_FATAL(eNum == EOK, "memcpy_s failed");
     dataLength += str.dataLength;
     data[dataLength] = '\0';
@@ -193,7 +189,7 @@ class MapleString {
 
     data = static_cast<char*>(memPool->Realloc(data, oldSize * sizeof(char), (dataLength + size + 1) * sizeof(char)));
     CHECK_FATAL(data != nullptr, " null ptr check");
-    errno_t eNum = memcpy_s(data + dataLength, (size_t)size, str.data(), (size_t)size);
+    errno_t eNum = memcpy_s(data + dataLength, size, str.data(), size);
     CHECK_FATAL(eNum == EOK, "memcpy_s failed");
     dataLength += size;
     data[dataLength] = '\0';
@@ -211,7 +207,7 @@ class MapleString {
 
   MapleString &push_back(const char c);
   MapleString &append(const MapleString &str);
-  MapleString &append(const MapleString &str, unsigned int subpos, unsigned int sublen);
+  MapleString &append(const MapleString &str, unsigned int subPos, unsigned int subLen);
   MapleString &append(const char *s);
   MapleString &append(const char *s, unsigned int n);
   MapleString &append(unsigned int n, char c);
@@ -223,25 +219,17 @@ class MapleString {
   size_t find_last_of(const char*, unsigned int pos = 0) const;
   MapleString substr(unsigned int pos, unsigned int len) const;
   MapleString &insert(unsigned int pos, const MapleString &str);
-  MapleString &insert(unsigned int pos, const MapleString &str, unsigned int subpos, unsigned int sublen);
+  MapleString &insert(unsigned int pos, const MapleString &str, unsigned int subPos, unsigned int subLen);
   MapleString &insert(unsigned int pos, const char *s);
   MapleString &insert(unsigned int pos, const char *s, unsigned int n);
   MapleString &insert(unsigned int pos, unsigned int n, char c);
   MapleString &assign(const MapleString &str);
-  MapleString &assign(const MapleString &str, unsigned int subpos, unsigned int sublen);
+  MapleString &assign(const MapleString &str, unsigned int subPos, unsigned int subLen);
   MapleString &assign(const char *s);
   MapleString &assign(const char *s, unsigned int n);
   MapleString &assign(unsigned int n, char c);
 
  private:
-  char *data;
-  MemPool *memPool;
-  unsigned int dataLength;
-  friend bool operator==(const MapleString&, const MapleString&);
-  friend bool operator==(const MapleString&, const char*);
-  friend bool operator==(const char*, const MapleString&);
-  friend bool operator<(const MapleString &str1, const MapleString &str2);
-
   inline static size_t StrLen(const char *s) {
     if (s == nullptr) {
       return 0;
@@ -263,6 +251,15 @@ class MapleString {
     str[len] = 0;
     return str;
   }
+
+  friend bool operator==(const MapleString&, const MapleString&);
+  friend bool operator==(const MapleString&, const char*);
+  friend bool operator==(const char*, const MapleString&);
+  friend bool operator<(const MapleString &str1, const MapleString &str2);
+
+  char *data;
+  MemPool *memPool;
+  unsigned int dataLength;
 };
 
 // global operators

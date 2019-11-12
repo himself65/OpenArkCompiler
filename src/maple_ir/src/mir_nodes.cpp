@@ -65,7 +65,7 @@ bool BaseNode::MayThrowException() {
 }
 
 bool AddrofNode::CheckNode(const MIRModule &mod) const {
-  MIRSymbol *st = mod.CurFunction()->GetLocalOrGlobalSymbol(GetStIdx());
+  const MIRSymbol *st = mod.CurFunction()->GetLocalOrGlobalSymbol(GetStIdx());
   MIRType *ty = st->GetType();
   switch (ty->GetKind()) {
     case kTypeScalar: {
@@ -501,7 +501,7 @@ void FieldsDistNode::Dump(const MIRModule &mod, int32 indent) const {
 
 void AddrofNode::Dump(const MIRModule &mod, int32 indent) const {
   LogInfo::MapleLogger() << kOpcodeInfo.GetTableItemAt(GetOpCode()).name << " " << GetPrimTypeName(GetPrimType());
-  MIRSymbol *st = mod.CurFunction()->GetLocalOrGlobalSymbol(GetStIdx());
+  const MIRSymbol *st = mod.CurFunction()->GetLocalOrGlobalSymbol(GetStIdx());
   LogInfo::MapleLogger() << (GetStIdx().Islocal() ? " %" : " $");
   LogInfo::MapleLogger() << st->GetName();
   if (fieldID != 0) {
@@ -597,7 +597,7 @@ void StmtNode::InsertBeforeThis(StmtNode &pos) {
 
 void DassignNode::Dump(const MIRModule &mod, int32 indent) const {
   StmtNode::DumpBase(mod, indent);
-  MIRSymbol *st = mod.CurFunction()->GetLocalOrGlobalSymbol(stIdx);
+  const MIRSymbol *st = mod.CurFunction()->GetLocalOrGlobalSymbol(stIdx);
   LogInfo::MapleLogger() << (st->IsLocal() ? " %" : " $");
   LogInfo::MapleLogger() << st->GetName() << " " << fieldID;
   LogInfo::MapleLogger() << " (";
@@ -841,7 +841,7 @@ void DoloopNode::DumpDoVar(const MIRModule &mod) const {
                            << mod.CurFunction()->GetPregTab()->PregFromPregIdx(doVarStIdx.FullIdx())->GetPregNo()
                            << " (" << std::endl;
   } else {
-    MIRSymbol *st = mod.CurFunction()->GetLocalOrGlobalSymbol(doVarStIdx);
+    const MIRSymbol *st = mod.CurFunction()->GetLocalOrGlobalSymbol(doVarStIdx);
     LogInfo::MapleLogger() << " %" << st->GetName().c_str() << " (" << std::endl;
   }
 }
@@ -863,7 +863,7 @@ void DoloopNode::Dump(const MIRModule &mod, int32 indent) const {
 
 void ForeachelemNode::Dump(const MIRModule &mod, int32 indent) const {
   StmtNode::DumpBase(mod, indent);
-  MIRSymbol *st = mod.CurFunction()->GetLocalOrGlobalSymbol(elemStIdx);
+  const MIRSymbol *st = mod.CurFunction()->GetLocalOrGlobalSymbol(elemStIdx);
   ASSERT(st != nullptr, "null ptr check");
   LogInfo::MapleLogger() << " %" << st->GetName().c_str();
   st = mod.CurFunction()->GetLocalOrGlobalSymbol(arrayStIdx);
@@ -898,7 +898,7 @@ void DumpCallReturns(const MIRModule &mod, CallReturnVector nrets, int32 indent)
     StIdx stIdx = nrets.begin()->first;
     RegFieldPair regFieldPair = nrets.begin()->second;
     if (!regFieldPair.IsReg()) {
-      MIRSymbol *st = mirFunc->GetLocalOrGlobalSymbol(stIdx);
+      const MIRSymbol *st = mirFunc->GetLocalOrGlobalSymbol(stIdx);
       ASSERT(st != nullptr, "st is null");
       uint16 fieldID = regFieldPair.GetFieldID();
       LogInfo::MapleLogger() << " { dassign ";
@@ -907,7 +907,7 @@ void DumpCallReturns(const MIRModule &mod, CallReturnVector nrets, int32 indent)
       return;
     } else {
       PregIdx16 regIdx = regFieldPair.GetPregIdx();
-      MIRPreg *mirPreg = mirFunc->GetPregItem(static_cast<PregIdx>(regIdx));
+      const MIRPreg *mirPreg = mirFunc->GetPregItem(static_cast<PregIdx>(regIdx));
       ASSERT(mirPreg != nullptr, "mirPreg is null");
       LogInfo::MapleLogger() << " { regassign";
       LogInfo::MapleLogger() << " " << GetPrimTypeName(mirPreg->GetPrimType());
@@ -923,13 +923,13 @@ void DumpCallReturns(const MIRModule &mod, CallReturnVector nrets, int32 indent)
     if (!regFieldPair.IsReg()) {
       uint16 fieldID = regFieldPair.GetFieldID();
       LogInfo::MapleLogger() << "dassign";
-      MIRSymbol *st = mirFunc->GetLocalOrGlobalSymbol(stIdx);
+      const MIRSymbol *st = mirFunc->GetLocalOrGlobalSymbol(stIdx);
       ASSERT(st != nullptr, "st is null");
       LogInfo::MapleLogger() << (stIdx.Islocal() ? " %" : " $");
       LogInfo::MapleLogger() << st->GetName() << " " << fieldID << std::endl;
     } else {
       PregIdx16 regidx = regFieldPair.GetPregIdx();
-      MIRPreg *mirPreg = mirFunc->GetPregItem(static_cast<PregIdx>(regidx));
+      const MIRPreg *mirPreg = mirFunc->GetPregItem(static_cast<PregIdx>(regidx));
       ASSERT(mirPreg != nullptr, "mirPreg is null");
       LogInfo::MapleLogger() << "regassign"
                              << " " << GetPrimTypeName(mirPreg->GetPrimType());
@@ -1268,7 +1268,7 @@ bool FloatIntCvtTypeVerify(PrimType resPType, PrimType opndPType) {
 }
 
 inline MIRTypeKind GetTypeKind(StIdx stIdx) {
-  MIRSymbol *var = theModule->CurFunction()->GetLocalOrGlobalSymbol(stIdx);
+  const MIRSymbol *var = theModule->CurFunction()->GetLocalOrGlobalSymbol(stIdx);
   ASSERT(var != nullptr, "null ptr check");
   MIRType *type = var->GetType();
   ASSERT(type != nullptr, "null ptr check");
@@ -1640,7 +1640,7 @@ bool AddrofNode::Verify() const {
       }
     }
     if (fieldID != 0 && structVerf) {
-      MIRSymbol *var = theModule->CurFunction()->GetLocalOrGlobalSymbol(GetStIdx());
+      const MIRSymbol *var = theModule->CurFunction()->GetLocalOrGlobalSymbol(GetStIdx());
       MIRType *type = var->GetType();
       MIRStructType *stty = static_cast<MIRStructType*>(type);
       if (IsStructureTypeKind(GetFieldTypeKind(stty, fieldID))) {

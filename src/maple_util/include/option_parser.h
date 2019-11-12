@@ -20,9 +20,11 @@
 #include "error_code.h"
 
 namespace mapleOption {
-enum ArgStatus { kArgNone, kArgOk, kArgIllegal };
-
-enum BuildType { kBuildTypeAll, kBuildTypeDebug, kBuildTypeRelease };
+enum BuildType {
+  kBuildTypeAll,
+  kBuildTypeDebug,
+  kBuildTypeRelease
+};
 
 enum ArgCheckPolicy {
   kArgCheckPolicyUnknown,
@@ -121,7 +123,7 @@ struct Descriptor {
   const ExtraOption extras[kMaxExtraOptions];
 #endif
 
-  const bool IsEnabledForCurrentBuild() const {
+  bool IsEnabledForCurrentBuild() const {
     switch (enableBuildType) {
       case BuildType::kBuildTypeAll:
         return true;
@@ -143,11 +145,11 @@ class Option {
 
   ~Option() = default;
 
-  const unsigned int Index() const {
+  unsigned int Index() const {
     return descriptor.index;
   }
 
-  const unsigned int Type() const {
+  unsigned int Type() const {
     return descriptor.type;
   }
 
@@ -160,7 +162,7 @@ class Option {
   }
 
 #ifdef OPTION_PARSER_EXTRAOPT
-  const std::string ConnectSymbol(const std::string &exeName) const {
+  std::string ConnectSymbol(const std::string &exeName) const {
     auto extra = FindExtra(exeName);
     if (extra != nullptr && extra->connector != nullptr) {
       return extra->connector;
@@ -168,7 +170,7 @@ class Option {
     return descriptor.connector == nullptr ? "" : descriptor.connector;
   }
 
-  const std::string AppendSymbol(const std::string &exeName) const {
+  std::string AppendSymbol(const std::string &exeName) const {
     auto extra = FindExtra(exeName);
     if (extra != nullptr && extra->delimiter != nullptr) {
       return extra->delimiter;
@@ -176,11 +178,11 @@ class Option {
     return descriptor.delimiter == nullptr ? "" : descriptor.delimiter;
   }
 
-  const bool HasExtra() const {
+  bool HasExtra() const {
     return descriptor.extras[0].exeName != nullptr;
   }
 
-  const std::vector<ExtraOption> GetExtras() const {
+  std::vector<ExtraOption> GetExtras() const {
     auto ret = std::vector<ExtraOption>();
     unsigned int index = 0;
     while (index < kMaxExtraOptions && descriptor.extras[index].exeName != nullptr) {
@@ -195,7 +197,7 @@ class Option {
       if (exeName == descriptor.extras[index].exeName) {
         return &descriptor.extras[index];
       }
-      index++;
+      ++index;
     }
     return nullptr;
   }
@@ -214,10 +216,10 @@ class OptionParser {
 
   ~OptionParser() = default;
 
-  const maple::ErrorCode Parse(int argc, char **argv);
+  maple::ErrorCode Parse(int argc, char **argv);
 
-  const maple::ErrorCode HandleInputArgs(const std::vector<std::string> &inputArgs, const std::string &exeName,
-                                         std::vector<mapleOption::Option> &inputOption);
+  maple::ErrorCode HandleInputArgs(const std::vector<std::string> &inputArgs, const std::string &exeName,
+                                   std::vector<mapleOption::Option> &inputOption);
 
   const std::vector<Option> &GetOptions() const {
     return options;
@@ -234,31 +236,26 @@ class OptionParser {
   void PrintUsage() const;
 
 #ifdef OPTION_PARSER_EXTRAOPT
-  const bool SetOption(const std::string &key, const std::string &value, const std::string &exeName,
-                       std::vector<mapleOption::Option> &exeOption);
+  bool SetOption(const std::string &key, const std::string &value, const std::string &exeName,
+                 std::vector<mapleOption::Option> &exeOption);
   void PrintUsage(const std::string &helpTyoe) const;
 #endif
 
  private:
-  const Descriptor *rawUsages;
-  std::multimap<std::string, Descriptor> usages;
-  std::vector<Option> options;
-  std::vector<std::string> nonOptionsArgs;
-
-  const ArgStatus CheckArg(Option &option) const;
-
-  const bool HandleKeyValue(const std::string &key, const std::string &value, bool isValueEmpty,
-                            std::vector<mapleOption::Option> &inputOption,  const std::string &exeName);
-  const bool CheckOpt(const std::string option, std::string &lastKey, bool &isLastMatch,
-                      std::vector<mapleOption::Option> &inputOption, const std::string &exeName);
-
+  bool HandleKeyValue(const std::string &key, const std::string &value, bool isValueEmpty,
+                      std::vector<mapleOption::Option> &inputOption,  const std::string &exeName);
+  bool CheckOpt(const std::string option, std::string &lastKey, bool &isLastMatch,
+                std::vector<mapleOption::Option> &inputOption, const std::string &exeName);
   void InsertOption(const std::string &opt, const Descriptor &usage) {
     if (usage.IsEnabledForCurrentBuild()) {
       usages.insert(make_pair(opt, usage));
     }
   }
-
-  const bool CheckSpecialOption(const std::string &option, std::string &key, std::string &value);
+  bool CheckSpecialOption(const std::string &option, std::string &key, std::string &value);
+  const Descriptor *rawUsages;
+  std::multimap<std::string, Descriptor> usages;
+  std::vector<Option> options;
+  std::vector<std::string> nonOptionsArgs;
 };
 }  // namespace mapleOption
 

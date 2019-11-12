@@ -53,7 +53,7 @@ class MIRBuilder {
         incompleteTypeRefedSet(std::less<TyIdx>(), mirModule->GetMPAllocator().Adapter()),
         lineNum(0) {}
 
-  virtual ~MIRBuilder() {}
+  virtual ~MIRBuilder() = default;
 
   virtual void SetCurrentFunction(MIRFunction &fun) {
     mirModule->SetCurFunction(&fun);
@@ -68,7 +68,7 @@ class MIRBuilder {
     return func;
   }
 
-  MIRModule &GetMirModule() const {
+  MIRModule &GetMirModule() {
     return *mirModule;
   }
 
@@ -111,16 +111,18 @@ class MIRBuilder {
   void AddAddrofFieldConst(const MIRStructType &sType, MIRAggConst &newConst, uint32 fieldID, const MIRSymbol &fieldSt);
   void AddAddroffuncFieldConst(const MIRStructType &sType, MIRAggConst &newConst, uint32 fieldID,
                                const MIRSymbol &funcSt);
+
   bool TraverseToNamedField(MIRStructType &structType, GStrIdx nameIdx, uint32 &fieldID);
-  bool IsOfSameType(MIRType &type1, MIRType &type2);
   bool TraverseToNamedFieldWithTypeAndMatchStyle(MIRStructType &structType, GStrIdx nameIdx, TyIdx typeIdx,
                                                  uint32 &fieldID, unsigned int matchStyle);
   void TraverseToNamedFieldWithType(MIRStructType &structType, GStrIdx nameIdx, TyIdx typeIdx, uint32 &fieldID,
                                     uint32 &idx);
+
   FieldID GetStructFieldIDFromNameAndType(MIRType &type, const std::string &name, TyIdx idx, unsigned int matchStyle);
   FieldID GetStructFieldIDFromNameAndType(MIRType &type, const std::string &name, TyIdx idx);
   FieldID GetStructFieldIDFromNameAndTypeParentFirst(MIRType &type, const std::string &name, TyIdx idx);
   FieldID GetStructFieldIDFromNameAndTypeParentFirstFoundInChild(MIRType &type, const std::string &name, TyIdx idx);
+
   FieldID GetStructFieldIDFromFieldName(MIRType &type, const std::string &name);
   FieldID GetStructFieldIDFromFieldNameParentFirst(MIRType *type, const std::string &name);
 
@@ -135,18 +137,18 @@ class MIRBuilder {
   MIRFunction *CreateFunction(const std::string &name, const MIRType &returnType, const ArgVector &arguments,
                               bool isvarg = false, bool createBody = true) const;
   MIRFunction *CreateFunction(const StIdx stIdx, bool addToTable = true) const;
-  virtual void UpdateFunction(MIRFunction &func, MIRType *returnType, const ArgVector &arguments) {
-    return;
-  }
+  virtual void UpdateFunction(MIRFunction &func, MIRType *returnType, const ArgVector &arguments) {}
 
   MIRSymbol *GetSymbolFromEnclosingScope(StIdx stIdx) const;
-  virtual MIRSymbol *GetOrCreateLocalDecl(const std::string &str, MIRType &type);
+  virtual MIRSymbol *GetOrCreateLocalDecl(const std::string &str, const MIRType &type);
   MIRSymbol *GetLocalDecl(const std::string &str);
   MIRSymbol *CreateLocalDecl(const std::string &str, const MIRType &type);
   MIRSymbol *GetOrCreateGlobalDecl(const std::string &str, const MIRType &type);
   MIRSymbol *GetGlobalDecl(const std::string &str);
   MIRSymbol *GetDecl(const std::string &str);
-  MIRSymbol *CreateGlobalDecl(const std::string &str, const MIRType &type, MIRStorageClass sc = kScGlobal);
+  MIRSymbol *CreateGlobalDecl(const std::string &str,
+                              const MIRType &type,
+                              MIRStorageClass sc = kScGlobal);
   MIRSymbol *GetOrCreateDeclInFunc(const std::string &str, const MIRType &type, MIRFunction &func);
   // for creating Expression
   ConstvalNode *CreateIntConst(int64, PrimType);
@@ -276,13 +278,14 @@ class MIRBuilder {
   MIRSymbol *GetOrCreateSymbol(TyIdx, GStrIdx, MIRSymKind, MIRStorageClass, MIRFunction*, uint8, bool) const;
   MIRSymbol *CreatePregFormalSymbol(TyIdx, PregIdx, MIRFunction&) const;
   // for creating symbol
-  MIRSymbol *CreateSymbol(TyIdx, const std::string&, MIRSymKind, MIRStorageClass, MIRFunction*, uint8) const;
+  MIRSymbol *CreateSymbol(TyIdx,const std::string&, MIRSymKind, MIRStorageClass, MIRFunction*, uint8) const;
   MIRSymbol *CreateSymbol(TyIdx, GStrIdx, MIRSymKind, MIRStorageClass, MIRFunction*, uint8) const;
   // for creating nodes
   AddrofNode *CreateAddrof(const MIRSymbol &st, PrimType pty = PTY_ptr);
   AddrofNode *CreateDread(const MIRSymbol &st, PrimType pty);
   virtual MemPool *GetCurrentFuncCodeMp();
   virtual MapleAllocator *GetCurrentFuncCodeMpAllocator();
+
 
  private:
   MIRSymbol *GetOrCreateGlobalDecl(const std::string &str, const TyIdx &tyIdx, bool &created) const;

@@ -146,6 +146,9 @@ class MIRPregTable {
   }
 
   MIRPreg *PregFromPregIdx(PregIdx pregIdx) {
+    return const_cast<MIRPreg*>(const_cast<const MIRPregTable*>(this)->PregFromPregIdx(pregIdx));
+  }
+  const MIRPreg *PregFromPregIdx(PregIdx pregIdx) const {
     // pregIdx < 0 denotes special register
     return (pregIdx < 0) ? &specPregTable[-pregIdx] : pregTable.at(pregIdx);
   }

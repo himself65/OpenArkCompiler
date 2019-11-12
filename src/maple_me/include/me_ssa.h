@@ -25,19 +25,19 @@
 namespace maple {
 class MeSSA : public SSA, public AnalysisResult {
  public:
-  MeSSA(MeFunction *func, Dominance *dom, MemPool *memPool, bool enabledDebug);
+  MeSSA(MeFunction &func, Dominance &dom, MemPool &memPool, bool enabledDebug);
   ~MeSSA() = default;
 
   void BuildSSA();
   bool VerifySSA() const;
 
  private:
-  MeFunction *func;
-  Dominance *dom;
   bool VerifySSAOpnd(const BaseNode &node) const;
   void CollectDefBBs(std::map<OStIdx, std::set<BBId>> &ostDefBBs);
   void InsertPhiNode();
   void RenameBB(BB&);
+  MeFunction *func;
+  Dominance *dom;
   bool enabledDebug;
 };
 

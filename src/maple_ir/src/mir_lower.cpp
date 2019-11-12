@@ -208,7 +208,7 @@ BlockNode *MIRLower::LowerDoloopStmt(DoloopNode &doloop) {
     endRegassign->SetOpnd(add);
     blk->AddStatement(endRegassign);
   } else {
-    MIRSymbol *doVarSym = mirModule.CurFunction()->GetLocalOrGlobalSymbol(doloop.GetDoVarStIdx());
+    const MIRSymbol *doVarSym = mirModule.CurFunction()->GetLocalOrGlobalSymbol(doloop.GetDoVarStIdx());
     PrimType doVarPType = doVarSym->GetType()->GetPrimType();
     DreadNode *readDovar =
         mirModule.CurFuncCodeMemPool()->New<DreadNode>(OP_dread, doVarPType, doloop.GetDoVarStIdx(), 0);

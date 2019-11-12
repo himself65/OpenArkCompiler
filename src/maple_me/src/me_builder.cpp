@@ -71,6 +71,14 @@ MeExpr *MeBuilder::CreateMeExpr(int32 exprId, MeExpr &meExpr) const {
   return resultExpr;
 }
 
+VarMeExpr *MeBuilder::BuildVarMeExpr(int32 exprID, OStIdx oStIdx, size_t vStIdx,
+                                     PrimType pType, FieldID fieldID) const {
+  VarMeExpr *varMeExpr = New<VarMeExpr>(&allocator, exprID, oStIdx, vStIdx);
+  varMeExpr->InitBase(OP_dread, pType, 0);
+  varMeExpr->SetFieldID(fieldID);
+  return varMeExpr;
+}
+
 MeExpr *MeBuilder::BuildMeExpr(BaseNode &mirNode) const {
   auto func = CreateProductFunction<MeExprBuildFactory>(mirNode.GetOpCode());
   ASSERT(func != nullptr, "NIY BuildExpe");

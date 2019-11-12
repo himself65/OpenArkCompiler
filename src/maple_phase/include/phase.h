@@ -49,7 +49,7 @@ class AnalysisResult {
 
 class Phase {
  public:
-  Phase() {}
+  Phase() = default;
 
   virtual std::string PhaseName() const {
     ASSERT(false, "The base Phase::PhaseName should not be called");

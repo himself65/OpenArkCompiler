@@ -101,30 +101,7 @@ struct DefaultOption {
 
 class MplOptions {
  public:
-  MplOptions()
-      : optionParser(nullptr),
-        options({}),
-        exeOptions({}),
-        inputFiles(""),
-        inputFolder(""),
-        outputFolder(""),
-        outputName("maple"),
-        exeFolder(""),
-        inputFileType(InputFileType::kNone),
-        optimizationLevel(OptimizationLevel::kO0),
-        runMode(RunMode::kUnkownRun),
-        setDefaultLevel(false),
-        isSaveTmps(false),
-        saveFiles({}),
-        splitsInputFiles({}),
-        extras({}),
-        runningExes({}),
-        printCommandStr(""),
-        debugFlag(false),
-        timePhases(false),
-        genMeMpl(false),
-        genVtableImpl(false),
-        verify(false) {}
+  MplOptions() = default;
   ~MplOptions() = default;
 
   int Parse(int argc, char **argv);
@@ -211,29 +188,29 @@ class MplOptions {
   }
 
  private:
-  std::unique_ptr<mapleOption::OptionParser> optionParser;
-  std::map<std::string, std::vector<mapleOption::Option>> options;
-  std::map<std::string, std::vector<mapleOption::Option>> exeOptions;
-  std::string inputFiles;
-  std::string inputFolder;
-  std::string outputFolder;
-  std::string outputName;
-  std::string exeFolder;
-  InputFileType inputFileType;
-  OptimizationLevel optimizationLevel;
-  RunMode runMode;
-  bool setDefaultLevel;
-  bool isSaveTmps;
-  std::vector<std::string> saveFiles;
-  std::vector<std::string> splitsInputFiles;
-  std::map<std::string, std::vector<MplOption>> extras;
-  std::vector<std::string> runningExes;
-  std::string printCommandStr;
-  bool debugFlag;
-  bool timePhases;
-  bool genMeMpl;
-  bool genVtableImpl;
-  bool verify;
+  std::unique_ptr<mapleOption::OptionParser> optionParser = nullptr;
+  std::map<std::string, std::vector<mapleOption::Option>> options = {};
+  std::map<std::string, std::vector<mapleOption::Option>> exeOptions = {};
+  std::string inputFiles = "";
+  std::string inputFolder = "";
+  std::string outputFolder = "";
+  std::string outputName = "maple";
+  std::string exeFolder = "";
+  InputFileType inputFileType = InputFileType::kNone;
+  OptimizationLevel optimizationLevel = OptimizationLevel::kO0;
+  RunMode runMode = RunMode::kUnkownRun;
+  bool setDefaultLevel = false;
+  bool isSaveTmps = false;
+  std::vector<std::string> saveFiles = {};
+  std::vector<std::string> splitsInputFiles = {};
+  std::map<std::string, std::vector<MplOption>> extras = {};
+  std::vector<std::string> runningExes = {};
+  std::string printCommandStr = "";
+  bool debugFlag = false;
+  bool timePhases = false;
+  bool genMeMpl = false;
+  bool genVtableImpl = false;
+  bool verify = false;
   bool Init(const std::string &inputFile);
   ErrorCode HandleGeneralOptions();
   ErrorCode DecideRunType();

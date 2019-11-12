@@ -18,11 +18,10 @@
 #include "me_function.h"
 #include "irmap.h"
 
-constexpr int kHmapHashLength = 5107;
-
 namespace maple {
 class MeIRMap : public IRMap {
  public:
+  static const uint32 kHmapHashLength = 5107;
   MeIRMap(MeFunction &f, Dominance &dom, MemPool &memPool, MemPool &tmpMemPool)
       : IRMap(*f.GetMeSSATab(), dom, memPool, tmpMemPool, kHmapHashLength), func(f) {
     SetDumpStmtNum(MeOption::stmtNum);

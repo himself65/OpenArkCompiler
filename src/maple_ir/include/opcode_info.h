@@ -56,7 +56,7 @@ struct OpcodeDesc {
 class OpcodeTable {
  public:
   OpcodeTable();
-  ~OpcodeTable() {}
+  ~OpcodeTable() = default;
 
   OpcodeDesc GetTableItemAt(Opcode o) const {
     ASSERT(o < kOpLast, "invalid opcode");

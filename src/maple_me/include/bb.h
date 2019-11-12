@@ -14,13 +14,14 @@
  */
 #ifndef MAPLE_ME_INCLUDE_BB_H
 #define MAPLE_ME_INCLUDE_BB_H
+#include "utils.h"
 #include "mpl_number.h"
 #include "ptr_list_ref.h"
+#include "orig_symbol.h"
+#include "ver_symbol.h"
 #include "ssa.h"
 
 namespace maple {
-class VersionSt;  // circular dependency exists, no other choice
-class OriginalSt;  // circular dependency exists, no other choice
 class MeStmt;  // circular dependency exists, no other choice
 class MeVarPhiNode;  // circular dependency exists, no other choice
 class MeRegPhiNode;  // circular dependency exists, no other choice
@@ -37,63 +38,29 @@ enum BBKind {
   kBBInvalid
 };
 
-enum BBAttr {
-  kBBNone,
-  kBBIsEntry,   // is this BB a function entry point?
-  kBBIsExit,    // is this BB a function exit point?
-  kBBWontExit,  // this BB will not reach any exit block
-  kBBIsTry,     // bb is tryblock which means more successor(handler)
-  kBBIsTryEnd,  // bb is tryblock and with endtry
-  kBBIsJSCatch,
-  kBBIsJSFinally,
-  kBBIsCatch,        // bb is start of catch handler
-  kBBIsJavaFinally,  // bb is start of finally handler
-  kBBArtificial,     // bb is inserted by maple_me
-  kBBIsInLoop,       // Is bb in a loop body
-  kBBIsInLoopForEA   // For EA use
+enum BBAttr : uint32 {
+  kBBAttrIsEntry = utils::bit_field_v<1>,
+  kBBAttrIsExit = utils::bit_field_v<2>,
+  kBBAttrWontExit = utils::bit_field_v<3>,
+  kBBAttrIsTry = utils::bit_field_v<4>,
+  kBBAttrIsTryEnd = utils::bit_field_v<5>,
+  kBBAttrIsJSCatch = utils::bit_field_v<6>,
+  kBBAttrIsJSFinally = utils::bit_field_v<7>,
+  kBBAttrIsCatch = utils::bit_field_v<8>,
+  kBBAttrIsJavaFinally = utils::bit_field_v<9>,
+  kBBAttrArtificial = utils::bit_field_v<10>,
+  kBBAttrIsInLoop = utils::bit_field_v<11>,
+  kBBAttrIsInLoopForEA = utils::bit_field_v<12>
 };
 
-class BB;
-using BBId = utils::Index<BB>;
-
-struct OStIdx {
-  size_t idx = 0;
-
-  OStIdx() = default;
-
-  explicit OStIdx(size_t i) : idx(i) {}
-
-  bool operator==(const OStIdx &x) const {
-    return idx == x.idx;
-  }
-
-  bool operator!=(const OStIdx &x) const {
-    return idx != x.idx;
-  }
-
-  bool operator<(const OStIdx &x) const {
-    return idx < x.idx;
-  }
-};
-
-constexpr uint32 kBBAttrIsEntry = (1U << kBBIsEntry);
-constexpr uint32 kBBAttrIsExit = (1U << kBBIsExit);
-constexpr uint32 kBBAttrWontExit = (1U << kBBWontExit);
-constexpr uint32 kBBAttrIsTry = (1U << kBBIsTry);
-constexpr uint32 kBBAttrIsTryEnd = (1U << kBBIsTryEnd);
-constexpr uint32 kBBAttrIsJSCatch = (1U << kBBIsJSCatch);
-constexpr uint32 kBBAttrIsJSFinally = (1U << kBBIsJSFinally);
-constexpr uint32 kBBAttrIsCatch = (1U << kBBIsCatch);
-constexpr uint32 kBBAttrIsJavaFinally = (1U << kBBIsJavaFinally);
-constexpr uint32 kBBAttrArtificial = (1U << kBBArtificial);
-constexpr uint32 kBBAttrIsInLoop = (1U << kBBIsInLoop);
-constexpr uint32 kBBAttrIsInLoopForEA = (1 << kBBIsInLoopForEA);
 constexpr uint32 kBBVectorInitialSize = 2;
 using StmtNodes = PtrListRef<StmtNode>;
 using MeStmts = PtrListRef<MeStmt>;
 
 class BB {
  public:
+  using BBId = utils::Index<BB>;
+
   BB(MapleAllocator *alloc, MapleAllocator *versAlloc, BBId id)
       : id(id),
         bbLabel(0),
@@ -412,6 +379,8 @@ class BB {
   MeStmts meStmtList;
 };
 
+using BBId = BB::BBId;
+
 class SCCOfBBs {
  public:
   SCCOfBBs(uint32 index, BB *bb, MapleAllocator *alloc)
@@ -463,13 +432,6 @@ template <>
 struct hash<maple::BBId> {
   size_t operator()(const maple::BBId &x) const {
     return x;
-  }
-};
-
-template <>
-struct hash<maple::OStIdx> {
-  size_t operator()(const maple::OStIdx &x) const {
-    return x.idx;
   }
 };
 }  // namespace std
