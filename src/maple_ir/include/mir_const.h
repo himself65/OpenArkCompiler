@@ -150,22 +150,22 @@ class MIRIntConst : public MIRConst {
     }
   }
 
-  void Dump() const;
-  bool IsZero() const {
+  void Dump() const override;
+  bool IsZero() const override {
     return value == 0 && IsPrimitiveInteger(GetType().GetPrimType());
   }
 
-  bool IsOne() const {
+  bool IsOne() const override {
     return value == 1 && IsPrimitiveInteger(GetType().GetPrimType());
   };
-  bool IsMagicNum() const {
+  bool IsMagicNum() const override {
     constexpr int64 kMagicNum = 51;
     return value == kMagicNum && IsPrimitiveInteger(GetType().GetPrimType());
   };
   bool IsAllBitsOne() const {
     return value == -1 && IsPrimitiveInteger(GetType().GetPrimType());
   };
-  void Neg() {
+  void Neg() override {
     value = -value;
   }
 
@@ -177,7 +177,7 @@ class MIRIntConst : public MIRConst {
     value = val;
   }
 
-  bool operator==(MIRConst &rhs) const;
+  bool operator==(MIRConst &rhs) const override;
 
  private:
   int64 value;
@@ -200,9 +200,9 @@ class MIRAddrofConst : public MIRConst {
   }
 
   /* virtual */
-  void Dump() const;
+  void Dump() const override;
   /* virtual */
-  bool operator==(MIRConst &rhs) const;
+  bool operator==(MIRConst &rhs) const override;
 
  private:
   StIdx stIdx;
@@ -222,9 +222,9 @@ class MIRAddroffuncConst : public MIRConst {
   }
 
   /* virtual */
-  void Dump() const;
+  void Dump() const override;
   /* virtual */
-  bool operator==(MIRConst &rhs) const;
+  bool operator==(MIRConst &rhs) const override;
 
  private:
   PUIdx puIdx;
@@ -238,7 +238,7 @@ class MIRLblConst : public MIRConst {
 
   ~MIRLblConst() = default;
 
-  bool operator==(MIRConst &rhs) const;
+  bool operator==(MIRConst &rhs) const override;
 
   LabelIdx GetValue() const {
     return value;
@@ -258,8 +258,8 @@ class MIRStrConst : public MIRConst {
 
   ~MIRStrConst() = default;
 
-  void Dump() const;
-  bool operator==(MIRConst &rhs) const;
+  void Dump() const override;
+  bool operator==(MIRConst &rhs) const override;
   UStrIdx GetValue() const {
     return value;
   }
@@ -287,8 +287,8 @@ class MIRStr16Const : public MIRConst {
     return kPrimType;
   }
 
-  void Dump() const;
-  bool operator==(MIRConst &rhs) const;
+  void Dump() const override;
+  bool operator==(MIRConst &rhs) const override;
   U16StrIdx GetValue() const {
     return value;
   }
@@ -328,22 +328,22 @@ class MIRFloatConst : public MIRConst {
     return GetFloatValue();
   }
 
-  void Dump() const;
-  bool IsZero() const {
+  void Dump() const override;
+  bool IsZero() const override {
     return fabs(value.floatValue) <= 1e-6;
   }
 
-  bool IsOne() const {
+  bool IsOne() const override {
     return value.floatValue == 1;
   };
   bool IsAllBitsOne() const {
     return value.floatValue == -1;
   };
-  void Neg() {
+  void Neg() override {
     value.floatValue = -value.floatValue;
   }
 
-  bool operator==(MIRConst &rhs) const;
+  bool operator==(MIRConst &rhs) const override;
 
  private:
   static const PrimType kPrimType = PTY_f32;
@@ -385,22 +385,22 @@ class MIRDoubleConst : public MIRConst {
     return kPrimType;
   }
 
-  void Dump() const;
-  bool IsZero() const {
+  void Dump() const override;
+  bool IsZero() const override {
     return fabs(value.dValue) <= 1e-15;
   }
 
-  bool IsOne() const {
+  bool IsOne() const override {
     return value.dValue == 1;
   };
   bool IsAllBitsOne() const {
     return value.dValue == -1;
   };
-  void Neg() {
+  void Neg() override {
     value.dValue = -value.dValue;
   }
 
-  bool operator==(MIRConst &rhs) const;
+  bool operator==(MIRConst &rhs) const override;
 
  private:
   static const PrimType kPrimType = PTY_f64;
@@ -427,12 +427,12 @@ class MIRFloat128Const : public MIRConst {
     return kPrimType;
   }
 
-  bool IsZero() const {
+  bool IsZero() const override {
     MIR_ASSERT(value && "value must not be nullptr!");
     return value[0] == 0 && value[1] == 0;
   }
 
-  bool IsOne() const {
+  bool IsOne() const override {
     MIR_ASSERT(value && "value must not be nullptr!");
     return value[0] == 0 && value[1] == 0x3FFF000000000000;
   };
@@ -440,8 +440,8 @@ class MIRFloat128Const : public MIRConst {
     MIR_ASSERT(value && "value must not be nullptr!");
     return (value[0] == 0xffffffffffffffff && value[1] == 0xffffffffffffffff);
   };
-  bool operator==(MIRConst &rhs) const;
-  void Dump() const;
+  bool operator==(MIRConst &rhs) const override;
+  void Dump() const override;
 
  private:
   static const PrimType kPrimType = PTY_f128;
@@ -496,8 +496,8 @@ class MIRAggConst : public MIRConst {
     constVec.push_back(elem);
   }
 
-  void Dump() const;
-  bool operator==(MIRConst &rhs) const;
+  void Dump() const override;
+  bool operator==(MIRConst &rhs) const override;
 
  private:
   MapleAllocator allocator;

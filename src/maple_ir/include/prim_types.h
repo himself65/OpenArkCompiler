@@ -21,45 +21,43 @@ namespace maple {
 class PrimitiveType {
  public:
   // we need implicit conversion from PrimType to PrimitiveType, so there is no explicit keyword here.
-  PrimitiveType(PrimType type) {
-    property = &GetPrimitiveTypeProperty(type);
-  }
+  PrimitiveType(PrimType type) : property(GetPrimitiveTypeProperty(type)) {}
   ~PrimitiveType() = default;
 
   PrimType GetType() const {
-    return property->type;
+    return property.type;
   }
 
   bool IsInteger() const {
-    return property->isInteger;
+    return property.isInteger;
   }
   bool IsUnsigned() const {
-    return property->isUnsigned;
+    return property.isUnsigned;
   }
   bool IsAddress() const {
-    return property->isAddress;
+    return property.isAddress;
   }
   bool IsFloat() const {
-    return property->isFloat;
+    return property.isFloat;
   }
   bool IsPointer() const {
-    return property->isPointer;
+    return property.isPointer;
   }
   bool IsDynamic() const {
-    return property->isDynamic;
+    return property.isDynamic;
   }
   bool IsSimple() const {
-    return property->isSimple;
+    return property.isSimple;
   }
   bool IsDynamicAny() const {
-    return property->isDynamicAny;
+    return property.isDynamicAny;
   }
   bool IsDynamicNone() const {
-    return property->isDynamicNone;
+    return property.isDynamicNone;
   }
 
  private:
-  const PrimitiveTypeProperty *property;
+  const PrimitiveTypeProperty &property;
 };
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_PRIM_TYPES_H

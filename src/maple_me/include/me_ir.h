@@ -853,6 +853,10 @@ class OpMeExpr : public MeExpr {
     return opndType;
   }
 
+  PrimType GetOpndType() const {
+    return opndType;
+  }
+
   void SetOpndType(PrimType opndTypeVal) {
     opndType = opndTypeVal;
   }
@@ -944,9 +948,9 @@ class IvarMeExpr : public MeExpr {
     return IsVolatile();
   }
 
-  bool IsVolatile();
+  bool IsVolatile() const;
   bool IsFinal();
-  bool IsRCWeak();
+  bool IsRCWeak() const;
   bool IsUseSameSymbol(const MeExpr &) const override;
   bool IsIdentical(IvarMeExpr &expr) const;
   MeExpr *GetIdenticalExpr(MeExpr &expr) const override;
@@ -1172,6 +1176,10 @@ class MeStmt {
     return nullptr;
   }
 
+  const virtual MapleVector<MustDefMeNode> &GetMustDefList() const {
+    CHECK_FATAL(false, "should be implemented");
+  }
+
   const virtual MeExpr *GetAssignedLHS() const {
     return nullptr;
   }
@@ -1325,7 +1333,11 @@ class ChiMeNode {
     isLive = value;
   }
 
-  VarMeExpr *GetRHS() const {
+  VarMeExpr *GetRHS() {
+    return rhs;
+  }
+
+  const VarMeExpr *GetRHS() const {
     return rhs;
   }
 
@@ -2057,6 +2069,10 @@ class CallMeStmt : public NaryMeStmt, public MuChiMePart, public AssignedPart {
     return &mustDefList;
   }
 
+  const MapleVector<MustDefMeNode> &GetMustDefList() const {
+    return mustDefList;
+  }
+
   MustDefMeNode &GetMustDefListItem(int i) {
     return mustDefList[i];
   }
@@ -2149,6 +2165,10 @@ class IcallMeStmt : public NaryMeStmt, public MuChiMePart, public AssignedPart {
 
   MapleVector<MustDefMeNode> *GetMustDefList() {
     return &mustDefList;
+  }
+
+  const MapleVector<MustDefMeNode> &GetMustDefList() const {
+    return mustDefList;
   }
 
   const MeExpr *GetAssignedLHS() const {
@@ -2250,6 +2270,10 @@ class IntrinsiccallMeStmt : public NaryMeStmt, public MuChiMePart, public Assign
 
   MapleVector<MustDefMeNode> *GetMustDefList() {
     return &mustDefList;
+  }
+
+  const MapleVector<MustDefMeNode> &GetMustDefList() const {
+    return mustDefList;
   }
 
   MustDefMeNode &GetMustDefListItem(int i) {

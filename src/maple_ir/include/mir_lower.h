@@ -43,7 +43,7 @@ class MIRLower {
 
   virtual ~MIRLower() = default;
 
-  MIRFunction *GetMirFunc() const {
+  const MIRFunction *GetMirFunc() const {
     return mirFunc;
   }
 

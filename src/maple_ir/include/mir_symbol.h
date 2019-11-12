@@ -58,34 +58,8 @@ class MIRSymbol {
     MIRPreg *preg;  // the MIRSymKind must be kStPreg
   };
 
-  MIRSymbol()
-      : tyIdx(0),
-        inferredTyIdx(kInitTyIdx),
-        storageClass(kScInvalid),
-        sKind(kStInvalid),
-        isTmp(false),
-        needForwDecl(false),
-        isDeleted(false),
-        instrumented(false),
-        isImported(false),
-        stIdx(0, 0),
-        nameStrIdx(0),
-        value({ nullptr }) {
-  }
-  MIRSymbol(uint32 idx, uint8 scp)
-      : tyIdx(0),
-        inferredTyIdx(kInitTyIdx),
-        storageClass(kScInvalid),
-        sKind(kStInvalid),
-        isTmp(false),
-        needForwDecl(false),
-        isDeleted(false),
-        instrumented(false),
-        isImported(false),
-        stIdx(scp, idx),
-        nameStrIdx(0),
-        value({ nullptr }) {
-  }
+  MIRSymbol() : stIdx(0, 0) {}
+  MIRSymbol(uint32 idx, uint8 scp) : stIdx(scp, idx) {}
   ~MIRSymbol() = default;
 
   void SetIsTmp(bool temp) {
@@ -128,8 +102,8 @@ class MIRSymbol {
     return tyIdx;
   }
 
-  void SetInferredTyIdx(TyIdx i) {
-    inferredTyIdx = i;
+  void SetInferredTyIdx(TyIdx inferredTyIdx) {
+    this->inferredTyIdx = inferredTyIdx;
   }
 
   const TyIdx &GetInferredTyIdx() const {
@@ -382,21 +356,22 @@ class MIRSymbol {
   bool operator<(const MIRSymbol &msym) const {
     return nameStrIdx < msym.nameStrIdx;
   }
+
   // Please keep order of the fields, avoid paddings.
  private:
-  TyIdx tyIdx;
-  TyIdx inferredTyIdx;
-  MIRStorageClass storageClass;
-  MIRSymKind sKind;
-  bool isTmp;
-  bool needForwDecl;  // addrof of this symbol used in initialization, NOT serialized
-  bool isDeleted;     // tell if it is deleted, NOT serialized
-  bool instrumented;  // a local ref pointer instrumented by RC opt, NOT serialized
-  bool isImported;
+  TyIdx tyIdx{ 0 };
+  TyIdx inferredTyIdx{ kInitTyIdx };
+  MIRStorageClass storageClass{ kScInvalid };
+  MIRSymKind sKind{ kStInvalid };
+  bool isTmp = false;
+  bool needForwDecl = false;  // addrof of this symbol used in initialization, NOT serialized
+  bool isDeleted = false;     // tell if it is deleted, NOT serialized
+  bool instrumented = false;  // a local ref pointer instrumented by RC opt, NOT serialized
+  bool isImported = false;
   StIdx stIdx;
   TypeAttrs typeAttrs;
-  GStrIdx nameStrIdx;
-  SymbolType value;
+  GStrIdx nameStrIdx{ 0 };
+  SymbolType value = { nullptr };
   static GStrIdx reflectClassNameIdx;
   static GStrIdx reflectMethodNameIdx;
   static GStrIdx reflectFieldNameIdx;

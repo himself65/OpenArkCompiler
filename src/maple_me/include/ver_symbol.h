@@ -43,11 +43,7 @@ class VersionSt {
       : index(index),
         version(version),
         ost(ost),
-        defBB(nullptr),
-        defType(kDassign),
-        defStmt(),
-        live(false),
-        isReturn(false) {}
+        defStmt() {}
 
   ~VersionSt() = default;
 
@@ -176,8 +172,8 @@ class VersionSt {
   size_t index;     // index number in versionst_table_
   int version;      // starts from 0 for each symbol
   OriginalSt *ost;  // the index of related originalst in originalst_table
-  BB *defBB;
-  DefType defType;
+  BB *defBB = nullptr;
+  DefType defType = kDassign;
 
   union DefStmt {
     DassignNode *dassign;
@@ -187,8 +183,8 @@ class VersionSt {
     MustDefNode *mustDef;
   } defStmt;  // only valid after SSA
 
-  bool live;      // helper of dse
-  bool isReturn;  // the symbol will return in its function
+  bool live = false;      // helper of dse
+  bool isReturn = false;  // the symbol will return in its function
 };
 
 class VersionStTable {

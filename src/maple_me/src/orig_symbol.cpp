@@ -17,10 +17,12 @@
 namespace maple {
 bool OriginalSt::Equal(const OriginalSt &ost) const {
   if (IsSymbolOst()) {
-    return (symOrPreg.mirSt == ost.symOrPreg.mirSt && fieldID == ost.GetFieldID() &&
-            GetIndirectLev() == ost.GetIndirectLev());
-  } else if (IsPregOst()) {
-    return (symOrPreg.pregIdx == ost.symOrPreg.pregIdx && GetIndirectLev() == ost.GetIndirectLev());
+    return symOrPreg.mirSt == ost.symOrPreg.mirSt &&
+           fieldID == ost.GetFieldID() &&
+           GetIndirectLev() == ost.GetIndirectLev();
+  }
+  if (IsPregOst()) {
+    return symOrPreg.pregIdx == ost.symOrPreg.pregIdx && GetIndirectLev() == ost.GetIndirectLev();
   }
   return false;
 }

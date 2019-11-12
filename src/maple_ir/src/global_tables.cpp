@@ -20,20 +20,20 @@
 
 #if MIR_FEATURE_FULL
 namespace maple {
-MIRType *TypeTable::CreateMirType(uint32 ti) const {
-  MIRTypeKind defaultKind = ti == PTY_constStr ? kTypeConstString : kTypeScalar;
-  PrimType pti = static_cast<PrimType>(ti);
-  MIRType *type = new MIRType(defaultKind, pti);
-  return type;
+MIRType *TypeTable::CreateMirType(uint32 primTypeIdx) const {
+  MIRTypeKind defaultKind = (primTypeIdx == PTY_constStr ? kTypeConstString : kTypeScalar);
+  auto primType = static_cast<PrimType>(primTypeIdx);
+  auto *mirType = new MIRType(defaultKind, primType);
+  return mirType;
 }
 
 TypeTable::TypeTable() {
   // enter the primitve types in type_table_
   typeTable.push_back(static_cast<MIRType*>(nullptr));
   ASSERT(typeTable.size() == static_cast<size_t>(PTY_void), "use PTY_void as the first index to type table");
-  for (uint32 pti = static_cast<uint32>(PTY_void); pti <= static_cast<uint32>(PTY_agg); pti++) {
-    MIRType *type = CreateMirType(pti);
-    type->SetTypeIndex(TyIdx(pti));
+  for (auto primTypeIdx = static_cast<uint32>(PTY_void); primTypeIdx <= static_cast<uint32>(PTY_agg); ++primTypeIdx) {
+    MIRType *type = CreateMirType(primTypeIdx);
+    type->SetTypeIndex(TyIdx{ primTypeIdx });
     typeTable.push_back(type);
     PutToHashTable(type);
   }
@@ -43,67 +43,59 @@ TypeTable::TypeTable() {
 }
 
 TypeTable::~TypeTable() {
-  for (uint32 pti = static_cast<uint32>(PTY_void); pti < typeTable.size(); pti++) {
-    delete typeTable[pti];
-    typeTable[pti] = nullptr;
+  for (auto index = static_cast<uint32>(PTY_void); index < typeTable.size(); ++index) {
+    delete typeTable[index];
+    typeTable[index] = nullptr;
   }
 }
 
-void TypeTable::PutToHashTable(MIRType *mirtype) {
-  typeHashTable.insert(mirtype);
+void TypeTable::PutToHashTable(MIRType *mirType) {
+  typeHashTable.insert(mirType);
 }
 
-// create an entry in type_table_ for the type node
-inline MIRType *TypeTable::CreateType(MIRType &oldType) {
-  MIRType *newType = oldType.CopyMIRTypeNode();
-  newType->SetTypeIndex(TyIdx(typeTable.size()));
-  typeTable.push_back(newType);
-  return newType;
-}
-
-TyIdx TypeTable::GetOrCreateMIRType(MIRType *ptype) {
-  auto it = typeHashTable.find(ptype);
+TyIdx TypeTable::GetOrCreateMIRType(MIRType *pType) {
+  const auto it = typeHashTable.find(pType);
   if (it != typeHashTable.end()) {
     return (*it)->GetTypeIndex();
   }
 
-  MIRType *newTy = CreateType(*ptype);
+  MIRType *newTy = CreateType(*pType);
   PutToHashTable(newTy);
   return newTy->GetTypeIndex();
 }
 
 MIRType *TypeTable::voidPtrType = nullptr;
 // get or create a type that pointing to pointedTyIdx
-MIRType *TypeTable::GetOrCreatePointerType(TyIdx pointedTyIdx, PrimType pty) {
-  MIRPtrType type(pointedTyIdx, pty);
-  TyIdx tyidx = GetOrCreateMIRType(&type);
-  ASSERT(tyidx.GetIdx() < typeTable.size(), "index out of range in TypeTable::GetOrCreatePointerType");
-  return typeTable.at(tyidx.GetIdx());
+MIRType *TypeTable::GetOrCreatePointerType(TyIdx pointedTyIdx, PrimType primType) {
+  MIRPtrType type(pointedTyIdx, primType);
+  TyIdx tyIdx = GetOrCreateMIRType(&type);
+  ASSERT(tyIdx.GetIdx() < typeTable.size(), "index out of range in TypeTable::GetOrCreatePointerType");
+  return typeTable.at(tyIdx.GetIdx());
 }
 
-MIRType *TypeTable::GetOrCreatePointerType(const MIRType &pointTo, PrimType pty) {
+MIRType *TypeTable::GetOrCreatePointerType(const MIRType &pointTo, PrimType primType) {
   if (pointTo.GetPrimType() == PTY_constStr) {
-    pty = PTY_ptr;
+    primType = PTY_ptr;
   }
-  return GetOrCreatePointerType(pointTo.GetTypeIndex(), pty);
+  return GetOrCreatePointerType(pointTo.GetTypeIndex(), primType);
 }
 
 MIRType *TypeTable::GetPointedTypeIfApplicable(MIRType &type) const {
   if (type.GetKind() != kTypePointer) {
     return &type;
   }
-  MIRPtrType &ptype = static_cast<MIRPtrType&>(type);
-  return GetTypeFromTyIdx(ptype.GetPointedTyIdx());
+  auto &ptrType = static_cast<MIRPtrType&>(type);
+  return GetTypeFromTyIdx(ptrType.GetPointedTyIdx());
 }
 
 MIRArrayType *TypeTable::GetOrCreateArrayType(const MIRType &elem, uint8 dim, const uint32 *sizeArray) {
   std::vector<uint32> sizeVector;
-  for (uint8 i = 0; i < dim; i++) {
+  for (uint8 i = 0; i < dim; ++i) {
     sizeVector.push_back(sizeArray != nullptr ? sizeArray[i] : 0);
   }
-  MIRArrayType type(elem.GetTypeIndex(), sizeVector);
-  TyIdx tyidx = GetOrCreateMIRType(&type);
-  return static_cast<MIRArrayType*>(typeTable[tyidx.GetIdx()]);
+  MIRArrayType arrayType(elem.GetTypeIndex(), sizeVector);
+  TyIdx tyIdx = GetOrCreateMIRType(&arrayType);
+  return static_cast<MIRArrayType*>(typeTable[tyIdx.GetIdx()]);
 }
 
 // For one dimension array
@@ -114,29 +106,29 @@ MIRArrayType *TypeTable::GetOrCreateArrayType(const MIRType &elem, uint32 size) 
 MIRType *TypeTable::GetOrCreateFarrayType(const MIRType &elem) {
   MIRFarrayType type;
   type.SetElemtTyIdx(elem.GetTypeIndex());
-  TyIdx tyidx = GetOrCreateMIRType(&type);
-  ASSERT(tyidx.GetIdx() < typeTable.size(), "index out of range in TypeTable::GetOrCreateFarrayType");
-  return typeTable.at(tyidx.GetIdx());
+  TyIdx tyIdx = GetOrCreateMIRType(&type);
+  ASSERT(tyIdx.GetIdx() < typeTable.size(), "index out of range in TypeTable::GetOrCreateFarrayType");
+  return typeTable.at(tyIdx.GetIdx());
 }
 
 MIRType *TypeTable::GetOrCreateJarrayType(const MIRType &elem) {
   MIRJarrayType type;
   type.SetElemtTyIdx(elem.GetTypeIndex());
-  TyIdx tyidx = GetOrCreateMIRType(&type);
-  ASSERT(tyidx.GetIdx() < typeTable.size(), "index out of range in TypeTable::GetOrCreateJarrayType");
-  return typeTable.at(tyidx.GetIdx());
+  TyIdx tyIdx = GetOrCreateMIRType(&type);
+  ASSERT(tyIdx.GetIdx() < typeTable.size(), "index out of range in TypeTable::GetOrCreateJarrayType");
+  return typeTable.at(tyIdx.GetIdx());
 }
 
 MIRType *TypeTable::GetOrCreateFunctionType(MIRModule &module, TyIdx retTyidx, const std::vector<TyIdx> &vecType,
                                             const std::vector<TypeAttrs> &vecAttrs, bool isVarg, bool isSimpCreate) {
-  MIRFuncType *funcType = module.GetMemPool()->New<MIRFuncType>(retTyidx, vecType, vecAttrs);
+  auto *funcType = module.GetMemPool()->New<MIRFuncType>(retTyidx, vecType, vecAttrs);
   funcType->SetVarArgs(isVarg);
   if (isSimpCreate) {
     return funcType;
   }
-  TyIdx tyidx = GetOrCreateMIRType(funcType);
-  ASSERT(tyidx.GetIdx() < typeTable.size(), "index out of range in TypeTable::GetOrCreateFunctionType");
-  return typeTable.at(tyidx.GetIdx());
+  TyIdx tyIdx = GetOrCreateMIRType(funcType);
+  ASSERT(tyIdx.GetIdx() < typeTable.size(), "index out of range in TypeTable::GetOrCreateFunctionType");
+  return typeTable.at(tyIdx.GetIdx());
 }
 
 MIRType *TypeTable::GetOrCreateStructOrUnion(const std::string &name, const FieldVector &fields,
@@ -209,10 +201,10 @@ MIRFloatConst *FPConstTable::GetOrCreateFloatConst(float fval) {
   if (fval == 0.0 && std::signbit(fval)) {
     return minusZeroFloatConst;
   }
-  auto it = floatConstTable.find(fval);
-  if (it == floatConstTable.end()) {
+  const auto it = floatConstTable.find(fval);
+  if (it == floatConstTable.cend()) {
     // create a new one
-    MIRFloatConst *fconst = new MIRFloatConst(fval, *GlobalTables::GetTypeTable().GetTypeFromTyIdx((TyIdx)PTY_f32));
+    auto *fconst = new MIRFloatConst(fval, *GlobalTables::GetTypeTable().GetTypeFromTyIdx(TyIdx{ PTY_f32 }));
     floatConstTable[fval] = fconst;
     return fconst;
   } else {
@@ -230,8 +222,8 @@ MIRDoubleConst *FPConstTable::GetOrCreateDoubleConst(double fval) {
   if (fval == 0.0 && std::signbit(fval)) {
     return minusZeroDoubleConst;
   }
-  auto it = doubleConstTable.find(fval);
-  if (it == doubleConstTable.end()) {
+  const auto it = doubleConstTable.find(fval);
+  if (it == doubleConstTable.cend()) {
     // create a new one
     MIRDoubleConst *dconst = new MIRDoubleConst(fval, *GlobalTables::GetTypeTable().GetTypeFromTyIdx((TyIdx)PTY_f64));
     doubleConstTable[fval] = dconst;
@@ -250,28 +242,26 @@ FPConstTable::~FPConstTable() {
   delete infDoubleConst;
   delete minusInfDoubleConst;
   delete minusZeroDoubleConst;
-  for (auto it : floatConstTable) {
-    delete it.second;
+  for (const auto &floatConst : floatConstTable) {
+    delete floatConst.second;
   }
-  for (auto it : doubleConstTable) {
-    delete it.second;
+  for (const auto &doubleConst : doubleConstTable) {
+    delete doubleConst.second;
   }
 }
 
-GSymbolTable::GSymbolTable() : module(nullptr) {
+GSymbolTable::GSymbolTable() {
   symbolTable.push_back(static_cast<MIRSymbol*>(nullptr));
 }
 
 GSymbolTable::~GSymbolTable() {
   for (MIRSymbol *symbol : symbolTable) {
-    if (symbol != nullptr) {
-      delete symbol;
-    }
+    delete symbol;
   }
 }
 
 MIRSymbol *GSymbolTable::CreateSymbol(uint8 scopeID) {
-  MIRSymbol *st = new MIRSymbol(symbolTable.size(), scopeID);
+  auto *st = new MIRSymbol(symbolTable.size(), scopeID);
   symbolTable.push_back(st);
   module->AddSymbol(st);
   return st;
@@ -287,8 +277,8 @@ bool GSymbolTable::AddToStringSymbolMap(const MIRSymbol &st) {
 }
 
 bool GSymbolTable::RemoveFromStringSymbolMap(const MIRSymbol &st) {
-  auto it = strIdxToStIdxMap.find(st.GetNameStrIdx());
-  if (it != strIdxToStIdxMap.end()) {
+  const auto it = strIdxToStIdxMap.find(st.GetNameStrIdx());
+  if (it != strIdxToStIdxMap.cend()) {
     strIdxToStIdxMap.erase(it);
     return true;
   }
@@ -296,8 +286,8 @@ bool GSymbolTable::RemoveFromStringSymbolMap(const MIRSymbol &st) {
 }
 
 void GSymbolTable::Dump(bool islocal, int32 indent) const {
-  for (size_t i = 1; i < symbolTable.size(); i++) {
-    MIRSymbol *symbol = symbolTable[i];
+  for (size_t i = 1; i < symbolTable.size(); ++i) {
+    const MIRSymbol *symbol = symbolTable[i];
     if (symbol != nullptr) {
       symbol->Dump(module, islocal, indent);
     }
