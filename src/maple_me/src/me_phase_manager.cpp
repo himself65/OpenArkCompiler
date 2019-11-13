@@ -58,13 +58,13 @@ void MeFuncPhaseManager::RegisterFuncPhases() {
   do {                                                                        \
     void *buf = GetMemAllocator()->GetMemPool()->Malloc(sizeof(mephase(id))); \
     CHECK_FATAL(buf != nullptr, "null ptr check");                            \
-    RegisterPhase(id, *(new (buf) mephase(id)));                               \
+    RegisterPhase(id, *(new (buf) mephase(id)));                              \
   } while (0);
 #define FUNCAPHASE(id, mephase)                                                    \
   do {                                                                             \
     void *buf = GetMemAllocator()->GetMemPool()->Malloc(sizeof(mephase(id)));      \
     CHECK_FATAL(buf != nullptr, "null ptr check");                                 \
-    RegisterPhase(id, *(new (buf) mephase(id)));                                    \
+    RegisterPhase(id, *(new (buf) mephase(id)));                                   \
     arFuncManager.AddAnalysisPhase(id, (static_cast<MeFuncPhase*>(GetPhase(id)))); \
   } while (0);
 #include "me_phases.def"
@@ -73,7 +73,7 @@ void MeFuncPhaseManager::RegisterFuncPhases() {
 }
 
 void MeFuncPhaseManager::AddPhasesNoDefault(const std::vector<std::string> &phases) {
-  for (size_t i = 0; i < phases.size(); i++) {
+  for (size_t i = 0; i < phases.size(); ++i) {
     PhaseManager::AddPhase(phases[i]);
   }
   ASSERT(phases.size() == GetPhaseSequence()->size(), "invalid phase name");
@@ -130,7 +130,7 @@ void MeFuncPhaseManager::Run(MIRFunction *mirFunc, uint64 rangeNum, const std::s
   /* each function level phase */
   bool dumpFunc = FuncFilter(MeOption::dumpFunc, func.GetName());
   size_t phaseIndex = 0;
-  for (auto it = PhaseSequenceBegin(); it != PhaseSequenceEnd(); it++, ++phaseIndex) {
+  for (auto it = PhaseSequenceBegin(); it != PhaseSequenceEnd(); ++it, ++phaseIndex) {
     PhaseID id = GetPhaseId(it);
     MeFuncPhase *p = static_cast<MeFuncPhase*>(GetPhase(id));
     p->SetPreviousPhaseName(phaseName); /* prev phase name is for filename used in emission after phase */
@@ -168,7 +168,7 @@ void MeFuncPhaseManager::Run(MIRFunction *mirFunc, uint64 rangeNum, const std::s
     MeFunction function(&mirModule, mirFunc, funcMP, versMemPool, meInput);
     function.PartialInit(true);
     function.Prepare(rangeNum);
-    for (auto it = PhaseSequenceBegin(); it != PhaseSequenceEnd(); it++) {
+    for (auto it = PhaseSequenceBegin(); it != PhaseSequenceEnd(); ++it) {
       PhaseID id = GetPhaseId(it);
       MeFuncPhase *p = static_cast<MeFuncPhase*>(GetPhase(id));
       if (p == changeCFGPhase) {

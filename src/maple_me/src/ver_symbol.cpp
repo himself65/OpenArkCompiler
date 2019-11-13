@@ -24,8 +24,8 @@ void VersionSt::DumpDefStmt(const MIRModule *mod) const {
     return;
   }
   switch (defType) {
-    case kDassign:
-      defStmt.dassign->Dump(*mod, 0);
+    case kAssign:
+      defStmt.assign->Dump(*mod, 0);
       return;
     case kPhi:
       defStmt.phi->Dump(mod);
@@ -36,8 +36,6 @@ void VersionSt::DumpDefStmt(const MIRModule *mod) const {
     case kMustDef:
       defStmt.mustDef->Dump(mod);
       return;
-    case kRegassign:
-      defStmt.dassign->Dump(*mod, 0);
     default:
       ASSERT(false, "not yet implement");
   }

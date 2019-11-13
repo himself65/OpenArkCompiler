@@ -1441,6 +1441,10 @@ class StmtNode : public BaseNode, public PtrListNodeBase<StmtNode> {
 
   StmtNode *GetRealNext() const;
 
+  virtual BaseNode *GetRHS() const {
+    return nullptr;
+  }
+
  protected:
   SrcPosition srcPosition;
 
@@ -1475,18 +1479,18 @@ class IassignNode : public StmtNode {
     fieldID = fid;
   }
 
-  BaseNode *Opnd(size_t i) const {
+  BaseNode *Opnd(size_t i) const override {
     if (i == 0) {
       return addrExpr;
     }
     return rhs;
   }
 
-  uint8 NumOpnds() const {
+  uint8 NumOpnds() const override {
     return kOperandNumBinary;
   }
 
-  void SetOpnd(BaseNode *node, size_t i) {
+  void SetOpnd(BaseNode *node, size_t i) override {
     if (i == 0) {
       addrExpr = node;
     } else {
@@ -1494,10 +1498,10 @@ class IassignNode : public StmtNode {
     }
   }
 
-  void Dump(const MIRModule &mod, int32 indent) const;
-  bool Verify() const;
+  void Dump(const MIRModule &mod, int32 indent) const override;
+  bool Verify() const override;
 
-  IassignNode *CloneTree(MapleAllocator &allocator) const {
+  IassignNode *CloneTree(MapleAllocator &allocator) const override {
     IassignNode *bn = allocator.GetMemPool()->New<IassignNode>(*this);
     bn->SetStmtID(stmtIDNext++);
     bn->SetOpnd(addrExpr->CloneTree(allocator), 0);
@@ -1518,7 +1522,7 @@ class IassignNode : public StmtNode {
     addrExpr = exp;
   }
 
-  BaseNode *GetRHS() const {
+  BaseNode *GetRHS() const override {
     return rhs;
   }
 
@@ -1904,26 +1908,26 @@ class UnaryStmtNode : public StmtNode {
 
   virtual ~UnaryStmtNode() = default;
 
-  void Dump(const MIRModule &mod, int32 indent) const;
+  void Dump(const MIRModule &mod, int32 indent) const override;
   void Dump(const MIRModule &mod) const;
   void DumpOpnd(const MIRModule &mod, int32 indent) const;
 
-  bool Verify() const {
+  bool Verify() const  override {
     return uOpnd->Verify();
   }
 
-  UnaryStmtNode *CloneTree(MapleAllocator &allocator) const {
+  UnaryStmtNode *CloneTree(MapleAllocator &allocator) const override {
     UnaryStmtNode *nd = allocator.GetMemPool()->New<UnaryStmtNode>(*this);
     nd->SetStmtID(stmtIDNext++);
     nd->SetOpnd(uOpnd->CloneTree(allocator));
     return nd;
   }
 
-  bool IsLeaf(void) const {
+  bool IsLeaf(void) const override {
     return false;
   }
 
-  virtual BaseNode *GetRHS() const {
+  BaseNode *GetRHS() const override {
     return Opnd(0);
   }
 
@@ -1931,12 +1935,12 @@ class UnaryStmtNode : public StmtNode {
     this->SetOpnd(rhs, 0);
   }
 
-  BaseNode *Opnd(size_t i = 0) const {
+  BaseNode *Opnd(size_t i = 0) const override {
     ASSERT(i == 0, "Unary operand");
     return uOpnd;
   }
 
-  void SetOpnd(BaseNode *node, size_t i = 0) {
+  void SetOpnd(BaseNode *node, size_t i = 0) override {
     ASSERT(i == 0, "Unary operand");
     uOpnd = node;
   }
@@ -1961,17 +1965,17 @@ class DassignNode : public UnaryStmtNode {
 
   ~DassignNode() = default;
 
-  void Dump(const MIRModule &mod, int32 indent) const;
-  bool Verify() const;
+  void Dump(const MIRModule &mod, int32 indent) const override;
+  bool Verify() const override;
 
-  DassignNode *CloneTree(MapleAllocator &allocator) const {
+  DassignNode *CloneTree(MapleAllocator &allocator) const override {
     DassignNode *nd = allocator.GetMemPool()->New<DassignNode>(*this);
     nd->SetStmtID(stmtIDNext++);
     nd->SetOpnd(Opnd()->CloneTree(allocator));
     return nd;
   }
 
-  uint8 NumOpnds(void) const {
+  uint8 NumOpnds(void) const override {
     return 1;
   }
 
@@ -1984,11 +1988,11 @@ class DassignNode : public UnaryStmtNode {
     return (stIdx == dread->GetStIdx());
   }
 
-  BaseNode *GetRHS() const {
+  BaseNode *GetRHS() const override {
     return UnaryStmtNode::GetRHS();
   }
 
-  void SetRHS(BaseNode *rhs) {
+  void SetRHS(BaseNode *rhs) override {
     UnaryStmtNode::SetOpnd(rhs, 0);
   }
 
@@ -2023,21 +2027,21 @@ class RegassignNode : public UnaryStmtNode {
 
   ~RegassignNode() = default;
 
-  void Dump(const MIRModule &mod, int32 indent) const;
-  bool Verify() const;
+  void Dump(const MIRModule &mod, int32 indent) const override;
+  bool Verify() const override;
 
-  RegassignNode *CloneTree(MapleAllocator &allocator) const {
+  RegassignNode *CloneTree(MapleAllocator &allocator) const override {
     RegassignNode *nd = allocator.GetMemPool()->New<RegassignNode>(*this);
     nd->SetStmtID(stmtIDNext++);
     nd->SetOpnd(Opnd()->CloneTree(allocator));
     return nd;
   }
 
-  BaseNode *GetRHS() const {
+  BaseNode *GetRHS() const override {
     return UnaryStmtNode::GetRHS();
   }
 
-  void SetRHS(BaseNode *rhs) {
+  void SetRHS(BaseNode *rhs) override {
     UnaryStmtNode::SetOpnd(rhs, 0);
   }
 
@@ -2722,6 +2726,7 @@ class CallNode : public NaryStmtNode {
   virtual void Dump(const MIRModule &mod, int32 indent, bool newline) const;
   bool Verify() const;
   MIRType *GetCallReturnType();
+  const MIRSymbol *GetCallReturnSymbol(const MIRModule &mod) const;
 
   CallNode *CloneTree(MapleAllocator &allocator) const {
     CallNode *nd = allocator.GetMemPool()->New<CallNode>(allocator, *this);

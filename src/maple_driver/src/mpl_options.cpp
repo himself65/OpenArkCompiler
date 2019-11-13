@@ -1011,23 +1011,23 @@ ErrorCode MplOptions::DecideRunningPhases() {
 }
 
 ErrorCode MplOptions::CheckInputFileValidity() {
-  ErrorCode ret = ErrorCode::kErrorNoError;
   // Get input fileName
-  if (optionParser->GetNonOptionsCount() > 0) {
-    std::string optionString;
-    const std::vector<std::string> inputs = optionParser->GetNonOptions();
-    for (size_t i = 0; i < inputs.size(); i++) {
-      if (i == 0) {
-        optionString = inputs[i];
-      } else {
-        optionString = optionString + "," + inputs[i];
-      }
-    }
-    if (!Init(optionString)) {
-      ret = ErrorCode::kErrorInitFail;
+  if (optionParser->GetNonOptionsCount() <= 0) {
+    return ErrorCode::kErrorNoError;
+  }
+  std::ostringstream optionString;
+  const std::vector<std::string> &inputs = optionParser->GetNonOptions();
+  for (size_t i = 0; i < inputs.size(); ++i) {
+    if (i == 0) {
+      optionString << inputs[i];
+    } else {
+      optionString <<  "," << inputs[i];
     }
   }
-  return ret;
+  if (!Init(optionString.str())) {
+    return ErrorCode::kErrorInitFail;
+  }
+  return ErrorCode::kErrorNoError;
 }
 
 ErrorCode MplOptions::CheckFileExits() {
@@ -1049,14 +1049,15 @@ ErrorCode MplOptions::CheckFileExits() {
 }
 
 void MplOptions::AddOption(const mapleOption::Option &option) {
-  if (option.HasExtra()) {
-    for (auto &extra : option.GetExtras()) {
-      auto iter = std::find(runningExes.begin(), runningExes.end(), extra.exeName);
-      if (iter == runningExes.end()) {
-        continue;
-      }
-      options[extra.exeName].push_back(option);
+  if (!option.HasExtra()) {
+    return;
+  }
+  for (const auto &extra : option.GetExtras()) {
+    auto iter = std::find(runningExes.begin(), runningExes.end(), extra.exeName);
+    if (iter == runningExes.end()) {
+      continue;
     }
+    options[extra.exeName].push_back(option);
   }
 }
 
@@ -1130,7 +1131,7 @@ ErrorCode MplOptions::AppendDefaultCgOptions() {
 
 ErrorCode MplOptions::AppendDefaultOptions(const std::string &exeName, MplOption mplOptions[], unsigned int length) {
   auto &exeOption = exeOptions[exeName];
-  for (size_t i = 0; i < length; i++) {
+  for (size_t i = 0; i < length; ++i) {
     bool ret = optionParser->SetOption(mplOptions[i].GetKey(), mplOptions[i].GetValue(), exeName, exeOption);
     if (!ret) {
       return ErrorCode::kErrorInvalidParameter;
@@ -1160,7 +1161,7 @@ ErrorCode MplOptions::UpdatePhaseOption(const std::string &args, const std::stri
   // Fill extraOption
   // For compiler bins called by system()
   auto &extraOption = extras[exeName];
-  for (size_t i = 0; i < exeOption.size(); i++) {
+  for (size_t i = 0; i < exeOption.size(); ++i) {
     if (exeOption[i].Args() != "") {
       MplOption mplOption("-" + exeOption[i].OptionKey(), exeOption[i].Args(), "=", false, "");
       extraOption.push_back(mplOption);
@@ -1187,7 +1188,7 @@ ErrorCode MplOptions::UpdateExtraOptionOpt(const std::string &args) {
     if (ret != ErrorCode::kErrorNoError) {
       return ret;
     }
-    settingExe++;
+    ++settingExe;
   }
   return ErrorCode::kErrorNoError;
 }
@@ -1195,7 +1196,7 @@ ErrorCode MplOptions::UpdateExtraOptionOpt(const std::string &args) {
 void MplOptions::UpdateRunningExe(const std::string &args) {
   std::vector<std::string> results;
   StringUtils::Split(args, results, ':');
-  for (size_t i = 0; i < results.size(); i++) {
+  for (size_t i = 0; i < results.size(); ++i) {
     auto iter = std::find(runningExes.begin(), runningExes.end(), results[i].c_str());
     if (iter == runningExes.end()) {
       runningExes.push_back(results[i]);

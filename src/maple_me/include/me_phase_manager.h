@@ -30,13 +30,8 @@ class MeFuncPhaseManager : public PhaseManager {
  public:
   MeFuncPhaseManager(MemPool *memPool, MIRModule &mod, ModuleResultMgr *mrm = nullptr)
       : PhaseManager(*memPool, "mephase"),
-        arFuncManager(GetMemAllocator()),
         mirModule(mod),
-        modResMgr(mrm),
-        mePhaseType(kMePhaseInvalid),
-        genMeMpl(false),
-        timePhases(false),
-        ipa(false) {}
+        modResMgr(mrm) {}
 
   ~MeFuncPhaseManager() {
     arFuncManager.InvalidAllResults();
@@ -90,13 +85,13 @@ class MeFuncPhaseManager : public PhaseManager {
 
  private:
   /* analysis phase result manager */
-  MeFuncResultMgr arFuncManager;
+  MeFuncResultMgr arFuncManager{GetMemAllocator()};
   MIRModule &mirModule;
   ModuleResultMgr *modResMgr;
-  MePhaseType mePhaseType;
-  bool genMeMpl;
-  bool timePhases;
-  bool ipa;
+  MePhaseType mePhaseType = kMePhaseInvalid;
+  bool genMeMpl = false;
+  bool timePhases = false;
+  bool ipa = false;
 };
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_ME_PHASE_MANAGER_H

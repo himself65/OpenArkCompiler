@@ -206,7 +206,7 @@ void RCLowering::HandleAssignMeStmtRHS(MeStmt &stmt) {
 
 void RCLowering::HandleCallAssignedMeStmt(MeStmt &stmt, MeExpr *pendingDec) {
   MapleVector<MustDefMeNode> *mustDefs = stmt.GetMustDefList();
-  ASSERT(mustDefs != nullptr, "null ptr check");
+  ASSERT_NOT_NULL(mustDefs);
 
   BB *bb = stmt.GetBB();
   CHECK_FATAL(bb != nullptr, "bb null ptr check");
@@ -242,8 +242,8 @@ void RCLowering::IntroduceRegRetIntoCallAssigned(MeStmt &stmt) {
   RegMeExpr *curTmp = irMap.CreateRegMeExpr(PTY_ref);
   stmt.GetMustDefList()->push_back(MustDefMeNode(curTmp, &stmt));
   std::vector<MeExpr*> opnds = { curTmp };
-  IntrinsiccallMeStmt *decrefCall = CreateRCIntrinsic(INTRN_MCCDecRef, stmt, opnds);
-  stmt.GetBB()->InsertMeStmtAfter(&stmt, decrefCall);
+  IntrinsiccallMeStmt *decRefCall = CreateRCIntrinsic(INTRN_MCCDecRef, stmt, opnds);
+  stmt.GetBB()->InsertMeStmtAfter(&stmt, decRefCall);
 }
 
 void RCLowering::HandleRetOfCallAssignedMeStmt(MeStmt &stmt, MeExpr &pendingDec) {
@@ -251,10 +251,10 @@ void RCLowering::HandleRetOfCallAssignedMeStmt(MeStmt &stmt, MeExpr &pendingDec)
   CHECK_FATAL(bb != nullptr, "bb null ptr check");
   RegassignMeStmt *backup = irMap.CreateRegassignMeStmt(*irMap.CreateRegMeExpr(PTY_ref), pendingDec, *bb);
   std::vector<MeExpr*> opnds = { backup->GetRegLHS() };
-  IntrinsiccallMeStmt *decrefCall = CreateRCIntrinsic(INTRN_MCCDecRef, stmt, opnds);
+  IntrinsiccallMeStmt *decRefCall = CreateRCIntrinsic(INTRN_MCCDecRef, stmt, opnds);
   if (!dynamic_cast<CallMeStmt*>(&stmt)) {
     bb->InsertMeStmtBefore(&stmt, backup);
-    bb->InsertMeStmtAfter(&stmt, decrefCall);
+    bb->InsertMeStmtAfter(&stmt, decRefCall);
   } else {
     /*
      * simple optimization for callassign
@@ -264,7 +264,7 @@ void RCLowering::HandleRetOfCallAssignedMeStmt(MeStmt &stmt, MeExpr &pendingDec)
     RegMeExpr *curTmp = irMap.CreateRegMeExpr(PTY_ref);
     MeStmt *regToVar = irMap.CreateDassignMeStmt(*stmt.GetAssignedLHS(), *curTmp, *bb);
     stmt.GetMustDefList()->front().UpdateLHS(*curTmp);
-    bb->InsertMeStmtAfter(&stmt, decrefCall);
+    bb->InsertMeStmtAfter(&stmt, decRefCall);
     bb->InsertMeStmtAfter(&stmt, regToVar);
     bb->InsertMeStmtAfter(&stmt, backup);
   }
@@ -400,7 +400,7 @@ bool RCLowering::IsInitialized(IvarMeExpr &ivar) {
     return true;
   }
   MIRType *baseType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ivar.GetTyIdx());
-  ASSERT(dynamic_cast<MIRPtrType*>(baseType) != nullptr, "unexpected type");
+  ASSERT(baseType->IsMIRPtrType(), "unexpect type");
   auto *ptype = static_cast<MIRPtrType*>(baseType)->GetPointedType();
   auto *classType = dynamic_cast<MIRClassType*>(ptype);
   return classType == nullptr || !classType->IsOwnField(fieldID);
@@ -411,7 +411,7 @@ void RCLowering::HandleAssignMeStmtIvarLHS(MeStmt &stmt) {
   IvarMeExpr *lhsInner = iassign.GetLHSVal();
   FieldID fieldID = lhsInner->GetFieldID();
   MIRType *baseType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(lhsInner->GetTyIdx());
-  ASSERT(dynamic_cast<MIRPtrType*>(baseType) != nullptr, "unexpected type");
+  ASSERT(baseType->IsMIRPtrType(), "unexpect type");
   auto *ptype = static_cast<MIRPtrType*>(baseType)->GetPointedType();
   auto *classType = dynamic_cast<MIRClassType*>(ptype);
   // skip RC operation if the field is unowned
@@ -508,7 +508,7 @@ void RCLowering::InitializedObjectFields(MeStmt &stmt) {
     return;
   }
   auto &call = static_cast<CallMeStmt&>(stmt);
-  MIRFunction *callee = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(call.GetPUIdx());
+  MIRFunction &callee = call.GetTargetFunction();
   if (call.NumMeStmtOpnds() == 0 || call.GetOpnd(0)->GetMeOp() != kMeOpVar) {
     return;
   }
@@ -517,7 +517,7 @@ void RCLowering::InitializedObjectFields(MeStmt &stmt) {
   bool hasNotInitialized = initializedFields.find(firstOpnd) == initializedFields.end();
   bool inInitializedMap =
       mirModule.GetPuIdxFieldInitializedMap().find(call.GetPUIdx()) != mirModule.GetPuIdxFieldInitializedMap().end();
-  if (callee->IsConstructor() && isNew && hasNotInitialized && inInitializedMap) {
+  if (callee.IsConstructor() && isNew && hasNotInitialized && inInitializedMap) {
     initializedFields[firstOpnd] = mirModule.GetPUIdxFieldInitializedMapItem(call.GetPUIdx());
   } else {
     for (auto iter : call.GetOpnds()) {
@@ -638,13 +638,13 @@ void RCLowering::HandleReturnFormal(RetMeStmt &ret) {
   auto *retVar = static_cast<VarMeExpr*>(ret.GetOpnd(0));
   CHECK_FATAL(retVar != nullptr, "retVal null ptr check");
   std::vector<MeExpr*> opnds = { retVar };
-  IntrinsiccallMeStmt *increfStmt = CreateRCIntrinsic(INTRN_MCCIncRef, ret, opnds, true);
-  ret.SetOpnd(0, increfStmt->GetMustDefList()->front().GetLHS());
+  IntrinsiccallMeStmt *incRefStmt = CreateRCIntrinsic(INTRN_MCCIncRef, ret, opnds, true);
+  ret.SetOpnd(0, incRefStmt->GetMustDefList()->front().GetLHS());
   IntrinsiccallMeStmt *cleanup = FindCleanupIntrinsic(ret);
   if (cleanup == nullptr) {
-    bb->InsertMeStmtBefore(&ret, increfStmt);
+    bb->InsertMeStmtBefore(&ret, incRefStmt);
   } else {
-    bb->InsertMeStmtAfter(cleanup, increfStmt);
+    bb->InsertMeStmtAfter(cleanup, incRefStmt);
   }
 }
 
@@ -675,7 +675,7 @@ void RCLowering::HandleReturnReg(RetMeStmt &ret) {
   }
   if (regRet->GetDefBy() == kDefByStmt && regRet->GetDefStmt()->GetOp() == OP_regassign) {
     MeExpr *rhs = regRet->GetDefStmt()->GetRHS();
-    ASSERT(rhs != nullptr, "null ptr check");
+    ASSERT_NOT_NULL(rhs);
     if (rhs->GetOp() == OP_gcmalloc || rhs->GetOp() == OP_gcmallocjarray) {
       return;
     }
@@ -781,8 +781,8 @@ void RCLowering::HandleArguments() {
 
     for (auto *stmt : rets) {
       std::vector<MeExpr*> opnds = { argVar };
-      IntrinsiccallMeStmt *decrefCall = CreateRCIntrinsic(INTRN_MCCDecRef, *stmt, opnds);
-      stmt->GetBB()->InsertMeStmtBefore(stmt, decrefCall);
+      IntrinsiccallMeStmt *decRefCall = CreateRCIntrinsic(INTRN_MCCDecRef, *stmt, opnds);
+      stmt->GetBB()->InsertMeStmtBefore(stmt, decRefCall);
     }
   }
 }
@@ -829,7 +829,7 @@ VarMeExpr *RCLowering::CreateNewTmpVarMeExpr(bool isLocalRefVar) {
 
 AnalysisResult *MeDoRCLowering::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, ModuleResultMgr *moduleResMgr) {
   auto *kh = static_cast<KlassHierarchy*>(moduleResMgr->GetAnalysisResult(MoPhase_CHA, &func->GetMIRModule()));
-  ASSERT(kh != nullptr, "KlassHierarchy has problem");
+  ASSERT_NOT_NULL(kh);
   if (func->GetIRMap() == nullptr) {
     auto *hmap = static_cast<MeIRMap*>(funcResMgr->GetAnalysisResult(MeFuncPhase_IRMAP, func));
     CHECK_FATAL(hmap != nullptr, "hssamap has problem");

@@ -47,7 +47,7 @@ void MeSSAUpdate::InsertPhis() {
     for (const auto &bbId : dfSet) {
       // insert a phi node
       BB *bb = func.GetBBFromID(bbId);
-      ASSERT(bb != nullptr, "null ptr check");
+      ASSERT_NOT_NULL(bb);
       auto phiListIt = bb->GetMevarPhiList().find(it->first);
       if (phiListIt != bb->GetMevarPhiList().end()) {
         phiListIt->second->SetIsLive(true);
@@ -63,21 +63,22 @@ void MeSSAUpdate::InsertPhis() {
   }
 }
 
-void MeSSAUpdate::RenamePhi(BB &bb) {
+void MeSSAUpdate::RenamePhi(const BB &bb) {
   for (auto it1 = renameStacks.begin(); it1 != renameStacks.end(); ++it1) {
     auto it2 = bb.GetMevarPhiList().find(it1->first);
-    if (it2 != bb.GetMevarPhiList().end()) {
-      // if there is existing phi result node
-      MeVarPhiNode *phi = it2->second;
-      phi->SetIsLive(true);  // always make it live, for correctness
-      if (phi->GetLHS() == nullptr) {
-        // create a new VarMeExpr defined by this phi
-        VarMeExpr *newVar = irMap.CreateNewVarMeExpr(it2->first, PTY_ref, 0);
-        phi->UpdateLHS(*newVar);
-        it1->second->push(newVar);  // push the stack
-      } else {
-        it1->second->push(phi->GetLHS());  // push the stack
-      }
+    if (it2 == bb.GetMevarPhiList().end()) {
+      continue;
+    }
+    // if there is existing phi result node
+    MeVarPhiNode *phi = it2->second;
+    phi->SetIsLive(true);  // always make it live, for correctness
+    if (phi->GetLHS() == nullptr) {
+      // create a new VarMeExpr defined by this phi
+      VarMeExpr *newVar = irMap.CreateNewVarMeExpr(it2->first, PTY_ref, 0);
+      phi->UpdateLHS(*newVar);
+      it1->second->push(newVar);  // push the stack
+    } else {
+      it1->second->push(phi->GetLHS());  // push the stack
     }
   }
 }
@@ -155,7 +156,7 @@ MeExpr *MeSSAUpdate::RenameExpr(MeExpr &meExpr, bool &changed) {
   }
 }
 
-void MeSSAUpdate::RenameStmts(BB &bb) {
+void MeSSAUpdate::RenameStmts(const BB &bb) {
   for (auto &stmt : bb.GetMeStmts()) {
     // rename the expressions
     bool changed = false;
@@ -195,7 +196,7 @@ void MeSSAUpdate::RenameStmts(BB &bb) {
   }
 }
 
-void MeSSAUpdate::RenamePhiOpndsInSucc(BB &bb) {
+void MeSSAUpdate::RenamePhiOpndsInSucc(const BB &bb) {
   for (BB *succ : bb.GetSucc()) {
     // find index of bb in succ_bb->pred_[]
     size_t index = 0;
@@ -221,7 +222,7 @@ void MeSSAUpdate::RenamePhiOpndsInSucc(BB &bb) {
   }
 }
 
-void MeSSAUpdate::RenameBB(BB &bb) {
+void MeSSAUpdate::RenameBB(const BB &bb) {
   // for recording stack height on entering this BB, to pop back to same height
   // when backing up the dominator tree
   std::map<OStIdx, uint32> origStackSize((std::less<OStIdx>()));

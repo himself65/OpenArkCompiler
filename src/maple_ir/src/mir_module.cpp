@@ -57,20 +57,18 @@ MIRModule::MIRModule(const std::string &fn)
 
 MIRModule::~MIRModule() {
   memPoolCtrler.DeleteMemPool(memPool);
-  if (binMplt) {
-    delete binMplt;
-  }
+  delete binMplt;
 }
 
-MemPool *MIRModule::CurFuncCodeMemPool(void) const {
+MemPool *MIRModule::CurFuncCodeMemPool() const {
   return CurFunction()->GetCodeMempool();
 }
 
-MapleAllocator *MIRModule::CurFuncCodeMemPoolAllocator(void) const {
+MapleAllocator *MIRModule::CurFuncCodeMemPoolAllocator() const {
   return &curFunction->GetCodeMempoolAllocator();
 }
 
-MapleAllocator &MIRModule::GetCurFuncCodeMPAllocator(void) const {
+MapleAllocator &MIRModule::GetCurFuncCodeMPAllocator() const {
   return curFunction->GetCodeMPAllocator();
 }
 
@@ -98,18 +96,18 @@ void MIRModule::AddSymbol(const MIRSymbol *s) {
 
 void MIRModule::DumpGlobals(bool emitStructureType) const {
   if (flavor != kFlavorUnknown) {
-    LogInfo::MapleLogger() << "flavor " << flavor << std::endl;
+    LogInfo::MapleLogger() << "flavor " << flavor << '\n';
   }
   if (srcLang != kSrcLangUnknown) {
-    LogInfo::MapleLogger() << "srclang " << srcLang << std::endl;
+    LogInfo::MapleLogger() << "srclang " << srcLang << '\n';
   }
-  LogInfo::MapleLogger() << "id " << id << std::endl;
+  LogInfo::MapleLogger() << "id " << id << '\n';
   if (globalMemSize != 0) {
-    LogInfo::MapleLogger() << "globalmemsize " << globalMemSize << std::endl;
+    LogInfo::MapleLogger() << "globalmemsize " << globalMemSize << '\n';
   }
   if (globalBlkMap != nullptr) {
     LogInfo::MapleLogger() << "globalmemmap = [ ";
-    uint32 *p = reinterpret_cast<uint32*>(globalBlkMap);
+    auto *p = reinterpret_cast<uint32*>(globalBlkMap);
     LogInfo::MapleLogger() << std::hex;
     while (p < reinterpret_cast<uint32*>(globalBlkMap + globalMemSize)) {
       LogInfo::MapleLogger() << std::hex << "0x" << *p << " ";
@@ -119,21 +117,21 @@ void MIRModule::DumpGlobals(bool emitStructureType) const {
   }
   if (globalWordsTypeTagged != nullptr) {
     LogInfo::MapleLogger() << "globalwordstypetagged = [ ";
-    uint32 *p = reinterpret_cast<uint32*>(globalWordsTypeTagged);
+    auto *p = reinterpret_cast<uint32*>(globalWordsTypeTagged);
     LogInfo::MapleLogger() << std::hex;
     while (p < reinterpret_cast<uint32*>(globalWordsTypeTagged + BlockSize2BitVectorSize(globalMemSize))) {
       LogInfo::MapleLogger() << std::hex << "0x" << *p << " ";
-      p++;
+      ++p;
     }
     LogInfo::MapleLogger() << std::dec << "]\n";
   }
   if (globalWordsRefCounted != nullptr) {
     LogInfo::MapleLogger() << "globalwordsrefcounted = [ ";
-    uint32 *p = reinterpret_cast<uint32*>(globalWordsRefCounted);
+    auto *p = reinterpret_cast<uint32*>(globalWordsRefCounted);
     LogInfo::MapleLogger() << std::hex;
     while (p < reinterpret_cast<uint32*>(globalWordsRefCounted + BlockSize2BitVectorSize(globalMemSize))) {
       LogInfo::MapleLogger() << std::hex << "0x" << *p << " ";
-      p++;
+      ++p;
     }
     LogInfo::MapleLogger() << std::dec << "]\n";
   }
@@ -141,24 +139,23 @@ void MIRModule::DumpGlobals(bool emitStructureType) const {
   if (!importFiles.empty()) {
     // Output current module's mplt on top, imported ones at below
     for (auto it = importFiles.rbegin(); it != importFiles.rend(); it++) {
-      LogInfo::MapleLogger() << "import \"" << GlobalTables::GetStrTable().GetStringFromStrIdx(*it) << "\""
-                             << std::endl;
+      LogInfo::MapleLogger() << "import \"" << GlobalTables::GetStrTable().GetStringFromStrIdx(*it) << "\"\n";
     }
   }
   if (!importPaths.empty()) {
     size_t size = importPaths.size();
-    for (size_t i = 0; i < size; i++) {
+    for (size_t i = 0; i < size; ++i) {
       LogInfo::MapleLogger() << "importpath \"" << GlobalTables::GetStrTable().GetStringFromStrIdx(importPaths[i])
-                             << "\"" << std::endl;
+                             << "\"\n";
     }
   }
   if (entryFuncName.length()) {
-    LogInfo::MapleLogger() << "entryfunc &" << entryFuncName << std::endl;
+    LogInfo::MapleLogger() << "entryfunc &" << entryFuncName << '\n';
   }
   if (!fileInfo.empty()) {
     LogInfo::MapleLogger() << "fileinfo {\n";
     size_t size = fileInfo.size();
-    for (size_t i = 0; i < size; i++) {
+    for (size_t i = 0; i < size; ++i) {
       LogInfo::MapleLogger() << "  @" << GlobalTables::GetStrTable().GetStringFromStrIdx(fileInfo[i].first) << " ";
       if (!fileInfoIsString[i]) {
         LogInfo::MapleLogger() << "0x" << std::hex << fileInfo[i].second;
@@ -178,9 +175,9 @@ void MIRModule::DumpGlobals(bool emitStructureType) const {
     LogInfo::MapleLogger() << "srcfileinfo {\n";
     size_t size = srcFileInfo.size();
     size_t i = 0;
-    for (auto it : srcFileInfo) {
-      LogInfo::MapleLogger() << "  " << it.second;
-      LogInfo::MapleLogger() << " \"" << GlobalTables::GetStrTable().GetStringFromStrIdx(it.first) << "\"";
+    for (auto infoElem : srcFileInfo) {
+      LogInfo::MapleLogger() << "  " << infoElem.second;
+      LogInfo::MapleLogger() << " \"" << GlobalTables::GetStrTable().GetStringFromStrIdx(infoElem.first) << "\"";
       if (i++ < size - 1) {
         LogInfo::MapleLogger() << ",\n";
       } else {
@@ -191,10 +188,10 @@ void MIRModule::DumpGlobals(bool emitStructureType) const {
   if (!fileData.empty()) {
     LogInfo::MapleLogger() << "filedata {\n";
     size_t size = fileData.size();
-    for (size_t i = 0; i < size; i++) {
+    for (size_t i = 0; i < size; ++i) {
       LogInfo::MapleLogger() << "  @" << GlobalTables::GetStrTable().GetStringFromStrIdx(fileData[i].first) << " ";
       size_t dataSize = fileData[i].second.size();
-      for (size_t j = 0; j < dataSize; j++) {
+      for (size_t j = 0; j < dataSize; ++j) {
         uint8 data = fileData[i].second[j];
         LogInfo::MapleLogger() << "0x" << std::hex << static_cast<uint32>(data);
         if (j < dataSize - 1) {
@@ -215,16 +212,18 @@ void MIRModule::DumpGlobals(bool emitStructureType) const {
       const std::string &name = GlobalTables::GetStrTable().GetStringFromStrIdx(*it);
       MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
       ASSERT(type != nullptr, "type should not be nullptr here");
-      MIRStructType *structType = dynamic_cast<MIRStructType*>(type);
-      if (structType != nullptr && !emitStructureType) {
+      bool isStructType = type->IsStructType();
+      if (isStructType) {
+        auto *structType = static_cast<MIRStructType*>(type);
         // still emit what in extern_structtype_set_
-        if (externStructTypeSet.find(structType->GetTypeIndex()) == externStructTypeSet.end()) {
+        if (!emitStructureType && externStructTypeSet.find(structType->GetTypeIndex()) == externStructTypeSet.end()) {
+          continue;
+        }
+        if (structType->IsImported()) {
           continue;
         }
       }
-      if (structType != nullptr && structType->IsImported()) {
-        continue;
-      }
+
       LogInfo::MapleLogger() << "type $" << name << " ";
       if (type->GetKind() == kTypeByName) {
         LogInfo::MapleLogger() << "void";
@@ -237,7 +236,7 @@ void MIRModule::DumpGlobals(bool emitStructureType) const {
     }
     if (someSymbolNeedForwDecl) {
       // an extra pass thru the global symbol table to print forward decl
-      for (auto sit = symbolSet.begin(); sit != symbolSet.end(); sit++) {
+      for (auto sit = symbolSet.begin(); sit != symbolSet.end(); ++sit) {
         MIRSymbol *s = GlobalTables::GetGsymTable().GetSymbolFromStidx((*sit).Idx());
         if (s->IsNeedForwDecl()) {
           s->Dump(false, 0, true);
@@ -245,7 +244,7 @@ void MIRModule::DumpGlobals(bool emitStructureType) const {
       }
     }
     // dump javaclass and javainterface first
-    for (auto sit = symbolDefOrder.begin(); sit != symbolDefOrder.end(); sit++) {
+    for (auto sit = symbolDefOrder.begin(); sit != symbolDefOrder.end(); ++sit) {
       MIRSymbol *s = GlobalTables::GetGsymTable().GetSymbolFromStidx((*sit).Idx());
       if (!s->IsJavaClassInterface()) {
         continue;
@@ -255,7 +254,7 @@ void MIRModule::DumpGlobals(bool emitStructureType) const {
         s->Dump(false, 0);
       }
     }
-    for (auto sit = symbolDefOrder.begin(); sit != symbolDefOrder.end(); sit++) {
+    for (auto sit = symbolDefOrder.begin(); sit != symbolDefOrder.end(); ++sit) {
       MIRSymbol *s = GlobalTables::GetGsymTable().GetSymbolFromStidx((*sit).Idx());
       CHECK_FATAL(s != nullptr, "nullptr check");
       if (s->IsJavaClassInterface()) {
@@ -274,23 +273,22 @@ void MIRModule::Dump(bool emitStructureType) const {
 }
 
 void MIRModule::DumpGlobalArraySymbol() const {
-  MapleSet<StIdx>::iterator sit = symbolSet.begin();
-  for (; sit != symbolSet.end(); sit++) {
-    MIRSymbol *s = GlobalTables::GetGsymTable().GetSymbolFromStidx((*sit).Idx());
-    MIRType *sType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(s->GetTyIdx());
-    if (sType == nullptr || sType->GetKind() != kTypeArray) {
+  for (StIdx stIdx : symbolSet) {
+    MIRSymbol *symbol = GlobalTables::GetGsymTable().GetSymbolFromStidx(stIdx.Idx());
+    MIRType *symbolType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(symbol->GetTyIdx());
+    if (symbolType == nullptr || symbolType->GetKind() != kTypeArray) {
       continue;
     }
-    s->Dump(false, 0);
+    symbol->Dump(false, 0);
   }
 }
 
-void MIRModule::Emit(const std::string &outfileName) const {
+void MIRModule::Emit(const std::string &outFileName) const {
   std::ofstream file;
   // Change cout's buffer to file.
   std::streambuf *backup = LogInfo::MapleLogger().rdbuf();
   LogInfo::MapleLogger().rdbuf(file.rdbuf());
-  file.open(outfileName.c_str(), std::ios::trunc);
+  file.open(outFileName.c_str(), std::ios::trunc);
   DumpGlobals();
   for (MIRFunction *mirFunc : functionList) {
     mirFunc->Dump();
@@ -301,8 +299,8 @@ void MIRModule::Emit(const std::string &outfileName) const {
 }
 
 void MIRModule::DumpFunctionList(bool skipBody) const {
-  for (auto it = functionList.begin(); it != functionList.end(); it++) {
-    (*it)->Dump(skipBody);
+  for (MIRFunction *func : functionList) {
+    func->Dump(skipBody);
   }
 }
 
@@ -328,7 +326,6 @@ void MIRModule::OutputFunctionListAsciiMpl(const std::string &phaseName) {
   DumpFunctionList();
   LogInfo::MapleLogger().rdbuf(backup);  // restore cout's buffer
   mplFile.close();
-  return;
 }
 
 void MIRModule::DumpToFile(const std::string &fileNameStr, bool emitStructureType) const {
@@ -355,9 +352,9 @@ void MIRModule::DumpInlineCandidateToFile(const std::string &fileNameStr) const 
   std::streambuf *backup = LogInfo::MapleLogger().rdbuf();
   LogInfo::MapleLogger().rdbuf(file.rdbuf());
   file.open(fileNameStr.c_str(), std::ios::trunc);
-  for (auto it = optimizedFuncs.begin(); it != optimizedFuncs.end(); it++) {
-    (*it)->SetWithLocInfo(false);
-    (*it)->Dump();
+  for (auto *func : optimizedFuncs) {
+    func->SetWithLocInfo(false);
+    func->Dump();
   }
   // Restore cout's buffer.
   LogInfo::MapleLogger().rdbuf(backup);
@@ -366,7 +363,7 @@ void MIRModule::DumpInlineCandidateToFile(const std::string &fileNameStr) const 
 
 // This is not efficient. Only used in debug mode for now.
 const std::string &MIRModule::GetFileNameFromFileNum(uint32 fileNum) const {
-  GStrIdx nameIdx = GStrIdx(0);
+  GStrIdx nameIdx(0);
   for (auto &info : srcFileInfo) {
     if (info.second == fileNum) {
       nameIdx = info.first;
@@ -382,7 +379,7 @@ void MIRModule::DumpClassToFile(const std::string &path) const {
   for (auto it : typeNameTab->GetGStrIdxToTyIdxMap()) {
     const std::string &name = GlobalTables::GetStrTable().GetStringFromStrIdx(it.first);
     MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(it.second);
-    std::string outClassFile = name.c_str();
+    std::string outClassFile(name);
     /* replace class name / with - */
     std::replace(outClassFile.begin(), outClassFile.end(), '/', '-');
     outClassFile.insert(0, spath);
@@ -398,7 +395,7 @@ void MIRModule::DumpClassToFile(const std::string &path) const {
     } else {
       type->Dump(1);
     }
-    LogInfo::MapleLogger() << std::endl;
+    LogInfo::MapleLogger() << '\n';
     /* restore cout */
     LogInfo::MapleLogger().rdbuf(backup);
     mplFile.close();
@@ -406,8 +403,7 @@ void MIRModule::DumpClassToFile(const std::string &path) const {
 }
 
 MIRFunction *MIRModule::FindEntryFunction() {
-  for (size_t i = 0; i < functionList.size(); i++) {
-    MIRFunction *currFunc = functionList[i];
+  for (MIRFunction *currFunc : functionList) {
     if (currFunc->GetName() == entryFuncName) {
       entryFunc = currFunc;
       return currFunc;
@@ -421,7 +417,7 @@ MIRFunction *MIRModule::FindEntryFunction() {
 // stem from this->fileName appended with phasename
 void MIRModule::OutputAsciiMpl(const std::string &phaseName, bool emitStructureType) {
   std::string fileStem;
-  std::string::size_type lastDot = fileName.find_last_of(".");
+  std::string::size_type lastDot = fileName.find_last_of('.');
   if (lastDot == std::string::npos) {
     fileStem = fileName.append(phaseName);
   } else {
@@ -440,14 +436,12 @@ void MIRModule::OutputAsciiMpl(const std::string &phaseName, bool emitStructureT
   Dump(emitStructureType);
   LogInfo::MapleLogger().rdbuf(backup);  // restore cout's buffer
   mplFile.close();
-  return;
 }
 
 uint32 MIRModule::GetFileinfo(GStrIdx strIdx) const {
-  size_t size = fileInfo.size();
-  for (size_t i = 0; i < size; i++) {
-    if (fileInfo[i].first == strIdx) {
-      return fileInfo[i].second;
+  for (auto &infoElem : fileInfo) {
+    if (infoElem.first == strIdx) {
+      return infoElem.second;
     }
   }
   ASSERT(false, "should not be here");
@@ -462,13 +456,12 @@ std::string MIRModule::GetFileNameAsPostfix() const {
     fileNameStr += GlobalTables::GetStrTable().GetStringFromStrIdx(GStrIdx(fileNameIdx));
   } else {
     // option 2: src file name removing ext name.
-    ASSERT(fileNameStr.find_last_of(".") != fileNameStr.npos, "not found .");
-    fileNameStr += fileNameStr.substr(0, fileNameStr.find_last_of("."));
+    ASSERT(fileNameStr.find_last_of('.') != fileNameStr.npos, "not found.");
+    fileNameStr += fileNameStr.substr(0, fileNameStr.find_last_of('.'));
   }
-  for (uint32 i = 0; i < fileNameStr.length(); ++i) {
-    char c = fileNameStr[i];
+  for (char &c : fileNameStr) {
     if (!isalpha(c) && !isdigit(c) && c != '_' && c != '$') {
-      fileNameStr[i] = '_';
+      c = '_';
     }
   }
   return fileNameStr;
@@ -476,12 +469,10 @@ std::string MIRModule::GetFileNameAsPostfix() const {
 
 void MIRModule::AddClass(TyIdx t) {
   classList.insert(t.GetIdx());
-  return;
 }
 
 void MIRModule::RemoveClass(TyIdx t) {
   classList.erase(t.GetIdx());
-  return;
 }
 
 #endif  // MIR_FEATURE_FULL

@@ -78,7 +78,7 @@ struct EncodedValue {
 class MIRTypeNameTable {
  public:
   explicit MIRTypeNameTable(MapleAllocator &allocator)
-      : mAllocator(allocator), gStrIdxToTyIdxMap(std::less<GStrIdx>(), mAllocator.Adapter()) {}
+      : gStrIdxToTyIdxMap(std::less<GStrIdx>(), allocator.Adapter()) {}
 
   ~MIRTypeNameTable() = default;
 
@@ -102,7 +102,6 @@ class MIRTypeNameTable {
     return gStrIdxToTyIdxMap.size();
   }
  private:
-  MapleAllocator &mAllocator;
   MapleMap<GStrIdx, TyIdx> gStrIdxToTyIdxMap;
 };
 
@@ -110,10 +109,9 @@ class MIRModule {
  public:
   using CallSite = std::pair<CallInfo*, PUIdx>;
 
+  explicit MIRModule(const std::string &fn = "");
   MIRModule(MIRModule &p) = delete;
   MIRModule &operator=(const MIRModule &module) = delete;
-
-  explicit MIRModule(const std::string &fn = "");
   ~MIRModule();
 
   const MemPool *GetMemPool() const {
@@ -153,8 +151,8 @@ class MIRModule {
   const MapleVector<std::string> &GetImportedMplt() const {
     return importedMplt;
   }
-  void PushbackImportedMplt(std::string importFileName) {
-    importedMplt.push_back(std::move(importFileName));
+  void PushbackImportedMplt(const std::string &importFileName) {
+    importedMplt.push_back(importFileName);
   }
 
   MIRTypeNameTable *GetTypeNameTab() {
@@ -187,13 +185,13 @@ class MIRModule {
     someSymbolNeedForwDecl = s;
   }
 
-  MIRFunction *CurFunction(void) const {
+  MIRFunction *CurFunction() const {
     return curFunction;
   }
 
-  MemPool *CurFuncCodeMemPool(void) const;
-  MapleAllocator *CurFuncCodeMemPoolAllocator(void) const;
-  MapleAllocator &GetCurFuncCodeMPAllocator(void) const;
+  MemPool *CurFuncCodeMemPool() const;
+  MapleAllocator *CurFuncCodeMemPoolAllocator() const;
+  MapleAllocator &GetCurFuncCodeMPAllocator() const;
   void AddExternStructType(TyIdx tyIdx);
   void AddExternStructType(const MIRType *t);
   void AddSymbol(StIdx stIdx);
@@ -212,7 +210,7 @@ class MIRModule {
   void DumpClassToFile(const std::string &path) const;
   void DumpFunctionList(bool skipBody = false) const;
   void DumpGlobalArraySymbol() const;
-  void Emit(const std::string &outfileName) const;
+  void Emit(const std::string &outFileName) const;
   uint32 GetAndIncFloatNum() {
     return floatNum++;
   }
@@ -270,8 +268,8 @@ class MIRModule {
     puIdxFieldInitializedMap[puIdx] = fieldIDSet;
   }
 
-  MapleSet<FieldID> *GetPUIdxFieldInitializedMapItem(PUIdx first) {
-    return puIdxFieldInitializedMap[first];
+  MapleSet<FieldID> *GetPUIdxFieldInitializedMapItem(PUIdx key) {
+    return puIdxFieldInitializedMap[key];
   }
 
   std::ostream &GetOut() {
@@ -285,8 +283,8 @@ class MIRModule {
   const std::string &GetEntryFuncName() const {
     return entryFuncName;
   }
-  void SetEntryFuncName(std::string entryFunctionName) {
-    entryFuncName = std::move(entryFunctionName);
+  void SetEntryFuncName(const std::string &entryFunctionName) {
+    entryFuncName = entryFunctionName;
   }
 
   TyIdx GetThrowableTyIdx() const {
@@ -323,14 +321,14 @@ class MIRModule {
   void PushFileInfoPair(MIRInfoPair pair) {
     fileInfo.push_back(pair);
   }
-  void SetFileInfo(MIRInfoVector fileInf) {
+  void SetFileInfo(const MIRInfoVector &fileInf) {
     fileInfo = fileInf;
   }
 
   const MapleVector<bool> &GetFileInfoIsString() const {
     return fileInfoIsString;
   }
-  void SetFileInfoIsString(MapleVector<bool> fileInfoIsStr) {
+  void SetFileInfoIsString(const MapleVector<bool> &fileInfoIsStr) {
     fileInfoIsString = fileInfoIsStr;
   }
   void PushFileInfoIsString(bool isString) {
@@ -340,7 +338,7 @@ class MIRModule {
   const MIRDataVector &GetFileData() const {
     return fileData;
   }
-  void PushbackFileData(MIRDataPair pair) {
+  void PushbackFileData(const MIRDataPair &pair) {
     fileData.push_back(pair);
   }
 

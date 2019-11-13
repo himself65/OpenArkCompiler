@@ -25,9 +25,13 @@ class MeBuilder {
 
   virtual ~MeBuilder() = default;
 
-  MeExpr *CreateMeExpr(int32 exprId, MeExpr &meExpr) const;
+  MeExpr &CreateMeExpr(int32 exprId, MeExpr &meExpr) const;
   MeExpr *BuildMeExpr(BaseNode &mirNode) const;
   VarMeExpr *BuildVarMeExpr(int32 exprID, OStIdx oStIdx, size_t vStIdx, PrimType pType, FieldID fieldID) const;
+
+  UnaryMeStmt &BuildUnaryMeStmt(Opcode op, MeExpr &opnd, BB &bb, const SrcPosition &src) const;
+  UnaryMeStmt &BuildUnaryMeStmt(Opcode op, MeExpr &opnd, BB &bb) const;
+  UnaryMeStmt &BuildUnaryMeStmt(Opcode op, MeExpr &opnd) const;
 
  private:
   template<class T, typename... Arguments>

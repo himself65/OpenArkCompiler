@@ -2121,6 +2121,8 @@ class CallMeStmt : public NaryMeStmt, public MuChiMePart, public AssignedPart {
     return callee->GetReturnType();
   }
 
+  const MIRFunction &GetTargetFunction() const;
+  MIRFunction &GetTargetFunction();
   StmtNode &EmitStmt(SSATab &ssatab);
 
   void SetCallReturn(MeExpr&);

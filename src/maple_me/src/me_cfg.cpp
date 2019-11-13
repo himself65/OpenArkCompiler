@@ -295,16 +295,8 @@ void MeCFG::FixMirCFG() {
       for (StmtNode *stmt = to_ptr(bb->GetStmtNodes().begin()); stmt != nullptr; stmt = stmt->GetNext()) {
         const MIRSymbol *sym = nullptr;
         if (kOpcodeInfo.IsCallAssigned(stmt->GetOpCode())) {
-          CallNode *cnode = static_cast<CallNode *>(stmt);
-          CallReturnVector &nrets = cnode->GetReturnVec();
-          if (nrets.size() != 0) {
-            ASSERT(nrets.size() == 1, "Single Ret value for now.");
-            StIdx stidx = nrets[0].first;
-            RegFieldPair regfieldpair = nrets[0].second;
-            if (!regfieldpair.IsReg()) {
-              sym = func.GetMirFunc()->GetLocalOrGlobalSymbol(stidx);
-            }
-          }
+          CallNode *cNode = static_cast<CallNode *>(stmt);
+          sym = cNode->GetCallReturnSymbol(func.GetMIRModule());
         } else if (stmt->GetOpCode() == OP_dassign) {
           DassignNode *dassStmt = static_cast<DassignNode*>(stmt);
           // exclude the case a = b;
@@ -316,7 +308,7 @@ void MeCFG::FixMirCFG() {
         if (sym == nullptr || sym->GetType()->GetPrimType() != PTY_ref || !sym->IsLocal()) {
           continue;
         }
-        if (FindUse(*stmt, sym->GetStIdx())) {
+        if (kOpcodeInfo.IsCallAssigned(stmt->GetOpCode()) || FindUse(*stmt, sym->GetStIdx())) {
           func.GetMirFunc()->IncTempCount();
           std::string tempStr = std::string("tempRet").append(std::to_string(func.GetMirFunc()->GetTempCount()));
           MIRBuilder *builder = func.GetMirFunc()->GetModule()->GetMIRBuilder();
@@ -358,46 +350,45 @@ void MeCFG::FixMirCFG() {
     }
     if (bb->GetAttributes(kBBAttrIsTry)) {
       for (auto &splitPoint : bb->GetStmtNodes()) {
+        const MIRSymbol *sym = nullptr;
         StmtNode *nextStmt = splitPoint.GetNext();
-        if (nextStmt != nullptr &&
-            (nextStmt->GetOpCode() == OP_dassign || kOpcodeInfo.IsCallAssigned(nextStmt->GetOpCode()))) {
-          const MIRSymbol *sym = nullptr;
+        if (kOpcodeInfo.IsCallAssigned(splitPoint.GetOpCode())) {
+          CallNode *cNode = static_cast<CallNode*>(&splitPoint);
+          sym = cNode->GetCallReturnSymbol(func.GetMIRModule());
+        } else {
+          if (nextStmt == nullptr ||
+              (nextStmt->GetOpCode() != OP_dassign && !kOpcodeInfo.IsCallAssigned(nextStmt->GetOpCode()))) {
+            continue;
+          }
           if (nextStmt->GetOpCode() == OP_dassign) {
             DassignNode *dassignStmt = static_cast<DassignNode*>(nextStmt);
             const StIdx stIdx = dassignStmt->GetStIdx();
             sym = func.GetMirFunc()->GetLocalOrGlobalSymbol(stIdx);
           } else {
             CallNode *cNode = static_cast<CallNode*>(nextStmt);
-            CallReturnVector &nrets = cNode->GetReturnVec();
-            if (!nrets.empty()) {
-              ASSERT(nrets.size() == 1, "Single Ret value for now.");
-              StIdx stIdx = nrets[0].first;
-              RegFieldPair regFieldPair = nrets[0].second;
-              if (!regFieldPair.IsReg()) {
-                sym = func.GetMirFunc()->GetLocalOrGlobalSymbol(stIdx);
-              }
-            }
+            sym = cNode->GetCallReturnSymbol(func.GetMIRModule());
           }
-          if (sym == nullptr || sym->GetType()->GetPrimType() != PTY_ref || !sym->IsLocal()) {
-            continue;
-          }
-          if (HasNoOccBetween(*bb->GetStmtNodes().begin().d(), *nextStmt, sym->GetStIdx())) {
-            continue;
-          }
-          BB &newBB = func.SplitBB(*bb, splitPoint);
-          // because SplitBB will insert a bb, we need update bIt & eIt
-          auto newBBIt = std::find(func.cbegin(), func.cend(), bb);
-          bIt = build_filter_iterator(
-              newBBIt, std::bind(FilterNullPtr<MapleVector<BB*>::const_iterator>, std::placeholders::_1, func.end()));
-          eIt = func.valid_end();
-          for (size_t si = 0; si < newBB.GetSucc().size(); si++) {
-            BB *sucBB = newBB.GetSucc(si);
-            if (sucBB->GetAttributes(kBBAttrIsCatch)) {
-              bb->AddSuccBB(sucBB);
-            }
-          }
-          break;
         }
+        if (sym == nullptr || sym->GetType()->GetPrimType() != PTY_ref || !sym->IsLocal()) {
+          continue;
+        }
+        if (!kOpcodeInfo.IsCallAssigned(splitPoint.GetOpCode()) &&
+            HasNoOccBetween(*bb->GetStmtNodes().begin().d(), *nextStmt, sym->GetStIdx())) {
+          continue;
+        }
+        BB &newBB = func.SplitBB(*bb, splitPoint);
+        // because SplitBB will insert a bb, we need update bIt & eIt
+        auto newBBIt = std::find(func.cbegin(), func.cend(), bb);
+        bIt = build_filter_iterator(
+            newBBIt, std::bind(FilterNullPtr<MapleVector<BB*>::const_iterator>, std::placeholders::_1, func.end()));
+        eIt = func.valid_end();
+        for (size_t si = 0; si < newBB.GetSucc().size(); si++) {
+          BB *sucBB = newBB.GetSucc(si);
+          if (sucBB->GetAttributes(kBBAttrIsCatch)) {
+            bb->AddSuccBB(sucBB);
+          }
+        }
+        break;
       }
     }
     // removing outgoing exception edge from normal return bb

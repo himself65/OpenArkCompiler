@@ -36,7 +36,8 @@ void SSA::InitRenameStack(OriginalStTable &oTable, size_t bbSize, VersionStTable
 VersionSt *SSA::CreateNewVersion(VersionSt &vSym, BB &defBB) {
   CHECK_FATAL(vSym.GetVersion() == 0, "rename before?");
   // volatile variables will keep zero version.
-  if (vSym.GetOrigSt()->IsVolatile()) {
+  OriginalSt *oSt = vSym.GetOrigSt();
+  if (oSt->IsVolatile() || oSt->IsSpecialPreg()) {
     return &vSym;
   }
   CHECK_FATAL(vSym.GetOrigIdx().idx < vstVersions.size(), "index out of range in SSA::CreateNewVersion");
@@ -62,26 +63,15 @@ void SSA::RenamePhi(BB &bb) {
 
 void SSA::RenameDefs(StmtNode &stmt, BB &defBB) {
   Opcode opcode = stmt.GetOpCode();
-  if (opcode == OP_regassign) {
-    RegassignNode &regNode = static_cast<RegassignNode&>(stmt);
-    if (regNode.GetRegIdx() < 0) {
-      return;
-    }
-    AccessSSANodes *theSSAPart = ssaTab->GetStmtsSSAPart().SSAPartOf(stmt);
-    VersionSt *newVersionSym = CreateNewVersion(*(theSSAPart->GetSSAVar()), defBB);
-    newVersionSym->SetDefType(VersionSt::kRegassign);
-    newVersionSym->SetRegassignNode(&regNode);
-    theSSAPart->SetSSAVar(*newVersionSym);
-    return;
-  } else if (opcode == OP_dassign) {
-    AccessSSANodes *theSSAPart = ssaTab->GetStmtsSSAPart().SSAPartOf(stmt);
+  AccessSSANodes *theSSAPart = ssaTab->GetStmtsSSAPart().SSAPartOf(stmt);
+  if (kOpcodeInfo.AssignActualVar(opcode)) {
     VersionSt *newVersionSym = CreateNewVersion(*theSSAPart->GetSSAVar(), defBB);
-    newVersionSym->SetDefType(VersionSt::kDassign);
-    newVersionSym->SetDassignNode(static_cast<DassignNode*>(&stmt));
+    newVersionSym->SetDefType(VersionSt::kAssign);
+    newVersionSym->SetAssignNode(&stmt);
     theSSAPart->SetSSAVar(*newVersionSym);
   }
-  if (kOpcodeInfo.HasSSADef(stmt.GetOpCode())) {
-    MapleMap<OStIdx, MayDefNode> &mayDefList = ssaTab->GetStmtsSSAPart().GetMayDefNodesOf(stmt);
+  if (kOpcodeInfo.HasSSADef(opcode)) {
+    MapleMap<OStIdx, MayDefNode> &mayDefList = theSSAPart->GetMayDefNodes();
     for (auto it = mayDefList.begin(); it != mayDefList.end(); it++) {
       MayDefNode &mayDef = it->second;
       VersionSt *vSym = mayDef.GetResult();

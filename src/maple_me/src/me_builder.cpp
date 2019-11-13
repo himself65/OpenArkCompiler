@@ -19,7 +19,7 @@
 namespace maple {
 using MeExprBuildFactory = FunctionFactory<Opcode, MeExpr*, const MeBuilder*, BaseNode&>;
 
-MeExpr *MeBuilder::CreateMeExpr(int32 exprId, MeExpr &meExpr) const {
+MeExpr &MeBuilder::CreateMeExpr(int32 exprId, MeExpr &meExpr) const {
   MeExpr *resultExpr = nullptr;
   switch (meExpr.GetMeOp()) {
     case kMeOpIvar:
@@ -59,16 +59,13 @@ MeExpr *MeBuilder::CreateMeExpr(int32 exprId, MeExpr &meExpr) const {
       resultExpr = New<GcmallocMeExpr>(exprId, static_cast<GcmallocMeExpr&>(meExpr).GetTyIdx());
       break;
     default:
-      ASSERT(false, "not yet implement");
-      return nullptr;
+      CHECK_FATAL(false, "not yet implement");
   }
-  if (resultExpr != nullptr) {
-    resultExpr->InitBase(meExpr.GetOp(), meExpr.GetPrimType(), meExpr.GetNumOpnds());
-    if (meExpr.GetMeOp() == kMeOpOp || meExpr.GetMeOp() == kMeOpNary) {
-      resultExpr->UpdateDepth();
-    }
+  resultExpr->InitBase(meExpr.GetOp(), meExpr.GetPrimType(), meExpr.GetNumOpnds());
+  if (meExpr.GetMeOp() == kMeOpOp || meExpr.GetMeOp() == kMeOpNary) {
+    resultExpr->UpdateDepth();
   }
-  return resultExpr;
+  return *resultExpr;
 }
 
 VarMeExpr *MeBuilder::BuildVarMeExpr(int32 exprID, OStIdx oStIdx, size_t vStIdx,
@@ -216,6 +213,24 @@ MeExpr *MeBuilder::BuildNaryMeExprForIntrinsicWithType(BaseNode &mirNode) const 
   NaryMeExpr &meExpr = *NewInPool<NaryMeExpr>(kInvalidExprID, intrinNode.GetTyIdx(), intrinNode.GetIntrinsic(), false);
   meExpr.InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
   return &meExpr;
+}
+
+UnaryMeStmt &MeBuilder::BuildUnaryMeStmt(Opcode op, MeExpr &opnd, BB &bb, const SrcPosition &src) const {
+  UnaryMeStmt &unaryMeStmt = BuildUnaryMeStmt(op, opnd, bb);
+  unaryMeStmt.SetSrcPos(src);
+  return unaryMeStmt;
+}
+
+UnaryMeStmt &MeBuilder::BuildUnaryMeStmt(Opcode op, MeExpr &opnd, BB &bb) const {
+  UnaryMeStmt &unaryMeStmt = BuildUnaryMeStmt(op, opnd);
+  unaryMeStmt.SetBB(&bb);
+  return unaryMeStmt;
+}
+
+UnaryMeStmt &MeBuilder::BuildUnaryMeStmt(Opcode op, MeExpr &opnd) const {
+  UnaryMeStmt &unaryMeStmt = *New<UnaryMeStmt>(op);
+  unaryMeStmt.SetMeStmtOpndValue(&opnd);
+  return unaryMeStmt;
 }
 
 void MeBuilder::InitMeExprBuildFactory() const {

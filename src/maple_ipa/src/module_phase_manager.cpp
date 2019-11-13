@@ -55,7 +55,7 @@ void ModulePhaseManager::RegisterModulePhases() {
     MemPool *memPool = GetMemPool();                                               \
     ModulePhase *phase = new (memPool->Malloc(sizeof(modphase(id)))) modphase(id); \
     CHECK_FATAL(phase != nullptr, "null ptr check ");                              \
-    RegisterPhase(id, *phase);                                                      \
+    RegisterPhase(id, *phase);                                                     \
     arModuleMgr->AddAnalysisPhase(id, phase);                                      \
   } while (0);
 #define MODTPHASE(id, modphase)                                                    \
@@ -63,7 +63,7 @@ void ModulePhaseManager::RegisterModulePhases() {
     MemPool *memPool = GetMemPool();                                               \
     ModulePhase *phase = new (memPool->Malloc(sizeof(modphase(id)))) modphase(id); \
     CHECK_FATAL(phase != nullptr, "null ptr check ");                              \
-    RegisterPhase(id, *phase);                                                      \
+    RegisterPhase(id, *phase);                                                     \
   } while (0);
 #include "module_phases.def"
 #undef MODAPHASE
@@ -80,7 +80,7 @@ void ModulePhaseManager::RunModulePhases() const {}
 
 void ModulePhaseManager::Run() {
   int phaseIndex = 0;
-  for (auto it = PhaseSequenceBegin(); it != PhaseSequenceEnd(); it++, ++phaseIndex) {
+  for (auto it = PhaseSequenceBegin(); it != PhaseSequenceEnd(); ++it, ++phaseIndex) {
     PhaseID id = GetPhaseId(it);
     ModulePhase *p = static_cast<ModulePhase*>(GetPhase(id));
     MIR_ASSERT(p);

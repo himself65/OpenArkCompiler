@@ -103,6 +103,8 @@ static constexpr const char kDecoupleOption[] = "__decouple_option";
 static constexpr const char kDecoupleStr[] = "__decouple";
 static constexpr const char kCompilerVersionNum[] = "__compilerVersionNum";
 static constexpr const char kCompilerVersionNumStr[] = "__compilerVersionNumTab";
+static constexpr const char kSourceMuid[] = "__sourceMuid";
+static constexpr const char kSourceMuidSectionStr[] = "__sourceMuidTab";
 
 static constexpr const char kStaticFieldNamePrefixStr[] = "__static_field_name";
 static constexpr const char kPackageNameSplitterStr[] = "_2F";
@@ -132,6 +134,8 @@ static constexpr const char kFunctionProfileTabPrefixStr[] = "__muid_profile_fun
 
 static constexpr const char kBindingProtectedRegionStr[] = "__BindingProtectRegion__";
 
+static constexpr const char kClassNamePrefixStr[] = "L";
+static constexpr const char kClassMethodSplitterStr[] = "_3B";
 // Serve as a global flag to indicate whether frequent strings have been compressed
 extern bool doCompression;
 
