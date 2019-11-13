@@ -75,6 +75,8 @@ class IRMap : public AnalysisResult {
     return meExpr;
   }
 
+  VarMeExpr *CreateNewVarMeExpr(OStIdx oStIdx, PrimType pType, FieldID fieldID);
+  VarMeExpr *CreateNewVarMeExpr(OriginalSt &oSt, PrimType pType, FieldID fieldID);
   VarMeExpr *CreateNewGlobalTmp(GStrIdx strIdx, PrimType ptyp);
   VarMeExpr *CreateNewLocalRefVarTmp(GStrIdx strIdx, TyIdx tIdx);
   DassignMeStmt *CreateDassignMeStmt(MeExpr&, MeExpr&, BB&);
@@ -202,9 +204,9 @@ class IRMap : public AnalysisResult {
   MeExpr *CreateAddrofMeExprFromNewSymbol(MIRSymbol&, PUIdx);
   VarMeExpr *GetOrCreateVarFromVerSt(const VersionSt &verSt);
   RegMeExpr *GetOrCreateRegFromVerSt(const VersionSt &verSt);
-  void BuildChiList(MeStmt&, MapleMap<OStIdx, MayDefNode> &, MapleMap<OStIdx, ChiMeNode*> &);
-  void BuildMustDefList(MeStmt &meStmt, MapleVector<MustDefNode> &, MapleVector<MustDefMeNode> &);
-  void BuildMuList(MapleMap<OStIdx, MayUseNode> &, MapleMap<OStIdx, VarMeExpr*> &);
+  void BuildChiList(MeStmt&, MapleMap<OStIdx, MayDefNode>&, MapleMap<OStIdx, ChiMeNode*>&);
+  void BuildMustDefList(MeStmt &meStmt, MapleVector<MustDefNode>&, MapleVector<MustDefMeNode>&);
+  void BuildMuList(MapleMap<OStIdx, MayUseNode>&, MapleMap<OStIdx, VarMeExpr*>&);
   void BuildPhiMeNode(BB&);
   BB *GetFalseBrBB(CondGotoMeStmt&);
   void SetMeExprOpnds(MeExpr &meExpr, BaseNode &mirNode);

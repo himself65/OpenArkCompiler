@@ -53,11 +53,11 @@ class ObjectFactory {
 
  private:
   ObjectFactory() = default;
-  ~ObjectFactory() = default;
   ObjectFactory(const ObjectFactory&) = delete;
-  ObjectFactory(const ObjectFactory&&) = delete;
   ObjectFactory &operator=(const ObjectFactory&) = delete;
+  ObjectFactory(const ObjectFactory&&) = delete;
   ObjectFactory &operator=(const ObjectFactory&&) = delete;
+  ~ObjectFactory() = default;
   CreatorHolder objectCreator;
 };
 
@@ -104,11 +104,11 @@ class FunctionFactory {
 
  private:
   FunctionFactory() = default;
-  ~FunctionFactory() = default;
   FunctionFactory(const FunctionFactory&) = delete;
-  FunctionFactory(const FunctionFactory&&) = delete;
   FunctionFactory &operator=(const FunctionFactory&) = delete;
+  FunctionFactory(const FunctionFactory&&) = delete;
   FunctionFactory &operator=(const FunctionFactory&&) = delete;
+  ~FunctionFactory() = default;
   FuncHolder funcCreator;
 };
 

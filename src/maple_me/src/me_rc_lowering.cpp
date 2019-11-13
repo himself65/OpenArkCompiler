@@ -95,7 +95,7 @@ void RCLowering::CreateCleanupIntrinsics() {
       continue;
     }
     std::vector<MeExpr*> opnds;
-    for (auto item : cleanUpVars) {
+    for (const auto &item : cleanUpVars) {
       if (!varOStMap[item.first]->IsLocal() || varOStMap[item.first]->IsFormal()) {
         continue;
       }
@@ -820,13 +820,7 @@ VarMeExpr *RCLowering::CreateNewTmpVarMeExpr(bool isLocalRefVar) {
     irMap.PushBackVerst2MeExprTable(nullptr);
     ost->PushbackVersionIndex(ost->GetZeroVersionIndex());
   }
-  irMap.SetExprID(irMap.GetExprID() + 1);
-  VarMeExpr *varMeExpr = irMap.New<VarMeExpr>(&irMap.GetIRMapAlloc(), irMap.GetExprID(), ost->GetIndex(),
-                                               irMap.GetVerst2MeExprTableSize());
-  varMeExpr->InitBase(OP_dread, PTY_ref, 0);
-  varMeExpr->SetFieldID(0);
-  irMap.PushBackVerst2MeExprTable(varMeExpr);
-  ost->PushbackVersionIndex(varMeExpr->GetVstIdx());
+  VarMeExpr *varMeExpr = irMap.CreateNewVarMeExpr(*ost, PTY_ref, 0);
   if (isLocalRefVar) {
     tmpLocalRefVars.insert(varMeExpr);
   }

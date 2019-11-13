@@ -112,5 +112,21 @@ inline typename T::element_type &ToRef(T &ptr) {
   return ToRef(ptr.get());
 }
 
+template <size_t pos, typename = std::enable_if_t<pos < 32>>
+struct bit_field {
+  enum {value = 1U << pos};
+};
+
+template <size_t pos>
+constexpr uint32_t bit_field_v = bit_field<pos>::value;
+
+template <size_t pos, typename = std::enable_if_t<pos < 64>>
+struct lbit_field {
+  enum {value = 1UL << pos};
+};
+
+template <size_t pos>
+constexpr uint64_t lbit_field_v = bit_field<pos>::value;
+
 }} // namespace maple::utils
 #endif  // MAPLE_UTIL_INCLUDE_UTILS_H

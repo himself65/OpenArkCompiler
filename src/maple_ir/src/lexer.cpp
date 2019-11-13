@@ -22,7 +22,6 @@
 #include "utils.h"
 
 namespace maple {
-
 int32_t HexCharToDigit(char c) {
   int32_t ret = utils::ToDigit<16, int32_t>(c);
   return (ret != INT32_MAX ? ret : 0);

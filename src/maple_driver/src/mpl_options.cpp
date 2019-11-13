@@ -821,7 +821,7 @@ using namespace mapleOption;
 const std::string kMapleDriverVersion = "mapledriver " + std::to_string(Version::kMajorMplVersion) + "." +
                                         std::to_string(Version::kMinorCompilerVersion) + " 20190712";
 int MplOptions::Parse(int argc, char **argv) {
-  this->optionParser.reset(new OptionParser(USAGES));
+  optionParser.reset(new OptionParser(USAGES));
   exeFolder = FileUtils::GetFileFolder(*argv);
   int ret = optionParser->Parse(argc, argv);
   if (ret != ErrorCode::kErrorNoError) {
@@ -893,37 +893,37 @@ ErrorCode MplOptions::HandleGeneralOptions() {
         optionParser->PrintUsage(kBinNameMpl2mpl);
         return ErrorCode::kErrorExitHelp;
       case kCombTimePhases:
-        this->timePhases = true;
-        this->printCommandStr += " -time-phases";
+        timePhases = true;
+        printCommandStr += " -time-phases";
         break;
       case kGenMeMpl:
-        this->genMeMpl = true;
-        this->printCommandStr += " --genmempl";
+        genMeMpl = true;
+        printCommandStr += " --genmempl";
         break;
       case kGenVtableImpl:
-        this->genVtableImpl = true;
-        this->printCommandStr += " --genVtableImpl";
+        genVtableImpl = true;
+        printCommandStr += " --genVtableImpl";
         break;
       case kVerify:
-        this->verify = true;
-        this->printCommandStr += " --verify";
+        verify = true;
+        printCommandStr += " --verify";
         break;
       case kSaveTemps:
-        this->isSaveTmps = true;
-        this->genMeMpl = true;
-        this->genVtableImpl = true;
-        StringUtils::Split(opt.Args(), this->saveFiles, ',');
-        this->printCommandStr += " --save-temps";
+        isSaveTmps = true;
+        genMeMpl = true;
+        genVtableImpl = true;
+        StringUtils::Split(opt.Args(), saveFiles, ',');
+        printCommandStr += " --save-temps";
         break;
       case kOption:
-        if (this->UpdateExtraOptionOpt(opt.Args()) != ErrorCode::kErrorNoError) {
+        if (UpdateExtraOptionOpt(opt.Args()) != ErrorCode::kErrorNoError) {
           return ErrorCode::kErrorInvalidParameter;
         }
         break;
       case kInMplt:
         break;
       case kAllDebug:
-        this->debugFlag = true;
+        debugFlag = true;
         break;
       default:
         // I do not care
@@ -952,7 +952,7 @@ ErrorCode MplOptions::DecideRunType() {
           runModeConflict = true;
         } else {
           runMode = RunMode::kCustomRun;
-          this->UpdateRunningExe(opt.Args());
+          UpdateRunningExe(opt.Args());
         }
         break;
       case kInFile: {
@@ -980,7 +980,7 @@ ErrorCode MplOptions::DecideRunningPhases() {
     case InputFileType::kJar:
       /* fall-through */
     case InputFileType::kClass:
-      this->UpdateRunningExe(kBinNameJbc2mpl);
+      UpdateRunningExe(kBinNameJbc2mpl);
       break;
     case InputFileType::kMpl:
       break;
@@ -1016,7 +1016,7 @@ ErrorCode MplOptions::CheckInputFileValidity() {
   if (optionParser->GetNonOptionsCount() > 0) {
     std::string optionString;
     const std::vector<std::string> inputs = optionParser->GetNonOptions();
-    for (unsigned int i = 0; i < inputs.size(); i++) {
+    for (size_t i = 0; i < inputs.size(); i++) {
       if (i == 0) {
         optionString = inputs[i];
       } else {
@@ -1051,8 +1051,8 @@ ErrorCode MplOptions::CheckFileExits() {
 void MplOptions::AddOption(const mapleOption::Option &option) {
   if (option.HasExtra()) {
     for (auto &extra : option.GetExtras()) {
-      auto iter = std::find(this->runningExes.begin(), this->runningExes.end(), extra.exeName);
-      if (iter == this->runningExes.end()) {
+      auto iter = std::find(runningExes.begin(), runningExes.end(), extra.exeName);
+      if (iter == runningExes.end()) {
         continue;
       }
       options[extra.exeName].push_back(option);
@@ -1064,26 +1064,26 @@ bool MplOptions::Init(const std::string &inputFile) {
   if (StringUtils::Trim(inputFile).empty()) {
     return false;
   }
-  this->inputFiles = inputFile;
-  StringUtils::Split(inputFile, this->splitsInputFiles, ',');
+  inputFiles = inputFile;
+  StringUtils::Split(inputFile, splitsInputFiles, ',');
   std::string firstInputFile = splitsInputFiles[0];
-  this->inputFolder = FileUtils::GetFileFolder(firstInputFile);
-  this->outputFolder = this->inputFolder;
-  this->outputName = FileUtils::GetFileName(firstInputFile, false);
+  inputFolder = FileUtils::GetFileFolder(firstInputFile);
+  outputFolder = inputFolder;
+  outputName = FileUtils::GetFileName(firstInputFile, false);
   std::string extensionName = FileUtils::GetFileExtension(firstInputFile);
   if (extensionName == "class") {
-    this->inputFileType = InputFileType::kClass;
+    inputFileType = InputFileType::kClass;
   }
   else if (extensionName == "jar") {
-    this->inputFileType = InputFileType::kJar;
+    inputFileType = InputFileType::kJar;
   } else if (extensionName == "mpl") {
     if (firstInputFile.find("VtableImpl") == std::string::npos) {
-      this->inputFileType = InputFileType::kMpl;
+      inputFileType = InputFileType::kMpl;
     } else {
-      this->inputFileType = InputFileType::kVtableImplMpl;
+      inputFileType = InputFileType::kVtableImplMpl;
     }
   } else if (extensionName == "s") {
-    this->inputFileType = InputFileType::kS;
+    inputFileType = InputFileType::kS;
   } else {
     return false;
   }
@@ -1091,7 +1091,7 @@ bool MplOptions::Init(const std::string &inputFile) {
 }
 
 std::string MplOptions::OptimizationLevelStr() const {
-  switch (this->optimizationLevel) {
+  switch (optimizationLevel) {
     case OptimizationLevel::kO0: {
       return "-O0";
     }
@@ -1123,30 +1123,30 @@ ErrorCode MplOptions::AppendDefaultCombOptions() {
 ErrorCode MplOptions::AppendDefaultCgOptions() {
   ErrorCode ret = ErrorCode::kErrorNoError;
   if (optimizationLevel == kO0) {
-    this->UpdateRunningExe(kBinNameMplcg);
+    UpdateRunningExe(kBinNameMplcg);
   }
   return ret;
 }
 
 ErrorCode MplOptions::AppendDefaultOptions(const std::string &exeName, MplOption mplOptions[], unsigned int length) {
   auto &exeOption = exeOptions[exeName];
-  for (unsigned int i = 0; i < length; i++) {
+  for (size_t i = 0; i < length; i++) {
     bool ret = optionParser->SetOption(mplOptions[i].GetKey(), mplOptions[i].GetValue(), exeName, exeOption);
     if (!ret) {
       return ErrorCode::kErrorInvalidParameter;
     }
   }
-  auto iter = std::find(this->runningExes.begin(), this->runningExes.end(), exeName.c_str());
-  if (iter == this->runningExes.end()) {
-    this->runningExes.push_back(exeName);
+  auto iter = std::find(runningExes.begin(), runningExes.end(), exeName.c_str());
+  if (iter == runningExes.end()) {
+    runningExes.push_back(exeName);
   }
   return ErrorCode::kErrorNoError;
 }
 
 ErrorCode MplOptions::UpdatePhaseOption(const std::string &args, const std::string &exeName) {
-  auto iter = std::find(this->runningExes.begin(), this->runningExes.end(), exeName.c_str());
-  if (iter == this->runningExes.end()) {
-    LogInfo::MapleLogger(kLlErr) << "Cannot find phase " << exeName << std::endl;
+  auto iter = std::find(runningExes.begin(), runningExes.end(), exeName.c_str());
+  if (iter == runningExes.end()) {
+    LogInfo::MapleLogger(kLlErr) << "Cannot find phase " << exeName << '\n';
     return ErrorCode::kErrorExit;
   }
   std::vector<std::string> tmpArgs;
@@ -1195,10 +1195,10 @@ ErrorCode MplOptions::UpdateExtraOptionOpt(const std::string &args) {
 void MplOptions::UpdateRunningExe(const std::string &args) {
   std::vector<std::string> results;
   StringUtils::Split(args, results, ':');
-  for (unsigned int i = 0; i < results.size(); i++) {
-    auto iter = std::find(this->runningExes.begin(), this->runningExes.end(), results[i].c_str());
-    if (iter == this->runningExes.end()) {
-      this->runningExes.push_back(results[i]);
+  for (size_t i = 0; i < results.size(); i++) {
+    auto iter = std::find(runningExes.begin(), runningExes.end(), results[i].c_str());
+    if (iter == runningExes.end()) {
+      runningExes.push_back(results[i]);
     }
   }
 }

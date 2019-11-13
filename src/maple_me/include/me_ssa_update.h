@@ -38,6 +38,13 @@ class MeSSAUpdate {
   void Run();
 
  private:
+  void GetIterDomFrontier(const BB &bb, MapleSet<BBId> &dfSet, std::vector<bool> &visitedMap);
+  void InsertPhis();
+  void RenamePhi(BB &bb);
+  MeExpr *RenameExpr(MeExpr &meExpr, bool &changed);
+  void RenameStmts(BB &bb);
+  void RenamePhiOpndsInSucc(BB &bb);
+  void RenameBB(BB &bb);
   MeFunction &func;
   IRMap &irMap;
   SSATab &ssaTab;
@@ -46,13 +53,6 @@ class MeSSAUpdate {
   MapleAllocator ssaUpdateAlloc;
   MapleMap<OStIdx, MapleSet<BBId>*> &updateCands;
   MapleMap<OStIdx, MapleStack<VarMeExpr*>*> renameStacks;
-  void GetIterDomFrontier(const BB &bb, MapleSet<BBId> &dfSet, std::vector<bool> &visitedMap);
-  void InsertPhis();
-  void RenamePhi(BB &bb);
-  MeExpr *RenameExpr(MeExpr &meExpr, bool &changed);
-  void RenameStmts(BB &bb);
-  void RenamePhiOpndsInSucc(BB &bb);
-  void RenameBB(BB &bb);
 };
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_ME_SSA_UPDATE_H

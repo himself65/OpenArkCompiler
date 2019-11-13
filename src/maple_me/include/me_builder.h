@@ -27,6 +27,7 @@ class MeBuilder {
 
   MeExpr *CreateMeExpr(int32 exprId, MeExpr &meExpr) const;
   MeExpr *BuildMeExpr(BaseNode &mirNode) const;
+  VarMeExpr *BuildVarMeExpr(int32 exprID, OStIdx oStIdx, size_t vStIdx, PrimType pType, FieldID fieldID) const;
 
  private:
   template<class T, typename... Arguments>

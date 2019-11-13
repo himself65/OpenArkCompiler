@@ -31,7 +31,7 @@ bool MeAliasClass::HasWriteToStaticFinal() const {
       if (stmt.GetOpCode() == OP_dassign) {
         DassignNode &dass = static_cast<DassignNode&>(stmt);
         if (dass.GetStIdx().IsGlobal()) {
-          MIRSymbol *sym = mirModule.CurFunction()->GetLocalOrGlobalSymbol(dass.GetStIdx());
+          const MIRSymbol *sym = mirModule.CurFunction()->GetLocalOrGlobalSymbol(dass.GetStIdx());
           if (sym->IsFinal()) {
             return true;
           }

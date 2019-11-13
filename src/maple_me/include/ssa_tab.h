@@ -34,7 +34,7 @@ class SSATab : public AnalysisResult {
   ~SSATab() = default;
 
   BaseNode *CreateSSAExpr(BaseNode &expr);
-  void CreateSSAStmt(StmtNode &stmt, const BB &curbb, bool ignoreCallassignedDefs = false);
+  void CreateSSAStmt(StmtNode &stmt, const BB &curbb);
   VersionSt *GetVerSt(size_t verIdx) {
     return versionStTable.GetVersionStFromID(verIdx);
   }
@@ -84,7 +84,7 @@ class SSATab : public AnalysisResult {
     return versionStTable;
   }
 
-  size_t GetVersionStTableSize() {
+  size_t GetVersionStTableSize() const {
     return versionStTable.GetVersionStVectorSize();
   }
 
@@ -92,7 +92,7 @@ class SSATab : public AnalysisResult {
     return originalStTable;
   }
 
-  size_t GetOriginalStTableSize() {
+  size_t GetOriginalStTableSize() const {
     return originalStTable.Size();
   }
 
@@ -100,7 +100,7 @@ class SSATab : public AnalysisResult {
     return stmtsSSAPart;
   }
 
-  bool IsWholeProgramScope() {
+  bool IsWholeProgramScope() const {
     return wholeProgramScope;
   }
 

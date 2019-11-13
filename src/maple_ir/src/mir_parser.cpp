@@ -29,7 +29,6 @@ bool MIRParser::ParseStmtDassign(StmtNodePtr &stmt) {
     Error("expect dassign but get ");
     return false;
   }
-  DassignNode *assignstmt = mod.CurFuncCodeMemPool()->New<DassignNode>();
   // parse %i
   lexer.NextToken();
   StIdx stidx;
@@ -40,11 +39,12 @@ bool MIRParser::ParseStmtDassign(StmtNodePtr &stmt) {
     Error("expect a symbol parsing ParseStmtDassign");
     return false;
   }
-  assignstmt->SetStIdx(stidx);
+  auto *assignStmt = mod.CurFuncCodeMemPool()->New<DassignNode>();
+  assignStmt->SetStIdx(stidx);
   TokenKind ntk = lexer.NextToken();
   // parse field id
   if (ntk == kTkIntconst) {  // may be a field id
-    assignstmt->SetFieldID(lexer.GetTheIntVal());
+    assignStmt->SetFieldID(lexer.GetTheIntVal());
     ntk = lexer.NextToken();
   }
   // parse expression like (constval i32 0)
@@ -52,31 +52,31 @@ bool MIRParser::ParseStmtDassign(StmtNodePtr &stmt) {
   if (!ParseExprOneOperand(expr)) {
     return false;
   }
-  assignstmt->SetRHS(expr);
-  stmt = assignstmt;
+  assignStmt->SetRHS(expr);
+  stmt = assignStmt;
   lexer.NextToken();
   return true;
 }
 
 bool MIRParser::ParseStmtRegassign(StmtNodePtr &stmt) {
-  RegassignNode *regassign = mod.CurFuncCodeMemPool()->New<RegassignNode>();
   if (!IsPrimitiveType(lexer.NextToken())) {
     Error("expect type parsing binary operator but get ");
     return false;
   }
-  regassign->SetPrimType(GetPrimitiveType(lexer.GetTokenKind()));
+  auto *regAssign = mod.CurFuncCodeMemPool()->New<RegassignNode>();
+  regAssign->SetPrimType(GetPrimitiveType(lexer.GetTokenKind()));
   lexer.NextToken();
   if (lexer.GetTokenKind() == kTkSpecialreg) {
-    PregIdx tempPregIdx = regassign->GetRegIdx();
+    PregIdx tempPregIdx = regAssign->GetRegIdx();
     bool isSuccess = ParseSpecialReg(tempPregIdx);
-    regassign->SetRegIdx(tempPregIdx);
+    regAssign->SetRegIdx(tempPregIdx);
     if (!isSuccess) {
       return false;
     }
   } else if (lexer.GetTokenKind() == kTkPreg) {
-    PregIdx tempPregIdx = regassign->GetRegIdx();
-    bool isSuccess = ParsePseudoReg(regassign->GetPrimType(), tempPregIdx);
-    regassign->SetRegIdx(tempPregIdx);
+    PregIdx tempPregIdx = regAssign->GetRegIdx();
+    bool isSuccess = ParsePseudoReg(regAssign->GetPrimType(), tempPregIdx);
+    regAssign->SetRegIdx(tempPregIdx);
     if (!isSuccess) {
       return false;
     }
@@ -88,9 +88,9 @@ bool MIRParser::ParseStmtRegassign(StmtNodePtr &stmt) {
   if (!ParseExprOneOperand(expr)) {
     return false;
   }
-  regassign->SetOpnd(expr);
-  if (regassign->GetRegIdx() > 0) {  // check type consistenency for the preg
-    MIRPreg *preg = mod.CurFunction()->GetPregTab()->PregFromPregIdx(regassign->GetRegIdx());
+  regAssign->SetOpnd(expr);
+  if (regAssign->GetRegIdx() > 0) {  // check type consistenency for the preg
+    MIRPreg *preg = mod.CurFunction()->GetPregTab()->PregFromPregIdx(regAssign->GetRegIdx());
     if (preg->GetPrimType() == kPtyInvalid) {
       preg->SetPrimType(expr->GetPrimType());
     } else if (preg->GetPrimType() == PTY_dynany) {
@@ -106,13 +106,13 @@ bool MIRParser::ParseStmtRegassign(StmtNodePtr &stmt) {
       }
     }
   }
-  stmt = regassign;
+  stmt = regAssign;
   lexer.NextToken();
   return true;
 }
 
 bool MIRParser::ParseStmtIassign(StmtNodePtr &stmt) {
-  // iassign <* [10] int> ()
+  // iAssign <* [10] int> ()
   if (lexer.GetTokenKind() != TK_iassign) {
     Error("expect iassign but get ");
     return false;
@@ -121,13 +121,13 @@ bool MIRParser::ParseStmtIassign(StmtNodePtr &stmt) {
   lexer.NextToken();
   TyIdx tyIdx(0);
   if (!ParseDerivedType(tyIdx)) {
-    Error("ParseStmtIassign failed when parisng derived type");
+    Error("ParseStmtIassign failed when parsing derived type");
     return false;
   }
-  IassignNode *iassign = mod.CurFuncCodeMemPool()->New<IassignNode>();
-  iassign->SetTyIdx(tyIdx);
+  auto *iAssign = mod.CurFuncCodeMemPool()->New<IassignNode>();
+  iAssign->SetTyIdx(tyIdx);
   if (lexer.GetTokenKind() == kTkIntconst) {
-    iassign->SetFieldID(lexer.theIntVal);
+    iAssign->SetFieldID(lexer.theIntVal);
     lexer.NextToken();
   }
   BaseNode *addr = nullptr;
@@ -136,73 +136,73 @@ bool MIRParser::ParseStmtIassign(StmtNodePtr &stmt) {
   if (!ParseExprTwoOperand(addr, rhs)) {
     return false;
   }
-  iassign->SetOpnd(addr, 0);
-  iassign->SetRHS(rhs);
+  iAssign->SetOpnd(addr, 0);
+  iAssign->SetRHS(rhs);
   lexer.NextToken();
-  stmt = iassign;
+  stmt = iAssign;
   return true;
 }
 
 bool MIRParser::ParseStmtIassignoff(StmtNodePtr &stmt) {
-  // iassign <prim-type> <offset> ( <addr-expr>, <rhs-expr> )
-  IassignoffNode *iassignoff = mod.CurFuncCodeMemPool()->New<IassignoffNode>();
   if (!IsPrimitiveType(lexer.NextToken())) {
     Error("expect type parsing binary operator but get ");
     return false;
   }
-  iassignoff->SetPrimType(GetPrimitiveType(lexer.GetTokenKind()));
+  // iassign <prim-type> <offset> ( <addr-expr>, <rhs-expr> )
+  auto *iAssignOff = mod.CurFuncCodeMemPool()->New<IassignoffNode>();
+  iAssignOff->SetPrimType(GetPrimitiveType(lexer.GetTokenKind()));
   if (lexer.NextToken() != kTkIntconst) {
     Error("expect offset but get ");
     return false;
   }
-  iassignoff->SetOffset(lexer.GetTheIntVal());
+  iAssignOff->SetOffset(lexer.GetTheIntVal());
   lexer.NextToken();
   BaseNode *addr = nullptr;
   BaseNode *rhs = nullptr;
   if (!ParseExprTwoOperand(addr, rhs)) {
     return false;
   }
-  iassignoff->SetBOpnd(addr, 0);
-  iassignoff->SetBOpnd(rhs, 1);
+  iAssignOff->SetBOpnd(addr, 0);
+  iAssignOff->SetBOpnd(rhs, 1);
   lexer.NextToken();
-  stmt = iassignoff;
+  stmt = iAssignOff;
   return true;
 }
 
 bool MIRParser::ParseStmtIassignFPoff(StmtNodePtr &stmt) {
-  // iassignfpoff <prim-type> <offset> (<rhs-expr> )
-  IassignFPoffNode *iassignoff = mod.CurFuncCodeMemPool()->New<IassignFPoffNode>();
   if (!IsPrimitiveType(lexer.NextToken())) {
     Error("expect type parsing binary operator but get ");
     return false;
   }
-  iassignoff->SetPrimType(GetPrimitiveType(lexer.GetTokenKind()));
+  // iassignfpoff <prim-type> <offset> (<rhs-expr> )
+  auto *iAssignOff = mod.CurFuncCodeMemPool()->New<IassignFPoffNode>();
+  iAssignOff->SetPrimType(GetPrimitiveType(lexer.GetTokenKind()));
   if (lexer.NextToken() != kTkIntconst) {
     Error("expect offset but get ");
     return false;
   }
-  iassignoff->SetOffset(lexer.GetTheIntVal());
+  iAssignOff->SetOffset(lexer.GetTheIntVal());
   lexer.NextToken();
   BaseNode *expr = nullptr;
   if (!ParseExprOneOperand(expr)) {
     return false;
   }
-  iassignoff->SetOpnd(expr);
+  iAssignOff->SetOpnd(expr);
   lexer.NextToken();
-  stmt = iassignoff;
+  stmt = iAssignOff;
   return true;
 }
 
 bool MIRParser::ParseStmtDoloop(StmtNodePtr &stmt) {
   // syntax: doloop <do-var> (<start-expr>, <cont-expr>, <incr-amt>) {
   //              <body-stmts> }
-  DoloopNode *doloopnode = mod.CurFuncCodeMemPool()->New<DoloopNode>();
-  stmt = doloopnode;
+  auto *doLoopNode = mod.CurFuncCodeMemPool()->New<DoloopNode>();
+  stmt = doLoopNode;
   lexer.NextToken();
   if (lexer.GetTokenKind() == kTkPreg) {
-    PregIdx pregidx = LookupOrCreatePregIdx(static_cast<uint32>(lexer.GetTheIntVal()), false, *mod.CurFunction());
-    doloopnode->SetIsPreg(true);
-    doloopnode->SetDoVarStFullIdx(pregidx);
+    PregIdx pregIdx = LookupOrCreatePregIdx(static_cast<uint32>(lexer.GetTheIntVal()), false, *mod.CurFunction());
+    doLoopNode->SetIsPreg(true);
+    doLoopNode->SetDoVarStFullIdx(pregIdx);
     // let other appearances handle the preg primitive type
   } else {
     StIdx stIdx;
@@ -217,7 +217,7 @@ bool MIRParser::ParseStmtDoloop(StmtNodePtr &stmt) {
       Error("expect local variable for doloop var but get ");
       return false;
     }
-    doloopnode->SetDoVarStIdx(stIdx);
+    doLoopNode->SetDoVarStIdx(stIdx);
   }
   // parse (
   if (lexer.NextToken() != kTkLparen) {
@@ -231,19 +231,19 @@ bool MIRParser::ParseStmtDoloop(StmtNodePtr &stmt) {
     Error("ParseStmtDoloop when parsing start expression");
     return false;
   }
-  if (doloopnode->IsPreg()) {
-    PregIdx regidx = (PregIdx)doloopnode->GetDoVarStIdx().FullIdx();
-    MIRPreg *mpreg = mod.CurFunction()->GetPregTab()->PregFromPregIdx(regidx);
-    if (mpreg->GetPrimType() == kPtyInvalid) {
+  if (doLoopNode->IsPreg()) {
+    PregIdx regIdx = (PregIdx)doLoopNode->GetDoVarStIdx().FullIdx();
+    MIRPreg *mpReg = mod.CurFunction()->GetPregTab()->PregFromPregIdx(regIdx);
+    if (mpReg->GetPrimType() == kPtyInvalid) {
       CHECK_FATAL(start != nullptr, "null ptr check");
-      mpreg->SetPrimType(start->GetPrimType());
+      mpReg->SetPrimType(start->GetPrimType());
     }
   }
   if (lexer.GetTokenKind() != kTkComa) {
     Error("expect , after start expression but get ");
     return false;
   }
-  doloopnode->SetStartExpr(start);
+  doLoopNode->SetStartExpr(start);
   // parse end expression
   lexer.NextToken();
   BaseNode *end = nullptr;
@@ -255,7 +255,7 @@ bool MIRParser::ParseStmtDoloop(StmtNodePtr &stmt) {
     Error("expect , after condition expression but get ");
     return false;
   }
-  doloopnode->SetContExpr(end);
+  doLoopNode->SetContExpr(end);
   // parse renew induction expression
   lexer.NextToken();
   BaseNode *induction = nullptr;
@@ -268,23 +268,23 @@ bool MIRParser::ParseStmtDoloop(StmtNodePtr &stmt) {
     Error("expect ) parsing doloop but get ");
     return false;
   }
-  doloopnode->SetIncrExpr(induction);
+  doLoopNode->SetIncrExpr(induction);
   // parse body of the loop
   lexer.NextToken();
-  BlockNode *bodystmt = nullptr;
-  if (!ParseStmtBlock(bodystmt)) {
+  BlockNode *bodyStmt = nullptr;
+  if (!ParseStmtBlock(bodyStmt)) {
     Error("ParseStmtDoloop when parsing body of the loop");
     return false;
   }
-  doloopnode->SetDoBody(bodystmt);
+  doLoopNode->SetDoBody(bodyStmt);
   return true;
 }
 
 bool MIRParser::ParseStmtForeachelem(StmtNodePtr &stmt) {
   // syntax: foreachelem <elemvar> <arrayvar> {
   //              <body-stmts> }
-  ForeachelemNode *fornode = mod.CurFuncCodeMemPool()->New<ForeachelemNode>();
-  stmt = fornode;
+  auto *forNode = mod.CurFuncCodeMemPool()->New<ForeachelemNode>();
+  stmt = forNode;
   lexer.NextToken();  // skip foreachelem token
   StIdx stidx;
   if (!ParseDeclaredSt(stidx)) {
@@ -298,7 +298,7 @@ bool MIRParser::ParseStmtForeachelem(StmtNodePtr &stmt) {
     Error("illegal global scope for element variable for foreachelem in ");
     return false;
   }
-  fornode->SetElemStIdx(stidx);
+  forNode->SetElemStIdx(stidx);
   lexer.NextToken();
   if (!ParseDeclaredSt(stidx)) {
     return false;
@@ -307,15 +307,15 @@ bool MIRParser::ParseStmtForeachelem(StmtNodePtr &stmt) {
     Error("error parsing array/collection variable of foreachelem in ");
     return false;
   }
-  fornode->SetArrayStIdx(stidx);
+  forNode->SetArrayStIdx(stidx);
   lexer.NextToken();
   // parse body of the loop
-  BlockNode *bodystmt = nullptr;
-  if (!ParseStmtBlock(bodystmt)) {
+  BlockNode *bodyStmt = nullptr;
+  if (!ParseStmtBlock(bodyStmt)) {
     Error("error when parsing body of foreachelem loop in ");
     return false;
   }
-  fornode->SetLoopBody(bodystmt);
+  forNode->SetLoopBody(bodyStmt);
   return true;
 }
 
@@ -324,40 +324,40 @@ bool MIRParser::ParseStmtIf(StmtNodePtr &stmt) {
     Error("expect if but get ");
     return false;
   }
-  IfStmtNode *ifstmt = mod.CurFuncCodeMemPool()->New<IfStmtNode>();
+  auto *ifStmt = mod.CurFuncCodeMemPool()->New<IfStmtNode>();
   lexer.NextToken();
   BaseNode *expr = nullptr;
   if (!ParseExprOneOperand(expr)) {
     return false;
   }
-  ifstmt->SetOpnd(expr);
+  ifStmt->SetOpnd(expr);
   if (lexer.NextToken() != kTkLbrace) {
     Error("expect { begin if body but get ");
     return false;
   }
-  BlockNode *thenblock = nullptr;
-  if (!ParseStmtBlock(thenblock)) {
+  BlockNode *thenBlock = nullptr;
+  if (!ParseStmtBlock(thenBlock)) {
     Error("ParseStmtIf failed when parsing then block");
     return false;
   }
-  ifstmt->SetThenPart(thenblock);
-  BlockNode *elseblock = nullptr;
+  ifStmt->SetThenPart(thenBlock);
+  BlockNode *elseBlock = nullptr;
   if (lexer.GetTokenKind() == TK_else) {
     // has else part
     if (lexer.NextToken() != kTkLbrace) {
       Error("expect { begin if body but get ");
       return false;
     }
-    if (!ParseStmtBlock(elseblock)) {
+    if (!ParseStmtBlock(elseBlock)) {
       Error("ParseStmtIf failed when parsing else block");
       return false;
     }
-    ifstmt->SetElsePart(elseblock);
-    if (elseblock != nullptr) {
-      ifstmt->SetNumOpnds(ifstmt->GetNumOpnds() + 1);
+    ifStmt->SetElsePart(elseBlock);
+    if (elseBlock != nullptr) {
+      ifStmt->SetNumOpnds(ifStmt->GetNumOpnds() + 1);
     }
   }
-  stmt = ifstmt;
+  stmt = ifStmt;
   return true;
 }
 
@@ -366,24 +366,24 @@ bool MIRParser::ParseStmtWhile(StmtNodePtr &stmt) {
     Error("expect while but get ");
     return false;
   }
-  WhileStmtNode *whilestmt = mod.CurFuncCodeMemPool()->New<WhileStmtNode>(OP_while);
+  auto *whileStmt = mod.CurFuncCodeMemPool()->New<WhileStmtNode>(OP_while);
   lexer.NextToken();
   BaseNode *expr = nullptr;
   if (!ParseExprOneOperand(expr)) {
     return false;
   }
-  whilestmt->SetOpnd(expr);
+  whileStmt->SetOpnd(expr);
   if (lexer.NextToken() != kTkLbrace) {
     Error("expect { begin if body but get ");
     return false;
   }
-  BlockNode *whilebody = nullptr;
-  if (!ParseStmtBlock(whilebody)) {
+  BlockNode *whileBody = nullptr;
+  if (!ParseStmtBlock(whileBody)) {
     Error("ParseStmtWhile failed when parse while body");
     return false;
   }
-  whilestmt->SetBody(whilebody);
-  stmt = whilestmt;
+  whileStmt->SetBody(whileBody);
+  stmt = whileStmt;
   return true;
 }
 
@@ -392,47 +392,47 @@ bool MIRParser::ParseStmtDowhile(StmtNodePtr &stmt) {
     Error("expect while but get ");
     return false;
   }
-  WhileStmtNode *whilestmt = mod.CurFuncCodeMemPool()->New<WhileStmtNode>(OP_dowhile);
+  auto *whileStmt = mod.CurFuncCodeMemPool()->New<WhileStmtNode>(OP_dowhile);
   if (lexer.NextToken() != kTkLbrace) {
     Error("expect { begin if body but get ");
     return false;
   }
-  BlockNode *dowhilebody = nullptr;
-  if (!ParseStmtBlock(dowhilebody)) {
+  BlockNode *doWhileBody = nullptr;
+  if (!ParseStmtBlock(doWhileBody)) {
     Error("ParseStmtDowhile failed when trying to parsing do while body");
     return false;
   }
-  whilestmt->SetBody(dowhilebody);
+  whileStmt->SetBody(doWhileBody);
   BaseNode *expr = nullptr;
   if (!ParseExprOneOperand(expr)) {
     return false;
   }
-  whilestmt->SetOpnd(expr);
+  whileStmt->SetOpnd(expr);
   lexer.NextToken();
-  stmt = whilestmt;
+  stmt = whileStmt;
   return true;
 }
 
 bool MIRParser::ParseStmtLabel(StmtNodePtr &stmt) {
-  GStrIdx stridx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName());
-  LabelIdx labidx = mod.CurFunction()->GetLabelTab()->GetStIdxFromStrIdx(stridx);
-  if (labidx == 0) {
-    labidx = mod.CurFunction()->GetLabelTab()->CreateLabel();
-    mod.CurFunction()->GetLabelTab()->SetSymbolFromStIdx(labidx, stridx);
-    mod.CurFunction()->GetLabelTab()->AddToStringLabelMap(labidx);
+  GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName());
+  LabelIdx labIdx = mod.CurFunction()->GetLabelTab()->GetStIdxFromStrIdx(strIdx);
+  if (labIdx == 0) {
+    labIdx = mod.CurFunction()->GetLabelTab()->CreateLabel();
+    mod.CurFunction()->GetLabelTab()->SetSymbolFromStIdx(labIdx, strIdx);
+    mod.CurFunction()->GetLabelTab()->AddToStringLabelMap(labIdx);
   } else {
-    if (definedLabels.size() > labidx && definedLabels[labidx]) {
+    if (definedLabels.size() > labIdx && definedLabels[labIdx]) {
       Error("label multiply declared ");
       return false;
     }
   }
-  if (definedLabels.size() <= labidx) {
-    definedLabels.resize(labidx + 1);
+  if (definedLabels.size() <= labIdx) {
+    definedLabels.resize(labIdx + 1);
   }
-  definedLabels[labidx] = true;
-  LabelNode *labnode = mod.CurFuncCodeMemPool()->New<LabelNode>();
-  labnode->SetLabelIdx(labidx);
-  stmt = labnode;
+  definedLabels[labIdx] = true;
+  auto *labNode = mod.CurFuncCodeMemPool()->New<LabelNode>();
+  labNode->SetLabelIdx(labIdx);
+  stmt = labNode;
   lexer.NextToken();
   return true;
 }
@@ -446,16 +446,16 @@ bool MIRParser::ParseStmtGoto(StmtNodePtr &stmt) {
     Error("expect label in goto but get ");
     return false;
   }
-  GStrIdx stridx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName());
-  LabelIdx labidx = mod.CurFunction()->GetLabelTab()->GetStIdxFromStrIdx(stridx);
-  if (labidx == 0) {
-    labidx = mod.CurFunction()->GetLabelTab()->CreateLabel();
-    mod.CurFunction()->GetLabelTab()->SetSymbolFromStIdx(labidx, stridx);
-    mod.CurFunction()->GetLabelTab()->AddToStringLabelMap(labidx);
+  GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName());
+  LabelIdx labIdx = mod.CurFunction()->GetLabelTab()->GetStIdxFromStrIdx(strIdx);
+  if (labIdx == 0) {
+    labIdx = mod.CurFunction()->GetLabelTab()->CreateLabel();
+    mod.CurFunction()->GetLabelTab()->SetSymbolFromStIdx(labIdx, strIdx);
+    mod.CurFunction()->GetLabelTab()->AddToStringLabelMap(labIdx);
   }
-  GotoNode *gotonode = mod.CurFuncCodeMemPool()->New<GotoNode>(OP_goto);
-  gotonode->SetOffset(labidx);
-  stmt = gotonode;
+  auto *gotoNode = mod.CurFuncCodeMemPool()->New<GotoNode>(OP_goto);
+  gotoNode->SetOffset(labIdx);
+  stmt = gotoNode;
   lexer.NextToken();
   return true;
 }
@@ -470,34 +470,34 @@ bool MIRParser::ParseStmtBr(StmtNodePtr &stmt) {
     Error("expect label in goto but get ");
     return false;
   }
-  GStrIdx stridx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName());
-  LabelIdx labidx = mod.CurFunction()->GetLabelTab()->GetStIdxFromStrIdx(stridx);
-  if (labidx == 0) {
-    labidx = mod.CurFunction()->GetLabelTab()->CreateLabel();
-    mod.CurFunction()->GetLabelTab()->SetSymbolFromStIdx(labidx, stridx);
-    mod.CurFunction()->GetLabelTab()->AddToStringLabelMap(labidx);
+  GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName());
+  LabelIdx labIdx = mod.CurFunction()->GetLabelTab()->GetStIdxFromStrIdx(strIdx);
+  if (labIdx == 0) {
+    labIdx = mod.CurFunction()->GetLabelTab()->CreateLabel();
+    mod.CurFunction()->GetLabelTab()->SetSymbolFromStIdx(labIdx, strIdx);
+    mod.CurFunction()->GetLabelTab()->AddToStringLabelMap(labIdx);
   }
-  CondGotoNode *condgoto = mod.CurFuncCodeMemPool()->New<CondGotoNode>(tk == TK_brtrue ? OP_brtrue : OP_brfalse);
-  condgoto->SetOffset(labidx);
+  auto *condGoto = mod.CurFuncCodeMemPool()->New<CondGotoNode>(tk == TK_brtrue ? OP_brtrue : OP_brfalse);
+  condGoto->SetOffset(labIdx);
   lexer.NextToken();
   // parse (<expr>)
   BaseNode *expr = nullptr;
   if (!ParseExprOneOperand(expr)) {
     return false;
   }
-  condgoto->SetOpnd(expr);
-  stmt = condgoto;
+  condGoto->SetOpnd(expr);
+  stmt = condGoto;
   lexer.NextToken();
   return true;
 }
 
-bool MIRParser::ParseSwitchCase(int32 &constval, LabelIdx &lblIdx) {
+bool MIRParser::ParseSwitchCase(int32 &constVal, LabelIdx &lblIdx) {
   // syntax <intconst0>: goto <label0>
   if (lexer.GetTokenKind() != kTkIntconst) {
     Error("expect intconst in switch but get ");
     return false;
   }
-  constval = lexer.GetTheIntVal();
+  constVal = lexer.GetTheIntVal();
   if (lexer.NextToken() != kTkColon) {
     Error("expect : in switch but get ");
     return false;
@@ -516,20 +516,20 @@ bool MIRParser::ParseSwitchCase(int32 &constval, LabelIdx &lblIdx) {
 }
 
 bool MIRParser::ParseStmtSwitch(StmtNodePtr &stmt) {
-  SwitchNode *switchnode = mod.CurFuncCodeMemPool()->New<SwitchNode>(mod);
-  stmt = switchnode;
+  auto *switchNode = mod.CurFuncCodeMemPool()->New<SwitchNode>(mod);
+  stmt = switchNode;
   lexer.NextToken();
   BaseNode *expr = nullptr;
   if (!ParseExprOneOperand(expr)) {
     return false;
   }
-  switchnode->SetSwitchOpnd(expr);
+  switchNode->SetSwitchOpnd(expr);
   if (!IsPrimitiveInteger(expr->GetPrimType())) {
     Error("expect expression return integer but get ");
     return false;
   }
   if (lexer.NextToken() == TK_label) {
-    switchnode->SetDefaultLabel(mod.CurFunction()->GetOrCreateLableIdxFromName(lexer.GetName()));
+    switchNode->SetDefaultLabel(mod.CurFunction()->GetOrCreateLableIdxFromName(lexer.GetName()));
   } else {
     Error("expect label in switch but get ");
     return false;
@@ -555,7 +555,7 @@ bool MIRParser::ParseStmtSwitch(StmtNodePtr &stmt) {
       Error("duplicated switch case ");
       return false;
     }
-    switchnode->InsertCasePair(CasePair(constVal, lbl));
+    switchNode->InsertCasePair(CasePair(constVal, lbl));
     casesSet.insert(constVal);
     tk = lexer.GetTokenKind();
   }
@@ -564,20 +564,20 @@ bool MIRParser::ParseStmtSwitch(StmtNodePtr &stmt) {
 }
 
 bool MIRParser::ParseStmtRangegoto(StmtNodePtr &stmt) {
-  RangeGotoNode *rangegotonode = mod.CurFuncCodeMemPool()->New<RangeGotoNode>(mod);
-  stmt = rangegotonode;
+  auto *rangeGotoNode = mod.CurFuncCodeMemPool()->New<RangeGotoNode>(mod);
+  stmt = rangeGotoNode;
   lexer.NextToken();
   BaseNode *expr = nullptr;
   if (!ParseExprOneOperand(expr)) {
     return false;
   }
   if (!IsPrimitiveInteger(expr->GetPrimType())) {
-    rangegotonode->SetOpnd(expr);
+    rangeGotoNode->SetOpnd(expr);
     Error("expect expression return integer but get ");
     return false;
   }
   if (lexer.NextToken() == kTkIntconst) {
-    rangegotonode->SetTagOffset(lexer.GetTheIntVal());
+    rangeGotoNode->SetTagOffset(lexer.GetTheIntVal());
   } else {
     Error("expect tag offset in rangegoto but get ");
     return false;
@@ -592,8 +592,8 @@ bool MIRParser::ParseStmtRangegoto(StmtNodePtr &stmt) {
   // <intconstn>: goto <labeln>
   TokenKind tk = lexer.NextToken();
   std::set<uint16> casesSet;
-  int32 minidx = UINT16_MAX;
-  int32 maxidx = 0;
+  int32 minIdx = UINT16_MAX;
+  int32 maxIdx = 0;
   while (tk != kTkRbrace) {
     int32 constVal = 0;
     LabelIdx lbl = 0;
@@ -609,19 +609,19 @@ bool MIRParser::ParseStmtRangegoto(StmtNodePtr &stmt) {
       Error("duplicated switch case ");
       return false;
     }
-    if (constVal < minidx) {
-      minidx = constVal;
+    if (constVal < minIdx) {
+      minIdx = constVal;
     }
-    if (constVal > maxidx) {
-      maxidx = constVal;
+    if (constVal > maxIdx) {
+      maxIdx = constVal;
     }
-    rangegotonode->AddRangeGoto(static_cast<uint32>(constVal), static_cast<uint32>(lbl));
+    rangeGotoNode->AddRangeGoto(static_cast<uint32>(constVal), static_cast<uint32>(lbl));
     casesSet.insert(constVal);
     tk = lexer.GetTokenKind();
   }
-  ASSERT(rangegotonode->GetNumOpnds() == 1, "Rangegoto is a UnaryOpnd; numOpnds must be 1");
+  ASSERT(rangeGotoNode->GetNumOpnds() == 1, "Rangegoto is a UnaryOpnd; numOpnds must be 1");
   // check there is no gap
-  if (static_cast<size_t>(static_cast<uint32>(maxidx - minidx) + 1) != casesSet.size()) {
+  if (static_cast<size_t>(static_cast<uint32>(maxIdx - minIdx) + 1) != casesSet.size()) {
     Error("gap not allowed in rangegoto case tags ");
     return false;
   }
@@ -630,16 +630,16 @@ bool MIRParser::ParseStmtRangegoto(StmtNodePtr &stmt) {
 }
 
 bool MIRParser::ParseStmtMultiway(StmtNodePtr &stmt) {
-  MultiwayNode *multiwaynode = mod.CurFuncCodeMemPool()->New<MultiwayNode>(mod);
-  stmt = multiwaynode;
+  auto *multiwayNode = mod.CurFuncCodeMemPool()->New<MultiwayNode>(mod);
+  stmt = multiwayNode;
   lexer.NextToken();
   BaseNode *expr = nullptr;
   if (!ParseExprOneOperand(expr)) {
     return false;
   }
-  multiwaynode->SetMultiWayOpnd(expr);
+  multiwayNode->SetMultiWayOpnd(expr);
   if (lexer.NextToken() == TK_label) {
-    multiwaynode->SetDefaultlabel(mod.CurFunction()->GetOrCreateLableIdxFromName(lexer.GetName()));
+    multiwayNode->SetDefaultlabel(mod.CurFunction()->GetOrCreateLableIdxFromName(lexer.GetName()));
   } else {
     Error("expect label in multiway but get ");
     return false;
@@ -672,11 +672,11 @@ bool MIRParser::ParseStmtMultiway(StmtNodePtr &stmt) {
     }
     LabelIdx lblIdx = mod.CurFunction()->GetOrCreateLableIdxFromName(lexer.GetName());
     lexer.NextToken();
-    multiwaynode->AppendElemToMultiWayTable(MCasePair(static_cast<BaseNode*>(x), lblIdx));
+    multiwayNode->AppendElemToMultiWayTable(MCasePair(static_cast<BaseNode*>(x), lblIdx));
     tk = lexer.GetTokenKind();
   }
-  const MapleVector<MCasePair> &multiWayTable = multiwaynode->GetMultiWayTable();
-  multiwaynode->SetNumOpnds(multiWayTable.size());
+  const MapleVector<MCasePair> &multiWayTable = multiwayNode->GetMultiWayTable();
+  multiwayNode->SetNumOpnds(multiWayTable.size());
   lexer.NextToken();
   return true;
 }
@@ -689,22 +689,22 @@ PUIdx MIRParser::EnterUndeclaredFunction(bool isMcount) {
   } else {
     funcName = lexer.GetName();
   }
-  GStrIdx stridx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(funcName);
+  GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(funcName);
   MIRSymbol *funcSt = GlobalTables::GetGsymTable().CreateSymbol(kScopeGlobal);
-  funcSt->SetNameStrIdx(stridx);
+  funcSt->SetNameStrIdx(strIdx);
   (void)GlobalTables::GetGsymTable().AddToStringSymbolMap(*funcSt);
   funcSt->SetStorageClass(kScText);
   funcSt->SetSKind(kStFunc);
-  MIRFunction *fn = mod.GetMemPool()->New<MIRFunction>(&mod, funcSt->GetStIdx());
+  auto *fn = mod.GetMemPool()->New<MIRFunction>(&mod, funcSt->GetStIdx());
   fn->Init();
   fn->SetPuidx(GlobalTables::GetFunctionTable().GetFuncTable().size());
   GlobalTables::GetFunctionTable().GetFuncTable().push_back(fn);
   funcSt->SetFunction(fn);
-  MIRFuncType *functype = mod.GetMemPool()->New<MIRFuncType>();
-  fn->SetMIRFuncType(functype);
+  auto *funcType = mod.GetMemPool()->New<MIRFuncType>();
+  fn->SetMIRFuncType(funcType);
   if (isMcount) {
-    MIRType *rettype = GlobalTables::GetTypeTable().GetTypeFromTyIdx(TyIdx(PTY_void));
-    fn->SetReturnTyIdx(rettype->GetTypeIndex());
+    MIRType *retType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(TyIdx(PTY_void));
+    fn->SetReturnTyIdx(retType->GetTypeIndex());
   }
   return fn->GetPuidx();
 }
@@ -712,13 +712,13 @@ PUIdx MIRParser::EnterUndeclaredFunction(bool isMcount) {
 bool MIRParser::ParseStmtCallMcount(StmtNodePtr &stmt) {
   // syntax: call <PU-name> (<opnd0>, ..., <opndn>)
   Opcode o = OP_call;
-  PUIdx pidx = EnterUndeclaredFunction(true);
-  CallNode *callstmt = mod.CurFuncCodeMemPool()->New<CallNode>(mod, o);
-  callstmt->SetPUIdx(pidx);
+  PUIdx pIdx = EnterUndeclaredFunction(true);
+  auto *callStmt = mod.CurFuncCodeMemPool()->New<CallNode>(mod, o);
+  callStmt->SetPUIdx(pIdx);
   MapleVector<BaseNode*> opndsvec(mod.CurFuncCodeMemPoolAllocator()->Adapter());
-  callstmt->SetNOpnd(opndsvec);
-  callstmt->SetNumOpnds(opndsvec.size());
-  stmt = callstmt;
+  callStmt->SetNOpnd(opndsvec);
+  callStmt->SetNumOpnds(opndsvec.size());
+  stmt = callStmt;
   return true;
 }
 
@@ -727,13 +727,13 @@ bool MIRParser::ParseStmtCall(StmtNodePtr &stmt) {
   TokenKind tk = lexer.GetTokenKind();
   Opcode o = GetOpFromToken(tk);
   ASSERT(kOpcodeInfo.IsCall(o), "ParseStmtCall: not a call opcode");
-  bool hasassigned = kOpcodeInfo.IsCallAssigned(o);
-  bool hasinstant = false;
-  bool withtype = false;
+  bool hasAssigned = kOpcodeInfo.IsCallAssigned(o);
+  bool hasInstant = false;
+  bool withType = false;
   switch (tk) {
     case TK_polymorphiccall:
     case TK_polymorphiccallassigned:
-      withtype = true;
+      withType = true;
       break;
     case TK_callinstant:
     case TK_virtualcallinstant:
@@ -743,19 +743,19 @@ bool MIRParser::ParseStmtCall(StmtNodePtr &stmt) {
     case TK_virtualcallinstantassigned:
     case TK_superclasscallinstantassigned:
     case TK_interfacecallinstantassigned:
-      hasinstant = true;
+      hasInstant = true;
       break;
     default:
       break;
   }
-  TyIdx polymophictyidx(0);
+  TyIdx polymophicTyidx(0);
   if (o == OP_polymorphiccallassigned || o == OP_polymorphiccall) {
     TokenKind nextTk = lexer.NextToken();
     if (nextTk == kTkLangle) {
       nextTk = lexer.NextToken();
       if (nextTk == TK_func) {
         lexer.NextToken();
-        if (!ParseFuncType(polymophictyidx)) {
+        if (!ParseFuncType(polymophicTyidx)) {
           Error("error parsing functype in ParseStmtCall for polymorphiccallassigned at ");
           return false;
         }
@@ -773,21 +773,21 @@ bool MIRParser::ParseStmtCall(StmtNodePtr &stmt) {
     Error("expect func name in call but get ");
     return false;
   }
-  PUIdx pidx;
-  if (!ParseDeclaredFunc(pidx)) {
+  PUIdx pIdx;
+  if (!ParseDeclaredFunc(pIdx)) {
     if (mod.GetFlavor() < kMmpl) {
       Error("expect .mmpl");
       return false;
     }
-    pidx = EnterUndeclaredFunction();
+    pIdx = EnterUndeclaredFunction();
   }
   lexer.NextToken();
-  CallNode *callstmt = nullptr;
+  CallNode *callStmt = nullptr;
   CallinstantNode *callInstantStmt = nullptr;
-  if (withtype) {
-    callstmt = mod.CurFuncCodeMemPool()->New<CallNode>(mod, o);
-    callstmt->SetTyIdx(polymophictyidx);
-  } else if (hasinstant) {
+  if (withType) {
+    callStmt = mod.CurFuncCodeMemPool()->New<CallNode>(mod, o);
+    callStmt->SetTyIdx(polymophicTyidx);
+  } else if (hasInstant) {
     TokenKind langleTk = lexer.GetTokenKind();
     if (langleTk != kTkLangle) {
       Error("missing < in generic method instantiation at ");
@@ -798,8 +798,8 @@ bool MIRParser::ParseStmtCall(StmtNodePtr &stmt) {
       Error("missing { in generic method instantiation at ");
       return false;
     }
-    MIRInstantVectorType instvecty;
-    if (!ParseGenericInstantVector(instvecty)) {
+    MIRInstantVectorType instVecTy;
+    if (!ParseGenericInstantVector(instVecTy)) {
       Error("error parsing generic method instantiation at ");
       return false;
     }
@@ -808,35 +808,35 @@ bool MIRParser::ParseStmtCall(StmtNodePtr &stmt) {
       Error("missing > in generic method instantiation at ");
       return false;
     }
-    TyIdx tyidx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&instvecty);
-    callInstantStmt = mod.CurFuncCodeMemPool()->New<CallinstantNode>(mod, o, tyidx);
-    callstmt = callInstantStmt;
+    TyIdx tyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&instVecTy);
+    callInstantStmt = mod.CurFuncCodeMemPool()->New<CallinstantNode>(mod, o, tyIdx);
+    callStmt = callInstantStmt;
     lexer.NextToken();  // skip the >
   } else {
-    callstmt = mod.CurFuncCodeMemPool()->New<CallNode>(mod, o);
+    callStmt = mod.CurFuncCodeMemPool()->New<CallNode>(mod, o);
   }
-  callstmt->SetPUIdx(pidx);
-  MapleVector<BaseNode*> opndsvec(mod.CurFuncCodeMemPoolAllocator()->Adapter());
-  if (!ParseExprNaryOperand(opndsvec)) {
+  callStmt->SetPUIdx(pIdx);
+  MapleVector<BaseNode*> opndsVec(mod.CurFuncCodeMemPoolAllocator()->Adapter());
+  if (!ParseExprNaryOperand(opndsVec)) {
     return false;
   }
-  callstmt->SetNOpnd(opndsvec);
-  callstmt->SetNumOpnds(opndsvec.size());
-  if (hasassigned) {
-    CallReturnVector retsvec(mod.CurFuncCodeMemPoolAllocator()->Adapter());
-    if (!ParseCallReturns(retsvec)) {
+  callStmt->SetNOpnd(opndsVec);
+  callStmt->SetNumOpnds(opndsVec.size());
+  if (hasAssigned) {
+    CallReturnVector retsVec(mod.CurFuncCodeMemPoolAllocator()->Adapter());
+    if (!ParseCallReturns(retsVec)) {
       return false;
     }
-    if (!hasinstant) {
-      ASSERT(callstmt != nullptr, "callstmt is null in MIRParser::ParseStmtCall");
-      callstmt->SetReturnVec(retsvec);
+    if (!hasInstant) {
+      ASSERT(callStmt != nullptr, "callstmt is null in MIRParser::ParseStmtCall");
+      callStmt->SetReturnVec(retsVec);
     } else {
       ASSERT(callInstantStmt != nullptr, "callinstantstmt is null in MIRParser::ParseStmtCall");
-      callInstantStmt->SetReturnVec(retsvec);
+      callInstantStmt->SetReturnVec(retsVec);
     }
   }
   lexer.NextToken();
-  stmt = callstmt;
+  stmt = callStmt;
   return true;
 }
 
@@ -847,23 +847,23 @@ bool MIRParser::ParseStmtIcall(StmtNodePtr &stmt, bool isAssigned) {
   //              dassign <var-name1> <field-id1>
   //               . . .
   //              dassign <var-namen> <field-idn> }
-  IcallNode *icallStmt = mod.CurFuncCodeMemPool()->New<IcallNode>(mod, !isAssigned ? OP_icall : OP_icallassigned);
+  auto *iCallStmt = mod.CurFuncCodeMemPool()->New<IcallNode>(mod, !isAssigned ? OP_icall : OP_icallassigned);
   lexer.NextToken();
-  MapleVector<BaseNode*> opndsvec(mod.CurFuncCodeMemPoolAllocator()->Adapter());
-  if (!ParseExprNaryOperand(opndsvec)) {
+  MapleVector<BaseNode*> opndsVec(mod.CurFuncCodeMemPoolAllocator()->Adapter());
+  if (!ParseExprNaryOperand(opndsVec)) {
     return false;
   }
-  icallStmt->SetNOpnd(opndsvec);
-  icallStmt->SetNumOpnds(opndsvec.size());
+  iCallStmt->SetNOpnd(opndsVec);
+  iCallStmt->SetNumOpnds(opndsVec.size());
   if (isAssigned) {
-    CallReturnVector retsvec(mod.CurFuncCodeMemPoolAllocator()->Adapter());
-    if (!ParseCallReturns(retsvec)) {
+    CallReturnVector retsVec(mod.CurFuncCodeMemPoolAllocator()->Adapter());
+    if (!ParseCallReturns(retsVec)) {
       return false;
     }
-    icallStmt->SetReturnVec(retsvec);
+    iCallStmt->SetReturnVec(retsVec);
   }
   lexer.NextToken();
-  stmt = icallStmt;
+  stmt = iCallStmt;
   return true;
 }
 
@@ -879,35 +879,35 @@ bool MIRParser::ParseStmtIntrinsiccall(StmtNodePtr &stmt, bool isAssigned) {
   Opcode o = !isAssigned ? (lexer.GetTokenKind() == TK_intrinsiccall ? OP_intrinsiccall : OP_xintrinsiccall)
                          : (lexer.GetTokenKind() == TK_intrinsiccallassigned ? OP_intrinsiccallassigned
                                                                              : OP_xintrinsiccallassigned);
-  IntrinsiccallNode *intrncallnode = mod.CurFuncCodeMemPool()->New<IntrinsiccallNode>(mod, o);
+  auto *intrnCallNode = mod.CurFuncCodeMemPool()->New<IntrinsiccallNode>(mod, o);
   lexer.NextToken();
   if (o == !isAssigned ? OP_intrinsiccall : OP_intrinsiccallassigned) {
-    intrncallnode->SetIntrinsic(GetIntrinsicId(lexer.GetTokenKind()));
+    intrnCallNode->SetIntrinsic(GetIntrinsicId(lexer.GetTokenKind()));
   } else {
-    intrncallnode->SetIntrinsic(static_cast<MIRIntrinsicID>(lexer.GetTheIntVal()));
+    intrnCallNode->SetIntrinsic(static_cast<MIRIntrinsicID>(lexer.GetTheIntVal()));
   }
   lexer.NextToken();
-  MapleVector<BaseNode*> opndsvec(mod.CurFuncCodeMemPoolAllocator()->Adapter());
-  if (!ParseExprNaryOperand(opndsvec)) {
+  MapleVector<BaseNode*> opndsVec(mod.CurFuncCodeMemPoolAllocator()->Adapter());
+  if (!ParseExprNaryOperand(opndsVec)) {
     return false;
   }
-  intrncallnode->SetNOpnd(opndsvec);
-  intrncallnode->SetNumOpnds(opndsvec.size());
+  intrnCallNode->SetNOpnd(opndsVec);
+  intrnCallNode->SetNumOpnds(opndsVec.size());
   if (isAssigned) {
-    CallReturnVector retsvec(mod.CurFuncCodeMemPoolAllocator()->Adapter());
-    if (!ParseCallReturns(retsvec)) {
+    CallReturnVector retsVec(mod.CurFuncCodeMemPoolAllocator()->Adapter());
+    if (!ParseCallReturns(retsVec)) {
       return false;
     }
     // store return type of IntrinsiccallNode
-    if (retsvec.size() == 1 && retsvec[0].first.Idx() != 0) {
-      MIRSymbol *retsymbol = curFunc->GetSymTab()->GetSymbolFromStIdx(retsvec[0].first.Idx());
-      MIRType *rettype = GlobalTables::GetTypeTable().GetTypeFromTyIdx(retsymbol->GetTyIdx());
-      CHECK_FATAL(rettype != nullptr, "rettype is null in MIRParser::ParseStmtIntrinsiccallAssigned");
-      intrncallnode->SetPrimType(rettype->GetPrimType());
+    if (retsVec.size() == 1 && retsVec[0].first.Idx() != 0) {
+      MIRSymbol *retSymbol = curFunc->GetSymTab()->GetSymbolFromStIdx(retsVec[0].first.Idx());
+      MIRType *retType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(retSymbol->GetTyIdx());
+      CHECK_FATAL(retType != nullptr, "rettype is null in MIRParser::ParseStmtIntrinsiccallAssigned");
+      intrnCallNode->SetPrimType(retType->GetPrimType());
     }
-    intrncallnode->SetReturnVec(retsvec);
+    intrnCallNode->SetReturnVec(retsVec);
   }
-  stmt = intrncallnode;
+  stmt = intrnCallNode;
   lexer.NextToken();
   return true;
 }
@@ -922,42 +922,42 @@ bool MIRParser::ParseStmtIntrinsiccallassigned(StmtNodePtr &stmt) {
 
 bool MIRParser::ParseStmtIntrinsiccallwithtype(StmtNodePtr &stmt, bool isAssigned) {
   Opcode o = !isAssigned ? OP_intrinsiccallwithtype : OP_intrinsiccallwithtypeassigned;
-  IntrinsiccallNode *intrncallnode = mod.CurFuncCodeMemPool()->New<IntrinsiccallNode>(mod, o);
+  IntrinsiccallNode *intrnCallNode = mod.CurFuncCodeMemPool()->New<IntrinsiccallNode>(mod, o);
   TokenKind tk = lexer.NextToken();
-  TyIdx tyidx(0);
+  TyIdx tyIdx(0);
   if (IsPrimitiveType(tk)) {
-    if (!ParsePrimType(tyidx)) {
+    if (!ParsePrimType(tyIdx)) {
       Error("expect primitive type in ParseStmtIntrinsiccallwithtype but get ");
       return false;
     }
-  } else if (!ParseDerivedType(tyidx)) {
+  } else if (!ParseDerivedType(tyIdx)) {
     Error("error parsing type in ParseStmtIntrinsiccallwithtype at ");
     return false;
   }
-  intrncallnode->SetTyIdx(tyidx);
-  intrncallnode->SetIntrinsic(GetIntrinsicId(lexer.GetTokenKind()));
+  intrnCallNode->SetTyIdx(tyIdx);
+  intrnCallNode->SetIntrinsic(GetIntrinsicId(lexer.GetTokenKind()));
   lexer.NextToken();
-  MapleVector<BaseNode*> opndsvec(mod.CurFuncCodeMemPoolAllocator()->Adapter());
-  if (!ParseExprNaryOperand(opndsvec)) {
+  MapleVector<BaseNode*> opndsVec(mod.CurFuncCodeMemPoolAllocator()->Adapter());
+  if (!ParseExprNaryOperand(opndsVec)) {
     return false;
   }
-  intrncallnode->SetNOpnd(opndsvec);
-  intrncallnode->SetNumOpnds(opndsvec.size());
+  intrnCallNode->SetNOpnd(opndsVec);
+  intrnCallNode->SetNumOpnds(opndsVec.size());
   if (isAssigned) {
-    CallReturnVector retsvec(mod.CurFuncCodeMemPoolAllocator()->Adapter());
-    if (!ParseCallReturns(retsvec)) {
+    CallReturnVector retsVec(mod.CurFuncCodeMemPoolAllocator()->Adapter());
+    if (!ParseCallReturns(retsVec)) {
       return false;
     }
     // store return type of IntrinsiccallNode
-    if (retsvec.size() == 1 && retsvec[0].first.Idx() != 0) {
-      MIRSymbol *retsymbol = curFunc->GetSymTab()->GetSymbolFromStIdx(retsvec[0].first.Idx());
-      MIRType *rettype = GlobalTables::GetTypeTable().GetTypeFromTyIdx(retsymbol->GetTyIdx());
-      CHECK_FATAL(rettype != nullptr, "rettype is null in MIRParser::ParseStmtIntrinsiccallwithtypeAssigned");
-      intrncallnode->SetPrimType(rettype->GetPrimType());
+    if (retsVec.size() == 1 && retsVec[0].first.Idx() != 0) {
+      MIRSymbol *retSymbol = curFunc->GetSymTab()->GetSymbolFromStIdx(retsVec[0].first.Idx());
+      MIRType *retType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(retSymbol->GetTyIdx());
+      CHECK_FATAL(retType != nullptr, "rettype is null in MIRParser::ParseStmtIntrinsiccallwithtypeAssigned");
+      intrnCallNode->SetPrimType(retType->GetPrimType());
     }
-    intrncallnode->SetReturnVec(retsvec);
+    intrnCallNode->SetReturnVec(retsVec);
   }
-  stmt = intrncallnode;
+  stmt = intrnCallNode;
   lexer.NextToken();
   return true;
 }
@@ -1002,34 +1002,34 @@ bool MIRParser::ParseCallReturns(CallReturnVector &retsvec) {
         return false;
       }
       if (lexer.GetTokenKind() == kTkLname) {
-        MIRSymbolTable *lsymtab = mod.CurFunction()->GetSymTab();
-        MIRSymbol *lsym = lsymtab->GetSymbolFromStIdx(stidx.Idx(), 0);
-        ASSERT(lsym != nullptr, "lsym MIRSymbol is null");
-        if (lsym->GetName().find("L_STR") == 0) {
-          MIRType *ty = GlobalTables::GetTypeTable().GetTypeFromTyIdx(lsym->GetTyIdx());
+        MIRSymbolTable *lSymTab = mod.CurFunction()->GetSymTab();
+        MIRSymbol *lSym = lSymTab->GetSymbolFromStIdx(stidx.Idx(), 0);
+        ASSERT(lSym != nullptr, "lsym MIRSymbol is null");
+        if (lSym->GetName().find("L_STR") == 0) {
+          MIRType *ty = GlobalTables::GetTypeTable().GetTypeFromTyIdx(lSym->GetTyIdx());
           MIRPtrType *ptrTy = static_cast<MIRPtrType*>(ty->CopyMIRTypeNode());
           ASSERT(ptrTy != nullptr, "null ptr check");
           ptrTy->SetPrimType(PTY_ptr);
           TyIdx newTyidx = GlobalTables::GetTypeTable().GetOrCreateMIRType(ptrTy);
           delete ptrTy;
-          lsym->SetTyIdx(newTyidx);
+          lSym->SetTyIdx(newTyidx);
         }
       }
       if (stidx.FullIdx() == 0) {
         Error("expect a symbol parsing ParseCallAssignedStmts. ");
         return false;
       }
-      uint16 fieldid = 0;
+      uint16 fieldId = 0;
       TokenKind ntk = lexer.NextToken();
       // parse field id
       if (ntk == kTkIntconst) {
-        fieldid = lexer.GetTheIntVal();
+        fieldId = lexer.GetTheIntVal();
       } else {
         Error("expect a fieldID parsing ParseCallAssignedStmts. ");
       }
-      RegFieldPair regfieldpair;
-      regfieldpair.SetFieldID(fieldid);
-      retsvec.push_back(CallReturnPair(stidx, regfieldpair));
+      RegFieldPair regFieldPair;
+      regFieldPair.SetFieldID(fieldId);
+      retsvec.push_back(CallReturnPair(stidx, regFieldPair));
       tk = lexer.NextToken();
     } else {
       // parse type
@@ -1046,14 +1046,14 @@ bool MIRParser::ParseCallReturns(CallReturnVector &retsvec) {
         return false;
       }
       PrimType ptype = GlobalTables::GetTypeTable().GetPrimTypeFromTyIdx(tyidx);
-      PregIdx pregidx;
+      PregIdx pregIdx;
       if (lexer.GetTokenKind() == kTkSpecialreg) {
-        if (!ParseSpecialReg(pregidx)) {
+        if (!ParseSpecialReg(pregIdx)) {
           Error("expect specialreg parsing callassign CallReturnVector");
           return false;
         }
       } else if (lexer.GetTokenKind() == kTkPreg) {
-        if (!ParsePseudoReg(ptype, pregidx)) {
+        if (!ParsePseudoReg(ptype, pregIdx)) {
           Error("expect pseudoreg parsing callassign CallReturnVector");
           return false;
         }
@@ -1061,11 +1061,11 @@ bool MIRParser::ParseCallReturns(CallReturnVector &retsvec) {
         Error("expect special or pseudo register but get ");
         return false;
       }
-      ASSERT(pregidx > 0, "register number is zero");
-      ASSERT(pregidx <= 0xffff, "register number is over 16 bits");
-      RegFieldPair regfieldpair;
-      regfieldpair.SetPregIdx(pregidx);
-      retsvec.push_back(CallReturnPair(StIdx(), regfieldpair));
+      ASSERT(pregIdx > 0, "register number is zero");
+      ASSERT(pregIdx <= 0xffff, "register number is over 16 bits");
+      RegFieldPair regFieldPair;
+      regFieldPair.SetPregIdx(pregIdx);
+      retsvec.push_back(CallReturnPair(StIdx(), regFieldPair));
       tk = lexer.GetTokenKind();
     }
   }
@@ -1073,11 +1073,11 @@ bool MIRParser::ParseCallReturns(CallReturnVector &retsvec) {
 }
 
 bool MIRParser::ParseStmtJsTry(StmtNodePtr &stmt) {
-  JsTryNode *trynode = mod.CurFuncCodeMemPool()->New<JsTryNode>();
+  auto *tryNode = mod.CurFuncCodeMemPool()->New<JsTryNode>();
   lexer.NextToken();
   // parse handler label
   if (lexer.GetTokenKind() == kTkIntconst && lexer.GetTheIntVal() == 0) {
-    trynode->SetCatchOffset(0);
+    tryNode->SetCatchOffset(0);
   } else {
     if (lexer.GetTokenKind() != TK_label) {
       Error("expect handler label in try but get ");
@@ -1090,12 +1090,12 @@ bool MIRParser::ParseStmtJsTry(StmtNodePtr &stmt) {
       mod.CurFunction()->GetLabelTab()->SetSymbolFromStIdx(labidx, stridx);
       mod.CurFunction()->GetLabelTab()->AddToStringLabelMap(labidx);
     }
-    trynode->SetCatchOffset(labidx);
+    tryNode->SetCatchOffset(labidx);
   }
   lexer.NextToken();
   // parse finally label
   if (lexer.GetTokenKind() == kTkIntconst && lexer.GetTheIntVal() == 0) {
-    trynode->SetFinallyOffset(0);
+    tryNode->SetFinallyOffset(0);
   } else {
     if (lexer.GetTokenKind() != TK_label) {
       Error("expect finally label in try but get ");
@@ -1108,15 +1108,15 @@ bool MIRParser::ParseStmtJsTry(StmtNodePtr &stmt) {
       mod.CurFunction()->GetLabelTab()->SetSymbolFromStIdx(labidx, stridx);
       mod.CurFunction()->GetLabelTab()->AddToStringLabelMap(labidx);
     }
-    trynode->SetFinallyOffset(labidx);
+    tryNode->SetFinallyOffset(labidx);
   }
-  stmt = trynode;
+  stmt = tryNode;
   lexer.NextToken();
   return true;
 }
 
 bool MIRParser::ParseStmtTry(StmtNodePtr &stmt) {
-  TryNode *trynode = mod.CurFuncCodeMemPool()->New<TryNode>(mod);
+  auto *tryNode = mod.CurFuncCodeMemPool()->New<TryNode>(mod);
   lexer.NextToken();
   ASSERT(lexer.GetTokenKind() == kTkLbrace, "expect left brace in try but get ");
   lexer.NextToken();
@@ -1133,16 +1133,16 @@ bool MIRParser::ParseStmtTry(StmtNodePtr &stmt) {
       mod.CurFunction()->GetLabelTab()->SetSymbolFromStIdx(labidx, stridx);
       mod.CurFunction()->GetLabelTab()->AddToStringLabelMap(labidx);
     }
-    trynode->AddOffset(labidx);
+    tryNode->AddOffset(labidx);
     lexer.NextToken();
   }
-  stmt = trynode;
+  stmt = tryNode;
   lexer.NextToken();
   return true;
 }
 
 bool MIRParser::ParseStmtCatch(StmtNodePtr &stmt) {
-  CatchNode *catchnode = mod.CurFuncCodeMemPool()->New<CatchNode>(mod);
+  auto *catchNode = mod.CurFuncCodeMemPool()->New<CatchNode>(mod);
   lexer.NextToken();
   ASSERT(lexer.GetTokenKind() == kTkLbrace, "expect left brace in catch but get ");
   lexer.NextToken();
@@ -1152,23 +1152,23 @@ bool MIRParser::ParseStmtCatch(StmtNodePtr &stmt) {
       Error("expect type parsing java catch statement");
       return false;
     }
-    catchnode->PushBack(tyidx);
+    catchNode->PushBack(tyidx);
   }
-  catchnode->SetNumOpnds(0);
-  stmt = catchnode;
+  catchNode->SetNumOpnds(0);
+  stmt = catchNode;
   lexer.NextToken();
   return true;
 }
 
 bool MIRParser::ParseUnaryStmt(Opcode op, StmtNodePtr &stmt) {
   lexer.NextToken();
-  UnaryStmtNode *throwstmt = mod.CurFuncCodeMemPool()->New<UnaryStmtNode>(op);
-  stmt = throwstmt;
+  auto *throwStmt = mod.CurFuncCodeMemPool()->New<UnaryStmtNode>(op);
+  stmt = throwStmt;
   BaseNode *expr = nullptr;
   if (!ParseExprOneOperand(expr)) {
     return false;
   }
-  throwstmt->SetOpnd(expr);
+  throwStmt->SetOpnd(expr);
   lexer.NextToken();
   return true;
 }
@@ -1234,8 +1234,8 @@ bool MIRParser::ParseStmtMarker(StmtNodePtr &stmt) {
     default:
       return false;
   }
-  StmtNode *stmtnode = mod.CurFuncCodeMemPool()->New<StmtNode>(op);
-  stmt = stmtnode;
+  auto *stmtNode = mod.CurFuncCodeMemPool()->New<StmtNode>(op);
+  stmt = stmtNode;
   lexer.NextToken();
   return true;
 }
@@ -1252,24 +1252,24 @@ bool MIRParser::ParseStmtGosub(StmtNodePtr &stmt) {
     mod.CurFunction()->GetLabelTab()->SetSymbolFromStIdx(labidx, stridx);
     mod.CurFunction()->GetLabelTab()->AddToStringLabelMap(labidx);
   }
-  GotoNode *gosubnode = mod.CurFuncCodeMemPool()->New<GotoNode>(OP_gosub);
-  gosubnode->SetOffset(labidx);
-  stmt = gosubnode;
+  auto *goSubNode = mod.CurFuncCodeMemPool()->New<GotoNode>(OP_gosub);
+  goSubNode->SetOffset(labidx);
+  stmt = goSubNode;
   lexer.NextToken();
   return true;
 }
 
 bool MIRParser::ParseBinaryStmt(StmtNodePtr &stmt, Opcode op) {
-  BinaryStmtNode *assstmt = mod.CurFuncCodeMemPool()->New<BinaryStmtNode>(op);
+  auto *assStmt = mod.CurFuncCodeMemPool()->New<BinaryStmtNode>(op);
   lexer.NextToken();
   BaseNode *opnd0 = nullptr;
   BaseNode *opnd1 = nullptr;
   if (!ParseExprTwoOperand(opnd0, opnd1)) {
     return false;
   }
-  assstmt->SetBOpnd(opnd0, 0);
-  assstmt->SetBOpnd(opnd1, 1);
-  stmt = assstmt;
+  assStmt->SetBOpnd(opnd0, 0);
+  assStmt->SetBOpnd(opnd1, 1);
+  stmt = assStmt;
   lexer.NextToken();
   return true;
 }
@@ -1283,7 +1283,7 @@ bool MIRParser::ParseBinaryStmtAssertLT(StmtNodePtr &stmt) {
 }
 
 bool MIRParser::ParseNaryStmt(StmtNodePtr &stmt, Opcode op) {
-  NaryStmtNode *stmtReturn = mod.CurFuncCodeMemPool()->New<NaryStmtNode>(mod, op);
+  auto *stmtReturn = mod.CurFuncCodeMemPool()->New<NaryStmtNode>(mod, op);
   if (lexer.NextToken() != kTkLparen) {
     Error("expect return with ( but get ");
     return false;
@@ -1310,13 +1310,13 @@ bool MIRParser::ParseNaryStmt(StmtNodePtr &stmt, Opcode op) {
       }
       stmtReturn->GetNopnd().push_back(exprSync);
     } else {
-      MIRType *inttype = GlobalTables::GetTypeTable().GetTypeFromTyIdx((TyIdx)PTY_i32);
+      MIRType *intType = GlobalTables::GetTypeTable().GetTypeFromTyIdx((TyIdx)PTY_i32);
       // default 2 for __sync_enter_fast()
-      MIRIntConst *intconst = mod.GetMemPool()->New<MIRIntConst>(2, *inttype);
-      ConstvalNode *exprconst = mod.GetMemPool()->New<ConstvalNode>();
-      exprconst->SetPrimType(PTY_i32);
-      exprconst->SetConstVal(intconst);
-      stmtReturn->GetNopnd().push_back(exprconst);
+      MIRIntConst *intConst = mod.GetMemPool()->New<MIRIntConst>(2, *intType);
+      ConstvalNode *exprConst = mod.GetMemPool()->New<ConstvalNode>();
+      exprConst->SetPrimType(PTY_i32);
+      exprConst->SetConstVal(intConst);
+      stmtReturn->GetNopnd().push_back(exprConst);
       stmtReturn->SetNumOpnds(stmtReturn->GetNopndSize());
     }
   }
@@ -1439,7 +1439,7 @@ void MIRParser::ParseStmtBlockForSeenComment(BlockNodePtr blk, uint32 mplNum) {
   // collect accumulated comments into comment statement nodes
   if (!lexer.seenComments.empty()) {
     for (size_t i = 0; i < lexer.seenComments.size(); i++) {
-      CommentNode *cmnt = mod.CurFuncCodeMemPool()->New<CommentNode>(mod);
+      auto *cmnt = mod.CurFuncCodeMemPool()->New<CommentNode>(mod);
       cmnt->SetComment(lexer.seenComments[i]);
       SetSrcPos(cmnt, mplNum);
       blk->AddStatement(cmnt);
@@ -1480,26 +1480,26 @@ bool MIRParser::ParseStmtBlockForReg() {
     Error("expect %%preg after reg");
     return false;
   }
-  PregIdx pregidx;
-  if (!ParseRefPseudoReg(pregidx)) {
+  PregIdx pregIdx;
+  if (!ParseRefPseudoReg(pregIdx)) {
     return false;
   }
-  MIRPreg *preg = mod.CurFunction()->GetPregTab()->PregFromPregIdx(pregidx);
+  MIRPreg *preg = mod.CurFunction()->GetPregTab()->PregFromPregIdx(pregIdx);
   TyIdx tyidx(0);
   if (!ParseType(tyidx)) {
     Error("ParseDeclareVar failed when parsing the type");
     return false;
   }
   ASSERT(tyidx.GetIdx() > 0, "parse declare var failed ");
-  MIRType *mirtype = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyidx);
-  preg->SetMIRType(mirtype);
+  MIRType *mirType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyidx);
+  preg->SetMIRType(mirType);
   if (lexer.GetTokenKind() == kTkIntconst) {
-    int64 theintval = lexer.GetTheIntVal();
-    if (theintval != 0 && theintval != 1) {
+    int64 theIntVal = lexer.GetTheIntVal();
+    if (theIntVal != 0 && theIntVal != 1) {
       Error("parseDeclareReg failed");
       return false;
     }
-    preg->SetNeedRC(theintval == 0 ? false : true);
+    preg->SetNeedRC(theIntVal == 0 ? false : true);
   } else {
     Error("parseDeclareReg failed");
     return false;
@@ -1824,8 +1824,8 @@ bool MIRParser::ParseExprDread(BaseNodePtr &expr) {
 }
 
 bool MIRParser::ParseExprRegread(BaseNodePtr &expr) {
-  RegreadNode *regread = mod.CurFuncCodeMemPool()->New<RegreadNode>();
-  expr = regread;
+  auto *regRead = mod.CurFuncCodeMemPool()->New<RegreadNode>();
+  expr = regRead;
   lexer.NextToken();
   TyIdx tyidx(0);
   if (!ParsePrimType(tyidx)) {
@@ -1837,21 +1837,21 @@ bool MIRParser::ParseExprRegread(BaseNodePtr &expr) {
   }
   expr->SetPrimType(GlobalTables::GetTypeTable().GetPrimTypeFromTyIdx(tyidx));
   if (lexer.GetTokenKind() == kTkSpecialreg) {
-    PregIdx tempPregIdx = regread->GetRegIdx();
+    PregIdx tempPregIdx = regRead->GetRegIdx();
     bool isSuccess = ParseSpecialReg(tempPregIdx);
-    regread->SetRegIdx(tempPregIdx);
+    regRead->SetRegIdx(tempPregIdx);
     return isSuccess;
   }
   if (lexer.GetTokenKind() == kTkPreg) {
     if (expr->GetPrimType() == PTY_ptr || expr->GetPrimType() == PTY_ref) {
-      PregIdx tempPregIdx = regread->GetRegIdx();
+      PregIdx tempPregIdx = regRead->GetRegIdx();
       bool isSuccess = ParseRefPseudoReg(tempPregIdx);
-      regread->SetRegIdx(tempPregIdx);
+      regRead->SetRegIdx(tempPregIdx);
       return isSuccess;
     } else {
-      PregIdx tempPregIdx = regread->GetRegIdx();
+      PregIdx tempPregIdx = regRead->GetRegIdx();
       bool isSuccess = ParsePseudoReg(expr->GetPrimType(), tempPregIdx);
-      regread->SetRegIdx(tempPregIdx);
+      regRead->SetRegIdx(tempPregIdx);
       return isSuccess;
     }
   }
@@ -1860,34 +1860,34 @@ bool MIRParser::ParseExprRegread(BaseNodePtr &expr) {
 }
 
 bool MIRParser::ParseExprConstval(BaseNodePtr &expr) {
-  ConstvalNode *exprconst = mod.CurFuncCodeMemPool()->New<ConstvalNode>();
+  auto *exprConst = mod.CurFuncCodeMemPool()->New<ConstvalNode>();
   TokenKind typeTk = lexer.NextToken();
   if (!IsPrimitiveType(typeTk)) {
     Error("expect type for GetConstVal but get ");
     return false;
   }
-  exprconst->SetPrimType(GetPrimitiveType(typeTk));
+  exprConst->SetPrimType(GetPrimitiveType(typeTk));
   lexer.NextToken();
-  MIRConst *constval = nullptr;
-  if (!ParseScalarValue(constval, *GlobalTables::GetTypeTable().GetPrimType(exprconst->GetPrimType()))) {
+  MIRConst *constVal = nullptr;
+  if (!ParseScalarValue(constVal, *GlobalTables::GetTypeTable().GetPrimType(exprConst->GetPrimType()))) {
     Error("expect scalar type but get ");
     return false;
   }
-  exprconst->SetConstVal(constval);
-  expr = exprconst;
+  exprConst->SetConstVal(constVal);
+  expr = exprConst;
   lexer.NextToken();
   return true;
 }
 
 bool MIRParser::ParseExprConststr(BaseNodePtr &expr) {
-  ConststrNode *strconst = mod.CurFuncCodeMemPool()->New<ConststrNode>();
+  auto *strConst = mod.CurFuncCodeMemPool()->New<ConststrNode>();
   TokenKind tk = lexer.NextToken();
   if (!IsPrimitiveType(tk)) {
     Error("expect primitive type for conststr but get ");
     return false;
   }
-  strconst->SetPrimType(GetPrimitiveType(tk));
-  if (!IsAddress(strconst->GetPrimType())) {
+  strConst->SetPrimType(GetPrimitiveType(tk));
+  if (!IsAddress(strConst->GetPrimType())) {
     Error("expect primitive type for conststr but get ");
     return false;
   }
@@ -1896,14 +1896,14 @@ bool MIRParser::ParseExprConststr(BaseNodePtr &expr) {
     Error("expect string literal for conststr but get ");
     return false;
   }
-  strconst->SetStrIdx(GlobalTables::GetUStrTable().GetOrCreateStrIdxFromName(lexer.GetName()));
-  expr = strconst;
+  strConst->SetStrIdx(GlobalTables::GetUStrTable().GetOrCreateStrIdxFromName(lexer.GetName()));
+  expr = strConst;
   lexer.NextToken();
   return true;
 }
 
 bool MIRParser::ParseExprConststr16(BaseNodePtr &expr) {
-  Conststr16Node *str16Const = mod.CurFuncCodeMemPool()->New<Conststr16Node>();
+  auto *str16Const = mod.CurFuncCodeMemPool()->New<Conststr16Node>();
   TokenKind tk = lexer.NextToken();
   if (!IsPrimitiveType(tk)) {
     Error("expect primitive type for conststr16 but get ");
@@ -1932,21 +1932,21 @@ bool MIRParser::ParseExprConststr16(BaseNodePtr &expr) {
 }
 
 bool MIRParser::ParseExprSizeoftype(BaseNodePtr &expr) {
-  SizeoftypeNode *exprSizeoftype = mod.CurFuncCodeMemPool()->New<SizeoftypeNode>();
+  auto *exprSizeOfType = mod.CurFuncCodeMemPool()->New<SizeoftypeNode>();
   TokenKind typeTk = lexer.NextToken();
   if (!IsPrimitiveType(typeTk)) {
     Error("expect type for GetConstVal but get ");
     return false;
   }
-  exprSizeoftype->SetPrimType(GetPrimitiveType(typeTk));
+  exprSizeOfType->SetPrimType(GetPrimitiveType(typeTk));
   lexer.NextToken();
   TyIdx tyidx(0);
   if (!ParseType(tyidx)) {
     Error("expect type parsing array but get ");
     return false;
   }
-  exprSizeoftype->SetTyIdx(tyidx);
-  expr = exprSizeoftype;
+  exprSizeOfType->SetTyIdx(tyidx);
+  expr = exprSizeOfType;
   return true;
 }
 
@@ -1956,7 +1956,7 @@ bool MIRParser::ParseExprFieldsDist(BaseNodePtr &expr) {
     Error("expect type for GetConstVal but get ");
     return false;
   }
-  FieldsDistNode *node = mod.CurFuncCodeMemPool()->New<FieldsDistNode>();
+  auto *node = mod.CurFuncCodeMemPool()->New<FieldsDistNode>();
   node->SetPrimType(GetPrimitiveType(typeTk));
   lexer.NextToken();
   TyIdx tyIdx(0);
@@ -1988,47 +1988,47 @@ bool MIRParser::ParseExprBinary(BaseNodePtr &expr) {
     Error("expect add operator but get ");
     return false;
   }
-  BinaryNode *addexpr = mod.CurFuncCodeMemPool()->New<BinaryNode>(opcode);
+  auto *addExpr = mod.CurFuncCodeMemPool()->New<BinaryNode>(opcode);
   if (!IsPrimitiveType(lexer.NextToken())) {
     Error("expect type parsing binary operator but get ");
     return false;
   }
-  addexpr->SetPrimType(GetPrimitiveType(lexer.GetTokenKind()));
+  addExpr->SetPrimType(GetPrimitiveType(lexer.GetTokenKind()));
   lexer.NextToken();
   BaseNode *opnd0 = nullptr;
   BaseNode *opnd1 = nullptr;
   if (!ParseExprTwoOperand(opnd0, opnd1)) {
     return false;
   }
-  addexpr->SetBOpnd(opnd0, 0);
-  addexpr->SetBOpnd(opnd1, 1);
-  expr = addexpr;
+  addExpr->SetBOpnd(opnd0, 0);
+  addExpr->SetBOpnd(opnd1, 1);
+  expr = addExpr;
   lexer.NextToken();
   return true;
 }
 
 bool MIRParser::ParseExprCompare(BaseNodePtr &expr) {
   Opcode opcode = GetBinaryOp(lexer.GetTokenKind());
-  CompareNode *addexpr = mod.CurFuncCodeMemPool()->New<CompareNode>(opcode);
+  auto *addExpr = mod.CurFuncCodeMemPool()->New<CompareNode>(opcode);
   if (!IsPrimitiveType(lexer.NextToken())) {
     Error("expect type parsing compare operator but get ");
     return false;
   }
-  addexpr->SetPrimType(GetPrimitiveType(lexer.GetTokenKind()));
+  addExpr->SetPrimType(GetPrimitiveType(lexer.GetTokenKind()));
   if (!IsPrimitiveType(lexer.NextToken())) {
     Error("expect operand type parsing compare operator but get ");
     return false;
   }
-  addexpr->SetOpndType(GetPrimitiveType(lexer.GetTokenKind()));
+  addExpr->SetOpndType(GetPrimitiveType(lexer.GetTokenKind()));
   lexer.NextToken();
   BaseNode *opnd0 = nullptr;
   BaseNode *opnd1 = nullptr;
   if (!ParseExprTwoOperand(opnd0, opnd1)) {
     return false;
   }
-  addexpr->SetBOpnd(opnd0, 0);
-  addexpr->SetBOpnd(opnd1, 1);
-  expr = addexpr;
+  addExpr->SetBOpnd(opnd0, 0);
+  addExpr->SetBOpnd(opnd1, 1);
+  expr = addExpr;
   lexer.NextToken();
   return true;
 }
@@ -2039,7 +2039,7 @@ bool MIRParser::ParseExprDepositbits(BaseNodePtr &expr) {
     Error("expect depositbits but get ");
     return false;
   }
-  DepositbitsNode *dpsbNode = mod.CurFuncCodeMemPool()->New<DepositbitsNode>();
+  auto *dpsbNode = mod.CurFuncCodeMemPool()->New<DepositbitsNode>();
   expr = dpsbNode;
   PrimType ptyp = GetPrimitiveType(lexer.NextToken());
   if (!IsPrimitiveInteger(ptyp)) {
@@ -2102,30 +2102,30 @@ bool MIRParser::ParseExprIreadIaddrof(IreadNode &expr) {
 
 bool MIRParser::ParseExprIread(BaseNodePtr &expr) {
   // syntax : iread <prim-type> <type> <field-id> (<addr-expr>)
-  IreadNode *iexpr = mod.CurFuncCodeMemPool()->New<IreadNode>(OP_iread);
-  if (!ParseExprIreadIaddrof(*iexpr)) {
+  auto *iExpr = mod.CurFuncCodeMemPool()->New<IreadNode>(OP_iread);
+  if (!ParseExprIreadIaddrof(*iExpr)) {
     Error("ParseExprIread failed when trying to parse addof");
     return false;
   }
-  expr = iexpr;
+  expr = iExpr;
   return true;
 }
 
 bool MIRParser::ParseExprIaddrof(BaseNodePtr &expr) {
   // syntax : iaddrof <prim-type> <type> <field-id> (<addr-expr>)
-  IreadNode *iexpr = mod.CurFuncCodeMemPool()->New<IreadNode>(OP_iaddrof);
-  if (!ParseExprIreadIaddrof(*iexpr)) {
+  auto *iExpr = mod.CurFuncCodeMemPool()->New<IreadNode>(OP_iaddrof);
+  if (!ParseExprIreadIaddrof(*iExpr)) {
     Error("ParseExprIaddrof failed when trying to parse addof");
     return false;
   }
-  expr = iexpr;
+  expr = iExpr;
   return true;
 }
 
 bool MIRParser::ParseExprIreadoff(BaseNodePtr &expr) {
   // syntax : iread <prim-type> <offset> (<addr-expr>)
-  IreadoffNode *ireadoff = mod.CurFuncCodeMemPool()->New<IreadoffNode>();
-  expr = ireadoff;
+  auto *iReadOff = mod.CurFuncCodeMemPool()->New<IreadoffNode>();
+  expr = iReadOff;
   if (!IsPrimitiveType(lexer.NextToken())) {
     Error("expect primitive type but get ");
     return false;
@@ -2134,8 +2134,8 @@ bool MIRParser::ParseExprIreadoff(BaseNodePtr &expr) {
   if (!ParsePrimType(tyidx)) {
     return false;
   }
-  ireadoff->SetPrimType(GlobalTables::GetTypeTable().GetPrimTypeFromTyIdx(tyidx));
-  if (!IsPrimitiveScalar(ireadoff->GetPrimType())) {
+  iReadOff->SetPrimType(GlobalTables::GetTypeTable().GetPrimTypeFromTyIdx(tyidx));
+  if (!IsPrimitiveScalar(iReadOff->GetPrimType())) {
     Error("only scalar types allowed for ireadoff");
     return false;
   }
@@ -2143,22 +2143,22 @@ bool MIRParser::ParseExprIreadoff(BaseNodePtr &expr) {
     Error("expect offset but get ");
     return false;
   }
-  ireadoff->SetOffset(lexer.GetTheIntVal());
+  iReadOff->SetOffset(lexer.GetTheIntVal());
   lexer.NextToken();
   BaseNode *opnd = nullptr;
   if (!ParseExprOneOperand(opnd)) {
     Error("ParseExprIreadoff when paring one operand");
     return false;
   }
-  ireadoff->SetOpnd(opnd);
+  iReadOff->SetOpnd(opnd);
   lexer.NextToken();
   return true;
 }
 
 bool MIRParser::ParseExprIreadFPoff(BaseNodePtr &expr) {
   // syntax : iread <prim-type> <offset>
-  IreadFPoffNode *ireadoff = mod.CurFuncCodeMemPool()->New<IreadFPoffNode>();
-  expr = ireadoff;
+  auto *iReadOff = mod.CurFuncCodeMemPool()->New<IreadFPoffNode>();
+  expr = iReadOff;
   if (!IsPrimitiveType(lexer.NextToken())) {
     Error("expect primitive type but get ");
     return false;
@@ -2167,8 +2167,8 @@ bool MIRParser::ParseExprIreadFPoff(BaseNodePtr &expr) {
   if (!ParsePrimType(tyidx)) {
     return false;
   }
-  ireadoff->SetPrimType(GlobalTables::GetTypeTable().GetPrimTypeFromTyIdx(tyidx));
-  if (!IsPrimitiveScalar(ireadoff->GetPrimType())) {
+  iReadOff->SetPrimType(GlobalTables::GetTypeTable().GetPrimTypeFromTyIdx(tyidx));
+  if (!IsPrimitiveScalar(iReadOff->GetPrimType())) {
     Error("only scalar types allowed for ireadoff");
     return false;
   }
@@ -2176,14 +2176,14 @@ bool MIRParser::ParseExprIreadFPoff(BaseNodePtr &expr) {
     Error("expect offset but get ");
     return false;
   }
-  ireadoff->SetOffset(lexer.GetTheIntVal());
+  iReadOff->SetOffset(lexer.GetTheIntVal());
   lexer.NextToken();
   return true;
 }
 
 bool MIRParser::ParseExprAddrof(BaseNodePtr &expr) {
   // syntax: addrof <prim-type> <var-name> <field-id>
-  AddrofNode *addrofNode = mod.CurFuncCodeMemPool()->New<AddrofNode>(OP_addrof);
+  auto *addrofNode = mod.CurFuncCodeMemPool()->New<AddrofNode>(OP_addrof);
   expr = addrofNode;
   if (lexer.GetTokenKind() != TK_addrof) {
     Error("expect addrof but get ");
@@ -2218,8 +2218,8 @@ bool MIRParser::ParseExprAddrof(BaseNodePtr &expr) {
 }
 
 bool MIRParser::ParseExprAddroffunc(BaseNodePtr &expr) {
-  AddroffuncNode *addroffuncNode = mod.CurFuncCodeMemPool()->New<AddroffuncNode>();
-  expr = addroffuncNode;
+  auto *addrOfFuncNode = mod.CurFuncCodeMemPool()->New<AddroffuncNode>();
+  expr = addrOfFuncNode;
   TokenKind tk = lexer.NextToken();
   if (tk != TK_a32 && tk != TK_a64 && tk != TK_ptr) {
     Error("expect address primitive type but get ");
@@ -2230,7 +2230,7 @@ bool MIRParser::ParseExprAddroffunc(BaseNodePtr &expr) {
     Error("ParseExprAddroffunc failed when parsing primitive type");
     return false;
   }
-  addroffuncNode->SetPrimType(GlobalTables::GetTypeTable().GetPrimTypeFromTyIdx(tyidx));
+  addrOfFuncNode->SetPrimType(GlobalTables::GetTypeTable().GetPrimTypeFromTyIdx(tyidx));
   if (lexer.GetTokenKind() != kTkFname) {
     Error("expect function name but get ");
     return false;
@@ -2243,15 +2243,15 @@ bool MIRParser::ParseExprAddroffunc(BaseNodePtr &expr) {
     }
     pidx = EnterUndeclaredFunction();
   }
-  addroffuncNode->SetPUIdx(pidx);
+  addrOfFuncNode->SetPUIdx(pidx);
   lexer.NextToken();
   return true;
 }
 
 bool MIRParser::ParseExprAddroflabel(BaseNodePtr &expr) {
   // syntax: addroflabel <prim-type> <label>
-  AddroflabelNode *addroflabelNode = mod.CurFuncCodeMemPool()->New<AddroflabelNode>();
-  expr = addroflabelNode;
+  auto *addrOfLabelNode = mod.CurFuncCodeMemPool()->New<AddroflabelNode>();
+  expr = addrOfLabelNode;
   TokenKind tk = lexer.NextToken();
   if (tk != TK_a32 && tk != TK_a64 && tk != TK_ptr) {
     Error("expect address primitive type but get ");
@@ -2262,13 +2262,13 @@ bool MIRParser::ParseExprAddroflabel(BaseNodePtr &expr) {
     Error("ParseExprAddroflabel failed");
     return false;
   }
-  addroflabelNode->SetPrimType(GlobalTables::GetTypeTable().GetPrimTypeFromTyIdx(tyidx));
+  addrOfLabelNode->SetPrimType(GlobalTables::GetTypeTable().GetPrimTypeFromTyIdx(tyidx));
   if (lexer.GetTokenKind() != TK_label) {
     Error("expect label but get ");
     return false;
   }
   LabelIdx lblIdx = mod.CurFunction()->GetOrCreateLableIdxFromName(lexer.GetName());
-  addroflabelNode->SetOffset(lblIdx);
+  addrOfLabelNode->SetOffset(lblIdx);
   lexer.NextToken();
   return true;
 }
@@ -2286,7 +2286,7 @@ bool MIRParser::ParseExprUnary(BaseNodePtr &expr) {
     Error("expect primitive parsing unary operator ");
     return false;
   }
-  UnaryNode *unaryNode = mod.CurFuncCodeMemPool()->New<UnaryNode>(op);
+  auto *unaryNode = mod.CurFuncCodeMemPool()->New<UnaryNode>(op);
   expr = unaryNode;
   unaryNode->SetPrimType(GlobalTables::GetTypeTable().GetPrimTypeFromTyIdx(tyidx));
   BaseNode *opnd = nullptr;
@@ -2319,7 +2319,7 @@ bool MIRParser::ParseExprGCMalloc(BaseNodePtr &expr) {
     Error("expect type parsing unary operator ");
     return false;
   }
-  GCMallocNode *mallocNode = mod.CurFuncCodeMemPool()->New<GCMallocNode>(op);
+  auto *mallocNode = mod.CurFuncCodeMemPool()->New<GCMallocNode>(op);
   expr = mallocNode;
   mallocNode->SetPrimType(GlobalTables::GetTypeTable().GetPrimTypeFromTyIdx(ptyidx));
   mallocNode->SetOrigPType(mallocNode->GetPrimType());
@@ -2346,7 +2346,7 @@ bool MIRParser::ParseExprJarray(BaseNodePtr &expr) {
     Error("expect primitive parsing unary operator ");
     return false;
   }
-  JarrayMallocNode *jarrayNode = mod.CurFuncCodeMemPool()->New<JarrayMallocNode>(op);
+  auto *jarrayNode = mod.CurFuncCodeMemPool()->New<JarrayMallocNode>(op);
   expr = jarrayNode;
   jarrayNode->SetPrimType(GlobalTables::GetTypeTable().GetPrimTypeFromTyIdx(ptyidx));
   jarrayNode->SetTyIdx(tyidx);
@@ -2368,7 +2368,7 @@ bool MIRParser::ParseExprExtractbits(BaseNodePtr &expr) {
     Error("expect unary op but get ");
     return false;
   }
-  ExtractbitsNode *extrctNode = mod.CurFuncCodeMemPool()->New<ExtractbitsNode>(op);
+  auto *extrctNode = mod.CurFuncCodeMemPool()->New<ExtractbitsNode>(op);
   expr = extrctNode;
   lexer.NextToken();
   TyIdx tyidx(0);
@@ -2412,14 +2412,14 @@ bool MIRParser::ParseExprTyconvert(BaseNodePtr &expr) {
     Error("expect covertion operator but get ");
     return false;
   }
-  TypeCvtNode *cvtNode = mod.CurFuncCodeMemPool()->New<TypeCvtNode>(op);
+  auto *cvtNode = mod.CurFuncCodeMemPool()->New<TypeCvtNode>(op);
   expr = static_cast<BaseNode*>(cvtNode);
-  PrimType totype = GetPrimitiveType(lexer.NextToken());
-  if (totype == kPtyInvalid) {
+  PrimType toType = GetPrimitiveType(lexer.NextToken());
+  if (toType == kPtyInvalid) {
     Error("expect to-type parsing conversion");
     return false;
   }
-  cvtNode->SetPrimType(totype);
+  cvtNode->SetPrimType(toType);
   lexer.NextToken();
   PrimType fromType = GetPrimitiveType(lexer.GetTokenKind());
   if (fromType == kPtyInvalid) {
@@ -2441,14 +2441,14 @@ bool MIRParser::ParseExprTyconvert(BaseNodePtr &expr) {
 }
 
 bool MIRParser::ParseExprRetype(BaseNodePtr &expr) {
-  RetypeNode *cvtNode = mod.CurFuncCodeMemPool()->New<RetypeNode>();
+  auto *cvtNode = mod.CurFuncCodeMemPool()->New<RetypeNode>();
   expr = static_cast<BaseNode*>(cvtNode);
-  PrimType totype = GetPrimitiveType(lexer.NextToken());
-  if (totype == kPtyInvalid) {
+  PrimType toType = GetPrimitiveType(lexer.NextToken());
+  if (toType == kPtyInvalid) {
     Error("expect to-type parsing conversion");
     return false;
   }
-  cvtNode->SetPrimType(totype);
+  cvtNode->SetPrimType(toType);
   lexer.NextToken();
   TyIdx tyidx(0);
   if (!ParseDerivedType(tyidx)) {
@@ -2498,7 +2498,7 @@ bool MIRParser::ParseExprTernary(BaseNodePtr &expr) {
 
 bool MIRParser::ParseExprArray(BaseNodePtr &expr) {
   // syntax: array <addr-type> <array-type> (<opnd0>, <opnd1>, . . . , <opndn>)
-  ArrayNode *arrayNode = mod.CurFuncCodeMemPool()->New<ArrayNode>(mod);
+  auto *arrayNode = mod.CurFuncCodeMemPool()->New<ArrayNode>(mod);
   expr = arrayNode;
   if (lexer.GetTokenKind() != TK_array) {
     Error("expect array but get ");
@@ -2544,13 +2544,13 @@ bool MIRParser::ParseExprArray(BaseNodePtr &expr) {
   return true;
 }
 
-bool MIRParser::ParseIntrinsicId(IntrinsicopNode &intrnopnode) {
-  MIRIntrinsicID intrinid = GetIntrinsicId(lexer.GetTokenKind());
-  if (intrinid <= INTRN_UNDEFINED || intrinid >= INTRN_LAST) {
+bool MIRParser::ParseIntrinsicId(IntrinsicopNode &intrnOpNode) {
+  MIRIntrinsicID intrinId = GetIntrinsicId(lexer.GetTokenKind());
+  if (intrinId <= INTRN_UNDEFINED || intrinId >= INTRN_LAST) {
     Error("wrong intrinsic id ");
     return false;
   }
-  intrnopnode.SetIntrinsic(intrinid);
+  intrnOpNode.SetIntrinsic(intrinId);
   return true;
 }
 
@@ -2577,10 +2577,10 @@ bool MIRParser::ParseExprIntrinsicop(BaseNodePtr &expr) {
     Error("ParseExprIntrinsicop(withtype) failed when parsing derived type ");
     return false;
   }
-  IntrinsicopNode *intrnopnode = mod.CurFuncCodeMemPool()->New<IntrinsicopNode>(
+  auto *intrnOpNode = mod.CurFuncCodeMemPool()->New<IntrinsicopNode>(
       mod, opCode, GlobalTables::GetTypeTable().GetPrimTypeFromTyIdx(pTyIdx), tyIdx);
-  expr = intrnopnode;
-  if (!ParseIntrinsicId(*intrnopnode)) {
+  expr = intrnOpNode;
+  if (!ParseIntrinsicId(*intrnOpNode)) {
     return false;
   }
   // number of operand can not be zero
@@ -2590,8 +2590,8 @@ bool MIRParser::ParseExprIntrinsicop(BaseNodePtr &expr) {
     Error("ParseExprIntrinsicop(withtype) failed");
     return false;
   }
-  intrnopnode->SetNOpnd(opndVec);
-  intrnopnode->SetNumOpnds(opndVec.size());
+  intrnOpNode->SetNOpnd(opndVec);
+  intrnOpNode->SetNumOpnds(opndVec.size());
   lexer.NextToken();
   return true;
 }
@@ -2609,8 +2609,8 @@ bool MIRParser::ParseScalarValue(MIRConstPtr &stype, MIRType &type) {
       Error("constant value incompatible with single-precision float type at ");
       return false;
     }
-    MIRFloatConst *fconst = GlobalTables::GetFpConstTable().GetOrCreateFloatConst(lexer.GetTheFloatVal());
-    stype = fconst;
+    MIRFloatConst *fConst = GlobalTables::GetFpConstTable().GetOrCreateFloatConst(lexer.GetTheFloatVal());
+    stype = fConst;
   } else if (ptp == PTY_f64) {
     if (lexer.GetTokenKind() != kTkDoubleconst && lexer.GetTokenKind() != kTkIntconst) {
       Error("constant value incompatible with double-precision float type at ");
@@ -2637,40 +2637,40 @@ bool MIRParser::ParseConstAddrLeafExpr(MIRConstPtr &cexpr, MIRType &type) {
   }
   if (expr->GetOpCode() == OP_addrof) {
     AddrofNode *anode = static_cast<AddrofNode*>(expr);
-    MIRFunction *currfn = static_cast<MIRFunction*>(mod.CurFunction());
-    MIRSymbol *var = currfn->GetLocalOrGlobalSymbol(anode->GetStIdx());
+    MIRFunction *currFn = static_cast<MIRFunction*>(mod.CurFunction());
+    MIRSymbol *var = currFn->GetLocalOrGlobalSymbol(anode->GetStIdx());
     var->SetNeedForwDecl();
     mod.SetSomeSymbolNeedForDecl(true);
-    TyIdx ptyidx = var->GetTyIdx();
-    MIRPtrType ptrtype(ptyidx, (mod.IsJavaModule() ? PTY_ref : PTY_ptr));
-    ptyidx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&ptrtype);
-    MIRType *exprty = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ptyidx);
-    cexpr = mod.CurFuncCodeMemPool()->New<MIRAddrofConst>(anode->GetStIdx(), anode->GetFieldID(), *exprty);
+    TyIdx ptyIdx = var->GetTyIdx();
+    MIRPtrType ptrType(ptyIdx, (mod.IsJavaModule() ? PTY_ref : PTY_ptr));
+    ptyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&ptrType);
+    MIRType *exprTy = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ptyIdx);
+    cexpr = mod.CurFuncCodeMemPool()->New<MIRAddrofConst>(anode->GetStIdx(), anode->GetFieldID(), *exprTy);
   } else if (expr->GetOpCode() == OP_addroffunc) {
     AddroffuncNode *aof = static_cast<AddroffuncNode*>(expr);
     MIRFunction *f = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(aof->GetPUIdx());
-    MIRSymbol *fname = f->GetFuncSymbol();
-    TyIdx ptyidx = fname->GetTyIdx();
-    MIRPtrType ptrtype(ptyidx);
-    ptyidx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&ptrtype);
-    MIRType *exprty = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ptyidx);
-    cexpr = mod.CurFuncCodeMemPool()->New<MIRAddroffuncConst>(aof->GetPUIdx(), *exprty);
+    const MIRSymbol *fName = f->GetFuncSymbol();
+    TyIdx ptyIdx = fName->GetTyIdx();
+    MIRPtrType ptrType(ptyIdx);
+    ptyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&ptrType);
+    MIRType *exprTy = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ptyIdx);
+    cexpr = mod.CurFuncCodeMemPool()->New<MIRAddroffuncConst>(aof->GetPUIdx(), *exprTy);
   } else if (expr->GetOpCode() == OP_conststr) {
     ConststrNode *cs = static_cast<ConststrNode*>(expr);
     UStrIdx stridx = cs->GetStrIdx();
-    TyIdx ptyidx = GlobalTables::GetTypeTable().GetTypeFromTyIdx(TyIdx(PTY_u8))->GetTypeIndex();
-    MIRPtrType ptrtype(ptyidx);
-    ptyidx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&ptrtype);
-    MIRType *exprty = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ptyidx);
+    TyIdx ptyIdx = GlobalTables::GetTypeTable().GetTypeFromTyIdx(TyIdx(PTY_u8))->GetTypeIndex();
+    MIRPtrType ptrtype(ptyIdx);
+    ptyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&ptrtype);
+    MIRType *exprty = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ptyIdx);
     cexpr = mod.CurFuncCodeMemPool()->New<MIRStrConst>(stridx, *exprty);
   } else {
     Conststr16Node *cs = static_cast<Conststr16Node*>(expr);
     U16StrIdx stridx = cs->GetStrIdx();
-    TyIdx ptyidx = GlobalTables::GetTypeTable().GetTypeFromTyIdx(TyIdx(PTY_u16))->GetTypeIndex();
-    MIRPtrType ptrtype(ptyidx);
-    ptyidx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&ptrtype);
-    MIRType *exprty = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ptyidx);
-    cexpr = mod.CurFuncCodeMemPool()->New<MIRStr16Const>(stridx, *exprty);
+    TyIdx ptyIdx = GlobalTables::GetTypeTable().GetTypeFromTyIdx(TyIdx(PTY_u16))->GetTypeIndex();
+    MIRPtrType ptrType(ptyIdx);
+    ptyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&ptrType);
+    MIRType *exprTy = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ptyIdx);
+    cexpr = mod.CurFuncCodeMemPool()->New<MIRStr16Const>(stridx, *exprTy);
   }
   return true;
 }

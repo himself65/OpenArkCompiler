@@ -265,7 +265,7 @@ void MIRPragmaElement::Dump(int indent) const {
       LogInfo::MapleLogger() << "array [" << num;
       if (num != 0) {
         if (num > 1) {
-          LogInfo::MapleLogger() << "," << std::endl;
+          LogInfo::MapleLogger() << ",\n";
         } else {
           LogInfo::MapleLogger() << ", ";
         }
@@ -276,7 +276,7 @@ void MIRPragmaElement::Dump(int indent) const {
           }
           subElemVec[i]->Dump(indent + indentOffset);
           if (i != num - 1) {
-            LogInfo::MapleLogger() << "," << std::endl;
+            LogInfo::MapleLogger() << ",\n";
           }
           ++i;
         }
@@ -290,7 +290,7 @@ void MIRPragmaElement::Dump(int indent) const {
       LogInfo::MapleLogger() << GlobalTables::GetStrTable().GetStringFromStrIdx(typeStrIdx).c_str() << "> [" << num;
       if (num) {
         if (num > 1) {
-          LogInfo::MapleLogger() << "," << std::endl;
+          LogInfo::MapleLogger() << ",\n";
         } else {
           LogInfo::MapleLogger() << ", ";
         }
@@ -304,7 +304,7 @@ void MIRPragmaElement::Dump(int indent) const {
                                  << " ";
           subElemVec[i]->Dump(indent + indentOffset);
           if (i != num - 1) {
-            LogInfo::MapleLogger() << "," << std::endl;
+            LogInfo::MapleLogger() << ",\n";
           }
           ++i;
         }
@@ -322,7 +322,7 @@ void MIRPragmaElement::Dump(int indent) const {
 }
 
 void MIRPragma::Dump(int indent) const {
-  LogInfo::MapleLogger() << std::endl;
+  LogInfo::MapleLogger() << '\n';
   PrintIndentation(indent);
   LogInfo::MapleLogger() << "pragma " << static_cast<int>(visibility) << " ";
   switch (pragmaKind) {
@@ -359,7 +359,7 @@ void MIRPragma::Dump(int indent) const {
   }
   LogInfo::MapleLogger() << "<$" << GlobalTables::GetStrTable().GetStringFromStrIdx(gStrIdx) << "> {";
   for (size_t j = 0; j < elementVec.size(); ++j) {
-    LogInfo::MapleLogger() << std::endl;
+    LogInfo::MapleLogger() << '\n';
     PrintIndentation(indent + 1);
     MIRPragmaElement *e = elementVec[j];
     gStrIdx = e->GetNameStrIdx();

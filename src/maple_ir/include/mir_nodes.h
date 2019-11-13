@@ -147,7 +147,7 @@ class BaseNode {
     ASSERT(0, "This should not happen");
   }
 
-  virtual bool IsLeaf(void) const {
+  virtual bool IsLeaf() const {
     return true;
   }
 
@@ -159,11 +159,11 @@ class BaseNode {
     return nullptr;
   }
 
-  virtual bool IsUnaryNode(void) const {
+  virtual bool IsUnaryNode() const {
     return false;
   }
 
-  virtual bool IsBinaryNode(void) const {
+  virtual bool IsBinaryNode() const {
     return false;
   }
 
@@ -216,7 +216,7 @@ class UnaryNode : public BaseNode {
     return uOpnd;
   }
 
-  uint8 NumOpnds(void) const {
+  uint8 NumOpnds() const {
     return 1;
   }
 
@@ -224,11 +224,11 @@ class UnaryNode : public BaseNode {
     uOpnd = node;
   }
 
-  bool IsLeaf(void) const {
+  bool IsLeaf() const {
     return false;
   }
 
-  bool IsUnaryNode(void) const {
+  bool IsUnaryNode() const {
     return true;
   }
 
@@ -587,7 +587,7 @@ class BinaryNode : public BaseNode, public BinaryOpnds {
     return GetBOpnd(i);
   }
 
-  uint8 NumOpnds(void) const {
+  uint8 NumOpnds() const {
     return kOperandNumBinary;
   }
 
@@ -595,11 +595,11 @@ class BinaryNode : public BaseNode, public BinaryOpnds {
     SetBOpnd(node, i);
   }
 
-  bool IsLeaf(void) const {
+  bool IsLeaf() const {
     return false;
   }
 
-  bool IsBinaryNode(void) const {
+  bool IsBinaryNode() const {
     return true;
   }
 };
@@ -763,7 +763,7 @@ class TernaryNode : public BaseNode {
     return topnd[i];
   }
 
-  uint8 NumOpnds(void) const override {
+  uint8 NumOpnds() const override {
     return kOperandNumTernary;
   }
 
@@ -772,7 +772,7 @@ class TernaryNode : public BaseNode {
     topnd[i] = node;
   }
 
-  bool IsLeaf(void) const override {
+  bool IsLeaf() const override {
     return false;
   }
 
@@ -856,7 +856,7 @@ class NaryNode : public BaseNode, public NaryOpnds {
     return GetNopndAt(i);
   }
 
-  uint8 NumOpnds(void) const override {
+  uint8 NumOpnds() const override {
     ASSERT(numOpnds == GetNopndSize(), "NaryNode has wrong numOpnds field");
     return GetNopndSize();
   }
@@ -866,7 +866,7 @@ class NaryNode : public BaseNode, public NaryOpnds {
     SetNOpndAt(i, node);
   }
 
-  bool IsLeaf(void) const override {
+  bool IsLeaf() const override {
     return false;
   }
 
@@ -1482,7 +1482,7 @@ class IassignNode : public StmtNode {
     return rhs;
   }
 
-  uint8 NumOpnds(void) const {
+  uint8 NumOpnds() const {
     return kOperandNumBinary;
   }
 
@@ -2431,7 +2431,7 @@ class DoloopNode : public StmtNode {
     return *(&doBody + i - 3);
   }
 
-  uint8 NumOpnds(void) const {
+  uint8 NumOpnds() const {
     return kOperandNumDoloop;
   }
 
@@ -2537,7 +2537,7 @@ class BinaryStmtNode : public StmtNode, public BinaryOpnds {
     return GetBOpnd(i);
   }
 
-  uint8 NumOpnds(void) const {
+  uint8 NumOpnds() const {
     return kOperandNumBinary;
   }
 
@@ -2545,7 +2545,7 @@ class BinaryStmtNode : public StmtNode, public BinaryOpnds {
     SetBOpnd(node, i);
   }
 
-  bool IsLeaf(void) const {
+  bool IsLeaf() const {
     return false;
   }
 };
@@ -2660,7 +2660,7 @@ class NaryStmtNode : public StmtNode, public NaryOpnds {
     SetNOpndAt(i, node);
   }
 
-  uint8 NumOpnds(void) const {
+  uint8 NumOpnds() const {
     ASSERT(numOpnds == GetNopndSize(), "NaryStmtNode has wrong numOpnds field");
     return GetNopndSize();
   }

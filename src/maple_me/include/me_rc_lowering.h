@@ -41,22 +41,6 @@ class RCLowering {
   void FastBBLower(BB &bb);
 
  private:
-  MeFunction &func;
-  MIRModule &mirModule;
-  IRMap &irMap;
-  SSATab &ssaTab;
-  KlassHierarchy &klassHierarchy;
-  std::vector<MeStmt*> rets{};  // std::vector of return statement
-  unsigned int tmpCount = 0;
-  bool needSpecialHandleException = false;
-  std::set<MIRSymbol*> assignedPtrSym;
-  std::set<VarMeExpr*> tmpLocalRefVars;
-  std::set<MeExpr*> gcMallocObjects{};
-  std::map<OStIdx, VarMeExpr*> cleanUpVars{};
-  std::map<OStIdx, OriginalSt*> varOStMap{};
-  // used to store initialized map, help to optimize dec ref in first assignment
-  std::unordered_map<MeExpr*, MapleSet<FieldID>*> initializedFields{};
-  bool enabledDebug;
   void MarkLocalRefVar();
   void MarkAllRefOpnds();
   void BBLower(BB &bb);
@@ -100,6 +84,22 @@ class RCLowering {
   void HandleReturnStmt();
   void HandleAssignMeStmt(MeStmt &stmt, MeExpr *pendingDec);
   MIRIntrinsicID SelectWriteBarrier(const MeStmt &stmt);
+  MeFunction &func;
+  MIRModule &mirModule;
+  IRMap &irMap;
+  SSATab &ssaTab;
+  KlassHierarchy &klassHierarchy;
+  std::vector<MeStmt*> rets{};  // std::vector of return statement
+  unsigned int tmpCount = 0;
+  bool needSpecialHandleException = false;
+  std::set<MIRSymbol*> assignedPtrSym;
+  std::set<VarMeExpr*> tmpLocalRefVars;
+  std::set<MeExpr*> gcMallocObjects{};
+  std::map<OStIdx, VarMeExpr*> cleanUpVars{};
+  std::map<OStIdx, OriginalSt*> varOStMap{};
+  // used to store initialized map, help to optimize dec ref in first assignment
+  std::unordered_map<MeExpr*, MapleSet<FieldID>*> initializedFields{};
+  bool enabledDebug;
 };
 
 class MeDoRCLowering : public MeFuncPhase {

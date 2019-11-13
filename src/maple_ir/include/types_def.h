@@ -116,6 +116,9 @@ class IdxTemplate {
   IdxTemplate &operator=(const IdxTemplate&) = default;
   ~IdxTemplate() = default;
 
+  void operator=(T id) {
+    idx = id;
+  }
   bool operator==(const IdxTemplate &x) const {
     return idx == x.idx;
   }

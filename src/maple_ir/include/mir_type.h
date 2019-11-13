@@ -763,6 +763,9 @@ class MIRStructType : public MIRType {
   MethodVector &GetMethods() {
     return methods;
   }
+  const MethodVector &GetMethods() const {
+    return methods;
+  }
 
   const MethodPair &GetMethodsElement(size_t n) const {
     ASSERT(n < methods.size(), "array index out of range");
@@ -1169,6 +1172,7 @@ class MIRClassType : public MIRStructType {
   FieldID GetFirstLocalFieldID() const;
   // return class id or superclass id accroding to input string
   MIRClassType *GetExceptionRootType();
+  const MIRClassType *GetExceptionRootType() const;
   bool IsExceptionType() const;
   void AddImplementedInterface(TyIdx interfaceTyIdx) {
     if (std::find(interfacesImplemented.begin(), interfacesImplemented.end(), interfaceTyIdx) !=

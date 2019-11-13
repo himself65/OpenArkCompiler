@@ -189,8 +189,8 @@ struct ClassMetadata {
   uint16_t numOfSuperclasses;
 #endif // USE_32BIT_REF
 
-  void *iTable;  // iTable of current class, used for virtual call, will insert the content into classinfo
-  void *vTable;  // vTable of current class, used for interface call, will insert the content into classinfo
+  DataRef iTable;  // iTable of current class, used for virtual call, will insert the content into classinfo
+  DataRef vTable;  // vTable of current class, used for interface call, will insert the content into classinfo
   void *gctib; // for rc
 
   union {

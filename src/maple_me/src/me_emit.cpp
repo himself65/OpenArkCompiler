@@ -43,7 +43,7 @@ AnalysisResult *MeDoEmit::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, Mod
       mirFunction->GetCodeMPAllocator().SetMemPool(mirFunction->GetCodeMempool());
       mirFunction->SetBody(mirFunction->GetCodeMempool()->New<BlockNode>());
       // initialize is_deleted field to true; will reset when emitting Maple IR
-      for (size_t k = 1; k < mirFunction->GetSymTab()->GetSymbolTableSize(); k++) {
+      for (size_t k = 1; k < mirFunction->GetSymTab()->GetSymbolTableSize(); ++k) {
         MIRSymbol *sym = mirFunction->GetSymTab()->GetSymbolFromStIdx(k);
         if (sym->GetSKind() == kStVar) {
           sym->SetIsDeleted();

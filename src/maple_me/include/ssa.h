@@ -53,7 +53,7 @@ class PhiNode {
   }
 
   void SetPhiOpnd(size_t index, VersionSt &opnd) {
-    CHECK_FATAL(index < phiOpnds.size(), "out of range in PhiNode::SetPhiOpnd");
+    ASSERT(index < phiOpnds.size(), "out of range in PhiNode::SetPhiOpnd");
     phiOpnds[index] = &opnd;
   }
 
@@ -79,7 +79,7 @@ class SSA {
   virtual ~SSA() = default;
 
   void InitRenameStack(OriginalStTable&, size_t, VersionStTable&);
-  VersionSt *CreateNewVersion(VersionSt &vsym, BB &defBB);
+  VersionSt *CreateNewVersion(VersionSt &vSym, BB &defBB);
   void RenamePhi(BB &bb);
   void RenameDefs(StmtNode &stmt, BB &defBB);
   void RenameMustDefs(const StmtNode &stmt, BB &defBB);
@@ -104,7 +104,7 @@ class SSA {
     vstStacks.at(idx)->pop();
   }
 
-  MapleVector<bool> &GetBBsRenamed() {
+  MapleVector<bool> &GetBBRenamedVec() {
     return bbRenamed;
   }
 
@@ -114,7 +114,7 @@ class SSA {
   }
 
   void SetBBRenamed(size_t idx, bool isRenamed) {
-    CHECK_FATAL(idx < bbRenamed.size(), "BBId out of range");
+    ASSERT(idx < bbRenamed.size(), "BBId out of range");
     bbRenamed[idx] = isRenamed;
   }
 

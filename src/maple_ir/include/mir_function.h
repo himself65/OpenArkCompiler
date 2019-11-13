@@ -20,27 +20,11 @@
 #include "mir_symbol.h"
 #include "mir_preg.h"
 #include "intrinsics.h"
-#include "global_tables.h"
 #include "file_layout.h"
 #include "mir_nodes.h"
 
 
 namespace maple {
-enum MIRFuncProp {
-  kFuncPropNone,
-  kFuncPropHasCall,      // the function has call
-  kFuncPropRetStruct,    // the function returns struct
-  kFuncPropUserFunc,     // the function is a user func
-  kFuncPropInfoPrinted,  // to avoid printing framesize/moduleid/funcSize info more than once per function since they
-  // can only be printed at the beginning of a block
-  kFuncPropNeverReturn,  // the function when called never returns
-};
-
-#define FUNCHASCALL (1U << kFuncPropHasCall)
-#define FUNCRETSTRUCT (1U << kFuncPropRetStruct)
-#define FUNCUSER (1U << kFuncPropUserFunc)
-#define FUNCINFOPRINTED (1U << kFuncPropInfoPrinted)
-#define FUNCNEVERRETURN (1U << kFuncPropNeverReturn)
 // mapping src (java) variable to mpl variables to display debug info
 struct MIRAliasVars {
   GStrIdx memPoolStrIdx;
@@ -48,106 +32,47 @@ struct MIRAliasVars {
   GStrIdx sigStrIdx;
 };
 
-constexpr uint8 kDefEffect = 0x80;
-constexpr uint8 kUseEffect = 0x40;
-constexpr uint8 kIpaSeen = 0x20;
-constexpr uint8 kPureFunc = 0x10;
-constexpr uint8 kNoDefArgEffect = 0x8;
-constexpr uint8 kNoDefEffect = 0x4;
-constexpr uint8 kNoRetNewlyAllocObj = 0x2;
-constexpr uint8 kNoThrowException = 0x1;
-
 class MeFunction;  // circular dependency exists, no other choice
 class EAConnectionGraph;  // circular dependency exists, no other choice
 class MIRFunction {
  public:
-  MIRFunction(MIRModule *mod, const StIdx sidx)
+  MIRFunction(MIRModule *mod, StIdx idx)
       : module(mod),
-        puIdx(0),
-        symbolTableIdx(sidx),
-        formals(mod->GetMPAllocator().Adapter()),
-        retRefSym(mod->GetMPAllocator().Adapter()),
-        argumentsTyIdx(mod->GetMPAllocator().Adapter()),
-        argumentsAttrs(mod->GetMPAllocator().Adapter()),
-        dataMemPool(memPoolCtrler.NewMemPool("func data mempool")),
-        dataMPAllocator(dataMemPool),
-        codeMemPool(memPoolCtrler.NewMemPool("func code mempool")),
-        codeMemPoolAllocator(codeMemPool),
-        info(mod->GetMPAllocator().Adapter()),
-        infoIsString(mod->GetMPAllocator().Adapter()),
-        aliasVarMap(std::less<GStrIdx>(), mod->GetMPAllocator().Adapter()),
-        withLocInfo(true)
-  {
-    frameSize = 0;
-    upFormalSize = 0;
-    moduleID = 0;
-    funcSize = 0;
-    tempCount = 0;
-    puIdxOrigin = 0;
-    baseFuncStrIdx = GStrIdx(0);
-    baseClassStrIdx = GStrIdx(0);
-    baseFuncWithTypeStrIdx = GStrIdx(0);
-    signatureStrIdx = GStrIdx(0);
-    hashCode = 0;
-    layoutType = kLayoutUnused;
-    mefunc = nullptr;
-    eacg = nullptr;
-  }
+        symbolTableIdx(idx) {}
 
   ~MIRFunction() = default;
 
-  void Init() {
-    // Initially allocate symTab and pregTab on the module mempool for storing
-    // parameters. If later mirfunction turns out to be a definition, new
-    // tables will be allocated on the local data mempool.
-    symTab = module->GetMemPool()->New<MIRSymbolTable>(module->GetMPAllocator());
-    pregTab = module->GetMemPool()->New<MIRPregTable>(module, &module->GetMPAllocator());
-    typeNameTab = module->GetMemPool()->New<MIRTypeNameTable>(module->GetMPAllocator());
-    labelTab = module->GetMemPool()->New<MIRLabelTable>(module->GetMPAllocator());
-  }
+  void Init();
 
   void Dump(bool withoutBody = false);
   void DumpUpFormal(int32 indent) const;
   void DumpFrame(int32 indent) const;
   void DumpFuncBody(int32 indent);
-  MIRSymbol *GetFuncSymbol() const {
-    return GlobalTables::GetGsymTable().GetSymbolFromStidx(symbolTableIdx.Idx());
-  }
+  const MIRSymbol *GetFuncSymbol() const;
+  MIRSymbol *GetFuncSymbol();
 
-  void SetBaseClassFuncNames(GStrIdx stridx);
+  void SetBaseClassFuncNames(GStrIdx strIdx);
   void SetMemPool(MemPool *memPool) {
     SetCodeMemPool(memPool);
     codeMemPoolAllocator.SetMemPool(codeMemPool);
   }
 
-  /// update signature_stridx, basefunc_stridx, baseclass_stridx, basefunc_withtype_stridx
-  /// without considering baseclass_stridx, basefunc_stridx's original non-zero values
-  /// \param stridx full_name stridx of the new function name
-  void OverrideBaseClassFuncNames(GStrIdx stridx);
-  const std::string &GetName() const {
-    return GlobalTables::GetGsymTable().GetSymbolFromStidx(symbolTableIdx.Idx())->GetName();
-  }
+  /// update signature_strIdx, basefunc_strIdx, baseclass_strIdx, basefunc_withtype_strIdx
+  /// without considering baseclass_strIdx, basefunc_strIdx's original non-zero values
+  /// \param strIdx full_name strIdx of the new function name
+  void OverrideBaseClassFuncNames(GStrIdx strIdx);
+  const std::string &GetName() const;
 
-  GStrIdx GetNameStrIdx() const {
-    return GlobalTables::GetGsymTable().GetSymbolFromStidx(symbolTableIdx.Idx())->GetNameStrIdx();
-  }
+  GStrIdx GetNameStrIdx() const;
 
-  const std::string &GetBaseClassName() const {
-    return GlobalTables::GetStrTable().GetStringFromStrIdx(baseClassStrIdx);
-  }
+  const std::string &GetBaseClassName() const;
 
-  const std::string &GetBaseFuncName() const {
-    return GlobalTables::GetStrTable().GetStringFromStrIdx(baseFuncStrIdx);
-  }
+  const std::string &GetBaseFuncName() const;
 
-  const std::string &GetBaseFuncNameWithType() const {
-    return GlobalTables::GetStrTable().GetStringFromStrIdx(baseFuncWithTypeStrIdx);
-  }
+  const std::string &GetBaseFuncNameWithType() const;
 
 
-  const std::string &GetSignature() const {
-    return GlobalTables::GetStrTable().GetStringFromStrIdx(signatureStrIdx);
-  }
+  const std::string &GetSignature() const;
 
   GStrIdx GetBaseClassNameStrIdx() const {
     return baseClassStrIdx;
@@ -163,33 +88,30 @@ class MIRFunction {
 
 
   void SetBaseClassNameStrIdx(GStrIdx id) {
-    baseClassStrIdx.SetIdx(id.GetIdx());
+    baseClassStrIdx = id;
   }
 
   void SetBaseFuncNameStrIdx(GStrIdx id) {
-    baseFuncStrIdx.SetIdx(id.GetIdx());
+    baseFuncStrIdx = id;
   }
 
   void SetBaseFuncNameWithTypeStrIdx(GStrIdx id) {
-    baseFuncWithTypeStrIdx.SetIdx(id.GetIdx());
+    baseFuncWithTypeStrIdx = id;
   }
 
-  MIRType *GetReturnType() const {
-    return GlobalTables::GetTypeTable().GetTypeFromTyIdx(funcType->GetRetTyIdx());
-  }
-
+  const MIRType *GetReturnType() const;
+  MIRType *GetReturnType();
   bool IsReturnVoid() const {
     return GetReturnType()->GetPrimType() == PTY_void;
   }
-
   TyIdx GetReturnTyIdx() const {
     return funcType->GetRetTyIdx();
   }
-
-  MIRType *GetClassType() const {
-    return GlobalTables::GetTypeTable().GetTypeFromTyIdx(classTyIdx);
+  void SetReturnTyIdx(TyIdx tyidx) {
+    funcType->SetRetTyIdx(tyidx);
   }
 
+  const MIRType *GetClassType() const;
   TyIdx GetClassTyIdx() const {
     return classTyIdx;
   }
@@ -197,110 +119,54 @@ class MIRFunction {
     classTyIdx = tyIdx;
   }
   void SetClassTyIdx(uint32 idx) {
-    classTyIdx.SetIdx(idx);
-  }
-
-  void SetReturnTyIdx(TyIdx tyidx) {
-    funcType->SetRetTyIdx(tyidx);
+    classTyIdx = idx;
   }
 
   size_t GetParamSize() const {
     return funcType->GetParamTypeList().size();
   }
-
   const std::vector<TyIdx> &GetParamTypes() const {
     return funcType->GetParamTypeList();
   }
-
   TyIdx GetNthParamTyIdx(size_t i) const {
-    CHECK_FATAL(i < funcType->GetParamTypeList().size(), "array index out of range");
+    ASSERT(i < funcType->GetParamTypeList().size(), "array index out of range");
     return funcType->GetParamTypeList()[i];
   }
-
-  MIRType *GetNthParamType(size_t i) const {
-    CHECK_FATAL(i < funcType->GetParamTypeList().size(), "array index out of range");
-    return GlobalTables::GetTypeTable().GetTypeFromTyIdx(funcType->GetParamTypeList()[i]);
-  }
-
+  const MIRType *GetNthParamType(size_t i) const;
+  MIRType *GetNthParamType(size_t i);
   const TypeAttrs &GetNthParamAttr(size_t i) const {
-    CHECK_FATAL(i < funcType->GetParamAttrsList().size(), "array index out of range");
+    ASSERT(i < funcType->GetParamAttrsList().size(), "array index out of range");
     return funcType->GetParamAttrsList()[i];
   }
-
-  void SetNthParamAttr(size_t i, TypeAttrs ta) const {
-    CHECK_FATAL(i < funcType->GetParamAttrsList().size(), "array index out of range");
-    funcType->GetParamAttrsList()[i] = ta;
+  void SetNthParamAttr(size_t i, TypeAttrs attrs) {
+    ASSERT(i < funcType->GetParamAttrsList().size(), "array index out of range");
+    funcType->GetParamAttrsList()[i] = attrs;
+  }
+  void AddArgument(MIRSymbol *symbol) {
+    formals.push_back(symbol);
+    funcType->GetParamTypeList().push_back(symbol->GetTyIdx());
+    funcType->GetParamAttrsList().push_back(symbol->GetAttrs());
   }
 
-  void AddArgument(MIRSymbol *st) {
-    formals.push_back(st);
-    funcType->GetParamTypeList().push_back(st->GetTyIdx());
-    funcType->GetParamAttrsList().push_back(st->GetAttrs());
+  LabelIdx GetOrCreateLableIdxFromName(const std::string &name);
+  GStrIdx GetLabelStringIndex(LabelIdx labelIdx) const {
+    ASSERT(labelIdx < labelTab->Size(), "index out of range in GetLabelStringIndex");
+    return labelTab->GetSymbolFromStIdx(labelIdx);
+  }
+  const std::string &GetLabelName(LabelIdx labelIdx) const {
+    GStrIdx strIdx = GetLabelStringIndex(labelIdx);
+    return GlobalTables::GetStrTable().GetStringFromStrIdx(strIdx);
   }
 
-  LabelIdx GetOrCreateLableIdxFromName(const std::string &name) {
-    // TODO: this function should never be used after parsing, so move to parser?
-    GStrIdx stridx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(name);
-    LabelIdx labidx = GetLabelTab()->GetStIdxFromStrIdx(stridx);
-    if (labidx == 0) {
-      labidx = GetLabelTab()->CreateLabel();
-      GetLabelTab()->SetSymbolFromStIdx(labidx, stridx);
-      GetLabelTab()->AddToStringLabelMap(labidx);
-    }
-    return labidx;
-  }
+  const MIRSymbol *GetLocalOrGlobalSymbol(const StIdx &idx, bool checkFirst = false) const;
+  MIRSymbol *GetLocalOrGlobalSymbol(const StIdx &idx, bool checkFirst = false);
 
-  const GStrIdx GetLabelStringIndex(LabelIdx lbidx) const {
-    CHECK(lbidx < labelTab->Size(), "index out of range in GetLabelStringIndex");
-    return labelTab->GetSymbolFromStIdx(lbidx);
+  void SetAttrsFromSe(uint8 specialEffect);
+  bool GetAttr(FuncAttrKind attrKind) const {
+    return funcAttrs.GetAttr(attrKind);
   }
-
-  const std::string &GetLabelName(LabelIdx lbidx) const {
-    GStrIdx stridx = GetLabelStringIndex(lbidx);
-    return GlobalTables::GetStrTable().GetStringFromStrIdx(stridx);
-  }
-
-  MIRSymbol *GetLocalOrGlobalSymbol(const StIdx &idx, bool checkfirst = false) const;
-
-  void SetAttrsFromSe(uint8 se) {
-    // NoPrivateDefEffect
-    if ((se & kDefEffect) == kDefEffect) {
-      funcAttrs.SetAttr(FUNCATTR_noprivate_defeffect);
-    }
-    // NoPrivateUseEffect
-    if ((se & kUseEffect) == kUseEffect) {
-      funcAttrs.SetAttr(FUNCATTR_noprivate_useeffect);
-    }
-    // IpaSeen
-    if ((se & kIpaSeen) == kIpaSeen) {
-      funcAttrs.SetAttr(FUNCATTR_ipaseen);
-    }
-    // Pure
-    if ((se & kPureFunc) == kPureFunc) {
-      funcAttrs.SetAttr(FUNCATTR_pure);
-    }
-    // NoDefArgEffect
-    if ((se & kNoDefArgEffect) == kNoDefArgEffect) {
-      funcAttrs.SetAttr(FUNCATTR_nodefargeffect);
-    }
-    // NoDefEffect
-    if ((se & kNoDefEffect) == kNoDefEffect) {
-      funcAttrs.SetAttr(FUNCATTR_nodefeffect);
-    }
-    // NoRetNewlyAllocObj
-    if ((se & kNoRetNewlyAllocObj) == kNoRetNewlyAllocObj) {
-      funcAttrs.SetAttr(FUNCATTR_noret_newly_alloc_obj);
-    }
-    // NoThrowException
-    if ((se & kNoThrowException) == kNoThrowException) {
-      funcAttrs.SetAttr(FUNCATTR_nothrow_exception);
-    }
-  }
-  bool GetAttr(FuncAttrKind x) const {
-    return funcAttrs.GetAttr(x);
-  }
-  void SetAttr(FuncAttrKind x) {
-    funcAttrs.SetAttr(x);
+  void SetAttr(FuncAttrKind attrKind) {
+    funcAttrs.SetAttr(attrKind);
   }
 
   bool IsVarargs() const {
@@ -447,81 +313,39 @@ class MIRFunction {
     funcAttrs.SetAttr(FUNCATTR_noprivate_defeffect, true);
   }
 
-  bool HasCall() const {
-    return flag & FUNCHASCALL;
-  }
+  bool HasCall() const;
+  void SetHasCall();
 
-  void SetHasCall() {
-    flag |= FUNCHASCALL;
-  }
+  bool IsReturnStruct() const;
+  void SetReturnStruct();
+  void SetReturnStruct(MIRType &retType);
 
-  bool IsReturnStruct() const {
-    return flag & FUNCRETSTRUCT;
-  }
+  bool IsUserFunc() const;
+  void SetUserFunc();
 
-  void SetReturnStruct() {
-    flag |= FUNCRETSTRUCT;
-  }
+  bool IsInfoPrinted() const;
+  void SetInfoPrinted();
+  void ResetInfoPrinted();
 
-  bool IsUserFunc() const {
-    return flag & FUNCUSER;
-  }
-
-  void SetUserFunc() {
-    flag |= FUNCUSER;
-  }
-
-  bool IsInfoPrinted() const {
-    return flag & FUNCINFOPRINTED;
-  }
-
-  void SetInfoPrinted() {
-    flag |= FUNCINFOPRINTED;
-  }
-
-  void ResetInfoPrinted() {
-    flag &= ~FUNCINFOPRINTED;
-  }
-
-  void SetNoReturn() {
-    flag |= FUNCNEVERRETURN;
-  }
-
-  bool NeverReturns() const {
-    return flag & FUNCNEVERRETURN;
-  }
-
-  void SetReturnStruct(MIRType &retType) {
-    switch (retType.GetKind()) {
-      case kTypeUnion:
-      case kTypeStruct:
-      case kTypeStructIncomplete:
-      case kTypeClass:
-      case kTypeClassIncomplete:
-      case kTypeInterface:
-      case kTypeInterfaceIncomplete:
-        flag |= FUNCRETSTRUCT;
-        break;
-      default:;
-    }
-  }
+  void SetNoReturn();
+  bool NeverReturns() const;
 
   bool IsEmpty() const;
   bool IsClinit() const;
   uint32 GetInfo(GStrIdx strIdx) const;
-  uint32 GetInfo(const std::string &string) const;
-  bool IsAFormal(const MIRSymbol *st) const {
-    for (MapleVector<MIRSymbol*>::const_iterator it = formals.begin(); it != formals.end(); it++) {
-      if (st == *it) {
+  uint32 GetInfo(const std::string &str) const;
+  bool IsAFormal(const MIRSymbol *symbol) const {
+    for (const MIRSymbol *fSymbol : formals) {
+      if (symbol == fSymbol) {
         return true;
       }
     }
     return false;
   }
 
-  uint32 GetFormalIndex(const MIRSymbol *st) const {
+  uint32 GetFormalIndex(const MIRSymbol *symbol) const {
     for (size_t i = 0; i < formals.size(); i++)
-      if (formals[i] == st) {
+      if (formals[i] == symbol) {
         return i;
       }
     return 0xffffffff;
@@ -532,19 +356,21 @@ class MIRFunction {
     return classTyIdx.GetIdx();
   }
 
-  MIRType *GetNodeType(BaseNode &node);
+  const MIRType *GetNodeType(const BaseNode &node) const;
+
   void SetUpGDBEnv();
   void ResetGDBEnv();
+
   MemPool *GetCodeMempool() {
     return codeMemPool;
   }
 
-  MapleAllocator *GetCodeMemPoolAllocator() {
-    return &codeMemPoolAllocator;
+  MapleAllocator &GetCodeMemPoolAllocator() {
+    return codeMemPoolAllocator;
   }
 
-  MapleAllocator *GetCodeMempoolAllocator() {
-    return &codeMemPoolAllocator;
+  MapleAllocator &GetCodeMempoolAllocator() {
+    return codeMemPoolAllocator;
   }
 
   void NewBody();
@@ -556,17 +382,15 @@ class MIRFunction {
   PUIdx GetPuidx() const {
     return puIdx;
   }
-
-  void SetPuidx(PUIdx n) {
-    puIdx = n;
+  void SetPuidx(PUIdx idx) {
+    puIdx = idx;
   }
 
   PUIdx GetPuidxOrigin() const {
     return puIdxOrigin;
   }
-
-  void SetPuidxOrigin(PUIdx n) {
-    puIdxOrigin = n;
+  void SetPuidxOrigin(PUIdx idx) {
+    puIdxOrigin = idx;
   }
 
   StIdx GetStIdx() const {
@@ -580,7 +404,6 @@ class MIRFunction {
   MIRFuncType *GetMIRFuncType() {
     return funcType;
   }
-
   void SetMIRFuncType(MIRFuncType *type) {
     funcType = type;
   }
@@ -592,12 +415,10 @@ class MIRFunction {
   void ClearArgumentsTyIdx() {
     argumentsTyIdx.clear();
   }
-
-  TyIdx GetArgumentsTyIdxItem(size_t n) const {
-    ASSERT(n < argumentsTyIdx.size(), "array index out of range");
-    return argumentsTyIdx.at(n);
+  TyIdx GetArgumentsTyIdxItem(size_t i) const {
+    ASSERT(i < argumentsTyIdx.size(), "array index out of range");
+    return argumentsTyIdx.at(i);
   }
-
   size_t GetArgumentsTyIdxSize() const {
     return argumentsTyIdx.size();
   }
@@ -619,20 +440,24 @@ class MIRFunction {
     typeNameTab->SetGStrIdxToTyIdx(gStrIdx, tyIdx);
   }
 
-  const std::string &GetLabelTabItem(LabelIdx labidx) const {
-    return labelTab->GetName(labidx);
+  const std::string &GetLabelTabItem(LabelIdx labelIdx) const {
+    return labelTab->GetName(labelIdx);
   }
 
   MIRPregTable *GetPregTab() {
     return pregTab;
   }
-
-  MIRPreg *GetPregItem(PregIdx idx) const {
-    return pregTab->PregFromPregIdx(idx);
+  const MIRPregTable *GetPregTab() const {
+    return pregTab;
   }
-
   void SetPregTab(MIRPregTable *tab) {
     pregTab = tab;
+  }
+  MIRPreg *GetPregItem(PregIdx idx) {
+    return const_cast<MIRPreg*>(const_cast<const MIRFunction*>(this)->GetPregItem(idx));
+  }
+  const MIRPreg *GetPregItem(PregIdx idx) const {
+    return pregTab->PregFromPregIdx(idx);
   }
 
   MemPool *GetMemPool() {
@@ -642,11 +467,9 @@ class MIRFunction {
   BlockNode *GetBody() {
     return body;
   }
-
   const BlockNode *GetBody() const {
     return body;
   }
-
   void SetBody(BlockNode *node) {
     body = node;
   }
@@ -654,38 +477,36 @@ class MIRFunction {
   SrcPosition &GetSrcPosition() {
     return srcPosition;
   }
-  void SetSrcPosition(const SrcPosition &sp) {
-    srcPosition = sp;
+  void SetSrcPosition(const SrcPosition &position) {
+    srcPosition = position;
   }
 
   const FuncAttrs &GetFuncAttrs() const {
     return funcAttrs;
   }
-  void SetFuncAttrs(const FuncAttrs &fa) {
-    funcAttrs = fa;
+  void SetFuncAttrs(const FuncAttrs &attrs) {
+    funcAttrs = attrs;
   }
   void SetFuncAttrs(uint64 attrFlag) {
     funcAttrs.SetAttrFlag(attrFlag);
   }
 
-  uint32 GetFlag() {
+  uint32 GetFlag() const {
     return flag;
   }
-
-  void SetFlag(uint32 f) {
-    flag = f;
+  void SetFlag(uint32 newFlag) {
+    flag = newFlag;
   }
 
-  uint16 GetHashCode() {
+  uint16 GetHashCode() const {
     return hashCode;
   }
-
-  void SetHashCode(uint16 h) {
-    hashCode = h;
+  void SetHashCode(uint16 newHashCode) {
+    hashCode = newHashCode;
   }
 
-  void SetFileIndex(uint32 fi) {
-    fileIndex = fi;
+  void SetFileIndex(uint32 newFileIndex) {
+    fileIndex = newFileIndex;
   }
 
   const MIRInfoVector &GetInfoVector() const {
@@ -708,120 +529,104 @@ class MIRFunction {
   const MapleMap<GStrIdx, MIRAliasVars> &GetAliasVarMap() const {
     return aliasVarMap;
   }
-  void SetAliasVarMap(GStrIdx g, MIRAliasVars &a) {
-    aliasVarMap[g] = a;
+  void SetAliasVarMap(GStrIdx idx, MIRAliasVars &vars) {
+    aliasVarMap[idx] = vars;
   }
 
 
-  bool WithLocInfo() {
+  bool WithLocInfo() const {
     return withLocInfo;
   }
-
-  void SetWithLocInfo(bool s) {
-    withLocInfo = s;
+  void SetWithLocInfo(bool withInfo) {
+    withLocInfo = withInfo;
   }
 
 
-  uint8 GetLayoutType() {
+  uint8 GetLayoutType() const {
     return layoutType;
   }
-
-  const uint8 GetLayoutType() const {
-    return layoutType;
+  void SetLayoutType(uint8 type) {
+    layoutType = type;
   }
 
-  void SetLayoutType(uint8 lt) {
-    layoutType = lt;
-  }
 
   uint16 GetFrameSize() const {
     return frameSize;
   }
-
-  void SetFrameSize(uint16 fs) {
-    frameSize = fs;
+  void SetFrameSize(uint16 size) {
+    frameSize = size;
   }
 
   uint16 GetUpFormalSize() const {
     return upFormalSize;
   }
-
-  void SetUpFormalSize(uint16 uf) {
-    upFormalSize = uf;
+  void SetUpFormalSize(uint16 size) {
+    upFormalSize = size;
   }
 
   uint16 GetModuleId() const {
     return moduleID;
   }
-
-  void SetModuleID(uint16 mi) {
-    moduleID = mi;
+  void SetModuleID(uint16 id) {
+    moduleID = id;
   }
 
   uint32 GetFuncSize() const {
     return funcSize;
   }
-
-  void SetFuncSize(uint32 fs) {
-    funcSize = fs;
+  void SetFuncSize(uint32 size) {
+    funcSize = size;
   }
 
   uint32 GetTempCount() const {
     return tempCount;
   }
-
   void IncTempCount() {
-    tempCount++;
+    ++tempCount;
   }
 
   const uint8 *GetFormalWordsTypeTagged() const {
     return formalWordsTypeTagged;
   }
-
+  void SetFormalWordsTypeTagged(uint8 *tagged) {
+    formalWordsTypeTagged = tagged;
+  }
   uint8 **GetFwtAddress() {
     return &formalWordsTypeTagged;
-  }
-
-  void SetFormalWordsTypeTagged(uint8 *fwt) {
-    formalWordsTypeTagged = fwt;
-  }
-
-  uint8 **GetLwtAddress() {
-    return &localWordsTypeTagged;
   }
 
   const uint8 *GetLocalWordsTypeTagged() const {
     return localWordsTypeTagged;
   }
-
-  void SetLocalWordsTypeTagged(uint8 *lwt) {
-    localWordsTypeTagged = lwt;
+  void SetLocalWordsTypeTagged(uint8 *tagged) {
+    localWordsTypeTagged = tagged;
   }
-
-  uint8 **GetFwrAddress() {
-    return &formalWordsRefCounted;
+  uint8 **GetLwtAddress() {
+    return &localWordsTypeTagged;
   }
 
   const uint8 *GetFormalWordsRefCounted() const {
     return formalWordsRefCounted;
   }
-
-  void SetFormalWordsRefCounted(uint8 *fwr) {
-    formalWordsRefCounted = fwr;
+  void SetFormalWordsRefCounted(uint8 *counted) {
+    formalWordsRefCounted = counted;
+  }
+  uint8 **GetFwrAddress() {
+    return &formalWordsRefCounted;
   }
 
   const uint8 *GetLocalWordsRefCounted() const {
     return localWordsRefCounted;
   }
-  void SetLocalWordsRefCounted(uint8 *lwr) {
-    localWordsRefCounted = lwr;
+  void SetLocalWordsRefCounted(uint8 *counted) {
+    localWordsRefCounted = counted;
   }
 
   MeFunction *GetMeFunc() {
-    return mefunc;
+    return meFunc;
   }
   void SetMeFunc(MeFunction *func) {
-    mefunc = func;
+    meFunc = func;
   }
 
   EAConnectionGraph *GetEACG() {
@@ -831,28 +636,26 @@ class MIRFunction {
     eacg = eacgVal;
   }
 
-  void SetFormals(MapleVector<MIRSymbol*> currFormals) {
+  void SetFormals(const MapleVector<MIRSymbol*> &currFormals) {
     formals = currFormals;
   }
-
-  MIRSymbol *GetFormal(size_t i) const {
-    CHECK_FATAL(i < formals.size(), "array index out of range");
+  MIRSymbol *GetFormal(size_t i) {
+    return const_cast<MIRSymbol*>(const_cast<const MIRFunction*>(this)->GetFormal(i));
+  }
+  const MIRSymbol *GetFormal(size_t i) const {
+    ASSERT(i < formals.size(), "array index out of range");
     return formals[i];
   }
-
   void SetFormal(size_t index, MIRSymbol *value) {
-    CHECK_FATAL(index < formals.size(), "array index out of range");
+    ASSERT(index < formals.size(), "array index out of range");
     formals[index] = value;
   }
-
   size_t GetFormalCount() const {
     return formals.size();
   }
-
   void AddFormal(MIRSymbol *formal) {
     formals.push_back(formal);
   }
-
   void ClearFormals() {
     formals.clear();
   }
@@ -860,8 +663,8 @@ class MIRFunction {
   uint32 GetSymbolTabSize() const {
     return symTab->GetSymbolTableSize();
   }
-  MIRSymbol *GetSymbolTabItem(uint32 idx, bool checkfirst = false) const {
-    return symTab->GetSymbolFromStIdx(idx, checkfirst);
+  MIRSymbol *GetSymbolTabItem(uint32 idx, bool checkFirst = false) const {
+    return symTab->GetSymbolFromStIdx(idx, checkFirst);
   }
   const MIRSymbolTable *GetSymTab() const {
     return symTab;
@@ -873,11 +676,9 @@ class MIRFunction {
   const MIRLabelTable *GetLabelTab() const {
     return labelTab;
   }
-
   MIRLabelTable *GetLabelTab() {
     return labelTab;
   }
-
   void SetLabelTab(MIRLabelTable *currLabelTab) {
     labelTab = currLabelTab;
   }
@@ -905,44 +706,46 @@ class MIRFunction {
     return codeMemPoolAllocator;
   }
 
+
  private:
   MIRModule *module;     // the module that owns this function
   PUIdx puIdx = 0;           // the PU index of this function
-  PUIdx puIdxOrigin;     // the original puIdx when initial generation
+  PUIdx puIdxOrigin = 0;     // the original puIdx when initial generation
   StIdx symbolTableIdx;  // the symbol table index of this function
   MIRFuncType *funcType = nullptr;
-  TyIdx returnTyIdx;                // the declared return type of this function
+  TyIdx returnTyIdx{0};                // the declared return type of this function
   TyIdx classTyIdx{0};                 // class/interface type this function belongs to
-  MapleVector<MIRSymbol*> formals;  // formal parameter symbols of this function
-  MapleSet<MIRSymbol*> retRefSym;
-  MapleVector<TyIdx> argumentsTyIdx;  // arguments types of this function
-  MapleVector<TypeAttrs> argumentsAttrs;
+  MapleVector<MIRSymbol*> formals{module->GetMPAllocator().Adapter()};  // formal parameter symbols of this function
+  MapleSet<MIRSymbol*> retRefSym{module->GetMPAllocator().Adapter()};
+  MapleVector<TyIdx> argumentsTyIdx{module->GetMPAllocator().Adapter()};  // arguments types of this function
+  MapleVector<TypeAttrs> argumentsAttrs{module->GetMPAllocator().Adapter()};
 
   MIRSymbolTable *symTab = nullptr;
   MIRTypeNameTable *typeNameTab = nullptr;
   MIRLabelTable *labelTab = nullptr;
   MIRPregTable *pregTab = nullptr;
-  MemPool *dataMemPool;
-  MapleAllocator dataMPAllocator;
-  MemPool *codeMemPool;
-  MapleAllocator codeMemPoolAllocator;
+  MemPool *dataMemPool = memPoolCtrler.NewMemPool("func data mempool");
+  MapleAllocator dataMPAllocator{dataMemPool};
+  MemPool *codeMemPool = memPoolCtrler.NewMemPool("func code mempool");
+  MapleAllocator codeMemPoolAllocator{codeMemPool};
   BlockNode *body = nullptr;
-  SrcPosition srcPosition;
-  FuncAttrs funcAttrs;
+  SrcPosition srcPosition{};
+  FuncAttrs funcAttrs{};
   uint32 flag = 0;
-  uint16 hashCode;   // for methodmetadata order
+  uint16 hashCode = 0;   // for methodmetadata order
   uint32 fileIndex = 0;  // this function belongs to which file, used by VM for plugin manager
-  MIRInfoVector info;
-  MapleVector<bool> infoIsString;               // tells if an entry has string value
-  MapleMap<GStrIdx, MIRAliasVars> aliasVarMap;  // source code alias variables for debuginfo
-  bool withLocInfo;
+  MIRInfoVector info{module->GetMPAllocator().Adapter()};
+  MapleVector<bool> infoIsString{module->GetMPAllocator().Adapter()};  // tells if an entry has string value
+  MapleMap<GStrIdx, MIRAliasVars> aliasVarMap{module->GetMPAllocator().Adapter()};  // source code alias variables
+                                                                                    //for debuginfo
+  bool withLocInfo = true;
 
-  uint8_t layoutType;
-  uint16 frameSize;
-  uint16 upFormalSize;
-  uint16 moduleID;
-  uint32 funcSize;                         // size of code in words
-  uint32 tempCount;
+  uint8_t layoutType = kLayoutUnused;
+  uint16 frameSize = 0;
+  uint16 upFormalSize = 0;
+  uint16 moduleID = 0;
+  uint32 funcSize = 0;                         // size of code in words
+  uint32 tempCount = 0;
   uint8 *formalWordsTypeTagged = nullptr;  // bit vector where the Nth bit tells whether
   // the Nth word in the formal parameters area
   // addressed upward from %%FP (that means
@@ -974,14 +777,14 @@ class MIRFunction {
   // uint16 numlabels; // removed. label table size
   // StmtNode **lbl2stmt; // lbl2stmt table, removed;
   // to hold unmangled class and function names
-  MeFunction *mefunc;
-  EAConnectionGraph *eacg;
-  GStrIdx baseClassStrIdx;  // the string table index of base class name
-  GStrIdx baseFuncStrIdx;   // the string table index of base function name
+  MeFunction *meFunc = nullptr;
+  EAConnectionGraph *eacg = nullptr;
+  GStrIdx baseClassStrIdx{0};  // the string table index of base class name
+  GStrIdx baseFuncStrIdx{0};   // the string table index of base function name
   // the string table index of base function name mangled with type info
-  GStrIdx baseFuncWithTypeStrIdx;
+  GStrIdx baseFuncWithTypeStrIdx{0};
   // funcname + types of args, no type of retv
-  GStrIdx signatureStrIdx;
+  GStrIdx signatureStrIdx{0};
 
   void DumpFlavorLoweredThanMmpl() const;
 };

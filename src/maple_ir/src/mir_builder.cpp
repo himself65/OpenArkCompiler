@@ -20,8 +20,7 @@
 namespace maple {
 // This is for compiler-generated metadata 1-level struct
 void MIRBuilder::AddIntFieldConst(const MIRStructType &sType, MIRAggConst &newConst, uint32 fieldID, int64 constValue) {
-  MIRConst *fieldConst =
-      mirModule->GetMemPool()->New<MIRIntConst>(constValue, *sType.GetElemType(fieldID - 1), fieldID);
+  MIRConst *fieldConst = mirModule->GetMemPool()->New<MIRIntConst>(constValue, *sType.GetElemType(fieldID - 1), fieldID);
   newConst.PushBack(fieldConst);
 }
 
@@ -58,10 +57,6 @@ bool MIRBuilder::TraverseToNamedField(MIRStructType &structType, GStrIdx nameIdx
   return TraverseToNamedFieldWithTypeAndMatchStyle(structType, nameIdx, tid, fieldID, kMatchAnyField);
 }
 
-bool MIRBuilder::IsOfSameType(MIRType &type1, MIRType &type2) {
-  return type1.IsOfSameType(type2);
-}
-
 // traverse parent first but match self first.
 void MIRBuilder::TraverseToNamedFieldWithType(MIRStructType &structType, GStrIdx nameIdx, TyIdx typeIdx,
                                               uint32 &fieldID, uint32 &idx) {
@@ -74,22 +69,22 @@ void MIRBuilder::TraverseToNamedFieldWithType(MIRStructType &structType, GStrIdx
     MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(classType.GetParentTyIdx());
     MIRStructType *parentType = static_cast<MIRStructType*>(type);
     if (parentType != nullptr) {
-      fieldID++;
+      ++fieldID;
       TraverseToNamedFieldWithType(*parentType, nameIdx, typeIdx, fieldID, idx);
     }
   }
-  for (uint32 fieldIdx = 0; fieldIdx < structType.GetFieldsSize(); fieldIdx++) {
-    fieldID++;
+  for (uint32 fieldIdx = 0; fieldIdx < structType.GetFieldsSize(); ++fieldIdx) {
+    ++fieldID;
     TyIdx fieldTyIdx = structType.GetFieldsElemt(fieldIdx).second.first;
     MIRType *fieldType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(fieldTyIdx);
     if (structType.GetFieldsElemt(fieldIdx).first == nameIdx) {
-      if ((typeIdx == 0 || fieldTyIdx == typeIdx)) {
+      if (typeIdx == 0 || fieldTyIdx == typeIdx) {
         idx = fieldID;
         continue;
       }
       // for pointer type, check their pointed type
       MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(typeIdx);
-      if (IsOfSameType(*type, *fieldType)) {
+      if (type->IsOfSameType(*fieldType)) {
         idx = fieldID;
       }
     }
@@ -122,7 +117,7 @@ bool MIRBuilder::TraverseToNamedFieldWithTypeAndMatchStyle(MIRStructType &struct
       MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(classType.GetParentTyIdx());
       MIRStructType *parentType = static_cast<MIRStructType*>(type);
       if (parentType != nullptr) {
-        fieldID++;
+        ++fieldID;
         if (matchStyle == (kFoundInChild | kParentFirst | kUpdateFieldID)) {
           matchStyle = kParentFirst;
           uint32 idxBackup = nameIdx.GetIdx();
@@ -138,14 +133,14 @@ bool MIRBuilder::TraverseToNamedFieldWithTypeAndMatchStyle(MIRStructType &struct
       return false;
     }
   }
-  for (uint32 fieldIdx = 0; fieldIdx < structType.GetFieldsSize(); fieldIdx++) {
-    fieldID++;
+  for (uint32 fieldIdx = 0; fieldIdx < structType.GetFieldsSize(); ++fieldIdx) {
+    ++fieldID;
     TyIdx fieldTyIdx = structType.GetFieldsElemt(fieldIdx).second.first;
     MIRType *fieldType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(fieldTyIdx);
     ASSERT(fieldType != nullptr, "fieldType is null");
     if (matchStyle && structType.GetFieldsElemt(fieldIdx).first == nameIdx) {
       if (typeIdx == 0 || fieldTyIdx == typeIdx ||
-          IsOfSameType(*GlobalTables::GetTypeTable().GetTypeFromTyIdx(typeIdx), *fieldType)) {
+          fieldType->IsOfSameType(*GlobalTables::GetTypeTable().GetTypeFromTyIdx(typeIdx))) {
         return true;
       }
     }
@@ -182,7 +177,7 @@ FieldID MIRBuilder::GetStructFieldIDFromNameAndTypeParentFirst(MIRType &type, co
 FieldID MIRBuilder::GetStructFieldIDFromNameAndTypeParentFirstFoundInChild(MIRType &type, const std::string &name,
                                                                            TyIdx idx) {
   // do not match but traverse to update fieldid, traverse parent first, found in child
-  return GetStructFieldIDFromNameAndType(type, name, idx, (kFoundInChild | kParentFirst | kUpdateFieldID));
+  return GetStructFieldIDFromNameAndType(type, name, idx, kFoundInChild | kParentFirst | kUpdateFieldID);
 }
 
 FieldID MIRBuilder::GetStructFieldIDFromFieldName(MIRType &type, const std::string &name) {
@@ -209,7 +204,7 @@ void MIRBuilder::SetStructFieldIDFromFieldName(MIRType &structtype, const std::s
       structType.SetElemtTyIdx(fieldID, newFieldType.GetTypeIndex());
       return;
     }
-    fieldID++;
+    ++fieldID;
   }
 }
 
@@ -273,7 +268,7 @@ MIRFunction *MIRBuilder::CreateFunction(const std::string &name, const MIRType &
   GlobalTables::GetFunctionTable().GetFuncTable().push_back(fn);
   std::vector<TyIdx> funcVecType;
   std::vector<TypeAttrs> funcVecAttrs;
-  for (size_t i = 0; i < arguments.size(); i++) {
+  for (size_t i = 0; i < arguments.size(); ++i) {
     MIRSymbol *argSymbol = fn->GetSymTab()->CreateSymbol(kScopeLocal);
     argSymbol->SetNameStrIdx(GetOrCreateStringIndex(arguments[i].first.c_str()));
     MIRType *ty = arguments[i].second;
@@ -358,7 +353,7 @@ MIRSymbol *MIRBuilder::GetOrCreateDeclInFunc(const std::string &str, const MIRTy
   return st;
 }
 
-MIRSymbol *MIRBuilder::GetOrCreateLocalDecl(const std::string &str, MIRType &type) {
+MIRSymbol *MIRBuilder::GetOrCreateLocalDecl(const std::string &str, const MIRType &type) {
   MIRFunction *currentFunc = GetCurrentFunction();
   CHECK_FATAL(currentFunc != nullptr, "null ptr check");
   return GetOrCreateDeclInFunc(str, type, *currentFunc);
@@ -512,7 +507,7 @@ ConstvalNode *MIRBuilder::CreateAddrofConst(BaseNode &e) {
 
   // determine the type of 'e' and create a pointer type, accordingly
   AddrofNode &aNode = static_cast<AddrofNode &>(e);
-  MIRSymbol *var = currentFunctionInner->GetLocalOrGlobalSymbol(aNode.GetStIdx());
+  const MIRSymbol *var = currentFunctionInner->GetLocalOrGlobalSymbol(aNode.GetStIdx());
   TyIdx ptyIdx = var->GetTyIdx();
   MIRPtrType ptrType(ptyIdx);
   ptyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&ptrType);
@@ -673,8 +668,7 @@ ExtractbitsNode *MIRBuilder::CreateExprExtractbits(Opcode o, const MIRType &type
 }
 
 RetypeNode *MIRBuilder::CreateExprRetype(const MIRType &type, const MIRType &fromType, BaseNode *opnd) {
-  return GetCurrentFuncCodeMp()->New<RetypeNode>(type.GetPrimType(), fromType.GetPrimType(),
-                                                 type.GetTypeIndex(), opnd);
+  return GetCurrentFuncCodeMp()->New<RetypeNode>(type.GetPrimType(), fromType.GetPrimType(), type.GetTypeIndex(), opnd);
 }
 
 BinaryNode *MIRBuilder::CreateExprBinary(Opcode opcode, const MIRType &type, BaseNode *opnd0, BaseNode *opnd1) {

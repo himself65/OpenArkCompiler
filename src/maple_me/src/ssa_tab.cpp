@@ -35,8 +35,8 @@ BaseNode *SSATab::CreateSSAExpr(BaseNode &expr) {
     ssaNode->SetSSAVar(vst);
     return ssaNode;
   } else if (expr.GetOpCode() == OP_regread) {
-    RegreadNode &rreadNode = static_cast<RegreadNode&>(expr);
-    RegreadSSANode *ssaNode = mirModule.CurFunction()->GetCodeMemPool()->New<RegreadSSANode>(&rreadNode);
+    RegreadNode &regReadNode = static_cast<RegreadNode&>(expr);
+    RegreadSSANode *ssaNode = mirModule.CurFunction()->GetCodeMemPool()->New<RegreadSSANode>(&regReadNode);
     OriginalSt *ost =
         originalStTable.FindOrCreatePregOriginalSt(ssaNode->GetRegIdx(), mirModule.CurFunction()->GetPuidx());
     VersionSt *vst = versionStTable.FindOrCreateVersionSt(ost, kInitVersion);
@@ -62,7 +62,7 @@ BaseNode *SSATab::CreateSSAExpr(BaseNode &expr) {
   }
 }
 
-void SSATab::CreateSSAStmt(StmtNode &stmt, const BB &curbb, bool ignoreCallassignedDefs) {
+void SSATab::CreateSSAStmt(StmtNode &stmt, const BB &curbb) {
   for (size_t i = 0; i < stmt.NumOpnds(); i++) {
     BaseNode *newOpnd = CreateSSAExpr(*stmt.Opnd(i));
     if (newOpnd != nullptr) {
@@ -75,21 +75,21 @@ void SSATab::CreateSSAStmt(StmtNode &stmt, const BB &curbb, bool ignoreCallassig
       MayDefPartWithVersionSt *theSSAPart =
           stmtsSSAPart.GetSSAPartMp()->New<MayDefPartWithVersionSt>(&stmtsSSAPart.GetSSAPartAlloc());
       stmtsSSAPart.SetSSAPartOf(stmt, theSSAPart);
-      DassignNode &dnode = static_cast<DassignNode&>(stmt);
-      MIRSymbol *st = mirModule.CurFunction()->GetLocalOrGlobalSymbol(dnode.GetStIdx());
+      auto &dNode = static_cast<DassignNode&>(stmt);
+      MIRSymbol *st = mirModule.CurFunction()->GetLocalOrGlobalSymbol(dNode.GetStIdx());
       CHECK_FATAL(st != nullptr, "null ptr check");
 
-      OriginalSt *ost = FindOrCreateSymbolOriginalSt(*st, mirModule.CurFunction()->GetPuidx(), dnode.GetFieldID());
+      OriginalSt *ost = FindOrCreateSymbolOriginalSt(*st, mirModule.CurFunction()->GetPuidx(), dNode.GetFieldID());
       VersionSt *vst = versionStTable.FindOrCreateVersionSt(ost, kInitVersion);
       theSSAPart->SetSSAVar(*vst);
       // if the rhs may throw exception, we insert MayDef of the lhs var
       if (stmt.GetOpCode() == OP_maydassign) {
-        theSSAPart->InsertMayDefNode(theSSAPart->GetSSAVar(), &dnode);
+        theSSAPart->InsertMayDefNode(theSSAPart->GetSSAVar(), &dNode);
       }
       return;
     }
     case OP_regassign: {
-      RegassignNode &regNode = static_cast<RegassignNode&>(stmt);
+      auto &regNode = static_cast<RegassignNode&>(stmt);
       OriginalSt *ost =
           originalStTable.FindOrCreatePregOriginalSt(regNode.GetRegIdx(), mirModule.CurFunction()->GetPuidx());
       VersionSt *vst = versionStTable.FindOrCreateVersionSt(ost, kInitVersion);
@@ -124,8 +124,8 @@ void SSATab::CreateSSAStmt(StmtNode &stmt, const BB &curbb, bool ignoreCallassig
         for (CallReturnPair &retPair : *nrets) {
           if (!retPair.second.IsReg()) {
             StIdx stidx = retPair.first;
-            MIRSymbolTable *symtab = mirModule.CurFunction()->GetSymTab();
-            MIRSymbol *st = symtab->GetSymbolFromStIdx(stidx.Idx());
+            MIRSymbolTable *symTab = mirModule.CurFunction()->GetSymTab();
+            MIRSymbol *st = symTab->GetSymbolFromStIdx(stidx.Idx());
             OriginalSt *ost =
                 FindOrCreateSymbolOriginalSt(*st, mirModule.CurFunction()->GetPuidx(), retPair.second.GetFieldID());
             VersionSt *vst = versionStTable.FindOrCreateVersionSt(ost, kInitVersion);
@@ -134,11 +134,9 @@ void SSATab::CreateSSAStmt(StmtNode &stmt, const BB &curbb, bool ignoreCallassig
             ASSERT(false, "NYI");
           }
         }
-        return;
       } else if (kOpcodeInfo.IsCall(stmt.GetOpCode())) {
         stmtsSSAPart.SetSSAPartOf(stmt,
                                   stmtsSSAPart.GetSSAPartMp()->New<MayDefMayUsePart>(&stmtsSSAPart.GetSSAPartAlloc()));
-        return;
       }
     }
   }

@@ -16,16 +16,15 @@
 #define MAPLE_ME_INCLUDE_ME_IR_H
 #include <array>
 #include "orig_symbol.h"
+#include "bb.h"
 
 namespace maple {
-class BB;  // circular dependency exists, no other choice
 class PhiNode;  // circular dependency exists, no other choice
 class MeStmt;  // circular dependency exists, no other choice
 class IRMap;  // circular dependency exists, no other choice
 class SSATab;  // circular dependency exists, no other choice
 class VarMeExpr;  // circular dependency exists, no other choice
 class RegMeExpr;  // circular dependency exists, no other choice
-class OriginalSt;  // circular dependency exists, no other choice
 class Dominance;  // circular dependency exists, no other choice
 using MeStmtPtr = MeStmt*;
 enum MeExprOp : std::uint8_t {
@@ -121,7 +120,7 @@ class MeExpr {
     return exprID == expr.exprID;
   }
 
-  virtual BaseNode &EmitExpr(SSATab &) = 0;
+  virtual BaseNode &EmitExpr(SSATab&) = 0;
   bool IsLeaf() const {
     return numOpnds == 0;
   }
@@ -130,12 +129,12 @@ class MeExpr {
     return op == OP_gcmalloc || op == OP_gcmallocjarray || op == OP_gcpermalloc || op == OP_gcpermallocjarray;
   }
 
-  virtual bool IsVolatile(SSATab &) {
+  virtual bool IsVolatile(SSATab&) {
     return false;
   }
 
-  bool IsTheSameWorkcand(const MeExpr &) const;
-  virtual void SetDefByStmt(MeStmt &) {}
+  bool IsTheSameWorkcand(const MeExpr&) const;
+  virtual void SetDefByStmt(MeStmt&) {}
 
   virtual MeExpr *GetOpnd(size_t i) const {
     return nullptr;
@@ -160,7 +159,7 @@ class MeExpr {
     return !kOpcodeInfo.NotPure(op);
   }
 
-  virtual bool IsSameVariableValue(const VarMeExpr &) const;
+  virtual bool IsSameVariableValue(const VarMeExpr&) const;
   MeExpr *ResolveMeExprValue();
   bool CouldThrowException() const;
   bool PointsToSomethingThatNeedsIncRef();
@@ -209,8 +208,8 @@ class VarMeExpr final : public MeExpr {
   ~VarMeExpr() = default;
 
   void Dump(IRMap*, int32 indent = 0) const override;
-  bool IsUseSameSymbol(const MeExpr &) const override;
-  BaseNode &EmitExpr(SSATab &) override;
+  bool IsUseSameSymbol(const MeExpr&) const override;
+  BaseNode &EmitExpr(SSATab&) override;
   bool IsValidVerIdx(SSATab &ssaTab) const;
   void SetDefByStmt(MeStmt &defStmt) override {
     defBy = kDefByStmt;
@@ -226,12 +225,12 @@ class VarMeExpr final : public MeExpr {
   }
 
   BB *DefByBB();
-  bool IsVolatile(SSATab &) override;
+  bool IsVolatile(SSATab&) override;
   // indicate if the variable is local variable but not a function formal variable
-  bool IsPureLocal(SSATab &, const MIRFunction &) const;
-  bool IsZeroVersion(SSATab &) const;
-  BB *GetDefByBBMeStmt(Dominance &, MeStmtPtr &);
-  bool IsSameVariableValue(const VarMeExpr &) const override;
+  bool IsPureLocal(SSATab&, const MIRFunction&) const;
+  bool IsZeroVersion(SSATab&) const;
+  BB *GetDefByBBMeStmt(Dominance&, MeStmtPtr&);
+  bool IsSameVariableValue(const VarMeExpr&) const override;
   VarMeExpr &ResolveVarMeValue();
 
   const OStIdx &GetOStIdx() const {
@@ -441,7 +440,7 @@ class RegMeExpr : public MeExpr {
   ~RegMeExpr() = default;
 
   void Dump(IRMap*, int32 indent = 0) const override;
-  BaseNode &EmitExpr(SSATab &) override;
+  BaseNode &EmitExpr(SSATab&) override;
   void SetDefByStmt(MeStmt &defStmt) override {
     defBy = kDefByStmt;
     def.defStmt = &defStmt;
@@ -455,9 +454,9 @@ class RegMeExpr : public MeExpr {
     return IsDefByPhi() ? def.defPhi : nullptr;
   }
 
-  bool IsSameVariableValue(const VarMeExpr &) const override;
+  bool IsSameVariableValue(const VarMeExpr&) const override;
 
-  bool IsUseSameSymbol(const MeExpr &) const override;
+  bool IsUseSameSymbol(const MeExpr&) const override;
   BB *DefByBB();
   RegMeExpr *FindDefByStmt(std::set<RegMeExpr*> &visited);
 
@@ -642,7 +641,7 @@ class ConststrMeExpr : public MeExpr {
   ~ConststrMeExpr() = default;
 
   void Dump(IRMap*, int32 indent = 0) const override;
-  BaseNode &EmitExpr(SSATab &) override;
+  BaseNode &EmitExpr(SSATab&) override;
   MeExpr *GetIdenticalExpr(MeExpr &expr) const override;
 
   UStrIdx GetStrIdx() const {
@@ -664,7 +663,7 @@ class Conststr16MeExpr : public MeExpr {
   ~Conststr16MeExpr() = default;
 
   void Dump(IRMap*, int32 indent = 0) const override;
-  BaseNode &EmitExpr(SSATab &) override;
+  BaseNode &EmitExpr(SSATab&) override;
   MeExpr *GetIdenticalExpr(MeExpr &expr) const override;
 
   U16StrIdx GetStrIdx() {
@@ -686,7 +685,7 @@ class SizeoftypeMeExpr : public MeExpr {
   ~SizeoftypeMeExpr() = default;
 
   void Dump(IRMap*, int32 indent = 0) const override;
-  BaseNode &EmitExpr(SSATab &) override;
+  BaseNode &EmitExpr(SSATab&) override;
   MeExpr *GetIdenticalExpr(MeExpr &expr) const override;
 
   TyIdx GetTyIdx() const {
@@ -709,7 +708,7 @@ class FieldsDistMeExpr : public MeExpr {
 
   ~FieldsDistMeExpr() = default;
   void Dump(IRMap*, int32 indent = 0) const override;
-  BaseNode &EmitExpr(SSATab &) override;
+  BaseNode &EmitExpr(SSATab&) override;
   MeExpr *GetIdenticalExpr(MeExpr &expr) const override;
 
   TyIdx GetTyIdx() const {
@@ -743,8 +742,8 @@ class AddrofMeExpr : public MeExpr {
   ~AddrofMeExpr() = default;
 
   void Dump(IRMap*, int32 indent = 0) const override;
-  bool IsUseSameSymbol(const MeExpr &) const override;
-  BaseNode &EmitExpr(SSATab &) override;
+  bool IsUseSameSymbol(const MeExpr&) const override;
+  BaseNode &EmitExpr(SSATab&) override;
   MeExpr *GetIdenticalExpr(MeExpr &expr) const override;
 
   OStIdx GetOstIdx() const {
@@ -776,7 +775,7 @@ class AddroffuncMeExpr : public MeExpr {
   ~AddroffuncMeExpr() = default;
 
   void Dump(IRMap*, int32 indent = 0) const override;
-  BaseNode &EmitExpr(SSATab &) override;
+  BaseNode &EmitExpr(SSATab&) override;
   MeExpr *GetIdenticalExpr(MeExpr &expr) const override;
 
   PUIdx GetPuIdx() {
@@ -799,7 +798,7 @@ class GcmallocMeExpr : public MeExpr {
   ~GcmallocMeExpr() = default;
 
   void Dump(IRMap*, int32 indent = 0) const;
-  BaseNode &EmitExpr(SSATab &);
+  BaseNode &EmitExpr(SSATab&);
 
   TyIdx GetTyIdx() const {
     return tyIdx;
@@ -831,14 +830,14 @@ class OpMeExpr : public MeExpr {
 
   ~OpMeExpr() = default;
 
-  OpMeExpr(const OpMeExpr &) = delete;
-  OpMeExpr &operator=(const OpMeExpr &) = delete;
+  OpMeExpr(const OpMeExpr&) = delete;
+  OpMeExpr &operator=(const OpMeExpr&) = delete;
 
   bool IsIdentical(const OpMeExpr &meexpr) const;
   void Dump(IRMap*, int32 indent = 0) const override;
-  bool IsUseSameSymbol(const MeExpr &) const override;
+  bool IsUseSameSymbol(const MeExpr&) const override;
   MeExpr *GetIdenticalExpr(MeExpr &expr) const override;
-  BaseNode &EmitExpr(SSATab &) override;
+  BaseNode &EmitExpr(SSATab&) override;
   MeExpr *GetOpnd(size_t i) const override {
     CHECK_FATAL(i < kOperandNumTernary, "OpMeExpr cannot have more than 3 operands");
     return opnds[i];
@@ -943,15 +942,15 @@ class IvarMeExpr : public MeExpr {
   ~IvarMeExpr() = default;
 
   void Dump(IRMap*, int32 indent = 0) const override;
-  BaseNode &EmitExpr(SSATab &) override;
-  bool IsVolatile(SSATab &) override {
+  BaseNode &EmitExpr(SSATab&) override;
+  bool IsVolatile(SSATab&) override {
     return IsVolatile();
   }
 
   bool IsVolatile() const;
   bool IsFinal();
   bool IsRCWeak() const;
-  bool IsUseSameSymbol(const MeExpr &) const override;
+  bool IsUseSameSymbol(const MeExpr&) const override;
   bool IsIdentical(IvarMeExpr &expr) const;
   MeExpr *GetIdenticalExpr(MeExpr &expr) const override;
   MeExpr *GetOpnd(size_t idx) const override {
@@ -1055,9 +1054,9 @@ class NaryMeExpr : public MeExpr {
   ~NaryMeExpr() = default;
 
   void Dump(IRMap*, int32 indent = 0) const override;
-  bool IsIdentical(NaryMeExpr &) const;
-  bool IsUseSameSymbol(const MeExpr &) const override;
-  BaseNode &EmitExpr(SSATab &) override;
+  bool IsIdentical(NaryMeExpr&) const;
+  bool IsUseSameSymbol(const MeExpr&) const override;
+  BaseNode &EmitExpr(SSATab&) override;
   MeExpr *GetIdenticalExpr(MeExpr &expr) const override;
   MeExpr *GetOpnd(size_t idx) const override {
     ASSERT(idx < opnds.size(), "NaryMeExpr operand out of bounds");
@@ -1202,7 +1201,7 @@ class MeStmt {
     isLive = mestmt.isLive;
   }
 
-  bool IsTheSameWorkcand(MeStmt &) const;
+  bool IsTheSameWorkcand(MeStmt&) const;
   virtual bool NeedDecref() const {
     return false;
   }
@@ -1437,12 +1436,12 @@ class MustDefMeNode {
   void UpdateLHS(MeExpr &x) {
     lhs = &x;
     if (x.GetMeOp() == kMeOpReg) {
-      auto &reg = static_cast<RegMeExpr &>(x);
+      auto &reg = static_cast<RegMeExpr&>(x);
       reg.SetDefBy(kDefByMustDef);
       reg.SetDefMustDef(*this);
     } else {
       ASSERT(lhs->GetMeOp() == kMeOpVar, "unexpected opcode");
-      auto &var = static_cast<VarMeExpr &>(x);
+      auto &var = static_cast<VarMeExpr&>(x);
       var.SetDefBy(kDefByMustDef);
       var.SetDefMustDef(*this);
     }
@@ -2124,7 +2123,7 @@ class CallMeStmt : public NaryMeStmt, public MuChiMePart, public AssignedPart {
 
   StmtNode &EmitStmt(SSATab &ssatab);
 
-  void SetCallReturn(MeExpr &);
+  void SetCallReturn(MeExpr&);
 
  private:
   PUIdx puIdx;

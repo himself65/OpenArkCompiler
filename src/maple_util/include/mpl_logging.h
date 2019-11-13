@@ -151,14 +151,15 @@ enum LogNumberCode {
 
 class LogInfo {
  public:
-  static std::ostream &MapleLogger(LogLevel l = kLlLog);
-  LogInfo &operator=(const LogInfo &p) = delete;
-  LogInfo(const LogInfo &p) = delete;
   LogInfo() : outStream(stdout), outMode(kLmComplex) {}
+  LogInfo(const LogInfo &p) = delete;
+  LogInfo &operator=(const LogInfo &p) = delete;
 
   ~LogInfo() {
     fclose(outStream);
   }
+
+  static std::ostream &MapleLogger(LogLevel l = kLlLog);
 
   void EmitLogForUser(enum LogNumberCode num, enum LogLevel ll, const char *fmt, ...) const;
   void EmitLogForUser(enum LogNumberCode num, enum LogLevel ll, const std::string &message) const;
@@ -166,8 +167,6 @@ class LogInfo {
                         const char *fmt, ...) const;
 
  private:
-  FILE *outStream;
-  LogMode outMode;
   void SetLogDevice(FILE &stream) {
     outStream = &stream;
   }
@@ -176,6 +175,8 @@ class LogInfo {
   }
   void EmitLogForDevelop(enum LogTags tag, enum LogLevel ll, const std::string &file, const std::string &func,
                          int line, const char *fmt, ...);
+  FILE *outStream;
+  LogMode outMode;
 };
 
 #ifdef DEBUG

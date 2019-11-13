@@ -184,13 +184,13 @@ void GenericNativeStubFunc::ProcessFunc(MIRFunction *func) {
       ? builder->CreateStmtCallRegassigned(MRTPreNativeFunc->GetPuidx(), args, envPregIdx, OP_callassigned)
       : builder->CreateStmtCallAssigned(MRTPreNativeFunc->GetPuidx(), args, envPtrSym, OP_callassigned);
   // Generate a MRT call for extra work after calling the native
-  MapleVector<BaseNode*> postArgs(func->GetCodeMempoolAllocator()->Adapter());
+  MapleVector<BaseNode*> postArgs(func->GetCodeMempoolAllocator().Adapter());
   postArgs.push_back(Options::usePreg ? (static_cast<BaseNode*>(builder->CreateExprRegread(PTY_ptr, envPregIdx)))
                                       : (static_cast<BaseNode*>(builder->CreateExprDread(*envPtrSym))));
   CallNode *postFuncCall =
       builder->CreateStmtCallAssigned(MRTPostNativeFunc->GetPuidx(), postArgs, nullptr, OP_callassigned);
 
-  MapleVector<BaseNode*> allocCallArgs(func->GetCodeMempoolAllocator()->Adapter());
+  MapleVector<BaseNode*> allocCallArgs(func->GetCodeMempoolAllocator().Adapter());
   if (!func->GetAttr(FUNCATTR_critical_native)) {
     if (needNativeCall) {
       func->GetBody()->AddStatement(preFuncCall);
@@ -234,7 +234,7 @@ void GenericNativeStubFunc::ProcessFunc(MIRFunction *func) {
   }
   if (func->GetReturnType()->GetPrimType() == PTY_ref) {
     // Generate a MRT call to decode the tagged pointer
-    MapleVector<BaseNode*> decodeArgs(func->GetCodeMempoolAllocator()->Adapter());
+    MapleVector<BaseNode*> decodeArgs(func->GetCodeMempoolAllocator().Adapter());
     CHECK_FATAL(stubFuncRet != nullptr, "stubfunc_ret is nullptr");
     decodeArgs.push_back(builder->CreateExprDread(*stubFuncRet));
     CallNode *decodeFuncCall =
@@ -267,7 +267,7 @@ void GenericNativeStubFunc::ProcessFunc(MIRFunction *func) {
   }
   // check pending exception just before leaving this stub frame except for critical natives
   if (needCheckThrowPendingExceptionFunc) {
-    MapleVector<BaseNode*> getExceptArgs(func->GetCodeMempoolAllocator()->Adapter());
+    MapleVector<BaseNode*> getExceptArgs(func->GetCodeMempoolAllocator().Adapter());
     CallNode *callGetExceptFunc = builder->CreateStmtCallAssigned(MRTCheckThrowPendingExceptionFunc->GetPuidx(),
                                                                   getExceptArgs, nullptr, OP_callassigned);
     func->GetBody()->AddStatement(callGetExceptFunc);
@@ -275,7 +275,7 @@ void GenericNativeStubFunc::ProcessFunc(MIRFunction *func) {
   // this function is a bridge function generated for Java Genetic
   if ((func->GetAttr(FUNCATTR_native) || func->GetAttr(FUNCATTR_fast_native)) &&
       !func->GetAttr(FUNCATTR_critical_native) && !func->GetAttr(FUNCATTR_bridge)) {
-    MapleVector<BaseNode*> frameStatusArgs(func->GetCodeMempoolAllocator()->Adapter());
+    MapleVector<BaseNode*> frameStatusArgs(func->GetCodeMempoolAllocator().Adapter());
     CallNode *callSetFrameStatusFunc = builder->CreateStmtCallAssigned(MCCSetReliableUnwindContextFunc->GetPuidx(),
                                                                        frameStatusArgs, nullptr, OP_callassigned);
     func->GetBody()->AddStatement(callSetFrameStatusFunc);
@@ -337,7 +337,7 @@ void GenericNativeStubFunc::GenericRegisteredNativeFuncCall(MIRFunction &func, c
   // Generate registration table entry.
   GenericRegTabEntry(func);
   GenericRegFuncTabEntry();
-  CallReturnVector nrets(func.GetCodeMempoolAllocator()->Adapter());
+  CallReturnVector nrets(func.GetCodeMempoolAllocator().Adapter());
   if (ret != nullptr) {
     CHECK_FATAL((ret->GetStorageClass() == kScAuto || ret->GetStorageClass() == kScFormal ||
                  ret->GetStorageClass() == kScExtern || ret->GetStorageClass() == kScGlobal),
@@ -378,7 +378,7 @@ void GenericNativeStubFunc::GenericRegisteredNativeFuncCall(MIRFunction &func, c
   // get find_native_func function
   MIRType *voidPointerType = GlobalTables::GetTypeTable().GetVoidPtr();
   // set parameter of find_native_func
-  MapleVector<BaseNode*> dynamicStubOpnds(func.GetCodeMempoolAllocator()->Adapter());
+  MapleVector<BaseNode*> dynamicStubOpnds(func.GetCodeMempoolAllocator().Adapter());
   dynamicStubOpnds.push_back(arrayExpr);
   // Use native wrapper if required.
   if (Options::nativeWrapper) {
@@ -408,7 +408,7 @@ void GenericNativeStubFunc::GenericRegisteredNativeFuncCall(MIRFunction &func, c
       dummyNativeFunc->SetAttr(FUNCATTR_nosideeffect);
       auto dummyFuncPreg = func.GetPregTab()->CreatePreg(PTY_ptr);
       auto readDummyFuncPtr = builder->CreateExprRegread(PTY_ptr, dummyFuncPreg);
-      MapleVector<BaseNode*> dummyFuncOpnds(func.GetCodeMempoolAllocator()->Adapter());
+      MapleVector<BaseNode*> dummyFuncOpnds(func.GetCodeMempoolAllocator().Adapter());
       CallNode *callDummyNativeFunc = builder->CreateStmtCallRegassigned(dummyNativeFunc->GetPuidx(), dummyFuncOpnds,
                                                                          dummyFuncPreg, OP_callassigned);
       BaseNode *checkStubReturnExpr =
@@ -520,7 +520,7 @@ StmtNode *GenericNativeStubFunc::CreateNativeWrapperCallNode(MIRFunction &func, 
   constexpr size_t numOfArgs = 8;
   if (func.GetAttr(FUNCATTR_critical_native) && args.size() < numOfArgs) {
     IcallNode *icall = func.GetCodeMempool()->New<IcallNode>(GetMIRModule(), OP_icallassigned);
-    CallReturnVector nrets(func.GetCodeMempoolAllocator()->Adapter());
+    CallReturnVector nrets(func.GetCodeMempoolAllocator().Adapter());
     if (ret != nullptr) {
       CHECK_FATAL((ret->GetStorageClass() == kScAuto || ret->GetStorageClass() == kScFormal ||
                    ret->GetStorageClass() == kScExtern || ret->GetStorageClass() == kScGlobal),
