@@ -140,11 +140,11 @@ void GenericNativeStubFunc::ProcessFunc(MIRFunction *func) {
       const size_t funcFormalsSize = func->GetFormalCount();
       CHECK_FATAL(funcFormalsSize > 0, "container check");
       MIRSymbol *formal0St = func->GetFormal(0);
-      if (formal0St->GetSKind() == kStPreg)
+      if (formal0St->GetSKind() == kStPreg) {
         monitor =
             builder->CreateExprRegread(formal0St->GetType()->GetPrimType(),
                                        func->GetPregTab()->GetPregIdxFromPregno(formal0St->GetPreg()->GetPregNo()));
-      else {
+      } else {
         monitor = builder->CreateExprDread(*formal0St);
       }
     }
@@ -169,11 +169,11 @@ void GenericNativeStubFunc::ProcessFunc(MIRFunction *func) {
   } else {
     // Grab _this pointer
     MIRSymbol *formal0St = func->GetFormal(0);
-    if (formal0St->GetSKind() == kStPreg)
+    if (formal0St->GetSKind() == kStPreg) {
       callerObj =
           builder->CreateExprRegread(formal0St->GetType()->GetPrimType(),
                                      func->GetPregTab()->GetPregIdxFromPregno(formal0St->GetPreg()->GetPregNo()));
-    else {
+    } else {
       callerObj = builder->CreateExprDread(*formal0St);
     }
   }
@@ -207,10 +207,10 @@ void GenericNativeStubFunc::ProcessFunc(MIRFunction *func) {
   for (uint32 i = 0; i < func->GetFormalCount(); i++) {
     auto argSt = func->GetFormal(i);
     BaseNode *argExpr = nullptr;
-    if (argSt->GetSKind() == kStPreg)
+    if (argSt->GetSKind() == kStPreg) {
       argExpr = builder->CreateExprRegread(argSt->GetType()->GetPrimType(),
                                            func->GetPregTab()->GetPregIdxFromPregno(argSt->GetPreg()->GetPregNo()));
-    else {
+    } else {
       argExpr = builder->CreateExprDread(*argSt);
     }
     allocCallArgs.push_back(argExpr);
@@ -254,11 +254,11 @@ void GenericNativeStubFunc::ProcessFunc(MIRFunction *func) {
     } else {
       // Grab _this pointer
       MIRSymbol *formal0St = func->GetFormal(0);
-      if (formal0St->GetSKind() == kStPreg)
+      if (formal0St->GetSKind() == kStPreg) {
         monitor =
             builder->CreateExprRegread(formal0St->GetType()->GetPrimType(),
                                        func->GetPregTab()->GetPregIdxFromPregno(formal0St->GetPreg()->GetPregNo()));
-      else {
+      } else {
         monitor = builder->CreateExprDread(*formal0St);
       }
     }
@@ -661,7 +661,7 @@ void GenericNativeStubFunc::InitStaticBindingMethodList() {
   }
 }
 
-bool GenericNativeStubFunc::IsStaticBindingMethod(const std::string &methodName) {
+bool GenericNativeStubFunc::IsStaticBindingMethod(const std::string &methodName) const {
   return (staticBindingMethodsSet.find(NameMangler::NativeJavaName(methodName.c_str())) !=
           staticBindingMethodsSet.end());
 }

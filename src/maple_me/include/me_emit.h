@@ -17,7 +17,7 @@
 #include "me_function.h"
 #include "me_phase.h"
 
-/* emit ir to specified file */
+// emit ir to specified file
 namespace maple {
 class MeDoEmit : public MeFuncPhase {
  public:

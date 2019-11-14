@@ -150,9 +150,6 @@ MeOption *MapleCombCompiler::MakeMeOptions(const MplOptions &options, maple::Mem
       case kLessThrowAlias:
         meOption->lessThrowAlias = true;
         break;
-      case kFinalFieldAlias:
-        meOption->finalFieldAlias = true;
-        break;
       case kRegReadAtReturn:
         meOption->regreadAtReturn = true;
         break;

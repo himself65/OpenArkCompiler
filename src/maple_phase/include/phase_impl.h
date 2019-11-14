@@ -49,7 +49,7 @@ class FuncOptimizeImpl : public MplTaskParam {
 
   KlassHierarchy *klassHierarchy = nullptr;
   MIRFunction *currFunc = nullptr;
-  MIRBuilder *builder;
+  MIRBuilder *builder = nullptr;
   bool trace = false;
 
  private:
@@ -58,7 +58,7 @@ class FuncOptimizeImpl : public MplTaskParam {
 
 class FuncOptimizeIterator {
  public:
-  explicit FuncOptimizeIterator(const std::string &phaseName, FuncOptimizeImpl *phaseImpl);
+  FuncOptimizeIterator(const std::string &phaseName, FuncOptimizeImpl *phaseImpl);
   virtual ~FuncOptimizeIterator();
   virtual void Run();
 

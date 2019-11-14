@@ -30,7 +30,7 @@ uint8 BinaryMplImport::Read() {
   return buf[bufI++];
 }
 
-/* Little endian */
+// Little endian
 int32 BinaryMplImport::ReadInt() {
   uint32 x0 = static_cast<uint32>(Read());
   uint32 x1 = static_cast<uint32>(Read());
@@ -46,7 +46,7 @@ int64 BinaryMplImport::ReadInt64() {
   return static_cast<int64>((x1 << 32) + x0);
 }
 
-/* LEB128 */
+// LEB128
 int64 BinaryMplImport::ReadNum() {
   uint64 n = 0;
   int64 y = 0;
@@ -554,7 +554,7 @@ TyIdx BinaryMplImport::ImportType(bool forPointedType) {
     }
     size_t idx = typTab.size();
     typTab.push_back(nullptr);
-    type.SetElemtTyIdx(ImportType(forPointedType));
+    type.SetElemTyIdx(ImportType(forPointedType));
     MIRType *origType = &InsertInTypeTables(type);
     typTab[idx] = origType;
     return origType->GetTypeIndex();
@@ -853,7 +853,7 @@ void BinaryMplImport::ReadContentField() {
 void BinaryMplImport::Jump2NextField() {
   uint32 totalSize = ReadInt();
   bufI += (totalSize - sizeof(uint32));
-  ReadNum();  /// skip end tag for this field
+  ReadNum();  // skip end tag for this field
 }
 
 bool BinaryMplImport::Import(const std::string &fname, bool readSymbols, bool readSe) {

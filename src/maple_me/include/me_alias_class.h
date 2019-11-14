@@ -22,8 +22,8 @@ namespace maple {
 class MeAliasClass : public AliasClass {
  public:
   MeAliasClass(MemPool &memPool, MIRModule &mod, SSATab &ssaTab, MeFunction &func, bool lessAliasAtThrow,
-               bool finalFieldHasAlias, bool ignoreIPA, bool debug, bool setCalleeHasSideEffect, KlassHierarchy *kh)
-      : AliasClass(memPool, mod, ssaTab, lessAliasAtThrow, finalFieldHasAlias, ignoreIPA, setCalleeHasSideEffect, kh),
+               bool ignoreIPA, bool debug, bool setCalleeHasSideEffect, KlassHierarchy *kh)
+      : AliasClass(memPool, mod, ssaTab, lessAliasAtThrow, ignoreIPA, setCalleeHasSideEffect, kh),
         func(func), enabledDebug(debug) {}
 
   virtual ~MeAliasClass() = default;

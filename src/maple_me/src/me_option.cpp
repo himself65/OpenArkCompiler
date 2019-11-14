@@ -37,7 +37,6 @@ bool MeOption::stmtNum = false;
 uint8 MeOption::optLevel = 0;
 bool MeOption::ignoreIPA = true;
 bool MeOption::lessThrowAlias = true;
-bool MeOption::finalFieldAlias = false;
 bool MeOption::regreadAtReturn = true;
 
 void MeOption::SplitPhases(const std::string &str, std::unordered_set<std::string> &set) const {

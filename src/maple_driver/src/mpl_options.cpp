@@ -439,18 +439,6 @@ const mapleOption::Descriptor USAGES[] = {
     "  --lessthrowalias            \tHandle aliases at java throw statements more accurately\n",
     "me",
     { { nullptr } } },
-  { kFinalFieldAlias,
-    0,
-    nullptr,
-    "finalfieldalias",
-    nullptr,
-    false,
-    nullptr,
-    mapleOption::BuildType::kBuildTypeAll,
-    mapleOption::ArgCheckPolicy::kArgCheckPolicyNone,
-    "  --finalfieldalias           \tRegard final fields as having alias like other fields\n",
-    "me",
-    { { nullptr } } },
   { kRegReadAtReturn,
     0,
     nullptr,
@@ -940,7 +928,7 @@ ErrorCode MplOptions::DecideRunType() {
   for (auto opt : optionParser->GetOptions()) {
     switch (opt.Index()) {
       case kOptimization0:
-        if (runMode == RunMode::kCustomRun) {// O0 and run should not appear at the same time
+        if (runMode == RunMode::kCustomRun) {  // O0 and run should not appear at the same time
           runModeConflict = true;
         } else {
           runMode = RunMode::kAutoRun;
@@ -948,7 +936,7 @@ ErrorCode MplOptions::DecideRunType() {
         }
         break;
       case kRun:
-        if (runMode == RunMode::kAutoRun) {// O0 and run should not appear at the same time
+        if (runMode == RunMode::kAutoRun) {    // O0 and run should not appear at the same time
           runModeConflict = true;
         } else {
           runMode = RunMode::kCustomRun;

@@ -18,8 +18,7 @@
 #include "bb.h"
 #include "ver_symbol.h"
 
-/* This file define data structures to store SSA information in the IR
-   instructions */
+// This file define data structures to store SSA information in the IR instructions
 namespace maple {
 class MayDefNode {
  public:
@@ -203,7 +202,7 @@ class MayDefPart : public AccessSSANodes {
  public:
   explicit MayDefPart(MapleAllocator *alloc) : mayDefNodes(std::less<OStIdx>(), alloc->Adapter()) {}
 
-  virtual ~MayDefPart() = default;
+  ~MayDefPart() override = default;
 
   const MapleMap<OStIdx, MayDefNode> &GetMayDefNodes() const override {
     return mayDefNodes;
@@ -221,7 +220,7 @@ class MayUsePart : public AccessSSANodes {
  public:
   explicit MayUsePart(MapleAllocator *alloc) : mayUseNodes(std::less<OStIdx>(), alloc->Adapter()) {}
 
-  virtual ~MayUsePart() = default;
+  ~MayUsePart() override = default;
 
   const MapleMap<OStIdx, MayUseNode> &GetMayUseNodes() const override {
     return mayUseNodes;
@@ -239,7 +238,7 @@ class MustDefPart : public AccessSSANodes {
  public:
   explicit MustDefPart(MapleAllocator *alloc) : mustDefNodes(alloc->Adapter()) {}
 
-  virtual ~MustDefPart() = default;
+  ~MustDefPart() override = default;
 
   const MapleVector<MustDefNode> &GetMustDefNodes() const override {
     return mustDefNodes;
@@ -258,7 +257,7 @@ class MayDefPartWithVersionSt : public AccessSSANodes {
   explicit MayDefPartWithVersionSt(MapleAllocator *alloc)
       : mayDefNodes(std::less<OStIdx>(), alloc->Adapter()) {}
 
-  ~MayDefPartWithVersionSt() = default;
+  ~MayDefPartWithVersionSt() override = default;
 
   const MapleMap<OStIdx, MayDefNode> &GetMayDefNodes() const override {
     return mayDefNodes;
@@ -288,7 +287,7 @@ class MayDefPartWithVersionSt : public AccessSSANodes {
 class VersionStPart : public AccessSSANodes {
  public:
   VersionStPart() = default;
-  ~VersionStPart() = default;
+  ~VersionStPart() override = default;
 
   const VersionSt *GetSSAVar() const override {
     return ssaVar;
@@ -311,7 +310,7 @@ class MayDefMayUsePart : public AccessSSANodes {
   explicit MayDefMayUsePart(MapleAllocator *alloc)
       : mayDefNodes(std::less<OStIdx>(), alloc->Adapter()), mayUseNodes(std::less<OStIdx>(), alloc->Adapter()) {}
 
-  ~MayDefMayUsePart() = default;
+  ~MayDefMayUsePart() override = default;
 
   const MapleMap<OStIdx, MayDefNode> &GetMayDefNodes() const override {
     return mayDefNodes;
@@ -341,7 +340,7 @@ class MayDefMayUseMustDefPart : public AccessSSANodes {
         mayUseNodes(std::less<OStIdx>(), alloc->Adapter()),
         mustDefNodes(alloc->Adapter()) {}
 
-  ~MayDefMayUseMustDefPart() = default;
+  ~MayDefMayUseMustDefPart() override = default;
 
   const MapleMap<OStIdx, MayDefNode> &GetMayDefNodes() const override {
     return mayDefNodes;
@@ -419,7 +418,7 @@ class StmtsSSAPart {
   }
 
   void SetSSAPartOf(const StmtNode &s, VersionSt *vst) {
-    VersionStPart *vStSSAPart = GetSSAPartMp()->New<VersionStPart>();
+    auto *vStSSAPart = GetSSAPartMp()->New<VersionStPart>();
     vStSSAPart->SetSSAVar(*vst);
     ssaPart[s.GetStmtID()] = vStSSAPart;
   }
@@ -448,9 +447,9 @@ class AddrofSSANode : public AddrofNode {
     ssaVar = nullptr;
   }
 
-  ~AddrofSSANode() = default;
+  ~AddrofSSANode() override = default;
 
-  void Dump(const MIRModule &mod, int32 indent) const {
+  void Dump(const MIRModule &mod, int32 indent) const override {
     AddrofNode::Dump(mod, indent);
     if (ssaVar != nullptr) {
       ssaVar->Dump(&mod, true);
@@ -482,9 +481,9 @@ class IreadSSANode : public IreadNode {
     SetOpnd(inode->Opnd());
   }
 
-  ~IreadSSANode() = default;
+  ~IreadSSANode() override = default;
 
-  void Dump(const MIRModule &mod, int32 indent) const {
+  void Dump(const MIRModule &mod, int32 indent) const override {
     if (ssaVar != nullptr) {
       ssaVar->Dump(&mod, true);
     }
@@ -510,9 +509,9 @@ class RegreadSSANode : public RegreadNode {
     SetRegIdx(rreadnode->GetRegIdx());
   }
 
-  ~RegreadSSANode() = default;
+  ~RegreadSSANode() override = default;
 
-  void Dump(const MIRModule &mod, int32 indent) const {
+  void Dump(const MIRModule &mod, int32 indent) const override {
     RegreadNode::Dump(mod, indent);
     if (ssaVar != nullptr) {
       ssaVar->Dump(&mod, true);

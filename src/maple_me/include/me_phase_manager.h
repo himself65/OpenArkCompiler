@@ -25,7 +25,7 @@
 namespace maple {
 enum MePhaseType { kMePhaseInvalid, kMePhaseMainopt, kMePhaseLno };
 
-/* driver of Me */
+// driver of Me
 class MeFuncPhaseManager : public PhaseManager {
  public:
   MeFuncPhaseManager(MemPool *memPool, MIRModule &mod, ModuleResultMgr *mrm = nullptr)
@@ -84,7 +84,7 @@ class MeFuncPhaseManager : public PhaseManager {
   }
 
  private:
-  /* analysis phase result manager */
+  // analysis phase result manager
   MeFuncResultMgr arFuncManager{GetMemAllocator()};
   MIRModule &mirModule;
   ModuleResultMgr *modResMgr;

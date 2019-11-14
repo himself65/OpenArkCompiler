@@ -43,7 +43,7 @@ std::string BB::StrAttribute() const {
   return "NYI";
 }
 
-void BB::DumpBBAttribute(MIRModule *mod) {
+void BB::DumpBBAttribute(MIRModule *mod) const {
   if (GetAttributes(kBBAttrIsEntry)) {
     mod->GetOut() << " Entry ";
   }
@@ -72,7 +72,7 @@ void BB::DumpBBAttribute(MIRModule *mod) {
   }
 }
 
-void BB::DumpHeader(MIRModule *mod) {
+void BB::DumpHeader(MIRModule *mod) const {
   mod->GetOut() << "============BB id:" << GetBBId() << " " << StrAttribute() << " [";
   DumpBBAttribute(mod);
   mod->GetOut() << "]===============\n";
@@ -84,12 +84,12 @@ void BB::DumpHeader(MIRModule *mod) {
   for (const auto &succElement : succ) {
     mod->GetOut() << succElement->GetBBId() << " ";
   }
-  mod->GetOut() << "\n";
+  mod->GetOut() << '\n';
   if (bbLabel != 0) {
     static LabelNode lblNode;
     lblNode.SetLabelIdx(bbLabel);
     lblNode.Dump(*mod, 0);
-    mod->GetOut() << "\n";
+    mod->GetOut() << '\n';
   }
 }
 
@@ -136,7 +136,7 @@ int BB::RemoveBBFromVector(MapleVector<BB*> &bbVec) const {
     if (bbVec[i] == this) {
       break;
     }
-    i++;
+    ++i;
   }
   if (i == bbVec.size()) {
     // bb not in the vector
@@ -149,17 +149,17 @@ int BB::RemoveBBFromVector(MapleVector<BB*> &bbVec) const {
 void BB::RemoveBBFromPred(BB *bb) {
   int index = bb->RemoveBBFromVector(pred);
   ASSERT(index != -1, "-1 is a very large number in BB::RemoveBBFromPred");
-  for (auto phiIt = phiList.begin(); phiIt != phiList.end(); phiIt++) {
-    ASSERT((*phiIt).second.GetPhiOpnds().size() > index, "index out of range in BB::RemoveBBFromPred");
-    (*phiIt).second.GetPhiOpnds().erase((*phiIt).second.GetPhiOpnds().cbegin() + index);
+  for (auto &phi : phiList) {
+    ASSERT(phi.second.GetPhiOpnds().size() > index, "index out of range in BB::RemoveBBFromPred");
+    phi.second.GetPhiOpnds().erase(phi.second.GetPhiOpnds().cbegin() + index);
   }
-  for (auto phiIt = mevarPhiList.begin(); phiIt != mevarPhiList.end(); phiIt++) {
-    ASSERT((*phiIt).second->GetOpnds().size() > index, "index out of range in BB::RemoveBBFromPred");
-    (*phiIt).second->GetOpnds().erase((*phiIt).second->GetOpnds().cbegin() + index);
+  for (auto &phi : mevarPhiList) {
+    ASSERT(phi.second->GetOpnds().size() > index, "index out of range in BB::RemoveBBFromPred");
+    phi.second->GetOpnds().erase(phi.second->GetOpnds().cbegin() + index);
   }
-  for (auto phiIt = meregPhiList.begin(); phiIt != meregPhiList.end(); phiIt++) {
-    ASSERT((*phiIt).second->GetOpnds().size() > index, "index out of range in BB::RemoveBBFromPred");
-    (*phiIt).second->GetOpnds().erase((*phiIt).second->GetOpnds().cbegin() + index);
+  for (auto &phi : meregPhiList) {
+    ASSERT(phi.second->GetOpnds().size() > index, "index out of range in BB::RemoveBBFromPred");
+    phi.second->GetOpnds().erase(phi.second->GetOpnds().cbegin() + index);
   }
 }
 
@@ -167,13 +167,13 @@ void BB::RemoveBBFromSucc(BB *bb) {
   bb->RemoveBBFromVector(succ);
 }
 
-/* add stmtnode to bb and update first_stmt_ and last_stmt_ */
+// add stmtnode to bb and update first_stmt_ and last_stmt_
 void BB::AddStmtNode(StmtNode *stmt) {
   CHECK_FATAL(stmt != nullptr, "null ptr check");
   stmtNodeList.push_back(stmt);
 }
 
-/* add stmtnode at beginning of bb and update first_stmt_ and last_stmt_ */
+// add stmtnode at beginning of bb and update first_stmt_ and last_stmt_
 void BB::PrependStmtNode(StmtNode *stmt) {
   stmtNodeList.push_front(stmt);
 }
@@ -216,13 +216,12 @@ void BB::ReplaceStmt(StmtNode *stmt, StmtNode *newStmt) {
   RemoveStmtNode(stmt);
 }
 
-/* delete last_stmt_ and update */
+// delete last_stmt_ and update
 void BB::RemoveLastStmt() {
   stmtNodeList.pop_back();
 }
 
-/* replace pred with newbb to keep position and
- * add this as succ of newpred */
+// replace pred with newbb to keep position and add this as succ of newpred
 void BB::ReplacePred(const BB *old, BB *newPred) {
   for (auto &predElement : pred) {
     if (predElement == old) {
@@ -233,8 +232,7 @@ void BB::ReplacePred(const BB *old, BB *newPred) {
   }
 }
 
-/* replace succ in current position with newsucc
- * and add this as pred of newsucc */
+// replace succ in current position with newsucc and add this as pred of newsucc
 void BB::ReplaceSucc(const BB *old, BB *newSucc) {
   for (auto &succElement : succ) {
     if (succElement == old) {
@@ -245,7 +243,7 @@ void BB::ReplaceSucc(const BB *old, BB *newSucc) {
   }
 }
 
-/* this is common_entry_bb, so newsucc's pred is left as is */
+// this is common_entry_bb, so newsucc's pred is left as is
 void BB::ReplaceSuccOfCommonEntryBB(const BB *old, BB *newSucc) {
   for (auto &succElement : succ) {
     if (succElement == old) {
@@ -261,8 +259,8 @@ void BB::FindReachableBBs(std::vector<bool> &visitedBBs) const {
     return;
   }
   visitedBBs[GetBBId()] = true;
-  for (auto it = succ.begin(); it != succ.end(); ++it) {
-    (*it)->FindReachableBBs(visitedBBs);
+  for (const BB *bb : succ) {
+    bb->FindReachableBBs(visitedBBs);
   }
 }
 
@@ -272,8 +270,8 @@ void BB::FindWillExitBBs(std::vector<bool> &visitedBBs) const {
     return;
   }
   visitedBBs[GetBBId()] = true;
-  for (auto it = pred.begin(); it != pred.end(); ++it) {
-    (*it)->FindWillExitBBs(visitedBBs);
+  for (const BB *bb : pred) {
+    bb->FindWillExitBBs(visitedBBs);
   }
 }
 
@@ -322,15 +320,15 @@ void BB::InsertMeStmtAfter(MeStmt *meStmt, MeStmt *inStmt) {
 void BB::InsertMeStmtLastBr(MeStmt *inStmt) {
   if (IsMeStmtEmpty()) {
     AddMeStmtLast(inStmt);
+    return;
+  }
+  MeStmt *brStmt = meStmtList.rbegin().base().d();
+  Opcode op = brStmt->GetOp();
+  if (brStmt->IsCondBr() || op == OP_goto || op == OP_switch || op == OP_throw || op == OP_return || op == OP_gosub ||
+      op == OP_retsub) {
+    InsertMeStmtBefore(brStmt, inStmt);
   } else {
-    MeStmt *brStmt = meStmtList.rbegin().base().d();
-    Opcode op = brStmt->GetOp();
-    if (brStmt->IsCondBr() || op == OP_goto || op == OP_switch || op == OP_throw || op == OP_return || op == OP_gosub ||
-        op == OP_retsub) {
-      InsertMeStmtBefore(brStmt, inStmt);
-    } else {
-      AddMeStmtLast(inStmt);
-    }
+    AddMeStmtLast(inStmt);
   }
 }
 
@@ -346,24 +344,24 @@ void BB::DumpMeBB(IRMap &irMap) {
 }
 
 void BB::DumpMeVarPaiList(IRMap *irMap) {
-  if (mevarPaiList.size() == 0) {
+  if (mevarPaiList.empty()) {
     return;
   }
-  std::cout << "<<<<<<<<<<<<<<  PAI Node Start >>>>>>>>>>>>>>>>>>" << '\n';
-  for (auto pair : mevarPaiList) {
+  std::cout << "<<<<<<<<<<<<<<  PAI Node Start >>>>>>>>>>>>>>>>>>\n";
+  for (const auto &pair : mevarPaiList) {
     BB *bb = pair.first;
     std::cout << "Frome BB : " << bb->GetBBId() << '\n';
-    for (uint32 j = 0; j < pair.second.size(); ++j) {
-      pair.second.at(j)->Dump(irMap);
+    for (const auto *stmt : pair.second) {
+      stmt->Dump(irMap);
     }
   }
-  std::cout << "<<<<<<<<<<<<<<  PAI Node End >>>>>>>>>>>>>>>>>>>>" << '\n';
+  std::cout << "<<<<<<<<<<<<<<  PAI Node End >>>>>>>>>>>>>>>>>>>>\n";
 }
 
 void BB::DumpMeVarPhiList(IRMap *irMap) {
   int count = 0;
-  for (auto phiIt = mevarPhiList.begin(); phiIt != mevarPhiList.end(); phiIt++) {
-    (*phiIt).second->Dump(irMap);
+  for (const auto &phi : mevarPhiList) {
+    phi.second->Dump(irMap);
     int dumpVsyNum = DumpOptions::GetDumpVsyNum();
     if (dumpVsyNum > 0 && ++count >= dumpVsyNum) {
       break;
@@ -373,13 +371,13 @@ void BB::DumpMeVarPhiList(IRMap *irMap) {
 }
 
 void BB::DumpMeRegPhiList(IRMap *irMap) {
-  for (auto phiIt = meregPhiList.begin(); phiIt != meregPhiList.end(); phiIt++) {
-    (*phiIt).second->Dump(irMap);
+  for (const auto &phi : meregPhiList) {
+    phi.second->Dump(irMap);
   }
 }
 
 void SCCOfBBs::Dump() {
-  std::cout << "SCC " << id << " contains" << '\n';
+  std::cout << "SCC " << id << " contains\n";
   for (BB *bb : bbs) {
     std::cout << "bb(" << bb->UintID() << ")  ";
   }
@@ -387,12 +385,12 @@ void SCCOfBBs::Dump() {
 }
 
 bool SCCOfBBs::HasCycle() const {
-  CHECK_FATAL(bbs.size() > 0, "should have bbs in the scc");
+  CHECK_FATAL(!bbs.empty(), "should have bbs in the scc");
   if (bbs.size() > 1) {
     return true;
   }
   BB *bb = bbs[0];
-  for (BB *succ : bb->GetSucc()) {
+  for (const BB *succ : bb->GetSucc()) {
     if (succ == bb) {
       return true;
     }
@@ -401,8 +399,8 @@ bool SCCOfBBs::HasCycle() const {
 }
 
 void SCCOfBBs::Verify(MapleVector<SCCOfBBs*> &sccOfBB) {
-  CHECK_FATAL(bbs.size() > 0, "should have bbs in the scc");
-  for (BB *bb : bbs) {
+  CHECK_FATAL(!bbs.empty(), "should have bbs in the scc");
+  for (const BB *bb : bbs) {
     SCCOfBBs *scc = sccOfBB.at(bb->UintID());
     CHECK_FATAL(scc == this, "");
   }

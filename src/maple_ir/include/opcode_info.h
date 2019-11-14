@@ -31,7 +31,7 @@ enum OpcodeProp {
   kOpcodePropIsCall,          // The instruction is among the call instructions
   kOpcodePropIsCallAssigned,  // The instruction is among the call instructions with implicit assignments of the
   // returned values
-  kOpcodePropNotPure,  // The operation does not return same result with idential operands
+  kOpcodePropNotPure,         // The operation does not return same result with idential operands
   kOpcodePropMayThrowException,
 };
 

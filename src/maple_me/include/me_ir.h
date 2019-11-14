@@ -19,10 +19,10 @@
 #include "bb.h"
 
 namespace maple {
-class PhiNode;  // circular dependency exists, no other choice
-class MeStmt;  // circular dependency exists, no other choice
-class IRMap;  // circular dependency exists, no other choice
-class SSATab;  // circular dependency exists, no other choice
+class PhiNode;    // circular dependency exists, no other choice
+class MeStmt;     // circular dependency exists, no other choice
+class IRMap;      // circular dependency exists, no other choice
+class SSATab;     // circular dependency exists, no other choice
 class VarMeExpr;  // circular dependency exists, no other choice
 class RegMeExpr;  // circular dependency exists, no other choice
 class Dominance;  // circular dependency exists, no other choice
@@ -187,7 +187,7 @@ enum MeDefBy {
   kDefByMustDef,  // only applies to callassigned and its siblings
 };
 
-class ChiMeNode;  // circular dependency exists, no other choice
+class ChiMeNode;      // circular dependency exists, no other choice
 class MustDefMeNode;  // circular dependency exists, no other choice
 class IassignMeStmt;  // circular dependency exists, no other choice
 
@@ -323,7 +323,7 @@ class VarMeExpr final : public MeExpr {
 
  private:
   union {
-    MeStmt *defStmt;  // definition stmt of this var
+    MeStmt *defStmt;            // definition stmt of this var
     MeVarPhiNode *defPhi;
     ChiMeNode *defChi;          // definition node by Chi
     MustDefMeNode *defMustDef;  // definition by callassigned
@@ -905,8 +905,8 @@ class OpMeExpr : public MeExpr {
   }
 
  private:
-  std::array<MeExpr*, kOperandNumTernary> opnds = { nullptr }; // kid
-  PrimType opndType = kPtyInvalid;                           // from type
+  std::array<MeExpr*, kOperandNumTernary> opnds = { nullptr };  // kid
+  PrimType opndType = kPtyInvalid;  // from type
   uint8 bitsOffset = 0;
   uint8 bitsSize = 0;
   TyIdx tyIdx;

@@ -72,9 +72,7 @@ class MapleString {
   }
 
   MapleString &operator=(const char *str) {
-    if (str == nullptr)
-    // If str is nullptr, do nothing
-    {
+    if (str == nullptr) {
       return *this;
     }
     size_t size = strlen(str);
@@ -151,9 +149,7 @@ class MapleString {
   }
 
   MapleString &operator+=(const char *str) {
-    if (str == nullptr)
-    // If str is nullptr, do nothing
-    {
+    if (str == nullptr) {
       return *this;
     }
     size_t size = strlen(str);

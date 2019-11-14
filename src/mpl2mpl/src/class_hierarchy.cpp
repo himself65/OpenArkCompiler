@@ -347,20 +347,20 @@ bool KlassHierarchy::IsSuperKlass(const Klass *super, const Klass *base) const {
 }
 
 // Interface
-bool KlassHierarchy::IsSuperKlassForInterface(const Klass *super, Klass *base) const {
+bool KlassHierarchy::IsSuperKlassForInterface(const Klass *super, const Klass *base) const {
   if (super == nullptr || base == nullptr) {
     return false;
   }
   if (!super->IsInterface() || !base->IsInterface()) {
     return false;
   }
-  std::vector<Klass*> tmpVector;
+  std::vector<const Klass*> tmpVector;
   tmpVector.push_back(base);
   for (size_t idx = 0; idx < tmpVector.size(); idx++) {
     if (tmpVector[idx] == super) {
       return true;
     }
-    for (Klass *superKlass : tmpVector[idx]->GetSuperKlasses()) {
+    for (const Klass *superKlass : tmpVector[idx]->GetSuperKlasses()) {
       tmpVector.push_back(superKlass);
     }
   }

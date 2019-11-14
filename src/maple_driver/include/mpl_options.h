@@ -37,8 +37,17 @@ enum InputFileType {
   kS,
 };
 
-enum OptimizationLevel { kO0, kO1, kO2 };
-enum RunMode { kAutoRun, kCustomRun, kUnkownRun };
+enum OptimizationLevel {
+  kO0,
+  kO1,
+  kO2
+};
+
+enum RunMode {
+  kAutoRun,
+  kCustomRun,
+  kUnkownRun
+};
 
 class MplOption {
  public:

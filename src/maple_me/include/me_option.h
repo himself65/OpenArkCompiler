@@ -51,7 +51,6 @@ class MeOption {
   static uint8 optLevel;
   static bool ignoreIPA;
   static bool lessThrowAlias;
-  static bool finalFieldAlias;
   static bool regreadAtReturn;
   void SplitPhases(const std::string &str, std::unordered_set<std::string> &set) const;
   void SplitSkipPhases(const std::string &str) {

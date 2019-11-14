@@ -42,7 +42,7 @@ class Dominance : public AnalysisResult {
         pdtPreOrder(bbVec.size(), BBId(0), domAllocator.Adapter()),
         pdtDfn(bbVec.size(), -1, domAllocator.Adapter()) {}
 
-  ~Dominance() = default;
+  ~Dominance() override = default;
 
   void GenPostOrderID();
   void ComputeDominance();
@@ -129,7 +129,7 @@ class Dominance : public AnalysisResult {
     return pdomChildren[idx];
   }
 
-  void ResizePdtPreOrder(int n) {
+  void ResizePdtPreOrder(size_t n) {
     pdtPreOrder.resize(n);
   }
 
@@ -145,7 +145,7 @@ class Dominance : public AnalysisResult {
     return doms[idx];
   }
 
-  uint32 GetDomsSize() const {
+  size_t GetDomsSize() const {
     return doms.size();
   }
 
@@ -190,13 +190,13 @@ class Dominance : public AnalysisResult {
   }
 
  protected:
-  MapleAllocator domAllocator;  // stores the analysis results
-
   void PostOrderWalk(const BB &bb, int32 &pid, std::vector<bool> &visitedMap);
-  BB *Intersect(BB &bb1, const BB &bb2);
+  BB *Intersect(BB &bb1, const BB &bb2) const;
   bool CommonEntryBBIsPred(const BB &bb) const;
   void PdomPostOrderWalk(BB &bb, int32 &pid, std::vector<bool> &visitedMap);
   BB *PdomIntersect(BB &bb1, const BB &bb2);
+
+  MapleAllocator domAllocator;  // stores the analysis results
 
  private:
   MapleAllocator tmpAllocator;  // can be freed after dominator computation

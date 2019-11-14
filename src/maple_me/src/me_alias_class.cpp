@@ -91,7 +91,7 @@ AnalysisResult *MeDoAliasClass::Run(MeFunction *func, MeFuncResultMgr *funcResMg
       MoPhase_CHA, &func->GetMIRModule()));
   MeAliasClass *aliasClass = aliasClassMp->New<MeAliasClass>(
       *aliasClassMp, func->GetMIRModule(), *func->GetMeSSATab(), *func, MeOption::lessThrowAlias,
-      MeOption::finalFieldAlias, MeOption::ignoreIPA, DEBUGFUNC(func), MeOption::setCalleeHasSideEffect, kh);
+      MeOption::ignoreIPA, DEBUGFUNC(func), MeOption::setCalleeHasSideEffect, kh);
   // pass 1 through the program statements
   if (DEBUGFUNC(func)) {
     LogInfo::MapleLogger() << "\n============ Alias Classification Pass 1 ============" << '\n';

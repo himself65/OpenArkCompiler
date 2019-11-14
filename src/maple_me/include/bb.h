@@ -25,7 +25,7 @@ namespace maple {
 class MeStmt;  // circular dependency exists, no other choice
 class MeVarPhiNode;  // circular dependency exists, no other choice
 class MeRegPhiNode;  // circular dependency exists, no other choice
-class PaiassignMeStmt;
+class PaiassignMeStmt;  // circular dependency exists, no other choice
 class IRMap;  // circular dependency exists, no other choice
 enum BBKind {
   kBBUnknown,  // uninitialized
@@ -63,16 +63,12 @@ class BB {
 
   BB(MapleAllocator *alloc, MapleAllocator *versAlloc, BBId id)
       : id(id),
-        bbLabel(0),
         pred(kBBVectorInitialSize, nullptr, alloc->Adapter()),
         succ(kBBVectorInitialSize, nullptr, alloc->Adapter()),
         phiList(versAlloc->Adapter()),
         mevarPhiList(alloc->Adapter()),
         meregPhiList(alloc->Adapter()),
-        mevarPaiList(alloc->Adapter()),
-        frequency(0),
-        kind(kBBUnknown),
-        attributes(0) {
+        mevarPaiList(alloc->Adapter()) {
     pred.pop_back();
     pred.pop_back();
     succ.pop_back();
@@ -81,16 +77,12 @@ class BB {
 
   BB(MapleAllocator *alloc, MapleAllocator *versAlloc, BBId id, StmtNode *firstStmt, StmtNode *lastStmt)
       : id(id),
-        bbLabel(0),
         pred(kBBVectorInitialSize, nullptr, alloc->Adapter()),
         succ(kBBVectorInitialSize, nullptr, alloc->Adapter()),
         phiList(versAlloc->Adapter()),
         mevarPhiList(alloc->Adapter()),
         meregPhiList(alloc->Adapter()),
         mevarPaiList(alloc->Adapter()),
-        frequency(0),
-        kind(kBBUnknown),
-        attributes(0),
         stmtNodeList(firstStmt, lastStmt) {
     pred.pop_back();
     pred.pop_back();
@@ -123,9 +115,9 @@ class BB {
   }
 
   void Dump(MIRModule *mod);
-  void DumpHeader(MIRModule *mod);
+  void DumpHeader(MIRModule *mod) const;
   void DumpPhi(MIRModule* mod);
-  void DumpBBAttribute(MIRModule *mod);
+  void DumpBBAttribute(MIRModule *mod) const;
   std::string StrAttribute() const;
 
   void AddPredBB(BB *predVal) {
@@ -365,16 +357,16 @@ class BB {
 
  private:
   BBId id;
-  LabelIdx bbLabel;       // the BB's label
+  LabelIdx bbLabel = 0;       // the BB's label
   MapleVector<BB*> pred;  // predecessor list
   MapleVector<BB*> succ;  // successor list
   MapleMap<const OriginalSt*, PhiNode> phiList;
   MapleMap<OStIdx, MeVarPhiNode*> mevarPhiList;
   MapleMap<OStIdx, MeRegPhiNode*> meregPhiList;
   MapleMap<BB*, std::vector<PaiassignMeStmt*>> mevarPaiList;
-  uint32 frequency;
-  BBKind kind;
-  uint32 attributes;
+  uint32 frequency = 0;
+  BBKind kind = kBBUnknown;
+  uint32 attributes = 0;
   StmtNodes stmtNodeList;
   MeStmts meStmtList;
 };
@@ -413,7 +405,7 @@ class SCCOfBBs {
     return predSCC;
   }
   bool HasPred() const {
-    return (predSCC.size() != 0);
+    return !predSCC.empty();
   }
   BB *GetEntry() {
     return entry;
@@ -435,5 +427,4 @@ struct hash<maple::BBId> {
   }
 };
 }  // namespace std
-
 #endif  // MAPLE_ME_INCLUDE_BB_H

@@ -15,11 +15,9 @@
 #include "me_rc_lowering.h"
 #include <cstring>
 
-/*
- * RCLowering phase generate RC intrinsic for reference assignment
- * based on previous analyze results. RC intrinsic will later be lowered
- * in Code Generation
- */
+// RCLowering phase generate RC intrinsic for reference assignment
+// based on previous analyze results. RC intrinsic will later be lowered
+// in Code Generation
 namespace {
 }
 
@@ -256,11 +254,9 @@ void RCLowering::HandleRetOfCallAssignedMeStmt(MeStmt &stmt, MeExpr &pendingDec)
     bb->InsertMeStmtBefore(&stmt, backup);
     bb->InsertMeStmtAfter(&stmt, decRefCall);
   } else {
-    /*
-     * simple optimization for callassign
-     * instead of change callassign {dassign} to backup; callassign {dassign}; decref
-     * callassign {regassign}; backup; dassign (regread); decref
-     */
+    // simple optimization for callassign
+    // instead of change callassign {dassign} to backup; callassign {dassign}; decref
+    // callassign {regassign}; backup; dassign (regread); decref
     RegMeExpr *curTmp = irMap.CreateRegMeExpr(PTY_ref);
     MeStmt *regToVar = irMap.CreateDassignMeStmt(*stmt.GetAssignedLHS(), *curTmp, *bb);
     stmt.GetMustDefList()->front().UpdateLHS(*curTmp);
@@ -305,11 +301,9 @@ void RCLowering::PreprocessAssignMeStmt(MeStmt &stmt) {
   }
   gcMallocObjects.insert(lhs);
   if (lsym->GetAttr(ATTR_rcunowned)) {
-    /*
-     * if new obj is assigned to unowned refvar, we need a localrefvar
-     * to decref at exit
-     * introduce new localrefvar = lhs after current stmt
-     */
+    // if new obj is assigned to unowned refvar, we need a localrefvar
+    // to decref at exit
+    // introduce new localrefvar = lhs after current stmt
     MeStmt *backup = irMap.CreateDassignMeStmt(*CreateNewTmpVarMeExpr(true), *lhs, *bb);
     // backup will not have any incref/decref
     bb->InsertMeStmtAfter(&stmt, backup);
@@ -452,11 +446,10 @@ void RCLowering::HandleAssignMeStmt(MeStmt &stmt, MeExpr *pendingDec) {
   }
 }
 
-/*
- * align with order in rcinsertion, otherwise missing weak volatile
- * note that we are generating INTRN_MCCWriteNoRC so write_barrier is supported,
- * otherwise iassign would be enough.
- */
+
+// align with order in rcinsertion, otherwise missing weak volatile
+// note that we are generating INTRN_MCCWriteNoRC so write_barrier is supported,
+// otherwise iassign would be enough.
 MIRIntrinsicID RCLowering::SelectWriteBarrier(const MeStmt &stmt) {
   bool incWithLHS = stmt.NeedIncref();
   bool decWithLHS = stmt.NeedDecref();
@@ -498,11 +491,10 @@ void RCLowering::RCLower() {
   }
 }
 
-/*
- * if a var me expr is initialized by constructor, record it's initialized map
- * if a field id is not in initialized map, means the field has not been assigned a value
- * dec ref is not necessary in it's first assignment.
- */
+
+// if a var me expr is initialized by constructor, record it's initialized map
+// if a field id is not in initialized map, means the field has not been assigned a value
+// dec ref is not necessary in it's first assignment.
 void RCLowering::InitializedObjectFields(MeStmt &stmt) {
   if (stmt.GetOp() != OP_callassigned) {
     return;
@@ -586,10 +578,8 @@ void RCLowering::HandleReturnVar(RetMeStmt &ret) {
   if (sym != nullptr && sym->IsGlobal() && !sym->IsFinal()) {
     HandleReturnGlobal(ret);
   } else if (assignedPtrSym.count(sym) > 0 && sym->GetStorageClass() == kScAuto && sym->GetAttr(ATTR_localrefvar)) {
-    /*
-     * must be regreadAtReturn
-     * checking localrefvar because some objects are meta
-     */
+    // must be regreadAtReturn
+    // checking localrefvar because some objects are meta
     HandleReturnRegread(ret);
   } else {
     // if returning formal, incref unless placementRC is used and formal is NOT reassigned
@@ -665,10 +655,8 @@ void RCLowering::HandleReturnIvar(RetMeStmt &ret) {
 }
 
 void RCLowering::HandleReturnReg(RetMeStmt &ret) {
-  /*
-   * if the register with ref value is defined by callassigned or gcmalloc
-   * return incref should have been delegated and not needed.
-   */
+  // if the register with ref value is defined by callassigned or gcmalloc
+  // return incref should have been delegated and not needed.
   auto *regRet = static_cast<RegMeExpr*>(ret.GetOpnd(0));
   if (regRet->GetDefBy() == kDefByMustDef) {
     return;
@@ -723,10 +711,8 @@ void RCLowering::HandleReturnWithCleanup() {
 }
 
 void RCLowering::HandleReturnNeedBackup() {
-  /*
-   * any return value expression containing ivar has to be saved in a
-   * temp with the temp being returned
-   */
+  // any return value expression containing ivar has to be saved in a
+  // temp with the temp being returned
   for (auto *stmt : rets) {
     auto *ret = static_cast<RetMeStmt*>(stmt);
     if (ret->NumMeStmtOpnds() == 0) {
@@ -754,10 +740,8 @@ void RCLowering::HandleReturnStmt() {
 }
 
 void RCLowering::HandleArguments() {
-  /*
-   * handle arguments, if the formal gets modified
-   * insert incref at entry and decref before all returns
-   */
+  // handle arguments, if the formal gets modified
+  // insert incref at entry and decref before all returns
   MIRFunction *mirFunc = func.GetMirFunc();
   BB *firstBB = func.GetFirstBB();
   MeStmt *firstMeStmt = to_ptr(firstBB->GetMeStmts().begin());

@@ -16,7 +16,7 @@
 #define MAPLE_ME_INCLUDE_FUNC_EMIT_H
 #include "bb.h"
 
-/* Provide emit service for both MeFunction and WpoFunction.  */
+// Provide emit service for both MeFunction and WpoFunction.
 namespace maple {
 class FuncEmit {
  public:

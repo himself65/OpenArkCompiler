@@ -86,7 +86,7 @@ class GenericNativeStubFunc : public FuncOptimizeImpl {
     return (retType == jstrPointerTypeIdx);
   }
   void InitStaticBindingMethodList();
-  bool IsStaticBindingMethod(const std::string &methodName);
+  bool IsStaticBindingMethod(const std::string &methodName) const;
   MIRFunction &GetOrCreateDefaultNativeFunc(MIRFunction &stubFunc);
   void GenericRegisteredNativeFuncCall(MIRFunction &func, const MIRFunction &nativeFunc, MapleVector<BaseNode*> &args,
                                        const MIRSymbol *ret, bool needNativeCall, CallNode &prevNativeFuncCall,

@@ -23,12 +23,11 @@ void Dominance::PostOrderWalk(const BB &bb, int32 &pid, std::vector<bool> &visit
     return;
   }
   visitedMap[bb.GetBBId()] = true;
-  for (BB *suc : bb.GetSucc()) {
+  for (const BB *suc : bb.GetSucc()) {
     PostOrderWalk(*suc, pid, visitedMap);
   }
   ASSERT(bb.GetBBId() < postOrderIDVec.size(), "index out of range in Dominance::PostOrderWalk");
   postOrderIDVec[bb.GetBBId()] = pid++;
-  return;
 }
 
 void Dominance::GenPostOrderID() {
@@ -39,7 +38,7 @@ void Dominance::GenPostOrderID() {
   // initialize reversePostOrder
   int32 maxPostOrderID = postOrderID - 1;
   reversePostOrder.resize(maxPostOrderID + 1);
-  for (size_t i = 0; i < postOrderIDVec.size(); i++) {
+  for (size_t i = 0; i < postOrderIDVec.size(); ++i) {
     int32 postOrderNo = postOrderIDVec[i];
     if (postOrderNo == -1) {
       continue;
@@ -48,7 +47,7 @@ void Dominance::GenPostOrderID() {
   }
 }
 
-BB *Dominance::Intersect(BB &bb1, const BB &bb2) {
+BB *Dominance::Intersect(BB &bb1, const BB &bb2) const {
   auto *ptrBB1 = &bb1;
   auto *ptrBB2 = &bb2;
   while (ptrBB1 != ptrBB2) {
@@ -63,7 +62,7 @@ BB *Dominance::Intersect(BB &bb1, const BB &bb2) {
 }
 
 bool Dominance::CommonEntryBBIsPred(const BB &bb) const {
-  for (BB *suc : GetCommonEntryBB().GetSucc()) {
+  for (const BB *suc : GetCommonEntryBB().GetSucc()) {
     if (suc == &bb) {
       return true;
     }
@@ -77,7 +76,7 @@ void Dominance::ComputeDominance() {
   bool changed = false;
   do {
     changed = false;
-    for (size_t i = 1; i < reversePostOrder.size(); i++) {
+    for (size_t i = 1; i < reversePostOrder.size(); ++i) {
       BB *bb = reversePostOrder[i];
       BB *pre = nullptr;
       if (CommonEntryBBIsPred(*bb) || bb->GetPred().empty()) {
@@ -88,10 +87,10 @@ void Dominance::ComputeDominance() {
       size_t j = 1;
       while ((doms[pre->GetBBId()] == nullptr || pre == bb) && j < bb->GetPred().size()) {
         pre = bb->GetPred(j);
-        j++;
+        ++j;
       }
       BB *newIDom = pre;
-      for (; j < bb->GetPred().size(); j++) {
+      for (; j < bb->GetPred().size(); ++j) {
         pre = bb->GetPred(j);
         if (doms[pre->GetBBId()] != nullptr && pre != bb) {
           newIDom = Intersect(*pre, *newIDom);
@@ -149,7 +148,7 @@ void Dominance::ComputeDtPreorder(const BB &bb, size_t &num) {
 }
 
 void Dominance::ComputeDtDfn() {
-  for (uint32 i = 0; i < dtPreOrder.size(); i++) {
+  for (uint32 i = 0; i < dtPreOrder.size(); ++i) {
     dtDfn[dtPreOrder[i]] = i;
   }
 }
@@ -191,7 +190,6 @@ void Dominance::PdomPostOrderWalk(BB &bb, int32 &pid, std::vector<bool> &visited
   }
   CHECK_FATAL(bb.GetBBId() < pdomPostOrderIDVec.size(), "index out of range in  Dominance::PdomPostOrderWalk");
   pdomPostOrderIDVec[bb.GetBBId()] = pid++;
-  return;
 }
 
 void Dominance::PdomGenPostOrderID() {
@@ -231,7 +229,7 @@ void Dominance::ComputePostDominance() {
   bool changed = false;
   do {
     changed = false;
-    for (size_t i = 1; i < pdomReversePostOrder.size(); i++) {
+    for (size_t i = 1; i < pdomReversePostOrder.size(); ++i) {
       BB *bb = pdomReversePostOrder[i];
       BB *suc = nullptr;
       if (bb->GetAttributes(kBBAttrIsExit) || bb->GetSucc().empty()) {
@@ -242,13 +240,13 @@ void Dominance::ComputePostDominance() {
       size_t j = 1;
       while ((pdoms[suc->GetBBId()] == nullptr || suc == bb) && j < bb->GetSucc().size()) {
         suc = bb->GetSucc(j);
-        j++;
+        ++j;
       }
       if (pdoms[suc->GetBBId()] == nullptr) {
         suc = &commonExitBB;
       }
       BB *newIDom = suc;
-      for (; j < bb->GetSucc().size(); j++) {
+      for (; j < bb->GetSucc().size(); ++j) {
         suc = bb->GetSucc(j);
         if (pdoms[suc->GetBBId()] != nullptr && suc != bb) {
           newIDom = PdomIntersect(*suc, *newIDom);
@@ -305,7 +303,7 @@ void Dominance::ComputePdtPreorder(const BB &bb, size_t &num) {
 }
 
 void Dominance::ComputePdtDfn() {
-  for (uint32 i = 0; i < pdtPreOrder.size(); i++) {
+  for (uint32 i = 0; i < pdtPreOrder.size(); ++i) {
     pdtDfn[pdtPreOrder[i]] = i;
   }
 }
@@ -333,8 +331,7 @@ bool Dominance::PostDominate(const BB &bb1, BB &bb2) {
 }
 
 void Dominance::DumpDoms() {
-  for (size_t i = 0; i < reversePostOrder.size(); i++) {
-    BB *bb = reversePostOrder[i];
+  for (BB *bb : reversePostOrder) {
     LogInfo::MapleLogger() << "postorder no " << postOrderIDVec[bb->GetBBId()];
     LogInfo::MapleLogger() << " is bb:" << bb->GetBBId();
     LogInfo::MapleLogger() << " im_dom is bb:" << doms[bb->GetBBId()]->GetBBId();
@@ -356,8 +353,7 @@ void Dominance::DumpDoms() {
 }
 
 void Dominance::DumpPdoms() {
-  for (size_t i = 0; i < pdomReversePostOrder.size(); i++) {
-    BB *bb = pdomReversePostOrder[i];
+  for (BB *bb : pdomReversePostOrder) {
     LogInfo::MapleLogger() << "pdom_postorder no " << pdomPostOrderIDVec[bb->GetBBId()];
     LogInfo::MapleLogger() << " is bb:" << bb->GetBBId();
     LogInfo::MapleLogger() << " im_pdom is bb:" << pdoms[bb->GetBBId()]->GetBBId();

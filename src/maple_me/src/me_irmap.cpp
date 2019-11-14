@@ -84,7 +84,7 @@ void MeIRMap::EmitBB(const BB &bb, BlockNode &curblk) {
   }
   EmitBBStmts(bb, curblk);
   if (bb.GetAttributes(kBBAttrIsTryEnd)) {
-    /* generate op_endtry */
+    // generate op_endtry
     StmtNode *endtry = GetSSATab().GetModule().CurFunction()->GetCodeMempool()->New<StmtNode>(OP_endtry);
     curblk.AddStatement(endtry);
   }

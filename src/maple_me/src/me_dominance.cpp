@@ -24,8 +24,8 @@
 namespace maple {
 AnalysisResult *MeDoDominance::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, ModuleResultMgr *moduleResMgr) {
   MemPool *memPool = NewMemPool();
-  Dominance *dom = memPool->New<Dominance>(*memPool, *NewMemPool(), func->GetAllBBs(),
-                                           *func->GetCommonEntryBB(), *func->GetCommonExitBB());
+  auto *dom = memPool->New<Dominance>(*memPool, *NewMemPool(), func->GetAllBBs(),
+                                      *func->GetCommonEntryBB(), *func->GetCommonExitBB());
   dom->GenPostOrderID();
   dom->ComputeDominance();
   dom->ComputeDomFrontiers();

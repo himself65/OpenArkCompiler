@@ -21,31 +21,29 @@
 #include "dominance.h"
 #include "me_function.h"
 
-/*
-   This phase builds the SSA form of a function. Before this we have got the dominator tree
-   and each bb's dominance frontiers. Then the algorithm follows this outline:
-
-   Step 1: Inserting phi-node.
-   With dominance frontiers, we can determine more
-   precisely where phi-node might be needed. The basic idea is simple.
-   A definition of x in block b forces a phi-node at every node in b's
-   dominance frontiers. Since that phi-node is a new definition of x,
-   it may, in turn, force the insertion of additional phi-node.
-
-   Step 2: Renaming.
-   Renames both definitions and uses of each symbol in
-   a preorder walk over the dominator tree. In each block, we first
-   rename the values defined by phi-node at the head of the block, then
-   visit each stmt in the block: we rewrite each uses of a symbol with current
-   SSA names(top of the stack which holds the current SSA version of the corresponding symbol),
-   then it creates a new SSA name for the result of the stmt.
-   This latter act makes the new name current. After all the stmts in the
-   block have been rewritten, we rewrite the appropriate phi-node's
-   parameters in each cfg successor of the block, using the current SSA names.
-   Finally, it recurs on any children of the block in the dominator tree. When it
-   returns from those recursive calls, we restores the stack of current SSA names to
-   the state that existed before the current block was visited.
- */
+// This phase builds the SSA form of a function. Before this we have got the dominator tree
+// and each bb's dominance frontiers. Then the algorithm follows this outline:
+//
+// Step 1: Inserting phi-node.
+// With dominance frontiers, we can determine more
+// precisely where phi-node might be needed. The basic idea is simple.
+// A definition of x in block b forces a phi-node at every node in b's
+// dominance frontiers. Since that phi-node is a new definition of x,
+// it may, in turn, force the insertion of additional phi-node.
+//
+// Step 2: Renaming.
+// Renames both definitions and uses of each symbol in
+// a preorder walk over the dominator tree. In each block, we first
+// rename the values defined by phi-node at the head of the block, then
+// visit each stmt in the block: we rewrite each uses of a symbol with current
+// SSA names(top of the stack which holds the current SSA version of the corresponding symbol),
+// then it creates a new SSA name for the result of the stmt.
+// This latter act makes the new name current. After all the stmts in the
+// block have been rewritten, we rewrite the appropriate phi-node's
+// parameters in each cfg successor of the block, using the current SSA names.
+// Finally, it recurs on any children of the block in the dominator tree. When it
+// returns from those recursive calls, we restores the stack of current SSA names to
+// the state that existed before the current block was visited.
 namespace maple {
 void MeSSA::BuildSSA() {
   InsertPhiNode();

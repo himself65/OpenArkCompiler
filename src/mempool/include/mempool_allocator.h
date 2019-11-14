@@ -67,7 +67,6 @@ class MapleStack {
   using size_type = typename MapleVector<T>::size_type;
   using iterator = typename MapleVector<T>::iterator;
 
- public:
   MapleStack(MapleAllocatorAdapter<T> adapter) : vect(adapter) {}
 
   ~MapleStack() = default;

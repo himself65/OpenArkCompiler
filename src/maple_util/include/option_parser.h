@@ -35,91 +35,61 @@ enum ArgCheckPolicy {
 };
 
 struct ExtraOption {
-  /**
-   * Tool bin name
-   */
+  // Tool bin name
   const char * const exeName;
 
-  /**
-   * Key mapping with -/-- if needed.
-   */
+  // Key mapping with -/-- if needed.
   const char * const optionKey;
 
-  /**
-   * Can override the connector defined in Descriptor.
-   */
+  // Can override the connector defined in Descriptor.
   const char * const connector;
 
-  /**
-   * Can override the delimiter defined in Descriptor
-   */
+  // Can override the delimiter defined in Descriptor
   const char * const delimiter;
 };
 
 constexpr static unsigned int kMaxExtraOptions = 10;
 
 struct Descriptor {
-  /**
-   * Unique option index
-   */
+  // Unique option index
   const unsigned int index;
 
-  /**
-   * Unique  option type
-   */
+  // Unique  option type
   const int type;
 
-  /**
-   * Short form option key
-   */
+  // Short form option key
   const char * const shortOption;
 
-  /**
-   * Long form option key
-   */
+  // Long form option key
   const char * const longOption;
 
 #ifdef OPTION_PARSER_EXTRAOPT
-  /**
-   * Connector followed after key when passing args to target tool.
-   */
+  // Connector followed after key when passing args to target tool.
   const char * const connector;
 
-  /**
-   * There's default args for the option.
-   * When user set it again, if true, append to the default args,
-   * else replace it.
-   */
+  // There's default args for the option.
+  // When user set it again, if true, append to the default args,
+  // else replace it.
   const bool isCanAppend;
 
-  /**
-   * Delimiter when append.
-   * if isCanAppend is false, it's meaningless.
-   */
+  // Delimiter when append.
+  // if isCanAppend is false, it's meaningless.
   const char * const delimiter;
 #endif
 
-  /**
-   * The option can be seen in which build type.
-   */
+  // The option can be seen in which build type.
   const BuildType enableBuildType;
 
-  /**
-   * Should we have a parameter?
-   */
+  // Should we have a parameter?
   const ArgCheckPolicy checkPolicy;
 
-  /**
-   * Help info
-   */
+  // Help info
   const char * const help;
 
 #ifdef OPTION_PARSER_EXTRAOPT
   const char * const exeName;
 
-  /**
-   * option key mapping to target tool
-   */
+  // option key mapping to target tool
   const ExtraOption extras[kMaxExtraOptions];
 #endif
 

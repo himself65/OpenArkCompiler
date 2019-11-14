@@ -14,14 +14,12 @@
  */
 #ifndef MAPLE_DRIVER_INCLUDE_SAFE_EXE_H
 #define MAPLE_DRIVER_INCLUDE_SAFE_EXE_H
-#if __linux__ or __linux
-#include <stdlib.h>
-#endif
 
 #if __linux__ or __linux
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <stdlib.h>
 #include "error_code.h"
 #endif
 #include "mpl_logging.h"
@@ -31,9 +29,7 @@
 namespace maple {
 class SafeExe {
  public:
-  /**
-   * Current tool is for linux only
-   */
+    // Current tool is for linux only
 #if __linux__ or __linux
   static ErrorCode HandleCommand(const std::string &cmd, const std::string &args) {
     std::vector<std::string> vectorArgs = ParseArgsVector(cmd, args);

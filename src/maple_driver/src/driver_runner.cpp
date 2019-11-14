@@ -69,8 +69,8 @@ ErrorCode DriverRunner::Run() {
   printOutExe = exeNames[exeNames.size() - 1];
 
   // Prepare output file
-  std::string::size_type lastdot = actualInput.find_last_of(".");
-  std::string baseName = lastdot == std::string::npos ? actualInput : actualInput.substr(0, lastdot);
+  std::string::size_type lastDot = actualInput.find_last_of(".");
+  std::string baseName = lastDot == std::string::npos ? actualInput : actualInput.substr(0, lastDot);
   std::string originBaseName = baseName;
   std::string outputFile = baseName.append(GetPostfix());
 
@@ -101,12 +101,9 @@ std::string DriverRunner::GetPostfix() const {
     return ".me.mpl";
   } else if (printOutExe == mpl2Mpl) {
     return ".VtableImpl.mpl";
-  } else {
   }
-
   return "";
 }
-
 
 ErrorCode DriverRunner::ParseInput(const std::string &outputFile, const std::string &originBaseName) const {
   CHECK_MODULE(ErrorCode::kErrorExit);

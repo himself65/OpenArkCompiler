@@ -210,7 +210,7 @@ BlockNode *JavaEHLowerer::DoLowerBlock(BlockNode &block) {
           DoLowerBoundaryCheck(*intrinCall, *newBlock);
           break;
         }
-        //  fallthrough;
+        // fallthrough;
       }
       default: {
         for (size_t i = 0; i < stmt->NumOpnds(); i++) {

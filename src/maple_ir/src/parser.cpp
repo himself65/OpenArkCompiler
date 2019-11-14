@@ -592,7 +592,7 @@ bool MIRParser::ParseFields(MIRStructType &type) {
   TokenKind tk = lexer.NextToken();
   MIRTypeKind tyKind = type.GetKind();
   while (tk == TK_label || tk == kTkPrntfield || tk == TK_pragma) {
-    bool isPragma = tk == TK_pragma;
+    bool isPragma = (tk == TK_pragma);
     bool notaType = false;
     TyIdx fieldTyIdx(0);
     bool isParentField = false;
@@ -658,9 +658,9 @@ bool MIRParser::ParseFields(MIRStructType &type) {
     } else if ((tk == kTkIntconst || tk == kTkString) && !isParentField &&
                (tyKind == kTypeClass || tyKind == kTypeClassIncomplete ||
                 tyKind == kTypeInterface || tyKind == kTypeInterfaceIncomplete)) {
-      uint32 infoVal = (tk == kTkIntconst)
-                           ? lexer.GetTheIntVal()
-                           : GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName()).GetIdx();
+      uint32 infoVal =
+          (tk == kTkIntconst) ? lexer.GetTheIntVal()
+                              : GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName()).GetIdx();
       type.PushbackMIRInfo(MIRInfoPair(strIdx, infoVal));
       type.PushbackIsString(tk != kTkIntconst);
       notaType = true;
@@ -738,7 +738,6 @@ bool MIRParser::ParseFields(MIRStructType &type) {
     MIRSymbol *funcSymbol = mirBuilder.CreateSymbol(TyIdx(0), strIdx, kStFunc, kScText, nullptr, kScopeGlobal);
     ASSERT(funcSymbol != nullptr, "Failed to create MIRSymbol");
     MIRFunction *fn = mod.GetMemPool()->New<MIRFunction>(&mod, funcSymbol->GetStIdx());
-    ASSERT(fn != nullptr, "Failed to create MIRFunction");
     fn->Init();
     fn->SetPuidx(GlobalTables::GetFunctionTable().GetFuncTable().size());
     GlobalTables::GetFunctionTable().GetFuncTable().push_back(fn);
@@ -821,7 +820,8 @@ bool MIRParser::ParseStructType(TyIdx &styIdx) {
     case TK_union:
       tkind = kTypeUnion;
       break;
-    default:;
+    default:
+      break;
   }
   if (lexer.NextToken() != kTkLbrace) {
     Error("expect { parsing struct body");
@@ -1136,7 +1136,7 @@ bool MIRParser::ParseDefinedTypename(TyIdx &definedTyIdx, MIRTypeKind kind) {
   if (prevTypeIdx != 0 && prevTypeIdx != definedTyIdx) {
     // replace all uses of prevTypeIdx by tyIdx in type_table_
     typeDefIdxMap[prevTypeIdx] = definedTyIdx;
-        // remove prevTypeIdx from classlist
+    // remove prevTypeIdx from classlist
     mod.RemoveClass(prevTypeIdx);
   }
   lexer.NextToken();
@@ -2192,7 +2192,7 @@ static void GenJStringType(MIRModule &module) {
   metaClassType.GetFields().push_back(FieldPair(stridx, TyIdxFieldAttrPair(TyIdx(PTY_ref), FieldAttrs())));
   stridx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName("__class_meta__");
   TyIdx tyidx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&metaClassType);
-  // Global?
+  // Global
   module.GetTypeNameTab()->SetGStrIdxToTyIdx(stridx, tyidx);
   ASSERT(GlobalTables::GetTypeTable().GetTypeTable().empty() == false, "container check");
   if (GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyidx)->GetNameStrIdx() == 0) {
@@ -2266,9 +2266,9 @@ bool MIRParser::ParseMIR(uint32 fileIdx, uint32 option, bool isIPA, bool isComb)
   }
   if (!isIPA && isComb) {
     for (auto it = paramImportFileList.begin(); it != paramImportFileList.end(); it++) {
-      BinaryMplt binmplt(mod);
+      BinaryMplt binMplt(mod);
       std::string importFilename = *it;
-      if (!binmplt.Import(importFilename, false, true)) {  // not a binary mplt
+      if (!binMplt.Import(importFilename, false, true)) {  // not a binary mplt
         std::ifstream mpltFile(importFilename);
         if (!mpltFile.is_open()) {
           FATAL(kLncFatal, "cannot open MPLT file: %s\n", importFilename.c_str());
@@ -2345,7 +2345,6 @@ bool MIRParser::ParseMIRForVar() {
       if (prevSt->GetStorageClass() == kScExtern) {
         prevSt->SetStorageClass(st.GetStorageClass());
       }
-    } else {
     }
   } else {  // seeing the first time
     maple::MIRBuilder mirBuilder(&mod);
@@ -2618,9 +2617,9 @@ bool MIRParser::ParseMIRForImport() {
     FATAL(kLncFatal, "MPLT file has wrong suffix: %s\n", importFileName.c_str());
   }
   if (paramIsIPA && firstImport) {
-    BinaryMplt *binmplt = new BinaryMplt(mod);
-    mod.SetBinMplt(binmplt);
-    if (!(*binmplt).Import(importFileName, paramIsIPA && !firstImport, paramIsComb)) {  // not a binary mplt
+    BinaryMplt *binMplt = new BinaryMplt(mod);
+    mod.SetBinMplt(binMplt);
+    if (!(*binMplt).Import(importFileName, paramIsIPA && !firstImport, paramIsComb)) {  // not a binary mplt
       std::ifstream mpltFile(importFileName);
       if (!mpltFile.is_open()) {
         FATAL(kLncFatal, "cannot open MPLT file: %s\n", importFileName.c_str());
@@ -2632,8 +2631,8 @@ bool MIRParser::ParseMIRForImport() {
       }
     }
   } else {
-    BinaryMplt binmplt(mod);
-    if (!binmplt.Import(importFileName, paramIsIPA, false)) {  // not a binary mplt
+    BinaryMplt binMplt(mod);
+    if (!binMplt.Import(importFileName, paramIsIPA, false)) {  // not a binary mplt
       std::ifstream mpltFile(importFileName);
       if (!mpltFile.is_open()) {
         FATAL(kLncFatal, "cannot open MPLT file: %s\n", importFileName.c_str());

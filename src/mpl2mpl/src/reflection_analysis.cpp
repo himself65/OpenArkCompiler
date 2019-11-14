@@ -207,11 +207,11 @@ uint32 GetClassAccessFlags(MIRClassType &classType) {
   return 0;
 }
 
-bool ReflectionAnalysis::IsStaticClass(MIRClassType &classType) {
+bool ReflectionAnalysis::IsStaticClass(MIRClassType &classType) const {
   return GetClassAccessFlags(classType) & 0x00000008;  // #  Modifier_Static 0x00000008;
 }
 
-bool ReflectionAnalysis::IsPrivateClass(MIRClassType &classType) {
+bool ReflectionAnalysis::IsPrivateClass(MIRClassType &classType) const {
   return GetClassAccessFlags(classType) & 0x00000002;  // #  Modifier_Private 0x00000002;
 }
 
