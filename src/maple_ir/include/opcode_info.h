@@ -133,6 +133,10 @@ class OpcodeTable {
     return o == OP_brtrue || o == OP_brfalse;
   }
 
+  bool AssignActualVar(Opcode o) const {
+    ASSERT(o < kOpLast, "invalid opcode");
+    return o == OP_dassign || o == OP_regassign;
+  }
  private:
   OpcodeDesc table[kOpLast];
 };

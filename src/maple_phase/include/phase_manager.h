@@ -28,10 +28,10 @@ class PhaseManager {
         phaseSequences(allocator.Adapter()),
         phaseTimers(allocator.Adapter()) {}
 
-  virtual ~PhaseManager() {}
+  virtual ~PhaseManager() = default;
 
   void AddPhase(const std::string &pname) {
-    for (auto it = RegPhaseBegin(); it != RegPhaseEnd(); it++) {
+    for (auto it = RegPhaseBegin(); it != RegPhaseEnd(); ++it) {
       if (GetPhaseName(it) == pname) {
         phaseSequences.push_back(GetPhaseId(it));
         phaseTimers.push_back(0);
@@ -46,7 +46,7 @@ class PhaseManager {
   }
 
   Phase *GetPhaseFromName(const std::string &pname) {
-    for (auto it = RegPhaseBegin(); it != RegPhaseEnd(); it++) {
+    for (auto it = RegPhaseBegin(); it != RegPhaseEnd(); ++it) {
       if (GetPhaseName(it) == pname) {
         return GetPhase(GetPhaseId(it));
       }
@@ -121,12 +121,11 @@ class PhaseManager {
   }
 
   bool ExistPhase(const std::string &name) {
-    for (auto it = RegPhaseBegin(); it != RegPhaseEnd(); it++) {
+    for (auto it = RegPhaseBegin(); it != RegPhaseEnd(); ++it) {
       if (GetPhaseName(it) == name) {
         return true;
       }
     }
-
     return false;
   }
 

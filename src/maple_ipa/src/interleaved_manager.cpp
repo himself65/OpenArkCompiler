@@ -19,8 +19,6 @@
 
 #include "module_phase.h"
 #include "mir_function.h"
-#include "mir_module.h"
-#include "me_function.h"
 #include "me_option.h"
 #include "mempool.h"
 #include "phase_manager.h"
@@ -81,11 +79,11 @@ void InterleavedManager::Run() {
       }
       for (auto *func : *compList) {
         if (MeOption::useRange && (rangeNum < MeOption::range[0] || rangeNum > MeOption::range[1])) {
-          rangeNum++;
+          ++rangeNum;
           continue;
         }
         if (func->GetBody() == nullptr) {
-          rangeNum++;
+          ++rangeNum;
           continue;
         }
         if (fpm->GetPhaseSequence()->empty()) {
@@ -94,7 +92,7 @@ void InterleavedManager::Run() {
         mirModule.SetCurFunction(func);
         // lower, create BB and build cfg
         fpm->Run(func, rangeNum, meInput);
-        rangeNum++;
+        ++rangeNum;
       }
       if (fpm->GetGenMeMpl()) {
         mirModule.Emit("comb.me.mpl");

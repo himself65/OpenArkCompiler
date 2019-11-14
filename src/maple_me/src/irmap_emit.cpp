@@ -328,6 +328,14 @@ StmtNode &IassignMeStmt::EmitStmt(SSATab &ssaTab) {
   return *iassignNode;
 }
 
+const MIRFunction &CallMeStmt::GetTargetFunction() const {
+  return *GlobalTables::GetFunctionTable().GetFunctionFromPuidx(puIdx);
+}
+
+MIRFunction &CallMeStmt::GetTargetFunction() {
+  return *GlobalTables::GetFunctionTable().GetFunctionFromPuidx(puIdx);
+}
+
 StmtNode &CallMeStmt::EmitStmt(SSATab &ssaTab) {
   if (GetOp() != OP_icall && GetOp() != OP_icallassigned) {
     CallNode *callNode =

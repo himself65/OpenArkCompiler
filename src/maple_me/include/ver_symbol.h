@@ -29,11 +29,11 @@ class MayDefNode;  // circular dependency exists, no other choice
 class MustDefNode;  // circular dependency exists, no other choice
 class VersionStTable;  // circular dependency exists, no other choice
 class OriginalSt;  // circular dependency exists, no other choice
+constexpr size_t kInvalidVersionID = static_cast<size_t>(-1);
 class VersionSt {
  public:
   enum DefType {
-    kDassign,
-    kRegassign,
+    kAssign,
     kPhi,
     kMayDef,
     kMustDef
@@ -103,24 +103,16 @@ class VersionSt {
     this->ost = ost;
   }
 
-  const DassignNode *GetDassignNode() const {
-    return defStmt.dassign;
-  }
-  DassignNode *GetDassignNode() {
-    return defStmt.dassign;
-  }
-  void SetDassignNode(DassignNode *dassignNode) {
-    defStmt.dassign = dassignNode;
+  const StmtNode *GetAssignNode() const {
+    return defStmt.assign;
   }
 
-  RegassignNode *GetRegassignNode() {
-    return defStmt.regassign;
+  StmtNode *GetAssignNode() {
+    return defStmt.assign;
   }
-  const RegassignNode *GetRegassignNode() const {
-    return defStmt.regassign;
-  }
-  void SetRegassignNode(RegassignNode *regAssignNode) {
-    defStmt.regassign = regAssignNode;
+
+  void SetAssignNode(StmtNode *assignNode) {
+    defStmt.assign = assignNode;
   }
 
   const PhiNode *GetPhi() const {
@@ -173,11 +165,10 @@ class VersionSt {
   int version;      // starts from 0 for each symbol
   OriginalSt *ost;  // the index of related originalst in originalst_table
   BB *defBB = nullptr;
-  DefType defType = kDassign;
+  DefType defType = kAssign;
 
   union DefStmt {
-    DassignNode *dassign;
-    RegassignNode *regassign;
+    StmtNode *assign;
     PhiNode *phi;
     MayDefNode *mayDef;
     MustDefNode *mustDef;

@@ -15,10 +15,10 @@
 #ifndef MAPLE_ME_INCLUDE_ME_OPTION_H
 #define MAPLE_ME_INCLUDE_ME_OPTION_H
 #include <vector>
+#include <string>
 #include "mempool.h"
 #include "mempool_allocator.h"
 #include "types_def.h"
-#include <string>
 
 namespace maple {
 class MeOption {
@@ -69,7 +69,7 @@ class MeOption {
 };
 
 #ifndef DEBUGFUNC
-#define DEBUGFUNC(f)                                                         \
+#define DEBUGFUNC(f)                                                       \
   (MeOption::dumpPhases.find(PhaseName()) != MeOption::dumpPhases.end() && \
    (MeOption::dumpFunc.compare("*") == 0 || f->GetName().find(MeOption::dumpFunc) != std::string::npos))
 #endif

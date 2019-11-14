@@ -948,6 +948,23 @@ MIRType *CallNode::GetCallReturnType() {
   MIRFunction *mirFunc = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(puIdx);
   return mirFunc->GetReturnType();
 }
+const MIRSymbol *CallNode::GetCallReturnSymbol(const MIRModule &mod) const {
+  if (!kOpcodeInfo.IsCallAssigned(GetOpCode())) {
+    return nullptr;
+  }
+  const CallReturnVector &nrets = this->GetReturnVec();
+  if (nrets.size() == 1) {
+    StIdx stIdx = nrets.begin()->first;
+    RegFieldPair regFieldPair = nrets.begin()->second;
+    if (!regFieldPair.IsReg()) {
+      const MIRFunction *mirFunc = mod.CurFunction();;
+      const MIRSymbol *st = mirFunc->GetLocalOrGlobalSymbol(stIdx);
+      return st;
+    }
+  }
+  return nullptr;
+}
+
 
 void CallNode::Dump(const MIRModule &mod, int32 indent, bool newline) const {
   StmtNode::DumpBase(mod, indent);

@@ -30,7 +30,7 @@ class DoKlassHierarchy : public ModulePhase {
     return "classhierarchy";
   }
 
-  virtual ~DoKlassHierarchy() {};
+  virtual ~DoKlassHierarchy() = default;
 };
 
 class ModulePhaseManager : public PhaseManager {
@@ -45,7 +45,7 @@ class ModulePhaseManager : public PhaseManager {
     timePhases = false;
   }
 
-  ~ModulePhaseManager() {}
+  ~ModulePhaseManager() = default;
 
   // register all module phases defined in module_phases.def
   void RegisterModulePhases();

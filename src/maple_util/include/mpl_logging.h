@@ -134,6 +134,7 @@
 
 namespace maple {
 extern class LogInfo logInfo;
+extern class LogInfo &log;
 
 enum LogLevel { kLlDbg, kLlLog, kLlInfo, kLlWarn, kLlErr, kLlFatal, kLlMax };
 
@@ -153,6 +154,8 @@ class LogInfo {
  public:
   LogInfo() : outStream(stdout), outMode(kLmComplex) {}
   LogInfo(const LogInfo &p) = delete;
+  static std::ostream &Info();
+  static std::ostream &Err();
   LogInfo &operator=(const LogInfo &p) = delete;
 
   ~LogInfo() {

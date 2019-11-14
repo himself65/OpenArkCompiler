@@ -63,36 +63,37 @@ void MeSSA::CollectDefBBs(std::map<OStIdx, std::set<BBId>> &ostDefBBs) {
   for (auto bIt = func->valid_begin(); bIt != eIt; ++bIt) {
     auto *bb = *bIt;
     for (auto &stmt : bb->GetStmtNodes()) {
-      if (kOpcodeInfo.HasSSADef(stmt.GetOpCode())) {
-        MapleMap<OStIdx, MayDefNode> &mayDefs = GetSSATab()->GetStmtsSSAPart().GetMayDefNodesOf(stmt);
-        MapleMap<OStIdx, MayDefNode>::iterator iter;
-        for (iter = mayDefs.begin(); iter != mayDefs.end(); ++iter) {
-          const OriginalSt *ost = func->GetMeSSATab()->GetOriginalStFromID(iter->first);
-          if (ost != nullptr && (!ost->IsFinal() || func->GetMirFunc()->IsConstructor())) {
+      if (!kOpcodeInfo.HasSSADef(stmt.GetOpCode())) {
+        continue;
+      }
+      MapleMap<OStIdx, MayDefNode> &mayDefs = GetSSATab()->GetStmtsSSAPart().GetMayDefNodesOf(stmt);
+      for (auto iter = mayDefs.begin(); iter != mayDefs.end(); ++iter) {
+        const OriginalSt *ost = func->GetMeSSATab()->GetOriginalStFromID(iter->first);
+        if (ost != nullptr && (!ost->IsFinal() || func->GetMirFunc()->IsConstructor())) {
+          ostDefBBs[iter->first].insert(bb->GetBBId());
+        } else if (stmt.GetOpCode() == OP_intrinsiccallwithtype) {
+          auto &inNode = static_cast<IntrinsiccallNode&>(stmt);
+          if (inNode.GetIntrinsic() == INTRN_JAVA_CLINIT_CHECK) {
             ostDefBBs[iter->first].insert(bb->GetBBId());
-          } else if (stmt.GetOpCode() == OP_intrinsiccallwithtype) {
-            auto &inNode = static_cast<IntrinsiccallNode&>(stmt);
-            if (inNode.GetIntrinsic() == INTRN_JAVA_CLINIT_CHECK) {
-              ostDefBBs[iter->first].insert(bb->GetBBId());
-            }
-          }
-        }
-        if (stmt.GetOpCode() == OP_dassign || stmt.GetOpCode() == OP_maydassign) {
-          VersionSt *vst = GetSSATab()->GetStmtsSSAPart().GetAssignedVarOf(stmt);
-          OriginalSt *ost = vst->GetOrigSt();
-          if (ost != nullptr && (!ost->IsFinal() || func->GetMirFunc()->IsConstructor())) {
-            ostDefBBs[vst->GetOrigIdx()].insert(bb->GetBBId());
           }
         }
       }
-      if (kOpcodeInfo.IsCallAssigned(stmt.GetOpCode())) {  // Needs to handle mustDef in callassigned stmt
-        MapleVector<MustDefNode> &mustDefs = GetSSATab()->GetStmtsSSAPart().GetMustDefNodesOf(stmt);
-        MapleVector<MustDefNode>::iterator iter;
-        for (iter = mustDefs.begin(); iter != mustDefs.end(); ++iter) {
-          OriginalSt *ost = iter->GetResult()->GetOrigSt();
-          if (ost != nullptr && (!ost->IsFinal() || func->GetMirFunc()->IsConstructor())) {
-            ostDefBBs[ost->GetIndex()].insert(bb->GetBBId());
-          }
+      if (stmt.GetOpCode() == OP_dassign || stmt.GetOpCode() == OP_maydassign) {
+        VersionSt *vst = GetSSATab()->GetStmtsSSAPart().GetAssignedVarOf(stmt);
+        OriginalSt *ost = vst->GetOrigSt();
+        if (ost != nullptr && (!ost->IsFinal() || func->GetMirFunc()->IsConstructor())) {
+          ostDefBBs[vst->GetOrigIdx()].insert(bb->GetBBId());
+        }
+      }
+      // Needs to handle mustDef in callassigned stmt
+      if (!kOpcodeInfo.IsCallAssigned(stmt.GetOpCode())) {
+        continue;
+      }
+      MapleVector<MustDefNode> &mustDefs = GetSSATab()->GetStmtsSSAPart().GetMustDefNodesOf(stmt);
+      for (auto iter = mustDefs.begin(); iter != mustDefs.end(); ++iter) {
+        OriginalSt *ost = iter->GetResult()->GetOrigSt();
+        if (ost != nullptr && (!ost->IsFinal() || func->GetMirFunc()->IsConstructor())) {
+          ostDefBBs[ost->GetIndex()].insert(bb->GetBBId());
         }
       }
     }

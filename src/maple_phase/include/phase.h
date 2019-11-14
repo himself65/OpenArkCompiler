@@ -41,7 +41,7 @@ class AnalysisResult {
     memPoolCtrler.DeleteMemPool(memPool);
   }
 
-  virtual ~AnalysisResult() {}
+  virtual ~AnalysisResult() = default;
 
  private:
   MemPool *memPool;
@@ -60,7 +60,7 @@ class Phase {
   MemPool *NewMemPool() {
     std::string phaseName = PhaseName();
     ASSERT(!phaseName.empty(), "PhaseName should not be empty");
-    memPoolCount++;
+    ++memPoolCount;
     std::string memPoolName = phaseName + " MemPool " + std::to_string(memPoolCount);
     MemPool *memPool = memPoolCtrler.NewMemPool(memPoolName.c_str());
     memPools.push_back(memPool);
@@ -80,7 +80,7 @@ class Phase {
     memPools.shrink_to_fit();
   }
 
-  virtual ~Phase(){};
+  virtual ~Phase() = default;
 
  private:
   unsigned int memPoolCount = 0;
@@ -145,14 +145,14 @@ class AnalysisResultManager {
 
   void InvalidIRbaseAnalysisResult(UnitIR &ir) {
     PhaseIDT id;
-    for (auto it = analysisPhases.begin(); it != analysisPhases.end(); it++) {
+    for (auto it = analysisPhases.begin(); it != analysisPhases.end(); ++it) {
       id = it->first;
       InvalidAnalysisResult(id, &ir);
     }
   }
 
   void InvalidAllResults() {
-    for (auto it = analysisResults.begin(); it != analysisResults.end(); it++) {
+    for (auto it = analysisResults.begin(); it != analysisResults.end(); ++it) {
       AnalysisResult *r = it->second;
       ASSERT(r != nullptr, "r is null in AnalysisResultManager::InvalidAllResults");
       r->EraseMemPool();

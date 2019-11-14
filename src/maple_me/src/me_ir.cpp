@@ -1338,8 +1338,8 @@ bool MeExpr::PointsToSomethingThatNeedsIncRef() {
       MeStmt *baseStmt = var->GetDefMustDef().GetBase();
       if (baseStmt->GetOp() == OP_callassigned) {
         CallMeStmt *call = static_cast<CallMeStmt*>(baseStmt);
-        MIRFunction *callFunc = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(call->GetPUIdx());
-        if (callFunc->GetName() == "MCC_GetOrInsertLiteral") {
+        MIRFunction &callFunc = call->GetTargetFunction();
+        if (callFunc.GetName() == "MCC_GetOrInsertLiteral") {
           return false;
         }
       }

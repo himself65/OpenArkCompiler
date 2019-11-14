@@ -150,6 +150,10 @@ class OriginalSt {
     return (ostType == kPregOst);
   }
 
+  bool IsSpecialPreg() const {
+    return ostType == kPregOst && symOrPreg.pregIdx < 0;
+  }
+
   int8 GetIndirectLev() const {
     return indirectLev;
   }

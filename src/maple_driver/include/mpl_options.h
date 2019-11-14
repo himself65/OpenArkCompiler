@@ -188,6 +188,19 @@ class MplOptions {
   }
 
  private:
+  bool Init(const std::string &inputFile);
+  ErrorCode HandleGeneralOptions();
+  ErrorCode DecideRunType();
+  ErrorCode DecideRunningPhases();
+  ErrorCode CheckInputFileValidity();
+  ErrorCode CheckFileExits();
+  void AddOption(const mapleOption::Option &option);
+  ErrorCode UpdatePhaseOption(const std::string &args, const std::string &exeName);
+  ErrorCode UpdateExtraOptionOpt(const std::string &args);
+  ErrorCode AppendDefaultCombOptions();
+  ErrorCode AppendDefaultCgOptions();
+  ErrorCode AppendDefaultOptions(const std::string &exeName, MplOption mplOptions[], unsigned int length);
+  void UpdateRunningExe(const std::string &args);
   std::unique_ptr<mapleOption::OptionParser> optionParser = nullptr;
   std::map<std::string, std::vector<mapleOption::Option>> options = {};
   std::map<std::string, std::vector<mapleOption::Option>> exeOptions = {};
@@ -211,19 +224,6 @@ class MplOptions {
   bool genMeMpl = false;
   bool genVtableImpl = false;
   bool verify = false;
-  bool Init(const std::string &inputFile);
-  ErrorCode HandleGeneralOptions();
-  ErrorCode DecideRunType();
-  ErrorCode DecideRunningPhases();
-  ErrorCode CheckInputFileValidity();
-  ErrorCode CheckFileExits();
-  void AddOption(const mapleOption::Option &option);
-  ErrorCode UpdatePhaseOption(const std::string &args, const std::string &exeName);
-  ErrorCode UpdateExtraOptionOpt(const std::string &args);
-  ErrorCode AppendDefaultCombOptions();
-  ErrorCode AppendDefaultCgOptions();
-  ErrorCode AppendDefaultOptions(const std::string &exeName, MplOption mplOptions[], unsigned int length);
-  void UpdateRunningExe(const std::string &args);
 };
 }  // namespace maple
 #endif  // MAPLE_DRIVER_INCLUDE_MPL_OPTIONS_H

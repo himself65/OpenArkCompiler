@@ -414,7 +414,9 @@ void MeFunction::Prepare(unsigned long rangeNum) {
   RemoveEhEdgesInSyncRegion();
   theCFG = memPool->New<MeCFG>(*this);
   theCFG->BuildMirCFG();
-  theCFG->FixMirCFG();
+  if (MeOption::optLevel > MeOption::kLevelZero) {
+    theCFG->FixMirCFG();
+  }
   theCFG->VerifyLabels();
   theCFG->UnreachCodeAnalysis();
   theCFG->WontExitAnalysis();

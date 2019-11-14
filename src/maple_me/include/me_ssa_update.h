@@ -40,11 +40,11 @@ class MeSSAUpdate {
  private:
   void GetIterDomFrontier(const BB &bb, MapleSet<BBId> &dfSet, std::vector<bool> &visitedMap);
   void InsertPhis();
-  void RenamePhi(BB &bb);
+  void RenamePhi(const BB &bb);
   MeExpr *RenameExpr(MeExpr &meExpr, bool &changed);
-  void RenameStmts(BB &bb);
-  void RenamePhiOpndsInSucc(BB &bb);
-  void RenameBB(BB &bb);
+  void RenameStmts(const BB &bb);
+  void RenamePhiOpndsInSucc(const BB &bb);
+  void RenameBB(const BB &bb);
   MeFunction &func;
   IRMap &irMap;
   SSATab &ssaTab;
