@@ -46,7 +46,7 @@ void MapleCombCompiler::PrintCommand(const MplOptions &options) const {
   if (options.GetExeOptions().find(kBinNameMe) != options.GetExeOptions().end()) {
     runStr += "me";
     auto inputMeOptions = options.GetExeOptions().find(kBinNameMe);
-    for (auto &opt : inputMeOptions->second) {
+    for (const auto &opt : inputMeOptions->second) {
       connectSym = opt.Args() != "" ? "=" : "";
       optionStr += " --" + opt.OptionKey() + connectSym + opt.Args();
     }
@@ -60,7 +60,7 @@ void MapleCombCompiler::PrintCommand(const MplOptions &options) const {
       runStr += "mpl2mpl";
     }
     auto inputMpl2mplOptions = options.GetExeOptions().find(kBinNameMpl2mpl);
-    for (auto &opt : inputMpl2mplOptions->second) {
+    for (const auto &opt : inputMpl2mplOptions->second) {
       connectSym = opt.Args() != "" ? "=" : "";
       optionStr += " --" + opt.OptionKey() + connectSym + opt.Args();
     }
@@ -77,7 +77,7 @@ MeOption *MapleCombCompiler::MakeMeOptions(const MplOptions &options, maple::Mem
     LogInfo::MapleLogger() << "no me input options" << '\n';
     return meOption;
   }
-  for (auto &opt : inputMeOptions->second) {
+  for (const auto &opt : inputMeOptions->second) {
     if (options.HasSetDebugFlag()) {
       LogInfo::MapleLogger() << "Me options: " << opt.Index() << " " << opt.OptionKey() << " " << opt.Args()
                              << '\n';

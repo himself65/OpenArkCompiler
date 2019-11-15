@@ -71,7 +71,7 @@ bool MIRAddrofConst::operator==(MIRConst &rhs) const {
   if (&GetType() != &rhs.GetType()) {
     return false;
   }
-  return (stIdx == rhsA.stIdx && fldID == rhsA.fldID);
+  return (stIdx == rhsA.stIdx) && (fldID == rhsA.fldID);
 }
 
 void MIRAddroffuncConst::Dump() const {
@@ -89,7 +89,7 @@ bool MIRAddroffuncConst::operator==(MIRConst &rhs) const {
     return false;
   }
   auto &rhsAf = static_cast<MIRAddroffuncConst&>(rhs);
-  return (&GetType() == &rhs.GetType() && puIdx == rhsAf.puIdx);
+  return (&GetType() == &rhs.GetType()) && (puIdx == rhsAf.puIdx);
 }
 
 bool MIRLblConst::operator==(MIRConst &rhs) const {
@@ -223,7 +223,7 @@ bool MIRStrConst::operator==(MIRConst &rhs) const {
     return false;
   }
   auto &rhsCs = static_cast<MIRStrConst&>(rhs);
-  return (&rhs.GetType() == &GetType() && value == rhsCs.value);
+  return (&rhs.GetType() == &GetType()) && (value == rhsCs.value);
 }
 
 MIRStr16Const::MIRStr16Const(const std::u16string &str, MIRType &type)
@@ -249,7 +249,7 @@ bool MIRStr16Const::operator==(MIRConst &rhs) const {
     return false;
   }
   auto &rhsCs = static_cast<MIRStr16Const&>(rhs);
-  return (&GetType() == &rhs.GetType() && value == rhsCs.value);
+  return (&GetType() == &rhs.GetType()) && (value == rhsCs.value);
 }
 }  // namespace maple
 #endif  // MIR_FEATURE_FULL

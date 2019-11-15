@@ -24,12 +24,9 @@ class BinaryMplImport {
   using CallSite = std::pair<CallInfo*, PUIdx>;
 
  public:
+  explicit BinaryMplImport(MIRModule &md) : mod(md), mirBuilder(&md) {}
   BinaryMplImport &operator=(const BinaryMplImport&) = delete;
   BinaryMplImport(const BinaryMplImport&) = delete;
-  explicit BinaryMplImport(MIRModule &md) : mod(md), mirBuilder(&md) {
-    imported = true;
-    bufI = 0;
-  }
 
   virtual ~BinaryMplImport() {
     for (MIRStructType *structPtr : tmpStruct) {
@@ -46,7 +43,6 @@ class BinaryMplImport {
   uint64 GetBufI() const {
     return bufI;
   }
-
   void SetBufI(uint64 bufIVal) {
     bufI = bufIVal;
   }
@@ -54,7 +50,6 @@ class BinaryMplImport {
   bool IsBufEmpty() const {
     return buf.empty();
   }
-
   size_t GetBufSize() const {
     return buf.size();
   }
@@ -116,10 +111,13 @@ class BinaryMplImport {
   int32 GetIPAFileIndex(std::string &name);
 
  private:
-  uint64 bufI;
+  void SkipTotalSize();
+  void ImportFieldsOfStructType(FieldVector &fields, uint32 methodSize);
+
+  bool imported = true;  // used only by irbuild to convert to ascii
+  uint64 bufI = 0;
   std::vector<uint8> buf;
   std::map<int64, int32> content;
-  bool imported;  // used only by irbuild to convert to ascii
   MIRModule &mod;
   MIRBuilder mirBuilder;
   std::vector<GStrIdx> gStrTab;
@@ -134,9 +132,6 @@ class BinaryMplImport {
   std::map<TyIdx, TyIdx> typeDefIdxMap;  // map previous declared tyIdx
   std::vector<bool> definedLabels;
   std::string importFileName;
-
-  void SkipTotalSize();
-  void ImportFieldsOfStructType(FieldVector &fields, uint32 methodSize);
 };
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_BIN_MPL_IMPORT_H

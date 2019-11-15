@@ -39,7 +39,7 @@ class MemPoolCtrler {
   friend MemPool;
 
  public:  // Methods
-  MemPoolCtrler() {}
+  MemPoolCtrler() = default;
 
   ~MemPoolCtrler();
 
@@ -47,10 +47,6 @@ class MemPoolCtrler {
   void DeleteMemPool(MemPool *memPool);
   bool IsEmpty() const {
     return memPools.empty();
-  }
-
-  unsigned GetMempoolSize() const {
-    return memPools.size();
   }
 
  private:  // Methods
@@ -104,6 +100,7 @@ class MemPool {
   template <class T, typename... Arguments>
   T *New(Arguments &&... args) {
     void *p = Malloc(sizeof(T));
+    CHECK_FATAL(p != nullptr, "ERROR: New error");
     p = new (p) T(std::forward<Arguments>(args)...);  // Call constructor
     return static_cast<T*>(p);
   }
@@ -112,6 +109,7 @@ class MemPool {
   template <class T>
   T *NewArray(unsigned int num) {
     void *p = Malloc(sizeof(T) * num);
+    CHECK_FATAL(p != nullptr, "ERROR: NewArray error");
     p = new (p) T[num];
     return static_cast<T*>(p);
   }
@@ -119,6 +117,7 @@ class MemPool {
 #define BitsAlign(size) (((size) + 7) & (0xFFFFFFF8))
 #define MemBlockFirstPtr(x) \
   static_cast<void*>((reinterpret_cast<char*>(x)) + BitsAlign(sizeof(MemPoolCtrler::MemBlock)))
+
  private:                                         // constants
   static constexpr size_t kMinBlockSize = 0x800;  // Minimum BlockSize is 2K
   static constexpr size_t kMemBlockOverhead = (BitsAlign(sizeof(MemPoolCtrler::MemBlock)));

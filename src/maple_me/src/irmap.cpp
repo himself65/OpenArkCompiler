@@ -524,8 +524,8 @@ MeStmt *IRMap::BuildMeStmt(StmtNode &stmt) {
   }
 
   auto func = CreateProductFunction<MeStmtFactory>(stmt.GetOpCode());
-  ASSERT(func != nullptr, "NYI");
-  return func != nullptr ? func(this, stmt, *ssaPart) : nullptr;
+  CHECK_FATAL(func != nullptr, "func nullptr check");
+  return func(this, stmt, *ssaPart);
 }
 
 void IRMap::BuildMuList(MapleMap<OStIdx, MayUseNode> &mayuseList, MapleMap<OStIdx, VarMeExpr*> &mulist) {

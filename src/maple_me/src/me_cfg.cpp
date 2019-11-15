@@ -860,7 +860,6 @@ void MeCFG::DumpToFile(const std::string &prefix, bool dumpInStrs) const {
   }
   cfgFile << "}\n";
   cfgFile.flush();
-  cfgFile.close();
   LogInfo::MapleLogger().rdbuf(coutBuf);
 }
 }  // namespace maple

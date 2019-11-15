@@ -319,7 +319,7 @@ void MIRSymbol::DumpAsLiteralVar(int32 indent) const {
 
 void MIRSymbolTable::Dump(bool isLocal, int32 indent, bool printDeleted) const {
   size_t size = symbolTable.size();
-  for (size_t i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; ++i) {
     MIRSymbol *symbol = symbolTable[i];
     if (symbol == nullptr) {
       continue;
@@ -364,7 +364,7 @@ bool MIRLabelTable::AddToStringLabelMap(LabelIdx labelIdx) {
 
 void MIRPregTable::DumpRef(int32 indent) {
   MapleVector<MIRPreg*> &pRegTable = pregTable;
-  for (size_t i = 1; i < pRegTable.size(); i++) {
+  for (size_t i = 1; i < pRegTable.size(); ++i) {
     MIRPreg *mirPReg = pRegTable[i];
     if (mirPReg->GetPrimType() != PTY_ref) {
       continue;

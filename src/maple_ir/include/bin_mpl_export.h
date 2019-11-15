@@ -120,7 +120,7 @@ class BinaryMplExport {
 
  private:
   MIRModule &mod;
-  size_t bufI;
+  size_t bufI = 0;
   std::vector<uint8> buf;
   std::unordered_map<GStrIdx, int64, GStrIdxHash> gStrMark;
   std::unordered_map<MIRFunction*, int64> funcMark;

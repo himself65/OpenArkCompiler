@@ -16,7 +16,6 @@
 #include "compiler.h"
 #include "default_options.def"
 
-
 using namespace maple;
 
 DefaultOption MplcgCompiler::GetDefaultOptions(const MplOptions &options) {

@@ -23,8 +23,7 @@
 #include "mempool.h"
 #include "phase_manager.h"
 
-using namespace maple;
-
+namespace maple {
 
 void InterleavedManager::AddPhases(const std::vector<std::string> &phases, bool isModulePhase, bool timePhases,
                                    bool genMpl) {
@@ -63,42 +62,42 @@ void InterleavedManager::Run() {
     if (pm == nullptr) {
       continue;
     }
-    if (dynamic_cast<MeFuncPhaseManager*>(pm)) {
-      MeFuncPhaseManager *fpm = static_cast<MeFuncPhaseManager*>(pm);
-      unsigned long rangeNum = 0;
-      MapleVector<MIRFunction*> *compList;
-      if (!mirModule.GetCompilationList().empty()) {
-        if ((mirModule.GetCompilationList().size() != mirModule.GetFunctionList().size() &&
-             mirModule.GetCompilationList().size() !=
-                 mirModule.GetFunctionList().size() - mirModule.GetOptFuncsSize())) {
-          ASSERT(false, "should be equal");
-        }
-        compList = &mirModule.GetCompilationList();
-      } else {
-        compList = &mirModule.GetFunctionList();
-      }
-      for (auto *func : *compList) {
-        if (MeOption::useRange && (rangeNum < MeOption::range[0] || rangeNum > MeOption::range[1])) {
-          ++rangeNum;
-          continue;
-        }
-        if (func->GetBody() == nullptr) {
-          ++rangeNum;
-          continue;
-        }
-        if (fpm->GetPhaseSequence()->empty()) {
-          continue;
-        }
-        mirModule.SetCurFunction(func);
-        // lower, create BB and build cfg
-        fpm->Run(func, rangeNum, meInput);
-        ++rangeNum;
-      }
-      if (fpm->GetGenMeMpl()) {
-        mirModule.Emit("comb.me.mpl");
-      }
-    } else {
+    if (!dynamic_cast<MeFuncPhaseManager*>(pm)) {
       pm->Run();
+      continue;
+    }
+    MeFuncPhaseManager *fpm = static_cast<MeFuncPhaseManager*>(pm);
+    unsigned long rangeNum = 0;
+    MapleVector<MIRFunction*> *compList;
+    if (!mirModule.GetCompilationList().empty()) {
+      if ((mirModule.GetCompilationList().size() != mirModule.GetFunctionList().size()) &&
+          (mirModule.GetCompilationList().size() !=
+           mirModule.GetFunctionList().size() - mirModule.GetOptFuncsSize())) {
+        ASSERT(false, "should be equal");
+      }
+      compList = &mirModule.GetCompilationList();
+    } else {
+      compList = &mirModule.GetFunctionList();
+    }
+    for (auto *func : *compList) {
+      if (MeOption::useRange && (rangeNum < MeOption::range[0] || rangeNum > MeOption::range[1])) {
+        ++rangeNum;
+        continue;
+      }
+      if (func->GetBody() == nullptr) {
+        ++rangeNum;
+        continue;
+      }
+      if (fpm->GetPhaseSequence()->empty()) {
+        continue;
+      }
+      mirModule.SetCurFunction(func);
+      // lower, create BB and build cfg
+      fpm->Run(func, rangeNum, meInput);
+      ++rangeNum;
+    }
+    if (fpm->GetGenMeMpl()) {
+      mirModule.Emit("comb.me.mpl");
     }
   }
 }
@@ -108,7 +107,7 @@ void InterleavedManager::DumpTimers() {
   std::vector<std::pair<std::string, time_t>> timeVec;
   long total = 0;
   LogInfo::MapleLogger() << "=================== TIMEPHASES =================\n";
-  for (auto manager : phaseManagers) {
+  for (auto *manager : phaseManagers) {
     long temp = manager->DumpTimers();
     total += temp;
     timeVec.push_back(std::pair<std::string, time_t>(manager->GetMgrName(), temp));
@@ -153,4 +152,5 @@ const PhaseManager *InterleavedManager::GetSupportPhaseManager(const std::string
   }
 
   return nullptr;
+}
 }

@@ -20,17 +20,17 @@
 namespace maple {
 class InterleavedManager {
  public:
-  InterleavedManager(MemPool *memPool, MIRModule *mirm, std::string input, bool timer)
+  InterleavedManager(MemPool *memPool, MIRModule *module, const std::string &input, bool timer)
       : allocator(memPool),
-        mirModule(*mirm),
+        mirModule(*module),
         phaseManagers(allocator.Adapter()),
         supportPhaseManagers(allocator.Adapter()),
         meInput(input),
         timePasses(timer) {}
 
-  InterleavedManager(MemPool *memPool, MIRModule *mirm)
+  InterleavedManager(MemPool *memPool, MIRModule *module)
       : allocator(memPool),
-        mirModule(*mirm),
+        mirModule(*module),
         phaseManagers(allocator.Adapter()),
         supportPhaseManagers(allocator.Adapter()),
         timePasses(false) {}
@@ -42,7 +42,7 @@ class InterleavedManager {
     }
   }
 
-  const MapleAllocator *GetMemAllocator() {
+  const MapleAllocator *GetMemAllocator() const {
     return &allocator;
   }
 
@@ -56,7 +56,7 @@ class InterleavedManager {
   void Run();
   void IPARun(MeFuncPhaseManager&);
 
-  PhaseManager *AccessPhaseManager(int i) const {
+  const PhaseManager *AccessPhaseManager(int i) const {
     return phaseManagers.at(i);
   }
 

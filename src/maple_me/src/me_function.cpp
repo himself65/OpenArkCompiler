@@ -703,8 +703,8 @@ void MeFunction::SCCTopologicalSort(std::vector<SCCOfBBs*> &sccNodes) {
 
   // Top-down iterates all nodes
   for (size_t i = 0; i < sccTopologicalVec.size(); ++i) {
-    SCCOfBBs *scc = sccTopologicalVec[i];
-    for (SCCOfBBs *succ : scc->GetSucc()) {
+    SCCOfBBs *sccBB = sccTopologicalVec[i];
+    for (SCCOfBBs *succ : sccBB->GetSucc()) {
       if (InQueue.find(succ) == InQueue.end()) {
         // successor has not been visited
         bool predAllVisited = true;

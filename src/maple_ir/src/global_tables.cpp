@@ -285,11 +285,11 @@ bool GSymbolTable::RemoveFromStringSymbolMap(const MIRSymbol &st) {
   return false;
 }
 
-void GSymbolTable::Dump(bool islocal, int32 indent) const {
+void GSymbolTable::Dump(bool isLocal, int32 indent) const {
   for (size_t i = 1; i < symbolTable.size(); ++i) {
     const MIRSymbol *symbol = symbolTable[i];
     if (symbol != nullptr) {
-      symbol->Dump(module, islocal, indent);
+      symbol->Dump(module, isLocal, indent);
     }
   }
 }

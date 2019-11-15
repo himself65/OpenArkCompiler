@@ -29,10 +29,10 @@ class MeSSA : public SSA, public AnalysisResult {
   ~MeSSA() = default;
 
   void BuildSSA();
-  bool VerifySSA() const;
+  void VerifySSA() const;
 
  private:
-  bool VerifySSAOpnd(const BaseNode &node) const;
+  void VerifySSAOpnd(const BaseNode &node) const;
   void CollectDefBBs(std::map<OStIdx, std::set<BBId>> &ostDefBBs);
   void InsertPhiNode();
   void RenameBB(BB&);

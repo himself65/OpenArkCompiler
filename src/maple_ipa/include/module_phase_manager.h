@@ -42,7 +42,6 @@ class ModulePhaseManager : public PhaseManager {
     } else {
       arModuleMgr = memPool->New<ModuleResultMgr>(GetMemAllocator());
     }
-    timePhases = false;
   }
 
   ~ModulePhaseManager() = default;
@@ -64,7 +63,7 @@ class ModulePhaseManager : public PhaseManager {
   void Emit(const std::string &passName);
 
  private:
-  bool timePhases;
+  bool timePhases = false;
   MIRModule &mirModule;
   ModuleResultMgr *arModuleMgr; // module level analysis result
 };

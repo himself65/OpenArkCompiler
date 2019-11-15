@@ -101,7 +101,7 @@ class BaseNode {
 
   void Dump(const MIRModule &mod) const {
     Dump(mod, 0);
-    LogInfo::MapleLogger() << std::endl;
+    LogInfo::MapleLogger() << '\n';
   }
 
   virtual uint8 SizeOfInstr() const {
@@ -109,8 +109,8 @@ class BaseNode {
   }
 
   const char *GetOpName() const;
-  bool MayThrowException(void);
-  virtual uint8 NumOpnds(void) const {
+  bool MayThrowException();
+  virtual uint8 NumOpnds() const {
     return numOpnds;
   }
 
@@ -202,33 +202,33 @@ class UnaryNode : public BaseNode {
   virtual ~UnaryNode() = default;
 
   void DumpOpnd(const MIRModule &mod, int32 indent) const;
-  void Dump(const MIRModule &mod, int32 indent) const;
-  bool Verify() const;
+  void Dump(const MIRModule &mod, int32 indent) const override;
+  bool Verify() const override;
 
-  UnaryNode *CloneTree(MapleAllocator &allocator) const {
-    UnaryNode *nd = allocator.GetMemPool()->New<UnaryNode>(*this);
+  UnaryNode *CloneTree(MapleAllocator &allocator) const override {
+    auto *nd = allocator.GetMemPool()->New<UnaryNode>(*this);
     nd->SetOpnd(uOpnd->CloneTree(allocator), 0);
     return nd;
   }
 
-  BaseNode *Opnd(size_t i = 0) const {
+  BaseNode *Opnd(size_t i = 0) const override {
     ASSERT(i == 0, "Invalid operand idx in UnaryNode");
     return uOpnd;
   }
 
-  uint8 NumOpnds() const {
+  uint8 NumOpnds() const override {
     return 1;
   }
 
-  void SetOpnd(BaseNode *node, size_t i = 0) {
+  void SetOpnd(BaseNode *node, size_t i = 0) override {
     uOpnd = node;
   }
 
-  bool IsLeaf() const {
+  bool IsLeaf() const override {
     return false;
   }
 
-  bool IsUnaryNode() const {
+  bool IsUnaryNode() const override {
     return true;
   }
 
@@ -251,12 +251,12 @@ class TypeCvtNode : public UnaryNode {
   bool Verify() const;
 
   TypeCvtNode *CloneTree(MapleAllocator &allocator) const {
-    TypeCvtNode *nd = allocator.GetMemPool()->New<TypeCvtNode>(*this);
+    auto *nd = allocator.GetMemPool()->New<TypeCvtNode>(*this);
     nd->SetOpnd(Opnd(0)->CloneTree(allocator), 0);
     return nd;
   }
 
-  PrimType FromType(void) const {
+  PrimType FromType() const {
     return fromPrimType;
   }
 
@@ -282,7 +282,7 @@ class RetypeNode : public TypeCvtNode {
   void Dump(const MIRModule &mod, int32 indent) const;
 
   RetypeNode *CloneTree(MapleAllocator &allocator) const {
-    RetypeNode *nd = allocator.GetMemPool()->New<RetypeNode>(*this);
+    auto *nd = allocator.GetMemPool()->New<RetypeNode>(*this);
     nd->SetOpnd(Opnd()->CloneTree(allocator));
     return nd;
   }
@@ -318,7 +318,7 @@ class ExtractbitsNode : public UnaryNode {
   bool Verify() const;
 
   ExtractbitsNode *CloneTree(MapleAllocator &allocator) const {
-    ExtractbitsNode *nd = allocator.GetMemPool()->New<ExtractbitsNode>(*this);
+    auto *nd = allocator.GetMemPool()->New<ExtractbitsNode>(*this);
     nd->SetOpnd(Opnd()->CloneTree(allocator));
     return nd;
   }
@@ -352,10 +352,10 @@ class GCMallocNode : public BaseNode {
 
   ~GCMallocNode() = default;
 
-  void Dump(const MIRModule &mod, int32 indent) const;
+  void Dump(const MIRModule &mod, int32 indent) const override;
 
-  GCMallocNode *CloneTree(MapleAllocator &allocator) const {
-    GCMallocNode *nd = allocator.GetMemPool()->New<GCMallocNode>(*this);
+  GCMallocNode *CloneTree(MapleAllocator &allocator) const override {
+    auto *nd = allocator.GetMemPool()->New<GCMallocNode>(*this);
     return nd;
   }
 
@@ -391,7 +391,7 @@ class JarrayMallocNode : public UnaryNode {
   void Dump(const MIRModule &mod, int32 indent) const;
 
   JarrayMallocNode *CloneTree(MapleAllocator &allocator) const {
-    JarrayMallocNode *nd = allocator.GetMemPool()->New<JarrayMallocNode>(*this);
+    auto *nd = allocator.GetMemPool()->New<JarrayMallocNode>(*this);
     nd->SetOpnd(Opnd()->CloneTree(allocator));
     return nd;
   }
@@ -425,7 +425,7 @@ class IreadNode : public UnaryNode {
   bool Verify() const;
 
   IreadNode *CloneTree(MapleAllocator &allocator) const {
-    IreadNode *nd = allocator.GetMemPool()->New<IreadNode>(*this);
+    auto *nd = allocator.GetMemPool()->New<IreadNode>(*this);
     nd->SetOpnd(Opnd()->CloneTree(allocator));
     return nd;
   }
@@ -477,7 +477,7 @@ class IreadoffNode : public UnaryNode {
   bool Verify() const;
 
   IreadoffNode *CloneTree(MapleAllocator &allocator) const {
-    IreadoffNode *nd = allocator.GetMemPool()->New<IreadoffNode>(*this);
+    auto *nd = allocator.GetMemPool()->New<IreadoffNode>(*this);
     nd->SetOpnd(Opnd()->CloneTree(allocator));
     return nd;
   }
@@ -502,11 +502,11 @@ class IreadFPoffNode : public BaseNode {
 
   ~IreadFPoffNode() = default;
 
-  void Dump(const MIRModule &mod, int32 indent) const;
-  bool Verify() const;
+  void Dump(const MIRModule &mod, int32 indent) const override;
+  bool Verify() const override;
 
-  IreadFPoffNode *CloneTree(MapleAllocator &allocator) const {
-    IreadFPoffNode *nd = allocator.GetMemPool()->New<IreadFPoffNode>(*this);
+  IreadFPoffNode *CloneTree(MapleAllocator &allocator) const override {
+    auto *nd = allocator.GetMemPool()->New<IreadFPoffNode>(*this);
     return nd;
   }
 
@@ -555,12 +555,12 @@ class BinaryNode : public BaseNode, public BinaryOpnds {
 
   ~BinaryNode() = default;
 
-  void Dump(const MIRModule &mod, int32 indent) const;
+  void Dump(const MIRModule &mod, int32 indent) const override;
   void Dump(const MIRModule &mod) const;
-  bool Verify() const;
+  bool Verify() const override;
 
-  BinaryNode *CloneTree(MapleAllocator &allocator) const {
-    BinaryNode *nd = allocator.GetMemPool()->New<BinaryNode>(*this);
+  BinaryNode *CloneTree(MapleAllocator &allocator) const override {
+    auto *nd = allocator.GetMemPool()->New<BinaryNode>(*this);
     nd->SetBOpnd(GetBOpnd(0)->CloneTree(allocator), 0);
     nd->SetBOpnd(GetBOpnd(1)->CloneTree(allocator), 1);
     return nd;
@@ -581,25 +581,25 @@ class BinaryNode : public BaseNode, public BinaryOpnds {
     }
   }
 
-  BaseNode *Opnd(size_t i) const {
+  BaseNode *Opnd(size_t i) const override {
     ASSERT(i < kOperandNumBinary, "invalid operand idx in BinaryNode");
     ASSERT(i >= 0, "invalid operand idx in BinaryNode");
     return GetBOpnd(i);
   }
 
-  uint8 NumOpnds() const {
+  uint8 NumOpnds() const override {
     return kOperandNumBinary;
   }
 
-  void SetOpnd(BaseNode *node, size_t i = 0) {
+  void SetOpnd(BaseNode *node, size_t i = 0) override {
     SetBOpnd(node, i);
   }
 
-  bool IsLeaf() const {
+  bool IsLeaf() const override {
     return false;
   }
 
-  bool IsBinaryNode() const {
+  bool IsBinaryNode() const override {
     return true;
   }
 };
@@ -620,7 +620,7 @@ class CompareNode : public BinaryNode {
   bool Verify() const;
 
   CompareNode *CloneTree(MapleAllocator &allocator) const {
-    CompareNode *nd = allocator.GetMemPool()->New<CompareNode>(*this);
+    auto *nd = allocator.GetMemPool()->New<CompareNode>(*this);
     nd->SetBOpnd(GetBOpnd(0)->CloneTree(allocator), 0);
     nd->SetBOpnd(GetBOpnd(1)->CloneTree(allocator), 1);
     return nd;
@@ -653,7 +653,7 @@ class DepositbitsNode : public BinaryNode {
   bool Verify() const;
 
   DepositbitsNode *CloneTree(MapleAllocator &allocator) const {
-    DepositbitsNode *nd = allocator.GetMemPool()->New<DepositbitsNode>(*this);
+    auto *nd = allocator.GetMemPool()->New<DepositbitsNode>(*this);
     nd->SetBOpnd(GetBOpnd(0)->CloneTree(allocator), 0);
     nd->SetBOpnd(GetBOpnd(1)->CloneTree(allocator), 1);
     return nd;
@@ -699,7 +699,7 @@ class ResolveFuncNode : public BinaryNode {
   void Dump(const MIRModule &mod, int32 indent) const;
 
   ResolveFuncNode *CloneTree(MapleAllocator &allocator) const {
-    ResolveFuncNode *nd = allocator.GetMemPool()->New<ResolveFuncNode>(*this);
+    auto *nd = allocator.GetMemPool()->New<ResolveFuncNode>(*this);
     nd->SetBOpnd(GetBOpnd(0)->CloneTree(allocator), 0);
     nd->SetBOpnd(GetBOpnd(1)->CloneTree(allocator), 1);
     return nd;
@@ -751,7 +751,7 @@ class TernaryNode : public BaseNode {
   bool Verify() const override;
 
   TernaryNode *CloneTree(MapleAllocator &allocator) const override {
-    TernaryNode *nd = allocator.GetMemPool()->New<TernaryNode>(*this);
+    auto *nd = allocator.GetMemPool()->New<TernaryNode>(*this);
     nd->topnd[0] = topnd[0]->CloneTree(allocator);
     nd->topnd[1] = topnd[1]->CloneTree(allocator);
     nd->topnd[2] = topnd[2]->CloneTree(allocator);
@@ -845,7 +845,7 @@ class NaryNode : public BaseNode, public NaryOpnds {
   virtual void Dump(const MIRModule &mod, int32 indent) const override;
 
   NaryNode *CloneTree(MapleAllocator &allocator) const override {
-    NaryNode *nd = allocator.GetMemPool()->New<NaryNode>(allocator, *this);
+    auto *nd = allocator.GetMemPool()->New<NaryNode>(allocator, *this);
     for (size_t i = 0; i < GetNopndSize(); i++) {
       nd->GetNopnd().push_back(GetNopndAt(i)->CloneTree(allocator));
     }
@@ -907,7 +907,7 @@ class IntrinsicopNode : public NaryNode {
   bool Verify() const;
 
   IntrinsicopNode *CloneTree(MapleAllocator &allocator) const {
-    IntrinsicopNode *nd = allocator.GetMemPool()->New<IntrinsicopNode>(allocator, *this);
+    auto *nd = allocator.GetMemPool()->New<IntrinsicopNode>(allocator, *this);
     for (size_t i = 0; i < GetNopndSize(); i++) {
       nd->GetNopnd().push_back(GetNopndAt(i)->CloneTree(allocator));
     }
@@ -946,9 +946,9 @@ class ConstvalNode : public BaseNode {
 
   ConstvalNode(PrimType typ, MIRConst *constv) : BaseNode(OP_constval, typ, 0), constVal(constv) {}
   ~ConstvalNode() = default;
-  void Dump(const MIRModule &mod, int32 indent) const;
+  void Dump(const MIRModule &mod, int32 indent) const override;
 
-  ConstvalNode *CloneTree(MapleAllocator &allocator) const {
+  ConstvalNode *CloneTree(MapleAllocator &allocator) const override {
     return allocator.GetMemPool()->New<ConstvalNode>(*this);
   }
 
@@ -978,9 +978,9 @@ class ConststrNode : public BaseNode {
 
   ~ConststrNode() = default;
 
-  void Dump(const MIRModule &mod, int32 indent) const;
+  void Dump(const MIRModule &mod, int32 indent) const override;
 
-  ConststrNode *CloneTree(MapleAllocator &allocator) const {
+  ConststrNode *CloneTree(MapleAllocator &allocator) const override {
     return allocator.GetMemPool()->New<ConststrNode>(*this);
   }
 
@@ -1006,9 +1006,9 @@ class Conststr16Node : public BaseNode {
 
   ~Conststr16Node() = default;
 
-  void Dump(const MIRModule &mod, int32 indent) const;
+  void Dump(const MIRModule &mod, int32 indent) const override;
 
-  Conststr16Node *CloneTree(MapleAllocator &allocator) const {
+  Conststr16Node *CloneTree(MapleAllocator &allocator) const override {
     return allocator.GetMemPool()->New<Conststr16Node>(*this);
   }
 
@@ -1034,10 +1034,10 @@ class SizeoftypeNode : public BaseNode {
 
   ~SizeoftypeNode() = default;
 
-  void Dump(const MIRModule &mod, int32 indent) const;
-  bool Verify() const;
+  void Dump(const MIRModule &mod, int32 indent) const override;
+  bool Verify() const override;
 
-  SizeoftypeNode *CloneTree(MapleAllocator &allocator) const {
+  SizeoftypeNode *CloneTree(MapleAllocator &allocator) const override {
     return allocator.GetMemPool()->New<SizeoftypeNode>(*this);
   }
 
@@ -1064,9 +1064,9 @@ class FieldsDistNode : public BaseNode {
 
   ~FieldsDistNode() = default;
 
-  void Dump(const MIRModule &mod, int32 indent) const;
+  void Dump(const MIRModule &mod, int32 indent) const override;
 
-  FieldsDistNode *CloneTree(MapleAllocator &allocator) const {
+  FieldsDistNode *CloneTree(MapleAllocator &allocator) const override {
     return allocator.GetMemPool()->New<FieldsDistNode>(*this);
   }
 
@@ -1130,13 +1130,13 @@ class ArrayNode : public NaryNode {
   bool Verify() const;
   bool IsSameBase(ArrayNode*);
 
-  uint8 NumOpnds(void) const {
+  uint8 NumOpnds() const {
     ASSERT(numOpnds == GetNopndSize(), "ArrayNode has wrong numOpnds field");
     return GetNopndSize();
   }
 
   ArrayNode *CloneTree(MapleAllocator &allocator) const {
-    ArrayNode *nd = allocator.GetMemPool()->New<ArrayNode>(allocator, *this);
+    auto *nd = allocator.GetMemPool()->New<ArrayNode>(allocator, *this);
     for (size_t i = 0; i < GetNopndSize(); i++) {
       nd->GetNopnd().push_back(GetNopndAt(i)->CloneTree(allocator));
     }
@@ -1187,11 +1187,11 @@ class AddrofNode : public BaseNode {
 
   ~AddrofNode() = default;
 
-  virtual void Dump(const MIRModule &mod, int32 indent) const;
-  bool Verify() const;
+  virtual void Dump(const MIRModule &mod, int32 indent) const override;
+  bool Verify() const override;
   bool CheckNode(const MIRModule &mod) const;
 
-  AddrofNode *CloneTree(MapleAllocator &allocator) const {
+  AddrofNode *CloneTree(MapleAllocator &allocator) const override {
     return allocator.GetMemPool()->New<AddrofNode>(*this);
   }
 
@@ -1235,10 +1235,10 @@ class RegreadNode : public BaseNode {
 
   ~RegreadNode() = default;
 
-  virtual void Dump(const MIRModule &mod, int32 indent) const;
-  bool Verify() const;
+  virtual void Dump(const MIRModule &mod, int32 indent) const override;
+  bool Verify() const override;
 
-  RegreadNode *CloneTree(MapleAllocator &allocator) const {
+  RegreadNode *CloneTree(MapleAllocator &allocator) const override {
     return allocator.GetMemPool()->New<RegreadNode>(*this);
   }
 
@@ -1261,10 +1261,10 @@ class AddroffuncNode : public BaseNode {
 
   ~AddroffuncNode() = default;
 
-  void Dump(const MIRModule &mod, int32 indent) const;
-  bool Verify() const;
+  void Dump(const MIRModule &mod, int32 indent) const override;
+  bool Verify() const override;
 
-  AddroffuncNode *CloneTree(MapleAllocator &allocator) const {
+  AddroffuncNode *CloneTree(MapleAllocator &allocator) const override {
     return allocator.GetMemPool()->New<AddroffuncNode>(*this);
   }
 
@@ -1288,10 +1288,10 @@ class AddroflabelNode : public BaseNode {
 
   ~AddroflabelNode() = default;
 
-  void Dump(const MIRModule &mod, int32 indent) const;
-  bool Verify() const;
+  void Dump(const MIRModule &mod, int32 indent) const override;
+  bool Verify() const override;
 
-  AddroflabelNode *CloneTree(MapleAllocator &allocator) const {
+  AddroflabelNode *CloneTree(MapleAllocator &allocator) const override {
     return allocator.GetMemPool()->New<AddroflabelNode>(*this);
   }
 
@@ -1403,19 +1403,19 @@ class StmtNode : public BaseNode, public PtrListNodeBase<StmtNode> {
 
   virtual ~StmtNode() = default;
 
-  void DumpBase(const MIRModule &mod, int32 indent) const;
-  void Dump(const MIRModule &mod, int32 indent) const;
+  void DumpBase(const MIRModule &mod, int32 indent) const override;
+  void Dump(const MIRModule &mod, int32 indent) const override;
   void Dump(const MIRModule &mod) const;
   void InsertAfterThis(StmtNode &pos);
   void InsertBeforeThis(StmtNode &pos);
 
-  virtual StmtNode *CloneTree(MapleAllocator &allocator) const {
-    StmtNode *s = allocator.GetMemPool()->New<StmtNode>(*this);
+  virtual StmtNode *CloneTree(MapleAllocator &allocator) const override {
+    auto *s = allocator.GetMemPool()->New<StmtNode>(*this);
     s->SetStmtID(stmtIDNext++);
     return s;
   }
 
-  virtual bool Verify() const {
+  virtual bool Verify() const override {
     return true;
   }
 
@@ -1502,7 +1502,7 @@ class IassignNode : public StmtNode {
   bool Verify() const override;
 
   IassignNode *CloneTree(MapleAllocator &allocator) const override {
-    IassignNode *bn = allocator.GetMemPool()->New<IassignNode>(*this);
+    auto *bn = allocator.GetMemPool()->New<IassignNode>(*this);
     bn->SetStmtID(stmtIDNext++);
     bn->SetOpnd(addrExpr->CloneTree(allocator), 0);
     bn->SetRHS(rhs->CloneTree(allocator));
@@ -1546,10 +1546,10 @@ class GotoNode : public StmtNode {
 
   ~GotoNode() = default;
 
-  void Dump(const MIRModule &mod, int32 indent) const;
+  void Dump(const MIRModule &mod, int32 indent) const override;
 
-  GotoNode *CloneTree(MapleAllocator &allocator) const {
-    GotoNode *g = allocator.GetMemPool()->New<GotoNode>(*this);
+  GotoNode *CloneTree(MapleAllocator &allocator) const override {
+    auto *g = allocator.GetMemPool()->New<GotoNode>(*this);
     g->SetStmtID(stmtIDNext++);
     return g;
   }
@@ -1576,10 +1576,10 @@ class JsTryNode : public StmtNode {
 
   ~JsTryNode() = default;
 
-  void Dump(const MIRModule &mod, int32 indent) const;
+  void Dump(const MIRModule &mod, int32 indent) const override;
 
-  JsTryNode *CloneTree(MapleAllocator &allocator) const {
-    JsTryNode *t = allocator.GetMemPool()->New<JsTryNode>(*this);
+  JsTryNode *CloneTree(MapleAllocator &allocator) const override {
+    auto *t = allocator.GetMemPool()->New<JsTryNode>(*this);
     t->SetStmtID(stmtIDNext++);
     return t;
   }
@@ -1618,7 +1618,7 @@ class TryNode : public StmtNode {
   TryNode &operator=(const TryNode &node) = delete;
   ~TryNode() = default;
 
-  void Dump(const MIRModule &mod, int32 indent) const;
+  void Dump(const MIRModule &mod, int32 indent) const override;
   void Dump(const MIRModule &mod) const;
 
   LabelIdx GetOffset(size_t i) const {
@@ -1660,8 +1660,8 @@ class TryNode : public StmtNode {
     offsets.insert(a, b, c);
   }
 
-  TryNode *CloneTree(MapleAllocator &allocator) const {
-    TryNode *nd = allocator.GetMemPool()->New<TryNode>(allocator);
+  TryNode *CloneTree(MapleAllocator &allocator) const override {
+    auto *nd = allocator.GetMemPool()->New<TryNode>(allocator);
     nd->SetStmtID(stmtIDNext++);
     for (size_t i = 0; i < offsets.size(); i++) {
       nd->AddOffset(offsets[i]);
@@ -1687,7 +1687,7 @@ class CatchNode : public StmtNode {
   CatchNode &operator=(const CatchNode &node) = delete;
   ~CatchNode() = default;
 
-  void Dump(const MIRModule &mod, int32 indent) const;
+  void Dump(const MIRModule &mod, int32 indent) const override;
   void Dump(const MIRModule &mod) const;
 
   TyIdx GetExceptionTyIdxVecElement(size_t i) const {
@@ -1716,8 +1716,8 @@ class CatchNode : public StmtNode {
     exceptionTyIdxVec.push_back(idx);
   }
 
-  CatchNode *CloneTree(MapleAllocator &allocator) const {
-    CatchNode *j = allocator.GetMemPool()->New<CatchNode>(allocator);
+  CatchNode *CloneTree(MapleAllocator &allocator) const override {
+    auto *j = allocator.GetMemPool()->New<CatchNode>(allocator);
     j->SetStmtID(stmtIDNext++);
     for (uint32 i = 0; i < Size(); i++) {
       j->PushBack(GetExceptionTyIdxVecElement(i));
@@ -1758,11 +1758,11 @@ class SwitchNode : public StmtNode {
   SwitchNode &operator=(const SwitchNode &node) = delete;
   ~SwitchNode() = default;
 
-  void Dump(const MIRModule &mod, int32 indent) const;
-  bool Verify() const;
+  void Dump(const MIRModule &mod, int32 indent) const override;
+  bool Verify() const override;
 
-  SwitchNode *CloneTree(MapleAllocator &allocator) const {
-    SwitchNode *nd = allocator.GetMemPool()->New<SwitchNode>(allocator, *this);
+  SwitchNode *CloneTree(MapleAllocator &allocator) const override {
+    auto *nd = allocator.GetMemPool()->New<SwitchNode>(allocator, *this);
     nd->SetSwitchOpnd(switchOpnd->CloneTree(allocator));
     for (size_t i = 0; i < switchTable.size(); i++) {
       nd->InsertCasePair(switchTable[i]);
@@ -1770,12 +1770,12 @@ class SwitchNode : public StmtNode {
     return nd;
   }
 
-  BaseNode *Opnd(size_t i) const {
+  BaseNode *Opnd(size_t i) const override {
     ASSERT(i == 0, "it is not same as original");
     return switchOpnd;
   }
 
-  void SetOpnd(BaseNode *node, size_t i = 0) {
+  void SetOpnd(BaseNode *node, size_t i = 0) override {
     ASSERT(i == 0, "it is not same as original");
     switchOpnd = node;
   }
@@ -1854,10 +1854,10 @@ class MultiwayNode : public StmtNode {
   MultiwayNode &operator=(const MultiwayNode &node) = delete;
   ~MultiwayNode() = default;
 
-  void Dump(const MIRModule &mod, int32 indent) const;
+  void Dump(const MIRModule &mod, int32 indent) const override;
 
-  MultiwayNode *CloneTree(MapleAllocator &allocator) const {
-    MultiwayNode *nd = allocator.GetMemPool()->New<MultiwayNode>(allocator, *this);
+  MultiwayNode *CloneTree(MapleAllocator &allocator) const override {
+    auto *nd = allocator.GetMemPool()->New<MultiwayNode>(allocator, *this);
     nd->multiWayOpnd = static_cast<BaseNode*>(multiWayOpnd->CloneTree(allocator));
     for (size_t i = 0; i < multiWayTable.size(); i++) {
       BaseNode *node = multiWayTable[i].first->CloneTree(allocator);
@@ -1867,7 +1867,7 @@ class MultiwayNode : public StmtNode {
     return nd;
   }
 
-  BaseNode *Opnd(size_t i) const {
+  BaseNode *Opnd(size_t i) const override {
     return *(&multiWayOpnd + static_cast<uint32>(i));
   }
 
@@ -1917,13 +1917,13 @@ class UnaryStmtNode : public StmtNode {
   }
 
   UnaryStmtNode *CloneTree(MapleAllocator &allocator) const override {
-    UnaryStmtNode *nd = allocator.GetMemPool()->New<UnaryStmtNode>(*this);
+    auto *nd = allocator.GetMemPool()->New<UnaryStmtNode>(*this);
     nd->SetStmtID(stmtIDNext++);
     nd->SetOpnd(uOpnd->CloneTree(allocator));
     return nd;
   }
 
-  bool IsLeaf(void) const override {
+  bool IsLeaf() const override {
     return false;
   }
 
@@ -1969,13 +1969,13 @@ class DassignNode : public UnaryStmtNode {
   bool Verify() const override;
 
   DassignNode *CloneTree(MapleAllocator &allocator) const override {
-    DassignNode *nd = allocator.GetMemPool()->New<DassignNode>(*this);
+    auto *nd = allocator.GetMemPool()->New<DassignNode>(*this);
     nd->SetStmtID(stmtIDNext++);
     nd->SetOpnd(Opnd()->CloneTree(allocator));
     return nd;
   }
 
-  uint8 NumOpnds(void) const override {
+  uint8 NumOpnds() const override {
     return 1;
   }
 
@@ -2031,7 +2031,7 @@ class RegassignNode : public UnaryStmtNode {
   bool Verify() const override;
 
   RegassignNode *CloneTree(MapleAllocator &allocator) const override {
-    RegassignNode *nd = allocator.GetMemPool()->New<RegassignNode>(*this);
+    auto *nd = allocator.GetMemPool()->New<RegassignNode>(*this);
     nd->SetStmtID(stmtIDNext++);
     nd->SetOpnd(Opnd()->CloneTree(allocator));
     return nd;
@@ -2079,7 +2079,7 @@ class CondGotoNode : public UnaryStmtNode {
   }
 
   CondGotoNode *CloneTree(MapleAllocator &allocator) const {
-    CondGotoNode *nd = allocator.GetMemPool()->New<CondGotoNode>(*this);
+    auto *nd = allocator.GetMemPool()->New<CondGotoNode>(*this);
     nd->SetStmtID(stmtIDNext++);
     nd->SetOpnd(Opnd()->CloneTree(allocator));
     return nd;
@@ -2113,7 +2113,7 @@ class RangeGotoNode : public UnaryStmtNode {
   void Dump(const MIRModule &mod, int32 indent) const;
   bool Verify() const;
   RangeGotoNode *CloneTree(MapleAllocator &allocator) const {
-    RangeGotoNode *nd = allocator.GetMemPool()->New<RangeGotoNode>(allocator, *this);
+    auto *nd = allocator.GetMemPool()->New<RangeGotoNode>(allocator, *this);
     nd->SetOpnd(Opnd()->CloneTree(allocator));
     for (size_t i = 0; i < rangegotoTable.size(); i++) {
       nd->rangegotoTable.push_back(rangegotoTable[i]);
@@ -2170,14 +2170,14 @@ class BlockNode : public StmtNode {
   void InsertBlockAfter(BlockNode &inblock, StmtNode *stmt1);
   void Dump(const MIRModule &mod, int32 indent, const MIRSymbolTable *theSymTab, MIRPregTable *thePregTab,
             bool withInfo, bool isFuncbody) const;
-  bool Verify() const;
+  bool Verify() const override;
 
-  void Dump(const MIRModule &mod, int32 indent) const {
+  void Dump(const MIRModule &mod, int32 indent) const override {
     Dump(mod, indent, nullptr, nullptr, false, false);
   }
 
-  BlockNode *CloneTree(MapleAllocator &allocator) const {
-    BlockNode *blk = allocator.GetMemPool()->New<BlockNode>();
+  BlockNode *CloneTree(MapleAllocator &allocator) const override {
+    auto *blk = allocator.GetMemPool()->New<BlockNode>();
     blk->SetStmtID(stmtIDNext++);
     for (auto &stmt : stmtNodeList) {
       StmtNode *newStmt = static_cast<StmtNode*>(stmt.CloneTree(allocator));
@@ -2191,7 +2191,7 @@ class BlockNode : public StmtNode {
 
   BlockNode *CloneTreeWithSrcPosition(const MIRModule &mod) {
     MapleAllocator &allocator = mod.GetCurFuncCodeMPAllocator();
-    BlockNode *blk = allocator.GetMemPool()->New<BlockNode>();
+    auto *blk = allocator.GetMemPool()->New<BlockNode>();
     blk->SetStmtID(stmtIDNext++);
     for (auto &stmt : stmtNodeList) {
       StmtNode *newStmt = static_cast<StmtNode*>(stmt.CloneTree(allocator));
@@ -2260,7 +2260,7 @@ class IfStmtNode : public UnaryStmtNode {
   bool Verify() const;
 
   IfStmtNode *CloneTree(MapleAllocator &allocator) const {
-    IfStmtNode *nd = allocator.GetMemPool()->New<IfStmtNode>(*this);
+    auto *nd = allocator.GetMemPool()->New<IfStmtNode>(*this);
     nd->SetStmtID(stmtIDNext++);
     nd->SetOpnd(Opnd()->CloneTree(allocator));
     nd->thenPart = thenPart->CloneTree(allocator);
@@ -2300,7 +2300,7 @@ class IfStmtNode : public UnaryStmtNode {
     elsePart = node;
   }
 
-  uint8 NumOpnds(void) const {
+  uint8 NumOpnds() const {
     return numOpnds;
   }
 
@@ -2322,7 +2322,7 @@ class WhileStmtNode : public UnaryStmtNode {
   bool Verify() const;
 
   WhileStmtNode *CloneTree(MapleAllocator &allocator) const {
-    WhileStmtNode *nd = allocator.GetMemPool()->New<WhileStmtNode>(*this);
+    auto *nd = allocator.GetMemPool()->New<WhileStmtNode>(*this);
     nd->SetStmtID(stmtIDNext++);
     nd->SetOpnd(Opnd()->CloneTree(allocator));
     nd->body = body->CloneTree(allocator);
@@ -2357,11 +2357,11 @@ class DoloopNode : public StmtNode {
   ~DoloopNode() = default;
 
   void DumpDoVar(const MIRModule &mod) const;
-  void Dump(const MIRModule &mod, int32 indent) const;
-  bool Verify() const;
+  void Dump(const MIRModule &mod, int32 indent) const override;
+  bool Verify() const override;
 
-  DoloopNode *CloneTree(MapleAllocator &allocator) const {
-    DoloopNode *nd = allocator.GetMemPool()->New<DoloopNode>(*this);
+  DoloopNode *CloneTree(MapleAllocator &allocator) const override {
+    auto *nd = allocator.GetMemPool()->New<DoloopNode>(*this);
     nd->SetStmtID(stmtIDNext++);
     nd->SetStartExpr(startExpr->CloneTree(allocator));
     nd->SetContExpr(GetCondExpr()->CloneTree(allocator));
@@ -2422,7 +2422,7 @@ class DoloopNode : public StmtNode {
     return doBody;
   }
 
-  BaseNode *Opnd(size_t i) const {
+  BaseNode *Opnd(size_t i) const override {
     if (i == 0) {
       return startExpr;
     }
@@ -2435,11 +2435,11 @@ class DoloopNode : public StmtNode {
     return *(&doBody + i - 3);
   }
 
-  uint8 NumOpnds() const {
+  uint8 NumOpnds() const override {
     return kOperandNumDoloop;
   }
 
-  void SetOpnd(BaseNode *node, size_t i) {
+  void SetOpnd(BaseNode *node, size_t i) override {
     if (i == 0) {
       startExpr = node;
     }
@@ -2499,14 +2499,14 @@ class ForeachelemNode : public StmtNode {
     return loopBody;
   }
 
-  uint8 NumOpnds(void) const {
+  uint8 NumOpnds() const {
     return numOpnds;
   }
 
   void Dump(const MIRModule &mod, int32 indent) const;
 
   ForeachelemNode *CloneTree(MapleAllocator &allocator) const {
-    ForeachelemNode *nd = allocator.GetMemPool()->New<ForeachelemNode>(*this);
+    auto *nd = allocator.GetMemPool()->New<ForeachelemNode>(*this);
     nd->SetStmtID(stmtIDNext++);
     nd->SetLoopBody(loopBody->CloneTree(allocator));
     return nd;
@@ -2528,7 +2528,7 @@ class BinaryStmtNode : public StmtNode, public BinaryOpnds {
   void Dump(const MIRModule &mod, int32 indent) const;
   virtual bool Verify() const;
   BinaryStmtNode *CloneTree(MapleAllocator &allocator) const {
-    BinaryStmtNode *nd = allocator.GetMemPool()->New<BinaryStmtNode>(*this);
+    auto *nd = allocator.GetMemPool()->New<BinaryStmtNode>(*this);
     nd->SetStmtID(stmtIDNext++);
     nd->SetBOpnd(GetBOpnd(0)->CloneTree(allocator), 0);
     nd->SetBOpnd(GetBOpnd(1)->CloneTree(allocator), 1);
@@ -2572,7 +2572,7 @@ class IassignoffNode : public BinaryStmtNode {
   bool Verify() const;
 
   IassignoffNode *CloneTree(MapleAllocator &allocator) const {
-    IassignoffNode *nd = allocator.GetMemPool()->New<IassignoffNode>(*this);
+    auto *nd = allocator.GetMemPool()->New<IassignoffNode>(*this);
     nd->SetStmtID(stmtIDNext++);
     nd->SetBOpnd(GetBOpnd(0)->CloneTree(allocator), 0);
     nd->SetBOpnd(GetBOpnd(1)->CloneTree(allocator), 1);
@@ -2608,7 +2608,7 @@ class IassignFPoffNode : public UnaryStmtNode {
   bool Verify() const;
 
   IassignFPoffNode *CloneTree(MapleAllocator &allocator) const {
-    IassignFPoffNode *nd = allocator.GetMemPool()->New<IassignFPoffNode>(*this);
+    auto *nd = allocator.GetMemPool()->New<IassignFPoffNode>(*this);
     nd->SetStmtID(stmtIDNext++);
     nd->SetOpnd(Opnd()->CloneTree(allocator));
     return nd;
@@ -2643,11 +2643,11 @@ class NaryStmtNode : public StmtNode, public NaryOpnds {
   NaryStmtNode &operator=(const NaryStmtNode &node) = delete;
   ~NaryStmtNode() = default;
 
-  void Dump(const MIRModule &mod, int32 indent) const;
-  virtual bool Verify() const;
+  void Dump(const MIRModule &mod, int32 indent) const override;
+  virtual bool Verify() const override;
 
-  NaryStmtNode *CloneTree(MapleAllocator &allocator) const {
-    NaryStmtNode *nd = allocator.GetMemPool()->New<NaryStmtNode>(allocator, *this);
+  NaryStmtNode *CloneTree(MapleAllocator &allocator) const override {
+    auto *nd = allocator.GetMemPool()->New<NaryStmtNode>(allocator, *this);
     for (size_t i = 0; i < GetNopndSize(); i++) {
       nd->GetNopnd().push_back(GetNopndAt(i)->CloneTree(allocator));
     }
@@ -2655,16 +2655,16 @@ class NaryStmtNode : public StmtNode, public NaryOpnds {
     return nd;
   }
 
-  BaseNode *Opnd(size_t i) const {
+  BaseNode *Opnd(size_t i) const override {
     return GetNopndAt(i);
   }
 
-  void SetOpnd(BaseNode *node, size_t i) {
+  void SetOpnd(BaseNode *node, size_t i) override {
     ASSERT(i < GetNopnd().size(), "array index out of range");
     SetNOpndAt(i, node);
   }
 
-  uint8 NumOpnds() const {
+  uint8 NumOpnds() const override {
     ASSERT(numOpnds == GetNopndSize(), "NaryStmtNode has wrong numOpnds field");
     return GetNopndSize();
   }
@@ -2729,7 +2729,7 @@ class CallNode : public NaryStmtNode {
   const MIRSymbol *GetCallReturnSymbol(const MIRModule &mod) const;
 
   CallNode *CloneTree(MapleAllocator &allocator) const {
-    CallNode *nd = allocator.GetMemPool()->New<CallNode>(allocator, *this);
+    auto *nd = allocator.GetMemPool()->New<CallNode>(allocator, *this);
     for (size_t i = 0; i < GetNopndSize(); i++) {
       nd->GetNopnd().push_back(GetNopndAt(i)->CloneTree(allocator));
     }
@@ -2783,7 +2783,7 @@ class CallNode : public NaryStmtNode {
     returnValues = vec;
   }
 
-  uint8 NumOpnds(void) const {
+  uint8 NumOpnds() const {
     ASSERT(numOpnds == GetNopndSize(), "CallNode has wrong numOpnds field");
     return GetNopndSize();
   }
@@ -2831,7 +2831,7 @@ class IcallNode : public NaryStmtNode {
   bool Verify() const;
   MIRType *GetCallReturnType();
   IcallNode *CloneTree(MapleAllocator &allocator) const {
-    IcallNode *nd = allocator.GetMemPool()->New<IcallNode>(allocator, *this);
+    auto *nd = allocator.GetMemPool()->New<IcallNode>(allocator, *this);
     for (size_t i = 0; i < GetNopndSize(); i++) {
       nd->GetNopnd().push_back(GetNopndAt(i)->CloneTree(allocator));
     }
@@ -2862,7 +2862,7 @@ class IcallNode : public NaryStmtNode {
     returnValues = vec;
   }
 
-  uint8 NumOpnds(void) const {
+  uint8 NumOpnds() const {
     ASSERT(numOpnds == GetNopndSize(), "IcallNode has wrong numOpnds field");
     return GetNopndSize();
   }
@@ -2913,7 +2913,7 @@ class IntrinsiccallNode : public NaryStmtNode {
   MIRType *GetCallReturnType();
 
   IntrinsiccallNode *CloneTree(MapleAllocator &allocator) const {
-    IntrinsiccallNode *nd = allocator.GetMemPool()->New<IntrinsiccallNode>(allocator, *this);
+    auto *nd = allocator.GetMemPool()->New<IntrinsiccallNode>(allocator, *this);
     for (size_t i = 0; i < GetNopndSize(); i++) {
       nd->GetNopnd().push_back(GetNopndAt(i)->CloneTree(allocator));
     }
@@ -2952,7 +2952,7 @@ class IntrinsiccallNode : public NaryStmtNode {
     returnValues = vec;
   }
 
-  uint8 NumOpnds(void) const {
+  uint8 NumOpnds() const {
     ASSERT(numOpnds == GetNopndSize(), "IntrinsiccallNode has wrong numOpnds field");
     return GetNopndSize();
   }
@@ -3003,7 +3003,7 @@ class CallinstantNode : public CallNode {
   }
 
   CallinstantNode *CloneTree(MapleAllocator &allocator) const {
-    CallinstantNode *nd = allocator.GetMemPool()->New<CallinstantNode>(allocator, *this);
+    auto *nd = allocator.GetMemPool()->New<CallinstantNode>(allocator, *this);
     for (size_t i = 0; i < GetNopndSize(); i++) {
       nd->GetNopnd().push_back(GetNopndAt(i)->CloneTree(allocator));
     }
@@ -3045,10 +3045,10 @@ class LabelNode : public StmtNode {
 
   ~LabelNode() = default;
 
-  void Dump(const MIRModule &mod, int32 indent) const;
+  void Dump(const MIRModule &mod, int32 indent) const override;
 
-  LabelNode *CloneTree(MapleAllocator &allocator) const {
-    LabelNode *l = allocator.GetMemPool()->New<LabelNode>(*this);
+  LabelNode *CloneTree(MapleAllocator &allocator) const override {
+    auto *l = allocator.GetMemPool()->New<LabelNode>(*this);
     l->SetStmtID(stmtIDNext++);
     return l;
   }
@@ -3089,7 +3089,7 @@ class CommentNode : public StmtNode {
   void Dump(const MIRModule &mod, int32 indent) const;
 
   CommentNode *CloneTree(MapleAllocator &allocator) const {
-    CommentNode *c = allocator.GetMemPool()->New<CommentNode>(allocator, *this);
+    auto *c = allocator.GetMemPool()->New<CommentNode>(allocator, *this);
     return c;
   }
 

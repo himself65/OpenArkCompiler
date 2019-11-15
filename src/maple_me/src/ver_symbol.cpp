@@ -69,7 +69,7 @@ VersionSt *VersionStTable::FindOrCreateVersionSt(OriginalSt *ost, size_t version
 void VersionStTable::Dump(MIRModule *mod) const {
   ASSERT(mod != nullptr, "nullptr check");
   LogInfo::MapleLogger() << "=======version st table entries=======\n";
-  for (size_t i = 1; i < versionStVector.size(); i++) {
+  for (size_t i = 1; i < versionStVector.size(); ++i) {
     const VersionSt *vst = versionStVector[i];
     vst->Dump(mod);
     if (vst->GetVersion() > 0) {
