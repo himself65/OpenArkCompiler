@@ -316,8 +316,8 @@ class ReflectionAnalysis : public AnalysisResult {
   void SetAnnoFieldConst(const MIRStructType &metadataRoType, MIRAggConst &newConst, uint32 fieldID,
                          std::map<int, int> &idxNumMap, const std::string &annoArr);
   bool IsAnonymousClass(const std::string &annotationString);
-  bool IsPrivateClass(MIRClassType &classType);
-  bool IsStaticClass(MIRClassType &classType);
+  bool IsPrivateClass(MIRClassType &classType) const;
+  bool IsStaticClass(MIRClassType &classType) const;
   int8 JudgePara(MIRClassType &ctype);
   void CheckPrivateInnerAndNoSubClass(Klass &clazz, const std::string &annoArr);
   void ConvertMapleClassName(const std::string &mplClassName, std::string &javaDsp);

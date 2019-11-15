@@ -39,11 +39,11 @@ void MeFunction::PartialInit(bool isSecondPass) {
   secondPass = isSecondPass;
   if ((mirModule.GetSrcLang() == kSrcLangJava) && (!mirModule.CurFunction()->GetInfoVector().empty())) {
     std::string string("INFO_registers");
-    GStrIdx stridx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(string);
-    regNum = mirModule.CurFunction()->GetInfo(stridx);
-    std::string trynum("INFO_tries_size");
-    stridx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(trynum);
-    uint32 num = mirModule.CurFunction()->GetInfo(stridx);
+    GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(string);
+    regNum = mirModule.CurFunction()->GetInfo(strIdx);
+    std::string tryNum("INFO_tries_size");
+    strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(tryNum);
+    uint32 num = mirModule.CurFunction()->GetInfo(strIdx);
     hasEH = (num != 0);
   }
 }
@@ -154,7 +154,7 @@ void MeFunction::CreateBasicBlocks() {
       case OP_doloop:
       case OP_dowhile:
       case OP_while: {
-        ASSERT(false, "NYI");
+        ASSERT(false, "not yet implemented");
         break;
       }
       case OP_throw:
@@ -283,17 +283,18 @@ void MeFunction::CreateBasicBlocks() {
         }
         curBB->SetFirst(stmt);
         curBB->SetAttributes(kBBAttrIsCatch);
-        CatchNode *catchNode = static_cast<CatchNode*>(stmt);
-        const MapleVector<TyIdx> &exceptiontyidxvec = catchNode->GetExceptionTyIdxVec();
-        for (size_t i = 0; i < exceptiontyidxvec.size(); i++) {
-          MIRType *eType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(exceptiontyidxvec[i]);
+        auto *catchNode = static_cast<CatchNode*>(stmt);
+        const MapleVector<TyIdx> &exceptionTyIdxVec = catchNode->GetExceptionTyIdxVec();
+
+        for (TyIdx excepIdx : exceptionTyIdxVec) {
+          MIRType *eType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(excepIdx);
           ASSERT(eType != nullptr && (eType->GetPrimType() == PTY_ptr || eType->GetPrimType() == PTY_ref),
                  "wrong exception type");
-          MIRPtrType *epType = static_cast<MIRPtrType*>(eType);
+          auto *epType = static_cast<MIRPtrType*>(eType);
           MIRType *pointType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(epType->GetPointedTyIdx());
           const std::string &ename = GlobalTables::GetStrTable().GetStringFromStrIdx(pointType->GetNameStrIdx());
-          if ((pointType->GetPrimType() == PTY_void) || (ename.compare("Ljava/lang/Throwable;") == 0) ||
-              (ename.compare("Ljava/lang/Exception;") == 0)) {
+          if ((pointType->GetPrimType() == PTY_void) || (ename == "Ljava/lang/Throwable;") ||
+              (ename == "Ljava/lang/Exception;")) {
             // "Ljava/lang/Exception;" is risk to set isJavaFinally because it
             // only deal with "throw exception". if throw error,  it's wrong
             curBB->SetAttributes(kBBAttrIsJavaFinally);  // this is a start of finally handler
@@ -302,7 +303,7 @@ void MeFunction::CreateBasicBlocks() {
         break;
       }
       case OP_label: {
-        LabelNode *lblNode = static_cast<LabelNode*>(stmt);
+        auto *lblNode = static_cast<LabelNode*>(stmt);
         LabelIdx labidx = lblNode->GetLabelIdx();
         if (!curBB->IsEmpty() || curBB->GetBBLabel() != 0) {
           // prepare a new bb
@@ -391,7 +392,6 @@ void MeFunction::CreateBasicBlocks() {
   } else if (lastBB->GetKind() == kBBUnknown) {
     lastBB->SetKind(kBBReturn);
   }
-  return;
 }
 
 void MeFunction::Prepare(unsigned long rangeNum) {
@@ -447,7 +447,7 @@ BB *MeFunction::InsertNewBasicBlock(const BB &position) {
     if ((*it) != nullptr) {
       (*it)->SetBBId(BBId(idx));
     }
-    idx++;
+    ++idx;
   }
   return newBB;
 }
@@ -488,7 +488,7 @@ void MeFunction::CloneBasicBlock(BB &newBB, const BB &orig) {
     return;
   }
   for (const auto &stmt : orig.GetStmtNodes()) {
-    StmtNode *newStmt = static_cast<StmtNode*>(stmt.CloneTree(mirModule.GetCurFuncCodeMPAllocator()));
+    StmtNode *newStmt = stmt.CloneTree(mirModule.GetCurFuncCodeMPAllocator());
     newStmt->SetNext(nullptr);
     newStmt->SetPrev(nullptr);
     newBB.AddStmtNode(newStmt);
@@ -539,13 +539,13 @@ BB &MeFunction::SplitBB(BB &bb, StmtNode &splitPoint, BB *newBB) {
   }
   // Special Case: commonExitBB is orig bb's succ
   auto *commonExitBB = *common_exit();
-  for (size_t i = 0; i < commonExitBB->GetPred().size(); i++) {
+  for (size_t i = 0; i < commonExitBB->GetPred().size(); ++i) {
     if (commonExitBB->GetPred(i) == &bb) {
       commonExitBB->SetPred(i, newBB);
       break;
     }
   }
-  for (size_t i = 0; i < bb.GetSucc().size(); i++) {
+  for (size_t i = 0; i < bb.GetSucc().size(); ++i) {
     BB *succ = bb.GetSucc(i);
     succ->ReplacePred(&bb, newBB);
   }
@@ -586,9 +586,9 @@ void MeFunction::RemoveEhEdgesInSyncRegion() {
   if (endTryBB2TryBB.size() != 1) {
     return;
   }
-  for (auto iter : endTryBB2TryBB) {
-    BB *tryBB = iter.second;
-    BB *endtryBB = iter.first;
+  for (auto &pair : endTryBB2TryBB) {
+    BB *tryBB = pair.second;
+    BB *endtryBB = pair.first;
     CHECK_FATAL(tryBB != nullptr, "null ptr check ");
     CHECK_FATAL(endtryBB != nullptr, "null ptr check ");
     // Filter out complex cases
@@ -598,8 +598,8 @@ void MeFunction::RemoveEhEdgesInSyncRegion() {
         tryBB->GetStmtNodes().back().GetOpCode() != OP_try) {
       return;
     }
-    for (auto it : bbTryNodeMap) {
-      BB *bb = it.first;
+    for (auto &bbTryPair : bbTryNodeMap) {
+      BB *bb = bbTryPair.first;
       if (bb != tryBB && bb != endtryBB) {
         for (auto &stmt : bb->GetStmtNodes()) {
           if (stmt.GetOpCode() == OP_try || stmt.GetOpCode() == OP_catch || stmt.GetOpCode() == OP_throw) {
@@ -609,8 +609,8 @@ void MeFunction::RemoveEhEdgesInSyncRegion() {
       }
     }
     // Unmark unnecessary isTry flags
-    for (auto it : bbTryNodeMap) {
-      BB *bb = it.first;
+    for (auto &bbTryPair : bbTryNodeMap) {
+      BB *bb = bbTryPair.first;
       if (bb != tryBB && bb != endtryBB) {
         bb->ClearAttributes(kBBAttrIsTry);
       }
@@ -624,7 +624,7 @@ void MeFunction::BuildSCCDFS(BB &bb, uint32 &visitIndex, std::vector<SCCOfBBs*> 
   uint32 id = bb.UintID();
   visitedOrder[id] = visitIndex;
   lowestOrder[id] = visitIndex;
-  visitIndex++;
+  ++visitIndex;
   visitStack.push(id);
   inStack[id] = true;
 
@@ -647,7 +647,7 @@ void MeFunction::BuildSCCDFS(BB &bb, uint32 &visitIndex, std::vector<SCCOfBBs*> 
   }
 
   if (visitedOrder.at(id) == lowestOrder.at(id)) {
-    SCCOfBBs *sccNode = alloc.GetMemPool()->New<SCCOfBBs>(numOfSCCs++, &bb, &alloc);
+    auto *sccNode = alloc.GetMemPool()->New<SCCOfBBs>(numOfSCCs++, &bb, &alloc);
     uint32 stackTopId;
     do {
       stackTopId = visitStack.top();
@@ -702,7 +702,7 @@ void MeFunction::SCCTopologicalSort(std::vector<SCCOfBBs*> &sccNodes) {
   }
 
   // Top-down iterates all nodes
-  for (size_t i = 0; i < sccTopologicalVec.size(); i++) {
+  for (size_t i = 0; i < sccTopologicalVec.size(); ++i) {
     SCCOfBBs *scc = sccTopologicalVec[i];
     for (SCCOfBBs *succ : scc->GetSucc()) {
       if (InQueue.find(succ) == InQueue.end()) {
@@ -734,7 +734,7 @@ void MeFunction::BBTopologicalSort(SCCOfBBs &scc) {
   scc.AddBBNode(scc.GetEntry());
   InQueue.insert(scc.GetEntry());
 
-  for (size_t i = 0; i < scc.GetBBs().size(); i++) {
+  for (size_t i = 0; i < scc.GetBBs().size(); ++i) {
     BB *bb = scc.GetBBs()[i];
     for (BB *succ : bb->GetSucc()) {
       if (succ == nullptr) {

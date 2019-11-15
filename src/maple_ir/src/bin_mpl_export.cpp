@@ -303,7 +303,7 @@ uint8 BinaryMplExport::Read() {
   return buf[bufI++];
 }
 
-/* Little endian */
+// Little endian
 int32 BinaryMplExport::ReadInt() {
   uint32 x0 = static_cast<uint32>(Read());
   uint32 x1 = static_cast<uint32>(Read());
@@ -317,7 +317,7 @@ void BinaryMplExport::Write(uint8 b) {
   buf.push_back(b);
 }
 
-/* Little endian */
+// Little endian
 void BinaryMplExport::WriteInt(int32 x) {
   Write(static_cast<uint8>(static_cast<uint32>(x) & 0xFF));
   Write(static_cast<uint8>((static_cast<uint32>(x) >> 8) & 0xFF));
@@ -341,7 +341,7 @@ void BinaryMplExport::WriteInt64(int64 x) {
   WriteInt(static_cast<int32>((static_cast<uint64>(x) >> 32) & 0xFFFFFFFF));
 }
 
-/* LEB128 */
+// LEB128
 void BinaryMplExport::WriteNum(int64 x) {
   while (x < -0x40 || x >= 0x40) {
     Write(static_cast<uint8>((static_cast<uint64>(x) & 0x7F) + 0x80));

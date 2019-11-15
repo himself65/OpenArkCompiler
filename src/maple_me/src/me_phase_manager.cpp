@@ -47,13 +47,13 @@ void MeFuncPhaseManager::RunFuncPhase(MeFunction *func, MeFuncPhase *phase) {
     phase->ReleaseMemPool(r == nullptr ? nullptr : r->GetMempool());
   }
   if (r != nullptr) {
-    /* if phase is an analysis Phase, add result to arm */
+    // if phase is an analysis Phase, add result to arm
     arFuncManager.AddResult(phase->GetPhaseId(), *func, *r);
   }
 }
 
 void MeFuncPhaseManager::RegisterFuncPhases() {
-  /* register all Funcphases defined in me_phases.def */
+  // register all Funcphases defined in me_phases.def
 #define FUNCTPHASE(id, mephase)                                               \
   do {                                                                        \
     void *buf = GetMemAllocator()->GetMemPool()->Malloc(sizeof(mephase(id))); \
@@ -87,7 +87,7 @@ void MeFuncPhaseManager::AddPhases(const std::unordered_set<std::string> &skipPh
     }
   };
   if (mePhaseType == kMePhaseMainopt) {
-    /* default phase sequence */
+    // default phase sequence
     addPhase("ssaTab");
     addPhase("aliasclass");
     addPhase("ssa");
@@ -110,9 +110,10 @@ void MeFuncPhaseManager::IPACleanUp(MeFunction *func) {
 }
 
 void MeFuncPhaseManager::Run(MIRFunction *mirFunc, uint64 rangeNum, const std::string &meInput) {
-  if (!MeOption::quiet)
+  if (!MeOption::quiet) {
     LogInfo::MapleLogger() << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>> Optimizing Function  < " << mirFunc->GetName()
                            << " id=" << mirFunc->GetPuidxOrigin() << " >---\n";
+  }
   MemPool *funcMP = memPoolCtrler.NewMemPool("maple_me per-function mempool");
   MemPool *versMP = memPoolCtrler.NewMemPool("first verst mempool");
   MeFunction func(&mirModule, mirFunc, funcMP, versMP, meInput);
@@ -127,13 +128,13 @@ void MeFuncPhaseManager::Run(MIRFunction *mirFunc, uint64 rangeNum, const std::s
   }
   std::string phaseName = "";
   MeFuncPhase *changeCFGPhase = nullptr;
-  /* each function level phase */
+  // each function level phase
   bool dumpFunc = FuncFilter(MeOption::dumpFunc, func.GetName());
   size_t phaseIndex = 0;
   for (auto it = PhaseSequenceBegin(); it != PhaseSequenceEnd(); ++it, ++phaseIndex) {
     PhaseID id = GetPhaseId(it);
     MeFuncPhase *p = static_cast<MeFuncPhase*>(GetPhase(id));
-    p->SetPreviousPhaseName(phaseName); /* prev phase name is for filename used in emission after phase */
+    p->SetPreviousPhaseName(phaseName); // prev phase name is for filename used in emission after phase
     phaseName = p->PhaseName();         // new phase name
     bool dumpPhase = MeOption::DumpPhase(phaseName);
     MPLTimer timer;
@@ -174,7 +175,7 @@ void MeFuncPhaseManager::Run(MIRFunction *mirFunc, uint64 rangeNum, const std::s
       if (p == changeCFGPhase) {
         continue;
       }
-      p->SetPreviousPhaseName(phaseName); /* prev phase name is for filename used in emission after phase */
+      p->SetPreviousPhaseName(phaseName); // prev phase name is for filename used in emission after phase
       phaseName = p->PhaseName();         // new phase name
       bool dumpPhase = MeOption::DumpPhase(phaseName);
       RunFuncPhase(&function, p);

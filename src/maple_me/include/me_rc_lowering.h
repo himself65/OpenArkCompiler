@@ -48,10 +48,8 @@ class RCLowering {
   void HandleArguments();
   // create new symbol from name and return its ost
   OriginalSt *RetrieveOSt(const std::string &name, bool isLocalrefvar) const;
-  /**
-   * create new symbol from temp name and return its VarMeExpr
-   * new symbols are stored in a set
-   */
+  // create new symbol from temp name and return its VarMeExpr
+  // new symbols are stored in a set
   VarMeExpr *CreateNewTmpVarMeExpr(bool isLocalrefvar);
   VarMeExpr *CreateVarMeExprFromSym(MIRSymbol &sym) const;
   // return true if the rhs is simple so we can adjust RC count before assignments

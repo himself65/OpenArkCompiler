@@ -23,7 +23,7 @@ class MeDoDominance : public MeFuncPhase {
  public:
   explicit MeDoDominance(MePhaseID id) : MeFuncPhase(id) {}
 
-  virtual ~MeDoDominance() = default;
+  ~MeDoDominance() override = default;
   AnalysisResult *Run(MeFunction *func, MeFuncResultMgr *funcResMgr, ModuleResultMgr *moduleResMgr) override;
 
   std::string PhaseName() const override {

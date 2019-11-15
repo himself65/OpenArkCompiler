@@ -628,6 +628,7 @@ MeExpr *IRMap::HashMeExpr(MeExpr &meExpr) {
 
   if (resultExpr == nullptr) {
     resultExpr = &meBuilder.CreateMeExpr(exprID++, meExpr);
+    PutToBucket(hidx, *resultExpr);
   }
   return resultExpr;
 }

@@ -20,7 +20,7 @@
 namespace maple {
 #ifdef USE_32BIT_REF
 static constexpr unsigned int kTabEntrySize = 4;
-#else   //! USE_32BIT_REF
+#else   // !USE_32BIT_REF
 static constexpr unsigned int kTabEntrySize = 8;
 #endif  // USE_32BIT_REF
 

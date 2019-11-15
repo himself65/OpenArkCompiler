@@ -316,7 +316,7 @@ class WKTypes {
   static MIRType *javalangrefConstructor;
 };
 
-/* data structure to represent class information defined in the module */
+// data structure to represent class information defined in the module
 class KlassHierarchy : public AnalysisResult {
  public:
   static bool traceFlag;
@@ -339,7 +339,7 @@ class KlassHierarchy : public AnalysisResult {
   GStrIdx GetLCA(GStrIdx str1, GStrIdx str2) const;
   const std::string &GetLCA(const std::string &name1, const std::string &name2) const;
   bool IsSuperKlass(const Klass *super, const Klass *base) const;
-  bool IsSuperKlassForInterface(const Klass *super, Klass *base) const;
+  bool IsSuperKlassForInterface(const Klass *super, const Klass *base) const;
   bool IsInterfaceImplemented(Klass *interface, const Klass *base) const;
   bool UpdateFieldID(TyIdx baseTypeIdx, TyIdx targetTypeIdx, FieldID &fldID) const;
   // return true if class, its super or interfaces have at least one clinit function

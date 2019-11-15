@@ -25,7 +25,7 @@
 using PhaseID = int;
 
 namespace maple {
-/* base class of analysisPhase's result */
+// base class of analysisPhase's result
 class AnalysisResult {
  public:
   explicit AnalysisResult(MemPool *memPoolParam) {
@@ -97,11 +97,11 @@ class AnalysisResultManager {
   }
 
   virtual ~AnalysisResultManager() {
+    // global variable mirModule which use same mempool control is not delete yet
     InvalidAllResults();
-    /* global variable mirModule which use same mempool control is not delete yet */
   }
 
-  /* analysis result use global mempool and allocator */
+  // analysis result use global mempool and allocator
   AnalysisResult *GetAnalysisResult(PhaseIDT id, UnitIR *ir) {
     ASSERT(ir != nullptr, "ir is null in AnalysisResultManager::GetAnalysisResult");
     std::pair<PhaseIDT, UnitIR*> key = std::make_pair(id, ir);
@@ -118,7 +118,7 @@ class AnalysisResultManager {
         return nullptr;
       }
       anaPhase->ReleaseMemPool(result->GetMempool());
-      analysisResults[key] = result; /* add r to analysisResults */
+      analysisResults[key] = result; // add r to analysisResults
       return result;
     } else {
       return nullptr;
@@ -178,7 +178,7 @@ class AnalysisResultManager {
   }
 
  private:
-  MapleAllocator *allocator; /* allocator used in local field */
+  MapleAllocator *allocator; // allocator used in local field
   using analysisResultKey = std::pair<PhaseIDT, UnitIR*>;
   MapleMap<analysisResultKey, AnalysisResult*> analysisResults;
   MapleMap<PhaseIDT, PhaseT*> analysisPhases;

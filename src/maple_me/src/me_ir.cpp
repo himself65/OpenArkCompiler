@@ -331,10 +331,10 @@ bool IvarMeExpr::IsFinal() {
   return static_cast<MIRStructType*>(pointedTy)->IsFieldFinal(fieldID);
 }
 
-/*
- * check paragma
- *   pragma 0 var %keySet <$Ljava_2Flang_2Fannotation_2FRCWeakRef_3B>
- */
+
+// check paragma
+//   pragma 0 var %keySet <$Ljava_2Flang_2Fannotation_2FRCWeakRef_3B>
+
 bool IvarMeExpr::IsRCWeak() const {
   MIRPtrType *ty = static_cast<MIRPtrType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx));
   MIRType *pointedType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ty->GetPointedTyIdx());

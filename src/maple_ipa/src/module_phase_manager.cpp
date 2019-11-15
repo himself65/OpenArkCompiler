@@ -39,9 +39,12 @@ AnalysisResult *DoKlassHierarchy::Run(MIRModule *module, ModuleResultMgr *m) {
   KlassHierarchy::traceFlag = TRACE_PHASE;
   kh->BuildHierarchy();
 #if MIR_JAVA
-  if (!Options::skipVirtualMethod)
-#endif
+  if (!Options::skipVirtualMethod) {
     kh->CountVirtualMethods();
+  }
+#else
+  kh->CountVirtualMethods();
+#endif
   if (KlassHierarchy::traceFlag) {
     kh->Dump();
   }

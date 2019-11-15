@@ -98,11 +98,6 @@ class MUIDReplacement : public FuncOptimizeImpl {
   std::map<MUID, SymIdxPair> funcUndefMap;
   std::map<MUID, SymIdxPair> dataUndefMap;
   std::map<MUID, uint32> defMuidIdxMap;
-  enum LazyBindingOption : uint32 {
-    kNoLazyBinding = 0,
-    kConservativeLazyBinding = 1,
-    kRadicalLazyBinding = 2
-  };
 
   void GenericTables();
   void GenericFuncDefTable();
@@ -130,25 +125,25 @@ class MUIDReplacement : public FuncOptimizeImpl {
   void CollectFuncAndDataFromGlobalTab();
   void CollectFuncAndDataFromFuncList();
   void GenericCompilerVersionNum();
-  inline static MIRSymbol *GetSymbolFromName(const std::string &name);
+  static MIRSymbol *GetSymbolFromName(const std::string &name);
   // The following sets are for internal uses. Sorting order does not matter here.
   std::unordered_set<MIRFunction*> funcDefSet;
   std::unordered_set<MIRFunction*> funcUndefSet;
   std::unordered_set<MIRSymbol*> dataDefSet;
   std::unordered_set<MIRSymbol*> dataUndefSet;
-  inline void AddDefFunc(MIRFunction *func) {
+  void AddDefFunc(MIRFunction *func) {
     funcDefSet.insert(func);
   }
 
-  inline void AddUndefFunc(MIRFunction *func) {
+  void AddUndefFunc(MIRFunction *func) {
     funcUndefSet.insert(func);
   }
 
-  inline void AddDefData(MIRSymbol *sym) {
+  void AddDefData(MIRSymbol *sym) {
     dataDefSet.insert(sym);
   }
 
-  inline void AddUndefData(MIRSymbol *sym) {
+  void AddUndefData(MIRSymbol *sym) {
     dataUndefSet.insert(sym);
   }
 

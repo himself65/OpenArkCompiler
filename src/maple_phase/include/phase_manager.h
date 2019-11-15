@@ -84,7 +84,7 @@ class PhaseManager {
     return &phaseSequences;
   }
 
-  /* iterator for register_phases */
+  // iterator for register_phases
   using iterator = MapleMap<PhaseID, Phase*>::iterator;
   iterator RegPhaseBegin() {
     return registeredPhases.begin();
@@ -106,7 +106,7 @@ class PhaseManager {
     return (*it).first;
   }
 
-  /* iterator for phaseSeq */
+  // iterator for phaseSeq
   using phaseSeq_iterator = MapleVector<PhaseID>::iterator;
   phaseSeq_iterator PhaseSequenceBegin() {
     return phaseSequences.begin();

@@ -18,11 +18,11 @@
 #include "me_cfg.h"
 
 namespace maple {
-/* emit IR to specified file */
+// emit IR to specified file
 AnalysisResult *MeDoEmit::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, ModuleResultMgr *moduleResMgr) {
   bool emitHssaOrAfter = (func->GetIRMap() != nullptr);
   if (func->NumBBs() > 0) {
-    /* generate bblist after layout (bb physical position) */
+    // generate bblist after layout (bb physical position)
     if (!MeOption::quiet) {
       CHECK_FATAL(funcResMgr->GetAnalysisPhase(MeFuncPhase_BBLAYOUT) != nullptr, "null ptr check");
       LogInfo::MapleLogger() << "===== Check/run Depended Phase [ "

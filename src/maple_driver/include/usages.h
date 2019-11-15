@@ -52,7 +52,6 @@ enum OptionIndex : uint64 {
   kMeDumpAfter,
   kMeRange,
   kLessThrowAlias,
-  kFinalFieldAlias,
   kRegReadAtReturn,
   //----------mpl2mpl begin---------
   kMpl2MplHelp,

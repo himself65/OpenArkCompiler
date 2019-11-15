@@ -90,8 +90,8 @@ class AliasElem {
 
 class AliasClass : public AnalysisResult {
  public:
-  AliasClass(MemPool &memPool, MIRModule &mod, SSATab &ssatb, bool lessThrowAliasParam, bool finalFieldHasAlias,
-             bool ignoreIpa, bool setCalleeHasSideEffect = false, KlassHierarchy *kh = nullptr)
+  AliasClass(MemPool &memPool, MIRModule &mod, SSATab &ssatb, bool lessThrowAliasParam, bool ignoreIPA,
+             bool setCalleeHasSideEffect = false, KlassHierarchy *kh = nullptr)
       : AnalysisResult(&memPool),
         mirModule(mod),
         acMemPool(memPool),
@@ -104,8 +104,7 @@ class AliasClass : public AnalysisResult {
         globalsAffectedByCalls(std::less<unsigned int>(), acAlloc.Adapter()),
         globalsMayAffectedByClinitCheck(acAlloc.Adapter()),
         lessThrowAlias(lessThrowAliasParam),
-        finalFieldAlias(finalFieldHasAlias),
-        ignoreIPA(ignoreIpa),
+        ignoreIPA(ignoreIPA),
         calleeHasSideEffect(setCalleeHasSideEffect),
         klassHierarchy(kh),
         aliasAnalysisTable(nullptr) {}
@@ -174,7 +173,6 @@ class AliasClass : public AnalysisResult {
   // aliased at calls; needed only when wholeProgramScope is true
   MapleSet<OStIdx> globalsMayAffectedByClinitCheck;
   bool lessThrowAlias;
-  bool finalFieldAlias;  // whether to regard final fields as having alias;
   bool ignoreIPA;        // whether to ignore information provided by IPA
   bool calleeHasSideEffect;
   KlassHierarchy *klassHierarchy;
@@ -191,6 +189,8 @@ class AliasClass : public AnalysisResult {
                               bool hasNoPrivateDefEffect);
   void ApplyUnionForDassignCopy(const AliasElem &lhsAe, const AliasElem *rhsAe, const BaseNode &rhs);
   AliasElem *FindOrCreateDummyNADSAe();
+  bool IsPointedTo(OriginalSt &oSt);
+  AliasElem &FindOrCreateAliasElemOfAddrofOSt(OriginalSt &oSt);
   void CollectMayDefForMustDefs(const StmtNode &stmt, std::set<OriginalSt*> &mayDefOsts);
   void CollectMayUseForCallOpnd(const StmtNode &stmt, std::set<OriginalSt*> &mayUseOsts);
   void InsertMayDefNodeForCall(std::set<OriginalSt*> &mayDefOsts, MapleMap<OStIdx, MayDefNode> &mayDefNodes,

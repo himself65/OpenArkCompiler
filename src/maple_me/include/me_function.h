@@ -81,13 +81,13 @@ class FilterIterator {
     return func(iterator) ? *this : --(*this);
   }
 
-  FilterIterator operator++(int) {
+  const FilterIterator operator++(int) {
     FilterIterator it = *this;
     ++(*this);
     return it;
   }
 
-  FilterIterator operator--(int) {
+  const FilterIterator operator--(int) {
     FilterIterator it = *this;
     --(*this);
     return it;
@@ -167,7 +167,7 @@ class MeFunction : public FuncEmit {
         backEdges(alloc.Adapter()),
         fileName(fileName) {}
 
-  virtual ~MeFunction() = default;
+  ~MeFunction() override = default;
 
   using value_type = BBPtrHolder::value_type;
   using size_type = BBPtrHolder::size_type;

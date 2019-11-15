@@ -66,7 +66,7 @@ class ModulePhaseManager : public PhaseManager {
  private:
   bool timePhases;
   MIRModule &mirModule;
-  ModuleResultMgr *arModuleMgr; /* module level analysis result */
+  ModuleResultMgr *arModuleMgr; // module level analysis result
 };
 }  // namespace maple
 #endif  // MAPLE_IPA_INCLUDE_MODULE_PHASE_MANAGER_H

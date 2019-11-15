@@ -71,7 +71,7 @@ static MapleMap<OStIdx, MayDefNode> *SSAGenericGetMayDefsFromVersionSt(VersionSt
   visited.insert(&vst);
   if (vst.GetDefType() == VersionSt::kPhi) {
     PhiNode *phi = vst.GetPhi();
-    for (size_t i = 0; i < phi->GetPhiOpnds().size(); i++) {
+    for (size_t i = 0; i < phi->GetPhiOpnds().size(); ++i) {
       VersionSt *vsym = phi->GetPhiOpnd(i);
       MapleMap<OStIdx, MayDefNode> *mayDefs = SSAGenericGetMayDefsFromVersionSt(*vsym, stmtsSSAPart, visited);
       if (mayDefs != nullptr) {
@@ -91,14 +91,14 @@ MapleMap<OStIdx, MayDefNode> *SSAGenericGetMayDefsFromVersionSt(VersionSt &sym, 
 }
 
 bool HasMayUseOpnd(const BaseNode &baseNode, SSATab &func) {
-  const StmtNode &stmtNode = static_cast<const StmtNode&>(baseNode);
+  const auto &stmtNode = static_cast<const StmtNode&>(baseNode);
   if (kOpcodeInfo.HasSSAUse(stmtNode.GetOpCode())) {
     MapleMap<OStIdx, MayUseNode> &mayUses = func.GetStmtsSSAPart().GetMayUseNodesOf(stmtNode);
     if (!mayUses.empty()) {
       return true;
     }
   }
-  for (size_t i = 0; i < baseNode.NumOpnds(); i++) {
+  for (size_t i = 0; i < baseNode.NumOpnds(); ++i) {
     if (HasMayUseOpnd(*baseNode.Opnd(i), func)) {
       return true;
     }

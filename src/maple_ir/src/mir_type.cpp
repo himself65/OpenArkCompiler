@@ -76,9 +76,9 @@ bool VerifyPrimType(PrimType primType1, PrimType primType2) {
   }
 }
 
-PrimType GetDynType(PrimType pType) {
+PrimType GetDynType(PrimType primType) {
 #ifdef DYNAMICLANG
-  switch (pType) {
+  switch (primType) {
     case PTY_u1:
       return PTY_dynbool;
     case PTY_i32:
@@ -92,16 +92,16 @@ PrimType GetDynType(PrimType pType) {
     case PTY_f64:
       return PTY_dynf64;
     default:
-      return pType;
+      return primType;
   }
 #else
-  return pType;
+  return primType;
 #endif
 }
 
-PrimType GetNonDynType(PrimType pType) {
+PrimType GetNonDynType(PrimType primType) {
 #ifdef DYNAMICLANG
-  switch (pType) {
+  switch (primType) {
     case PTY_dynbool:
       return PTY_u1;
     case PTY_dyni32:
@@ -115,10 +115,10 @@ PrimType GetNonDynType(PrimType pType) {
     case PTY_dynf64:
       return PTY_f64;
     default:
-      return pType;
+      return primType;
   }
 #else
-  return pType;
+  return primType;
 #endif
 }
 
@@ -138,10 +138,6 @@ bool IsNoCvtNeeded(PrimType toType, PrimType fromType) {
     default:
       return false;
   }
-}
-
-bool IsRefOrPtrAssign(PrimType toType, PrimType fromType) {
-  return (toType == PTY_ref && fromType == PTY_ptr) || (toType == PTY_ptr && fromType == PTY_ref);
 }
 
 // answer in bytes; 0 if unknown
@@ -241,8 +237,8 @@ const char *GetPrimTypeName(PrimType primType) {
     case kPtyInvalid:
       return "kPtyInvalid";
 #define PRIMTYPE(P) \
-  case PTY_##P:     \
-    return #P;
+    case PTY_##P:   \
+      return #P;
 #include "prim_types.def"
 #undef PRIMTYPE
     case kPtyDerived:
@@ -320,15 +316,14 @@ bool MIRType::ValidateClassOrInterface(const std::string &className, bool noWarn
     return true;
   }
   if (!noWarning) {
-    int len = className.size();
+    size_t len = className.size();
     constexpr int minClassNameLen = 4;
     constexpr char suffix[] = "_3B";
-    int suffixLen = std::strlen(suffix);
+    size_t suffixLen = std::strlen(suffix);
     if (len > minClassNameLen && strncmp(className.c_str() + len - suffixLen, suffix, suffixLen) == 0) {
-      LogInfo::MapleLogger(kLlErr) << "error: missing proper mplt file for " << className << std::endl;
+      LogInfo::MapleLogger(kLlErr) << "error: missing proper mplt file for " << className << '\n';
     } else {
-      LogInfo::MapleLogger(kLlErr) << "internal error: type is not java class or interface "
-                                   << className << std::endl;
+      LogInfo::MapleLogger(kLlErr) << "internal error: type is not java class or interface " << className << '\n';
     }
   }
   return false;
@@ -413,7 +408,7 @@ void MIRType::DumpAsCxx(int indent) const {
       LogInfo::MapleLogger() << "double complex";
       break;
     default:
-      ASSERT(false, "NYI");
+      ASSERT(false, "not yet implemented");
   }
 }
 
@@ -423,8 +418,8 @@ bool MIRType::IsOfSameType(MIRType &type) {
   }
 
   if (typeKind == kTypePointer) {
-    MIRPtrType &ptrType = static_cast<MIRPtrType&>(*this);
-    MIRPtrType &ptrTypeIt = static_cast<MIRPtrType&>(type);
+    const auto &ptrType = static_cast<const MIRPtrType&>(*this);
+    const auto &ptrTypeIt = static_cast<const MIRPtrType&>(type);
     if (ptrType.GetPointedTyIdx() == ptrTypeIt.GetPointedTyIdx()) {
       return true;
     } else {
@@ -432,8 +427,8 @@ bool MIRType::IsOfSameType(MIRType &type) {
       return GlobalTables::GetTypeTable().GetTypeFromTyIdx(ptrType.GetPointedTyIdx())->IsOfSameType(mirTypeIt);
     }
   } else if (typeKind == kTypeJArray) {
-    MIRJarrayType &atype1 = static_cast<MIRJarrayType&>(*this);
-    MIRJarrayType &atype2 = static_cast<MIRJarrayType&>(type);
+    auto &atype1 = static_cast<MIRJarrayType&>(*this);
+    auto &atype2 = static_cast<MIRJarrayType&>(type);
     if (atype1.GetDim() != atype2.GetDim()) {
       return false;
     }
@@ -463,7 +458,7 @@ void MIRFuncType::Dump(int indent, bool dontUseName) const {
   }
   LogInfo::MapleLogger() << "<func(";
   size_t size = paramTypeList.size();
-  for (size_t i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; ++i) {
     GlobalTables::GetTypeTable().GetTypeFromTyIdx(paramTypeList[i])->Dump(indent + 1);
     if (size - 1 != i) {
       LogInfo::MapleLogger() << ",";
@@ -496,9 +491,6 @@ std::string MIRArrayType::GetCompactMplTypeName() const {
   MIRType *elemType = GetElemType();
   ss << elemType->GetCompactMplTypeName();
   return ss.str();
-}
-MIRType *MIRFarrayType::CopyMIRTypeNode() const {
-  return new MIRFarrayType(*this);
 }
 
 void MIRFarrayType::Dump(int indent, bool dontUseName) const {
@@ -559,7 +551,7 @@ void MIRJarrayType::DetermineName() {
         auto *tmpPtype = static_cast<MIRJarrayType*>(ptype);
         elemType = tmpPtype->GetElemType();
         ASSERT(elemType != nullptr, "elemType is null in MIRJarrayType::DetermineName");
-        dim++;
+        ++dim;
       } else {
         ASSERT(false, "unexpected type!");
       }
@@ -611,7 +603,7 @@ size_t MIRClassType::GetSize() const {
   if (parentTyIdx == 0) {
     return MIRStructType::GetSize();
   }
-  auto *parentType = static_cast<MIRClassType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(parentTyIdx));
+  const auto *parentType = static_cast<const MIRClassType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(parentTyIdx));
   size_t parentSize = parentType->GetSize();
   if (parentSize == 0) {
     return 0;
@@ -624,18 +616,20 @@ size_t MIRClassType::GetSize() const {
 }
 
 FieldID MIRClassType::GetFirstLocalFieldID() const {
-  constexpr uint8 lastFieldIDOffset = 2;
-  constexpr uint8 firstLocalFieldIDOffset = 1;
   if (!IsLocal()) {
     return 0;
-  } else if (parentTyIdx != 0) {
-    MIRClassType *parentClassType =
-        MIR_DYN_CAST(GlobalTables::GetTypeTable().GetTypeFromTyIdx(parentTyIdx), MIRClassType*);
-    CHECK_FATAL(parentClassType != nullptr, "null pointer check");
-    return (!parentClassType->IsLocal()) ? parentClassType->GetLastFieldID() + lastFieldIDOffset
-                                         : parentClassType->GetFirstLocalFieldID() + firstLocalFieldIDOffset;
   }
-  return 1;
+  if (parentTyIdx == 0) {
+    return 1;
+  }
+
+  constexpr uint8 lastFieldIDOffset = 2;
+  constexpr uint8 firstLocalFieldIDOffset = 1;
+  const auto *parentClassType =
+      MIR_DYN_CAST(GlobalTables::GetTypeTable().GetTypeFromTyIdx(parentTyIdx), const MIRClassType*);
+  CHECK_FATAL(parentClassType != nullptr, "null pointer check");
+  return !parentClassType->IsLocal() ? parentClassType->GetLastFieldID() + lastFieldIDOffset
+                                     : parentClassType->GetFirstLocalFieldID() + firstLocalFieldIDOffset;
 }
 
 const MIRClassType *MIRClassType::GetExceptionRootType() const {
@@ -665,8 +659,8 @@ bool MIRClassType::IsExceptionType() const {
 FieldID MIRClassType::GetLastFieldID() const {
   FieldID fieldID = fields.size();
   if (parentTyIdx != 0) {
-    MIRClassType *parentClassType =
-        MIR_DYN_CAST(GlobalTables::GetTypeTable().GetTypeFromTyIdx(parentTyIdx), MIRClassType*);
+    const auto *parentClassType =
+        MIR_DYN_CAST(GlobalTables::GetTypeTable().GetTypeFromTyIdx(parentTyIdx), const MIRClassType*);
     if (parentClassType != nullptr) {
       fieldID += parentClassType->GetLastFieldID() + 1;
     }
@@ -709,8 +703,8 @@ uint32 MIRInterfaceType::GetInfo(GStrIdx strIdx) const {
 
 // return class id or superclass id accroding to input string
 uint32 MIRInterfaceType::GetInfo(const std::string &infoStr) const {
-  GStrIdx stridx = GlobalTables::GetStrTable().GetStrIdxFromName(infoStr);
-  return GetInfo(stridx);
+  GStrIdx strIdx = GlobalTables::GetStrTable().GetStrIdxFromName(infoStr);
+  return GetInfo(strIdx);
 }
 size_t MIRInterfaceType::GetSize() const {
   if (parentsTyIdx.empty()) {
@@ -720,9 +714,9 @@ size_t MIRInterfaceType::GetSize() const {
   if (size == 0) {
     return 0;
   }
-  for (size_t i = 0; i < parentsTyIdx.size(); i++) {
-    auto *parentType =
-        static_cast<MIRInterfaceType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(parentsTyIdx[i]));
+  for (size_t i = 0; i < parentsTyIdx.size(); ++i) {
+    const auto *parentType =
+        static_cast<const MIRInterfaceType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(parentsTyIdx[i]));
     size_t parentSize = parentType->GetSize();
     if (parentSize == 0) {
       return 0;
@@ -902,7 +896,7 @@ static void DumpInterfaces(std::vector<TyIdx> interfaces, int indent) {
 size_t MIRStructType::GetSize() const {
   if (typeKind == kTypeUnion) {
     size_t maxSize = GetElemType(0)->GetSize();
-    for (size_t i = 1; i < fields.size(); i++) {
+    for (size_t i = 1; i < fields.size(); ++i) {
       size_t size = GetElemType(i)->GetSize();
       if (size == 0) {
         return 0;
@@ -914,7 +908,7 @@ size_t MIRStructType::GetSize() const {
     return maxSize;
   }
   size_t size = 0;
-  for (size_t i = 0; i < fields.size(); i++) {
+  for (size_t i = 0; i < fields.size(); ++i) {
     size_t fieldSize = GetElemType(i)->GetSize();
     if (fieldSize == 0) {
       return 0;
@@ -933,7 +927,7 @@ void MIRStructType::DumpFieldsAndMethods(int indent, bool hasMethod) const {
   }
   DumpFields(staticFields, indent, true);
   bool hasFieldOrStaticField = hasField || hasStaticField;
-  bool hasParentField = parentFields.size();
+  bool hasParentField = !parentFields.empty();
   if (hasFieldOrStaticField && hasParentField) {
     LogInfo::MapleLogger() << ",";
   }
@@ -948,9 +942,9 @@ void MIRStructType::Dump(int indent, bool dontUseName) const {
   if (!dontUseName && CheckAndDumpTypeName(nameStrIdx, nameIsLocal)) {
     return;
   }
-  LogInfo::MapleLogger() << ((typeKind == kTypeStruct)
-                                 ? "<struct {"
-                                 : ((typeKind == kTypeUnion) ? "<union {" : "<structincomplete {"));
+  LogInfo::MapleLogger() << ((typeKind == kTypeStruct) ? "<struct {"
+                                                       : ((typeKind == kTypeUnion) ? "<union {"
+                                                                                   : "<structincomplete {"));
   DumpFieldsAndMethods(indent, !methods.empty());
   LogInfo::MapleLogger() << "}>";
 }
@@ -961,8 +955,8 @@ uint32 MIRClassType::GetInfo(GStrIdx strIdx) const {
 
 // return class id or superclass id accroding to input string
 uint32 MIRClassType::GetInfo(const std::string &infoStr) const {
-  GStrIdx stridx = GlobalTables::GetStrTable().GetStrIdxFromName(infoStr);
-  return GetInfo(stridx);
+  GStrIdx strIdx = GlobalTables::GetStrTable().GetStrIdxFromName(infoStr);
+  return GetInfo(strIdx);
 }
 
 bool MIRClassType::IsFinal() const {
@@ -973,7 +967,7 @@ bool MIRClassType::IsFinal() const {
 }
 
 bool MIRClassType::IsInner() const {
-  const std::string name = GetName();
+  const std::string &name = GetName();
   return name.find("_24") != std::string::npos;
 }
 
@@ -1026,9 +1020,9 @@ void MIRClassType::Dump(int indent, bool dontUseName) const {
 }
 
 void MIRClassType::DumpAsCxx(int indent) const {
-  LogInfo::MapleLogger() << "{" << std::endl;
+  LogInfo::MapleLogger() << "{\n";
   DumpFieldsAsCxx(fields, indent);
-  LogInfo::MapleLogger() << "};" << std::endl;
+  LogInfo::MapleLogger() << "};\n";
   DumpConstructorsAsCxx(methods, 0);
 }
 
@@ -1061,15 +1055,15 @@ void MIRTypeParam::Dump(int indent, bool dontUseName) const {
 
 void MIRInstantVectorType::Dump(int indent, bool dontUseName) const {
   LogInfo::MapleLogger() << "{";
-  for (size_t i = 0; i < instantVec.size(); i++) {
-    TypePair tpair = instantVec[i];
+  for (size_t i = 0; i < instantVec.size(); ++i) {
+    TypePair typePair = instantVec[i];
     if (i != 0) {
       LogInfo::MapleLogger() << ", ";
     }
-    MIRType *typeParmType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tpair.first);
+    MIRType *typeParmType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(typePair.first);
     const std::string &name = GlobalTables::GetStrTable().GetStringFromStrIdx(typeParmType->GetNameStrIdx());
     LogInfo::MapleLogger() << "!" << name << "=";
-    MIRType *realty = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tpair.second);
+    MIRType *realty = GlobalTables::GetTypeTable().GetTypeFromTyIdx(typePair.second);
     realty->Dump(0);
   }
   LogInfo::MapleLogger() << "}";
@@ -1077,14 +1071,14 @@ void MIRInstantVectorType::Dump(int indent, bool dontUseName) const {
 
 void MIRGenericInstantType::Dump(int indent, bool dontUseName) const {
   LogInfo::MapleLogger() << "<";
-  MIRType *genericty = GlobalTables::GetTypeTable().GetTypeFromTyIdx(genericTyIdx);
-  DumpTypeName(genericty->GetNameStrIdx(), genericty->IsNameIsLocal());
+  const MIRType *genericType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(genericTyIdx);
+  DumpTypeName(genericType->GetNameStrIdx(), genericType->IsNameIsLocal());
   MIRInstantVectorType::Dump(indent, dontUseName);
   LogInfo::MapleLogger() << ">";
 }
 
 bool MIRType::EqualTo(const MIRType &mirType) const {
-  return (typeKind == mirType.typeKind && primType == mirType.primType);
+  return typeKind == mirType.typeKind && primType == mirType.primType;
 }
 
 bool MIRPtrType::EqualTo(const MIRType &type) const {
@@ -1103,7 +1097,7 @@ bool MIRArrayType::EqualTo(const MIRType &type) const {
   if (dim != pType.GetDim() || eTyIdx != pType.GetElemTyIdx()) {
     return false;
   }
-  for (int i = 0; i < dim; i++) {
+  for (size_t i = 0; i < dim; ++i) {
     if (GetSizeArrayItem(i) != pType.GetSizeArrayItem(i)) {
       return false;
     }
@@ -1150,8 +1144,8 @@ bool MIRFuncType::EqualTo(const MIRType &type) const {
     return false;
   }
   const auto &pType = static_cast<const MIRFuncType&>(type);
-  return (pType.retTyIdx == retTyIdx && pType.paramTypeList == paramTypeList && pType.isVarArgs == isVarArgs &&
-          pType.paramAttrsList == paramAttrsList);
+  return (pType.retTyIdx == retTyIdx && pType.paramTypeList == paramTypeList &&
+          pType.isVarArgs == isVarArgs && pType.paramAttrsList == paramAttrsList);
 }
 
 bool MIRBitFieldType::EqualTo(const MIRType &type) const {
@@ -1175,7 +1169,7 @@ MIRType *MIRStructType::GetElemType(uint32 n) const {
 }
 
 MIRType *MIRStructType::GetFieldType(FieldID fieldID) {
-  FieldPair fieldPair = TraverseToField(fieldID);
+  const FieldPair &fieldPair = TraverseToField(fieldID);
   return GlobalTables::GetTypeTable().GetTypeFromTyIdx(fieldPair.second.first);
 }
 
@@ -1266,7 +1260,7 @@ FieldPair MIRStructType::TraverseToField(FieldID fieldID) const {
   // in parentfields
   uint32 parentFieldIdx = -fieldID;
   if (parentFields.empty() || parentFieldIdx > parentFields.size()) {
-    return FieldPair(GStrIdx(0), TyIdxFieldAttrPair(TyIdx(0), FieldAttrs()));
+    return { GStrIdx(0), TyIdxFieldAttrPair(TyIdx(0), FieldAttrs()) };
   }
   return parentFields[parentFieldIdx - 1];
 }
@@ -1282,13 +1276,13 @@ static bool TraverseToFieldInFields(const FieldVector &fields, const GStrIdx &fi
 }
 
 FieldPair MIRStructType::TraverseToField(GStrIdx fieldStrIdx) const {
-  FieldPair field;
-  if ((!fields.empty() && TraverseToFieldInFields(fields, fieldStrIdx, field)) ||
-      (!staticFields.empty() && TraverseToFieldInFields(staticFields, fieldStrIdx, field)) ||
-      TraverseToFieldInFields(parentFields, fieldStrIdx, field)) {
-    return field;
+  FieldPair fieldPair;
+  if ((!fields.empty() && TraverseToFieldInFields(fields, fieldStrIdx, fieldPair)) ||
+      (!staticFields.empty() && TraverseToFieldInFields(staticFields, fieldStrIdx, fieldPair)) ||
+      TraverseToFieldInFields(parentFields, fieldStrIdx, fieldPair)) {
+    return fieldPair;
   }
-  return FieldPair(GStrIdx(0), TyIdxFieldAttrPair(TyIdx(0), FieldAttrs()));
+  return { GStrIdx(0), TyIdxFieldAttrPair(TyIdx(0), FieldAttrs()) };
 }
 
 bool MIRStructType::HasVolatileFieldInFields(const FieldVector &fieldsOfStruct) {
@@ -1338,7 +1332,7 @@ bool MIRInterfaceType::HasVolatileField() {
 }
 
 bool MIRStructType::HasTypeParamInFields(const FieldVector &fieldsOfStruct) const {
-  for (FieldPair field : fieldsOfStruct) {
+  for (const FieldPair &field : fieldsOfStruct) {
     if (field.second.second.GetAttr(FLDATTR_generic)) {
       return true;
     }
@@ -1371,11 +1365,10 @@ bool MIRInterfaceType::HasTypeParam() const {
 
 FieldPair MIRClassType::TraverseToFieldRef(FieldID &fieldID) const {
   if (parentTyIdx != 0) {
-    MIRClassType *parentClassType =
-        MIR_DYN_CAST(GlobalTables::GetTypeTable().GetTypeFromTyIdx(parentTyIdx), MIRClassType*);
+    auto *parentClassType = MIR_DYN_CAST(GlobalTables::GetTypeTable().GetTypeFromTyIdx(parentTyIdx), MIRClassType*);
     if (parentClassType != nullptr) {
-      fieldID--;
-      FieldPair curPair = parentClassType->TraverseToFieldRef(fieldID);
+      --fieldID;
+      const FieldPair &curPair = parentClassType->TraverseToFieldRef(fieldID);
       if (fieldID == 1 && curPair.second.first != 0) {
         return curPair;
       }
@@ -1386,7 +1379,7 @@ FieldPair MIRClassType::TraverseToFieldRef(FieldID &fieldID) const {
 
 // fields in interface are all static and are global, won't be accessed through fields
 FieldPair MIRInterfaceType::TraverseToFieldRef(FieldID &fieldID) const {
-  return FieldPair(GStrIdx(0), TyIdxFieldAttrPair(TyIdx(0), FieldAttrs()));
+  return { GStrIdx(0), TyIdxFieldAttrPair(TyIdx(0), FieldAttrs()) };
 }
 
 TyIdxFieldAttrPair MIRPtrType::GetPointedTyIdxFldAttrPairWithFieldID(FieldID fieldID) const {
@@ -1423,12 +1416,12 @@ std::string MIRPtrType::GetCompactMplTypeName() const {
 TypeAttrs FieldAttrs::ConvertToTypeAttrs() {
   TypeAttrs attr;
   constexpr uint32 maxAttrNum = 64;
-  for (uint32 i = 0; i < maxAttrNum; i++) {
+  for (uint32 i = 0; i < maxAttrNum; ++i) {
     if ((attrFlag & (1ULL << i)) == 0) {
       continue;
     }
-    FieldAttrKind tA = static_cast<FieldAttrKind>(i);
-    switch (tA) {
+    auto attrKind = static_cast<FieldAttrKind>(i);
+    switch (attrKind) {
 #define FIELD_ATTR
 #define ATTR(STR)               \
     case FLDATTR_##STR:         \
