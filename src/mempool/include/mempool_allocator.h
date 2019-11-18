@@ -32,8 +32,7 @@ class MapleAllocatorAdapter;  // circular dependency exists, no other choice
 class MapleAllocator {
  public:
   explicit MapleAllocator(MemPool *m) : memPool(m) {}
-
-  virtual ~MapleAllocator() {}
+  virtual ~MapleAllocator() = default;
 
   // Get adapter for use in STL containers. See arena_containers.h .
   MapleAllocatorAdapter<void> Adapter();
@@ -149,9 +148,9 @@ class MapleAllocatorAdapter<void> {
   ~MapleAllocatorAdapter() = default;
 
  private:
-  MapleAllocator *mapleAllocator;
   template <typename U>
   friend class MapleAllocatorAdapter;
+  MapleAllocator *mapleAllocator;
 };
 
 template <typename T>
@@ -204,11 +203,11 @@ class MapleAllocatorAdapter {
   }
 
  private:
-  MapleAllocator *mapleAllocator;
   template <typename U>
   friend class MapleAllocatorAdapter;
   template <typename U>
   friend bool operator==(const MapleAllocatorAdapter<U> &lhs, const MapleAllocatorAdapter<U> &rhs);
+  MapleAllocator *mapleAllocator;
 };
 
 template <typename T>

@@ -21,7 +21,6 @@
 constexpr int kScopeLocal = 2;   // the default scope level for function variables
 constexpr int kScopeGlobal = 1;  // the scope level for global variables
 
-
 namespace maple {
 enum MIRSymKind {
   kStInvalid,
@@ -98,7 +97,7 @@ class MIRSymbol {
     this->tyIdx = tyIdx;
   }
 
-  const TyIdx GetTyIdx() const {
+  TyIdx GetTyIdx() const {
     return tyIdx;
   }
 
@@ -380,9 +379,9 @@ class MIRSymbol {
 class MIRSymbolTable {
  public:
   explicit MIRSymbolTable(MapleAllocator &allocator)
-      : mAllocator(allocator), strIdxToStIdxMap(mAllocator.Adapter()), symbolTable(mAllocator.Adapter()) {
-    symbolTable.push_back(nullptr);
-  }
+      : mAllocator(allocator),
+        strIdxToStIdxMap(mAllocator.Adapter()),
+        symbolTable({ nullptr }, mAllocator.Adapter()) {}
 
   ~MIRSymbolTable() = default;
 
@@ -425,13 +424,14 @@ class MIRSymbolTable {
 
   StIdx GetStIdxFromStrIdx(GStrIdx idx) const {
     auto it = strIdxToStIdxMap.find(idx);
-    if (it == strIdxToStIdxMap.end()) {
-      return StIdx();
-    }
-    return it->second;
+    return (it == strIdxToStIdxMap.end()) ? StIdx() : it->second;
   }
 
-  MIRSymbol *GetSymbolFromStrIdx(GStrIdx idx, bool checkFirst = false) const {
+  MIRSymbol *GetSymbolFromStrIdx(GStrIdx idx, bool checkFirst = false) {
+    return GetSymbolFromStIdx(GetStIdxFromStrIdx(idx).Idx(), checkFirst);
+  }
+
+  const MIRSymbol *GetSymbolFromStrIdx(GStrIdx idx, bool checkFirst = false) const {
     return GetSymbolFromStIdx(GetStIdxFromStrIdx(idx).Idx(), checkFirst);
   }
 

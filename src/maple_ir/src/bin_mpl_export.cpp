@@ -292,7 +292,6 @@ namespace maple {
 int BinaryMplExport::typeMarkOffset = 0;
 
 BinaryMplExport::BinaryMplExport(MIRModule &md) : mod(md) {
-  bufI = 0;
   Init();
   InitOutputConstFactory();
   InitOutputTypeFactory();

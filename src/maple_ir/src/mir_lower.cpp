@@ -36,14 +36,14 @@ LabelIdx MIRLower::CreateCondGotoStmt(Opcode op, BlockNode &blk, const IfStmtNod
 }
 
 void MIRLower::CreateBrFalseStmt(BlockNode &blk, const IfStmtNode &ifStmt) {
-  LabelIdx labelIdx =CreateCondGotoStmt(OP_brfalse, blk, ifStmt);
+  LabelIdx labelIdx = CreateCondGotoStmt(OP_brfalse, blk, ifStmt);
   LabelNode *lableStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
   lableStmt->SetLabelIdx(labelIdx);
   blk.AddStatement(lableStmt);
 }
 
 void MIRLower::CreateBrTrueStmt(BlockNode &blk, const IfStmtNode &ifStmt) {
-  LabelIdx labelIdx =CreateCondGotoStmt(OP_brtrue, blk, ifStmt);
+  LabelIdx labelIdx = CreateCondGotoStmt(OP_brtrue, blk, ifStmt);
   LabelNode *lableStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
   lableStmt->SetLabelIdx(labelIdx);
   blk.AddStatement(lableStmt);
@@ -51,7 +51,7 @@ void MIRLower::CreateBrTrueStmt(BlockNode &blk, const IfStmtNode &ifStmt) {
 
 
 void MIRLower::CreateBrFalseAndGotoStmt(BlockNode &blk, const IfStmtNode &ifStmt) {
-  LabelIdx labelIdx =CreateCondGotoStmt(OP_brfalse, blk, ifStmt);
+  LabelIdx labelIdx = CreateCondGotoStmt(OP_brfalse, blk, ifStmt);
   ASSERT(ifStmt.GetThenPart()->GetLast()->GetOpCode() != OP_brtrue, "then or else block should not end with brtrue");
   ASSERT(ifStmt.GetThenPart()->GetLast()->GetOpCode() != OP_brfalse,
          "then or else block should not end with brfalse");

@@ -18,7 +18,7 @@
 #include "types_def.h"
 
 namespace maple {
-extern void PrintIndentation(int32 indent);
+void PrintIndentation(int32 indent);
 void PrintString(const std::string &str);
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_PRINTING_H

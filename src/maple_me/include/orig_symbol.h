@@ -340,8 +340,8 @@ class OriginalStTable {
   // malloc info to virtual variables in original table. this only exists for no-original variables.
   MapleMap<std::pair<BaseNode*, uint32>, OStIdx> malloc2Ost;
   MapleMap<uint32, OStIdx> thisField2Ost;  // field of this_memory to virtual variables in original table.
-  OStIdx virtuaLostUnkownMem;
-  OStIdx virtuaLostConstMem;
+  OStIdx virtuaLostUnkownMem{ 0 };
+  OStIdx virtuaLostConstMem{ 0 };
 };
 }  // namespace maple
 

@@ -201,12 +201,12 @@ void AliasClass::ApplyUnionForCopies(StmtNode &stmt) {
     case OP_dassign:
     case OP_regassign: {
       // RHS
-      ASSERT(stmt.Opnd(0) != nullptr, "nullptr check");
+      ASSERT_NOT_NULL(stmt.Opnd(0));
       AliasElem *rhsAe = CreateAliasElemsExpr(*stmt.Opnd(0));
       // LHS
       OriginalSt *ost = ssaTab.GetStmtsSSAPart().GetAssignedVarOf(stmt)->GetOrigSt();
       AliasElem *lhsAe = FindOrCreateAliasElem(*ost);
-      ASSERT(lhsAe != nullptr, "aliaselem of lhs should not be null");
+      ASSERT_NOT_NULL(lhsAe);
       ApplyUnionForDassignCopy(*lhsAe, rhsAe, *stmt.Opnd(0));
       return;
     }
@@ -790,7 +790,7 @@ void AliasClass::CollectMayDefForIassign(StmtNode &stmt, std::set<OriginalSt*> &
 }
 
 void AliasClass::InsertMayDefNodeExcludeFinalOst(std::set<OriginalSt*> &mayDefOsts,
-                                                 MapleMap<OStIdx, MayDefNode> &mayDefNodes, StmtNode &stmt, BBId bbID) {
+                                                 MapleMap<OStIdx, MayDefNode> &mayDefNodes, StmtNode &stmt) {
   for (OriginalSt *mayDefOst : mayDefOsts) {
     if (!mayDefOst->IsFinal()) {
       mayDefNodes.insert(std::make_pair(
@@ -807,7 +807,7 @@ void AliasClass::InsertMayDefIassign(StmtNode &stmt, BBId bbID) {
   if (mayDefOsts.size() == 1) {
     InsertMayDefNode(mayDefOsts, mayDefNodes, stmt, bbID);
   } else {
-    InsertMayDefNodeExcludeFinalOst(mayDefOsts, mayDefNodes, stmt, bbID);
+    InsertMayDefNodeExcludeFinalOst(mayDefOsts, mayDefNodes, stmt);
   }
   ASSERT(!mayDefNodes.empty(), "AliasClass::InsertMayUseIassign(): iassign cannot have empty maydef");
 }
@@ -942,12 +942,12 @@ void AliasClass::InsertMayDefUseCall(StmtNode &stmt, BBId bbID, bool hasSideEffe
   InsertMayUseNode(mayDefUseOstsB, theSSAPart->GetMayUseNodes());
   // insert may def node, if the callee has side-effect.
   if (hasSideEffect) {
-    InsertMayDefNodeExcludeFinalOst(mayDefUseOstsB, theSSAPart->GetMayDefNodes(), stmt, bbID);
+    InsertMayDefNodeExcludeFinalOst(mayDefUseOstsB, theSSAPart->GetMayDefNodes(), stmt);
     if (kOpcodeInfo.IsCallAssigned(stmt.GetOpCode())) {
       // 4. insert mayDefs caused by the mustDefs
       std::set<OriginalSt*> mayDefOstsC;
       CollectMayDefForMustDefs(stmt, mayDefOstsC);
-      InsertMayDefNodeExcludeFinalOst(mayDefOstsC, theSSAPart->GetMayDefNodes(), stmt, bbID);
+      InsertMayDefNodeExcludeFinalOst(mayDefOstsC, theSSAPart->GetMayDefNodes(), stmt);
     }
   }
 }
@@ -977,13 +977,13 @@ void AliasClass::InsertMayDefUseIntrncall(StmtNode &stmt, BBId bbID) {
   CollectMayUseFromGlobalsAffectedByCalls(mayDefUseOsts);
   InsertMayUseNodeExcludeFinalOst(mayDefUseOsts, theSSAPart->GetMayUseNodes());
   if (!intrinDesc->HasNoSideEffect() || calleeHasSideEffect) {
-    InsertMayDefNodeExcludeFinalOst(mayDefUseOsts, theSSAPart->GetMayDefNodes(), stmt, bbID);
+    InsertMayDefNodeExcludeFinalOst(mayDefUseOsts, theSSAPart->GetMayDefNodes(), stmt);
   }
   if (kOpcodeInfo.IsCallAssigned(stmt.GetOpCode())) {
     // 3. insert maydefs caused by the mustdefs
     std::set<OriginalSt*> mayDefOsts;
     CollectMayDefForMustDefs(stmt, mayDefOsts);
-    InsertMayDefNodeExcludeFinalOst(mayDefOsts, theSSAPart->GetMayDefNodes(), stmt, bbID);
+    InsertMayDefNodeExcludeFinalOst(mayDefOsts, theSSAPart->GetMayDefNodes(), stmt);
   }
 }
 

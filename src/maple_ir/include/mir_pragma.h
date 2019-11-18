@@ -255,8 +255,8 @@ class MIRPragma {
     tyIdxEx = idx;
   }
 
-  void SetParamNum(int32 paramnum) {
-    paramNum = paramnum;
+  void SetParamNum(int32 num) {
+    paramNum = num;
   }
 
  private:

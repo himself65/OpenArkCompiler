@@ -33,14 +33,12 @@ class AliasAnalysisTable {
   OriginalSt *GetPrevLevelNode(const OriginalSt &ost);
   MapleVector<OriginalSt*> *GetNextLevelNodes(const OriginalSt &ost);
   OriginalSt *FindOrCreateAddrofSymbolOriginalSt(OriginalSt &ost);
-  OriginalSt *FindOrCreateExtraLevSymOrRegOriginalSt(OriginalSt &ost, TyIdx ptyidx, FieldID fld);
   OriginalSt *FindOrCreateExtraLevOriginalSt(OriginalSt &ost, TyIdx ptyidx, FieldID fld);
-  OriginalSt *FindExtraLevOriginalSt(const MapleVector<OriginalSt*> &nextLevelOsts, FieldID fld);
-  OriginalSt *FindOrCreateDiffFieldOriginalSt(OriginalSt &ost, FieldID fld);
-  OriginalSt *FindDiffFieldOriginalSt(const OriginalSt &ost, FieldID fld);
   ~AliasAnalysisTable() = default;
 
  private:
+  OriginalSt *FindOrCreateExtraLevSymOrRegOriginalSt(OriginalSt &ost, TyIdx ptyidx, FieldID fld);
+  OriginalSt *FindExtraLevOriginalSt(const MapleVector<OriginalSt*> &nextLevelOsts, FieldID fld);
   SSATab &ssaTab;
   MapleAllocator alloc;
   MIRModule &mirModule;

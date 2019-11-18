@@ -68,7 +68,7 @@ class MIRParser {
   Opcode GetOpFromToken(TokenKind tk) const;
   bool IsStatement(TokenKind tk) const;
   PrimType GetPrimitiveType(TokenKind tk) const;
-  MIRIntrinsicID GetIntrinsicId(TokenKind tk) const;
+  MIRIntrinsicID GetIntrinsicID(TokenKind tk) const;
   bool ParseScalarValue(MIRConstPtr&, MIRType&);
   bool ParseConstAddrLeafExpr(MIRConstPtr&, MIRType&);
   bool ParseInitValue(MIRConstPtr&, TyIdx);
@@ -92,7 +92,7 @@ class MIRParser {
   bool ParseFields(MIRStructType &type);
   bool ParseStructType(TyIdx &styIdx);
   bool ParseClassType(TyIdx &tyIdx);
-  bool ParseInterfaceType(TyIdx &tyIdx);
+  bool ParseInterfaceType(TyIdx &sTyIdx);
   bool ParseDefinedTypename(TyIdx &tyIdx, MIRTypeKind kind = kTypeUnknown);
   bool ParseTypeParam(TyIdx &tyIdx);
   bool ParsePointType(TyIdx &tyIdx);

@@ -178,27 +178,28 @@ void MeSSA::RenameBB(BB &bb) {
   }
 }
 
-bool MeSSA::VerifySSAOpnd(const BaseNode &node) const {
+void MeSSA::VerifySSAOpnd(const BaseNode &node) const {
   Opcode op = node.GetOpCode();
   size_t vtableSize = func->GetMeSSATab()->GetVersionStTable().GetVersionStVectorSize();
   if (op == OP_dread || op == OP_addrof) {
     const auto &addrOfSSANode = static_cast<const AddrofSSANode&>(node);
     const VersionSt *verSt = addrOfSSANode.GetSSAVar();
     CHECK_FATAL(verSt->GetIndex() < vtableSize, "runtime check error");
-    return true;
-  } else if (op == OP_regread) {
+    return;
+  }
+  if (op == OP_regread) {
     const auto &regNode = static_cast<const RegreadSSANode&>(node);
     const VersionSt *verSt = regNode.GetSSAVar();
     CHECK_FATAL(verSt->GetIndex() < vtableSize, "runtime check error");
-    return true;
+    return;
   }
+
   for (size_t i = 0; i < node.NumOpnds(); ++i) {
     VerifySSAOpnd(*node.Opnd(i));
   }
-  return true;
 }
 
-bool MeSSA::VerifySSA() const {
+void MeSSA::VerifySSA() const {
   size_t vtableSize = func->GetMeSSATab()->GetVersionStTable().GetVersionStVectorSize();
   auto eIt = func->valid_end();
   for (auto bIt = func->valid_begin(); bIt != eIt; ++bIt) {
@@ -211,11 +212,10 @@ bool MeSSA::VerifySSA() const {
         CHECK_FATAL(verSt != nullptr && verSt->GetIndex() < vtableSize, "runtime check error");
       }
       for (size_t i = 0; i < stmt.NumOpnds(); ++i) {
-        CHECK_FATAL(VerifySSAOpnd(*stmt.Opnd(i)), "runtime check error");
+        VerifySSAOpnd(*stmt.Opnd(i));
       }
     }
   }
-  return true;
 }
 
 AnalysisResult *MeDoSSA::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, ModuleResultMgr *moduleResMgr) {

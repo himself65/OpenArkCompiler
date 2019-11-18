@@ -79,6 +79,9 @@ enum OptionIndex : uint64 {
   kCGMapleLinker,
 };
 
-enum EnabledIndex { kDisable, kEnable };
+enum EnabledIndex {
+  kDisable,
+  kEnable
+};
 }  // namespace maple
 #endif  // MAPLE_DRIVER_INCLUDE_USAGES_H

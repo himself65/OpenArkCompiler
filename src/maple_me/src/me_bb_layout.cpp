@@ -183,50 +183,30 @@ bool BBLayout::BBCanBeMoved(const BB &fromBB, const BB &toAfterBB) const {
 // Return true if bb1 and bb2 has the branch conditon.such as
 // bb1 : brfalse (a > 3)  bb2: brfalse (a > 3)/ brtrue (a <= 3)
 bool BBLayout::HasSameBranchCond(BB &bb1, BB &bb2) const {
-  if (func.GetIRMap() != nullptr) {
-    CondGotoMeStmt &meStmt1 = static_cast<CondGotoMeStmt&>(bb1.GetMeStmts().back());
-    CondGotoMeStmt &meStmt2 = static_cast<CondGotoMeStmt&>(bb2.GetMeStmts().back());
-    MeExpr *expr1 = meStmt1.GetOpnd();
-    MeExpr *expr2 = meStmt2.GetOpnd();
-    // Compare the opcode:  brtrue/brfalse
-    if (!(meStmt1.GetOp() == meStmt2.GetOp() && expr1->GetOp() == expr2->GetOp()) &&
-        !(meStmt1.GetOp() == GetOppositeOp(meStmt2.GetOp()) && expr1->GetOp() == GetOppositeOp(expr2->GetOp()))) {
-      return false;
-    }
-    if (!(expr1->GetMeOp() == expr2->GetMeOp() && expr1->GetMeOp() == kMeOpOp)) {
-      return false;
-    }
-    OpMeExpr *opMeExpr1 = static_cast<OpMeExpr*>(expr1);
-    OpMeExpr *opMeExpr2 = static_cast<OpMeExpr*>(expr2);
-    // Compare the two operands to make sure they are both equal.
-    if (opMeExpr1->GetOpnd(0) != opMeExpr2->GetOpnd(0)) {
-      return false;
-    }
-    // If one side is const, assume it is always the rhs.
-    if ((opMeExpr1->GetOpnd(1) != opMeExpr2->GetOpnd(1)) &&
-        !(opMeExpr1->GetOpnd(1)->IsZero() && opMeExpr2->GetOpnd(1)->IsZero())) {
-      return false;
-    }
-  } else {
-    CondGotoNode &stmt1 = static_cast<CondGotoNode&>(bb1.GetStmtNodes().back());
-    CondGotoNode &stmt2 = static_cast<CondGotoNode&>(bb2.GetStmtNodes().back());
-    if (stmt1.GetOpCode() != stmt2.GetOpCode() && stmt1.GetOpCode() != GetOppositeOp(stmt2.GetOpCode())) {
-      return false;
-    }
-    BaseNode *expr1 = stmt1.Opnd();
-    BaseNode *expr2 = stmt2.Opnd();
-    if (expr1->GetOpCode() != expr2->GetOpCode() && expr1->GetOpCode() != GetOppositeOp(expr2->GetOpCode())) {
-      return false;
-    }
-    if (stmt1.GetOpCode() == stmt2.GetOpCode()) {
-      if (expr1->GetOpCode() != expr2->GetOpCode()) {
-        return false;
-      }
-    } else {
-      if (expr1->GetOpCode() != GetOppositeOp(expr2->GetOpCode())) {
-        return false;
-      }
-    }
+  if(func.GetIRMap() == nullptr) {
+    return false;
+  }
+  CondGotoMeStmt &meStmt1 = static_cast<CondGotoMeStmt&>(bb1.GetMeStmts().back());
+  CondGotoMeStmt &meStmt2 = static_cast<CondGotoMeStmt&>(bb2.GetMeStmts().back());
+  MeExpr *expr1 = meStmt1.GetOpnd();
+  MeExpr *expr2 = meStmt2.GetOpnd();
+  // Compare the opcode:  brtrue/brfalse
+  if (!(meStmt1.GetOp() == meStmt2.GetOp() && expr1->GetOp() == expr2->GetOp()) &&
+      !(meStmt1.GetOp() == GetOppositeOp(meStmt2.GetOp()) && expr1->GetOp() == GetOppositeOp(expr2->GetOp()))) {
+    return false;
+  }
+  if (!(expr1->GetMeOp() == expr2->GetMeOp() && expr1->GetMeOp() == kMeOpOp)) {
+    return false;
+  }
+  OpMeExpr *opMeExpr1 = static_cast<OpMeExpr*>(expr1);
+  OpMeExpr *opMeExpr2 = static_cast<OpMeExpr*>(expr2);
+  // Compare the two operands to make sure they are both equal.
+  if (opMeExpr1->GetOpnd(0) != opMeExpr2->GetOpnd(0)) {
+    return false;
+  }
+  // If one side is const, assume it is always the rhs.
+  if ((opMeExpr1->GetOpnd(1) != opMeExpr2->GetOpnd(1)) &&
+      !(opMeExpr1->GetOpnd(1)->IsZero() && opMeExpr2->GetOpnd(1)->IsZero())) {
     return false;
   }
   return true;

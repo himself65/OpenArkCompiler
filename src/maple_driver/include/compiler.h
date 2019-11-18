@@ -53,11 +53,11 @@ class Compiler {
   }
 
   virtual std::string GetInputFileName(const MplOptions &options) const {
-    std::ostringstream ss;
-    for (auto const &inputFile : options.GetSplitsInputFiles()) {
-      ss << " " << inputFile;
+    std::ostringstream stream;
+    for (const auto &inputFile : options.GetSplitsInputFiles()) {
+      stream << " " << inputFile;
     }
-    return ss.str();
+    return stream.str();
   }
 
   virtual DefaultOption GetDefaultOptions(const MplOptions &options) {
@@ -74,7 +74,7 @@ class Compiler {
     return std::vector<std::string>();
   }
 
-  const bool CanAppendOptimization(const std::string &optionStr) const;
+  bool CanAppendOptimization(const std::string &optionStr) const;
 
  private:
   const std::string name;
@@ -121,8 +121,8 @@ class MapleCombCompiler : public Compiler {
  private:
   std::string realRunningExe;
   std::unordered_set<std::string> GetFinalOutputs(const MplOptions &mplOptions) const override;
-  MeOption *MakeMeOptions(const MplOptions &options, MemPool &optmp);
-  Options *MakeMpl2MplOptions(const MplOptions &options, MemPool &optmp);
+  MeOption *MakeMeOptions(const MplOptions &options, MemPool &memPool);
+  Options *MakeMpl2MplOptions(const MplOptions &options, MemPool &memPool);
 };
 
 class MplcgCompiler : public Compiler {

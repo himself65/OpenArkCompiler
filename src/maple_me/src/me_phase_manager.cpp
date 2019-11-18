@@ -40,31 +40,31 @@ void MeFuncPhaseManager::RunFuncPhase(MeFunction *func, MeFuncPhase *phase) {
   }
   // 3. tracetime(phase.id())
   // 4. run: skip mplme phase except "emit" if no cfg in MeFunction
-  AnalysisResult *r = nullptr;
+  AnalysisResult *analysisRes = nullptr;
   MePhaseID phaseID = phase->GetPhaseId();
   if ((func->NumBBs() > 0) || (phaseID == MeFuncPhase_EMIT)) {
-    r = phase->Run(func, &arFuncManager, modResMgr);
-    phase->ReleaseMemPool(r == nullptr ? nullptr : r->GetMempool());
+    analysisRes = phase->Run(func, &arFuncManager, modResMgr);
+    phase->ReleaseMemPool(analysisRes == nullptr ? nullptr : analysisRes->GetMempool());
   }
-  if (r != nullptr) {
+  if (analysisRes != nullptr) {
     // if phase is an analysis Phase, add result to arm
-    arFuncManager.AddResult(phase->GetPhaseId(), *func, *r);
+    arFuncManager.AddResult(phase->GetPhaseId(), *func, *analysisRes);
   }
 }
 
 void MeFuncPhaseManager::RegisterFuncPhases() {
   // register all Funcphases defined in me_phases.def
-#define FUNCTPHASE(id, mephase)                                               \
+#define FUNCTPHASE(id, mePhase)                                               \
   do {                                                                        \
-    void *buf = GetMemAllocator()->GetMemPool()->Malloc(sizeof(mephase(id))); \
+    void *buf = GetMemAllocator()->GetMemPool()->Malloc(sizeof(mePhase(id))); \
     CHECK_FATAL(buf != nullptr, "null ptr check");                            \
-    RegisterPhase(id, *(new (buf) mephase(id)));                              \
+    RegisterPhase(id, *(new (buf) mePhase(id)));                              \
   } while (0);
-#define FUNCAPHASE(id, mephase)                                                    \
+#define FUNCAPHASE(id, mePhase)                                                    \
   do {                                                                             \
-    void *buf = GetMemAllocator()->GetMemPool()->Malloc(sizeof(mephase(id)));      \
+    void *buf = GetMemAllocator()->GetMemPool()->Malloc(sizeof(mePhase(id)));      \
     CHECK_FATAL(buf != nullptr, "null ptr check");                                 \
-    RegisterPhase(id, *(new (buf) mephase(id)));                                   \
+    RegisterPhase(id, *(new (buf) mePhase(id)));                                   \
     arFuncManager.AddAnalysisPhase(id, (static_cast<MeFuncPhase*>(GetPhase(id)))); \
   } while (0);
 #include "me_phases.def"

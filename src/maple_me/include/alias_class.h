@@ -210,7 +210,7 @@ class AliasClass : public AnalysisResult {
   bool IsEquivalentField(TyIdx tyIdxA, FieldID fldA, TyIdx tyIdxB, FieldID fldB) const;
   void CollectMayDefForIassign(StmtNode &stmt, std::set<OriginalSt*> &mayDefOsts);
   void InsertMayDefNodeExcludeFinalOst(std::set<OriginalSt*> &mayDefOsts, MapleMap<OStIdx, MayDefNode> &mayDefNodes,
-                                       StmtNode &stmt, BBId bbid);
+                                       StmtNode &stmt);
   void InsertMayDefIassign(StmtNode &stmt, BBId bbid);
   void InsertMayDefUseSyncOps(StmtNode &stmt, BBId bbid);
   void InsertMayUseNodeExcludeFinalOst(const std::set<OriginalSt*> &mayUseOsts,

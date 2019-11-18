@@ -48,20 +48,16 @@ void OriginalSt::Dump() const {
 OriginalStTable::OriginalStTable(MemPool &memPool, MIRModule &mod)
     : alloc(&memPool),
       mirModule(mod),
-      originalStVector(alloc.Adapter()),
+      originalStVector({ nullptr }, alloc.Adapter()),
       mirSt2Ost(alloc.Adapter()),
       preg2Ost(alloc.Adapter()),
       pType2Ost(std::less<TyIdx>(), alloc.Adapter()),
       malloc2Ost(alloc.Adapter()),
-      thisField2Ost(std::less<uint32>(), alloc.Adapter()),
-      virtuaLostUnkownMem(0),
-      virtuaLostConstMem(0) {
-  originalStVector.push_back(nullptr);
-}
+      thisField2Ost(std::less<uint32>(), alloc.Adapter()) {}
 
 void OriginalStTable::Dump() {
   mirModule.GetOut() << "==========original st table===========\n";
-  for (size_t i = 1; i < Size(); i++) {
+  for (size_t i = 1; i < Size(); ++i) {
     const OriginalSt *verst = GetOriginalStFromID(OStIdx(i));
     verst->Dump();
   }
@@ -105,9 +101,11 @@ OriginalSt *OriginalStTable::CreateSymbolOriginalSt(MIRSymbol &mirst, PUIdx pidx
 
 OriginalSt *OriginalStTable::CreatePregOriginalSt(PregIdx regidx, PUIdx pidx) {
   OriginalSt *ost = alloc.GetMemPool()->New<OriginalSt>(originalStVector.size(), regidx, pidx, alloc);
-  ost->SetTyIdx((regidx < 0)
-                    ? TyIdx(PTY_unknown)
-                    : GlobalTables::GetTypeTable().GetPrimType(ost->GetMIRPreg()->GetPrimType())->GetTypeIndex());
+  if (regidx < 0) {
+    ost->SetTyIdx(TyIdx(PTY_unknown));
+  } else {
+    ost->SetTyIdx(GlobalTables::GetTypeTable().GetPrimType(ost->GetMIRPreg()->GetPrimType())->GetTypeIndex());
+  }
   originalStVector.push_back(ost);
   preg2Ost[regidx] = ost->GetIndex();
   return ost;
@@ -117,10 +115,9 @@ OriginalSt *OriginalStTable::FindSymbolOriginalSt(MIRSymbol &mirst) {
   MapleUnorderedMap<const MIRSymbol*, OStIdx>::iterator it = mirSt2Ost.find(&mirst);
   if (it == mirSt2Ost.end()) {
     return nullptr;
-  } else {
-    CHECK_FATAL(it->second.idx < originalStVector.size(),
-                "index out of range in OriginalStTable::FindSymbolOriginalSt");
-    return originalStVector[it->second.idx];
   }
+  CHECK_FATAL(it->second.idx < originalStVector.size(),
+              "index out of range in OriginalStTable::FindSymbolOriginalSt");
+  return originalStVector[it->second.idx];
 }
 }  // namespace maple

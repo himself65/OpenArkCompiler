@@ -19,7 +19,7 @@
 #include "option_parser.h"
 #include "string_utils.h"
 
-using namespace maple;
+namespace maple {
 using namespace mapleOption;
 
 std::unordered_set<std::string> MeOption::dumpPhases = {};
@@ -68,3 +68,4 @@ bool MeOption::DumpPhase(const std::string &phase) {
   }
   return ((dumpPhases.find(phase) != dumpPhases.end()) || (dumpPhases.find("*") != dumpPhases.end()));
 }
+} // namespace maple

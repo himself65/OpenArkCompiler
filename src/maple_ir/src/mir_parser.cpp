@@ -882,7 +882,7 @@ bool MIRParser::ParseStmtIntrinsiccall(StmtNodePtr &stmt, bool isAssigned) {
   auto *intrnCallNode = mod.CurFuncCodeMemPool()->New<IntrinsiccallNode>(mod, o);
   lexer.NextToken();
   if (o == !isAssigned ? OP_intrinsiccall : OP_intrinsiccallassigned) {
-    intrnCallNode->SetIntrinsic(GetIntrinsicId(lexer.GetTokenKind()));
+    intrnCallNode->SetIntrinsic(GetIntrinsicID(lexer.GetTokenKind()));
   } else {
     intrnCallNode->SetIntrinsic(static_cast<MIRIntrinsicID>(lexer.GetTheIntVal()));
   }
@@ -935,7 +935,7 @@ bool MIRParser::ParseStmtIntrinsiccallwithtype(StmtNodePtr &stmt, bool isAssigne
     return false;
   }
   intrnCallNode->SetTyIdx(tyIdx);
-  intrnCallNode->SetIntrinsic(GetIntrinsicId(lexer.GetTokenKind()));
+  intrnCallNode->SetIntrinsic(GetIntrinsicID(lexer.GetTokenKind()));
   lexer.NextToken();
   MapleVector<BaseNode*> opndsVec(mod.CurFuncCodeMemPoolAllocator()->Adapter());
   if (!ParseExprNaryOperand(opndsVec)) {
@@ -2545,7 +2545,7 @@ bool MIRParser::ParseExprArray(BaseNodePtr &expr) {
 }
 
 bool MIRParser::ParseIntrinsicId(IntrinsicopNode &intrnOpNode) {
-  MIRIntrinsicID intrinId = GetIntrinsicId(lexer.GetTokenKind());
+  MIRIntrinsicID intrinId = GetIntrinsicID(lexer.GetTokenKind());
   if (intrinId <= INTRN_UNDEFINED || intrinId >= INTRN_LAST) {
     Error("wrong intrinsic id ");
     return false;

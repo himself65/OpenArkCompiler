@@ -295,7 +295,6 @@ void MIRModule::Emit(const std::string &outFileName) const {
   }
   // Restore cout's buffer.
   LogInfo::MapleLogger().rdbuf(backup);
-  file.close();
 }
 
 void MIRModule::DumpFunctionList(bool skipBody) const {
@@ -325,7 +324,6 @@ void MIRModule::OutputFunctionListAsciiMpl(const std::string &phaseName) {
   DumpGlobalArraySymbol();
   DumpFunctionList();
   LogInfo::MapleLogger().rdbuf(backup);  // restore cout's buffer
-  mplFile.close();
 }
 
 void MIRModule::DumpToFile(const std::string &fileNameStr, bool emitStructureType) const {
@@ -358,7 +356,6 @@ void MIRModule::DumpInlineCandidateToFile(const std::string &fileNameStr) const 
   }
   // Restore cout's buffer.
   LogInfo::MapleLogger().rdbuf(backup);
-  file.close();
 }
 
 // This is not efficient. Only used in debug mode for now.
@@ -398,7 +395,6 @@ void MIRModule::DumpClassToFile(const std::string &path) const {
     LogInfo::MapleLogger() << '\n';
     /* restore cout */
     LogInfo::MapleLogger().rdbuf(backup);
-    mplFile.close();
   }
 }
 
@@ -435,7 +431,6 @@ void MIRModule::OutputAsciiMpl(const std::string &phaseName, bool emitStructureT
   LogInfo::MapleLogger().rdbuf(mplFile.rdbuf());  // change cout's buffer to that of file
   Dump(emitStructureType);
   LogInfo::MapleLogger().rdbuf(backup);  // restore cout's buffer
-  mplFile.close();
 }
 
 uint32 MIRModule::GetFileinfo(GStrIdx strIdx) const {

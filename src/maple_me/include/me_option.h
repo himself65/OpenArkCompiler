@@ -25,8 +25,9 @@ class MeOption {
  public:
   explicit MeOption(MemPool &memPool) : optionAlloc(&memPool) {}
 
-  void ParseOptions(int argc, char **argv, std::string &fileName);
   ~MeOption() = default;
+
+  void ParseOptions(int argc, char **argv, std::string &fileName);
 
   static bool DumpPhase(const std::string &phase);
   static std::unordered_set<std::string> dumpPhases;
@@ -70,7 +71,7 @@ class MeOption {
 #ifndef DEBUGFUNC
 #define DEBUGFUNC(f)                                                       \
   (MeOption::dumpPhases.find(PhaseName()) != MeOption::dumpPhases.end() && \
-   (MeOption::dumpFunc.compare("*") == 0 || f->GetName().find(MeOption::dumpFunc) != std::string::npos))
+   (MeOption::dumpFunc.compare("*") == 0 || (f)->GetName().find(MeOption::dumpFunc) != std::string::npos))
 #endif
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_ME_OPTION_H
