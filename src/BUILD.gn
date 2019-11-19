@@ -24,7 +24,7 @@ config("mapleallcompilecfg") {
       "-Wl,-z,relro",
       "-Wl,-z,now",
       "-Wl,-z,noexecstack",
-      "-fPIE",
+      "-pie",
     ]
   }
 }
