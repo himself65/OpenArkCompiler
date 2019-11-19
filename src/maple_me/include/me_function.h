@@ -345,6 +345,11 @@ class MeFunction : public FuncEmit {
     return bbVec.at(bbID);
   }
 
+  void NullifyBBByID(BBId bbID) {
+    ASSERT(bbID < bbVec.size(), "array index out of range");
+    bbVec.at(bbID) = nullptr;
+  }
+
   SSATab *GetMeSSATab() {
     return meSSATab;
   }

@@ -29,21 +29,21 @@ namespace maple {
 class UnionFind {
  public:
   explicit UnionFind(MemPool &memPool)
-      : ufAlloc(&memPool), num(0), id(ufAlloc.Adapter()), sz(ufAlloc.Adapter()) {}
+      : ufAlloc(&memPool), rootIDs(ufAlloc.Adapter()), sizeOfClass(ufAlloc.Adapter()) {}
 
   UnionFind(MemPool &memPool, uint32 siz)
-      : ufAlloc(&memPool), num(siz), id(siz, 0, ufAlloc.Adapter()), sz(siz, 0, ufAlloc.Adapter()) {
+      : ufAlloc(&memPool), num(siz), rootIDs(siz, 0, ufAlloc.Adapter()), sizeOfClass(siz, 0, ufAlloc.Adapter()) {
     Reinit();
   }
 
   ~UnionFind() {
     // for the root id's, the sum of their size should be population size
 #if DEBUG
-    unsigned int sum = 0;
-    for (unsigned int i = 0; i < num; i++)
-      if (id[i] == i) {
+    size_t sum = 0;
+    for (size_t i = 0; i < num; ++i)
+      if (rootIDs[i] == i) {
         // it is a root
-        sum += sz[i];
+        sum += sizeOfClass[i];
       }
     ASSERT(sum == num, "Something wrong in UnionFind");
 #endif
@@ -51,65 +51,65 @@ class UnionFind {
 
   void Reinit() {
     for (size_t i = 0; i < num; ++i) {
-      id[i] = i;
-      sz[i] = 1;
+      rootIDs[i] = i;
+      sizeOfClass[i] = 1;
     }
   }
 
   unsigned int NewMember() {
-    id.push_back(num);  // new member is its own root
-    sz.push_back(1);
+    rootIDs.push_back(num);  // new member is its own root
+    sizeOfClass.push_back(1);
     return ++num;
   }
 
-  unsigned int Root(unsigned int i) {
-    while (id[i] != i) {
-      id[i] = id[id[i]];  // this compresses the path
-      i = id[i];
+  unsigned int Root(size_t i) {
+    while (rootIDs[i] != i) {
+      rootIDs[i] = rootIDs[rootIDs[i]];  // this compresses the path
+      i = rootIDs[i];
     }
     return i;
   }
 
-  bool Find(unsigned int p, unsigned int q) {
+  bool Find(size_t p, unsigned int q) {
     return Root(p) == Root(q);
   }
 
-  void Union(unsigned int p, unsigned int q) {
+  void Union(size_t p, unsigned int q) {
     unsigned int i = Root(p);
     unsigned int j = Root(q);
     if (i == j) {
       return;
     }
     // construct a balanced tree
-    if (sz[i] < sz[j]) {
-      id[i] = j;
-      sz[j] += sz[i];
+    if (sizeOfClass[i] < sizeOfClass[j]) {
+      rootIDs[i] = j;
+      sizeOfClass[j] += sizeOfClass[i];
     } else {
-      id[j] = i;
-      sz.at(i) += sz.at(j);
+      rootIDs[j] = i;
+      sizeOfClass.at(i) += sizeOfClass.at(j);
     }
   }
 
-  unsigned int GetElementsNumber(int i) const {
-    ASSERT(i < sz.size(), "index out of range");
-    return sz[i];
+  unsigned int GetElementsNumber(size_t i) const {
+    ASSERT(i < sizeOfClass.size(), "index out of range");
+    return sizeOfClass[i];
   }
 
   bool SingleMemberClass(unsigned int p) {
     unsigned int i = Root(p);
-    ASSERT(i < sz.size(), "index out of range");
-    return sz[i] == 1;
+    ASSERT(i < sizeOfClass.size(), "index out of range");
+    return sizeOfClass[i] == 1;
   }
 
  private:
   MapleAllocator ufAlloc;
-  unsigned int num;                     // the population size; can continue to increase
-  MapleVector<unsigned int> id;  // array index is id of each population member;
+  unsigned int num = 0;                     // the population size; can continue to increase
+  MapleVector<unsigned int> rootIDs;  // array index is id of each population member;
   // value is id of the root member of its class;
   // the member is a root if its value is itself;
   // as its root changes, will keep updating so as to
   // maintain a flat tree
-  MapleVector<unsigned int> sz;  // gives number of elements in the tree rooted there
+  MapleVector<unsigned int> sizeOfClass;  // gives number of elements in the tree rooted there
 };
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_UNION_FIND_H

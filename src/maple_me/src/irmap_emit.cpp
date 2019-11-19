@@ -19,7 +19,7 @@
 #include "orig_symbol.h"
 
 namespace maple {
-bool VarMeExpr::IsValidVerIdx(SSATab &ssaTab) const {
+bool VarMeExpr::IsValidVerIdx(const SSATab &ssaTab) const {
   const OriginalSt *ost = ssaTab.GetOriginalStFromID(ostIdx);
   if (ost == nullptr || !ost->IsSymbolOst()) {
     return false;
@@ -303,7 +303,7 @@ StmtNode &MaydassignMeStmt::EmitStmt(SSATab &ssaTab) {
   return *dassignStmt;
 }
 
-void MeStmt::EmitCallReturnVector(SSATab &ssaTab, CallReturnVector &nrets) {
+void MeStmt::EmitCallReturnVector(SSATab &ssaTab, CallReturnVector &nRets) {
   MapleVector<MustDefMeNode> *mustDefs = GetMustDefList();
   if (mustDefs == nullptr || mustDefs->empty()) {
     return;
@@ -312,9 +312,9 @@ void MeStmt::EmitCallReturnVector(SSATab &ssaTab, CallReturnVector &nrets) {
   if (meExpr->GetMeOp() == kMeOpVar) {
     OriginalSt *ost = ssaTab.GetOriginalStFromID(static_cast<VarMeExpr*>(meExpr)->GetOStIdx());
     MIRSymbol *symbol = ost->GetMIRSymbol();
-    nrets.push_back(CallReturnPair(symbol->GetStIdx(), RegFieldPair(0, 0)));
+    nRets.push_back(CallReturnPair(symbol->GetStIdx(), RegFieldPair(0, 0)));
   } else if (meExpr->GetMeOp() == kMeOpReg) {
-    nrets.push_back(CallReturnPair(StIdx(), RegFieldPair(0, static_cast<RegMeExpr*>(meExpr)->GetRegIdx())));
+    nRets.push_back(CallReturnPair(StIdx(), RegFieldPair(0, static_cast<RegMeExpr*>(meExpr)->GetRegIdx())));
   }
 }
 

@@ -37,7 +37,7 @@ void MeSSAUpdate::GetIterDomFrontier(const BB &bb, MapleSet<BBId> &dfSet, std::v
 }
 
 void MeSSAUpdate::InsertPhis() {
-  MapleSet<BBId> dfSet(std::less<BBId>(), ssaUpdateAlloc.Adapter());
+  MapleSet<BBId> dfSet(ssaUpdateAlloc.Adapter());
   for (auto it = updateCands.begin(); it != updateCands.end(); ++it) {
     std::vector<bool> visitedMap(func.GetAllBBs().size(), false);
     dfSet.clear();
@@ -53,7 +53,7 @@ void MeSSAUpdate::InsertPhis() {
         phiListIt->second->SetIsLive(true);
         continue;
       }
-      MeVarPhiNode *phiMeNode = irMap.NewInPool<MeVarPhiNode>();
+      auto *phiMeNode = irMap.NewInPool<MeVarPhiNode>();
       phiMeNode->SetDefBB(bb);
       phiMeNode->GetOpnds().resize(bb->GetPred().size());
       bb->GetMevarPhiList().insert(std::make_pair(it->first, phiMeNode));
@@ -89,11 +89,11 @@ MeExpr *MeSSAUpdate::RenameExpr(MeExpr &meExpr, bool &changed) {
   switch (meExpr.GetMeOp()) {
     case kMeOpVar: {
       auto &varExpr = static_cast<VarMeExpr&>(meExpr);
-      auto it1 = renameStacks.find(varExpr.GetOStIdx());
-      if (it1 == renameStacks.end()) {
+      auto it = renameStacks.find(varExpr.GetOStIdx());
+      if (it == renameStacks.end()) {
         return &meExpr;
       }
-      MapleStack<VarMeExpr*> *renameStack = it1->second;
+      MapleStack<VarMeExpr*> *renameStack = it->second;
       VarMeExpr *curVar = renameStack->top();
       if (&varExpr == curVar) {
         return &meExpr;
@@ -225,7 +225,7 @@ void MeSSAUpdate::RenamePhiOpndsInSucc(const BB &bb) {
 void MeSSAUpdate::RenameBB(const BB &bb) {
   // for recording stack height on entering this BB, to pop back to same height
   // when backing up the dominator tree
-  std::map<OStIdx, uint32> origStackSize((std::less<OStIdx>()));
+  std::map<OStIdx, uint32> origStackSize;
   for (auto it = renameStacks.begin(); it != renameStacks.end(); ++it) {
     origStackSize[it->first] = it->second->size();
   }

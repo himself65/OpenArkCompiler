@@ -20,9 +20,11 @@
 #include "mir_function.h"
 #include "global_tables.h"
 
-namespace maple {
-constexpr int32_t kDefaultPrintIndentNum = 5;
+namespace {
+  constexpr int32_t kDefaultPrintIndentNum = 5;
+}
 
+namespace maple {
 bool MeExpr::IsTheSameWorkcand(const MeExpr &expr) const {
   ASSERT((exprID != -1 || expr.GetExprID() != -1), "at least one of them should not be none initialized");
   if (exprID == expr.GetExprID()) {
@@ -196,8 +198,8 @@ RegMeExpr *RegMeExpr::FindDefByStmt(std::set<RegMeExpr*> &visited) {
     return this;
   }
   if (GetDefBy() == kDefByPhi) {
-    MeRegPhiNode &phireg = GetDefPhi();
-    for (RegMeExpr *phiOpnd : phireg.GetOpnds()) {
+    MeRegPhiNode &phiReg = GetDefPhi();
+    for (RegMeExpr *phiOpnd : phiReg.GetOpnds()) {
       RegMeExpr *res = phiOpnd->FindDefByStmt(visited);
       if (res != nullptr) {
         return res;
@@ -283,7 +285,6 @@ bool OpMeExpr::IsIdentical(const OpMeExpr &meExpr) const {
       meExpr.bitsSize != bitsSize || meExpr.tyIdx != tyIdx || meExpr.fieldID != fieldID) {
     return false;
   }
-
   return IsAllOpndsIdentical(meExpr);
 }
 
@@ -295,7 +296,6 @@ bool NaryMeExpr::IsIdentical(NaryMeExpr &meExpr) const {
   if (meExpr.GetNumOpnds() != GetNumOpnds()) {
     return false;
   }
-
   return IsAllOpndsIdentical(meExpr);
 }
 
@@ -314,8 +314,8 @@ bool IvarMeExpr::IsUseSameSymbol(const MeExpr &expr) const {
 }
 
 bool IvarMeExpr::IsVolatile() const {
-  MIRPtrType *ty = static_cast<MIRPtrType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx));
-  MIRType *pointedType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ty->GetPointedTyIdx());
+  auto *type = static_cast<MIRPtrType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx));
+  MIRType *pointedType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(type->GetPointedTyIdx());
   if (fieldID == 0) {
     return pointedType->HasVolatileField();
   }
@@ -323,12 +323,12 @@ bool IvarMeExpr::IsVolatile() const {
 }
 
 bool IvarMeExpr::IsFinal() {
-  MIRPtrType *ty = static_cast<MIRPtrType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx));
-  MIRType *pointedTy = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ty->GetPointedTyIdx());
+  auto *type = static_cast<MIRPtrType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx));
+  MIRType *pointedType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(type->GetPointedTyIdx());
   if (fieldID == 0) {
     return false;
   }
-  return static_cast<MIRStructType*>(pointedTy)->IsFieldFinal(fieldID);
+  return static_cast<MIRStructType*>(pointedType)->IsFieldFinal(fieldID);
 }
 
 
@@ -336,10 +336,10 @@ bool IvarMeExpr::IsFinal() {
 //   pragma 0 var %keySet <$Ljava_2Flang_2Fannotation_2FRCWeakRef_3B>
 
 bool IvarMeExpr::IsRCWeak() const {
-  MIRPtrType *ty = static_cast<MIRPtrType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx));
-  MIRType *pointedType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ty->GetPointedTyIdx());
+  auto *type = static_cast<MIRPtrType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx));
+  MIRType *pointedType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(type->GetPointedTyIdx());
   if (pointedType->GetKind() == kTypeClass) {
-    MIRClassType *classType = static_cast<MIRClassType*>(pointedType);
+    auto *classType = static_cast<MIRClassType*>(pointedType);
     return classType->IsFieldRCWeak(fieldID);
   }
   return false;
@@ -376,12 +376,11 @@ bool IvarMeExpr::IsIdentical(IvarMeExpr &expr) const {
     }
     return false;
   }
-
   return true;
 }
 
 MeExpr *IvarMeExpr::GetIdenticalExpr(MeExpr &expr) const {
-  IvarMeExpr *ivarExpr = static_cast<IvarMeExpr*>(&expr);
+  auto *ivarExpr = static_cast<IvarMeExpr*>(&expr);
 
   while (ivarExpr != nullptr) {
     if (ivarExpr->GetMeOp() == kMeOpIvar && IsIdentical(*ivarExpr)) {
@@ -389,11 +388,10 @@ MeExpr *IvarMeExpr::GetIdenticalExpr(MeExpr &expr) const {
     }
     ivarExpr = static_cast<IvarMeExpr*>(ivarExpr->GetNext());
   }
-
   return nullptr;
 }
 
-BB *VarMeExpr::GetDefByBBMeStmt(Dominance &dominance, MeStmtPtr &defMeStmt) {
+BB *VarMeExpr::GetDefByBBMeStmt(const Dominance &dominance, MeStmtPtr &defMeStmt) {
   switch (defBy) {
     case kDefByNo:
       return &dominance.GetCommonEntryBB();
@@ -421,12 +419,12 @@ bool VarMeExpr::IsUseSameSymbol(const MeExpr &expr) const {
   return ostIdx == varMeExpr.ostIdx;
 }
 
-bool VarMeExpr::IsPureLocal(SSATab &tab, const MIRFunction &irFunc) const {
+bool VarMeExpr::IsPureLocal(const SSATab &tab, const MIRFunction &irFunc) const {
   const MIRSymbol *st = tab.GetMIRSymbolFromID(ostIdx);
   return st->IsLocal() && !irFunc.IsAFormal(st);
 }
 
-bool VarMeExpr::IsZeroVersion(SSATab &ssatab) const {
+bool VarMeExpr::IsZeroVersion(const SSATab &ssatab) const {
   ASSERT(vstIdx != 0, "VarMeExpr::IsZeroVersion: cannot determine because vstIdx is 0");
   const OriginalSt *ost = ssatab.GetOriginalStFromID(ostIdx);
   return ost->GetZeroVersionIndex() == vstIdx;
@@ -495,7 +493,7 @@ bool OpMeExpr::IsUseSameSymbol(const MeExpr &expr) const {
 
 MeExpr *OpMeExpr::GetIdenticalExpr(MeExpr &expr) const {
   if (!kOpcodeInfo.NotPure(GetOp())) {
-    OpMeExpr *opExpr = static_cast<OpMeExpr*>(&expr);
+    auto *opExpr = static_cast<OpMeExpr*>(&expr);
 
     while (opExpr != nullptr) {
       if (IsIdentical(*opExpr)) {
@@ -537,7 +535,7 @@ int64 ConstMeExpr::GetIntValue() const {
 }
 
 MeExpr *ConstMeExpr::GetIdenticalExpr(MeExpr &expr) const {
-  ConstMeExpr *constExpr = static_cast<ConstMeExpr*>(&expr);
+  auto *constExpr = static_cast<ConstMeExpr*>(&expr);
 
   while (constExpr != nullptr) {
     if (constExpr->GetMeOp() == kMeOpConst && constExpr->GetPrimType() == GetPrimType() &&
@@ -551,7 +549,7 @@ MeExpr *ConstMeExpr::GetIdenticalExpr(MeExpr &expr) const {
 }
 
 MeExpr *ConststrMeExpr::GetIdenticalExpr(MeExpr &expr) const {
-  ConststrMeExpr *constStrExpr = static_cast<ConststrMeExpr*>(&expr);
+  auto *constStrExpr = static_cast<ConststrMeExpr*>(&expr);
 
   while (constStrExpr != nullptr) {
     if (constStrExpr->GetMeOp() == kMeOpConststr && constStrExpr->GetStrIdx() == strIdx) {
@@ -564,7 +562,7 @@ MeExpr *ConststrMeExpr::GetIdenticalExpr(MeExpr &expr) const {
 }
 
 MeExpr *Conststr16MeExpr::GetIdenticalExpr(MeExpr &expr) const {
-  Conststr16MeExpr *constStr16Expr = static_cast<Conststr16MeExpr*>(&expr);
+  auto *constStr16Expr = static_cast<Conststr16MeExpr*>(&expr);
 
   while (constStr16Expr != nullptr) {
     if (constStr16Expr->GetMeOp() == kMeOpConststr16 && constStr16Expr->GetStrIdx() == strIdx) {
@@ -577,7 +575,7 @@ MeExpr *Conststr16MeExpr::GetIdenticalExpr(MeExpr &expr) const {
 }
 
 MeExpr *SizeoftypeMeExpr::GetIdenticalExpr(MeExpr &expr) const {
-  SizeoftypeMeExpr *sizeoftypeExpr = static_cast<SizeoftypeMeExpr*>(&expr);
+  auto *sizeoftypeExpr = static_cast<SizeoftypeMeExpr*>(&expr);
 
   while (sizeoftypeExpr != nullptr) {
     if (sizeoftypeExpr->GetMeOp() == kMeOpSizeoftype && sizeoftypeExpr->GetTyIdx() == tyIdx) {
@@ -590,7 +588,7 @@ MeExpr *SizeoftypeMeExpr::GetIdenticalExpr(MeExpr &expr) const {
 }
 
 MeExpr *FieldsDistMeExpr::GetIdenticalExpr(MeExpr &expr) const {
-  FieldsDistMeExpr *fieldsDistExpr = static_cast<FieldsDistMeExpr*>(&expr);
+  auto *fieldsDistExpr = static_cast<FieldsDistMeExpr*>(&expr);
 
   while (fieldsDistExpr != nullptr) {
     if (fieldsDistExpr->GetMeOp() == kMeOpFieldsDist && fieldsDistExpr->GetTyIdx() == GetTyIdx() &&
@@ -604,7 +602,7 @@ MeExpr *FieldsDistMeExpr::GetIdenticalExpr(MeExpr &expr) const {
 }
 
 MeExpr *AddrofMeExpr::GetIdenticalExpr(MeExpr &expr) const {
-  AddrofMeExpr *addrofExpr = static_cast<AddrofMeExpr*>(&expr);
+  auto *addrofExpr = static_cast<AddrofMeExpr*>(&expr);
 
   while (addrofExpr != nullptr) {
     if (addrofExpr->GetMeOp() == kMeOpAddrof && addrofExpr->GetOstIdx() == GetOstIdx() &&
@@ -618,7 +616,7 @@ MeExpr *AddrofMeExpr::GetIdenticalExpr(MeExpr &expr) const {
 }
 
 MeExpr *NaryMeExpr::GetIdenticalExpr(MeExpr &expr) const {
-  NaryMeExpr *naryExpr = static_cast<NaryMeExpr*>(&expr);
+  auto *naryExpr = static_cast<NaryMeExpr*>(&expr);
 
   while (naryExpr != nullptr) {
     bool isPureIntrinsic =
@@ -633,7 +631,7 @@ MeExpr *NaryMeExpr::GetIdenticalExpr(MeExpr &expr) const {
 }
 
 MeExpr *AddroffuncMeExpr::GetIdenticalExpr(MeExpr &expr) const {
-  AddroffuncMeExpr *addroffuncExpr = static_cast<AddroffuncMeExpr*>(&expr);
+  auto *addroffuncExpr = static_cast<AddroffuncMeExpr*>(&expr);
 
   while (addroffuncExpr != nullptr) {
     if (addroffuncExpr->GetMeOp() == kMeOpAddroffunc && addroffuncExpr->GetPuIdx() == puIdx) {
@@ -829,57 +827,57 @@ void NaryMeExpr::Dump(IRMap *irMap, int32 indent) const {
   }
 }
 
-MeExpr *DassignMeStmt::GetLHSRef(SSATab &ssatab, bool excludelocalrefvar) {
-  VarMeExpr *l = GetVarLHS();
-  if (l->GetPrimType() != PTY_ref) {
+MeExpr *DassignMeStmt::GetLHSRef(SSATab &ssaTab, bool excludeLocalRefVar) {
+  VarMeExpr *lhs = GetVarLHS();
+  if (lhs->GetPrimType() != PTY_ref) {
     return nullptr;
   }
-  const OriginalSt *ost = ssatab.GetOriginalStFromID(lhs->GetOStIdx());
+  const OriginalSt *ost = ssaTab.GetOriginalStFromID(lhs->GetOStIdx());
   if (ost->IsIgnoreRC()) {
     return nullptr;
   }
-  if (excludelocalrefvar && ost->IsLocal()) {
+  if (excludeLocalRefVar && ost->IsLocal()) {
     return nullptr;
   }
-  return l;
+  return lhs;
 }
 
-MeExpr *MaydassignMeStmt::GetLHSRef(SSATab &ssatab, bool excludelocalrefvar) {
-  VarMeExpr *l = GetVarLHS();
-  if (l->GetPrimType() != PTY_ref) {
+MeExpr *MaydassignMeStmt::GetLHSRef(SSATab &ssaTab, bool excludeLocalRefVar) {
+  VarMeExpr *lhs = GetVarLHS();
+  if (lhs->GetPrimType() != PTY_ref) {
     return nullptr;
   }
-  const OriginalSt *ost = ssatab.GetOriginalStFromID(l->GetOStIdx());
+  const OriginalSt *ost = ssaTab.GetOriginalStFromID(lhs->GetOStIdx());
   if (ost->IsIgnoreRC()) {
     return nullptr;
   }
-  if (excludelocalrefvar && ost->IsLocal()) {
+  if (excludeLocalRefVar && ost->IsLocal()) {
     return nullptr;
   }
-  return l;
+  return lhs;
 }
 
-MeExpr *IassignMeStmt::GetLHSRef(SSATab &ssatab, bool excludelocalrefvar) {
+MeExpr *IassignMeStmt::GetLHSRef(SSATab &ssaTab, bool excludeLocalRefVar) {
   MIRType *baseType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(lhsVar->GetTyIdx());
   ASSERT(baseType != nullptr, "null ptr check");
-  MIRType *ptype = static_cast<MIRPtrType*>(baseType)->GetPointedType();
-  MIRStructType *structType = dynamic_cast<MIRStructType*>(ptype);
+  auto *pType = static_cast<MIRPtrType*>(baseType)->GetPointedType();
+  auto *structType = dynamic_cast<MIRStructType*>(pType);
   if (structType == nullptr) {
-    if (ptype->GetKind() == kTypePointer) {
+    if (pType->GetKind() == kTypePointer) {
       if (lhsVar->GetFieldID() == 0) {
-        if (static_cast<MIRPtrType*>(ptype)->GetPrimType() != PTY_ref) {
+        if (static_cast<MIRPtrType*>(pType)->GetPrimType() != PTY_ref) {
           return nullptr;
         }
       } else {
-        MIRType *pptype = static_cast<MIRPtrType*>(ptype)->GetPointedType();
-        TyIdx ftyidx = static_cast<MIRStructType*>(pptype)->GetFieldTyIdx(lhsVar->GetFieldID());
-        if (GlobalTables::GetTypeTable().GetTypeFromTyIdx(ftyidx)->GetPrimType() != PTY_ref) {
+        auto *ppType = static_cast<MIRPtrType*>(pType)->GetPointedType();
+        auto fTyIdx = static_cast<MIRStructType*>(ppType)->GetFieldTyIdx(lhsVar->GetFieldID());
+        if (GlobalTables::GetTypeTable().GetTypeFromTyIdx(fTyIdx)->GetPrimType() != PTY_ref) {
           return nullptr;
         }
       }
-    } else if (ptype->GetKind() == kTypeJArray) {
-      MIRType *pptype = static_cast<MIRPtrType*>(ptype)->GetPointedType();
-      if (static_cast<MIRPtrType*>(pptype)->GetPrimType() != PTY_ref) {
+    } else if (pType->GetKind() == kTypeJArray) {
+      auto *ppType = static_cast<MIRPtrType*>(pType)->GetPointedType();
+      if (static_cast<MIRPtrType*>(ppType)->GetPrimType() != PTY_ref) {
         return nullptr;
       }
     } else {
@@ -896,7 +894,7 @@ MeExpr *IassignMeStmt::GetLHSRef(SSATab &ssatab, bool excludelocalrefvar) {
   return lhsVar;
 }
 
-VarMeExpr *AssignedPart::GetAssignedPartLHSRef(SSATab &ssatab, bool excludelocalrefvar) {
+VarMeExpr *AssignedPart::GetAssignedPartLHSRef(SSATab &ssaTab, bool excludeLocalRefVar) {
   if (mustDefList.empty()) {
     return nullptr;
   }
@@ -908,11 +906,11 @@ VarMeExpr *AssignedPart::GetAssignedPartLHSRef(SSATab &ssatab, bool excludelocal
   if (theLHS->GetPrimType() != PTY_ref) {
     return nullptr;
   }
-  const OriginalSt *ost = ssatab.GetOriginalStFromID(theLHS->GetOStIdx());
+  const OriginalSt *ost = ssaTab.GetOriginalStFromID(theLHS->GetOStIdx());
   if (ost->IsIgnoreRC()) {
     return nullptr;
   }
-  if (excludelocalrefvar && ost->IsLocal()) {
+  if (excludeLocalRefVar && ost->IsLocal()) {
     return nullptr;
   }
   return theLHS;
@@ -991,16 +989,16 @@ void MaydassignMeStmt::Dump(IRMap *irMap) const {
 }
 
 void ChiMeNode::Dump(IRMap *irMap) const {
-  auto *melhs = static_cast<VarMeExpr*>(lhs);
-  auto *merhs = static_cast<VarMeExpr*>(rhs);
-  CHECK_FATAL(melhs != nullptr, "Node doesn't have lhs?");
-  CHECK_FATAL(merhs != nullptr, "Node doesn't have rhs?");
+  auto *meLHS = static_cast<VarMeExpr*>(lhs);
+  auto *meRHS = static_cast<VarMeExpr*>(rhs);
+  CHECK_FATAL(meLHS != nullptr, "Node doesn't have lhs?");
+  CHECK_FATAL(meRHS != nullptr, "Node doesn't have rhs?");
   if (!DumpOptions::GetSimpleDump()) {
     LogInfo::MapleLogger() << "VAR:";
-    irMap->GetSSATab().GetOriginalStFromID(melhs->GetOStIdx())->Dump();
+    irMap->GetSSATab().GetOriginalStFromID(meLHS->GetOStIdx())->Dump();
   }
-  LogInfo::MapleLogger() << " mx" << melhs->GetExprID() << " = CHI{";
-  LogInfo::MapleLogger() << "mx" << merhs->GetExprID() << "}";
+  LogInfo::MapleLogger() << " mx" << meLHS->GetExprID() << " = CHI{";
+  LogInfo::MapleLogger() << "mx" << meRHS->GetExprID() << "}";
 }
 
 void DumpMuList(IRMap *irMap, const MapleMap<OStIdx, VarMeExpr*> &muList, int32 indent) {
@@ -1037,7 +1035,7 @@ void DumpChiList(IRMap *irMap, const MapleMap<OStIdx, ChiMeNode*> &chiList) {
   LogInfo::MapleLogger() << "---- CHILIST: { ";
   for (auto it = chiList.begin();;) {
     it->second->Dump(irMap);
-    it++;
+    ++it;
     if (it == chiList.end()) {
       break;
     } else {
@@ -1087,8 +1085,8 @@ void NaryMeStmt::Dump(IRMap *irMap) const {
 void AssignedPart::DumpAssignedPart(IRMap *irMap) const {
   LogInfo::MapleLogger() << "    assignedpart: {";
   for (auto it = mustDefList.begin(); it != mustDefList.end(); ++it) {
-    const MeExpr *lhsvar = (*it).GetLHS();
-    lhsvar->Dump(irMap);
+    const MeExpr *lhsVar = (*it).GetLHS();
+    lhsVar->Dump(irMap);
   }
   if (needIncref) {
     LogInfo::MapleLogger() << " [RC+]";
@@ -1272,7 +1270,7 @@ BB *VarMeExpr::DefByBB() {
   }
 }
 
-bool VarMeExpr::IsVolatile(SSATab &ssatab) {
+bool VarMeExpr::IsVolatile(const SSATab &ssatab) {
   const OriginalSt *ost = ssatab.GetOriginalStFromID(ostIdx);
   if (!ost->IsSymbolOst()) {
     return false;
@@ -1281,11 +1279,11 @@ bool VarMeExpr::IsVolatile(SSATab &ssatab) {
   if (sym->IsVolatile()) {
     return true;
   }
-  MIRType *ty = GlobalTables::GetTypeTable().GetTypeFromTyIdx(sym->GetTyIdx());
+  MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(sym->GetTyIdx());
   if (fieldID == 0) {
-    return (ty->HasVolatileField());
+    return (type->HasVolatileField());
   }
-  auto *structType = static_cast<MIRStructType*>(ty);
+  auto *structType = static_cast<MIRStructType*>(type);
   return structType->IsFieldVolatile(fieldID);
 }
 
@@ -1333,11 +1331,11 @@ bool MeExpr::PointsToSomethingThatNeedsIncRef() {
     return true;
   }
   if (meOp == kMeOpVar) {
-    VarMeExpr *var = static_cast<VarMeExpr*>(this);
+    auto *var = static_cast<VarMeExpr*>(this);
     if (var->GetDefBy() == kDefByMustDef) {
       MeStmt *baseStmt = var->GetDefMustDef().GetBase();
       if (baseStmt->GetOp() == OP_callassigned) {
-        CallMeStmt *call = static_cast<CallMeStmt*>(baseStmt);
+        auto *call = static_cast<CallMeStmt*>(baseStmt);
         MIRFunction &callFunc = call->GetTargetFunction();
         if (callFunc.GetName() == "MCC_GetOrInsertLiteral") {
           return false;
@@ -1347,7 +1345,7 @@ bool MeExpr::PointsToSomethingThatNeedsIncRef() {
     return true;
   }
   if (meOp == kMeOpReg) {
-    RegMeExpr *r = static_cast<RegMeExpr*>(this);
+    auto *r = static_cast<RegMeExpr*>(this);
     return r->GetRegIdx() != -kSregThrownval;
   }
   return false;
@@ -1360,20 +1358,19 @@ MapleMap<OStIdx, ChiMeNode*> *GenericGetChiListFromVarMeExprInner(VarMeExpr &exp
   }
   visited.insert(&expr);
   if (expr.GetDefBy() == kDefByPhi) {
-    MeVarPhiNode &phime = expr.GetDefPhi();
-    MapleVector<VarMeExpr*> &phiopnds = phime.GetOpnds();
-    for (auto it = phiopnds.begin(); it != phiopnds.end(); ++it) {
+    MeVarPhiNode &phiMe = expr.GetDefPhi();
+    MapleVector<VarMeExpr*> &phiOpnds = phiMe.GetOpnds();
+    for (auto it = phiOpnds.begin(); it != phiOpnds.end(); ++it) {
       VarMeExpr *meExpr = *it;
       MapleMap<OStIdx, ChiMeNode*> *chiList = GenericGetChiListFromVarMeExprInner(*meExpr, visited);
       if (chiList != nullptr) {
         return chiList;
       }
     }
-  } else if (expr.GetDefBy() == kDefByChi) {
-    return expr.GetDefChi().GetBase()->GetChiList();
-  } else {
-    // not yet implemented
     return nullptr;
+  }
+  if (expr.GetDefBy() == kDefByChi) {
+    return expr.GetDefChi().GetBase()->GetChiList();
   }
   return nullptr;
 }

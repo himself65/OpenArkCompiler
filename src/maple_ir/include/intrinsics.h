@@ -70,21 +70,21 @@ enum IntrinArgType {
   kArgTySimplestr,
   kArgTyDynstr,
   kArgTySimpleobj,
-  kArgTyDynobj,
+  kArgTyDynobj
 #endif
 };
 
-static constexpr uint32 INTRNISJS = 1U << kIntrnIsJs;
-static constexpr uint32 INTRNISJSUNARY = 1U << kIntrnIsJsUnary;
-static constexpr uint32 INTRNISJSBINARY = 1U << kIntrnIsJsBinary;
-static constexpr uint32 INTRNISJAVA = 1U << kIntrnIsJava;
-static constexpr uint32 INTRNNOSIDEEFFECT = 1U << kIntrnNoSideEffect;
-static constexpr uint32 INTRNRETURNSTRUCT = 1U << kIntrnIsReturnStruct;
-static constexpr uint32 INTRNLOADMEM = 1U << kIntrnIsLoadMem;
-static constexpr uint32 INTRNISPURE = 1U << kIntrnIsPure;
-static constexpr uint32 INTRNNEVERRETURN = 1U << kIntrnNeverReturn;
-static constexpr uint32 INTRNATOMIC = 1U << kIntrnIsAtomic;
-static constexpr uint32 INTRNISRC = 1U << kIntrnIsRC;
+constexpr uint32 INTRNISJS = 1U << kIntrnIsJs;
+constexpr uint32 INTRNISJSUNARY = 1U << kIntrnIsJsUnary;
+constexpr uint32 INTRNISJSBINARY = 1U << kIntrnIsJsBinary;
+constexpr uint32 INTRNISJAVA = 1U << kIntrnIsJava;
+constexpr uint32 INTRNNOSIDEEFFECT = 1U << kIntrnNoSideEffect;
+constexpr uint32 INTRNRETURNSTRUCT = 1U << kIntrnIsReturnStruct;
+constexpr uint32 INTRNLOADMEM = 1U << kIntrnIsLoadMem;
+constexpr uint32 INTRNISPURE = 1U << kIntrnIsPure;
+constexpr uint32 INTRNNEVERRETURN = 1U << kIntrnNeverReturn;
+constexpr uint32 INTRNATOMIC = 1U << kIntrnIsAtomic;
+constexpr uint32 INTRNISRC = 1U << kIntrnIsRC;
 class MIRType;    // circular dependency exists, no other choice
 class MIRModule;  // circular dependency exists, no other choice
 struct IntrinDesc {
@@ -142,10 +142,10 @@ struct IntrinDesc {
 
   MIRType *GetReturnType() const;
   MIRType *GetArgType(uint32 index) const;
-  MIRType *GetTypeFromArgTy(IntrinArgType argtype) const;
+  MIRType *GetTypeFromArgTy(IntrinArgType argType) const;
   static MIRType *jsValueType;
   static MIRModule *mirModule;
-  static void InitMIRModule(MIRModule *mirmodule);
+  static void InitMIRModule(MIRModule *mirModule);
   static MIRType *GetOrCreateJSValueType();
   static IntrinDesc intrinTable[INTRN_LAST + 1];
 };

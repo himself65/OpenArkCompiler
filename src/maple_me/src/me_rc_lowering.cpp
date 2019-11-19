@@ -22,11 +22,11 @@ namespace {
 }
 
 namespace maple {
-static inline bool CheckOp(const MeStmt *stmt, const Opcode op) {
+static inline bool CheckOp(const MeStmt *stmt, Opcode op) {
   return stmt != nullptr && stmt->GetOp() == op;
 }
 
-static inline void CheckRemove(MeStmt *stmt, const Opcode op) {
+static inline void CheckRemove(MeStmt *stmt, Opcode op) {
   if (CheckOp(stmt, op)) {
     stmt->GetBB()->RemoveMeStmt(stmt);
   }
@@ -60,8 +60,8 @@ void RCLowering::MarkLocalRefVar() {
 }
 
 void RCLowering::MarkAllRefOpnds() {
-  auto eIt = func.valid_end();
-  for (auto bIt = func.valid_begin(); bIt != eIt; ++bIt) {
+  // to prevent valid_end from being called repeatedly, don't modify the definition of eIt
+  for (auto bIt = func.valid_begin(), eIt = func.valid_end(); bIt != eIt; ++bIt) {
     for (auto &stmt : (*bIt)->GetMeStmts()) {
       MeExpr *lhsRef = stmt.GetLHSRef(ssaTab, false);
       if (lhsRef == nullptr) {
@@ -111,11 +111,11 @@ VarMeExpr *RCLowering::CreateVarMeExprFromSym(MIRSymbol &sym) const {
 }
 
 // note that RCInstrinsic creation will check the ref assignment and reuse lhs if possible
-IntrinsiccallMeStmt *RCLowering::CreateRCIntrinsic(const MIRIntrinsicID intrnID, const MeStmt &stmt,
+IntrinsiccallMeStmt *RCLowering::CreateRCIntrinsic(MIRIntrinsicID intrnID, const MeStmt &stmt,
                                                    std::vector<MeExpr*> &opnds, bool assigned) {
   IntrinsiccallMeStmt *intrn = nullptr;
   if (assigned) {
-    MeExpr *ret = stmt.GetOp() == OP_regassign ? stmt.GetLHS() : irMap.CreateRegMeExpr(PTY_ref);
+    MeExpr *ret = (stmt.GetOp() == OP_regassign) ? stmt.GetLHS() : irMap.CreateRegMeExpr(PTY_ref);
     intrn = irMap.CreateIntrinsicCallAssignedMeStmt(intrnID, opnds, ret);
   } else {
     intrn = irMap.CreateIntrinsicCallMeStmt(intrnID, opnds);
@@ -124,7 +124,7 @@ IntrinsiccallMeStmt *RCLowering::CreateRCIntrinsic(const MIRIntrinsicID intrnID,
   return intrn;
 }
 
-MIRIntrinsicID RCLowering::PrepareVolatileCall(const MeStmt &stmt, const MIRIntrinsicID intrnId) {
+MIRIntrinsicID RCLowering::PrepareVolatileCall(const MeStmt &stmt, MIRIntrinsicID intrnId) {
   bool isLoad = (intrnId == INTRN_MCCLoadRefSVol || intrnId == INTRN_MCCLoadWeakVol || intrnId == INTRN_MCCLoadRefVol);
   if (isLoad) {
     CheckRemove(stmt.GetNext(), OP_membaracquire);
@@ -270,7 +270,8 @@ bool RCLowering::RCFirst(MeExpr &rhs) {
   // null, local var/reg read
   if (rhs.GetMeOp() == kMeOpConst) {
     return static_cast<ConstMeExpr&>(rhs).IsZero();
-  } else if (rhs.GetMeOp() == kMeOpVar) {
+  }
+  if (rhs.GetMeOp() == kMeOpVar) {
     auto &rhsVar = static_cast<VarMeExpr&>(rhs);
     const MIRSymbol *sym = ssaTab.GetMIRSymbolFromID(rhsVar.GetOStIdx());
     return sym->IsLocal();
@@ -417,7 +418,7 @@ void RCLowering::HandleAssignMeStmtIvarLHS(MeStmt &stmt) {
     MapleSet<FieldID> *fieldSet = initializedFields[lhsInner->GetBase()];
     if (fieldSet == nullptr) {
       fieldSet =
-          mirModule.GetMemPool()->New<MapleSet<FieldID>>(std::less<FieldID>(), mirModule.GetMPAllocator().Adapter());
+          mirModule.GetMemPool()->New<MapleSet<FieldID>>(mirModule.GetMPAllocator().Adapter());
     }
     fieldSet->insert(fieldID);
   }
@@ -461,29 +462,26 @@ MIRIntrinsicID RCLowering::SelectWriteBarrier(const MeStmt &stmt) {
     if (meOp == kMeOpVar) {
       return PrepareVolatileCall(stmt, incWithLHS ? (decWithLHS ? INTRN_MCCWriteSVol : INTRN_MCCWriteSVolNoDec)
                                                   : (decWithLHS ? INTRN_MCCWriteSVolNoInc : INTRN_MCCWriteSVolNoRC));
-    } else {
-      if (static_cast<IvarMeExpr*>(lhs)->IsRCWeak()) {
-        return PrepareVolatileCall(stmt, INTRN_MCCWriteVolWeak);
-      }
-      return PrepareVolatileCall(stmt, incWithLHS ? INTRN_MCCWriteVol : INTRN_MCCWriteVolNoInc);
     }
-  } else {
-    if (meOp == kMeOpVar) {
-      return incWithLHS ? (decWithLHS ? INTRN_MCCWriteS : INTRN_MCCWriteSNoDec)
-                        : (decWithLHS ? INTRN_MCCWriteSNoInc : INTRN_MCCWriteSNoRC);
-    } else {
-      if (static_cast<IvarMeExpr*>(lhs)->IsRCWeak()) {
-        return INTRN_MCCWriteWeak;
-      }
-      return incWithLHS ? (decWithLHS ? INTRN_MCCWrite : INTRN_MCCWriteNoDec)
-                        : (decWithLHS ? INTRN_MCCWriteNoInc : INTRN_MCCWriteNoRC);
+    if (static_cast<IvarMeExpr*>(lhs)->IsRCWeak()) {
+      return PrepareVolatileCall(stmt, INTRN_MCCWriteVolWeak);
     }
+    return PrepareVolatileCall(stmt, incWithLHS ? INTRN_MCCWriteVol : INTRN_MCCWriteVolNoInc);
   }
+  if (meOp == kMeOpVar) {
+    return incWithLHS ? (decWithLHS ? INTRN_MCCWriteS : INTRN_MCCWriteSNoDec)
+                      : (decWithLHS ? INTRN_MCCWriteSNoInc : INTRN_MCCWriteSNoRC);
+  }
+  if (static_cast<IvarMeExpr*>(lhs)->IsRCWeak()) {
+    return INTRN_MCCWriteWeak;
+  }
+  return incWithLHS ? (decWithLHS ? INTRN_MCCWrite : INTRN_MCCWriteNoDec)
+                    : (decWithLHS ? INTRN_MCCWriteNoInc : INTRN_MCCWriteNoRC);
 }
 
 void RCLowering::RCLower() {
-  auto eIt = func.valid_end();
-  for (auto bIt = func.valid_begin(); bIt != eIt; ++bIt) {
+  // to prevent valid_end from being called repeatedly, don't modify the definition of eIt
+  for (auto bIt = func.valid_begin(), eIt = func.valid_end(); bIt != eIt; ++bIt) {
     if (bIt == func.common_entry() || bIt == func.common_exit()) {
       continue;
     }
@@ -611,7 +609,7 @@ void RCLowering::HandleReturnRegread(RetMeStmt &ret) {
   } else {
     // remove argument from intrinsiccall MPL_CLEANUP_LOCALREFVARS (dread ref %Reg1_R5678, ...
     MapleVector<MeExpr*> *opnds = &cleanup->GetOpnds();
-    for (auto iter = opnds->begin(); iter != opnds->end(); iter++) {
+    for (auto iter = opnds->begin(); iter != opnds->end(); ++iter) {
       if (*iter == retVar || static_cast<VarMeExpr*>(*iter)->GetOStIdx() == retVar->GetOStIdx()) {
         opnds->erase(iter);
         opnds->push_back(retVar);  // pin it to end of std::vector

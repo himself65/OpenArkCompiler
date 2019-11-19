@@ -966,7 +966,7 @@ ErrorCode MplOptions::DecideRunningPhases() {
   bool isNeedMplcg = true;
   switch (inputFileType) {
     case InputFileType::kJar:
-      /* fall-through */
+      // fall-through
     case InputFileType::kClass:
       UpdateRunningExe(kBinNameJbc2mpl);
       break;
@@ -1133,7 +1133,7 @@ ErrorCode MplOptions::AppendDefaultOptions(const std::string &exeName, MplOption
 }
 
 ErrorCode MplOptions::UpdatePhaseOption(const std::string &args, const std::string &exeName) {
-  auto iter = std::find(runningExes.begin(), runningExes.end(), exeName.c_str());
+  auto iter = std::find(runningExes.begin(), runningExes.end(), exeName);
   if (iter == runningExes.end()) {
     LogInfo::MapleLogger(kLlErr) << "Cannot find phase " << exeName << '\n';
     return ErrorCode::kErrorExit;
@@ -1185,7 +1185,7 @@ void MplOptions::UpdateRunningExe(const std::string &args) {
   std::vector<std::string> results;
   StringUtils::Split(args, results, ':');
   for (size_t i = 0; i < results.size(); ++i) {
-    auto iter = std::find(runningExes.begin(), runningExes.end(), results[i].c_str());
+    auto iter = std::find(runningExes.begin(), runningExes.end(), results[i]);
     if (iter == runningExes.end()) {
       runningExes.push_back(results[i]);
     }

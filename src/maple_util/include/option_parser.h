@@ -48,7 +48,7 @@ struct ExtraOption {
   const char * const delimiter;
 };
 
-constexpr static unsigned int kMaxExtraOptions = 10;
+constexpr unsigned int kMaxExtraOptions = 10;
 
 struct Descriptor {
   // Unique option index

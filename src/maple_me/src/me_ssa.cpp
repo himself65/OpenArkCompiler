@@ -57,8 +57,8 @@ void MeSSA::BuildSSA() {
 }
 
 void MeSSA::CollectDefBBs(std::map<OStIdx, std::set<BBId>> &ostDefBBs) {
-  auto eIt = func->valid_end();
-  for (auto bIt = func->valid_begin(); bIt != eIt; ++bIt) {
+  // to prevent valid_end from being called repeatedly, don't modify the definition of eIt
+  for (auto bIt = func->valid_begin(), eIt = func->valid_end(); bIt != eIt; ++bIt) {
     auto *bb = *bIt;
     for (auto &stmt : bb->GetStmtNodes()) {
       if (!kOpcodeInfo.HasSSADef(stmt.GetOpCode())) {
@@ -113,22 +113,22 @@ void MeSSA::InsertPhiNode() {
     if (ost->IsVolatile()) {
       continue;
     }
-    std::deque<BB*> *workList = new std::deque<BB*>();
+    std::deque<BB*> workList;
     for (auto it = ost2DefBBs[ost->GetIndex()].begin(); it != ost2DefBBs[ost->GetIndex()].end(); ++it) {
       BB *defBB = func->GetAllBBs()[*it];
       if (defBB != nullptr) {
-        workList->push_back(defBB);
+        workList.push_back(defBB);
       }
     }
-    while (!workList->empty()) {
-      BB *defBB = workList->front();
-      workList->pop_front();
+    while (!workList.empty()) {
+      BB *defBB = workList.front();
+      workList.pop_front();
       MapleSet<BBId> &dfs = dom->GetDomFrontier(defBB->GetBBId());
-      for (auto &bbID : dfs) {
+      for (auto bbID : dfs) {
         BB *dfBB = func->GetBBFromID(bbID);
         CHECK_FATAL(dfBB != nullptr, "null ptr check");
         if (dfBB->PhiofVerStInserted(*vst) == nullptr) {
-          workList->push_back(dfBB);
+          workList.push_back(dfBB);
           dfBB->InsertPhi(&func->GetAlloc(), vst);
           if (enabledDebug) {
             ost->Dump();
@@ -138,7 +138,6 @@ void MeSSA::InsertPhiNode() {
         }
       }
     }
-    delete workList;
   }
 }
 
@@ -153,8 +152,7 @@ void MeSSA::RenameBB(BB &bb) {
   SetBBRenamed(bb.GetBBId(), true);
 
   // record stack size for variable versions before processing rename. It is used for stack pop up.
-  std::vector<uint32> oriStackSize;
-  oriStackSize.resize(GetVstStacks().size());
+  std::vector<uint32> oriStackSize(GetVstStacks().size());
   for (size_t i = 1; i < GetVstStacks().size(); ++i) {
     oriStackSize[i] = GetVstStack(i)->size();
   }
@@ -201,8 +199,8 @@ void MeSSA::VerifySSAOpnd(const BaseNode &node) const {
 
 void MeSSA::VerifySSA() const {
   size_t vtableSize = func->GetMeSSATab()->GetVersionStTable().GetVersionStVectorSize();
-  auto eIt = func->valid_end();
-  for (auto bIt = func->valid_begin(); bIt != eIt; ++bIt) {
+  // to prevent valid_end from being called repeatedly, don't modify the definition of eIt
+  for (auto bIt = func->valid_begin(), eIt = func->valid_end(); bIt != eIt; ++bIt) {
     auto *bb = *bIt;
     Opcode opcode;
     for (auto &stmt : bb->GetStmtNodes()) {
@@ -224,7 +222,7 @@ AnalysisResult *MeDoSSA::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, Modu
   auto *ssaTab = static_cast<SSATab*>(funcResMgr->GetAnalysisResult(MeFuncPhase_SSATAB, func));
   CHECK_FATAL(ssaTab != nullptr, "ssaTab phase has problem");
   MemPool *ssaMp = NewMemPool();
-  MeSSA *ssa = ssaMp->New<MeSSA>(*func, *dom, *ssaMp, DEBUGFUNC(func));
+  auto *ssa = ssaMp->New<MeSSA>(*func, *dom, *ssaMp, DEBUGFUNC(func));
   ssa->BuildSSA();
   ssa->VerifySSA();
   if (DEBUGFUNC(func)) {

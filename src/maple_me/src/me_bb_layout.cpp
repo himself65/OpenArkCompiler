@@ -282,6 +282,7 @@ void BBLayout::OptimizeBranchTarget(BB &bb) {
     if (brTargetBB->GetPred().empty() && !laidOut[brTargetBB->GetBBId()]) {
       laidOut[brTargetBB->GetBBId()] = true;
       brTargetBB->RemoveBBFromVector(newTargetBB->GetPred());
+      func.NullifyBBByID(brTargetBB->GetBBId());
     }
   } while (true);
 }

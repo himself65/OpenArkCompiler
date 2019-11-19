@@ -209,21 +209,21 @@ class LogInfo {
 #define DBG(tag, fmt, ...)                                                                      \
   do {                                                                                          \
     if (PRINT_LEVEL_DEV <= kLlLog) {                                                             \
-      maple::logInfo.EmitLogForDev(tag, kLlLog, __FILE__, __FUNCTION__, __LINE__, fmt, ##__VA_ARGS__); \
+      logInfo.EmitLogForDev(tag, kLlLog, __FILE__, __FUNCTION__, __LINE__, fmt, ##__VA_ARGS__); \
     }                                                                                           \
   } while (0)
 
 #define LOG(tag, fmt, ...)                                                                      \
   do {                                                                                          \
     if (PRINT_LEVEL_DEV <= kLlLog) {                                                            \
-      maple::logInfo.EmitLogForDev(tag, kLlLog, __FILE__, __FUNCTION__, __LINE__, fmt, ##__VA_ARGS__); \
+      logInfo.EmitLogForDev(tag, kLlLog, __FILE__, __FUNCTION__, __LINE__, fmt, ##__VA_ARGS__); \
     }                                                                                                \
   } while (0)
 
 #define CHECK(cond, fmt, ...)                                                       \
   do {                                                                              \
     if (!(cond)) {                                                                  \
-      maple::logInfo.EmitErrorMessage(#cond, __FILE__, __LINE__, fmt "\n", ##__VA_ARGS__); \
+      logInfo.EmitErrorMessage(#cond, __FILE__, __LINE__, fmt "\n", ##__VA_ARGS__); \
     }                                                                                  \
   } while (0)
 
@@ -235,7 +235,7 @@ class LogInfo {
 #define CHECK_FATAL(cond, fmt, ...)                                                 \
   do {                                                                              \
     if (!(cond)) {                                                                  \
-      maple::logInfo.EmitErrorMessage(#cond, __FILE__, __LINE__, fmt "\n", ##__VA_ARGS__); \
+      logInfo.EmitErrorMessage(#cond, __FILE__, __LINE__, fmt "\n", ##__VA_ARGS__); \
       if (DEBUG_TEST) {                                                             \
         abort();                                                                    \
       } else {                                                                         \
@@ -250,7 +250,7 @@ class LogInfo {
 #define ASSERT(cond, fmt, ...)                                                      \
   do {                                                                              \
     if (!(cond)) {                                                                  \
-      maple::logInfo.EmitErrorMessage(#cond, __FILE__, __LINE__, fmt "\n", ##__VA_ARGS__); \
+      logInfo.EmitErrorMessage(#cond, __FILE__, __LINE__, fmt "\n", ##__VA_ARGS__); \
       abort();                                                                      \
     }                                                                               \
   } while (0)
@@ -267,35 +267,35 @@ class LogInfo {
 #define INFO(num, fmt, ...)                                     \
   do {                                                          \
     if (PRINT_LEVEL_USER <= kLlInfo) {                          \
-      maple::logInfo.EmitLogForUser(num, kLlInfo, fmt, ##__VA_ARGS__); \
+      logInfo.EmitLogForUser(num, kLlInfo, fmt, ##__VA_ARGS__); \
     }                                                              \
   } while (0)
 
 #define INFO_V(verbose, num, fmt, ...)                          \
   if (verbose) {                                                \
     if (PRINT_LEVEL_USER <= kLlInfo) {                          \
-      maple::logInfo.EmitLogForUser(num, kLlInfo, fmt, ##__VA_ARGS__); \
+      logInfo.EmitLogForUser(num, kLlInfo, fmt, ##__VA_ARGS__); \
     }                                                           \
   }
 
 #define WARN(num, fmt, ...)                                     \
   do {                                                          \
     if (PRINT_LEVEL_USER <= kLlWarn) {                          \
-      maple::logInfo.EmitLogForUser(num, kLlWarn, fmt, ##__VA_ARGS__); \
+      logInfo.EmitLogForUser(num, kLlWarn, fmt, ##__VA_ARGS__); \
     }                                                             \
   } while (0)
 
 #define ERR(num, fmt, ...)                                     \
   do {                                                         \
     if (PRINT_LEVEL_USER <= kLlErr) {                          \
-      maple::logInfo.EmitLogForUser(num, kLlErr, fmt, ##__VA_ARGS__); \
+      logInfo.EmitLogForUser(num, kLlErr, fmt, ##__VA_ARGS__); \
     }                                                          \
   } while (0)
 
 #define FATAL(num, fmt, ...)                                     \
   do {                                                           \
     if (PRINT_LEVEL_USER <= kLlFatal) {                          \
-      maple::logInfo.EmitLogForUser(num, kLlFatal, fmt, ##__VA_ARGS__); \
+      logInfo.EmitLogForUser(num, kLlFatal, fmt, ##__VA_ARGS__); \
     }                                                            \
     if (DEBUG_TEST) {                                            \
       abort();                                                   \
