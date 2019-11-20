@@ -27,7 +27,7 @@ class VarMeExpr;  // circular dependency exists, no other choice
 class RegMeExpr;  // circular dependency exists, no other choice
 class Dominance;  // circular dependency exists, no other choice
 using MeStmtPtr = MeStmt*;
-enum MeExprOp : std::uint8_t {
+enum MeExprOp : uint8 {
   kMeOpUnknown,
   kMeOpVar,
   kMeOpIvar,
@@ -41,14 +41,14 @@ enum MeExprOp : std::uint8_t {
   kMeOpSizeoftype,
   kMeOpFieldsDist,
   kMeOpOp,
-  kMeOpNary,
+  kMeOpNary
 };  // cache the op to avoid dynamic cast
 
 constexpr int kInvalidExprID = -1;
 class MeExpr {
  public:
-  MeExpr(int32 exprid, MeExprOp o)
-      : op(kOpUndef), primType(kPtyInvalid), numOpnds(0), meOp(o), exprID(exprid), depth(0), treeID(0), next(nullptr) {}
+  MeExpr(int32 exprId, MeExprOp op)
+      : meOp(op), exprID(exprId) {}
 
   virtual ~MeExpr() = default;
 
@@ -56,8 +56,8 @@ class MeExpr {
     op = opcode;
   }
 
-  void SetPtyp(PrimType primtypeVal) {
-    primType = primtypeVal;
+  void SetPtyp(PrimType primTypeVal) {
+    primType = primTypeVal;
   }
 
   void SetNumOpnds(uint8 val) {
@@ -129,7 +129,7 @@ class MeExpr {
     return op == OP_gcmalloc || op == OP_gcmallocjarray || op == OP_gcpermalloc || op == OP_gcpermallocjarray;
   }
 
-  virtual bool IsVolatile(SSATab&) {
+  virtual bool IsVolatile(const SSATab&) {
     return false;
   }
 
@@ -151,7 +151,6 @@ class MeExpr {
 
   void UpdateDepth();                      // update the depth, suppose all sub nodes have already depth done.
   MeExpr &GetAddrExprBase();               // get the base of the address expression
-  MeExpr *FindSymAppearance(OStIdx oidx);  // find the appearance of the symbol
   // in the expression; nullptr otherwise
   bool SymAppears(OStIdx oidx);  // check if symbol appears in the expression
   bool HasIvar() const;          // whether there is any iread node in the expression
@@ -162,21 +161,23 @@ class MeExpr {
   virtual bool IsSameVariableValue(const VarMeExpr&) const;
   MeExpr *ResolveMeExprValue();
   bool CouldThrowException() const;
+  bool IsAllOpndsIdentical(const MeExpr &meExpr) const;
   bool PointsToSomethingThatNeedsIncRef();
   virtual uint32 GetHashIndex() const {
     return 0;
   }
-  bool IsAllOpndsIdentical(const MeExpr &meExpr) const;
 
  private:
-  Opcode op;
-  PrimType primType;
-  uint8 numOpnds;
+  MeExpr *FindSymAppearance(OStIdx oidx);  // find the appearance of the symbol
+
+  Opcode op = kOpUndef;
+  PrimType primType = kPtyInvalid;
+  uint8 numOpnds = 0;
   MeExprOp meOp;
   int32 exprID;
-  uint8 depth;
-  uint32 treeID;  // for bookkeeping purpose during SSAPRE
-  MeExpr *next;
+  uint8 depth = 0;
+  uint32 treeID = 0;  // for bookkeeping purpose during SSAPRE
+  MeExpr *next = nullptr;
 };
 
 enum MeDefBy {
@@ -184,7 +185,7 @@ enum MeDefBy {
   kDefByStmt,
   kDefByPhi,
   kDefByChi,
-  kDefByMustDef,  // only applies to callassigned and its siblings
+  kDefByMustDef  // only applies to callassigned and its siblings
 };
 
 class ChiMeNode;      // circular dependency exists, no other choice
@@ -196,28 +197,19 @@ class VarMeExpr final : public MeExpr {
  public:
   VarMeExpr(MapleAllocator *alloc, int32 exprid, OStIdx oidx, size_t vidx)
       : MeExpr(exprid, kMeOpVar),
-        def{ .defStmt = nullptr },
         ostIdx(oidx),
         vstIdx(vidx),
-        fieldID(0),
-        inferredTyIdx(0),
-        inferredTypeCandidates(alloc->Adapter()),
-        defBy(kDefByNo),
-        maybeNull(true) {}
+        inferredTypeCandidates(alloc->Adapter()) {}
 
   ~VarMeExpr() = default;
 
   void Dump(IRMap*, int32 indent = 0) const override;
   bool IsUseSameSymbol(const MeExpr&) const override;
   BaseNode &EmitExpr(SSATab&) override;
-  bool IsValidVerIdx(SSATab &ssaTab) const;
+  bool IsValidVerIdx(const SSATab &ssaTab) const;
   void SetDefByStmt(MeStmt &defStmt) override {
     defBy = kDefByStmt;
     def.defStmt = &defStmt;
-  }
-
-  bool IsDefByPhi() const {
-    return defBy == kDefByPhi;
   }
 
   MeVarPhiNode *GetMeVarPhiDef() const {
@@ -225,11 +217,11 @@ class VarMeExpr final : public MeExpr {
   }
 
   BB *DefByBB();
-  bool IsVolatile(SSATab&) override;
+  bool IsVolatile(const SSATab&) override;
   // indicate if the variable is local variable but not a function formal variable
-  bool IsPureLocal(SSATab&, const MIRFunction&) const;
-  bool IsZeroVersion(SSATab&) const;
-  BB *GetDefByBBMeStmt(Dominance&, MeStmtPtr&);
+  bool IsPureLocal(const SSATab&, const MIRFunction&) const;
+  bool IsZeroVersion(const SSATab&) const;
+  BB *GetDefByBBMeStmt(const Dominance&, MeStmtPtr&);
   bool IsSameVariableValue(const VarMeExpr&) const override;
   VarMeExpr &ResolveVarMeValue();
 
@@ -249,8 +241,8 @@ class VarMeExpr final : public MeExpr {
     return fieldID;
   }
 
-  void SetFieldID(FieldID fieldId) {
-    fieldID = fieldId;
+  void SetFieldID(FieldID fieldIDVal) {
+    fieldID = fieldIDVal;
   }
 
   TyIdx GetInferredTyIdx() const {
@@ -322,8 +314,11 @@ class VarMeExpr final : public MeExpr {
   }
 
  private:
+  bool IsDefByPhi() const {
+    return defBy == kDefByPhi;
+  }
   union {
-    MeStmt *defStmt;            // definition stmt of this var
+    MeStmt *defStmt = nullptr;            // definition stmt of this var
     MeVarPhiNode *defPhi;
     ChiMeNode *defChi;          // definition node by Chi
     MustDefMeNode *defMustDef;  // definition by callassigned
@@ -331,27 +326,23 @@ class VarMeExpr final : public MeExpr {
 
   OStIdx ostIdx;  // the index in MEOptimizer's OriginalStTable;
   size_t vstIdx;  // the index in MEOptimizer's VersionStTable, 0 if not in VersionStTable
-  FieldID fieldID;
-  TyIdx inferredTyIdx; /* Non zero if it has a known type (allocation type is seen). */
+  FieldID fieldID = 0;
+  TyIdx inferredTyIdx{ 0 }; /* Non zero if it has a known type (allocation type is seen). */
   MapleVector<TyIdx> inferredTypeCandidates;
-  MeDefBy defBy;
-  bool maybeNull;  // false if definitely not null
+  MeDefBy defBy = kDefByNo;
+  bool maybeNull = true;  // false if definitely not null
 };
 
 class MeVarPhiNode {
  public:
   explicit MeVarPhiNode(MapleAllocator *alloc)
-      : lhs(nullptr),
-        opnds(kOperandNumBinary, nullptr, alloc->Adapter()),
-        isLive(true),
-        defBB(nullptr),
-        isPaiAdded(false) {
+      : opnds(kOperandNumBinary, nullptr, alloc->Adapter()) {
     opnds.pop_back();
     opnds.pop_back();
   }
 
   MeVarPhiNode(VarMeExpr *var, MapleAllocator *alloc)
-      : lhs(var), opnds(kOperandNumBinary, nullptr, alloc->Adapter()), isLive(true), defBB(nullptr), isPaiAdded(false) {
+      : lhs(var), opnds(kOperandNumBinary, nullptr, alloc->Adapter()) {
     var->SetDefPhi(*this);
     var->SetDefBy(kDefByPhi);
     opnds.pop_back();
@@ -366,8 +357,8 @@ class MeVarPhiNode {
     var.SetDefPhi(*this);
   }
 
-  bool IsPureLocal(SSATab &ssatab, const MIRFunction &mirfunc);
-  void Dump(IRMap *irmap) const;
+  bool IsPureLocal(const SSATab &ssaTab, const MIRFunction &mirFunc);
+  void Dump(IRMap *irMap) const;
 
   VarMeExpr *GetOpnd(size_t idx) const {
     ASSERT(idx < opnds.size(), "out of range in MeVarPhiNode::GetOpnd");
@@ -383,16 +374,16 @@ class MeVarPhiNode {
     return opnds;
   }
 
-  void SetIsLive(bool isliveVal) {
-    isLive = isliveVal;
+  void SetIsLive(bool isLiveVal) {
+    isLive = isLiveVal;
   }
 
   bool GetIsLive() {
     return isLive;
   }
 
-  void SetDefBB(BB *defbbVal) {
-    defBB = defbbVal;
+  void SetDefBB(BB *defBBVal) {
+    defBB = defBBVal;
   }
 
   BB *GetDefBB() {
@@ -416,11 +407,11 @@ class MeVarPhiNode {
   }
 
  private:
-  VarMeExpr *lhs;
+  VarMeExpr *lhs = nullptr;
   MapleVector<VarMeExpr*> opnds;
-  bool isLive;
-  BB *defBB;  // the bb that defines this phi
-  bool isPaiAdded;
+  bool isLive = true;
+  BB *defBB = nullptr;  // the bb that defines this phi
+  bool isPaiAdded = false;
 };
 
 class RegMeExpr : public MeExpr {
@@ -428,14 +419,10 @@ class RegMeExpr : public MeExpr {
   RegMeExpr(MapleAllocator *alloc, int32 exprid, PregIdx preg, PUIdx pidx, OStIdx oidx, uint32 vidx)
       : MeExpr(exprid, kMeOpReg),
         regIdx(preg),
-        defBy(kDefByNo),
-        recursivePtr(false),
         puIdx(pidx),
         ostIdx(oidx),
         vstIdx(vidx),
-        phiUseSet(std::less<MeRegPhiNode*>(), alloc->Adapter()) {
-    def.defStmt = nullptr;
-  }
+        phiUseSet(std::less<MeRegPhiNode*>(), alloc->Adapter()) {}
 
   ~RegMeExpr() = default;
 
@@ -513,24 +500,24 @@ class RegMeExpr : public MeExpr {
   }
 
  private:
+  union {
+    MeStmt *defStmt = nullptr;
+    MeRegPhiNode *defPhi;
+    MustDefMeNode *defMustDef;  // definition by callassigned
+  } def;
   PregIdx16 regIdx;
-  MeDefBy defBy;
-  bool recursivePtr;  // if pointer to recursive data structures;
+  MeDefBy defBy = kDefByNo;
+  bool recursivePtr = false;  // if pointer to recursive data structures;
   PUIdx puIdx;
   OStIdx ostIdx;                      // the index in MEOptimizer's OriginalStTable;
   uint32 vstIdx;                      // the index in MEOptimizer's VersionStTable, 0 if not in VersionStTable
   MapleSet<MeRegPhiNode*> phiUseSet;  // the use set of this reg node, used by preg renamer
-  union {
-    MeStmt *defStmt;
-    MeRegPhiNode *defPhi;
-    MustDefMeNode *defMustDef;  // definition by callassigned
-  } def;
 };
 
 class MeRegPhiNode {
  public:
   explicit MeRegPhiNode(MapleAllocator *alloc)
-      : lhs(nullptr), opnds(kOperandNumBinary, nullptr, alloc->Adapter()), isLive(true), defBB(nullptr) {
+      : opnds(kOperandNumBinary, nullptr, alloc->Adapter()) {
     opnds.pop_back();
     opnds.pop_back();
   }
@@ -584,10 +571,10 @@ class MeRegPhiNode {
   }
 
  private:
-  RegMeExpr *lhs;
+  RegMeExpr *lhs = nullptr;
   MapleVector<RegMeExpr*> opnds;
-  bool isLive;
-  BB *defBB;  // the bb that defines this phi
+  bool isLive = true;
+  BB *defBB = nullptr;  // the bb that defines this phi
 };
 
 class ConstMeExpr : public MeExpr {
@@ -611,19 +598,19 @@ class ConstMeExpr : public MeExpr {
 
   uint32 GetHashIndex() const override {
     if (constVal->GetKind() == kConstInt) {
-      MIRIntConst *intConst = static_cast<MIRIntConst*>(constVal);
+      auto *intConst = static_cast<MIRIntConst*>(constVal);
       return intConst->GetValue();
     }
     if (constVal->GetKind() == kConstFloatConst) {
-      MIRFloatConst *floatConst = static_cast<MIRFloatConst*>(constVal);
+      auto *floatConst = static_cast<MIRFloatConst*>(constVal);
       return floatConst->GetIntValue();
     }
     if (constVal->GetKind() == kConstDoubleConst) {
-      MIRDoubleConst *doubleConst = static_cast<MIRDoubleConst*>(constVal);
+      auto *doubleConst = static_cast<MIRDoubleConst*>(constVal);
       return doubleConst->GetIntValue();
     }
     if (constVal->GetKind() == kConstLblConst) {
-      MIRLblConst *lblConst = static_cast<MIRLblConst*>(constVal);
+      auto *lblConst = static_cast<MIRLblConst*>(constVal);
       return lblConst->GetValue();
     }
     ASSERT(false, "ComputeHash: const type not yet implemented");
@@ -693,8 +680,8 @@ class SizeoftypeMeExpr : public MeExpr {
   }
 
   uint32 GetHashIndex() const override {
-    constexpr uint32 kSizeoftypeHashShift = 5;
-    return tyIdx.GetIdx() << kSizeoftypeHashShift;
+    constexpr uint32 sizeoftypeHashShift = 5;
+    return tyIdx.GetIdx() << sizeoftypeHashShift;
   }
 
  private:
@@ -759,8 +746,8 @@ class AddrofMeExpr : public MeExpr {
   }
 
   uint32 GetHashIndex() const override {
-    constexpr uint32 kAddrofHashShift = 4;
-    return ostIdx.idx << kAddrofHashShift;
+    constexpr uint32 addrofHashShift = 4;
+    return ostIdx.idx << addrofHashShift;
   }
 
  private:
@@ -770,7 +757,7 @@ class AddrofMeExpr : public MeExpr {
 
 class AddroffuncMeExpr : public MeExpr {
  public:
-  AddroffuncMeExpr(int32 exprid, PUIdx puid) : MeExpr(exprid, kMeOpAddroffunc), puIdx(puid) {}
+  AddroffuncMeExpr(int32 exprID, PUIdx puIdx) : MeExpr(exprID, kMeOpAddroffunc), puIdx(puIdx) {}
 
   ~AddroffuncMeExpr() = default;
 
@@ -783,8 +770,8 @@ class AddroffuncMeExpr : public MeExpr {
   }
 
   uint32 GetHashIndex() const override {
-    constexpr uint32 kAddroffuncHashShift = 5;
-    return puIdx << kAddroffuncHashShift;
+    constexpr uint32 addroffuncHashShift = 5;
+    return puIdx << addroffuncHashShift;
   }
 
  private:
@@ -895,7 +882,7 @@ class OpMeExpr : public MeExpr {
   uint32 GetHashIndex() const override {
     uint32 hashIdx = static_cast<uint32>(GetOp());
     constexpr uint32 kOpMeHashShift = 3;
-    for (auto &opnd : opnds) {
+    for (const auto &opnd : opnds) {
       if (opnd == nullptr) {
         break;
       }
@@ -916,14 +903,7 @@ class OpMeExpr : public MeExpr {
 class IvarMeExpr : public MeExpr {
  public:
   explicit IvarMeExpr(int32 exprid)
-      : MeExpr(exprid, kMeOpIvar),
-        defStmt(nullptr),
-        base(nullptr),
-        tyIdx(0),
-        inferredTyIdx(0),
-        fieldID(0),
-        maybeNull(true),
-        mu(nullptr) {
+      : MeExpr(exprid, kMeOpIvar) {
     SetNumOpnds(kOperandNumUnary);
   }
 
@@ -932,9 +912,7 @@ class IvarMeExpr : public MeExpr {
         defStmt(ivarme.defStmt),
         base(ivarme.base),
         tyIdx(ivarme.tyIdx),
-        fieldID(ivarme.fieldID),
-        maybeNull(true),
-        mu(nullptr) {
+        fieldID(ivarme.fieldID) {
     InitBase(ivarme.GetOp(), ivarme.GetPrimType(), ivarme.GetNumOpnds());
     mu = ivarme.mu;
   }
@@ -943,7 +921,7 @@ class IvarMeExpr : public MeExpr {
 
   void Dump(IRMap*, int32 indent = 0) const override;
   BaseNode &EmitExpr(SSATab&) override;
-  bool IsVolatile(SSATab&) override {
+  bool IsVolatile(const SSATab&) override {
     return IsVolatile();
   }
 
@@ -1024,30 +1002,30 @@ class IvarMeExpr : public MeExpr {
   }
 
  private:
-  IassignMeStmt *defStmt;
-  MeExpr *base;
-  TyIdx tyIdx;
-  TyIdx inferredTyIdx;  // may be a subclass of above tyIdx
-  FieldID fieldID;
-  bool maybeNull;  // false if definitely not null
-  VarMeExpr *mu;   // use of mu, only one for IvarMeExpr
+  IassignMeStmt *defStmt = nullptr;
+  MeExpr *base = nullptr;
+  TyIdx tyIdx{ 0 };
+  TyIdx inferredTyIdx{ 0 };  // may be a subclass of above tyIdx
+  FieldID fieldID = 0;
+  bool maybeNull = true;  // false if definitely not null
+  VarMeExpr *mu = nullptr;   // use of mu, only one for IvarMeExpr
 };
 
 // for array, intrinsicop and intrinsicopwithtype
 class NaryMeExpr : public MeExpr {
  public:
-  NaryMeExpr(MapleAllocator *alloc, int32 expid, TyIdx tidx, MIRIntrinsicID intrinid, bool bcheck)
-      : MeExpr(expid, kMeOpNary), tyIdx(tidx), intrinsic(intrinid), opnds(alloc->Adapter()), boundCheck(bcheck) {}
+  NaryMeExpr(MapleAllocator *alloc, int32 expID, TyIdx tyIdx, MIRIntrinsicID intrinID, bool bCheck)
+      : MeExpr(expID, kMeOpNary), tyIdx(tyIdx), intrinsic(intrinID), opnds(alloc->Adapter()), boundCheck(bCheck) {}
 
-  NaryMeExpr(MapleAllocator *alloc, int32 expid, NaryMeExpr &meexpr)
-      : MeExpr(expid, kMeOpNary),
-        tyIdx(meexpr.tyIdx),
-        intrinsic(meexpr.intrinsic),
+  NaryMeExpr(MapleAllocator *alloc, int32 expID, NaryMeExpr &meExpr)
+      : MeExpr(expID, kMeOpNary),
+        tyIdx(meExpr.tyIdx),
+        intrinsic(meExpr.intrinsic),
         opnds(alloc->Adapter()),
-        boundCheck(meexpr.boundCheck) {
-    InitBase(meexpr.GetOp(), meexpr.GetPrimType(), meexpr.GetNumOpnds());
-    for (size_t i = 0; i < meexpr.opnds.size(); ++i) {
-      opnds.push_back(meexpr.opnds[i]);
+        boundCheck(meExpr.boundCheck) {
+    InitBase(meExpr.GetOp(), meExpr.GetPrimType(), meExpr.GetNumOpnds());
+    for (size_t i = 0; i < meExpr.opnds.size(); ++i) {
+      opnds.push_back(meExpr.opnds[i]);
     }
   }
 
@@ -1120,13 +1098,13 @@ class NaryMeExpr : public MeExpr {
 
 class MeStmt {
  public:
-  explicit MeStmt(const StmtNode *sst) : isLive(true), bb(nullptr), prev(nullptr), next(nullptr) {
+  explicit MeStmt(const StmtNode *sst) {
     ASSERT(sst != nullptr, "StmtNode nullptr check");
     op = sst->GetOpCode();
     srcPos = sst->GetSrcPos();
   }
 
-  explicit MeStmt(Opcode op1) : op(op1), isLive(true), bb(nullptr), prev(nullptr), next(nullptr) {}
+  explicit MeStmt(Opcode op1) : op(op1) {}
 
   virtual ~MeStmt() = default;
 
@@ -1170,7 +1148,7 @@ class MeStmt {
     return nullptr;
   }
 
-  void EmitCallReturnVector(SSATab &ssatab, CallReturnVector &nrets);
+  void EmitCallReturnVector(SSATab &ssaTab, CallReturnVector &nRets);
   virtual MapleVector<MustDefMeNode> *GetMustDefList() {
     return nullptr;
   }
@@ -1195,10 +1173,10 @@ class MeStmt {
     return nullptr;
   }
 
-  void CopyBase(MeStmt &mestmt) {
-    bb = mestmt.bb;
-    srcPos = mestmt.srcPos;
-    isLive = mestmt.isLive;
+  void CopyBase(MeStmt &meStmt) {
+    bb = meStmt.bb;
+    srcPos = meStmt.srcPos;
+    isLive = meStmt.isLive;
   }
 
   bool IsTheSameWorkcand(MeStmt&) const;
@@ -1234,11 +1212,11 @@ class MeStmt {
     return nullptr;
   }
 
-  virtual MeExpr *GetLHSRef(SSATab &ssatab, bool excludelocalrefvar) {
+  virtual MeExpr *GetLHSRef(SSATab &ssaTab, bool excludeLocalRefVar) {
     return nullptr;
   }
 
-  virtual StmtNode &EmitStmt(SSATab &ssatab);
+  virtual StmtNode &EmitStmt(SSATab &ssaTab);
   void RemoveNode() {
     // remove this node from the double link list
     if (prev != nullptr) {
@@ -1311,16 +1289,16 @@ class MeStmt {
 
  private:
   Opcode op;
-  bool isLive;
-  BB *bb;
+  bool isLive = true;
+  BB *bb = nullptr;
   SrcPosition srcPos;
-  MeStmt *prev;
-  MeStmt *next;
+  MeStmt *prev = nullptr;
+  MeStmt *next = nullptr;
 };
 
 class ChiMeNode {
  public:
-  explicit ChiMeNode(MeStmt *mestmt) : rhs(nullptr), lhs(nullptr), base(mestmt), isLive(true) {}
+  explicit ChiMeNode(MeStmt *meStmt) : base(meStmt) {}
 
   ~ChiMeNode() = default;
 
@@ -1352,7 +1330,7 @@ class ChiMeNode {
     lhs = value;
   }
 
-  void Dump(IRMap *irmap) const;
+  void Dump(IRMap *irMap) const;
 
   MeStmt *GetBase() const {
     return base;
@@ -1363,22 +1341,22 @@ class ChiMeNode {
   }
 
  private:
-  VarMeExpr *rhs;
-  VarMeExpr *lhs;
+  VarMeExpr *rhs = nullptr;
+  VarMeExpr *lhs = nullptr;
   MeStmt *base;
-  bool isLive;
+  bool isLive = true;
 };
 
 class MustDefMeNode {
  public:
-  MustDefMeNode(MeExpr *x, MeStmt *mestmt) : lhs(x), base(mestmt), isLive(true) {
+  MustDefMeNode(MeExpr *x, MeStmt *meStmt) : lhs(x), base(meStmt) {
     if (x->GetMeOp() == kMeOpReg) {
-      RegMeExpr *reg = static_cast<RegMeExpr*>(x);
+      auto *reg = static_cast<RegMeExpr*>(x);
       reg->SetDefBy(kDefByMustDef);
       reg->SetDefMustDef(*this);
     } else {
       CHECK(x->GetMeOp() == kMeOpVar, "unexpected opcode");
-      VarMeExpr *var = static_cast<VarMeExpr*>(x);
+      auto *var = static_cast<VarMeExpr*>(x);
       var->SetDefBy(kDefByMustDef);
       var->SetDefMustDef(*this);
     }
@@ -1454,16 +1432,13 @@ class MustDefMeNode {
  private:
   MeExpr *lhs;  // could be var or register, can we make this private?
   MeStmt *base;
-  bool isLive;
+  bool isLive = true;
 };
+
 class PaiassignMeStmt : public MeStmt {
  public:
   explicit PaiassignMeStmt(MapleAllocator *alloc)
-      : MeStmt(OP_paiassign),
-        rhs(nullptr),
-        lhs(nullptr),
-        generatedBy(nullptr),
-        isToken(false) {}
+      : MeStmt(OP_paiassign) {}
   ~PaiassignMeStmt() = default;
 
   void SetLHS(VarMeExpr &l) {
@@ -1474,8 +1449,8 @@ class PaiassignMeStmt : public MeStmt {
     rhs = &r;
   }
 
-  void SetGeneratedBy(MeStmt &m) {
-    generatedBy = &m;
+  void SetGeneratedBy(MeStmt &meStmt) {
+    generatedBy = &meStmt;
   }
 
   VarMeExpr *GetLHS() const {
@@ -1486,7 +1461,7 @@ class PaiassignMeStmt : public MeStmt {
     return rhs;
   }
 
-  MeStmt *GetGeneratedBy() {
+  MeStmt *GetGeneratedBy() const{
     return generatedBy;
   }
 
@@ -1501,42 +1476,27 @@ class PaiassignMeStmt : public MeStmt {
   void Dump(IRMap*) const;
 
  private:
-  VarMeExpr *rhs;
-  VarMeExpr *lhs;
-  MeStmt *generatedBy;
-  bool isToken;
+  VarMeExpr *rhs = nullptr;
+  VarMeExpr *lhs = nullptr;
+  MeStmt *generatedBy = nullptr;
+  bool isToken = false;
 };
+
 class DassignMeStmt : public MeStmt {
  public:
   DassignMeStmt(MapleAllocator *alloc, const StmtNode *stt)
       : MeStmt(stt),
-        rhs(nullptr),
-        lhs(nullptr),
-        chiList(std::less<OStIdx>(), alloc->Adapter()),
-        propagated(false),
-        needDecref(false),
-        needIncref(false),
-        wasMayDassign(false) {}
+        chiList(std::less<OStIdx>(), alloc->Adapter()) {}
 
   explicit DassignMeStmt(MapleAllocator *alloc)
       : MeStmt(OP_dassign),
-        rhs(nullptr),
-        lhs(nullptr),
-        chiList(std::less<OStIdx>(), alloc->Adapter()),
-        propagated(false),
-        needDecref(false),
-        needIncref(false),
-        wasMayDassign(false) {}
+        chiList(std::less<OStIdx>(), alloc->Adapter()) {}
 
   DassignMeStmt(MapleAllocator *alloc, DassignMeStmt *dass)
       : MeStmt(dass->GetOp()),
         rhs(dass->rhs),
         lhs(dass->GetVarLHS()),
-        chiList(std::less<OStIdx>(), alloc->Adapter()),
-        propagated(false),
-        needDecref(false),
-        needIncref(false),
-        wasMayDassign(false) {}
+        chiList(std::less<OStIdx>(), alloc->Adapter()) {}
 
   ~DassignMeStmt() = default;
 
@@ -1633,32 +1593,32 @@ class DassignMeStmt : public MeStmt {
     return lhs;
   }
 
-  MeExpr *GetLHSRef(SSATab &ssatab, bool excludelocalrefvar);
+  MeExpr *GetLHSRef(SSATab &ssaTab, bool excludeLocalRefVar);
   void UpdateLHS(VarMeExpr &var) {
     lhs = &var;
     var.SetDefBy(kDefByStmt);
     var.SetDefStmt(this);
   }
 
-  StmtNode &EmitStmt(SSATab &ssatab);
+  StmtNode &EmitStmt(SSATab &ssaTab);
 
  private:
-  MeExpr *rhs;
-  VarMeExpr *lhs;
+  MeExpr *rhs = nullptr;
+  VarMeExpr *lhs = nullptr;
   MapleMap<OStIdx, ChiMeNode*> chiList;
-  bool propagated;     // the RHS has been propagated forward
-  bool needDecref;     // to be determined by analyzerc phase
-  bool needIncref;     // to be determined by analyzerc phase
-  bool wasMayDassign;  // was converted back to dassign by may2dassign phase
+  bool propagated = false;     // the RHS has been propagated forward
+  bool needDecref = false;     // to be determined by analyzerc phase
+  bool needIncref = false;     // to be determined by analyzerc phase
+  bool wasMayDassign = false;  // was converted back to dassign by may2dassign phase
 };
 
 class RegassignMeStmt : public MeStmt {
  public:
-  explicit RegassignMeStmt(const StmtNode *stt) : MeStmt(stt), rhs(nullptr), lhs(nullptr), needIncref(false) {}
+  explicit RegassignMeStmt(const StmtNode *stt) : MeStmt(stt) {}
 
-  RegassignMeStmt() : MeStmt(OP_regassign), rhs(nullptr), lhs(nullptr), needIncref(false) {}
+  RegassignMeStmt() : MeStmt(OP_regassign) {}
 
-  RegassignMeStmt(RegMeExpr *reg, MeExpr *val) : MeStmt(OP_regassign), rhs(val), lhs(reg), needIncref(false) {
+  RegassignMeStmt(RegMeExpr *reg, MeExpr *val) : MeStmt(OP_regassign), rhs(val), lhs(reg) {
     reg->SetDefBy(kDefByStmt);
     reg->SetDefStmt(this);
   }
@@ -1710,24 +1670,19 @@ class RegassignMeStmt : public MeStmt {
     lhs = value;
   }
 
-  StmtNode &EmitStmt(SSATab &ssatab);
+  StmtNode &EmitStmt(SSATab &ssaTab);
 
  private:
-  MeExpr *rhs;
-  RegMeExpr *lhs;
-  bool needIncref;  // to be determined by analyzerc phase
+  MeExpr *rhs = nullptr;
+  RegMeExpr *lhs = nullptr;
+  bool needIncref = false;  // to be determined by analyzerc phase
 };
 
 class MaydassignMeStmt : public MeStmt {
  public:
   MaydassignMeStmt(MapleAllocator *alloc, const StmtNode *stt)
       : MeStmt(stt),
-        rhs(nullptr),
-        mayDSSym(nullptr),
-        fieldID(0),
-        chiList(std::less<OStIdx>(), alloc->Adapter()),
-        needDecref(false),
-        needIncref(false) {}
+        chiList(std::less<OStIdx>(), alloc->Adapter()) {}
 
   ~MaydassignMeStmt() = default;
 
@@ -1808,40 +1763,33 @@ class MaydassignMeStmt : public MeStmt {
     return chiList.begin()->second->GetLHS();
   }
 
-  MeExpr *GetLHSRef(SSATab &ssatab, bool excludelocalrefvar);
-  StmtNode &EmitStmt(SSATab &ssatab);
+  MeExpr *GetLHSRef(SSATab &ssaTab, bool excludeLocalRefVar);
+  StmtNode &EmitStmt(SSATab &ssaTab);
 
  private:
-  MeExpr *rhs;
-  OriginalSt *mayDSSym;
-  FieldID fieldID;
+  MeExpr *rhs = nullptr;
+  OriginalSt *mayDSSym = nullptr;
+  FieldID fieldID = 0;
   MapleMap<OStIdx, ChiMeNode*> chiList;
-  bool needDecref;  // to be determined by analyzerc phase
-  bool needIncref;  // to be determined by analyzerc phase
+  bool needDecref = false;  // to be determined by analyzerc phase
+  bool needIncref = false;  // to be determined by analyzerc phase
 };
 
 class IassignMeStmt : public MeStmt {
  public:
   IassignMeStmt(MapleAllocator *alloc, const StmtNode *stt)
       : MeStmt(stt),
-        tyIdx(0),
-        lhsVar(nullptr),
-        rhs(nullptr),
-        chiList(std::less<OStIdx>(), alloc->Adapter()),
-        needDecref(false),
-        needIncref(false) {}
+        chiList(std::less<OStIdx>(), alloc->Adapter()) {}
 
   IassignMeStmt(MapleAllocator *alloc, const IassignMeStmt &iss)
       : MeStmt(iss),
         tyIdx(iss.tyIdx),
         lhsVar(iss.lhsVar),
         rhs(iss.rhs),
-        chiList(iss.chiList),
-        needDecref(false),
-        needIncref(false) {}
+        chiList(iss.chiList) {}
 
   IassignMeStmt(MapleAllocator *alloc, TyIdx tidx, IvarMeExpr *l, MeExpr *r, const MapleMap<OStIdx, ChiMeNode*> *clist)
-      : MeStmt(OP_iassign), tyIdx(tidx), lhsVar(l), rhs(r), chiList(*clist), needDecref(false), needIncref(false) {
+      : MeStmt(OP_iassign), tyIdx(tidx), lhsVar(l), rhs(r), chiList(*clist) {
     l->SetDefStmt(this);
   }
 
@@ -1879,7 +1827,7 @@ class IassignMeStmt : public MeStmt {
     chiList = value;
   }
 
-  MeExpr *GetLHSRef(SSATab &ssatab, bool excludelocalrefvar);
+  MeExpr *GetLHSRef(SSATab &ssaTab, bool excludeLocalRefVar);
   bool NeedDecref() const {
     return needDecref;
   }
@@ -1925,15 +1873,15 @@ class IassignMeStmt : public MeStmt {
     lhsVar = val;
   }
 
-  StmtNode &EmitStmt(SSATab &ssatab);
+  StmtNode &EmitStmt(SSATab &ssaTab);
 
  private:
-  TyIdx tyIdx;
-  IvarMeExpr *lhsVar;
-  MeExpr *rhs;
+  TyIdx tyIdx{ 0 };
+  IvarMeExpr *lhsVar = nullptr;
+  MeExpr *rhs = nullptr;
   MapleMap<OStIdx, ChiMeNode*> chiList;
-  bool needDecref;  // to be determined by analyzerc phase
-  bool needIncref;  // to be determined by analyzerc phase
+  bool needDecref = false;  // to be determined by analyzerc phase
+  bool needIncref = false;  // to be determined by analyzerc phase
 };
 
 class NaryMeStmt : public MeStmt {
@@ -1977,7 +1925,7 @@ class NaryMeStmt : public MeStmt {
     return nullptr;
   }
 
-  StmtNode &EmitStmt(SSATab &ssatab);
+  StmtNode &EmitStmt(SSATab &ssaTab);
 
  private:
   MapleVector<MeExpr*> opnds;
@@ -2005,20 +1953,20 @@ class MuChiMePart {
 
 class AssignedPart {
  public:
-  explicit AssignedPart(MapleAllocator *alloc) : mustDefList(alloc->Adapter()), needDecref(false), needIncref(false) {}
+  explicit AssignedPart(MapleAllocator *alloc) : mustDefList(alloc->Adapter()) {}
 
-  explicit AssignedPart(const MapleVector<MustDefMeNode> &mustdefList)
-      : mustDefList(mustdefList), needDecref(false), needIncref(false) {}
+  explicit AssignedPart(const MapleVector<MustDefMeNode> &mustDefList)
+      : mustDefList(mustDefList) {}
 
   virtual ~AssignedPart() = default;
 
-  void DumpAssignedPart(IRMap *irmap) const;
-  VarMeExpr *GetAssignedPartLHSRef(SSATab &ssatab, bool excludelocalrefvar);
+  void DumpAssignedPart(IRMap *irMap) const;
+  VarMeExpr *GetAssignedPartLHSRef(SSATab &ssaTab, bool excludeLocalRefVar);
 
  protected:
   MapleVector<MustDefMeNode> mustDefList;
-  bool needDecref;  // to be determined by analyzerc phase
-  bool needIncref;  // to be determined by analyzerc phase
+  bool needDecref = false;  // to be determined by analyzerc phase
+  bool needIncref = false;  // to be determined by analyzerc phase
 };
 
 class CallMeStmt : public NaryMeStmt, public MuChiMePart, public AssignedPart {
@@ -2032,14 +1980,13 @@ class CallMeStmt : public NaryMeStmt, public MuChiMePart, public AssignedPart {
         tyIdx(static_cast<const CallNode*>(stt)->GetTyIdx()) {}
 
   CallMeStmt(MapleAllocator *alloc, Opcode op)
-      : NaryMeStmt(alloc, op), MuChiMePart(alloc), AssignedPart(alloc), puIdx(0), stmtID(0) {}
+      : NaryMeStmt(alloc, op), MuChiMePart(alloc), AssignedPart(alloc) {}
 
   CallMeStmt(MapleAllocator *alloc, CallMeStmt *cstmt)
       : NaryMeStmt(alloc, cstmt),
         MuChiMePart(alloc),
         AssignedPart(cstmt->mustDefList),
-        puIdx(cstmt->GetPUIdx()),
-        stmtID(0) {}
+        puIdx(cstmt->GetPUIdx()) {}
 
   virtual ~CallMeStmt() = default;
 
@@ -2088,8 +2035,8 @@ class CallMeStmt : public NaryMeStmt, public MuChiMePart, public AssignedPart {
     return mustDefList.empty() ? nullptr : mustDefList.front().GetLHS();
   }
 
-  MeExpr *GetLHSRef(SSATab &ssatab, bool excludelocalrefvar) {
-    return GetAssignedPartLHSRef(ssatab, excludelocalrefvar);
+  MeExpr *GetLHSRef(SSATab &ssaTab, bool excludeLocalRefVar) {
+    return GetAssignedPartLHSRef(ssaTab, excludeLocalRefVar);
   }
 
   bool NeedDecref() const {
@@ -2123,14 +2070,14 @@ class CallMeStmt : public NaryMeStmt, public MuChiMePart, public AssignedPart {
 
   const MIRFunction &GetTargetFunction() const;
   MIRFunction &GetTargetFunction();
-  StmtNode &EmitStmt(SSATab &ssatab);
+  StmtNode &EmitStmt(SSATab &ssaTab);
 
   void SetCallReturn(MeExpr&);
 
  private:
-  PUIdx puIdx;
+  PUIdx puIdx = 0;
   // Used in trim call graph
-  uint32 stmtID;
+  uint32 stmtID = 0;
   TyIdx tyIdx;
 };
 
@@ -2144,7 +2091,7 @@ class IcallMeStmt : public NaryMeStmt, public MuChiMePart, public AssignedPart {
         stmtID(stt->GetStmtID()) {}
 
   IcallMeStmt(MapleAllocator *alloc, Opcode op)
-      : NaryMeStmt(alloc, op), MuChiMePart(alloc), AssignedPart(alloc), retTyIdx(0), stmtID(0) {}
+      : NaryMeStmt(alloc, op), MuChiMePart(alloc), AssignedPart(alloc) {}
 
   IcallMeStmt(MapleAllocator *alloc, IcallMeStmt *cstmt)
       : NaryMeStmt(alloc, cstmt),
@@ -2176,8 +2123,8 @@ class IcallMeStmt : public NaryMeStmt, public MuChiMePart, public AssignedPart {
     return mustDefList.empty() ? nullptr : mustDefList.front().GetLHS();
   }
 
-  MeExpr *GetLHSRef(SSATab &ssatab, bool excludelocalrefvar) {
-    return GetAssignedPartLHSRef(ssatab, excludelocalrefvar);
+  MeExpr *GetLHSRef(SSATab &ssaTab, bool excludeLocalRefVar) {
+    return GetAssignedPartLHSRef(ssaTab, excludeLocalRefVar);
   }
 
   bool NeedDecref() const {
@@ -2208,7 +2155,7 @@ class IcallMeStmt : public NaryMeStmt, public MuChiMePart, public AssignedPart {
     return GlobalTables::GetTypeTable().GetTypeFromTyIdx(retTyIdx);
   }
 
-  StmtNode &EmitStmt(SSATab &ssatab);
+  StmtNode &EmitStmt(SSATab &ssaTab);
 
   TyIdx GetRetTyIdx() const {
     return retTyIdx;
@@ -2220,9 +2167,9 @@ class IcallMeStmt : public NaryMeStmt, public MuChiMePart, public AssignedPart {
 
  private:
   // return type for callee
-  TyIdx retTyIdx;
+  TyIdx retTyIdx{ 0 };
   // Used in trim call graph
-  uint32 stmtID;
+  uint32 stmtID = 0;
 };
 
 class IntrinsiccallMeStmt : public NaryMeStmt, public MuChiMePart, public AssignedPart {
@@ -2240,8 +2187,7 @@ class IntrinsiccallMeStmt : public NaryMeStmt, public MuChiMePart, public Assign
         MuChiMePart(alloc),
         AssignedPart(alloc),
         intrinsic(id),
-        tyIdx(tyid),
-        retPType(kPtyInvalid) {}
+        tyIdx(tyid) {}
 
   IntrinsiccallMeStmt(MapleAllocator *alloc, IntrinsiccallMeStmt *intrn)
       : NaryMeStmt(alloc, intrn),
@@ -2289,8 +2235,8 @@ class IntrinsiccallMeStmt : public NaryMeStmt, public MuChiMePart, public Assign
     return mustDefList.empty() ? nullptr : mustDefList.front().GetLHS();
   }
 
-  MeExpr *GetLHSRef(SSATab &ssatab, bool excludelocalrefvar) {
-    return GetAssignedPartLHSRef(ssatab, excludelocalrefvar);
+  MeExpr *GetLHSRef(SSATab &ssaTab, bool excludeLocalRefVar) {
+    return GetAssignedPartLHSRef(ssaTab, excludeLocalRefVar);
   }
 
   bool NeedDecref() const {
@@ -2317,7 +2263,7 @@ class IntrinsiccallMeStmt : public NaryMeStmt, public MuChiMePart, public Assign
     needIncref = false;
   }
 
-  StmtNode &EmitStmt(SSATab &ssatab);
+  StmtNode &EmitStmt(SSATab &ssaTab);
 
   MIRIntrinsicID GetIntrinsic() const {
     return intrinsic;
@@ -2335,7 +2281,7 @@ class IntrinsiccallMeStmt : public NaryMeStmt, public MuChiMePart, public Assign
   MIRIntrinsicID intrinsic;
   TyIdx tyIdx;
   // Used to store return value type
-  PrimType retPType;
+  PrimType retPType = kPtyInvalid;
 };
 
 class RetMeStmt : public NaryMeStmt {
@@ -2357,14 +2303,11 @@ class RetMeStmt : public NaryMeStmt {
 // eval, free, decref, incref, decrefreset, assertnonnull
 class UnaryMeStmt : public MeStmt {
  public:
-  explicit UnaryMeStmt(const StmtNode *stt) : MeStmt(stt), opnd(nullptr), decrefBeforeExit(false) {}
+  explicit UnaryMeStmt(const StmtNode *stt) : MeStmt(stt) {}
 
-  explicit UnaryMeStmt(Opcode o) : MeStmt(o), opnd(nullptr), decrefBeforeExit(false) {}
+  explicit UnaryMeStmt(Opcode o) : MeStmt(o) {}
 
-  explicit UnaryMeStmt(UnaryMeStmt *umestmt)
-      : MeStmt(umestmt->GetOp()),
-        opnd(umestmt->opnd),
-        decrefBeforeExit(false) {}
+  explicit UnaryMeStmt(UnaryMeStmt *umestmt) : MeStmt(umestmt->GetOp()), opnd(umestmt->opnd) {}
 
   virtual ~UnaryMeStmt() = default;
 
@@ -2394,11 +2337,11 @@ class UnaryMeStmt : public MeStmt {
 
   void Dump(IRMap*) const;
 
-  StmtNode &EmitStmt(SSATab &ssatab);
+  StmtNode &EmitStmt(SSATab &ssaTab);
 
  private:
-  MeExpr *opnd;
-  bool decrefBeforeExit;  // true if decref is inserted due to anticipated function exit
+  MeExpr *opnd = nullptr;
+  bool decrefBeforeExit = false;  // true if decref is inserted due to anticipated function exit
 };
 
 class GotoMeStmt : public MeStmt {
@@ -2415,7 +2358,7 @@ class GotoMeStmt : public MeStmt {
     offset = o;
   }
 
-  StmtNode &EmitStmt(SSATab &ssatab);
+  StmtNode &EmitStmt(SSATab &ssaTab);
 
  private:
   uint32 offset;  // the label
@@ -2437,7 +2380,7 @@ class CondGotoMeStmt : public UnaryMeStmt {
   }
 
   void Dump(IRMap*) const;
-  StmtNode &EmitStmt(SSATab &ssatab);
+  StmtNode &EmitStmt(SSATab &ssaTab);
 
  private:
   uint32 offset;  // the label
@@ -2452,7 +2395,7 @@ class JsTryMeStmt : public MeStmt {
 
   ~JsTryMeStmt() = default;
 
-  StmtNode &EmitStmt(SSATab &ssatab);
+  StmtNode &EmitStmt(SSATab &ssaTab);
 
  private:
   uint16 catchOffset;
@@ -2469,7 +2412,7 @@ class TryMeStmt : public MeStmt {
     offsets.push_back(curr);
   }
 
-  StmtNode &EmitStmt(SSATab &ssatab);
+  StmtNode &EmitStmt(SSATab &ssaTab);
 
  private:
   MapleVector<LabelIdx> offsets;
@@ -2485,7 +2428,7 @@ class CatchMeStmt : public MeStmt {
 
   ~CatchMeStmt() = default;
 
-  StmtNode &EmitStmt(SSATab &ssatab);
+  StmtNode &EmitStmt(SSATab &ssaTab);
 
  private:
   MapleVector<TyIdx> exceptionTyIdxVec;
@@ -2509,6 +2452,7 @@ class SwitchMeStmt : public UnaryMeStmt {
   void SetDefaultLabel(LabelIdx curr) {
     defaultLabel = curr;
   }
+
   void SetCaseLabel(uint32 caseIdx, LabelIdx label) {
     switchTable[caseIdx].second = label;
   }
@@ -2533,7 +2477,7 @@ class CommentMeStmt : public MeStmt {
 
   ~CommentMeStmt() = default;
 
-  StmtNode &EmitStmt(SSATab &ssatab);
+  StmtNode &EmitStmt(SSATab &ssaTab);
 
  private:
   MapleString comment;
@@ -2574,7 +2518,7 @@ class GosubMeStmt : public WithMuMeStmt {
 
 class ThrowMeStmt : public WithMuMeStmt {
  public:
-  ThrowMeStmt(MapleAllocator *alloc, const StmtNode *stt) : WithMuMeStmt(alloc, stt), opnd(nullptr) {}
+  ThrowMeStmt(MapleAllocator *alloc, const StmtNode *stt) : WithMuMeStmt(alloc, stt) {}
 
   ~ThrowMeStmt() = default;
 
@@ -2599,10 +2543,10 @@ class ThrowMeStmt : public WithMuMeStmt {
   }
 
   void Dump(IRMap*) const;
-  StmtNode &EmitStmt(SSATab &ssatab);
+  StmtNode &EmitStmt(SSATab &ssaTab);
 
  private:
-  MeExpr *opnd;
+  MeExpr *opnd = nullptr;
 };
 
 class SyncMeStmt : public NaryMeStmt, public MuChiMePart {
@@ -2638,15 +2582,15 @@ class AssertMeStmt : public MeStmt {
     return kOperandNumBinary;
   }
 
-  AssertMeStmt(const AssertMeStmt &assmestmt) : MeStmt(assmestmt.GetOp()) {
-    SetOp(assmestmt.GetOp());
-    opnds[0] = assmestmt.opnds[0];
-    opnds[1] = assmestmt.opnds[1];
+  AssertMeStmt(const AssertMeStmt &assMeStmt) : MeStmt(assMeStmt.GetOp()) {
+    SetOp(assMeStmt.GetOp());
+    opnds[0] = assMeStmt.opnds[0];
+    opnds[1] = assMeStmt.opnds[1];
   }
 
-  AssertMeStmt(MeExpr *arrexpr, MeExpr *indxexpr, bool ilt) : MeStmt(ilt ? OP_assertlt : OP_assertge) {
-    opnds[0] = arrexpr;
-    opnds[1] = indxexpr;
+  AssertMeStmt(MeExpr *arrExpr, MeExpr *idxExpr, bool ilt) : MeStmt(ilt ? OP_assertlt : OP_assertge) {
+    opnds[0] = arrExpr;
+    opnds[1] = idxExpr;
   }
 
   ~AssertMeStmt() = default;
@@ -2670,17 +2614,17 @@ class AssertMeStmt : public MeStmt {
   }
 
   void Dump(IRMap*) const override;
-  StmtNode &EmitStmt(SSATab &ssatab) override;
+  StmtNode &EmitStmt(SSATab &ssaTab) override;
 
  private:
   MeExpr *opnds[kOperandNumBinary];
-  AssertMeStmt &operator=(const AssertMeStmt &assmestmt) {
-    if (&assmestmt == this) {
+  AssertMeStmt &operator=(const AssertMeStmt &assMeStmt) {
+    if (&assMeStmt == this) {
       return *this;
     }
-    SetOp(assmestmt.GetOp());
-    opnds[0] = assmestmt.opnds[0];
-    opnds[1] = assmestmt.opnds[1];
+    SetOp(assMeStmt.GetOp());
+    opnds[0] = assMeStmt.opnds[0];
+    opnds[1] = assMeStmt.opnds[1];
     return *this;
   }
 };
@@ -2706,5 +2650,4 @@ class DumpOptions {
 #define LOAD_SAFE_CAST_FOR_ME_EXPR
 #define LOAD_SAFE_CAST_FOR_ME_STMT
 #include "me_safe_cast_traits.def"
-
 #endif  // MAPLE_ME_INCLUDE_ME_IR_H

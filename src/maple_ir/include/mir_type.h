@@ -727,7 +727,6 @@ class MIRStructType : public MIRType {
   FieldVector &GetStaticFields() {
     return staticFields;
   }
-
   const FieldVector &GetStaticFields() const {
     return staticFields;
   }
@@ -735,12 +734,13 @@ class MIRStructType : public MIRType {
   FieldVector &GetParentFields() {
     return parentFields;
   }
-
+  const FieldVector &GetParentFields() const {
+    return parentFields;
+  }
   const FieldPair &GetParentFieldsElemt(size_t n) const {
     ASSERT(n < parentFields.size(), "array index out of range");
     return parentFields.at(n);
   }
-
   size_t GetParentFieldsSize() const {
     return parentFields.size();
   }
@@ -1118,12 +1118,13 @@ class MIRClassType : public MIRStructType {
   std::vector<TyIdx> &GetInterfaceImplemented() {
     return interfacesImplemented;
   }
-
+  const std::vector<TyIdx> &GetInterfaceImplemented() const {
+    return interfacesImplemented;
+  }
   TyIdx GetNthInterfaceImplemented(size_t i) const {
     ASSERT(i < interfacesImplemented.size(), "array index out of range");
     return interfacesImplemented.at(i);
   }
-
   void SetNthInterfaceImplemented(uint32 i, TyIdx tyIdx) {
     ASSERT(i < interfacesImplemented.size(), "array index out of range");
     interfacesImplemented.at(i) = tyIdx;
@@ -1247,6 +1248,9 @@ class MIRInterfaceType : public MIRStructType {
   }
 
   std::vector<TyIdx> &GetParentsTyIdx() {
+    return parentsTyIdx;
+  }
+  const std::vector<TyIdx> &GetParentsTyIdx() const {
     return parentsTyIdx;
   }
 

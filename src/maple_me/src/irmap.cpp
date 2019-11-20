@@ -25,11 +25,11 @@ using MeStmtFactory = FunctionFactory<Opcode, MeStmt*, IRMap*, StmtNode&, Access
 // recursively invoke itself in a pre-order traversal of the dominator tree of
 // the CFG to build the HSSA representation for the code in each BB
 void IRMap::BuildBB(BB &bb, std::vector<bool> &bbIRMapProcessed) {
-  BBId bbid = bb.GetBBId();
-  if (bbIRMapProcessed[bbid]) {
+  BBId bbID = bb.GetBBId();
+  if (bbIRMapProcessed[bbID]) {
     return;
   }
-  bbIRMapProcessed[bbid] = true;
+  bbIRMapProcessed[bbID] = true;
   curBB = &bb;
   SetCurFunction(bb);
   // iterate phi list to update the definition by phi
@@ -41,73 +41,73 @@ void IRMap::BuildBB(BB &bb, std::vector<bool> &bbIRMapProcessed) {
     }
   }
   // travesal bb's dominated tree
-  ASSERT(bbid < dom.GetDomChildrenSize(), " index out of range in IRMap::BuildBB");
-  const MapleSet<BBId> &domChildren = dom.GetDomChildren(bbid);
-  for (auto bbit = domChildren.begin(); bbit != domChildren.end(); ++bbit) {
-    BBId childbbid = *bbit;
-    BuildBB(*GetBB(childbbid), bbIRMapProcessed);
+  ASSERT(bbID < dom.GetDomChildrenSize(), " index out of range in IRMap::BuildBB");
+  const MapleSet<BBId> &domChildren = dom.GetDomChildren(bbID);
+  for (auto bbIt = domChildren.begin(); bbIt != domChildren.end(); ++bbIt) {
+    BBId childBBId = *bbIt;
+    BuildBB(*GetBB(childBBId), bbIRMapProcessed);
   }
 }
 
 void IRMap::BuildPhiMeNode(BB &bb) {
   for (auto &phi : bb.GetPhiList()) {
-    const OriginalSt *origst = phi.first;
-    VersionSt *verSt = phi.second.GetResult();
-    if (origst->IsPregOst()) {
-      MeRegPhiNode *phiMeNode = NewInPool<MeRegPhiNode>();
-      RegMeExpr *medef = GetOrCreateRegFromVerSt(*verSt);
-      phiMeNode->UpdateLHS(*medef);
+    const OriginalSt *oSt = phi.first;
+    VersionSt *vSt = phi.second.GetResult();
+    if (oSt->IsPregOst()) {
+      auto *phiMeNode = NewInPool<MeRegPhiNode>();
+      RegMeExpr *meDef = GetOrCreateRegFromVerSt(*vSt);
+      phiMeNode->UpdateLHS(*meDef);
       phiMeNode->SetDefBB(&bb);
       // build phi operands
       for (VersionSt *opnd : phi.second.GetPhiOpnds()) {
         phiMeNode->GetOpnds().push_back(GetOrCreateRegFromVerSt(*opnd));
       }
-      bb.GetMeregphiList().insert(std::make_pair(medef->GetOstIdx(), phiMeNode));
+      bb.GetMeRegPhiList().insert(std::make_pair(meDef->GetOstIdx(), phiMeNode));
     } else {
-      MeVarPhiNode *phimenode = NewInPool<MeVarPhiNode>();
-      VarMeExpr *medef = GetOrCreateVarFromVerSt(*verSt);
-      phimenode->UpdateLHS(*medef);
-      phimenode->SetDefBB(&bb);
+      auto *phiMeNode = NewInPool<MeVarPhiNode>();
+      VarMeExpr *meDef = GetOrCreateVarFromVerSt(*vSt);
+      phiMeNode->UpdateLHS(*meDef);
+      phiMeNode->SetDefBB(&bb);
       // build phi operands
       for (VersionSt *opnd : phi.second.GetPhiOpnds()) {
-        phimenode->GetOpnds().push_back(GetOrCreateVarFromVerSt(*opnd));
+        phiMeNode->GetOpnds().push_back(GetOrCreateVarFromVerSt(*opnd));
       }
-      bb.GetMevarPhiList().insert(std::make_pair(medef->GetOStIdx(), phimenode));
+      bb.GetMevarPhiList().insert(std::make_pair(meDef->GetOStIdx(), phiMeNode));
     }
   }
 }
 
 VarMeExpr *IRMap::CreateVarMeExprVersion(const VarMeExpr &origExpr) {
-  VarMeExpr *varmeexpr = New<VarMeExpr>(&irMapAlloc, exprID++, origExpr.GetOStIdx(), verst2MeExprTable.size());
-  verst2MeExprTable.push_back(varmeexpr);
-  varmeexpr->InitBase(origExpr.GetOp(), origExpr.GetPrimType(), origExpr.GetNumOpnds());
-  varmeexpr->SetFieldID(origExpr.GetFieldID());
-  return varmeexpr;
+  auto *varMeExpr = New<VarMeExpr>(&irMapAlloc, exprID++, origExpr.GetOStIdx(), vst2MeExprTable.size());
+  vst2MeExprTable.push_back(varMeExpr);
+  varMeExpr->InitBase(origExpr.GetOp(), origExpr.GetPrimType(), origExpr.GetNumOpnds());
+  varMeExpr->SetFieldID(origExpr.GetFieldID());
+  return varMeExpr;
 }
 
 MeExpr *IRMap::CreateAddrofMeExpr(MeExpr &expr) {
   if (expr.GetMeOp() == kMeOpVar) {
-    VarMeExpr &varmeexpr = static_cast<VarMeExpr&>(expr);
-    AddrofMeExpr addrofme(kInvalidExprID, varmeexpr.GetOStIdx());
-    addrofme.SetOp(OP_addrof);
-    addrofme.SetPtyp(PTY_ptr);
-    return HashMeExpr(addrofme);
+    auto &varMeExpr = static_cast<VarMeExpr&>(expr);
+    AddrofMeExpr addrOfMe(kInvalidExprID, varMeExpr.GetOStIdx());
+    addrOfMe.SetOp(OP_addrof);
+    addrOfMe.SetPtyp(PTY_ptr);
+    return HashMeExpr(addrOfMe);
   } else {
     ASSERT(expr.GetMeOp() == kMeOpIvar, "expecting IVarMeExpr");
-    IvarMeExpr &ivarexpr = static_cast<IvarMeExpr&>(expr);
-    OpMeExpr opmeexpr(kInvalidExprID);
-    opmeexpr.SetFieldID(ivarexpr.GetFieldID());
-    opmeexpr.SetTyIdx(ivarexpr.GetTyIdx());
-    opmeexpr.SetOpnd(0, ivarexpr.GetBase());
-    opmeexpr.SetOp(OP_iaddrof);
-    opmeexpr.SetPtyp(PTY_ptr);
-    opmeexpr.SetNumOpnds(1);
-    return HashMeExpr(opmeexpr);
+    auto &ivarExpr = static_cast<IvarMeExpr&>(expr);
+    OpMeExpr opMeExpr(kInvalidExprID);
+    opMeExpr.SetFieldID(ivarExpr.GetFieldID());
+    opMeExpr.SetTyIdx(ivarExpr.GetTyIdx());
+    opMeExpr.SetOpnd(0, ivarExpr.GetBase());
+    opMeExpr.SetOp(OP_iaddrof);
+    opMeExpr.SetPtyp(PTY_ptr);
+    opMeExpr.SetNumOpnds(1);
+    return HashMeExpr(opMeExpr);
   }
 }
 
 VarMeExpr *IRMap::CreateNewVarMeExpr(OStIdx oStIdx, PrimType pType, FieldID fieldID) {
-  VarMeExpr *varMeExpr = meBuilder.BuildVarMeExpr(exprID++, oStIdx, verst2MeExprTable.size(), pType, fieldID);
+  VarMeExpr *varMeExpr = meBuilder.BuildVarMeExpr(exprID++, oStIdx, vst2MeExprTable.size(), pType, fieldID);
   PushBackVerst2MeExprTable(varMeExpr);
   return varMeExpr;
 }
@@ -118,13 +118,13 @@ VarMeExpr *IRMap::CreateNewVarMeExpr(OriginalSt &oSt, PrimType pType, FieldID fi
   return varMeExpr;
 }
 
-VarMeExpr *IRMap::CreateNewGlobalTmp(GStrIdx strIdx, PrimType ptyp) {
+VarMeExpr *IRMap::CreateNewGlobalTmp(GStrIdx strIdx, PrimType pType) {
   MIRSymbol *st =
-      mirModule.GetMIRBuilder()->CreateSymbol((TyIdx)ptyp, strIdx, kStVar, kScGlobal, nullptr, kScopeGlobal);
+      mirModule.GetMIRBuilder()->CreateSymbol((TyIdx)pType, strIdx, kStVar, kScGlobal, nullptr, kScopeGlobal);
   st->SetIsTmp(true);
   OriginalSt *oSt = ssaTab.CreateSymbolOriginalSt(*st, 0, 0);
-  VarMeExpr *varx = New<VarMeExpr>(&irMapAlloc, exprID++, oSt->GetIndex(), oSt->GetZeroVersionIndex());
-  varx->InitBase(OP_dread, ptyp, 0);
+  auto *varx = New<VarMeExpr>(&irMapAlloc, exprID++, oSt->GetIndex(), oSt->GetZeroVersionIndex());
+  varx->InitBase(OP_dread, pType, 0);
   return varx;
 }
 
@@ -133,91 +133,91 @@ VarMeExpr *IRMap::CreateNewLocalRefVarTmp(GStrIdx strIdx, TyIdx tIdx) {
       mirModule.GetMIRBuilder()->CreateSymbol(tIdx, strIdx, kStVar, kScAuto, mirModule.CurFunction(), kScopeLocal);
   st->SetInstrumented();
   OriginalSt *oSt = ssaTab.CreateSymbolOriginalSt(*st, mirModule.CurFunction()->GetPuidx(), 0);
-  oSt->SetZeroVersionIndex(verst2MeExprTable.size());
-  verst2MeExprTable.push_back(nullptr);
+  oSt->SetZeroVersionIndex(vst2MeExprTable.size());
+  vst2MeExprTable.push_back(nullptr);
   oSt->PushbackVersionIndex(oSt->GetZeroVersionIndex());
-  VarMeExpr *newlocalrefvar = New<VarMeExpr>(&irMapAlloc, exprID++, oSt->GetIndex(), verst2MeExprTable.size());
-  verst2MeExprTable.push_back(newlocalrefvar);
-  newlocalrefvar->InitBase(OP_dread, PTY_ref, 0);
-  return newlocalrefvar;
+  auto *newLocalRefVar = New<VarMeExpr>(&irMapAlloc, exprID++, oSt->GetIndex(), vst2MeExprTable.size());
+  vst2MeExprTable.push_back(newLocalRefVar);
+  newLocalRefVar->InitBase(OP_dread, PTY_ref, 0);
+  return newLocalRefVar;
 }
 
-RegMeExpr *IRMap::CreateRegMeExprVersion(const OriginalSt &pregOrgst) {
-  RegMeExpr *regreadexpr =
-      NewInPool<RegMeExpr>(exprID++, pregOrgst.GetPregIdx(), pregOrgst.GetPuIdx(), pregOrgst.GetIndex(), 0);
-  regreadexpr->InitBase(OP_regread, pregOrgst.GetMIRPreg()->GetPrimType(), 0);
-  regMeExprTable.push_back(regreadexpr);
-  return regreadexpr;
+RegMeExpr *IRMap::CreateRegMeExprVersion(const OriginalSt &pregOSt) {
+  auto *regReadExpr =
+      NewInPool<RegMeExpr>(exprID++, pregOSt.GetPregIdx(), pregOSt.GetPuIdx(), pregOSt.GetIndex(), 0);
+  regReadExpr->InitBase(OP_regread, pregOSt.GetMIRPreg()->GetPrimType(), 0);
+  regMeExprTable.push_back(regReadExpr);
+  return regReadExpr;
 }
 
 RegMeExpr *IRMap::CreateRegMeExprVersion(const RegMeExpr &origExpr) {
-  RegMeExpr *regreadexpr =
+  auto *regReadExpr =
       NewInPool<RegMeExpr>(exprID++, origExpr.GetRegIdx(), origExpr.GetPuIdx(), origExpr.GetOstIdx(), 0);
-  regreadexpr->InitBase(origExpr.GetOp(), origExpr.GetPrimType(), origExpr.GetNumOpnds());
-  regMeExprTable.push_back(regreadexpr);
-  return regreadexpr;
+  regReadExpr->InitBase(origExpr.GetOp(), origExpr.GetPrimType(), origExpr.GetNumOpnds());
+  regMeExprTable.push_back(regReadExpr);
+  return regReadExpr;
 }
 
 RegMeExpr *IRMap::CreateRefRegMeExpr(const MIRSymbol &mirSt) {
-  MIRFunction *mirfunc = mirModule.CurFunction();
-  MIRType *sttype = mirSt.GetType();
-  PrimType ptyp = sttype->GetPrimType();
-  ASSERT(ptyp == PTY_ref, "only PTY_ref needed");
-  PregIdx regidx = mirfunc->GetPregTab()->CreateRefPreg(*sttype);
-  ASSERT(regidx <= 0xffff, "register oversized");
-  MIRPreg *preg = mirfunc->GetPregTab()->PregFromPregIdx(regidx);
+  MIRFunction *mirFunc = mirModule.CurFunction();
+  MIRType *stType = mirSt.GetType();
+  PrimType pType = stType->GetPrimType();
+  ASSERT(pType == PTY_ref, "only PTY_ref needed");
+  PregIdx regIdx = mirFunc->GetPregTab()->CreateRefPreg(*stType);
+  ASSERT(regIdx <= 0xffff, "register oversized");
+  MIRPreg *preg = mirFunc->GetPregTab()->PregFromPregIdx(regIdx);
   if (!mirSt.IgnoreRC()) {
     preg->SetNeedRC();
   }
-  OriginalSt *oSt = ssaTab.GetOriginalStTable().CreatePregOriginalSt(regidx, mirfunc->GetPuidx());
-  RegMeExpr *regreadexpr = NewInPool<RegMeExpr>(exprID++, regidx, mirfunc->GetPuidx(), oSt->GetIndex(), 0);
-  regreadexpr->InitBase(OP_regread, ptyp, 0);
+  OriginalSt *oSt = ssaTab.GetOriginalStTable().CreatePregOriginalSt(regIdx, mirFunc->GetPuidx());
+  auto *regreadexpr = NewInPool<RegMeExpr>(exprID++, regIdx, mirFunc->GetPuidx(), oSt->GetIndex(), 0);
+  regreadexpr->InitBase(OP_regread, pType, 0);
   regMeExprTable.push_back(regreadexpr);
   return regreadexpr;
 }
 
-RegMeExpr *IRMap::CreateRegMeExpr(PrimType ptyp) {
-  MIRFunction *mirfunc = mirModule.CurFunction();
-  PregIdx regidx = mirfunc->GetPregTab()->CreatePreg(ptyp);
-  ASSERT(regidx <= 0xffff, "register oversized");
-  OriginalSt *oSt = ssaTab.GetOriginalStTable().CreatePregOriginalSt(regidx, mirfunc->GetPuidx());
-  RegMeExpr *regreadexpr = NewInPool<RegMeExpr>(exprID++, regidx, mirfunc->GetPuidx(), oSt->GetIndex(), 0);
-  regreadexpr->InitBase(OP_regread, ptyp, 0);
-  regMeExprTable.push_back(regreadexpr);
-  return regreadexpr;
+RegMeExpr *IRMap::CreateRegMeExpr(PrimType pType) {
+  MIRFunction *mirFunc = mirModule.CurFunction();
+  PregIdx regIdx = mirFunc->GetPregTab()->CreatePreg(pType);
+  ASSERT(regIdx <= 0xffff, "register oversized");
+  OriginalSt *ost = ssaTab.GetOriginalStTable().CreatePregOriginalSt(regIdx, mirFunc->GetPuidx());
+  auto *regReadExpr = NewInPool<RegMeExpr>(exprID++, regIdx, mirFunc->GetPuidx(), ost->GetIndex(), 0);
+  regReadExpr->InitBase(OP_regread, pType, 0);
+  regMeExprTable.push_back(regReadExpr);
+  return regReadExpr;
 }
 
 RegMeExpr *IRMap::CreateRegRefMeExpr(MIRType &mirType) {
-  MIRFunction *mirfunc = mirModule.CurFunction();
-  PregIdx regidx = mirfunc->GetPregTab()->CreateRefPreg(mirType);
-  ASSERT(regidx <= 0xffff, "register oversized");
-  OriginalSt *oSt = ssaTab.GetOriginalStTable().CreatePregOriginalSt(regidx, mirfunc->GetPuidx());
-  RegMeExpr *regreadexpr = NewInPool<RegMeExpr>(exprID++, regidx, mirfunc->GetPuidx(), oSt->GetIndex(), 0);
-  regreadexpr->InitBase(OP_regread, mirType.GetPrimType(), 0);
-  regMeExprTable.push_back(regreadexpr);
-  return regreadexpr;
+  MIRFunction *mirFunc = mirModule.CurFunction();
+  PregIdx regIdx = mirFunc->GetPregTab()->CreateRefPreg(mirType);
+  ASSERT(regIdx <= 0xffff, "register oversized");
+  OriginalSt *ost = ssaTab.GetOriginalStTable().CreatePregOriginalSt(regIdx, mirFunc->GetPuidx());
+  auto *regReadExpr = NewInPool<RegMeExpr>(exprID++, regIdx, mirFunc->GetPuidx(), ost->GetIndex(), 0);
+  regReadExpr->InitBase(OP_regread, mirType.GetPrimType(), 0);
+  regMeExprTable.push_back(regReadExpr);
+  return regReadExpr;
 }
 
 RegMeExpr *IRMap::CreateRegRefMeExpr(MeExpr &meExpr) {
   MIRType *mirType = nullptr;
   switch (meExpr.GetMeOp()) {
     case kMeOpVar: {
-      VarMeExpr &varmeexpr = static_cast<VarMeExpr&>(meExpr);
-      const OriginalSt *oSt = ssaTab.GetOriginalStFromID(varmeexpr.GetOStIdx());
-      ASSERT(oSt->GetTyIdx() != 0, "expect oSt->tyIdx to be initialized");
-      mirType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(oSt->GetTyIdx());
+      auto &varMeExpr = static_cast<VarMeExpr&>(meExpr);
+      const OriginalSt *ost = ssaTab.GetOriginalStFromID(varMeExpr.GetOStIdx());
+      ASSERT(ost->GetTyIdx() != 0, "expect ost->tyIdx to be initialized");
+      mirType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ost->GetTyIdx());
       break;
     }
     case kMeOpIvar: {
-      IvarMeExpr &ivarmeexpr = static_cast<IvarMeExpr&>(meExpr);
-      MIRType *ptrmirtype = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ivarmeexpr.GetTyIdx());
-      ASSERT(ptrmirtype->GetKind() == kTypePointer, "must be point type for ivar");
-      MIRPtrType *realmirtype = static_cast<MIRPtrType*>(ptrmirtype);
-      FieldID fieldID = ivarmeexpr.GetFieldID();
+      auto &ivarMeExpr = static_cast<IvarMeExpr&>(meExpr);
+      MIRType *ptrMirType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ivarMeExpr.GetTyIdx());
+      ASSERT(ptrMirType->GetKind() == kTypePointer, "must be point type for ivar");
+      auto *realMirType = static_cast<MIRPtrType*>(ptrMirType);
+      FieldID fieldID = ivarMeExpr.GetFieldID();
       if (fieldID > 0) {
-        mirType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(realmirtype->GetPointedTyIdxWithFieldID(fieldID));
+        mirType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(realMirType->GetPointedTyIdxWithFieldID(fieldID));
       } else {
-        mirType = realmirtype->GetPointedType();
+        mirType = realMirType->GetPointedType();
       }
       ASSERT(mirType->GetPrimType() == meExpr.GetPrimType() ||
              !(IsAddress(mirType->GetPrimType()) && IsAddress(meExpr.GetPrimType())),
@@ -227,9 +227,9 @@ RegMeExpr *IRMap::CreateRegRefMeExpr(MeExpr &meExpr) {
     }
     case kMeOpOp:
       if (meExpr.GetOp() == OP_retype) {
-        OpMeExpr &opmeexpr = static_cast<OpMeExpr&>(meExpr);
-        ASSERT(opmeexpr.GetTyIdx() != 0, "expect opmeexpr.tyIdx to be initialized");
-        mirType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(opmeexpr.GetTyIdx());
+        auto &opMeExpr = static_cast<OpMeExpr&>(meExpr);
+        ASSERT(opMeExpr.GetTyIdx() != 0, "expect opMeExpr.tyIdx to be initialized");
+        mirType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(opMeExpr.GetTyIdx());
         break;
       }
     // fall thru
@@ -239,87 +239,87 @@ RegMeExpr *IRMap::CreateRegRefMeExpr(MeExpr &meExpr) {
   return CreateRegRefMeExpr(*mirType);
 }
 
-VarMeExpr *IRMap::GetOrCreateVarFromVerSt(const VersionSt &verSt) {
-  size_t vindex = verSt.GetIndex();
-  ASSERT(vindex < verst2MeExprTable.size(), "GetOrCreateVarFromVerSt: index %d is out of range", vindex);
-  MeExpr *meExpr = verst2MeExprTable.at(vindex);
+VarMeExpr *IRMap::GetOrCreateVarFromVerSt(const VersionSt &vst) {
+  size_t vindex = vst.GetIndex();
+  ASSERT(vindex < vst2MeExprTable.size(), "GetOrCreateVarFromVerSt: index %d is out of range", vindex);
+  MeExpr *meExpr = vst2MeExprTable.at(vindex);
   if (meExpr != nullptr) {
     return static_cast<VarMeExpr*>(meExpr);
   }
-  const OriginalSt *oSt = verSt.GetOrigSt();
-  ASSERT(oSt->IsSymbolOst(), "GetOrCreateVarFromVerSt: wrong ost_type");
-  VarMeExpr *varx = New<VarMeExpr>(&irMapAlloc, exprID++, oSt->GetIndex(), vindex);
+  const OriginalSt *ost = vst.GetOrigSt();
+  ASSERT(ost->IsSymbolOst(), "GetOrCreateVarFromVerSt: wrong ost_type");
+  auto *varx = New<VarMeExpr>(&irMapAlloc, exprID++, ost->GetIndex(), vindex);
   ASSERT(!GlobalTables::GetTypeTable().GetTypeTable().empty(), "container check");
-  varx->InitBase(OP_dread, GlobalTables::GetTypeTable().GetTypeFromTyIdx(oSt->GetTyIdx())->GetPrimType(), 0);
-  varx->SetFieldID(oSt->GetFieldID());
-  verst2MeExprTable[vindex] = varx;
+  varx->InitBase(OP_dread, GlobalTables::GetTypeTable().GetTypeFromTyIdx(ost->GetTyIdx())->GetPrimType(), 0);
+  varx->SetFieldID(ost->GetFieldID());
+  vst2MeExprTable[vindex] = varx;
   return varx;
 }
 
-VarMeExpr *IRMap::GetOrCreateZeroVersionVarMeExpr(const OriginalSt &oSt) {
-  ASSERT(oSt.GetZeroVersionIndex() < verst2MeExprTable.size(),
+VarMeExpr *IRMap::GetOrCreateZeroVersionVarMeExpr(const OriginalSt &ost) {
+  ASSERT(ost.GetZeroVersionIndex() < vst2MeExprTable.size(),
          "GetOrCreateZeroVersionVarMeExpr: version index of osym's kInitVersion out of range");
-  if (oSt.GetZeroVersionIndex() == 0) {
-    ssaTab.SetZeroVersionIndex(oSt.GetIndex(), verst2MeExprTable.size());
-    verst2MeExprTable.push_back(nullptr);
+  if (ost.GetZeroVersionIndex() == 0) {
+    ssaTab.SetZeroVersionIndex(ost.GetIndex(), vst2MeExprTable.size());
+    vst2MeExprTable.push_back(nullptr);
   }
-  if (verst2MeExprTable[oSt.GetZeroVersionIndex()] == nullptr) {
-    VarMeExpr *varmeexpr = New<VarMeExpr>(&irMapAlloc, exprID++, oSt.GetIndex(), oSt.GetZeroVersionIndex());
-    varmeexpr->SetFieldID(oSt.GetFieldID());
-    varmeexpr->SetOp(OP_dread);
+  if (vst2MeExprTable[ost.GetZeroVersionIndex()] == nullptr) {
+    auto *varMeExpr = New<VarMeExpr>(&irMapAlloc, exprID++, ost.GetIndex(), ost.GetZeroVersionIndex());
+    varMeExpr->SetFieldID(ost.GetFieldID());
+    varMeExpr->SetOp(OP_dread);
     ASSERT(!GlobalTables::GetTypeTable().GetTypeTable().empty(), "container check");
-    varmeexpr->SetPtyp(GlobalTables::GetTypeTable().GetTypeFromTyIdx(oSt.GetTyIdx())->GetPrimType());
-    varmeexpr->SetNumOpnds(0);
-    verst2MeExprTable[oSt.GetZeroVersionIndex()] = varmeexpr;
-    return varmeexpr;
+    varMeExpr->SetPtyp(GlobalTables::GetTypeTable().GetTypeFromTyIdx(ost.GetTyIdx())->GetPrimType());
+    varMeExpr->SetNumOpnds(0);
+    vst2MeExprTable[ost.GetZeroVersionIndex()] = varMeExpr;
+    return varMeExpr;
   }
-  return static_cast<VarMeExpr*>(verst2MeExprTable[oSt.GetZeroVersionIndex()]);
+  return static_cast<VarMeExpr*>(vst2MeExprTable[ost.GetZeroVersionIndex()]);
 }
 
-RegMeExpr *IRMap::GetOrCreateRegFromVerSt(const VersionSt &verSt) {
-  size_t vindex = verSt.GetIndex();
-  ASSERT(vindex < verst2MeExprTable.size(), " GetOrCreateRegFromVerSt: index %d is out of range", vindex);
-  MeExpr *meExpr = verst2MeExprTable[vindex];
+RegMeExpr *IRMap::GetOrCreateRegFromVerSt(const VersionSt &vst) {
+  size_t vindex = vst.GetIndex();
+  ASSERT(vindex < vst2MeExprTable.size(), " GetOrCreateRegFromVerSt: index %d is out of range", vindex);
+  MeExpr *meExpr = vst2MeExprTable[vindex];
   if (meExpr != nullptr) {
     return static_cast<RegMeExpr*>(meExpr);
   }
-  const OriginalSt *oSt = verSt.GetOrigSt();
-  ASSERT(oSt->IsPregOst(), "GetOrCreateRegFromVerSt: PregOST expected");
-  RegMeExpr *regx =
-      NewInPool<RegMeExpr>(exprID++, oSt->GetPregIdx(), mirModule.CurFunction()->GetPuidx(), oSt->GetIndex(), vindex);
-  regx->InitBase(OP_regread, oSt->GetMIRPreg()->GetPrimType(), 0);
+  const OriginalSt *ost = vst.GetOrigSt();
+  ASSERT(ost->IsPregOst(), "GetOrCreateRegFromVerSt: PregOST expected");
+  auto *regx =
+      NewInPool<RegMeExpr>(exprID++, ost->GetPregIdx(), mirModule.CurFunction()->GetPuidx(), ost->GetIndex(), vindex);
+  regx->InitBase(OP_regread, ost->GetMIRPreg()->GetPrimType(), 0);
   regMeExprTable.push_back(regx);
-  verst2MeExprTable[vindex] = regx;
+  vst2MeExprTable[vindex] = regx;
   return regx;
 }
 
-MeExpr *IRMap::BuildLHSVar(const VersionSt &verSt, DassignMeStmt &defMeStmt) {
-  VarMeExpr *medef = GetOrCreateVarFromVerSt(verSt);
-  medef->SetDefStmt(&defMeStmt);
-  medef->SetDefBy(kDefByStmt);
-  verst2MeExprTable.at(verSt.GetIndex()) = medef;
-  return medef;
+MeExpr *IRMap::BuildLHSVar(const VersionSt &vst, DassignMeStmt &defMeStmt) {
+  VarMeExpr *meDef = GetOrCreateVarFromVerSt(vst);
+  meDef->SetDefStmt(&defMeStmt);
+  meDef->SetDefBy(kDefByStmt);
+  vst2MeExprTable.at(vst.GetIndex()) = meDef;
+  return meDef;
 }
 
-MeExpr *IRMap::BuildLHSReg(const VersionSt &verSt, RegassignMeStmt &defMeStmt, const RegassignNode &regassign) {
-  RegMeExpr *medef = GetOrCreateRegFromVerSt(verSt);
-  medef->SetPtyp(regassign.GetPrimType());
-  medef->SetDefStmt(&defMeStmt);
-  medef->SetDefBy(kDefByStmt);
-  verst2MeExprTable.at(verSt.GetIndex()) = medef;
-  return medef;
+MeExpr *IRMap::BuildLHSReg(const VersionSt &vst, RegassignMeStmt &defMeStmt, const RegassignNode &regassign) {
+  RegMeExpr *meDef = GetOrCreateRegFromVerSt(vst);
+  meDef->SetPtyp(regassign.GetPrimType());
+  meDef->SetDefStmt(&defMeStmt);
+  meDef->SetDefBy(kDefByStmt);
+  vst2MeExprTable.at(vst.GetIndex()) = meDef;
+  return meDef;
 }
 
 IvarMeExpr *IRMap::BuildLHSIvar(MeExpr &baseAddr, IassignMeStmt &iassignMeStmt, FieldID fieldID) {
-  IvarMeExpr *medef = New<IvarMeExpr>(exprID++);
-  medef->SetFieldID(fieldID);
-  medef->SetTyIdx(iassignMeStmt.GetTyIdx());
-  medef->SetBase(&baseAddr);
-  medef->SetDefStmt(&iassignMeStmt);
-  medef->SetOp(OP_iread);
-  medef->SetPtyp(iassignMeStmt.GetRHS()->GetPrimType());
-  PutToBucket(medef->GetHashIndex() % mapHashLength, *medef);
-  return medef;
+  auto *meDef = New<IvarMeExpr>(exprID++);
+  meDef->SetFieldID(fieldID);
+  meDef->SetTyIdx(iassignMeStmt.GetTyIdx());
+  meDef->SetBase(&baseAddr);
+  meDef->SetDefStmt(&iassignMeStmt);
+  meDef->SetOp(OP_iread);
+  meDef->SetPtyp(iassignMeStmt.GetRHS()->GetPrimType());
+  PutToBucket(meDef->GetHashIndex() % mapHashLength, *meDef);
+  return meDef;
 }
 
 IvarMeExpr *IRMap::BuildLHSIvarFromIassMeStmt(IassignMeStmt &iassignMeStmt) {
@@ -330,27 +330,27 @@ IvarMeExpr *IRMap::BuildLHSIvarFromIassMeStmt(IassignMeStmt &iassignMeStmt) {
 void IRMap::BuildChiList(MeStmt &meStmt, MapleMap<OStIdx, MayDefNode> &mayDefNodes,
                          MapleMap<OStIdx, ChiMeNode*> &outList) {
   for (auto it = mayDefNodes.begin(); it != mayDefNodes.end(); ++it) {
-    MayDefNode &maydefNode = it->second;
-    VersionSt *opndst = maydefNode.GetOpnd();
-    VersionSt *resst = maydefNode.GetResult();
-    ChiMeNode *chimestmt = New<ChiMeNode>(&meStmt);
-    chimestmt->SetRHS(GetOrCreateVarFromVerSt(*opndst));
-    VarMeExpr *lhs = GetOrCreateVarFromVerSt(*resst);
+    MayDefNode &mayDefNode = it->second;
+    VersionSt *opndSt = mayDefNode.GetOpnd();
+    VersionSt *resSt = mayDefNode.GetResult();
+    auto *chiMeStmt = New<ChiMeNode>(&meStmt);
+    chiMeStmt->SetRHS(GetOrCreateVarFromVerSt(*opndSt));
+    VarMeExpr *lhs = GetOrCreateVarFromVerSt(*resSt);
     lhs->SetDefBy(kDefByChi);
-    lhs->SetDefChi(*chimestmt);
-    chimestmt->SetLHS(lhs);
-    outList.insert(std::make_pair(lhs->GetOStIdx(), chimestmt));
+    lhs->SetDefChi(*chiMeStmt);
+    chiMeStmt->SetLHS(lhs);
+    outList.insert(std::make_pair(lhs->GetOStIdx(), chiMeStmt));
   }
 }
 
-void IRMap::BuildMustDefList(MeStmt &meStmt, MapleVector<MustDefNode> &mustdeflist,
-                             MapleVector<MustDefMeNode> &mustdefList) {
-  for (auto it = mustdeflist.begin(); it != mustdeflist.end(); ++it) {
-    MustDefNode &mustdefnode = *it;
-    VersionSt *verSt = mustdefnode.GetResult();
-    VarMeExpr *lhs = GetOrCreateVarFromVerSt(*verSt);
+void IRMap::BuildMustDefList(MeStmt &meStmt, MapleVector<MustDefNode> &mustDefList,
+                             MapleVector<MustDefMeNode> &mustDefMeList) {
+  for (auto it = mustDefList.begin(); it != mustDefList.end(); ++it) {
+    MustDefNode &mustDefNode = *it;
+    VersionSt *vst = mustDefNode.GetResult();
+    VarMeExpr *lhs = GetOrCreateVarFromVerSt(*vst);
     ASSERT(lhs->GetMeOp() == kMeOpReg || lhs->GetMeOp() == kMeOpVar, "unexpected opcode");
-    mustdefList.push_back(MustDefMeNode(lhs, &meStmt));
+    mustDefMeList.push_back(MustDefMeNode(lhs, &meStmt));
   }
 }
 
@@ -376,14 +376,14 @@ MeStmt *IRMap::BuildMeStmtWithNoSSAPart(StmtNode &stmt) {
       return NewInPool<CatchMeStmt>(&stmt);
     case OP_brfalse:
     case OP_brtrue: {
-      CondGotoNode &condGotoNode = static_cast<CondGotoNode&>(stmt);
-      CondGotoMeStmt *condGotoMeStmt = New<CondGotoMeStmt>(&stmt);
+      auto &condGotoNode = static_cast<CondGotoNode&>(stmt);
+      auto *condGotoMeStmt = New<CondGotoMeStmt>(&stmt);
       condGotoMeStmt->SetOpnd(0, BuildExpr(*condGotoNode.Opnd(0)));
       return condGotoMeStmt;
     }
     case OP_try: {
-      TryNode &tryNode = static_cast<TryNode&>(stmt);
-      TryMeStmt *tryMeStmt = NewInPool<TryMeStmt>(&stmt);
+      auto &tryNode = static_cast<TryNode&>(stmt);
+      auto *tryMeStmt = NewInPool<TryMeStmt>(&stmt);
       for (size_t i = 0; i < tryNode.GetOffsetsCount(); ++i) {
         tryMeStmt->OffsetsPushBack(tryNode.GetOffset(i));
       }
@@ -393,7 +393,7 @@ MeStmt *IRMap::BuildMeStmtWithNoSSAPart(StmtNode &stmt) {
     case OP_eval:
     case OP_free:
     case OP_switch: {
-      UnaryStmtNode &unaryStmt = static_cast<UnaryStmtNode&>(stmt);
+      auto &unaryStmt = static_cast<UnaryStmtNode&>(stmt);
       UnaryMeStmt *unMeStmt =
           static_cast<UnaryMeStmt*>((op == OP_switch) ? NewInPool<SwitchMeStmt>(&stmt) : New<UnaryMeStmt>(&stmt));
       unMeStmt->SetOpnd(0, BuildExpr(*unaryStmt.Opnd(0)));
@@ -405,27 +405,27 @@ MeStmt *IRMap::BuildMeStmtWithNoSSAPart(StmtNode &stmt) {
 }
 
 MeStmt *IRMap::BuildDassignMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart) {
-  DassignMeStmt *meStmt = NewInPool<DassignMeStmt>(&stmt);
-  DassignNode &dassiNode = static_cast<DassignNode&>(stmt);
+  auto *meStmt = NewInPool<DassignMeStmt>(&stmt);
+  auto &dassiNode = static_cast<DassignNode&>(stmt);
   meStmt->SetRHS(BuildExpr(*dassiNode.GetRHS()));
-  VarMeExpr *varlhs = static_cast<VarMeExpr*>(BuildLHSVar(*ssaPart.GetSSAVar(), *meStmt));
-  meStmt->SetLHS(varlhs);
+  auto *varLHS = static_cast<VarMeExpr*>(BuildLHSVar(*ssaPart.GetSSAVar(), *meStmt));
+  meStmt->SetLHS(varLHS);
   BuildChiList(*meStmt, ssaPart.GetMayDefNodes(), *meStmt->GetChiList());
   return meStmt;
 }
 
 MeStmt *IRMap::BuildRegassignMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart) {
-  RegassignMeStmt *meStmt = New<RegassignMeStmt>(&stmt);
-  RegassignNode &regNode = static_cast<RegassignNode&>(stmt);
+  auto *meStmt = New<RegassignMeStmt>(&stmt);
+  auto &regNode = static_cast<RegassignNode&>(stmt);
   meStmt->SetRHS(BuildExpr(*regNode.Opnd(0)));
-  RegMeExpr *regLHS = static_cast<RegMeExpr*>(BuildLHSReg(*ssaPart.GetSSAVar(), *meStmt, regNode));
+  auto *regLHS = static_cast<RegMeExpr*>(BuildLHSReg(*ssaPart.GetSSAVar(), *meStmt, regNode));
   meStmt->SetLHS(regLHS);
   return meStmt;
 }
 
 MeStmt *IRMap::BuildIassignMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart) {
-  IassignNode &iasNode = static_cast<IassignNode&>(stmt);
-  IassignMeStmt *meStmt = NewInPool<IassignMeStmt>(&stmt);
+  auto &iasNode = static_cast<IassignNode&>(stmt);
+  auto *meStmt = NewInPool<IassignMeStmt>(&stmt);
   meStmt->SetTyIdx(iasNode.GetTyIdx());
   meStmt->SetRHS(BuildExpr(*iasNode.GetRHS()));
   meStmt->SetLHSVal(BuildLHSIvar(*BuildExpr(*iasNode.Opnd(0)), *meStmt, iasNode.GetFieldID()));
@@ -434,8 +434,8 @@ MeStmt *IRMap::BuildIassignMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart) {
 }
 
 MeStmt *IRMap::BuildMaydassignMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart) {
-  MaydassignMeStmt *meStmt = NewInPool<MaydassignMeStmt>(&stmt);
-  DassignNode &dassiNode = static_cast<DassignNode&>(stmt);
+  auto *meStmt = NewInPool<MaydassignMeStmt>(&stmt);
+  auto &dassiNode = static_cast<DassignNode&>(stmt);
   meStmt->SetRHS(BuildExpr(*dassiNode.GetRHS()));
   meStmt->SetMayDassignSym(ssaPart.GetSSAVar()->GetOrigSt());
   meStmt->SetFieldID(dassiNode.GetFieldID());
@@ -444,8 +444,8 @@ MeStmt *IRMap::BuildMaydassignMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart) {
 }
 
 MeStmt *IRMap::BuildCallMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart) {
-  CallMeStmt *callMeStmt = NewInPool<CallMeStmt>(&stmt);
-  CallNode &intrinNode = static_cast<CallNode&>(stmt);
+  auto *callMeStmt = NewInPool<CallMeStmt>(&stmt);
+  auto &intrinNode = static_cast<CallNode&>(stmt);
   callMeStmt->SetPUIdx(intrinNode.GetPUIdx());
   for (size_t i = 0; i < intrinNode.NumOpnds(); ++i) {
     callMeStmt->GetOpnds().push_back(BuildExpr(*intrinNode.Opnd(i)));
@@ -464,7 +464,7 @@ MeStmt *IRMap::BuildNaryMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart) {
   NaryMeStmt *naryMeStmt = (op == OP_icall || op == OP_icallassigned)
                            ? static_cast<NaryMeStmt*>(NewInPool<IcallMeStmt>(&stmt))
                            : static_cast<NaryMeStmt*>(NewInPool<IntrinsiccallMeStmt>(&stmt));
-  NaryStmtNode &naryStmtNode = static_cast<NaryStmtNode&>(stmt);
+  auto &naryStmtNode = static_cast<NaryStmtNode&>(stmt);
   for (size_t i = 0; i < naryStmtNode.NumOpnds(); ++i) {
     naryMeStmt->GetOpnds().push_back(BuildExpr(*naryStmtNode.Opnd(i)));
   }
@@ -477,8 +477,8 @@ MeStmt *IRMap::BuildNaryMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart) {
 }
 
 MeStmt *IRMap::BuildRetMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart) {
-  NaryStmtNode &retStmt = static_cast<NaryStmtNode&>(stmt);
-  RetMeStmt *meStmt = NewInPool<RetMeStmt>(&stmt);
+  auto &retStmt = static_cast<NaryStmtNode&>(stmt);
+  auto *meStmt = NewInPool<RetMeStmt>(&stmt);
   for (size_t i = 0; i < retStmt.NumOpnds(); ++i) {
     meStmt->GetOpnds().push_back(BuildExpr(*retStmt.Opnd(i)));
   }
@@ -487,28 +487,28 @@ MeStmt *IRMap::BuildRetMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart) {
 }
 
 MeStmt *IRMap::BuildWithMuMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart) {
-  WithMuMeStmt *retSub = NewInPool<WithMuMeStmt>(&stmt);
+  auto *retSub = NewInPool<WithMuMeStmt>(&stmt);
   BuildMuList(ssaPart.GetMayUseNodes(), *(retSub->GetMuList()));
   return retSub;
 }
 
 MeStmt *IRMap::BuildGosubMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart) {
-  GosubMeStmt *goSub = NewInPool<GosubMeStmt>(&stmt);
+  auto *goSub = NewInPool<GosubMeStmt>(&stmt);
   BuildMuList(ssaPart.GetMayUseNodes(), *(goSub->GetMuList()));
   return goSub;
 }
 
 MeStmt *IRMap::BuildThrowMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart) {
-  UnaryStmtNode &unaryNode = static_cast<UnaryStmtNode&>(stmt);
-  ThrowMeStmt *tmeStmt = NewInPool<ThrowMeStmt>(&stmt);
+  auto &unaryNode = static_cast<UnaryStmtNode&>(stmt);
+  auto *tmeStmt = NewInPool<ThrowMeStmt>(&stmt);
   tmeStmt->SetMeStmtOpndValue(BuildExpr(*unaryNode.Opnd(0)));
   BuildMuList(ssaPart.GetMayUseNodes(), *(tmeStmt->GetMuList()));
   return tmeStmt;
 }
 
 MeStmt *IRMap::BuildSyncMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart) {
-  NaryStmtNode &naryNode = static_cast<NaryStmtNode&>(stmt);
-  SyncMeStmt *naryStmt = NewInPool<SyncMeStmt>(&stmt);
+  auto &naryNode = static_cast<NaryStmtNode&>(stmt);
+  auto *naryStmt = NewInPool<SyncMeStmt>(&stmt);
   for (size_t i = 0; i < naryNode.NumOpnds(); ++i) {
     naryStmt->GetOpnds().push_back(BuildExpr(*naryNode.Opnd(i)));
   }
@@ -528,46 +528,46 @@ MeStmt *IRMap::BuildMeStmt(StmtNode &stmt) {
   return func(this, stmt, *ssaPart);
 }
 
-void IRMap::BuildMuList(MapleMap<OStIdx, MayUseNode> &mayuseList, MapleMap<OStIdx, VarMeExpr*> &mulist) {
-  for (std::pair<OStIdx, MayUseNode> mapitem : mayuseList) {
-    MayUseNode &mayusenode = mapitem.second;
-    VersionSt *verSt = mayusenode.GetOpnd();
-    VarMeExpr *varmeexpr = GetOrCreateVarFromVerSt(*verSt);
-    mulist.insert(std::make_pair(varmeexpr->GetOStIdx(), varmeexpr));
+void IRMap::BuildMuList(MapleMap<OStIdx, MayUseNode> &mayUseList, MapleMap<OStIdx, VarMeExpr*> &muList) {
+  for (std::pair<OStIdx, MayUseNode> mapItem : mayUseList) {
+    MayUseNode &mayUseNode = mapItem.second;
+    VersionSt *vst = mayUseNode.GetOpnd();
+    VarMeExpr *varMeExpr = GetOrCreateVarFromVerSt(*vst);
+    muList.insert(std::make_pair(varMeExpr->GetOStIdx(), varMeExpr));
   }
 }
 
 MeExpr *IRMap::BuildExpr(BaseNode &mirNode) {
   Opcode op = mirNode.GetOpCode();
   if (op == OP_dread) {
-    AddrofSSANode &addrofnode = static_cast<AddrofSSANode &>(mirNode);
-    VersionSt *verSt = addrofnode.GetSSAVar();
-    VarMeExpr *varmeexpr = GetOrCreateVarFromVerSt(*verSt);
-    varmeexpr->InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
-    if (verSt->GetOrigSt()->IsRealSymbol()) {
-      ASSERT(!verSt->GetOrigSt()->IsPregOst(), "not expect preg symbol here");
-      varmeexpr->SetPtyp(GlobalTables::GetTypeTable().GetTypeFromTyIdx(verSt->GetOrigSt()->GetTyIdx())->GetPrimType());
-      varmeexpr->SetFieldID(addrofnode.GetFieldID());
+    auto &addrOfNode = static_cast<AddrofSSANode &>(mirNode);
+    VersionSt *vst = addrOfNode.GetSSAVar();
+    VarMeExpr *varMeExpr = GetOrCreateVarFromVerSt(*vst);
+    varMeExpr->InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
+    if (vst->GetOrigSt()->IsRealSymbol()) {
+      ASSERT(!vst->GetOrigSt()->IsPregOst(), "not expect preg symbol here");
+      varMeExpr->SetPtyp(GlobalTables::GetTypeTable().GetTypeFromTyIdx(vst->GetOrigSt()->GetTyIdx())->GetPrimType());
+      varMeExpr->SetFieldID(addrOfNode.GetFieldID());
     }
-    return varmeexpr;
+    return varMeExpr;
   }
 
   if (op == OP_regread) {
-    RegreadSSANode &regnode = static_cast<RegreadSSANode &>(mirNode);
-    VersionSt *verSt = regnode.GetSSAVar();
-    RegMeExpr *regmeexpr = GetOrCreateRegFromVerSt(*verSt);
-    regmeexpr->InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
-    return regmeexpr;
+    auto &regNode = static_cast<RegreadSSANode &>(mirNode);
+    VersionSt *vst = regNode.GetSSAVar();
+    RegMeExpr *regMeExpr = GetOrCreateRegFromVerSt(*vst);
+    regMeExpr->InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
+    return regMeExpr;
   }
 
   MeExpr *meExpr = meBuilder.BuildMeExpr(mirNode);
   SetMeExprOpnds(*meExpr, mirNode);
 
   if (op == OP_iread) {
-    IvarMeExpr *ivarMeExpr = static_cast<IvarMeExpr*>(meExpr);
-    IreadSSANode &ireadSSANode = static_cast<IreadSSANode&>(mirNode);
-    ivarMeExpr->SetBase(BuildExpr(*ireadSSANode.Opnd(0)));
-    VersionSt *verSt = ireadSSANode.GetSSAVar();
+    auto *ivarMeExpr = static_cast<IvarMeExpr*>(meExpr);
+    auto &iReadSSANode = static_cast<IreadSSANode&>(mirNode);
+    ivarMeExpr->SetBase(BuildExpr(*iReadSSANode.Opnd(0)));
+    VersionSt *verSt = iReadSSANode.GetSSAVar();
     if (verSt != nullptr) {
       VarMeExpr *varMeExpr = GetOrCreateVarFromVerSt(*verSt);
       ivarMeExpr->SetMuVal(varMeExpr);
@@ -584,23 +584,23 @@ MeExpr *IRMap::BuildExpr(BaseNode &mirNode) {
 }
 
 void IRMap::SetMeExprOpnds(MeExpr &meExpr, BaseNode &mirNode) {
-  OpMeExpr &opMeExpr = static_cast<OpMeExpr&>(meExpr);
+  auto &opMeExpr = static_cast<OpMeExpr&>(meExpr);
   if (mirNode.IsUnaryNode()) {
     if (mirNode.GetOpCode() != OP_iread) {
       opMeExpr.SetOpnd(0, BuildExpr(*static_cast<UnaryNode&>(mirNode).Opnd(0)));
     }
   } else if (mirNode.IsBinaryNode()) {
-    BinaryNode &binaryNode = static_cast<BinaryNode&>(mirNode);
+    auto &binaryNode = static_cast<BinaryNode&>(mirNode);
     opMeExpr.SetOpnd(0, BuildExpr(*binaryNode.Opnd(0)));
     opMeExpr.SetOpnd(1, BuildExpr(*binaryNode.Opnd(1)));
   } else if (mirNode.IsTernaryNode()) {
-    TernaryNode &ternaryNode = static_cast<TernaryNode&>(mirNode);
+    auto &ternaryNode = static_cast<TernaryNode&>(mirNode);
     opMeExpr.SetOpnd(0, BuildExpr(*ternaryNode.Opnd(0)));
     opMeExpr.SetOpnd(1, BuildExpr(*ternaryNode.Opnd(1)));
     opMeExpr.SetOpnd(2, BuildExpr(*ternaryNode.Opnd(2)));
   } else if (mirNode.IsNaryNode()) {
-    NaryMeExpr &naryMeExpr = static_cast<NaryMeExpr&>(meExpr);
-    NaryNode &naryNode = static_cast<NaryNode&>(mirNode);
+    auto &naryMeExpr = static_cast<NaryMeExpr&>(meExpr);
+    auto &naryNode = static_cast<NaryNode&>(mirNode);
     for (size_t i = 0; i < naryNode.NumOpnds(); ++i) {
       naryMeExpr.GetOpnds().push_back(BuildExpr(*naryNode.Opnd(i)));
     }
@@ -609,18 +609,18 @@ void IRMap::SetMeExprOpnds(MeExpr &meExpr, BaseNode &mirNode) {
   }
 }
 
-void IRMap::PutToBucket(uint32 hashidx, MeExpr &meExpr) {
-  MeExpr *headexpr = hashTable[hashidx];
-  if (headexpr != nullptr) {
-    meExpr.SetNext(headexpr);
+void IRMap::PutToBucket(uint32 hashIdx, MeExpr &meExpr) {
+  MeExpr *headExpr = hashTable[hashIdx];
+  if (headExpr != nullptr) {
+    meExpr.SetNext(headExpr);
   }
-  hashTable[hashidx] = &meExpr;
+  hashTable[hashIdx] = &meExpr;
 }
 
 MeExpr *IRMap::HashMeExpr(MeExpr &meExpr) {
   MeExpr *resultExpr = nullptr;
-  uint32 hidx = meExpr.GetHashIndex() % mapHashLength;
-  MeExpr *hashedExpr = hashTable[hidx];
+  uint32 hashIdx = meExpr.GetHashIndex() % mapHashLength;
+  MeExpr *hashedExpr = hashTable[hashIdx];
 
   if (hashedExpr != nullptr && meExpr.GetMeOp() != kMeOpGcmalloc) {
     resultExpr = meExpr.GetIdenticalExpr(*hashedExpr);
@@ -628,7 +628,7 @@ MeExpr *IRMap::HashMeExpr(MeExpr &meExpr) {
 
   if (resultExpr == nullptr) {
     resultExpr = &meBuilder.CreateMeExpr(exprID++, meExpr);
-    PutToBucket(hidx, *resultExpr);
+    PutToBucket(hashIdx, *resultExpr);
   }
   return resultExpr;
 }
@@ -665,29 +665,29 @@ MeExpr *IRMap::ReplaceMeExprExpr(MeExpr &origExpr, MeExpr &meExpr, MeExpr &repEx
 
   switch (origExpr.GetMeOp()) {
     case kMeOpOp: {
-      OpMeExpr &opMeExpr = static_cast<OpMeExpr&>(origExpr);
+      auto &opMeExpr = static_cast<OpMeExpr&>(origExpr);
       OpMeExpr newMeExpr(opMeExpr, kInvalidExprID);
       return ReplaceMeExprExpr(opMeExpr, newMeExpr, kOperandNumTernary, meExpr, repExpr);
     }
     case kMeOpNary: {
-      NaryMeExpr &narymeexpr = static_cast<NaryMeExpr&>(origExpr);
-      NaryMeExpr newmeexpr(&irMapAlloc, kInvalidExprID, narymeexpr);
-      return ReplaceMeExprExpr(narymeexpr, newmeexpr, narymeexpr.GetOpnds().size(), meExpr, repExpr);
+      auto &naryMeExpr = static_cast<NaryMeExpr&>(origExpr);
+      NaryMeExpr newMeExpr(&irMapAlloc, kInvalidExprID, naryMeExpr);
+      return ReplaceMeExprExpr(naryMeExpr, newMeExpr, naryMeExpr.GetOpnds().size(), meExpr, repExpr);
     }
     case kMeOpIvar: {
-      IvarMeExpr &ivarexpr = static_cast<IvarMeExpr&>(origExpr);
-      IvarMeExpr newmeexpr(kInvalidExprID, ivarexpr);
+      auto &ivarExpr = static_cast<IvarMeExpr&>(origExpr);
+      IvarMeExpr newMeExpr(kInvalidExprID, ivarExpr);
       bool needRehash = false;
-      if (ivarexpr.GetBase() == &meExpr) {
-        newmeexpr.SetBase(&repExpr);
+      if (ivarExpr.GetBase() == &meExpr) {
+        newMeExpr.SetBase(&repExpr);
         needRehash = true;
-      } else if (!ivarexpr.GetBase()->IsLeaf()) {
-        newmeexpr.SetBase(ReplaceMeExprExpr(*newmeexpr.GetBase(), meExpr, repExpr));
-        if (newmeexpr.GetBase() != ivarexpr.GetBase()) {
+      } else if (!ivarExpr.GetBase()->IsLeaf()) {
+        newMeExpr.SetBase(ReplaceMeExprExpr(*newMeExpr.GetBase(), meExpr, repExpr));
+        if (newMeExpr.GetBase() != ivarExpr.GetBase()) {
           needRehash = true;
         }
       }
-      return needRehash ? HashMeExpr(newmeexpr) : &origExpr;
+      return needRehash ? HashMeExpr(newMeExpr) : &origExpr;
     }
     default:
       ASSERT(false, "NYI");
@@ -720,9 +720,9 @@ bool IRMap::ReplaceMeExprStmt(MeStmt &meStmt, MeExpr &meExpr, MeExpr &repexpr) {
         op == OP_intrinsiccallwithtypeassigned) {
       MeExpr *opnd = meStmt.GetOpnd(i);
       if (opnd->IsLeaf() && opnd->GetMeOp() == kMeOpVar) {
-        VarMeExpr *varmeexpr = static_cast<VarMeExpr*>(opnd);
-        const OriginalSt *orgsym = ssaTab.GetOriginalStFromID(varmeexpr->GetOStIdx());
-        if (orgsym->IsSymbolOst() && orgsym->GetMIRSymbol()->GetAttr(ATTR_static)) {
+        auto *varMeExpr = static_cast<VarMeExpr*>(opnd);
+        const OriginalSt *ost = ssaTab.GetOriginalStFromID(varMeExpr->GetOStIdx());
+        if (ost->IsSymbolOst() && ost->GetMIRSymbol()->GetAttr(ATTR_static)) {
           // its address may be taken
           continue;
         }
@@ -733,115 +733,115 @@ bool IRMap::ReplaceMeExprStmt(MeStmt &meStmt, MeExpr &meExpr, MeExpr &repexpr) {
     isReplaced = isReplaced || curOpndReplaced;
 
     if (i == 0 && curOpndReplaced && op == OP_iassign) {
-      IassignMeStmt &ivarstmt = static_cast<IassignMeStmt&>(meStmt);
-      ivarstmt.SetLHSVal(BuildLHSIvar(*ivarstmt.GetOpnd(0), ivarstmt, ivarstmt.GetLHSVal()->GetFieldID()));
+      auto &ivarStmt = static_cast<IassignMeStmt&>(meStmt);
+      ivarStmt.SetLHSVal(BuildLHSIvar(*ivarStmt.GetOpnd(0), ivarStmt, ivarStmt.GetLHSVal()->GetFieldID()));
     }
   }
 
   return isReplaced;
 }
 
-MeRegPhiNode *IRMap::CreateMeRegPhi(RegMeExpr &mevar) {
-  MeRegPhiNode *phimereg = NewInPool<MeRegPhiNode>();
-  phimereg->UpdateLHS(mevar);
-  return phimereg;
+MeRegPhiNode *IRMap::CreateMeRegPhi(RegMeExpr &meVar) {
+  auto *phiMeReg = NewInPool<MeRegPhiNode>();
+  phiMeReg->UpdateLHS(meVar);
+  return phiMeReg;
 }
 
-MeVarPhiNode *IRMap::CreateMeVarPhi(VarMeExpr &mevar) {
-  MeVarPhiNode *phimevar = NewInPool<MeVarPhiNode>();
-  phimevar->UpdateLHS(mevar);
-  return phimevar;
+MeVarPhiNode *IRMap::CreateMeVarPhi(VarMeExpr &meVar) {
+  auto *phiMeVar = NewInPool<MeVarPhiNode>();
+  phiMeVar->UpdateLHS(meVar);
+  return phiMeVar;
 }
 
-DassignMeStmt *IRMap::CreateDassignMeStmt(MeExpr &lhs, MeExpr &rhs, BB &curbb) {
-  DassignMeStmt *meStmt = NewInPool<DassignMeStmt>();
+DassignMeStmt *IRMap::CreateDassignMeStmt(MeExpr &lhs, MeExpr &rhs, BB &curBB) {
+  auto *meStmt = NewInPool<DassignMeStmt>();
   meStmt->SetRHS(&rhs);
-  VarMeExpr &var = static_cast<VarMeExpr&>(lhs);
+  auto &var = static_cast<VarMeExpr&>(lhs);
   meStmt->SetLHS(&var);
   var.SetDefBy(kDefByStmt);
   var.SetDefStmt(meStmt);
-  meStmt->SetBB(&curbb);
+  meStmt->SetBB(&curBB);
   return meStmt;
 }
 
-RegassignMeStmt *IRMap::CreateRegassignMeStmt(MeExpr &lhs, MeExpr &rhs, BB &curbb) {
-  RegassignMeStmt *meStmt = New<RegassignMeStmt>();
+RegassignMeStmt *IRMap::CreateRegassignMeStmt(MeExpr &lhs, MeExpr &rhs, BB &curBB) {
+  auto *meStmt = New<RegassignMeStmt>();
   ASSERT(lhs.GetMeOp() == kMeOpReg, "Create regassign without lhs == regread");
   meStmt->SetRHS(&rhs);
-  RegMeExpr &reg = static_cast<RegMeExpr&>(lhs);
+  auto &reg = static_cast<RegMeExpr&>(lhs);
   meStmt->SetLHS(&reg);
   reg.SetDefBy(kDefByStmt);
   reg.SetDefStmt(meStmt);
-  meStmt->SetBB(&curbb);
+  meStmt->SetBB(&curBB);
   return meStmt;
 }
 
 // get the false goto bb, if condgoto is brtrue, take the other bb of brture @lable
 // otherwise, take the bb of @lable
 BB *IRMap::GetFalseBrBB(CondGotoMeStmt &condgoto) {
-  LabelIdx lblidx = (LabelIdx)condgoto.GetOffset();
-  BB *gotobb = GetBBForLabIdx(lblidx);
+  LabelIdx lblIdx = (LabelIdx)condgoto.GetOffset();
+  BB *gotoBB = GetBBForLabIdx(lblIdx);
   BB *bb = condgoto.GetBB();
   ASSERT(bb->GetSucc().size() == kBBVectorInitialSize, "array size error");
   if (condgoto.GetOp() == OP_brfalse) {
-    return gotobb;
+    return gotoBB;
   } else {
-    return gotobb == bb->GetSucc(0) ? bb->GetSucc(1) : bb->GetSucc(0);
+    return gotoBB == bb->GetSucc(0) ? bb->GetSucc(1) : bb->GetSucc(0);
   }
 }
 
-MeExpr *IRMap::CreateConstMeExpr(PrimType ptyp, MIRConst &mirConst) {
+MeExpr *IRMap::CreateConstMeExpr(PrimType pType, MIRConst &mirConst) {
   ConstMeExpr constMeExpr(kInvalidExprID, &mirConst);
   constMeExpr.SetOp(OP_constval);
-  constMeExpr.SetPtyp(ptyp);
+  constMeExpr.SetPtyp(pType);
   return HashMeExpr(constMeExpr);
 }
 
-MeExpr *IRMap::CreateIntConstMeExpr(int64 value, PrimType ptyp) {
-  MIRIntConst *intConst =
-      mirModule.GetMemPool()->New<MIRIntConst>(value, *GlobalTables::GetTypeTable().GetPrimType(ptyp));
-  return CreateConstMeExpr(ptyp, *intConst);
+MeExpr *IRMap::CreateIntConstMeExpr(int64 value, PrimType pType) {
+  auto *intConst =
+      mirModule.GetMemPool()->New<MIRIntConst>(value, *GlobalTables::GetTypeTable().GetPrimType(pType));
+  return CreateConstMeExpr(pType, *intConst);
 }
 
-MeExpr *IRMap::CreateMeExprBinary(Opcode op, PrimType ptyp, MeExpr &expr0, MeExpr &expr1) {
-  OpMeExpr opmeexpr(kInvalidExprID);
-  opmeexpr.SetOpnd(0, &expr0);
-  opmeexpr.SetOpnd(1, &expr1);
-  opmeexpr.InitBase(op, ptyp, kOperandNumBinary);
-  return HashMeExpr(opmeexpr);
+MeExpr *IRMap::CreateMeExprBinary(Opcode op, PrimType pType, MeExpr &expr0, MeExpr &expr1) {
+  OpMeExpr opMeExpr(kInvalidExprID);
+  opMeExpr.SetOpnd(0, &expr0);
+  opMeExpr.SetOpnd(1, &expr1);
+  opMeExpr.InitBase(op, pType, kOperandNumBinary);
+  return HashMeExpr(opMeExpr);
 }
 
-MeExpr *IRMap::CreateMeExprSelect(PrimType ptyp, MeExpr &expr0, MeExpr &expr1, MeExpr &expr2) {
-  OpMeExpr opmeexpr(kInvalidExprID);
-  opmeexpr.SetOpnd(0, &expr0);
-  opmeexpr.SetOpnd(1, &expr1);
-  opmeexpr.SetOpnd(2, &expr2);
-  opmeexpr.InitBase(OP_select, ptyp, kOperandNumTernary);
-  return HashMeExpr(opmeexpr);
+MeExpr *IRMap::CreateMeExprSelect(PrimType pType, MeExpr &expr0, MeExpr &expr1, MeExpr &expr2) {
+  OpMeExpr opMeExpr(kInvalidExprID);
+  opMeExpr.SetOpnd(0, &expr0);
+  opMeExpr.SetOpnd(1, &expr1);
+  opMeExpr.SetOpnd(2, &expr2);
+  opMeExpr.InitBase(OP_select, pType, kOperandNumTernary);
+  return HashMeExpr(opMeExpr);
 }
 
 MeExpr *IRMap::CreateMeExprCompare(Opcode op, PrimType resptyp, PrimType opndptyp, MeExpr &opnd0, MeExpr &opnd1) {
-  OpMeExpr opmeexpr(kInvalidExprID);
-  opmeexpr.SetOpnd(0, &opnd0);
-  opmeexpr.SetOpnd(1, &opnd1);
-  opmeexpr.InitBase(op, resptyp, kOperandNumBinary);
-  opmeexpr.SetOpndType(opndptyp);
-  MeExpr *retmeexpr = HashMeExpr(opmeexpr);
-  static_cast<OpMeExpr*>(retmeexpr)->SetOpndType(opndptyp);
-  return retmeexpr;
+  OpMeExpr opMeExpr(kInvalidExprID);
+  opMeExpr.SetOpnd(0, &opnd0);
+  opMeExpr.SetOpnd(1, &opnd1);
+  opMeExpr.InitBase(op, resptyp, kOperandNumBinary);
+  opMeExpr.SetOpndType(opndptyp);
+  MeExpr *retMeExpr = HashMeExpr(opMeExpr);
+  static_cast<OpMeExpr*>(retMeExpr)->SetOpndType(opndptyp);
+  return retMeExpr;
 }
 
-MeExpr *IRMap::CreateMeExprTypeCvt(PrimType ptyp, PrimType opndptyp, MeExpr &opnd0) {
-  OpMeExpr opmeexpr(kInvalidExprID);
-  opmeexpr.SetOpnd(0, &opnd0);
-  opmeexpr.InitBase(OP_cvt, ptyp, kOperandNumUnary);
-  opmeexpr.SetOpndType(opndptyp);
-  return HashMeExpr(opmeexpr);
+MeExpr *IRMap::CreateMeExprTypeCvt(PrimType pType, PrimType opndptyp, MeExpr &opnd0) {
+  OpMeExpr opMeExpr(kInvalidExprID);
+  opMeExpr.SetOpnd(0, &opnd0);
+  opMeExpr.InitBase(OP_cvt, pType, kOperandNumUnary);
+  opMeExpr.SetOpndType(opndptyp);
+  return HashMeExpr(opMeExpr);
 }
 
-IntrinsiccallMeStmt *IRMap::CreateIntrinsicCallMeStmt(MIRIntrinsicID idx, std::vector<MeExpr*> &opnds, TyIdx tyidx) {
-  IntrinsiccallMeStmt *meStmt =
-      NewInPool<IntrinsiccallMeStmt>(tyidx == 0 ? OP_intrinsiccall : OP_intrinsiccallwithtype, idx, tyidx);
+IntrinsiccallMeStmt *IRMap::CreateIntrinsicCallMeStmt(MIRIntrinsicID idx, std::vector<MeExpr*> &opnds, TyIdx tyIdx) {
+  auto *meStmt =
+      NewInPool<IntrinsiccallMeStmt>(tyIdx == 0 ? OP_intrinsiccall : OP_intrinsiccallwithtype, idx, tyIdx);
   for (MeExpr *opnd : opnds) {
     meStmt->GetOpnds().push_back(opnd);
   }
@@ -849,26 +849,26 @@ IntrinsiccallMeStmt *IRMap::CreateIntrinsicCallMeStmt(MIRIntrinsicID idx, std::v
 }
 
 IntrinsiccallMeStmt *IRMap::CreateIntrinsicCallAssignedMeStmt(MIRIntrinsicID idx, std::vector<MeExpr*> &opnds,
-                                                              MeExpr *ret, TyIdx tyidx) {
-  IntrinsiccallMeStmt *meStmt = NewInPool<IntrinsiccallMeStmt>(
-      tyidx == 0 ? OP_intrinsiccallassigned : OP_intrinsiccallwithtypeassigned, idx, tyidx);
+                                                              MeExpr *ret, TyIdx tyIdx) {
+  auto *meStmt = NewInPool<IntrinsiccallMeStmt>(
+      tyIdx == 0 ? OP_intrinsiccallassigned : OP_intrinsiccallwithtypeassigned, idx, tyIdx);
   for (MeExpr *opnd : opnds) {
     meStmt->GetOpnds().push_back(opnd);
   }
   if (ret != nullptr) {
     ASSERT(ret->GetMeOp() == kMeOpReg || ret->GetMeOp() == kMeOpVar, "unexpected opcode");
-    MustDefMeNode *mustdef = New<MustDefMeNode>(ret, meStmt);
-    meStmt->GetMustDefList()->push_back(*mustdef);
+    auto *mustDef = New<MustDefMeNode>(ret, meStmt);
+    meStmt->GetMustDefList()->push_back(*mustDef);
   }
   return meStmt;
 }
 
-MeExpr *IRMap::CreateAddrofMeExprFromNewSymbol(MIRSymbol &st, PUIdx puidx) {
-  OriginalSt *baseOst = ssaTab.CreateSymbolOriginalSt(st, puidx, 0);
-  AddrofMeExpr addrofme(kInvalidExprID, baseOst->GetIndex());
-  addrofme.SetOp(OP_addrof);
-  addrofme.SetPtyp(PTY_ptr);
-  return HashMeExpr(addrofme);
+MeExpr *IRMap::CreateAddrofMeExprFromNewSymbol(MIRSymbol &st, PUIdx puIdx) {
+  OriginalSt *baseOst = ssaTab.CreateSymbolOriginalSt(st, puIdx, 0);
+  AddrofMeExpr addrOfMe(kInvalidExprID, baseOst->GetIndex());
+  addrOfMe.SetOp(OP_addrof);
+  addrOfMe.SetPtyp(PTY_ptr);
+  return HashMeExpr(addrOfMe);
 }
 
 void IRMap::InitMeStmtFactory() const {

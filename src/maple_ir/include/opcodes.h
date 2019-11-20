@@ -14,9 +14,10 @@
  */
 #ifndef MAPLE_IR_INCLUDE_OPCODES_H
 #define MAPLE_IR_INCLUDE_OPCODES_H
+#include "types_def.h"
 
 namespace maple {
-enum Opcode : std::uint8_t {
+enum Opcode : uint8 {
   kOpUndef,
 #define OPCODE(STR, YY, ZZ, SS) OP_##STR,
 #include "opcodes.def"

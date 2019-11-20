@@ -21,9 +21,8 @@
 #include "mir_builder.h"
 namespace maple {
 class BinaryMplImport {
-  using CallSite = std::pair<CallInfo*, PUIdx>;
-
  public:
+  using CallSite = std::pair<CallInfo*, PUIdx>;
   explicit BinaryMplImport(MIRModule &md) : mod(md), mirBuilder(&md) {}
   BinaryMplImport &operator=(const BinaryMplImport&) = delete;
   BinaryMplImport(const BinaryMplImport&) = delete;
@@ -63,13 +62,18 @@ class BinaryMplImport {
   }
 
   bool Import(const std::string &modid, bool readSymbols = false, bool readSe = false);
+  MIRSymbol *GetOrCreateSymbol(TyIdx tyIdx, GStrIdx strIdx, MIRSymKind mclass, MIRStorageClass sclass,
+                               MIRFunction *func, uint8 scpID);
+  int32 ReadInt();
+  int64 ReadNum();
+ private:
   void ReadContentField();
   void ReadStrField();
   void ReadTypeField();
   void Jump2NextField();
   void Reset();
-  MIRSymbol *GetOrCreateSymbol(TyIdx tyIdx, GStrIdx strIdx, MIRSymKind mclass, MIRStorageClass sclass,
-                               MIRFunction *func, uint8 scpID);
+  void SkipTotalSize();
+  void ImportFieldsOfStructType(FieldVector &fields, uint32 methodSize);
   MIRType &InsertInTypeTables(MIRType &ptype);
   void InsertInHashTable(MIRType &ptype);
   void SetupEHRootType();
@@ -104,15 +108,9 @@ class BinaryMplImport {
   MIRSymbol *InSymbol(MIRFunction *func);
   void ReadFileAt(const std::string &modid, int32 offset);
   uint8 Read();
-  int32 ReadInt();
   int64 ReadInt64();
   void ReadAsciiStr(std::string &str);
-  int64 ReadNum();
   int32 GetIPAFileIndex(std::string &name);
-
- private:
-  void SkipTotalSize();
-  void ImportFieldsOfStructType(FieldVector &fields, uint32 methodSize);
 
   bool imported = true;  // used only by irbuild to convert to ascii
   uint64 bufI = 0;

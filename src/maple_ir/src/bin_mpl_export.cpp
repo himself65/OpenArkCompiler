@@ -45,8 +45,8 @@ void OutputConstAddrof(const MIRConst &constVal, BinaryMplExport &mplExport) {
 void OutputConstAddrofFunc(const MIRConst &constVal, BinaryMplExport &mplExport) {
   mplExport.WriteNum(kBinKindConstAddrofFunc);
   mplExport.OutputConstBase(constVal);
-  const auto &addrfunc = static_cast<const MIRAddroffuncConst&>(constVal);
-  mplExport.OutputFunction(addrfunc.GetValue());
+  const auto &newConst = static_cast<const MIRAddroffuncConst&>(constVal);
+  mplExport.OutputFunction(newConst.GetValue());
 }
 
 void OutputConstLbl(const MIRConst &constVal, BinaryMplExport &mplExport) {
@@ -56,8 +56,8 @@ void OutputConstLbl(const MIRConst &constVal, BinaryMplExport &mplExport) {
 void OutputConstStr(const MIRConst &constVal, BinaryMplExport &mplExport) {
   mplExport.WriteNum(kBinKindConstStr);
   mplExport.OutputConstBase(constVal);
-  const auto &strc = static_cast<const MIRStrConst&>(constVal);
-  mplExport.OutputUsrStr(strc.GetValue());
+  const auto &newConst = static_cast<const MIRStrConst&>(constVal);
+  mplExport.OutputUsrStr(newConst.GetValue());
 }
 
 void OutputConstStr16(const MIRConst &constVal, BinaryMplExport &mplExport) {
@@ -75,14 +75,14 @@ void OutputConstStr16(const MIRConst &constVal, BinaryMplExport &mplExport) {
 
 void OutputConstFloat(const MIRConst &constVal, BinaryMplExport &mplExport) {
   mplExport.WriteNum(kBinKindConstFloat);
-  const auto &fconst = static_cast<const MIRFloatConst&>(constVal);
-  mplExport.WriteNum(fconst.GetIntValue());
+  const auto &newConst = static_cast<const MIRFloatConst&>(constVal);
+  mplExport.WriteNum(newConst.GetIntValue());
 }
 
 void OutputConstDouble(const MIRConst &constVal, BinaryMplExport &mplExport) {
   mplExport.WriteNum(kBinKindConstDouble);
-  const auto &dconst = static_cast<const MIRDoubleConst&>(constVal);
-  mplExport.WriteNum(dconst.GetIntValue());
+  const auto &newConst = static_cast<const MIRDoubleConst&>(constVal);
+  mplExport.WriteNum(newConst.GetIntValue());
 }
 
 void OutputConstAgg(const MIRConst &constVal, BinaryMplExport &mplExport) {
@@ -162,7 +162,7 @@ void OutputTypeArray(const MIRType &ty, BinaryMplExport &mplExport) {
   mplExport.WriteNum(kBinKindTypeArray);
   mplExport.OutputTypeBase(type);
   mplExport.WriteNum(type.GetDim());
-  for (int i = 0; i < type.GetDim(); ++i) {
+  for (uint16 i = 0; i < type.GetDim(); ++i) {
     mplExport.WriteNum(type.GetSizeArrayItem(i));
   }
   mplExport.OutputType(type.GetElemTyIdx());
@@ -192,20 +192,20 @@ void OutputTypeParam(const MIRType &ty, BinaryMplExport &mplExport) {
   mplExport.OutputTypeBase(type);
 }
 
-void OutputTypeInstantVector(MIRType &ty, BinaryMplExport &mplExport) {
-  MIRInstantVectorType *type = static_cast<MIRInstantVectorType*>(&ty);
+void OutputTypeInstantVector(const MIRType &ty, BinaryMplExport &mplExport) {
+  const auto &type = static_cast<const MIRInstantVectorType&>(ty);
   mplExport.WriteNum(kBinKindTypeInstantVector);
-  mplExport.OutputTypeBase(*type);
+  mplExport.OutputTypeBase(type);
   mplExport.WriteNum(ty.GetKind());
-  mplExport.OutputTypePairs(*type);
+  mplExport.OutputTypePairs(type);
 }
 
-void OutputTypeGenericInstant(MIRType &ty, BinaryMplExport &mplExport) {
-  MIRGenericInstantType *type = static_cast<MIRGenericInstantType*>(&ty);
+void OutputTypeGenericInstant(const MIRType &ty, BinaryMplExport &mplExport) {
+  const auto &type = static_cast<const MIRGenericInstantType&>(ty);
   mplExport.WriteNum(kBinKindTypeGenericInstant);
-  mplExport.OutputTypeBase(*type);
-  mplExport.OutputTypePairs(*type);
-  mplExport.OutputType(type->GetGenericTyIdx());
+  mplExport.OutputTypeBase(type);
+  mplExport.OutputTypePairs(type);
+  mplExport.OutputType(type.GetGenericTyIdx());
 }
 
 void OutputTypeBitField(const MIRType &ty, BinaryMplExport &mplExport) {
@@ -216,8 +216,8 @@ void OutputTypeBitField(const MIRType &ty, BinaryMplExport &mplExport) {
 }
 
 // for Struct/StructIncomplete/Union
-void OutputTypeStruct(MIRType &ty, BinaryMplExport &mplExport) {
-  auto &type = static_cast<MIRStructType&>(ty);
+void OutputTypeStruct(const MIRType &ty, BinaryMplExport &mplExport) {
+  const auto &type = static_cast<const MIRStructType&>(ty);
   mplExport.WriteNum(kBinKindTypeStruct);
   mplExport.OutputTypeBase(type);
   MIRTypeKind kind = ty.GetKind();
@@ -231,8 +231,8 @@ void OutputTypeStruct(MIRType &ty, BinaryMplExport &mplExport) {
   }
 }
 
-void OutputTypeClass(MIRType &ty, BinaryMplExport &mplExport) {
-  auto &type = static_cast<MIRClassType&>(ty);
+void OutputTypeClass(const MIRType &ty, BinaryMplExport &mplExport) {
+  const auto &type = static_cast<const MIRClassType&>(ty);
   mplExport.WriteNum(kBinKindTypeClass);
   mplExport.OutputTypeBase(type);
   MIRTypeKind kind = ty.GetKind();
@@ -246,8 +246,8 @@ void OutputTypeClass(MIRType &ty, BinaryMplExport &mplExport) {
   }
 }
 
-void OutputTypeInterface(MIRType &ty, BinaryMplExport &mplExport) {
-  auto &type = static_cast<MIRInterfaceType&>(ty);
+void OutputTypeInterface(const MIRType &ty, BinaryMplExport &mplExport) {
+  const auto &type = static_cast<const MIRInterfaceType&>(ty);
   mplExport.WriteNum(kBinKindTypeInterface);
   mplExport.OutputTypeBase(type);
   MIRTypeKind kind = ty.GetKind();
@@ -261,7 +261,7 @@ void OutputTypeInterface(MIRType &ty, BinaryMplExport &mplExport) {
   }
 }
 
-void OutputTypeConstString(MIRType &ty, BinaryMplExport &mplExport) {
+void OutputTypeConstString(const MIRType &ty, BinaryMplExport &mplExport) {
   ASSERT(false, "Type's kind not yet implemented: %d", ty.GetKind());
 }
 
@@ -347,7 +347,7 @@ void BinaryMplExport::WriteNum(int64 x) {
     x = x >> 7; // This is a compress algorithm, do not cast int64 to uint64. If do so, small negtivate number like -3
                 // will occupy 9 bits and we will not get the compressed benefit.
   }
-  Write((uint8)(static_cast<uint64>(x) & 0x7F));
+  Write(static_cast<uint8>(static_cast<uint64>(x) & 0x7F));
 }
 
 void BinaryMplExport::WriteAsciiStr(const std::string &str) {
@@ -505,7 +505,7 @@ void BinaryMplExport::OutputMethodsOfStruct(const MethodVector &methods) {
   }
 }
 
-void BinaryMplExport::OutputStructTypeData(MIRStructType &type) {
+void BinaryMplExport::OutputStructTypeData(const MIRStructType &type) {
   OutputFieldsOfStruct(type.GetFields());
   OutputFieldsOfStruct(type.GetStaticFields());
   OutputFieldsOfStruct(type.GetParentFields());
@@ -546,7 +546,7 @@ void BinaryMplExport::OutputPragmaVec(const std::vector<MIRPragma*> &pragmaVec) 
   }
 }
 
-void BinaryMplExport::OutputClassTypeData(MIRClassType &type) {
+void BinaryMplExport::OutputClassTypeData(const MIRClassType &type) {
   OutputType(type.GetParentTyIdx());
   OutputImplementedInterfaces(type.GetInterfaceImplemented());
   OutputInfoIsString(type.GetInfoIsString());
@@ -554,7 +554,7 @@ void BinaryMplExport::OutputClassTypeData(MIRClassType &type) {
   OutputPragmaVec(type.GetPragmaVec());
 }
 
-void BinaryMplExport::OutputInterfaceTypeData(MIRInterfaceType &type) {
+void BinaryMplExport::OutputInterfaceTypeData(const MIRInterfaceType &type) {
   OutputImplementedInterfaces(type.GetParentsTyIdx());
   OutputInfoIsString(type.GetInfoIsString());
   OutputInfo(type.GetInfo(), type.GetInfoIsString());
@@ -566,7 +566,7 @@ void BinaryMplExport::Init() {
   uStrMark[UStrIdx(0)] = 0;
   symMark[nullptr] = 0;
   funcMark[nullptr] = 0;
-  for (int32 pti = 0; pti <= static_cast<int32>(PTY_agg); ++pti) {
+  for (uint32 pti = 0; pti <= static_cast<uint32>(PTY_agg); ++pti) {
     typMark[GlobalTables::GetTypeTable().GetTypeFromTyIdx(TyIdx(pti))] = pti;
   }
 }
@@ -654,7 +654,7 @@ void BinaryMplExport::WriteTypeField(uint64 contentIdx) {
     MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(curTyidx);
     CHECK_FATAL(type != nullptr, "Pointer type is nullptr, cannot get type, check it!");
     if (type->GetKind() == kTypeClass || type->GetKind() == kTypeInterface) {
-      MIRStructType *structType = static_cast<MIRStructType*>(type);
+      auto *structType = static_cast<MIRStructType*>(type);
       // skip imported class/interface and incomplete types
       if (!structType->IsImported() && !structType->IsIncomplete()) {
         OutputType(curTyidx);
@@ -668,7 +668,7 @@ void BinaryMplExport::WriteTypeField(uint64 contentIdx) {
 }
 
 
-void BinaryMplExport::WriteContentField(int fieldNum, uint64 &fieldStartP) {
+void BinaryMplExport::WriteContentField(int fieldNum, size_t *fieldStartP) {
   WriteNum(kBinContentStart);
   size_t totalSizeIdx = buf.size();
   ExpandFourBuffSize();  // total size of this field to ~BIN_SYM_START
@@ -676,15 +676,15 @@ void BinaryMplExport::WriteContentField(int fieldNum, uint64 &fieldStartP) {
   WriteInt(fieldNum);  // size of Content item
 
   WriteNum(kBinStrStart);
-  (&fieldStartP)[0] = buf.size();
+  fieldStartP[0] = buf.size();
   ExpandFourBuffSize();
 
   WriteNum(kBinTypeStart);
-  (&fieldStartP)[1] = buf.size();
+  fieldStartP[1] = buf.size();
   ExpandFourBuffSize();
 
   WriteNum(kBinCgStart);
-  (&fieldStartP)[2] = buf.size();
+  fieldStartP[2] = buf.size();
   ExpandFourBuffSize();
 
   Fixup(totalSizeIdx, buf.size() - totalSizeIdx);
@@ -695,7 +695,7 @@ void BinaryMplExport::Export(const std::string &fname) {
   constexpr int fieldNum = 3;
   uint64 fieldStartPoint[fieldNum];
   WriteInt(kMpltMagicNumber);
-  WriteContentField(fieldNum, *fieldStartPoint);
+  WriteContentField(fieldNum, fieldStartPoint);
   WriteStrField(fieldStartPoint[0]);
   WriteTypeField(fieldStartPoint[1]);
   WriteNum(kBinFinish);
@@ -733,7 +733,7 @@ void BinaryMplExport::OutputTypeAttrs(const TypeAttrs &ta) {
   WriteNum(ta.GetAlignValue());
 }
 
-void BinaryMplExport::OutputType(const TyIdx &tyIdx) {
+void BinaryMplExport::OutputType(TyIdx tyIdx) {
   MIRType *ty = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
   if (tyIdx == 0) {
     WriteNum(0);
@@ -748,7 +748,7 @@ void BinaryMplExport::OutputType(const TyIdx &tyIdx) {
     }
     ++BinaryMplExport::typeMarkOffset;
   } else {
-    int64 mark = typMark.size() + BinaryMplExport::typeMarkOffset;
+    size_t mark = typMark.size() + BinaryMplExport::typeMarkOffset;
     typMark[ty] = mark;
   }
 

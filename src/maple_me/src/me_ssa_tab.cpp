@@ -26,7 +26,7 @@ AnalysisResult *MeDoSSATab::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, M
   }
   MemPool *memPool = NewMemPool();
   // allocate ssaTab including its SSAPart to store SSA information for statements
-  SSATab *ssaTab = memPool->New<SSATab>(memPool, func->GetVersMp(), &func->GetMIRModule());
+  auto *ssaTab = memPool->New<SSATab>(memPool, func->GetVersMp(), &func->GetMIRModule());
   func->SetMeSSATab(ssaTab);
 #if DEBUG
   globalSSATab = ssaTab;

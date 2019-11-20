@@ -37,14 +37,14 @@ enum PragmaKind {
   kPragmaVar,
   kPragmaGlbvar,
   kPragmaFuncExecptioni,
-  kPragmaFuncVar,
+  kPragmaFuncVar
 };
 
 enum PragmaVisibility {
   kVisBuild,
   kVisRuntime,
   kVisSystem,
-  kVisMaple,
+  kVisMaple
 };
 
 enum PragmaValueType {
@@ -71,7 +71,7 @@ enum PragmaValueType {
 class MIRPragmaElement {
  public:
   explicit MIRPragmaElement(MIRModule &m)
-      : nameStrIdx(0), typeStrIdx(0), valueType(kValueNull), subElemVec(m.GetMPAllocator().Adapter()) {
+      : subElemVec(m.GetMPAllocator().Adapter()) {
     val.u = 0;
     subElemVec.clear();
   }
@@ -159,9 +159,9 @@ class MIRPragmaElement {
   }
 
  private:
-  GStrIdx nameStrIdx;
-  GStrIdx typeStrIdx;
-  PragmaValueType valueType;
+  GStrIdx nameStrIdx{ 0 };
+  GStrIdx typeStrIdx{ 0 };
+  PragmaValueType valueType = kValueNull;
   union {
     int32 i;
     int64 j;
@@ -176,12 +176,6 @@ class MIRPragma {
  public:
   explicit MIRPragma(MIRModule &m)
       : mod(&m),
-        pragmaKind(kPragmaUnknown),
-        visibility(0),
-        strIdx(0),
-        tyIdx(0),
-        tyIdxEx(0),
-        paramNum(-1),
         elementVec(m.GetMPAllocator().Adapter()) {}
 
   ~MIRPragma() = default;
@@ -261,12 +255,12 @@ class MIRPragma {
 
  private:
   MIRModule *mod;
-  PragmaKind pragmaKind;
-  uint8 visibility;
-  GStrIdx strIdx;
-  TyIdx tyIdx;
-  TyIdx tyIdxEx;
-  int32 paramNum;  // paramNum th param in function, -1 not for param annotation
+  PragmaKind pragmaKind = kPragmaUnknown;
+  uint8 visibility = 0;
+  GStrIdx strIdx{ 0 };
+  TyIdx tyIdx{ 0 };
+  TyIdx tyIdxEx{ 0 };
+  int32 paramNum = -1;  // paramNum th param in function, -1 not for param annotation
   MapleVector<MIRPragmaElement*> elementVec;
 };
 }  // namespace maple

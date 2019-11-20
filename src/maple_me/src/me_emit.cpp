@@ -28,7 +28,7 @@ AnalysisResult *MeDoEmit::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, Mod
       LogInfo::MapleLogger() << "===== Check/run Depended Phase [ "
                              << funcResMgr->GetAnalysisPhase(MeFuncPhase_BBLAYOUT)->PhaseName() << " ]=====\n";
     }
-    BBLayout *layoutBBs = static_cast<BBLayout*>(funcResMgr->GetAnalysisResult(MeFuncPhase_BBLAYOUT, func));
+    auto *layoutBBs = static_cast<BBLayout*>(funcResMgr->GetAnalysisResult(MeFuncPhase_BBLAYOUT, func));
     if (!MeOption::quiet) {
       LogInfo::MapleLogger() << "===== Depended Phase ended =====\n";
     }

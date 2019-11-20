@@ -91,7 +91,7 @@ void MeIRMap::EmitBB(const BB &bb, BlockNode &curblk) {
 }
 
 AnalysisResult *MeDoIRMap::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, ModuleResultMgr *moduleResMgr) {
-  Dominance *dom = static_cast<Dominance*>(funcResMgr->GetAnalysisResult(MeFuncPhase_DOMINANCE, func));
+  auto *dom = static_cast<Dominance*>(funcResMgr->GetAnalysisResult(MeFuncPhase_DOMINANCE, func));
   ASSERT(dom != nullptr, "dominance phase has problem");
   MemPool *irMapMemPool = NewMemPool();
   MeIRMap *irMap = irMapMemPool->New<MeIRMap>(*func, *dom, *irMapMemPool, *NewMemPool());

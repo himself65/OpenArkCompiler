@@ -56,8 +56,8 @@ class RCLowering {
   bool RCFirst(MeExpr &rhs);
   IntrinsiccallMeStmt *GetVarRHSHandleStmt(const MeStmt &stmt);
   IntrinsiccallMeStmt *GetIvarRHSHandleStmt(const MeStmt &stmt);
-  MIRIntrinsicID PrepareVolatileCall(const MeStmt &stmt, const MIRIntrinsicID index = INTRN_UNDEFINED);
-  IntrinsiccallMeStmt *CreateRCIntrinsic(const MIRIntrinsicID intrnID, const MeStmt &stmt, std::vector<MeExpr*> &opnds,
+  MIRIntrinsicID PrepareVolatileCall(const MeStmt &stmt, MIRIntrinsicID index = INTRN_UNDEFINED);
+  IntrinsiccallMeStmt *CreateRCIntrinsic(MIRIntrinsicID intrnID, const MeStmt &stmt, std::vector<MeExpr*> &opnds,
                                          bool assigned = false);
   void InitializedObjectFields(MeStmt &stmt);
   bool IsInitialized(IvarMeExpr &ivar);

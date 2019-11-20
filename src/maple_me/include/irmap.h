@@ -33,9 +33,8 @@ class IRMap : public AnalysisResult {
         tempAlloc(&tmpMemPool),
         mapHashLength(hashTableSize),
         hashTable(mapHashLength, nullptr, irMapAlloc.Adapter()),
-        verst2MeExprTable(ssaTab.GetVersionStTableSize(), nullptr, irMapAlloc.Adapter()),
+        vst2MeExprTable(ssaTab.GetVersionStTableSize(), nullptr, irMapAlloc.Adapter()),
         regMeExprTable(irMapAlloc.Adapter()),
-        curBB(nullptr),
         meBuilder(irMapAlloc) {
     InitMeStmtFactory();
   }
@@ -62,13 +61,13 @@ class IRMap : public AnalysisResult {
   MeExpr *ReplaceMeExprExpr(MeExpr&, MeExpr&, MeExpr&);
   bool ReplaceMeExprStmt(MeStmt&, MeExpr&, MeExpr&);
   MeExpr *GetMeExprByVerID(uint32 verid) const {
-    return verst2MeExprTable[verid];
+    return vst2MeExprTable[verid];
   }
 
-  VarMeExpr *GetOrCreateZeroVersionVarMeExpr(const OriginalSt &oSt);
+  VarMeExpr *GetOrCreateZeroVersionVarMeExpr(const OriginalSt &ost);
   MeExpr *GetMeExpr(size_t index) {
-    ASSERT(index < verst2MeExprTable.size(), "index out of range");
-    MeExpr *meExpr = verst2MeExprTable.at(index);
+    ASSERT(index < vst2MeExprTable.size(), "index out of range");
+    MeExpr *meExpr = vst2MeExprTable.at(index);
     if (meExpr != nullptr) {
       ASSERT(meExpr->GetMeOp() == kMeOpVar || meExpr->GetMeOp() == kMeOpReg, "opcode error");
     }
@@ -77,7 +76,7 @@ class IRMap : public AnalysisResult {
 
   VarMeExpr *CreateNewVarMeExpr(OStIdx oStIdx, PrimType pType, FieldID fieldID);
   VarMeExpr *CreateNewVarMeExpr(OriginalSt &oSt, PrimType pType, FieldID fieldID);
-  VarMeExpr *CreateNewGlobalTmp(GStrIdx strIdx, PrimType ptyp);
+  VarMeExpr *CreateNewGlobalTmp(GStrIdx strIdx, PrimType pType);
   VarMeExpr *CreateNewLocalRefVarTmp(GStrIdx strIdx, TyIdx tIdx);
   DassignMeStmt *CreateDassignMeStmt(MeExpr&, MeExpr&, BB&);
   RegassignMeStmt *CreateRegassignMeStmt(MeExpr&, MeExpr&, BB&);
@@ -94,9 +93,9 @@ class IRMap : public AnalysisResult {
   MeExpr *CreateMeExprSelect(PrimType, MeExpr&, MeExpr&, MeExpr&);
   MeExpr *CreateMeExprTypeCvt(PrimType, PrimType, MeExpr&);
   IntrinsiccallMeStmt *CreateIntrinsicCallMeStmt(MIRIntrinsicID idx, std::vector<MeExpr*> &opnds,
-                                                 TyIdx tyidx = TyIdx());
+                                                 TyIdx tyIdx = TyIdx());
   IntrinsiccallMeStmt *CreateIntrinsicCallAssignedMeStmt(MIRIntrinsicID idx, std::vector<MeExpr*> &opnds, MeExpr *ret,
-                                                         TyIdx tyidx = TyIdx());
+                                                         TyIdx tyIdx = TyIdx());
   template <class T, typename... Arguments>
   T *NewInPool(Arguments&&... args) {
     return irMapAlloc.GetMemPool()->New<T>(&irMapAlloc, std::forward<Arguments>(args)...);
@@ -140,19 +139,19 @@ class IRMap : public AnalysisResult {
   }
 
   const MapleVector<MeExpr*> &GetVerst2MeExprTable() const {
-    return verst2MeExprTable;
+    return vst2MeExprTable;
   }
 
   MeExpr *GetVerst2MeExprTableItem(int i) {
-    return verst2MeExprTable[i];
+    return vst2MeExprTable[i];
   }
 
   size_t GetVerst2MeExprTableSize() const {
-    return verst2MeExprTable.size();
+    return vst2MeExprTable.size();
   }
 
   void PushBackVerst2MeExprTable(MeExpr *item) {
-    verst2MeExprTable.push_back(item);
+    vst2MeExprTable.push_back(item);
   }
 
   const MapleVector<RegMeExpr*> &GetRegMeExprTable() const {
@@ -185,25 +184,25 @@ class IRMap : public AnalysisResult {
   int32 exprID = 0;                                // for allocating exprid_ in MeExpr
   uint32 mapHashLength;                            // size of hashTable
   MapleVector<MeExpr*> hashTable;                  // the value number hash table
-  MapleVector<MeExpr*> verst2MeExprTable;          // map versionst to MeExpr.
+  MapleVector<MeExpr*> vst2MeExprTable;            // map versionst to MeExpr.
   MapleVector<RegMeExpr*> regMeExprTable;          // record all the regmeexpr created by ssapre
   bool needAnotherPass = false;                    // set to true if CFG has changed
   bool dumpStmtNum = false;
-  BB *curBB;  // current maple_me::BB being visited
+  BB *curBB = nullptr;  // current maple_me::BB being visited
   MeBuilder meBuilder;
 
   bool ReplaceMeExprStmtOpnd(uint32, MeStmt&, MeExpr&, MeExpr&);
-  MeExpr *BuildLHSVar(const VersionSt &verSt, DassignMeStmt &defMeStmt);
+  MeExpr *BuildLHSVar(const VersionSt &vst, DassignMeStmt &defMeStmt);
   void PutToBucket(uint32, MeExpr&);
   MeStmt *BuildMeStmtWithNoSSAPart(StmtNode &stmt);
   MeStmt *BuildMeStmt(StmtNode&);
-  MeExpr *BuildLHSReg(const VersionSt &verSt, RegassignMeStmt &defMeStmt, const RegassignNode &regassign);
+  MeExpr *BuildLHSReg(const VersionSt &vst, RegassignMeStmt &defMeStmt, const RegassignNode &regassign);
   IvarMeExpr *BuildLHSIvar(MeExpr &baseAddr, IassignMeStmt &iassignMeStmt, FieldID fieldID);
   RegMeExpr *CreateRefRegMeExpr(const MIRSymbol&);
   MeExpr *CreateMeExprCompare(Opcode, PrimType, PrimType, MeExpr&, MeExpr&);
   MeExpr *CreateAddrofMeExprFromNewSymbol(MIRSymbol&, PUIdx);
-  VarMeExpr *GetOrCreateVarFromVerSt(const VersionSt &verSt);
-  RegMeExpr *GetOrCreateRegFromVerSt(const VersionSt &verSt);
+  VarMeExpr *GetOrCreateVarFromVerSt(const VersionSt &vst);
+  RegMeExpr *GetOrCreateRegFromVerSt(const VersionSt &vst);
   void BuildChiList(MeStmt&, MapleMap<OStIdx, MayDefNode>&, MapleMap<OStIdx, ChiMeNode*>&);
   void BuildMustDefList(MeStmt &meStmt, MapleVector<MustDefNode>&, MapleVector<MustDefMeNode>&);
   void BuildMuList(MapleMap<OStIdx, MayUseNode>&, MapleMap<OStIdx, VarMeExpr*>&);

@@ -498,8 +498,8 @@ void MeCFG::ConvertMevarPhiList2IdentityAssigns(BB &meBB) const {
 }
 
 void MeCFG::ConvertMeregphiList2IdentityAssigns(BB &meBB) const {
-  auto regPhiIt = meBB.GetMeregphiList().begin();
-  while (regPhiIt != meBB.GetMeregphiList().end()) {
+  auto regPhiIt = meBB.GetMeRegPhiList().begin();
+  while (regPhiIt != meBB.GetMeRegPhiList().end()) {
     if (!(*regPhiIt).second->GetIsLive()) {
       ++regPhiIt;
       continue;
@@ -517,7 +517,7 @@ void MeCFG::ConvertMeregphiList2IdentityAssigns(BB &meBB) const {
     }
     ++regPhiIt;
   }
-  meBB.GetMeregphiList().clear();  // delete all the phis
+  meBB.GetMeRegPhiList().clear();  // delete all the phis
 }
 
 // used only after DSE because it looks at live field of VersionSt

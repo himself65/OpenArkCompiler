@@ -347,11 +347,11 @@ class BB {
     return mevarPhiList;
   }
 
-  MapleMap<OStIdx, MeRegPhiNode*> &GetMeregphiList() {
+  MapleMap<OStIdx, MeRegPhiNode*> &GetMeRegPhiList() {
     return meregPhiList;
   }
 
-  const MapleMap<OStIdx, MeRegPhiNode*> &GetMeregphiList() const {
+  const MapleMap<OStIdx, MeRegPhiNode*> &GetMeRegPhiList() const {
     return meregPhiList;
   }
 

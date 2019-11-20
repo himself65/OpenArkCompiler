@@ -77,8 +77,8 @@ void IntrinDesc::InitMIRModule(MIRModule *mod) {
   mirModule = mod;
 }
 
-MIRType *IntrinDesc::GetTypeFromArgTy(IntrinArgType argtype) const {
-  switch (argtype) {
+MIRType *IntrinDesc::GetTypeFromArgTy(IntrinArgType argType) const {
+  switch (argType) {
     case kArgTyVoid:
       return GlobalTables::GetTypeTable().GetTypeFromTyIdx((TyIdx)PTY_void);
     case kArgTyI8:
