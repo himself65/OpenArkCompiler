@@ -30,8 +30,7 @@ class FileUtils {
   static std::string ConvertPathIfNeeded(const std::string &src);
   static int Remove(const std::string &filePath);
   static std::string AppendMapleRootIfNeeded(bool needRootPath, const std::string &path,
-                                             const std::string &defaultRoot =
-                                                 ("." + kFileSeperatorStr));
+                                             const std::string &defaultRoot = "." + kFileSeperatorStr);
 };
 }  // namespace maple
 #endif  // MAPLE_DRIVER_INCLUDE_FILE_UTILS_H

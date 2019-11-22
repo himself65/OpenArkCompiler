@@ -135,10 +135,10 @@ void MIRModule::DumpGlobals(bool emitStructureType) const {
     }
     LogInfo::MapleLogger() << std::dec << "]\n";
   }
-  LogInfo::MapleLogger() << "numfuncs " << numFuncs << std::endl;
+  LogInfo::MapleLogger() << "numfuncs " << numFuncs << '\n';
   if (!importFiles.empty()) {
     // Output current module's mplt on top, imported ones at below
-    for (auto it = importFiles.rbegin(); it != importFiles.rend(); it++) {
+    for (auto it = importFiles.rbegin(); it != importFiles.rend(); ++it) {
       LogInfo::MapleLogger() << "import \"" << GlobalTables::GetStrTable().GetStringFromStrIdx(*it) << "\"\n";
     }
   }
@@ -207,7 +207,7 @@ void MIRModule::DumpGlobals(bool emitStructureType) const {
     LogInfo::MapleLogger() << std::dec;
   }
   if (flavor < kMmpl) {
-    for (auto it = typeDefOrder.begin(); it != typeDefOrder.end(); it++) {
+    for (auto it = typeDefOrder.begin(); it != typeDefOrder.end(); ++it) {
       TyIdx tyIdx = typeNameTab->GetTyIdxFromGStrIdx(*it);
       const std::string &name = GlobalTables::GetStrTable().GetStringFromStrIdx(*it);
       MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
@@ -232,7 +232,7 @@ void MIRModule::DumpGlobals(bool emitStructureType) const {
       } else {
         type->Dump(1);
       }
-      LogInfo::MapleLogger() << std::endl;
+      LogInfo::MapleLogger() << '\n';
     }
     if (someSymbolNeedForwDecl) {
       // an extra pass thru the global symbol table to print forward decl
@@ -371,15 +371,15 @@ const std::string &MIRModule::GetFileNameFromFileNum(uint32 fileNum) const {
 
 
 void MIRModule::DumpClassToFile(const std::string &path) const {
-  std::string spath(path);
-  spath.append("/");
+  std::string strPath(path);
+  strPath.append("/");
   for (auto it : typeNameTab->GetGStrIdxToTyIdxMap()) {
     const std::string &name = GlobalTables::GetStrTable().GetStringFromStrIdx(it.first);
     MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(it.second);
     std::string outClassFile(name);
     /* replace class name / with - */
     std::replace(outClassFile.begin(), outClassFile.end(), '/', '-');
-    outClassFile.insert(0, spath);
+    outClassFile.insert(0, strPath);
     outClassFile.append(".mpl");
     std::ofstream mplFile;
     mplFile.open(outClassFile.c_str(), std::ios::trunc);

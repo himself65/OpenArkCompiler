@@ -25,10 +25,7 @@ class BBLayout : public AnalysisResult {
         func(f),
         layoutAlloc(&memPool),
         layoutBBs(layoutAlloc.Adapter()),
-        curBBId(0),
-        bbCreated(false),
         laidOut(func.GetAllBBs().size(), false, layoutAlloc.Adapter()),
-        tryOutstanding(false),
         enabledDebug(enabledDebug) {
     laidOut[func.GetCommonEntryBB()->GetBBId()] = true;
     laidOut[func.GetCommonExitBB()->GetBBId()] = true;
@@ -37,13 +34,13 @@ class BBLayout : public AnalysisResult {
   virtual ~BBLayout() = default;
   BB *NextBB() {
     // return the next BB following strictly program input order
-    curBBId++;
+    ++curBBId;
     while (curBBId < func.GetAllBBs().size()) {
       BB *nextBB = func.GetBBFromID(curBBId);
       if (nextBB != nullptr && !laidOut[nextBB->GetBBId()]) {
         return nextBB;
       }
-      curBBId++;
+      ++curBBId;
     }
     return nullptr;
   }
@@ -62,7 +59,7 @@ class BBLayout : public AnalysisResult {
     return layoutBBs;
   }
 
-  const bool IsNewBBInLayout() const {
+  bool IsNewBBInLayout() const {
     return bbCreated;
   }
 
@@ -90,11 +87,11 @@ class BBLayout : public AnalysisResult {
   MeFunction &func;
   MapleAllocator layoutAlloc;
   MapleVector<BB*> layoutBBs;  // gives the determined layout order
-  BBId curBBId;                // to index into func.bb_vec_ to return the next BB
-  bool bbCreated;              // new create bb will change mefunction::bb_vec_ and
+  BBId curBBId { 0 };          // to index into func.bb_vec_ to return the next BB
+  bool bbCreated = false;      // new create bb will change mefunction::bb_vec_ and
   // related analysis result
-  MapleVector<bool> laidOut;  // indexed by bbid to tell if has been laid out
-  bool tryOutstanding;        // true if a try laid out but not its endtry
+  MapleVector<bool> laidOut;   // indexed by bbid to tell if has been laid out
+  bool tryOutstanding = false; // true if a try laid out but not its endtry
   bool enabledDebug;
 };
 

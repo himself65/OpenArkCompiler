@@ -14,7 +14,7 @@
  */
 #ifndef MEMPOOL_INCLUDE_MEMPOOL_ALLOCATOR_H
 #define MEMPOOL_INCLUDE_MEMPOOL_ALLOCATOR_H
-#include <stddef.h>
+#include <cstddef>
 #include <limits>
 #include <vector>
 #include <deque>
@@ -37,7 +37,7 @@ class MapleAllocator {
   // Get adapter for use in STL containers. See arena_containers.h .
   MapleAllocatorAdapter<void> Adapter();
   void *Alloc(size_t bytes) {
-    return (memPool ? memPool->Malloc(bytes) : nullptr);
+    return (memPool != nullptr) ? memPool->Malloc(bytes) : nullptr;
   }
 
   MemPool *GetMemPool() {
@@ -56,10 +56,13 @@ class MapleAllocator {
 
 template <typename T>
 class MapleAllocatorAdapter;  // circular dependency exists, no other choice
+
 template <typename T>
 using MapleQueue = std::deque<T, MapleAllocatorAdapter<T>>;
+
 template <typename T>
 using MapleVector = std::vector<T, MapleAllocatorAdapter<T>>;
+
 template <typename T>
 class MapleStack {
  public:
@@ -112,20 +115,28 @@ class MapleStack {
 
 template <typename T>
 using MapleList = std::list<T, MapleAllocatorAdapter<T>>;
+
 template <typename T>
 using MapleForwardList = std::forward_list<T, MapleAllocatorAdapter<T>>;
+
 template <typename T, typename Comparator = std::less<T>>
 using MapleSet = std::set<T, Comparator, MapleAllocatorAdapter<T>>;
+
 template <typename T, typename Hash = std::hash<T>, typename Equal = std::equal_to<T>>
 using MapleUnorderedSet = std::unordered_set<T, Hash, Equal, MapleAllocatorAdapter<T>>;
+
 template <typename K, typename V, typename Comparator = std::less<K>>
 using MapleMap = std::map<K, V, Comparator, MapleAllocatorAdapter<std::pair<const K, V>>>;
+
 template <typename K, typename V, typename Comparator = std::less<K>>
 using MapleMultiMap = std::multimap<K, V, Comparator, MapleAllocatorAdapter<std::pair<const K, V>>>;
+
 template <typename K, typename V, typename Hash = std::hash<K>, typename Equal = std::equal_to<K>>
 using MapleUnorderedMap = std::unordered_map<K, V, Hash, Equal, MapleAllocatorAdapter<std::pair<const K, V>>>;
+
 template <typename K, typename V, typename Hash = std::hash<K>, typename Equal = std::equal_to<K>>
 using MapleUnorderedMultiMap = std::unordered_multimap<K, V, Hash, Equal, MapleAllocatorAdapter<std::pair<const K, V>>>;
+
 // Implementation details below.
 template <>
 class MapleAllocatorAdapter<void> {

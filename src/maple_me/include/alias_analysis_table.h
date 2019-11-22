@@ -30,14 +30,15 @@ class AliasAnalysisTable {
         memPool(ssaTab.GetMempool()),
         klassHierarchy(kh) {}
 
+  ~AliasAnalysisTable() = default;
+
   OriginalSt *GetPrevLevelNode(const OriginalSt &ost);
   MapleVector<OriginalSt*> *GetNextLevelNodes(const OriginalSt &ost);
   OriginalSt *FindOrCreateAddrofSymbolOriginalSt(OriginalSt &ost);
   OriginalSt *FindOrCreateExtraLevOriginalSt(OriginalSt &ost, TyIdx ptyidx, FieldID fld);
-  ~AliasAnalysisTable() = default;
 
  private:
-  OriginalSt *FindOrCreateExtraLevSymOrRegOriginalSt(OriginalSt &ost, TyIdx ptyidx, FieldID fld);
+  OriginalSt *FindOrCreateExtraLevSymOrRegOriginalSt(OriginalSt &ost, TyIdx tyIdx, FieldID fld);
   OriginalSt *FindExtraLevOriginalSt(const MapleVector<OriginalSt*> &nextLevelOsts, FieldID fld);
   SSATab &ssaTab;
   MapleAllocator alloc;

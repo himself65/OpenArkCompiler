@@ -41,11 +41,11 @@ bool MIRParser::ParseStmtDassign(StmtNodePtr &stmt) {
   }
   auto *assignStmt = mod.CurFuncCodeMemPool()->New<DassignNode>();
   assignStmt->SetStIdx(stidx);
-  TokenKind ntk = lexer.NextToken();
+  TokenKind nextToken = lexer.NextToken();
   // parse field id
-  if (ntk == kTkIntconst) {  // may be a field id
+  if (nextToken == kTkIntconst) {  // may be a field id
     assignStmt->SetFieldID(lexer.GetTheIntVal());
-    ntk = lexer.NextToken();
+    (void)lexer.NextToken();
   }
   // parse expression like (constval i32 0)
   BaseNode *expr = nullptr;
@@ -232,7 +232,7 @@ bool MIRParser::ParseStmtDoloop(StmtNodePtr &stmt) {
     return false;
   }
   if (doLoopNode->IsPreg()) {
-    PregIdx regIdx = (PregIdx)doLoopNode->GetDoVarStIdx().FullIdx();
+    auto regIdx = static_cast<PregIdx>(doLoopNode->GetDoVarStIdx().FullIdx());
     MIRPreg *mpReg = mod.CurFunction()->GetPregTab()->PregFromPregIdx(regIdx);
     if (mpReg->GetPrimType() == kPtyInvalid) {
       CHECK_FATAL(start != nullptr, "null ptr check");
@@ -921,7 +921,7 @@ bool MIRParser::ParseStmtIntrinsiccallassigned(StmtNodePtr &stmt) {
 }
 
 bool MIRParser::ParseStmtIntrinsiccallwithtype(StmtNodePtr &stmt, bool isAssigned) {
-  Opcode o = !isAssigned ? OP_intrinsiccallwithtype : OP_intrinsiccallwithtypeassigned;
+  Opcode o = (!isAssigned) ? OP_intrinsiccallwithtype : OP_intrinsiccallwithtypeassigned;
   IntrinsiccallNode *intrnCallNode = mod.CurFuncCodeMemPool()->New<IntrinsiccallNode>(mod, o);
   TokenKind tk = lexer.NextToken();
   TyIdx tyIdx(0);
@@ -1007,7 +1007,7 @@ bool MIRParser::ParseCallReturns(CallReturnVector &retsvec) {
         ASSERT(lSym != nullptr, "lsym MIRSymbol is null");
         if (lSym->GetName().find("L_STR") == 0) {
           MIRType *ty = GlobalTables::GetTypeTable().GetTypeFromTyIdx(lSym->GetTyIdx());
-          MIRPtrType *ptrTy = static_cast<MIRPtrType*>(ty->CopyMIRTypeNode());
+          auto *ptrTy = static_cast<MIRPtrType*>(ty->CopyMIRTypeNode());
           ASSERT(ptrTy != nullptr, "null ptr check");
           ptrTy->SetPrimType(PTY_ptr);
           TyIdx newTyidx = GlobalTables::GetTypeTable().GetOrCreateMIRType(ptrTy);
@@ -1020,9 +1020,9 @@ bool MIRParser::ParseCallReturns(CallReturnVector &retsvec) {
         return false;
       }
       uint16 fieldId = 0;
-      TokenKind ntk = lexer.NextToken();
+      TokenKind nextToken = lexer.NextToken();
       // parse field id
-      if (ntk == kTkIntconst) {
+      if (nextToken == kTkIntconst) {
         fieldId = lexer.GetTheIntVal();
       } else {
         Error("expect a fieldID parsing ParseCallAssignedStmts. ");
@@ -1438,7 +1438,7 @@ bool MIRParser::ParseStmtBlock(BlockNodePtr &blk) {
 void MIRParser::ParseStmtBlockForSeenComment(BlockNodePtr blk, uint32 mplNum) {
   // collect accumulated comments into comment statement nodes
   if (!lexer.seenComments.empty()) {
-    for (size_t i = 0; i < lexer.seenComments.size(); i++) {
+    for (size_t i = 0; i < lexer.seenComments.size(); ++i) {
       auto *cmnt = mod.CurFuncCodeMemPool()->New<CommentNode>(mod);
       cmnt->SetComment(lexer.seenComments[i]);
       SetSrcPos(cmnt, mplNum);
@@ -2636,8 +2636,8 @@ bool MIRParser::ParseConstAddrLeafExpr(MIRConstPtr &cexpr, MIRType &type) {
     return false;
   }
   if (expr->GetOpCode() == OP_addrof) {
-    AddrofNode *anode = static_cast<AddrofNode*>(expr);
-    MIRFunction *currFn = static_cast<MIRFunction*>(mod.CurFunction());
+    auto *anode = static_cast<AddrofNode*>(expr);
+    auto *currFn = static_cast<MIRFunction*>(mod.CurFunction());
     MIRSymbol *var = currFn->GetLocalOrGlobalSymbol(anode->GetStIdx());
     var->SetNeedForwDecl();
     mod.SetSomeSymbolNeedForDecl(true);
@@ -2647,7 +2647,7 @@ bool MIRParser::ParseConstAddrLeafExpr(MIRConstPtr &cexpr, MIRType &type) {
     MIRType *exprTy = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ptyIdx);
     cexpr = mod.CurFuncCodeMemPool()->New<MIRAddrofConst>(anode->GetStIdx(), anode->GetFieldID(), *exprTy);
   } else if (expr->GetOpCode() == OP_addroffunc) {
-    AddroffuncNode *aof = static_cast<AddroffuncNode*>(expr);
+    auto *aof = static_cast<AddroffuncNode*>(expr);
     MIRFunction *f = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(aof->GetPUIdx());
     const MIRSymbol *fName = f->GetFuncSymbol();
     TyIdx ptyIdx = fName->GetTyIdx();
@@ -2656,7 +2656,7 @@ bool MIRParser::ParseConstAddrLeafExpr(MIRConstPtr &cexpr, MIRType &type) {
     MIRType *exprTy = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ptyIdx);
     cexpr = mod.CurFuncCodeMemPool()->New<MIRAddroffuncConst>(aof->GetPUIdx(), *exprTy);
   } else if (expr->GetOpCode() == OP_conststr) {
-    ConststrNode *cs = static_cast<ConststrNode*>(expr);
+    auto *cs = static_cast<ConststrNode*>(expr);
     UStrIdx stridx = cs->GetStrIdx();
     TyIdx ptyIdx = GlobalTables::GetTypeTable().GetTypeFromTyIdx(TyIdx(PTY_u8))->GetTypeIndex();
     MIRPtrType ptrtype(ptyIdx);
@@ -2664,7 +2664,7 @@ bool MIRParser::ParseConstAddrLeafExpr(MIRConstPtr &cexpr, MIRType &type) {
     MIRType *exprty = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ptyIdx);
     cexpr = mod.CurFuncCodeMemPool()->New<MIRStrConst>(stridx, *exprty);
   } else {
-    Conststr16Node *cs = static_cast<Conststr16Node*>(expr);
+    auto *cs = static_cast<Conststr16Node*>(expr);
     U16StrIdx stridx = cs->GetStrIdx();
     TyIdx ptyIdx = GlobalTables::GetTypeTable().GetTypeFromTyIdx(TyIdx(PTY_u16))->GetTypeIndex();
     MIRPtrType ptrType(ptyIdx);

@@ -70,7 +70,10 @@ class TypeTable {
     return typeTable;
   }
 
-  MIRType *GetTypeFromTyIdx(TyIdx tyIdx) const {
+  MIRType *GetTypeFromTyIdx(TyIdx tyIdx) {
+    return const_cast<MIRType*>(const_cast<const TypeTable*>(this)->GetTypeFromTyIdx(tyIdx));
+  }
+  const MIRType *GetTypeFromTyIdx(TyIdx tyIdx) const {
     ASSERT(tyIdx.GetIdx() < typeTable.size(), "array index out of range");
     return typeTable.at(tyIdx.GetIdx());
   }
@@ -250,7 +253,8 @@ class TypeTable {
   // Get or Create derived types.
   MIRType *GetOrCreatePointerType(TyIdx pointedTyIdx, PrimType primType = PTY_ptr);
   MIRType *GetOrCreatePointerType(const MIRType &pointTo, PrimType primType = PTY_ptr);
-  MIRType *GetPointedTypeIfApplicable(MIRType &type) const;
+  const MIRType *GetPointedTypeIfApplicable(MIRType &type) const;
+  MIRType *GetPointedTypeIfApplicable(MIRType &type);
   MIRType *GetVoidPtr() const {
     ASSERT(voidPtrType != nullptr, "voidPtrType should not be null");
     return voidPtrType;
@@ -297,9 +301,6 @@ class TypeTable {
     }
   };
 
-  std::unordered_set<MIRTypePtr, Hash, Equal> typeHashTable;
-  std::vector<MIRType*> typeTable;
-
   // create an entry in typeTable for the type node
   MIRType *CreateType(MIRType &oldType) {
     MIRType *newType = oldType.CopyMIRTypeNode();
@@ -308,9 +309,12 @@ class TypeTable {
     return newType;
   }
 
-  MIRType *GetOrCreateStructOrUnion(const std::string &name, const FieldVector &fields, const FieldVector &prntFields,
+  MIRType *GetOrCreateStructOrUnion(const std::string &name, const FieldVector &fields, const FieldVector &printFields,
                                     MIRModule &module, bool forStruct = true);
   MIRType *GetOrCreateClassOrInterface(const std::string &name, MIRModule &module, bool forClass);
+
+  std::unordered_set<MIRTypePtr, Hash, Equal> typeHashTable;
+  std::vector<MIRType*> typeTable;
 };
 
 class StrPtrHash {
@@ -341,8 +345,8 @@ template <typename T, typename U>
 class StringTable {
  public:
   StringTable() = default;
-  StringTable &operator=(const StringTable&) = delete;
   StringTable(const StringTable&) = delete;
+  StringTable &operator=(const StringTable&) = delete;
 
   ~StringTable() {
     stringTableMap.clear();
@@ -459,9 +463,9 @@ class FunctionTable {
     return funcTable;
   }
 
-  MIRFunction *GetFunctionFromPuidx(PUIdx pidx) const {
-    CHECK_FATAL(pidx < funcTable.size(), "Invalid puIdx");
-    return funcTable.at(pidx);
+  MIRFunction *GetFunctionFromPuidx(PUIdx pIdx) const {
+    CHECK_FATAL(pIdx < funcTable.size(), "Invalid puIdx");
+    return funcTable.at(pIdx);
   }
 
  private:
@@ -523,7 +527,7 @@ class GSymbolTable {
   MIRSymbol *CreateSymbol(uint8 scopeID);
   bool AddToStringSymbolMap(const MIRSymbol &st);
   bool RemoveFromStringSymbolMap(const MIRSymbol &st);
-  void Dump(bool islocal, int32 indent = 0) const;
+  void Dump(bool isLocal, int32 indent = 0) const;
 
  private:
   MIRModule *module = nullptr;

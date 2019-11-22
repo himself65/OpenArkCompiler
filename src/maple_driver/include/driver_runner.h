@@ -54,18 +54,6 @@ class DriverRunner final {
 
 
  private:
-  MIRModule *theModule;
-  std::vector<std::string> exeNames;
-  Options *mpl2mplOptions = nullptr;
-  std::string mpl2mplInput;
-  MeOption *meOptions = nullptr;
-  std::string meInput;
-  std::string actualInput;
-  MemPool *optMp;
-  bool timePhases = false;
-  bool genMeMpl = false;
-  std::string printOutExe;
-
   static bool FuncOrderLessThan(const MIRFunction *left, const MIRFunction *right);
 
   bool IsFramework() const;
@@ -77,6 +65,19 @@ class DriverRunner final {
                  const PhaseManager &phaseManager) const;
   void AddPhase(std::vector<std::string> &phases, const std::string phase, const PhaseManager &phaseManager) const;
   void ProcessMpl2mplAndMePhases(const std::string &outputFile, const std::string &vtableImplFile) const;
+
+
+  MIRModule *theModule;
+  std::vector<std::string> exeNames;
+  Options *mpl2mplOptions = nullptr;
+  std::string mpl2mplInput;
+  MeOption *meOptions = nullptr;
+  std::string meInput;
+  std::string actualInput;
+  MemPool *optMp;
+  bool timePhases = false;
+  bool genMeMpl = false;
+  std::string printOutExe;
 
 };
 }  // namespace maple

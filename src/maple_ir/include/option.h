@@ -27,7 +27,7 @@ constexpr uint32 kConservativeDecouple = 1;
 constexpr uint32 kRadicalDecouple = 2;
 class Options {
  public:
-  explicit Options(maple::MemPool &memPool) : optionAlloc(&memPool) {}
+  explicit Options(MemPool &memPool) : optionAlloc(&memPool) {}
 
   bool ParseOptions(int argc, char **argv, std::string &fileName) const;
   ~Options() = default;
@@ -37,8 +37,8 @@ class Options {
     return phaseSeq;
   }
 
-  const std::string LastPhaseName() const {
-    return phaseSeq.empty() ? "noopt" : phaseSeq[phaseSeq.size() - 1].c_str();
+  std::string LastPhaseName() const {
+    return phaseSeq.empty() ? "noopt" : phaseSeq[phaseSeq.size() - 1];
   }
 
   static bool dumpBefore;

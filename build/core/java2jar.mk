@@ -1,2 +1,2 @@
-$(APP_JAR): %.jar : %.java
-	$(JAVA2JAR) $(APP_JAR) ${MAPLE_ROOT}/libjava-core/java-core.jar "$(wildcard *.java)"
+$(APP_JAR): %.jar : %.java $(LIB_CORE_JAR)
+	$(JAVA2JAR) $(APP_JAR) $(LIB_CORE_JAR) "$(wildcard *.java)"

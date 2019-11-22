@@ -14,10 +14,8 @@
  */
 #include "me_function.h"
 #include <iostream>
-#include <fstream>
 #include <functional>
 #include "ssa_mir_nodes.h"
-#include "me_ssa.h"
 #include "me_cfg.h"
 #include "mir_lower.h"
 #include "mir_builder.h"
@@ -286,15 +284,15 @@ void MeFunction::CreateBasicBlocks() {
         auto *catchNode = static_cast<CatchNode*>(stmt);
         const MapleVector<TyIdx> &exceptionTyIdxVec = catchNode->GetExceptionTyIdxVec();
 
-        for (TyIdx excepIdx : exceptionTyIdxVec) {
-          MIRType *eType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(excepIdx);
+        for (TyIdx exceptIdx : exceptionTyIdxVec) {
+          MIRType *eType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(exceptIdx);
           ASSERT(eType != nullptr && (eType->GetPrimType() == PTY_ptr || eType->GetPrimType() == PTY_ref),
                  "wrong exception type");
-          auto *epType = static_cast<MIRPtrType*>(eType);
-          MIRType *pointType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(epType->GetPointedTyIdx());
-          const std::string &ename = GlobalTables::GetStrTable().GetStringFromStrIdx(pointType->GetNameStrIdx());
-          if ((pointType->GetPrimType() == PTY_void) || (ename == "Ljava/lang/Throwable;") ||
-              (ename == "Ljava/lang/Exception;")) {
+          auto *exceptType = static_cast<MIRPtrType*>(eType);
+          MIRType *pointType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(exceptType->GetPointedTyIdx());
+          const std::string &eName = GlobalTables::GetStrTable().GetStringFromStrIdx(pointType->GetNameStrIdx());
+          if ((pointType->GetPrimType() == PTY_void) || (eName == "Ljava/lang/Throwable;") ||
+              (eName == "Ljava/lang/Exception;")) {
             // "Ljava/lang/Exception;" is risk to set isJavaFinally because it
             // only deal with "throw exception". if throw error,  it's wrong
             curBB->SetAttributes(kBBAttrIsJavaFinally);  // this is a start of finally handler
@@ -303,8 +301,8 @@ void MeFunction::CreateBasicBlocks() {
         break;
       }
       case OP_label: {
-        auto *lblNode = static_cast<LabelNode*>(stmt);
-        LabelIdx labidx = lblNode->GetLabelIdx();
+        auto *labelNode = static_cast<LabelNode*>(stmt);
+        LabelIdx labelIdx = labelNode->GetLabelIdx();
         if (!curBB->IsEmpty() || curBB->GetBBLabel() != 0) {
           // prepare a new bb
           StmtNode *lastStmt = stmt->GetPrev();
@@ -337,8 +335,8 @@ void MeFunction::CreateBasicBlocks() {
           }
           curBB = newBB;
         }
-        labelBBIdMap[labidx] = curBB;
-        curBB->SetBBLabel(labidx);
+        labelBBIdMap[labelIdx] = curBB;
+        curBB->SetBBLabel(labelIdx);
         break;
       }
       case OP_jscatch: {
@@ -532,7 +530,7 @@ BB &MeFunction::SplitBB(BB &bb, StmtNode &splitPoint, BB *newBB) {
   auto eIt = end();
   // update bb's idx
   for (auto it = newIt; it != eIt; ++it) {
-    idx++;
+    ++idx;
     if ((*it) != nullptr) {
       (*it)->SetBBId(BBId(idx));
     }
@@ -653,7 +651,7 @@ void MeFunction::BuildSCCDFS(BB &bb, uint32 &visitIndex, std::vector<SCCOfBBs*> 
       stackTopId = visitStack.top();
       visitStack.pop();
       inStack[stackTopId] = false;
-      BB *topBB = static_cast<BB*>(GetAllBBs()[stackTopId]);
+      auto *topBB = static_cast<BB*>(GetAllBBs()[stackTopId]);
       sccNode->AddBBNode(topBB);
       sccOfBB[stackTopId] = sccNode;
     } while (stackTopId != id);

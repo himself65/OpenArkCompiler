@@ -16,45 +16,50 @@
 #include <iostream>
 #include <fstream>
 
+namespace {
+constexpr char kMCCPreClinitCheck[] = "MCC_PreClinitCheck";
+constexpr char kMCCPostClinitCheck[] = "MCC_PostClinitCheck";
+
+} // namespace
+
 // This phase does two things.
 // 1. Insert clinit(class initialization) check, a intrinsic call INTRN_MPL_CLINIT_CHECK
 //   for place where needed.
 //   Insert clinit check for static native methods which are not private.
 // 2. Lower JAVA_CLINIT_CHECK to MPL_CLINIT_CHECK.
-
 namespace maple {
 ClassInit::ClassInit(MIRModule *mod, KlassHierarchy *kh, bool dump) : FuncOptimizeImpl(mod, kh, dump) {
 }
 
 
-bool ClassInit::CanRemoveClinitCheck(const std::string &clinitClassname) {
+bool ClassInit::CanRemoveClinitCheck(const std::string &clinitClassname) const {
   return false;
 }
 
 #undef CLINIT_CHECK
-void ClassInit::GenClassInitCheckProfile(MIRFunction &func, MIRSymbol &classinfo, StmtNode *clinit) const {
+void ClassInit::GenClassInitCheckProfile(MIRFunction &func, const MIRSymbol &classInfo, StmtNode *clinit) const {
 #ifdef CLINIT_CHECK
-  GenPreClassInitCheck(func, classinfo, clinit);
-  GenPostClassInitCheck(func, classinfo, clinit);
+  GenPreClassInitCheck(func, classInfo, clinit);
+  GenPostClassInitCheck(func, classInfo, clinit);
 #endif  // CLINIT_CHECK
 }
 
-void ClassInit::GenPreClassInitCheck(MIRFunction &func, const MIRSymbol &classinfo, StmtNode *clinit) {
+void ClassInit::GenPreClassInitCheck(MIRFunction &func, const MIRSymbol &classInfo, StmtNode *clinit) const {
   MIRFunction *preClinit = builder->GetOrCreateFunction(kMCCPreClinitCheck, (TyIdx)(PTY_void));
-  BaseNode *classInfoNode = builder->CreateExprAddrof(0, classinfo);
+  BaseNode *classInfoNode = builder->CreateExprAddrof(0, classInfo);
   MapleVector<BaseNode*> args(builder->GetCurrentFuncCodeMpAllocator()->Adapter());
   args.push_back(classInfoNode);
   CallNode *callPreclinit = builder->CreateStmtCall(preClinit->GetPuidx(), args);
   func.GetBody()->InsertBefore(clinit, callPreclinit);
 }
 
-void ClassInit::GenPostClassInitCheck(MIRFunction &func, const MIRSymbol &classinfo, StmtNode *clinit) {
+void ClassInit::GenPostClassInitCheck(MIRFunction &func, const MIRSymbol &classInfo, StmtNode *clinit) const {
   MIRFunction *postClinit = builder->GetOrCreateFunction(kMCCPostClinitCheck, (TyIdx)(PTY_void));
-  BaseNode *classInfoNode = builder->CreateExprAddrof(0, classinfo);
+  BaseNode *classInfoNode = builder->CreateExprAddrof(0, classInfo);
   MapleVector<BaseNode*> args(builder->GetCurrentFuncCodeMpAllocator()->Adapter());
   args.push_back(classInfoNode);
-  CallNode *callPostclinit = builder->CreateStmtCall(postClinit->GetPuidx(), args);
-  func.GetBody()->InsertAfter(clinit, callPostclinit);
+  CallNode *callPostClinit = builder->CreateStmtCall(postClinit->GetPuidx(), args);
+  func.GetBody()->InsertAfter(clinit, callPostClinit);
 }
 
 void ClassInit::ProcessFunc(MIRFunction *func) {

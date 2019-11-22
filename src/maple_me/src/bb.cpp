@@ -114,7 +114,7 @@ const PhiNode *BB::PhiofVerStInserted(const VersionSt &versionSt) const {
 
 void BB::InsertPhi(MapleAllocator *alloc, VersionSt *versionSt) {
   PhiNode phiNode(*alloc, *versionSt);
-  for (auto prevIt = pred.begin(); prevIt != pred.end(); prevIt++) {
+  for (auto prevIt = pred.begin(); prevIt != pred.end(); ++prevIt) {
     phiNode.GetPhiOpnds().push_back(versionSt);
   }
   phiList.insert(std::make_pair(versionSt->GetOrigSt(), phiNode));
@@ -153,11 +153,11 @@ void BB::RemoveBBFromPred(BB *bb) {
     ASSERT(phi.second.GetPhiOpnds().size() > index, "index out of range in BB::RemoveBBFromPred");
     phi.second.GetPhiOpnds().erase(phi.second.GetPhiOpnds().cbegin() + index);
   }
-  for (auto &phi : mevarPhiList) {
+  for (auto &phi : meVarPhiList) {
     ASSERT(phi.second->GetOpnds().size() > index, "index out of range in BB::RemoveBBFromPred");
     phi.second->GetOpnds().erase(phi.second->GetOpnds().cbegin() + index);
   }
-  for (auto &phi : meregPhiList) {
+  for (auto &phi : meRegPhiList) {
     ASSERT(phi.second->GetOpnds().size() > index, "index out of range in BB::RemoveBBFromPred");
     phi.second->GetOpnds().erase(phi.second->GetOpnds().cbegin() + index);
   }
@@ -344,11 +344,11 @@ void BB::DumpMeBB(IRMap &irMap) {
 }
 
 void BB::DumpMeVarPaiList(IRMap *irMap) {
-  if (mevarPaiList.empty()) {
+  if (meVarPaiList.empty()) {
     return;
   }
   std::cout << "<<<<<<<<<<<<<<  PAI Node Start >>>>>>>>>>>>>>>>>>\n";
-  for (const auto &pair : mevarPaiList) {
+  for (const auto &pair : meVarPaiList) {
     BB *bb = pair.first;
     std::cout << "Frome BB : " << bb->GetBBId() << '\n';
     for (const auto *stmt : pair.second) {
@@ -360,18 +360,18 @@ void BB::DumpMeVarPaiList(IRMap *irMap) {
 
 void BB::DumpMeVarPhiList(IRMap *irMap) {
   int count = 0;
-  for (const auto &phi : mevarPhiList) {
+  for (const auto &phi : meVarPhiList) {
     phi.second->Dump(irMap);
     int dumpVsyNum = DumpOptions::GetDumpVsyNum();
     if (dumpVsyNum > 0 && ++count >= dumpVsyNum) {
       break;
     }
-    ASSERT(count >= 0, "mevarPhiList too large");
+    ASSERT(count >= 0, "meVarPhiList too large");
   }
 }
 
 void BB::DumpMeRegPhiList(IRMap *irMap) {
-  for (const auto &phi : meregPhiList) {
+  for (const auto &phi : meRegPhiList) {
     phi.second->Dump(irMap);
   }
 }

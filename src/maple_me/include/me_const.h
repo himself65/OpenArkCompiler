@@ -12,15 +12,12 @@
  * FIT FOR A PARTICULAR PURPOSE.
  * See the Mulan PSL v1 for more details.
  */
-/**
- *
- * define consts used by maple_me
- *
- */
+
 #ifndef MAPLE_ME_INCLUDE_ME_CONST_H
 #define MAPLE_ME_INCLUDE_ME_CONST_H
 #include <string>
 
+// define consts used by maple_me
 namespace maple {
 const std::string kStrThisPointer = "_this";
 }

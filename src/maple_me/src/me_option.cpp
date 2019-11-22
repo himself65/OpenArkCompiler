@@ -40,7 +40,7 @@ bool MeOption::lessThrowAlias = true;
 bool MeOption::regreadAtReturn = true;
 
 void MeOption::SplitPhases(const std::string &str, std::unordered_set<std::string> &set) const {
-  std::string s{str};
+  std::string s{ str };
 
   if (s.compare("*") == 0) {
     set.insert(s);
@@ -50,7 +50,7 @@ void MeOption::SplitPhases(const std::string &str, std::unordered_set<std::strin
 }
 
 void MeOption::GetRange(const std::string &str) const {
-  std::string s{str};
+  std::string s{ str };
   size_t comma = s.find_first_of(",", 0);
   if (comma != std::string::npos) {
     range[0] = std::stoul(s.substr(0, comma), nullptr);

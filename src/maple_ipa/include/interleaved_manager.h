@@ -32,15 +32,15 @@ class InterleavedManager {
       : allocator(memPool),
         mirModule(*module),
         phaseManagers(allocator.Adapter()),
-        supportPhaseManagers(allocator.Adapter()),
-        timePasses(false) {}
+        supportPhaseManagers(allocator.Adapter()) {}
 
-  void DumpTimers();
   ~InterleavedManager() {
     if (timePasses) {
       DumpTimers();
     }
   }
+
+  void DumpTimers();
 
   const MapleAllocator *GetMemAllocator() const {
     return &allocator;
@@ -56,7 +56,7 @@ class InterleavedManager {
   void Run();
   void IPARun(MeFuncPhaseManager&);
 
-  const PhaseManager *AccessPhaseManager(int i) const {
+  const PhaseManager *AccessPhaseManager(size_t i) const {
     return phaseManagers.at(i);
   }
 
@@ -68,7 +68,7 @@ class InterleavedManager {
   MapleVector<PhaseManager*> phaseManagers;
   MapleVector<PhaseManager*> supportPhaseManagers;  // Used to check whether a phase is supported and by which manager
   std::string meInput;
-  bool timePasses;
+  bool timePasses = false;
 
   void InitSupportPhaseManagers();
 };

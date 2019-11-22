@@ -150,6 +150,18 @@ class MeFunction : public FuncEmit {
   using BBPtrHolder = MapleVector<BB*>;
 
  public:
+  using value_type = BBPtrHolder::value_type;
+  using size_type = BBPtrHolder::size_type;
+  using difference_type = BBPtrHolder::difference_type;
+  using pointer = BBPtrHolder::pointer;
+  using const_pointer = BBPtrHolder::const_pointer;
+  using reference = BBPtrHolder::reference;
+  using const_reference = BBPtrHolder::const_reference;
+  using iterator = BBPtrHolder::iterator;
+  using const_iterator = BBPtrHolder::const_iterator;
+  using reverse_iterator = BBPtrHolder::reverse_iterator;
+  using const_reverse_iterator = BBPtrHolder::const_reverse_iterator;
+
   MeFunction(MIRModule *mod, MIRFunction *func, MemPool *memPool, MemPool *versMemPool,
              const std::string &fileName)
       : memPool(memPool),
@@ -168,18 +180,6 @@ class MeFunction : public FuncEmit {
         fileName(fileName) {}
 
   ~MeFunction() override = default;
-
-  using value_type = BBPtrHolder::value_type;
-  using size_type = BBPtrHolder::size_type;
-  using difference_type = BBPtrHolder::difference_type;
-  using pointer = BBPtrHolder::pointer;
-  using const_pointer = BBPtrHolder::const_pointer;
-  using reference = BBPtrHolder::reference;
-  using const_reference = BBPtrHolder::const_reference;
-  using iterator = BBPtrHolder::iterator;
-  using const_iterator = BBPtrHolder::const_iterator;
-  using reverse_iterator = BBPtrHolder::reverse_iterator;
-  using const_reverse_iterator = BBPtrHolder::const_reverse_iterator;
 
   iterator begin() {
     return bbVec.begin();
@@ -396,7 +396,7 @@ class MeFunction : public FuncEmit {
   const MapleUnorderedMap<BB*, BB*> &GetEndTryBB2TryBB() const {
     return endTryBB2TryBB;
   }
-  const BB* GetTryBBFromEndTryBB(BB *endTryBB) const {
+  const BB *GetTryBBFromEndTryBB(BB *endTryBB) const {
     auto it = endTryBB2TryBB.find(endTryBB);
     return it == endTryBB2TryBB.end() ? nullptr : it->second;
   }

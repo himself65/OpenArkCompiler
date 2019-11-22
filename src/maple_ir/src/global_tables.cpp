@@ -80,17 +80,20 @@ MIRType *TypeTable::GetOrCreatePointerType(const MIRType &pointTo, PrimType prim
   return GetOrCreatePointerType(pointTo.GetTypeIndex(), primType);
 }
 
-MIRType *TypeTable::GetPointedTypeIfApplicable(MIRType &type) const {
+const MIRType *TypeTable::GetPointedTypeIfApplicable(MIRType &type) const {
   if (type.GetKind() != kTypePointer) {
     return &type;
   }
   auto &ptrType = static_cast<MIRPtrType&>(type);
   return GetTypeFromTyIdx(ptrType.GetPointedTyIdx());
 }
+MIRType *TypeTable::GetPointedTypeIfApplicable(MIRType &type) {
+  return const_cast<MIRType*>(const_cast<const TypeTable*>(this)->GetPointedTypeIfApplicable(type));
+}
 
 MIRArrayType *TypeTable::GetOrCreateArrayType(const MIRType &elem, uint8 dim, const uint32 *sizeArray) {
   std::vector<uint32> sizeVector;
-  for (uint8 i = 0; i < dim; ++i) {
+  for (size_t i = 0; i < dim; ++i) {
     sizeVector.push_back(sizeArray != nullptr ? sizeArray[i] : 0);
   }
   MIRArrayType arrayType(elem.GetTypeIndex(), sizeVector);
@@ -119,9 +122,9 @@ MIRType *TypeTable::GetOrCreateJarrayType(const MIRType &elem) {
   return typeTable.at(tyIdx.GetIdx());
 }
 
-MIRType *TypeTable::GetOrCreateFunctionType(MIRModule &module, TyIdx retTyidx, const std::vector<TyIdx> &vecType,
+MIRType *TypeTable::GetOrCreateFunctionType(MIRModule &module, TyIdx retTyIdx, const std::vector<TyIdx> &vecType,
                                             const std::vector<TypeAttrs> &vecAttrs, bool isVarg, bool isSimpCreate) {
-  auto *funcType = module.GetMemPool()->New<MIRFuncType>(retTyidx, vecType, vecAttrs);
+  auto *funcType = module.GetMemPool()->New<MIRFuncType>(retTyIdx, vecType, vecAttrs);
   funcType->SetVarArgs(isVarg);
   if (isSimpCreate) {
     return funcType;
@@ -132,43 +135,43 @@ MIRType *TypeTable::GetOrCreateFunctionType(MIRModule &module, TyIdx retTyidx, c
 }
 
 MIRType *TypeTable::GetOrCreateStructOrUnion(const std::string &name, const FieldVector &fields,
-                                             const FieldVector &prntFields, MIRModule &module, bool forStruct) {
-  GStrIdx stridx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(name);
-  MIRStructType type(forStruct ? kTypeStruct : kTypeUnion, stridx);
+                                             const FieldVector &printFields, MIRModule &module, bool forStruct) {
+  GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(name);
+  MIRStructType type(forStruct ? kTypeStruct : kTypeUnion, strIdx);
   type.GetFields() = fields;
-  type.GetParentFields() = prntFields;
-  TyIdx tyidx = GetOrCreateMIRType(&type);
+  type.GetParentFields() = printFields;
+  TyIdx tyIdx = GetOrCreateMIRType(&type);
   // Global?
-  module.GetTypeNameTab()->SetGStrIdxToTyIdx(stridx, tyidx);
-  module.PushbackTypeDefOrder(stridx);
-  ASSERT(tyidx.GetIdx() < typeTable.size(), "index out of range in TypeTable::GetOrCreateStructOrUnion");
-  return typeTable.at(tyidx.GetIdx());
+  module.GetTypeNameTab()->SetGStrIdxToTyIdx(strIdx, tyIdx);
+  module.PushbackTypeDefOrder(strIdx);
+  ASSERT(tyIdx.GetIdx() < typeTable.size(), "index out of range in TypeTable::GetOrCreateStructOrUnion");
+  return typeTable.at(tyIdx.GetIdx());
 }
 
 void TypeTable::PushIntoFieldVector(FieldVector &fields, const std::string &name, MIRType &type) {
-  GStrIdx stridx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(name);
-  fields.push_back(FieldPair(stridx, TyIdxFieldAttrPair(type.GetTypeIndex(), FieldAttrs())));
+  GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(name);
+  fields.push_back(FieldPair(strIdx, TyIdxFieldAttrPair(type.GetTypeIndex(), FieldAttrs())));
 }
 
 MIRType *TypeTable::GetOrCreateClassOrInterface(const std::string &name, MIRModule &module, bool forClass) {
-  GStrIdx stridx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(name);
-  TyIdx tyidx = module.GetTypeNameTab()->GetTyIdxFromGStrIdx(stridx);
-  if (!tyidx.GetIdx()) {
+  GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(name);
+  TyIdx tyIdx = module.GetTypeNameTab()->GetTyIdxFromGStrIdx(strIdx);
+  if (!tyIdx.GetIdx()) {
     if (forClass) {
-      MIRClassType type(kTypeClassIncomplete, stridx);  // for class type
-      tyidx = GetOrCreateMIRType(&type);
+      MIRClassType type(kTypeClassIncomplete, strIdx);  // for class type
+      tyIdx = GetOrCreateMIRType(&type);
     } else {
-      MIRInterfaceType type(kTypeInterfaceIncomplete, stridx);  // for interface type
-      tyidx = GetOrCreateMIRType(&type);
+      MIRInterfaceType type(kTypeInterfaceIncomplete, strIdx);  // for interface type
+      tyIdx = GetOrCreateMIRType(&type);
     }
-    module.PushbackTypeDefOrder(stridx);
-    module.GetTypeNameTab()->SetGStrIdxToTyIdx(stridx, tyidx);
-    if (typeTable[tyidx.GetIdx()]->GetNameStrIdx() == 0) {
-      typeTable[tyidx.GetIdx()]->SetNameStrIdx(stridx);
+    module.PushbackTypeDefOrder(strIdx);
+    module.GetTypeNameTab()->SetGStrIdxToTyIdx(strIdx, tyIdx);
+    if (typeTable[tyIdx.GetIdx()]->GetNameStrIdx() == 0) {
+      typeTable[tyIdx.GetIdx()]->SetNameStrIdx(strIdx);
     }
   }
-  ASSERT(tyidx.GetIdx() < typeTable.size(), "index out of range in TypeTable::GetOrCreateClassOrInterface");
-  return typeTable.at(tyidx.GetIdx());
+  ASSERT(tyIdx.GetIdx() < typeTable.size(), "index out of range in TypeTable::GetOrCreateClassOrInterface");
+  return typeTable.at(tyIdx.GetIdx());
 }
 
 void TypeTable::AddFieldToStructType(MIRStructType &structType, const std::string &fieldName, MIRType &fieldType) {
@@ -191,46 +194,45 @@ void FPConstTable::PostInit() {
   minusZeroDoubleConst = new MIRDoubleConst(-0.0, typeDouble);
 }
 
-MIRFloatConst *FPConstTable::GetOrCreateFloatConst(float fval) {
-  if (std::isnan(fval)) {
+MIRFloatConst *FPConstTable::GetOrCreateFloatConst(float floatVal) {
+  if (std::isnan(floatVal)) {
     return nanFloatConst;
   }
-  if (std::isinf(fval)) {
-    return (fval < 0) ? minusInfFloatConst : infFloatConst;
+  if (std::isinf(floatVal)) {
+    return (floatVal < 0) ? minusInfFloatConst : infFloatConst;
   }
-  if (fval == 0.0 && std::signbit(fval)) {
+  if (floatVal == 0.0 && std::signbit(floatVal)) {
     return minusZeroFloatConst;
   }
-  const auto it = floatConstTable.find(fval);
+  const auto it = floatConstTable.find(floatVal);
   if (it == floatConstTable.cend()) {
     // create a new one
-    auto *fconst = new MIRFloatConst(fval, *GlobalTables::GetTypeTable().GetTypeFromTyIdx(TyIdx{ PTY_f32 }));
-    floatConstTable[fval] = fconst;
-    return fconst;
-  } else {
-    return it->second;
+    auto *floatConst = new MIRFloatConst(floatVal, *GlobalTables::GetTypeTable().GetTypeFromTyIdx(TyIdx{ PTY_f32 }));
+    floatConstTable[floatVal] = floatConst;
+    return floatConst;
   }
+  return it->second;
 }
 
-MIRDoubleConst *FPConstTable::GetOrCreateDoubleConst(double fval) {
-  if (std::isnan(fval)) {
+MIRDoubleConst *FPConstTable::GetOrCreateDoubleConst(double floatVal) {
+  if (std::isnan(floatVal)) {
     return nanDoubleConst;
   }
-  if (std::isinf(fval)) {
-    return (fval < 0) ? minusInfDoubleConst : infDoubleConst;
+  if (std::isinf(floatVal)) {
+    return (floatVal < 0) ? minusInfDoubleConst : infDoubleConst;
   }
-  if (fval == 0.0 && std::signbit(fval)) {
+  if (floatVal == 0.0 && std::signbit(floatVal)) {
     return minusZeroDoubleConst;
   }
-  const auto it = doubleConstTable.find(fval);
+  const auto it = doubleConstTable.find(floatVal);
   if (it == doubleConstTable.cend()) {
     // create a new one
-    MIRDoubleConst *dconst = new MIRDoubleConst(fval, *GlobalTables::GetTypeTable().GetTypeFromTyIdx((TyIdx)PTY_f64));
-    doubleConstTable[fval] = dconst;
-    return dconst;
-  } else {
-    return it->second;
+    auto *doubleConst = new MIRDoubleConst(floatVal,
+                                           *GlobalTables::GetTypeTable().GetTypeFromTyIdx((TyIdx)PTY_f64));
+    doubleConstTable[floatVal] = doubleConst;
+    return doubleConst;
   }
+  return it->second;
 }
 
 FPConstTable::~FPConstTable() {

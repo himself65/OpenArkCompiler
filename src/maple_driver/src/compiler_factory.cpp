@@ -30,7 +30,7 @@ CompilerFactory &CompilerFactory::GetInstance() {
   return instance;
 }
 
-CompilerFactory::CompilerFactory() : theModule(nullptr) {
+CompilerFactory::CompilerFactory() {
   // Supported compilers
   ADD_COMPILER("jbc2mpl" ,Jbc2MplCompiler)
   ADD_COMPILER("me" ,MapleCombCompiler)
@@ -66,7 +66,7 @@ void CompilerFactory::Insert(const std::string &name, Compiler *value) {
 ErrorCode CompilerFactory::DeleteTmpFiles(const MplOptions &mplOptions, const std::vector<std::string> &tempFiles,
                                           const std::unordered_set<std::string> &finalOutputs) const {
   int ret = 0;
-  for (auto tmpFile : tempFiles) {
+  for (const std::string &tmpFile : tempFiles) {
     bool isSave = false;
     for (auto saveFile : mplOptions.GetSaveFiles()) {
       if (!saveFile.empty() && std::regex_match(tmpFile, std::regex(StringUtils::Replace(saveFile, "*", ".*?")))) {
@@ -84,12 +84,12 @@ ErrorCode CompilerFactory::DeleteTmpFiles(const MplOptions &mplOptions, const st
 
 ErrorCode CompilerFactory::Compile(const MplOptions &mplOptions) {
   std::vector<Compiler*> compilers;
-  auto ret = compilerSelector->Select(supportedCompilers, mplOptions, compilers);
+  ErrorCode ret = compilerSelector->Select(supportedCompilers, mplOptions, compilers);
   if (ret != ErrorCode::kErrorNoError) {
     return ret;
   }
 
-  for (auto compiler : compilers) {
+  for (auto *compiler : compilers) {
     if (compiler == nullptr) {
       LogInfo::MapleLogger() << "Failed! Compiler is null." << "\n";
       return ErrorCode::kErrorCompileFail;
@@ -101,8 +101,8 @@ ErrorCode CompilerFactory::Compile(const MplOptions &mplOptions) {
   }
 
   if (!mplOptions.HasSetSaveTmps() || !mplOptions.GetSaveFiles().empty()) {
-    auto tmpFiles = std::vector<std::string>();
-    for (auto compiler : compilers) {
+    std::vector<std::string> tmpFiles;
+    for (auto *compiler : compilers) {
       compiler->GetTmpFilesToDelete(mplOptions, tmpFiles);
     }
     ret = DeleteTmpFiles(mplOptions, tmpFiles, compilers.at(compilers.size() - 1)->GetFinalOutputs(mplOptions));

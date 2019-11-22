@@ -27,11 +27,10 @@ class MeAliasClass : public AliasClass {
         func(func), enabledDebug(debug) {}
 
   virtual ~MeAliasClass() = default;
+
   void DoAliasAnalysis();
 
  private:
-  MeFunction &func;
-  bool enabledDebug;
   BB *GetBB(BBId id) override {
     if (func.GetAllBBs().size() < id) {
       return nullptr;
@@ -44,6 +43,9 @@ class MeAliasClass : public AliasClass {
   }
 
   bool HasWriteToStaticFinal() const;
+
+  MeFunction &func;
+  bool enabledDebug;
 };
 
 class MeDoAliasClass : public MeFuncPhase {
@@ -51,7 +53,9 @@ class MeDoAliasClass : public MeFuncPhase {
   explicit MeDoAliasClass(MePhaseID id) : MeFuncPhase(id) {}
 
   virtual ~MeDoAliasClass() = default;
+
   AnalysisResult *Run(MeFunction *func, MeFuncResultMgr *funcResMgr, ModuleResultMgr *moduleResMgr) override;
+
   std::string PhaseName() const override {
     return "aliasclass";
   }

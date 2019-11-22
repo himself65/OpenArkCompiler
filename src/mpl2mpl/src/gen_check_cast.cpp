@@ -18,6 +18,12 @@
 #include "reflection_analysis.h"
 #include "mir_lower.h"
 
+namespace {
+constexpr char kMCCReflectThrowCastException[] = "MCC_Reflect_ThrowCastException";
+constexpr char kMCCReflectCheckCastingNoArray[] = "MCC_Reflect_Check_Casting_NoArray";
+constexpr char kMCCReflectCheckCastingArray[] = "MCC_Reflect_Check_Casting_Array";
+} // namespace
+
 // This phase does two things:
 // #1 implement the opcode check-cast vx, type_id
 //    according to the check-cast definition:
@@ -27,7 +33,6 @@
 //    in our case check if object can be cast or insert MCC_Reflect_ThrowCastException
 //    before the stmt.
 // #2 optimise instance-of && cast
-
 namespace maple {
 CheckCastGenerator::CheckCastGenerator(MIRModule *mod, KlassHierarchy *kh, bool dump)
     : FuncOptimizeImpl(mod, kh, dump) {
@@ -55,7 +60,7 @@ void CheckCastGenerator::InitFuncs() {
 
 MIRSymbol *CheckCastGenerator::GetOrCreateClassInfoSymbol(const std::string &className) {
   std::string classInfoName = CLASSINFO_PREFIX_STR + className;
-  MIRSymbol *classInfoSymbol = builder->GetGlobalDecl(classInfoName.c_str());
+  MIRSymbol *classInfoSymbol = builder->GetGlobalDecl(classInfoName);
   if (classInfoSymbol == nullptr) {
     GStrIdx gStrIdx = GlobalTables::GetStrTable().GetStrIdxFromName(className);
     MIRType *classType =
@@ -63,12 +68,12 @@ MIRSymbol *CheckCastGenerator::GetOrCreateClassInfoSymbol(const std::string &cla
     MIRStorageClass sclass = (classType != nullptr && static_cast<MIRClassType*>(classType)->IsLocal()) ? kScGlobal
                                                                                                         : kScExtern;
     // Creating global symbol needs synchronization.
-    classInfoSymbol = builder->CreateGlobalDecl(classInfoName.c_str(), *GlobalTables::GetTypeTable().GetPtr(), sclass);
+    classInfoSymbol = builder->CreateGlobalDecl(classInfoName, *GlobalTables::GetTypeTable().GetPtr(), sclass);
   }
   return classInfoSymbol;
 }
 
-void CheckCastGenerator::GenCheckCast(BaseNode &stmt) {
+void CheckCastGenerator::GenCheckCast(StmtNode &stmt) {
   // Handle the special case like (Type)null, we don't need a checkcast.
   if (stmt.GetOpCode() == OP_intrinsiccallwithtypeassigned) {
     auto *callNode = static_cast<IntrinsiccallNode*>(&stmt);
@@ -87,7 +92,7 @@ void CheckCastGenerator::GenCheckCast(BaseNode &stmt) {
         MIRPreg *mirPreg = currFunc->GetPregTab()->PregFromPregIdx(pregIdx);
         assignReturnTypeNode = builder->CreateStmtRegassign(mirPreg->GetPrimType(), pregIdx, opnd);
       }
-      currFunc->GetBody()->ReplaceStmt1WithStmt2(static_cast<StmtNode*>(&stmt), assignReturnTypeNode);
+      currFunc->GetBody()->ReplaceStmt1WithStmt2(&stmt, assignReturnTypeNode);
       return;
     }
   }
@@ -99,8 +104,8 @@ void CheckCastGenerator::GenCheckCast(BaseNode &stmt) {
   Klass *checkKlass = klassHierarchy->GetKlassFromTyIdx(static_cast<MIRPtrType*>(checkType)->GetPointedTyIdx());
 
   {
-    if (checkKlass != nullptr && strcmp("", checkKlass->GetKlassName().c_str())) {
-      if (!strcmp(checkKlass->GetKlassName().c_str(), NameMangler::kJavaLangObjectStr)) {
+    if ((checkKlass != nullptr) && (checkKlass->GetKlassName() != "")) {
+      if (checkKlass->GetKlassName() == NameMangler::kJavaLangObjectStr) {
         const size_t callNodeNopndSize1 = callNode->GetNopndSize();
         CHECK_FATAL(callNodeNopndSize1 > 0, "container check");
         if (callNode->GetNopndAt(0)->GetPrimType() != PTY_ref && callNode->GetNopndAt(0)->GetPrimType() != PTY_ptr) {
@@ -112,17 +117,17 @@ void CheckCastGenerator::GenCheckCast(BaseNode &stmt) {
           args.push_back(callNode->GetNopndAt(0));
           args.push_back(builder->CreateIntConst(0, PTY_ptr));
           StmtNode *dassignStmt = builder->CreateStmtCall(throwCastException->GetPuidx(), args);
-          currFunc->GetBody()->InsertBefore(static_cast<StmtNode*>(&stmt), dassignStmt);
+          currFunc->GetBody()->InsertBefore(&stmt, dassignStmt);
         }
       } else {
         MIRSymbol *classSt = GetOrCreateClassInfoSymbol(checkKlass->GetKlassName());
         BaseNode *valueExpr = builder->CreateExprAddrof(0, *classSt);
-        BaseNode *nullPtr = builder->CreateIntConst(0, PTY_ptr);
+        BaseNode *nullPtrConst = builder->CreateIntConst(0, PTY_ptr);
         const size_t callNodeNopndSize2 = callNode->GetNopndSize();
         CHECK_FATAL(callNodeNopndSize2 > 0, "container check");
         BaseNode *cond =
             builder->CreateExprCompare(OP_ne, *GlobalTables::GetTypeTable().GetUInt1(),
-                                       *GlobalTables::GetTypeTable().GetPtr(), callNode->GetNopndAt(0), nullPtr);
+                                       *GlobalTables::GetTypeTable().GetPtr(), callNode->GetNopndAt(0), nullPtrConst);
         auto *ifStmt = static_cast<IfStmtNode*>(builder->CreateStmtIf(cond));
         MIRType *mVoidPtr = GlobalTables::GetTypeTable().GetVoidPtr();
         CHECK_FATAL(mVoidPtr != nullptr, "builder->GetVoidPtr() is null in CheckCastGenerator::GenCheckCast");
@@ -137,7 +142,7 @@ void CheckCastGenerator::GenCheckCast(BaseNode &stmt) {
         StmtNode *dassignStmt = builder->CreateStmtCall(checkCastingNoArray->GetPuidx(), args);
         innerIfStmt->GetThenPart()->AddStatement(dassignStmt);
         ifStmt->GetThenPart()->AddStatement(innerIfStmt);
-        currFunc->GetBody()->InsertBefore(static_cast<StmtNode*>(&stmt), ifStmt);
+        currFunc->GetBody()->InsertBefore(&stmt, ifStmt);
       }
     } else {
       MIRType *pointedType =
@@ -148,7 +153,7 @@ void CheckCastGenerator::GenCheckCast(BaseNode &stmt) {
         std::string arrayName = jarrayType->GetJavaName();
         int dim = 0;
         while (arrayName[dim] == 'A') {
-          dim++;
+          ++dim;
         }
         MIRSymbol *elemClassSt = nullptr;
         std::string elementName = arrayName.substr(dim, arrayName.size() - dim);
@@ -158,16 +163,16 @@ void CheckCastGenerator::GenCheckCast(BaseNode &stmt) {
             elementName == "S" || elementName == "J" || elementName == "D" || elementName == "Z" ||
             elementName == "V") {
           std::string primClassinfoName = PRIMITIVECLASSINFO_PREFIX_STR + elementName;
-          elemClassSt = builder->GetGlobalDecl(primClassinfoName.c_str());
+          elemClassSt = builder->GetGlobalDecl(primClassinfoName);
           if (elemClassSt == nullptr) {
-            elemClassSt = builder->CreateGlobalDecl(primClassinfoName.c_str(), *GlobalTables::GetTypeTable().GetPtr());
+            elemClassSt = builder->CreateGlobalDecl(primClassinfoName, *GlobalTables::GetTypeTable().GetPtr());
           }
         } else {
           elemClassSt = GetOrCreateClassInfoSymbol(elementName);
         }
         BaseNode *valueExpr = builder->CreateExprAddrof(0, *elemClassSt);
-        UStrIdx stridx = GlobalTables::GetUStrTable().GetOrCreateStrIdxFromName(jarrayType->GetJavaName());
-        ConststrNode *signatureNode = currFunc->GetCodeMempool()->New<ConststrNode>(stridx);
+        UStrIdx strIdx = GlobalTables::GetUStrTable().GetOrCreateStrIdxFromName(jarrayType->GetJavaName());
+        auto *signatureNode = currFunc->GetCodeMempool()->New<ConststrNode>(strIdx);
         signatureNode->SetPrimType(PTY_ptr);
         MapleVector<BaseNode*> opnds(currFunc->GetCodeMempoolAllocator().Adapter());
         opnds.push_back(valueExpr);
@@ -177,7 +182,7 @@ void CheckCastGenerator::GenCheckCast(BaseNode &stmt) {
         opnds.push_back(builder->CreateIntConst(dim, PTY_ptr));
         opnds.push_back(signatureNode);
         StmtNode *dassignStmt = builder->CreateStmtCall(checkCastingArray->GetPuidx(), opnds);
-        currFunc->GetBody()->InsertBefore(static_cast<StmtNode*>(&stmt), dassignStmt);
+        currFunc->GetBody()->InsertBefore(&stmt, dassignStmt);
       } else {
         MIRTypeKind kd = pointedType->GetKind();
         if (kd == kTypeStructIncomplete || kd == kTypeClassIncomplete || kd == kTypeInterfaceIncomplete) {
@@ -235,7 +240,7 @@ void CheckCastGenerator::GenCheckCast(BaseNode &stmt) {
   ASSERT((fromType->GetPrimType() == maple::PTY_ptr || fromType->GetPrimType() == maple::PTY_ref),
          "unknown fromType! check it!");
   ASSERT(GlobalTables::GetTypeTable().GetTypeFromTyIdx(callNode->GetTyIdx())->GetPrimType() == maple::PTY_ptr ||
-          GlobalTables::GetTypeTable().GetTypeFromTyIdx(callNode->GetTyIdx())->GetPrimType() == maple::PTY_ref,
+         GlobalTables::GetTypeTable().GetTypeFromTyIdx(callNode->GetTyIdx())->GetPrimType() == maple::PTY_ref,
          "unknown fromType! check it!");
   CHECK_FATAL(!callNode->GetReturnVec().empty(), "container check");
   CallReturnPair callReturnPair = callNode->GetReturnVec()[0];
@@ -247,7 +252,7 @@ void CheckCastGenerator::GenCheckCast(BaseNode &stmt) {
     MIRPreg *mirPreg = currFunc->GetPregTab()->PregFromPregIdx(pregIdx);
     assignReturnTypeNode = builder->CreateStmtRegassign(mirPreg->GetPrimType(), pregIdx, opnd);
   }
-  currFunc->GetBody()->ReplaceStmt1WithStmt2(static_cast<StmtNode*>(&stmt), assignReturnTypeNode);
+  currFunc->GetBody()->ReplaceStmt1WithStmt2(&stmt, assignReturnTypeNode);
 }
 
 void CheckCastGenerator::GenAllCheckCast() {

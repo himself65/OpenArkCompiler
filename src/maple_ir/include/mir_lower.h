@@ -19,14 +19,20 @@
 #include "opcodes.h"
 
 namespace maple {
-enum MirLowerPhase : uint8 { kLowerUnder, kLowerMe, kLowerExpandArray, kLowerBe, kLowerCG };
+enum MirLowerPhase : uint8 {
+  kLowerUnder,
+  kLowerMe,
+  kLowerExpandArray,
+  kLowerBe,
+  kLowerCG
+};
 
-#define LOWERME (1U << kLowerMe)
-#define LOWEREXPANDARRAY (1U << kLowerExpandArray)
-#define LOWERBE (1U << kLowerBe)
-#define LOWERCG (1U << kLowerCG)
+constexpr uint32 kShiftLowerMe = 1U << kLowerMe;
+constexpr uint32 kShiftLowerExpandArray = 1U << kLowerExpandArray;
+constexpr uint32 kShiftLowerBe = 1U << kLowerBe;
+constexpr uint32 kShiftLowerCG = 1U << kLowerCG;
 // check if a block node ends with an unconditional jump
-inline bool OpCodeNoFallThrough(const Opcode opCode) {
+inline bool OpCodeNoFallThrough(Opcode opCode) {
   return opCode == OP_goto || opCode == OP_return || opCode == OP_switch || opCode == OP_throw || opCode == OP_gosub ||
          opCode == OP_retsub;
 }
@@ -39,7 +45,7 @@ class MIRLower {
  public:
   static const std::set<std::string> kSetArrayHotFunc;
 
-  MIRLower(MIRModule &mod, MIRFunction *f) : mirModule(mod), mirFunc(f), mirBuilder(nullptr), lowerPhase(0) {}
+  MIRLower(MIRModule &mod, MIRFunction *f) : mirModule(mod), mirFunc(f) {}
 
   virtual ~MIRLower() = default;
 
@@ -59,7 +65,6 @@ class MIRLower {
   void LowerBrCondition(BlockNode &block);
   void LowerFunc(MIRFunction &func);
   void ExpandArrayMrt(MIRFunction &func);
-  static bool ShouldOptArrayMrt(const MIRFunction &func);
   IfStmtNode *ExpandArrayMrtIfBlock(IfStmtNode &node);
   WhileStmtNode *ExpandArrayMrtWhileBlock(WhileStmtNode &node);
   DoloopNode *ExpandArrayMrtDoloopBlock(DoloopNode &node);
@@ -67,42 +72,44 @@ class MIRLower {
   BlockNode *ExpandArrayMrtBlock(BlockNode &block);
   void AddArrayMrtMpl(BaseNode &exp, BlockNode &newblk);
   void SetLowerME() {
-    lowerPhase |= LOWERME;
+    lowerPhase |= kShiftLowerMe;
   }
 
   void SetLowerExpandArray() {
-    lowerPhase |= LOWEREXPANDARRAY;
+    lowerPhase |= kShiftLowerExpandArray;
   }
 
   void SetLowerBE() {
-    lowerPhase |= LOWERBE;
+    lowerPhase |= kShiftLowerBe;
   }
 
   void SetLowerCG() {
-    lowerPhase |= LOWERCG;
+    lowerPhase |= kShiftLowerCG;
   }
 
   bool IsLowerME() const {
-    return lowerPhase & LOWERME;
+    return lowerPhase & kShiftLowerMe;
   }
 
   bool IsLowerExpandArray() const {
-    return lowerPhase & LOWEREXPANDARRAY;
+    return lowerPhase & kShiftLowerExpandArray;
   }
 
   bool IsLowerBE() const {
-    return lowerPhase & LOWERBE;
+    return lowerPhase & kShiftLowerBe;
   }
 
   bool IsLowerCG() const {
-    return lowerPhase & LOWERCG;
+    return lowerPhase & kShiftLowerCG;
   }
+
+  static bool ShouldOptArrayMrt(const MIRFunction &func);
 
  private:
   MIRModule &mirModule;
   MIRFunction *mirFunc;
-  MIRBuilder *mirBuilder;
-  uint32 lowerPhase;
+  MIRBuilder *mirBuilder = nullptr;
+  uint32 lowerPhase = 0;
   LabelIdx CreateCondGotoStmt(Opcode op, BlockNode &blk, const IfStmtNode &ifStmt);
   void CreateBrFalseStmt(BlockNode &blk, const IfStmtNode &ifStmt);
   void CreateBrTrueStmt(BlockNode &blk, const IfStmtNode &ifStmt);

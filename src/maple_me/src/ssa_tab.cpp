@@ -27,23 +27,25 @@
 namespace maple {
 BaseNode *SSATab::CreateSSAExpr(BaseNode &expr) {
   if (expr.GetOpCode() == OP_addrof || expr.GetOpCode() == OP_dread) {
-    AddrofNode &addrofNode = static_cast<AddrofNode&>(expr);
+    auto &addrofNode = static_cast<AddrofNode&>(expr);
     AddrofSSANode *ssaNode = mirModule.CurFunction()->GetCodeMemPool()->New<AddrofSSANode>(&addrofNode);
     MIRSymbol *st = mirModule.CurFunction()->GetLocalOrGlobalSymbol(ssaNode->GetStIdx());
     OriginalSt *ost = FindOrCreateSymbolOriginalSt(*st, mirModule.CurFunction()->GetPuidx(), ssaNode->GetFieldID());
     VersionSt *vst = versionStTable.FindOrCreateVersionSt(ost, kInitVersion);
     ssaNode->SetSSAVar(vst);
     return ssaNode;
-  } else if (expr.GetOpCode() == OP_regread) {
-    RegreadNode &regReadNode = static_cast<RegreadNode&>(expr);
+  }
+  if (expr.GetOpCode() == OP_regread) {
+    auto &regReadNode = static_cast<RegreadNode&>(expr);
     RegreadSSANode *ssaNode = mirModule.CurFunction()->GetCodeMemPool()->New<RegreadSSANode>(&regReadNode);
     OriginalSt *ost =
         originalStTable.FindOrCreatePregOriginalSt(ssaNode->GetRegIdx(), mirModule.CurFunction()->GetPuidx());
     VersionSt *vst = versionStTable.FindOrCreateVersionSt(ost, kInitVersion);
     ssaNode->SetSSAVar(vst);
     return ssaNode;
-  } else if (expr.GetOpCode() == OP_iread) {
-    IreadNode &ireadNode = static_cast<IreadNode&>(expr);
+  }
+  if (expr.GetOpCode() == OP_iread) {
+    auto &ireadNode = static_cast<IreadNode&>(expr);
     IreadSSANode *ssaNode = mirModule.CurFunction()->GetCodeMempool()->New<IreadSSANode>(
         mirModule.CurFuncCodeMemPoolAllocator(), &ireadNode);
     BaseNode *newOpnd = CreateSSAExpr(*expr.Opnd(0));
@@ -51,19 +53,18 @@ BaseNode *SSATab::CreateSSAExpr(BaseNode &expr) {
       ssaNode->SetOpnd(newOpnd, 0);
     }
     return ssaNode;
-  } else {
-    for (size_t i = 0; i < expr.NumOpnds(); i++) {
-      BaseNode *newOpnd = CreateSSAExpr(*expr.Opnd(i));
-      if (newOpnd != nullptr) {
-        expr.SetOpnd(newOpnd, i);
-      }
-    }
-    return nullptr;
   }
+  for (size_t i = 0; i < expr.NumOpnds(); ++i) {
+    BaseNode *newOpnd = CreateSSAExpr(*expr.Opnd(i));
+    if (newOpnd != nullptr) {
+      expr.SetOpnd(newOpnd, i);
+    }
+  }
+  return nullptr;
 }
 
 void SSATab::CreateSSAStmt(StmtNode &stmt, const BB &curbb) {
-  for (size_t i = 0; i < stmt.NumOpnds(); i++) {
+  for (size_t i = 0; i < stmt.NumOpnds(); ++i) {
     BaseNode *newOpnd = CreateSSAExpr(*stmt.Opnd(i));
     if (newOpnd != nullptr) {
       stmt.SetOpnd(newOpnd, i);
@@ -116,7 +117,7 @@ void SSATab::CreateSSAStmt(StmtNode &stmt, const BB &curbb) {
             stmtsSSAPart.GetSSAPartMp()->New<MayDefMayUseMustDefPart>(&stmtsSSAPart.GetSSAPartAlloc());
         stmtsSSAPart.SetSSAPartOf(stmt, theSSAPart);
         // insert the mustdefs
-        CallReturnVector *nrets = static_cast<NaryStmtNode&>(stmt).GetCallReturnVector();
+        auto *nrets = static_cast<NaryStmtNode&>(stmt).GetCallReturnVector();
         CHECK_FATAL(nrets != nullptr, "CreateSSAStmt: failed to retrieve call return vector");
         if (nrets->empty()) {
           return;
@@ -140,6 +141,5 @@ void SSATab::CreateSSAStmt(StmtNode &stmt, const BB &curbb) {
       }
     }
   }
-  return;
 }
 }  // namespace maple

@@ -136,12 +136,19 @@ class MIRFunction {
   MIRType *GetNthParamType(size_t i);
   const TypeAttrs &GetNthParamAttr(size_t i) const {
     ASSERT(i < funcType->GetParamAttrsList().size(), "array index out of range");
-    return funcType->GetParamAttrsList()[i];
+    return funcType->GetNthParamAttrs(i);
   }
+
   void SetNthParamAttr(size_t i, TypeAttrs attrs) {
     ASSERT(i < funcType->GetParamAttrsList().size(), "array index out of range");
-    funcType->GetParamAttrsList()[i] = attrs;
+    funcType->SetNthParamAttrs(i, attrs);
   }
+
+  void SetNthParamAttrKind(size_t i, AttrKind x) const {
+    CHECK_FATAL(i < funcType->GetParamAttrsList().size(), "array index out of range");
+    funcType->GetNthParamAttrs(i).SetAttr(x);
+  }
+
   void AddArgument(MIRSymbol *symbol) {
     formals.push_back(symbol);
     funcType->GetParamTypeList().push_back(symbol->GetTyIdx());
@@ -344,7 +351,7 @@ class MIRFunction {
   }
 
   uint32 GetFormalIndex(const MIRSymbol *symbol) const {
-    for (size_t i = 0; i < formals.size(); i++)
+    for (size_t i = 0; i < formals.size(); ++i)
       if (formals[i] == symbol) {
         return i;
       }
@@ -698,8 +705,8 @@ class MIRFunction {
     return codeMemPool;
   }
 
-  void SetCodeMemPool(MemPool *currCodemp) {
-    codeMemPool = currCodemp;
+  void SetCodeMemPool(MemPool *currCodeMemPool) {
+    codeMemPool = currCodeMemPool;
   }
 
   MapleAllocator &GetCodeMPAllocator() {

@@ -22,9 +22,9 @@
 #include "mempool_allocator.h"
 #include "option.h"
 
+namespace maple {
 using PhaseID = int;
 
-namespace maple {
 // base class of analysisPhase's result
 class AnalysisResult {
  public:
@@ -32,6 +32,8 @@ class AnalysisResult {
     ASSERT(memPoolParam != nullptr, "memPoolParam is null in AnalysisResult::AnalysisResult");
     memPool = memPoolParam;
   }
+
+  virtual ~AnalysisResult() = default;
 
   MemPool *GetMempool() {
     return memPool;
@@ -41,8 +43,6 @@ class AnalysisResult {
     memPoolCtrler.DeleteMemPool(memPool);
   }
 
-  virtual ~AnalysisResult() = default;
-
  private:
   MemPool *memPool;
 };
@@ -50,6 +50,8 @@ class AnalysisResult {
 class Phase {
  public:
   Phase() = default;
+
+  virtual ~Phase() = default;
 
   virtual std::string PhaseName() const {
     ASSERT(false, "The base Phase::PhaseName should not be called");
@@ -80,8 +82,6 @@ class Phase {
     memPools.shrink_to_fit();
   }
 
-  virtual ~Phase() = default;
-
  private:
   unsigned int memPoolCount = 0;
   std::vector<MemPool*> memPools;
@@ -91,10 +91,9 @@ template <typename UnitIR, typename PhaseIDT, typename PhaseT>
 class AnalysisResultManager {
  public:
   explicit AnalysisResultManager(MapleAllocator *alloc)
-      : analysisResults(std::less<analysisResultKey>(), alloc->Adapter()),
-        analysisPhases(std::less<PhaseIDT>(), alloc->Adapter()) {
-    allocator = alloc;
-  }
+      : allocator(alloc),
+        analysisResults(alloc->Adapter()),
+        analysisPhases(alloc->Adapter()) {}
 
   virtual ~AnalysisResultManager() {
     // global variable mirModule which use same mempool control is not delete yet
@@ -110,19 +109,19 @@ class AnalysisResultManager {
     }
 
     PhaseT *anaPhase = GetAnalysisPhase(id);
-    if (std::string(anaPhase->PhaseName()) != Options::skipPhase) {
-      AnalysisResult *result = anaPhase->Run(ir, this);
-      // allow invoke phases whose return value is nullptr using GetAnalysisResult
-      if (result == nullptr) {
-        anaPhase->ReleaseMemPool(nullptr);
-        return nullptr;
-      }
-      anaPhase->ReleaseMemPool(result->GetMempool());
-      analysisResults[key] = result; // add r to analysisResults
-      return result;
-    } else {
+    if (std::string(anaPhase->PhaseName()) == Options::skipPhase) {
       return nullptr;
     }
+
+    AnalysisResult *result = anaPhase->Run(ir, this);
+    // allow invoke phases whose return value is nullptr using GetAnalysisResult
+    if (result == nullptr) {
+      anaPhase->ReleaseMemPool(nullptr);
+      return nullptr;
+    }
+    anaPhase->ReleaseMemPool(result->GetMempool());
+    analysisResults[key] = result; // add r to analysisResults
+    return result;
   }
 
   void AddResult(PhaseIDT id, UnitIR &ir, AnalysisResult &ar) {
@@ -166,11 +165,11 @@ class AnalysisResultManager {
   }
 
   PhaseT *GetAnalysisPhase(PhaseIDT id) {
-    if (analysisPhases.find(id) != analysisPhases.end()) {
-      return analysisPhases[id];
+    auto it = analysisPhases.find(id);
+    if (it != analysisPhases.end()) {
+      return it->second;
     }
     CHECK_FATAL(false, "Invalid analysis phase");
-    return nullptr;
   }
 
   void ClearAnalysisPhase() {

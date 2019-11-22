@@ -14,7 +14,6 @@
  */
 #include "me_cfg.h"
 #include <iostream>
-#include <fstream>
 #include <algorithm>
 #include "bb.h"
 #include "ssa_mir_nodes.h"
@@ -82,7 +81,7 @@ void MeCFG::BuildMirCFG() {
         BB *mirBB = func.GetLabelBBAt(lblIdx);
         bb->GetSucc().push_back(mirBB);
         mirBB->GetPred().push_back(bb);
-        for (size_t j = 0; j < switchStmt.GetSwitchTable().size(); j++) {
+        for (size_t j = 0; j < switchStmt.GetSwitchTable().size(); ++j) {
           lblIdx = switchStmt.GetCasePair(j).second;
           BB *meBB = func.GetLabelBBAt(lblIdx);
           // Avoid duplicate succs.
@@ -210,7 +209,7 @@ bool MeCFG::FindUse(const StmtNode &stmt, StIdx stIdx) const {
     case OP_intrinsiccallwithtypeassigned:
     case OP_syncenter:
     case OP_syncexit: {
-      for (size_t i = 0; i < stmt.NumOpnds(); i++) {
+      for (size_t i = 0; i < stmt.NumOpnds(); ++i) {
         BaseNode *argExpr = stmt.Opnd(i);
         if (FindExprUse(*argExpr, stIdx)) {
           return true;
@@ -258,12 +257,12 @@ bool MeCFG::FindDef(const StmtNode &stmt, StIdx stIdx) const {
     const auto &dassStmt = static_cast<const DassignNode&>(stmt);
     return dassStmt.GetStIdx() == stIdx;
   }
-  const auto &cnode = static_cast<const CallNode&>(stmt);
-  const CallReturnVector &nrets = cnode.GetReturnVec();
-  if (!nrets.empty()) {
-    ASSERT(nrets.size() == 1, "Single Ret value for now.");
-    StIdx idx = nrets[0].first;
-    RegFieldPair regFieldPair = nrets[0].second;
+  const auto &cNode = static_cast<const CallNode&>(stmt);
+  const CallReturnVector &nRets = cNode.GetReturnVec();
+  if (!nRets.empty()) {
+    ASSERT(nRets.size() == 1, "Single Ret value for now.");
+    StIdx idx = nRets[0].first;
+    RegFieldPair regFieldPair = nRets[0].second;
     if (!regFieldPair.IsReg()) {
       return idx == stIdx;
     }
@@ -316,15 +315,15 @@ void MeCFG::FixMirCFG() {
           MIRSymbol *targetSt = builder->GetOrCreateLocalDecl(tempStr.c_str(), *sym->GetType());
           targetSt->ResetIsDeleted();
           if (stmt->GetOpCode() == OP_dassign) {
-            BaseNode *rhs = static_cast<DassignNode*>(stmt)->GetRHS();
+            auto *rhs = static_cast<DassignNode*>(stmt)->GetRHS();
             StmtNode *dassign = builder->CreateStmtDassign(*targetSt, 0, rhs);
             bb->ReplaceStmt(stmt, dassign);
             stmt = dassign;
           } else {
-            auto *cnode = static_cast<CallNode*>(stmt);
-            CallReturnPair retPair = cnode->GetReturnPair(0);
+            auto *cNode = static_cast<CallNode*>(stmt);
+            CallReturnPair retPair = cNode->GetReturnPair(0);
             retPair.first = targetSt->GetStIdx();
-            cnode->SetReturnPair(retPair, 0);
+            cNode->SetReturnPair(retPair, 0);
           }
           StmtNode *dassign = builder->CreateStmtDassign(*sym, 0, builder->CreateExprDread(*targetSt));
           if (stmt->GetNext() != nullptr) {
@@ -404,9 +403,8 @@ void MeCFG::FixMirCFG() {
     // fast path
     StmtNode *stmt = bb->GetTheOnlyStmtNode();
     if (stmt != nullptr) {
-      size_t si = 0;
       // simplify the cfg removing all succs of this bb
-      for (; si < bb->GetSucc().size(); ++si) {
+      for (size_t si = 0; si < bb->GetSucc().size(); ++si) {
         BB *sucBB = bb->GetSucc(si);
         if (sucBB->GetAttributes(kBBAttrIsCatch)) {
           sucBB->RemoveBBFromPred(bb);
@@ -429,8 +427,7 @@ void MeCFG::FixMirCFG() {
         newBBIt, std::bind(FilterNullPtr<MapleVector<BB*>::const_iterator>, std::placeholders::_1, func.end()));
     eIt = func.valid_end();
     // redirect all succs of new bb to bb
-    size_t si = 0;
-    for (; si < newBB.GetSucc().size(); si++) {
+    for (size_t si = 0; si < newBB.GetSucc().size(); ++si) {
       BB *sucBB = newBB.GetSucc(si);
       if (sucBB->GetAttributes(kBBAttrIsCatch)) {
         sucBB->ReplacePred(&newBB, bb);
@@ -507,13 +504,13 @@ void MeCFG::ConvertMeregphiList2IdentityAssigns(BB &meBB) const {
     // replace phi with identify assignment as it only has 1 opnd
     const OriginalSt *ost = func.GetMeSSATab()->GetOriginalStFromID(regPhiIt->first);
     if (ost->IsSymbolOst() && ost->GetIndirectLev() == 0) {
-      auto *regass = func.GetIRMap()->New<RegassignMeStmt>();
+      auto *regAss = func.GetIRMap()->New<RegassignMeStmt>();
       MeRegPhiNode *regPhi = regPhiIt->second;
-      regass->SetLHS(regPhi->GetLHS());
-      regass->SetRHS(regPhi->GetOpnd(0));
-      regass->SetBB(regPhi->GetDefBB());
-      regass->SetIsLive(regPhi->GetIsLive());
-      meBB.PrependMeStmt(regass);
+      regAss->SetLHS(regPhi->GetLHS());
+      regAss->SetRHS(regPhi->GetOpnd(0));
+      regAss->SetBB(regPhi->GetDefBB());
+      regAss->SetIsLive(regPhi->GetIsLive());
+      meBB.PrependMeStmt(regAss);
     }
     ++regPhiIt;
   }
@@ -613,26 +610,27 @@ void MeCFG::WontExitAnalysis() {
     }
     auto *bb = *bIt;
     BBId idx = bb->GetBBId();
-    if (!visitedBBs[idx]) {
-      bb->SetAttributes(kBBAttrWontExit);
-      if (!MeOption::quiet) {
-        LogInfo::MapleLogger() << "#### BB " << idx << " wont exit\n";
-      }
-      if (bb->GetKind() == kBBGoto) {
-        // create artificial BB to transition to common_exit_bb
-        BB *newBB = func.NewBasicBlock();
-        // update bIt & eIt
-        auto newBBIt = std::find(func.cbegin(), func.cend(), bb);
-        bIt = build_filter_iterator(
-            newBBIt, std::bind(FilterNullPtr<MapleVector<BB*>::const_iterator>, std::placeholders::_1, func.end()));
-        eIt = func.valid_end();
-        newBB->SetKind(kBBReturn);
-        newBB->SetAttributes(kBBAttrIsExit);
-        newBB->SetAttributes(kBBAttrArtificial);
-        bb->GetSucc().push_back(newBB);
-        newBB->GetPred().push_back(bb);
-        func.GetCommonExitBB()->GetPred().push_back(newBB);
-      }
+    if (visitedBBs[idx]) {
+      continue;
+    }
+    bb->SetAttributes(kBBAttrWontExit);
+    if (!MeOption::quiet) {
+      LogInfo::MapleLogger() << "#### BB " << idx << " wont exit\n";
+    }
+    if (bb->GetKind() == kBBGoto) {
+      // create artificial BB to transition to common_exit_bb
+      BB *newBB = func.NewBasicBlock();
+      // update bIt & eIt
+      auto newBBIt = std::find(func.cbegin(), func.cend(), bb);
+      bIt = build_filter_iterator(
+          newBBIt, std::bind(FilterNullPtr<MapleVector<BB*>::const_iterator>, std::placeholders::_1, func.end()));
+      eIt = func.valid_end();
+      newBB->SetKind(kBBReturn);
+      newBB->SetAttributes(kBBAttrIsExit);
+      newBB->SetAttributes(kBBAttrArtificial);
+      bb->GetSucc().push_back(newBB);
+      newBB->GetPred().push_back(bb);
+      func.GetCommonExitBB()->GetPred().push_back(newBB);
     }
   }
 }
@@ -702,7 +700,7 @@ void MeCFG::VerifyLabels() const {
       LabelIdx targetLabIdx = switchStmt.GetDefaultLabel();
       BB *bb = func.GetLabelBBAt(targetLabIdx);
       ASSERT(bb->GetBBLabel() == targetLabIdx, "undefined label in switch");
-      for (size_t j = 0; j < switchStmt.GetSwitchTable().size(); j++) {
+      for (size_t j = 0; j < switchStmt.GetSwitchTable().size(); ++j) {
         targetLabIdx = switchStmt.GetCasePair(j).second;
         bb = func.GetLabelBBAt(targetLabIdx);
         ASSERT(bb->GetBBLabel() == targetLabIdx, "undefined switch target label");

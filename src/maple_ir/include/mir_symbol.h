@@ -29,10 +29,10 @@ enum MIRSymKind {
   kStConst,
   kStJavaClass,
   kStJavaInterface,
-  kStPreg,
+  kStPreg
 };
 
-enum MIRStorageClass : std::uint8_t {
+enum MIRStorageClass : uint8 {
   kScInvalid,
   kScAuto,
   kScAliased,
@@ -57,7 +57,7 @@ class MIRSymbol {
     MIRPreg *preg;  // the MIRSymKind must be kStPreg
   };
 
-  MIRSymbol() : stIdx(0, 0) {}
+  MIRSymbol() = default;
   MIRSymbol(uint32 idx, uint8 scp) : stIdx(scp, idx) {}
   ~MIRSymbol() = default;
 
@@ -105,7 +105,7 @@ class MIRSymbol {
     this->inferredTyIdx = inferredTyIdx;
   }
 
-  const TyIdx &GetInferredTyIdx() const {
+  TyIdx GetInferredTyIdx() const {
     return inferredTyIdx;
   }
 
@@ -113,7 +113,7 @@ class MIRSymbol {
     this->stIdx = stIdx;
   }
 
-  const StIdx &GetStIdx() const {
+  StIdx GetStIdx() const {
     return stIdx;
   }
 
@@ -194,8 +194,8 @@ class MIRSymbol {
     return typeAttrs.GetAttr(ATTR_localrefvar);
   }
 
-  void SetNameStrIdx(const GStrIdx &stridx) {
-    nameStrIdx = stridx;
+  void SetNameStrIdx(GStrIdx strIdx) {
+    nameStrIdx = strIdx;
   }
 
   void SetNameStrIdx(const std::string &name);
@@ -213,7 +213,7 @@ class MIRSymbol {
   }
 
   bool IsReadOnly() const {
-    return (kScFstatic == storageClass && kStConst == sKind);
+    return kScFstatic == storageClass && kStConst == sKind;
   }
 
   bool IsConst() const {
@@ -296,7 +296,7 @@ class MIRSymbol {
   }
 
   bool IsEhIndex() const {
-    return GetName().compare("__eh_index__") == 0;
+    return GetName() == "__eh_index__";
   }
 
   bool HasAddrOfValues() const;
@@ -367,7 +367,7 @@ class MIRSymbol {
   bool isDeleted = false;     // tell if it is deleted, NOT serialized
   bool instrumented = false;  // a local ref pointer instrumented by RC opt, NOT serialized
   bool isImported = false;
-  StIdx stIdx;
+  StIdx stIdx { 0, 0 };
   TypeAttrs typeAttrs;
   GStrIdx nameStrIdx{ 0 };
   SymbolType value = { nullptr };
@@ -389,16 +389,19 @@ class MIRSymbolTable {
     return idx < symbolTable.size();
   }
 
-  MIRSymbol *GetSymbolFromStIdx(uint32 idx, bool checkFirst = false) const {
+  const MIRSymbol *GetSymbolFromStIdx(uint32 idx, bool checkFirst = false) const {
     if (checkFirst && idx >= symbolTable.size()) {
       return nullptr;
     }
     CHECK_FATAL(IsValidIdx(idx), "symbol table index out of range");
     return symbolTable[idx];
   }
+  MIRSymbol *GetSymbolFromStIdx(uint32 idx, bool checkFirst = false) {
+    return const_cast<MIRSymbol*>(const_cast<const MIRSymbolTable*>(this)->GetSymbolFromStIdx(idx, checkFirst));
+  }
 
   MIRSymbol *CreateSymbol(uint8 scopeID) {
-    MIRSymbol *st = mAllocator.GetMemPool()->New<MIRSymbol>(symbolTable.size(), scopeID);
+    auto *st = mAllocator.GetMemPool()->New<MIRSymbol>(symbolTable.size(), scopeID);
     symbolTable.push_back(st);
     return st;
   }

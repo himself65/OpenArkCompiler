@@ -33,12 +33,12 @@ class Dominance : public AnalysisResult {
         pdomPostOrderIDVec(bbVec.size(), -1, tmpAllocator.Adapter()),
         pdomReversePostOrder(tmpAllocator.Adapter()),
         pdoms(bbVec.size(), nullptr, domAllocator.Adapter()),
-        domFrontier(bbVec.size(), MapleSet<BBId>(std::less<BBId>(), domAllocator.Adapter()), domAllocator.Adapter()),
-        domChildren(bbVec.size(), MapleSet<BBId>(std::less<BBId>(), domAllocator.Adapter()), domAllocator.Adapter()),
+        domFrontier(bbVec.size(), MapleSet<BBId>(domAllocator.Adapter()), domAllocator.Adapter()),
+        domChildren(bbVec.size(), MapleSet<BBId>(domAllocator.Adapter()), domAllocator.Adapter()),
         dtPreOrder(bbVec.size(), BBId(0), domAllocator.Adapter()),
         dtDfn(bbVec.size(), -1, domAllocator.Adapter()),
-        pdomFrontier(bbVec.size(), MapleSet<BBId>(std::less<BBId>(), domAllocator.Adapter()), domAllocator.Adapter()),
-        pdomChildren(bbVec.size(), MapleSet<BBId>(std::less<BBId>(), domAllocator.Adapter()), domAllocator.Adapter()),
+        pdomFrontier(bbVec.size(), MapleSet<BBId>(domAllocator.Adapter()), domAllocator.Adapter()),
+        pdomChildren(bbVec.size(), MapleSet<BBId>(domAllocator.Adapter()), domAllocator.Adapter()),
         pdtPreOrder(bbVec.size(), BBId(0), domAllocator.Adapter()),
         pdtDfn(bbVec.size(), -1, domAllocator.Adapter()) {}
 

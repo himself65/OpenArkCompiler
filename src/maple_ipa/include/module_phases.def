@@ -15,7 +15,7 @@
 MODAPHASE(MoPhase_CHA, DoKlassHierarchy)
 MODAPHASE(MoPhase_CLINIT, DoClassInit)
 #if MIR_JAVA
-MODTPHASE(MoPhase_GENNATIVESTUBFUNC, DoGenericNativeStubFunc)
+MODTPHASE(MoPhase_GENNATIVESTUBFUNC, DoGenerateNativeStubFunc)
 MODAPHASE(MoPhase_VTABLEANALYSIS, DoVtableAnalysis)
 MODAPHASE(MoPhase_REFLECTIONANALYSIS, DoReflectionAnalysis)
 MODTPHASE(MoPhase_VTABLEIMPL, DoVtableImpl)

@@ -19,10 +19,6 @@
 #include "phase_impl.h"
 
 namespace maple {
-static constexpr char kMCCReflectThrowCastException[] = "MCC_Reflect_ThrowCastException";
-static constexpr char kMCCReflectCheckCastingNoArray[] = "MCC_Reflect_Check_Casting_NoArray";
-static constexpr char kMCCReflectCheckCastingArray[] = "MCC_Reflect_Check_Casting_Array";
-
 
 class CheckCastGenerator : public FuncOptimizeImpl {
  public:
@@ -36,19 +32,18 @@ class CheckCastGenerator : public FuncOptimizeImpl {
   void ProcessFunc(MIRFunction *func) override;
 
  private:
+  void InitTypes();
+  void InitFuncs();
+  void GenAllCheckCast();
+  void GenCheckCast(StmtNode &stmt);
+  BaseNode *GetObjectShadow(BaseNode *opnd);
+  MIRSymbol *GetOrCreateClassInfoSymbol(const std::string &className);
   MIRType *pointerObjType = nullptr;
   MIRType *pointerClassMetaType = nullptr;
   MIRType *classinfoType = nullptr;
   MIRFunction *throwCastException = nullptr;
   MIRFunction *checkCastingNoArray = nullptr;
   MIRFunction *checkCastingArray = nullptr;
-
-  void InitTypes();
-  void InitFuncs();
-  void GenAllCheckCast();
-  void GenCheckCast(BaseNode &stmt);
-  BaseNode *GetObjectShadow(BaseNode *opnd);
-  MIRSymbol *GetOrCreateClassInfoSymbol(const std::string &className);
 };
 
 class DoCheckCastGeneration : public ModulePhase {

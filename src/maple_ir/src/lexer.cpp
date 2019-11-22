@@ -33,12 +33,11 @@ static uint8 Char2num(char c) {
   return ret;
 }
 
-/* Read (next) line from the MIR (text) file, and return the read
-   number of chars.
-   if the line is empty (nothing but a newline), returns 0.
-   if EOF, return -1.
-   The trailing new-line character has been removed.
- */
+// Read (next) line from the MIR (text) file, and return the read
+// number of chars.
+// if the line is empty (nothing but a newline), returns 0.
+// if EOF, return -1.
+// The trailing new-line character has been removed.
 int MIRLexer::ReadALine() {
   if (airFile == nullptr) {
     line = "";
@@ -60,17 +59,7 @@ int MIRLexer::ReadALine() {
 
 MIRLexer::MIRLexer(MIRModule &mod)
     : module(mod),
-      theIntVal(0),
-      theFloatVal(0.0f),
-      theDoubleVal(0),
       seenComments(mod.GetMPAllocator().Adapter()),
-      airFile(nullptr),
-      lineBufSize(0),
-      currentLineSize(0),
-      curIdx(0),
-      lineNum(0),
-      kind(kTkInvalid),
-      name(""),
       keywordMap(mod.GetMPAllocator().Adapter()) {
   // initialize keywordMap
   keywordMap.clear();
@@ -102,7 +91,7 @@ void MIRLexer::PrepareForFile(const std::string &filename) {
 void MIRLexer::PrepareForString(const std::string &src) {
   line = src;
   RemoveReturnInline(line);
-  currentLineSize = line.length();
+  currentLineSize = line.size();
   curIdx = 0;
   NextToken();
 }
@@ -159,8 +148,8 @@ TokenKind MIRLexer::GetConstVal(){
 }
 
 TokenKind MIRLexer::GetSpecialFloatConst() {
-  const uint32 lenSpecFloat = 4;
-  const uint32 lenSpecDouble = 3;
+  constexpr uint32 lenSpecFloat = 4;
+  constexpr uint32 lenSpecDouble = 3;
   if (line.compare(curIdx, lenSpecFloat, "inff") == 0 && !isalnum(GetCharAtWithUpperCheck(curIdx + lenSpecFloat))) {
     curIdx += lenSpecFloat;
     theFloatVal = -INFINITY;
@@ -237,7 +226,7 @@ TokenKind MIRLexer::GetIntConst(uint32 valStart, bool negative) {
   if (c == 'l' || c == 'L') {
     c = GetNextCurrentCharWithUpperCheck();
     if (c == 'l' || c == 'L' || c == 'u' || c == 'U') {
-      curIdx++;
+      ++curIdx;
     }
   }
   name = line.substr(valStart, curIdx - valStart);
@@ -278,7 +267,7 @@ TokenKind MIRLexer::GetFloatConst(uint32 valStart, uint32 startIdx, bool negativ
   }
   if (c == 'l' || c == 'L') {
     MIR_ERROR("warning: not yet support long double\n");
-    curIdx++;
+    ++curIdx;
   }
 
   std::string floatStr = line.substr(startIdx, curIdx - startIdx);
@@ -341,16 +330,17 @@ TokenKind MIRLexer::GetTokenWithPrefixPercent() {
     }
     name = line.substr(valStart, curIdx - valStart);
     return kTkPreg;
-  } else if (isalpha(c) || c == '_' || c == '$') {
+  }
+  if (isalpha(c) || c == '_' || c == '$') {
     GenName();
     return kTkLname;
-  } else if (c == '%' && isalpha(GetCharAtWithUpperCheck(curIdx + 1))) {
-    curIdx++;
+  }
+  if (c == '%' && isalpha(GetCharAtWithUpperCheck(curIdx + 1))) {
+    ++curIdx;
     GenName();
     return kTkSpecialreg;
-  } else {
-    return kTkInvalid;
   }
+  return kTkInvalid;
 }
 
 TokenKind MIRLexer::GetTokenWithPrefixAmpersand() {
@@ -359,12 +349,11 @@ TokenKind MIRLexer::GetTokenWithPrefixAmpersand() {
   if (isalpha(c) || c == '_') {
     GenName();
     return kTkFname;
-  } else {
-    // for error reporting.
-    const uint32 printLength = 2;
-    name = line.substr(curIdx - 1, printLength);
-    return kTkInvalid;
   }
+  // for error reporting.
+  constexpr uint32 printLength = 2;
+  name = line.substr(curIdx - 1, printLength);
+  return kTkInvalid;
 }
 
 TokenKind MIRLexer::GetTokenWithPrefixAtOrCircumflex(char prefix) {
@@ -374,12 +363,10 @@ TokenKind MIRLexer::GetTokenWithPrefixAtOrCircumflex(char prefix) {
     GenName();
     if (prefix == '@') {
       return TK_label;
-    } else {
-      return kTkPrntfield;
     }
-  } else {
-    return kTkInvalid;
+    return kTkPrntfield;
   }
+  return kTkInvalid;
 }
 
 TokenKind MIRLexer::GetTokenWithPrefixExclamation() {
@@ -388,12 +375,11 @@ TokenKind MIRLexer::GetTokenWithPrefixExclamation() {
   if (isalpha(c)) {
     GenName();
     return kTkTypeparam;
-  } else {
-    // for error reporting.
-    const uint32 printLength = 2;
-    name = line.substr(curIdx - 1, printLength);
-    return kTkInvalid;
   }
+  // for error reporting.
+  const uint32 printLength = 2;
+  name = line.substr(curIdx - 1, printLength);
+  return kTkInvalid;
 }
 
 TokenKind MIRLexer::GetTokenWithPrefixQuotation() {
@@ -401,9 +387,8 @@ TokenKind MIRLexer::GetTokenWithPrefixQuotation() {
     theIntVal = GetCharAtWithUpperCheck(curIdx);
     curIdx += 2;
     return kTkIntconst;
-  } else {
-    return kTkInvalid;
   }
+  return kTkInvalid;
 }
 
 TokenKind MIRLexer::GetTokenWithPrefixDoubleQuotation() {
@@ -481,7 +466,7 @@ TokenKind MIRLexer::GetTokenWithPrefixDoubleQuotation() {
         }
         default:
           line[curIdx - shift] = '\\';
-          shift--;
+          --shift;
           line[curIdx - shift] = c;
           break;
       }
@@ -499,12 +484,12 @@ TokenKind MIRLexer::GetTokenWithPrefixDoubleQuotation() {
   } else {
     name = line.substr(startIdx, curIdx - startIdx - shift);
   }
-  curIdx++;
+  ++curIdx;
   return kTkString;
 }
 
 TokenKind MIRLexer::GetTokenSpecial() {
-  curIdx--;
+  --curIdx;
   char c = GetCharAtWithLowerCheck(curIdx);
   if (isalpha(c) || c < 0 || c == '_') {
     GenName();
@@ -544,7 +529,7 @@ TokenKind MIRLexer::LexToken() {
     if (ReadALine() < 0) {
       return kTkEof;
     }
-    lineNum++;  // a new line readed.
+    ++lineNum;  // a new line readed.
     // skip spaces
     c = GetCurrentCharWithUpperCheck();
     while (c == ' ' || c == '\t') {
@@ -552,7 +537,7 @@ TokenKind MIRLexer::LexToken() {
     }
   }
   char curChar = c;
-  curIdx++;
+  ++curIdx;
   switch (curChar) {
     case '\n':
       return kTkNewline;
@@ -598,7 +583,7 @@ TokenKind MIRLexer::LexToken() {
     case '8':
     case '9':
     case '-':
-      curIdx--;
+      --curIdx;
       return GetConstVal();
     case '$':
       return GetTokenWithPrefixDollar();

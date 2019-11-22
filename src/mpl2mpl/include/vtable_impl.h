@@ -18,18 +18,12 @@
 #include "phase_impl.h"
 
 namespace maple {
-static constexpr int kNumOfMCCParas = 5;
 enum CallKind {
   kStaticCall = 0,
   kVirtualCall = 1,
   kSuperCall = 2
 };
 
-#ifdef USE_32BIT_REF
-static constexpr char kInterfaceMethod[] = "MCC_getFuncPtrFromItab";
-#else
-static constexpr char kInterfaceMethod[] = "MCC_getFuncPtrFromItabSecondHash64";
-#endif
 
 class VtableImpl : public FuncOptimizeImpl {
  public:
@@ -42,10 +36,9 @@ class VtableImpl : public FuncOptimizeImpl {
   }
 
  private:
-  MIRModule *mirModule;
-  KlassHierarchy *klassHierarchy;
-  MIRFunction *mccItabFunc;
   void ReplaceResolveInterface(StmtNode &stmt, const ResolveFuncNode &resolveNode);
+  MIRModule *mirModule;
+  MIRFunction *mccItabFunc;
 };
 
 class DoVtableImpl : public ModulePhase {

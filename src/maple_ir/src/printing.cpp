@@ -30,7 +30,7 @@ void PrintIndentation(int32 indent) {
 }
 
 void PrintString(const std::string &str) {
-  uint32 i = 0;
+  size_t i = 0;
   LogInfo::MapleLogger() << " \"";
   while (i < str.length()) {
     unsigned char c = str[i++];

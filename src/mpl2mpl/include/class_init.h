@@ -19,8 +19,6 @@
 #include "class_hierarchy.h"
 
 namespace maple {
-static constexpr char kMCCPreClinitCheck[] = "MCC_PreClinitCheck";
-static constexpr char kMCCPostClinitCheck[] = "MCC_PostClinitCheck";
 class ClassInit : public FuncOptimizeImpl {
  public:
   ClassInit(MIRModule *mod, KlassHierarchy *kh, bool dump);
@@ -33,11 +31,11 @@ class ClassInit : public FuncOptimizeImpl {
   void ProcessFunc(MIRFunction *func) override;
 
  private:
-  void GenClassInitCheckProfile(MIRFunction &func, MIRSymbol &classinfo, StmtNode *clinit) const;
-  void GenPreClassInitCheck(MIRFunction &func, const MIRSymbol &classinfo, StmtNode *clinit);
-  void GenPostClassInitCheck(MIRFunction &func, const MIRSymbol &classinfo, StmtNode *clinit);
+  void GenClassInitCheckProfile(MIRFunction &func, const MIRSymbol &classInfo, StmtNode *clinit) const;
+  void GenPreClassInitCheck(MIRFunction &func, const MIRSymbol &classInfo, StmtNode *clinit) const;
+  void GenPostClassInitCheck(MIRFunction &func, const MIRSymbol &classInfo, StmtNode *clinit) const;
   MIRSymbol *GetClassInfo(const std::string &classname);
-  bool CanRemoveClinitCheck(const std::string &clinitClassname);
+  bool CanRemoveClinitCheck(const std::string &clinitClassname) const;
 };
 
 class DoClassInit : public ModulePhase {

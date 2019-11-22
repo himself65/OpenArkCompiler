@@ -21,9 +21,14 @@
 #include "phase_manager.h"
 #include "mir_module.h"
 #include "me_phase.h"
+#include "mir_function.h"
 
 namespace maple {
-enum MePhaseType { kMePhaseInvalid, kMePhaseMainopt, kMePhaseLno };
+enum MePhaseType {
+  kMePhaseInvalid,
+  kMePhaseMainopt,
+  kMePhaseLno
+};
 
 // driver of Me
 class MeFuncPhaseManager : public PhaseManager {
@@ -85,7 +90,7 @@ class MeFuncPhaseManager : public PhaseManager {
 
  private:
   // analysis phase result manager
-  MeFuncResultMgr arFuncManager{GetMemAllocator()};
+  MeFuncResultMgr arFuncManager{ GetMemAllocator() };
   MIRModule &mirModule;
   ModuleResultMgr *modResMgr;
   MePhaseType mePhaseType = kMePhaseInvalid;

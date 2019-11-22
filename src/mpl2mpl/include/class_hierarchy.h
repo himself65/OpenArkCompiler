@@ -20,24 +20,23 @@
 namespace maple {
 class KlassHierarchy;  // circular dependency exists, no other choice
 // should be consistent with runtime
-static constexpr uint32 kClassPrim = 0x0001;
-static constexpr uint32 kClassArray = 0x0002;
-static constexpr uint32 kClassHasFinalizer = 0x0004;
-static constexpr uint32 kClassSoftreference = 0x0008;
-static constexpr uint32 kClassWeakreference = 0x0010;
-static constexpr uint32 kClassPhantomreference = 0x0020;
-static constexpr uint32 kClassFinalizereference = 0x0040;
-static constexpr uint32 kClassCleaner = 0x0080;
-static constexpr uint32 kClassFinalizerreferenceSentinel = 0x0100;
-static constexpr uint32 kClassIsExceptionKlass = 0x0200;
-static constexpr uint32 kClassIsanonymousclass = 0x0400;
-static constexpr uint32 kClassIscoldclass = 0x0800;
-static constexpr uint32 kClassNeedDecouple = 0x1000;
-static constexpr uint32 kClassLazyBindingClass = 0x2000;
-static constexpr char kJavaLangNoMethodStr[] = "Ljava_2Flang_2FNoSuchMethodException_3B";
-
-#define CLASS_REFERENCE \
-  (kClassSoftreference | kClassWeakreference | kClassCleaner | kClassFinalizereference | kClassPhantomreference)
+constexpr uint32 kClassPrim = 0x0001;
+constexpr uint32 kClassArray = 0x0002;
+constexpr uint32 kClassHasFinalizer = 0x0004;
+constexpr uint32 kClassSoftreference = 0x0008;
+constexpr uint32 kClassWeakreference = 0x0010;
+constexpr uint32 kClassPhantomreference = 0x0020;
+constexpr uint32 kClassFinalizereference = 0x0040;
+constexpr uint32 kClassCleaner = 0x0080;
+constexpr uint32 kClassFinalizerreferenceSentinel = 0x0100;
+constexpr uint32 kClassIsExceptionKlass = 0x0200;
+constexpr uint32 kClassIsanonymousclass = 0x0400;
+constexpr uint32 kClassIscoldclass = 0x0800;
+constexpr uint32 kClassNeedDecouple = 0x1000;
+constexpr uint32 kClassLazyBindingClass = 0x2000;
+constexpr char kJavaLangNoMethodStr[] = "Ljava_2Flang_2FNoSuchMethodException_3B";
+constexpr uint32 kClassReference = (kClassSoftreference | kClassWeakreference | kClassCleaner |
+                                    kClassFinalizereference | kClassPhantomreference);
 // Klass is the basic node for building class hierarchy
 class Klass {
  public:
@@ -63,7 +62,7 @@ class Klass {
   // Return true if found in the member methods
   bool IsKlassMethod(const MIRFunction *func) const;
   // Return MIRFunction if has method
-  const MIRFunction *HasMethod(const std::string &funcname);
+  const MIRFunction *HasMethod(const std::string &funcname) const;
   const MapleList<MIRFunction*> &GetMethods() const {
     return methods;
   }
@@ -118,7 +117,7 @@ class Klass {
   }
 
   bool HasFlag(uint32 flag) const {
-    return static_cast<bool>(GetFlag(flag) != 0);
+    return GetFlag(flag) != 0;
   }
 
   bool IsExceptionKlass() const {
@@ -150,7 +149,7 @@ class Klass {
   }
 
   bool IsReference() const {
-    return HasFlag(CLASS_REFERENCE);
+    return HasFlag(kClassReference);
   }
 
   bool IsArray() const {
@@ -176,7 +175,6 @@ class Klass {
   const MIRFunction * const GetClinit() const {
     return clinitMethod;
   }
-
   void SetClinit(MIRFunction *m) {
     clinitMethod = m;
   }
@@ -244,6 +242,12 @@ class Klass {
   void Dump() const;
 
  private:
+  void DumpKlassImplInterfaces() const;
+  void DumpKlassImplKlasses() const;
+  void DumpKlassSuperKlasses() const;
+  void DumpKlassSubKlasses() const;
+  void DumpKlassMethods() const;
+  bool IsVirtualMethod(const MIRFunction &func) const;
   // structType can be class or interface
   MIRStructType *structType;
   MapleAllocator *alloc;
@@ -260,22 +264,16 @@ class Klass {
   MapleList<MIRFunction*> methods;
   // A mapping to track every method to its baseFuncNameWithType
   MapleMap<GStrIdx, MIRFunction*> strIdx2Method;
-  MIRFunction *clinitMethod;
-  MIRSymbol *classInitBridge;
+  MIRFunction *clinitMethod = nullptr;
+  MIRSymbol *classInitBridge = nullptr;
   // A mapping to track possible implementations for each virtual function
   MapleMap<GStrIdx, MapleVector<MIRFunction*>*> strIdx2CandidateMap;
   // flags of this class.
   // Now contains whether this class is exception, reference or has finalizer.
-  uint32 flags;
-  bool isPrivateInnerAndNoSubClassFlag;
-  bool hasNativeMethods;
-  bool needDecoupling;
-  void DumpKlassImplInterfaces() const;
-  void DumpKlassImplKlasses() const;
-  void DumpKlassSuperKlasses() const;
-  void DumpKlassSubKlasses() const;
-  void DumpKlassMethods() const;
-  bool IsVirtualMethod(const MIRFunction &func) const;
+  uint32 flags = 0;
+  bool isPrivateInnerAndNoSubClassFlag = false;
+  bool hasNativeMethods = false;
+  bool needDecoupling = true;
 };
 
 // Some well known types like java.lang.Object. They may be commonly referenced.
@@ -284,42 +282,41 @@ class Klass {
 // jlr - java lang reflect
 class WKTypes {
  public:
-  static void Init();
   class Util {
    public:
     static bool MayRefString(const BaseNode &n, MIRType &type);
     static bool MayRefMeta(const BaseNode &n, MIRType &type);
     static bool MayNotRefCyclicly(const BaseNode &n, MIRType &type);
     static MIRType *GetJavaLangObjectType() {
-      return javalangObject;
+      return javaLangObject;
     }
 
    private:
     static bool NotCyclicType(MIRType &type, std::set<MIRType*> &workList);
   };
+  static void Init();
 
  private:
-  static MIRType *javalangObject;
-  static MIRType *jlString;
-  static MIRType *javalangobjectSerializable;
-  static MIRType *javalangComparable;
-  static MIRType *javalangCharSequence;
-  static MIRType *javalangClass;
-  static MIRType *javalangrefGenericDeclaration;
-  static MIRType *javalangrefAnnotatedElement;
-  static MIRType *jlrType;
-  static MIRType *javalangrefMethod;
-  static MIRType *javalangrefExecutable;
-  static MIRType *javalangrefAccessibleObject;
-  static MIRType *javalangrefMember;
-  static MIRType *javalangrefField;
-  static MIRType *javalangrefConstructor;
+  static MIRType *javaLangObject;
+  static MIRType *javaLangString;
+  static MIRType *javaLangObjectSerializable;
+  static MIRType *javaLangComparable;
+  static MIRType *javaLangCharSequence;
+  static MIRType *javaLangClass;
+  static MIRType *javaLangRefGenericDeclaration;
+  static MIRType *javaLangRefAnnotatedElement;
+  static MIRType *javaLangRefType;
+  static MIRType *javaLangRefMethod;
+  static MIRType *javaLangRefExecutable;
+  static MIRType *javaLangRefAccessibleObject;
+  static MIRType *javaLangRefMember;
+  static MIRType *javaLangRefField;
+  static MIRType *javaLangRefConstructor;
 };
 
 // data structure to represent class information defined in the module
 class KlassHierarchy : public AnalysisResult {
  public:
-  static bool traceFlag;
   KlassHierarchy(MIRModule *mirmodule, MemPool *memPool);
   virtual ~KlassHierarchy() = default;
 
@@ -334,7 +331,7 @@ class KlassHierarchy : public AnalysisResult {
   }
 
   // Get lowest common ancestor for two classes
-  Klass *GetLCA(Klass *k1, Klass *k2) const;
+  Klass *GetLCA(Klass *klass1, Klass *klass2) const;
   TyIdx GetLCA(TyIdx ty1, TyIdx ty2) const;
   GStrIdx GetLCA(GStrIdx str1, GStrIdx str2) const;
   const std::string &GetLCA(const std::string &name1, const std::string &name2) const;
@@ -343,9 +340,9 @@ class KlassHierarchy : public AnalysisResult {
   bool IsInterfaceImplemented(Klass *interface, const Klass *base) const;
   bool UpdateFieldID(TyIdx baseTypeIdx, TyIdx targetTypeIdx, FieldID &fldID) const;
   // return true if class, its super or interfaces have at least one clinit function
-  bool NeedClinitCheckRecursively(Klass &kl);
+  bool NeedClinitCheckRecursively(const Klass &kl) const;
 
-  void CountVirtualMethods();
+  void CountVirtualMethods() const;
   void BuildHierarchy();
   void Dump() const;
 
@@ -356,18 +353,8 @@ class KlassHierarchy : public AnalysisResult {
   const MIRModule *GetModule() const {
     return mirModule;
   }
-
+  static bool traceFlag;
  private:
-  MapleAllocator alloc;
-  MIRModule *mirModule;
-  // Map from class name to klass. Use name as the key because the type
-  // information is incomplete, e.g.
-  // method to class link, e.g.
-  //    class A { void foo(); void bar(); }
-  //    class B extends A { void foo(); }
-  //    In this case, there is no link from B.bar to B in the maple file.
-  MapleMap<GStrIdx, Klass*> strIdx2KlassMap;
-  MapleVector<Klass*> topoWorkList;
   // New all klass
   void AddKlasses();
   // Add superklass/subclass edge and class methods for each class
@@ -384,6 +371,16 @@ class KlassHierarchy : public AnalysisResult {
   int GetFieldIDOffsetBetweenClasses(const Klass &super, const Klass &base) const;
   void TopologicalSortKlasses();
   void MarkClassFlags();
+  MapleAllocator alloc;
+  MIRModule *mirModule;
+  // Map from class name to klass. Use name as the key because the type
+  // information is incomplete, e.g.
+  // method to class link, e.g.
+  //    class A { void foo(); void bar(); }
+  //    class B extends A { void foo(); }
+  //    In this case, there is no link from B.bar to B in the maple file.
+  MapleMap<GStrIdx, Klass*> strIdx2KlassMap;
+  MapleVector<Klass*> topoWorkList;
 };
 }  // namespace maple
 #endif  // MPL2MPL_INCLUDE_CLASS_HIERARCHY_H

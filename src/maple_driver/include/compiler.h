@@ -60,7 +60,7 @@ class Compiler {
     return stream.str();
   }
 
-  virtual DefaultOption GetDefaultOptions(const MplOptions &options) {
+  virtual DefaultOption GetDefaultOptions(const MplOptions &options) const {
     return DefaultOption();
   }
 
@@ -78,7 +78,7 @@ class Compiler {
 
  private:
   const std::string name;
-  std::string MakeOption(const MplOptions &options);
+  std::string MakeOption(const MplOptions &options) const;
   void AppendDefaultOptions(std::map<std::string, MplOption> &finalOptions,
                             const std::map<std::string, MplOption> &defaultOptions) const;
   void AppendUserOptions(std::map<std::string, MplOption> &finalOptions,
@@ -87,7 +87,7 @@ class Compiler {
                      const std::string &connectSymbol) const;
   void AppendExtraOptions(std::map<std::string, MplOption> &finalOptions,
                           const std::map<std::string, std::vector<MplOption>> &extraOptions) const;
-  std::map<std::string, MplOption> MakeDefaultOptions(const MplOptions &options);
+  std::map<std::string, MplOption> MakeDefaultOptions(const MplOptions &options) const;
   int Exe(const MplOptions &mplOptions, const std::string &options) const;
   const std::string &GetName() const {
     return name;
@@ -102,7 +102,7 @@ class Jbc2MplCompiler : public Compiler {
 
  private:
   std::string GetBinName() const override;
-  DefaultOption GetDefaultOptions(const MplOptions &options) override;
+  DefaultOption GetDefaultOptions(const MplOptions &options) const override;
   void GetTmpFilesToDelete(const MplOptions &mplOptions, std::vector<std::string> &tempFiles) const override;
   std::unordered_set<std::string> GetFinalOutputs(const MplOptions &mplOptions) const override;
   std::vector<std::string> GetBinNames() const override;
@@ -134,7 +134,7 @@ class MplcgCompiler : public Compiler {
 
  private:
   std::string GetInputFileName(const MplOptions &options) const override;
-  DefaultOption GetDefaultOptions(const MplOptions &options) override;
+  DefaultOption GetDefaultOptions(const MplOptions &options) const override;
   std::string GetBinName() const override;
   std::vector<std::string> GetBinNames() const override;
 };

@@ -3,6 +3,7 @@ include $(MAPLE_BUILD_CORE)/maple_variables.mk
 test: $(APP_S)
 include $(MAPLE_BUILD_CORE)/mplcomb.mk
 include $(MAPLE_BUILD_CORE)/jbc2mpl.mk
+include $(MAPLE_BUILD_CORE)/genmplt.mk
 include $(MAPLE_BUILD_CORE)/java2jar.mk
 
 .PHONY: clean

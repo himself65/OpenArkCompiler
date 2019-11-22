@@ -57,8 +57,8 @@ class MeCFG {
   void ConvertMevarPhiList2IdentityAssigns(BB &meBB) const;
   void ConvertMeregphiList2IdentityAssigns(BB &meBB) const;
 
-    MeFunction &func;
-    bool hasDoWhile = false;
+  MeFunction &func;
+  bool hasDoWhile = false;
 };
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_ME_CFG_H

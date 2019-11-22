@@ -44,7 +44,7 @@ void VersionSt::DumpDefStmt(const MIRModule *mod) const {
 VersionSt *VersionStTable::CreateVersionSt(OriginalSt *ost, size_t version) {
   ASSERT(ost != nullptr, "nullptr check");
   ASSERT(ost->GetVersionsIndex().size() == version, "ssa version need to be created incrementally!");
-  VersionSt *vst = vstAlloc.GetMemPool()->New<VersionSt>(versionStVector.size(), version, ost);
+  auto *vst = vstAlloc.GetMemPool()->New<VersionSt>(versionStVector.size(), version, ost);
   versionStVector.push_back(vst);
   ost->PushbackVersionIndex(vst->GetIndex());
   if (version == kInitVersion) {
@@ -61,9 +61,8 @@ VersionSt *VersionStTable::FindOrCreateVersionSt(OriginalSt *ost, size_t version
     size_t versionIndex = ost->GetVersionIndex(version);
     ASSERT(versionStVector.size() > versionIndex, "versionStVector out of range");
     return versionStVector.at(versionIndex);
-  } else {
-    return CreateVersionSt(ost, version);
   }
+  return CreateVersionSt(ost, version);
 }
 
 void VersionStTable::Dump(MIRModule *mod) const {

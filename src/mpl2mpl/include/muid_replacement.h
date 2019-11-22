@@ -28,13 +28,6 @@ constexpr uint32 kDataDefAddrIndex = 0;
 constexpr uint32 kFuncDefSizeIndex = 0;
 constexpr uint32 kFuncDefNameIndex = 1;
 constexpr uint32 kRangeBeginIndex = 0;
-// Version for the mpl linker
-static constexpr char kMplLinkerVersionNumber[] = "MPL-LINKER V1.1";
-static constexpr char kMuidFuncPtrStr[] = "__muid_funcptr";
-static constexpr char kMuidSymPtrStr[] = "__muid_symptr";
-
-static constexpr uint64 kFromUndefIndexMask = 0x4000000000000000;
-static constexpr uint64 kFromDefIndexMask = 0x2000000000000000;
 
 enum RangeIdx {
   // 0,1 entry is reserved for a stamp
@@ -75,35 +68,18 @@ class MUIDReplacement : public FuncOptimizeImpl {
   }
 
  private:
-  bool isLibcore = false;
-  MIRSymbol *funcDefTabSym = nullptr;
-  MIRSymbol *funcDefOrigTabSym = nullptr;
-  MIRSymbol *funcInfTabSym = nullptr;
-  MIRSymbol *funcUndefTabSym = nullptr;
-  MIRSymbol *dataDefTabSym = nullptr;
-  MIRSymbol *dataDefOrigTabSym = nullptr;
-  MIRSymbol *dataUndefTabSym = nullptr;
-  MIRSymbol *funcDefMuidTabSym = nullptr;
-  MIRSymbol *funcUndefMuidTabSym = nullptr;
-  MIRSymbol *dataDefMuidTabSym = nullptr;
-  MIRSymbol *dataUndefMuidTabSym = nullptr;
-  MIRSymbol *funcMuidIdxTabSym = nullptr;
-  MIRSymbol *rangeTabSym = nullptr;
-  MIRSymbol *funcProfileTabSym = nullptr;
-  static MUID mplMuid;
-  std::string mplMuidStr;
   using SymIdxPair = std::pair<MIRSymbol*, uint32>;
-  std::map<MUID, SymIdxPair> funcDefMap;
-  std::map<MUID, SymIdxPair> dataDefMap;
-  std::map<MUID, SymIdxPair> funcUndefMap;
-  std::map<MUID, SymIdxPair> dataUndefMap;
-  std::map<MUID, uint32> defMuidIdxMap;
+  enum LazyBindingOption : uint32 {
+    kNoLazyBinding = 0,
+    kConservativeLazyBinding = 1,
+    kRadicalLazyBinding = 2
+  };
 
-  void GenericTables();
-  void GenericFuncDefTable();
-  void GenericDataDefTable();
-  void GenericUnifiedUndefTable();
-  void GenericRangeTable();
+  void GenerateTables();
+  void GenerateFuncDefTable();
+  void GenerateDataDefTable();
+  void GenerateUnifiedUndefTable();
+  void GenerateRangeTable();
   uint32 FindIndexFromDefTable(const MIRSymbol &mirSymbol, bool isFunc);
   uint32 FindIndexFromUndefTable(const MIRSymbol &mirSymbol, bool isFunc);
   void ReplaceAddroffuncConst(MIRConst *&entry, uint32 fieldID, bool isVtab);
@@ -119,12 +95,12 @@ class MUIDReplacement : public FuncOptimizeImpl {
   void CollectDread(MIRFunction &currentFunc, StmtNode &stmt, BaseNode &opnd);
   void DumpMUIDFile(bool isFunc);
   void ReplaceStmts();
-  void GenericGlobalRootList();
+  void GenerateGlobalRootList();
   void CollectImplicitUndefClassInfo(StmtNode &stmt);
   void CollectFuncAndDataFromKlasses();
   void CollectFuncAndDataFromGlobalTab();
   void CollectFuncAndDataFromFuncList();
-  void GenericCompilerVersionNum();
+  void GenerateCompilerVersionNum();
   static MIRSymbol *GetSymbolFromName(const std::string &name);
   // The following sets are for internal uses. Sorting order does not matter here.
   std::unordered_set<MIRFunction*> funcDefSet;
@@ -157,6 +133,28 @@ class MUIDReplacement : public FuncOptimizeImpl {
 #undef __MRT_MAGIC_PASTE
   const std::unordered_set<std::string> reflectionList = {
   };
+  bool isLibcore = false;
+  MIRSymbol *funcDefTabSym = nullptr;
+  MIRSymbol *funcDefOrigTabSym = nullptr;
+  MIRSymbol *funcInfTabSym = nullptr;
+  MIRSymbol *funcUndefTabSym = nullptr;
+  MIRSymbol *dataDefTabSym = nullptr;
+  MIRSymbol *dataDefOrigTabSym = nullptr;
+  MIRSymbol *dataUndefTabSym = nullptr;
+  MIRSymbol *funcDefMuidTabSym = nullptr;
+  MIRSymbol *funcUndefMuidTabSym = nullptr;
+  MIRSymbol *dataDefMuidTabSym = nullptr;
+  MIRSymbol *dataUndefMuidTabSym = nullptr;
+  MIRSymbol *funcMuidIdxTabSym = nullptr;
+  MIRSymbol *rangeTabSym = nullptr;
+  MIRSymbol *funcProfileTabSym = nullptr;
+  std::map<MUID, SymIdxPair> funcDefMap;
+  std::map<MUID, SymIdxPair> dataDefMap;
+  std::map<MUID, SymIdxPair> funcUndefMap;
+  std::map<MUID, SymIdxPair> dataUndefMap;
+  std::map<MUID, uint32> defMuidIdxMap;
+  static MUID mplMuid;
+  std::string mplMuidStr;
 };
 
 class DoMUIDReplacement : public ModulePhase {

@@ -34,11 +34,9 @@ enum SpecialReg : signed int {
 #if MIR_FEATURE_FULL
 class MIRPreg {
  public:
-  explicit MIRPreg(uint32 n = 0) : primType(kPtyInvalid), isRef(false), needRC(false), pregNo(n), mirType(nullptr) {}
+  explicit MIRPreg(uint32 n = 0) : MIRPreg(n, nullptr) {}
 
-  MIRPreg(uint32 n, MIRType *mType) : MIRPreg(n) {
-    mirType = mType;
-  }
+  MIRPreg(uint32 n, MIRType *mType) : pregNo(n), mirType(mType) {}
 
   ~MIRPreg() = default;
   void SetNeedRC(bool needRC = true) {
@@ -82,9 +80,9 @@ class MIRPreg {
   }
 
  private:
-  PrimType primType;
-  bool isRef;
-  bool needRC;
+  PrimType primType = kPtyInvalid;
+  bool isRef = false;
+  bool needRC = false;
   int32 pregNo;  // the number in maple IR after the %
   MIRType *mirType;
 };
@@ -93,8 +91,7 @@ class MIRPregTable {
  public:
   static constexpr uint32 kMaxUserPregIndex = 10000;
   MIRPregTable(MIRModule *mod, MapleAllocator *allocator)
-      : pregIndex(kMaxUserPregIndex),
-        pregNoToPregIdxMap(std::less<uint32>(), allocator->Adapter()),
+      : pregNoToPregIdxMap(allocator->Adapter()),
         pregTable(allocator->Adapter()),
         module(mod),
         mAllocator(allocator) {
@@ -106,7 +103,7 @@ class MIRPregTable {
     specPregTable[kSregThrownval].SetPregNo(-kSregThrownval);
     specPregTable[kSregMethodhdl].SetPregNo(-kSregMethodhdl);
     specPregTable[kSregRetval0].SetPregNo(-kSregRetval0);
-    for (uint32 i = 0; i < kSregLast; i++) {
+    for (uint32 i = 0; i < kSregLast; ++i) {
       specPregTable[i].SetPrimType(PTY_unknown);
     }
   }
@@ -193,7 +190,7 @@ class MIRPregTable {
   }
 
  private:
-  uint32 pregIndex;                              // user(maple_ir)'s preg must less than this value
+  uint32 pregIndex = kMaxUserPregIndex;          // user(maple_ir)'s preg must less than this value
   MapleMap<uint32, PregIdx> pregNoToPregIdxMap;  // for quick lookup based on pregno
   MapleVector<MIRPreg*> pregTable;
   MIRPreg specPregTable[kSregLast];  // for the MIRPreg nodes corresponding to special registers

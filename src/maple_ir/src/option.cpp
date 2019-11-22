@@ -19,7 +19,7 @@
 #include "mpl_logging.h"
 #include "option_parser.h"
 
-using namespace maple;
+namespace maple {
 using namespace mapleOption;
 
 bool Options::dumpBefore = false;
@@ -184,7 +184,7 @@ bool Options::ParseOptions(int argc, char **argv, std::string &fileName) const {
       for (const auto &optionArg : optionParser.GetNonOptions()) {
         LogInfo::MapleLogger(kLlErr) << optionArg << " ";
       }
-      LogInfo::MapleLogger(kLlErr) << std::endl;
+      LogInfo::MapleLogger(kLlErr) << "\n";
       result = false;
     }
 
@@ -204,5 +204,6 @@ void Options::DumpOptions() const {
       LogInfo::MapleLogger() << " " << phaseSeq[i].c_str();
     }
   }
-  LogInfo::MapleLogger() << std::endl;
+  LogInfo::MapleLogger() << "\n";
 }
+};  // namespace maple

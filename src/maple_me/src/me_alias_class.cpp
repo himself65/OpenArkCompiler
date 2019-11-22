@@ -13,7 +13,6 @@
  * See the Mulan PSL v1 for more details.
  */
 #include "me_alias_class.h"
-#include <cstdlib>
 #include "me_option.h"
 #include "mpl_logging.h"
 #include "ssa_mir_nodes.h"
@@ -25,13 +24,12 @@ namespace maple {
 // This phase performs alias analysis based on Steensgaard's algorithm and
 // represent the resulting alias relationships in the Maple IR representation
 bool MeAliasClass::HasWriteToStaticFinal() const {
-  auto eIt = func.valid_end();
-  for (auto bIt = func.valid_begin(); bIt != eIt; ++bIt) {
-    for (auto &stmt : (*bIt)->GetStmtNodes()) {
+  for (auto bIt = func.valid_begin(); bIt != func.valid_end(); ++bIt) {
+    for (const auto &stmt : (*bIt)->GetStmtNodes()) {
       if (stmt.GetOpCode() == OP_dassign) {
-        DassignNode &dass = static_cast<DassignNode&>(stmt);
-        if (dass.GetStIdx().IsGlobal()) {
-          const MIRSymbol *sym = mirModule.CurFunction()->GetLocalOrGlobalSymbol(dass.GetStIdx());
+        const auto &dassignNode = static_cast<const DassignNode&>(stmt);
+        if (dassignNode.GetStIdx().IsGlobal()) {
+          const MIRSymbol *sym = mirModule.CurFunction()->GetLocalOrGlobalSymbol(dassignNode.GetStIdx());
           if (sym->IsFinal()) {
             return true;
           }
@@ -43,8 +41,8 @@ bool MeAliasClass::HasWriteToStaticFinal() const {
 }
 
 void MeAliasClass::DoAliasAnalysis() {
-  auto eIt = func.valid_end();
-  for (auto bIt = func.valid_begin(); bIt != eIt; ++bIt) {
+
+  for (auto bIt = func.valid_begin(); bIt != func.valid_end(); ++bIt) {
     for (auto &stmt : (*bIt)->GetStmtNodes()) {
       ApplyUnionForCopies(stmt);
     }
@@ -73,8 +71,7 @@ void MeAliasClass::DoAliasAnalysis() {
     LogInfo::MapleLogger() << "\n============ Alias Classification Pass 2 ============" << '\n';
   }
 
-  eIt = func.valid_end();
-  for (auto bIt = func.valid_begin(); bIt != eIt; ++bIt) {
+  for (auto bIt = func.valid_begin(); bIt != func.valid_end(); ++bIt) {
     auto *bb = *bIt;
     for (auto &stmt : bb->GetStmtNodes()) {
       GenericInsertMayDefUse(stmt, bb->GetBBId());
@@ -87,9 +84,9 @@ AnalysisResult *MeDoAliasClass::Run(MeFunction *func, MeFuncResultMgr *funcResMg
   timer.Start();
   (void)funcResMgr->GetAnalysisResult(MeFuncPhase_SSATAB, func);
   MemPool *aliasClassMp = NewMemPool();
-  KlassHierarchy *kh = static_cast<KlassHierarchy*>(moduleResMgr->GetAnalysisResult(
+  auto *kh = static_cast<KlassHierarchy*>(moduleResMgr->GetAnalysisResult(
       MoPhase_CHA, &func->GetMIRModule()));
-  MeAliasClass *aliasClass = aliasClassMp->New<MeAliasClass>(
+  auto *aliasClass = aliasClassMp->New<MeAliasClass>(
       *aliasClassMp, func->GetMIRModule(), *func->GetMeSSATab(), *func, MeOption::lessThrowAlias,
       MeOption::ignoreIPA, DEBUGFUNC(func), MeOption::setCalleeHasSideEffect, kh);
   // pass 1 through the program statements

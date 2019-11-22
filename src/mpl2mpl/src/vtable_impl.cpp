@@ -19,11 +19,17 @@
 
 // This phase is mainly to lower interfacecall into icall
 
+namespace {
+#ifdef USE_32BIT_REF
+constexpr char kInterfaceMethod[] = "MCC_getFuncPtrFromItab";
+#else
+constexpr char kInterfaceMethod[] = "MCC_getFuncPtrFromItabSecondHash64";
+#endif
+} // namespace
+
 namespace maple {
 VtableImpl::VtableImpl(MIRModule *mod, KlassHierarchy *kh, bool dump)
-    : FuncOptimizeImpl(mod, kh, dump),
-      mirModule(mod) {
-  klassHierarchy = kh;
+    : FuncOptimizeImpl(mod, kh, dump), mirModule(mod) {
   mccItabFunc = builder->GetOrCreateFunction(kInterfaceMethod, TyIdx(PTY_ptr));
   mccItabFunc->SetAttr(FUNCATTR_nosideeffect);
 }
@@ -42,8 +48,8 @@ void VtableImpl::ProcessFunc(MIRFunction *func) {
       case OP_regassign: {
         auto *regassign = static_cast<RegassignNode*>(stmt);
         BaseNode *rhs = regassign->Opnd();
-        ASSERT(rhs != nullptr, "null ptr check!");
-        if (rhs->GetOpCode() == maple::OP_resolveinterfacefunc) {
+        ASSERT_NOT_NULL(rhs);
+        if (rhs->GetOpCode() == OP_resolveinterfacefunc) {
           ReplaceResolveInterface(*stmt, *(static_cast<ResolveFuncNode*>(rhs)));
         }
         break;
@@ -60,7 +66,7 @@ void VtableImpl::ProcessFunc(MIRFunction *func) {
         icallNode->SetSrcPos(callNode->GetSrcPos());
         icallNode->GetNopnd().resize(callNode->GetNopndSize());
         icallNode->SetNumOpnds(icallNode->GetNopndSize());
-        for (size_t i = 0; i < callNode->GetNopndSize(); i++) {
+        for (size_t i = 0; i < callNode->GetNopndSize(); ++i) {
           icallNode->SetOpnd(callNode->GetNopndAt(i)->CloneTree(mirModule->GetCurFuncCodeMPAllocator()), i);
         }
         currFunc->GetBody()->ReplaceStmt1WithStmt2(stmt, icallNode);
@@ -70,7 +76,7 @@ void VtableImpl::ProcessFunc(MIRFunction *func) {
       case OP_icallassigned: {
         auto *icall = static_cast<IcallNode*>(stmt);
         BaseNode *firstParm = icall->GetNopndAt(0);
-        ASSERT(firstParm != nullptr, "null ptr check!");
+        ASSERT_NOT_NULL(firstParm);
         if (firstParm->GetOpCode() == maple::OP_resolveinterfacefunc) {
           ReplaceResolveInterface(*stmt, *(static_cast<ResolveFuncNode*>(firstParm)));
         }
@@ -103,7 +109,6 @@ void VtableImpl::ProcessFunc(MIRFunction *func) {
 
 void VtableImpl::ReplaceResolveInterface(StmtNode &stmt, const ResolveFuncNode &resolveNode) {
   MIRFunction *func = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(resolveNode.GetPuIdx());
-  ASSERT(func != nullptr, "null ptr check!");
   std::string signature = VtableAnalysis::DecodeBaseNameWithType(*func);
   int64 hashCode = GetHashIndex(signature.c_str());
   PregIdx pregItabAddress = currFunc->GetPregTab()->CreatePreg(PTY_ptr);

@@ -603,7 +603,6 @@ void BinaryMplExport::OutputFunction(PUIdx puIdx) {
     return;
   }
   MIRFunction *func = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(puIdx);
-  ASSERT(func != nullptr, "Cannot get MIRFunction.");
   size_t mark = funcMark.size();
   funcMark[func] = mark;
   MIRFunction *savedFunc = mod.CurFunction();

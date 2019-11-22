@@ -19,13 +19,9 @@
 #include "class_hierarchy.h"
 
 namespace maple {
-const std::string strDivOpnd = "__div_opnd1";
-const std::string strDivRes = "__div_res";
-const std::string strMCCThrowArrayIndexOutOfBoundsException = "MCC_ThrowArrayIndexOutOfBoundsException";
-const std::string strMCCThrowNullPointerException = "MCC_ThrowNullPointerException";
 class JavaEHLowerer : public FuncOptimizeImpl {
  public:
-  explicit JavaEHLowerer(MIRModule *mod, KlassHierarchy *kh, bool dump);
+  JavaEHLowerer(MIRModule *mod, KlassHierarchy *kh, bool dump) : FuncOptimizeImpl(mod, kh, dump) {}
   ~JavaEHLowerer() = default;
 
   FuncOptimizeImpl *Clone() override {
@@ -43,8 +39,8 @@ class JavaEHLowerer : public FuncOptimizeImpl {
     return DoLowerDiv(expr, blkNode);
   }
 
-  uint32 divSTIndex;  // The index of divide operand and result.
-  bool useRegTmp;     // Use register to save temp variable or not.
+  uint32 divSTIndex = 0;                 // The index of divide operand and result.
+  bool useRegTmp = Options::usePreg;     // Use register to save temp variable or not.
 };
 
 class JavaEHLowererPhase : public ModulePhase {

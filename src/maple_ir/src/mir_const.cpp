@@ -15,7 +15,6 @@
 #include "mir_const.h"
 #include <iostream>
 #include <iomanip>
-#include "mir_nodes.h"
 #include "mir_function.h"
 #include "global_tables.h"
 #include "printing.h"
@@ -38,14 +37,14 @@ void MIRIntConst::Dump() const {
   }
 }
 
-bool MIRIntConst::operator==(MIRConst &rhs) const {
+bool MIRIntConst::operator==(const MIRConst &rhs) const {
   if (&rhs == this) {
     return true;
   }
   if (GetKind() != rhs.GetKind()) {
     return false;
   }
-  auto &intConst = static_cast<MIRIntConst&>(rhs);
+  const auto &intConst = static_cast<const MIRIntConst&>(rhs);
   return ((&intConst.GetType() == &GetType()) && (intConst.value == value));
 }
 
@@ -60,14 +59,14 @@ void MIRAddrofConst::Dump() const {
   }
 }
 
-bool MIRAddrofConst::operator==(MIRConst &rhs) const {
+bool MIRAddrofConst::operator==(const MIRConst &rhs) const {
   if (&rhs == this) {
     return true;
   }
   if (GetKind() != rhs.GetKind()) {
     return false;
   }
-  auto &rhsA = static_cast<MIRAddrofConst&>(rhs);
+  const auto &rhsA = static_cast<const MIRAddrofConst&>(rhs);
   if (&GetType() != &rhs.GetType()) {
     return false;
   }
@@ -81,36 +80,36 @@ void MIRAddroffuncConst::Dump() const {
   LogInfo::MapleLogger() << " &" << GlobalTables::GetGsymTable().GetSymbolFromStidx(func->GetStIdx().Idx())->GetName();
 }
 
-bool MIRAddroffuncConst::operator==(MIRConst &rhs) const {
+bool MIRAddroffuncConst::operator==(const MIRConst &rhs) const {
   if (&rhs == this) {
     return true;
   }
   if (GetKind() != rhs.GetKind()) {
     return false;
   }
-  auto &rhsAf = static_cast<MIRAddroffuncConst&>(rhs);
+  const auto &rhsAf = static_cast<const MIRAddroffuncConst&>(rhs);
   return (&GetType() == &rhs.GetType()) && (puIdx == rhsAf.puIdx);
 }
 
-bool MIRLblConst::operator==(MIRConst &rhs) const {
+bool MIRLblConst::operator==(const MIRConst &rhs) const {
   if (&rhs == this) {
     return true;
   }
   if (GetKind() != rhs.GetKind()) {
     return false;
   }
-  auto &lblConst = static_cast<MIRLblConst&>(rhs);
+  const auto &lblConst = static_cast<const MIRLblConst&>(rhs);
   return (lblConst.value == value);
 }
 
-bool MIRFloatConst::operator==(MIRConst &rhs) const {
+bool MIRFloatConst::operator==(const MIRConst &rhs) const {
   if (&rhs == this) {
     return true;
   }
   if (GetKind() != rhs.GetKind()) {
     return false;
   }
-  auto &floatConst = static_cast<MIRFloatConst&>(rhs);
+  const auto &floatConst = static_cast<const MIRFloatConst&>(rhs);
   if (std::isnan(floatConst.value.floatValue)) {
     return std::isnan(value.floatValue);
   }
@@ -120,14 +119,14 @@ bool MIRFloatConst::operator==(MIRConst &rhs) const {
   return (fabs(floatConst.value.floatValue - value.floatValue) <= 1e-6);
 }
 
-bool MIRDoubleConst::operator==(MIRConst &rhs) const {
+bool MIRDoubleConst::operator==(const MIRConst &rhs) const {
   if (&rhs == this) {
     return true;
   }
   if (GetKind() != rhs.GetKind()) {
     return false;
   }
-  auto &floatConst = static_cast<MIRDoubleConst&>(rhs);
+  const auto &floatConst = static_cast<const MIRDoubleConst&>(rhs);
   if (std::isnan(floatConst.value.dValue)) {
     return std::isnan(value.dValue);
   }
@@ -137,28 +136,28 @@ bool MIRDoubleConst::operator==(MIRConst &rhs) const {
   return (fabs(floatConst.value.dValue - value.dValue) <= 1e-15);
 }
 
-bool MIRFloat128Const::operator==(MIRConst &rhs) const {
+bool MIRFloat128Const::operator==(const MIRConst &rhs) const {
   if (&rhs == this) {
     return true;
   }
   if (GetKind() != rhs.GetKind()) {
     return false;
   }
-  auto &floatConst = static_cast<MIRFloat128Const&>(rhs);
+  const auto &floatConst = static_cast<const MIRFloat128Const&>(rhs);
   if ((value[0] == floatConst.value[0]) && (value[1] == floatConst.value[1])) {
     return true;
   }
   return false;
 }
 
-bool MIRAggConst::operator==(MIRConst &rhs) const {
+bool MIRAggConst::operator==(const MIRConst &rhs) const {
   if (&rhs == this) {
     return true;
   }
   if (GetKind() != rhs.GetKind()) {
     return false;
   }
-  auto &aggregateConst = static_cast<MIRAggConst&>(rhs);
+  const auto &aggregateConst = static_cast<const MIRAggConst&>(rhs);
   if (aggregateConst.constVec.size() != constVec.size()) {
     return false;
   }
@@ -211,18 +210,18 @@ MIRStrConst::MIRStrConst(const std::string &str, MIRType &type)
 void MIRStrConst::Dump() const {
   MIRConst::Dump();
   LogInfo::MapleLogger() << "conststr " << GetPrimTypeName(GetType().GetPrimType());
-  const std::string dumpStr = GlobalTables::GetUStrTable().GetStringFromStrIdx(value);
+  const std::string &dumpStr = GlobalTables::GetUStrTable().GetStringFromStrIdx(value);
   PrintString(dumpStr);
 }
 
-bool MIRStrConst::operator==(MIRConst &rhs) const {
+bool MIRStrConst::operator==(const MIRConst &rhs) const {
   if (&rhs == this) {
     return true;
   }
   if (GetKind() != rhs.GetKind()) {
     return false;
   }
-  auto &rhsCs = static_cast<MIRStrConst&>(rhs);
+  const auto &rhsCs = static_cast<const MIRStrConst&>(rhs);
   return (&rhs.GetType() == &GetType()) && (value == rhsCs.value);
 }
 
@@ -241,14 +240,14 @@ void MIRStr16Const::Dump() const {
   PrintString(str);
 }
 
-bool MIRStr16Const::operator==(MIRConst &rhs) const {
+bool MIRStr16Const::operator==(const MIRConst &rhs) const {
   if (&rhs == this) {
     return true;
   }
   if (GetKind() != rhs.GetKind()) {
     return false;
   }
-  auto &rhsCs = static_cast<MIRStr16Const&>(rhs);
+  const auto &rhsCs = static_cast<const MIRStr16Const&>(rhs);
   return (&GetType() == &rhs.GetType()) && (value == rhsCs.value);
 }
 }  // namespace maple

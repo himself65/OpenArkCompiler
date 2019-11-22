@@ -223,7 +223,7 @@ void RCLowering::HandleCallAssignedMeStmt(MeStmt &stmt, MeExpr *pendingDec) {
   if (!ost->IsSymbolOst()) {
     return;
   }
-  MIRSymbol *retSym = ost->GetMIRSymbol();
+  const MIRSymbol *retSym = ost->GetMIRSymbol();
   if (retSym == nullptr) {
     return;
   }
@@ -293,7 +293,7 @@ void RCLowering::PreprocessAssignMeStmt(MeStmt &stmt) {
   if (lhs->GetMeOp() != kMeOpVar) {
     return;
   }
-  MIRSymbol *lsym = ssaTab.GetMIRSymbolFromID(stmt.GetVarLHS()->GetOStIdx());
+  const MIRSymbol *lsym = ssaTab.GetMIRSymbolFromID(stmt.GetVarLHS()->GetOStIdx());
   if (stmt.GetOp() == OP_dassign && (lsym->GetStorageClass() == kScAuto || lsym->GetStorageClass() == kScFormal)) {
     assignedPtrSym.insert(lsym);
   }
@@ -321,7 +321,7 @@ void RCLowering::HandleAssignMeStmtRegLHS(MeStmt &stmt) {
 }
 
 void RCLowering::HandleAssignMeStmtVarLHS(MeStmt &stmt, MeExpr *pendingDec) {
-  MIRSymbol *lsym = ssaTab.GetMIRSymbolFromID(stmt.GetVarLHS()->GetOStIdx());
+  const MIRSymbol *lsym = ssaTab.GetMIRSymbolFromID(stmt.GetVarLHS()->GetOStIdx());
   if (lsym->IsGlobal()) {
     // decref could be optimized away after if null check
     HandleAssignToGlobalVar(stmt);

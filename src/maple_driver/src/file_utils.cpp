@@ -47,8 +47,7 @@ std::string FileUtils::GetFileFolder(const std::string &filePath) {
 
 std::string FileUtils::ConvertPathIfNeeded(const std::string &src) {
   std::string ret = src;
-  ret = StringUtils::Replace(ret, kFileSeperatorWindowsStyleStr,
-                             kFileSeperatorLinuxStyleStr);
+  ret = StringUtils::Replace(ret, kFileSeperatorWindowsStyleStr, kFileSeperatorLinuxStyleStr);
   return ret;
 }
 

@@ -18,6 +18,13 @@
 #include "global_tables.h"
 #include "option.h"
 
+namespace {
+const std::string strDivOpnd = "__div_opnd1";
+const std::string strDivRes = "__div_res";
+const std::string strMCCThrowArrayIndexOutOfBoundsException = "MCC_ThrowArrayIndexOutOfBoundsException";
+const std::string strMCCThrowNullPointerException = "MCC_ThrowNullPointerException";
+} // namespace
+
 // Do exception handling runtime insertion of runtime function call
 // scan the entire function body once to lookup expression that
 // could potentially raise exceptions such as division,
@@ -28,73 +35,67 @@
 // if b == 0,
 //  call MCC_ThrowArithmeticException()
 // x = a/b
-
 namespace maple {
-JavaEHLowerer::JavaEHLowerer(MIRModule *mod, KlassHierarchy *kh, bool dump) : FuncOptimizeImpl(mod, kh, dump) {
-  useRegTmp = Options::usePreg;
-  divSTIndex = 0;
-}
-
 BaseNode *JavaEHLowerer::DoLowerDiv(BinaryNode &expr, BlockNode &blknode) {
   PrimType ptype = expr.GetPrimType();
   MIRBuilder *mirBuilder = GetMIRModule().GetMIRBuilder();
   MIRFunction *func = GetMIRModule().CurFunction();
-  if (IsPrimitiveInteger(ptype)) {
-    // Store divopnd to a tmp st if not a leaf node.
-    BaseNode *divOpnd = expr.Opnd(1);
-    if (!divOpnd->IsLeaf()) {
-      std::string opnd1name(strDivOpnd);
-      opnd1name.append(std::to_string(divSTIndex));
-      if (useRegTmp) {
-        PregIdx pregIdx = func->GetPregTab()->CreatePreg(ptype);
-        RegassignNode *regassDivnode = mirBuilder->CreateStmtRegassign(ptype, pregIdx, divOpnd);
-        blknode.AddStatement(regassDivnode);
-        divOpnd = mirBuilder->CreateExprRegread(ptype, pregIdx);
-      } else {
-        MIRSymbol *divOpndSymbol = mirBuilder->CreateSymbol(TyIdx(ptype), opnd1name.c_str(), kStVar, kScAuto,
-                                                            GetMIRModule().CurFunction(), kScopeLocal);
-        DassignNode *dssDivNode = mirBuilder->CreateStmtDassign(*divOpndSymbol, 0, divOpnd);
-        blknode.AddStatement(dssDivNode);
-        divOpnd = mirBuilder->CreateExprDread(*divOpndSymbol);
-      }
-      expr.SetBOpnd(divOpnd, 1);
-    }
-    BaseNode *retExprNode = nullptr;
-    StmtNode *divStmt = nullptr;
-    if (useRegTmp) {
-      PregIdx resPregIdx = func->GetPregTab()->CreatePreg(ptype);
-      divStmt = mirBuilder->CreateStmtRegassign(ptype, resPregIdx, &expr);
-      retExprNode = GetMIRModule().GetMIRBuilder()->CreateExprRegread(ptype, resPregIdx);
-    } else {
-      std::string resName(strDivRes);
-      resName.append(std::to_string(divSTIndex++));
-      MIRSymbol *divResSymbol = mirBuilder->CreateSymbol(TyIdx(ptype), resName.c_str(), kStVar, kScAuto,
-                                                         GetMIRModule().CurFunction(), kScopeLocal);
-      // Put expr result to dssnode.
-      divStmt = mirBuilder->CreateStmtDassign(*divResSymbol, 0, &expr);
-      retExprNode = GetMIRModule().GetMIRBuilder()->CreateExprDread(*divResSymbol, 0);
-    }
-    // Check if the second operand of the div expression is 0.
-    // Inser if statement for high level ir.
-    CompareNode *cmpNode = mirBuilder->CreateExprCompare(OP_eq, *GlobalTables::GetTypeTable().GetInt32(),
-                                                         *GlobalTables::GetTypeTable().GetTypeFromTyIdx((TyIdx)ptype),
-                                                         divOpnd, mirBuilder->CreateIntConst(0, ptype));
-    IfStmtNode *ifStmtNode = mirBuilder->CreateStmtIf(cmpNode);
-    blknode.AddStatement(ifStmtNode);
-    // Call the MCC_ThrowArithmeticException() that will never return.
-    MapleVector<BaseNode*> args(GetMIRModule().GetMIRBuilder()->GetCurrentFuncCodeMpAllocator()->Adapter());
-    IntrinsiccallNode *intrinCallNode = mirBuilder->CreateStmtIntrinsicCall(INTRN_JAVA_THROW_ARITHMETIC, args);
-    ifStmtNode->GetThenPart()->AddStatement(intrinCallNode);
-    blknode.AddStatement(divStmt);
-    // Make dread from the divresst and return it as new expression for this function.
-    return retExprNode;
-  } else {
+  if (!IsPrimitiveInteger(ptype)) {
     return &expr;
   }
+
+  // Store divopnd to a tmp st if not a leaf node.
+  BaseNode *divOpnd = expr.Opnd(1);
+  if (!divOpnd->IsLeaf()) {
+    std::string opnd1name(strDivOpnd);
+    opnd1name.append(std::to_string(divSTIndex));
+    if (useRegTmp) {
+      PregIdx pregIdx = func->GetPregTab()->CreatePreg(ptype);
+      RegassignNode *regassDivnode = mirBuilder->CreateStmtRegassign(ptype, pregIdx, divOpnd);
+      blknode.AddStatement(regassDivnode);
+      divOpnd = mirBuilder->CreateExprRegread(ptype, pregIdx);
+    } else {
+      MIRSymbol *divOpndSymbol = mirBuilder->CreateSymbol(TyIdx(ptype), opnd1name.c_str(), kStVar, kScAuto,
+                                                          GetMIRModule().CurFunction(), kScopeLocal);
+      DassignNode *dssDivNode = mirBuilder->CreateStmtDassign(*divOpndSymbol, 0, divOpnd);
+      blknode.AddStatement(dssDivNode);
+      divOpnd = mirBuilder->CreateExprDread(*divOpndSymbol);
+    }
+    expr.SetBOpnd(divOpnd, 1);
+  }
+  BaseNode *retExprNode = nullptr;
+  StmtNode *divStmt = nullptr;
+  if (useRegTmp) {
+    PregIdx resPregIdx = func->GetPregTab()->CreatePreg(ptype);
+    divStmt = mirBuilder->CreateStmtRegassign(ptype, resPregIdx, &expr);
+    retExprNode = GetMIRModule().GetMIRBuilder()->CreateExprRegread(ptype, resPregIdx);
+  } else {
+    std::string resName(strDivRes);
+    resName.append(std::to_string(divSTIndex++));
+    MIRSymbol *divResSymbol = mirBuilder->CreateSymbol(TyIdx(ptype), resName.c_str(), kStVar, kScAuto,
+                                                       GetMIRModule().CurFunction(), kScopeLocal);
+    // Put expr result to dssnode.
+    divStmt = mirBuilder->CreateStmtDassign(*divResSymbol, 0, &expr);
+    retExprNode = GetMIRModule().GetMIRBuilder()->CreateExprDread(*divResSymbol, 0);
+  }
+  // Check if the second operand of the div expression is 0.
+  // Inser if statement for high level ir.
+  CompareNode *cmpNode = mirBuilder->CreateExprCompare(OP_eq, *GlobalTables::GetTypeTable().GetInt32(),
+                                                       *GlobalTables::GetTypeTable().GetTypeFromTyIdx((TyIdx)ptype),
+                                                       divOpnd, mirBuilder->CreateIntConst(0, ptype));
+  IfStmtNode *ifStmtNode = mirBuilder->CreateStmtIf(cmpNode);
+  blknode.AddStatement(ifStmtNode);
+  // Call the MCC_ThrowArithmeticException() that will never return.
+  MapleVector<BaseNode*> args(GetMIRModule().GetMIRBuilder()->GetCurrentFuncCodeMpAllocator()->Adapter());
+  IntrinsiccallNode *intrinCallNode = mirBuilder->CreateStmtIntrinsicCall(INTRN_JAVA_THROW_ARITHMETIC, args);
+  ifStmtNode->GetThenPart()->AddStatement(intrinCallNode);
+  blknode.AddStatement(divStmt);
+  // Make dread from the divresst and return it as new expression for this function.
+  return retExprNode;
 }
 
 BaseNode *JavaEHLowerer::DoLowerExpr(BaseNode &expr, BlockNode &curblk) {
-  for (size_t i = 0; i < expr.NumOpnds(); i++) {
+  for (size_t i = 0; i < expr.NumOpnds(); ++i) {
     expr.SetOpnd(DoLowerExpr(*(expr.Opnd(i)), curblk), i);
   }
   switch (expr.GetOpCode()) {
@@ -213,7 +214,7 @@ BlockNode *JavaEHLowerer::DoLowerBlock(BlockNode &block) {
         // fallthrough;
       }
       default: {
-        for (size_t i = 0; i < stmt->NumOpnds(); i++) {
+        for (size_t i = 0; i < stmt->NumOpnds(); ++i) {
           stmt->SetOpnd(DoLowerExpr(*(stmt->Opnd(i)), *newBlock), i);
         }
         newBlock->AddStatement(stmt);

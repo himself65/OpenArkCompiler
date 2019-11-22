@@ -14,11 +14,11 @@
  */
 #ifndef MAPLE_IR_INCLUDE_LEXER_H
 #define MAPLE_IR_INCLUDE_LEXER_H
+#include "cstdio"
+#include <fstream>
 #include "types_def.h"
 #include "tokens.h"
 #include "mempool_allocator.h"
-#include "stdio.h"
-#include <fstream>
 #include "mir_module.h"
 
 namespace maple {
@@ -73,19 +73,19 @@ class MIRLexer {
  private:
   MIRModule &module;
   // for storing the different types of constant values
-  int64 theIntVal;  // also indicates preg number under kTkPreg
-  float theFloatVal;
-  double theDoubleVal;
+  int64 theIntVal = 0;  // also indicates preg number under kTkPreg
+  float theFloatVal = 0.0;
+  double theDoubleVal = 0.0;
   MapleVector<std::string> seenComments;
-  std::ifstream *airFile;
+  std::ifstream *airFile = nullptr;
   std::ifstream airFileInternal;
   std::string line;
-  size_t lineBufSize;  // the allocated size of line(buffer).
-  uint32 currentLineSize;
-  uint32 curIdx;
-  uint32 lineNum;
-  TokenKind kind;
-  std::string name;  // store the name token without the % or $ prefix
+  size_t lineBufSize = 0;  // the allocated size of line(buffer).
+  uint32 currentLineSize = 0;
+  uint32 curIdx = 0;
+  uint32 lineNum = 0;
+  TokenKind kind = kTkInvalid;
+  std::string name = "";  // store the name token without the % or $ prefix
   MapleUnorderedMap<std::string, TokenKind> keywordMap;
 
   void RemoveReturnInline(std::string &line) {
@@ -114,24 +114,24 @@ class MIRLexer {
   TokenKind GetTokenWithPrefixDoubleQuotation();
   TokenKind GetTokenSpecial();
 
-  inline char GetCharAt(uint32 idx) const {
+  char GetCharAt(uint32 idx) const {
     return line[idx];
   }
 
-  inline char GetCharAtWithUpperCheck(uint32 idx) const {
+  char GetCharAtWithUpperCheck(uint32 idx) const {
     return idx < currentLineSize ? line[idx] : 0;
   }
 
-  inline char GetCharAtWithLowerCheck(uint32 idx) const {
+  char GetCharAtWithLowerCheck(uint32 idx) const {
     return idx >= 0 ? line[idx] : 0;
   }
 
-  inline char GetCurrentCharWithUpperCheck() {
+  char GetCurrentCharWithUpperCheck() {
     return curIdx < currentLineSize ? line[curIdx] : 0;
   }
 
-  inline char GetNextCurrentCharWithUpperCheck() {
-    curIdx++;
+  char GetNextCurrentCharWithUpperCheck() {
+    ++curIdx;
     return curIdx < currentLineSize ? line[curIdx] : 0;
   }
 
@@ -145,23 +145,23 @@ class MIRLexer {
 };
 
 inline bool IsPrimitiveType(TokenKind tk) {
-  return tk >= TK_void && tk <= TK_agg;
+  return (tk >= TK_void) && (tk <= TK_agg);
 }
 
 inline bool IsVarName(TokenKind tk) {
-  return tk == kTkLname || tk == kTkGname;
+  return (tk == kTkLname) || (tk == kTkGname);
 }
 
 inline bool IsExprBinary(TokenKind tk) {
-  return tk >= TK_add && tk <= TK_sub;
+  return (tk >= TK_add) && (tk <= TK_sub);
 }
 
 inline bool IsConstValue(TokenKind tk) {
-  return tk >= kTkIntconst && tk <= kTkDoubleconst;
+  return (tk >= kTkIntconst) && (tk <= kTkDoubleconst);
 }
 
 inline bool IsConstAddrExpr(TokenKind tk) {
-  return tk == TK_addrof || tk == TK_addroffunc || tk == TK_conststr || tk == TK_conststr16;
+  return (tk == TK_addrof) || (tk == TK_addroffunc) || (tk == TK_conststr) || (tk == TK_conststr16);
 }
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_LEXER_H

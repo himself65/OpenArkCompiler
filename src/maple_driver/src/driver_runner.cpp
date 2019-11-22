@@ -16,7 +16,6 @@
 #include <iostream>
 #include <typeinfo>
 #include <sys/stat.h>
-#include <climits>
 #include "mpl_timer.h"
 #include "mir_function.h"
 #include "mir_parser.h"
@@ -46,7 +45,7 @@
 
 #define ADD_EXTRA_PHASE(name, timephases, timeStart)                                                    \
   if (timephases) {                                                                                     \
-    auto duration = std::chrono::system_clock::now() - timeStart;                                       \
+    auto duration = std::chrono::system_clock::now() - (timeStart);                                       \
     extraPhasesTime.push_back(std::chrono::duration_cast<std::chrono::microseconds>(duration).count()); \
     extraPhasesName.push_back(name);                                                                    \
   }
@@ -56,7 +55,11 @@ namespace maple {
 const std::string mpl2Mpl = "mpl2mpl";
 const std::string mplME = "me";
 
-enum OptLevel { kLevelO0, kLevelO1, kLevelO2 };
+enum OptLevel {
+  kLevelO0,
+  kLevelO1,
+  kLevelO2
+};
 
 ErrorCode DriverRunner::Run() {
   CHECK_MODULE(ErrorCode::kErrorExit);
@@ -69,8 +72,8 @@ ErrorCode DriverRunner::Run() {
   printOutExe = exeNames[exeNames.size() - 1];
 
   // Prepare output file
-  std::string::size_type lastDot = actualInput.find_last_of(".");
-  std::string baseName = lastDot == std::string::npos ? actualInput : actualInput.substr(0, lastDot);
+  auto lastDot = actualInput.find_last_of(".");
+  std::string baseName = (lastDot == std::string::npos) ? actualInput : actualInput.substr(0, lastDot);
   std::string originBaseName = baseName;
   std::string outputFile = baseName.append(GetPostfix());
 
@@ -99,7 +102,8 @@ bool DriverRunner::IsFramework() const {
 std::string DriverRunner::GetPostfix() const {
   if (printOutExe == mplME) {
     return ".me.mpl";
-  } else if (printOutExe == mpl2Mpl) {
+  }
+  if (printOutExe == mpl2Mpl) {
     return ".VtableImpl.mpl";
   }
   return "";
@@ -161,7 +165,7 @@ void DriverRunner::InitPhases(InterleavedManager &mgr, const std::vector<std::st
   const PhaseManager *curManager = nullptr;
   std::vector<std::string> curPhases;
 
-  for (std::string phase : phases) {
+  for (const std::string &phase : phases) {
     auto temp = mgr.GetSupportPhaseManager(phase);
     if (temp != nullptr) {
       if (temp != curManager) {
@@ -184,7 +188,7 @@ void DriverRunner::InitPhases(InterleavedManager &mgr, const std::vector<std::st
 
 void DriverRunner::AddPhases(InterleavedManager &mgr, const std::vector<std::string> &phases,
                              const PhaseManager &phaseManager) const {
-  const std::type_info &type = typeid(phaseManager);
+  const auto &type = typeid(phaseManager);
   if (type == typeid(ModulePhaseManager)) {
     mgr.AddPhases(phases, true, timePhases);
   } else if (type == typeid(MeFuncPhaseManager)) {

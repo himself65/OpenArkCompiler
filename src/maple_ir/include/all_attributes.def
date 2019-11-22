@@ -23,6 +23,8 @@
   ATTR(static)
   ATTR(synthetic)
   ATTR(used)
+  ATTR(hiddenapiblack)
+  ATTR(hiddenapigrey)
 #ifdef FUNC_ATTR
   ATTR(bridge)
   ATTR(constructor)

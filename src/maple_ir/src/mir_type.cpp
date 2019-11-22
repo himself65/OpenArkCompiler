@@ -13,9 +13,7 @@
  * See the Mulan PSL v1 for more details.
  */
 #include "mir_type.h"
-#include <cmath>
 #include <iostream>
-#include <cstdio>
 #include <cstring>
 #include "mir_symbol.h"
 #include "printing.h"
@@ -427,12 +425,12 @@ bool MIRType::IsOfSameType(MIRType &type) {
       return GlobalTables::GetTypeTable().GetTypeFromTyIdx(ptrType.GetPointedTyIdx())->IsOfSameType(mirTypeIt);
     }
   } else if (typeKind == kTypeJArray) {
-    auto &atype1 = static_cast<MIRJarrayType&>(*this);
-    auto &atype2 = static_cast<MIRJarrayType&>(type);
-    if (atype1.GetDim() != atype2.GetDim()) {
+    auto &arrType1 = static_cast<MIRJarrayType&>(*this);
+    auto &arrType2 = static_cast<MIRJarrayType&>(type);
+    if (arrType1.GetDim() != arrType2.GetDim()) {
       return false;
     }
-    return atype1.GetElemType()->IsOfSameType(*atype2.GetElemType());
+    return arrType1.GetElemType()->IsOfSameType(*arrType2.GetElemType());
   } else {
     return tyIdx == type.tyIdx;
   }
@@ -477,7 +475,7 @@ void MIRArrayType::Dump(int indent, bool dontUseName) const {
     return;
   }
   LogInfo::MapleLogger() << "<";
-  for (uint16 i = 0; i < dim; i++) {
+  for (uint16 i = 0; i < dim; ++i) {
     LogInfo::MapleLogger() << "[" << GetSizeArrayItem(i) << "]";
   }
   LogInfo::MapleLogger() << " ";
@@ -540,15 +538,15 @@ void MIRJarrayType::DetermineName() {
       fromPrimitive = true;
       break;
     } else if (elemType->GetKind() == kTypePointer) {
-      auto *ptype = static_cast<MIRPtrType*>(elemType)->GetPointedType();
-      ASSERT(ptype != nullptr, "ptype is null in MIRJarrayType::DetermineName");
-      if (ptype->GetKind() == kTypeByName || ptype->GetKind() == kTypeClass || ptype->GetKind() == kTypeInterface ||
-          ptype->GetKind() == kTypeClassIncomplete || ptype->GetKind() == kTypeInterfaceIncomplete) {
-        baseName = static_cast<MIRStructType*>(ptype)->GetName();
+      auto *pType = static_cast<MIRPtrType*>(elemType)->GetPointedType();
+      ASSERT(pType != nullptr, "pType is null in MIRJarrayType::DetermineName");
+      if (pType->GetKind() == kTypeByName || pType->GetKind() == kTypeClass || pType->GetKind() == kTypeInterface ||
+          pType->GetKind() == kTypeClassIncomplete || pType->GetKind() == kTypeInterfaceIncomplete) {
+        baseName = static_cast<MIRStructType*>(pType)->GetName();
         fromPrimitive = false;
         break;
-      } else if (ptype->GetKind() == kTypeJArray) {
-        auto *tmpPtype = static_cast<MIRJarrayType*>(ptype);
+      } else if (pType->GetKind() == kTypeJArray) {
+        auto *tmpPtype = static_cast<MIRJarrayType*>(pType);
         elemType = tmpPtype->GetElemType();
         ASSERT(elemType != nullptr, "elemType is null in MIRJarrayType::DetermineName");
         ++dim;
@@ -560,7 +558,7 @@ void MIRJarrayType::DetermineName() {
     }
   }
   std::string name;
-  for (int i = dim; i > 0; i--) {
+  for (int i = dim; i > 0; --i) {
     name += JARRAY_PREFIX_STR;
   }
   name += baseName;
@@ -672,8 +670,8 @@ static void DumpClassOrInterfaceInfo(const MIRStructType &type, int indent) {
   const std::vector<MIRInfoPair> &info = type.GetInfo();
   std::vector<bool> infoIsString = type.GetInfoIsString();
   size_t size = info.size();
-  for (size_t i = 0; i < size; i++) {
-    LogInfo::MapleLogger() << std::endl;
+  for (size_t i = 0; i < size; ++i) {
+    LogInfo::MapleLogger() << '\n';
     PrintIndentation(indent);
     LogInfo::MapleLogger() << "@" << GlobalTables::GetStrTable().GetStringFromStrIdx(info[i].first) << " ";
     if (!infoIsString[i]) {
@@ -730,7 +728,7 @@ static void DumpStaticValue(const MIREncodedArray &staticValue, int indent) {
   if (staticValue.empty()) {
     return;
   }
-  LogInfo::MapleLogger() << std::endl;
+  LogInfo::MapleLogger() << '\n';
   PrintIndentation(indent);
   LogInfo::MapleLogger() << "@staticvalue";
   constexpr uint32 typeLen = 5;
@@ -743,7 +741,7 @@ static void DumpStaticValue(const MIREncodedArray &staticValue, int indent) {
     constexpr uint32 simpleOffset = 1;
     constexpr uint32 aggOffSet = 2;
     valueArg = (valueType == kValueNull || valueType == kValueBoolean) ? simpleOffset : valueArg + aggOffSet;
-    for (uint32 k = 0; k < valueArg; k++) {
+    for (uint32 k = 0; k < valueArg; ++k) {
       LogInfo::MapleLogger() << static_cast<uint32>(value.encodedValue[k]);
       if (k != static_cast<uint32>(valueArg - 1)) {
         LogInfo::MapleLogger() << " ";
@@ -755,8 +753,8 @@ static void DumpStaticValue(const MIREncodedArray &staticValue, int indent) {
 
 static void DumpFields(FieldVector fields, int indent, bool otherFields = false) {
   size_t size = fields.size();
-  for (size_t i = 0; i < size; i++) {
-    LogInfo::MapleLogger() << std::endl;
+  for (size_t i = 0; i < size; ++i) {
+    LogInfo::MapleLogger() << '\n';
     PrintIndentation(indent);
     LogInfo::MapleLogger() << ((!otherFields) ? "@" : "^")
                            << GlobalTables::GetStrTable().GetStringFromStrIdx(fields[i].first) << " ";
@@ -778,7 +776,6 @@ static void DumpFields(FieldVector fields, int indent, bool otherFields = false)
       LogInfo::MapleLogger() << ",";
     }
   }
-  return;
 }
 
 static void DumpFieldsAsCxx(const FieldVector &fields, int indent) {
@@ -793,14 +790,14 @@ static void DumpFieldsAsCxx(const FieldVector &fields, int indent) {
     GlobalTables::GetTypeTable().GetTypeFromTyIdx(f.second.first)->Dump(indent + 1);
     LogInfo::MapleLogger() << " */ ";
     GlobalTables::GetTypeTable().GetTypeFromTyIdx(f.second.first)->DumpAsCxx(indent + 1);
-    LogInfo::MapleLogger() << " " << GlobalTables::GetStrTable().GetStringFromStrIdx(f.first) << ";" << std::endl;
+    LogInfo::MapleLogger() << " " << GlobalTables::GetStrTable().GetStringFromStrIdx(f.first) << ";" << '\n';
   }
 }
 
 static void DumpMethods(MethodVector methods, int indent) {
   size_t size = methods.size();
-  for (size_t i = 0; i < size; i++) {
-    LogInfo::MapleLogger() << std::endl;
+  for (size_t i = 0; i < size; ++i) {
+    LogInfo::MapleLogger() << '\n';
     PrintIndentation(indent);
     LogInfo::MapleLogger() << "&" << GlobalTables::GetGsymTable().GetSymbolFromStidx(methods[i].first.Idx())->GetName();
     methods[i].second.second.DumpAttributes();
@@ -808,7 +805,7 @@ static void DumpMethods(MethodVector methods, int indent) {
     auto *funcType =
         static_cast<MIRFuncType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(methods[i].second.first));
     size_t parmListSize = funcType->GetParamTypeList().size();
-    for (size_t j = 0; j < parmListSize; j++) {
+    for (size_t j = 0; j < parmListSize; ++j) {
       GlobalTables::GetTypeTable().GetTypeFromTyIdx(funcType->GetNthParamType(j))->Dump(indent + 1);
       if (j != parmListSize - 1) {
         LogInfo::MapleLogger() << ",";
@@ -844,19 +841,19 @@ static void DumpConstructorsAsCxx(MethodVector methods, int indent) {
       if (j != paramTypeListSize - 1) {
         LogInfo::MapleLogger() << ", ";
       }
-      j++;
+      ++j;
     }
     if (funcType->IsVarargs()) {
       LogInfo::MapleLogger() << ", ...";
     }
     LogInfo::MapleLogger() << ") ";
     GlobalTables::GetTypeTable().GetTypeFromTyIdx(funcType->GetRetTyIdx())->Dump(indent + 1);
-    LogInfo::MapleLogger() << " */" << std::endl;
+    LogInfo::MapleLogger() << " */" << '\n';
     PrintIndentation(indent);
     LogInfo::MapleLogger() << "/* ";
     LogInfo::MapleLogger() << NameMangler::DecodeName(
         GlobalTables::GetGsymTable().GetSymbolFromStidx(m.first.Idx())->GetName());
-    LogInfo::MapleLogger() << " */" << std::endl;
+    LogInfo::MapleLogger() << " */" << '\n';
     PrintIndentation(indent);
     LogInfo::MapleLogger() << "extern \"C\" ";
     // return type
@@ -868,22 +865,22 @@ static void DumpConstructorsAsCxx(MethodVector methods, int indent) {
       if (j != paramTypeListSize - 1) {
         LogInfo::MapleLogger() << ", ";
       }
-      j++;
+      ++j;
     }
     if (funcType->IsVarargs()) {
       LogInfo::MapleLogger() << ", ...";
     }
     LogInfo::MapleLogger() << ")";
     if (methods.size() - 1 != i++) {
-      LogInfo::MapleLogger() << ";" << std::endl;
+      LogInfo::MapleLogger() << ";" << '\n';
     }
   }
 }
 
 static void DumpInterfaces(std::vector<TyIdx> interfaces, int indent) {
   size_t size = interfaces.size();
-  for (size_t i = 0; i < size; i++) {
-    LogInfo::MapleLogger() << std::endl;
+  for (size_t i = 0; i < size; ++i) {
+    LogInfo::MapleLogger() << '\n';
     PrintIndentation(indent);
     GStrIdx stridx = GlobalTables::GetTypeTable().GetTypeFromTyIdx(interfaces[i])->GetNameStrIdx();
     LogInfo::MapleLogger() << "$" << GlobalTables::GetStrTable().GetStringFromStrIdx(stridx);
@@ -979,7 +976,7 @@ static void DumpInfoPragmaStaticValue(const std::vector<MIRInfoPair> &info, cons
     LogInfo::MapleLogger() << ",";
   }
   size_t size = pragmaVec.size();
-  for (size_t i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; ++i) {
     pragmaVec[i]->Dump(indent);
     if (i != size - 1) {
       LogInfo::MapleLogger() << ",";
@@ -1225,7 +1222,7 @@ FieldPair MIRStructType::TraverseToFieldRef(FieldID &fieldID) const {
   uint32 fieldIdx = 0;
   FieldPair curPair = fields[0];
   while (fieldID > 1) {
-    fieldID--;
+    --fieldID;
     MIRType *curFieldType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(curPair.second.first);
     MIRStructType *curFieldStructType = nullptr;
     switch (curFieldType->GetKind()) {
@@ -1244,7 +1241,7 @@ FieldPair MIRStructType::TraverseToFieldRef(FieldID &fieldID) const {
       default:
         break;
     }
-    fieldIdx++;
+    ++fieldIdx;
     if (fieldIdx == fields.size()) {
       return FieldPair(GStrIdx(0), TyIdxFieldAttrPair(TyIdx(0), FieldAttrs()));
     }
@@ -1389,7 +1386,7 @@ TyIdxFieldAttrPair MIRPtrType::GetPointedTyIdxFldAttrPairWithFieldID(FieldID fie
   MIRType *pointedType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(pointedTyIdx);
   CHECK_FATAL(pointedType->IsStructType(),
       "MIRPtrType::GetPointedTyIdxWithFieldID(): cannot have non-zero fieldID for something other than a struct");
-  MIRStructType *structType = static_cast<MIRStructType*>(pointedType);
+  auto *structType = static_cast<MIRStructType*>(pointedType);
   return structType->GetFieldTyIdxAttrPair(fieldID);
 }
 
@@ -1441,11 +1438,11 @@ TypeAttrs FieldAttrs::ConvertToTypeAttrs() {
 TypeAttrs GenericAttrs::ConvertToTypeAttrs() {
   TypeAttrs attr;
   constexpr uint32 maxAttrNum = 64;
-  for (uint32 i = 0; i < maxAttrNum; i++) {
+  for (uint32 i = 0; i < maxAttrNum; ++i) {
     if ((attrFlag & (1ULL << i)) == 0) {
       continue;
     }
-    GenericAttrKind tA = static_cast<GenericAttrKind>(i);
+    auto tA = static_cast<GenericAttrKind>(i);
     switch (tA) {
 #define TYPE_ATTR
 #define ATTR(STR)               \
@@ -1466,11 +1463,11 @@ TypeAttrs GenericAttrs::ConvertToTypeAttrs() {
 FuncAttrs GenericAttrs::ConvertToFuncAttrs() {
   FuncAttrs attr;
   constexpr uint32 maxAttrNum = 64;
-  for (uint32 i = 0; i < maxAttrNum; i++) {
+  for (uint32 i = 0; i < maxAttrNum; ++i) {
     if ((attrFlag & (1ULL << i)) == 0) {
       continue;
     }
-    GenericAttrKind tA = static_cast<GenericAttrKind>(i);
+    auto tA = static_cast<GenericAttrKind>(i);
     switch (tA) {
 #define FUNC_ATTR
 #define ATTR(STR)                   \
@@ -1491,11 +1488,11 @@ FuncAttrs GenericAttrs::ConvertToFuncAttrs() {
 FieldAttrs GenericAttrs::ConvertToFieldAttrs() {
   FieldAttrs attr;
   constexpr uint32 maxAttrNum = 64;
-  for (uint32 i = 0; i < maxAttrNum; i++) {
+  for (uint32 i = 0; i < maxAttrNum; ++i) {
     if ((attrFlag & (1ULL << i)) == 0) {
       continue;
     }
-    GenericAttrKind tA = static_cast<GenericAttrKind>(i);
+    auto tA = static_cast<GenericAttrKind>(i);
     switch (tA) {
 #define FIELD_ATTR
 #define ATTR(STR)                  \
