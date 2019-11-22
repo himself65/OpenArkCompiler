@@ -72,15 +72,15 @@ static MapleMap<OStIdx, MayDefNode> *SSAGenericGetMayDefsFromVersionSt(VersionSt
   if (vst.GetDefType() == VersionSt::kPhi) {
     PhiNode *phi = vst.GetPhi();
     for (size_t i = 0; i < phi->GetPhiOpnds().size(); ++i) {
-      VersionSt *vsym = phi->GetPhiOpnd(i);
-      MapleMap<OStIdx, MayDefNode> *mayDefs = SSAGenericGetMayDefsFromVersionSt(*vsym, stmtsSSAPart, visited);
+      VersionSt *vSym = phi->GetPhiOpnd(i);
+      MapleMap<OStIdx, MayDefNode> *mayDefs = SSAGenericGetMayDefsFromVersionSt(*vSym, stmtsSSAPart, visited);
       if (mayDefs != nullptr) {
         return mayDefs;
       }
     }
   } else if (vst.GetDefType() == VersionSt::kMayDef) {
-    MayDefNode *maydef = vst.GetMayDef();
-    return &stmtsSSAPart.GetMayDefNodesOf(*maydef->GetStmt());
+    MayDefNode *mayDef = vst.GetMayDef();
+    return &stmtsSSAPart.GetMayDefNodesOf(*mayDef->GetStmt());
   }
   return nullptr;
 }

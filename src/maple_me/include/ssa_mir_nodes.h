@@ -418,9 +418,9 @@ class StmtsSSAPart {
   }
 
   void SetSSAPartOf(const StmtNode &s, VersionSt *vst) {
-    auto *vStSSAPart = GetSSAPartMp()->New<VersionStPart>();
-    vStSSAPart->SetSSAVar(*vst);
-    ssaPart[s.GetStmtID()] = vStSSAPart;
+    auto *vstSSAPart = GetSSAPartMp()->New<VersionStPart>();
+    vstSSAPart->SetSSAVar(*vst);
+    ssaPart[s.GetStmtID()] = vstSSAPart;
   }
 
   MemPool *GetSSAPartMp() {
@@ -440,10 +440,10 @@ class StmtsSSAPart {
 // The following expression nodes need extra fields to represent SSA
 class AddrofSSANode : public AddrofNode {
  public:
-  explicit AddrofSSANode(const AddrofNode *addrnode) : AddrofNode(addrnode->GetOpCode()) {
-    SetPrimType(addrnode->GetPrimType());
-    SetStIdx(addrnode->GetStIdx());
-    SetFieldID(addrnode->GetFieldID());
+  explicit AddrofSSANode(const AddrofNode *addrofNode) : AddrofNode(addrofNode->GetOpCode()) {
+    SetPrimType(addrofNode->GetPrimType());
+    SetStIdx(addrofNode->GetStIdx());
+    SetFieldID(addrofNode->GetFieldID());
     ssaVar = nullptr;
   }
 
@@ -459,11 +459,9 @@ class AddrofSSANode : public AddrofNode {
   const VersionSt *GetSSAVar() const {
     return ssaVar;
   }
-
   VersionSt *GetSSAVar() {
     return ssaVar;
   }
-
   void SetSSAVar(VersionSt *ssaVarPara) {
     ssaVar = ssaVarPara;
   }
@@ -474,11 +472,11 @@ class AddrofSSANode : public AddrofNode {
 
 class IreadSSANode : public IreadNode {
  public:
-  IreadSSANode(MapleAllocator *alloc, IreadNode *inode) : IreadNode(inode->GetOpCode()), ssaVar(nullptr) {
-    SetPrimType(inode->GetPrimType());
-    tyIdx = inode->GetTyIdx();
-    fieldID = inode->GetFieldID();
-    SetOpnd(inode->Opnd());
+  IreadSSANode(MapleAllocator *alloc, IreadNode *iNode) : IreadNode(iNode->GetOpCode()), ssaVar(nullptr) {
+    SetPrimType(iNode->GetPrimType());
+    tyIdx = iNode->GetTyIdx();
+    fieldID = iNode->GetFieldID();
+    SetOpnd(iNode->Opnd());
   }
 
   ~IreadSSANode() override = default;
@@ -504,9 +502,9 @@ class IreadSSANode : public IreadNode {
 
 class RegreadSSANode : public RegreadNode {
  public:
-  explicit RegreadSSANode(const RegreadNode *rreadnode) : RegreadNode() {
-    SetPrimType(rreadnode->GetPrimType());
-    SetRegIdx(rreadnode->GetRegIdx());
+  explicit RegreadSSANode(const RegreadNode *readNode) : RegreadNode() {
+    SetPrimType(readNode->GetPrimType());
+    SetRegIdx(readNode->GetRegIdx());
   }
 
   ~RegreadSSANode() override = default;

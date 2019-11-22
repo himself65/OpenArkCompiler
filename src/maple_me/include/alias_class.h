@@ -28,15 +28,11 @@ class AliasElem {
  public:
   AliasElem(uint32 i, OriginalSt &origst)
       : id(i),
-        ost(origst),
-        notAllDefsSeen(false),
-        nextLevNotAllDefsSeen(false),
-        classSet(nullptr),
-        assignSet(nullptr) {}
+        ost(origst) {}
 
   ~AliasElem() = default;
 
-  void Dump(MIRModule &mod) const;
+  void Dump(const MIRModule &mod) const;
 
   uint32 GetClassID() const {
     return id;
@@ -52,7 +48,6 @@ class AliasElem {
   bool IsNotAllDefsSeen() const {
     return notAllDefsSeen;
   }
-
   void SetNotAllDefsSeen(bool allDefsSeen) {
     notAllDefsSeen = allDefsSeen;
   }
@@ -60,7 +55,6 @@ class AliasElem {
   bool IsNextLevNotAllDefsSeen() const {
     return nextLevNotAllDefsSeen;
   }
-
   void SetNextLevNotAllDefsSeen(bool allDefsSeen) {
     nextLevNotAllDefsSeen = allDefsSeen;
   }
@@ -82,23 +76,24 @@ class AliasElem {
  private:
   uint32 id;  // the original alias class id, before any union; start from 0
   OriginalSt &ost;
-  bool notAllDefsSeen;         // applied to current level; unused for lev -1
-  bool nextLevNotAllDefsSeen;  // remember that next level's elements need to be made notAllDefsSeen
-  MapleSet<unsigned int> *classSet;    // points to the set of members of its class; nullptr for single-member classes
-  MapleSet<unsigned int> *assignSet;   // points to the set of members that have assignments among themselves
+  bool notAllDefsSeen = false;         // applied to current level; unused for lev -1
+  bool nextLevNotAllDefsSeen = false;  // remember that next level's elements need to be made notAllDefsSeen
+  MapleSet<unsigned int> *classSet = nullptr;    // points to the set of members of its class; nullptr for
+                                                 // single-member classes
+  MapleSet<unsigned int> *assignSet = nullptr;   // points to the set of members that have assignments among themselves
 };
 
 class AliasClass : public AnalysisResult {
  public:
-  AliasClass(MemPool &memPool, MIRModule &mod, SSATab &ssatb, bool lessThrowAliasParam, bool ignoreIPA,
+  AliasClass(MemPool &memPool, MIRModule &mod, SSATab &ssaTabParam, bool lessThrowAliasParam, bool ignoreIPA,
              bool setCalleeHasSideEffect = false, KlassHierarchy *kh = nullptr)
       : AnalysisResult(&memPool),
         mirModule(mod),
         acMemPool(memPool),
         acAlloc(&memPool),
-        ssaTab(ssatb),
+        ssaTab(ssaTabParam),
         unionFind(memPool),
-        osym2Elem(ssatb.GetOriginalStTableSize(), nullptr, acAlloc.Adapter()),
+        osym2Elem(ssaTabParam.GetOriginalStTableSize(), nullptr, acAlloc.Adapter()),
         id2Elem(acAlloc.Adapter()),
         notAllDefsSeenClassSetRoots(acAlloc.Adapter()),
         globalsAffectedByCalls(std::less<unsigned int>(), acAlloc.Adapter()),
@@ -106,10 +101,9 @@ class AliasClass : public AnalysisResult {
         lessThrowAlias(lessThrowAliasParam),
         ignoreIPA(ignoreIPA),
         calleeHasSideEffect(setCalleeHasSideEffect),
-        klassHierarchy(kh),
-        aliasAnalysisTable(nullptr) {}
+        klassHierarchy(kh) {}
 
-  ~AliasClass() = default;
+  ~AliasClass() override = default;
 
   AliasAnalysisTable *GetAliasAnalysisTable() {
     if (aliasAnalysisTable == nullptr) {
@@ -118,15 +112,21 @@ class AliasClass : public AnalysisResult {
     return aliasAnalysisTable;
   }
 
-  AliasElem *FindAliasElem(const OriginalSt &ost) const {
+  const AliasElem *FindAliasElem(const OriginalSt &ost) const {
     return osym2Elem.at(ost.GetIndex().idx);
+  }
+  AliasElem *FindAliasElem(const OriginalSt &ost) {
+    return const_cast<AliasElem*>(const_cast<const AliasClass*>(this)->FindAliasElem(ost));
   }
 
   size_t GetAliasElemCount() const {
     return osym2Elem.size();
   }
 
-  AliasElem *FindID2Elem(size_t id) const {
+  const AliasElem *FindID2Elem(size_t id) const {
+    return id2Elem.at(id);
+  }
+  AliasElem *FindID2Elem(size_t id) {
     return id2Elem.at(id);
   }
 
@@ -146,22 +146,67 @@ class AliasClass : public AnalysisResult {
   void CollectRootIDOfNextLevelNodes(const OriginalSt &ost, std::set<unsigned int> &rootIDOfNADSs);
   void UnionForNotAllDefsSeen();
   void CollectAliasGroups(std::map<unsigned int, std::set<unsigned int>> &aliasGroups);
-  bool AliasAccordingToType(TyIdx tyidxA, TyIdx tyidxB);
+  bool AliasAccordingToType(TyIdx tyIdxA, TyIdx tyIdxB);
   bool AliasAccordingToFieldID(const OriginalSt &ostA, const OriginalSt &ostB);
   void ReconstructAliasGroups();
   void CollectNotAllDefsSeenAes();
   void CreateClassSets();
   void DumpClassSets();
-  void InsertMayDefUseCall(StmtNode &stmt, BBId bbid, bool hasSideEffect, bool hasNoPrivateDefEffect);
-  void GenericInsertMayDefUse(StmtNode &stmt, BBId bbid);
+  void InsertMayDefUseCall(StmtNode &stmt, BBId bbID, bool hasSideEffect, bool hasNoPrivateDefEffect);
+  void GenericInsertMayDefUse(StmtNode &stmt, BBId bbID);
 
  protected:
-  MIRModule &mirModule;
   virtual bool InConstructorLikeFunc() const {
     return true;
   }
+  MIRModule &mirModule;
 
  private:
+  bool CallHasNoSideEffectOrPrivateDefEffect(const CallNode &stmt, FuncAttrKind attrKind) const;
+  bool CallHasSideEffect(const CallNode &stmt) const;
+  bool CallHasNoPrivateDefEffect(const CallNode &stmt) const;
+  AliasElem *FindOrCreateAliasElem(OriginalSt &ost);
+  AliasElem *FindOrCreateExtraLevAliasElem(BaseNode &expr, TyIdx tyIdx, FieldID fieldId);
+  AliasElem *CreateAliasElemsExpr(BaseNode &expr);
+  void SetNotAllDefsSeenForMustDefs(const StmtNode &callas);
+  void SetPtrOpndNextLevNADS(const BaseNode &opnd, AliasElem *aliasElem, bool hasNoPrivateDefEffect);
+  void SetPtrOpndsNextLevNADS(unsigned int start, unsigned int end, MapleVector<BaseNode*> &opnds,
+                              bool hasNoPrivateDefEffect);
+  void ApplyUnionForDassignCopy(const AliasElem &lhsAe, const AliasElem *rhsAe, const BaseNode &rhs);
+  AliasElem *FindOrCreateDummyNADSAe();
+  bool IsPointedTo(OriginalSt &oSt);
+  AliasElem &FindOrCreateAliasElemOfAddrofOSt(OriginalSt &oSt);
+  void CollectMayDefForMustDefs(const StmtNode &stmt, std::set<OriginalSt*> &mayDefOsts);
+  void CollectMayUseForCallOpnd(const StmtNode &stmt, std::set<OriginalSt*> &mayUseOsts);
+  void InsertMayDefNodeForCall(std::set<OriginalSt*> &mayDefOsts, MapleMap<OStIdx, MayDefNode> &mayDefNodes,
+                               StmtNode &stmt, BBId bbID, bool hasNoPrivateDefEffect);
+  void InsertMayUseExpr(BaseNode &expr);
+  void CollectMayUseFromGlobalsAffectedByCalls(std::set<OriginalSt*> &mayUseOsts);
+  void CollectMayUseFromNADS(std::set<OriginalSt*> &mayUseOsts);
+  void InsertMayUseNode(std::set<OriginalSt*> &mayUseOsts, MapleMap<OStIdx, MayUseNode> &mayUseNodes);
+  void InsertMayUseReturn(const StmtNode &stmt);
+  void CollectPtsToOfReturnOpnd(const OriginalSt &ost, std::set<OriginalSt*> &mayUseOsts);
+  void InsertReturnOpndMayUse(const StmtNode &stmt);
+  void InsertMayUseAll(const StmtNode &stmt);
+  void CollectMayDefForDassign(const StmtNode &stmt, std::set<OriginalSt*> &mayDefOsts);
+  void InsertMayDefNode(std::set<OriginalSt*> &mayDefOsts, MapleMap<OStIdx, MayDefNode> &mayDefNodes, StmtNode &stmt);
+  void InsertMayDefDassign(StmtNode &stmt);
+  bool IsEquivalentField(TyIdx tyIdxA, FieldID fldA, TyIdx tyIdxB, FieldID fldB) const;
+  void CollectMayDefForIassign(StmtNode &stmt, std::set<OriginalSt*> &mayDefOsts);
+  void InsertMayDefNodeExcludeFinalOst(std::set<OriginalSt*> &mayDefOsts, MapleMap<OStIdx, MayDefNode> &mayDefNodes,
+                                       StmtNode &stmt);
+  void InsertMayDefIassign(StmtNode &stmt);
+  void InsertMayDefUseSyncOps(StmtNode &stmt);
+  void InsertMayUseNodeExcludeFinalOst(const std::set<OriginalSt*> &mayUseOsts,
+                                       MapleMap<OStIdx, MayUseNode> &mayUseNodes);
+  void InsertMayDefUseIntrncall(StmtNode &stmt);
+  void InsertMayDefUseClinitCheck(IntrinsiccallNode &stmt);
+  virtual BB *GetBB(BBId id) = 0;
+  void ProcessIdsAliasWithRoot(const std::set<unsigned int> &idsAliasWithRoot, std::vector<unsigned int> &newGroups);
+  void UpdateNextLevelNodes(std::vector<OriginalSt*> &nextLevelOsts, const AliasElem &aliasElem);
+  void UnionNodes(std::vector<OriginalSt*> &nextLevelOsts);
+  int GetOffset(const Klass &super, const Klass &base) const;
+
   MemPool &acMemPool;
   MapleAllocator acAlloc;
   SSATab &ssaTab;
@@ -176,52 +221,7 @@ class AliasClass : public AnalysisResult {
   bool ignoreIPA;        // whether to ignore information provided by IPA
   bool calleeHasSideEffect;
   KlassHierarchy *klassHierarchy;
-  AliasAnalysisTable *aliasAnalysisTable;
-  bool CallHasNoSideEffectOrPrivateDefEffect(const CallNode &stmt, FuncAttrKind attrKind) const;
-  bool CallHasSideEffect(const CallNode &stmt) const;
-  bool CallHasNoPrivateDefEffect(const CallNode &stmt) const;
-  AliasElem *FindOrCreateAliasElem(OriginalSt &ost);
-  AliasElem *FindOrCreateExtraLevAliasElem(BaseNode &expr, TyIdx tyIdx, FieldID fieldId);
-  AliasElem *CreateAliasElemsExpr(BaseNode &expr);
-  void SetNotAllDefsSeenForMustDefs(const StmtNode &callas);
-  void SetPtrOpndNextLevNADS(const BaseNode &opnd, AliasElem *ae, bool hasNoPrivateDefEffect);
-  void SetPtrOpndsNextLevNADS(unsigned int start, unsigned int end, MapleVector<BaseNode*> &opnds,
-                              bool hasNoPrivateDefEffect);
-  void ApplyUnionForDassignCopy(const AliasElem &lhsAe, const AliasElem *rhsAe, const BaseNode &rhs);
-  AliasElem *FindOrCreateDummyNADSAe();
-  bool IsPointedTo(OriginalSt &oSt);
-  AliasElem &FindOrCreateAliasElemOfAddrofOSt(OriginalSt &oSt);
-  void CollectMayDefForMustDefs(const StmtNode &stmt, std::set<OriginalSt*> &mayDefOsts);
-  void CollectMayUseForCallOpnd(const StmtNode &stmt, std::set<OriginalSt*> &mayUseOsts);
-  void InsertMayDefNodeForCall(std::set<OriginalSt*> &mayDefOsts, MapleMap<OStIdx, MayDefNode> &mayDefNodes,
-                               StmtNode &stmt, BBId bbid, bool hasNoPrivateDefEffect);
-  void InsertMayUseExpr(BaseNode &expr);
-  void CollectMayUseFromGlobalsAffectedByCalls(std::set<OriginalSt*> &mayUseOsts);
-  void CollectMayUseFromNADS(std::set<OriginalSt*> &mayUseOsts);
-  void InsertMayUseNode(std::set<OriginalSt*> &mayUseOsts, MapleMap<OStIdx, MayUseNode> &mayUseNodes);
-  void InsertMayUseReturn(const StmtNode &stmt);
-  void CollectPtsToOfReturnOpnd(const OriginalSt &ost, std::set<OriginalSt*> &mayUseOsts);
-  void InsertReturnOpndMayUse(const StmtNode &stmt);
-  void InsertMayUseAll(const StmtNode &stmt);
-  void CollectMayDefForDassign(const StmtNode &stmt, std::set<OriginalSt*> &mayDefOsts);
-  void InsertMayDefNode(std::set<OriginalSt*> &mayDefOsts, MapleMap<OStIdx, MayDefNode> &mayDefNodes, StmtNode &stmt,
-                        BBId bbid);
-  void InsertMayDefDassign(StmtNode &stmt, BBId bbid);
-  bool IsEquivalentField(TyIdx tyIdxA, FieldID fldA, TyIdx tyIdxB, FieldID fldB) const;
-  void CollectMayDefForIassign(StmtNode &stmt, std::set<OriginalSt*> &mayDefOsts);
-  void InsertMayDefNodeExcludeFinalOst(std::set<OriginalSt*> &mayDefOsts, MapleMap<OStIdx, MayDefNode> &mayDefNodes,
-                                       StmtNode &stmt);
-  void InsertMayDefIassign(StmtNode &stmt, BBId bbid);
-  void InsertMayDefUseSyncOps(StmtNode &stmt, BBId bbid);
-  void InsertMayUseNodeExcludeFinalOst(const std::set<OriginalSt*> &mayUseOsts,
-                                       MapleMap<OStIdx, MayUseNode> &mayUseNodes);
-  void InsertMayDefUseIntrncall(StmtNode &stmt, BBId bbid);
-  void InsertMayDefUseClinitCheck(IntrinsiccallNode &stmt, BBId bbid);
-  virtual BB *GetBB(BBId id) = 0;
-  void ProcessIdsAliasWithRoot(const std::set<unsigned int> &idsAliasWithRoot, std::vector<unsigned int> &newGroups);
-  void UpdateNextLevelNodes(std::vector<OriginalSt*> &nextLevelOsts, const AliasElem &aliasElem);
-  void UnionNodes(std::vector<OriginalSt*> &nextLevelOsts);
-  int GetOffset(const Klass &super, Klass &base) const;
+  AliasAnalysisTable *aliasAnalysisTable = nullptr;
 };
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_ALIAS_CLASS_H

@@ -23,22 +23,20 @@
 
 using namespace maple;
 #if MIR_FEATURE_FULL
-void ConstantFoldModule(maple::MIRModule &module) {
-  MapleVector<maple::MIRFunction*> &funcList = module.GetFunctionList();
+void ConstantFoldModule(MIRModule &module) {
+  MapleVector<MIRFunction*> &funcList = module.GetFunctionList();
   for (auto it = funcList.begin(); it != funcList.end(); ++it) {
-    maple::MIRFunction *curFunc = *it;
+    MIRFunction *curFunc = *it;
     module.SetCurFunction(curFunc);
   }
 }
 
-/* hello.mpl
-   flavor 1
-   srclang 3
-
-   type $person <struct {@age i64,
-                      @data <* f32>}>
-   var $BOB i32 = 8
-*/
+// hello.mpl
+// flavor 1
+// srclang 3
+// type $person <struct {@age i64,
+//                       @data <* f32>}>
+// var $BOB i32 = 8
 int main(int argc, char **argv) {
   constexpr int judgeNumber = 2;
   if (argc < judgeNumber) {
@@ -49,7 +47,7 @@ int main(int argc, char **argv) {
     exit(1);
   }
   char flag = '\0';
-  maple::int32 i = 1;
+  int32 i = 1;
   if (argv[1][0] == 'i' && argv[1][1] == '\0') {
     flag = 'i';
     i = judgeNumber;
@@ -58,25 +56,25 @@ int main(int argc, char **argv) {
     i = judgeNumber;
   }
   while (i < argc) {
-    maple::MIRModule module{ argv[i] };
+    MIRModule module{ argv[i] };
     if (flag == '\0') {
-      maple::MIRParser theParser(module);
+      MIRParser theParser(module);
       if (theParser.ParseMIR()) {
         ConstantFoldModule(module);
         module.OutputAsciiMpl(".irb");
       } else {
-        theParser.EmitError(module.GetFileName().c_str());
+        theParser.EmitError(module.GetFileName());
         return 1;
       }
     } else if (flag == 'e') {
-      maple::MIRParser theParser(module);
+      MIRParser theParser(module);
       if (theParser.ParseMIR()) {
         ConstantFoldModule(module);
         BinaryMplt binMplt(module);
-        std::string modID = module.GetFileName();
+        const std::string &modID = module.GetFileName();
         binMplt.Export("bin." + modID);
       } else {
-        theParser.EmitError(module.GetFileName().c_str());
+        theParser.EmitError(module.GetFileName());
         return 1;
       }
     } else if (flag == 'i') {
@@ -84,7 +82,7 @@ int main(int argc, char **argv) {
       module.SetSrcLang(kSrcLangJava);
       BinaryMplImport binMplt(module);
       binMplt.SetImported(false);
-      std::string modID = module.GetFileName();
+      const std::string &modID = module.GetFileName();
       binMplt.Import(modID, true);
       module.OutputAsciiMpl(".irb");
     }

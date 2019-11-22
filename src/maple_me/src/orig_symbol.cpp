@@ -65,7 +65,7 @@ void OriginalStTable::Dump() {
 }
 
 OriginalSt *OriginalStTable::FindOrCreateSymbolOriginalSt(MIRSymbol &mirst, PUIdx pidx, FieldID fld) {
-  MapleUnorderedMap<const MIRSymbol*, OStIdx>::iterator it = mirSt2Ost.find(&mirst);
+  auto it = mirSt2Ost.find(&mirst);
   if (it == mirSt2Ost.end()) {
     // create a new OriginalSt
     return CreateSymbolOriginalSt(mirst, pidx, fld);
@@ -76,12 +76,12 @@ OriginalSt *OriginalStTable::FindOrCreateSymbolOriginalSt(MIRSymbol &mirst, PUId
 }
 
 OriginalSt *OriginalStTable::FindOrCreatePregOriginalSt(PregIdx regidx, PUIdx pidx) {
-  MapleUnorderedMap<PregIdx, OStIdx>::iterator it = preg2Ost.find(regidx);
+  auto it = preg2Ost.find(regidx);
   return (it == preg2Ost.end()) ? CreatePregOriginalSt(regidx, pidx) : originalStVector.at(it->second.idx);
 }
 
 OriginalSt *OriginalStTable::CreateSymbolOriginalSt(MIRSymbol &mirst, PUIdx pidx, FieldID fld) {
-  OriginalSt *ost = alloc.GetMemPool()->New<OriginalSt>(originalStVector.size(), mirst, pidx, fld, alloc);
+  auto *ost = alloc.GetMemPool()->New<OriginalSt>(originalStVector.size(), mirst, pidx, fld, alloc);
   if (fld == 0) {
     ost->SetTyIdx(mirst.GetTyIdx());
     ost->SetIsFinal(mirst.IsFinal());
@@ -100,7 +100,7 @@ OriginalSt *OriginalStTable::CreateSymbolOriginalSt(MIRSymbol &mirst, PUIdx pidx
 }
 
 OriginalSt *OriginalStTable::CreatePregOriginalSt(PregIdx regidx, PUIdx pidx) {
-  OriginalSt *ost = alloc.GetMemPool()->New<OriginalSt>(originalStVector.size(), regidx, pidx, alloc);
+  auto *ost = alloc.GetMemPool()->New<OriginalSt>(originalStVector.size(), regidx, pidx, alloc);
   if (regidx < 0) {
     ost->SetTyIdx(TyIdx(PTY_unknown));
   } else {
@@ -112,7 +112,7 @@ OriginalSt *OriginalStTable::CreatePregOriginalSt(PregIdx regidx, PUIdx pidx) {
 }
 
 OriginalSt *OriginalStTable::FindSymbolOriginalSt(MIRSymbol &mirst) {
-  MapleUnorderedMap<const MIRSymbol*, OStIdx>::iterator it = mirSt2Ost.find(&mirst);
+  auto it = mirSt2Ost.find(&mirst);
   if (it == mirSt2Ost.end()) {
     return nullptr;
   }

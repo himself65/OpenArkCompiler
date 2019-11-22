@@ -22,6 +22,7 @@
 #include "printing.h"
 #include "native_stub_func.h"
 #include "literal_str_name.h"
+#include "string_utils.h"
 
 namespace maple {
 using namespace NameMangler;
@@ -31,18 +32,20 @@ void MIRSymbol::SetNameStrIdx(const std::string &name) {
 }
 
 bool MIRSymbol::HasAddrOfValues() const {
-  return (GetName().find(VTAB_PREFIX_STR) == 0 || GetName().find(ITAB_PREFIX_STR) == 0 ||
-          GetName().find(kVtabOffsetTabStr) == 0 || IsClassInitBridge() || IsReflectionInfo() ||
-          IsReflectionHashTabBucket() || IsReflectionStrTab() || IsITabConflictInfo() || IsRegJNITab() ||
-          IsRegJNIFuncTab() || IsLiteral());
+  return  StringUtils::StartsWith(GetName(), VTAB_PREFIX_STR) ||
+          StringUtils::StartsWith(GetName(), ITAB_PREFIX_STR) ||
+          StringUtils::StartsWith(GetName(), kVtabOffsetTabStr) ||
+          IsClassInitBridge() || IsReflectionInfo() || IsReflectionHashTabBucket() ||
+          IsReflectionStrTab() || IsITabConflictInfo() || IsRegJNITab() ||
+          IsRegJNIFuncTab() || IsLiteral();
 }
 
 bool MIRSymbol::IsLiteral() const {
-  return GetName().find(kConstString) == 0;
+  return StringUtils::StartsWith(GetName(), kConstString);
 }
 
 bool MIRSymbol::IsLiteralPtr() const {
-  return GetName().find(kConstStringPtr) == 0;
+  return StringUtils::StartsWith(GetName(), kConstStringPtr);
 }
 
 MIRType *MIRSymbol::GetType() const {
@@ -66,27 +69,27 @@ bool MIRSymbol::IsConstString() const {
 }
 
 bool MIRSymbol::IsReflectionStrTab() const {
-  return (GetName().find(kReflectionStrtabPrefixStr) == 0) ||
-         (GetName().find(kReflectionStartHotStrtabPrefixStr) == 0) ||
-         (GetName().find(kReflectionBothHotStrTabPrefixStr) == 0) ||
-         (GetName().find(kReflectionRunHotStrtabPrefixStr) == 0) ||
-         (GetName().find(kReflectionNoEmitStrtabPrefixStr) == 0);
+  return StringUtils::StartsWith(GetName(), kReflectionStrtabPrefixStr) ||
+         StringUtils::StartsWith(GetName(), kReflectionStartHotStrtabPrefixStr) ||
+         StringUtils::StartsWith(GetName(), kReflectionBothHotStrTabPrefixStr) ||
+         StringUtils::StartsWith(GetName(), kReflectionRunHotStrtabPrefixStr) ||
+         StringUtils::StartsWith(GetName(), kReflectionNoEmitStrtabPrefixStr);
 }
 
 bool MIRSymbol::IsRegJNITab() const {
-  return GetName().find(kRegJNITabPrefixStr) == 0;
+  return StringUtils::StartsWith(GetName(), kRegJNITabPrefixStr);
 }
 
 bool MIRSymbol::IsRegJNIFuncTab() const {
-  return GetName().find(kRegJNIFuncTabPrefixStr) == 0;
+  return StringUtils::StartsWith(GetName(), kRegJNIFuncTabPrefixStr);
 }
 
 bool MIRSymbol::IsMuidTab() const {
-  return GetName().find(kMuidPrefixStr) == 0;
+  return StringUtils::StartsWith(GetName(), kMuidPrefixStr);
 }
 
 bool MIRSymbol::IsCodeLayoutInfo() const {
-  return GetName().find(kFunctionLayoutStr) == 0;
+  return StringUtils::StartsWith(GetName(), kFunctionLayoutStr);
 }
 
 std::string MIRSymbol::GetMuidTabName() const {
@@ -98,59 +101,59 @@ std::string MIRSymbol::GetMuidTabName() const {
 }
 
 bool MIRSymbol::IsMuidFuncDefTab() const {
-  return GetName().find(kMuidFuncDefTabPrefixStr) == 0;
+  return StringUtils::StartsWith(GetName(), kMuidFuncDefTabPrefixStr);
 }
 
 bool MIRSymbol::IsMuidFuncDefOrigTab() const {
-  return GetName().find(kMuidFuncDefOrigTabPrefixStr) == 0;
+  return StringUtils::StartsWith(GetName(), kMuidFuncDefOrigTabPrefixStr);
 }
 
 bool MIRSymbol::IsMuidFuncInfTab() const {
-  return GetName().find(kMuidFuncInfTabPrefixStr) == 0;
+  return StringUtils::StartsWith(GetName(), kMuidFuncInfTabPrefixStr);
 }
 
 bool MIRSymbol::IsMuidFuncUndefTab() const {
-  return GetName().find(kMuidFuncUndefTabPrefixStr) == 0;
+  return StringUtils::StartsWith(GetName(), kMuidFuncUndefTabPrefixStr);
 }
 
 bool MIRSymbol::IsMuidDataDefTab() const {
-  return GetName().find(kMuidDataDefTabPrefixStr) == 0;
+  return StringUtils::StartsWith(GetName(), kMuidDataDefTabPrefixStr);
 }
 
 bool MIRSymbol::IsMuidDataDefOrigTab() const {
-  return GetName().find(kMuidDataDefOrigTabPrefixStr) == 0;
+  return StringUtils::StartsWith(GetName(), kMuidDataDefOrigTabPrefixStr);
 }
 
 bool MIRSymbol::IsMuidDataUndefTab() const {
-  return GetName().find(kMuidDataUndefTabPrefixStr) == 0;
+  return StringUtils::StartsWith(GetName(), kMuidDataUndefTabPrefixStr);
 }
 
 bool MIRSymbol::IsMuidFuncDefMuidTab() const {
-  return GetName().find(kMuidFuncDefMuidTabPrefixStr) == 0;
+  return StringUtils::StartsWith(GetName(), kMuidFuncDefMuidTabPrefixStr);
 }
 
 bool MIRSymbol::IsMuidFuncUndefMuidTab() const {
-  return GetName().find(kMuidFuncUndefMuidTabPrefixStr) == 0;
+  return StringUtils::StartsWith(GetName(), kMuidFuncUndefMuidTabPrefixStr);
 }
 
 bool MIRSymbol::IsMuidDataDefMuidTab() const {
-  return GetName().find(kMuidDataDefMuidTabPrefixStr) == 0;
+  return StringUtils::StartsWith(GetName(), kMuidDataDefMuidTabPrefixStr);
 }
 
 bool MIRSymbol::IsMuidDataUndefMuidTab() const {
-  return GetName().find(kMuidDataUndefMuidTabPrefixStr) == 0;
+  return StringUtils::StartsWith(GetName(), kMuidDataUndefMuidTabPrefixStr);
 }
 
 bool MIRSymbol::IsMuidRangeTab() const {
-  return GetName().find(kMuidRangeTabPrefixStr) == 0;
+  return StringUtils::StartsWith(GetName(), kMuidRangeTabPrefixStr);
 }
 
 bool MIRSymbol::IsClassInitBridge() const {
-  return GetName().find(CLASS_INIT_BRIDGE_PREFIX_STR) == 0;
+  return StringUtils::StartsWith(GetName(), CLASS_INIT_BRIDGE_PREFIX_STR);
 }
 
 bool MIRSymbol::IsReflectionHashTabBucket() const {
-  return GetName().compare(0, strlen(kMuidClassMetadataBucketPrefixStr), kMuidClassMetadataBucketPrefixStr) == 0;
+  return StringUtils::StartsWith(GetName(), kMuidClassMetadataBucketPrefixStr);
 }
 
 bool MIRSymbol::IsReflectionInfo() const {
@@ -160,59 +163,59 @@ bool MIRSymbol::IsReflectionInfo() const {
 }
 
 bool MIRSymbol::IsReflectionFieldsInfo() const {
-  return GetName().find(kFieldsInfoPrefixStr) == 0;
+  return StringUtils::StartsWith(GetName(), kFieldsInfoPrefixStr);
 }
 
 bool MIRSymbol::IsReflectionFieldsInfoCompact() const {
-  return GetName().find(kFieldsInfoCompactPrefixStr) == 0;
+  return StringUtils::StartsWith(GetName(), kFieldsInfoCompactPrefixStr);
 }
 
 bool MIRSymbol::IsReflectionSuperclassInfo() const {
-  return GetName().find(SUPERCLASSINFO_PREFIX_STR) == 0;
+  return StringUtils::StartsWith(GetName(), SUPERCLASSINFO_PREFIX_STR);
 }
 
 bool MIRSymbol::IsReflectionFieldOffsetData() const {
-  return (GetName().find(kFieldOffsetDataPrefixStr) == 0);
+  return StringUtils::StartsWith(GetName(), kFieldOffsetDataPrefixStr);
 }
 
 bool MIRSymbol::IsReflectionClassInfo() const {
-  return GetName().find(CLASSINFO_PREFIX_STR) == 0;
+  return StringUtils::StartsWith(GetName(), CLASSINFO_PREFIX_STR);
 }
 
 bool MIRSymbol::IsReflectionArrayClassInfo() const {
-  return GetName().find(kArrayClassInfoPrefixStr) == 0;
+  return StringUtils::StartsWith(GetName(), kArrayClassInfoPrefixStr);
 }
 
 bool MIRSymbol::IsReflectionClassInfoPtr() const {
-  return GetName().find(kClassINfoPtrPrefixStr) == 0;
+  return StringUtils::StartsWith(GetName(), kClassINfoPtrPrefixStr);
 }
 
 bool MIRSymbol::IsReflectionClassInfoRO() const {
-  return GetName().find(CLASSINFO_RO_PREFIX_STR) == 0;
+  return StringUtils::StartsWith(GetName(), CLASSINFO_RO_PREFIX_STR);
 }
 
 bool MIRSymbol::IsITabConflictInfo() const {
-  return GetName().find(ITAB_CONFLICT_PREFIX_STR) == 0;
+  return StringUtils::StartsWith(GetName(), ITAB_CONFLICT_PREFIX_STR);
 }
 
 bool MIRSymbol::IsVTabInfo() const {
-  return GetName().find(VTAB_PREFIX_STR) == 0;
+  return StringUtils::StartsWith(GetName(), VTAB_PREFIX_STR);
 }
 
 bool MIRSymbol::IsITabInfo() const {
-  return GetName().find(ITAB_PREFIX_STR) == 0;
+  return StringUtils::StartsWith(GetName(), ITAB_PREFIX_STR);
 }
 
 bool MIRSymbol::IsReflectionPrimitiveClassInfo() const {
-  return GetName().find(PRIMITIVECLASSINFO_PREFIX_STR) == 0;
+  return StringUtils::StartsWith(GetName(), PRIMITIVECLASSINFO_PREFIX_STR);
 }
 
 bool MIRSymbol::IsReflectionMethodsInfo() const {
-  return GetName().find(kMethodsInfoPrefixStr) == 0;
+  return StringUtils::StartsWith(GetName(), kMethodsInfoPrefixStr);
 }
 
 bool MIRSymbol::IsReflectionMethodsInfoCompact() const {
-  return GetName().find(kMethodsInfoCompactPrefixStr) == 0;
+  return StringUtils::StartsWith(GetName(), kMethodsInfoCompactPrefixStr);
 }
 
 bool MIRSymbol::IsPrimordialObject() const {
@@ -220,7 +223,7 @@ bool MIRSymbol::IsPrimordialObject() const {
 }
 
 bool MIRSymbol::IsGctibSym() const {
-  return GetName().find(GCTIB_PREFIX_STR) == 0;
+  return StringUtils::StartsWith(GetName(), GCTIB_PREFIX_STR);
 }
 
 // [Note]
@@ -353,8 +356,7 @@ bool MIRLabelTable::AddToStringLabelMap(LabelIdx labelIdx) {
     // generate a label name based on lab_idx
     std::ostringstream labelNameStream;
     labelNameStream << "@" << labelIdx;
-    std::string labelName;
-    labelName = labelNameStream.str();
+    std::string labelName = labelNameStream.str();
     labelTable[labelIdx] = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(labelName);
   }
   GStrIdx strIdx = labelTable[labelIdx];

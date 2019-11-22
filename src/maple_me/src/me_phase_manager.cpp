@@ -81,7 +81,7 @@ void MeFuncPhaseManager::AddPhasesNoDefault(const std::vector<std::string> &phas
 
 void MeFuncPhaseManager::AddPhases(const std::unordered_set<std::string> &skipPhases) {
   auto addPhase = [&](const std::string &phase) {
-    std::unordered_set<std::string>::const_iterator it = skipPhases.find(phase);
+    auto it = skipPhases.find(phase);
     if (it == skipPhases.end()) {
       PhaseManager::AddPhase(phase);
     }
@@ -98,10 +98,7 @@ void MeFuncPhaseManager::AddPhases(const std::unordered_set<std::string> &skipPh
 
 // match sub string of function name
 bool MeFuncPhaseManager::FuncFilter(const std::string &filter, const std::string &name) {
-  if (filter.compare("*") == 0 || name.find(filter.c_str()) != std::string::npos) {
-    return true;
-  }
-  return false;
+  return (filter == "*") || (name.find(filter) != std::string::npos);
 }
 
 void MeFuncPhaseManager::IPACleanUp(MeFunction *func) {
@@ -133,7 +130,7 @@ void MeFuncPhaseManager::Run(MIRFunction *mirFunc, uint64 rangeNum, const std::s
   size_t phaseIndex = 0;
   for (auto it = PhaseSequenceBegin(); it != PhaseSequenceEnd(); ++it, ++phaseIndex) {
     PhaseID id = GetPhaseId(it);
-    MeFuncPhase *p = static_cast<MeFuncPhase*>(GetPhase(id));
+    auto *p = static_cast<MeFuncPhase*>(GetPhase(id));
     p->SetPreviousPhaseName(phaseName); // prev phase name is for filename used in emission after phase
     phaseName = p->PhaseName();         // new phase name
     bool dumpPhase = MeOption::DumpPhase(phaseName);
@@ -171,7 +168,7 @@ void MeFuncPhaseManager::Run(MIRFunction *mirFunc, uint64 rangeNum, const std::s
     function.Prepare(rangeNum);
     for (auto it = PhaseSequenceBegin(); it != PhaseSequenceEnd(); ++it) {
       PhaseID id = GetPhaseId(it);
-      MeFuncPhase *p = static_cast<MeFuncPhase*>(GetPhase(id));
+      auto *p = static_cast<MeFuncPhase*>(GetPhase(id));
       if (p == changeCFGPhase) {
         continue;
       }

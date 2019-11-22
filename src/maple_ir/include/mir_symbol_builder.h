@@ -40,7 +40,7 @@ class MIRSymbolBuilder {
     return builder;
   }
 
-  MIRSymbol *GetLocalDecl(const MIRSymbolTable &symbolTable, GStrIdx strIdx) const;
+  MIRSymbol *GetLocalDecl(MIRSymbolTable &symbolTable, GStrIdx strIdx) const;
   MIRSymbol *CreateLocalDecl(MIRSymbolTable &symbolTable, GStrIdx strIdx, const MIRType &type) const;
   MIRSymbol *GetGlobalDecl(GStrIdx strIdx) const;
   MIRSymbol *CreateGlobalDecl(GStrIdx strIdx, const MIRType &type, MIRStorageClass sc) const;

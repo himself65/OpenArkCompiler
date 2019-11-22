@@ -17,30 +17,28 @@
 #include <fstream>
 #include "option.h"
 
-/*
- * Class Hierarchy Analysis
- * This phase is a foundation phase of compilation. This phase build
- * the class hierarchy for both this module and all modules it depends
- * on. So many phases rely on this phase's analysis result, such as
- * call graph, ssa and so on.
- * The main procedure shows as following.
- * A. Based on the information read from mplts, it collects all class that
- *    declared in modules. And creates a Klass for each class.
- * B. Fill class method info. Connect superclass<->subclass and
- *    interface->implementation edges.
- * C. Tag All Throwable class and its child class.
- * D. In the case of "class C implements B; interface B extends A;",
- *    we need to add a link between C and A. So we recursively traverse
- *    Klass and collect all interfaces it implements.
- * E. Topological Sort
- * F. Based on Topological Sort Order, for each virtual method in a class,
- *    we collect all its potential implementation. If the number of
- *    potential implementations is 1, it means all virtual calls to this
- *    method can be easily devirtualized.
- */
-
+// Class Hierarchy Analysis
+// This phase is a foundation phase of compilation. This phase build
+// the class hierarchy for both this module and all modules it depends
+// on. So many phases rely on this phase's analysis result, such as
+// call graph, ssa and so on.
+// The main procedure shows as following.
+// A. Based on the information read from mplts, it collects all class that
+//    declared in modules. And creates a Klass for each class.
+// B. Fill class method info. Connect superclass<->subclass and
+//    interface->implementation edges.
+// C. Tag All Throwable class and its child class.
+// D. In the case of "class C implements B; interface B extends A;",
+//    we need to add a link between C and A. So we recursively traverse
+//    Klass and collect all interfaces it implements.
+// E. Topological Sort
+// F. Based on Topological Sort Order, for each virtual method in a class,
+//    we collect all its potential implementation. If the number of
+//    potential implementations is 1, it means all virtual calls to this
+//    method can be easily devirtualized.
 namespace maple {
 bool KlassHierarchy::traceFlag = false;
+
 Klass::Klass(MIRStructType *type, MapleAllocator *alc)
     : structType(type),
       alloc(alc),
@@ -49,16 +47,10 @@ Klass::Klass(MIRStructType *type, MapleAllocator *alc)
       implKlasses(alloc->Adapter()),
       implInterfaces(alloc->Adapter()),
       methods(alloc->Adapter()),
-      strIdx2Method(std::less<GStrIdx>(), alloc->Adapter()),
-      clinitMethod(nullptr),
-      classInitBridge(nullptr),
-      strIdx2CandidateMap(std::less<GStrIdx>(), alloc->Adapter()),
-      flags(0),
-      isPrivateInnerAndNoSubClassFlag(false),
-      hasNativeMethods(false),
-      needDecoupling(true) {
+      strIdx2Method(alloc->Adapter()),
+      strIdx2CandidateMap(alloc->Adapter()) {
   ASSERT(type != nullptr, "type is nullptr in Klass::Klass!");
-  ASSERT(type->GetKind() == kTypeClass || type->GetKind() == kTypeInterface, "runtime check error");
+  ASSERT(type->GetKind() == kTypeClass || type->GetKind() == kTypeInterface, "type error");
 }
 
 void Klass::DumpKlassMethods() const {
@@ -66,12 +58,12 @@ void Klass::DumpKlassMethods() const {
     return;
   }
   LogInfo::MapleLogger() << "   class member methods:\n";
-  for (MIRFunction * const &method : methods) {
+  for (MIRFunction *method : methods) {
     LogInfo::MapleLogger() << "   \t" << method->GetName() << " , ";
     method->GetFuncSymbol()->GetAttrs().DumpAttributes();
     LogInfo::MapleLogger() << "\n";
   }
-  for (auto const &m2cPair : strIdx2CandidateMap) {
+  for (const auto &m2cPair : strIdx2CandidateMap) {
     LogInfo::MapleLogger() << "   \t" << GlobalTables::GetStrTable().GetStringFromStrIdx(m2cPair.first)
                            << "   , # of target:" << m2cPair.second->size() << "\n";
   }
@@ -82,7 +74,7 @@ void Klass::DumpKlassImplKlasses() const {
     return;
   }
   LogInfo::MapleLogger() << "  implemented by:\n";
-  for (Klass * const &implKlass : implKlasses) {
+  for (Klass *implKlass : implKlasses) {
     LogInfo::MapleLogger() << "   \t@implbyclass_idx " << implKlass->structType->GetTypeIndex().GetIdx() << "\n";
   }
 }
@@ -92,7 +84,7 @@ void Klass::DumpKlassImplInterfaces() const {
     return;
   }
   LogInfo::MapleLogger() << "  implements:\n";
-  for (Klass * const &interface : implInterfaces) {
+  for (Klass *interface : implInterfaces) {
     LogInfo::MapleLogger() << "   \t@implinterface_idx " << interface->structType->GetTypeIndex().GetIdx() << "\n";
   }
 }
@@ -102,7 +94,7 @@ void Klass::DumpKlassSuperKlasses() const {
     return;
   }
   LogInfo::MapleLogger() << "   superclasses:\n";
-  for (Klass * const &superKlass : superKlasses) {
+  for (Klass *superKlass : superKlasses) {
     LogInfo::MapleLogger() << "   \t@superclass_idx " << superKlass->structType->GetTypeIndex().GetIdx() << "\n";
   }
 }
@@ -112,7 +104,7 @@ void Klass::DumpKlassSubKlasses() const {
     return;
   }
   LogInfo::MapleLogger() << "   subclasses:\n";
-  for (Klass * const &subKlass : subKlasses) {
+  for (Klass *subKlass : subKlasses) {
     LogInfo::MapleLogger() << "   \t@subclass_idx " << subKlass->structType->GetTypeIndex().GetIdx() << "\n";
   }
 }
@@ -128,8 +120,8 @@ void Klass::Dump() const {
   DumpKlassMethods();
 }
 
-MIRFunction *Klass::GetClosestMethod(GStrIdx funcnamewithtype) const {
-  MapleVector<MIRFunction*> *cands = GetCandidates(funcnamewithtype);
+MIRFunction *Klass::GetClosestMethod(GStrIdx funcName) const {
+  MapleVector<MIRFunction*> *cands = GetCandidates(funcName);
   if (cands != nullptr && !cands->empty()) {
     return cands->at(0);
   }
@@ -140,7 +132,7 @@ void Klass::DelMethod(const MIRFunction &func) {
   if (GetMethod(func.GetBaseFuncNameWithTypeStrIdx()) == &func) {
     strIdx2Method.erase(func.GetBaseFuncNameWithTypeStrIdx());
   }
-  for (auto it = methods.begin(); it != methods.end(); it++) {
+  for (auto it = methods.begin(); it != methods.end(); ++it) {
     if (*it == &func) {
       methods.erase(it--);
       return;
@@ -158,7 +150,6 @@ Klass *Klass::GetSuperKlass() const {
     default:
       LogInfo::MapleLogger() << GetKlassName() << "\n";
       CHECK_FATAL(false, "GetSuperKlass expects less than one super class");
-      return nullptr;
   }
 }
 
@@ -166,7 +157,7 @@ bool Klass::IsKlassMethod(const MIRFunction *func) const {
   if (func == nullptr) {
     return false;
   }
-  for (MIRFunction * const &method : methods) {
+  for (MIRFunction *method : methods) {
     if (method == func) {
       return true;
     }
@@ -178,14 +169,13 @@ bool Klass::ImplementsKlass() const {
   if (IsInterface()) {
     return false;
   }
-  MIRClassType *ctype = GetMIRClassType();
-  ASSERT(ctype != nullptr, "null ptr check");
-  return (!ctype->GetInterfaceImplemented().empty());
+  MIRClassType *classType = GetMIRClassType();
+  ASSERT(classType != nullptr, "null ptr check");
+  return (!classType->GetInterfaceImplemented().empty());
 }
 
 MapleVector<MIRFunction*> *Klass::GetCandidates(GStrIdx mnameNoklassStrIdx) const {
-  MapleMap<GStrIdx, MapleVector<MIRFunction*>*>::const_iterator it;
-  it = strIdx2CandidateMap.find(mnameNoklassStrIdx);
+  auto it = strIdx2CandidateMap.find(mnameNoklassStrIdx);
   return ((it != strIdx2CandidateMap.end()) ? (it->second) : nullptr);
 }
 
@@ -193,8 +183,7 @@ MIRFunction *Klass::GetUniqueMethod(GStrIdx mnameNoklassStrIdx) const {
   if (structType->IsIncomplete()) {
     return nullptr;
   }
-  MapleMap<GStrIdx, MapleVector<MIRFunction*>*>::const_iterator it;
-  it = strIdx2CandidateMap.find(mnameNoklassStrIdx);
+  auto it = strIdx2CandidateMap.find(mnameNoklassStrIdx);
   if (it != strIdx2CandidateMap.end()) {
     MapleVector<MIRFunction*> *fv = it->second;
     if (fv != nullptr && fv->size() == 1) {
@@ -212,23 +201,23 @@ bool Klass::IsVirtualMethod(const MIRFunction &func) const {
 void Klass::CountVirtMethTopDown(const KlassHierarchy &kh) {
   MapleVector<MIRFunction*> *vec, *pvec;
   GStrIdx strIdx;
-  MapleVector<Klass*> *superAndImplClasses = alloc->GetMemPool()->New<MapleVector<Klass*>>(alloc->Adapter());
+  auto *superAndImplClasses = alloc->GetMemPool()->New<MapleVector<Klass*>>(alloc->Adapter());
   // Add default methods of interface. Add them first because they have lowest
   // priorities compared with methods defined in classes
-  for (TyIdx const &tyIdx : GetMIRClassType()->GetInterfaceImplemented()) {
+  for (TyIdx tyIdx : GetMIRClassType()->GetInterfaceImplemented()) {
     Klass *interface = kh.GetKlassFromTyIdx(tyIdx);
     if (interface != nullptr) {
       superAndImplClasses->push_back(interface);
     }
   }
   // Then add methods from superclasses
-  for (Klass * const &superKlass : superKlasses) {
+  for (Klass *superKlass : superKlasses) {
     superAndImplClasses->push_back(superKlass);
   }
   // Initialize strIdx2CandidateMap based on the superclass methods
-  for (Klass * const &superAndImplClass : *superAndImplClasses) {
+  for (Klass *superAndImplClass : *superAndImplClasses) {
     ASSERT(superAndImplClass != nullptr, "Not a valid super class of interface");
-    for (auto const &pair : superAndImplClass->strIdx2CandidateMap) {
+    for (const auto &pair : superAndImplClass->strIdx2CandidateMap) {
       strIdx = pair.first;
       pvec = pair.second;
       ASSERT(pvec->size() == 1, "Expect exactly one method definition from parent class");
@@ -257,7 +246,7 @@ void Klass::CountVirtMethTopDown(const KlassHierarchy &kh) {
     }
   }
   // Initialize mstridx2count_map based on the current class methods
-  for (MIRFunction * const &method : methods) {
+  for (MIRFunction *method : methods) {
     ASSERT(method != nullptr, "null ptr check!");
     if (!IsVirtualMethod(*method)) {
       continue;
@@ -281,9 +270,9 @@ void Klass::CountVirtMethTopDown(const KlassHierarchy &kh) {
 void Klass::CountVirtMethBottomUp() {
   MapleVector<MIRFunction*> *vec;
   GStrIdx strIdx;
-  for (Klass * const &subKlass : subKlasses) {
+  for (Klass *subKlass : subKlasses) {
     CHECK_FATAL(subKlass != nullptr, "nullptr check failed");
-    for (auto const &pair : subKlass->strIdx2CandidateMap) {
+    for (const auto &pair : subKlass->strIdx2CandidateMap) {
       strIdx = pair.first;
       if (strIdx2CandidateMap.find(strIdx) == strIdx2CandidateMap.end()) {
         continue;
@@ -301,7 +290,7 @@ void Klass::CountVirtMethBottomUp() {
   }
 }
 
-const MIRFunction *Klass::HasMethod(const std::string &funcname) {
+const MIRFunction *Klass::HasMethod(const std::string &funcname) const {
   for (auto *method : methods) {
     if (method->GetBaseFuncNameWithType().find(funcname) != std::string::npos) {
       return method;
@@ -311,7 +300,7 @@ const MIRFunction *Klass::HasMethod(const std::string &funcname) {
 }
 
 Klass *KlassHierarchy::GetKlassFromStrIdx(GStrIdx strIdx) const {
-  MapleMap<GStrIdx, Klass*>::const_iterator it = strIdx2KlassMap.find(strIdx);
+  auto it = strIdx2KlassMap.find(strIdx);
   return ((it != strIdx2KlassMap.end()) ? (it->second) : nullptr);
 }
 
@@ -356,7 +345,7 @@ bool KlassHierarchy::IsSuperKlassForInterface(const Klass *super, const Klass *b
   }
   std::vector<const Klass*> tmpVector;
   tmpVector.push_back(base);
-  for (size_t idx = 0; idx < tmpVector.size(); idx++) {
+  for (size_t idx = 0; idx < tmpVector.size(); ++idx) {
     if (tmpVector[idx] == super) {
       return true;
     }
@@ -415,8 +404,8 @@ bool KlassHierarchy::UpdateFieldID(TyIdx baseTypeIdx, TyIdx targetTypeIdx, Field
   return false;
 }
 
-bool KlassHierarchy::NeedClinitCheckRecursively(Klass &kl) {
-  Klass *klass = &kl;
+bool KlassHierarchy::NeedClinitCheckRecursively(const Klass &kl) const {
+  const Klass *klass = &kl;
   if (klass->IsClass()) {
     while (klass != nullptr) {
       if (klass->GetClinit()) {
@@ -434,29 +423,29 @@ bool KlassHierarchy::NeedClinitCheckRecursively(Klass &kl) {
       }
     }
     return false;
-  } else if (klass->IsInterface()) {
-    return klass->GetClinit();
-  } else {
-    return true;
   }
+  if (klass->IsInterface()) {
+    return klass->GetClinit();
+  }
+  return true;
 }
 
 // Get lowest common ancestor for two classes
-Klass *KlassHierarchy::GetLCA(Klass *k1, Klass *k2) const {
+Klass *KlassHierarchy::GetLCA(Klass *klass1, Klass *klass2) const {
   std::vector<Klass*> v1, v2;
-  while (k1 != nullptr) {
-    v1.push_back(k1);
-    k1 = k1->GetSuperKlass();
+  while (klass1 != nullptr) {
+    v1.push_back(klass1);
+    klass1 = klass1->GetSuperKlass();
   }
-  while (k2 != nullptr) {
-    v2.push_back(k2);
-    k2 = k2->GetSuperKlass();
+  while (klass2 != nullptr) {
+    v2.push_back(klass2);
+    klass2 = klass2->GetSuperKlass();
   }
   Klass *result = nullptr;
   size_t size1 = v1.size();
   size_t size2 = v2.size();
   size_t min = (size1 < size2) ? size1 : size2;
-  for (size_t i = 1; i <= min; i++) {
+  for (size_t i = 1; i <= min; ++i) {
     if (v1[size1 - i] != v2[size2 - i]) {
       break;
     }
@@ -509,7 +498,7 @@ void KlassHierarchy::ExceptionFlagProp(Klass &klass) {
 }
 
 void KlassHierarchy::AddKlassRelationAndMethods() {
-  for (auto const &pair : strIdx2KlassMap) {
+  for (const auto &pair : strIdx2KlassMap) {
     Klass *klass = pair.second;
     ASSERT(klass, "null ptr check");
     Klass *superKlass = nullptr;
@@ -517,7 +506,7 @@ void KlassHierarchy::AddKlassRelationAndMethods() {
       MIRInterfaceType *itype = klass->GetMIRInterfaceType();
       ASSERT(itype != nullptr, "null ptr check");
       // Java interface supports multiple inheritance
-      for (TyIdx const &superTyIdx : itype->GetParentsTyIdx()) {
+      for (TyIdx superTyIdx : itype->GetParentsTyIdx()) {
         superKlass = GetKlassFromTyIdx(superTyIdx);
         if (superKlass != nullptr) {
           klass->AddSuperKlass(superKlass);
@@ -526,17 +515,17 @@ void KlassHierarchy::AddKlassRelationAndMethods() {
       }
     } else {
       // Class
-      MIRClassType *ctype = klass->GetMIRClassType();
-      ASSERT(ctype != nullptr, "null ptr check");
+      MIRClassType *classType = klass->GetMIRClassType();
+      ASSERT(classType != nullptr, "null ptr check");
       // Add interface relationship
-      for (TyIdx const &intfTyIdx : ctype->GetInterfaceImplemented()) {
+      for (TyIdx intfTyIdx : classType->GetInterfaceImplemented()) {
         Klass *intfKlass = GetKlassFromTyIdx(intfTyIdx);
         if (intfKlass != nullptr) {
           intfKlass->AddImplKlass(klass);
           klass->AddImplInterface(intfKlass);
         }
       }
-      superKlass = GetKlassFromTyIdx(ctype->GetParentTyIdx());
+      superKlass = GetKlassFromTyIdx(classType->GetParentTyIdx());
       // Add superclass/subclass for each class.
       if (superKlass != nullptr) {
         klass->AddSuperKlass(superKlass);
@@ -549,8 +538,8 @@ void KlassHierarchy::AddKlassRelationAndMethods() {
       }
     }
     // Add method info
-    for (auto const &mpair : klass->GetMIRStructType()->GetMethods()) {
-      MIRSymbol *funcSym = GlobalTables::GetGsymTable().GetSymbolFromStidx(mpair.first.Idx());
+    for (const auto &methodPair : klass->GetMIRStructType()->GetMethods()) {
+      MIRSymbol *funcSym = GlobalTables::GetGsymTable().GetSymbolFromStidx(methodPair.first.Idx());
       MIRFunction *method = funcSym->GetFunction();
       klass->AddMethod(method);
       if (method->GetName().compare(klass->GetKlassName() + NameMangler::kClinitSuffix) == 0) {
@@ -573,7 +562,7 @@ void KlassHierarchy::TagThrowableKlasses() {
   if (throwable == nullptr) {
     return;
   }
-  for (auto const &pair : strIdx2KlassMap) {
+  for (const auto &pair : strIdx2KlassMap) {
     Klass *klass = pair.second;
     ASSERT(klass != nullptr, "unexpeced null klass");
     if (!klass->IsInterface() && IsSuperKlass(throwable, klass)) {
@@ -602,7 +591,7 @@ static void CollectImplInterfaces(const Klass &klass, std::set<Klass*> &implInte
 }
 
 void KlassHierarchy::UpdateImplementedInterfaces() {
-  for (auto const &pair : strIdx2KlassMap) {
+  for (const auto &pair : strIdx2KlassMap) {
     Klass *klass = pair.second;
     ASSERT(klass != nullptr, "null ptr check");
     if (!klass->IsInterface()) {
@@ -641,7 +630,7 @@ void KlassHierarchy::GetChildKlasses(const Klass &klass, std::vector<Klass*> &ch
 
 void KlassHierarchy::TopologicalSortKlasses() {
   std::set<Klass*> inQueue;  // Local variable, no need to use MapleSet
-  for (auto const &pair : strIdx2KlassMap) {
+  for (const auto &pair : strIdx2KlassMap) {
     Klass *klass = pair.second;
     ASSERT(klass != nullptr, "klass can not be nullptr");
     if (!klass->HasSuperKlass() && !klass->ImplementsKlass()) {
@@ -650,7 +639,7 @@ void KlassHierarchy::TopologicalSortKlasses() {
     }
   }
   // Top-down iterates all nodes
-  for (size_t i = 0; i < topoWorkList.size(); i++) {
+  for (size_t i = 0; i < topoWorkList.size(); ++i) {
     Klass *klass = topoWorkList[i];
     std::vector<Klass*> childklasses;
     ASSERT(klass != nullptr, "null ptr check!");
@@ -678,13 +667,13 @@ void KlassHierarchy::TopologicalSortKlasses() {
   }
 }
 
-void KlassHierarchy::CountVirtualMethods() {
+void KlassHierarchy::CountVirtualMethods() const {
   // Top-down iterates all klass nodes
-  for (size_t i = 0; i < topoWorkList.size(); i++) {
-    topoWorkList[i]->CountVirtMethTopDown(*this);
+  for (Klass *klass : topoWorkList) {
+    klass->CountVirtMethTopDown(*this);
   }
   // Bottom-up iterates all klass nodes
-  for (size_t i = topoWorkList.size(); i != 0; i--) {
+  for (size_t i = topoWorkList.size(); i != 0; --i) {
     topoWorkList[i - 1]->CountVirtMethBottomUp();
   }
 }
@@ -721,7 +710,7 @@ void KlassHierarchy::MarkClassFlags() {
     // sun.misc.Cleaner's superclass is PhantomReference.
     // Break this chain to process Cleaner correctly.
     if (super != nullptr && super->IsReference() && klass != cleanerKlass) {
-      klass->SetFlag(super->GetFlag(CLASS_REFERENCE));
+      klass->SetFlag(super->GetFlag(kClassReference));
     }
     // Mark Finalizer
     if (super != nullptr && super->HasFinalizer()) {
@@ -775,42 +764,42 @@ KlassHierarchy::KlassHierarchy(MIRModule *mirmodule, MemPool *memPool)
       strIdx2KlassMap(std::less<GStrIdx>(), alloc.Adapter()),
       topoWorkList(alloc.Adapter()) {}
 
-MIRType *WKTypes::javalangObject;
-MIRType *WKTypes::jlString;
-MIRType *WKTypes::javalangobjectSerializable;
-MIRType *WKTypes::javalangComparable;
-MIRType *WKTypes::javalangCharSequence;
-MIRType *WKTypes::javalangClass;
-MIRType *WKTypes::javalangrefGenericDeclaration;
-MIRType *WKTypes::javalangrefAnnotatedElement;
-MIRType *WKTypes::jlrType;
-MIRType *WKTypes::javalangrefMethod;
-MIRType *WKTypes::javalangrefExecutable;
-MIRType *WKTypes::javalangrefAccessibleObject;
-MIRType *WKTypes::javalangrefMember;
-MIRType *WKTypes::javalangrefField;
-MIRType *WKTypes::javalangrefConstructor;
+MIRType *WKTypes::javaLangObject;
+MIRType *WKTypes::javaLangString;
+MIRType *WKTypes::javaLangObjectSerializable;
+MIRType *WKTypes::javaLangComparable;
+MIRType *WKTypes::javaLangCharSequence;
+MIRType *WKTypes::javaLangClass;
+MIRType *WKTypes::javaLangRefGenericDeclaration;
+MIRType *WKTypes::javaLangRefAnnotatedElement;
+MIRType *WKTypes::javaLangRefType;
+MIRType *WKTypes::javaLangRefMethod;
+MIRType *WKTypes::javaLangRefExecutable;
+MIRType *WKTypes::javaLangRefAccessibleObject;
+MIRType *WKTypes::javaLangRefMember;
+MIRType *WKTypes::javaLangRefField;
+MIRType *WKTypes::javaLangRefConstructor;
 inline static MIRType *GetMIRTypeFromName(const std::string &name) {
   GStrIdx gStrIdx = GlobalTables::GetStrTable().GetStrIdxFromName(NameMangler::GetInternalNameLiteral(name));
   return GlobalTables::GetTypeTable().GetTypeFromTyIdx(GlobalTables::GetTypeNameTable().GetTyIdxFromGStrIdx(gStrIdx));
 }
 
 void WKTypes::Init() {
-  javalangObject = GetMIRTypeFromName(NameMangler::kJavaLangObjectStr);
-  jlString = GetMIRTypeFromName("Ljava_2Flang_2FString_3B");
-  javalangobjectSerializable = GetMIRTypeFromName("Ljava_2Fio_2FSerializable_3B");
-  javalangComparable = GetMIRTypeFromName("Ljava_2Flang_2FComparable_3B");
-  javalangCharSequence = GetMIRTypeFromName("Ljava_2Flang_2FCharSequence_3B");
-  javalangClass = GetMIRTypeFromName("Ljava_2Flang_2FClass_3B");
-  javalangrefGenericDeclaration = GetMIRTypeFromName("Ljava_2Flang_2Freflect_2FGenericDeclaration_3B");
-  javalangrefAnnotatedElement = GetMIRTypeFromName("Ljava_2Flang_2Freflect_2FAnnotatedElement_3B");
-  jlrType = GetMIRTypeFromName("Ljava_2Flang_2Freflect_2FType_3B");
-  javalangrefMethod = GetMIRTypeFromName("Ljava_2Flang_2Freflect_2FMethod_3B");
-  javalangrefExecutable = GetMIRTypeFromName("Ljava_2Flang_2Freflect_2FExecutable_3B");
-  javalangrefAccessibleObject = GetMIRTypeFromName("Ljava_2Flang_2Freflect_2FAccessibleObject_3B");
-  javalangrefMember = GetMIRTypeFromName("Ljava_2Flang_2Freflect_2FMember_3B");
-  javalangrefField = GetMIRTypeFromName("Ljava_2Flang_2Freflect_2FField_3B");
-  javalangrefConstructor = GetMIRTypeFromName("Ljava_2Flang_2Freflect_2FConstructor_3B");
+  javaLangObject = GetMIRTypeFromName(NameMangler::kJavaLangObjectStr);
+  javaLangString = GetMIRTypeFromName("Ljava_2Flang_2FString_3B");
+  javaLangObjectSerializable = GetMIRTypeFromName("Ljava_2Fio_2FSerializable_3B");
+  javaLangComparable = GetMIRTypeFromName("Ljava_2Flang_2FComparable_3B");
+  javaLangCharSequence = GetMIRTypeFromName("Ljava_2Flang_2FCharSequence_3B");
+  javaLangClass = GetMIRTypeFromName("Ljava_2Flang_2FClass_3B");
+  javaLangRefGenericDeclaration = GetMIRTypeFromName("Ljava_2Flang_2Freflect_2FGenericDeclaration_3B");
+  javaLangRefAnnotatedElement = GetMIRTypeFromName("Ljava_2Flang_2Freflect_2FAnnotatedElement_3B");
+  javaLangRefType = GetMIRTypeFromName("Ljava_2Flang_2Freflect_2FType_3B");
+  javaLangRefMethod = GetMIRTypeFromName("Ljava_2Flang_2Freflect_2FMethod_3B");
+  javaLangRefExecutable = GetMIRTypeFromName("Ljava_2Flang_2Freflect_2FExecutable_3B");
+  javaLangRefAccessibleObject = GetMIRTypeFromName("Ljava_2Flang_2Freflect_2FAccessibleObject_3B");
+  javaLangRefMember = GetMIRTypeFromName("Ljava_2Flang_2Freflect_2FMember_3B");
+  javaLangRefField = GetMIRTypeFromName("Ljava_2Flang_2Freflect_2FField_3B");
+  javaLangRefConstructor = GetMIRTypeFromName("Ljava_2Flang_2Freflect_2FConstructor_3B");
 }
 
 // Return true if node n may point to a String object.
@@ -822,8 +811,8 @@ bool WKTypes::Util::MayRefString(const BaseNode &n, MIRType &type) {
   if ((n.GetPrimType() == PTY_ref || n.GetPrimType() == PTY_ptr) && type.GetKind() == kTypePointer) {
     auto *pointType = static_cast<MIRPtrType*>(&type);
     MIRType *pointedType = pointType->GetPointedType();
-    if (pointedType == jlString || pointedType == javalangobjectSerializable || pointedType == javalangComparable ||
-        pointedType == javalangCharSequence || pointedType == javalangObject) {
+    if (pointedType == javaLangString || pointedType == javaLangObjectSerializable ||
+        pointedType == javaLangComparable || pointedType == javaLangCharSequence || pointedType == javaLangObject) {
       return true;
     }
   }
@@ -837,52 +826,44 @@ bool WKTypes::Util::MayRefMeta(const BaseNode &n, MIRType &type) {
   if ((n.GetPrimType() == PTY_ref || n.GetPrimType() == PTY_ptr) && type.GetKind() == kTypePointer) {
     auto *pointType = static_cast<MIRPtrType*>(&type);
     MIRType *pointedType = pointType->GetPointedType();
-    /*
-       Definition of java.lang.Class:
-       public final class Class<T> implements java.io.Serializable,
-       GenericDeclaration,
-       Type,
-       AnnotatedElement {...}
-       public interface Serializable {}
-       public interface GenericDeclaration extends AnnotatedElement {...}
-       public interface AnnotatedElement {...}
-       public interface Type {...}
-       public interface AnnotatedElement {...}
-     */
-    if (pointedType == javalangClass || pointedType == javalangobjectSerializable ||
-        pointedType == javalangrefGenericDeclaration || pointedType == javalangrefAnnotatedElement ||
-        pointedType == jlrType || pointedType == javalangObject) {
+    // Definition of java.lang.Class:
+    // public final class Class<T> implements java.io.Serializable,
+    // GenericDeclaration,
+    // Type,
+    // AnnotatedElement {...}
+    // public interface Serializable {}
+    // public interface GenericDeclaration extends AnnotatedElement {...}
+    // public interface AnnotatedElement {...}
+    // public interface Type {...}
+    // public interface AnnotatedElement {...}
+    if (pointedType == javaLangClass || pointedType == javaLangObjectSerializable ||
+        pointedType == javaLangRefGenericDeclaration || pointedType == javaLangRefAnnotatedElement ||
+        pointedType == javaLangRefType || pointedType == javaLangObject) {
       return true;
     }
-    /*
-       Definition of java.lang.reflect.Method:
-       public final class Method extends Executable {...}
-       public abstract class Executable extends AccessibleObject
-       implements Member, GenericDeclaration {...}
-       public class AccessibleObject implements AnnotatedElement {...}
-       public interface AnnotatedElement {...}
-       public interface Member {...}
-       public interface GenericDeclaration extends AnnotatedElement {...}
-       public interface AnnotatedElement {...}
-     */
-    if (pointedType == javalangrefMethod || pointedType == javalangrefExecutable ||
-        pointedType == javalangrefAccessibleObject ||
-        pointedType == javalangrefMember || pointedType == javalangrefGenericDeclaration ||
-        pointedType == javalangrefAnnotatedElement || pointedType == javalangObject) {
+    // Definition of java.lang.reflect.Method:
+    // public final class Method extends Executable {...}
+    // public abstract class Executable extends AccessibleObject
+    // implements Member, GenericDeclaration {...}
+    // public class AccessibleObject implements AnnotatedElement {...}
+    // public interface AnnotatedElement {...}
+    // public interface Member {...}
+    // public interface GenericDeclaration extends AnnotatedElement {...}
+    // public interface AnnotatedElement {...}
+    if (pointedType == javaLangRefMethod || pointedType == javaLangRefExecutable ||
+        pointedType == javaLangRefAccessibleObject ||
+        pointedType == javaLangRefMember || pointedType == javaLangRefGenericDeclaration ||
+        pointedType == javaLangRefAnnotatedElement || pointedType == javaLangObject) {
       return true;
     }
-    /*
-       Definition of java.lang.reflect.Field:
-       public final class Field extends AccessibleObject implements Member {...}
-     */
-    if (pointedType == javalangrefField) {  // super classes/interfaces are checked by javalangrefMethod
+    // Definition of java.lang.reflect.Field:
+    // public final class Field extends AccessibleObject implements Member {...}
+    if (pointedType == javaLangRefField) {  // super classes/interfaces are checked by javaLangRefMethod
       return true;
     }
-    /*
-       Definition of java.lang.reflect.Constructor:
-       public final class Constructor<T> extends Executable {...}
-     */
-    if (pointedType == javalangrefConstructor) {  // super classes are checked by javalangrefMethod
+    // Definition of java.lang.reflect.Constructor:
+    // public final class Constructor<T> extends Executable {...}
+    if (pointedType == javaLangRefConstructor) {  // super classes are checked by javaLangRefMethod
       return true;
     }
   }
@@ -902,21 +883,24 @@ bool WKTypes::Util::MayNotRefCyclicly(const BaseNode &n, MIRType &type) {
 // Helper function of WKTypes::Util::MayNotRefCyclicly.
 bool WKTypes::Util::NotCyclicType(MIRType &type, std::set<MIRType*> &workList) {
   // Fast path for special cases: String, Class
-  if (&type == jlString || &type == javalangClass) {
+  if (&type == javaLangString || &type == javaLangClass) {
     return true;
   }
   if (type.GetKind() == kTypeScalar) {  // primitive type
     return true;
-  } else if (type.GetKind() == kTypePointer) {
+  }
+  if (type.GetKind() == kTypePointer) {
     auto *pointedType = static_cast<MIRPtrType*>(&type)->GetPointedType();
     ASSERT(pointedType != nullptr, "null ptr check!");
     return NotCyclicType(*pointedType, workList);
-  } else if (type.GetKind() == kTypeJArray) {
+  }
+  if (type.GetKind() == kTypeJArray) {
     MIRType *elemType =
         GlobalTables::GetTypeTable().GetTypeFromTyIdx(static_cast<MIRJarrayType*>(&type)->GetElemTyIdx());
     ASSERT(elemType != nullptr, "null ptr check!");
     return NotCyclicType(*elemType, workList);
-  } else if (type.GetKind() == kTypeClass) {
+  }
+  if (type.GetKind() == kTypeClass) {
     auto *classType = static_cast<MIRClassType*>(&type);
     if (!classType->IsFinal()) {  // Not sure what actual class it refers to
       return false;
@@ -957,7 +941,8 @@ bool WKTypes::Util::NotCyclicType(MIRType &type, std::set<MIRType*> &workList) {
       }
     }
     return true;
-  } else if (type.GetKind() == kTypeInterface) {
+  }
+  if (type.GetKind() == kTypeInterface) {
     // Perhaps something more can do.
     return false;
   }

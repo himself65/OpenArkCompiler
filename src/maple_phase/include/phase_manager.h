@@ -95,7 +95,7 @@ class PhaseManager {
   }
 
   const std::string GetPhaseName(iterator it) {
-    return (*it).second->PhaseName();
+    return it->second->PhaseName();
   }
 
   const std::string &GetMgrName() const {
@@ -103,7 +103,7 @@ class PhaseManager {
   }
 
   PhaseID GetPhaseId(iterator it) const {
-    return (*it).first;
+    return it->first;
   }
 
   // iterator for phaseSeq
@@ -141,7 +141,7 @@ class PhaseManager {
       LogInfo::MapleLogger() << std::left << std::setw(25) << registeredPhases[phaseSequences[i]]->PhaseName()
                              << std::setw(10) << std::right << std::fixed << std::setprecision(2)
                              << (100.0 * phaseTimers[i] / total) << "%" << std::setw(10) << std::setprecision(0)
-                             << (phaseTimers[i] / 1000.0) << "ms" << std::endl;
+                             << (phaseTimers[i] / 1000.0) << "ms" << '\n';
       LogInfo::MapleLogger().flags(f);
     }
     return total;

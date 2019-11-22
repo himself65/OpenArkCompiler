@@ -26,61 +26,60 @@ using namespace mapleOption;
 std::string MapleCombCompiler::GetInputFileName(const MplOptions &options) const {
   if (options.GetInputFileType() == InputFileType::kVtableImplMpl) {
     return options.GetOutputFolder() + options.GetOutputName() + ".VtableImpl.mpl";
-  } else {
-    return options.GetOutputFolder() + options.GetOutputName() + ".mpl";
   }
+  return options.GetOutputFolder() + options.GetOutputName() + ".mpl";
 }
 
 
 std::unordered_set<std::string> MapleCombCompiler::GetFinalOutputs(const MplOptions &mplOptions) const {
-  auto finalOutputs = std::unordered_set<std::string>();
+  std::unordered_set<std::string> finalOutputs;
   finalOutputs.insert(mplOptions.GetOutputFolder() + mplOptions.GetOutputName() + ".VtableImpl.mpl");
   return finalOutputs;
 }
 
 void MapleCombCompiler::PrintCommand(const MplOptions &options) const {
   std::string runStr = "--run=";
-  std::string optionStr = "--option=\"";
+  std::ostringstream optionStr;
+  optionStr << "--option=\"";
   std::string connectSym = "";
   bool firstComb = false;
   if (options.GetExeOptions().find(kBinNameMe) != options.GetExeOptions().end()) {
     runStr += "me";
-    auto inputMeOptions = options.GetExeOptions().find(kBinNameMe);
-    for (const auto &opt : inputMeOptions->second) {
-      connectSym = opt.Args() != "" ? "=" : "";
-      optionStr += " --" + opt.OptionKey() + connectSym + opt.Args();
+    auto it = options.GetExeOptions().find(kBinNameMe);
+    for (const mapleOption::Option &opt : it->second) {
+      connectSym = !opt.Args().empty() ? "=" : "";
+      optionStr << " --" << opt.OptionKey() << connectSym << opt.Args();
     }
     firstComb = true;
   }
   if (options.GetExeOptions().find(kBinNameMpl2mpl) != options.GetExeOptions().end()) {
     if (firstComb) {
       runStr += ":mpl2mpl";
-      optionStr += ":";
+      optionStr << ":";
     } else {
       runStr += "mpl2mpl";
     }
-    auto inputMpl2mplOptions = options.GetExeOptions().find(kBinNameMpl2mpl);
-    for (const auto &opt : inputMpl2mplOptions->second) {
-      connectSym = opt.Args() != "" ? "=" : "";
-      optionStr += " --" + opt.OptionKey() + connectSym + opt.Args();
+    auto it = options.GetExeOptions().find(kBinNameMpl2mpl);
+    for (const mapleOption::Option &opt : it->second) {
+      connectSym = !opt.Args().empty() ? "=" : "";
+      optionStr << " --" << opt.OptionKey() << connectSym << opt.Args();
     }
   }
-  optionStr += "\"";
-  LogInfo::MapleLogger() << "Starting:" << options.GetExeFolder() << "maple " << runStr << " " << optionStr << " "
+  optionStr << "\"";
+  LogInfo::MapleLogger() << "Starting:" << options.GetExeFolder() << "maple " << runStr << " " << optionStr.str() << " "
                          << GetInputFileName(options) << options.GetPrintCommandStr() << '\n';
 }
 
-MeOption *MapleCombCompiler::MakeMeOptions(const MplOptions &options, maple::MemPool &optMp) {
+MeOption *MapleCombCompiler::MakeMeOptions(const MplOptions &options, MemPool &optMp) {
   MeOption *meOption = new MeOption(optMp);
-  auto inputMeOptions = options.GetExeOptions().find(kBinNameMe);
-  if (inputMeOptions == options.GetExeOptions().end()) {
-    LogInfo::MapleLogger() << "no me input options" << '\n';
+  auto it = options.GetExeOptions().find(kBinNameMe);
+  if (it == options.GetExeOptions().end()) {
+    LogInfo::MapleLogger() << "no me input options\n";
     return meOption;
   }
-  for (const auto &opt : inputMeOptions->second) {
+  for (const mapleOption::Option &opt : it->second) {
     if (options.HasSetDebugFlag()) {
-      LogInfo::MapleLogger() << "Me options: " << opt.Index() << " " << opt.OptionKey() << " " << opt.Args()
-                             << '\n';
+      LogInfo::MapleLogger() << "Me options: " << opt.Index() << " " << opt.OptionKey() << " " << opt.Args() << '\n';
     }
     switch (opt.Index()) {
       case kMeSkipPhases:
@@ -161,14 +160,14 @@ MeOption *MapleCombCompiler::MakeMeOptions(const MplOptions &options, maple::Mem
   return meOption;
 }
 
-Options *MapleCombCompiler::MakeMpl2MplOptions(const MplOptions &options, maple::MemPool &optMp) {
-  Options *mpl2mplOption = new Options(optMp);
-  auto inputOptions = options.GetExeOptions().find(kBinNameMpl2mpl);
-  if (inputOptions == options.GetExeOptions().end()) {
-    LogInfo::MapleLogger() << "no mpl2mpl input options" << '\n';
+Options *MapleCombCompiler::MakeMpl2MplOptions(const MplOptions &options, MemPool &optMp) {
+  auto *mpl2mplOption = new Options(optMp);
+  auto it = options.GetExeOptions().find(kBinNameMpl2mpl);
+  if (it == options.GetExeOptions().end()) {
+    LogInfo::MapleLogger() << "no mpl2mpl input options\n";
     return mpl2mplOption;
   }
-  for (auto &opt : inputOptions->second) {
+  for (const mapleOption::Option &opt : it->second) {
     if (options.HasSetDebugFlag()) {
       LogInfo::MapleLogger() << "mpl2mpl options: " << opt.Index() << " " << opt.OptionKey() << " " << opt.Args()
                              << '\n';
@@ -239,8 +238,8 @@ ErrorCode MapleCombCompiler::Compile(const MplOptions &options, MIRModulePtr &th
   theModule = new MIRModule(fileName);
   std::unique_ptr<MeOption> meOptions;
   std::unique_ptr<Options> mpl2mplOptions;
-  auto iterMe = std::find(options.GetRunningExes().begin(), options.GetRunningExes().end(), kBinNameMe);
-  if (iterMe != options.GetRunningExes().end()) {
+  auto it = std::find(options.GetRunningExes().begin(), options.GetRunningExes().end(), kBinNameMe);
+  if (it != options.GetRunningExes().end()) {
     meOptions.reset(MakeMeOptions(options, *optMp));
   }
   auto iterMpl2Mpl = std::find(options.GetRunningExes().begin(), options.GetRunningExes().end(), kBinNameMpl2mpl);
@@ -248,7 +247,7 @@ ErrorCode MapleCombCompiler::Compile(const MplOptions &options, MIRModulePtr &th
     mpl2mplOptions.reset(MakeMpl2MplOptions(options, *optMp));
   }
 
-  LogInfo::MapleLogger() << "Starting mpl2mpl&mplme" << '\n';
+  LogInfo::MapleLogger() << "Starting mpl2mpl&mplme\n";
   PrintCommand(options);
   DriverRunner runner(theModule, options.GetRunningExes(), mpl2mplOptions.get(), fileName, meOptions.get(),
                       fileName, fileName, optMp,

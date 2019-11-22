@@ -73,7 +73,7 @@ bool Dominance::CommonEntryBBIsPred(const BB &bb) const {
 // Figure 3 in "A Simple, Fast Dominance Algorithm" by Keith Cooper et al.
 void Dominance::ComputeDominance() {
   doms.at(commonEntryBB.GetBBId()) = &commonEntryBB;
-  bool changed = false;
+  bool changed;
   do {
     changed = false;
     for (size_t i = 1; i < reversePostOrder.size(); ++i) {
@@ -148,7 +148,7 @@ void Dominance::ComputeDtPreorder(const BB &bb, size_t &num) {
 }
 
 void Dominance::ComputeDtDfn() {
-  for (uint32 i = 0; i < dtPreOrder.size(); ++i) {
+  for (size_t i = 0; i < dtPreOrder.size(); ++i) {
     dtDfn[dtPreOrder[i]] = i;
   }
 }
@@ -200,7 +200,7 @@ void Dominance::PdomGenPostOrderID() {
   // initialize pdomReversePostOrder
   int32 maxPostOrderID = postOrderID - 1;
   pdomReversePostOrder.resize(maxPostOrderID + 1);
-  for (size_t i = 0; i < pdomPostOrderIDVec.size(); i++) {
+  for (size_t i = 0; i < pdomPostOrderIDVec.size(); ++i) {
     int32 postOrderNo = pdomPostOrderIDVec[i];
     if (postOrderNo == -1) {
       continue;
@@ -303,7 +303,7 @@ void Dominance::ComputePdtPreorder(const BB &bb, size_t &num) {
 }
 
 void Dominance::ComputePdtDfn() {
-  for (uint32 i = 0; i < pdtPreOrder.size(); ++i) {
+  for (size_t i = 0; i < pdtPreOrder.size(); ++i) {
     pdtDfn[pdtPreOrder[i]] = i;
   }
 }

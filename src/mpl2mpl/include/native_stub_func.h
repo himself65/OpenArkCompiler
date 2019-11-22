@@ -18,24 +18,23 @@
 #include "phase_impl.h"
 
 namespace maple {
-static constexpr int kSlownativeFuncnum = 9;
-static constexpr int kJniTypeNormal = 0;
-static constexpr int kJniTypeMapleCriticalNative = 1;
-static constexpr int kJnitTypeCriticalNative = 2;
-static constexpr int kInvalidCode = 0xFF;
+constexpr int kSlownativeFuncnum = 9;
+constexpr int kJniTypeNormal = 0;
+constexpr int kJniTypeMapleCriticalNative = 1;
+constexpr int kJnitTypeCriticalNative = 2;
+constexpr int kInvalidCode = 0xFF;
 
-static constexpr char kPreNativeFunc[] = "MCC_PreNativeCall";
-static constexpr char kPostNativeFunc[] = "MCC_PostNativeCall";
-static constexpr char kDecodeRefFunc[] = "MCC_DecodeReference";
-static constexpr char kFindNativeFunc[] = "MCC_FindNativeMethodPtr";
-static constexpr char kFindNativeFuncNoeh[] = "MCC_FindNativeMethodPtrWithoutException";
-static constexpr char kDummyNativeFunc[] = "MCC_DummyNativeMethodPtr";
-static constexpr char kCheckThrowPendingExceptionFunc[] = "MCC_CheckThrowPendingException";
-static constexpr char kCallFastNativeFunc[] = "MCC_CallFastNative";
-static constexpr char kCallFastNativeExtFunc[] = "MCC_CallFastNativeExt";
-static constexpr char kCallSlowNativeExtFunc[] = "MCC_CallSlowNativeExt";
-static constexpr char kSetReliableUnwindContextFunc[] = "MCC_SetReliableUnwindContext";
-
+constexpr char kPreNativeFunc[] = "MCC_PreNativeCall";
+constexpr char kPostNativeFunc[] = "MCC_PostNativeCall";
+constexpr char kDecodeRefFunc[] = "MCC_DecodeReference";
+constexpr char kFindNativeFunc[] = "MCC_FindNativeMethodPtr";
+constexpr char kFindNativeFuncNoeh[] = "MCC_FindNativeMethodPtrWithoutException";
+constexpr char kDummyNativeFunc[] = "MCC_DummyNativeMethodPtr";
+constexpr char kCheckThrowPendingExceptionFunc[] = "MCC_CheckThrowPendingException";
+constexpr char kCallFastNativeFunc[] = "MCC_CallFastNative";
+constexpr char kCallFastNativeExtFunc[] = "MCC_CallFastNativeExt";
+constexpr char kCallSlowNativeExtFunc[] = "MCC_CallSlowNativeExt";
+constexpr char kSetReliableUnwindContextFunc[] = "MCC_SetReliableUnwindContext";
 class NativeFuncProperty {
  public:
   NativeFuncProperty() = default;
@@ -47,21 +46,42 @@ class NativeFuncProperty {
   std::string nativeFunc;
   int jniType = kJniTypeNormal;
 
-  friend class GenericNativeStubFunc;
+  friend class NativeStubFuncGeneration;
 };
 
-class GenericNativeStubFunc : public FuncOptimizeImpl {
+class NativeStubFuncGeneration : public FuncOptimizeImpl {
  public:
-  GenericNativeStubFunc(MIRModule *mod, KlassHierarchy *kh, bool dump);
-  ~GenericNativeStubFunc() = default;
+  NativeStubFuncGeneration(MIRModule *mod, KlassHierarchy *kh, bool dump);
+  ~NativeStubFuncGeneration() = default;
 
   void ProcessFunc(MIRFunction *func) override;
   void Finish() override;
   FuncOptimizeImpl *Clone() override {
-    return new GenericNativeStubFunc(*this);
+    return new NativeStubFuncGeneration(*this);
   }
 
  private:
+  bool IsStaticBindingListMode() const;
+  bool ReturnsJstr(TyIdx retType) {
+    return retType == jstrPointerTypeIdx;
+  }
+  void InitStaticBindingMethodList();
+  bool IsStaticBindingMethod(const std::string &methodName) const;
+  MIRFunction &GetOrCreateDefaultNativeFunc(MIRFunction &stubFunc);
+  void GenerateRegisteredNativeFuncCall(MIRFunction &func, const MIRFunction &nativeFunc, MapleVector<BaseNode*> &args,
+                                        const MIRSymbol *ret, bool needNativeCall, CallNode &preNativeFuncCall,
+                                        CallNode &postNativeFuncCall);
+  StmtNode *CreateNativeWrapperCallNode(MIRFunction &func, BaseNode *funcPtr, MapleVector<BaseNode*> &args,
+                                        const MIRSymbol *ret);
+  void GenerateNativeWrapperFuncCall(MIRFunction &func, const MIRFunction &nativeFunc, MapleVector<BaseNode*> &args,
+                                     const MIRSymbol *ret);
+  void GenerateHelperFuncDecl();
+  void GenerateRegTabEntry(const MIRFunction &func);
+  void GenerateRegTableEntryType();
+  void GenerateRegTable();
+  void GenerateRegFuncTabEntryType();
+  void GenerateRegFuncTabEntry();
+  void GenerateRegFuncTab();
   // a static binding function list
   std::unordered_set<std::string> staticBindingMethodsSet;
   TyIdx jstrPointerTypeIdx = TyIdx(0);
@@ -77,45 +97,21 @@ class GenericNativeStubFunc : public FuncOptimizeImpl {
   MIRFunction *MRTCallSlowNativeFunc[kSlownativeFuncnum] = { nullptr };  // for native func which args <=8, use x0-x7
   MIRFunction *MRTCallSlowNativeExtFunc = nullptr;
   MIRFunction *MCCSetReliableUnwindContextFunc = nullptr;
-  const std::string callSlowNativeFuncs[kSlownativeFuncnum] = {
-    "MCC_CallSlowNative0", "MCC_CallSlowNative1", "MCC_CallSlowNative2", "MCC_CallSlowNative3", "MCC_CallSlowNative4",
-    "MCC_CallSlowNative5", "MCC_CallSlowNative6", "MCC_CallSlowNative7", "MCC_CallSlowNative8"
-  };
-  bool IsStaticBindingListMode() const;
-  inline bool ReturnsJstr(TyIdx retType) {
-    return (retType == jstrPointerTypeIdx);
-  }
-  void InitStaticBindingMethodList();
-  bool IsStaticBindingMethod(const std::string &methodName) const;
-  MIRFunction &GetOrCreateDefaultNativeFunc(MIRFunction &stubFunc);
-  void GenericRegisteredNativeFuncCall(MIRFunction &func, const MIRFunction &nativeFunc, MapleVector<BaseNode*> &args,
-                                       const MIRSymbol *ret, bool needNativeCall, CallNode &prevNativeFuncCall,
-                                       CallNode &postNativeFuncCall);
-  StmtNode *CreateNativeWrapperCallNode(MIRFunction &func, BaseNode *funcPtr, MapleVector<BaseNode*> &args,
-                                        const MIRSymbol *ret);
-  void GenericNativeWrapperFuncCall(MIRFunction &func, const MIRFunction &nativeFunc, MapleVector<BaseNode*> &args,
-                                    const MIRSymbol *ret);
-  void GenericHelperFuncDecl();
-  void GenericRegTabEntry(const MIRFunction &func);
-  void GenericRegTableEntryType();
-  void GenericRegTable();
-  void GenericRegFuncTabEntryType();
-  void GenericRegFuncTabEntry();
-  void GenericRegFuncTab();
+  static const std::string callSlowNativeFuncs[kSlownativeFuncnum];
 };
 
-class DoGenericNativeStubFunc : public ModulePhase {
+class DoGenerateNativeStubFunc : public ModulePhase {
  public:
-  explicit DoGenericNativeStubFunc(ModulePhaseID id) : ModulePhase(id) {}
+  explicit DoGenerateNativeStubFunc(ModulePhaseID id) : ModulePhase(id) {}
 
-  ~DoGenericNativeStubFunc() = default;
+  ~DoGenerateNativeStubFunc() = default;
 
   std::string PhaseName() const override {
     return "GenNativeStubFunc";
   }
 
   AnalysisResult *Run(MIRModule *mod, ModuleResultMgr *mrm) override {
-    OPT_TEMPLATE(GenericNativeStubFunc);
+    OPT_TEMPLATE(NativeStubFuncGeneration);
     return nullptr;
   }
 };

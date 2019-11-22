@@ -22,12 +22,10 @@ std::string Jbc2MplCompiler::GetBinName() const {
 }
 
 std::vector<std::string> Jbc2MplCompiler::GetBinNames() const {
-  auto binNames = std::vector<std::string>();
-  binNames.push_back(kBinNameJbc2mpl);
-  return binNames;
+  return std::vector<std::string> { kBinNameJbc2mpl };
 }
 
-DefaultOption Jbc2MplCompiler::GetDefaultOptions(const MplOptions &options) {
+DefaultOption Jbc2MplCompiler::GetDefaultOptions(const MplOptions &options) const {
   DefaultOption defaultOptions = { nullptr, 0 };
   return defaultOptions;
 }
@@ -37,7 +35,7 @@ void Jbc2MplCompiler::GetTmpFilesToDelete(const MplOptions &mplOptions, std::vec
 }
 
 std::unordered_set<std::string> Jbc2MplCompiler::GetFinalOutputs(const MplOptions &mplOptions) const {
-  auto finalOutputs = std::unordered_set<std::string>();
+  std::unordered_set<std::string> finalOutputs;
   finalOutputs.insert(mplOptions.GetOutputFolder() + mplOptions.GetOutputName() + ".mpl");
   return finalOutputs;
 }

@@ -13,20 +13,19 @@
  * See the Mulan PSL v1 for more details.
  */
 #include "mir_lower.h"
-#include "vtable_impl.h"
 
 #define DO_LT_0_CHECK 1
 
 namespace maple {
 LabelIdx MIRLower::CreateCondGotoStmt(Opcode op, BlockNode &blk, const IfStmtNode &ifStmt) {
-  CondGotoNode *brStmt = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(op);
+  auto *brStmt = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(op);
   brStmt->SetOpnd(ifStmt.Opnd());
   brStmt->SetSrcPos(ifStmt.GetSrcPos());
   LabelIdx lableIdx = mirModule.CurFunction()->GetLabelTab()->CreateLabel();
   (void)mirModule.CurFunction()->GetLabelTab()->AddToStringLabelMap(lableIdx);
   brStmt->SetOffset(lableIdx);
   blk.AddStatement(brStmt);
-  bool thenEmpty = ifStmt.GetThenPart() == nullptr || ifStmt.GetThenPart()->GetFirst() == nullptr;
+  bool thenEmpty = (ifStmt.GetThenPart() == nullptr) || (ifStmt.GetThenPart()->GetFirst() == nullptr);
   if (thenEmpty) {
     blk.AppendStatementsFromBlock(*ifStmt.GetElsePart());
   } else {
@@ -37,14 +36,14 @@ LabelIdx MIRLower::CreateCondGotoStmt(Opcode op, BlockNode &blk, const IfStmtNod
 
 void MIRLower::CreateBrFalseStmt(BlockNode &blk, const IfStmtNode &ifStmt) {
   LabelIdx labelIdx = CreateCondGotoStmt(OP_brfalse, blk, ifStmt);
-  LabelNode *lableStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
+  auto *lableStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
   lableStmt->SetLabelIdx(labelIdx);
   blk.AddStatement(lableStmt);
 }
 
 void MIRLower::CreateBrTrueStmt(BlockNode &blk, const IfStmtNode &ifStmt) {
   LabelIdx labelIdx = CreateCondGotoStmt(OP_brtrue, blk, ifStmt);
-  LabelNode *lableStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
+  auto *lableStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
   lableStmt->SetLabelIdx(labelIdx);
   blk.AddStatement(lableStmt);
 }
@@ -58,13 +57,13 @@ void MIRLower::CreateBrFalseAndGotoStmt(BlockNode &blk, const IfStmtNode &ifStmt
   bool fallThroughFromThen = !IfStmtNoFallThrough(ifStmt);
   LabelIdx gotoLableIdx = 0;
   if (fallThroughFromThen) {
-    GotoNode *gotoStmt = mirModule.CurFuncCodeMemPool()->New<GotoNode>(OP_goto);
+    auto *gotoStmt = mirModule.CurFuncCodeMemPool()->New<GotoNode>(OP_goto);
     gotoLableIdx = mirModule.CurFunction()->GetLabelTab()->CreateLabel();
     (void)mirModule.CurFunction()->GetLabelTab()->AddToStringLabelMap(gotoLableIdx);
     gotoStmt->SetOffset(gotoLableIdx);
     blk.AddStatement(gotoStmt);
   }
-  LabelNode *lableStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
+  auto *lableStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
   lableStmt->SetLabelIdx(labelIdx);
   blk.AddStatement(lableStmt);
   blk.AppendStatementsFromBlock(*ifStmt.GetElsePart());
@@ -76,8 +75,8 @@ void MIRLower::CreateBrFalseAndGotoStmt(BlockNode &blk, const IfStmtNode &ifStmt
 }
 
 BlockNode *MIRLower::LowerIfStmt(IfStmtNode &ifStmt, bool recursive) {
-  bool thenEmpty = ifStmt.GetThenPart() == nullptr || ifStmt.GetThenPart()->GetFirst() == nullptr;
-  bool elseEmpty = ifStmt.GetElsePart() == nullptr || ifStmt.GetElsePart()->GetFirst() == nullptr;
+  bool thenEmpty = (ifStmt.GetThenPart() == nullptr) || (ifStmt.GetThenPart()->GetFirst() == nullptr);
+  bool elseEmpty = (ifStmt.GetElsePart() == nullptr) || (ifStmt.GetElsePart()->GetFirst() == nullptr);
   if (recursive) {
     if (!thenEmpty) {
       ifStmt.SetThenPart(LowerBlock(*ifStmt.GetThenPart()));
@@ -86,10 +85,10 @@ BlockNode *MIRLower::LowerIfStmt(IfStmtNode &ifStmt, bool recursive) {
       ifStmt.SetElsePart(LowerBlock(*ifStmt.GetElsePart()));
     }
   }
-  BlockNode *blk = mirModule.CurFuncCodeMemPool()->New<BlockNode>();
+  auto *blk = mirModule.CurFuncCodeMemPool()->New<BlockNode>();
   if (thenEmpty && elseEmpty) {
     // generate EVAL <cond> statement
-    UnaryStmtNode *evalStmt = mirModule.CurFuncCodeMemPool()->New<UnaryStmtNode>(OP_eval);
+    auto *evalStmt = mirModule.CurFuncCodeMemPool()->New<UnaryStmtNode>(OP_eval);
     evalStmt->SetOpnd(ifStmt.Opnd());
     evalStmt->SetSrcPos(ifStmt.GetSrcPos());
     blk->AddStatement(evalStmt);
@@ -125,8 +124,8 @@ BlockNode *MIRLower::LowerIfStmt(IfStmtNode &ifStmt, bool recursive) {
 BlockNode *MIRLower::LowerWhileStmt(WhileStmtNode &whileStmt) {
   ASSERT(whileStmt.GetBody() != nullptr, "nullptr check");
   whileStmt.SetBody(LowerBlock(*whileStmt.GetBody()));
-  BlockNode *blk = mirModule.CurFuncCodeMemPool()->New<BlockNode>();
-  CondGotoNode *brFalseStmt = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(OP_brfalse);
+  auto *blk = mirModule.CurFuncCodeMemPool()->New<BlockNode>();
+  auto *brFalseStmt = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(OP_brfalse);
   brFalseStmt->SetOpnd(whileStmt.Opnd());
   brFalseStmt->SetSrcPos(whileStmt.GetSrcPos());
   LabelIdx lalbeIdx = mirModule.CurFunction()->GetLabelTab()->CreateLabel();
@@ -135,11 +134,11 @@ BlockNode *MIRLower::LowerWhileStmt(WhileStmtNode &whileStmt) {
   blk->AddStatement(brFalseStmt);
   LabelIdx bodyLableIdx = mirModule.CurFunction()->GetLabelTab()->CreateLabel();
   (void)mirModule.CurFunction()->GetLabelTab()->AddToStringLabelMap(bodyLableIdx);
-  LabelNode *lableStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
+  auto *lableStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
   lableStmt->SetLabelIdx(bodyLableIdx);
   blk->AddStatement(lableStmt);
   blk->AppendStatementsFromBlock(*whileStmt.GetBody());
-  CondGotoNode *brTrueStmt = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(OP_brtrue);
+  auto *brTrueStmt = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(OP_brtrue);
   brTrueStmt->SetOpnd(whileStmt.Opnd()->CloneTree(mirModule.GetCurFuncCodeMPAllocator()));
   brTrueStmt->SetOffset(bodyLableIdx);
   blk->AddStatement(brTrueStmt);
@@ -161,26 +160,26 @@ BlockNode *MIRLower::LowerWhileStmt(WhileStmtNode &whileStmt) {
 BlockNode *MIRLower::LowerDoloopStmt(DoloopNode &doloop) {
   ASSERT(doloop.GetDoBody() != nullptr, "nullptr check");
   doloop.SetDoBody(LowerBlock(*doloop.GetDoBody()));
-  BlockNode *blk = mirModule.CurFuncCodeMemPool()->New<BlockNode>();
+  auto *blk = mirModule.CurFuncCodeMemPool()->New<BlockNode>();
   if (doloop.IsPreg()) {
     PregIdx regIdx = (PregIdx)doloop.GetDoVarStIdx().FullIdx();
-    MIRPreg *mirPReg = mirModule.CurFunction()->GetPregTab()->PregFromPregIdx(regIdx);
-    PrimType primType = mirPReg->GetPrimType();
+    MIRPreg *mirPreg = mirModule.CurFunction()->GetPregTab()->PregFromPregIdx(regIdx);
+    PrimType primType = mirPreg->GetPrimType();
     ASSERT(primType != kPtyInvalid, "runtime check error");
-    RegassignNode *startRegassign = mirModule.CurFuncCodeMemPool()->New<RegassignNode>();
+    auto *startRegassign = mirModule.CurFuncCodeMemPool()->New<RegassignNode>();
     startRegassign->SetRegIdx(regIdx);
     startRegassign->SetPrimType(primType);
     startRegassign->SetOpnd(doloop.GetStartExpr());
     startRegassign->SetSrcPos(doloop.GetSrcPos());
     blk->AddStatement(startRegassign);
   } else {
-    DassignNode *startDassign = mirModule.CurFuncCodeMemPool()->New<DassignNode>();
+    auto *startDassign = mirModule.CurFuncCodeMemPool()->New<DassignNode>();
     startDassign->SetStIdx(doloop.GetDoVarStIdx());
     startDassign->SetRHS(doloop.GetStartExpr());
     startDassign->SetSrcPos(doloop.GetSrcPos());
     blk->AddStatement(startDassign);
   }
-  CondGotoNode *brFalseStmt = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(OP_brfalse);
+  auto *brFalseStmt = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(OP_brfalse);
   brFalseStmt->SetOpnd(doloop.GetCondExpr());
   LabelIdx lIdx = mirModule.CurFunction()->GetLabelTab()->CreateLabel();
   (void)mirModule.CurFunction()->GetLabelTab()->AddToStringLabelMap(lIdx);
@@ -188,7 +187,7 @@ BlockNode *MIRLower::LowerDoloopStmt(DoloopNode &doloop) {
   blk->AddStatement(brFalseStmt);
   LabelIdx bodyLabelIdx = mirModule.CurFunction()->GetLabelTab()->CreateLabel();
   (void)mirModule.CurFunction()->GetLabelTab()->AddToStringLabelMap(bodyLabelIdx);
-  LabelNode *labelStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
+  auto *labelStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
   labelStmt->SetLabelIdx(bodyLabelIdx);
   blk->AddStatement(labelStmt);
   blk->AppendStatementsFromBlock(*doloop.GetDoBody());
@@ -197,12 +196,12 @@ BlockNode *MIRLower::LowerDoloopStmt(DoloopNode &doloop) {
     MIRPreg *mirPreg = mirModule.CurFunction()->GetPregTab()->PregFromPregIdx(regIdx);
     PrimType doVarPType = mirPreg->GetPrimType();
     ASSERT(doVarPType != kPtyInvalid, "runtime check error");
-    RegreadNode *readDoVar = mirModule.CurFuncCodeMemPool()->New<RegreadNode>();
+    auto *readDoVar = mirModule.CurFuncCodeMemPool()->New<RegreadNode>();
     readDoVar->SetRegIdx(regIdx);
     readDoVar->SetPrimType(doVarPType);
-    BinaryNode *add =
+    auto *add =
         mirModule.CurFuncCodeMemPool()->New<BinaryNode>(OP_add, doVarPType, doloop.GetIncrExpr(), readDoVar);
-    RegassignNode *endRegassign = mirModule.CurFuncCodeMemPool()->New<RegassignNode>();
+    auto *endRegassign = mirModule.CurFuncCodeMemPool()->New<RegassignNode>();
     endRegassign->SetRegIdx(regIdx);
     endRegassign->SetPrimType(doVarPType);
     endRegassign->SetOpnd(add);
@@ -210,16 +209,16 @@ BlockNode *MIRLower::LowerDoloopStmt(DoloopNode &doloop) {
   } else {
     const MIRSymbol *doVarSym = mirModule.CurFunction()->GetLocalOrGlobalSymbol(doloop.GetDoVarStIdx());
     PrimType doVarPType = doVarSym->GetType()->GetPrimType();
-    DreadNode *readDovar =
+    auto *readDovar =
         mirModule.CurFuncCodeMemPool()->New<DreadNode>(OP_dread, doVarPType, doloop.GetDoVarStIdx(), 0);
-    BinaryNode *add =
+    auto *add =
         mirModule.CurFuncCodeMemPool()->New<BinaryNode>(OP_add, doVarPType, doloop.GetIncrExpr(), readDovar);
-    DassignNode *endDassign = mirModule.CurFuncCodeMemPool()->New<DassignNode>();
+    auto *endDassign = mirModule.CurFuncCodeMemPool()->New<DassignNode>();
     endDassign->SetStIdx(doloop.GetDoVarStIdx());
     endDassign->SetRHS(add);
     blk->AddStatement(endDassign);
   }
-  CondGotoNode *brTrueStmt = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(OP_brtrue);
+  auto *brTrueStmt = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(OP_brtrue);
   brTrueStmt->SetOpnd(doloop.GetCondExpr()->CloneTree(mirModule.GetCurFuncCodeMPAllocator()));
   brTrueStmt->SetOffset(bodyLabelIdx);
   blk->AddStatement(brTrueStmt);
@@ -237,14 +236,14 @@ BlockNode *MIRLower::LowerDoloopStmt(DoloopNode &doloop) {
 BlockNode *MIRLower::LowerDowhileStmt(WhileStmtNode &doWhileStmt) {
   ASSERT(doWhileStmt.GetBody() != nullptr, "nullptr check");
   doWhileStmt.SetBody(LowerBlock(*doWhileStmt.GetBody()));
-  BlockNode *blk = mirModule.CurFuncCodeMemPool()->New<BlockNode>();
+  auto *blk = mirModule.CurFuncCodeMemPool()->New<BlockNode>();
   LabelIdx lIdx = mirModule.CurFunction()->GetLabelTab()->CreateLabel();
   (void)mirModule.CurFunction()->GetLabelTab()->AddToStringLabelMap(lIdx);
-  LabelNode *labelStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
+  auto *labelStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
   labelStmt->SetLabelIdx(lIdx);
   blk->AddStatement(labelStmt);
   blk->AppendStatementsFromBlock(*doWhileStmt.GetBody());
-  CondGotoNode *brTrueStmt = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(OP_brtrue);
+  auto *brTrueStmt = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(OP_brtrue);
   brTrueStmt->SetOpnd(doWhileStmt.Opnd());
   brTrueStmt->SetOffset(lIdx);
   blk->AddStatement(brTrueStmt);
@@ -252,7 +251,7 @@ BlockNode *MIRLower::LowerDowhileStmt(WhileStmtNode &doWhileStmt) {
 }
 
 BlockNode *MIRLower::LowerBlock(BlockNode &block) {
-  BlockNode *newBlock = mirModule.CurFuncCodeMemPool()->New<BlockNode>();
+  auto *newBlock = mirModule.CurFuncCodeMemPool()->New<BlockNode>();
   BlockNode *tmp = nullptr;
   if (block.GetFirst() == nullptr) {
     return newBlock;
@@ -265,7 +264,6 @@ BlockNode *MIRLower::LowerBlock(BlockNode &block) {
     switch (stmt->GetOpCode()) {
       case OP_if:
         tmp = LowerIfStmt(static_cast<IfStmtNode&>(*stmt), true);
-        ASSERT(tmp != nullptr, "null ptr check");
         newBlock->AppendStatementsFromBlock(*tmp);
         break;
       case OP_while:
@@ -279,7 +277,6 @@ BlockNode *MIRLower::LowerBlock(BlockNode &block) {
         break;
       case OP_block:
         tmp = LowerBlock(static_cast<BlockNode&>(*stmt));
-        ASSERT(tmp != nullptr, "null ptr check ");
         newBlock->AppendStatementsFromBlock(*tmp);
         break;
       default:
@@ -308,7 +305,7 @@ void MIRLower::LowerBrCondition(BlockNode &block) {
             (stmt->GetOpCode() == OP_brtrue && cond->GetOpCode() == OP_cior)) {
           // short-circuit target label is same as original condGoto stmt
           condGoto->SetOpnd(cond->GetBOpnd(0));
-          CondGotoNode *newCondGoto = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(Opcode(stmt->GetOpCode()));
+          auto *newCondGoto = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(Opcode(stmt->GetOpCode()));
           newCondGoto->SetOpnd(cond->GetBOpnd(1));
           newCondGoto->SetOffset(condGoto->GetOffset());
           block.InsertAfter(newCondGoto, condGoto);
@@ -326,7 +323,7 @@ void MIRLower::LowerBrCondition(BlockNode &block) {
             labelStmt->SetLabelIdx(lIdx);
             block.InsertAfter(condGoto, labelStmt);
           }
-          CondGotoNode *newCondGoto = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(
+          auto *newCondGoto = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(
               stmt->GetOpCode() == OP_brfalse ? OP_brtrue : OP_brfalse);
           newCondGoto->SetOpnd(cond->GetBOpnd(0));
           newCondGoto->SetOffset(lIdx);
@@ -391,10 +388,10 @@ void MIRLower::AddArrayMrtMpl(BaseNode &exp, BlockNode &newBlock) {
     AddArrayMrtMpl(*exp.Opnd(i), newBlock);
   }
   if (exp.GetOpCode() == OP_array) {
-    auto *arrayNode = static_cast<ArrayNode*>(&exp);
-    if (arrayNode->GetBoundsCheck()) {
-      BaseNode *arrAddr = arrayNode->Opnd(0);
-      BaseNode *index = arrayNode->Opnd(1);
+    auto &arrayNode = static_cast<ArrayNode&>(exp);
+    if (arrayNode.GetBoundsCheck()) {
+      BaseNode *arrAddr = arrayNode.Opnd(0);
+      BaseNode *index = arrayNode.Opnd(1);
       ASSERT(index != nullptr, "null ptr check");
       MIRType *indexType = GlobalTables::GetTypeTable().GetPrimType(index->GetPrimType());
       UnaryStmtNode *nullCheck = builder->CreateStmtUnary(OP_assertnonnull, arrAddr);
@@ -434,7 +431,7 @@ void MIRLower::AddArrayMrtMpl(BaseNode &exp, BlockNode &newBlock) {
 }
 
 BlockNode *MIRLower::ExpandArrayMrtBlock(BlockNode &block) {
-  BlockNode *newBlock = mirModule.CurFuncCodeMemPool()->New<BlockNode>();
+  auto *newBlock = mirModule.CurFuncCodeMemPool()->New<BlockNode>();
   if (block.GetFirst() == nullptr) {
     return newBlock;
   }

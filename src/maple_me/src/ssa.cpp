@@ -23,7 +23,7 @@ void SSA::InitRenameStack(OriginalStTable &oTable, size_t bbSize, VersionStTable
   vstStacks.resize(oTable.Size());
   vstVersions.resize(oTable.Size(), 0);
   bbRenamed.resize(bbSize, false);
-  for (size_t i = 1; i < oTable.Size(); i++) {
+  for (size_t i = 1; i < oTable.Size(); ++i) {
     MapleStack<VersionSt*> *vStack = ssaAlloc.GetMemPool()->New<MapleStack<VersionSt*>>(ssaAlloc.Adapter());
     const OriginalSt *ost = oTable.GetOriginalStFromID(OStIdx(i));
     VersionSt *temp = (ost->GetIndirectLev() >= 0) ? verStTab.GetVersionStFromID(ost->GetZeroVersionIndex(), true)
@@ -48,7 +48,7 @@ VersionSt *SSA::CreateNewVersion(VersionSt &vSym, BB &defBB) {
 }
 
 void SSA::RenamePhi(BB &bb) {
-  for (auto phiIt = bb.GetPhiList().begin(); phiIt != bb.GetPhiList().end(); phiIt++) {
+  for (auto phiIt = bb.GetPhiList().begin(); phiIt != bb.GetPhiList().end(); ++phiIt) {
     VersionSt *vSym = (*phiIt).second.GetResult();
     // It shows that this BB has been renamed.
     if (vSym->GetVersion() > 0) {
@@ -100,7 +100,7 @@ void SSA::RenameMustDefs(const StmtNode &stmt, BB &defBB) {
 
 void SSA::RenameMayUses(BaseNode &node) {
   if (node.GetOpCode() == OP_iread) {
-    IreadSSANode &iRead = static_cast<IreadSSANode&>(node);
+    auto &iRead = static_cast<IreadSSANode&>(node);
     VersionSt *vSym = iRead.GetSSAVar();
     CHECK_FATAL(vSym != nullptr, "SSA::RenameMayUses: iRead has no mayUse opnd");
     CHECK_FATAL(vSym->GetOrigIdx().idx < vstStacks.size(), "index out of range in SSA::RenameMayUses");
@@ -119,21 +119,23 @@ void SSA::RenameMayUses(BaseNode &node) {
 
 void SSA::RenameExpr(BaseNode &expr) {
   if (expr.GetOpCode() == OP_addrof || expr.GetOpCode() == OP_dread) {
-    AddrofSSANode &addrofNode = static_cast<AddrofSSANode&>(expr);
+    auto &addrofNode = static_cast<AddrofSSANode&>(expr);
     VersionSt *vSym = addrofNode.GetSSAVar();
     CHECK_FATAL(vSym->GetOrigIdx().idx < vstStacks.size(), "index out of range in SSA::RenameExpr");
     addrofNode.SetSSAVar(vstStacks[vSym->GetOrigIdx().idx]->top());
     return;
-  } else if (expr.GetOpCode() == OP_regread) {
-    RegreadSSANode &regNode = static_cast<RegreadSSANode&>(expr);
+  }
+  if (expr.GetOpCode() == OP_regread) {
+    auto &regNode = static_cast<RegreadSSANode&>(expr);
     VersionSt *vSym = regNode.GetSSAVar();
     CHECK_FATAL(vSym->GetOrigIdx().idx < vstStacks.size(), "index out of range in SSA::RenameExpr");
     regNode.SetSSAVar(vstStacks[vSym->GetOrigIdx().idx]->top());
     return;
-  } else if (expr.GetOpCode() == OP_iread) {
+  }
+  if (expr.GetOpCode() == OP_iread) {
     RenameMayUses(expr);
   }
-  for (size_t i = 0; i < expr.NumOpnds(); i++) {
+  for (size_t i = 0; i < expr.NumOpnds(); ++i) {
     RenameExpr(*expr.Opnd(i));
   }
 }
@@ -142,7 +144,7 @@ void SSA::RenameUses(StmtNode &stmt) {
   if (kOpcodeInfo.HasSSAUse(stmt.GetOpCode())) {
     RenameMayUses(stmt);
   }
-  for (int i = 0; i < stmt.NumOpnds(); i++) {
+  for (int i = 0; i < stmt.NumOpnds(); ++i) {
     RenameExpr(*stmt.Opnd(i));
   }
 }
@@ -159,7 +161,7 @@ void SSA::RenamePhiUseInSucc(BB &bb) {
     }
     CHECK_FATAL(index < succBB->GetPred().size(), "RenamePhiUseInSucc: cannot find corresponding pred");
     // rename the phiOpnds[index] in all the phis in succ_bb
-    for (auto phiIt = succBB->GetPhiList().begin(); phiIt != succBB->GetPhiList().end(); phiIt++) {
+    for (auto phiIt = succBB->GetPhiList().begin(); phiIt != succBB->GetPhiList().end(); ++phiIt) {
       PhiNode &phiNode = phiIt->second;
       CHECK_FATAL(phiNode.GetPhiOpnd(index)->GetOrigIdx().idx < vstStacks.size(),
                   "out of range SSA::RenamePhiUseInSucc");
@@ -171,7 +173,7 @@ void SSA::RenamePhiUseInSucc(BB &bb) {
 void PhiNode::Dump(const MIRModule *mod) {
   GetResult()->Dump(mod);
   LogInfo::MapleLogger() << " = PHI(";
-  for (size_t i = 0; i < GetPhiOpnds().size(); i++) {
+  for (size_t i = 0; i < GetPhiOpnds().size(); ++i) {
     GetPhiOpnd(i)->Dump(mod);
     if (i < GetPhiOpnds().size() - 1) {
       LogInfo::MapleLogger() << ',';

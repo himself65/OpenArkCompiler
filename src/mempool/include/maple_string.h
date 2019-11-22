@@ -23,17 +23,15 @@
 namespace maple {
 class MapleString {
  public:
-  MapleString() : data(nullptr), memPool(nullptr), dataLength(0) {}
-
-  explicit MapleString(MemPool *currMp) : data(nullptr), memPool(currMp), dataLength(0) {}
-
+  MapleString() = default;
+  explicit MapleString(MemPool *currMp) : memPool(currMp) {}
+  MapleString(const MapleString &str);
   MapleString(const char *str, MemPool *memPool);
   MapleString(const char *str, size_t size, MemPool *memPool);  // copyin
   MapleString(unsigned int size, MemPool *memPool);
   MapleString(const MapleString &str, MemPool *memPool);
   MapleString(const std::string &str, MemPool *memPool);
-  MapleString(const MapleString &str);
-  ~MapleString() {}
+  ~MapleString() = default;
 
   unsigned int length() const {
     return dataLength;
@@ -142,7 +140,7 @@ class MapleString {
     CHECK_FATAL(oldSize <= UINT_MAX - 1, "str too large");
 
     data = static_cast<char*>(memPool->Realloc(data, oldSize * sizeof(char), (dataLength + 1 + 1) * sizeof(char)));
-    dataLength++;
+    ++dataLength;
     data[dataLength - 1] = c;
     data[dataLength] = '\0';
     return *this;
@@ -253,9 +251,9 @@ class MapleString {
   friend bool operator==(const char*, const MapleString&);
   friend bool operator<(const MapleString &str1, const MapleString &str2);
 
-  char *data;
-  MemPool *memPool;
-  unsigned int dataLength;
+  char *data = nullptr;
+  MemPool *memPool = nullptr;
+  unsigned int dataLength = 0;
 };
 
 // global operators

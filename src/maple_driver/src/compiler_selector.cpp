@@ -25,26 +25,26 @@ Compiler *CompilerSelectorImpl::FindCompiler(const SupportedCompilers &compilers
   return nullptr;
 }
 
-const ErrorCode CompilerSelectorImpl::InsertCompilerIfNeeded(std::vector<Compiler*> &selected,
-                                                             const SupportedCompilers &compilers,
-                                                             const std::string &name) const {
+ErrorCode CompilerSelectorImpl::InsertCompilerIfNeeded(std::vector<Compiler*> &selected,
+                                                       const SupportedCompilers &compilers,
+                                                       const std::string &name) const {
   Compiler *compiler = FindCompiler(compilers, name);
   if (compiler != nullptr) {
     if (std::find(selected.cbegin(), selected.cend(), compiler) == selected.cend()) {
       selected.push_back(compiler);
     }
     return ErrorCode::kErrorNoError;
-  } else {
-    LogInfo::MapleLogger(kLlErr) << name << " not found!!!" << '\n';
-    return ErrorCode::kErrorToolNotFound;
   }
+
+  LogInfo::MapleLogger(kLlErr) << name << " not found!!!" << '\n';
+  return ErrorCode::kErrorToolNotFound;
 }
 
 ErrorCode CompilerSelectorImpl::Select(const SupportedCompilers &supportedCompilers, const MplOptions &mplOptions,
                                        std::vector<Compiler*> &selected) const {
   bool combPhases = false;
   if (!mplOptions.GetRunningExes().empty()) {
-    for (auto runningExe : mplOptions.GetRunningExes()) {
+    for (const std::string &runningExe : mplOptions.GetRunningExes()) {
       if (runningExe == kBinNameMe) {
         combPhases = true;
       } else if (runningExe == kBinNameMpl2mpl && combPhases) {

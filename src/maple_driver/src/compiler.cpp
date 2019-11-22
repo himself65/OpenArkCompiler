@@ -60,13 +60,13 @@ ErrorCode Compiler::Compile(const MplOptions &options, MIRModulePtr &theModule) 
     return ErrorCode::kErrorCompileFail;
   }
   timer.Stop();
-  LogInfo::MapleLogger() << (GetName() + " consumed ") << timer.Elapsed() << "s" << '\n';
+  LogInfo::MapleLogger() << (GetName() + " consumed ") << timer.Elapsed() << "s\n";
   return ErrorCode::kErrorNoError;
 }
 
-std::string Compiler::MakeOption(const MplOptions &options) {
+std::string Compiler::MakeOption(const MplOptions &options) const {
   std::map<std::string, MplOption> finalOptions;
-  auto defaultOptions = MakeDefaultOptions(options);
+  std::map<std::string, MplOption> defaultOptions = MakeDefaultOptions(options);
   AppendDefaultOptions(finalOptions, defaultOptions);
   for (const auto &binName : GetBinNames()) {
     auto userOption = options.GetOptions().find(binName);
@@ -123,12 +123,13 @@ void Compiler::AppendExtraOptions(std::map<std::string, MplOption> &finalOptions
   }
 }
 
-std::map<std::string, MplOption> Compiler::MakeDefaultOptions(const MplOptions &options) {
-  auto rawDefaultOptions = GetDefaultOptions(options);
+std::map<std::string, MplOption> Compiler::MakeDefaultOptions(const MplOptions &options) const {
+  DefaultOption rawDefaultOptions = GetDefaultOptions(options);
   std::map<std::string, MplOption> defaultOptions;
   if (rawDefaultOptions.mplOptions != nullptr) {
-    for (unsigned int i = 0; i < rawDefaultOptions.length; ++i) {
-      defaultOptions.insert(std::make_pair(rawDefaultOptions.mplOptions[i].GetKey(), rawDefaultOptions.mplOptions[i]));
+    for (uint32_t i = 0; i < rawDefaultOptions.length; ++i) {
+      defaultOptions.insert(std::make_pair(rawDefaultOptions.mplOptions[i].GetKey(),
+          rawDefaultOptions.mplOptions[i]));
     }
   }
   return defaultOptions;

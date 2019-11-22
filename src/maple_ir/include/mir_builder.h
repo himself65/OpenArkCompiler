@@ -50,8 +50,7 @@ class MIRBuilder {
 
   explicit MIRBuilder(MIRModule *module)
       : mirModule(module),
-        incompleteTypeRefedSet(std::less<TyIdx>(), mirModule->GetMPAllocator().Adapter()),
-        lineNum(0) {}
+        incompleteTypeRefedSet(mirModule->GetMPAllocator().Adapter()) {}
 
   virtual ~MIRBuilder() = default;
 
@@ -83,9 +82,8 @@ class MIRBuilder {
   unsigned int GetLineNum() const {
     return lineNum;
   }
-
-  void SetLineNum(unsigned int i) {
-    lineNum = i;
+  void SetLineNum(unsigned int num) {
+    lineNum = num;
   }
 
   GStrIdx GetOrCreateStringIndex(const std::string &str) const {
@@ -103,7 +101,7 @@ class MIRBuilder {
   }
 
   MIRFunction *GetOrCreateFunction(const std::string&, TyIdx);
-  MIRFunction *GetFunctionFromSymbol(const MIRSymbol &funcst) const;
+  MIRFunction *GetFunctionFromSymbol(const MIRSymbol &funcst);
   MIRFunction *GetFunctionFromStidx(StIdx stIdx);
   MIRFunction *GetFunctionFromName(const std::string&);
   // For compiler-generated metadata struct
@@ -126,7 +124,7 @@ class MIRBuilder {
   FieldID GetStructFieldIDFromFieldName(MIRType &type, const std::string &name);
   FieldID GetStructFieldIDFromFieldNameParentFirst(MIRType *type, const std::string &name);
 
-  void SetStructFieldIDFromFieldName(MIRType &structtype, const std::string &name, GStrIdx newStrIdx,
+  void SetStructFieldIDFromFieldName(MIRStructType &structType, const std::string &name, GStrIdx newStrIdx,
                                      const MIRType &newFieldType);
   // for creating Function.
   MIRSymbol *GetFunctionArgument(MIRFunction &fun, uint32 index) const {
@@ -135,8 +133,8 @@ class MIRBuilder {
   }
 
   MIRFunction *CreateFunction(const std::string &name, const MIRType &returnType, const ArgVector &arguments,
-                              bool isvarg = false, bool createBody = true) const;
-  MIRFunction *CreateFunction(const StIdx stIdx, bool addToTable = true) const;
+                              bool isVarg = false, bool createBody = true) const;
+  MIRFunction *CreateFunction(StIdx stIdx, bool addToTable = true) const;
   virtual void UpdateFunction(MIRFunction &func, MIRType *returnType, const ArgVector &arguments) {}
 
   MIRSymbol *GetSymbolFromEnclosingScope(StIdx stIdx) const;
@@ -155,29 +153,29 @@ class MIRBuilder {
   ConstvalNode *CreateFloatConst(float val);
   ConstvalNode *CreateDoubleConst(double val);
   ConstvalNode *CreateFloat128Const(const uint64 *val);
-  ConstvalNode *GetConstInt(MemPool &memPool, int i);
-  ConstvalNode *GetConstInt(int i) {
-    return CreateIntConst(i, PTY_i32);
+  ConstvalNode *GetConstInt(MemPool &memPool, int val);
+  ConstvalNode *GetConstInt(int val) {
+    return CreateIntConst(val, PTY_i32);
   }
 
-  ConstvalNode *GetConstUInt1(bool i) {
-    return CreateIntConst(i, PTY_u1);
+  ConstvalNode *GetConstUInt1(bool val) {
+    return CreateIntConst(val, PTY_u1);
   }
 
-  ConstvalNode *GetConstUInt8(uint8 i) {
-    return CreateIntConst(i, PTY_u8);
+  ConstvalNode *GetConstUInt8(uint8 val) {
+    return CreateIntConst(val, PTY_u8);
   }
 
-  ConstvalNode *GetConstUInt16(uint16 i) {
-    return CreateIntConst(i, PTY_u16);
+  ConstvalNode *GetConstUInt16(uint16 val) {
+    return CreateIntConst(val, PTY_u16);
   }
 
-  ConstvalNode *GetConstUInt32(uint32 i) {
-    return CreateIntConst(i, PTY_u32);
+  ConstvalNode *GetConstUInt32(uint32 val) {
+    return CreateIntConst(val, PTY_u32);
   }
 
-  ConstvalNode *GetConstUInt64(uint64 i) {
-    return CreateIntConst(i, PTY_u64);
+  ConstvalNode *GetConstUInt64(uint64 val) {
+    return CreateIntConst(val, PTY_u64);
   }
 
   ConstvalNode *CreateAddrofConst(BaseNode&);
@@ -208,12 +206,12 @@ class MIRBuilder {
   GCMallocNode *CreateExprGCMalloc(Opcode opcode, const MIRType &ptype, const MIRType &type);
   JarrayMallocNode *CreateExprJarrayMalloc(Opcode opcode, const MIRType &ptype, const MIRType &type, BaseNode *opnd);
   TypeCvtNode *CreateExprTypeCvt(Opcode o, const MIRType &type, const MIRType &fromtype, BaseNode *opnd);
-  ExtractbitsNode *CreateExprExtractbits(Opcode o, const MIRType &type, uint32 bOffset, uint32 bsize, BaseNode *opnd);
+  ExtractbitsNode *CreateExprExtractbits(Opcode o, const MIRType &type, uint32 bOffset, uint32 bSize, BaseNode *opnd);
   RetypeNode *CreateExprRetype(const MIRType &type, const MIRType &fromType, BaseNode *opnd);
   ArrayNode *CreateExprArray(const MIRType &arrayType);
   ArrayNode *CreateExprArray(const MIRType &arrayType, BaseNode *op);
   ArrayNode *CreateExprArray(const MIRType &arrayType, BaseNode *op1, BaseNode *op2);
-  IntrinsicopNode *CreateExprIntrinsicop(MIRIntrinsicID idx, Opcode opCode, const MIRType &type,
+  IntrinsicopNode *CreateExprIntrinsicop(MIRIntrinsicID idx, Opcode opcode, const MIRType &type,
                                          const MapleVector<BaseNode*> &ops);
   // for creating Statement.
   NaryStmtNode *CreateStmtReturn(BaseNode *rVal);
@@ -227,7 +225,7 @@ class MIRBuilder {
   IassignNode *CreateStmtIassign(const MIRType &type, FieldID fieldID, BaseNode *addr, BaseNode *src);
   IassignoffNode *CreateStmtIassignoff(PrimType pty, int32 offset, BaseNode *opnd0, BaseNode *src);
   IassignFPoffNode *CreateStmtIassignFPoff(PrimType pty, int32 offset, BaseNode *src);
-  CallNode *CreateStmtCall(PUIdx puIdx, const MapleVector<BaseNode*> &args, Opcode opCode = OP_call);
+  CallNode *CreateStmtCall(PUIdx puIdx, const MapleVector<BaseNode*> &args, Opcode opcode = OP_call);
   CallNode *CreateStmtCall(const std::string &name, const MapleVector<BaseNode*> &args);
   CallNode *CreateStmtVirtualCall(PUIdx puIdx, const MapleVector<BaseNode*> &args) {
     return CreateStmtCall(puIdx, args, OP_virtualcall);
@@ -267,9 +265,9 @@ class MIRBuilder {
   TryNode *CreateStmtTry(const MapleVector<LabelIdx> &cLabIdxs);
   CatchNode *CreateStmtCatch(const MapleVector<TyIdx> &tyIdxVec);
   LabelIdx GetOrCreateMIRLabel(const std::string &name);
-  LabelIdx CreateLabIdx(MIRFunction &mirfunc);
+  LabelIdx CreateLabIdx(MIRFunction &mirFunc);
   LabelNode *CreateStmtLabel(LabelIdx labIdx);
-  StmtNode *CreateStmtComment(const std::string &cmnt);
+  StmtNode *CreateStmtComment(const std::string &comment);
   CondGotoNode *CreateStmtCondGoto(BaseNode *cond, Opcode op, LabelIdx labIdx);
   void AddStmtInCurrentFunctionBody(StmtNode &stmt);
   MIRSymbol *GetSymbol(TyIdx, const std::string&, MIRSymKind, MIRStorageClass, uint8, bool) const;
@@ -288,8 +286,8 @@ class MIRBuilder {
 
 
  private:
-  MIRSymbol *GetOrCreateGlobalDecl(const std::string &str, const TyIdx &tyIdx, bool &created) const;
-  MIRSymbol *GetOrCreateLocalDecl(const std::string &str, const TyIdx &tyIdx, MIRSymbolTable &symbolTable,
+  MIRSymbol *GetOrCreateGlobalDecl(const std::string &str, TyIdx tyIdx, bool &created) const;
+  MIRSymbol *GetOrCreateLocalDecl(const std::string &str, TyIdx tyIdx, MIRSymbolTable &symbolTable,
                                   bool &created) const;
   bool IsValidCallReturn(const MIRSymbol &ret) const {
     return ret.GetStorageClass() == kScAuto || ret.GetStorageClass() == kScFormal ||
@@ -300,7 +298,7 @@ class MIRBuilder {
   MapleSet<TyIdx> incompleteTypeRefedSet;
   // <classname strIdx, fieldname strIdx, typename strIdx, attr list strIdx>
   std::vector<std::tuple<uint32, uint32, uint32, uint32>> extraFieldsTuples;
-  unsigned int lineNum;
+  unsigned int lineNum = 0;
 };
 
 }  // namespace maple

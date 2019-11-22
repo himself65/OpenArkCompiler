@@ -17,9 +17,6 @@
 #include "module_phase.h"
 #include "me_phase_manager.h"
 
-static constexpr char kDotStr[] = ".";
-static constexpr char kDotMplStr[] = ".mpl";
-
 namespace maple {
 class DoKlassHierarchy : public ModulePhase {
  public:

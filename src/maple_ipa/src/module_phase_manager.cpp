@@ -30,6 +30,11 @@
 #include "bin_mpl_export.h"
 #include "mpl_timer.h"
 
+namespace {
+constexpr char kDotStr[] = ".";
+constexpr char kDotMplStr[] = ".mpl";
+} // namespace
+
 namespace maple {
 // Manage the phases of middle and implement some maplecomb-options such as
 // skipAfter, skipFrom, quiet.
@@ -85,7 +90,7 @@ void ModulePhaseManager::Run() {
   int phaseIndex = 0;
   for (auto it = PhaseSequenceBegin(); it != PhaseSequenceEnd(); ++it, ++phaseIndex) {
     PhaseID id = GetPhaseId(it);
-    ModulePhase *p = static_cast<ModulePhase*>(GetPhase(id));
+    auto *p = static_cast<ModulePhase*>(GetPhase(id));
     MIR_ASSERT(p);
     // if we need to skip after certain pass
     if (Options::skipFrom.compare(p->PhaseName()) == 0) {

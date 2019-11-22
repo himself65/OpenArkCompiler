@@ -14,10 +14,8 @@
  */
 #include "mir_function.h"
 #include <cstdio>
-#include <fstream>
 #include <iostream>
 #include "mir_nodes.h"
-#include "class_hierarchy.h"
 #include "printing.h"
 #include "string_utils.h"
 
@@ -269,7 +267,7 @@ void MIRFunction::Dump(bool withoutBody) {
   if (codeMemPool == nullptr) {
     LogInfo::MapleLogger() << '\n';
     LogInfo::MapleLogger() << "# [WARNING] skipped dumping because codeMemPool is nullptr " << '\n';
-  } else if (GetBody() && !withoutBody && symbol->GetStorageClass() != kScExtern) {
+  } else if (GetBody() != nullptr && !withoutBody && symbol->GetStorageClass() != kScExtern) {
     ResetInfoPrinted();  // this ensures funcinfo will be printed
     GetBody()->Dump(*module, 0, module->GetFlavor() < kMmpl ? GetSymTab() : nullptr,
                     module->GetFlavor() < kMmpl ? GetPregTab() : nullptr, false, true);  // Dump body
@@ -288,7 +286,7 @@ void MIRFunction::DumpUpFormal(int32 indent) const {
   if (localWordsTypeTagged != nullptr) {
     PrintIndentation(indent + 1);
     LogInfo::MapleLogger() << "formalWordsTypeTagged = [ ";
-    const uint32 *p = reinterpret_cast<const uint32*>(localWordsTypeTagged);
+    const auto *p = reinterpret_cast<const uint32*>(localWordsTypeTagged);
     LogInfo::MapleLogger() << std::hex;
     while (p < reinterpret_cast<const uint32*>(localWordsTypeTagged + BlockSize2BitVectorSize(GetUpFormalSize()))) {
       LogInfo::MapleLogger() << std::hex << "0x" << *p << " ";
@@ -400,11 +398,11 @@ bool MIRFunction::IsEmpty() const {
 }
 
 bool MIRFunction::IsClinit() const {
-  const std::string clInitPostfix = "_7C_3Cclinit_3E_7C_28_29V";
+  const std::string clinitPostfix = "_7C_3Cclinit_3E_7C_28_29V";
   const std::string &funcName = this->GetName();
   // this does not work for smali files like art/test/511-clinit-interface/smali/BogusInterface.smali,
   // which is decorated without "constructor".
-  return StringUtils::EndsWith(funcName, clInitPostfix);
+  return StringUtils::EndsWith(funcName, clinitPostfix);
 }
 
 uint32 MIRFunction::GetInfo(GStrIdx strIdx) const {
@@ -450,12 +448,12 @@ void MIRFunction::SetBaseClassFuncNames(GStrIdx strIdx) {
   if (pos != std::string::npos && pos > 0) {
     const std::string className = name.substr(0, pos);
     baseClassStrIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(className);
-    std::string funcNameWithtype = name.substr(pos + width, name.length() - pos - width);
-    baseFuncWithTypeStrIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(funcNameWithtype);
+    std::string funcNameWithType = name.substr(pos + width, name.length() - pos - width);
+    baseFuncWithTypeStrIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(funcNameWithType);
     size_t index = name.find(NameMangler::kRigthBracketStr);
     ASSERT(index != std::string::npos, "Invalid name, cannot find '_29' in name");
     size_t posEnd = index + (std::string(NameMangler::kRigthBracketStr)).length();
-    funcNameWithtype = name.substr(pos + width, posEnd - pos - width);
+    funcNameWithType = name.substr(pos + width, posEnd - pos - width);
     size_t newPos = name.find(delimiter, pos + width);
     while (newPos != std::string::npos && (name[newPos - 1] == '_' && name[newPos - 2] != '_')) {
       newPos = name.find(delimiter, newPos + width);
@@ -500,7 +498,7 @@ void MIRFunction::NewBody() {
   // from module mempool to function mempool.
   MIRSymbolTable *oldSymTable = GetSymTab();
   MIRPregTable *oldPregTable = GetPregTab();
-  MIRTypeNameTable *oldTypenameTable = typeNameTab;
+  MIRTypeNameTable *oldTypeNameTable = typeNameTab;
   MIRLabelTable *oldLabelTable = GetLabelTab();
   symTab = dataMemPool->New<MIRSymbolTable>(dataMPAllocator);
   SetPregTab(dataMemPool->New<MIRPregTable>(module, &dataMPAllocator));
@@ -512,12 +510,12 @@ void MIRFunction::NewBody() {
     }
   }
   if (oldPregTable != nullptr) {
-    for (size_t i = 1; i < oldPregTable->Size(); i++) {
+    for (size_t i = 1; i < oldPregTable->Size(); ++i) {
       GetPregTab()->AddPreg(oldPregTable->PregFromPregIdx(i));
     }
   }
-  if (oldTypenameTable != nullptr) {
-    ASSERT(oldTypenameTable->Size() == typeNameTab->Size(),
+  if (oldTypeNameTable != nullptr) {
+    ASSERT(oldTypeNameTable->Size() == typeNameTab->Size(),
            "Does not expect to process typeNameTab in MIRFunction::NewBody");
   }
   if (oldLabelTable != nullptr) {

@@ -67,7 +67,7 @@ class FuncOptimizeIterator {
 };
 
 #define OPT_TEMPLATE(OPT_NAME)                                                                 \
-  KlassHierarchy *kh = static_cast<KlassHierarchy*>(mrm->GetAnalysisResult(MoPhase_CHA, mod)); \
+  auto *kh = static_cast<KlassHierarchy*>(mrm->GetAnalysisResult(MoPhase_CHA, mod));           \
   ASSERT(kh, "null ptr check");                                                                \
   FuncOptimizeIterator opt(PhaseName(), new OPT_NAME(mod, kh, TRACE_PHASE));                   \
   opt.Run();

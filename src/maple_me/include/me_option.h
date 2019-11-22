@@ -23,20 +23,31 @@
 namespace maple {
 class MeOption {
  public:
-  explicit MeOption(MemPool &memPool) : optionAlloc(&memPool) {}
-
-  ~MeOption() = default;
-
-  void ParseOptions(int argc, char **argv, std::string &fileName);
-
-  static bool DumpPhase(const std::string &phase);
-  static std::unordered_set<std::string> dumpPhases;
   enum Level {
     kLevelZero = 0,
     kLevelOne = 1,
     kLevelTwo = 2,
     kLevelThree = 3
   };
+
+  explicit MeOption(MemPool &memPool) : optionAlloc(&memPool) {}
+
+  ~MeOption() = default;
+
+  void ParseOptions(int argc, char **argv, std::string &fileName);
+
+  void SplitPhases(const std::string &str, std::unordered_set<std::string> &set) const;
+  void SplitSkipPhases(const std::string &str) {
+    SplitPhases(str, skipPhases);
+  }
+  void GetRange(const std::string &str) const;
+
+  const std::unordered_set<std::string> &GetSkipPhases() const {
+    return skipPhases;
+  }
+
+  static bool DumpPhase(const std::string &phase);
+  static std::unordered_set<std::string> dumpPhases;
   static bool dumpAfter;
   static constexpr int kRangeArrayLen = 2;
   static unsigned long range[kRangeArrayLen];
@@ -53,16 +64,6 @@ class MeOption {
   static bool ignoreIPA;
   static bool lessThrowAlias;
   static bool regreadAtReturn;
-  void SplitPhases(const std::string &str, std::unordered_set<std::string> &set) const;
-  void SplitSkipPhases(const std::string &str) {
-    SplitPhases(str, skipPhases);
-  }
-  void GetRange(const std::string &str) const;
-
-  const std::unordered_set<std::string> &GetSkipPhases() const {
-    return skipPhases;
-  }
-
  private:
   std::unordered_set<std::string> skipPhases;
   MapleAllocator optionAlloc;

@@ -16,9 +16,9 @@
 #include "compiler.h"
 #include "default_options.def"
 
-using namespace maple;
+namespace maple {
 
-DefaultOption MplcgCompiler::GetDefaultOptions(const MplOptions &options) {
+DefaultOption MplcgCompiler::GetDefaultOptions(const MplOptions &options) const {
   DefaultOption defaultOptions = { nullptr, 0 };
   if (options.GetOptimizationLevel() == kO0 && options.HasSetDefaultLevel()) {
     defaultOptions.mplOptions = kMplcgDefaultOptionsO0;
@@ -32,13 +32,12 @@ std::string MplcgCompiler::GetBinName() const {
 }
 
 std::vector<std::string> MplcgCompiler::GetBinNames() const {
-  auto binNames = std::vector<std::string>();
-  binNames.push_back(kBinNameMplcg);
+  std::vector<std::string> binNames{ kBinNameMplcg };
   return binNames;
 }
 
 std::string MplcgCompiler::GetInputFileName(const MplOptions &options) const {
-  std::string::size_type idx = options.GetOutputName().find(".VtableImpl");
+  auto idx = options.GetOutputName().find(".VtableImpl");
   std::string outputName = options.GetOutputName();
   if (idx != std::string::npos) {
     outputName = options.GetOutputName().substr(0, idx);
@@ -46,3 +45,4 @@ std::string MplcgCompiler::GetInputFileName(const MplOptions &options) const {
   return options.GetOutputFolder() + outputName + ".VtableImpl.mpl";
 }
 
+}  // namespace maple

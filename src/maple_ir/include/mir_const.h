@@ -39,7 +39,7 @@ enum MIRConstKind {
 
 class MIRConst {
  public:
-  explicit MIRConst(MIRType &type, uint32 fieldID = 0) : kind(kConstInvalid), type(type), fieldID(fieldID) {}
+  explicit MIRConst(MIRType &type, uint32 fieldID = 0) : type(type), fieldID(fieldID) {}
 
   virtual ~MIRConst() = default;
 
@@ -68,15 +68,11 @@ class MIRConst {
   // NO OP
   virtual void Neg() {}
 
-  virtual bool operator==(MIRConst &rhs) const {
+  virtual bool operator==(const MIRConst &rhs) const {
     return &rhs == this;
   }
 
-  MIRConstKind GetKind() {
-    return kind;
-  }
-
-  const MIRConstKind GetKind() const {
+  MIRConstKind GetKind() const {
     return kind;
   }
 
@@ -93,7 +89,7 @@ class MIRConst {
   }
 
  private:
-  MIRConstKind kind;
+  MIRConstKind kind = kConstInvalid;
   MIRType &type;
   uint32 fieldID;
 };
@@ -117,7 +113,7 @@ class MIRIntConst : public MIRConst {
     uint8 width = 0;
     uint64 tmp = value < 0 ? -(value + 1) : value;
     while (tmp != 0) {
-      width++;
+      ++width;
       tmp = tmp >> 1u;
     }
     return width;
@@ -128,7 +124,7 @@ class MIRIntConst : public MIRConst {
     if (shiftBitNum < 0) {
       CHECK_FATAL(false, "shiftBitNum should not be less than zero");
     }
-    uint32 unsignShiftBitNum = static_cast<uint32>(shiftBitNum);
+    auto unsignShiftBitNum = static_cast<uint32>(shiftBitNum);
     if (IsSignedInteger(GetType().GetPrimType())) {
       value = (value << unsignShiftBitNum) >> unsignShiftBitNum;
     } else {
@@ -144,10 +140,9 @@ class MIRIntConst : public MIRConst {
     }
     if (IsSignedInteger(GetType().GetPrimType())) {
       return static_cast<int64>(((value) << shiftBitNum) >> shiftBitNum);
-    } else {
-      uint64 unsignedVal = static_cast<uint64>(value);
-      return static_cast<int64>((unsignedVal << shiftBitNum) >> shiftBitNum);
     }
+    auto unsignedVal = static_cast<uint64>(value);
+    return static_cast<int64>((unsignedVal << shiftBitNum) >> shiftBitNum);
   }
 
   void Dump() const override;
@@ -177,7 +172,7 @@ class MIRIntConst : public MIRConst {
     value = val;
   }
 
-  bool operator==(MIRConst &rhs) const override;
+  bool operator==(const MIRConst &rhs) const override;
 
  private:
   int64 value;
@@ -191,7 +186,7 @@ class MIRAddrofConst : public MIRConst {
 
   ~MIRAddrofConst() = default;
 
-  const StIdx &GetSymbolIndex() const {
+  StIdx GetSymbolIndex() const {
     return stIdx;
   }
 
@@ -199,10 +194,9 @@ class MIRAddrofConst : public MIRConst {
     return fldID;
   }
 
-  /* virtual */
   void Dump() const override;
-  /* virtual */
-  bool operator==(MIRConst &rhs) const override;
+
+  bool operator==(const MIRConst &rhs) const override;
 
  private:
   StIdx stIdx;
@@ -221,10 +215,9 @@ class MIRAddroffuncConst : public MIRConst {
     return puIdx;
   }
 
-  /* virtual */
   void Dump() const override;
-  /* virtual */
-  bool operator==(MIRConst &rhs) const override;
+
+  bool operator==(const MIRConst &rhs) const override;
 
  private:
   PUIdx puIdx;
@@ -238,7 +231,7 @@ class MIRLblConst : public MIRConst {
 
   ~MIRLblConst() = default;
 
-  bool operator==(MIRConst &rhs) const override;
+  bool operator==(const MIRConst &rhs) const override;
 
   LabelIdx GetValue() const {
     return value;
@@ -259,7 +252,7 @@ class MIRStrConst : public MIRConst {
   ~MIRStrConst() = default;
 
   void Dump() const override;
-  bool operator==(MIRConst &rhs) const override;
+  bool operator==(const MIRConst &rhs) const override;
   UStrIdx GetValue() const {
     return value;
   }
@@ -288,7 +281,7 @@ class MIRStr16Const : public MIRConst {
   }
 
   void Dump() const override;
-  bool operator==(MIRConst &rhs) const override;
+  bool operator==(const MIRConst &rhs) const override;
   U16StrIdx GetValue() const {
     return value;
   }
@@ -343,7 +336,7 @@ class MIRFloatConst : public MIRConst {
     value.floatValue = -value.floatValue;
   }
 
-  bool operator==(MIRConst &rhs) const override;
+  bool operator==(const MIRConst &rhs) const override;
 
  private:
   static const PrimType kPrimType = PTY_f32;
@@ -364,12 +357,12 @@ class MIRDoubleConst : public MIRConst {
   ~MIRDoubleConst() = default;
 
   uint32 GetIntLow32() const {
-    uint64 unsignVal = static_cast<uint64>(value.intValue);
+    auto unsignVal = static_cast<uint64>(value.intValue);
     return static_cast<uint32>(unsignVal & 0xffffffff);
   }
 
   uint32 GetIntHigh32() const {
-    uint64 unsignVal = static_cast<uint64>(value.intValue);
+    auto unsignVal = static_cast<uint64>(value.intValue);
     return static_cast<uint32>((unsignVal & 0xffffffff00000000) >> 32);
   }
 
@@ -400,7 +393,7 @@ class MIRDoubleConst : public MIRConst {
     value.dValue = -value.dValue;
   }
 
-  bool operator==(MIRConst &rhs) const override;
+  bool operator==(const MIRConst &rhs) const override;
 
  private:
   static const PrimType kPrimType = PTY_f64;
@@ -440,7 +433,7 @@ class MIRFloat128Const : public MIRConst {
     MIR_ASSERT(value && "value must not be nullptr!");
     return (value[0] == 0xffffffffffffffff && value[1] == 0xffffffffffffffff);
   };
-  bool operator==(MIRConst &rhs) const override;
+  bool operator==(const MIRConst &rhs) const override;
   void Dump() const override;
 
  private:
@@ -452,7 +445,7 @@ class MIRFloat128Const : public MIRConst {
 class MIRAggConst : public MIRConst {
  public:
   MIRAggConst(MIRModule &mod, MIRType &type)
-      : MIRConst(type), allocator(nullptr), constVec(mod.GetMPAllocator().Adapter()) {
+      : MIRConst(type), constVec(mod.GetMPAllocator().Adapter()) {
     SetKind(kConstAggConst);
   }
 
@@ -497,10 +490,9 @@ class MIRAggConst : public MIRConst {
   }
 
   void Dump() const override;
-  bool operator==(MIRConst &rhs) const override;
+  bool operator==(const MIRConst &rhs) const override;
 
  private:
-  MapleAllocator allocator;
   MapleVector<MIRConst*> constVec;
 };
 

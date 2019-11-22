@@ -35,7 +35,7 @@ void InterleavedManager::AddPhases(const std::vector<std::string> &phases, bool 
   }
 
   if (isModulePhase) {
-    ModulePhaseManager *mpm = GetMempool()->New<ModulePhaseManager>(GetMempool(), mirModule, mrm);
+    auto *mpm = GetMempool()->New<ModulePhaseManager>(GetMempool(), mirModule, mrm);
     mpm->RegisterModulePhases();
     mpm->AddModulePhases(phases);
     if (timePhases) {
@@ -43,7 +43,7 @@ void InterleavedManager::AddPhases(const std::vector<std::string> &phases, bool 
     }
     phaseManagers.push_back(mpm);
   } else {  // MeFuncPhase
-    MeFuncPhaseManager *fpm = GetMempool()->New<MeFuncPhaseManager>(GetMempool(), mirModule, mrm);
+    auto *fpm = GetMempool()->New<MeFuncPhaseManager>(GetMempool(), mirModule, mrm);
     fpm->RegisterFuncPhases();
     if (genMpl) {
       fpm->SetGenMeMpl(true);
@@ -62,12 +62,12 @@ void InterleavedManager::Run() {
     if (pm == nullptr) {
       continue;
     }
-    if (!dynamic_cast<MeFuncPhaseManager*>(pm)) {
+    auto *fpm = dynamic_cast<MeFuncPhaseManager*>(pm);
+    if (fpm == nullptr) {
       pm->Run();
       continue;
     }
-    MeFuncPhaseManager *fpm = static_cast<MeFuncPhaseManager*>(pm);
-    unsigned long rangeNum = 0;
+    uint64 rangeNum = 0;
     MapleVector<MIRFunction*> *compList;
     if (!mirModule.GetCompilationList().empty()) {
       if ((mirModule.GetCompilationList().size() != mirModule.GetFunctionList().size()) &&
@@ -127,15 +127,13 @@ void InterleavedManager::DumpTimers() {
 void InterleavedManager::InitSupportPhaseManagers() {
   ASSERT(supportPhaseManagers.empty(), "Phase managers already initialized");
 
-  ModuleResultMgr *mrm = nullptr;
-
-  ModulePhaseManager *mpm = GetMempool()->New<ModulePhaseManager>(GetMempool(), mirModule, mrm);
+  auto *mpm = GetMempool()->New<ModulePhaseManager>(GetMempool(), mirModule, nullptr);
   mpm->RegisterModulePhases();
   supportPhaseManagers.push_back(mpm);
 
-  mrm = mpm->GetModResultMgr();
+  ModuleResultMgr *mrm = mpm->GetModResultMgr();
 
-  MeFuncPhaseManager *fpm = GetMempool()->New<MeFuncPhaseManager>(GetMempool(), mirModule, mrm);
+  auto *fpm = GetMempool()->New<MeFuncPhaseManager>(GetMempool(), mirModule, mrm);
   fpm->RegisterFuncPhases();
   supportPhaseManagers.push_back(fpm);
 }
@@ -153,4 +151,4 @@ const PhaseManager *InterleavedManager::GetSupportPhaseManager(const std::string
 
   return nullptr;
 }
-}
+} // namespace maple

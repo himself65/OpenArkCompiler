@@ -22,7 +22,7 @@
 #include "name_mangler.h"
 
 namespace maple {
-MIRModule *theModule;
+MIRModule *theMIRModule = nullptr;
 uint32 StmtNode::stmtIDNext = 1;  // 0 is reserved
 uint32 StmtNode::lastPrintedLineNum = 0;
 
@@ -30,8 +30,8 @@ const char *GetIntrinsicName(MIRIntrinsicID intrn) {
   switch (intrn) {
     default:
 #define DEF_MIR_INTRINSIC(STR, NAME, INTRN_CLASS, RETURN_TYPE, ...) \
-  case INTRN_##STR:                                                 \
-    return #STR;
+    case INTRN_##STR:                                                 \
+      return #STR;
 #include "intrinsics.def"
 #undef DEF_MIR_INTRINSIC
   }
@@ -56,7 +56,7 @@ bool BaseNode::MayThrowException() {
       return true;
     }
   }
-  for (size_t i = 0; i < NumOpnds(); i++) {
+  for (size_t i = 0; i < NumOpnds(); ++i) {
     if (Opnd(i)->MayThrowException()) {
       return true;
     }
@@ -72,9 +72,8 @@ bool AddrofNode::CheckNode(const MIRModule &mod) const {
 #ifdef DYNAMICLANG
       if (GetPrimType() == PTY_dynany) {
         return true;
-      } else {
-        return IsPrimitiveScalar(GetPrimType());
       }
+      return IsPrimitiveScalar(GetPrimType());
 #else
       return IsPrimitiveScalar(GetPrimType());
 #endif
@@ -87,44 +86,41 @@ bool AddrofNode::CheckNode(const MIRModule &mod) const {
     case kTypeStructIncomplete: {
       if (GetFieldID() == 0) {
         return GetPrimType() == PTY_agg;
-      } else {
-        auto *structType = static_cast<MIRStructType*>(ty);
-        TyIdx ftyidx = structType->GetFieldTyIdx(fieldID);
-        MIRType *subType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ftyidx);
-        MIRTypeKind subKind = subType->GetKind();
-        return (subKind == kTypeBitField && VerifyPrimType(subType->GetPrimType(), GetPrimType())) ||
-               (subKind == kTypeScalar && IsPrimitiveScalar(GetPrimType())) ||
-               (subKind == kTypePointer && IsPrimitivePoint(GetPrimType())) ||
-               (subKind == kTypeStruct && GetPrimType() == PTY_agg) || (ftyidx != 0 && GetPrimType() == PTY_agg);
       }
+      auto *structType = static_cast<MIRStructType*>(ty);
+      TyIdx fTyIdx = structType->GetFieldTyIdx(fieldID);
+      MIRType *subType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(fTyIdx);
+      MIRTypeKind subKind = subType->GetKind();
+      return (subKind == kTypeBitField && VerifyPrimType(subType->GetPrimType(), GetPrimType())) ||
+             (subKind == kTypeScalar && IsPrimitiveScalar(GetPrimType())) ||
+             (subKind == kTypePointer && IsPrimitivePoint(GetPrimType())) ||
+             (subKind == kTypeStruct && GetPrimType() == PTY_agg) || (fTyIdx != 0 && GetPrimType() == PTY_agg);
     }
     case kTypeClass:
     case kTypeClassIncomplete: {
       if (fieldID == 0) {
         return GetPrimType() == PTY_agg;
-      } else {
-        auto *classType = static_cast<MIRClassType*>(ty);
-        MIRType *subType = classType->GetFieldType(fieldID);
-        MIRTypeKind subKind = subType->GetKind();
-        return (subKind == kTypeBitField && VerifyPrimType(subType->GetPrimType(), GetPrimType())) ||
-               (subKind == kTypeScalar && IsPrimitiveScalar(GetPrimType())) ||
-               (subKind == kTypePointer && IsPrimitivePoint(GetPrimType())) ||
-               (subKind == kTypeStruct && GetPrimType() == PTY_agg);
       }
+      auto *classType = static_cast<MIRClassType*>(ty);
+      MIRType *subType = classType->GetFieldType(fieldID);
+      MIRTypeKind subKind = subType->GetKind();
+      return (subKind == kTypeBitField && VerifyPrimType(subType->GetPrimType(), GetPrimType())) ||
+             (subKind == kTypeScalar && IsPrimitiveScalar(GetPrimType())) ||
+             (subKind == kTypePointer && IsPrimitivePoint(GetPrimType())) ||
+             (subKind == kTypeStruct && GetPrimType() == PTY_agg);
     }
     case kTypeInterface:
     case kTypeInterfaceIncomplete: {
       if (fieldID == 0) {
         return GetPrimType() == PTY_agg;
-      } else {
-        auto *interfaceType = static_cast<MIRInterfaceType*>(ty);
-        MIRType *subty = interfaceType->GetFieldType(fieldID);
-        MIRTypeKind subKind = subty->GetKind();
-        return (subKind == kTypeBitField && VerifyPrimType(subty->GetPrimType(), GetPrimType())) ||
-               (subKind == kTypeScalar && IsPrimitiveScalar(GetPrimType())) ||
-               (subKind == kTypePointer && IsPrimitivePoint(GetPrimType())) ||
-               (subKind == kTypeStruct && GetPrimType() == PTY_agg);
       }
+      auto *interfaceType = static_cast<MIRInterfaceType*>(ty);
+      MIRType *subType = interfaceType->GetFieldType(fieldID);
+      MIRTypeKind subKind = subType->GetKind();
+      return (subKind == kTypeBitField && VerifyPrimType(subType->GetPrimType(), GetPrimType())) ||
+             (subKind == kTypeScalar && IsPrimitiveScalar(GetPrimType())) ||
+             (subKind == kTypePointer && IsPrimitivePoint(GetPrimType())) ||
+             (subKind == kTypeStruct && GetPrimType() == PTY_agg);
     }
     case kTypePointer:
       return IsPrimitivePoint(GetPrimType());
@@ -208,7 +204,7 @@ void CatchNode::Dump(const MIRModule &mod, int32 indent) const {
   PrintIndentation(indent);
   LogInfo::MapleLogger() << kOpcodeInfo.GetTableItemAt(GetOpCode()).name << " {";
   size_t size = exceptionTyIdxVec.size();
-  for (size_t i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; ++i) {
     LogInfo::MapleLogger() << " ";
     GlobalTables::GetTypeTable().GetTypeFromTyIdx(exceptionTyIdxVec[i])->Dump(indent + 1);
   }
@@ -373,14 +369,14 @@ void NaryOpnds::Dump(const MIRModule &mod, int32 indent) const {
     GetNopndAt(0)->Dump(mod, indent);
   } else {
     bool allisLeaf = true;
-    for (size_t i = 0; i < GetNopndSize(); i++)
+    for (size_t i = 0; i < GetNopndSize(); ++i)
       if (!GetNopndAt(i)->IsLeaf()) {
         allisLeaf = false;
         break;
       }
     if (allisLeaf) {
       GetNopndAt(0)->Dump(mod, 0);
-      for (size_t i = 1; i < GetNopndSize(); i++) {
+      for (size_t i = 1; i < GetNopndSize(); ++i) {
         LogInfo::MapleLogger() << ", ";
         GetNopndAt(i)->Dump(mod, 0);
       }
@@ -388,7 +384,7 @@ void NaryOpnds::Dump(const MIRModule &mod, int32 indent) const {
       LogInfo::MapleLogger() << '\n';
       PrintIndentation(indent + 1);
       GetNopndAt(0)->Dump(mod, indent + 1);
-      for (size_t i = 1; i < GetNopndSize(); i++) {
+      for (size_t i = 1; i < GetNopndSize(); ++i) {
         LogInfo::MapleLogger() << ",\n";
         PrintIndentation(indent + 1);
         GetNopndAt(i)->Dump(mod, indent + 1);
@@ -400,7 +396,7 @@ void NaryOpnds::Dump(const MIRModule &mod, int32 indent) const {
 
 bool NaryOpnds::VerifyOpnds() const {
   bool nOpndsVerify = true;
-  for (size_t i = 0; i < GetNopndSize(); i++) {
+  for (size_t i = 0; i < GetNopndSize(); ++i) {
     if (!GetNopndAt(i)->Verify()) {
       nOpndsVerify = false;
       break;
@@ -414,17 +410,23 @@ void NaryNode::Dump(const MIRModule &mod, int32 indent) const {
   NaryOpnds::Dump(mod, indent);
 }
 
-MIRType *ArrayNode::GetArrayType(const TypeTable &tt) const {
-  MIRType *type = tt.GetTypeFromTyIdx(tyIdx);
+const MIRType *ArrayNode::GetArrayType(const TypeTable &tt) const {
+  const MIRType *type = tt.GetTypeFromTyIdx(tyIdx);
   CHECK_FATAL(type->GetKind() == kTypePointer, "expect array type pointer");
-  auto *pointType = static_cast<MIRPtrType*>(type);
+  const auto *pointType = static_cast<const MIRPtrType*>(type);
   return tt.GetTypeFromTyIdx(pointType->GetPointedTyIdx());
 }
+MIRType *ArrayNode::GetArrayType(const TypeTable &tt) {
+  return const_cast<MIRType*>(const_cast<const ArrayNode*>(this)->GetArrayType(tt));
+}
 
-BaseNode *ArrayNode::GetDim(const MIRModule &mod, const TypeTable &tt, int i) const {
-  auto *arrayType = static_cast<MIRArrayType*>(GetArrayType(tt));
+const BaseNode *ArrayNode::GetDim(const MIRModule &mod, TypeTable &tt, int i) const {
+  const auto *arrayType = static_cast<const MIRArrayType*>(GetArrayType(tt));
   auto *mirConst = mod.CurFuncCodeMemPool()->New<MIRConst>(*tt.GetTypeFromTyIdx(arrayType->GetElemTyIdx()));
   return mod.CurFuncCodeMemPool()->New<ConstvalNode>(mirConst);
+}
+BaseNode *ArrayNode::GetDim(const MIRModule &mod, TypeTable &tt, int i) {
+  return const_cast<BaseNode*>(const_cast<const ArrayNode*>(this)->GetDim(mod, tt, i));
 }
 
 void ArrayNode::Dump(const MIRModule &mod, int32 indent) const {
@@ -514,22 +516,29 @@ void RegreadNode::Dump(const MIRModule &mod, int32 indent) const {
   if (regIdx >= 0) {
     LogInfo::MapleLogger()
         << " %" << mod.CurFunction()->GetPregTab()->PregFromPregIdx(static_cast<uint32>(regIdx))->GetPregNo();
-  } else {
-    LogInfo::MapleLogger() << " %%";
-    if (regIdx == -kSregSp) {
+    return;
+  }
+  LogInfo::MapleLogger() << " %%";
+  switch (regIdx) {
+    case -kSregSp:
       LogInfo::MapleLogger() << "SP";
-    } else if (regIdx == -kSregFp) {
+      break;
+    case -kSregFp:
       LogInfo::MapleLogger() << "FP";
-    } else if (regIdx == -kSregGp) {
+      break;
+    case -kSregGp:
       LogInfo::MapleLogger() << "GP";
-    } else if (regIdx == -kSregThrownval) {
+      break;
+    case -kSregThrownval:
       LogInfo::MapleLogger() << "thrownval";
-    } else if (regIdx == -kSregMethodhdl) {
+      break;
+    case -kSregMethodhdl:
       LogInfo::MapleLogger() << "methodhdl";
-    } else {
+      break;
+    default:
       int32 retValIdx = (-regIdx) - kSregRetval0;
       LogInfo::MapleLogger() << "retval" << retValIdx;
-    }
+      break;
   }
 }
 
@@ -617,18 +626,28 @@ void RegassignNode::Dump(const MIRModule &mod, int32 indent) const {
         << " %" << mod.CurFunction()->GetPregTab()->PregFromPregIdx(static_cast<uint32>(regIdx))->GetPregNo();
   } else {
     LogInfo::MapleLogger() << " %%";
-    if (regIdx == -kSregSp) {
-      LogInfo::MapleLogger() << "SP";
-    } else if (regIdx == -kSregFp) {
-      LogInfo::MapleLogger() << "FP";
-    } else if (regIdx == -kSregGp) {
-      LogInfo::MapleLogger() << "GP";
-    } else if (regIdx == -kSregThrownval) {
-      LogInfo::MapleLogger() << "thrownval";
-    } else if (regIdx == -kSregMethodhdl) {
-      LogInfo::MapleLogger() << "methodhdl";
-    } else if (regIdx == -kSregRetval0) {
-      LogInfo::MapleLogger() << "retval0";
+    switch (regIdx) {
+      case -kSregSp:
+        LogInfo::MapleLogger() << "SP";
+        break;
+      case -kSregFp:
+        LogInfo::MapleLogger() << "FP";
+        break;
+      case -kSregGp:
+        LogInfo::MapleLogger() << "GP";
+        break;
+      case -kSregThrownval:
+        LogInfo::MapleLogger() << "thrownval";
+        break;
+      case -kSregMethodhdl:
+        LogInfo::MapleLogger() << "methodhdl";
+        break;
+      case -kSregRetval0:
+        LogInfo::MapleLogger() << "retval0";
+        break;
+      // no default
+      default:
+        break;
     }
   }
   LogInfo::MapleLogger() << " (";
@@ -697,7 +716,7 @@ void JsTryNode::Dump(const MIRModule &mod, int32 indent) const {
 void TryNode::Dump(const MIRModule &mod, int32 indent) const {
   StmtNode::DumpBase(mod, indent);
   LogInfo::MapleLogger() << " {";
-  for (size_t i = 0; i < offsets.size(); i++) {
+  for (size_t i = 0; i < offsets.size(); ++i) {
     int64 offset = offsets[i];
     LogInfo::MapleLogger() << " @" << mod.CurFunction()->GetLabelName((LabelIdx)offset);
   }
@@ -928,8 +947,8 @@ void DumpCallReturns(const MIRModule &mod, CallReturnVector nrets, int32 indent)
       LogInfo::MapleLogger() << (stIdx.Islocal() ? " %" : " $");
       LogInfo::MapleLogger() << st->GetName() << " " << fieldID << '\n';
     } else {
-      PregIdx16 regidx = regFieldPair.GetPregIdx();
-      const MIRPreg *mirPreg = mirFunc->GetPregItem(static_cast<PregIdx>(regidx));
+      PregIdx16 regIdx = regFieldPair.GetPregIdx();
+      const MIRPreg *mirPreg = mirFunc->GetPregItem(static_cast<PregIdx>(regIdx));
       ASSERT(mirPreg != nullptr, "mirPreg is null");
       LogInfo::MapleLogger() << "regassign"
                              << " " << GetPrimTypeName(mirPreg->GetPrimType());
@@ -952,10 +971,10 @@ const MIRSymbol *CallNode::GetCallReturnSymbol(const MIRModule &mod) const {
   if (!kOpcodeInfo.IsCallAssigned(GetOpCode())) {
     return nullptr;
   }
-  const CallReturnVector &nrets = this->GetReturnVec();
-  if (nrets.size() == 1) {
-    StIdx stIdx = nrets.begin()->first;
-    RegFieldPair regFieldPair = nrets.begin()->second;
+  const CallReturnVector &nRets = this->GetReturnVec();
+  if (nRets.size() == 1) {
+    StIdx stIdx = nRets.begin()->first;
+    RegFieldPair regFieldPair = nRets.begin()->second;
     if (!regFieldPair.IsReg()) {
       const MIRFunction *mirFunc = mod.CurFunction();;
       const MIRSymbol *st = mirFunc->GetLocalOrGlobalSymbol(stIdx);
@@ -1127,7 +1146,7 @@ bool ArithTypeVerify(const BaseNode &opnd) {
   bool verifyResult = ExcludeSmallIntTypeVerify(opnd);
   if (!verifyResult) {
     LogInfo::MapleLogger() << "\n#Error:u1,i8,u8,i16,u16 should not be used as types of arithmetic operations\n";
-    opnd.Dump(*theModule);
+    opnd.Dump(*theMIRModule);
   }
   return verifyResult;
 }
@@ -1137,25 +1156,25 @@ inline bool ReadTypeVerify(const BaseNode &opnd) {
   if (!verifyResult) {
     LogInfo::MapleLogger()
         << "\n#Error:u1,i8,u8,i16,u16 should not be used as result types for dread/iread/regread/ireadoff/ireadfpoff\n";
-    opnd.Dump(*theModule);
+    opnd.Dump(*theMIRModule);
   }
   return verifyResult;
 }
 
-inline bool IntTypeVerify(PrimType ptyp) {
-  return ptyp == PTY_i32 || ptyp == PTY_u32 || ptyp == PTY_i64 || ptyp == PTY_u64;
+inline bool IntTypeVerify(PrimType pTyp) {
+  return pTyp == PTY_i32 || pTyp == PTY_u32 || pTyp == PTY_i64 || pTyp == PTY_u64;
 }
 
-inline bool UnaryTypeVerify0(PrimType ptyp) {
-  bool verifyResult = IntTypeVerify(ptyp);
+inline bool UnaryTypeVerify0(PrimType pTyp) {
+  bool verifyResult = IntTypeVerify(pTyp);
   if (!verifyResult) {
     LogInfo::MapleLogger() << "\n#Error:result type of bnot,extractbits,sext,zext must be in [i32,u32,i64,u64]\n";
   }
   return verifyResult;
 }
 
-bool ArithResTypeVerify(PrimType ptyp) {
-  switch (ptyp) {
+bool ArithResTypeVerify(PrimType pTyp) {
+  switch (pTyp) {
     case PTY_i32:
     case PTY_u32:
     case PTY_i64:
@@ -1166,31 +1185,31 @@ bool ArithResTypeVerify(PrimType ptyp) {
     case PTY_a32:
     case PTY_a64:
     case PTY_ptr:
-      return theModule->IsCModule();
+      return theMIRModule->IsCModule();
     default:
       break;
   }
   return false;
 }
 
-inline bool UnaryTypeVerify1(PrimType ptyp) {
-  bool verifyResult = ArithResTypeVerify(ptyp);
+inline bool UnaryTypeVerify1(PrimType pType) {
+  bool verifyResult = ArithResTypeVerify(pType);
   if (!verifyResult) {
     LogInfo::MapleLogger() << "\n#Error:result type of abs,neg must be in [i32,u32,i64,u64,f32,f64]\n";
   }
   return verifyResult;
 }
 
-inline bool UnaryTypeVerify2(PrimType ptyp) {
-  bool verifyResult = IsPrimitiveFloat(ptyp);
+inline bool UnaryTypeVerify2(PrimType pType) {
+  bool verifyResult = IsPrimitiveFloat(pType);
   if (!verifyResult) {
     LogInfo::MapleLogger() << "\n#Error:result-type of recip,sqrt must be in [f32,f64]\n";
   }
   return verifyResult;
 }
 
-inline bool BinaryTypeVerify(PrimType ptyp) {
-  return ArithResTypeVerify(ptyp) || IsPrimitiveDynType(ptyp);
+inline bool BinaryTypeVerify(PrimType pType) {
+  return ArithResTypeVerify(pType) || IsPrimitiveDynType(pType);
 }
 
 inline bool BinaryGenericVerify(const BaseNode &bOpnd0, const BaseNode &bOpnd1) {
@@ -1260,14 +1279,14 @@ bool CompatibleTypeVerify(const BaseNode &opnd1, const BaseNode &opnd2) {
   uint8 groupID1 = GetCompGroupID(opnd1);
   uint8 groupID2 = GetCompGroupID(opnd2);
   Opcode opCode2 = opnd2.GetOpCode();
-  bool verifyResult = groupID1 == groupID2;
+  bool verifyResult = (groupID1 == groupID2);
   if (opCode2 == OP_gcmallocjarray || opCode2 == OP_gcpermallocjarray) {
-    verifyResult = groupID1 == kPTYGi32u32a32;
+    verifyResult = (groupID1 == kPTYGi32u32a32);
   }
   if (!verifyResult) {
     LogInfo::MapleLogger() << "\n#Error:incompatible operand types :\n";
-    opnd1.Dump(*theModule);
-    opnd2.Dump(*theModule);
+    opnd1.Dump(*theMIRModule);
+    opnd2.Dump(*theMIRModule);
   }
   return verifyResult;
 }
@@ -1285,7 +1304,7 @@ bool FloatIntCvtTypeVerify(PrimType resPType, PrimType opndPType) {
 }
 
 inline MIRTypeKind GetTypeKind(StIdx stIdx) {
-  const MIRSymbol *var = theModule->CurFunction()->GetLocalOrGlobalSymbol(stIdx);
+  const MIRSymbol *var = theMIRModule->CurFunction()->GetLocalOrGlobalSymbol(stIdx);
   ASSERT(var != nullptr, "null ptr check");
   MIRType *type = var->GetType();
   ASSERT(type != nullptr, "null ptr check");
@@ -1311,7 +1330,7 @@ inline MIRTypeKind GetPointedTypeKind(TyIdx tyIdx) {
   return pointedType->GetKind();
 }
 
-bool GetFieldType(MIRSrcLang srcLang, const MIRStructType *structType, FieldID targetFid, TyIdx &tid) {
+bool GetFieldType(MIRSrcLang srcLang, const MIRStructType *structType, FieldID targetFid, TyIdx &tyIdx) {
   if (structType == nullptr) {
     return false;
   }
@@ -1322,8 +1341,7 @@ bool GetFieldType(MIRSrcLang srcLang, const MIRStructType *structType, FieldID t
       std::stack<MIRStructType*> inheritChain;
       TyIdx parentTyIdx = classType->GetParentTyIdx();
       while (parentTyIdx.GetIdx() > 0) {
-        auto *parentType =
-            static_cast<MIRStructType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(parentTyIdx));
+        auto *parentType = static_cast<MIRStructType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(parentTyIdx));
         inheritChain.push(parentType);
         parentTyIdx = static_cast<MIRClassType*>(parentType)->GetParentTyIdx();
       }
@@ -1331,7 +1349,7 @@ bool GetFieldType(MIRSrcLang srcLang, const MIRStructType *structType, FieldID t
       while (!inheritChain.empty()) {
         auto *curClassType = static_cast<MIRClassType*>(inheritChain.top());
         if (static_cast<uint32>(targetFid) > 0 && static_cast<uint32>(targetFid) <= curClassType->GetFieldsSize()) {
-          tid = curClassType->GetFieldsElemt(targetFid - 1).second.first;
+          tyIdx = curClassType->GetFieldsElemt(targetFid - 1).second.first;
           return true;
         } else {
           targetFid -= curClassType->GetFieldsSize();
@@ -1339,7 +1357,7 @@ bool GetFieldType(MIRSrcLang srcLang, const MIRStructType *structType, FieldID t
         inheritChain.pop();
       }
       if (static_cast<uint32>(targetFid) > 0 && static_cast<uint32>(targetFid) <= classType->GetFieldsSize()) {
-        tid = classType->GetFieldsElemt(targetFid - 1).second.first;
+        tyIdx = classType->GetFieldsElemt(targetFid - 1).second.first;
         return true;
       }
     }
@@ -1350,7 +1368,7 @@ bool GetFieldType(MIRSrcLang srcLang, const MIRStructType *structType, FieldID t
 MIRTypeKind GetFieldTypeKind(const MIRStructType *structType, FieldID fieldId) {
   TyIdx fieldTyIdx;
   if (fieldId > 0) {
-    bool isValid = GetFieldType(theModule->GetSrcLang(), structType, fieldId, fieldTyIdx);
+    bool isValid = GetFieldType(theMIRModule->GetSrcLang(), structType, fieldId, fieldTyIdx);
     // when mpl does not have complete class info
     if (!isValid) {
       LogInfo::MapleLogger() << "\n#Error:field not found, must have complete class info\n";
@@ -1369,21 +1387,17 @@ inline bool IsStructureTypeKind(MIRTypeKind kind) {
 }
 
 inline bool IsStructureVerify(FieldID fieldID, StIdx stIdx) {
-  if (fieldID != 0) {
-    if (!IsStructureTypeKind(GetTypeKind(stIdx))) {
-      LogInfo::MapleLogger() << "\n#Error:if fieldID is not 0, the variable must be a structure\n";
-      return false;
-    }
+  if ((fieldID != 0) && (!IsStructureTypeKind(GetTypeKind(stIdx)))) {
+    LogInfo::MapleLogger() << "\n#Error:if fieldID is not 0, the variable must be a structure\n";
+    return false;
   }
   return true;
 }
 
 inline bool IsStructureVerify(FieldID fieldID, TyIdx tyIdx) {
-  if (fieldID != 0) {
-    if (!IsStructureTypeKind(GetTypeKind(tyIdx))) {
-      LogInfo::MapleLogger() << "\n#Error:if fieldID is not 0, the variable must be a structure\n";
-      return false;
-    }
+  if ((fieldID != 0) && (!IsStructureTypeKind(GetTypeKind(tyIdx)))) {
+    LogInfo::MapleLogger() << "\n#Error:if fieldID is not 0, the variable must be a structure\n";
+    return false;
   }
   return true;
 }
@@ -1488,9 +1502,9 @@ bool IreadNode::Verify() const {
       LogInfo::MapleLogger() << "\n#Error:If field-id is not 0, then type must specify pointer to a structure\n";
     } else {
       MIRType *type = GetPointedMIRType(tyIdx);
-      auto *stty = static_cast<MIRStructType*>(type);
-      if (GetOpCode() == OP_iread && stty->GetFieldsSize() != 0) {
-        if (IsStructureTypeKind(GetFieldTypeKind(stty, fieldID))) {
+      auto *stTy = static_cast<MIRStructType*>(type);
+      if (GetOpCode() == OP_iread && stTy->GetFieldsSize() != 0) {
+        if (IsStructureTypeKind(GetFieldTypeKind(stTy, fieldID))) {
           if (GetPrimType() != PTY_agg) {
             pTypeVerf = false;
             LogInfo::MapleLogger() << "\n#Error:If the field itself is a structure, prim-type should specify agg\n";
@@ -1534,18 +1548,18 @@ bool ExtractbitsNode::Verify() const {
 bool BinaryNode::Verify() const {
   bool opndsVerf = BinaryGenericVerify(*GetBOpnd(0), *GetBOpnd(1));
   bool resTypeVerf = BinaryTypeVerify(GetPrimType());
-  if (!resTypeVerf && theModule->IsCModule()) {
+  if (!resTypeVerf && theMIRModule->IsCModule()) {
     if ((IsAddress(GetBOpnd(0)->GetPrimType()) && !IsAddress(GetBOpnd(1)->GetPrimType())) ||
         (!IsAddress(GetBOpnd(0)->GetPrimType()) && IsAddress(GetBOpnd(1)->GetPrimType()))) {
       resTypeVerf = true;  // don't print the same kind of error message twice
       if (GetOpCode() != OP_add && GetOpCode() != OP_sub) {
         LogInfo::MapleLogger() << "\n#Error: Only add and sub are allowed for pointer arithemetic\n";
-        this->Dump(*theModule);
+        this->Dump(*theMIRModule);
       } else if (!IsAddress(GetPrimType())) {
         LogInfo::MapleLogger()
             << "\n#Error: Adding an offset to a pointer or subtracting one from a pointer should result in a pointer "
                "value\n";
-        this->Dump(*theModule);
+        this->Dump(*theMIRModule);
       }
     }
   }
@@ -1553,7 +1567,7 @@ bool BinaryNode::Verify() const {
     LogInfo::MapleLogger()
         << "\n#Error:result type of [add,div,sub,mul,max,min] and [ashr,band,bior,bxor,land,lior,lshr,shl,rem] must "
            "be in [i32,u32,i64,u64,f32,f64,dynamic-type]\n";
-    this->Dump(*theModule);
+    this->Dump(*theMIRModule);
   }
   bool comp0Verf = CompatibleTypeVerify(*GetBOpnd(0), *this);
   bool comp1Verf = CompatibleTypeVerify(*GetBOpnd(1), *this);
@@ -1577,7 +1591,7 @@ bool CompareNode::Verify() const {
   bool compVerf = CompatibleTypeVerify(*GetBOpnd(0), *GetBOpnd(1));
   bool resTypeVerf = CompareTypeVerify(GetPrimType());
   if (!resTypeVerf) {
-    this->Dump(*theModule);
+    this->Dump(*theMIRModule);
   }
   bool signVerf = true;
   bool typeVerf = compVerf && resTypeVerf;
@@ -1630,7 +1644,7 @@ bool ArrayNode::Verify() const {
   if (!opnd0TypeVerf) {
     LogInfo::MapleLogger() << "\n#Error:result-type of array-opnd0 must be in [ptr,ref,a32,a64]\n";
   }
-  for (size_t i = 1; i < NumOpnds(); i++) {
+  for (size_t i = 1; i < NumOpnds(); ++i) {
     if (!IntTypeVerify(GetNopndAt(i)->GetPrimType())) {
       opndsTypeVerf = false;
       LogInfo::MapleLogger() << "\n#Error:result of the array index operands must be in [i32,u32,i64,u64]\n";
@@ -1657,10 +1671,10 @@ bool AddrofNode::Verify() const {
       }
     }
     if (fieldID != 0 && structVerf) {
-      const MIRSymbol *var = theModule->CurFunction()->GetLocalOrGlobalSymbol(GetStIdx());
+      const MIRSymbol *var = theMIRModule->CurFunction()->GetLocalOrGlobalSymbol(GetStIdx());
       MIRType *type = var->GetType();
-      auto *stty = static_cast<MIRStructType*>(type);
-      if (IsStructureTypeKind(GetFieldTypeKind(stty, fieldID))) {
+      auto *stTy = static_cast<MIRStructType*>(type);
+      if (IsStructureTypeKind(GetFieldTypeKind(stTy, fieldID))) {
         if (GetPrimType() != PTY_agg) {
           pTypeVerf = false;
           LogInfo::MapleLogger() << "\n#Error:if the field itself is a structure, prim-type should specify agg\n";
@@ -1816,7 +1830,7 @@ bool CallNode::Verify() const {
 
 bool IcallNode::Verify() const {
   bool nOpndsVerf = true;
-  for (size_t i = 0; i < NumOpnds(); i++) {
+  for (size_t i = 0; i < NumOpnds(); ++i) {
     if (!GetNopndAt(i)->Verify()) {
       nOpndsVerf = false;
       break;

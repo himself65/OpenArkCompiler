@@ -17,19 +17,22 @@
 #include <algorithm>
 #include <cstdio>
 
+namespace {
+} // namespace
+
 // JavaIntrnLowering lowers several kinds of intrinsics:
 // 1. INTRN_JAVA_MERGE
 //    Check if INTRN_JAVA_MERGE is legal:
 //    if yes, turn it into a Retype or CvtType; if no, assert
 // 2. INTRN_JAVA_FILL_NEW_ARRAY
 //    Turn it into a jarray malloc and jarray element-wise assignment
-
 namespace maple {
-inline bool IsConstvalZero(BaseNode &n) {
-  return (n.GetOpCode() == OP_constval && static_cast<ConstvalNode*>(&n)->GetConstVal()->IsZero());
+inline bool IsConstvalZero(BaseNode &node) {
+  return (node.GetOpCode() == OP_constval) && (static_cast<ConstvalNode&>(node).GetConstVal()->IsZero());
 }
 
-JavaIntrnLowering::JavaIntrnLowering(MIRModule *mod, KlassHierarchy *kh, bool dump) : FuncOptimizeImpl(mod, kh, dump) {
+JavaIntrnLowering::JavaIntrnLowering(MIRModule *mod, KlassHierarchy *kh, bool dump)
+    : FuncOptimizeImpl(mod, kh, dump) {
 }
 
 
@@ -112,33 +115,33 @@ BaseNode *JavaIntrnLowering::JavaIntrnMergeToCvtType(PrimType destType, PrimType
   if (IsPrimitiveInteger(srcType) && IsPrimitiveFloat(destType)) {
     if (GetPrimTypeBitSize(srcType) == GetPrimTypeBitSize(destType)) {
       return builder->CreateExprRetype(*toType, *fromType, src);
-    } else {
-      return builder->CreateExprTypeCvt(OP_cvt, *toType, *fromType, src);
     }
+    return builder->CreateExprTypeCvt(OP_cvt, *toType, *fromType, src);
   } else if (IsPrimitiveInteger(srcType) && IsPrimitiveInteger(destType)) {
     if (GetPrimTypeBitSize(srcType) >= GetPrimTypeBitSize(destType)) {
       if (destType == PTY_u1) {  // e.g., type _Bool.
         return builder->CreateExprCompare(OP_ne, *toType, *fromType, src, builder->CreateIntConst(0, srcType));
-      } else if (GetPrimTypeBitSize(srcType) > GetPrimTypeBitSize(destType)) {
-        return builder->CreateExprTypeCvt(OP_cvt, *toType, *fromType, src);
-      } else if (IsSignedInteger(srcType) != IsSignedInteger(destType)) {
-        return builder->CreateExprTypeCvt(OP_cvt, *toType, *fromType, src);
-      } else {
-        src->SetPrimType(destType);
-        return src;
       }
-      // Force type cvt here because we currently do not run constant folding
-      // or contanst propagation before CG. We may revisit this decision later.
-    } else if (GetPrimTypeBitSize(srcType) < GetPrimTypeBitSize(destType)) {
-      return builder->CreateExprTypeCvt(OP_cvt, *toType, *fromType, src);
-    } else if (IsConstvalZero(*src)) {
-      return builder->CreateIntConst(0, destType);
-    } else {
-      CHECK_FATAL(false, "NYI. Don't know what to do");
+      if (GetPrimTypeBitSize(srcType) > GetPrimTypeBitSize(destType)) {
+        return builder->CreateExprTypeCvt(OP_cvt, *toType, *fromType, src);
+      }
+      if (IsSignedInteger(srcType) != IsSignedInteger(destType)) {
+        return builder->CreateExprTypeCvt(OP_cvt, *toType, *fromType, src);
+      }
+      src->SetPrimType(destType);
+      return src;
     }
-  } else {
+    // Force type cvt here because we currently do not run constant folding
+    // or contanst propagation before CG. We may revisit this decision later.
+    if (GetPrimTypeBitSize(srcType) < GetPrimTypeBitSize(destType)) {
+      return builder->CreateExprTypeCvt(OP_cvt, *toType, *fromType, src);
+    }
+    if (IsConstvalZero(*src)) {
+      return builder->CreateIntConst(0, destType);
+    }
     CHECK_FATAL(false, "NYI. Don't know what to do");
   }
+  CHECK_FATAL(false, "NYI. Don't know what to do");
 }
 
 void JavaIntrnLowering::ProcessJavaIntrnFillNewArray(IntrinsiccallNode &intrinCall) {
@@ -156,8 +159,9 @@ void JavaIntrnLowering::ProcessJavaIntrnFillNewArray(IntrinsiccallNode &intrinCa
                 "Dst preg needs to be a pointer or reference type");
     retType = mirPreg->GetMIRType();
   }
-  CHECK_FATAL(retType->GetKind() == kTypePointer, "Return type of INTRN_JAVA_FILL_NEW_ARRAY should point to a Jarray");
-  MIRType *arrayType = static_cast<MIRPtrType*>(retType)->GetPointedType();
+  CHECK_FATAL(retType->GetKind() == kTypePointer,
+              "Return type of INTRN_JAVA_FILL_NEW_ARRAY should point to a Jarray");
+  auto *arrayType = static_cast<MIRPtrType*>(retType)->GetPointedType();
   BaseNode *lenNode = builder->CreateIntConst(intrinCall.NumOpnds(), PTY_i32);
   JarrayMallocNode *newArrayNode = builder->CreateExprJarrayMalloc(OP_gcmallocjarray, *retType, *arrayType, lenNode);
   // Then fill each array element one by one.
@@ -177,7 +181,7 @@ void JavaIntrnLowering::ProcessJavaIntrnFillNewArray(IntrinsiccallNode &intrinCa
   }
   assignStmt->SetSrcPos(intrinCall.GetSrcPos());
   StmtNode *stmt = assignStmt;
-  for (int i = 0; i < intrinCall.NumOpnds(); i++) {
+  for (int i = 0; i < intrinCall.NumOpnds(); ++i) {
     ArrayNode *arrayexpr = builder->CreateExprArray(*arrayType, addrExpr, builder->CreateIntConst(i, PTY_i32));
     arrayexpr->SetBoundsCheck(false);
     StmtNode *storeStmt = builder->CreateStmtIassign(*retType, 0, arrayexpr, intrinCall.Opnd(i));

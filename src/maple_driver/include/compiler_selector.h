@@ -44,8 +44,8 @@ class CompilerSelectorImpl : public CompilerSelector {
 
  private:
   Compiler *FindCompiler(const SupportedCompilers &compilers, const std::string &name) const;
-  const ErrorCode InsertCompilerIfNeeded(std::vector<Compiler*> &selected, const SupportedCompilers &compilers,
-                                         const std::string &name) const;
+  ErrorCode InsertCompilerIfNeeded(std::vector<Compiler*> &selected, const SupportedCompilers &compilers,
+                                   const std::string &name) const;
 };
 }  // namespace maple
 #endif  // MAPLE_DRIVER_INCLUDE_COMPILER_SELECTOR_H

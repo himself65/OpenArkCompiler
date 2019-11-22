@@ -17,7 +17,7 @@
 #include <iostream>
 
 namespace maple {
-MIRSymbol *MIRSymbolBuilder::GetLocalDecl(const MIRSymbolTable &symbolTable, GStrIdx strIdx) const {
+MIRSymbol *MIRSymbolBuilder::GetLocalDecl(MIRSymbolTable &symbolTable, GStrIdx strIdx) const {
   if (strIdx != 0) {
     StIdx stIdx = symbolTable.GetStIdxFromStrIdx(strIdx);
     if (stIdx.FullIdx() != 0) {

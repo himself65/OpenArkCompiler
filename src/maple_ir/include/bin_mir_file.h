@@ -33,10 +33,10 @@ enum BinMirFileType {
 // file header for binary format kMmpl, 8B in total
 // Note the header is different with the specification
 struct BinMIRFileHeader {
-  char magic[kMagicSize];         // “HWCMPL”, or "HWLOS_"
-  maple::uint8 segNum;   // number of segments (e.g. one raw IR file is a segment unit)
-  maple::uint8 type;     // enum of type of VM file (e.g. MapleIR, TE)
-  maple::uint8 version;  // version of IR format (should be major.minor)
+  char magic[kMagicSize]; // “HWCMPL”, or "HWLOS_"
+  uint8 segNum;    // number of segments (e.g. one raw IR file is a segment unit)
+  uint8 type;      // enum of type of VM file (e.g. MapleIR, TE)
+  uint8 version;   // version of IR format (should be major.minor)
 };
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_BIN_MIR_FILE_H

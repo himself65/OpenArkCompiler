@@ -57,7 +57,7 @@ class PhiNode {
     phiOpnds[index] = &opnd;
   }
 
-  void SetPhiOpnds(MapleVector<VersionSt*> phiOpndsPara) {
+  void SetPhiOpnds(const MapleVector<VersionSt*> &phiOpndsPara) {
     phiOpnds = phiOpndsPara;
   }
 

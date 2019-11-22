@@ -45,7 +45,13 @@ enum MIRFlavor {
   kCmpl  // == CMPLv2
 };
 
-enum MIRSrcLang { kSrcLangUnknown, kSrcLangC, kSrcLangJs, kSrcLangJava, kSrcLangCPlusPlus };
+enum MIRSrcLang {
+  kSrcLangUnknown,
+  kSrcLangC,
+  kSrcLangJs,
+  kSrcLangJava,
+  kSrcLangCPlusPlus
+};
 
 // blksize gives the size of the memory block in bytes; there are (blksize+3)/4
 // words; 1 bit for each word, so the bit vector's length in bytes is
@@ -259,6 +265,10 @@ class MIRModule {
 
   void AddOptFuncs(MIRFunction *func) {
     return optimizedFuncs.push_back(func);
+  }
+
+  const MapleVector<MIRFunction*> &GetOptFuncs() const {
+    return optimizedFuncs;
   }
 
   const MapleMap<PUIdx, MapleSet<FieldID>*> &GetPuIdxFieldInitializedMap() const {

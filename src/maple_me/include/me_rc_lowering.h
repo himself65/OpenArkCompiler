@@ -90,7 +90,7 @@ class RCLowering {
   std::vector<MeStmt*> rets{};  // std::vector of return statement
   unsigned int tmpCount = 0;
   bool needSpecialHandleException = false;
-  std::set<MIRSymbol*> assignedPtrSym;
+  std::set<const MIRSymbol*> assignedPtrSym;
   std::set<VarMeExpr*> tmpLocalRefVars;
   std::set<MeExpr*> gcMallocObjects{};
   std::map<OStIdx, VarMeExpr*> cleanUpVars{};

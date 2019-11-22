@@ -66,9 +66,9 @@ class BB {
         pred(kBBVectorInitialSize, nullptr, alloc->Adapter()),
         succ(kBBVectorInitialSize, nullptr, alloc->Adapter()),
         phiList(versAlloc->Adapter()),
-        mevarPhiList(alloc->Adapter()),
-        meregPhiList(alloc->Adapter()),
-        mevarPaiList(alloc->Adapter()) {
+        meVarPhiList(alloc->Adapter()),
+        meRegPhiList(alloc->Adapter()),
+        meVarPaiList(alloc->Adapter()) {
     pred.pop_back();
     pred.pop_back();
     succ.pop_back();
@@ -80,15 +80,17 @@ class BB {
         pred(kBBVectorInitialSize, nullptr, alloc->Adapter()),
         succ(kBBVectorInitialSize, nullptr, alloc->Adapter()),
         phiList(versAlloc->Adapter()),
-        mevarPhiList(alloc->Adapter()),
-        meregPhiList(alloc->Adapter()),
-        mevarPaiList(alloc->Adapter()),
+        meVarPhiList(alloc->Adapter()),
+        meRegPhiList(alloc->Adapter()),
+        meVarPaiList(alloc->Adapter()),
         stmtNodeList(firstStmt, lastStmt) {
     pred.pop_back();
     pred.pop_back();
     succ.pop_back();
     succ.pop_back();
   }
+
+  virtual ~BB() = default;
 
   bool GetAttributes(uint32 attrKind) const {
     return (attributes & attrKind) != 0;
@@ -211,15 +213,15 @@ class BB {
   }
 
   void InsertPai(BB &bb, PaiassignMeStmt &s) {
-    if (mevarPaiList.find(&bb) == mevarPaiList.end()) {
+    if (meVarPaiList.find(&bb) == meVarPaiList.end()) {
       std::vector<PaiassignMeStmt*> tmp;
-      mevarPaiList[&bb] = tmp;
+      meVarPaiList[&bb] = tmp;
     }
-    mevarPaiList[&bb].push_back(&s);
+    meVarPaiList[&bb].push_back(&s);
   }
 
-  MapleMap<BB*, std::vector<PaiassignMeStmt*>>& GetPaiList() {
-    return mevarPaiList;
+  MapleMap<BB*, std::vector<PaiassignMeStmt*>> &GetPaiList() {
+    return meVarPaiList;
   }
 
   bool IsMeStmtEmpty() const {
@@ -256,8 +258,6 @@ class BB {
   const MeStmts &GetMeStmts() const {
     return meStmtList;
   }
-
-  virtual ~BB() = default;
 
   LabelIdx GetBBLabel() const {
     return bbLabel;
@@ -340,19 +340,19 @@ class BB {
   }
 
   MapleMap<OStIdx, MeVarPhiNode*> &GetMevarPhiList() {
-    return mevarPhiList;
+    return meVarPhiList;
   }
 
   const MapleMap<OStIdx, MeVarPhiNode*> &GetMevarPhiList() const {
-    return mevarPhiList;
+    return meVarPhiList;
   }
 
   MapleMap<OStIdx, MeRegPhiNode*> &GetMeRegPhiList() {
-    return meregPhiList;
+    return meRegPhiList;
   }
 
   const MapleMap<OStIdx, MeRegPhiNode*> &GetMeRegPhiList() const {
-    return meregPhiList;
+    return meRegPhiList;
   }
 
  private:
@@ -361,9 +361,9 @@ class BB {
   MapleVector<BB*> pred;  // predecessor list
   MapleVector<BB*> succ;  // successor list
   MapleMap<const OriginalSt*, PhiNode> phiList;
-  MapleMap<OStIdx, MeVarPhiNode*> mevarPhiList;
-  MapleMap<OStIdx, MeRegPhiNode*> meregPhiList;
-  MapleMap<BB*, std::vector<PaiassignMeStmt*>> mevarPaiList;
+  MapleMap<OStIdx, MeVarPhiNode*> meVarPhiList;
+  MapleMap<OStIdx, MeRegPhiNode*> meRegPhiList;
+  MapleMap<BB*, std::vector<PaiassignMeStmt*>> meVarPaiList;
   uint32 frequency = 0;
   BBKind kind = kBBUnknown;
   uint32 attributes = 0;

@@ -12,13 +12,12 @@
  * FIT FOR A PARTICULAR PURPOSE.
  * See the Mulan PSL v1 for more details.
  */
-/* configuration definition for code in maple_ir namespace */
+// configuration definition for code in maple_ir namespace
 #ifndef MAPLE_IR_INCLUDE_MIR_CONFIG_H
 #define MAPLE_IR_INCLUDE_MIR_CONFIG_H
-/**
- * MIR_FEATURE_FULL = 1 : for host/server size building, by default.
- * MIR_FEATURE_FULL = 0 : for resource-constrained devices. optimized for memory size
- */
+
+// MIR_FEATURE_FULL = 1 : for host/server size building, by default.
+// MIR_FEATURE_FULL = 0 : for resource-constrained devices. optimized for memory size
 #if !defined(MIR_FEATURE_FULL)
 #define MIR_FEATURE_FULL 1  // default to full feature building, for debugging
 #endif                      // MIR_FEATURE_FULL define
@@ -84,9 +83,8 @@ namespace maple {
 #define MIR_CAST_TO(var, totype) static_cast<totype>(var)
 #define MIR_DYN_CAST(var, totype) dynamic_cast<totype>(var)
 #endif  // !MIR_FEATURE_FULL
-/**
- * MIR specific configurations.
- */
+
+// MIR specific configurations.
 // Note: fix size definition cannot handle arbitary long MIR lines, such
 // as those array initialization lines.
 constexpr int kMirMaxLineSize = 3072;  // a max of 3K characters per line initially

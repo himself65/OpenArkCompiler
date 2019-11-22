@@ -1,5 +1,7 @@
 TARGETS := $(APP)
-LIB_MPLT := $(MAPLE_ROOT)/libjava-core/libjava-core.mplt
+LIB_CORE_PATH := $(MAPLE_ROOT)/libjava-core
+LIB_CORE_JAR := $(LIB_CORE_PATH)/java-core.jar
+LIB_CORE_MPLT := $(LIB_CORE_PATH)/java-core.mplt
 APP_CLASS := $(foreach APP, $(TARGETS), $(APP).class)
 APP_JAR := $(foreach APP, $(TARGETS), $(APP).jar)
 APP_MPL := $(foreach APP, $(TARGETS), $(APP).mpl)

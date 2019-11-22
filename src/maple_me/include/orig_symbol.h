@@ -34,7 +34,7 @@ struct OStIdx {
   }
 
   bool operator!=(const OStIdx &x) const {
-    return idx != x.idx;
+    return !(*this == x);
   }
 
   bool operator<(const OStIdx &x) const {
@@ -46,29 +46,14 @@ constexpr int kInitVersion = 0;
 class VarMeExpr;  // circular dependency exists, no other choice
 class OriginalSt {
  public:
-  OriginalSt(OStIdx index, MapleAllocator &alloc, bool local, bool isFormal, FieldID fieldIDPara)
-      : ostType(kUnkonwnOst),
-        index(index),
-        versionsIndex(alloc.Adapter()),
-        fieldID(fieldIDPara),
-        isLocal(local),
-        isFormal(isFormal),
-        symOrPreg() {}
-
   OriginalSt(uint32 index, PregIdx rIdx, PUIdx pIdx, MapleAllocator &alloc)
-      : OriginalSt(OStIdx(index), alloc, true, false, 0) {
-    ostType = kPregOst;
-    symOrPreg.pregIdx = rIdx;
-    puIdx = pIdx;
-  }
+      : OriginalSt(OStIdx(index), alloc, true, false, 0, pIdx, kPregOst, false, { .pregIdx = rIdx }) {}
 
-  OriginalSt(uint32 index, MIRSymbol &mirSt, PUIdx pIdx, FieldID fieldIDPara, MapleAllocator &alloc)
-      : OriginalSt(OStIdx(index), alloc, mirSt.IsLocal(), mirSt.GetStorageClass() == kScFormal, fieldIDPara) {
-    ostType = kSymbolOst;
-    symOrPreg.mirSt = &mirSt;
-    puIdx = pIdx;
-    ignoreRC = mirSt.IgnoreRC();
-  }
+  OriginalSt(uint32 index, MIRSymbol &mirSt, PUIdx pIdx, FieldID fieldID, MapleAllocator &alloc)
+      : OriginalSt(OStIdx(index), alloc, mirSt.IsLocal(), mirSt.GetStorageClass() == kScFormal, fieldID, pIdx,
+                   kSymbolOst, mirSt.IgnoreRC(), { .mirSt = &mirSt }) {}
+
+  ~OriginalSt() = default;
 
   void Dump() const;
   PregIdx GetPregIdx() const {
@@ -107,25 +92,22 @@ class OriginalSt {
   bool IsFormal() const {
     return isFormal;
   }
-
-  void SetIsFormal(bool isFormalPara = true) {
-    this->isFormal = isFormalPara;
+  void SetIsFormal(bool isFormal) {
+    this->isFormal = isFormal;
   }
 
   bool IsFinal() const {
     return isFinal;
   }
-
-  void SetIsFinal(bool isFinalPara = true) {
-    this->isFinal = isFinalPara;
+  void SetIsFinal(bool isFinal = true) {
+    this->isFinal = isFinal;
   }
 
   bool IsPrivate() const {
     return isPrivate;
   }
-
-  void SetIsPrivate(bool isPrivatePara = true) {
-    this->isPrivate = isPrivatePara;
+  void SetIsPrivate(bool isPrivate) {
+    this->isPrivate = isPrivate;
   }
 
   bool IsVolatile() const {
@@ -158,11 +140,9 @@ class OriginalSt {
     return indirectLev;
   }
 
-  void SetIndirectLev(int8 idl) {
-    this->indirectLev = idl;
+  void SetIndirectLev(int8 level) {
+    indirectLev = level;
   }
-
-  ~OriginalSt() = default;
 
   OStIdx GetIndex() const {
     return index;
@@ -200,8 +180,8 @@ class OriginalSt {
     return fieldID;
   }
 
-  void SetFieldID(FieldID fieldIDPara) {
-    fieldID = fieldIDPara;
+  void SetFieldID(FieldID fieldID) {
+    this->fieldID = fieldID;
   }
 
   bool IsIgnoreRC() const {
@@ -229,8 +209,24 @@ class OriginalSt {
     kUnkonwnOst,
     kSymbolOst,
     kPregOst
-  } ostType;
+  };
+  union SymOrPreg {
+    PregIdx pregIdx;
+    MIRSymbol *mirSt;
+  };
+  OriginalSt(OStIdx index, MapleAllocator &alloc, bool local, bool isFormal, FieldID fieldID, PUIdx pIdx,
+      OSTType ostType, bool ignoreRC, SymOrPreg sysOrPreg)
+      : ostType(ostType),
+        index(index),
+        versionsIndex(alloc.Adapter()),
+        fieldID(fieldID),
+        isLocal(local),
+        isFormal(isFormal),
+        ignoreRC(ignoreRC),
+        symOrPreg(sysOrPreg),
+        puIdx(pIdx) {}
 
+  OSTType ostType;
   OStIdx index;                       // index number in originalStVector
   MapleVector<size_t> versionsIndex;  // the i-th element refers the index of versionst in versionst table
   size_t zeroVersionIndex = 0;            // same as versionsIndex[0]
@@ -244,11 +240,7 @@ class OriginalSt {
   bool isPrivate = false;        // if the field has private attribute, only when fieldID != 0
   bool ignoreRC = false;         // base on MIRSymbol's IgnoreRC()
   bool epreLocalRefVar = false;  // is a localrefvar temp created by epre phase
-  union {
-    PregIdx pregIdx;
-    MIRSymbol *mirSt;
-  } symOrPreg;
-
+  SymOrPreg symOrPreg;
   PUIdx puIdx;
 };
 
@@ -271,11 +263,7 @@ class OriginalStTable {
     return originalStVector[id.idx];
   }
   OriginalSt *GetOriginalStFromID(OStIdx id, bool checkFirst = false) {
-    if (checkFirst && id.idx >= originalStVector.size()) {
-      return nullptr;
-    }
-    ASSERT(id.idx < originalStVector.size(), "symbol table index out of range");
-    return originalStVector[id.idx];
+    return const_cast<OriginalSt *>(const_cast<const OriginalStTable*>(this)->GetOriginalStFromID(id, checkFirst));
   }
 
   size_t Size() const {
@@ -287,8 +275,7 @@ class OriginalStTable {
     return ost.GetMIRSymbol();
   }
   MIRSymbol *GetMIRSymbolFromOriginalSt(OriginalSt &ost) {
-    ASSERT(ost.IsRealSymbol(), "runtime check error");
-    return ost.GetMIRSymbol();
+    return const_cast<MIRSymbol *>(const_cast<const OriginalStTable*>(this)->GetMIRSymbolFromOriginalSt(ost));
   }
 
   const MIRSymbol *GetMIRSymbolFromID(OStIdx id) const {

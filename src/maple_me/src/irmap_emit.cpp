@@ -34,7 +34,7 @@ BaseNode &VarMeExpr::EmitExpr(SSATab &ssaTab) {
   if (symbol->IsLocal()) {
     symbol->ResetIsDeleted();
   }
-  AddrofNode *addrofNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<AddrofNode>(
+  auto *addrofNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<AddrofNode>(
       OP_dread, PrimType(GetPrimType()), symbol->GetStIdx(), GetFieldID());
   ASSERT(addrofNode->GetPrimType() != kPtyInvalid, "runtime check error");
   ASSERT(IsValidVerIdx(ssaTab), "runtime check error");
@@ -42,7 +42,7 @@ BaseNode &VarMeExpr::EmitExpr(SSATab &ssaTab) {
 }
 
 BaseNode &RegMeExpr::EmitExpr(SSATab &ssaTab) {
-  RegreadNode *regRead = ssaTab.GetModule().CurFunction()->GetCodeMemPool()->New<RegreadNode>();
+  auto *regRead = ssaTab.GetModule().CurFunction()->GetCodeMemPool()->New<RegreadNode>();
   regRead->SetPrimType(GetPrimType());
   regRead->SetRegIdx(regIdx);
   ASSERT(regIdx < 0 ||
@@ -52,38 +52,38 @@ BaseNode &RegMeExpr::EmitExpr(SSATab &ssaTab) {
 }
 
 BaseNode &ConstMeExpr::EmitExpr(SSATab &ssaTab) {
-  ConstvalNode *exprConst =
+  auto *exprConst =
       ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<ConstvalNode>(PrimType(GetPrimType()), constVal);
   // if int const has been promoted from dyn int const, remove the type tag
   if (IsPrimitiveInteger(exprConst->GetPrimType())) {
-    MIRIntConst *intConst = static_cast<MIRIntConst*>(exprConst->GetConstVal());
+    auto *intConst = static_cast<MIRIntConst*>(exprConst->GetConstVal());
     intConst->SetValue(intConst->GetValueUnderType());
   }
   return *exprConst;
 }
 
 BaseNode &ConststrMeExpr::EmitExpr(SSATab &ssaTab) {
-  ConststrNode *exprConst =
+  auto *exprConst =
       ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<ConststrNode>(PrimType(GetPrimType()), strIdx);
   return *exprConst;
 }
 
 BaseNode &Conststr16MeExpr::EmitExpr(SSATab &ssaTab) {
-  Conststr16Node *exprConst =
+  auto *exprConst =
       ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<Conststr16Node>(PrimType(GetPrimType()), strIdx);
   return *exprConst;
 }
 
 BaseNode &SizeoftypeMeExpr::EmitExpr(SSATab &ssaTab) {
-  SizeoftypeNode *exprSizeoftype =
+  auto *exprSizeoftype =
       ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<SizeoftypeNode>(PrimType(GetPrimType()), tyIdx);
   return *exprSizeoftype;
 }
 
 BaseNode &FieldsDistMeExpr::EmitExpr(SSATab &ssaTab) {
-  FieldsDistNode *exprSizeoftype = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<FieldsDistNode>(
+  auto *exprSizeofType = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<FieldsDistNode>(
       PrimType(GetPrimType()), tyIdx, fieldID1, fieldID2);
-  return *exprSizeoftype;
+  return *exprSizeofType;
 }
 
 BaseNode &AddrofMeExpr::EmitExpr(SSATab &ssaTab) {
@@ -91,21 +91,21 @@ BaseNode &AddrofMeExpr::EmitExpr(SSATab &ssaTab) {
   if (symbol->IsLocal()) {
     symbol->ResetIsDeleted();
   }
-  AddrofNode *addrofNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<AddrofNode>(
+  auto *addrofNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<AddrofNode>(
       OP_addrof, PrimType(GetPrimType()), symbol->GetStIdx(), fieldID);
   return *addrofNode;
 }
 
 BaseNode &AddroffuncMeExpr::EmitExpr(SSATab &ssaTab) {
-  AddroffuncNode *addroffuncNode =
+  auto *addroffuncNode =
       ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<AddroffuncNode>(PrimType(GetPrimType()), puIdx);
   return *addroffuncNode;
 }
 
 BaseNode &GcmallocMeExpr::EmitExpr(SSATab &ssaTab) {
-  GCMallocNode *gcmallocNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<GCMallocNode>(
+  auto *gcMallocNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<GCMallocNode>(
       Opcode(GetOp()), PrimType(GetPrimType()), tyIdx);
-  return *gcmallocNode;
+  return *gcMallocNode;
 }
 
 BaseNode &OpMeExpr::EmitExpr(SSATab &ssaTab) {
@@ -125,7 +125,7 @@ BaseNode &OpMeExpr::EmitExpr(SSATab &ssaTab) {
     case OP_rem:
     case OP_shl:
     case OP_sub: {
-      BinaryNode *binaryNode =
+      auto *binaryNode =
           ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<BinaryNode>(Opcode(GetOp()),
                                                                               PrimType(GetPrimType()));
       binaryNode->SetBOpnd(&opnds[0]->EmitExpr(ssaTab), 0);
@@ -141,7 +141,7 @@ BaseNode &OpMeExpr::EmitExpr(SSATab &ssaTab) {
     case OP_cmpl:
     case OP_cmpg:
     case OP_cmp: {
-      CompareNode *cmpNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<CompareNode>(
+      auto *cmpNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<CompareNode>(
           Opcode(GetOp()), PrimType(GetPrimType()));
       cmpNode->SetBOpnd(&opnds[0]->EmitExpr(ssaTab), 0);
       cmpNode->SetBOpnd(&opnds[1]->EmitExpr(ssaTab), 1);
@@ -156,7 +156,7 @@ BaseNode &OpMeExpr::EmitExpr(SSATab &ssaTab) {
     case OP_sqrt:
     case OP_alloca:
     case OP_malloc: {
-      UnaryNode *unaryNode =
+      auto *unaryNode =
           ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<UnaryNode>(Opcode(GetOp()), PrimType(GetPrimType()));
       unaryNode->SetOpnd(&opnds[0]->EmitExpr(ssaTab));
       return *unaryNode;
@@ -164,7 +164,7 @@ BaseNode &OpMeExpr::EmitExpr(SSATab &ssaTab) {
     case OP_sext:
     case OP_zext:
     case OP_extractbits: {
-      ExtractbitsNode *unode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<ExtractbitsNode>(
+      auto *unode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<ExtractbitsNode>(
           Opcode(GetOp()), PrimType(GetPrimType()));
       unode->SetOpnd(&opnds[0]->EmitExpr(ssaTab));
       unode->SetBitsOffset(bitsOffset);
@@ -172,7 +172,7 @@ BaseNode &OpMeExpr::EmitExpr(SSATab &ssaTab) {
       return *unode;
     }
     case OP_select: {
-      TernaryNode *ternaryNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<TernaryNode>(
+      auto *ternaryNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<TernaryNode>(
           Opcode(GetOp()), PrimType(GetPrimType()));
       constexpr size_t kOpndNumOfTernary = 3;
       for (size_t i = 0; i < kOpndNumOfTernary; ++i) {
@@ -184,14 +184,14 @@ BaseNode &OpMeExpr::EmitExpr(SSATab &ssaTab) {
     case OP_cvt:
     case OP_floor:
     case OP_trunc: {
-      TypeCvtNode *cvtNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<TypeCvtNode>(
+      auto *cvtNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<TypeCvtNode>(
           Opcode(GetOp()), PrimType(GetPrimType()));
       cvtNode->SetOpnd(&opnds[0]->EmitExpr(ssaTab));
       cvtNode->SetFromType(opndType);
       return *cvtNode;
     }
     case OP_retype: {
-      RetypeNode *cvtNode =
+      auto *cvtNode =
           ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<RetypeNode>(PrimType(GetPrimType()));
       cvtNode->SetOpnd(&opnds[0]->EmitExpr(ssaTab));
       cvtNode->SetFromType(opndType);
@@ -200,7 +200,7 @@ BaseNode &OpMeExpr::EmitExpr(SSATab &ssaTab) {
     }
     case OP_gcmallocjarray:
     case OP_gcpermallocjarray: {
-      JarrayMallocNode *arrayMalloc = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<JarrayMallocNode>(
+      auto *arrayMalloc = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<JarrayMallocNode>(
           Opcode(GetOp()), PrimType(GetPrimType()));
       arrayMalloc->SetOpnd(&opnds[0]->EmitExpr(ssaTab));
       arrayMalloc->SetTyIdx(tyIdx);
@@ -208,15 +208,15 @@ BaseNode &OpMeExpr::EmitExpr(SSATab &ssaTab) {
     }
     case OP_resolveinterfacefunc:
     case OP_resolvevirtualfunc: {
-      ResolveFuncNode *resolveNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<ResolveFuncNode>(
+      auto *resolveNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<ResolveFuncNode>(
           Opcode(GetOp()), PrimType(GetPrimType()));
       resolveNode->SetBOpnd(&opnds[0]->EmitExpr(ssaTab), 0);
       resolveNode->SetBOpnd(&opnds[1]->EmitExpr(ssaTab), 1);
-      resolveNode->SetPuIdx(fieldID);
+      resolveNode->SetPUIdx(fieldID);
       return *resolveNode;
     }
     case OP_iaddrof: {
-      IaddrofNode *iaddrof =
+      auto *iaddrof =
           ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<IaddrofNode>(OP_iaddrof, PrimType(GetPrimType()));
       iaddrof->SetOpnd(&opnds[0]->EmitExpr(ssaTab));
       iaddrof->SetTyIdx(tyIdx);
@@ -232,14 +232,14 @@ BaseNode &NaryMeExpr::EmitExpr(SSATab &ssaTab) {
   BaseNode *nodeToReturn = nullptr;
   NaryOpnds *nopndPart = nullptr;
   if (GetOp() == OP_array) {
-    ArrayNode *arrayNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<ArrayNode>(
+    auto *arrayNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<ArrayNode>(
         ssaTab.GetModule(), PrimType(GetPrimType()), tyIdx);
     arrayNode->SetNumOpnds(GetNumOpnds());
     arrayNode->SetBoundsCheck(GetBoundCheck());
     nopndPart = arrayNode;
     nodeToReturn = arrayNode;
   } else {
-    IntrinsicopNode *intrinNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<IntrinsicopNode>(
+    auto *intrinNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<IntrinsicopNode>(
         ssaTab.GetModule(), GetOp(), PrimType(GetPrimType()), tyIdx);
     intrinNode->SetNumOpnds(GetNumOpnds());
     intrinNode->SetIntrinsic(intrinsic);
@@ -253,7 +253,7 @@ BaseNode &NaryMeExpr::EmitExpr(SSATab &ssaTab) {
 }
 
 BaseNode &IvarMeExpr::EmitExpr(SSATab &ssaTab) {
-  IreadNode *ireadNode =
+  auto *ireadNode =
       ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<IreadNode>(OP_iread, PrimType(GetPrimType()));
   ireadNode->SetOpnd(&base->EmitExpr(ssaTab));
   ireadNode->SetFieldID(fieldID);
@@ -265,13 +265,13 @@ BaseNode &IvarMeExpr::EmitExpr(SSATab &ssaTab) {
 }
 
 StmtNode &MeStmt::EmitStmt(SSATab &ssaTab) {
-  StmtNode *stmt = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<StmtNode>(Opcode(GetOp()));
+  auto *stmt = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<StmtNode>(Opcode(GetOp()));
   stmt->SetSrcPos(GetSrcPosition());
   return *stmt;
 }
 
 StmtNode &DassignMeStmt::EmitStmt(SSATab &ssaTab) {
-  DassignNode *dassignStmt = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<DassignNode>();
+  auto *dassignStmt = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<DassignNode>();
   MIRSymbol *symbol = ssaTab.GetMIRSymbolFromID(GetVarLHS()->GetOStIdx());
   if (symbol->IsLocal()) {
     symbol->ResetIsDeleted();
@@ -291,7 +291,7 @@ StmtNode &RegassignMeStmt::EmitStmt(SSATab &ssaTab) {
 }
 
 StmtNode &MaydassignMeStmt::EmitStmt(SSATab &ssaTab) {
-  DassignNode *dassignStmt = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<DassignNode>();
+  auto *dassignStmt = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<DassignNode>();
   MIRSymbol *symbol = mayDSSym->GetMIRSymbol();
   if (symbol->IsLocal()) {
     symbol->ResetIsDeleted();
@@ -319,7 +319,7 @@ void MeStmt::EmitCallReturnVector(SSATab &ssaTab, CallReturnVector &nRets) {
 }
 
 StmtNode &IassignMeStmt::EmitStmt(SSATab &ssaTab) {
-  IassignNode *iassignNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<IassignNode>();
+  auto *iassignNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<IassignNode>();
   iassignNode->SetTyIdx(tyIdx);
   iassignNode->SetFieldID(lhsVar->GetFieldID());
   iassignNode->SetAddrExpr(&lhsVar->GetBase()->EmitExpr(ssaTab));
@@ -338,7 +338,7 @@ MIRFunction &CallMeStmt::GetTargetFunction() {
 
 StmtNode &CallMeStmt::EmitStmt(SSATab &ssaTab) {
   if (GetOp() != OP_icall && GetOp() != OP_icallassigned) {
-    CallNode *callNode =
+    auto *callNode =
         ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<CallNode>(ssaTab.GetModule(), Opcode(GetOp()));
     callNode->SetPUIdx(puIdx);
     callNode->SetTyIdx(tyIdx);
@@ -363,41 +363,40 @@ StmtNode &CallMeStmt::EmitStmt(SSATab &ssaTab) {
       }
     }
     return *callNode;
-  } else {
-    IcallNode *icallNode =
-        ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<IcallNode>(ssaTab.GetModule(), Opcode(GetOp()));
-    icallNode->GetNopnd().resize(NumMeStmtOpnds());
-    for (size_t i = 0; i < NumMeStmtOpnds(); ++i) {
-      icallNode->SetOpnd(&GetOpnd(i)->EmitExpr(ssaTab), i);
-    }
-    icallNode->SetNumOpnds(icallNode->GetNopndSize());
-    icallNode->SetSrcPos(GetSrcPosition());
-    if (kOpcodeInfo.IsCallAssigned(GetOp())) {
-      EmitCallReturnVector(ssaTab, icallNode->GetReturnVec());
-      icallNode->SetRetTyIdx(TyIdx(PTY_void));
-      for (size_t j = 0; j < icallNode->GetReturnVec().size(); ++j) {
-        CallReturnPair retPair = icallNode->GetReturnVec()[j];
-        if (!retPair.second.IsReg()) {
-          StIdx stIdx = retPair.first;
-          MIRSymbolTable *symbolTab = ssaTab.GetModule().CurFunction()->GetSymTab();
-          MIRSymbol *symbol = symbolTab->GetSymbolFromStIdx(stIdx.Idx());
-          icallNode->SetRetTyIdx(symbol->GetType()->GetTypeIndex());
-          if (stIdx.Islocal()) {
-            symbol->ResetIsDeleted();
-          }
-        } else {
-          PregIdx pregIdx = (PregIdx)retPair.second.GetPregIdx();
-          MIRPreg *preg = ssaTab.GetModule().CurFunction()->GetPregTab()->PregFromPregIdx(pregIdx);
-          icallNode->SetRetTyIdx(TyIdx(preg->GetPrimType()));
+  }
+  auto *icallNode =
+      ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<IcallNode>(ssaTab.GetModule(), Opcode(GetOp()));
+  icallNode->GetNopnd().resize(NumMeStmtOpnds());
+  for (size_t i = 0; i < NumMeStmtOpnds(); ++i) {
+    icallNode->SetOpnd(&GetOpnd(i)->EmitExpr(ssaTab), i);
+  }
+  icallNode->SetNumOpnds(icallNode->GetNopndSize());
+  icallNode->SetSrcPos(GetSrcPosition());
+  if (kOpcodeInfo.IsCallAssigned(GetOp())) {
+    EmitCallReturnVector(ssaTab, icallNode->GetReturnVec());
+    icallNode->SetRetTyIdx(TyIdx(PTY_void));
+    for (size_t j = 0; j < icallNode->GetReturnVec().size(); ++j) {
+      CallReturnPair retPair = icallNode->GetReturnVec()[j];
+      if (!retPair.second.IsReg()) {
+        StIdx stIdx = retPair.first;
+        MIRSymbolTable *symbolTab = ssaTab.GetModule().CurFunction()->GetSymTab();
+        MIRSymbol *symbol = symbolTab->GetSymbolFromStIdx(stIdx.Idx());
+        icallNode->SetRetTyIdx(symbol->GetType()->GetTypeIndex());
+        if (stIdx.Islocal()) {
+          symbol->ResetIsDeleted();
         }
+      } else {
+        PregIdx pregIdx = (PregIdx)retPair.second.GetPregIdx();
+        MIRPreg *preg = ssaTab.GetModule().CurFunction()->GetPregTab()->PregFromPregIdx(pregIdx);
+        icallNode->SetRetTyIdx(TyIdx(preg->GetPrimType()));
       }
     }
-    return *icallNode;
   }
+  return *icallNode;
 }
 
 StmtNode &IcallMeStmt::EmitStmt(SSATab &ssaTab) {
-  IcallNode *icallNode =
+  auto *icallNode =
       ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<IcallNode>(ssaTab.GetModule(), Opcode(GetOp()));
   icallNode->GetNopnd().resize(NumMeStmtOpnds());
   for (size_t i = 0; i < NumMeStmtOpnds(); ++i) {
@@ -429,9 +428,9 @@ StmtNode &IcallMeStmt::EmitStmt(SSATab &ssaTab) {
 }
 
 StmtNode &IntrinsiccallMeStmt::EmitStmt(SSATab &ssaTab) {
-  IntrinsiccallNode *callNode =
+  auto *callNode =
       ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<IntrinsiccallNode>(ssaTab.GetModule(),
-                                                                                  Opcode(GetOp()));
+                                                                                 Opcode(GetOp()));
   callNode->SetIntrinsic(intrinsic);
   callNode->SetTyIdx(tyIdx);
   callNode->GetNopnd().resize(NumMeStmtOpnds());
@@ -458,7 +457,7 @@ StmtNode &IntrinsiccallMeStmt::EmitStmt(SSATab &ssaTab) {
 }
 
 StmtNode &NaryMeStmt::EmitStmt(SSATab &ssaTab) {
-  NaryStmtNode *naryStmt =
+  auto *naryStmt =
       ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<NaryStmtNode>(ssaTab.GetModule(), Opcode(GetOp()));
   naryStmt->GetNopnd().resize(NumMeStmtOpnds());
   for (size_t i = 0; i < NumMeStmtOpnds(); ++i) {
@@ -470,21 +469,21 @@ StmtNode &NaryMeStmt::EmitStmt(SSATab &ssaTab) {
 }
 
 StmtNode &UnaryMeStmt::EmitStmt(SSATab &ssaTab) {
-  UnaryStmtNode *unaryStmt = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<UnaryStmtNode>(Opcode(GetOp()));
+  auto *unaryStmt = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<UnaryStmtNode>(Opcode(GetOp()));
   unaryStmt->SetOpnd(&opnd->EmitExpr(ssaTab), 0);
   unaryStmt->SetSrcPos(GetSrcPosition());
   return *unaryStmt;
 }
 
 StmtNode &GotoMeStmt::EmitStmt(SSATab &ssaTab) {
-  GotoNode *gotoNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<GotoNode>(OP_goto);
+  auto *gotoNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<GotoNode>(OP_goto);
   gotoNode->SetOffset(offset);
   gotoNode->SetSrcPos(GetSrcPosition());
   return *gotoNode;
 }
 
 StmtNode &CondGotoMeStmt::EmitStmt(SSATab &ssaTab) {
-  CondGotoNode *cgNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<CondGotoNode>(Opcode(GetOp()));
+  auto *cgNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<CondGotoNode>(Opcode(GetOp()));
   cgNode->SetOffset(offset);
   cgNode->SetOpnd(&GetOpnd()->EmitExpr(ssaTab));
   cgNode->SetSrcPos(GetSrcPosition());
@@ -492,7 +491,7 @@ StmtNode &CondGotoMeStmt::EmitStmt(SSATab &ssaTab) {
 }
 
 StmtNode &JsTryMeStmt::EmitStmt(SSATab &ssaTab) {
-  JsTryNode *jtNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<JsTryNode>();
+  auto *jtNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<JsTryNode>();
   jtNode->SetCatchOffset(catchOffset);
   jtNode->SetFinallyOffset(finallyOffset);
   jtNode->SetSrcPos(GetSrcPosition());
@@ -500,7 +499,7 @@ StmtNode &JsTryMeStmt::EmitStmt(SSATab &ssaTab) {
 }
 
 StmtNode &TryMeStmt::EmitStmt(SSATab &ssaTab) {
-  TryNode *tryNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<TryNode>(ssaTab.GetModule());
+  auto *tryNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<TryNode>(ssaTab.GetModule());
   tryNode->ResizeOffsets(offsets.size());
   for (size_t i = 0; i < offsets.size(); ++i) {
     tryNode->SetOffset(offsets[i], i);
@@ -510,14 +509,14 @@ StmtNode &TryMeStmt::EmitStmt(SSATab &ssaTab) {
 }
 
 StmtNode &CatchMeStmt::EmitStmt(SSATab &ssaTab) {
-  CatchNode *catchNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<CatchNode>(ssaTab.GetModule());
+  auto *catchNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<CatchNode>(ssaTab.GetModule());
   catchNode->SetExceptionTyIdxVec(exceptionTyIdxVec);
   catchNode->SetSrcPos(GetSrcPosition());
   return *catchNode;
 }
 
 StmtNode &SwitchMeStmt::EmitStmt(SSATab &ssaTab) {
-  SwitchNode *switchNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<SwitchNode>(ssaTab.GetModule());
+  auto *switchNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<SwitchNode>(ssaTab.GetModule());
   switchNode->SetDefaultLabel(defaultLabel);
   switchNode->SetSwitchTable(switchTable);
   switchNode->SetSwitchOpnd(&GetOpnd()->EmitExpr(ssaTab));
@@ -526,7 +525,7 @@ StmtNode &SwitchMeStmt::EmitStmt(SSATab &ssaTab) {
 }
 
 StmtNode &CommentMeStmt::EmitStmt(SSATab &ssaTab) {
-  CommentNode *commentNode =
+  auto *commentNode =
       ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<CommentNode>(ssaTab.GetModule());
   commentNode->SetComment(comment);
   commentNode->SetSrcPos(GetSrcPosition());
@@ -534,21 +533,21 @@ StmtNode &CommentMeStmt::EmitStmt(SSATab &ssaTab) {
 }
 
 StmtNode &ThrowMeStmt::EmitStmt(SSATab &ssaTab) {
-  UnaryStmtNode *unaryStmt = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<UnaryStmtNode>(OP_throw);
+  auto *unaryStmt = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<UnaryStmtNode>(OP_throw);
   unaryStmt->SetOpnd(&opnd->EmitExpr(ssaTab), 0);
   unaryStmt->SetSrcPos(GetSrcPosition());
   return *unaryStmt;
 }
 
 StmtNode &GosubMeStmt::EmitStmt(SSATab &ssaTab) {
-  GotoNode *gosubNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<GotoNode>(OP_gosub);
+  auto *gosubNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<GotoNode>(OP_gosub);
   gosubNode->SetOffset(offset);
   gosubNode->SetSrcPos(GetSrcPosition());
   return *gosubNode;
 }
 
 StmtNode &AssertMeStmt::EmitStmt(SSATab &ssaTab) {
-  AssertStmtNode *assertStmt = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<AssertStmtNode>(Opcode(GetOp()));
+  auto *assertStmt = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<AssertStmtNode>(Opcode(GetOp()));
   assertStmt->SetBOpnd(&opnds[0]->EmitExpr(ssaTab), 0);
   assertStmt->SetBOpnd(&opnds[1]->EmitExpr(ssaTab), 1);
   assertStmt->SetSrcPos(GetSrcPosition());

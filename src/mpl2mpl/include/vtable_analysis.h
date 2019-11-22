@@ -19,14 +19,10 @@
 
 namespace maple {
 #ifdef USE_32BIT_REF
-static constexpr unsigned int kTabEntrySize = 4;
+constexpr unsigned int kTabEntrySize = 4;
 #else   // !USE_32BIT_REF
-static constexpr unsigned int kTabEntrySize = 8;
+constexpr unsigned int kTabEntrySize = 8;
 #endif  // USE_32BIT_REF
-
-// +1 is needed here because our field id starts with 0 pointing to the struct itself
-#define KLASS_ITAB_FIELDID (static_cast<uint32>(ClassProperty::kItab) + 1)
-#define KLASS_VTAB_FIELDID (static_cast<uint32>(ClassProperty::kVtab) + 1)
 
 class VtableAnalysis : public FuncOptimizeImpl {
  public:
@@ -39,24 +35,25 @@ class VtableAnalysis : public FuncOptimizeImpl {
   }
 
  private:
-  std::unordered_map<PUIdx, int> puidxToVtabIndex;
-  MIRType *voidPtrType;
-  MIRIntConst *zeroConst;
-  MIRIntConst *oneConst;
   bool IsVtableCandidate(const MIRFunction &func) const;
   bool CheckOverrideForCrossPackage(const MIRFunction &baseMethod, const MIRFunction &currMethod) const;
-  void AddMethodToTable(MethodPtrVector &methodTable, MethodPair &methodpair);
+  void AddMethodToTable(MethodPtrVector &methodTable, MethodPair &methodPair);
   void GenVtableList(const Klass &klass);
-  void DumpVtableList(const Klass *klass) const;
-  void GenTableSymbol(const std::string &prefix, const std::string klassName, MIRAggConst &newconst);
+  void DumpVtableList(const Klass &klass) const;
+  void GenTableSymbol(const std::string &prefix, const std::string klassName, MIRAggConst &newConst) const;
   void GenVtableDefinition(const Klass &klass);
   void GenItableDefinition(const Klass &klass);
 
-  BaseNode *GenVtabItabBaseAddr(BaseNode *obj, bool isVirtual);
+  BaseNode *GenVtabItabBaseAddr(BaseNode &obj, bool isVirtual);
   void ReplaceVirtualInvoke(CallNode &stmt);
   void ReplaceInterfaceInvoke(CallNode &stmt);
   void ReplaceSuperclassInvoke(CallNode &stmt);
   void ReplacePolymorphicInvoke(CallNode &stmt);
+
+  std::unordered_map<PUIdx, int> puidxToVtabIndex;
+  MIRType *voidPtrType;
+  MIRIntConst *zeroConst;
+  MIRIntConst *oneConst;
 };
 
 class DoVtableAnalysis : public ModulePhase {

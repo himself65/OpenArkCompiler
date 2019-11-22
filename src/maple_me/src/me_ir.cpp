@@ -936,11 +936,11 @@ MeStmt *MeStmt::GetNextMeStmt() const {
 void PaiassignMeStmt::Dump(IRMap *irMap) const {
   LogInfo::MapleLogger() << "||MEIR PAI|| " << kOpcodeInfo.GetTableItemAt(GetOp()).name << " ";
   lhs->Dump(irMap);
-  LogInfo::MapleLogger() << std::endl;
+  LogInfo::MapleLogger() << '\n';
   PrintIndentation(kDefaultPrintIndentNum);
   LogInfo::MapleLogger() << "rhs = ";
   rhs->Dump(irMap, kDefaultPrintIndentNum);
-  LogInfo::MapleLogger() << std::endl;
+  LogInfo::MapleLogger() << '\n';
 }
 
 void DassignMeStmt::Dump(IRMap *irMap) const {
