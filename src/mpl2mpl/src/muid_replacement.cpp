@@ -316,12 +316,12 @@ void MUIDReplacement::GenerateFuncDefTable() {
     uint32 muidIdx = iter->second.second;
     constexpr uint32 weakFuncFlag = 0x80000000; // 0b10000000 00000000 00000000 00000000
     auto *indexConst = static_cast<MIRIntConst*>(muidIdxTabConst->GetConstVecItem(muidIdx));
-    uint32 tempIdx = (indexConst->GetValue() & weakFuncFlag) | idx;
+    uint32 tempIdx = (static_cast<uint64>(indexConst->GetValue()) & weakFuncFlag) | idx;
     indexConst = GetMIRModule().GetMemPool()->New<MIRIntConst>(tempIdx, *GlobalTables::GetTypeTable().GetUInt32());
     muidIdxTabConst->SetConstVecItem(muidIdx, *indexConst);
     if (reflectionList.find(mirFunc->GetName()) != reflectionList.end()) {
       auto *tempConst = static_cast<MIRIntConst*>(muidIdxTabConst->GetConstVecItem(idx));
-      tempIdx = weakFuncFlag | tempConst->GetValue();
+      tempIdx = weakFuncFlag | static_cast<uint64>(tempConst->GetValue());
       tempConst = GetMIRModule().GetMemPool()->New<MIRIntConst>(tempIdx, *GlobalTables::GetTypeTable().GetUInt32());
       muidIdxTabConst->SetConstVecItem(idx, *tempConst);
     }
