@@ -135,11 +135,11 @@ MIRType *TypeTable::GetOrCreateFunctionType(MIRModule &module, TyIdx retTyIdx, c
 }
 
 MIRType *TypeTable::GetOrCreateStructOrUnion(const std::string &name, const FieldVector &fields,
-                                             const FieldVector &printFields, MIRModule &module, bool forStruct) {
+                                             const FieldVector &parentFields, MIRModule &module, bool forStruct) {
   GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(name);
   MIRStructType type(forStruct ? kTypeStruct : kTypeUnion, strIdx);
-  type.GetFields() = fields;
-  type.GetParentFields() = printFields;
+  type.SetFields(fields);
+  type.SetParentFields(parentFields);
   TyIdx tyIdx = GetOrCreateMIRType(&type);
   // Global?
   module.GetTypeNameTab()->SetGStrIdxToTyIdx(strIdx, tyIdx);

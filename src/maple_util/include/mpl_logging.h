@@ -126,7 +126,6 @@
 // instead of exit(1) so that the program will not completely exit, to allow the
 // developer to print stack trace and peruse the program environment at the point
 // of the assertion.
-
 namespace maple {
 extern class LogInfo logInfo;
 extern class LogInfo &log;

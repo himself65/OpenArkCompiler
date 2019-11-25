@@ -78,7 +78,6 @@ class DriverRunner final {
   bool timePhases = false;
   bool genMeMpl = false;
   std::string printOutExe;
-
 };
 }  // namespace maple
 

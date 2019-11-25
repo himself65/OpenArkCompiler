@@ -89,6 +89,9 @@ class MIRLexer {
   MapleUnorderedMap<std::string, TokenKind> keywordMap;
 
   void RemoveReturnInline(std::string &line) {
+    if (line.empty()) {
+      return;
+    }
     if (line.back() == '\n') {
       line.pop_back();
     }

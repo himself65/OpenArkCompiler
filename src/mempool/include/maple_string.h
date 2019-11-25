@@ -73,11 +73,11 @@ class MapleString {
     if (str == nullptr) {
       return *this;
     }
-    size_t size = strlen(str);
+    unsigned int size = strlen(str);
     CHECK_FATAL(size <= UINT_MAX - 1, "str too large");
 
     // if data is null, old_size = 0, else +1
-    size_t oldSize = (data == nullptr) ? 0 : (dataLength + 1);
+    unsigned int oldSize = (data == nullptr) ? 0 : (dataLength + 1);
     if (oldSize < (1 + size)) {
       data = static_cast<char*>(memPool->Realloc(data, oldSize * sizeof(char), (1 + size) * sizeof(char)));
     }
@@ -95,10 +95,10 @@ class MapleString {
   }
 
   MapleString &operator=(const std::string &str) {
-    size_t size = str.length();
+    unsigned int size = str.length();
     CHECK_FATAL(size <= UINT_MAX - 1, "str too large");
 
-    size_t oldSize = (data == nullptr) ? 0 : (dataLength + 1);
+    unsigned int oldSize = (data == nullptr) ? 0 : (dataLength + 1);
     if (oldSize < (1 + size)) {
       data = static_cast<char*>(memPool->Realloc(data, oldSize * sizeof(char), (1 + size) * sizeof(char)));
     }
@@ -118,10 +118,10 @@ class MapleString {
     if (&str == this) {
       return *this;
     }
-    size_t size = str.dataLength;
+    unsigned int size = str.dataLength;
     CHECK_FATAL(size <= UINT_MAX - 1, "str too large");
 
-    int oldSize = (data == nullptr) ? 0 : (dataLength + 1);
+    unsigned int oldSize = (data == nullptr) ? 0 : (dataLength + 1);
     data = static_cast<char*>(memPool->Realloc(data, oldSize * sizeof(char), (1 + size) * sizeof(char)));
     CHECK_FATAL(data != nullptr, "null ptr check");
     if (size == 0) {
@@ -136,7 +136,7 @@ class MapleString {
   }
 
   MapleString &operator+=(const char c) {
-    int oldSize = (data == nullptr) ? 0 : (dataLength + 1);
+    unsigned int oldSize = (data == nullptr) ? 0 : (dataLength + 1);
     CHECK_FATAL(oldSize <= UINT_MAX - 1, "str too large");
 
     data = static_cast<char*>(memPool->Realloc(data, oldSize * sizeof(char), (dataLength + 1 + 1) * sizeof(char)));
@@ -150,8 +150,8 @@ class MapleString {
     if (str == nullptr) {
       return *this;
     }
-    size_t size = strlen(str);
-    int oldSize = (data == nullptr) ? 0 : (dataLength + 1);
+    unsigned int size = strlen(str);
+    unsigned int oldSize = (data == nullptr) ? 0 : (dataLength + 1);
     CHECK_FATAL(size <= UINT_MAX - oldSize, "str too large");
 
     data = static_cast<char*>(memPool->Realloc(data, oldSize * sizeof(char), (dataLength + size + 1) * sizeof(char)));
@@ -164,7 +164,7 @@ class MapleString {
   }
 
   MapleString &operator+=(const MapleString &str) {
-    int oldSize = (data == nullptr) ? 0 : (dataLength + 1);
+    unsigned int oldSize = (data == nullptr) ? 0 : (dataLength + 1);
     CHECK_FATAL(str.dataLength <= UINT_MAX - oldSize, "str too large");
 
     data = static_cast<char*>(
@@ -177,8 +177,8 @@ class MapleString {
   }
 
   MapleString &operator+=(const std::string &str) {
-    size_t size = str.length();
-    int oldSize = (data == nullptr) ? 0 : (dataLength + 1);
+    unsigned int size = str.length();
+    unsigned int oldSize = (data == nullptr) ? 0 : (dataLength + 1);
     CHECK_FATAL(size <= UINT_MAX - oldSize, "str too large");
 
     data = static_cast<char*>(memPool->Realloc(data, oldSize * sizeof(char), (dataLength + size + 1) * sizeof(char)));
@@ -231,20 +231,7 @@ class MapleString {
     return ::strlen(s);
   }
 
-  inline static char *NewData(MemPool *memPool, const char *source, size_t len) {
-    MIR_ASSERT(memPool && "Pointer to Mempool can not be nullptr");
-    if (source == nullptr && len == 0) {
-      return nullptr;
-    }
-    char *str = static_cast<char*>(memPool->Malloc((len + 1) * sizeof(char)));
-    CHECK_FATAL(str != nullptr, "MemPool::Malloc failed");
-    if (source != nullptr && len != 0) {
-      errno_t err = memcpy_s(str, len, source, len);
-      CHECK_FATAL(err == EOK, "memcpy_s failed");
-    }
-    str[len] = 0;
-    return str;
-  }
+  inline static char *NewData(MemPool *memPool, const char *source, size_t len);
 
   friend bool operator==(const MapleString&, const MapleString&);
   friend bool operator==(const MapleString&, const char*);

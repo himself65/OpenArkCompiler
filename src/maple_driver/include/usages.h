@@ -32,12 +32,12 @@ enum OptionIndex : uint64 {
   // ----------jbc2mpl begin-------
   kUseStringFactory,
   kJbc2mplOutMpl,
-  //-------- comb begin-------- --
+  // -------- comb begin-------- --
   kCombTimePhases,
   kGenMeMpl,
   kGenVtableImpl,
   kVerify,
-  //----------me begin-----------
+  // ----------me begin-----------
   kMeHelp,
   kMeDumpPhases,
   kMeSkipPhases,
@@ -53,7 +53,7 @@ enum OptionIndex : uint64 {
   kMeRange,
   kLessThrowAlias,
   kRegReadAtReturn,
-  //----------mpl2mpl begin---------
+  // ----------mpl2mpl begin---------
   kMpl2MplHelp,
   kMpl2MplDumpPhase,
   kMpl2MplSkipPhase,
@@ -71,7 +71,7 @@ enum OptionIndex : uint64 {
   kMpl2MplMapleLinker,
   kMplnkDumpMuid,
   kEmitVtableImpl,
-  //----------mplcg begin---------
+  // ----------mplcg begin---------
   kCGQuiet,
   kPie,
   kPic,

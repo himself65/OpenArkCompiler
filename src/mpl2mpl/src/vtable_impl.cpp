@@ -18,7 +18,6 @@
 #include "reflection_analysis.h"
 
 // This phase is mainly to lower interfacecall into icall
-
 namespace {
 #ifdef USE_32BIT_REF
 constexpr char kInterfaceMethod[] = "MCC_getFuncPtrFromItab";

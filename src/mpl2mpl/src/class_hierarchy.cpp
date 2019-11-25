@@ -812,7 +812,8 @@ bool WKTypes::Util::MayRefString(const BaseNode &n, MIRType &type) {
     auto *pointType = static_cast<MIRPtrType*>(&type);
     MIRType *pointedType = pointType->GetPointedType();
     if (pointedType == javaLangString || pointedType == javaLangObjectSerializable ||
-        pointedType == javaLangComparable || pointedType == javaLangCharSequence || pointedType == javaLangObject) {
+        pointedType == javaLangComparable ||
+        pointedType == javaLangCharSequence || pointedType == javaLangObject) {
       return true;
     }
   }

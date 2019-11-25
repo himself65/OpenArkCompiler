@@ -114,7 +114,7 @@ bool RegMeExpr::IsSameVariableValue(const VarMeExpr &expr) const {
     return true;
   }
 
-  if (GetMeOp() == kMeOpReg &&GetDefBy() == kDefByStmt && GetDefStmt()->GetOp() == OP_regassign) {
+  if (GetMeOp() == kMeOpReg && GetDefBy() == kDefByStmt && GetDefStmt()->GetOp() == OP_regassign) {
     auto *stmt = static_cast<RegassignMeStmt*>(GetDefStmt());
     if (stmt->GetRHS() == &expr) {
       return true;
@@ -861,8 +861,7 @@ MeExpr *IassignMeStmt::GetLHSRef(SSATab &ssaTab, bool excludeLocalRefVar) {
   MIRType *baseType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(lhsVar->GetTyIdx());
   ASSERT(baseType != nullptr, "null ptr check");
   auto *pType = static_cast<MIRPtrType*>(baseType)->GetPointedType();
-  auto *structType = dynamic_cast<MIRStructType*>(pType);
-  if (structType == nullptr) {
+  if (!pType->IsStructType()) {
     if (pType->GetKind() == kTypePointer) {
       if (lhsVar->GetFieldID() == 0) {
         if (static_cast<MIRPtrType*>(pType)->GetPrimType() != PTY_ref) {
@@ -884,6 +883,7 @@ MeExpr *IassignMeStmt::GetLHSRef(SSATab &ssaTab, bool excludeLocalRefVar) {
       return nullptr;
     }
   } else {
+    auto *structType = static_cast<MIRStructType*>(pType);
     if (lhsVar->GetFieldID() == 0) {
       return nullptr;  // struct assign is not ref
     }

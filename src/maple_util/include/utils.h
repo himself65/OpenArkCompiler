@@ -18,7 +18,6 @@
 #include "mpl_logging.h"
 
 namespace maple { namespace utils {
-
 // Operations on char
 inline constexpr bool IsDigit(char c) {
   return (c >= '0' && c <= '9');
@@ -41,7 +40,6 @@ inline constexpr bool IsAlnum(char c) {
 }
 
 namespace __ToDigitImpl {
-
 template <typename T>
 struct TypeMax {};
 

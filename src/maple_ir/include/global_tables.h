@@ -74,22 +74,22 @@ class TypeTable {
     return const_cast<MIRType*>(const_cast<const TypeTable*>(this)->GetTypeFromTyIdx(tyIdx));
   }
   const MIRType *GetTypeFromTyIdx(TyIdx tyIdx) const {
-    ASSERT(tyIdx.GetIdx() < typeTable.size(), "array index out of range");
+    CHECK_FATAL(tyIdx.GetIdx() < typeTable.size(), "array index out of range");
     return typeTable.at(tyIdx.GetIdx());
   }
 
   MIRType *GetTypeFromTyIdx(uint32 index) const {
-    ASSERT(index < typeTable.size(), "array index out of range");
+    CHECK_FATAL(index < typeTable.size(), "array index out of range");
     return typeTable.at(index);
   }
 
   PrimType GetPrimTypeFromTyIdx(TyIdx tyIdx) const {
-    ASSERT(tyIdx.GetIdx() < typeTable.size(), "array index out of range");
+    CHECK_FATAL(tyIdx.GetIdx() < typeTable.size(), "array index out of range");
     return typeTable.at(tyIdx.GetIdx())->GetPrimType();
   }
 
   void SetTypeWithTyIdx(TyIdx tyIdx, MIRType *type) {
-    ASSERT(tyIdx.GetIdx() < typeTable.size(), "array index out of range");
+    CHECK_FATAL(tyIdx.GetIdx() < typeTable.size(), "array index out of range");
     typeTable.at(tyIdx.GetIdx()) = type;
   }
 

@@ -276,7 +276,7 @@ class MIRBuilder {
   MIRSymbol *GetOrCreateSymbol(TyIdx, GStrIdx, MIRSymKind, MIRStorageClass, MIRFunction*, uint8, bool) const;
   MIRSymbol *CreatePregFormalSymbol(TyIdx, PregIdx, MIRFunction&) const;
   // for creating symbol
-  MIRSymbol *CreateSymbol(TyIdx,const std::string&, MIRSymKind, MIRStorageClass, MIRFunction*, uint8) const;
+  MIRSymbol *CreateSymbol(TyIdx, const std::string&, MIRSymKind, MIRStorageClass, MIRFunction*, uint8) const;
   MIRSymbol *CreateSymbol(TyIdx, GStrIdx, MIRSymKind, MIRStorageClass, MIRFunction*, uint8) const;
   // for creating nodes
   AddrofNode *CreateAddrof(const MIRSymbol &st, PrimType pty = PTY_ptr);

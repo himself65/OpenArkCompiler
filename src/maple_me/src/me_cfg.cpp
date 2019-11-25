@@ -59,13 +59,13 @@ void MeCFG::BuildMirCFG() {
       case kBBCondGoto: {
         StmtNode &lastStmt = bb->GetStmtNodes().back();
         ASSERT(lastStmt.IsCondBr(), "runtime check error");
-        /* succ[0] is fallthru, succ[1] is gotoBB */
+        // succ[0] is fallthru, succ[1] is gotoBB
         auto rightNextBB = bIt;
         ++rightNextBB;
         CHECK_FATAL(rightNextBB != eIt, "null ptr check ");
         (*rightNextBB)->GetPred().push_back(bb);
         bb->GetSucc().push_back(*rightNextBB);
-        /* link goto */
+        // link goto
         auto &gotoStmt = static_cast<CondGotoNode&>(lastStmt);
         LabelIdx lblIdx = gotoStmt.GetOffset();
         BB *meBB = func.GetLabelBBAt(lblIdx);
@@ -106,14 +106,14 @@ void MeCFG::BuildMirCFG() {
         break;
       }
     }
-    /* deal try blocks, add catch handler to try's succ */
+    // deal try blocks, add catch handler to try's succ
     if (bb->GetAttributes(kBBAttrIsTry)) {
       auto it = func.GetBBTryNodeMap().find(bb);
       CHECK_FATAL(it != func.GetBBTryNodeMap().end(), "try bb without try");
       StmtNode *currTry = it->second;
       const auto *tryNode = static_cast<const TryNode*>(currTry);
       bool hasFinallyHandler = false;
-      /* add exception handler bb */
+      // add exception handler bb
       for (size_t j = 0; j < tryNode->GetOffsetsCount(); ++j) {
         LabelIdx labelIdx = tryNode->GetOffset(j);
         ASSERT(func.GetLabelBBIdMap().find(labelIdx) != func.GetLabelBBIdMap().end(), "runtime check error");
@@ -124,7 +124,7 @@ void MeCFG::BuildMirCFG() {
         if (meBB->GetAttributes(kBBAttrIsJSFinally) || meBB->GetAttributes(kBBAttrIsCatch)) {
           hasFinallyHandler = true;
         }
-        /* avoid redundant succ */
+        // avoid redundant succ
         for (; si < bb->GetSucc().size(); ++si) {
           if (meBB == bb->GetSucc(si)) {
             break;
@@ -135,7 +135,7 @@ void MeCFG::BuildMirCFG() {
           meBB->GetPred().push_back(bb);
         }
       }
-      /* if try block don't have finally catch handler, add common_exit_bb as its succ */
+      // if try block don't have finally catch handler, add common_exit_bb as its succ
       if (!hasFinallyHandler) {
         if (!bb->GetAttributes(kBBAttrIsExit)) {
           bb->SetAttributes(kBBAttrIsExit);  // may exit
@@ -155,12 +155,10 @@ void MeCFG::BuildMirCFG() {
   // merge all blocks in entryBlocks
   for (BB *bb : entryBlocks) {
     func.GetCommonEntryBB()->GetSucc().push_back(bb);
-
   }
   // merge all blocks in exitBlocks
   for (BB *bb : exitBlocks) {
     func.GetCommonExitBB()->GetPred().push_back(bb);
-
   }
 }
 
@@ -539,7 +537,7 @@ void MeCFG::UnreachCodeAnalysis(bool updatePhi) {
     BBId idx = bb->GetBBId();
     if (!visitedBBs[idx] && !bb->GetAttributes(kBBAttrIsEntry)) {
       bb->SetAttributes(kBBAttrWontExit);
-      /* avoid redundant pred before adding to common_exit_bb's pred list */
+      // avoid redundant pred before adding to common_exit_bb's pred list
       size_t pi = 0;
       for (; pi < func.GetCommonExitBB()->GetPred().size(); ++pi) {
         if (bb == func.GetCommonExitBB()->GetPred(pi)) {
@@ -651,7 +649,7 @@ void MeCFG::Verify() const {
       continue;
     }
     ASSERT(bb->GetKind() != kBBUnknown, "runtime check error");
-    /* verify succ[1] is goto bb */
+    // verify succ[1] is goto bb
     if (bb->GetKind() == kBBCondGoto) {
       if (!bb->GetAttributes(kBBAttrIsTry) && !bb->GetAttributes(kBBAttrWontExit)) {
         ASSERT(bb->GetStmtNodes().rbegin().base().d() != nullptr, "runtime check error");
@@ -743,7 +741,7 @@ void MeCFG::Dump() const {
   }
 }
 
-/* replace special char in FunctionName for output file */
+// replace special char in FunctionName for output file
 static void ReplaceFilename(std::string &fileName) {
   for (char &c : fileName) {
     if (c == ';' || c == '/' || c == '|') {
@@ -812,25 +810,25 @@ void MeCFG::DumpToFileInStrs(std::ofstream &cfgFile) const {
   }
 }
 
-/* generate dot file for cfg */
+// generate dot file for cfg
 void MeCFG::DumpToFile(const std::string &prefix, bool dumpInStrs) const {
   if (MeOption::noDot) {
     return;
   }
   std::ofstream cfgFile;
-  std::streambuf *coutBuf = LogInfo::MapleLogger().rdbuf(); /* keep original cout buffer */
+  std::streambuf *coutBuf = LogInfo::MapleLogger().rdbuf(); // keep original cout buffer
   std::streambuf *buf = cfgFile.rdbuf();
   LogInfo::MapleLogger().rdbuf(buf);
   const std::string &fileName = ConstructFileNameToDump(prefix);
   cfgFile.open(fileName.c_str(), std::ios::trunc);
   cfgFile << "digraph {\n";
   cfgFile << " # /*" << func.GetName().c_str() << " (red line is exception handler)*/\n";
-  /* dump edge */
+  // dump edge
   auto eIt = func.valid_end();
   for (auto bIt = func.valid_begin(); bIt != eIt; ++bIt) {
     auto *bb = *bIt;
     if (bIt == func.common_exit()) {
-      /* specical case for common_exit_bb */
+      // specical case for common_exit_bb
       for (auto it = bb->GetPred().begin(); it != bb->GetPred().end(); ++it) {
         cfgFile << "BB" << (*it)->GetBBId() << " -> "
                 << "BB" << bb->GetBBId() << "[style=dotted];\n";
@@ -852,7 +850,7 @@ void MeCFG::DumpToFile(const std::string &prefix, bool dumpInStrs) const {
       }
     }
   }
-  /* dump instruction in each BB */
+  // dump instruction in each BB
   if (dumpInStrs) {
     DumpToFileInStrs(cfgFile);
   }
