@@ -85,11 +85,12 @@ AliasElem *AliasClass::FindOrCreateAliasElem(OriginalSt &ost) {
 }
 
 AliasElem *AliasClass::FindOrCreateExtraLevAliasElem(BaseNode &expr, TyIdx tyIdx, FieldID fieldId) {
-  AliasElem *ae = CreateAliasElemsExpr(kOpcodeInfo.IsTypeCvt(expr.GetOpCode()) ? *expr.Opnd(0) : expr);
-  if (ae == nullptr) {
+  AliasElem *aliasElem = CreateAliasElemsExpr(kOpcodeInfo.IsTypeCvt(expr.GetOpCode()) ? *expr.Opnd(0) : expr);
+  if (aliasElem == nullptr) {
     return nullptr;
   }
-  OriginalSt *newOst = GetAliasAnalysisTable()->FindOrCreateExtraLevOriginalSt(ae->GetOriginalSt(), tyIdx, fieldId);
+  OriginalSt *newOst = GetAliasAnalysisTable()->FindOrCreateExtraLevOriginalSt(aliasElem->GetOriginalSt(),
+      tyIdx, fieldId);
   CHECK_FATAL(newOst != nullptr, "null ptr check");
   if (newOst->GetIndex().idx == osym2Elem.size()) {
     osym2Elem.push_back(nullptr);
@@ -127,8 +128,8 @@ AliasElem *AliasClass::CreateAliasElemsExpr(BaseNode &expr) {
     }
     case OP_iaddrof: {
       auto &iread = static_cast<IreadNode&>(expr);
-      AliasElem *ae = FindOrCreateExtraLevAliasElem(*iread.Opnd(0), iread.GetTyIdx(), iread.GetFieldID());
-      return &FindOrCreateAliasElemOfAddrofOSt(ae->GetOriginalSt());
+      AliasElem *aliasElem = FindOrCreateExtraLevAliasElem(*iread.Opnd(0), iread.GetTyIdx(), iread.GetFieldID());
+      return &FindOrCreateAliasElemOfAddrofOSt(aliasElem->GetOriginalSt());
     }
     case OP_malloc:
     case OP_gcmalloc:
@@ -213,11 +214,12 @@ void AliasClass::ApplyUnionForCopies(StmtNode &stmt) {
       return;
     }
     case OP_iassign: {
-      auto &iass = static_cast<IassignNode&>(stmt);
-      AliasElem *rhsAliasElem = CreateAliasElemsExpr(*iass.Opnd(1));
-      AliasElem *lhsAliasElem = FindOrCreateExtraLevAliasElem(*iass.Opnd(0), iass.GetTyIdx(), iass.GetFieldID());
+      auto &iassignNode = static_cast<IassignNode&>(stmt);
+      AliasElem *rhsAliasElem = CreateAliasElemsExpr(*iassignNode.Opnd(1));
+      AliasElem *lhsAliasElem = FindOrCreateExtraLevAliasElem(*iassignNode.Opnd(0), iassignNode.GetTyIdx(),
+          iassignNode.GetFieldID());
       ASSERT(lhsAliasElem != nullptr, "aliaselem of lhs should not be null");
-      ApplyUnionForDassignCopy(*lhsAliasElem, rhsAliasElem, *iass.Opnd(1));
+      ApplyUnionForDassignCopy(*lhsAliasElem, rhsAliasElem, *iassignNode.Opnd(1));
       return;
     }
     case OP_throw: {
@@ -381,8 +383,8 @@ void AliasClass::UnionForNotAllDefsSeen() {
       continue;
     }
     for (size_t elemIdA : *(aliasElem->GetAssignSet())) {
-      AliasElem *aeA = id2Elem[elemIdA];
-      if (aeA->IsNotAllDefsSeen() || aeA->IsNextLevNotAllDefsSeen()) {
+      AliasElem *aliasElemA = id2Elem[elemIdA];
+      if (aliasElemA->IsNotAllDefsSeen() || aliasElemA->IsNextLevNotAllDefsSeen()) {
         for (unsigned int elemIdB : *(aliasElem->GetAssignSet())) {
           CollectRootIDOfNextLevelNodes(id2Elem[elemIdB]->GetOriginalSt(), rootIDOfNADSs);
         }
@@ -637,8 +639,8 @@ void AliasClass::CollectMayUseFromNADS(std::set<OriginalSt*> &mayUseOsts) {
       mayUseOsts.insert(&notAllDefsSeenAE->GetOriginalSt());
     } else {
       for (unsigned int elemID : *(notAllDefsSeenAE->GetClassSet())) {
-        AliasElem *ae = id2Elem[elemID];
-        mayUseOsts.insert(&ae->GetOriginalSt());
+        AliasElem *aliasElem = id2Elem[elemID];
+        mayUseOsts.insert(&aliasElem->GetOriginalSt());
       }
     }
   }

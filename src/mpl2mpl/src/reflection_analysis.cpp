@@ -34,7 +34,7 @@ using namespace maple;
 constexpr uint64 kMethodNotVirtual = 0x00000001;
 constexpr uint64 kMethodFinalize = 0x00000002;
 constexpr uint64 kMethodAbstract = 0x00000010;
-constexpr uint64 kFieldReadOnly = 0x00000001;
+constexpr uint64 kFieldOffsetIspOffset = 0x00000001;
 
 constexpr int kModPublic = 1;                 // 0x00000001
 constexpr int kModPrivate = 2;                // 0x00000002
@@ -102,6 +102,7 @@ constexpr char kFieldInfoTypeName[] = "__field_info__";
 constexpr char kINFOAccessFlags[] = "INFO_access_flags";
 constexpr char kSuperclassinfoStr[] = "superclassinfo";
 constexpr char kFieldOffsetDataStr[] = "fieldOffsetData";
+constexpr char kMethodAddrDataStr[] = "methodAddrData";
 constexpr char kAnnotationvalueStr[] = "annotationvalue";
 constexpr char kMethodInfoTypeName[] = "__method_info__";
 constexpr char kClinitSuffixStr[] = "_3Cclinit_3E_7C_28_29V";
@@ -112,6 +113,7 @@ constexpr char kMethodInVtabIndexStr[] = "method_in_vtab_index";
 constexpr char kClassStateInitializedStr[] = "classStateInitialized";
 constexpr char kSuperclassMetadataTypeName[] = "__superclass_meta__";
 constexpr char kFieldOffsetDataTypeName[] = "__fieldOffsetDataType__";
+constexpr char kMethodAddrDataTypeName[] = "__methodAddrDataType__";
 constexpr char kFieldInfoCompactTypeName[] = "__field_info_compact__";
 constexpr char kMethodInfoCompactTypeName[] = "__method_info_compact__";
 constexpr char kSuperclassOrComponentclassStr[] = "superclass_or_componentclass";
@@ -218,6 +220,7 @@ TyIdx ReflectionAnalysis::fieldsInfoTyIdx = TyIdx(0);
 TyIdx ReflectionAnalysis::fieldsInfoCompactTyIdx = TyIdx(0);
 TyIdx ReflectionAnalysis::superclassMetadataTyIdx = TyIdx(0);
 TyIdx ReflectionAnalysis::fieldOffsetDataTyIdx = TyIdx(0);
+TyIdx ReflectionAnalysis::methodAddrDataTyIdx = TyIdx(0);
 TyIdx ReflectionAnalysis::invalidIdx = TyIdx(-1);
 
 uint32 ReflectionAnalysis::GetMethodModifier(const Klass &klass, const MIRFunction &func) const {
@@ -728,7 +731,7 @@ uint32 ReflectionAnalysis::GetMethodFlag(const MIRFunction &func) const {
 }
 
 void ReflectionAnalysis::GenMethodMeta(const Klass &klass, MIRStructType &methodsInfoType,
-                                       MIRSymbol &funcSym, MIRAggConst &aggConst,
+                                       MIRSymbol &funcSym, MIRAggConst &aggConst, int idx,
                                        std::unordered_map<uint32, std::string> &baseNameMp,
                                        std::unordered_map<uint32, std::string> &fullNameMp) {
   MIRFunction &func = *funcSym.GetFunction();
@@ -740,8 +743,18 @@ void ReflectionAnalysis::GenMethodMeta(const Klass &klass, MIRStructType &method
   // @declaringclass
   MIRSymbol *dklassSt = GetOrCreateSymbol(CLASSINFO_PREFIX_STR + func.GetBaseClassName(), classMetadataTyIdx);
   mirBuilder.AddAddrofFieldConst(methodsInfoType, newConst, fieldID++, *dklassSt);
-  // @addr : Function address
-  mirBuilder.AddAddroffuncFieldConst(methodsInfoType, newConst, fieldID++, funcSym);
+  // @addr : Function address or point function addr if lazyBinding or decouple
+  if (isLazyBindingOrDecouple) {
+    MIRSymbol *methodAddrSt = GenMethodAddrData(klass, funcSym);
+    if (methodAddrSt != nullptr) {
+      mirBuilder.AddAddrofFieldConst(methodsInfoType, newConst, fieldID++, *methodAddrSt);
+    } else {
+      mirBuilder.AddIntFieldConst(methodsInfoType, newConst, fieldID++, 0);
+    }
+  } else {
+    mirBuilder.AddAddroffuncFieldConst(methodsInfoType, newConst, fieldID++, funcSym);
+  }
+
   // @modifier
   uint32 mod = GetMethodModifier(klass, func);
   mirBuilder.AddIntFieldConst(methodsInfoType, newConst, fieldID++, mod);
@@ -785,16 +798,38 @@ MIRSymbol *ReflectionAnalysis::GenMethodsMeta(const Klass &klass,
   MIRArrayType &arrayType = *GlobalTables::GetTypeTable().GetOrCreateArrayType(methodsInfoType, arraySize);
   MIRAggConst *aggConst = mirModule->GetMemPool()->New<MIRAggConst>(*mirModule, arrayType);
   ASSERT(aggConst != nullptr, "null ptr check!");
+  int idx = 0;
   for (auto &methodInfo : methodInfoVec) {
     MIRSymbol *funcSym = GlobalTables::GetGsymTable().GetSymbolFromStidx(methodInfo.first->first.Idx());
     reflectionMuidStr += funcSym->GetName();
-    GenMethodMeta(klass, methodsInfoType, *funcSym, *aggConst, baseNameMp, fullNameMp);
+    GenMethodMeta(klass, methodsInfoType, *funcSym, *aggConst, idx++, baseNameMp, fullNameMp);
   }
   MIRSymbol *methodsArraySt =
       GetOrCreateSymbol(NameMangler::kMethodsInfoPrefixStr + klass.GetKlassName(), arrayType.GetTypeIndex(), true);
   methodsArraySt->SetStorageClass(kScFstatic);
   methodsArraySt->SetKonst(aggConst);
   return methodsArraySt;
+}
+
+MIRSymbol *ReflectionAnalysis::GenMethodAddrData(const Klass &klass, const MIRSymbol &funcSym) {
+  MIRModule &module = *mirModule;
+  MIRStructType &methodAddrType =
+      static_cast<MIRStructType&>(*GlobalTables::GetTypeTable().GetTypeFromTyIdx(methodAddrDataTyIdx));
+  MIRArrayType &methodAddrArrayType = *GlobalTables::GetTypeTable().GetOrCreateArrayType(methodAddrType, 1);
+  MIRAggConst *aggconst = module.GetMemPool()->New<MIRAggConst>(module, methodAddrArrayType);
+  MIRAggConst *newconst = module.GetMemPool()->New<MIRAggConst>(module, methodAddrType);
+  MIRFunction *func = funcSym.GetFunction();
+  MIRSymbol *methodAddrSt = nullptr;
+  // skip abstract func.
+  if (!func->IsAbstract()) {
+    mirBuilder.AddAddroffuncFieldConst(methodAddrType, *newconst, 1, funcSym);
+    aggconst->GetConstVec().push_back(newconst);
+    methodAddrSt = GetOrCreateSymbol(NameMangler::kMethodAddrDataPrefixStr + func->GetName(),
+                                     methodAddrArrayType.GetTypeIndex(), true);
+    methodAddrSt->SetStorageClass(kScFstatic);
+    methodAddrSt->SetKonst(aggconst);
+  }
+  return methodAddrSt;
 }
 
 MIRSymbol *ReflectionAnalysis::GenMethodsMetaData(const Klass &klass) {
@@ -816,51 +851,66 @@ MIRSymbol *ReflectionAnalysis::GenMethodsMetaData(const Klass &klass) {
   MIRSymbol *methodsArraySt = GenMethodsMeta(klass, methodinfoVec, baseNameMp, fullNameMp);
   return methodsArraySt;
 }
+void ReflectionAnalysis::GenFieldOffsetConst(MIRAggConst &newConst, const Klass &klass,
+                                             const MIRStructType &type, std::pair<FieldPair, int> &fieldInfo,
+                                             uint32 metaFieldID) {
+  bool isStaticField = (fieldInfo.second == -1);
+  FieldPair fieldP = fieldInfo.first;
+  TyIdx fieldTyidx = fieldP.second.first;
+  std::string originFieldname = GlobalTables::GetStrTable().GetStringFromStrIdx(fieldP.first);
+  if (isStaticField) {
+    // Offset of the static field, we fill the global var address.
+    const GStrIdx stridx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(
+        GlobalTables::GetStrTable().GetStringFromStrIdx(fieldP.first));
+    MIRSymbol *gvarSt = GetSymbol(stridx, fieldTyidx);
+    if (gvarSt == nullptr) {
+      // If this static field is not used, the symbol will not be generated,
+      // so we just generate a weak one here.
+      gvarSt = CreateSymbol(stridx, fieldTyidx);
+      gvarSt->SetAttr(ATTR_weak);
+      gvarSt->SetAttr(ATTR_static);
+    }
+    mirBuilder.AddAddrofFieldConst(type, newConst, metaFieldID, *gvarSt);
+  } else {
+    // Offset of the instance field, we fill the index of fields here and let CG to fill in.
+    MIRClassType *mirClassType = klass.GetMIRClassType();
+    ASSERT(mirClassType != nullptr, "GetMIRClassType() returns null");
+    FieldID fldID = mirBuilder.GetStructFieldIDFromNameAndTypeParentFirstFoundInChild(
+        *mirClassType, originFieldname.c_str(), fieldP.second.first);
+    // set LSB 0, and set LSB 1 in muid_replacement
+    fldID = fldID * 2;
+    mirBuilder.AddIntFieldConst(type, newConst, metaFieldID, fldID);
+  }
+}
 
-void ReflectionAnalysis::GenFieldOffsetData(const Klass &klass,
-                                            std::vector<std::pair<FieldPair, int>> &fieldOffsetVector) {
-  size_t size = fieldOffsetVector.size();
+MIRSymbol *ReflectionAnalysis::GenFieldOffsetData(const Klass &klass, std::pair<FieldPair, int> &fieldInfo) {
   MIRModule &module = *mirModule;
   auto &fieldOffsetType =
       static_cast<MIRStructType&>(*GlobalTables::GetTypeTable().GetTypeFromTyIdx(fieldOffsetDataTyIdx));
-  MIRArrayType &fieldOffsetArrayType = *GlobalTables::GetTypeTable().GetOrCreateArrayType(fieldOffsetType, size);
+  MIRArrayType &fieldOffsetArrayType = *GlobalTables::GetTypeTable().GetOrCreateArrayType(fieldOffsetType, 1);
   MIRAggConst *aggConst = module.GetMemPool()->New<MIRAggConst>(module, fieldOffsetArrayType);
-  ASSERT(aggConst != nullptr, "null ptr check!");
-  for (auto &fieldinfo : fieldOffsetVector) {
-    MIRAggConst *newConst = module.GetMemPool()->New<MIRAggConst>(module, fieldOffsetType);
-    ASSERT(newConst != nullptr, "null ptr check!");
-    bool staticfield = (fieldinfo.second == -1);
-    FieldPair fieldP = fieldinfo.first;
-    TyIdx fieldTyidx = fieldP.second.first;
-    std::string originFieldname = GlobalTables::GetStrTable().GetStringFromStrIdx(fieldP.first);
-    if (staticfield) {
-      // Offset of the static field, we fill the global var address.
-      const GStrIdx stridx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(
-          GlobalTables::GetStrTable().GetStringFromStrIdx(fieldP.first));
-      MIRSymbol *gvarSt = GetSymbol(stridx, fieldTyidx);
-      if (gvarSt == nullptr) {
-        // If this static field is not used, the symbol will not be generated,
-        // so we just generate a weak one here.
-        gvarSt = CreateSymbol(stridx, fieldTyidx);
-        gvarSt->SetAttr(ATTR_weak);
-        gvarSt->SetAttr(ATTR_static);
-      }
-      mirBuilder.AddAddrofFieldConst(fieldOffsetType, *newConst, 1, *gvarSt);
-    } else {
-      // Offset of the instance field, we fill the index of fields here and let CG to fill in.
-      MIRClassType *mirClassType = klass.GetMIRClassType();
-      ASSERT(mirClassType != nullptr, "GetMIRClassType() returns null");
-      FieldID fldid = mirBuilder.GetStructFieldIDFromNameAndTypeParentFirstFoundInChild(
-          *mirClassType, originFieldname.c_str(), fieldP.second.first);
-      mirBuilder.AddIntFieldConst(fieldOffsetType, *newConst, 1, fldid);
-    }
-    aggConst->GetConstVec().push_back(newConst);
+
+  MIRAggConst *newConst = module.GetMemPool()->New<MIRAggConst>(module, fieldOffsetType);
+  constexpr uint32_t fieldId = 1;
+  GenFieldOffsetConst(*newConst, klass, fieldOffsetType, fieldInfo, fieldId);
+  aggConst->GetConstVec().push_back(newConst);
+
+  FieldPair fieldP = fieldInfo.first;
+  std::string originFieldname = GlobalTables::GetStrTable().GetStringFromStrIdx(fieldP.first);
+  std::string fieldOffsetSymbolName = NameMangler::kFieldOffsetDataPrefixStr;
+  bool isStaticField = (fieldInfo.second == -1);
+  if (isStaticField) {
+    fieldOffsetSymbolName += originFieldname;
+  } else {
+    MIRClassType *mirClassType = klass.GetMIRClassType();
+    FieldID fldID = mirBuilder.GetStructFieldIDFromNameAndTypeParentFirstFoundInChild(
+        *mirClassType, originFieldname.c_str(), fieldP.second.first);
+    fieldOffsetSymbolName += klass.GetKlassName() + "_FieldID_" + std::to_string(fldID);
   }
-  MIRSymbol *fieldsOffsetArraySt = GetOrCreateSymbol(NameMangler::kFieldOffsetDataPrefixStr + klass.GetKlassName(),
-                                                     fieldOffsetArrayType.GetTypeIndex(), true);
-  // Direct access to fieldoffset is only possible within a .so.
-  fieldsOffsetArraySt->SetStorageClass(kScFstatic);
-  fieldsOffsetArraySt->SetKonst(aggConst);
+  MIRSymbol *fieldsOffsetSt = GetOrCreateSymbol(fieldOffsetSymbolName, fieldOffsetArrayType.GetTypeIndex(), true);
+  fieldsOffsetSt->SetStorageClass(kScFstatic);
+  fieldsOffsetSt->SetKonst(aggConst);
+  return fieldsOffsetSt;
 }
 
 MIRSymbol *ReflectionAnalysis::GenSuperClassMetaData(const Klass &klass, std::list<Klass*> superClassList) {
@@ -907,17 +957,23 @@ void ReflectionAnalysis::GenFieldMeta(const Klass &klass, MIRStructType &fieldsI
   MIRAggConst *newConst = mirModule->GetMemPool()->New<MIRAggConst>(*mirModule, fieldsInfoType);
   ASSERT(newConst != nullptr, "null ptr check!");
   uint32 fieldID = 1;
+  uint16 hash = GetFieldHash(fieldHashVec, fieldP);
+  uint16 flag = (hash << kNoHashBits);  // Hash 10 bit.
 
-  // @pOffset:
-  mirBuilder.AddIntFieldConst(fieldsInfoType, *newConst, fieldID++, idx);
+  // @offset or pOffset
+  if (isLazyBindingOrDecouple) {
+    flag |= kFieldOffsetIspOffset;
+    MIRSymbol *fieldsOffsetSt = GenFieldOffsetData(klass, fieldInfo);
+    mirBuilder.AddAddrofFieldConst(fieldsInfoType, *newConst, fieldID++, *fieldsOffsetSt);
+  } else {
+    GenFieldOffsetConst(*newConst, klass, fieldsInfoType, fieldInfo, fieldID++);
+  }
+
   // @modifier
   FieldAttrs fa = fieldP.second.second;
   uint32 modifier = GetFieldModifier(fa);
   mirBuilder.AddIntFieldConst(fieldsInfoType, *newConst, fieldID++, modifier);
   // @flag
-  uint16 hash = GetFieldHash(fieldHashVec, fieldP);
-  uint16 flag = (hash << kNoHashBits);  // Hash 10 bit.
-  flag |= kFieldReadOnly;
   mirBuilder.AddIntFieldConst(fieldsInfoType, *newConst, fieldID++, flag);
   // @index
   mirBuilder.AddIntFieldConst(fieldsInfoType, *newConst, fieldID++, idx);
@@ -946,7 +1002,7 @@ void ReflectionAnalysis::GenFieldMeta(const Klass &klass, MIRStructType &fieldsI
 }
 
 MIRSymbol *ReflectionAnalysis::GenFieldsMeta(const Klass &klass, std::vector<std::pair<FieldPair, int>> &fieldsVector,
-                                             std::vector<std::pair<FieldPair, uint16>> &fieldHashvec) {
+                                             std::vector<std::pair<FieldPair, uint16>> &fieldHashVec) {
   size_t size = fieldsVector.size();
   auto &fieldsInfoType =
       static_cast<MIRStructType&>(*GlobalTables::GetTypeTable().GetTypeFromTyIdx(fieldsInfoTyIdx));
@@ -963,7 +1019,7 @@ MIRSymbol *ReflectionAnalysis::GenFieldsMeta(const Klass &klass, std::vector<std
     // Collect the the information about the fieldName and fieldtyidx.
     reflectionMuidStr += fieldName;
     reflectionMuidStr += ty->GetName();
-    GenFieldMeta(klass, fieldsInfoType, fieldInfo, *aggConst, idx++, fieldHashvec);
+    GenFieldMeta(klass, fieldsInfoType, fieldInfo, *aggConst, idx++, fieldHashVec);
   }
   MIRSymbol *fieldsArraySt =
       GetOrCreateSymbol(NameMangler::kFieldsInfoPrefixStr + klass.GetKlassName(), arraytype->GetTypeIndex(), true);
@@ -1017,7 +1073,6 @@ MIRSymbol *ReflectionAnalysis::GenFieldsMetaData(const Klass &klass) {
   }
   ASSERT(i == size, "In class %s: %d fields seen, BUT %d fields declared", klass.GetKlassName().c_str(), i, size);
   MIRSymbol *fieldsArraySt = GenFieldsMeta(klass, fieldinfoVec, fieldHashvec);
-  GenFieldOffsetData(klass, fieldinfoVec);
   return fieldsArraySt;
 }
 
@@ -1034,7 +1089,7 @@ void ReflectionAnalysis::ConvertMapleClassName(const std::string &mplClassName, 
 void ReflectionAnalysis::AppendValueByType(std::string &annoArr, const MIRPragmaElement &elem) {
   std::ostringstream oss;
   std::string tmp;
-  switch(elem.GetType()) {
+  switch (elem.GetType()) {
     case kValueInt:
     case kValueByte:
     case kValueShort:
@@ -1151,7 +1206,7 @@ std::string ReflectionAnalysis::GetAnnoValueNoArray(const MIRPragmaElement &anno
     case kValueArray:
       annoArray += GetArrayValue(annoElem.GetSubElemVec());
       break;
-    case kValueAnnotation :
+    case kValueAnnotation:
       annoArray += GetAnnotationValue(annoElem.GetSubElemVec(), annoElem.GetTypeStrIdx());
       break;
     default: {
@@ -1173,13 +1228,13 @@ void ReflectionAnalysis::GenAnnotation(std::map<int, int> &idxNumMap, std::strin
   int annoNum = 0;
   std::string cmpString = "";
   for (MIRPragma *prag : classType.GetPragmaVec()) {
-    cmpString = paragKind == kPragmaVar ? NameMangler::DecodeName(GlobalTables::GetStrTable().GetStringFromStrIdx(
+    cmpString = (paragKind == kPragmaVar) ? NameMangler::DecodeName(GlobalTables::GetStrTable().GetStringFromStrIdx(
         prag->GetStrIdx())) : GlobalTables::GetStrTable().GetStringFromStrIdx(prag->GetStrIdx());
     bool validTypeFlag = false;
     if (prag->GetTyIdxEx() == fieldTypeIdx || fieldTypeIdx == invalidIdx) {
       validTypeFlag = true;
     }
-    if (prag->GetKind() == paragKind && paragName == cmpString && validTypeFlag) {
+    if ((prag->GetKind() == paragKind) && (cmpString == paragName) && validTypeFlag) {
       const MapleVector<MIRPragmaElement*> &elemVector = prag->GetElementVector();
       MIRSymbol *classInfo = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(
           GlobalTables::GetTypeTable().GetTypeFromTyIdx(prag->GetTyIdx())->GetNameStrIdx());
@@ -1540,9 +1595,7 @@ TyIdx ReflectionAnalysis::GenMetaStructType(MIRModule &mirModule, MIRStructType 
   // Global?
   mirModule.GetTypeNameTab()->SetGStrIdxToTyIdx(strIdx, tyIdx);
   mirModule.PushbackTypeDefOrder(strIdx);
-  const size_t globalTypeTableSize = GlobalTables::GetTypeTable().GetTypeTable().size();
-  CHECK_FATAL(globalTypeTableSize > tyIdx.GetIdx(), "null ptr check");
-  if (GlobalTables::GetTypeTable().GetTypeTable()[tyIdx.GetIdx()]->GetNameStrIdx() == 0) {
+  if (GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx.GetIdx())->GetNameStrIdx() == 0) {
     GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->SetNameStrIdx(strIdx);
   }
   return tyIdx;
@@ -1662,6 +1715,10 @@ void ReflectionAnalysis::GenMetadataType(MIRModule &mirModule) {
   MIRStructType fieldOffsetDataType(kTypeStruct);
   GlobalTables::GetTypeTable().AddFieldToStructType(fieldOffsetDataType, kFieldOffsetDataStr, *typeVoidPtr);
   fieldOffsetDataTyIdx = GenMetaStructType(mirModule, fieldOffsetDataType, kFieldOffsetDataTypeName);
+  // MethodAddrDataType.
+  MIRStructType methodAddrDataType(kTypeStruct);
+  GlobalTables::GetTypeTable().AddFieldToStructType(methodAddrDataType, kMethodAddrDataStr, *typeVoidPtr);
+  methodAddrDataTyIdx = GenMetaStructType(mirModule, methodAddrDataType, kMethodAddrDataTypeName);
 }
 
 void ReflectionAnalysis::GenClassHashMetaData() {

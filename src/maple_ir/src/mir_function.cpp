@@ -105,7 +105,6 @@ MIRType *MIRFunction::GetNthParamType(size_t i) {
 }
 
 LabelIdx MIRFunction::GetOrCreateLableIdxFromName(const std::string &name) {
-  // TODO: this function should never be used after parsing, so move to parser?
   GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(name);
   LabelIdx labelIdx = GetLabelTab()->GetStIdxFromStrIdx(strIdx);
   if (labelIdx == 0) {

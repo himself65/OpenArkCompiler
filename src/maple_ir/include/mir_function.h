@@ -744,7 +744,7 @@ class MIRFunction {
   MIRInfoVector info{module->GetMPAllocator().Adapter()};
   MapleVector<bool> infoIsString{module->GetMPAllocator().Adapter()};  // tells if an entry has string value
   MapleMap<GStrIdx, MIRAliasVars> aliasVarMap{module->GetMPAllocator().Adapter()};  // source code alias variables
-                                                                                    //for debuginfo
+                                                                                    // for debuginfo
   bool withLocInfo = true;
 
   uint8_t layoutType = kLayoutUnused;

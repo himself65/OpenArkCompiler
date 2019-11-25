@@ -32,10 +32,10 @@ CompilerFactory &CompilerFactory::GetInstance() {
 
 CompilerFactory::CompilerFactory() {
   // Supported compilers
-  ADD_COMPILER("jbc2mpl" ,Jbc2MplCompiler)
-  ADD_COMPILER("me" ,MapleCombCompiler)
-  ADD_COMPILER("mpl2mpl" ,MapleCombCompiler)
-  ADD_COMPILER("mplcg" ,MplcgCompiler)
+  ADD_COMPILER("jbc2mpl", Jbc2MplCompiler)
+  ADD_COMPILER("me", MapleCombCompiler)
+  ADD_COMPILER("mpl2mpl", MapleCombCompiler)
+  ADD_COMPILER("mplcg", MplcgCompiler)
   compilerSelector = new CompilerSelectorImpl();
 }
 

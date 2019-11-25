@@ -389,6 +389,22 @@ void MUIDReplacement::GenerateFuncDefTable() {
   }
 }
 
+void MUIDReplacement::ReplaceMethodMetaFuncAddr(MIRSymbol &funcSymbol, int64 index) {
+  std::string symbolName = funcSymbol.GetName();
+  MIRSymbol *methodAddrDataSt = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(
+      GlobalTables::GetStrTable().GetStrIdxFromName(NameMangler::kMethodAddrDataPrefixStr + symbolName));
+  CHECK_FATAL(methodAddrDataSt != nullptr, "methodAddrDataSt symbol is null.");
+  MIRConst *mirConst = methodAddrDataSt->GetKonst();
+  MIRAggConst *aggConst = static_cast<MIRAggConst*>(mirConst);
+  MIRAggConst *agg = static_cast<MIRAggConst*>(aggConst->GetConstVecItem(0));
+  MIRConst *elem = agg->GetConstVecItem(0);
+  if (elem->GetKind() == kConstAddrofFunc) {
+    MIRType &type = elem->GetType();
+    MIRConst *constNode = GetMIRModule().GetMemPool()->New<MIRIntConst>(index, type, 1);
+    agg->SetConstVecItem(0, *constNode);
+  }
+}
+
 void MUIDReplacement::GenerateDataDefTable() {
   // Use dataDefMap to make sure dataDefTab is sorted by an increasing order of MUID
   for (MIRSymbol *mirSymbol : dataDefSet) {
@@ -459,6 +475,23 @@ void MUIDReplacement::GenerateDataDefTable() {
     dataDefMuidTabSym->SetKonst(dataDefMuidTabConst);
     dataDefMuidTabSym->SetStorageClass(kScFstatic);
   }
+}
+
+void MUIDReplacement::ReplaceFieldMetaStaticAddr(MIRSymbol &mirSymbol, int64 index) {
+  std::string symbolName = mirSymbol.GetName();
+  MIRSymbol *fieldOffsetDataSt = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(
+      GlobalTables::GetStrTable().GetStrIdxFromName(NameMangler::kFieldOffsetDataPrefixStr + symbolName));
+  CHECK_FATAL(fieldOffsetDataSt != nullptr, "fieldOffsetDataSt symbol is null.");
+  MIRAggConst *aggConst = static_cast<MIRAggConst*>(fieldOffsetDataSt->GetKonst());
+  MIRAggConst *agg = static_cast<MIRAggConst*>(aggConst->GetConstVecItem(0));
+  MIRConst *elem = agg->GetConstVecItem(0);
+  CHECK_FATAL(elem->GetKind() == kConstAddrof, "static field must kConstAddrof.");
+
+  MIRType &type = elem->GetType();
+  int64 idx = index * 2 + 1; // add flag to indicate that it's def tab index for emit.
+  MIRConst *constNode = GetMIRModule().GetMemPool()->New<MIRIntConst>(idx, type, 1);
+  agg->SetConstVecItem(0, *constNode);
+  (void)idx;
 }
 
 void MUIDReplacement::GenerateUnifiedUndefTable() {

@@ -426,6 +426,11 @@ class MIRType {
     typeKind = kind;
   }
 
+  bool IsIncomplete() const {
+    return typeKind == kTypeStructIncomplete || typeKind == kTypeClassIncomplete ||
+           typeKind == kTypeInterfaceIncomplete;
+  }
+
   bool IsNameIsLocal() const {
     return nameIsLocal;
   }
@@ -701,9 +706,11 @@ class MIRStructType : public MIRType {
   FieldVector &GetFields() {
     return fields;
   }
-
   const FieldVector &GetFields() const {
     return fields;
+  }
+  void SetFields(const FieldVector &fields) {
+    this->fields = fields;
   }
 
   const FieldPair &GetFieldsElemt(size_t n) const {
@@ -733,6 +740,9 @@ class MIRStructType : public MIRType {
 
   FieldVector &GetParentFields() {
     return parentFields;
+  }
+  void SetParentFields(const FieldVector &parentFields) {
+    this->parentFields = parentFields;
   }
   const FieldVector &GetParentFields() const {
     return parentFields;
@@ -907,10 +917,6 @@ class MIRStructType : public MIRType {
 
   void DumpFieldsAndMethods(int indent, bool hasMethod) const;
   void Dump(int indent, bool dontUseName = false) const override;
-  bool IsIncomplete() const {
-    return typeKind == kTypeStructIncomplete || typeKind == kTypeClassIncomplete ||
-           typeKind == kTypeInterfaceIncomplete;
-  }
 
   virtual void SetComplete() {
     typeKind = (typeKind == kTypeUnion) ? typeKind : kTypeStruct;
@@ -1250,6 +1256,9 @@ class MIRInterfaceType : public MIRStructType {
 
   std::vector<TyIdx> &GetParentsTyIdx() {
     return parentsTyIdx;
+  }
+  void SetParentsTyIdx(const std::vector<TyIdx> &parents) {
+    parentsTyIdx = parents;
   }
   const std::vector<TyIdx> &GetParentsTyIdx() const {
     return parentsTyIdx;

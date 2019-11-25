@@ -97,6 +97,8 @@ class MUIDReplacement : public FuncOptimizeImpl {
   void ReplaceStmts();
   void GenerateGlobalRootList();
   void CollectImplicitUndefClassInfo(StmtNode &stmt);
+  void ReplaceMethodMetaFuncAddr(MIRSymbol &funcSymbol, int64 index);
+  void ReplaceFieldMetaStaticAddr(MIRSymbol &mirSymbol, int64 index);
   void CollectFuncAndDataFromKlasses();
   void CollectFuncAndDataFromGlobalTab();
   void CollectFuncAndDataFromFuncList();

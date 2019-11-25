@@ -54,7 +54,7 @@ enum class ClassProperty : uint32 {
 enum class MethodProperty : uint32 {
   kVtabIndex,
   kDeclarclass,
-  kAddr,
+  kPaddrData,
   kMod,
   kMethodName,
   kSigName,
@@ -68,7 +68,7 @@ enum class MethodProperty : uint32 {
 
 enum class MethodInfoCompact : uint32 {
   kVtabIndex,
-  kAddr
+  kPaddrData
 };
 
 enum class FieldProperty : uint32 {
@@ -162,7 +162,7 @@ class ReflectionAnalysis : public AnalysisResult {
   std::string GetArrayValue(const MapleVector<MIRPragmaElement*> &subElemVector);
   std::string GetAnnotationValue(const MapleVector<MIRPragmaElement*> &subElemVector, GStrIdx typeStrIdx);
   MIRSymbol *GenSuperClassMetaData(const Klass &klass, std::list<Klass*> superClassList);
-  void GenFieldOffsetData(const Klass &klass, std::vector<std::pair<FieldPair, int>> &fieldOffsetVector);
+  MIRSymbol *GenFieldOffsetData(const Klass &klass, std::pair<FieldPair, int> &fieldInfo);
   MIRSymbol *GenFieldsMetaData(const Klass &klass);
   MIRSymbol *GenMethodsMetaData(const Klass &klass);
   MIRSymbol *GenFieldsMeta(const Klass &klass, std::vector<std::pair<FieldPair, int>> &fieldsVector,
@@ -173,11 +173,14 @@ class ReflectionAnalysis : public AnalysisResult {
                             std::unordered_map<uint32, std::string> &baseNameMp,
                             std::unordered_map<uint32, std::string> &fullNameMp);
   void GenMethodMeta(const Klass &klass, MIRStructType &methodsInfoType,
-                     MIRSymbol &funcSym, MIRAggConst &aggConst,
+                     MIRSymbol &funcSym, MIRAggConst &aggConst, int idx,
                      std::unordered_map<uint32, std::string> &baseNameMp,
                      std::unordered_map<uint32, std::string> &fullNameMp);
   uint32 GetMethodModifier(const Klass &klass, const MIRFunction &func) const;
   uint32 GetMethodFlag(const MIRFunction &func) const;
+  void GenFieldOffsetConst(MIRAggConst &newConst, const Klass &klass, const MIRStructType &type,
+                           std::pair<FieldPair, int> &fieldInfo, uint32 metaFieldID);
+  MIRSymbol *GenMethodAddrData(const Klass &klass, const MIRSymbol &funcSym);
   static void GenMetadataType(MIRModule &mirModule);
   static MIRType *GetRefFieldType();
   static TyIdx GenMetaStructType(MIRModule &mirModule, MIRStructType &metaType, const std::string &str);
@@ -223,6 +226,7 @@ class ReflectionAnalysis : public AnalysisResult {
   MIRBuilder &mirBuilder;
   MapleVector<MIRSymbol*> classTab;
   int isLibcore = -1;
+  bool isLazyBindingOrDecouple = false;
   std::string reflectionMuidStr;
   static const char *klassPtrName;
   static TyIdx classMetadataTyIdx;
@@ -233,6 +237,7 @@ class ReflectionAnalysis : public AnalysisResult {
   static TyIdx fieldsInfoCompactTyIdx;
   static TyIdx superclassMetadataTyIdx;
   static TyIdx fieldOffsetDataTyIdx;
+  static TyIdx methodAddrDataTyIdx;
   static std::string strTab;
   static std::unordered_map<std::string, uint32> str2IdxMap;
   static std::string strTabStartHot;

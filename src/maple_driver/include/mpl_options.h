@@ -62,6 +62,8 @@ class MplOption {
     CHECK_FATAL(!key.empty(), "MplOption got an empty key.");
   }
 
+  ~MplOption() = default;
+
   const std::string &GetKey() const {
     return key;
   }

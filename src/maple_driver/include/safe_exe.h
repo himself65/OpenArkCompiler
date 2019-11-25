@@ -38,10 +38,10 @@ class SafeExe {
     // argv[0] is program name
     // copy args
     for (size_t j = 0; j < vectorArgs.size(); ++j) {
-       int strLength = vectorArgs[j].size();
-       argv[j] = new char[strLength + 1];
-       strncpy_s(argv[j], strLength + 1, vectorArgs[j].c_str(), strLength);
-       argv[j][strLength] = '\0';
+      int strLength = vectorArgs[j].size();
+      argv[j] = new char[strLength + 1];
+      strncpy_s(argv[j], strLength + 1, vectorArgs[j].c_str(), strLength);
+      argv[j][strLength] = '\0';
     }
     // end of arguments sentinel is nullptr
     argv[vectorArgs.size()] = nullptr;
@@ -97,7 +97,7 @@ class SafeExe {
     StringUtils::Split(args, tmpArgs, ' ');
     // remove ' ' in vector
     for (auto iter = tmpArgs.begin(); iter != tmpArgs.end();) {
-      if (*iter == " " || *iter =="") {
+      if (*iter == " " || *iter == "") {
         iter = tmpArgs.erase(iter);
       } else {
         ++iter;

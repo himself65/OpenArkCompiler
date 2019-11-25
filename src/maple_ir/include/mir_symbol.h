@@ -312,6 +312,7 @@ class MIRSymbol {
   bool IsReflectionFieldsInfoCompact() const;
   bool IsReflectionSuperclassInfo() const;
   bool IsReflectionFieldOffsetData() const;
+  bool IsReflectionMethodAddrData() const;
   bool IsReflectionClassInfo() const;
   bool IsReflectionArrayClassInfo() const;
   bool IsReflectionClassInfoPtr() const;
@@ -518,8 +519,11 @@ class MIRLabelTable {
     return labelTable;
   }
 
-  MapleMap<GStrIdx, LabelIdx> &GetStrIdxToLabelIdxMap() {
+  const MapleMap<GStrIdx, LabelIdx> &GetStrIdxToLabelIdxMap() const {
     return strIdxToLabIdxMap;
+  }
+  void EraseStrIdxToLabelIdxElem(GStrIdx idx) {
+    strIdxToLabIdxMap.erase(idx);
   }
 
  private:

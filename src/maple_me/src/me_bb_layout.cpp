@@ -180,7 +180,7 @@ bool BBLayout::BBCanBeMoved(const BB &fromBB, const BB &toAfterBB) const {
 // Return true if bb1 and bb2 has the branch conditon.such as
 // bb1 : brfalse (a > 3)  bb2: brfalse (a > 3)/ brtrue (a <= 3)
 bool BBLayout::HasSameBranchCond(BB &bb1, BB &bb2) const {
-  if(func.GetIRMap() == nullptr) {
+  if (func.GetIRMap() == nullptr) {
     return false;
   }
   auto &meStmt1 = static_cast<CondGotoMeStmt&>(bb1.GetMeStmts().back());

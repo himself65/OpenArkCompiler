@@ -178,6 +178,10 @@ bool MIRSymbol::IsReflectionFieldOffsetData() const {
   return StringUtils::StartsWith(GetName(), kFieldOffsetDataPrefixStr);
 }
 
+bool MIRSymbol::IsReflectionMethodAddrData() const {
+  return (GetName().find(kMethodAddrDataPrefixStr) == 0);
+}
+
 bool MIRSymbol::IsReflectionClassInfo() const {
   return StringUtils::StartsWith(GetName(), CLASSINFO_PREFIX_STR);
 }
