@@ -1365,10 +1365,10 @@ class SrcPosition {
   union {
     struct {
       uint16 fileNum;
-      uint16 column;
-      bool stmtBegin;
-      bool bbBegin;
-      uint16 unused;
+      uint16 column : 12;
+      uint16 stmtBegin : 1;
+      uint16 bbBegin : 1;
+      uint16 unused : 2;
     } fileColumn;
 
     uint32 word0;
@@ -2010,8 +2010,6 @@ class DassignNode : public UnaryStmtNode {
 class RegassignNode : public UnaryStmtNode {
  public:
   RegassignNode() : UnaryStmtNode(OP_regassign) {}
-
-  explicit RegassignNode(const RegassignNode &node) : UnaryStmtNode(node), regIdx(node.regIdx) {}
 
   RegassignNode(PrimType primType, PregIdx idx, BaseNode *opnd)
       : UnaryStmtNode(OP_regassign, primType, opnd), regIdx(idx) {}

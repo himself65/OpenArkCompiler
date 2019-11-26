@@ -481,7 +481,12 @@ void MUIDReplacement::ReplaceFieldMetaStaticAddr(MIRSymbol &mirSymbol, int64 ind
   std::string symbolName = mirSymbol.GetName();
   MIRSymbol *fieldOffsetDataSt = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(
       GlobalTables::GetStrTable().GetStrIdxFromName(NameMangler::kFieldOffsetDataPrefixStr + symbolName));
-  CHECK_FATAL(fieldOffsetDataSt != nullptr, "fieldOffsetDataSt symbol is null.");
+  if (fieldOffsetDataSt == nullptr) {
+    if (trace) {
+      LogInfo::MapleLogger() << "fieldOffsetDataSt is nullptr, symbolName=" << symbolName << "\n";
+    }
+    return;
+  }
   MIRAggConst *aggConst = static_cast<MIRAggConst*>(fieldOffsetDataSt->GetKonst());
   MIRAggConst *agg = static_cast<MIRAggConst*>(aggConst->GetConstVecItem(0));
   MIRConst *elem = agg->GetConstVecItem(0);

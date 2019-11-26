@@ -82,10 +82,7 @@ void VtableAnalysis::AddMethodToTable(MethodPtrVector &methodTable, MethodPair &
     GStrIdx currStrIdx = currFunc->GetBaseFuncNameWithTypeStrIdx();
     if (strIdx == currStrIdx) {
       if (CheckOverrideForCrossPackage(*currFunc, *method)) {
-        // only update when it's not an abstract method
-        if (!method->IsAbstract()) {
-          methodTable[i] = &methodPair;
-        }
+        methodTable[i] = &methodPair;
         return;
       }
     }

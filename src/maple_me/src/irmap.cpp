@@ -753,18 +753,18 @@ MeVarPhiNode *IRMap::CreateMeVarPhi(VarMeExpr &meVar) {
   return phiMeVar;
 }
 
-DassignMeStmt *IRMap::CreateDassignMeStmt(MeExpr &lhs, MeExpr &rhs, BB &curBB) {
+DassignMeStmt *IRMap::CreateDassignMeStmt(MeExpr &lhs, MeExpr &rhs, BB &currBB) {
   auto *meStmt = NewInPool<DassignMeStmt>();
   meStmt->SetRHS(&rhs);
   auto &var = static_cast<VarMeExpr&>(lhs);
   meStmt->SetLHS(&var);
   var.SetDefBy(kDefByStmt);
   var.SetDefStmt(meStmt);
-  meStmt->SetBB(&curBB);
+  meStmt->SetBB(&currBB);
   return meStmt;
 }
 
-RegassignMeStmt *IRMap::CreateRegassignMeStmt(MeExpr &lhs, MeExpr &rhs, BB &curBB) {
+RegassignMeStmt *IRMap::CreateRegassignMeStmt(MeExpr &lhs, MeExpr &rhs, BB &currBB) {
   auto *meStmt = New<RegassignMeStmt>();
   ASSERT(lhs.GetMeOp() == kMeOpReg, "Create regassign without lhs == regread");
   meStmt->SetRHS(&rhs);
@@ -772,7 +772,7 @@ RegassignMeStmt *IRMap::CreateRegassignMeStmt(MeExpr &lhs, MeExpr &rhs, BB &curB
   meStmt->SetLHS(&reg);
   reg.SetDefBy(kDefByStmt);
   reg.SetDefStmt(meStmt);
-  meStmt->SetBB(&curBB);
+  meStmt->SetBB(&currBB);
   return meStmt;
 }
 

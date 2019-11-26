@@ -828,18 +828,18 @@ void NaryMeExpr::Dump(IRMap *irMap, int32 indent) const {
 }
 
 MeExpr *DassignMeStmt::GetLHSRef(SSATab &ssaTab, bool excludeLocalRefVar) {
-  VarMeExpr *lhs = GetVarLHS();
-  if (lhs->GetPrimType() != PTY_ref) {
+  VarMeExpr *lhsOpnd = GetVarLHS();
+  if (lhsOpnd->GetPrimType() != PTY_ref) {
     return nullptr;
   }
-  const OriginalSt *ost = ssaTab.GetOriginalStFromID(lhs->GetOStIdx());
+  const OriginalSt *ost = ssaTab.GetOriginalStFromID(lhsOpnd->GetOStIdx());
   if (ost->IsIgnoreRC()) {
     return nullptr;
   }
   if (excludeLocalRefVar && ost->IsLocal()) {
     return nullptr;
   }
-  return lhs;
+  return lhsOpnd;
 }
 
 MeExpr *MaydassignMeStmt::GetLHSRef(SSATab &ssaTab, bool excludeLocalRefVar) {

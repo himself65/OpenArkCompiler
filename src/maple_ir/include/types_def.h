@@ -35,7 +35,7 @@ class StIdx {  // scope nesting level + symbol table index
  public:
   union un {
     struct {
-      uint32 idx;
+      uint32 idx : 24;
       uint8 scope;  // scope level, with the global scope is at level 1
     } scopeIdx;
 
