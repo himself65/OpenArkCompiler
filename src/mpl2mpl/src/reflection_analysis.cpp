@@ -593,13 +593,7 @@ uint32 ReflectionAnalysis::GetMethodInVtabIndex(const Klass &klass, const MIRFun
       if (node->GetKind() == kConstAddrofFunc) {
         const auto *addr = static_cast<const MIRAddroffuncConst*>(node);
         MIRFunction *vtableFunc = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(addr->GetValue());
-        // NOTE: In VtableAnalysis::AddMethodToTable, a abstract method will not
-        // be added to the vtable if there is already an abstract method of the
-        // same name and descriptor (but from a superclass or implemented
-        // interface) in the vtable.  Therefore, we cannot compare methods by
-        // their GetNameStrIdx() (which includes package+class+method+descriptor),
-        // because otherwise we may not find the exact method.
-        if (func.GetBaseFuncNameWithTypeStrIdx() == vtableFunc->GetBaseFuncNameWithTypeStrIdx()) {
+        if (func.GetNameStrIdx() == vtableFunc->GetNameStrIdx()) {
           findMethod = true;
           break;
         }
