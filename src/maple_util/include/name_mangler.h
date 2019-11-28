@@ -49,18 +49,19 @@ namespace NameMangler {
 
 // Names of all compiler-generated tables and accessed by runtime
 static constexpr const char kMuidPrefixStr[] = "__muid_";
+static constexpr const char kMuidRoPrefixStr[] = "__muid_ro";
 static constexpr const char kMuidFuncDefTabPrefixStr[] = "__muid_func_def_tab";
-static constexpr const char kMuidFuncDefOrigTabPrefixStr[] = "__muid_func_def_orig_tab";
-static constexpr const char kMuidFuncInfTabPrefixStr[] = "__muid_func_inf_tab";
-static constexpr const char kMuidFuncMuidIdxTabPrefixStr[] = "__muid_func_muid_idx_tab";
+static constexpr const char kMuidFuncDefOrigTabPrefixStr[] = "__muid_ro_func_def_orig_tab";
+static constexpr const char kMuidFuncInfTabPrefixStr[] = "__muid_ro_func_inf_tab";
+static constexpr const char kMuidFuncMuidIdxTabPrefixStr[] = "__muid_ro_func_muid_idx_tab";
 static constexpr const char kMuidDataDefTabPrefixStr[] = "__muid_data_def_tab";
-static constexpr const char kMuidDataDefOrigTabPrefixStr[] = "__muid_data_def_orig_tab";
+static constexpr const char kMuidDataDefOrigTabPrefixStr[] = "__muid_ro_data_def_orig_tab";
 static constexpr const char kMuidFuncUndefTabPrefixStr[] = "__muid_func_undef_tab";
 static constexpr const char kMuidDataUndefTabPrefixStr[] = "__muid_data_undef_tab";
-static constexpr const char kMuidFuncDefMuidTabPrefixStr[] = "__muid_func_def_muid_tab";
-static constexpr const char kMuidDataDefMuidTabPrefixStr[] = "__muid_data_def_muid_tab";
-static constexpr const char kMuidFuncUndefMuidTabPrefixStr[] = "__muid_func_undef_muid_tab";
-static constexpr const char kMuidDataUndefMuidTabPrefixStr[] = "__muid_data_undef_muid_tab";
+static constexpr const char kMuidFuncDefMuidTabPrefixStr[] = "__muid_ro_func_def_muid_tab";
+static constexpr const char kMuidDataDefMuidTabPrefixStr[] = "__muid_ro_data_def_muid_tab";
+static constexpr const char kMuidFuncUndefMuidTabPrefixStr[] = "__muid_ro_func_undef_muid_tab";
+static constexpr const char kMuidDataUndefMuidTabPrefixStr[] = "__muid_ro_data_undef_muid_tab";
 static constexpr const char kMuidVtabPrefixStr[] = "__muid_vtab";
 static constexpr const char kMuidItabPrefixStr[] = "__muid_itab";
 static constexpr const char kMuidVtabOffsetPrefixStr[] = "__muid_vtab_offset_tab";

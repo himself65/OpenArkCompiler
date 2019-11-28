@@ -51,12 +51,20 @@ class Klass {
 
   // Return true if Klass represents an interface
   bool IsInterface() const {
-    return (structType->GetKind() == kTypeInterface);
+    return structType->GetKind() == kTypeInterface;
+  }
+
+  bool IsInterfaceIncomplete() const {
+    return structType->GetKind() == kTypeInterfaceIncomplete;
   }
 
   // Return true if Klass represents a normal java class
   bool IsClass() const {
-    return (structType->GetKind() == kTypeClass);
+    return structType->GetKind() == kTypeClass;
+  }
+
+  bool IsClassIncomplete() const {
+    return structType->GetKind() == kTypeClassIncomplete;
   }
 
   // Return true if found in the member methods

@@ -88,6 +88,10 @@ bool MIRSymbol::IsMuidTab() const {
   return StringUtils::StartsWith(GetName(), kMuidPrefixStr);
 }
 
+bool MIRSymbol::IsMuidRoTab() const {
+  return StringUtils::StartsWith(GetName(), kMuidRoPrefixStr);
+}
+
 bool MIRSymbol::IsCodeLayoutInfo() const {
   return StringUtils::StartsWith(GetName(), kFunctionLayoutStr);
 }
@@ -142,6 +146,10 @@ bool MIRSymbol::IsMuidDataDefMuidTab() const {
 
 bool MIRSymbol::IsMuidDataUndefMuidTab() const {
   return StringUtils::StartsWith(GetName(), kMuidDataUndefMuidTabPrefixStr);
+}
+
+bool MIRSymbol::IsMuidFuncMuidIdxMuidTab() const {
+  return StringUtils::StartsWith(GetName(), kMuidFuncMuidIdxTabPrefixStr);
 }
 
 bool MIRSymbol::IsMuidRangeTab() const {

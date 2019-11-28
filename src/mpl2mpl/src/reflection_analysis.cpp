@@ -493,18 +493,6 @@ uint16 GetFieldHash(const std::vector<std::pair<FieldPair, uint16>> &fieldV, con
   return 0;
 }
 
-bool ReflectionAnalysis::RootClassDefined() {
-  if (isLibcore < 0) {
-    // Check whether this module defines root classes including Class/Object/Fields/Methods.
-    Klass *objectKlass = klassH->GetKlassFromLiteral(NameMangler::kJavaLangObjectStr);
-    isLibcore = 0;
-    if (objectKlass != nullptr && objectKlass->GetMIRStructType()->IsLocal()) {
-      isLibcore = 1;
-    }
-  }
-  return (isLibcore == 1);
-}
-
 MIRSymbol *ReflectionAnalysis::GetOrCreateSymbol(const std::string &name, TyIdx tyIdx, bool needInit = false) {
   const GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(name);
   MIRSymbol *st = GetSymbol(strIdx, tyIdx);
@@ -1291,7 +1279,8 @@ int64 ReflectionAnalysis::BKDRHash(const std::string &strName, uint32 seed) {
   const char *name = strName.c_str();
   int64 hash = 0;
   while (*name) {
-    hash = hash * seed + (*name++);
+    uint8_t uName = *name++;
+    hash = hash * seed + uName;
   }
   return hash;
 }
@@ -1779,6 +1768,10 @@ void ReflectionAnalysis::GenStrTab(MIRModule &mirModule) {
 }
 
 void ReflectionAnalysis::MarkWeakMethods() {
+  if (!isLibcore) {
+    return;
+  }
+
   GStrIdx classNames[] = { GetOrCreateGStrIdxFromName(NameMangler::kJavaLangClassStr),
                            GetOrCreateGStrIdxFromName(NameMangler::kJavaLangObjectStr),
                            GetOrCreateGStrIdxFromName(kReflectionReferencePrefixStr) };
@@ -1791,10 +1784,8 @@ void ReflectionAnalysis::MarkWeakMethods() {
     for (const MethodPair &methodPair : classType->GetMethods()) {
       MIRSymbol *funcSym = GlobalTables::GetGsymTable().GetSymbolFromStidx(methodPair.first.Idx());
       MIRFunction *mirfunc = funcSym->GetFunction();
-      if (RootClassDefined()) {
+      if (mirfunc != nullptr) {
         mirfunc->SetAttr(FUNCATTR_weak);  // It's marked weak since RT-first.
-      } else {
-        mirfunc->SetAttr(FUNCATTR_extern);
       }
     }
   }

@@ -326,6 +326,7 @@ class MIRSymbol {
   bool IsRegJNITab() const;
   bool IsRegJNIFuncTab() const;
   bool IsMuidTab() const;
+  bool IsMuidRoTab() const;
   bool IsCodeLayoutInfo() const;
   std::string GetMuidTabName() const;
   bool IsMuidFuncDefTab() const;
@@ -339,6 +340,7 @@ class MIRSymbol {
   bool IsMuidFuncUndefMuidTab() const;
   bool IsMuidDataDefMuidTab() const;
   bool IsMuidDataUndefMuidTab() const;
+  bool IsMuidFuncMuidIdxMuidTab() const;
   bool IsMuidRangeTab() const;
   bool IsGctibSym() const;
   bool IsPrimordialObject() const;
