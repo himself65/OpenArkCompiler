@@ -50,7 +50,8 @@ Klass::Klass(MIRStructType *type, MapleAllocator *alc)
       strIdx2Method(alloc->Adapter()),
       strIdx2CandidateMap(alloc->Adapter()) {
   ASSERT(type != nullptr, "type is nullptr in Klass::Klass!");
-  ASSERT(type->GetKind() == kTypeClass || type->GetKind() == kTypeInterface, "type error");
+  ASSERT(type->GetKind() == kTypeClass || type->GetKind() == kTypeInterface ||
+         type->IsIncomplete(), "runtime check error");
 }
 
 void Klass::DumpKlassMethods() const {
@@ -502,7 +503,7 @@ void KlassHierarchy::AddKlassRelationAndMethods() {
     Klass *klass = pair.second;
     ASSERT(klass, "null ptr check");
     Klass *superKlass = nullptr;
-    if (klass->IsInterface()) {
+    if (klass->IsInterface() || klass->IsInterfaceIncomplete()) {
       MIRInterfaceType *itype = klass->GetMIRInterfaceType();
       ASSERT(itype != nullptr, "null ptr check");
       // Java interface supports multiple inheritance
@@ -513,7 +514,7 @@ void KlassHierarchy::AddKlassRelationAndMethods() {
           superKlass->AddSubKlass(klass);
         }
       }
-    } else {
+    } else if (klass->IsClass() || klass->IsClassIncomplete()) {
       // Class
       MIRClassType *classType = klass->GetMIRClassType();
       ASSERT(classType != nullptr, "null ptr check");

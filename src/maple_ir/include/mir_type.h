@@ -426,11 +426,6 @@ class MIRType {
     typeKind = kind;
   }
 
-  bool IsIncomplete() const {
-    return typeKind == kTypeStructIncomplete || typeKind == kTypeClassIncomplete ||
-           typeKind == kTypeInterfaceIncomplete;
-  }
-
   bool IsNameIsLocal() const {
     return nameIsLocal;
   }
@@ -458,6 +453,11 @@ class MIRType {
 
   virtual bool HasTypeParam() const {
     return false;
+  }
+
+  virtual bool IsIncomplete() const {
+    return typeKind == kTypeStructIncomplete || typeKind == kTypeClassIncomplete ||
+           typeKind == kTypeInterfaceIncomplete;
   }
 
   bool IsMIRPtrType() const {

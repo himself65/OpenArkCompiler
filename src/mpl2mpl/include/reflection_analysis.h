@@ -99,7 +99,14 @@ class ReflectionAnalysis : public AnalysisResult {
         allocator(memPool),
         klassH(kh),
         mirBuilder(builder),
-        classTab(allocator.Adapter()) {}
+        classTab(allocator.Adapter()),
+        isLibcore(false),
+        isLazyBindingOrDecouple(false) {
+    Klass *objectKlass = kh->GetKlassFromLiteral(NameMangler::kJavaLangObjectStr);
+    if (objectKlass != nullptr && objectKlass->GetMIRStructType()->IsLocal()) {
+      isLibcore = true;
+    }
+  }
   ~ReflectionAnalysis() = default;
 
   static void GenStrTab(MIRModule &mirmodule);
@@ -194,7 +201,6 @@ class ReflectionAnalysis : public AnalysisResult {
 
   bool VtableFunc(const MIRFunction &func) const;
   void GenPrimitiveClass();
-  bool RootClassDefined();  // whether current module defines root classes
   void GenAllMethodHash(std::vector<std::pair<MethodPair*, int>> &methodInfoVec,
                         std::unordered_map<uint32, std::string> &baseNameMap,
                         std::unordered_map<uint32, std::string> &fullNameMap);
@@ -225,8 +231,8 @@ class ReflectionAnalysis : public AnalysisResult {
   KlassHierarchy *klassH;
   MIRBuilder &mirBuilder;
   MapleVector<MIRSymbol*> classTab;
-  int isLibcore = -1;
-  bool isLazyBindingOrDecouple = false;
+  bool isLibcore;
+  bool isLazyBindingOrDecouple;
   std::string reflectionMuidStr;
   static const char *klassPtrName;
   static TyIdx classMetadataTyIdx;

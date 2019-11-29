@@ -729,13 +729,25 @@ bool IRMap::ReplaceMeExprStmt(MeStmt &meStmt, MeExpr &meExpr, MeExpr &repexpr) {
       }
     }
 
-    bool curOpndReplaced = ReplaceMeExprStmtOpnd(i, meStmt, meExpr, repexpr);
-    isReplaced = isReplaced || curOpndReplaced;
-
-    if (i == 0 && curOpndReplaced && op == OP_iassign) {
-      auto &ivarStmt = static_cast<IassignMeStmt&>(meStmt);
-      ivarStmt.SetLHSVal(BuildLHSIvar(*ivarStmt.GetOpnd(0), ivarStmt, ivarStmt.GetLHSVal()->GetFieldID()));
+    bool curOpndReplaced = false;
+    if (i == 0 && op == OP_iassign) {
+      IassignMeStmt &ivarStmt = static_cast<IassignMeStmt&>(meStmt);
+      MeExpr *oldBase = ivarStmt.GetLHS()->GetOpnd(0);
+      MeExpr *newBase = nullptr;
+      if (oldBase == &meExpr) {
+        newBase = &repexpr;
+        curOpndReplaced = true;
+      } else if (!oldBase->IsLeaf()) {
+        newBase = ReplaceMeExprExpr(*oldBase, meExpr, repexpr);
+        curOpndReplaced = (newBase != oldBase);
+      }
+      if (curOpndReplaced) {
+        ivarStmt.SetLHSVal(BuildLHSIvar(*newBase, ivarStmt, ivarStmt.GetLHSVal()->GetFieldID()));
+      }
+    } else {
+      curOpndReplaced = ReplaceMeExprStmtOpnd(i, meStmt, meExpr, repexpr);
     }
+    isReplaced = isReplaced || curOpndReplaced;
   }
 
   return isReplaced;

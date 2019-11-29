@@ -2680,7 +2680,7 @@ bool MIRParser::ParseMIRForImportPath() {
 void MIRParser::PrepareParsingMIR() {
   dummyFunction = CreateDummyFunction();
   mod.SetCurFunction(dummyFunction);
-  lexer.PrepareForFile(mod.GetFileName().c_str());
+  lexer.PrepareForFile(mod.GetFileName());
 }
 
 bool MIRParser::ParseTypeFromString(const std::string &src, TyIdx &tyIdx) {
