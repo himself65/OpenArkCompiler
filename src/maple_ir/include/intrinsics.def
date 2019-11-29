@@ -117,6 +117,9 @@ DEF_MIR_INTRINSIC(MPL_SET_CLASS,\
 DEF_MIR_INTRINSIC(MPL_CLEANUP_NORETESCOBJS,\
                   "__mpl_cleanup_noretescobjs", INTRNISJAVA | INTRNNOSIDEEFFECT, kArgTyUndef, kArgTyRef, kArgTyRef,\
                   kArgTyRef, kArgTyRef, kArgTyRef, kArgTyRef)
+
+// start of GC Intrinsics
+
 #include "intrinsic_java.def"
 DEF_MIR_INTRINSIC(LAST,\
                   nullptr, kIntrnUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)

@@ -51,6 +51,7 @@ class IRMap : public AnalysisResult {
   void BuildBB(BB &bb, std::vector<bool> &bbIRMapProcessed);
   MeExpr *BuildExpr(BaseNode&);
   IvarMeExpr *BuildLHSIvarFromIassMeStmt(IassignMeStmt &iassignMeStmt);
+  IvarMeExpr *BuildLHSIvar(MeExpr &baseAddr, IassignMeStmt &iassignMeStmt, FieldID fieldID);
   RegMeExpr *CreateRegRefMeExpr(MeExpr&);
   RegMeExpr *CreateRegRefMeExpr(MIRType&);
   VarMeExpr *CreateVarMeExprVersion(const VarMeExpr&);
@@ -197,7 +198,6 @@ class IRMap : public AnalysisResult {
   MeStmt *BuildMeStmtWithNoSSAPart(StmtNode &stmt);
   MeStmt *BuildMeStmt(StmtNode&);
   MeExpr *BuildLHSReg(const VersionSt &vst, RegassignMeStmt &defMeStmt, const RegassignNode &regassign);
-  IvarMeExpr *BuildLHSIvar(MeExpr &baseAddr, IassignMeStmt &iassignMeStmt, FieldID fieldID);
   RegMeExpr *CreateRefRegMeExpr(const MIRSymbol&);
   MeExpr *CreateMeExprCompare(Opcode, PrimType, PrimType, MeExpr&, MeExpr&);
   MeExpr *CreateAddrofMeExprFromNewSymbol(MIRSymbol&, PUIdx);

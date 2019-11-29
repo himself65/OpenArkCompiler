@@ -714,7 +714,7 @@ bool MIRParser::ParseFields(MIRStructType &type) {
         tk = lexer.NextToken();
         MIRConst *mirConst = nullptr;
         if (!ParseInitValue(mirConst, fieldTyIdx)) {
-          Error("wrong initialiaton value at ");
+          Error("wrong initialization value at ");
           return false;
         }
         GlobalTables::GetConstPool().InsertConstPool(p.first, mirConst);
@@ -1674,7 +1674,8 @@ bool MIRParser::ParseDeclareVar(MIRSymbol &symbol) {
       return false;
     }
   }
-  GStrIdx symbolStrID = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName());
+  std::string symbolStrName = lexer.GetName();
+  GStrIdx symbolStrID = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(symbolStrName);
   symbol.SetNameStrIdx(symbolStrID);
   tk = lexer.NextToken();
   if (ParseStorageClass(symbol)) {
@@ -1721,8 +1722,14 @@ bool MIRParser::ParseDeclareVar(MIRSymbol &symbol) {
     // parse initialized values
     MIRConst *mirConst = nullptr;
     lexer.NextToken();
-    if (!ParseInitValue(mirConst, tyIdx)) {
-      Error("wrong initialiaton value at ");
+    bool allowEmpty = false;
+    // allow empty initialization for vtable, itable, vtableOffsetTable and fieldOffsetTable
+    if (symbolStrName.find(VTAB_PREFIX_STR) == 0 || symbolStrName.find(NameMangler::kVtabOffsetTabStr) == 0 ||
+        symbolStrName.find(ITAB_PREFIX_STR) == 0 || symbolStrName.find(NameMangler::kFieldOffsetTabStr) == 0) {
+      allowEmpty = true;
+    }
+    if (!ParseInitValue(mirConst, tyIdx, allowEmpty)) {
+      Error("wrong initialization value at ");
       return false;
     }
     symbol.SetKonst(mirConst);
@@ -1953,7 +1960,7 @@ bool MIRParser::ParseFunction(uint32 fileIdx) {
   return true;
 }
 
-bool MIRParser::ParseInitValue(MIRConstPtr &theConst, TyIdx tyIdx) {
+bool MIRParser::ParseInitValue(MIRConstPtr &theConst, TyIdx tyIdx, bool allowEmpty) {
   TokenKind tokenKind = lexer.GetTokenKind();
   MIRType &type = *GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
   if (tokenKind != kTkLbrack) {  // scalar
@@ -1982,8 +1989,13 @@ bool MIRParser::ParseInitValue(MIRConstPtr &theConst, TyIdx tyIdx) {
       theConst = newConst;
       tokenKind = lexer.NextToken();
       if (tokenKind == kTkRbrack) {
-        Error("illegal empty initialization for array at ");
-        return false;
+        if (allowEmpty) {
+          lexer.NextToken();
+          return true;
+        } else {
+          Error("illegal empty initialization for array at ");
+          return false;
+        }
       }
       do {
         // parse single const or another dimension array

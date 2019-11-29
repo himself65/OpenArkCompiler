@@ -56,7 +56,7 @@ class MIRParser {
   MIRIntrinsicID GetIntrinsicID(TokenKind tk) const;
   bool ParseScalarValue(MIRConstPtr&, MIRType&);
   bool ParseConstAddrLeafExpr(MIRConstPtr&, MIRType&);
-  bool ParseInitValue(MIRConstPtr&, TyIdx);
+  bool ParseInitValue(MIRConstPtr&, TyIdx, bool allowEmpty = false);
   bool ParseDeclaredSt(StIdx&);
   bool ParseDeclaredFunc(PUIdx&);
   bool ParseTypeAttrs(TypeAttrs&);
