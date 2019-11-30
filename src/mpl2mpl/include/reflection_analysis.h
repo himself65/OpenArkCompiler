@@ -209,8 +209,6 @@ class ReflectionAnalysis : public AnalysisResult {
                       PragmaKind paragKind, const std::string &paragName, TyIdx fieldTypeIdx,
                       std::map<int, int> *paramNumArray = nullptr, int *paramIndex = nullptr);
   void AppendValueByType(std::string &annoArr, const MIRPragmaElement &elem);
-  void SetAnnoFieldConst(const MIRStructType &metadataRoType, MIRAggConst &newConst, uint32 fieldID,
-                         std::map<int, int> &idxNumMap, const std::string &annoArr);
   bool IsAnonymousClass(const std::string &annotationString);
   bool IsPrivateClass(const MIRClassType &classType) const;
   bool IsStaticClass(const MIRClassType &classType) const;
@@ -218,13 +216,15 @@ class ReflectionAnalysis : public AnalysisResult {
   void CheckPrivateInnerAndNoSubClass(Klass &clazz, const std::string &annoArr);
   void ConvertMapleClassName(const std::string &mplClassName, std::string &javaDsp);
 
-  int GetDeflateStringIdx(const std::string &subStr);
-  uint32 GetAnnoCstrIndex(std::map<int, int> &idxNumMap, const std::string &annoArr);
+  int GetDeflateStringIdx(const std::string &subStr, bool needSpecialFlag);
+  uint32 GetAnnoCstrIndex(std::map<int, int> &idxNumMap, const std::string &annoArr, bool isField);
   uint32 GetMethodInVtabIndex(const Klass &clazz, const MIRFunction &func) const;
   void GetSignatureTypeNames(std::string &signature, std::vector<std::string> &typeNames);
   MIRSymbol *GetClinitFuncSymbol(const Klass &klass);
   int SolveAnnotation(MIRClassType &classType, MIRFunction &func);
   uint32 GetTypeNameIdxFromType(const MIRType &type, const Klass &klass, const std::string &fieldName);
+  bool IsMemberClass(const std::string &annotationString);
+  int8_t GetAnnoFlag(const std::string &annotationString);
 
   MIRModule *mirModule;
   MapleAllocator allocator;
