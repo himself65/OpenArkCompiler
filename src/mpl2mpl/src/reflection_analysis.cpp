@@ -1260,7 +1260,7 @@ uint32 ReflectionAnalysis::GetAnnoCstrIndex(std::map<int, int> &idxNumMap, const
   size_t annoNum = idxNumMap.size();
   uint32 signatureIdx = 0;
   if (annoNum == 0) {
-    std::string subStr = "0!0";
+    std::string subStr = "1!0";
     signatureIdx = FindOrInsertReflectString(subStr);
   } else {
     std::string subStr = std::to_string(annoNum);
