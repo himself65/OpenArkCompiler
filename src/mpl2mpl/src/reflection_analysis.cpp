@@ -121,8 +121,8 @@ constexpr char kReflectionReferencePrefixStr[] = "Ljava_2Flang_2Fref_2FReference
 constexpr char kJavaLangAnnotationRetentionStr[] = "Ljava_2Flang_2Fannotation_2FRetention_3B";
 constexpr int kAnonymousClassIndex = 5;
 constexpr char kAnonymousClassSuffix[] = "30";
-constexpr char kAnonymousClassPrefix[] = "Lark/annotation/InnerClass;";
-constexpr char kInnerClassPrefix[] = "Lark/annotation/EnclosingClass;";
+constexpr char kInnerClassStr[] = "Lark/annotation/InnerClass;";
+constexpr char kEnclosingClassStr[] = "Lark/annotation/EnclosingClass;";
 constexpr char kArkAnnotationEnclosingClassStr[] = "Lark_2Fannotation_2FEnclosingClass_3B";
 } // namespace
 
@@ -141,8 +141,28 @@ std::string ReflectionAnalysis::strTabBothHot = std::string(1, '\0');
 std::string ReflectionAnalysis::strTabRunHot = std::string(1, '\0');
 bool ReflectionAnalysis::strTabInited = false;
 
-int ReflectionAnalysis::GetDeflateStringIdx(const std::string &subStr) {
-  return FindOrInsertReflectString("1!" + subStr);
+bool ReflectionAnalysis::IsMemberClass(const std::string &annotationString) {
+  uint32_t idx = ReflectionAnalysis::FindOrInsertReflectString(kEnclosingClassStr);
+  std::string target = annoDelimiterPrefix + std::to_string(idx) + annoDelimiter;
+  if (annotationString.find(target, 0) != std::string::npos) {
+    return true;
+  }
+  return false;
+}
+
+int8_t ReflectionAnalysis::GetAnnoFlag(const std::string &annotationString) {
+  constexpr int8_t kMemberPosValid = 1;
+  constexpr int8_t kMemberPosValidOffset = 2;
+  constexpr int8_t kIsMemberClassOffset = 1;
+  constexpr int8_t kNewMeta = 1;
+  int8_t isMemberClass = IsMemberClass(annotationString);
+  int8_t value = (kMemberPosValid << kMemberPosValidOffset) + (isMemberClass << kIsMemberClassOffset) + kNewMeta;
+  return value;
+}
+
+int ReflectionAnalysis::GetDeflateStringIdx(const std::string &subStr, bool needSpecialFlag) {
+  std::string flag = needSpecialFlag ? (std::to_string(GetAnnoFlag(subStr)) + annoDelimiter) : "1!";
+  return FindOrInsertReflectString(flag + subStr);
 }
 
 uint32 ReflectionAnalysis::FirstFindOrInsertRepeatString(const std::string &str, bool isHot, uint8 hotType) {
@@ -348,7 +368,7 @@ int ReflectionAnalysis::SolveAnnotation(MIRClassType &classType, MIRFunction &fu
     }
     subStr += annoArray2;
   }
-  return GetDeflateStringIdx(subStr);
+  return GetDeflateStringIdx(subStr, false);
 }
 
 uint32 ReflectionAnalysis::GetTypeNameIdxFromType(const MIRType &type, const Klass &klass,
@@ -390,9 +410,9 @@ uint32 ReflectionAnalysis::GetTypeNameIdxFromType(const MIRType &type, const Kla
 
 void ReflectionAnalysis::CheckPrivateInnerAndNoSubClass(Klass &clazz, const std::string &annoArr) {
   // LMain_24A_3B  `EC!`VL!24!LMain_3B!`IC!`AF!4!2!name!23!A!
-  uint32_t idx = FindOrInsertReflectString(kInnerClassPrefix);
+  uint32_t idx = FindOrInsertReflectString(kEnclosingClassStr);
   std::string target = annoDelimiterPrefix + std::to_string(idx) + annoDelimiter;
-  size_t pos = annoArr.find(kInnerClassPrefix, 0);
+  size_t pos = annoArr.find(kEnclosingClassStr, 0);
   if (pos == std::string::npos) {
     return;
   }
@@ -975,7 +995,7 @@ void ReflectionAnalysis::GenFieldMeta(const Klass &klass, MIRStructType &fieldsI
   std::string annoArr;
   std::map<int, int> idxNumMap;
   GenAnnotation(idxNumMap, annoArr, *classType, kPragmaVar, fieldName, ty->GetTypeIndex());
-  uint32 annotationIdx = GetAnnoCstrIndex(idxNumMap, annoArr);
+  uint32 annotationIdx = GetAnnoCstrIndex(idxNumMap, annoArr, true);
   mirBuilder.AddIntFieldConst(fieldsInfoType, *newConst, fieldID++, annotationIdx);
   // @declaring class
   MIRSymbol *dklassSt = GetOrCreateSymbol(CLASSINFO_PREFIX_STR + klass.GetKlassName(), classMetadataTyIdx);
@@ -1256,11 +1276,12 @@ void ReflectionAnalysis::GenAnnotation(std::map<int, int> &idxNumMap, std::strin
   }
 }
 
-uint32 ReflectionAnalysis::GetAnnoCstrIndex(std::map<int, int> &idxNumMap, const std::string &annoArr) {
+uint32 ReflectionAnalysis::GetAnnoCstrIndex(std::map<int, int> &idxNumMap, const std::string &annoArr, bool isField) {
   size_t annoNum = idxNumMap.size();
   uint32 signatureIdx = 0;
   if (annoNum == 0) {
-    std::string subStr = "1!0";
+    std::string flag = isField ? "1!" : std::to_string(GetAnnoFlag(annoArr)) + annoDelimiter;
+    std::string subStr = flag + "0";
     signatureIdx = FindOrInsertReflectString(subStr);
   } else {
     std::string subStr = std::to_string(annoNum);
@@ -1270,7 +1291,7 @@ uint32 ReflectionAnalysis::GetAnnoCstrIndex(std::map<int, int> &idxNumMap, const
       subStr += annoDelimiter;
     });
     subStr += annoArr;
-    signatureIdx = GetDeflateStringIdx(subStr);
+    signatureIdx = GetDeflateStringIdx(subStr, !isField);
   }
   return signatureIdx;
 }
@@ -1441,7 +1462,8 @@ void ReflectionAnalysis::GenClassMetaData(Klass &klass) {
   uint32 modifier = GetClassAccessFlags(*classType);
   mirBuilder.AddIntFieldConst(classMetadataROType, *newConst, fieldID++, modifier);
   // @annotation: Set annotation field.
-  SetAnnoFieldConst(classMetadataROType, *newConst, fieldID++, idxNumMap, annoArray);
+  uint32_t signatureIdx = GetAnnoCstrIndex(idxNumMap, annoArray, false);
+  mirBuilder.AddIntFieldConst(classMetadataROType, *newConst, fieldID++, signatureIdx);
   // @ClinitFuncAddr
   MIRSymbol *clinitFuncSym = GetClinitFuncSymbol(klass);
   if (clinitFuncSym != nullptr) {
@@ -1520,26 +1542,6 @@ void ReflectionAnalysis::GenClassMetaData(Klass &klass) {
   classTab.push_back(classSt);
 }
 
-void ReflectionAnalysis::SetAnnoFieldConst(const MIRStructType &metadataRoType, MIRAggConst &newConst, uint32 fieldid,
-                                           std::map<int, int> &idxNumMap, const std::string &annoArr) {
-  size_t annoNum = idxNumMap.size();
-  if (annoNum == 0) {
-    std::string subStr = "0!0";
-    uint32 signatureIdx = FindOrInsertReflectString(subStr);
-    mirBuilder.AddIntFieldConst(metadataRoType, newConst, fieldid, signatureIdx);
-  } else {
-    std::string subStr = std::to_string(annoNum);
-    subStr += "!";
-    std::for_each(idxNumMap.begin(), idxNumMap.end(), [&subStr](const std::pair<const int, int> p) {
-      subStr += std::to_string(p.second);
-      subStr += "!";
-    });
-    subStr += annoArr;
-    uint32 signatureIdx = GetDeflateStringIdx(subStr);
-    mirBuilder.AddIntFieldConst(metadataRoType, newConst, fieldid, signatureIdx);
-  }
-}
-
 int8 ReflectionAnalysis::JudgePara(MIRClassType &classType) {
   for (MIRPragma *prag : classType.GetPragmaVec()) {
     if (prag->GetKind() == kPragmaClass) {
@@ -1555,7 +1557,7 @@ int8 ReflectionAnalysis::JudgePara(MIRClassType &classType) {
 
 bool ReflectionAnalysis::IsAnonymousClass(const std::string &annotationString) {
   // eg: `IC!`AF!4!0!name!30!!
-  uint32_t idx = ReflectionAnalysis::FindOrInsertReflectString(kAnonymousClassPrefix);
+  uint32_t idx = ReflectionAnalysis::FindOrInsertReflectString(kInnerClassStr);
   std::string target = annoDelimiterPrefix + std::to_string(idx) + annoDelimiter;
   size_t pos = annotationString.find(target, 0);
   if (pos != std::string::npos) {
