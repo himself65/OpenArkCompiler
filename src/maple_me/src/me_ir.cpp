@@ -1287,6 +1287,21 @@ bool VarMeExpr::IsVolatile(const SSATab &ssatab) {
   return structType->IsFieldVolatile(fieldID);
 }
 
+bool VarMeExpr::PointsToStringLiteral() {
+  VarMeExpr &var = ResolveVarMeValue();
+  if (var.GetDefBy() == kDefByMustDef) {
+    MeStmt *baseStmt = var.GetDefMustDef().GetBase();
+    if (baseStmt->GetOp() == OP_callassigned) {
+      auto *call = static_cast<CallMeStmt*>(baseStmt);
+      MIRFunction &callFunc = call->GetTargetFunction();
+      if (callFunc.GetName() == "MCC_GetOrInsertLiteral") {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 MeExpr *MeExpr::FindSymAppearance(OStIdx oidx) {
   if (meOp == kMeOpVar) {
     if (static_cast<VarMeExpr*>(this)->GetOStIdx() == oidx) {
@@ -1332,15 +1347,8 @@ bool MeExpr::PointsToSomethingThatNeedsIncRef() {
   }
   if (meOp == kMeOpVar) {
     auto *var = static_cast<VarMeExpr*>(this);
-    if (var->GetDefBy() == kDefByMustDef) {
-      MeStmt *baseStmt = var->GetDefMustDef().GetBase();
-      if (baseStmt->GetOp() == OP_callassigned) {
-        auto *call = static_cast<CallMeStmt*>(baseStmt);
-        MIRFunction &callFunc = call->GetTargetFunction();
-        if (callFunc.GetName() == "MCC_GetOrInsertLiteral") {
-          return false;
-        }
-      }
+    if (var->PointsToStringLiteral()) {
+      return false;
     }
     return true;
   }

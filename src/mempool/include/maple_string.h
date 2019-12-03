@@ -240,7 +240,7 @@ class MapleString {
 
   char *data = nullptr;
   MemPool *memPool = nullptr;
-  size_t dataLength = 0;
+  unsigned int dataLength = 0;
 };
 
 // global operators

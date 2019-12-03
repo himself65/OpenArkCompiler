@@ -1183,6 +1183,7 @@ void MUIDReplacement::GenerateGlobalRootList() {
   }
 }
 
+// should use a new pass to generate these information
 void MUIDReplacement::GenerateCompilerVersionNum() {
   MIRType *ptrType = GlobalTables::GetTypeTable().GetVoidPtr();
   MIRArrayType &arrayType = *GlobalTables::GetTypeTable().GetOrCreateArrayType(*ptrType, 0);
@@ -1196,6 +1197,7 @@ void MUIDReplacement::GenerateCompilerVersionNum() {
   MIRSymbol *versionNum = builder->CreateGlobalDecl(symName.c_str(), arrayType);
   versionNum->SetKonst(newConst);
 }
+
 
 void MUIDReplacement::GenerateTables() {
   GenerateGlobalRootList();

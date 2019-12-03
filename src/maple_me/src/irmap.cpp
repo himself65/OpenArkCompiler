@@ -742,6 +742,7 @@ bool IRMap::ReplaceMeExprStmt(MeStmt &meStmt, MeExpr &meExpr, MeExpr &repexpr) {
         curOpndReplaced = (newBase != oldBase);
       }
       if (curOpndReplaced) {
+        ASSERT_NOT_NULL(newBase);
         ivarStmt.SetLHSVal(BuildLHSIvar(*newBase, ivarStmt, ivarStmt.GetLHSVal()->GetFieldID()));
       }
     } else {
