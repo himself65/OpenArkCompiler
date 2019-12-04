@@ -155,8 +155,9 @@ int8_t ReflectionAnalysis::GetAnnoFlag(const std::string &annotationString) {
   constexpr int8_t kMemberPosValidOffset = 2;
   constexpr int8_t kIsMemberClassOffset = 1;
   constexpr int8_t kNewMeta = 1;
-  int8_t isMemberClass = IsMemberClass(annotationString);
-  int8_t value = (kMemberPosValid << kMemberPosValidOffset) + (isMemberClass << kIsMemberClassOffset) + kNewMeta;
+  bool isMemberClass = IsMemberClass(annotationString);
+  int8_t value = (kMemberPosValid << kMemberPosValidOffset) +
+                 (static_cast<uint8_t>(isMemberClass) << kIsMemberClassOffset) + kNewMeta;
   return value;
 }
 
@@ -1821,6 +1822,7 @@ void ReflectionAnalysis::Run() {
 AnalysisResult *DoReflectionAnalysis::Run(MIRModule *module, ModuleResultMgr *moduleResultMgr) {
   MemPool *memPool = memPoolCtrler.NewMemPool("ReflectionAnalysis mempool");
   auto *kh = static_cast<KlassHierarchy*>(moduleResultMgr->GetAnalysisResult(MoPhase_CHA, module));
+  ASSERT_NOT_NULL(kh);
   maple::MIRBuilder mirBuilder(module);
   ReflectionAnalysis *rv = memPool->New<ReflectionAnalysis>(module, memPool, kh, mirBuilder);
   if (rv == nullptr) {
