@@ -224,6 +224,7 @@ class VarMeExpr final : public MeExpr {
   BB *GetDefByBBMeStmt(const Dominance&, MeStmtPtr&);
   bool IsSameVariableValue(const VarMeExpr&) const override;
   VarMeExpr &ResolveVarMeValue();
+  bool PointsToStringLiteral();
 
   const OStIdx &GetOStIdx() const {
     return ostIdx;

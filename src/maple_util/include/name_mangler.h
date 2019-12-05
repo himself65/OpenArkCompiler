@@ -105,6 +105,8 @@ static constexpr const char kDecoupleOption[] = "__decouple_option";
 static constexpr const char kDecoupleStr[] = "__decouple";
 static constexpr const char kCompilerVersionNum[] = "__compilerVersionNum";
 static constexpr const char kCompilerVersionNumStr[] = "__compilerVersionNumTab";
+static constexpr const char kCompilerMfileStatus[]  = "__compiler_mfile_status";
+
 static constexpr const char kSourceMuid[] = "__sourceMuid";
 static constexpr const char kSourceMuidSectionStr[] = "__sourceMuidTab";
 
