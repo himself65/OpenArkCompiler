@@ -15,13 +15,20 @@
 #ifndef MAPLE_DRIVER_INCLUDE_SAFE_EXE_H
 #define MAPLE_DRIVER_INCLUDE_SAFE_EXE_H
 
-#if __linux__ or __linux
+/* To start a new process for dex2mpl/mplipa, we need sys/wait on unix-like systems to
+ * make it complete. However, there is not a sys/wait.h for mingw, so we used createprocess
+ * in windows.h instead
+ */
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <sys/wait.h>
+#endif
+
 #include <unistd.h>
 #include <sys/types.h>
-#include <sys/wait.h>
 #include <stdlib.h>
 #include "error_code.h"
-#endif
 #include "mpl_logging.h"
 #include "string_utils.h"
 #include "securec.h"
@@ -29,8 +36,7 @@
 namespace maple {
 class SafeExe {
  public:
-    // Current tool is for linux only
-#if __linux__ or __linux
+#ifndef _WIN32
   static ErrorCode HandleCommand(const std::string &cmd, const std::string &args) {
     std::vector<std::string> vectorArgs = ParseArgsVector(cmd, args);
     // extra space for exe name and args
@@ -69,10 +75,48 @@ class SafeExe {
         ret = ErrorCode::kErrorCompileFail;
       }
     }
+
     for (int j = 0; j < vectorArgs.size(); ++j) {
       delete [] argv[j];
     }
     delete [] argv;
+    return ret;
+  }
+#else
+  static ErrorCode HandleCommand(const std::string &cmd, const std::string &args) {
+    ErrorCode ret = ErrorCode::kErrorNoError;
+
+    STARTUPINFO startInfo;
+    PROCESS_INFORMATION pInfo;
+    DWORD exitCode;
+
+    errno_t retSafe = memset_s(&startInfo, sizeof(STARTUPINFO), 0, sizeof(STARTUPINFO));
+    CHECK_FATAL(retSafe == EOK, "memset_s for StartUpInfo failed when HandleComand");
+
+    startInfo.cb = sizeof(STARTUPINFO);
+
+    char* appName = strdup(cmd.c_str());
+    char* cmdLine = strdup(args.c_str());
+    CHECK_FATAL(appName != nullptr, "strdup for appName failed");
+    CHECK_FATAL(cmdLine != nullptr, "strdup for cmdLine failed");
+
+    bool success = CreateProcess(appName, cmdLine, NULL, NULL, FALSE,
+                                 NORMAL_PRIORITY_CLASS, NULL, NULL, &startInfo, &pInfo);
+    CHECK_FATAL(success != 0, "CreateProcess failed when HandleCommond");
+
+    WaitForSingleObject(pInfo.hProcess, INFINITE);
+    GetExitCodeProcess(pInfo.hProcess, &exitCode);
+
+    if (exitCode != 0) {
+      LogInfo::MapleLogger() << "Error while Exe, cmd: " << cmd << " args: " << args
+                             << " exitCode: " << exitCode << '\n';
+      ret = ErrorCode::kErrorCompileFail;
+    }
+
+    free(appName);
+    free(cmdLine);
+    appName = nullptr;
+    cmdLine = nullptr;
     return ret;
   }
 #endif
@@ -83,14 +127,10 @@ class SafeExe {
       LogInfo::MapleLogger() << "Error while Exe, cmd: " << cmd << " args: " << args << '\n';
       return ErrorCode::kErrorCompileFail;
     }
-
-#if __linux__ or __linux
     ErrorCode ret = HandleCommand(cmd, args);
     return ret;
-#else
-    return ErrorCode::kErrorNotImplement;
-#endif
   }
+
  private:
   static std::vector<std::string> ParseArgsVector(const std::string &cmd, const std::string &args) {
     std::vector<std::string> tmpArgs;
