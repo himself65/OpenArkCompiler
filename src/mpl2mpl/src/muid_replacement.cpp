@@ -662,6 +662,7 @@ void MUIDReplacement::GenerateRangeTable() {
     rangeTabConst->PushBack(entryConst);
   }
   // Please refer to mrt/compiler-rt/include/mpl_linker.h for the layout
+
   std::vector<MIRSymbol*> workList = {
     funcDefTabSym,
     funcDefOrigTabSym,
@@ -687,6 +688,13 @@ void MUIDReplacement::GenerateRangeTable() {
       builder->AddIntFieldConst(rangeTabEntryType, *entryConst, fieldID++, 0);
       builder->AddIntFieldConst(rangeTabEntryType, *entryConst, fieldID++, 0);
     }
+    rangeTabConst->PushBack(entryConst);
+  }
+  for (int i = RangeIdx::kMaxNum + 1; i <= RangeIdx::kDecoupleStaticValue; ++i) {
+    uint32 fieldID = 1;
+    MIRAggConst *entryConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), rangeTabEntryType);
+    builder->AddIntFieldConst(rangeTabEntryType, *entryConst, fieldID++, i);
+    builder->AddIntFieldConst(rangeTabEntryType, *entryConst, fieldID++, i);
     rangeTabConst->PushBack(entryConst);
   }
   if (!rangeTabConst->GetConstVec().empty()) {
@@ -814,6 +822,29 @@ void MUIDReplacement::ReplaceDataTable(const std::string &name) {
         ASSERT(aggrC->GetConstVecItem(i) != nullptr, "null ptr check!");
         ReplaceAddrofConst(aggrC->GetConstVecItem(i));
         aggrC->GetConstVecItem(i)->SetFieldID(i + 1);
+      }
+    } else if (oldTabEntry->GetKind() == kConstAddrof) {
+      ReplaceAddrofConst(oldTabEntry);
+    }
+  }
+}
+
+void MUIDReplacement::ReplaceDecoupleKeyTable(MIRAggConst* oldConst) {
+  if (oldConst == nullptr) {
+    return;
+  }
+  for (MIRConst *&oldTabEntry : oldConst->GetConstVec()) {
+    ASSERT(oldTabEntry != nullptr, "null ptr check!");
+    if (oldTabEntry->GetKind() == kConstAggConst) {
+      auto *aggrC = static_cast<MIRAggConst*>(oldTabEntry);
+      for (size_t i = 0; i < aggrC->GetConstVec().size(); ++i) {
+        ASSERT(aggrC->GetConstVecItem(i) != nullptr, "null ptr check!");
+        if (aggrC->GetConstVecItem(i)->GetKind() == kConstAggConst) {
+          ReplaceDecoupleKeyTable(static_cast<MIRAggConst*>(aggrC->GetConstVecItem(i)));
+        } else {
+          ReplaceAddrofConst(aggrC->GetConstVecItem(i));
+          aggrC->GetConstVecItem(i)->SetFieldID(i + 1);
+        }
       }
     } else if (oldTabEntry->GetKind() == kConstAddrof) {
       ReplaceAddrofConst(oldTabEntry);

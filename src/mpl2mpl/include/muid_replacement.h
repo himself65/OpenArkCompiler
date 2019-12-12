@@ -28,6 +28,7 @@ constexpr uint32 kDataDefAddrIndex = 0;
 constexpr uint32 kFuncDefSizeIndex = 0;
 constexpr uint32 kFuncDefNameIndex = 1;
 constexpr uint32 kRangeBeginIndex = 0;
+constexpr int32_t kDecoupleAndLazy = 3;
 
 enum RangeIdx {
   // 0,1 entry is reserved for a stamp
@@ -45,7 +46,10 @@ enum RangeIdx {
   kJavatext = 13,
   kJavajni = 14,
   kJavajniFunc = 15,
-  kMaxNum = 16
+  kMaxNum = 16,
+  kDataSection = 17,
+  kDecoupleStaticKey = 18,
+  kDecoupleStaticValue = 19
 };
 
 class MUIDReplacement : public FuncOptimizeImpl {
@@ -90,6 +94,7 @@ class MUIDReplacement : public FuncOptimizeImpl {
   void ReplaceDassign(MIRFunction &currentFunc, DassignNode &dassignNode);
   void ReplaceDreadStmt(MIRFunction *currentFunc, StmtNode *stmt);
   void ClearVtabItab(const std::string &name);
+  void ReplaceDecoupleKeyTable(MIRAggConst *oldConst);
   BaseNode *ReplaceDreadExpr(MIRFunction *currentFunc, StmtNode *stmt, BaseNode *expr);
   BaseNode *ReplaceDread(MIRFunction &currentFunc, StmtNode *stmt, BaseNode *opnd);
   void CollectDread(MIRFunction &currentFunc, StmtNode &stmt, BaseNode &opnd);

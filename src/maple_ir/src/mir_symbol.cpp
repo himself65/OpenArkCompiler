@@ -35,6 +35,7 @@ bool MIRSymbol::HasAddrOfValues() const {
   return  StringUtils::StartsWith(GetName(), VTAB_PREFIX_STR) ||
           StringUtils::StartsWith(GetName(), ITAB_PREFIX_STR) ||
           StringUtils::StartsWith(GetName(), kVtabOffsetTabStr) ||
+          StringUtils::StartsWith(GetName(), kDecoupleStaticKeyStr) ||
           IsClassInitBridge() || IsReflectionInfo() || IsReflectionHashTabBucket() ||
           IsReflectionStrTab() || IsITabConflictInfo() || IsRegJNITab() ||
           IsRegJNIFuncTab() || IsLiteral();

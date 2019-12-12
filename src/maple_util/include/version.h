@@ -16,9 +16,11 @@
 #define MAPLE_UTIL_INCLUDE_VERSION_H
 
 namespace Version {
-constexpr int kMajorMplVersion = 1;
-constexpr int kMinorCompilerVersion = 0;
-constexpr int kMinorRuntimeVersion = 0;
+
+static constexpr const int kMajorMplVersion = 2;
+static constexpr const int kMinorCompilerVersion = 0;
+static constexpr const int kMinorRuntimeVersion = 0;
+
 }
 
-#endif  // MAPLE_UTIL_INCLUDE_VERSION_H
+#endif
