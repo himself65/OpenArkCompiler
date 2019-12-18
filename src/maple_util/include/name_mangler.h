@@ -75,6 +75,7 @@ static constexpr const char kMuidGlobalRootlistPrefixStr[] = "__muid_globalrootl
 static constexpr const char kMuidClassMetadataPrefixStr[] = "__muid_classmetadata";
 static constexpr const char kMuidClassMetadataBucketPrefixStr[] = "__muid_classmetadata_bucket";
 static constexpr const char kMuidJavatextPrefixStr[] = "java_text";
+static constexpr const char kMuidDataSectionStr[] = "__data_section";
 static constexpr const char kMuidRangeTabPrefixStr[] = "__muid_range_tab";
 static constexpr const char kMuidConststrPrefixStr[] = "__muid_conststr";
 static constexpr const char kVtabOffsetTabStr[] = "__vtable_offset_table";
@@ -109,6 +110,10 @@ static constexpr const char kCompilerMfileStatus[]  = "__compiler_mfile_status";
 
 static constexpr const char kSourceMuid[] = "__sourceMuid";
 static constexpr const char kSourceMuidSectionStr[] = "__sourceMuidTab";
+static constexpr const char kDecoupleStaticKeyStr[] = "__staticDecoupleKeyOffset";
+static constexpr const char kDecoupleStaticValueStr[] = "__staticDecoupleValueOffset";
+static constexpr const char kMarkDecoupleStaticStr[] = "decouple_static:";
+static constexpr const char kClassInfoPrefix[] = "__cinf";
 
 static constexpr const char kStaticFieldNamePrefixStr[] = "__static_field_name";
 static constexpr const char kPackageNameSplitterStr[] = "_2F";

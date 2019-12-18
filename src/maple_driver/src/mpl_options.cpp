@@ -806,8 +806,8 @@ const mapleOption::Descriptor USAGES[] = {
 namespace maple {
 using namespace mapleOption;
 
-const std::string kMapleDriverVersion = "mapledriver " + std::to_string(Version::kMajorMplVersion) + "." +
-                                        std::to_string(Version::kMinorCompilerVersion) + " 20190712";
+const std::string kMapleDriverVersion = "MapleDriver " + std::to_string(Version::kMajorMplVersion) + "." +
+                                        std::to_string(Version::kMinorCompilerVersion) + " 20190929";
 int MplOptions::Parse(int argc, char **argv) {
   optionParser.reset(new OptionParser(USAGES));
   exeFolder = FileUtils::GetFileFolder(*argv);
@@ -859,7 +859,7 @@ ErrorCode MplOptions::HandleGeneralOptions() {
         return ErrorCode::kErrorExitHelp;
       }
       case kVersion: {
-        INFO(kLncInfo, kMapleDriverVersion);
+        LogInfo::MapleLogger() << kMapleDriverVersion << "\n";
         return ErrorCode::kErrorExitHelp;
       }
       case kMeOpt:
