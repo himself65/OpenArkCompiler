@@ -27,6 +27,11 @@ constexpr uint32 kConservativeDecouple = 1;
 constexpr uint32 kRadicalDecouple = 2;
 class Options {
  public:
+  enum Level {
+    kMpl2MplLevelZero = 0,
+    kMpl2MplLevelOne = 1,
+    kMpl2MplLevelTwo = 2
+  };
   explicit Options(MemPool &memPool) : optionAlloc(&memPool) {}
 
   bool ParseOptions(int argc, char **argv, std::string &fileName) const;

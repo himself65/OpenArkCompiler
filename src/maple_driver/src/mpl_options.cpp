@@ -813,7 +813,7 @@ int MplOptions::Parse(int argc, char **argv) {
   exeFolder = FileUtils::GetFileFolder(*argv);
   int ret = optionParser->Parse(argc, argv);
   if (ret != kErrorNoError) {
-    return kErrorInvalidParameter;
+    return ret;
   }
   // We should recognize O0, O2 and run options firstly to decide the real options
   ret = DecideRunType();
@@ -917,7 +917,7 @@ ErrorCode MplOptions::HandleGeneralOptions() {
         // I do not care
         break;
     }
-    AddOption(opt);
+    ret = AddOption(opt);
   }
   return ret;
 }
@@ -1036,17 +1036,25 @@ ErrorCode MplOptions::CheckFileExits() {
   return ret;
 }
 
-void MplOptions::AddOption(const mapleOption::Option &option) {
+ErrorCode MplOptions::AddOption(const mapleOption::Option &option) {
   if (!option.HasExtra()) {
-    return;
+    return kErrorNoError;
   }
   for (const auto &extra : option.GetExtras()) {
     auto iter = std::find(runningExes.begin(), runningExes.end(), extra.exeName);
     if (iter == runningExes.end()) {
       continue;
     }
+    // For outside compilers, such as jbc2mpl
     options[extra.exeName].push_back(option);
+    // For internel compilers, such as me, mpl2mpl
+    auto &exeOption = exeOptions[extra.exeName];
+    bool ret = optionParser->SetOption(option.OptionKey(), option.Args(), extra.exeName, exeOption);
+    if (!ret) {
+      return kErrorInvalidParameter;
+    }
   }
+  return kErrorNoError;
 }
 
 bool MplOptions::Init(const std::string &inputFile) {

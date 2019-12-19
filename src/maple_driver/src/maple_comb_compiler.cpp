@@ -73,6 +73,7 @@ void MapleCombCompiler::PrintCommand(const MplOptions &options) const {
                          << GetInputFileName(options) << options.GetPrintCommandStr() << '\n';
 }
 
+
 MeOption *MapleCombCompiler::MakeMeOptions(const MplOptions &options, MemPool &optMp) {
   MeOption *meOption = new MeOption(optMp);
   auto it = options.GetExeOptions().find(kBinNameMe);
@@ -162,6 +163,7 @@ MeOption *MapleCombCompiler::MakeMeOptions(const MplOptions &options, MemPool &o
   }
   return meOption;
 }
+
 
 Options *MapleCombCompiler::MakeMpl2MplOptions(const MplOptions &options, MemPool &optMp) {
   auto *mpl2mplOption = new Options(optMp);
