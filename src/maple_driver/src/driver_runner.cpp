@@ -62,11 +62,11 @@ enum OptLevel {
 };
 
 ErrorCode DriverRunner::Run() {
-  CHECK_MODULE(ErrorCode::kErrorExit);
+  CHECK_MODULE(kErrorExit);
 
   if (exeNames.empty()) {
     LogInfo::MapleLogger() << "Fatal error: no exe specified" << '\n';
-    return ErrorCode::kErrorExit;
+    return kErrorExit;
   }
 
   printOutExe = exeNames[exeNames.size() - 1];
@@ -79,8 +79,8 @@ ErrorCode DriverRunner::Run() {
 
   ErrorCode ret = ParseInput(outputFile, originBaseName);
 
-  if (ret != ErrorCode::kErrorNoError) {
-    return ErrorCode::kErrorExit;
+  if (ret != kErrorNoError) {
+    return kErrorExit;
   }
   if (mpl2mplOptions || meOptions) {
     std::string vtableImplFile = originBaseName;
@@ -88,7 +88,7 @@ ErrorCode DriverRunner::Run() {
     originBaseName.append(".VtableImpl");
     ProcessMpl2mplAndMePhases(outputFile, vtableImplFile);
   }
-  return ErrorCode::kErrorNoError;
+  return kErrorNoError;
 }
 
 bool DriverRunner::FuncOrderLessThan(const MIRFunction *left, const MIRFunction *right) {
@@ -110,17 +110,17 @@ std::string DriverRunner::GetPostfix() const {
 }
 
 ErrorCode DriverRunner::ParseInput(const std::string &outputFile, const std::string &originBaseName) const {
-  CHECK_MODULE(ErrorCode::kErrorExit);
+  CHECK_MODULE(kErrorExit);
 
   LogInfo::MapleLogger() << "Starting parse input" << '\n';
   MPLTimer timer;
   timer.Start();
 
   MIRParser parser(*theModule);
-  ErrorCode ret = ErrorCode::kErrorNoError;
+  ErrorCode ret = kErrorNoError;
   bool parsed = parser.ParseMIR(0, 0, false, true);
   if (!parsed) {
-    ret = ErrorCode::kErrorExit;
+    ret = kErrorExit;
     parser.EmitError(outputFile);
   }
   timer.Stop();

@@ -38,6 +38,9 @@ class PhiNode {
   VersionSt *GetResult() {
     return result;
   }
+  const VersionSt *GetResult() const {
+    return result;
+  }
 
   void SetResult(VersionSt &resultPara) {
     result = &resultPara;
@@ -46,8 +49,15 @@ class PhiNode {
   MapleVector<VersionSt*> &GetPhiOpnds() {
     return phiOpnds;
   }
+  const MapleVector<VersionSt*> &GetPhiOpnds() const {
+    return phiOpnds;
+  }
 
   VersionSt *GetPhiOpnd(size_t index) {
+    ASSERT(index < phiOpnds.size(), "out of range in PhiNode::GetPhiOpnd");
+    return phiOpnds.at(index);
+  }
+  const VersionSt *GetPhiOpnd(size_t index) const {
     ASSERT(index < phiOpnds.size(), "out of range in PhiNode::GetPhiOpnd");
     return phiOpnds.at(index);
   }

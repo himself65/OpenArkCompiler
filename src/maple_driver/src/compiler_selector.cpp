@@ -33,11 +33,11 @@ ErrorCode CompilerSelectorImpl::InsertCompilerIfNeeded(std::vector<Compiler*> &s
     if (std::find(selected.cbegin(), selected.cend(), compiler) == selected.cend()) {
       selected.push_back(compiler);
     }
-    return ErrorCode::kErrorNoError;
+    return kErrorNoError;
   }
 
   LogInfo::MapleLogger(kLlErr) << name << " not found!!!" << '\n';
-  return ErrorCode::kErrorToolNotFound;
+  return kErrorToolNotFound;
 }
 
 ErrorCode CompilerSelectorImpl::Select(const SupportedCompilers &supportedCompilers, const MplOptions &mplOptions,
@@ -51,11 +51,11 @@ ErrorCode CompilerSelectorImpl::Select(const SupportedCompilers &supportedCompil
         continue;
       }
       ErrorCode ret = InsertCompilerIfNeeded(selected, supportedCompilers, runningExe);
-      if (ret != ErrorCode::kErrorNoError) {
-        return ErrorCode::kErrorToolNotFound;
+      if (ret != kErrorNoError) {
+        return kErrorToolNotFound;
       }
     }
   }
-  return selected.empty() ? ErrorCode::kErrorToolNotFound : ErrorCode::kErrorNoError;
+  return selected.empty() ? kErrorToolNotFound : kErrorNoError;
 }
 }  // namespace maple

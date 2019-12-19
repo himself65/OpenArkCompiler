@@ -74,7 +74,7 @@ void MeSSAUpdate::RenamePhi(const BB &bb) {
     phi->SetIsLive(true);  // always make it live, for correctness
     if (phi->GetLHS() == nullptr) {
       // create a new VarMeExpr defined by this phi
-      VarMeExpr *newVar = irMap.CreateNewVarMeExpr(it2->first, PTY_ref, 0);
+      VarMeExpr *newVar = irMap.CreateNewVarMeExpr(it2->first, ssaTab.GetPrimType(it2->first), 0);
       phi->UpdateLHS(*newVar);
       it1->second->push(newVar);  // push the stack
     } else {
@@ -156,7 +156,7 @@ MeExpr *MeSSAUpdate::RenameExpr(MeExpr &meExpr, bool &changed) {
   }
 }
 
-void MeSSAUpdate::RenameStmts(const BB &bb) {
+void MeSSAUpdate::RenameStmts(BB &bb) {
   for (auto &stmt : bb.GetMeStmts()) {
     // rename the expressions
     bool changed = false;
@@ -222,7 +222,7 @@ void MeSSAUpdate::RenamePhiOpndsInSucc(const BB &bb) {
   }
 }
 
-void MeSSAUpdate::RenameBB(const BB &bb) {
+void MeSSAUpdate::RenameBB(BB &bb) {
   // for recording stack height on entering this BB, to pop back to same height
   // when backing up the dominator tree
   std::map<OStIdx, uint32> origStackSize;

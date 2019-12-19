@@ -185,7 +185,7 @@ void BB::PrependMeStmt(MeStmt *meStmt) {
 
 // if the bb contains only one stmt other than comment, return that stmt
 // otherwise return nullptr
-StmtNode *BB::GetTheOnlyStmtNode() const {
+StmtNode *BB::GetTheOnlyStmtNode() {
   StmtNode *onlyStmtNode = nullptr;
   for (auto &stmtNode : stmtNodeList) {
     if (stmtNode.GetOpCode() == OP_comment) {
@@ -208,7 +208,7 @@ void BB::RemoveStmtNode(StmtNode *stmt) {
 void BB::InsertStmtBefore(StmtNode *stmt, StmtNode *newStmt) {
   CHECK_FATAL(newStmt != nullptr, "null ptr check");
   CHECK_FATAL(stmt != nullptr, "null ptr check");
-  stmtNodeList.insert(StmtNodes::iterator(stmt), newStmt);
+  stmtNodeList.insert(stmt, newStmt);
 }
 
 void BB::ReplaceStmt(StmtNode *stmt, StmtNode *newStmt) {
@@ -304,14 +304,14 @@ void BB::AddMeStmtLast(MeStmt *meStmt) {
   meStmt->SetBB(this);
 }
 
-void BB::InsertMeStmtBefore(MeStmt *meStmt, MeStmt *inStmt) {
+void BB::InsertMeStmtBefore(const MeStmt *meStmt, MeStmt *inStmt) {
   CHECK_FATAL(meStmt != nullptr, "null ptr check");
   CHECK_FATAL(inStmt != nullptr, "null ptr check");
   meStmtList.insert(meStmt, inStmt);
   inStmt->SetBB(this);
 }
 
-void BB::InsertMeStmtAfter(MeStmt *meStmt, MeStmt *inStmt) {
+void BB::InsertMeStmtAfter(const MeStmt *meStmt, MeStmt *inStmt) {
   meStmtList.insertAfter(meStmt, inStmt);
   inStmt->SetBB(this);
 }

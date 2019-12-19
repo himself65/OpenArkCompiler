@@ -264,6 +264,7 @@ GSymbolTable::~GSymbolTable() {
 
 MIRSymbol *GSymbolTable::CreateSymbol(uint8 scopeID) {
   auto *st = new MIRSymbol(symbolTable.size(), scopeID);
+  CHECK_FATAL(st != nullptr, "CreateSymbol failure");
   symbolTable.push_back(st);
   module->AddSymbol(st);
   return st;

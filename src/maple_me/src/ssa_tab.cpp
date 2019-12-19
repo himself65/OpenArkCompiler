@@ -27,28 +27,28 @@
 namespace maple {
 BaseNode *SSATab::CreateSSAExpr(BaseNode &expr) {
   if (expr.GetOpCode() == OP_addrof || expr.GetOpCode() == OP_dread) {
+    if (expr.IsSSANode()) {
+      return mirModule.CurFunction()->GetCodeMemPool()->New<AddrofSSANode>(static_cast<AddrofSSANode&>(expr));
+    }
     auto &addrofNode = static_cast<AddrofNode&>(expr);
-    AddrofSSANode *ssaNode = mirModule.CurFunction()->GetCodeMemPool()->New<AddrofSSANode>(&addrofNode);
+    AddrofSSANode *ssaNode = mirModule.CurFunction()->GetCodeMemPool()->New<AddrofSSANode>(addrofNode);
     MIRSymbol *st = mirModule.CurFunction()->GetLocalOrGlobalSymbol(ssaNode->GetStIdx());
     OriginalSt *ost = FindOrCreateSymbolOriginalSt(*st, mirModule.CurFunction()->GetPuidx(), ssaNode->GetFieldID());
     VersionSt *vst = versionStTable.FindOrCreateVersionSt(ost, kInitVersion);
-    ssaNode->SetSSAVar(vst);
+    ssaNode->SetSSAVar(*vst);
     return ssaNode;
-  }
-  if (expr.GetOpCode() == OP_regread) {
+  } else if (expr.GetOpCode() == OP_regread) {
     auto &regReadNode = static_cast<RegreadNode&>(expr);
-    RegreadSSANode *ssaNode = mirModule.CurFunction()->GetCodeMemPool()->New<RegreadSSANode>(&regReadNode);
+    RegreadSSANode *ssaNode = mirModule.CurFunction()->GetCodeMemPool()->New<RegreadSSANode>(regReadNode);
     OriginalSt *ost =
         originalStTable.FindOrCreatePregOriginalSt(ssaNode->GetRegIdx(), mirModule.CurFunction()->GetPuidx());
     VersionSt *vst = versionStTable.FindOrCreateVersionSt(ost, kInitVersion);
-    ssaNode->SetSSAVar(vst);
+    ssaNode->SetSSAVar(*vst);
     return ssaNode;
-  }
-  if (expr.GetOpCode() == OP_iread) {
+  } else if (expr.GetOpCode() == OP_iread) {
     auto &ireadNode = static_cast<IreadNode&>(expr);
-    IreadSSANode *ssaNode = mirModule.CurFunction()->GetCodeMempool()->New<IreadSSANode>(
-        mirModule.CurFuncCodeMemPoolAllocator(), &ireadNode);
-    BaseNode *newOpnd = CreateSSAExpr(*expr.Opnd(0));
+    IreadSSANode *ssaNode = mirModule.CurFunction()->GetCodeMempool()->New<IreadSSANode>(ireadNode);
+    BaseNode *newOpnd = CreateSSAExpr(*ireadNode.Opnd(0));
     if (newOpnd != nullptr) {
       ssaNode->SetOpnd(newOpnd, 0);
     }

@@ -630,5 +630,9 @@ class GlobalTables {
   StringTable<std::string, UStrIdx> uStrTable;
   StringTable<std::u16string, U16StrIdx> u16StringTable;
 };
+
+inline MIRType &GetTypeFromTyIdx(TyIdx idx) {
+  return *(GlobalTables::GetTypeTable().GetTypeFromTyIdx(idx));
+}
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_GLOBAL_TABLES_H

@@ -43,7 +43,7 @@ class VtableAnalysis : public FuncOptimizeImpl {
   void GenTableSymbol(const std::string &prefix, const std::string klassName, MIRAggConst &newConst) const;
   void GenVtableDefinition(const Klass &klass);
   void GenItableDefinition(const Klass &klass);
-
+  void AddNullPointExceptionCheck(MIRFunction &func, StmtNode &stmt) const;
   BaseNode *GenVtabItabBaseAddr(BaseNode &obj, bool isVirtual);
   void ReplaceVirtualInvoke(CallNode &stmt);
   void ReplaceInterfaceInvoke(CallNode &stmt);

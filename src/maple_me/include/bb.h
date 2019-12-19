@@ -108,10 +108,6 @@ class BB {
     return kind == kBBGoto;
   }
 
-  virtual bool IsFuncEntry() const {
-    return false;
-  }
-
   virtual bool AddBackEndTry() const {
     return GetAttributes(kBBAttrIsTryEnd);
   }
@@ -148,7 +144,7 @@ class BB {
     return static_cast<uint32>(id);
   }
 
-  StmtNode *GetTheOnlyStmtNode() const;
+  StmtNode *GetTheOnlyStmtNode();
   bool IsEmpty() const {
     return stmtNodeList.empty();
   }
@@ -161,12 +157,22 @@ class BB {
     stmtNodeList.update_back(stmt);
   }
 
-  StmtNode *GetFirst() {
-    return &(stmtNodeList.front());
+  // should test IsEmpty first
+  StmtNode &GetFirst() {
+    return stmtNodeList.front();
+  }
+  // should test IsEmpty first
+  const StmtNode &GetFirst() const {
+    return stmtNodeList.front();
   }
 
-  StmtNode *GetLast() {
-    return &(stmtNodeList.back());
+  // should test IsEmpty first
+  StmtNode &GetLast() {
+    return stmtNodeList.back();
+  }
+  // should test IsEmpty first
+  const StmtNode &GetLast() const {
+    return stmtNodeList.back();
   }
 
   void SetFirstMe(MeStmt *stmt);
@@ -236,8 +242,8 @@ class BB {
   void RemoveMeStmt(MeStmt *meStmt);
   void AddMeStmtFirst(MeStmt *meStmt);
   void AddMeStmtLast(MeStmt *meStmt);
-  void InsertMeStmtBefore(MeStmt *meStmt, MeStmt *inStmt);
-  void InsertMeStmtAfter(MeStmt *meStmt, MeStmt *inStmt);
+  void InsertMeStmtBefore(const MeStmt *meStmt, MeStmt *inStmt);
+  void InsertMeStmtAfter(const MeStmt *meStmt, MeStmt *inStmt);
   void InsertMeStmtLastBr(MeStmt *inStmt);
   void ReplaceMeStmt(MeStmt *stmt, MeStmt *newStmt);
   void DumpMeVarPhiList(IRMap *irMap);
@@ -417,6 +423,20 @@ class SCCOfBBs {
   MapleSet<SCCOfBBs*> predSCC;
   MapleSet<SCCOfBBs*> succSCC;
 };
+
+inline bool ControlFlowInInfiniteLoop(const BB& bb, Opcode opcode) {
+  switch (opcode) {
+    // goto always return true
+    case OP_goto:
+      return true;
+    case OP_brtrue:
+    case OP_brfalse:
+    case OP_switch:
+      return bb.GetAttributes(kBBAttrWontExit);
+    default:
+      return false;
+  }
+}
 }  // namespace maple
 
 namespace std {

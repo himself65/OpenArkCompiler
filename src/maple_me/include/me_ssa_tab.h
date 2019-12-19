@@ -27,7 +27,7 @@ class MeDoSSATab : public MeFuncPhase {
  private:
   AnalysisResult *Run(MeFunction *func, MeFuncResultMgr *funcResMgr, ModuleResultMgr *moduleResMgr) override;
   std::string PhaseName() const override {
-    return "ssaTab";
+    return "ssatab";
   }
 };
 }  // namespace maple

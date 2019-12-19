@@ -23,6 +23,8 @@ DEF_MIR_INTRINSIC(MPL_CLEAR_STACK,\
                   "__mpl_clear_stack", kIntrnUndef, kArgTyVoid, kArgTyDynany, kArgTyDynany, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
 DEF_MIR_INTRINSIC(MPL_GET_VTAB_FUNC,\
                   "MCC_getFuncPtrFromVtab", kIntrnUndef, kArgTyA64, kArgTyDynany, kArgTyDynany, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
+DEF_MIR_INTRINSIC(MPL_READ_STATIC_OFFSET_TAB,\
+                  "__mpl_read_static_offset", INTRNISJAVA | INTRNNOSIDEEFFECT, kArgTyDynany, kArgTyDynany, kArgTyU32, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
 DEF_MIR_INTRINSIC(MPL_READ_OVTABLE_ENTRY,\
                   "__mpl_const_offset", INTRNISPURE, kArgTyA32, kArgTyDynany, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
 DEF_MIR_INTRINSIC(MPL_READ_OVTABLE_ENTRY2,\

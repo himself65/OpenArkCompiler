@@ -174,6 +174,8 @@ class MIRSymbol {
     return typeAttrs.GetAttr(ATTR_volatile);
   }
 
+  bool IsTypeVolatile(int fieldID) const;
+
   bool IsStatic() const {
     return typeAttrs.GetAttr(ATTR_static);
   }

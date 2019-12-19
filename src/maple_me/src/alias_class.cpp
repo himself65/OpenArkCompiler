@@ -123,7 +123,7 @@ AliasElem *AliasClass::CreateAliasElemsExpr(BaseNode &expr) {
       return (oSt.IsSpecialPreg()) ? nullptr : FindOrCreateAliasElem(oSt);
     }
     case OP_iread: {
-      auto &iread = static_cast<IreadNode&>(expr);
+      auto &iread = static_cast<IreadSSANode&>(expr);
       return FindOrCreateExtraLevAliasElem(*iread.Opnd(0), iread.GetTyIdx(), iread.GetFieldID());
     }
     case OP_iaddrof: {
@@ -144,8 +144,9 @@ AliasElem *AliasClass::CreateAliasElemsExpr(BaseNode &expr) {
     }
     case OP_intrinsicop: {
       auto &intrn = static_cast<IntrinsicopNode&>(expr);
-      if (intrn.GetIntrinsic() == INTRN_JAVA_MERGE && intrn.NumOpnds() == 1 &&
-          intrn.GetNopndAt(0)->GetOpCode() == OP_dread) {
+      if (intrn.GetIntrinsic() == INTRN_MPL_READ_OVTABLE_ENTRY ||
+          (intrn.GetIntrinsic() == INTRN_JAVA_MERGE && intrn.NumOpnds() == 1 &&
+           intrn.GetNopndAt(0)->GetOpCode() == OP_dread)) {
         return CreateAliasElemsExpr(*intrn.GetNopndAt(0));
       }
       // fall-through
@@ -620,7 +621,7 @@ void AliasClass::InsertMayUseExpr(BaseNode &expr) {
     rhsAe = FindOrCreateDummyNADSAe();
   }
   auto &ireadNode = static_cast<IreadSSANode&>(expr);
-  ireadNode.SetSSAVar(ssaTab.GetVersionStTable().GetVersionStFromID(rhsAe->GetOriginalSt().GetZeroVersionIndex()));
+  ireadNode.SetSSAVar(*ssaTab.GetVersionStTable().GetVersionStFromID(rhsAe->GetOriginalSt().GetZeroVersionIndex()));
   ASSERT(ireadNode.GetSSAVar() != nullptr, "AliasClass::InsertMayUseExpr(): iread cannot have empty mayuse");
 }
 
@@ -819,13 +820,15 @@ void AliasClass::InsertMayDefUseSyncOps(StmtNode &stmt) {
   // collect the full alias set first
   for (size_t i = 0; i < stmt.NumOpnds(); ++i) {
     BaseNode *addrBase = stmt.Opnd(i);
-    if (addrBase->GetOpCode() == OP_addrof || addrBase->GetOpCode() == OP_dread ||
-        addrBase->GetOpCode() == OP_regread) {
-      OriginalSt *ost = (addrBase->GetOpCode() == OP_regread)
-          ? static_cast<RegreadSSANode*>(addrBase)->GetSSAVar()->GetOrigSt()
-          : static_cast<AddrofSSANode*>(addrBase)->GetSSAVar()->GetOrigSt();
-      if (addrBase->GetOpCode() != OP_addrof) {
-        for (OriginalSt *nextLevelOst : *(GetAliasAnalysisTable()->GetNextLevelNodes(*ost))) {
+    if (addrBase->IsSSANode()) {
+      OriginalSt *oSt = static_cast<SSANode*>(addrBase)->GetSSAVar()->GetOrigSt();
+      if (addrBase->GetOpCode() == OP_addrof) {
+        AliasElem *opndAE = osym2Elem[oSt->GetIndex().idx];
+        if (opndAE->GetClassSet() != nullptr) {
+          aliasSet.insert(opndAE->GetClassSet()->cbegin(), opndAE->GetClassSet()->cend());
+        }
+      } else {
+        for (OriginalSt *nextLevelOst : *(GetAliasAnalysisTable()->GetNextLevelNodes(*oSt))) {
           AliasElem *opndAE = osym2Elem[nextLevelOst->GetIndex().idx];
           if (opndAE->GetClassSet() != nullptr) {
             aliasSet.insert(opndAE->GetClassSet()->cbegin(), opndAE->GetClassSet()->cend());
@@ -879,8 +882,6 @@ void AliasClass::CollectMayDefForMustDefs(const StmtNode &stmt, std::set<Origina
 void AliasClass::CollectMayUseForCallOpnd(const StmtNode &stmt, std::set<OriginalSt*> &mayUseOsts) {
   for (size_t i = 0; i < stmt.NumOpnds(); ++i) {
     BaseNode *expr = stmt.Opnd(i);
-    InsertMayUseExpr(*expr);
-
     if (!IsPotentialAddress(expr->GetPrimType())) {
       continue;
     }
@@ -1005,12 +1006,15 @@ void AliasClass::InsertMayDefUseClinitCheck(IntrinsiccallNode &stmt) {
 }
 
 void AliasClass::GenericInsertMayDefUse(StmtNode &stmt, BBId bbID) {
+  for (size_t i = 0; i < stmt.NumOpnds(); ++i) {
+    InsertMayUseExpr(*stmt.Opnd(i));
+  }
   switch (stmt.GetOpCode()) {
     case OP_return: {
       InsertMayUseReturn(stmt);
       // insert mayuses caused by its return operand being a pointer
       InsertReturnOpndMayUse(stmt);
-      break;
+      return;
     }
     case OP_throw: {
       if (mirModule.GetSrcLang() != kSrcLangJs && lessThrowAlias) {
@@ -1022,7 +1026,7 @@ void AliasClass::GenericInsertMayDefUse(StmtNode &stmt, BBId bbID) {
       } else {
         InsertMayUseAll(stmt);
       }
-      break;
+      return;
     }
     case OP_gosub:
     case OP_retsub: {
@@ -1057,7 +1061,7 @@ void AliasClass::GenericInsertMayDefUse(StmtNode &stmt, BBId bbID) {
         InsertMayDefUseClinitCheck(intrnNode);
       }
       InsertMayDefUseIntrncall(stmt);
-      break;
+      return;
     }
     case OP_intrinsiccall:
     case OP_xintrinsiccall:
@@ -1065,27 +1069,24 @@ void AliasClass::GenericInsertMayDefUse(StmtNode &stmt, BBId bbID) {
     case OP_xintrinsiccallassigned:
     case OP_intrinsiccallwithtypeassigned: {
       InsertMayDefUseIntrncall(stmt);
-      break;
+      return;
     }
     case OP_maydassign:
     case OP_dassign: {
       InsertMayDefDassign(stmt);
-      break;
+      return;
     }
     case OP_iassign: {
       InsertMayDefIassign(stmt);
-      break;
+      return;
     }
     case OP_syncenter:
     case OP_syncexit: {
       InsertMayDefUseSyncOps(stmt);
-      break;
+      return;
     }
     default:
-      break;
-  }
-  for (size_t i = 0; i < stmt.NumOpnds(); ++i) {
-    InsertMayUseExpr(*stmt.Opnd(i));
+      return;
   }
 }
 }  // namespace maple

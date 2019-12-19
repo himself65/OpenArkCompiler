@@ -73,6 +73,11 @@ class SSATab : public AnalysisResult {
     return originalStTable.GetMIRSymbolFromOriginalSt(ost);
   }
 
+  PrimType GetPrimType(OStIdx idx) const {
+    const MIRSymbol *symbol = GetMIRSymbolFromID(idx);
+    return symbol->GetType()->GetPrimType();
+  }
+
   const MIRSymbol *GetMIRSymbolFromID(OStIdx id) const {
     return originalStTable.GetMIRSymbolFromID(id);
   }
@@ -98,6 +103,18 @@ class SSATab : public AnalysisResult {
 
   StmtsSSAPart &GetStmtsSSAPart() {
     return stmtsSSAPart;
+  }
+  const StmtsSSAPart &GetStmtsSSAPart() const {
+    return stmtsSSAPart;
+  }
+
+  // should check HasSSAUse first
+  const MapleMap<OStIdx, MayUseNode> &GetStmtMayUseNodes(const StmtNode &stmt) const {
+    return stmtsSSAPart.SSAPartOf(stmt)->GetMayUseNodes();
+  }
+  // should check IsCallAssigned first
+  MapleVector<MustDefNode> &GetStmtMustDefNodes(const StmtNode &stmt) {
+    return stmtsSSAPart.GetMustDefNodesOf(stmt);
   }
 
   bool IsWholeProgramScope() const {
@@ -126,6 +143,11 @@ class SSATab : public AnalysisResult {
 
   void UpdateVarOstMap(const OStIdx &ostIdx, std::map<OStIdx, OriginalSt*> &varOstMap) {
     originalStTable.UpdateVarOstMap(ostIdx, varOstMap);
+  }
+
+  // MIRSymbol query
+  const MIRSymbol &GetStmtMIRSymbol(const StmtNode &stmt) const {
+    return *(GetStmtsSSAPart().GetAssignedVarOf(stmt)->GetOrigSt()->GetMIRSymbol());
   }
 
  private:

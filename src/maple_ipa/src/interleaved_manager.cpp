@@ -67,7 +67,6 @@ void InterleavedManager::Run() {
       pm->Run();
       continue;
     }
-    uint64 rangeNum = 0;
     MapleVector<MIRFunction*> *compList;
     if (!mirModule.GetCompilationList().empty()) {
       if ((mirModule.GetCompilationList().size() != mirModule.GetFunctionList().size()) &&
@@ -79,6 +78,8 @@ void InterleavedManager::Run() {
     } else {
       compList = &mirModule.GetFunctionList();
     }
+    // If rangeNum < MeOption::range[0], Move to the next function with rangeNum++
+    uint64 rangeNum = 0;
     for (auto *func : *compList) {
       if (MeOption::useRange && (rangeNum < MeOption::range[0] || rangeNum > MeOption::range[1])) {
         ++rangeNum;

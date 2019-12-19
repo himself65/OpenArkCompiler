@@ -288,7 +288,7 @@ void MIRModule::Emit(const std::string &outFileName) const {
   // Change cout's buffer to file.
   std::streambuf *backup = LogInfo::MapleLogger().rdbuf();
   LogInfo::MapleLogger().rdbuf(file.rdbuf());
-  file.open(outFileName.c_str(), std::ios::trunc);
+  file.open(outFileName, std::ios::trunc);
   DumpGlobals();
   for (MIRFunction *mirFunc : functionList) {
     mirFunc->Dump();
@@ -328,7 +328,7 @@ void MIRModule::OutputFunctionListAsciiMpl(const std::string &phaseName) {
 
 void MIRModule::DumpToFile(const std::string &fileNameStr, bool emitStructureType) const {
   std::ofstream file;
-  file.open(fileNameStr.c_str(), std::ios::trunc);
+  file.open(fileNameStr, std::ios::trunc);
   if (!file.is_open()) {
     ERR(kLncErr, "Cannot open %s", fileNameStr.c_str());
     return;
@@ -349,7 +349,7 @@ void MIRModule::DumpInlineCandidateToFile(const std::string &fileNameStr) const 
   // Change cout's buffer to file.
   std::streambuf *backup = LogInfo::MapleLogger().rdbuf();
   LogInfo::MapleLogger().rdbuf(file.rdbuf());
-  file.open(fileNameStr.c_str(), std::ios::trunc);
+  file.open(fileNameStr, std::ios::trunc);
   for (auto *func : optimizedFuncs) {
     func->SetWithLocInfo(false);
     func->Dump();
@@ -382,7 +382,7 @@ void MIRModule::DumpClassToFile(const std::string &path) const {
     outClassFile.insert(0, strPath);
     outClassFile.append(".mpl");
     std::ofstream mplFile;
-    mplFile.open(outClassFile.c_str(), std::ios::trunc);
+    mplFile.open(outClassFile, std::ios::trunc);
     std::streambuf *backup = LogInfo::MapleLogger().rdbuf();
     LogInfo::MapleLogger().rdbuf(mplFile.rdbuf());
     /* dump class type */

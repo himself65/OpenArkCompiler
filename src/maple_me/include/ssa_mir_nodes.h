@@ -29,12 +29,21 @@ class MayDefNode {
   VersionSt *GetOpnd() {
     return opnd;
   }
+  const VersionSt *GetOpnd() const {
+    return opnd;
+  }
 
   VersionSt *GetResult() {
     return result;
   }
+  const VersionSt *GetResult() const {
+    return result;
+  }
 
   StmtNode *GetStmt() {
+    return stmt;
+  }
+  const StmtNode *GetStmt() const {
     return stmt;
   }
 
@@ -44,14 +53,6 @@ class MayDefNode {
 
   void SetResult(VersionSt *sym) {
     result = sym;
-  }
-
-  bool IsRequired() const {
-    return result->IsLive();
-  }
-
-  void MarkRequired() {
-    result->MarkLive();
   }
 
   void Dump(const MIRModule *mod) const {
@@ -103,6 +104,9 @@ class MustDefNode {
   VersionSt *GetResult() {
     return result;
   }
+  const VersionSt *GetResult() const {
+    return result;
+  }
 
   void SetResult(VersionSt *sym) {
     result = sym;
@@ -111,13 +115,8 @@ class MustDefNode {
   StmtNode *GetStmt() {
     return stmt;
   }
-
-  bool IsRequired() const {
-    return result->IsLive();
-  }
-
-  void MarkRequired() {
-    result->MarkLive();
+  const StmtNode *GetStmt() const {
+    return stmt;
   }
 
   void Dump(const MIRModule *mod) const {
@@ -154,7 +153,6 @@ class AccessSSANodes {
   virtual const MapleVector<MustDefNode> &GetMustDefNodes() const {
     CHECK_FATAL(false, "No mustDefNodes");
   }
-
   virtual MapleVector<MustDefNode> &GetMustDefNodes() {
     CHECK_FATAL(false, "No mustDefNodes");
   }
@@ -243,7 +241,6 @@ class MustDefPart : public AccessSSANodes {
   const MapleVector<MustDefNode> &GetMustDefNodes() const override {
     return mustDefNodes;
   }
-
   MapleVector<MustDefNode> &GetMustDefNodes() override {
     return mustDefNodes;
   }
@@ -361,7 +358,6 @@ class MayDefMayUseMustDefPart : public AccessSSANodes {
   const MapleVector<MustDefNode> &GetMustDefNodes() const override {
     return mustDefNodes;
   }
-
   MapleVector<MustDefNode> &GetMustDefNodes() override {
     return mustDefNodes;
   }
@@ -391,6 +387,9 @@ class StmtsSSAPart {
   AccessSSANodes *SSAPartOf(const StmtNode &stmt) {
     return ssaPart[stmt.GetStmtID()];
   }
+  const AccessSSANodes *SSAPartOf(const StmtNode &stmt) const {
+    return ssaPart.at(stmt.GetStmtID());
+  }
 
   bool HasMayDef(const StmtNode &stmt) {
     return kOpcodeInfo.HasSSADef(stmt.GetOpCode()) && !GetMayDefNodesOf(stmt).empty();
@@ -405,11 +404,17 @@ class StmtsSSAPart {
   }
 
   MapleVector<MustDefNode> &GetMustDefNodesOf(const StmtNode &stmt) {
-    return ssaPart[stmt.GetStmtID()]->GetMustDefNodes();
+    return ssaPart.at(stmt.GetStmtID())->GetMustDefNodes();
+  }
+  const MapleVector<MustDefNode> &GetMustDefNodesOf(const StmtNode &stmt) const {
+    return ssaPart.at(stmt.GetStmtID())->GetMustDefNodes();
   }
 
   VersionSt *GetAssignedVarOf(const StmtNode &stmt) {
-    return ssaPart[stmt.GetStmtID()]->GetSSAVar();
+    return ssaPart.at(stmt.GetStmtID())->GetSSAVar();
+  }
+  const VersionSt *GetAssignedVarOf(const StmtNode &stmt) const {
+    return ssaPart.at(stmt.GetStmtID())->GetSSAVar();
   }
 
   template <class T>
@@ -437,103 +442,118 @@ class StmtsSSAPart {
   MapleMap<uint32, AccessSSANodes*> ssaPart;  // key is stmtID
 };
 
-// The following expression nodes need extra fields to represent SSA
-class AddrofSSANode : public AddrofNode {
+class SSANode : public BaseNode {
  public:
-  explicit AddrofSSANode(const AddrofNode *addrofNode) : AddrofNode(addrofNode->GetOpCode()) {
-    SetPrimType(addrofNode->GetPrimType());
-    SetStIdx(addrofNode->GetStIdx());
-    SetFieldID(addrofNode->GetFieldID());
-    ssaVar = nullptr;
+  SSANode(Opcode op, PrimType typ, uint8 numOpr) : BaseNode(op, typ, numOpr) {}
+
+  ~SSANode() override = default;
+
+  VersionSt *GetSSAVar() {
+    return ssaVar;
   }
+  const VersionSt *GetSSAVar() const {
+    return ssaVar;
+  }
+
+  void SetSSAVar(VersionSt &ssaVarPara) {
+    ssaVar = &ssaVarPara;
+  }
+
+  bool IsSSANode() const override {
+    return true;
+  }
+
+  // MIRSymbol query
+  const MIRSymbol &GetMIRSymbol() const {
+    return *(GetSSAVar()->GetOrigSt()->GetMIRSymbol());
+  }
+
+ protected:
+  VersionSt *ssaVar = nullptr;
+};
+
+// The following expression nodes need extra fields to represent SSA
+class AddrofSSANode : public SSANode {
+ public:
+  explicit AddrofSSANode(AddrofNode &addrNode)
+      : SSANode(addrNode.GetOpCode(), addrNode.GetPrimType(), addrNode.NumOpnds()), addrofNode(&addrNode) {}
 
   ~AddrofSSANode() override = default;
 
   void Dump(const MIRModule &mod, int32 indent) const override {
-    AddrofNode::Dump(mod, indent);
-    if (ssaVar != nullptr) {
-      ssaVar->Dump(&mod, true);
+    addrofNode->Dump(mod, indent);
+    if (GetSSAVar() != nullptr) {
+      GetSSAVar()->Dump(&mod, true);
     }
   }
 
-  const VersionSt *GetSSAVar() const {
-    return ssaVar;
-  }
-  VersionSt *GetSSAVar() {
-    return ssaVar;
-  }
-  void SetSSAVar(VersionSt *ssaVarPara) {
-    ssaVar = ssaVarPara;
+  StIdx GetStIdx() const {
+    return addrofNode->GetStIdx();
   }
 
+  FieldID GetFieldID() const {
+    return addrofNode->GetFieldID();
+  }
  private:
-  VersionSt *ssaVar;
+  AddrofNode *addrofNode;
 };
 
-class IreadSSANode : public IreadNode {
+class IreadSSANode : public SSANode {
  public:
-  IreadSSANode(MapleAllocator *alloc, IreadNode *iNode) : IreadNode(iNode->GetOpCode()), ssaVar(nullptr) {
-    SetPrimType(iNode->GetPrimType());
-    tyIdx = iNode->GetTyIdx();
-    fieldID = iNode->GetFieldID();
-    SetOpnd(iNode->Opnd());
-  }
+  explicit IreadSSANode(IreadNode &iread)
+      : SSANode(iread.GetOpCode(), iread.GetPrimType(), iread.NumOpnds()), ireadNode(&iread) {}
 
   ~IreadSSANode() override = default;
 
   void Dump(const MIRModule &mod, int32 indent) const override {
-    if (ssaVar != nullptr) {
-      ssaVar->Dump(&mod, true);
+    if (GetSSAVar() != nullptr) {
+      GetSSAVar()->Dump(&mod, true);
     }
-    IreadNode::Dump(mod, indent);
+    ireadNode->Dump(mod, indent);
   }
 
-  VersionSt *GetSSAVar() {
-    return ssaVar;
+  FieldID GetFieldID() const {
+    return ireadNode->GetFieldID();
   }
 
-  void SetSSAVar(VersionSt *ssaVarPara) {
-    ssaVar = ssaVarPara;
+  TyIdx GetTyIdx() const {
+    return ireadNode->GetTyIdx();
   }
 
+  BaseNode *Opnd(size_t idx) const override {
+    return ireadNode->Opnd(idx);
+  }
+
+  void SetOpnd(BaseNode *node, size_t i = 0) override {
+    ireadNode->SetOpnd(node, i);
+  }
  private:
-  VersionSt *ssaVar;
+  IreadNode *ireadNode;
 };
 
-class RegreadSSANode : public RegreadNode {
+class RegreadSSANode : public SSANode {
  public:
-  explicit RegreadSSANode(const RegreadNode *readNode) : RegreadNode() {
-    SetPrimType(readNode->GetPrimType());
-    SetRegIdx(readNode->GetRegIdx());
-  }
+  explicit RegreadSSANode(RegreadNode &regRead)
+      : SSANode(regRead.GetOpCode(), regRead.GetPrimType(), regRead.GetNumOpnds()), regreadNode(&regRead) {}
 
   ~RegreadSSANode() override = default;
 
   void Dump(const MIRModule &mod, int32 indent) const override {
-    RegreadNode::Dump(mod, indent);
-    if (ssaVar != nullptr) {
-      ssaVar->Dump(&mod, true);
+    regreadNode->Dump(mod, indent);
+    if (GetSSAVar() != nullptr) {
+      GetSSAVar()->Dump(&mod, true);
     }
   }
 
-  const VersionSt *GetSSAVar() const {
-    return ssaVar;
+  PregIdx GetRegIdx() const {
+    return regreadNode->GetRegIdx();
   }
-
-  VersionSt *GetSSAVar() {
-    return ssaVar;
-  }
-
-  void SetSSAVar(VersionSt *ssaVarPara) {
-    ssaVar = ssaVarPara;
-  }
-
  private:
-  VersionSt *ssaVar = nullptr;
+  RegreadNode *regreadNode;
 };
 
 void GenericSSAPrint(MIRModule &mod, const StmtNode &stmtNode, int32 indent, StmtsSSAPart &stmtsSSAPart);
-MapleMap<OStIdx, MayDefNode> *SSAGenericGetMayDefsFromVersionSt(VersionSt &sym, StmtsSSAPart &stmtsSSAPart);
+MapleMap<OStIdx, MayDefNode> *SSAGenericGetMayDefsFromVersionSt(const VersionSt &sym, StmtsSSAPart &stmtsSSAPart);
 bool HasMayUseOpnd(const BaseNode &baseNode, SSATab &func);
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_SSA_MIR_NODES_H

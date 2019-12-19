@@ -19,8 +19,8 @@
 
 namespace maple {
 const std::string kBinMirFileID = "HWCMPL";  // for magic in file header
-constexpr int kVersionMajor = 0;             // experimental version
-constexpr int kVersionMinor = 1;
+constexpr uint8 kVersionMajor = 0;           // experimental version
+constexpr uint8 kVersionMinor = 1;
 constexpr int kMagicSize = 7;
 
 enum BinMirFileType {
@@ -29,7 +29,12 @@ enum BinMirFileType {
   kMjsvmFileTypeUnknown
 };
 
-#define MAKE_VERSION_NUM(major, minor) ((uint8)(((major & 0xF) << 4) | (minor & 0xF)))
+inline uint8 MakeVersionNum(uint8 major, uint8 minor) {
+  uint8 mj = major & 0x0Fu;
+  uint8 mn = minor & 0x0Fu;
+  return (mj << 4) | mn;
+}
+
 // file header for binary format kMmpl, 8B in total
 // Note the header is different with the specification
 struct BinMIRFileHeader {

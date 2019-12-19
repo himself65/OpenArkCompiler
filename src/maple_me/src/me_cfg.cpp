@@ -310,7 +310,7 @@ void MeCFG::FixMirCFG() {
           func.GetMirFunc()->IncTempCount();
           std::string tempStr = std::string("tempRet").append(std::to_string(func.GetMirFunc()->GetTempCount()));
           MIRBuilder *builder = func.GetMirFunc()->GetModule()->GetMIRBuilder();
-          MIRSymbol *targetSt = builder->GetOrCreateLocalDecl(tempStr.c_str(), *sym->GetType());
+          MIRSymbol *targetSt = builder->GetOrCreateLocalDecl(tempStr, *sym->GetType());
           targetSt->ResetIsDeleted();
           if (stmt->GetOpCode() == OP_dassign) {
             auto *rhs = static_cast<DassignNode*>(stmt)->GetRHS();
@@ -440,88 +440,6 @@ void MeCFG::FixMirCFG() {
 }
 
 
-void MeCFG::ConvertPhiList2IdentityAssigns(BB &meBB) const {
-  auto phiIt = meBB.GetPhiList().begin();
-  while (phiIt != meBB.GetPhiList().end()) {
-    if (!(*phiIt).second.GetResult()->IsLive()) {
-      ++phiIt;
-      continue;
-    }
-    // replace phi with identify assignment as it only has 1 opnd
-    const OriginalSt *ost = (*phiIt).first;
-    if (ost->IsSymbolOst() && ost->GetIndirectLev() == 0) {
-      const MIRSymbol *st = ost->GetMIRSymbol();
-      MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(st->GetTyIdx());
-      AddrofNode *dread = func.GetMIRModule().GetMIRBuilder()->CreateDread(*st, GetRegPrimType(type->GetPrimType()));
-      auto *dread2 = func.GetMirFunc()->GetCodeMemPool()->New<AddrofSSANode>(dread);
-      dread2->SetSSAVar((*phiIt).second.GetPhiOpnd(0));
-      DassignNode *dassign = func.GetMIRModule().GetMIRBuilder()->CreateStmtDassign(*st, 0, dread2);
-      func.GetMeSSATab()->GetStmtsSSAPart().SetSSAPartOf(
-          *dassign, func.GetMeSSATab()->GetStmtsSSAPart().GetSSAPartMp()->New<MayDefPartWithVersionSt>(
-              &func.GetMeSSATab()->GetStmtsSSAPart().GetSSAPartAlloc()));
-      auto *theSSAPart =
-          static_cast<MayDefPartWithVersionSt*>(func.GetMeSSATab()->GetStmtsSSAPart().SSAPartOf(*dassign));
-      theSSAPart->SetSSAVar(*((*phiIt).second.GetResult()));
-      meBB.PrependStmtNode(dassign);
-    }
-    ++phiIt;
-  }
-  meBB.ClearPhiList();  // delete all the phis
-}
-
-void MeCFG::ConvertMevarPhiList2IdentityAssigns(BB &meBB) const {
-  auto varPhiIt = meBB.GetMevarPhiList().begin();
-  while (varPhiIt != meBB.GetMevarPhiList().end()) {
-    if (!(*varPhiIt).second->GetIsLive()) {
-      ++varPhiIt;
-      continue;
-    }
-    // replace phi with identify assignment as it only has 1 opnd
-    const OriginalSt *ost = func.GetMeSSATab()->GetOriginalStFromID(varPhiIt->first);
-    if (ost->IsSymbolOst() && ost->GetIndirectLev() == 0) {
-      auto *dassign = func.GetIRMap()->NewInPool<DassignMeStmt>();
-      MeVarPhiNode *varPhi = varPhiIt->second;
-      dassign->SetLHS(varPhi->GetLHS());
-      dassign->SetRHS(varPhi->GetOpnd(0));
-      dassign->SetBB(varPhi->GetDefBB());
-      dassign->SetIsLive(varPhi->GetIsLive());
-      meBB.PrependMeStmt(dassign);
-    }
-    ++varPhiIt;
-  }
-  meBB.GetMevarPhiList().clear();  // delete all the phis
-}
-
-void MeCFG::ConvertMeregphiList2IdentityAssigns(BB &meBB) const {
-  auto regPhiIt = meBB.GetMeRegPhiList().begin();
-  while (regPhiIt != meBB.GetMeRegPhiList().end()) {
-    if (!(*regPhiIt).second->GetIsLive()) {
-      ++regPhiIt;
-      continue;
-    }
-    // replace phi with identify assignment as it only has 1 opnd
-    const OriginalSt *ost = func.GetMeSSATab()->GetOriginalStFromID(regPhiIt->first);
-    if (ost->IsSymbolOst() && ost->GetIndirectLev() == 0) {
-      auto *regAss = func.GetIRMap()->New<RegassignMeStmt>();
-      MeRegPhiNode *regPhi = regPhiIt->second;
-      regAss->SetLHS(regPhi->GetLHS());
-      regAss->SetRHS(regPhi->GetOpnd(0));
-      regAss->SetBB(regPhi->GetDefBB());
-      regAss->SetIsLive(regPhi->GetIsLive());
-      meBB.PrependMeStmt(regAss);
-    }
-    ++regPhiIt;
-  }
-  meBB.GetMeRegPhiList().clear();  // delete all the phis
-}
-
-// used only after DSE because it looks at live field of VersionSt
-void MeCFG::ConvertPhis2IdentityAssigns(BB &meBB) const {
-  ConvertPhiList2IdentityAssigns(meBB);
-  ConvertMevarPhiList2IdentityAssigns(meBB);
-  ConvertMeregphiList2IdentityAssigns(meBB);
-}
-
 // analyse the CFG to find the BBs that are not reachable from function entries
 // and delete them
 void MeCFG::UnreachCodeAnalysis(bool updatePhi) {
@@ -573,10 +491,10 @@ void MeCFG::UnreachCodeAnalysis(bool updatePhi) {
           bb->RemoveBBFromVector(sucBB->GetPred());
         } else {
           sucBB->RemoveBBFromPred(bb);
-          if (sucBB->GetPred().size() == 1) {
-            ConvertPhis2IdentityAssigns(*sucBB);
-          } else if (sucBB->GetPred().empty()) {
+          if (sucBB->GetPred().empty()) {
             sucBB->ClearPhiList();
+          } else if (sucBB->GetPred().size() == 1) {
+            ConvertPhis2IdentityAssigns(*sucBB);
           }
         }
       }
@@ -590,6 +508,76 @@ void MeCFG::UnreachCodeAnalysis(bool updatePhi) {
       }
     }
   }
+}
+
+void MeCFG::ConvertPhiList2IdentityAssigns(BB &meBB) const {
+  auto phiIt = meBB.GetPhiList().begin();
+  while (phiIt != meBB.GetPhiList().end()) {
+    // replace phi with identify assignment as it only has 1 opnd
+    const OriginalSt *ost = (*phiIt).first;
+    if (ost->IsSymbolOst() && ost->GetIndirectLev() == 0) {
+      const MIRSymbol *st = ost->GetMIRSymbol();
+      MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(st->GetTyIdx());
+      AddrofNode *dread = func.GetMIRModule().GetMIRBuilder()->CreateDread(*st, GetRegPrimType(type->GetPrimType()));
+      auto *dread2 = func.GetMirFunc()->GetCodeMemPool()->New<AddrofSSANode>(*dread);
+      dread2->SetSSAVar(*(*phiIt).second.GetPhiOpnd(0));
+      DassignNode *dassign = func.GetMIRModule().GetMIRBuilder()->CreateStmtDassign(*st, 0, dread2);
+      func.GetMeSSATab()->GetStmtsSSAPart().SetSSAPartOf(
+          *dassign, func.GetMeSSATab()->GetStmtsSSAPart().GetSSAPartMp()->New<MayDefPartWithVersionSt>(
+              &func.GetMeSSATab()->GetStmtsSSAPart().GetSSAPartAlloc()));
+      auto *theSSAPart =
+          static_cast<MayDefPartWithVersionSt*>(func.GetMeSSATab()->GetStmtsSSAPart().SSAPartOf(*dassign));
+      theSSAPart->SetSSAVar(*((*phiIt).second.GetResult()));
+      meBB.PrependStmtNode(dassign);
+    }
+    ++phiIt;
+  }
+  meBB.ClearPhiList();  // delete all the phis
+}
+
+void MeCFG::ConvertMevarPhiList2IdentityAssigns(BB &meBB) const {
+  auto varPhiIt = meBB.GetMevarPhiList().begin();
+  while (varPhiIt != meBB.GetMevarPhiList().end()) {
+    // replace phi with identify assignment as it only has 1 opnd
+    const OriginalSt *ost = func.GetMeSSATab()->GetOriginalStFromID(varPhiIt->first);
+    if (ost->IsSymbolOst() && ost->GetIndirectLev() == 0) {
+      auto *dassign = func.GetIRMap()->NewInPool<DassignMeStmt>();
+      MeVarPhiNode *varPhi = varPhiIt->second;
+      dassign->SetLHS(varPhi->GetLHS());
+      dassign->SetRHS(varPhi->GetOpnd(0));
+      dassign->SetBB(varPhi->GetDefBB());
+      dassign->SetIsLive(varPhi->GetIsLive());
+      meBB.PrependMeStmt(dassign);
+    }
+    ++varPhiIt;
+  }
+  meBB.GetMevarPhiList().clear();  // delete all the phis
+}
+
+void MeCFG::ConvertMeregphiList2IdentityAssigns(BB &meBB) const {
+  auto regPhiIt = meBB.GetMeRegPhiList().begin();
+  while (regPhiIt != meBB.GetMeRegPhiList().end()) {
+    // replace phi with identify assignment as it only has 1 opnd
+    const OriginalSt *ost = func.GetMeSSATab()->GetOriginalStFromID(regPhiIt->first);
+    if (ost->IsSymbolOst() && ost->GetIndirectLev() == 0) {
+      auto *regAss = func.GetIRMap()->New<RegassignMeStmt>();
+      MeRegPhiNode *regPhi = regPhiIt->second;
+      regAss->SetLHS(regPhi->GetLHS());
+      regAss->SetRHS(regPhi->GetOpnd(0));
+      regAss->SetBB(regPhi->GetDefBB());
+      regAss->SetIsLive(regPhi->GetIsLive());
+      meBB.PrependMeStmt(regAss);
+    }
+    ++regPhiIt;
+  }
+  meBB.GetMeRegPhiList().clear();  // delete all the phis
+}
+
+// used only after DSE because it looks at live field of VersionSt
+void MeCFG::ConvertPhis2IdentityAssigns(BB &meBB) const {
+  ConvertPhiList2IdentityAssigns(meBB);
+  ConvertMevarPhiList2IdentityAssigns(meBB);
+  ConvertMeregphiList2IdentityAssigns(meBB);
 }
 
 // analyse the CFG to find the BBs that will not reach any function exit; these
@@ -782,9 +770,6 @@ void MeCFG::DumpToFileInStrs(std::ofstream &cfgFile) const {
   const auto &eIt = func.valid_end();
   for (auto bIt = func.valid_begin(); bIt != eIt; ++bIt) {
     auto *bb = *bIt;
-    if (bb->IsEmpty()) {
-      continue;
-    }
     if (bb->GetKind() == kBBCondGoto) {
       cfgFile << "BB" << bb->GetBBId() << "[shape=diamond,label= \" BB" << bb->GetBBId() << ":\n{ ";
     } else {
@@ -820,9 +805,9 @@ void MeCFG::DumpToFile(const std::string &prefix, bool dumpInStrs) const {
   std::streambuf *buf = cfgFile.rdbuf();
   LogInfo::MapleLogger().rdbuf(buf);
   const std::string &fileName = ConstructFileNameToDump(prefix);
-  cfgFile.open(fileName.c_str(), std::ios::trunc);
+  cfgFile.open(fileName, std::ios::trunc);
   cfgFile << "digraph {\n";
-  cfgFile << " # /*" << func.GetName().c_str() << " (red line is exception handler)*/\n";
+  cfgFile << " # /*" << func.GetName() << " (red line is exception handler)*/\n";
   // dump edge
   auto eIt = func.valid_end();
   for (auto bIt = func.valid_begin(); bIt != eIt; ++bIt) {

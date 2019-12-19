@@ -210,55 +210,55 @@ void MIRPragmaElement::Dump(int indent) const {
   std::string str = GetKind(valueType);
   switch (valueType) {
     case kValueByte:
-      LogInfo::MapleLogger() << str.c_str() << " " << val.i;
+      LogInfo::MapleLogger() << str << " " << val.i;
       break;
     case kValueShort:
-      LogInfo::MapleLogger() << str.c_str() << " " << val.i;
+      LogInfo::MapleLogger() << str << " " << val.i;
       break;
     case kValueChar:
-      LogInfo::MapleLogger() << str.c_str() << " " << val.u;
+      LogInfo::MapleLogger() << str << " " << val.u;
       break;
     case kValueInt:
-      LogInfo::MapleLogger() << str.c_str() << " " << val.i;
+      LogInfo::MapleLogger() << str << " " << val.i;
       break;
     case kValueLong:
-      LogInfo::MapleLogger() << str.c_str() << " " << val.j;
+      LogInfo::MapleLogger() << str << " " << val.j;
       break;
     case kValueFloat:
-      LogInfo::MapleLogger() << std::setiosflags(std::ios::scientific) << str.c_str() << " "
+      LogInfo::MapleLogger() << std::setiosflags(std::ios::scientific) << str << " "
                              << std::setprecision(floatPrec) << val.f << "f";
       break;
     case kValueDouble:
-      LogInfo::MapleLogger() << std::setiosflags(std::ios::scientific) << str.c_str() << " "
+      LogInfo::MapleLogger() << std::setiosflags(std::ios::scientific) << str << " "
                              << std::setprecision(doublePrec) << val.d;
       break;
     case kValueMethodType:
-      LogInfo::MapleLogger() << str.c_str() << " $" << std::hex << "0x" << val.u << std::dec;
+      LogInfo::MapleLogger() << str << " $" << std::hex << "0x" << val.u << std::dec;
       break;
     case kValueMethodHandle:
-      LogInfo::MapleLogger() << str.c_str() << " " << std::hex << "0x" << val.u << std::dec;
+      LogInfo::MapleLogger() << str << " " << std::hex << "0x" << val.u << std::dec;
       break;
     case kValueString:
       gStrIdx.SetIdx(val.u);
-      LogInfo::MapleLogger() << str.c_str() << " \"" << GlobalTables::GetStrTable().GetStringFromStrIdx(gStrIdx).c_str()
+      LogInfo::MapleLogger() << str << " \"" << GlobalTables::GetStrTable().GetStringFromStrIdx(gStrIdx)
                              << "\"";
       break;
     case kValueType:
       gStrIdx.SetIdx(val.u);
-      LogInfo::MapleLogger() << str.c_str() << " <$" << GlobalTables::GetStrTable().GetStringFromStrIdx(gStrIdx).c_str()
+      LogInfo::MapleLogger() << str << " <$" << GlobalTables::GetStrTable().GetStringFromStrIdx(gStrIdx)
                              << ">";
       break;
     case kValueField:
       gStrIdx.SetIdx(val.u);
-      LogInfo::MapleLogger() << str.c_str() << " @" << GlobalTables::GetStrTable().GetStringFromStrIdx(gStrIdx).c_str();
+      LogInfo::MapleLogger() << str << " @" << GlobalTables::GetStrTable().GetStringFromStrIdx(gStrIdx);
       break;
     case kValueMethod:
       gStrIdx.SetIdx(val.u);
-      LogInfo::MapleLogger() << str.c_str() << " &" << GlobalTables::GetStrTable().GetStringFromStrIdx(gStrIdx).c_str();
+      LogInfo::MapleLogger() << str << " &" << GlobalTables::GetStrTable().GetStringFromStrIdx(gStrIdx);
       break;
     case kValueEnum:
       gStrIdx.SetIdx(val.u);
-      LogInfo::MapleLogger() << str.c_str() << " " << GlobalTables::GetStrTable().GetStringFromStrIdx(gStrIdx).c_str();
+      LogInfo::MapleLogger() << str << " " << GlobalTables::GetStrTable().GetStringFromStrIdx(gStrIdx);
       break;
     case kValueArray: {
       size_t num = subElemVec.size();
@@ -287,7 +287,7 @@ void MIRPragmaElement::Dump(int indent) const {
     case kValueAnnotation: {
       size_t num = subElemVec.size();
       LogInfo::MapleLogger() << "annotation <$";
-      LogInfo::MapleLogger() << GlobalTables::GetStrTable().GetStringFromStrIdx(typeStrIdx).c_str() << "> [" << num;
+      LogInfo::MapleLogger() << GlobalTables::GetStrTable().GetStringFromStrIdx(typeStrIdx) << "> [" << num;
       if (num) {
         if (num > 1) {
           LogInfo::MapleLogger() << ",\n";
@@ -300,7 +300,7 @@ void MIRPragmaElement::Dump(int indent) const {
             PrintIndentation(indent + indentOffset);
           }
           LogInfo::MapleLogger() << "@"
-                                 << GlobalTables::GetStrTable().GetStringFromStrIdx(subElemVec[i]->nameStrIdx).c_str()
+                                 << GlobalTables::GetStrTable().GetStringFromStrIdx(subElemVec[i]->nameStrIdx)
                                  << " ";
           subElemVec[i]->Dump(indent + indentOffset);
           if (i != num - 1) {
@@ -313,10 +313,10 @@ void MIRPragmaElement::Dump(int indent) const {
       break;
     }
     case kValueNull:
-      LogInfo::MapleLogger() << str.c_str() << " nullptr";
+      LogInfo::MapleLogger() << str << " nullptr";
       break;
     case kValueBoolean:
-      LogInfo::MapleLogger() << str.c_str() << " " << val.u;
+      LogInfo::MapleLogger() << str << " " << val.u;
       break;
   }
 }

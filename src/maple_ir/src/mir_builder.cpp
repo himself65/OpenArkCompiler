@@ -252,7 +252,7 @@ MIRFunction *MIRBuilder::GetFunctionFromStidx(StIdx stIdx) {
 MIRFunction *MIRBuilder::CreateFunction(const std::string &name, const MIRType &returnType, const ArgVector &arguments,
                                         bool isVarg, bool createBody) const {
   MIRSymbol *funcSymbol = GlobalTables::GetGsymTable().CreateSymbol(kScopeGlobal);
-  GStrIdx strIdx = GetOrCreateStringIndex(name.c_str());
+  GStrIdx strIdx = GetOrCreateStringIndex(name);
   funcSymbol->SetNameStrIdx(strIdx);
   if (!GlobalTables::GetGsymTable().AddToStringSymbolMap(*funcSymbol)) {
     return nullptr;

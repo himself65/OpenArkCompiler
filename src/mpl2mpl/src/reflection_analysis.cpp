@@ -318,7 +318,7 @@ bool ReflectionAnalysis::IsPrivateClass(const MIRClassType &classType) const {
 }
 
 static inline GStrIdx GetOrCreateGStrIdxFromName(const std::string &name) {
-  return GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(NameMangler::GetInternalNameLiteral(name.c_str()));
+  return GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(NameMangler::GetInternalNameLiteral(name));
 }
 
 static bool IsFinalize(const std::string &funcName, const std::string &signature) {
@@ -879,7 +879,7 @@ void ReflectionAnalysis::GenFieldOffsetConst(MIRAggConst &newConst, const Klass 
     MIRClassType *mirClassType = klass.GetMIRClassType();
     ASSERT(mirClassType != nullptr, "GetMIRClassType() returns null");
     FieldID fldID = mirBuilder.GetStructFieldIDFromNameAndTypeParentFirstFoundInChild(
-        *mirClassType, originFieldname.c_str(), fieldP.second.first);
+        *mirClassType, originFieldname, fieldP.second.first);
     // set LSB 0, and set LSB 1 in muid_replacement
     fldID = fldID * 2;
     mirBuilder.AddIntFieldConst(type, newConst, metaFieldID, fldID);
@@ -907,7 +907,7 @@ MIRSymbol *ReflectionAnalysis::GenFieldOffsetData(const Klass &klass, std::pair<
   } else {
     MIRClassType *mirClassType = klass.GetMIRClassType();
     FieldID fldID = mirBuilder.GetStructFieldIDFromNameAndTypeParentFirstFoundInChild(
-        *mirClassType, originFieldname.c_str(), fieldP.second.first);
+        *mirClassType, originFieldname, fieldP.second.first);
     fieldOffsetSymbolName += klass.GetKlassName() + "_FieldID_" + std::to_string(fldID);
   }
   MIRSymbol *fieldsOffsetSt = GetOrCreateSymbol(fieldOffsetSymbolName, fieldOffsetArrayType.GetTypeIndex(), true);
@@ -1045,13 +1045,13 @@ MIRSymbol *ReflectionAnalysis::GenFieldsMetaData(const Klass &klass) {
   for (; i < fields.size(); ++i) {
     std::string fieldname = GlobalTables::GetStrTable().GetStringFromStrIdx(fields[i].first);
     ConvertFieldName(fieldname, false);
-    uint32 hashcode = GetCharHashIndex(fieldname.c_str());
+    uint32 hashcode = GetCharHashIndex(fieldname);
     fieldHashvec[i] = std::make_pair(fields[i], hashcode);
   }
   for (size_t j = 0; j < staticFields.size(); ++j) {
     std::string fieldname = GlobalTables::GetStrTable().GetStringFromStrIdx(staticFields[j].first);
     ConvertFieldName(fieldname, true);
-    uint32 hashcode = GetCharHashIndex(fieldname.c_str());
+    uint32 hashcode = GetCharHashIndex(fieldname);
     fieldHashvec[i++] = std::make_pair(staticFields[j], hashcode);
   }
   GenAllFieldHash(fieldHashvec);
@@ -1074,7 +1074,7 @@ MIRSymbol *ReflectionAnalysis::GenFieldsMetaData(const Klass &klass) {
     }
     ++j;
   }
-  ASSERT(i == size, "In class %s: %d fields seen, BUT %d fields declared", klass.GetKlassName().c_str(), i, size);
+  ASSERT(i == size, "In class %s: %d fields seen, BUT %d fields declared", klass.GetKlassName(), i, size);
   MIRSymbol *fieldsArraySt = GenFieldsMeta(klass, fieldinfoVec, fieldHashvec);
   return fieldsArraySt;
 }

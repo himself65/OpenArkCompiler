@@ -569,6 +569,13 @@ MIRType *MIRPtrType::GetPointedType() const {
   return GlobalTables::GetTypeTable().GetTypeFromTyIdx(pointedTyIdx);
 }
 
+bool MIRType::IsVolatile(int fieldID) const {
+  if (fieldID == 0) {
+    return HasVolatileField();
+  }
+  return static_cast<const MIRStructType*>(this)->IsFieldVolatile(fieldID);
+}
+
 bool MIRPtrType::HasTypeParam() const {
   return GetPointedType()->HasTypeParam();
 }
@@ -1282,7 +1289,7 @@ FieldPair MIRStructType::TraverseToField(GStrIdx fieldStrIdx) const {
   return { GStrIdx(0), TyIdxFieldAttrPair(TyIdx(0), FieldAttrs()) };
 }
 
-bool MIRStructType::HasVolatileFieldInFields(const FieldVector &fieldsOfStruct) {
+bool MIRStructType::HasVolatileFieldInFields(const FieldVector &fieldsOfStruct) const {
   for (const auto &field : fieldsOfStruct) {
     if (field.second.second.GetAttr(FLDATTR_volatile) ||
         GlobalTables::GetTypeTable().GetTypeFromTyIdx(field.second.first)->HasVolatileField()) {
@@ -1295,7 +1302,7 @@ bool MIRStructType::HasVolatileFieldInFields(const FieldVector &fieldsOfStruct) 
 }
 
 // go through all the fields to check if there is volatile attribute set;
-bool MIRStructType::HasVolatileField() {
+bool MIRStructType::HasVolatileField() const {
   if (hasVolatileFieldSet) {
     return hasVolatileField;
   }
@@ -1310,13 +1317,13 @@ static bool ParentTypeHasVolatileField(const TyIdx parentTyIdx, bool &hasVolatil
 }
 
 // go through all the fields to check if there is volatile attribute set;
-bool MIRClassType::HasVolatileField() {
+bool MIRClassType::HasVolatileField() const {
   return MIRStructType::HasVolatileField() ||
          (parentTyIdx != 0 && ParentTypeHasVolatileField(parentTyIdx, hasVolatileField));
 }
 
 // go through all the fields to check if there is volatile attribute set;
-bool MIRInterfaceType::HasVolatileField() {
+bool MIRInterfaceType::HasVolatileField() const {
   if (MIRStructType::HasVolatileField()) {
     return true;
   }
@@ -1377,6 +1384,11 @@ FieldPair MIRClassType::TraverseToFieldRef(FieldID &fieldID) const {
 // fields in interface are all static and are global, won't be accessed through fields
 FieldPair MIRInterfaceType::TraverseToFieldRef(FieldID &fieldID) const {
   return { GStrIdx(0), TyIdxFieldAttrPair(TyIdx(0), FieldAttrs()) };
+}
+
+bool MIRPtrType::IsPointedTypeVolatile(int fieldID) const {
+  MIRType *pointedTy = GlobalTables::GetTypeTable().GetTypeFromTyIdx(GetPointedTyIdx());
+  return pointedTy->IsVolatile(fieldID);
 }
 
 TyIdxFieldAttrPair MIRPtrType::GetPointedTyIdxFldAttrPairWithFieldID(FieldID fieldID) const {

@@ -58,7 +58,7 @@ void MeIRMap::Dump() {
 }
 
 // this function only emits statement
-void MeIRMap::EmitBBStmts(const BB &bb, BlockNode &curblk) {
+void MeIRMap::EmitBBStmts(BB &bb, BlockNode &curblk) {
   auto &meStmts = bb.GetMeStmts();
   for (auto &meStmt : meStmts) {
     if (!GetNeedAnotherPass()) {
@@ -73,7 +73,7 @@ void MeIRMap::EmitBBStmts(const BB &bb, BlockNode &curblk) {
   }
 }
 
-void MeIRMap::EmitBB(const BB &bb, BlockNode &curblk) {
+void MeIRMap::EmitBB(BB &bb, BlockNode &curblk) {
   // emit head. label
   LabelIdx labidx = bb.GetBBLabel();
   if (labidx != 0) {

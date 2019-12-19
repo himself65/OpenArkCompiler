@@ -1280,7 +1280,7 @@ class MeStmt {
     return next;
   }
 
-  const Opcode GetOp() const {
+  Opcode GetOp() const {
     return op;
   }
 
