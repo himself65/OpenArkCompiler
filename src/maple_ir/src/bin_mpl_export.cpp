@@ -471,7 +471,7 @@ void BinaryMplExport::OutputFieldPair(const FieldPair &fp) {
   WriteNum(fa.GetAlignValue());
   if (fa.GetAttr(FLDATTR_static) && fa.GetAttr(FLDATTR_final) &&
       (fa.GetAttr(FLDATTR_public) || fa.GetAttr(FLDATTR_protected))) {
-    const char *fieldName = (GlobalTables::GetStrTable().GetStringFromStrIdx(fp.first)).c_str();
+    const std::string &fieldName = GlobalTables::GetStrTable().GetStringFromStrIdx(fp.first);
     MIRSymbol *fieldVar = mod.GetMIRBuilder()->GetGlobalDecl(fieldName);
     if ((fieldVar != nullptr) && (fieldVar->GetKonst() != nullptr) &&
         (fieldVar->GetKonst()->GetKind() == kConstStr16Const)) {

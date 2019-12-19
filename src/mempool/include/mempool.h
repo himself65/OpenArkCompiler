@@ -92,6 +92,7 @@ class MemPool {
   template <class T>
   T *Clone(const T &t) {
     void *p = Malloc(sizeof(T));
+    CHECK_FATAL(p != nullptr, "ERROR: New error");
     p = new (p) T(t);  // Call clone constructor
     return static_cast<T*>(p);
   }

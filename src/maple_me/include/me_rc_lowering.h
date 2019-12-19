@@ -98,6 +98,9 @@ class RCLowering {
   // used to store initialized map, help to optimize dec ref in first assignment
   std::unordered_map<MeExpr*, MapleSet<FieldID>*> initializedFields{};
   bool enabledDebug;
+  bool checkRefFormal = false;
+  bool checkRefAssign = false;
+  bool checkRefReturn = false;
 };
 
 class MeDoRCLowering : public MeFuncPhase {

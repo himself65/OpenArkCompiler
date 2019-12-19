@@ -111,7 +111,7 @@ bool Options::ParseOptions(int argc, char **argv, std::string &fileName) const {
   bool result = true;
   OptionParser optionParser(kUsage);
   int ret = optionParser.Parse(argc, argv);
-  CHECK_FATAL(ret == ErrorCode::kErrorNoError, "option parser error");
+  CHECK_FATAL(ret == kErrorNoError, "option parser error");
   for (auto opt : optionParser.GetOptions()) {
     switch (opt.Index()) {
       case kHelp: {
@@ -201,7 +201,7 @@ void Options::DumpOptions() const {
     LogInfo::MapleLogger() << "default phase sequence\n";
   } else {
     for (size_t i = 0; i < phaseSeq.size(); ++i) {
-      LogInfo::MapleLogger() << " " << phaseSeq[i].c_str();
+      LogInfo::MapleLogger() << " " << phaseSeq[i];
     }
   }
   LogInfo::MapleLogger() << "\n";

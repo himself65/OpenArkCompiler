@@ -88,7 +88,7 @@ void MeFuncPhaseManager::AddPhases(const std::unordered_set<std::string> &skipPh
   };
   if (mePhaseType == kMePhaseMainopt) {
     // default phase sequence
-    addPhase("ssaTab");
+    addPhase("ssatab");
     addPhase("aliasclass");
     addPhase("ssa");
     addPhase("rclowering");

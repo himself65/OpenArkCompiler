@@ -52,7 +52,7 @@ class SafeExe {
     // end of arguments sentinel is nullptr
     argv[vectorArgs.size()] = nullptr;
     pid_t pid = fork();
-    ErrorCode ret = ErrorCode::kErrorNoError;
+    ErrorCode ret = kErrorNoError;
     if (pid == 0) {
       // child process
       fflush(nullptr);
@@ -69,10 +69,10 @@ class SafeExe {
       waitpid(pid, &status, 0);
       if (!WIFEXITED(status)) {
         LogInfo::MapleLogger() << "Error while Exe, cmd: " << cmd << " args: " << args << '\n';
-        ret = ErrorCode::kErrorCompileFail;
+        ret = kErrorCompileFail;
       } else if (WEXITSTATUS(status) != 0) {
         LogInfo::MapleLogger() << "Error while Exe, cmd: " << cmd << " args: " << args << '\n';
-        ret = ErrorCode::kErrorCompileFail;
+        ret = kErrorCompileFail;
       }
     }
 
@@ -125,7 +125,7 @@ class SafeExe {
     LogInfo::MapleLogger() << "Starting:" << cmd << args << '\n';
     if (StringUtils::HasCommandInjectionChar(cmd) || StringUtils::HasCommandInjectionChar(args)) {
       LogInfo::MapleLogger() << "Error while Exe, cmd: " << cmd << " args: " << args << '\n';
-      return ErrorCode::kErrorCompileFail;
+      return kErrorCompileFail;
     }
     ErrorCode ret = HandleCommand(cmd, args);
     return ret;

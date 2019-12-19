@@ -447,7 +447,7 @@ class MIRType {
     return GetPrimTypeSize(primType);
   }
 
-  virtual bool HasVolatileField() {
+  virtual bool HasVolatileField() const {
     return false;
   }
 
@@ -459,6 +459,8 @@ class MIRType {
     return typeKind == kTypeStructIncomplete || typeKind == kTypeClassIncomplete ||
            typeKind == kTypeInterfaceIncomplete;
   }
+
+  bool IsVolatile(int fieldID) const;
 
   bool IsMIRPtrType() const {
     return typeKind == kTypePointer;
@@ -537,6 +539,7 @@ class MIRPtrType : public MIRType {
   bool EqualTo(const MIRType &type) const override;
 
   bool HasTypeParam() const override;
+  bool IsPointedTypeVolatile(int fieldID) const;
 
   void Dump(int indent, bool dontUseName = false) const override;
   TyIdxFieldAttrPair GetPointedTyIdxFldAttrPairWithFieldID(FieldID fieldID) const;
@@ -849,7 +852,7 @@ class MIRStructType : public MIRType {
     return std::find(fields.begin(), fields.end(), fieldPair) != fields.end();
   }
 
-  bool HasVolatileField() override;
+  bool HasVolatileField() const override;
   bool HasTypeParam() const override;
   bool EqualTo(const MIRType &type) const override;
   MIRType *CopyMIRTypeNode() const override {
@@ -992,13 +995,13 @@ class MIRStructType : public MIRType {
   // Weak indicates the actual definition is in another module.
   bool isImported = false;
   bool isUsed = false;
-  bool hasVolatileField = false;     // for caching computed value
-  bool hasVolatileFieldSet = false;  // if true, just read hasVolatileField;
-                                     // otherwise compute to initialize hasVolatileField
+  mutable bool hasVolatileField = false;     // for caching computed value
+  mutable bool hasVolatileFieldSet = false;  // if true, just read hasVolatileField;
+                                             // otherwise compute to initialize hasVolatileField
  private:
   FieldPair TraverseToField(FieldID fieldID) const ;
   FieldPair TraverseToField(GStrIdx fieldStrIdx) const ;
-  bool HasVolatileFieldInFields(const FieldVector &fieldsOfStruct);
+  bool HasVolatileFieldInFields(const FieldVector &fieldsOfStruct) const;
   bool HasTypeParamInFields(const FieldVector &fieldsOfStruct) const;
 };
 
@@ -1148,7 +1151,7 @@ class MIRClassType : public MIRStructType {
 
   bool IsFinal() const;
   bool IsInner() const;
-  bool HasVolatileField() override;
+  bool HasVolatileField() const override;
   bool HasTypeParam() const override;
   FieldPair TraverseToFieldRef(FieldID &fieldID) const override;
   size_t GetSize() const override;
@@ -1275,7 +1278,7 @@ class MIRInterfaceType : public MIRStructType {
   }
 
   void Dump(int indent, bool dontUseName = false) const override;
-  bool HasVolatileField() override;
+  bool HasVolatileField() const override;
   bool HasTypeParam() const override;
   FieldPair TraverseToFieldRef(FieldID &fieldID) const override;
   void SetComplete() override {

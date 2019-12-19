@@ -23,6 +23,7 @@
 #include "mir_const.h"
 #include "maple_string.h"
 #include "ptr_list_ref.h"
+#include "global_tables.h"
 
 namespace maple {
 extern MIRModule *theMIRModule;
@@ -184,6 +185,9 @@ class BaseNode {
     return true;
   }
 
+  virtual bool IsSSANode() const {
+    return false;
+  }
  protected:
   Opcode op;
   PrimType ptyp;
@@ -922,6 +926,11 @@ class IntrinsicopNode : public NaryNode {
 
   void SetTyIdx(TyIdx idx) {
     tyIdx = idx;
+  }
+
+  // IntrinDesc query
+  const IntrinDesc &GetIntrinDesc() const {
+    return IntrinDesc::intrinTable[intrinsic];
   }
 
  private:

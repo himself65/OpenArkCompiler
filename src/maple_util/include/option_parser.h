@@ -213,7 +213,8 @@ class OptionParser {
 
  private:
   bool HandleKeyValue(const std::string &key, const std::string &value, bool isValueEmpty,
-                      std::vector<mapleOption::Option> &inputOption,  const std::string &exeName);
+                      std::vector<mapleOption::Option> &inputOption,  const std::string &exeName,
+                      bool isAllOption = true);
   bool CheckOpt(const std::string option, std::string &lastKey, bool &isLastMatch,
                 std::vector<mapleOption::Option> &inputOption, const std::string &exeName);
   void InsertOption(const std::string &opt, const Descriptor &usage) {

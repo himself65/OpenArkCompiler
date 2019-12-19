@@ -55,7 +55,7 @@ BaseNode *JavaEHLowerer::DoLowerDiv(BinaryNode &expr, BlockNode &blknode) {
       blknode.AddStatement(regassDivnode);
       divOpnd = mirBuilder->CreateExprRegread(ptype, pregIdx);
     } else {
-      MIRSymbol *divOpndSymbol = mirBuilder->CreateSymbol(TyIdx(ptype), opnd1name.c_str(), kStVar, kScAuto,
+      MIRSymbol *divOpndSymbol = mirBuilder->CreateSymbol(TyIdx(ptype), opnd1name, kStVar, kScAuto,
                                                           GetMIRModule().CurFunction(), kScopeLocal);
       DassignNode *dssDivNode = mirBuilder->CreateStmtDassign(*divOpndSymbol, 0, divOpnd);
       blknode.AddStatement(dssDivNode);
@@ -72,7 +72,7 @@ BaseNode *JavaEHLowerer::DoLowerDiv(BinaryNode &expr, BlockNode &blknode) {
   } else {
     std::string resName(strDivRes);
     resName.append(std::to_string(divSTIndex++));
-    MIRSymbol *divResSymbol = mirBuilder->CreateSymbol(TyIdx(ptype), resName.c_str(), kStVar, kScAuto,
+    MIRSymbol *divResSymbol = mirBuilder->CreateSymbol(TyIdx(ptype), resName, kStVar, kScAuto,
                                                        GetMIRModule().CurFunction(), kScopeLocal);
     // Put expr result to dssnode.
     divStmt = mirBuilder->CreateStmtDassign(*divResSymbol, 0, &expr);

@@ -65,10 +65,6 @@ class VersionSt {
 
   void DumpDefStmt(const MIRModule *mod) const;
 
-  bool IsLive() const {
-    return live;
-  }
-
   bool IsInitVersion() const {
     return version == kInitVersion;
   }
@@ -79,14 +75,6 @@ class VersionSt {
 
   void SetDefType(DefType defType) {
     this->defType = defType;
-  }
-
-  void MarkLive() {
-    live = true;
-  }
-
-  void MarkDead() {
-    live = false;
   }
 
   OStIdx GetOrigIdx() const {
@@ -174,7 +162,6 @@ class VersionSt {
     MustDefNode *mustDef;
   } defStmt;  // only valid after SSA
 
-  bool live = false;      // helper of dse
   bool isReturn = false;  // the symbol will return in its function
 };
 

@@ -42,9 +42,9 @@ class MeSSAUpdate {
   void InsertPhis();
   void RenamePhi(const BB &bb);
   MeExpr *RenameExpr(MeExpr &meExpr, bool &changed);
-  void RenameStmts(const BB &bb);
+  void RenameStmts(BB &bb);
   void RenamePhiOpndsInSucc(const BB &bb);
-  void RenameBB(const BB &bb);
+  void RenameBB(BB &bb);
   MeFunction &func;
   IRMap &irMap;
   SSATab &ssaTab;

@@ -79,23 +79,23 @@ ErrorCode CompilerFactory::DeleteTmpFiles(const MplOptions &mplOptions, const st
       ret = FileUtils::Remove(tmpFile);
     }
   }
-  return ret == 0 ? ErrorCode::kErrorNoError : ErrorCode::kErrorFileNotFound;
+  return ret == 0 ? kErrorNoError : kErrorFileNotFound;
 }
 
 ErrorCode CompilerFactory::Compile(const MplOptions &mplOptions) {
   std::vector<Compiler*> compilers;
   ErrorCode ret = compilerSelector->Select(supportedCompilers, mplOptions, compilers);
-  if (ret != ErrorCode::kErrorNoError) {
+  if (ret != kErrorNoError) {
     return ret;
   }
 
   for (auto *compiler : compilers) {
     if (compiler == nullptr) {
       LogInfo::MapleLogger() << "Failed! Compiler is null." << "\n";
-      return ErrorCode::kErrorCompileFail;
+      return kErrorCompileFail;
     }
     ret = compiler->Compile(mplOptions, this->theModule);
-    if (ret != ErrorCode::kErrorNoError) {
+    if (ret != kErrorNoError) {
       return ret;
     }
   }
@@ -105,7 +105,7 @@ ErrorCode CompilerFactory::Compile(const MplOptions &mplOptions) {
     for (auto *compiler : compilers) {
       compiler->GetTmpFilesToDelete(mplOptions, tmpFiles);
     }
-    ret = DeleteTmpFiles(mplOptions, tmpFiles, compilers.at(compilers.size() - 1)->GetFinalOutputs(mplOptions));
+    ret = DeleteTmpFiles(mplOptions, tmpFiles, compilers.back()->GetFinalOutputs(mplOptions));
   }
   return ret;
 }

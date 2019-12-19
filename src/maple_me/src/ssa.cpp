@@ -99,14 +99,6 @@ void SSA::RenameMustDefs(const StmtNode &stmt, BB &defBB) {
 }
 
 void SSA::RenameMayUses(BaseNode &node) {
-  if (node.GetOpCode() == OP_iread) {
-    auto &iRead = static_cast<IreadSSANode&>(node);
-    VersionSt *vSym = iRead.GetSSAVar();
-    CHECK_FATAL(vSym != nullptr, "SSA::RenameMayUses: iRead has no mayUse opnd");
-    CHECK_FATAL(vSym->GetOrigIdx().idx < vstStacks.size(), "index out of range in SSA::RenameMayUses");
-    iRead.SetSSAVar(vstStacks[vSym->GetOrigIdx().idx]->top());
-    return;
-  }
   MapleMap<OStIdx, MayUseNode> &mayUseList = ssaTab->GetStmtsSSAPart().GetMayUseNodesOf(static_cast<StmtNode&>(node));
   MapleMap<OStIdx, MayUseNode>::iterator it = mayUseList.begin();
   for (; it != mayUseList.end(); it++) {
@@ -118,22 +110,11 @@ void SSA::RenameMayUses(BaseNode &node) {
 }
 
 void SSA::RenameExpr(BaseNode &expr) {
-  if (expr.GetOpCode() == OP_addrof || expr.GetOpCode() == OP_dread) {
-    auto &addrofNode = static_cast<AddrofSSANode&>(expr);
-    VersionSt *vSym = addrofNode.GetSSAVar();
+  if (expr.IsSSANode()) {
+    auto &ssaNode = static_cast<AddrofSSANode&>(expr);
+    VersionSt *vSym = ssaNode.GetSSAVar();
     CHECK_FATAL(vSym->GetOrigIdx().idx < vstStacks.size(), "index out of range in SSA::RenameExpr");
-    addrofNode.SetSSAVar(vstStacks[vSym->GetOrigIdx().idx]->top());
-    return;
-  }
-  if (expr.GetOpCode() == OP_regread) {
-    auto &regNode = static_cast<RegreadSSANode&>(expr);
-    VersionSt *vSym = regNode.GetSSAVar();
-    CHECK_FATAL(vSym->GetOrigIdx().idx < vstStacks.size(), "index out of range in SSA::RenameExpr");
-    regNode.SetSSAVar(vstStacks[vSym->GetOrigIdx().idx]->top());
-    return;
-  }
-  if (expr.GetOpCode() == OP_iread) {
-    RenameMayUses(expr);
+    ssaNode.SetSSAVar(*vstStacks[vSym->GetOrigIdx().idx]->top());
   }
   for (size_t i = 0; i < expr.NumOpnds(); ++i) {
     RenameExpr(*expr.Opnd(i));

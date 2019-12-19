@@ -27,6 +27,11 @@
 namespace maple {
 using namespace NameMangler;
 
+bool MIRSymbol::IsTypeVolatile(int fieldID) const {
+  const MIRType *ty = GlobalTables::GetTypeTable().GetTypeFromTyIdx(GetTyIdx());
+  return ty->IsVolatile(fieldID);
+}
+
 void MIRSymbol::SetNameStrIdx(const std::string &name) {
   nameStrIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(name);
 }

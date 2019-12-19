@@ -191,8 +191,8 @@ void VtableAnalysis::GenVtableDefinition(const Klass &klass) {
 }
 
 std::string VtableAnalysis::DecodeBaseNameWithType(const MIRFunction &func) {
-  const std::string &baseName = NameMangler::DecodeName(func.GetBaseFuncName().c_str());
-  std::string signatureName = NameMangler::DecodeName(func.GetSignature().c_str());
+  const std::string &baseName = NameMangler::DecodeName(func.GetBaseFuncName());
+  std::string signatureName = NameMangler::DecodeName(func.GetSignature());
   ReflectionAnalysis::ConvertMethodSig(signatureName);
   std::string baseNameWithType = baseName + "|" + signatureName;
   return baseNameWithType;
@@ -333,7 +333,7 @@ void VtableAnalysis::GenTableSymbol(const std::string &prefix, const std::string
                                     MIRAggConst &newConst) const {
   size_t arraySize = newConst.GetConstVec().size();
   MIRArrayType *arrayType = GlobalTables::GetTypeTable().GetOrCreateArrayType(*voidPtrType, arraySize);
-  MIRSymbol *vtabSt = builder->CreateGlobalDecl((prefix + klassName).c_str(), *arrayType);
+  MIRSymbol *vtabSt = builder->CreateGlobalDecl(prefix + klassName, *arrayType);
   if (klassName == NameMangler::GetInternalNameLiteral(NameMangler::kJavaLangObjectStr)) {
     vtabSt->SetStorageClass(kScGlobal);
   } else {
@@ -348,6 +348,17 @@ void VtableAnalysis ::DumpVtableList(const Klass &klass) const {
     MIRFunction *method = builder->GetFunctionFromStidx(vtableMethod->first);
     ASSERT_NOT_NULL(method);
     LogInfo::MapleLogger() << method->GetName() << "\n";
+  }
+}
+
+// add Null-Point-Exception check
+void VtableAnalysis::AddNullPointExceptionCheck(MIRFunction &func, StmtNode &stmt) const {
+  CallNode *cNode = static_cast<CallNode*>(&stmt);
+  MIRFunction *callee = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(cNode->GetPUIdx());
+  if (!callee->IsStatic() && !callee->GetBaseClassName().empty()) {
+    BaseNode *inputOpnd = cNode->Opnd(0);
+    UnaryStmtNode *nullCheck = builder->CreateStmtUnary(OP_assertnonnull, inputOpnd);
+    func.GetBody()->InsertBefore(&stmt, nullCheck);
   }
 }
 
@@ -375,6 +386,11 @@ void VtableAnalysis::ProcessFunc(MIRFunction *func) {
       }
       case OP_polymorphiccallassigned: {
         ReplacePolymorphicInvoke(*(static_cast<CallNode*>(stmt)));
+        break;
+      }
+      case OP_call:
+      case OP_callassigned: {
+        AddNullPointExceptionCheck(*func, *stmt); // npe check
         break;
       }
       default:

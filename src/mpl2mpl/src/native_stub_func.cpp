@@ -45,7 +45,7 @@ MIRFunction &NativeStubFuncGeneration::GetOrCreateDefaultNativeFunc(MIRFunction 
   }
   std::string nativeName = NameMangler::NativeJavaName(stubFunc.GetName().c_str());
   // No need to create a default function with exact arguments here
-  MIRFunction *nativeFunc = builder->GetOrCreateFunction(nativeName.c_str(), stubFunc.GetReturnTyIdx());
+  MIRFunction *nativeFunc = builder->GetOrCreateFunction(nativeName, stubFunc.GetReturnTyIdx());
   ASSERT(nativeFunc != nullptr, "null ptr check!");
   nativeFunc->GetSrcPosition().SetMplLineNum(stubFunc.GetSrcPosition().MplLineNum());
   if (nativeFunc->GetBody() == nullptr) {
@@ -75,7 +75,7 @@ MIRFunction &NativeStubFuncGeneration::GetOrCreateDefaultNativeFunc(MIRFunction 
     }
     findNativeFunc->SetAttr(FUNCATTR_nosideeffect);
     // fatal message parameter
-    std::string nativeSymbolName = stubFunc.GetName().c_str();
+    std::string nativeSymbolName = stubFunc.GetName();
     UStrIdx strIdx = GlobalTables::GetUStrTable().GetOrCreateStrIdxFromName(nativeSymbolName);
     auto *signatureNode = nativeFunc->GetCodeMempool()->New<ConststrNode>(strIdx);
     signatureNode->SetPrimType(PTY_ptr);
@@ -288,7 +288,7 @@ void NativeStubFuncGeneration::GenerateRegFuncTabEntryType() {
       *GlobalTables::GetTypeTable().GetOrCreateArrayType(*GlobalTables::GetTypeTable().GetVoidPtr(), 0);
   regFuncTabConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), arrayType);
   std::string regFuncTab = NameMangler::kRegJNIFuncTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
-  regFuncSymbol = builder->CreateSymbol(regFuncTabConst->GetType().GetTypeIndex(), regFuncTab.c_str(), kStVar,
+  regFuncSymbol = builder->CreateSymbol(regFuncTabConst->GetType().GetTypeIndex(), regFuncTab, kStVar,
                                         kScGlobal, nullptr, kScopeGlobal);
 }
 
@@ -640,7 +640,7 @@ void NativeStubFuncGeneration::GenerateRegTable() {
   auto &arrayType = static_cast<MIRArrayType&>(regTableConst->GetType());
   arrayType.SetSizeArrayItem(0, regTableConst->GetConstVec().size());
   std::string regJniTabName = NameMangler::kRegJNITabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
-  MIRSymbol *regJNISt = builder->CreateSymbol(regTableConst->GetType().GetTypeIndex(), regJniTabName.c_str(), kStVar,
+  MIRSymbol *regJNISt = builder->CreateSymbol(regTableConst->GetType().GetTypeIndex(), regJniTabName, kStVar,
                                               kScGlobal, nullptr, kScopeGlobal);
   regJNISt->SetKonst(regTableConst);
 }
@@ -653,7 +653,7 @@ void NativeStubFuncGeneration::InitStaticBindingMethodList() {
   if (!IsStaticBindingListMode()) {
     return;
   }
-  std::fstream file(Options::staticBindingList.c_str());
+  std::fstream file(Options::staticBindingList);
   std::string content;
   while (std::getline(file, content)) {
     staticBindingMethodsSet.insert(content);

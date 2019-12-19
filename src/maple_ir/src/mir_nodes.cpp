@@ -861,7 +861,7 @@ void DoloopNode::DumpDoVar(const MIRModule &mod) const {
                            << " (\n";
   } else {
     const MIRSymbol *st = mod.CurFunction()->GetLocalOrGlobalSymbol(doVarStIdx);
-    LogInfo::MapleLogger() << " %" << st->GetName().c_str() << " (\n";
+    LogInfo::MapleLogger() << " %" << st->GetName() << " (\n";
   }
 }
 
@@ -884,11 +884,11 @@ void ForeachelemNode::Dump(const MIRModule &mod, int32 indent) const {
   StmtNode::DumpBase(mod, indent);
   const MIRSymbol *st = mod.CurFunction()->GetLocalOrGlobalSymbol(elemStIdx);
   ASSERT(st != nullptr, "null ptr check");
-  LogInfo::MapleLogger() << " %" << st->GetName().c_str();
+  LogInfo::MapleLogger() << " %" << st->GetName();
   st = mod.CurFunction()->GetLocalOrGlobalSymbol(arrayStIdx);
   ASSERT(st != nullptr, "null ptr check");
   LogInfo::MapleLogger() << (arrayStIdx.Islocal() ? " %" : " $");
-  LogInfo::MapleLogger() << st->GetName().c_str();
+  LogInfo::MapleLogger() << st->GetName();
   loopBody->Dump(mod, indent + 1);
 }
 

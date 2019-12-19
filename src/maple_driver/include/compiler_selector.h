@@ -29,7 +29,7 @@ class CompilerSelector {
 
   virtual ErrorCode Select(const SupportedCompilers &supportedCompilers, const MplOptions &mplOptions,
                            std::vector<Compiler*> &selected) const {
-    return ErrorCode::kErrorToolNotFound;
+    return kErrorToolNotFound;
   }
 };
 

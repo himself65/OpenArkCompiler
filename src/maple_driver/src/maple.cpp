@@ -52,7 +52,7 @@ void PrintErrorMessage(int ret) {
 int main(int argc, char **argv) {
   MplOptions mplOptions;
   int ret = mplOptions.Parse(argc, argv);
-  if (ret == ErrorCode::kErrorNoError) {
+  if (ret == kErrorNoError) {
     ret = CompilerFactory::GetInstance().Compile(mplOptions);
   }
   PrintErrorMessage(ret);

@@ -39,8 +39,8 @@ class MeIRMap : public IRMap {
 
   void DumpBB(const BB &bb);
   void Dump() override;
-  void EmitBB(const BB&, BlockNode&);
-  void EmitBBStmts(const BB&, BlockNode&);
+  void EmitBB(BB&, BlockNode&);
+  void EmitBBStmts(BB&, BlockNode&);
 
   MeFunction &GetFunc() {
     return func;

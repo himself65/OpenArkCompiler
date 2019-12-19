@@ -166,7 +166,7 @@ MIRSymbol *ClassInit::GetClassInfo(const std::string &classname) {
   const std::string &classInfoName = CLASSINFO_PREFIX_STR + classname;
   MIRType *classInfoType =
       GlobalTables::GetTypeTable().GetOrCreateClassType(NameMangler::kClassMetadataTypeName, GetMIRModule());
-  MIRSymbol *classInfo = builder->GetOrCreateGlobalDecl(classInfoName.c_str(), *classInfoType);
+  MIRSymbol *classInfo = builder->GetOrCreateGlobalDecl(classInfoName, *classInfoType);
   Klass *klass = klassHierarchy->GetKlassFromName(classname);
   if (klass == nullptr || !klass->GetMIRStructType()->IsLocal()) {
     classInfo->SetStorageClass(kScExtern);

@@ -38,7 +38,7 @@ std::string Compiler::GetBinPath(const MplOptions &mplOptions) const {
 #ifdef MAPLE_PRODUCT_EXECUTABLE  // build flag -DMAPLE_PRODUCT_EXECUTABLE
   std::string binPath = std::string(MAPLE_PRODUCT_EXECUTABLE);
   if (binPath.empty()) {
-    binPath = mplOptions.exeFolder;
+    binPath = mplOptions.GetExeFolder();
   } else {
     binPath = binPath + kFileSeperatorChar;
   }
@@ -54,14 +54,14 @@ ErrorCode Compiler::Compile(const MplOptions &options, MIRModulePtr &theModule) 
   timer.Start();
   std::string strOption = MakeOption(options);
   if (strOption.empty()) {
-    return ErrorCode::kErrorInvalidParameter;
+    return kErrorInvalidParameter;
   }
   if (Exe(options, strOption) != 0) {
-    return ErrorCode::kErrorCompileFail;
+    return kErrorCompileFail;
   }
   timer.Stop();
   LogInfo::MapleLogger() << (GetName() + " consumed ") << timer.Elapsed() << "s\n";
-  return ErrorCode::kErrorNoError;
+  return kErrorNoError;
 }
 
 std::string Compiler::MakeOption(const MplOptions &options) const {
