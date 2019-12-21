@@ -231,7 +231,7 @@ MIRPragmaElement *BinaryMplImport::ImportPragmaElement() {
   element->SetType((PragmaValueType)ReadNum());
   if (element->GetType() == kValueString || element->GetType() == kValueType || element->GetType() == kValueField ||
       element->GetType() == kValueMethod || element->GetType() == kValueEnum) {
-    element->SetI32Val(static_cast<int32>(ImportStr().GetIdx()));
+    element->SetI32Val(static_cast<int32>(ImportStr()));
   } else {
     element->SetU64Val(static_cast<uint64>(ReadInt64()));
   }
@@ -310,7 +310,7 @@ void BinaryMplImport::ImportMethodPair(MethodPair &memPool) {
     fn->SetFuncAttrs(attrFlag);
   }
   memPool.first.SetFullIdx(funcSt->GetStIdx().FullIdx());
-  memPool.second.first.SetIdx(funcTyIdx.GetIdx());
+  memPool.second.first.reset(funcTyIdx);
   memPool.second.second.SetAttrFlag(attrFlag);
 }
 
@@ -386,7 +386,7 @@ void BinaryMplImport::ImportInfoOfStructType(MIRStructType &type) {
   bool isEmpty = type.GetInfo().empty();
   for (int64 i = 0; i < size; ++i) {
     GStrIdx idx = ImportStr();
-    int64 x = (type.GetInfoIsString()[i]) ? ImportStr().GetIdx() : ReadNum();
+    int64 x = (type.GetInfoIsString()[i]) ? static_cast<int64>(ImportStr()) : ReadNum();
     CHECK_FATAL(x >= 0, "ReadNum nagative, x: %d", x);
     CHECK_FATAL(x <= std::numeric_limits<uint32_t>::max(), "ReadNum too large, x: %d", x);
     if (isEmpty) {
@@ -422,7 +422,7 @@ void BinaryMplImport::SetClassTyidxOfMethods(MIRStructType &type) {
 void BinaryMplImport::ImportClassTypeData(MIRClassType &type) {
   TyIdx tempType = ImportType();
   // Keep the parent_tyidx we first met.
-  if (type.GetParentTyIdx().GetIdx() == 0) {
+  if (type.GetParentTyIdx() == 0) {
     type.SetParentTyIdx(tempType);
   }
   ImportInterfacesOfClassType(type.GetInterfaceImplemented());
@@ -724,7 +724,7 @@ MIRType &BinaryMplImport::InsertInTypeTables(MIRType &type) {
     // New type, no previous definition or anonymous type
     TyIdx tyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&type);
     resultTypePtr = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
-    if (tyIdx.GetIdx() + 1 == GlobalTables::GetTypeTable().GetTypeTable().size() && !resultTypePtr->IsNameIsLocal()) {
+    if (tyIdx + 1 == GlobalTables::GetTypeTable().GetTypeTable().size() && !resultTypePtr->IsNameIsLocal()) {
       GStrIdx stridx = resultTypePtr->GetNameStrIdx();
       if (IsObject(*resultTypePtr)) {
         mod.GetTypeNameTab()->SetGStrIdxToTyIdx(stridx, tyIdx);

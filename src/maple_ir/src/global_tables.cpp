@@ -69,8 +69,8 @@ MIRType *TypeTable::voidPtrType = nullptr;
 MIRType *TypeTable::GetOrCreatePointerType(TyIdx pointedTyIdx, PrimType primType) {
   MIRPtrType type(pointedTyIdx, primType);
   TyIdx tyIdx = GetOrCreateMIRType(&type);
-  ASSERT(tyIdx.GetIdx() < typeTable.size(), "index out of range in TypeTable::GetOrCreatePointerType");
-  return typeTable.at(tyIdx.GetIdx());
+  ASSERT(tyIdx < typeTable.size(), "index out of range in TypeTable::GetOrCreatePointerType");
+  return typeTable.at(tyIdx);
 }
 
 MIRType *TypeTable::GetOrCreatePointerType(const MIRType &pointTo, PrimType primType) {
@@ -98,7 +98,7 @@ MIRArrayType *TypeTable::GetOrCreateArrayType(const MIRType &elem, uint8 dim, co
   }
   MIRArrayType arrayType(elem.GetTypeIndex(), sizeVector);
   TyIdx tyIdx = GetOrCreateMIRType(&arrayType);
-  return static_cast<MIRArrayType*>(typeTable[tyIdx.GetIdx()]);
+  return static_cast<MIRArrayType*>(typeTable[tyIdx]);
 }
 
 // For one dimension array
@@ -110,16 +110,16 @@ MIRType *TypeTable::GetOrCreateFarrayType(const MIRType &elem) {
   MIRFarrayType type;
   type.SetElemtTyIdx(elem.GetTypeIndex());
   TyIdx tyIdx = GetOrCreateMIRType(&type);
-  ASSERT(tyIdx.GetIdx() < typeTable.size(), "index out of range in TypeTable::GetOrCreateFarrayType");
-  return typeTable.at(tyIdx.GetIdx());
+  ASSERT(tyIdx < typeTable.size(), "index out of range in TypeTable::GetOrCreateFarrayType");
+  return typeTable.at(tyIdx);
 }
 
 MIRType *TypeTable::GetOrCreateJarrayType(const MIRType &elem) {
   MIRJarrayType type;
   type.SetElemtTyIdx(elem.GetTypeIndex());
   TyIdx tyIdx = GetOrCreateMIRType(&type);
-  ASSERT(tyIdx.GetIdx() < typeTable.size(), "index out of range in TypeTable::GetOrCreateJarrayType");
-  return typeTable.at(tyIdx.GetIdx());
+  ASSERT(tyIdx < typeTable.size(), "index out of range in TypeTable::GetOrCreateJarrayType");
+  return typeTable.at(tyIdx);
 }
 
 MIRType *TypeTable::GetOrCreateFunctionType(MIRModule &module, TyIdx retTyIdx, const std::vector<TyIdx> &vecType,
@@ -130,8 +130,8 @@ MIRType *TypeTable::GetOrCreateFunctionType(MIRModule &module, TyIdx retTyIdx, c
     return funcType;
   }
   TyIdx tyIdx = GetOrCreateMIRType(funcType);
-  ASSERT(tyIdx.GetIdx() < typeTable.size(), "index out of range in TypeTable::GetOrCreateFunctionType");
-  return typeTable.at(tyIdx.GetIdx());
+  ASSERT(tyIdx < typeTable.size(), "index out of range in TypeTable::GetOrCreateFunctionType");
+  return typeTable.at(tyIdx);
 }
 
 MIRType *TypeTable::GetOrCreateStructOrUnion(const std::string &name, const FieldVector &fields,
@@ -144,8 +144,8 @@ MIRType *TypeTable::GetOrCreateStructOrUnion(const std::string &name, const Fiel
   // Global?
   module.GetTypeNameTab()->SetGStrIdxToTyIdx(strIdx, tyIdx);
   module.PushbackTypeDefOrder(strIdx);
-  ASSERT(tyIdx.GetIdx() < typeTable.size(), "index out of range in TypeTable::GetOrCreateStructOrUnion");
-  return typeTable.at(tyIdx.GetIdx());
+  ASSERT(tyIdx < typeTable.size(), "index out of range in TypeTable::GetOrCreateStructOrUnion");
+  return typeTable.at(tyIdx);
 }
 
 void TypeTable::PushIntoFieldVector(FieldVector &fields, const std::string &name, MIRType &type) {
@@ -156,7 +156,7 @@ void TypeTable::PushIntoFieldVector(FieldVector &fields, const std::string &name
 MIRType *TypeTable::GetOrCreateClassOrInterface(const std::string &name, MIRModule &module, bool forClass) {
   GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(name);
   TyIdx tyIdx = module.GetTypeNameTab()->GetTyIdxFromGStrIdx(strIdx);
-  if (!tyIdx.GetIdx()) {
+  if (!tyIdx) {
     if (forClass) {
       MIRClassType type(kTypeClassIncomplete, strIdx);  // for class type
       tyIdx = GetOrCreateMIRType(&type);
@@ -166,12 +166,12 @@ MIRType *TypeTable::GetOrCreateClassOrInterface(const std::string &name, MIRModu
     }
     module.PushbackTypeDefOrder(strIdx);
     module.GetTypeNameTab()->SetGStrIdxToTyIdx(strIdx, tyIdx);
-    if (typeTable[tyIdx.GetIdx()]->GetNameStrIdx() == 0) {
-      typeTable[tyIdx.GetIdx()]->SetNameStrIdx(strIdx);
+    if (typeTable[tyIdx]->GetNameStrIdx() == 0) {
+      typeTable[tyIdx]->SetNameStrIdx(strIdx);
     }
   }
-  ASSERT(tyIdx.GetIdx() < typeTable.size(), "index out of range in TypeTable::GetOrCreateClassOrInterface");
-  return typeTable.at(tyIdx.GetIdx());
+  ASSERT(tyIdx < typeTable.size(), "index out of range in TypeTable::GetOrCreateClassOrInterface");
+  return typeTable.at(tyIdx);
 }
 
 void TypeTable::AddFieldToStructType(MIRStructType &structType, const std::string &fieldName, MIRType &fieldType) {

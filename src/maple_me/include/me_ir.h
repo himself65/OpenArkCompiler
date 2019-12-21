@@ -638,7 +638,7 @@ class ConststrMeExpr : public MeExpr {
 
   uint32 GetHashIndex() const override {
     constexpr uint32 kConststrHashShift = 6;
-    return strIdx.GetIdx() << kConststrHashShift;
+    return static_cast<uint32>(strIdx) << kConststrHashShift;
   }
 
  private:
@@ -660,7 +660,7 @@ class Conststr16MeExpr : public MeExpr {
 
   uint32 GetHashIndex() const override {
     constexpr uint32 kConststr16HashShift = 6;
-    return strIdx.GetIdx() << kConststr16HashShift;
+    return static_cast<uint32>(strIdx) << kConststr16HashShift;
   }
 
  private:
@@ -682,7 +682,7 @@ class SizeoftypeMeExpr : public MeExpr {
 
   uint32 GetHashIndex() const override {
     constexpr uint32 sizeoftypeHashShift = 5;
-    return tyIdx.GetIdx() << sizeoftypeHashShift;
+    return static_cast<uint32>(tyIdx) << sizeoftypeHashShift;
   }
 
  private:
@@ -714,7 +714,8 @@ class FieldsDistMeExpr : public MeExpr {
   uint32 GetHashIndex() const override {
     constexpr uint32 kFieldsDistHashShift = 5;
     constexpr uint32 kTyIdxShiftFactor = 10;
-    return (tyIdx.GetIdx() << kTyIdxShiftFactor) + (static_cast<uint32>(fieldID1) << kFieldsDistHashShift) + fieldID2;
+    return (static_cast<uint32>(tyIdx) << kTyIdxShiftFactor) + (static_cast<uint32>(fieldID1) << kFieldsDistHashShift) +
+           fieldID2;
   }
 
  private:
@@ -794,7 +795,7 @@ class GcmallocMeExpr : public MeExpr {
 
   uint32 GetHashIndex() const {
     constexpr uint32 kGcmallocHashShift = 4;
-    return tyIdx.GetIdx() << kGcmallocHashShift;
+    return static_cast<uint32>(tyIdx) << kGcmallocHashShift;
   }
 
  private:

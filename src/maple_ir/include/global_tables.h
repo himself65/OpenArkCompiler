@@ -35,7 +35,7 @@ using FieldVector = std::vector<FieldPair>;
 class TyIdxHash {
  public:
   std::size_t operator()(const TyIdx &tyIdx) const {
-    return std::hash<uint32>{}(tyIdx.GetIdx());
+    return std::hash<uint32>{}(tyIdx);
   }
 };
 
@@ -43,7 +43,7 @@ class TyIdxHash {
 class GStrIdxHash {
  public:
   std::size_t operator()(const GStrIdx &gStrIdx) const {
-    return std::hash<uint32>{}(gStrIdx.GetIdx());
+    return std::hash<uint32>{}(gStrIdx);
   }
 };
 
@@ -51,7 +51,7 @@ class GStrIdxHash {
 class UStrIdxHash {
  public:
   std::size_t operator()(const UStrIdx &uStrIdx) const {
-    return std::hash<uint32>{}(uStrIdx.GetIdx());
+    return std::hash<uint32>{}(uStrIdx);
   }
 };
 
@@ -74,8 +74,8 @@ class TypeTable {
     return const_cast<MIRType*>(const_cast<const TypeTable*>(this)->GetTypeFromTyIdx(tyIdx));
   }
   const MIRType *GetTypeFromTyIdx(TyIdx tyIdx) const {
-    CHECK_FATAL(tyIdx.GetIdx() < typeTable.size(), "array index out of range");
-    return typeTable.at(tyIdx.GetIdx());
+    CHECK_FATAL(tyIdx < typeTable.size(), "array index out of range");
+    return typeTable.at(tyIdx);
   }
 
   MIRType *GetTypeFromTyIdx(uint32 index) const {
@@ -84,13 +84,13 @@ class TypeTable {
   }
 
   PrimType GetPrimTypeFromTyIdx(TyIdx tyIdx) const {
-    CHECK_FATAL(tyIdx.GetIdx() < typeTable.size(), "array index out of range");
-    return typeTable.at(tyIdx.GetIdx())->GetPrimType();
+    CHECK_FATAL(tyIdx < typeTable.size(), "array index out of range");
+    return typeTable.at(tyIdx)->GetPrimType();
   }
 
   void SetTypeWithTyIdx(TyIdx tyIdx, MIRType *type) {
-    CHECK_FATAL(tyIdx.GetIdx() < typeTable.size(), "array index out of range");
-    typeTable.at(tyIdx.GetIdx()) = type;
+    CHECK_FATAL(tyIdx < typeTable.size(), "array index out of range");
+    typeTable.at(tyIdx) = type;
   }
 
   TyIdx GetOrCreateMIRType(MIRType *pType);
@@ -372,7 +372,7 @@ class StringTable {
   U GetOrCreateStrIdxFromName(const T &str) {
     U strIdx = GetStrIdxFromName(str);
     if (strIdx == 0) {
-      strIdx.SetIdx(stringTable.size());
+      strIdx.reset(stringTable.size());
       T *newStr = new T(str);
       stringTable.push_back(newStr);
       stringTableMap[newStr] = strIdx;
@@ -385,8 +385,8 @@ class StringTable {
   }
 
   const T &GetStringFromStrIdx(U strIdx) const {
-    ASSERT(strIdx.GetIdx() < stringTable.size(), "array index out of range");
-    return *stringTable[strIdx.GetIdx()];
+    ASSERT(strIdx < stringTable.size(), "array index out of range");
+    return *stringTable[strIdx];
   }
 
  private:

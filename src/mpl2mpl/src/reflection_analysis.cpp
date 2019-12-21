@@ -463,10 +463,10 @@ void ReflectionAnalysis::GenAllMethodHash(std::vector<std::pair<MethodPair*, int
     MIRFunction *func = funcSym->GetFunction();
     std::string baseName = func->GetBaseFuncName();
     baseName = NameMangler::DecodeName(baseName);
-    baseNameMap[func->GetBaseFuncNameStrIdx().GetIdx()] = baseName;
+    baseNameMap[func->GetBaseFuncNameStrIdx()] = baseName;
     std::string fullName = func->GetBaseFuncNameWithType();
     fullName = NameMangler::DecodeName(fullName);
-    fullNameMap[func->GetBaseFuncNameWithTypeStrIdx().GetIdx()] = fullName;
+    fullNameMap[func->GetBaseFuncNameWithTypeStrIdx()] = fullName;
     CHECK_FATAL(fullName.find("|") != std::string::npos, "can not find |");
     std::string signature = fullName.substr(fullName.find("|") + 1);
     ConvertMethodSig(signature);
@@ -579,7 +579,7 @@ bool RtRetentionPolicyCheck(const MIRSymbol &clInfo) {
     if (GlobalTables::GetStrTable().GetStringFromStrIdx(
             GlobalTables::GetTypeTable().GetTypeFromTyIdx(p->GetTyIdx())->GetNameStrIdx()) ==
         (kJavaLangAnnotationRetentionStr)) {
-      strIdx.SetIdx(p->GetElementVector()[0]->GetU64Val());
+      strIdx.reset(p->GetNthElement(0)->GetU64Val());
       std::string retentionType = GlobalTables::GetStrTable().GetStringFromStrIdx(strIdx);
       if (retentionType != "RUNTIME") {
         return false;
@@ -677,20 +677,20 @@ struct HashCodeComparator {
   bool operator()(std::pair<MethodPair*, int> a, std::pair<MethodPair*, int> b) {
     const MIRSymbol *funcSymA = GlobalTables::GetGsymTable().GetSymbolFromStidx(a.first->first.Idx());
     const MIRFunction *funcA = funcSymA->GetFunction();
-    auto itB = basenameMp.find(funcA->GetBaseFuncNameStrIdx().GetIdx());
+    auto itB = basenameMp.find(funcA->GetBaseFuncNameStrIdx());
     ASSERT(itB != basenameMp.end(), "check funcAname!");
     const std::string &funcAName = itB->second;
-    auto itF = fullnameMp.find(funcA->GetBaseFuncNameWithTypeStrIdx().GetIdx());
+    auto itF = fullnameMp.find(funcA->GetBaseFuncNameWithTypeStrIdx());
     ASSERT(itF != fullnameMp.end(), "check funcAname!");
     const std::string &fullNameA = itF->second;
     CHECK_FATAL(fullNameA.find("|") != fullNameA.npos, "not found |");
     const std::string &signatureA = fullNameA.substr(fullNameA.find("|") + 1);
     const MIRSymbol *funcSymB = GlobalTables::GetGsymTable().GetSymbolFromStidx(b.first->first.Idx());
     const MIRFunction *funcB = funcSymB->GetFunction();
-    itB = basenameMp.find(funcB->GetBaseFuncNameStrIdx().GetIdx());
+    itB = basenameMp.find(funcB->GetBaseFuncNameStrIdx());
     ASSERT(itB != basenameMp.end(), "check funcBname!");
     const std::string &funcBName = itB->second;
-    itF = fullnameMp.find(funcB->GetBaseFuncNameWithTypeStrIdx().GetIdx());
+    itF = fullnameMp.find(funcB->GetBaseFuncNameWithTypeStrIdx());
     ASSERT(itF != fullnameMp.end(), "check funcBname!");
     const std::string &fullNameB = itF->second;
     CHECK_FATAL(fullNameB.find("|") != std::string::npos, "not found |");
@@ -762,11 +762,11 @@ void ReflectionAnalysis::GenMethodMeta(const Klass &klass, MIRStructType &method
   uint32 mod = GetMethodModifier(klass, func);
   mirBuilder.AddIntFieldConst(methodsInfoType, newConst, fieldID++, mod);
   // @methodname
-  std::string baseName = baseNameMp[func.GetBaseFuncNameStrIdx().GetIdx()];
+  std::string baseName = baseNameMp[func.GetBaseFuncNameStrIdx()];
   uint32 methodnameIdx = FindOrInsertReflectString(baseName);
   mirBuilder.AddIntFieldConst(methodsInfoType, newConst, fieldID++, methodnameIdx);
   // @methodsignature
-  std::string fullname = fullNameMp[func.GetBaseFuncNameWithTypeStrIdx().GetIdx()];
+  std::string fullname = fullNameMp[func.GetBaseFuncNameWithTypeStrIdx()];
   std::string signature = GetSignatureFromFullName(fullname);
   ConvertMethodSig(signature);
   std::vector<std::string> typeNames;
@@ -1115,7 +1115,7 @@ void ReflectionAnalysis::AppendValueByType(std::string &annoArr, const MIRPragma
       break;
     default: { // kValueString kValueEnum kValueType
       GStrIdx strIdx;
-      strIdx.SetIdx(elem.GetU64Val());
+      strIdx.reset(elem.GetU64Val());
       std::string s = GlobalTables::GetStrTable().GetStringFromStrIdx(strIdx);
       uint32 idx = ReflectionAnalysis::FindOrInsertReflectString(s);
       annoArr += annoDelimiterPrefix;
@@ -1191,7 +1191,7 @@ std::string ReflectionAnalysis::GetArrayValue(const MapleVector<MIRPragmaElement
       default: {
         annoArray += (std::to_string(arrayElem->GetU64Val()) + annoDelimiter);
         annoArray += GlobalTables::GetStrTable().GetStringFromStrIdx(arrayElem->GetNameStrIdx());
-        strIdx.SetIdx(arrayElem->GetU64Val());
+        strIdx.reset(arrayElem->GetU64Val());
         annoArray += (GlobalTables::GetStrTable().GetStringFromStrIdx(strIdx) + annoDelimiter);
       }
     }
@@ -1214,7 +1214,7 @@ std::string ReflectionAnalysis::GetAnnoValueNoArray(const MIRPragmaElement &anno
       break;
     default: {
       GStrIdx strIdx;
-      strIdx.SetIdx(annoElem.GetU64Val());
+      strIdx.reset(annoElem.GetU64Val());
       std::string javaDescriptor;
       ConvertMapleClassName(GlobalTables::GetStrTable().GetStringFromStrIdx(strIdx), javaDescriptor);
       uint32_t idx = ReflectionAnalysis::FindOrInsertReflectString(javaDescriptor);
@@ -1575,13 +1575,13 @@ bool ReflectionAnalysis::IsAnonymousClass(const std::string &annotationString) {
   return false;
 }
 
-TyIdx ReflectionAnalysis::GenMetaStructType(MIRModule &mirModule, MIRStructType &metatype, const std::string &str) {
+TyIdx ReflectionAnalysis::GenMetaStructType(MIRModule &mirModule, MIRStructType &metaType, const std::string &str) {
   const GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(str);
-  TyIdx tyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&metatype);
+  TyIdx tyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&metaType);
   // Global?
   mirModule.GetTypeNameTab()->SetGStrIdxToTyIdx(strIdx, tyIdx);
   mirModule.PushbackTypeDefOrder(strIdx);
-  if (GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx.GetIdx())->GetNameStrIdx() == 0) {
+  if (GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->GetNameStrIdx() == 0) {
     GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->SetNameStrIdx(strIdx);
   }
   return tyIdx;

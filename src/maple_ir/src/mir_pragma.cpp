@@ -173,7 +173,7 @@ MIRPragmaElement *MIRPragma::GetPragmaElemFromSignature(const std::string &signa
         MIRPragmaElement *etmp = mod->GetMemPool()->New<MIRPragmaElement>(*mod);
         etmp->SetType(kValueType);
         std::string typeStr = signature.substr(start, end - start);
-        etmp->SetU64Val(static_cast<uint64>(GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(typeStr).GetIdx()));
+        etmp->SetU64Val(static_cast<uint64>(GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(typeStr)));
         elemStack.top()->SubElemVecPushBack(etmp);
         break;
       }
@@ -181,7 +181,7 @@ MIRPragmaElement *MIRPragma::GetPragmaElemFromSignature(const std::string &signa
         MIRPragmaElement *etmp = mod->GetMemPool()->New<MIRPragmaElement>(*mod);
         etmp->SetType(kValueType);
         std::string typeStr = signature.substr(start, end - start) + ";";
-        etmp->SetU64Val(static_cast<uint64>(GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(typeStr).GetIdx()));
+        etmp->SetU64Val(static_cast<uint64>(GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(typeStr)));
         elemStack.top()->SubElemVecPushBack(etmp);
         break;
       }
@@ -239,25 +239,25 @@ void MIRPragmaElement::Dump(int indent) const {
       LogInfo::MapleLogger() << str << " " << std::hex << "0x" << val.u << std::dec;
       break;
     case kValueString:
-      gStrIdx.SetIdx(val.u);
+      gStrIdx.reset(val.u);
       LogInfo::MapleLogger() << str << " \"" << GlobalTables::GetStrTable().GetStringFromStrIdx(gStrIdx)
                              << "\"";
       break;
     case kValueType:
-      gStrIdx.SetIdx(val.u);
+      gStrIdx.reset(val.u);
       LogInfo::MapleLogger() << str << " <$" << GlobalTables::GetStrTable().GetStringFromStrIdx(gStrIdx)
                              << ">";
       break;
     case kValueField:
-      gStrIdx.SetIdx(val.u);
+      gStrIdx.reset(val.u);
       LogInfo::MapleLogger() << str << " @" << GlobalTables::GetStrTable().GetStringFromStrIdx(gStrIdx);
       break;
     case kValueMethod:
-      gStrIdx.SetIdx(val.u);
+      gStrIdx.reset(val.u);
       LogInfo::MapleLogger() << str << " &" << GlobalTables::GetStrTable().GetStringFromStrIdx(gStrIdx);
       break;
     case kValueEnum:
-      gStrIdx.SetIdx(val.u);
+      gStrIdx.reset(val.u);
       LogInfo::MapleLogger() << str << " " << GlobalTables::GetStrTable().GetStringFromStrIdx(gStrIdx);
       break;
     case kValueArray: {
@@ -353,7 +353,7 @@ void MIRPragma::Dump(int indent) const {
   }
   LogInfo::MapleLogger() << GlobalTables::GetStrTable().GetStringFromStrIdx(strIdx) << " ";
   GStrIdx gStrIdx = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->GetNameStrIdx();
-  if (tyIdxEx.GetIdx() != 0) {
+  if (tyIdxEx != 0) {
     MIRType *typeEx = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdxEx);
     LogInfo::MapleLogger() << "\"" << typeEx->GetMplTypeName() << "\" ";
   }

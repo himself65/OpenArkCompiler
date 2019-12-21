@@ -31,7 +31,21 @@ std::string Options::skipFrom;
 std::string Options::skipAfter;
 bool Options::quiet = false;
 bool Options::regNativeFunc = false;
-bool Options::nativeWrapper = true;  // enabled by default
+bool Options::nativeWrapper = true;         // Enabled by default
+bool Options::inlineWithProfile = false;
+bool Options::useInline = true;             // Enabled by default
+bool Options::useCrossModuleInline = true;  // Enabled by default
+uint32 Options::inlineSmallFunctionThreshold = 15;
+uint32 Options::inlineSyntheticFunctionThreshold = 15;
+uint32 Options::inlineHotFunctionThreshold = 30;
+uint32 Options::inlineModuleGrowth = 10;
+uint32 Options::inlineColdFunctionThreshold = 3;
+uint32 Options::profileHotCount = 1000;
+uint32 Options::profileColdCount = 10;
+bool Options::profileHotCountSeted = false;
+bool Options::profileColdCountSeted = false;
+uint32 Options::profileHotRate = 500000;
+uint32 Options::profileColdRate = 900000;
 bool Options::regNativeDynamicOnly = false;
 std::string Options::staticBindingList;
 bool Options::usePreg = false;
@@ -51,6 +65,21 @@ enum OptionIndex {
   kDumpFunc,
   kQuiet,
   kStubJniFunc,
+  kInlineWithProfile,
+  kInlineWithoutProfile,
+  kUseInline,
+  kNoInline,
+  kUseCrossModuleInline,
+  kNoCrossModuleInline,
+  kInlineSmallFunctionThreshold,
+  kInlineSyntheticFunctionThreshold,
+  kInlineHotFunctionThreshold,
+  kInlineModuleGrowth,
+  kInlineColdFunctionThreshold,
+  kProfileHotCount,
+  kProfileColdCount,
+  kProfileHotRate,
+  kProfileColdRate,
   kRegNativeDynamicOnly,
   kRegNativeStaticBindingList,
   kNativeWrapper,
@@ -83,6 +112,37 @@ const Descriptor kUsage[] = {
     "  --quiet                           Disable brief trace messages with phase/function names" },
   { kStubJniFunc, 0, "", "regnativefunc", kBuildTypeAll, kArgCheckPolicyNone,
     "  --regnativefunc                   Generate native stub function to support JNI registration and calling" },
+  { kInlineWithProfile, 0, "", "inline-with-profile", kBuildTypeAll, kArgCheckPolicyNone,
+    "  --inline-with-profile             Enable profile-based inlining" },
+  { kInlineWithoutProfile, 0, "", "inline-without-profile", kBuildTypeAll, kArgCheckPolicyNone,
+    "  --inline-without-profile          Disable profile-based inlining" },
+  { kUseInline, 0, "", "inline", kBuildTypeAll, kArgCheckPolicyNone,
+    "  --inline                          Enable function inlining" },
+  { kNoInline, 0, "", "no-inline", kBuildTypeAll, kArgCheckPolicyNone,
+    "  --no-inline                       Disable function inlining" },
+  { kUseCrossModuleInline, 0, "", "cross-module-inline", kBuildTypeAll, kArgCheckPolicyNone,
+    "  --cross-module-inline             Enable cross-module inlining" },
+  { kNoCrossModuleInline, 0, "", "no-cross-module-inline", kBuildTypeAll, kArgCheckPolicyNone,
+    "  --no-cross-module-inline          Disable cross-module inlining" },
+  { kInlineSmallFunctionThreshold, 0, "", "inline-small-function-threshold", kBuildTypeAll, kArgCheckPolicyRequired,
+    "  --inline-small-function-threshold=15        Threshold for inlining small function" },
+  { kInlineSyntheticFunctionThreshold, 0, "", "inline-synthetic-function-threshold",
+    kBuildTypeAll, kArgCheckPolicyRequired,
+    "  --inline-synthetic-function-threshold=15    Threshold for inlining synthetic function" },
+  { kInlineHotFunctionThreshold, 0, "", "inline-hot-function-threshold", kBuildTypeAll, kArgCheckPolicyRequired,
+    "  --inline-hot-function-threshold=30          Threshold for inlining hot function" },
+  { kInlineModuleGrowth, 0, "", "inline-module-growth", kBuildTypeAll, kArgCheckPolicyRequired,
+    "  --inline-module-growth=100000               Threshold for maxmium code size growth rate. (10%)" },
+  { kInlineColdFunctionThreshold, 0, "", "inline-cold-function-threshold", kBuildTypeAll, kArgCheckPolicyRequired,
+    "  --inline-cold-function-threshold=3          Threshold for inlining cold function" },
+  { kProfileHotCount, 0, "", "profile-hot-count", kBuildTypeAll, kArgCheckPolicyRequired,
+    "  --profile-hot-count=1000          A count is regarded as hot if it exceeds this number" },
+  { kProfileColdCount, 0, "", "profile-cold-count", kBuildTypeAll, kArgCheckPolicyRequired,
+    "  --profile-cold-count=10           A count is regarded as cold if it is below this number" },
+  { kProfileHotRate, 0, "", "profile-hot-rate", kBuildTypeAll, kArgCheckPolicyRequired,
+    "  --profile-hot-rate=500000         A count is regarded as hot if it is in the largest 50%" },
+  { kProfileColdRate, 0, "", "profile-cold-rate", kBuildTypeAll, kArgCheckPolicyRequired,
+    "  --profile-cold-rate=900000        A count is regarded as cold if it is in the smallest 10%" },
   { kNativeWrapper, 1, "", "nativewrapper", kBuildTypeAll, kArgCheckPolicyNone,
     "  --nativewrapper                   Generate native wrappers [default]" },
   { kNativeWrapper, 0, "", "no-nativewrapper", kBuildTypeAll, kArgCheckPolicyNone,
@@ -153,6 +213,53 @@ bool Options::ParseOptions(int argc, char **argv, std::string &fileName) const {
         break;
       case kStubJniFunc:
         Options::regNativeFunc = true;
+        break;
+      case kInlineWithProfile:
+        Options::inlineWithProfile = true;
+        break;
+      case kInlineWithoutProfile:
+        Options::inlineWithProfile = false;
+        break;
+      case kUseInline:
+        Options::useInline = true;
+        break;
+      case kNoInline:
+        Options::useInline = false;
+        break;
+      case kUseCrossModuleInline:
+        Options::useCrossModuleInline = true;
+        break;
+      case kNoCrossModuleInline:
+        Options::useCrossModuleInline = false;
+        break;
+      case kInlineSmallFunctionThreshold:
+        Options::inlineSmallFunctionThreshold = std::stoul(opt.Args());
+        break;
+      case kInlineSyntheticFunctionThreshold:
+        Options::inlineSyntheticFunctionThreshold = std::stoul(opt.Args());
+        break;
+      case kInlineHotFunctionThreshold:
+        Options::inlineHotFunctionThreshold = std::stoul(opt.Args());
+        break;
+      case kInlineModuleGrowth:
+        Options::inlineModuleGrowth = std::stoul(opt.Args());
+        break;
+      case kInlineColdFunctionThreshold:
+        Options::inlineColdFunctionThreshold = std::stoul(opt.Args());
+        break;
+      case kProfileHotCount:
+        Options::profileHotCount = std::stoul(opt.Args());
+        Options::profileHotCountSeted = true;
+        break;
+      case kProfileColdCount:
+        Options::profileColdCount = std::stoul(opt.Args());
+        Options::profileColdCountSeted = true;
+        break;
+      case kProfileHotRate:
+        Options::profileHotRate = std::stoul(opt.Args());
+        break;
+      case kProfileColdRate:
+        Options::profileColdRate = std::stoul(opt.Args());
         break;
       case kNativeWrapper:
         Options::nativeWrapper = opt.Type();

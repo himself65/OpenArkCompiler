@@ -214,6 +214,96 @@ Options *MapleCombCompiler::MakeMpl2MplOptions(const MplOptions &options, MemPoo
       case kNativeWrapper:
         mpl2mplOption->nativeWrapper = opt.Type();
         break;
+      case kInlineWithProfile:
+        mpl2mplOption->inlineWithProfile = true;
+        break;
+      case kInlineWithoutProfile:
+        mpl2mplOption->inlineWithProfile = false;
+        break;
+      case kMpl2MplUseInline:
+        mpl2mplOption->useInline = true;
+        break;
+      case kMpl2MplNoInline:
+        mpl2mplOption->useInline = false;
+        break;
+      case kMpl2MplUseCrossModuleInline:
+        mpl2mplOption->useCrossModuleInline = true;
+        break;
+      case kMpl2MplNoCrossModuleInline:
+        mpl2mplOption->useCrossModuleInline = false;
+        break;
+      case kInlineSmallFunctionThreshold:
+        if (opt.Args().empty()) {
+          LogInfo::MapleLogger(kLlErr) << "expecting not empty for --inline-small-function-threshold\n";
+          exit(1);
+        } else {
+          mpl2mplOption->inlineSmallFunctionThreshold = std::stoul(opt.Args());
+        }
+        break;
+      case kInlineSyntheticFunctionThreshold:
+        if (opt.Args().empty()) {
+          LogInfo::MapleLogger(kLlErr) << "expecting not empty for --inline-synthetic-function-threshold\n";
+          exit(1);
+        } else {
+          mpl2mplOption->inlineSyntheticFunctionThreshold = std::stoul(opt.Args());
+        }
+        break;
+      case kInlineHotFunctionThreshold:
+        if (opt.Args().empty()) {
+          LogInfo::MapleLogger(kLlErr) << "expecting not empty for --inline-hot-function-threshold\n";
+          exit(1);
+        } else {
+          mpl2mplOption->inlineHotFunctionThreshold = std::stoul(opt.Args());
+        }
+        break;
+      case kInlineModuleGrowth:
+        if (opt.Args().empty()) {
+          LogInfo::MapleLogger(kLlErr) << "expecting not empty for --inline-module-growth\n";
+          exit(1);
+        } else {
+          mpl2mplOption->inlineModuleGrowth = std::stoul(opt.Args());
+        }
+        break;
+      case kInlineColdFunctionThreshold:
+        if (opt.Args().empty()) {
+          LogInfo::MapleLogger(kLlErr) << "expecting not empty for --inline-cold-function-threshold\n";
+          exit(1);
+        } else {
+          mpl2mplOption->inlineColdFunctionThreshold = std::stoul(opt.Args());
+        }
+        break;
+      case kProfileHotCount:
+        if (opt.Args().empty()) {
+          LogInfo::MapleLogger(kLlErr) << "expecting not empty for --profile-hot-count\n";
+          exit(1);
+        } else {
+          mpl2mplOption->profileHotCount = std::stoul(opt.Args());
+        }
+        break;
+      case kProfileColdCount:
+        if (opt.Args().empty()) {
+          LogInfo::MapleLogger(kLlErr) << "expecting not empty for --profile-cold-count\n";
+          exit(1);
+        } else {
+          mpl2mplOption->profileColdCount = std::stoul(opt.Args());
+        }
+        break;
+      case kProfileHotRate:
+        if (opt.Args().empty()) {
+          LogInfo::MapleLogger(kLlErr) << "expecting not empty for --profile-hot-rate\n";
+          exit(1);
+        } else {
+          mpl2mplOption->profileHotRate = std::stoul(opt.Args());
+        }
+        break;
+      case kProfileColdRate:
+        if (opt.Args().empty()) {
+          LogInfo::MapleLogger(kLlErr) << "expecting not empty for --profile-cold-rate\n";
+          exit(1);
+        } else {
+          mpl2mplOption->profileColdRate = std::stoul(opt.Args());
+        }
+        break;
       case kMpl2MplMapleLinker:
         mpl2mplOption->mapleLinker = true;
         mpl2mplOption->dumpMuidFile = true;

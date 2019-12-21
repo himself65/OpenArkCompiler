@@ -125,12 +125,12 @@ void ClassInit::ProcessFunc(MIRFunction *func) {
         // intrinsiccallwithtype <$LTest_3B> JAVA_CLINIT_CHECK ()        -->
         // intrinsiccall MPL_CLINIT_CHECK (addrof ptr $__cinf_LTest_3B)
         CHECK_FATAL(intrinsicCall->GetNopndSize() == 0, "wrong arg vectors");
-        CHECK_FATAL(intrinsicCall->GetTyIdx().GetIdx() < GlobalTables::GetTypeTable().GetTypeTable().size(),
+        CHECK_FATAL(intrinsicCall->GetTyIdx() < GlobalTables::GetTypeTable().GetTypeTable().size(),
                     "index out of range");
-        MIRType *classType = GlobalTables::GetTypeTable().GetTypeTable()[intrinsicCall->GetTyIdx().GetIdx()];
+        MIRType *classType = GlobalTables::GetTypeTable().GetTypeTable()[intrinsicCall->GetTyIdx()];
         ASSERT(classType != nullptr, "null ptr check!");
         CHECK_FATAL(classType->GetNameStrIdx() != 0, "symbol name is null for type index %d",
-                    intrinsicCall->GetTyIdx().GetIdx());
+                    static_cast<uint32>(intrinsicCall->GetTyIdx()));
         const std::string &className = GlobalTables::GetStrTable().GetStringFromStrIdx(classType->GetNameStrIdx());
         Klass *klass = klassHierarchy->GetKlassFromName(className);
         bool doClinitCheck = false;

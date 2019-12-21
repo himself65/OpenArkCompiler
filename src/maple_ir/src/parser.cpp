@@ -429,11 +429,11 @@ bool MIRParser::ParsePragmaElement(MIRPragmaElement &elem) {
     case TK_var:
     case TK_func:
     case TK_enum:
-      elem.SetI32Val(GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName()).GetIdx());
+      elem.SetI32Val(static_cast<int32>(GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName())));
       break;
     case TK_type:
       lexer.NextToken();
-      elem.SetI32Val(GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName()).GetIdx());
+      elem.SetI32Val(static_cast<int32>(GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName())));
       lexer.NextToken();
       break;
     case TK_array:
@@ -672,9 +672,8 @@ bool MIRParser::ParseFields(MIRStructType &type) {
     } else if ((tk == kTkIntconst || tk == kTkString) && !isParentField &&
                (tyKind == kTypeClass || tyKind == kTypeClassIncomplete ||
                 tyKind == kTypeInterface || tyKind == kTypeInterfaceIncomplete)) {
-      uint32 infoVal =
-          (tk == kTkIntconst) ? lexer.GetTheIntVal()
-                              : GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName()).GetIdx();
+      uint32 infoVal = (tk == kTkIntconst) ? static_cast<uint32>(lexer.GetTheIntVal()) :
+          static_cast<uint32>(GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName()));
       type.PushbackMIRInfo(MIRInfoPair(strIdx, infoVal));
       type.PushbackIsString(tk != kTkIntconst);
       notaType = true;
@@ -1101,7 +1100,7 @@ bool MIRParser::ParseDefinedTypename(TyIdx &definedTyIdx, MIRTypeKind kind) {
   // check if type already exist
   definedTyIdx = mod.GetTypeNameTab()->GetTyIdxFromGStrIdx(strIdx);
   TyIdx prevTypeIdx(0);
-  if (definedTyIdx.GetIdx()) {
+  if (definedTyIdx) {
     MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(definedTyIdx);
     if (type->IsStructType()) {
       auto *stype = static_cast<MIRStructType*>(type);
@@ -1625,7 +1624,7 @@ bool MIRParser::ParseDeclareReg(MIRSymbol &symbol, MIRFunction &func) {
     Error("ParseDeclarePreg failed while parsing the type");
     return false;
   }
-  ASSERT(tyIdx.GetIdx() > 0, "parse declare preg failed");
+  ASSERT(tyIdx > 0, "parse declare preg failed");
   if (GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->GetKind() == kTypeByName) {
     Error("type in var declaration cannot be forward-referenced at ");
     return false;
@@ -1687,7 +1686,7 @@ bool MIRParser::ParseDeclareVar(MIRSymbol &symbol) {
     Error("ParseDeclareVar failed when parsing the type");
     return false;
   }
-  ASSERT(tyIdx.GetIdx() > 0, "parse declare var failed ");
+  ASSERT(tyIdx > 0, "parse declare var failed ");
   if (GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->GetKind() == kTypeByName) {
     Error("type in var declaration cannot be forward-referenced at ");
     return false;
@@ -2131,7 +2130,7 @@ bool MIRParser::ParseFuncInfo() {
       func->PushbackIsString(false);
     } else if (tokenKind == kTkString) {
       GStrIdx literalStrIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName());
-      func->PushbackMIRInfo(MIRInfoPair(strIdx, literalStrIdx.GetIdx()));
+      func->PushbackMIRInfo(MIRInfoPair(strIdx, literalStrIdx));
       func->PushbackIsString(true);
     } else {
       Error("illegal value after funcinfo field name at ");
@@ -2536,7 +2535,7 @@ bool MIRParser::ParseMIRForFileInfo() {
       mod.PushFileInfoIsString(false);
     } else if (tk == kTkString) {
       GStrIdx litStrIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName());
-      mod.PushFileInfoPair(MIRInfoPair(strIdx, litStrIdx.GetIdx()));
+      mod.PushFileInfoPair(MIRInfoPair(strIdx, litStrIdx));
       mod.PushFileInfoIsString(true);
     } else {
       Error("illegal value after fileInfo field name at ");

@@ -172,8 +172,8 @@ class MIRModule {
     typeDefOrder.push_back(gstrIdx);
   }
 
-  void AddClass(TyIdx t);
-  void RemoveClass(TyIdx t);
+  void AddClass(TyIdx tyIdx);
+  void RemoveClass(TyIdx tyIdx);
 
   void SetCurFunction(MIRFunction *f) {
     curFunction = f;
