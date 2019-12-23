@@ -119,7 +119,7 @@ class MIRFunction {
     classTyIdx = tyIdx;
   }
   void SetClassTyIdx(uint32 idx) {
-    classTyIdx = idx;
+    classTyIdx.reset(idx);
   }
 
   size_t GetParamSize() const {
@@ -360,7 +360,7 @@ class MIRFunction {
 
   // tell whether this function is a Java method
   bool IsJava() const {
-    return classTyIdx.GetIdx();
+    return classTyIdx != 0;
   }
 
   const MIRType *GetNodeType(const BaseNode &node) const;

@@ -114,6 +114,8 @@ static constexpr const char kDecoupleStaticKeyStr[] = "__staticDecoupleKeyOffset
 static constexpr const char kDecoupleStaticValueStr[] = "__staticDecoupleValueOffset";
 static constexpr const char kMarkDecoupleStaticStr[] = "decouple_static:";
 static constexpr const char kClassInfoPrefix[] = "__cinf";
+static constexpr const char kBssSectionStr[] = "__bss_section";
+static constexpr const char kLinkerHashSoStr[] = "__linkerHashSo";
 
 static constexpr const char kStaticFieldNamePrefixStr[] = "__static_field_name";
 static constexpr const char kPackageNameSplitterStr[] = "_2F";

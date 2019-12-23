@@ -420,8 +420,8 @@ uint32 MIRFunction::GetInfo(const std::string &string) const {
 }
 
 void MIRFunction::OverrideBaseClassFuncNames(GStrIdx strIdx) {
-  baseClassStrIdx.SetIdx(0);
-  baseFuncStrIdx.SetIdx(0);
+  baseClassStrIdx.reset();
+  baseFuncStrIdx.reset();
   SetBaseClassFuncNames(strIdx);
 }
 

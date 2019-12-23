@@ -288,7 +288,7 @@ void MIRSymbol::Dump(bool isLocal, int32 indent, bool suppressInit) const {
       (GetStorageClass() == kScExtern && sKind == kStFunc)) {
     return;
   }
-  if (GetTyIdx().GetIdx() >= GlobalTables::GetTypeTable().GetTypeTable().size()) {
+  if (GetTyIdx() >= GlobalTables::GetTypeTable().GetTypeTable().size()) {
     FATAL(kLncFatal, "valid maple_ir with illegal type");
   }
   if (GetStorageClass() == kScText && GetFunction() != nullptr) {

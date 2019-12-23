@@ -310,7 +310,7 @@ const std::string &MIRType::GetName() const {
 
 bool MIRType::ValidateClassOrInterface(const std::string &className, bool noWarning) const {
   if (primType == maple::PTY_agg && (typeKind == maple::kTypeClass || typeKind == maple::kTypeInterface) &&
-      nameStrIdx.GetIdx()) {
+      nameStrIdx != 0) {
     return true;
   }
   if (!noWarning) {

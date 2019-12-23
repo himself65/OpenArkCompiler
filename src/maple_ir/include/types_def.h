@@ -20,6 +20,7 @@
 // reinventing our own primitive types.
 #include <cstdint>
 #include <cstddef>
+#include "mpl_number.h"
 
 namespace maple {
 // Let's keep the following definitions so that existing code will continue to work.
@@ -105,61 +106,17 @@ using PregIdx16 = int16;
 using ExprIdx = int32;
 using FieldID = int32;
 
-// T is integer, category is Idx kind.
-// this template is for instantiating some kinds of Idx Class such as TyIdx, GStrIdx, UStrIdx, U16StrIdx
-template <typename T, typename Category>
-class IdxTemplate {
- public:
-  IdxTemplate() = default;
-  explicit IdxTemplate(T i) : idx(i) {}
-  IdxTemplate(const IdxTemplate&) = default;
-  IdxTemplate &operator=(const IdxTemplate&) = default;
-  ~IdxTemplate() = default;
+class TypeTag;
+using TyIdx = utils::Index<TypeTag, uint32>;        // global type table index
 
-  void operator=(T id) {
-    idx = id;
-  }
-  bool operator==(const IdxTemplate &x) const {
-    return idx == x.idx;
-  }
+class GStrTag;
+using GStrIdx = utils::Index<GStrTag, uint32>;      // global string table index
 
-  bool operator!=(const IdxTemplate &x) const {
-    return !(*this == x);
-  }
+class UStrTag;
+using UStrIdx = utils::Index<UStrTag, uint32>;      // user string table index (from the conststr opcode)
 
-  bool operator==(T id) const {
-    return idx == id;
-  }
-
-  bool operator!=(T id) const {
-    return !(*this == id);
-  }
-
-  bool operator<(const IdxTemplate &x) const {
-    return idx < x.idx;
-  }
-
-  T GetIdx() const {
-    return idx;
-  }
-
-  void SetIdx(T i) {
-    idx = i;
-  }
-
- private:
-  T idx = 0;
-};
-
-struct TyIdxCategory {};
-struct GStrIdxCategory {};
-struct UStrIdxCategory {};
-struct U16StrIdxCategory {};
-
-using TyIdx = IdxTemplate<uint32, TyIdxCategory>;          // global type table index
-using GStrIdx = IdxTemplate<uint32, GStrIdxCategory>;      // global string table index
-using UStrIdx = IdxTemplate<uint32, UStrIdxCategory>;      // user string table index (from the conststr opcode)
-using U16StrIdx = IdxTemplate<uint32, U16StrIdxCategory>;  // user string table index (from the conststr opcode)
+class U16StrTag;
+using U16StrIdx = utils::Index<U16StrTag, uint32>;  // user string table index (from the conststr opcode)
 
 const TyIdx kInitTyIdx = TyIdx(0);
 const TyIdx kNoneTyIdx = TyIdx(UINT32_MAX);

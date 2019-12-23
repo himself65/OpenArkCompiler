@@ -205,7 +205,7 @@ class MplOptions {
   ErrorCode DecideRunningPhases();
   ErrorCode CheckInputFileValidity();
   ErrorCode CheckFileExits();
-  void AddOption(const mapleOption::Option &option);
+  ErrorCode AddOption(const mapleOption::Option &option);
   ErrorCode UpdatePhaseOption(const std::string &args, const std::string &exeName);
   ErrorCode UpdateExtraOptionOpt(const std::string &args);
   ErrorCode AppendDefaultCombOptions();

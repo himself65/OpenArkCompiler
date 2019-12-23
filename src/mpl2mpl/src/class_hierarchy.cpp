@@ -76,7 +76,7 @@ void Klass::DumpKlassImplKlasses() const {
   }
   LogInfo::MapleLogger() << "  implemented by:\n";
   for (Klass *implKlass : implKlasses) {
-    LogInfo::MapleLogger() << "   \t@implbyclass_idx " << implKlass->structType->GetTypeIndex().GetIdx() << "\n";
+    LogInfo::MapleLogger() << "   \t@implbyclass_idx " << implKlass->structType->GetTypeIndex() << "\n";
   }
 }
 
@@ -86,7 +86,7 @@ void Klass::DumpKlassImplInterfaces() const {
   }
   LogInfo::MapleLogger() << "  implements:\n";
   for (Klass *interface : implInterfaces) {
-    LogInfo::MapleLogger() << "   \t@implinterface_idx " << interface->structType->GetTypeIndex().GetIdx() << "\n";
+    LogInfo::MapleLogger() << "   \t@implinterface_idx " << interface->structType->GetTypeIndex() << "\n";
   }
 }
 
@@ -96,7 +96,7 @@ void Klass::DumpKlassSuperKlasses() const {
   }
   LogInfo::MapleLogger() << "   superclasses:\n";
   for (Klass *superKlass : superKlasses) {
-    LogInfo::MapleLogger() << "   \t@superclass_idx " << superKlass->structType->GetTypeIndex().GetIdx() << "\n";
+    LogInfo::MapleLogger() << "   \t@superclass_idx " << superKlass->structType->GetTypeIndex() << "\n";
   }
 }
 
@@ -106,13 +106,13 @@ void Klass::DumpKlassSubKlasses() const {
   }
   LogInfo::MapleLogger() << "   subclasses:\n";
   for (Klass *subKlass : subKlasses) {
-    LogInfo::MapleLogger() << "   \t@subclass_idx " << subKlass->structType->GetTypeIndex().GetIdx() << "\n";
+    LogInfo::MapleLogger() << "   \t@subclass_idx " << subKlass->structType->GetTypeIndex() << "\n";
   }
 }
 
 void Klass::Dump() const {
   // Dump detailed class info
-  LogInfo::MapleLogger() << "class \" " << GetKlassName() << " \" @class_id " << structType->GetTypeIndex().GetIdx()
+  LogInfo::MapleLogger() << "class \" " << GetKlassName() << " \" @class_id " << structType->GetTypeIndex()
                          << "\n";
   DumpKlassSuperKlasses();
   DumpKlassSubKlasses();

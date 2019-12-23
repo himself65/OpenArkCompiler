@@ -14,8 +14,7 @@
  */
 #ifdef LOAD_ALGO_PRIMARY_TYPE
 #undef LOAD_ALGO_PRIMARY_TYPE
-/* NOTE: this ordering needs to be in sync with ptypesizetable[] in
-         maplevm/src/vmfunc.cpp */
+// NOTE: this ordering needs to be in sync with ptypesizetable[] in maplevm/src/vmfunc.cpp
   PRIMTYPE(void)
   PRIMTYPE(i8)
   PRIMTYPE(i16)

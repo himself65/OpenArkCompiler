@@ -475,13 +475,13 @@ void ConstvalNode::Dump(const MIRModule &mod, int32 indent) const {
 
 void ConststrNode::Dump(const MIRModule &mod, int32 indent) const {
   BaseNode::DumpBase(mod, 0);
-  const std::string kStr = GlobalTables::GetUStrTable().GetStringFromStrIdx(UStrIdx(strIdx.GetIdx()));
+  const std::string kStr = GlobalTables::GetUStrTable().GetStringFromStrIdx(UStrIdx(strIdx));
   PrintString(kStr);
 }
 
 void Conststr16Node::Dump(const MIRModule &mod, int32 indent) const {
   BaseNode::DumpBase(mod, 0);
-  const std::u16string kStr16 = GlobalTables::GetU16StrTable().GetStringFromStrIdx(U16StrIdx(strIdx.GetIdx()));
+  const std::u16string kStr16 = GlobalTables::GetU16StrTable().GetStringFromStrIdx(U16StrIdx(strIdx));
   // UTF-16 string are dumped as UTF-8 string in mpl to keep the printable chars in ascii form
   std::string str;
   NameMangler::UTF16ToUTF8(str, kStr16);
@@ -1090,7 +1090,7 @@ void BlockNode::Dump(const MIRModule &mod, int32 indent, const MIRSymbolTable *t
       LogInfo::MapleLogger() << "ALIAS %" << GlobalTables::GetStrTable().GetStringFromStrIdx(it.first) << " %"
                              << GlobalTables::GetStrTable().GetStringFromStrIdx(it.second.memPoolStrIdx) << " ";
       GlobalTables::GetTypeTable().GetTypeFromTyIdx(it.second.tyIdx)->Dump(0);
-      if (it.second.sigStrIdx.GetIdx()) {
+      if (it.second.sigStrIdx) {
         LogInfo::MapleLogger() << " \"" << GlobalTables::GetStrTable().GetStringFromStrIdx(it.second.sigStrIdx) << "\"";
       }
       LogInfo::MapleLogger() << '\n';
@@ -1319,7 +1319,7 @@ inline MIRTypeKind GetTypeKind(TyIdx tyIdx) {
 
 inline MIRType *GetPointedMIRType(TyIdx tyIdx) {
   MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
-  CHECK_FATAL(type->GetKind() == kTypePointer, "TyIdx: %d is not pointer type", tyIdx.GetIdx());
+  CHECK_FATAL(type->GetKind() == kTypePointer, "TyIdx: %d is not pointer type", static_cast<uint32>(tyIdx));
   auto *ptrType = static_cast<MIRPtrType*>(type);
   return ptrType->GetPointedType();
 }
@@ -1340,7 +1340,7 @@ bool GetFieldType(MIRSrcLang srcLang, const MIRStructType *structType, FieldID t
       const auto *classType = static_cast<const MIRClassType*>(structType);
       std::stack<MIRStructType*> inheritChain;
       TyIdx parentTyIdx = classType->GetParentTyIdx();
-      while (parentTyIdx.GetIdx() > 0) {
+      while (parentTyIdx > 0) {
         auto *parentType = static_cast<MIRStructType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(parentTyIdx));
         inheritChain.push(parentType);
         parentTyIdx = static_cast<MIRClassType*>(parentType)->GetParentTyIdx();

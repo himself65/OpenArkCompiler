@@ -15,12 +15,16 @@
 #ifndef MAPLE_UTIL_INCLUDE_MPL_NUMBER_H
 #define MAPLE_UTIL_INCLUDE_MPL_NUMBER_H
 #include <algorithm>
+#include <string>
+#include "meta.h"
 
 namespace maple { namespace utils {
 
 template <typename T, typename = void>
 class Number {
  public:
+  static_assert(std::is_integral<T>::value, "Type for Number should be an integral.");
+
   using element_type = T;
 
   Number() = default;
@@ -54,7 +58,7 @@ class Number {
     return *this;
   }
 
-  void reset(element_type data) noexcept {
+  void reset(element_type data = 0) noexcept {
     val = data;
   }
 
@@ -66,13 +70,19 @@ class Number {
     return val;
   }
 
-  operator bool() const = delete;
-
-  operator element_type() const noexcept {
+  template <typename U = T>
+  operator std::enable_if_t<std::is_same<U, T>::value, U>() const noexcept {
     return val;
   }
 
-  template <typename U, typename = std::enable_if_t<!std::is_same<T, U>::value>>
+  template <typename U = size_t>
+  operator
+      std::enable_if_t<meta_and<meta_not<std::is_same<U, T>>, std::is_same<U, size_t>>::value, U>() const noexcept {
+    return static_cast<size_t>(val);
+  }
+
+  template <typename U, typename = std::enable_if_t<meta_and<meta_not<std::is_same<U, T>>,
+                                                             meta_not<std::is_same<U, size_t>>>::value>>
   explicit operator U() const noexcept {
     return static_cast<U>(val);
   }
@@ -115,6 +125,14 @@ class Number {
     return Number(tmp);
   }
 
+  T GetIdx() const {
+    return val;
+  }
+
+  void SetIdx(T i) {
+    val = i;
+  }
+
  private:
   element_type val = 0;
 };
@@ -154,67 +172,80 @@ inline Number<T, Tag> operator+(const Number<T, Tag> &lhs, const Number<T, Tag> 
   return Number<T, Tag>(lhs.get() + rhs.get());
 }
 
+
 template <typename T, typename Tag>
 inline Number<T, Tag> operator-(const Number<T, Tag> &lhs, const Number<T, Tag> &rhs) {
   return Number<T, Tag>(lhs.get() + rhs.get());
 }
 
-template <typename T, typename Tag, typename U, typename = std::enable_if_t<std::is_integral<U>::value>>
+template <typename T, typename Tag, typename U,
+          typename = std::enable_if_t<meta_or<std::is_integral<U>, std::is_enum<U>>::value>>
 inline bool operator==(const Number<T, Tag> &lhs, const U &rhs) {
   return lhs.get() == rhs;
 }
 
-template <typename T, typename Tag, typename U, typename = std::enable_if_t<std::is_integral<U>::value>>
+template <typename T, typename Tag, typename U,
+          typename = std::enable_if_t<meta_or<std::is_integral<U>, std::is_enum<U>>::value>>
 inline bool operator==(const U &lhs, const Number<T, Tag> &rhs) {
   return lhs == rhs.get();
 }
 
-template <typename T, typename Tag, typename U, typename = std::enable_if_t<std::is_integral<U>::value>>
+template <typename T, typename Tag, typename U,
+          typename = std::enable_if_t<meta_or<std::is_integral<U>, std::is_enum<U>>::value>>
 inline bool operator!=(const Number<T, Tag> &lhs, const U &rhs) {
   return !(lhs == rhs);
 }
 
-template <typename T, typename Tag, typename U, typename = std::enable_if_t<std::is_integral<U>::value>>
+template <typename T, typename Tag, typename U,
+          typename = std::enable_if_t<meta_or<std::is_integral<U>, std::is_enum<U>>::value>>
 inline bool operator!=(const U &lhs, const Number<T, Tag> &rhs) {
   return !(lhs == rhs);
 }
 
-template <typename T, typename Tag, typename U, typename = std::enable_if_t<std::is_integral<U>::value>>
+template <typename T, typename Tag, typename U,
+          typename = std::enable_if_t<meta_or<std::is_integral<U>, std::is_enum<U>>::value>>
 inline bool operator<(const Number<T, Tag> &lhs, const U &rhs) {
   return lhs.get() < rhs;
 }
 
-template <typename T, typename Tag, typename U, typename = std::enable_if_t<std::is_integral<U>::value>>
+template <typename T, typename Tag, typename U,
+          typename = std::enable_if_t<meta_or<std::is_integral<U>, std::is_enum<U>>::value>>
 inline bool operator<(const U &lhs, const Number<T, Tag> &rhs) {
   return lhs < rhs.get();
 }
 
-template <typename T, typename Tag, typename U, typename = std::enable_if_t<std::is_integral<U>::value>>
+template <typename T, typename Tag, typename U,
+          typename = std::enable_if_t<meta_or<std::is_integral<U>, std::is_enum<U>>::value>>
 inline bool operator<=(const Number<T, Tag> &lhs, const U &rhs) {
   return lhs.get() <= rhs;
 }
 
-template <typename T, typename Tag, typename U, typename = std::enable_if_t<std::is_integral<U>::value>>
+template <typename T, typename Tag, typename U,
+          typename = std::enable_if_t<meta_or<std::is_integral<U>, std::is_enum<U>>::value>>
 inline bool operator<=(const U &lhs, const Number<T, Tag> &rhs) {
   return lhs <= rhs.get();
 }
 
-template <typename T, typename Tag, typename U, typename = std::enable_if_t<std::is_integral<U>::value>>
+template <typename T, typename Tag, typename U,
+          typename = std::enable_if_t<meta_or<std::is_integral<U>, std::is_enum<U>>::value>>
 inline bool operator>(const Number<T, Tag> &lhs, const U &rhs) {
   return !(lhs <= rhs);
 }
 
-template <typename T, typename Tag, typename U, typename = std::enable_if_t<std::is_integral<U>::value>>
+template <typename T, typename Tag, typename U,
+          typename = std::enable_if_t<meta_or<std::is_integral<U>, std::is_enum<U>>::value>>
 inline bool operator>(const U &lhs, const Number<T, Tag> &rhs) {
   return !(lhs <= rhs);
 }
 
-template <typename T, typename Tag, typename U, typename = std::enable_if_t<std::is_integral<U>::value>>
+template <typename T, typename Tag, typename U,
+          typename = std::enable_if_t<meta_or<std::is_integral<U>, std::is_enum<U>>::value>>
 inline bool operator>=(const Number<T, Tag> &lhs, const U &rhs) {
   return !(lhs < rhs);
 }
 
-template <typename T, typename Tag, typename U, typename = std::enable_if_t<std::is_integral<U>::value>>
+template <typename T, typename Tag, typename U,
+          typename = std::enable_if_t<meta_or<std::is_integral<U>, std::is_enum<U>>::value>>
 inline bool operator>=(const U &lhs, const Number<T, Tag> &rhs) {
   return !(lhs < rhs);
 }
@@ -249,4 +280,11 @@ template <typename Type, typename T = size_t>
 using Index = Number<T, Type>;
 
 }}
-#endif //MAPLE_UTIL_INCLUDE_NUMBER_H
+
+namespace std {
+  template <typename T, typename Type>
+  inline string to_string(maple::utils::Number<T, Type> val) {
+    return std::to_string (val.get());
+  }
+}
+#endif //MAPLE_UTIL_INCLUDE_MPL_NUMBER_H

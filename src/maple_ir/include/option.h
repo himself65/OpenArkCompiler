@@ -27,6 +27,11 @@ constexpr uint32 kConservativeDecouple = 1;
 constexpr uint32 kRadicalDecouple = 2;
 class Options {
  public:
+  enum Level {
+    kMpl2MplLevelZero = 0,
+    kMpl2MplLevelOne = 1,
+    kMpl2MplLevelTwo = 2
+  };
   explicit Options(MemPool &memPool) : optionAlloc(&memPool) {}
 
   bool ParseOptions(int argc, char **argv, std::string &fileName) const;
@@ -52,6 +57,20 @@ class Options {
   static bool regNativeFunc;
   static bool regNativeDynamicOnly;
   static bool nativeWrapper;
+  static bool inlineWithProfile;
+  static bool useInline;
+  static bool useCrossModuleInline;
+  static uint32 inlineSmallFunctionThreshold;
+  static uint32 inlineSyntheticFunctionThreshold;
+  static uint32 inlineHotFunctionThreshold;
+  static uint32 inlineModuleGrowth;
+  static uint32 inlineColdFunctionThreshold;
+  static uint32 profileHotCount;
+  static uint32 profileColdCount;
+  static bool profileHotCountSeted;
+  static bool profileColdCountSeted;
+  static uint32 profileHotRate;
+  static uint32 profileColdRate;
   static std::string staticBindingList;
   static bool usePreg;
   static bool mapleLinker;

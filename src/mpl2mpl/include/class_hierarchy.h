@@ -34,6 +34,7 @@ constexpr uint32 kClassIsanonymousclass = 0x0400;
 constexpr uint32 kClassIscoldclass = 0x0800;
 constexpr uint32 kClassNeedDecouple = 0x1000;
 constexpr uint32 kClassLazyBindingClass = 0x2000;
+constexpr uint32 kClassLazyBoundClass = 0x4000; // Only used in runtime, occupancy.
 constexpr char kJavaLangNoMethodStr[] = "Ljava_2Flang_2FNoSuchMethodException_3B";
 constexpr uint32 kClassReference = (kClassSoftreference | kClassWeakreference | kClassCleaner |
                                     kClassFinalizereference | kClassPhantomreference);

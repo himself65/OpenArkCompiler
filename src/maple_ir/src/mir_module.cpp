@@ -462,12 +462,12 @@ std::string MIRModule::GetFileNameAsPostfix() const {
   return fileNameStr;
 }
 
-void MIRModule::AddClass(TyIdx t) {
-  classList.insert(t.GetIdx());
+void MIRModule::AddClass(TyIdx tyIdx) {
+  classList.insert(tyIdx);
 }
 
-void MIRModule::RemoveClass(TyIdx t) {
-  classList.erase(t.GetIdx());
+void MIRModule::RemoveClass(TyIdx tyIdx) {
+  classList.erase(tyIdx);
 }
 
 #endif  // MIR_FEATURE_FULL

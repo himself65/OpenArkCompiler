@@ -122,11 +122,11 @@ bool MIRBuilder::TraverseToNamedFieldWithTypeAndMatchStyle(MIRStructType &struct
       ++fieldID;
       if (matchStyle == (kFoundInChild | kParentFirst | kUpdateFieldID)) {
         matchStyle = kParentFirst;
-        uint32 idxBackup = nameIdx.GetIdx();
-        nameIdx.SetIdx(0);
+        uint32 idxBackup = nameIdx;
+        nameIdx.reset();
         // do not match but traverse to update fieldID, traverse parent first
         TraverseToNamedFieldWithTypeAndMatchStyle(*parentType, nameIdx, typeIdx, fieldID, matchStyle);
-        nameIdx.SetIdx(idxBackup);
+        nameIdx.reset(idxBackup);
       } else if (TraverseToNamedFieldWithTypeAndMatchStyle(*parentType, nameIdx, typeIdx, fieldID, matchStyle)) {
         return true;
       }
@@ -580,7 +580,7 @@ AddroffuncNode *MIRBuilder::CreateExprAddroffunc(PUIdx puIdx, MemPool *memPool) 
 
 AddrofNode *MIRBuilder::CreateExprDread(const MIRType &type, FieldID fieldID, const MIRSymbol &symbol) {
   auto *node = GetCurrentFuncCodeMp()->New<AddrofNode>(OP_dread, kPtyInvalid, symbol.GetStIdx(), fieldID);
-  CHECK(type.GetTypeIndex().GetIdx() < GlobalTables::GetTypeTable().GetTypeTable().size(),
+  CHECK(type.GetTypeIndex() < GlobalTables::GetTypeTable().GetTypeTable().size(),
         "index out of range in MIRBuilder::CreateExprDread");
   node->SetPrimType(GlobalTables::GetTypeTable().GetPrimTypeFromTyIdx(type.GetTypeIndex()));
   return node;
@@ -615,7 +615,7 @@ AddrofNode *MIRBuilder::CreateExprDread(PregIdx pregID, PrimType pty) {
 IreadNode *MIRBuilder::CreateExprIread(const MIRType &returnType, const MIRType &ptrType, FieldID fieldID,
                                        BaseNode *addr) {
   TyIdx returnTypeIdx = returnType.GetTypeIndex();
-  ASSERT(returnTypeIdx.GetIdx() < GlobalTables::GetTypeTable().GetTypeTable().size(),
+  ASSERT(returnTypeIdx < GlobalTables::GetTypeTable().GetTypeTable().size(),
          "index out of range in MIRBuilder::CreateExprIread");
   ASSERT(fieldID != 0 || ptrType.GetPrimType() != PTY_agg,
          "Error: Fieldid should not be 0 when trying to iread a field from type ");

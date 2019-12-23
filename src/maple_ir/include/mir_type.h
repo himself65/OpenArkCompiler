@@ -440,7 +440,7 @@ class MIRType {
     nameStrIdx = strIdx;
   }
   void SetNameStrIdxItem(uint32 idx) {
-    nameStrIdx.SetIdx(idx);
+    nameStrIdx.reset(idx);
   }
 
   virtual size_t GetSize() const {
@@ -546,7 +546,7 @@ class MIRPtrType : public MIRType {
   TyIdx GetPointedTyIdxWithFieldID(FieldID fieldID) const;
   size_t GetHashIndex() const override {
     constexpr uint8 idxShift = 4;
-    return ((pointedTyIdx.GetIdx() << idxShift) + (typeKind << kShiftNumOfTypeKind)) % kTypeHashLength;
+    return ((static_cast<size_t>(pointedTyIdx) << idxShift) + (typeKind << kShiftNumOfTypeKind)) % kTypeHashLength;
   }
 
   bool PointsToConstString() const override;
@@ -628,7 +628,7 @@ class MIRArrayType : public MIRType {
 
   size_t GetHashIndex() const override {
     constexpr uint8 idxShift = 2;
-    size_t hIdx = (eTyIdx.GetIdx() << idxShift) + (typeKind << kShiftNumOfTypeKind);
+    size_t hIdx = (static_cast<size_t>(eTyIdx) << idxShift) + (typeKind << kShiftNumOfTypeKind);
     for (size_t i = 0; i < dim; ++i) {
       CHECK_FATAL(i < kMaxArrayDim, "array index out of range");
       hIdx += (sizeArray[i] << i);
@@ -677,7 +677,7 @@ class MIRFarrayType : public MIRType {
 
   size_t GetHashIndex() const override {
     constexpr uint8 idxShift = 5;
-    return ((elemTyIdx.GetIdx() << idxShift) + (typeKind << kShiftNumOfTypeKind)) % kTypeHashLength;
+    return ((static_cast<size_t>(elemTyIdx) << idxShift) + (typeKind << kShiftNumOfTypeKind)) % kTypeHashLength;
   }
 
   std::string GetMplTypeName() const override;
@@ -931,7 +931,8 @@ class MIRStructType : public MIRType {
   size_t GetSize() const override;
 
   size_t GetHashIndex() const override {
-    return ((nameStrIdx.GetIdx() << kShiftNumOfNameStrIdx) + (typeKind << kShiftNumOfTypeKind)) % kTypeHashLength;
+    return ((static_cast<size_t>(nameStrIdx) << kShiftNumOfNameStrIdx) + (typeKind << kShiftNumOfTypeKind)) %
+           kTypeHashLength;
   }
 
   virtual void ClearContents() {
@@ -1045,7 +1046,7 @@ class MIRJarrayType : public MIRFarrayType {
 
   size_t GetHashIndex() const override {
     constexpr uint8 idxShift = 5;
-    return ((GetElemTyIdx().GetIdx() << idxShift) + (typeKind << kShiftNumOfTypeKind)) % kTypeHashLength;
+    return ((static_cast<size_t>(GetElemTyIdx()) << idxShift) + (typeKind << kShiftNumOfTypeKind)) % kTypeHashLength;
   }
 
  private:
@@ -1184,7 +1185,8 @@ class MIRClassType : public MIRStructType {
   }
 
   size_t GetHashIndex() const override {
-    return ((nameStrIdx.GetIdx() << kShiftNumOfNameStrIdx) + (typeKind << kShiftNumOfTypeKind)) % kTypeHashLength;
+    return ((static_cast<size_t>(nameStrIdx) << kShiftNumOfNameStrIdx) + (typeKind << kShiftNumOfTypeKind)) %
+           kTypeHashLength;
   }
 
  private:
@@ -1297,7 +1299,8 @@ class MIRInterfaceType : public MIRStructType {
   }
 
   size_t GetHashIndex() const override {
-    return ((nameStrIdx.GetIdx() << kShiftNumOfNameStrIdx) + (typeKind << kShiftNumOfTypeKind)) % kTypeHashLength;
+    return ((static_cast<size_t>(nameStrIdx) << kShiftNumOfNameStrIdx) + (typeKind << kShiftNumOfTypeKind)) %
+           kTypeHashLength;
   }
 
  private:
@@ -1423,9 +1426,9 @@ class MIRFuncType : public MIRType {
 
   size_t GetHashIndex() const override {
     constexpr uint8 idxShift = 6;
-    size_t hIdx = (retTyIdx.GetIdx() << idxShift) + (typeKind << kShiftNumOfTypeKind);
+    size_t hIdx = (static_cast<size_t>(retTyIdx) << idxShift) + (typeKind << kShiftNumOfTypeKind);
     size_t size = paramTypeList.size();
-    hIdx += (size ? (paramTypeList[0].GetIdx() + size) : 0) << 4;
+    hIdx += (size ? (static_cast<size_t>(paramTypeList[0]) + size) : 0) << 4;
     return hIdx % kTypeHashLength;
   }
 
@@ -1458,7 +1461,8 @@ class MIRTypeByName : public MIRType {
 
   size_t GetHashIndex() const override {
     constexpr uint8 idxShift = 2;
-    return ((nameStrIdx.GetIdx() << idxShift) + nameIsLocal + (typeKind << kShiftNumOfTypeKind)) % kTypeHashLength;
+    return ((static_cast<size_t>(nameStrIdx) << idxShift) + nameIsLocal + (typeKind << kShiftNumOfTypeKind)) %
+           kTypeHashLength;
   }
 };
 
@@ -1487,7 +1491,7 @@ class MIRTypeParam : public MIRType {
 
   size_t GetHashIndex() const override {
     constexpr uint8 idxShift = 3;
-    return ((nameStrIdx.GetIdx() << idxShift) + (typeKind << kShiftNumOfTypeKind)) % kTypeHashLength;
+    return ((static_cast<size_t>(nameStrIdx) << idxShift) + (typeKind << kShiftNumOfTypeKind)) % kTypeHashLength;
   }
 };
 
@@ -1524,7 +1528,7 @@ class MIRInstantVectorType : public MIRType {
   size_t GetHashIndex() const override {
     uint32 hIdx = typeKind << kShiftNumOfTypeKind;
     for (const TypePair &typePair : instantVec) {
-      hIdx += (typePair.first.GetIdx() + typePair.second.GetIdx()) << 3;
+      hIdx += static_cast<uint32>(typePair.first + typePair.second) << 3;
     }
     return hIdx % kTypeHashLength;
   }
@@ -1563,9 +1567,9 @@ class MIRGenericInstantType : public MIRInstantVectorType {
 
   size_t GetHashIndex() const override {
     constexpr uint8 idxShift = 2;
-    uint32 hIdx = (genericTyIdx.GetIdx() << idxShift) + (typeKind << kShiftNumOfTypeKind);
+    uint32 hIdx = (static_cast<uint32>(genericTyIdx) << idxShift) + (typeKind << kShiftNumOfTypeKind);
     for (const TypePair &typePair : instantVec) {
-      hIdx += (typePair.first.GetIdx() + typePair.second.GetIdx()) << 3;
+      hIdx += static_cast<uint32>(typePair.first + typePair.second) << 3;
     }
     return hIdx % kTypeHashLength;
   }
