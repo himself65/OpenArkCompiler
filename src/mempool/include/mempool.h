@@ -115,13 +115,13 @@ class MemPool {
     return static_cast<T*>(p);
   }
 
-#define BitsAlign(size) (((size) + 7) & (0xFFFFFFF8))
-#define MemBlockFirstPtr(x) \
-  static_cast<void*>((reinterpret_cast<char*>(x)) + BitsAlign(sizeof(MemPoolCtrler::MemBlock)))
+#define BITS_ALIGN(size) (((size) + 7) & (0xFFFFFFF8))
+#define MEM_BLOCK_FIRST_PTR(x) \
+  static_cast<void*>((reinterpret_cast<char*>(x)) + BITS_ALIGN(sizeof(MemPoolCtrler::MemBlock)))
 
  private:                                         // constants
   static constexpr size_t kMinBlockSize = 0x800;  // Minimum BlockSize is 2K
-  static constexpr size_t kMemBlockOverhead = (BitsAlign(sizeof(MemPoolCtrler::MemBlock)));
+  static constexpr size_t kMemBlockOverhead = (BITS_ALIGN(sizeof(MemPoolCtrler::MemBlock)));
   MemPoolCtrler::MemBlock *GetLargeMemBlock(size_t size);  // Raw allocate large memory block
   MemPoolCtrler::MemBlock *GetMemBlock(size_t size);
   MemPoolCtrler *ctrler;  // Hookup controller object

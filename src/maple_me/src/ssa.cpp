@@ -40,9 +40,10 @@ VersionSt *SSA::CreateNewVersion(VersionSt &vSym, BB &defBB) {
   if (oSt->IsVolatile() || oSt->IsSpecialPreg()) {
     return &vSym;
   }
-  CHECK_FATAL(vSym.GetOrigIdx().idx < vstVersions.size(), "index out of range in SSA::CreateNewVersion");
-  VersionSt *newVersionSym = ssaTab->GetVersionStTable().CreateVSymbol(&vSym, ++vstVersions[vSym.GetOrigIdx().idx]);
-  vstStacks[vSym.GetOrigIdx().idx]->push(newVersionSym);
+  CHECK_FATAL(vSym.GetOrigIdx() < vstVersions.size(), "index out of range in SSA::CreateNewVersion");
+  VersionSt *newVersionSym =
+      ssaTab->GetVersionStTable().CreateVSymbol(&vSym, ++vstVersions[vSym.GetOrigIdx()]);
+  vstStacks[vSym.GetOrigIdx()]->push(newVersionSym);
   newVersionSym->SetDefBB(&defBB);
   return newVersionSym;
 }
@@ -75,8 +76,8 @@ void SSA::RenameDefs(StmtNode &stmt, BB &defBB) {
     for (auto it = mayDefList.begin(); it != mayDefList.end(); it++) {
       MayDefNode &mayDef = it->second;
       VersionSt *vSym = mayDef.GetResult();
-      CHECK_FATAL(vSym->GetOrigIdx().idx < vstStacks.size(), "index out of range in SSA::RenameMayDefs");
-      mayDef.SetOpnd(vstStacks[vSym->GetOrigIdx().idx]->top());
+      CHECK_FATAL(vSym->GetOrigIdx() < vstStacks.size(), "index out of range in SSA::RenameMayDefs");
+      mayDef.SetOpnd(vstStacks[vSym->GetOrigIdx()]->top());
       VersionSt *newVersionSym = CreateNewVersion(*vSym, defBB);
       mayDef.SetResult(newVersionSym);
       newVersionSym->SetDefType(VersionSt::kMayDef);
@@ -104,8 +105,8 @@ void SSA::RenameMayUses(BaseNode &node) {
   for (; it != mayUseList.end(); it++) {
     MayUseNode &mayUse = it->second;
     VersionSt *vSym = mayUse.GetOpnd();
-    CHECK_FATAL(vSym->GetOrigIdx().idx < vstStacks.size(), "index out of range in SSA::RenameMayUses");
-    mayUse.SetOpnd(vstStacks.at(vSym->GetOrigIdx().idx)->top());
+    CHECK_FATAL(vSym->GetOrigIdx() < vstStacks.size(), "index out of range in SSA::RenameMayUses");
+    mayUse.SetOpnd(vstStacks.at(vSym->GetOrigIdx())->top());
   }
 }
 
@@ -113,8 +114,8 @@ void SSA::RenameExpr(BaseNode &expr) {
   if (expr.IsSSANode()) {
     auto &ssaNode = static_cast<AddrofSSANode&>(expr);
     VersionSt *vSym = ssaNode.GetSSAVar();
-    CHECK_FATAL(vSym->GetOrigIdx().idx < vstStacks.size(), "index out of range in SSA::RenameExpr");
-    ssaNode.SetSSAVar(*vstStacks[vSym->GetOrigIdx().idx]->top());
+    CHECK_FATAL(vSym->GetOrigIdx() < vstStacks.size(), "index out of range in SSA::RenameExpr");
+    ssaNode.SetSSAVar(*vstStacks[vSym->GetOrigIdx()]->top());
   }
   for (size_t i = 0; i < expr.NumOpnds(); ++i) {
     RenameExpr(*expr.Opnd(i));
@@ -144,9 +145,9 @@ void SSA::RenamePhiUseInSucc(BB &bb) {
     // rename the phiOpnds[index] in all the phis in succ_bb
     for (auto phiIt = succBB->GetPhiList().begin(); phiIt != succBB->GetPhiList().end(); ++phiIt) {
       PhiNode &phiNode = phiIt->second;
-      CHECK_FATAL(phiNode.GetPhiOpnd(index)->GetOrigIdx().idx < vstStacks.size(),
+      CHECK_FATAL(phiNode.GetPhiOpnd(index)->GetOrigIdx() < vstStacks.size(),
                   "out of range SSA::RenamePhiUseInSucc");
-      phiNode.SetPhiOpnd(index, *vstStacks.at(phiNode.GetPhiOpnd(index)->GetOrigIdx().idx)->top());
+      phiNode.SetPhiOpnd(index, *vstStacks.at(phiNode.GetPhiOpnd(index)->GetOrigIdx())->top());
     }
   }
 }

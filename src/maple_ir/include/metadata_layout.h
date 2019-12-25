@@ -189,6 +189,11 @@ struct ClassMetadataRO {
 };
 
 static constexpr size_t PageSize = 4096;
+
+// according to kSpaceAnchor and kFireBreak defined in bpallocator.cpp
+// the address of this readable page is set as kClassInitialized for java class
+static constexpr uintptr_t kClassInitializedState = 0xC0000000 - (1u << 20) * 2;
+
 extern "C" uint8_t classInitProtectRegion[];
 
 // Note there is no state to indicate a class is already initialized.

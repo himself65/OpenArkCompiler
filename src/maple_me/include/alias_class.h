@@ -113,7 +113,7 @@ class AliasClass : public AnalysisResult {
   }
 
   const AliasElem *FindAliasElem(const OriginalSt &ost) const {
-    return osym2Elem.at(ost.GetIndex().idx);
+    return osym2Elem.at(ost.GetIndex());
   }
   AliasElem *FindAliasElem(const OriginalSt &ost) {
     return const_cast<AliasElem*>(const_cast<const AliasClass*>(this)->FindAliasElem(ost));
@@ -131,7 +131,7 @@ class AliasClass : public AnalysisResult {
   }
 
   bool IsCreatedByElimRC(const OriginalSt &ost) const {
-    return ost.GetIndex().idx >= osym2Elem.size();
+    return ost.GetIndex() >= osym2Elem.size();
   }
 
   void ReinitUnionFind() {

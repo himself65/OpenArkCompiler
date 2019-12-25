@@ -18,29 +18,13 @@
 #include "mir_symbol.h"
 #include "mir_preg.h"
 #include "mir_function.h"
+#include "mpl_number.h"
 
 // This file defines the data structure OriginalSt that represents a program
 // symbol occurring in the code of the program being optimized.
 namespace maple {
-struct OStIdx {
-  size_t idx = 0;
-
-  OStIdx() = default;
-
-  explicit OStIdx(size_t i) : idx(i) {}
-
-  bool operator==(const OStIdx &x) const {
-    return idx == x.idx;
-  }
-
-  bool operator!=(const OStIdx &x) const {
-    return !(*this == x);
-  }
-
-  bool operator<(const OStIdx &x) const {
-    return idx < x.idx;
-  }
-};
+class OStTag;
+using OStIdx = utils::Index<OStTag, uint32>;
 
 constexpr int kInitVersion = 0;
 class VarMeExpr;  // circular dependency exists, no other choice
@@ -256,11 +240,11 @@ class OriginalStTable {
   OriginalSt *CreatePregOriginalSt(PregIdx pregIdx, PUIdx puIdx);
   OriginalSt *FindSymbolOriginalSt(MIRSymbol &mirSt);
   const OriginalSt *GetOriginalStFromID(OStIdx id, bool checkFirst = false) const {
-    if (checkFirst && id.idx >= originalStVector.size()) {
+    if (checkFirst && id >= originalStVector.size()) {
       return nullptr;
     }
-    ASSERT(id.idx < originalStVector.size(), "symbol table index out of range");
-    return originalStVector[id.idx];
+    ASSERT(id < originalStVector.size(), "symbol table index out of range");
+    return originalStVector[id];
   }
   OriginalSt *GetOriginalStFromID(OStIdx id, bool checkFirst = false) {
     return const_cast<OriginalSt *>(const_cast<const OriginalStTable*>(this)->GetOriginalStFromID(id, checkFirst));
@@ -294,23 +278,23 @@ class OriginalStTable {
   }
 
   void SetEPreLocalRefVar(const OStIdx &id, bool epreLocalrefvarPara = true) {
-    ASSERT(id.idx < originalStVector.size(), "symbol table index out of range");
-    originalStVector[id.idx]->SetEPreLocalRefVar(epreLocalrefvarPara);
+    ASSERT(id < originalStVector.size(), "symbol table index out of range");
+    originalStVector[id]->SetEPreLocalRefVar(epreLocalrefvarPara);
   }
 
   void SetZeroVersionIndex(const OStIdx &id, size_t zeroVersionIndexParam) {
-    ASSERT(id.idx < originalStVector.size(), "symbol table index out of range");
-    originalStVector[id.idx]->SetZeroVersionIndex(zeroVersionIndexParam);
+    ASSERT(id < originalStVector.size(), "symbol table index out of range");
+    originalStVector[id]->SetZeroVersionIndex(zeroVersionIndexParam);
   }
 
   size_t GetVersionsIndexSize(const OStIdx &id) const {
-    ASSERT(id.idx < originalStVector.size(), "symbol table index out of range");
-    return originalStVector[id.idx]->GetVersionsIndex().size();
+    ASSERT(id < originalStVector.size(), "symbol table index out of range");
+    return originalStVector[id]->GetVersionsIndex().size();
   }
 
   void UpdateVarOstMap(const OStIdx &id, std::map<OStIdx, OriginalSt*> &varOstMap) {
-    ASSERT(id.idx < originalStVector.size(), "symbol table index out of range");
-    varOstMap[id] = originalStVector[id.idx];
+    ASSERT(id < originalStVector.size(), "symbol table index out of range");
+    varOstMap[id] = originalStVector[id];
   }
 
   void Dump();
@@ -336,7 +320,7 @@ namespace std {
 template <>
 struct hash<maple::OStIdx> {
   size_t operator()(const maple::OStIdx &x) const {
-    return x.idx;
+    return static_cast<size_t>(x);
   }
 };
 }  // namespace std

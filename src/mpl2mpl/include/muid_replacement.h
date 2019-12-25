@@ -46,10 +46,13 @@ enum RangeIdx {
   kJavatext = 13,
   kJavajni = 14,
   kJavajniFunc = 15,
-  kMaxNum = 16,
+  kOldMaxNum = 16, // Old num
   kDataSection = 17,
   kDecoupleStaticKey = 18,
-  kDecoupleStaticValue = 19
+  kDecoupleStaticValue = 19,
+  kBssStart = 20,
+  kLinkerSoHash = 21,
+  kNewMaxNum = 22 // New num
 };
 
 class MUIDReplacement : public FuncOptimizeImpl {

@@ -113,6 +113,8 @@ struct DefaultOption {
 class MplOptions {
  public:
   MplOptions() = default;
+  MplOptions(const MplOptions &options) = delete;
+  MplOptions &operator=(const MplOptions &options) = delete;
   ~MplOptions() = default;
 
   int Parse(int argc, char **argv);

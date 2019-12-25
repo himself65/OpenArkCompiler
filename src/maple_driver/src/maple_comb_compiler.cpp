@@ -212,7 +212,7 @@ Options *MapleCombCompiler::MakeMpl2MplOptions(const MplOptions &options, MemPoo
         mpl2mplOption->regNativeFunc = true;
         break;
       case kNativeWrapper:
-        mpl2mplOption->nativeWrapper = opt.Type();
+        mpl2mplOption->nativeWrapper = opt.Type() > 0;
         break;
       case kInlineWithProfile:
         mpl2mplOption->inlineWithProfile = true;

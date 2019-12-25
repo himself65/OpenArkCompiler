@@ -110,7 +110,6 @@ constexpr char kJavaLangEnumStr[] = "Ljava_2Flang_2FEnum_3B";
 constexpr char kNumOfSuperclassesStr[] = "numofsuperclasses";
 constexpr char kClassMetadataRoTypeName[] = "__class_meta_ro__";
 constexpr char kMethodInVtabIndexStr[] = "method_in_vtab_index";
-constexpr char kClassStateInitializedStr[] = "classStateInitialized";
 constexpr char kSuperclassMetadataTypeName[] = "__superclass_meta__";
 constexpr char kFieldOffsetDataTypeName[] = "__fieldOffsetDataType__";
 constexpr char kMethodAddrDataTypeName[] = "__methodAddrDataType__";
@@ -1074,7 +1073,7 @@ MIRSymbol *ReflectionAnalysis::GenFieldsMetaData(const Klass &klass) {
     }
     ++j;
   }
-  ASSERT(i == size, "In class %s: %d fields seen, BUT %d fields declared", klass.GetKlassName(), i, size);
+  ASSERT(i == size, "In class %s: %d fields seen, BUT %d fields declared", klass.GetKlassName().c_str(), i, size);
   MIRSymbol *fieldsArraySt = GenFieldsMeta(klass, fieldinfoVec, fieldHashvec);
   return fieldsArraySt;
 }
@@ -1531,10 +1530,8 @@ void ReflectionAnalysis::GenClassMetaData(Klass &klass) {
     mirBuilder.AddIntFieldConst(classMetadataType, *newConst, fieldID++, kSEGVAddrForClassUninitialized);
   } else {
     // If this class and its parents do not have <clinit> method, we do not do clinit-check for this class,
-    // thus the class initialization state is modified to "Initialized", i.e., some readable address.
-    MIRType *clinitState = GlobalTables::GetTypeTable().GetUInt64();
-    MIRSymbol *classInfo = mirBuilder.GetOrCreateGlobalDecl(kClassStateInitializedStr, *clinitState);
-    mirBuilder.AddAddrofFieldConst(classMetadataType, *newConst, fieldID++, *classInfo);
+    // thus the class initialization state is modified to "Initialized".
+    mirBuilder.AddIntFieldConst(classMetadataType, *newConst, fieldID++, kClassInitializedState);
   }
 
   // Finally generate class metadata here.
