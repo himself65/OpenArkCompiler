@@ -41,7 +41,6 @@ bool MeAliasClass::HasWriteToStaticFinal() const {
 }
 
 void MeAliasClass::DoAliasAnalysis() {
-
   for (auto bIt = func.valid_begin(); bIt != func.valid_end(); ++bIt) {
     for (auto &stmt : (*bIt)->GetStmtNodes()) {
       ApplyUnionForCopies(stmt);

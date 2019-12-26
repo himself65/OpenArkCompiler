@@ -15,7 +15,6 @@ include_directories = [
   "${MAPLEALL_ROOT}/maplewpo/include",
   "${MAPLEALL_ROOT}/maple_ipa/include",
   "${MAPLEALL_ROOT}/maple_phase/include",
-  "${MAPLEALL_ROOT}/maplecomb/include",
   "${MAPLEALL_ROOT}/maple_util/include",
   "${MAPLEALL_ROOT}/maple_ir/include",
   "${MAPLEALL_ROOT}/maple_me/include",

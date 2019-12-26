@@ -338,7 +338,7 @@ void BB::ReplaceMeStmt(MeStmt *stmt, MeStmt *newStmt) {
 }
 
 void BB::DumpMeBB(IRMap &irMap) {
-  for(MeStmt &meStmt : GetMeStmts()) {
+  for (MeStmt &meStmt : GetMeStmts()) {
     meStmt.Dump(&irMap);
   }
 }

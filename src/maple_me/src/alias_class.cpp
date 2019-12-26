@@ -56,9 +56,9 @@ bool AliasClass::CallHasNoPrivateDefEffect(const CallNode &stmt) const {
 // here starts pass 1 code
 AliasElem *AliasClass::FindOrCreateAliasElem(OriginalSt &ost) {
   OStIdx ostIdx = ost.GetIndex();
-  CHECK_FATAL(ostIdx.idx > 0, "Invalid ost index");
-  CHECK_FATAL(ostIdx.idx < osym2Elem.size(), "Index out of range");
-  AliasElem *aliasElem = osym2Elem[ostIdx.idx];
+  CHECK_FATAL(ostIdx > 0, "Invalid ost index");
+  CHECK_FATAL(ostIdx < osym2Elem.size(), "Index out of range");
+  AliasElem *aliasElem = osym2Elem[ostIdx];
   if (aliasElem != nullptr) {
     return aliasElem;
   }
@@ -79,7 +79,7 @@ AliasElem *AliasClass::FindOrCreateAliasElem(OriginalSt &ost) {
     aliasElem->SetNextLevNotAllDefsSeen(true);
   }
   id2Elem.push_back(aliasElem);
-  osym2Elem[ostIdx.idx] = aliasElem;
+  osym2Elem[ostIdx] = aliasElem;
   unionFind.NewMember();
   return aliasElem;
 }
@@ -92,7 +92,7 @@ AliasElem *AliasClass::FindOrCreateExtraLevAliasElem(BaseNode &expr, TyIdx tyIdx
   OriginalSt *newOst = GetAliasAnalysisTable()->FindOrCreateExtraLevOriginalSt(aliasElem->GetOriginalSt(),
       tyIdx, fieldId);
   CHECK_FATAL(newOst != nullptr, "null ptr check");
-  if (newOst->GetIndex().idx == osym2Elem.size()) {
+  if (newOst->GetIndex() == osym2Elem.size()) {
     osym2Elem.push_back(nullptr);
     ssaTab.GetVersionStTable().CreateVersionSt(newOst, kInitVersion);
   }
@@ -101,7 +101,7 @@ AliasElem *AliasClass::FindOrCreateExtraLevAliasElem(BaseNode &expr, TyIdx tyIdx
 
 AliasElem &AliasClass::FindOrCreateAliasElemOfAddrofOSt(OriginalSt &oSt) {
   OriginalSt *addrofOst = GetAliasAnalysisTable()->FindOrCreateAddrofSymbolOriginalSt(oSt);
-  if (addrofOst->GetIndex().idx == osym2Elem.size()) {
+  if (addrofOst->GetIndex() == osym2Elem.size()) {
     osym2Elem.push_back(nullptr);
   }
   return *FindOrCreateAliasElem(*addrofOst);
@@ -416,14 +416,14 @@ AliasElem *AliasClass::FindOrCreateDummyNADSAe() {
   dummySym->SetIsDeleted();
   OriginalSt *dummyOst = ssaTab.GetOriginalStTable().CreateSymbolOriginalSt(*dummySym, 0, 0);
   ssaTab.GetVersionStTable().FindOrCreateVersionSt(dummyOst, kInitVersion);
-  if (osym2Elem.size() == dummyOst->GetIndex().idx) {
+  if (osym2Elem.size() == dummyOst->GetIndex()) {
     AliasElem *dummyAe = acMemPool.New<AliasElem>(osym2Elem.size(), *dummyOst);
     dummyAe->SetNotAllDefsSeen(true);
     id2Elem.push_back(dummyAe);
     osym2Elem.push_back(dummyAe);
     unionFind.NewMember();
   }
-  return osym2Elem[dummyOst->GetIndex().idx];
+  return osym2Elem[dummyOst->GetIndex()];
 }
 
 // TBAA
@@ -720,7 +720,7 @@ void AliasClass::InsertMayUseAll(const StmtNode &stmt) {
 }
 
 void AliasClass::CollectMayDefForDassign(const StmtNode &stmt, std::set<OriginalSt*> &mayDefOsts) {
-  AliasElem *lhsAe = osym2Elem.at(ssaTab.GetStmtsSSAPart().GetAssignedVarOf(stmt)->GetOrigIdx().idx);
+  AliasElem *lhsAe = osym2Elem.at(ssaTab.GetStmtsSSAPart().GetAssignedVarOf(stmt)->GetOrigIdx());
   ASSERT(lhsAe != nullptr, "aliaselem of lhs should not be null");
   if (lhsAe->GetClassSet() != nullptr) {
     for (unsigned int elemID : *(lhsAe->GetClassSet())) {
@@ -776,7 +776,7 @@ void AliasClass::CollectMayDefForIassign(StmtNode &stmt, std::set<OriginalSt*> &
       }
     }
     CHECK_FATAL(lhsOst != nullptr, "AliasClass::InsertMayUseExpr: cannot find next level ost");
-    lhsAe = osym2Elem[lhsOst->GetIndex().idx];
+    lhsAe = osym2Elem[lhsOst->GetIndex()];
   } else {
     lhsAe = FindOrCreateDummyNADSAe();
   }
@@ -823,13 +823,13 @@ void AliasClass::InsertMayDefUseSyncOps(StmtNode &stmt) {
     if (addrBase->IsSSANode()) {
       OriginalSt *oSt = static_cast<SSANode*>(addrBase)->GetSSAVar()->GetOrigSt();
       if (addrBase->GetOpCode() == OP_addrof) {
-        AliasElem *opndAE = osym2Elem[oSt->GetIndex().idx];
+        AliasElem *opndAE = osym2Elem[oSt->GetIndex()];
         if (opndAE->GetClassSet() != nullptr) {
           aliasSet.insert(opndAE->GetClassSet()->cbegin(), opndAE->GetClassSet()->cend());
         }
       } else {
         for (OriginalSt *nextLevelOst : *(GetAliasAnalysisTable()->GetNextLevelNodes(*oSt))) {
-          AliasElem *opndAE = osym2Elem[nextLevelOst->GetIndex().idx];
+          AliasElem *opndAE = osym2Elem[nextLevelOst->GetIndex()];
           if (opndAE->GetClassSet() != nullptr) {
             aliasSet.insert(opndAE->GetClassSet()->cbegin(), opndAE->GetClassSet()->cend());
           }
@@ -865,7 +865,7 @@ void AliasClass::CollectMayDefForMustDefs(const StmtNode &stmt, std::set<Origina
   for (MustDefNode &mustDef : mustDefs) {
     VersionSt *vst = mustDef.GetResult();
     OriginalSt *ost = vst->GetOrigSt();
-    AliasElem *lhsAe = osym2Elem[ost->GetIndex().idx];
+    AliasElem *lhsAe = osym2Elem[ost->GetIndex()];
     if (lhsAe->GetClassSet() == nullptr || lhsAe->IsNotAllDefsSeen()) {
       continue;
     }
@@ -993,7 +993,7 @@ void AliasClass::InsertMayDefUseIntrncall(StmtNode &stmt) {
 void AliasClass::InsertMayDefUseClinitCheck(IntrinsiccallNode &stmt) {
   MapleMap<OStIdx, MayDefNode> &mayDefNodes = ssaTab.GetStmtsSSAPart().GetMayDefNodesOf(stmt);
   for (OStIdx ostIdx : globalsMayAffectedByClinitCheck) {
-    AliasElem *aliasElem = osym2Elem[ostIdx.idx];
+    AliasElem *aliasElem = osym2Elem[ostIdx];
     OriginalSt &ostOfAE = aliasElem->GetOriginalSt();
     std::string typeNameOfOst = ostOfAE.GetMIRSymbol()->GetName();
     std::string typeNameOfStmt = GlobalTables::GetTypeTable().GetTypeFromTyIdx(stmt.GetTyIdx())->GetName();

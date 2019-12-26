@@ -15,7 +15,7 @@
 #ifndef MEMPOOL_INCLUDE_MAPLE_STRING_H
 #define MEMPOOL_INCLUDE_MAPLE_STRING_H
 #include <cstring>
-#include <limits.h>
+#include <climits>
 #include "mempool.h"
 #include "securec.h"
 #include "mpl_logging.h"

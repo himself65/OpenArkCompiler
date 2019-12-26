@@ -70,14 +70,15 @@ OriginalSt *OriginalStTable::FindOrCreateSymbolOriginalSt(MIRSymbol &mirst, PUId
     // create a new OriginalSt
     return CreateSymbolOriginalSt(mirst, pidx, fld);
   }
-  CHECK_FATAL(it->second.idx < originalStVector.size(),
+  CHECK_FATAL(it->second < originalStVector.size(),
               "index out of range in OriginalStTable::FindOrCreateSymbolOriginalSt");
-  return originalStVector[it->second.idx];
+  return originalStVector[it->second];
 }
 
 OriginalSt *OriginalStTable::FindOrCreatePregOriginalSt(PregIdx regidx, PUIdx pidx) {
   auto it = preg2Ost.find(regidx);
-  return (it == preg2Ost.end()) ? CreatePregOriginalSt(regidx, pidx) : originalStVector.at(it->second.idx);
+  return (it == preg2Ost.end()) ? CreatePregOriginalSt(regidx, pidx)
+                                : originalStVector.at(it->second);
 }
 
 OriginalSt *OriginalStTable::CreateSymbolOriginalSt(MIRSymbol &mirst, PUIdx pidx, FieldID fld) {
@@ -116,8 +117,7 @@ OriginalSt *OriginalStTable::FindSymbolOriginalSt(MIRSymbol &mirst) {
   if (it == mirSt2Ost.end()) {
     return nullptr;
   }
-  CHECK_FATAL(it->second.idx < originalStVector.size(),
-              "index out of range in OriginalStTable::FindSymbolOriginalSt");
-  return originalStVector[it->second.idx];
+  CHECK_FATAL(it->second < originalStVector.size(), "index out of range in OriginalStTable::FindSymbolOriginalSt");
+  return originalStVector[it->second];
 }
 }  // namespace maple

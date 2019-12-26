@@ -714,8 +714,8 @@ class FieldsDistMeExpr : public MeExpr {
   uint32 GetHashIndex() const override {
     constexpr uint32 kFieldsDistHashShift = 5;
     constexpr uint32 kTyIdxShiftFactor = 10;
-    return (static_cast<uint32>(tyIdx) << kTyIdxShiftFactor) + (static_cast<uint32>(fieldID1) << kFieldsDistHashShift) +
-           fieldID2;
+    return (static_cast<uint32>(tyIdx) << kTyIdxShiftFactor) +
+           (static_cast<uint32>(fieldID1) << kFieldsDistHashShift) + fieldID2;
   }
 
  private:
@@ -749,7 +749,7 @@ class AddrofMeExpr : public MeExpr {
 
   uint32 GetHashIndex() const override {
     constexpr uint32 addrofHashShift = 4;
-    return ostIdx.idx << addrofHashShift;
+    return static_cast<uint32>(ostIdx) << addrofHashShift;
   }
 
  private:

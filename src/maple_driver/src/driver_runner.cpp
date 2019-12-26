@@ -82,7 +82,7 @@ ErrorCode DriverRunner::Run() {
   if (ret != kErrorNoError) {
     return kErrorExit;
   }
-  if (mpl2mplOptions || meOptions) {
+  if (mpl2mplOptions != nullptr || meOptions != nullptr) {
     std::string vtableImplFile = originBaseName;
     vtableImplFile.append(".VtableImpl.mpl");
     originBaseName.append(".VtableImpl");
@@ -139,7 +139,7 @@ bool DriverRunner::VerifyModule(MIRModulePtr &mModule) const {
 void DriverRunner::ProcessMpl2mplAndMePhases(const std::string &outputFile, const std::string &vtableImplFile) const {
   CHECK_MODULE();
 
-  if (mpl2mplOptions || meOptions) {
+  if (mpl2mplOptions != nullptr || meOptions != nullptr) {
     LogInfo::MapleLogger() << "Processing mpl2mpl&mplme" << '\n';
     MPLTimer timer;
     timer.Start();

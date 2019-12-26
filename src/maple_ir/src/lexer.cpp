@@ -397,7 +397,7 @@ TokenKind MIRLexer::GetTokenWithPrefixDoubleQuotation() {
   // for \", skip the \ to leave " only internally
   // and also for the pair of chars \ and n become '\n' etc.
   char c = GetCurrentCharWithUpperCheck();
-  while ((c != 0) && (c != '\"' || (c == '\"' && GetCharAtWithLowerCheck(curIdx - 1) == '\\'))) {
+  while ((c != 0) && (c != '\"' || GetCharAtWithLowerCheck(curIdx - 1) == '\\')) {
     if (GetCharAtWithLowerCheck(curIdx - 1) == '\\') {
       shift++;
       switch (c) {
