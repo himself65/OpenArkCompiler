@@ -39,15 +39,7 @@ inline constexpr bool IsCallAssigned(Opcode code) {
 }
 
 inline constexpr bool IsBranch(Opcode opcode) {
-  switch (opcode) {
-    case OP_goto:
-    case OP_brtrue:
-    case OP_brfalse:
-    case OP_switch:
-      return true;
-    default:
-      return false;
-  }
+  return (opcode == OP_goto || opcode == OP_brtrue || opcode == OP_brfalse || opcode == OP_switch);
 }
 
 constexpr bool IsStmtMustRequire(Opcode opcode) {

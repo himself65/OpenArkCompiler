@@ -423,20 +423,6 @@ class SCCOfBBs {
   MapleSet<SCCOfBBs*> predSCC;
   MapleSet<SCCOfBBs*> succSCC;
 };
-
-inline bool ControlFlowInInfiniteLoop(const BB& bb, Opcode opcode) {
-  switch (opcode) {
-    // goto always return true
-    case OP_goto:
-      return true;
-    case OP_brtrue:
-    case OP_brfalse:
-    case OP_switch:
-      return bb.GetAttributes(kBBAttrWontExit);
-    default:
-      return false;
-  }
-}
 }  // namespace maple
 
 namespace std {
