@@ -124,7 +124,7 @@ AliasElem *AliasClass::CreateAliasElemsExpr(BaseNode &expr) {
     }
     case OP_iread: {
       auto &iread = static_cast<IreadSSANode&>(expr);
-      return FindOrCreateExtraLevAliasElem(*iread.Opnd(0), iread.GetTyIdx(), iread.GetFieldID());
+      return FindOrCreateExtraLevAliasElem(utils::ToRef(iread.Opnd(0)), iread.GetTyIdx(), iread.GetFieldID());
     }
     case OP_iaddrof: {
       auto &iread = static_cast<IreadNode&>(expr);

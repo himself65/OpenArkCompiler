@@ -1270,7 +1270,7 @@ BB *VarMeExpr::DefByBB() {
   }
 }
 
-bool VarMeExpr::IsVolatile(const SSATab &ssatab) {
+bool VarMeExpr::IsVolatile(const SSATab &ssatab) const {
   const OriginalSt *ost = ssatab.GetOriginalStFromID(ostIdx);
   if (!ost->IsSymbolOst()) {
     return false;

@@ -129,7 +129,7 @@ class MeExpr {
     return op == OP_gcmalloc || op == OP_gcmallocjarray || op == OP_gcpermalloc || op == OP_gcpermallocjarray;
   }
 
-  virtual bool IsVolatile(const SSATab&) {
+  virtual bool IsVolatile(const SSATab&) const {
     return false;
   }
 
@@ -217,7 +217,7 @@ class VarMeExpr final : public MeExpr {
   }
 
   BB *DefByBB();
-  bool IsVolatile(const SSATab&) override;
+  bool IsVolatile(const SSATab&) const override;
   // indicate if the variable is local variable but not a function formal variable
   bool IsPureLocal(const SSATab&, const MIRFunction&) const;
   bool IsZeroVersion(const SSATab&) const;
@@ -498,6 +498,10 @@ class RegMeExpr : public MeExpr {
 
   void SetDefMustDef(MustDefMeNode &defMustDefVal) {
     def.defMustDef = &defMustDefVal;
+  }
+
+  bool IsNormalReg() const {
+    return regIdx >= 0;
   }
 
  private:
@@ -923,7 +927,7 @@ class IvarMeExpr : public MeExpr {
 
   void Dump(IRMap*, int32 indent = 0) const override;
   BaseNode &EmitExpr(SSATab&) override;
-  bool IsVolatile(const SSATab&) override {
+  bool IsVolatile(const SSATab&) const override {
     return IsVolatile();
   }
 
@@ -993,7 +997,9 @@ class IvarMeExpr : public MeExpr {
   VarMeExpr *GetMu() {
     return mu;
   }
-
+  const VarMeExpr *GetMu() const {
+    return mu;
+  }
   void SetMuVal(VarMeExpr *muVal) {
     mu = muVal;
   }
