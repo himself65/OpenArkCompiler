@@ -394,7 +394,7 @@ MeStmt *IRMap::BuildMeStmtWithNoSSAPart(StmtNode &stmt) {
     case OP_free:
     case OP_switch: {
       auto &unaryStmt = static_cast<UnaryStmtNode&>(stmt);
-      UnaryMeStmt *unMeStmt =
+      auto *unMeStmt =
           static_cast<UnaryMeStmt*>((op == OP_switch) ? NewInPool<SwitchMeStmt>(&stmt) : New<UnaryMeStmt>(&stmt));
       unMeStmt->SetOpnd(0, BuildExpr(*unaryStmt.Opnd(0)));
       return unMeStmt;
@@ -731,7 +731,7 @@ bool IRMap::ReplaceMeExprStmt(MeStmt &meStmt, MeExpr &meExpr, MeExpr &repexpr) {
 
     bool curOpndReplaced = false;
     if (i == 0 && op == OP_iassign) {
-      IassignMeStmt &ivarStmt = static_cast<IassignMeStmt&>(meStmt);
+      auto &ivarStmt = static_cast<IassignMeStmt&>(meStmt);
       MeExpr *oldBase = ivarStmt.GetLHS()->GetOpnd(0);
       MeExpr *newBase = nullptr;
       if (oldBase == &meExpr) {

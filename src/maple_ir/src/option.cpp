@@ -35,8 +35,8 @@ bool Options::nativeWrapper = true;         // Enabled by default
 bool Options::inlineWithProfile = false;
 bool Options::useInline = true;             // Enabled by default
 bool Options::useCrossModuleInline = true;  // Enabled by default
+std::string Options::noInlineFuncList = "";
 uint32 Options::inlineSmallFunctionThreshold = 15;
-uint32 Options::inlineSyntheticFunctionThreshold = 15;
 uint32 Options::inlineHotFunctionThreshold = 30;
 uint32 Options::inlineModuleGrowth = 10;
 uint32 Options::inlineColdFunctionThreshold = 3;
@@ -69,10 +69,10 @@ enum OptionIndex {
   kInlineWithoutProfile,
   kUseInline,
   kNoInline,
+  kNoInlineFuncList,
   kUseCrossModuleInline,
   kNoCrossModuleInline,
   kInlineSmallFunctionThreshold,
-  kInlineSyntheticFunctionThreshold,
   kInlineHotFunctionThreshold,
   kInlineModuleGrowth,
   kInlineColdFunctionThreshold,
@@ -120,15 +120,14 @@ const Descriptor kUsage[] = {
     "  --inline                          Enable function inlining" },
   { kNoInline, 0, "", "no-inline", kBuildTypeAll, kArgCheckPolicyNone,
     "  --no-inline                       Disable function inlining" },
+  { kNoInlineFuncList, 0, "", "no-inlinefunclist", kBuildTypeAll, kArgCheckPolicyRequired,
+    "  --no-inlinefunclist=list          Do not inline function in this list" },
   { kUseCrossModuleInline, 0, "", "cross-module-inline", kBuildTypeAll, kArgCheckPolicyNone,
     "  --cross-module-inline             Enable cross-module inlining" },
   { kNoCrossModuleInline, 0, "", "no-cross-module-inline", kBuildTypeAll, kArgCheckPolicyNone,
     "  --no-cross-module-inline          Disable cross-module inlining" },
   { kInlineSmallFunctionThreshold, 0, "", "inline-small-function-threshold", kBuildTypeAll, kArgCheckPolicyRequired,
     "  --inline-small-function-threshold=15        Threshold for inlining small function" },
-  { kInlineSyntheticFunctionThreshold, 0, "", "inline-synthetic-function-threshold",
-    kBuildTypeAll, kArgCheckPolicyRequired,
-    "  --inline-synthetic-function-threshold=15    Threshold for inlining synthetic function" },
   { kInlineHotFunctionThreshold, 0, "", "inline-hot-function-threshold", kBuildTypeAll, kArgCheckPolicyRequired,
     "  --inline-hot-function-threshold=30          Threshold for inlining hot function" },
   { kInlineModuleGrowth, 0, "", "inline-module-growth", kBuildTypeAll, kArgCheckPolicyRequired,
@@ -226,6 +225,9 @@ bool Options::ParseOptions(int argc, char **argv, std::string &fileName) const {
       case kNoInline:
         Options::useInline = false;
         break;
+      case kNoInlineFuncList:
+        Options::noInlineFuncList = opt.Args();
+        break;
       case kUseCrossModuleInline:
         Options::useCrossModuleInline = true;
         break;
@@ -234,9 +236,6 @@ bool Options::ParseOptions(int argc, char **argv, std::string &fileName) const {
         break;
       case kInlineSmallFunctionThreshold:
         Options::inlineSmallFunctionThreshold = std::stoul(opt.Args());
-        break;
-      case kInlineSyntheticFunctionThreshold:
-        Options::inlineSyntheticFunctionThreshold = std::stoul(opt.Args());
         break;
       case kInlineHotFunctionThreshold:
         Options::inlineHotFunctionThreshold = std::stoul(opt.Args());

@@ -37,10 +37,6 @@ class MapleString {
     return dataLength;
   }
 
-  operator const char *() const {
-    return data;
-  }
-
   char *c_str() {
     return data;
   }
@@ -242,6 +238,12 @@ class MapleString {
   MemPool *memPool = nullptr;
   unsigned int dataLength = 0;
 };
+
+template <typename OS>
+inline OS &operator<<(OS &os, const MapleString &data) {
+  os << data.c_str();
+  return os;
+}
 
 // global operators
 bool operator==(const MapleString &str1, const MapleString &str2);

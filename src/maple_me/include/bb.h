@@ -289,6 +289,11 @@ class BB {
     kind = bbKind;
   }
 
+  void SetKindReturn() {
+    SetKind(kBBReturn);
+    SetAttributes(kBBAttrIsExit);
+  }
+
   MapleVector<BB*> &GetPred() {
     return pred;
   }

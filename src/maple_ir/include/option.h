@@ -59,9 +59,9 @@ class Options {
   static bool nativeWrapper;
   static bool inlineWithProfile;
   static bool useInline;
+  static std::string noInlineFuncList;
   static bool useCrossModuleInline;
   static uint32 inlineSmallFunctionThreshold;
-  static uint32 inlineSyntheticFunctionThreshold;
   static uint32 inlineHotFunctionThreshold;
   static uint32 inlineModuleGrowth;
   static uint32 inlineColdFunctionThreshold;

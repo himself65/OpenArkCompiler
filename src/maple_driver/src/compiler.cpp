@@ -30,7 +30,7 @@ const std::string kBinNameMapleComb = "maplecomb";
 int Compiler::Exe(const MplOptions &mplOptions, const std::string &options) const {
   std::ostringstream ostrStream;
   ostrStream << GetBinPath(mplOptions) << GetBinName();
-  std::string binPath = FileUtils::ConvertPathIfNeeded(ostrStream.str());
+  std::string binPath = ostrStream.str();
   return SafeExe::Exe(binPath, options);
 }
 
@@ -87,7 +87,7 @@ std::string Compiler::MakeOption(const MplOptions &options) const {
   if (options.HasSetDebugFlag()) {
     LogInfo::MapleLogger() << Compiler::GetName() << " input files: " << GetInputFileName(options) << '\n';
   }
-  return FileUtils::ConvertPathIfNeeded(strOption.str());
+  return strOption.str();
 }
 
 void Compiler::AppendDefaultOptions(std::map<std::string, MplOption> &finalOptions,

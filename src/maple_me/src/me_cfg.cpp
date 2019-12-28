@@ -611,8 +611,7 @@ void MeCFG::WontExitAnalysis() {
       bIt = build_filter_iterator(
           newBBIt, std::bind(FilterNullPtr<MapleVector<BB*>::const_iterator>, std::placeholders::_1, func.end()));
       eIt = func.valid_end();
-      newBB->SetKind(kBBReturn);
-      newBB->SetAttributes(kBBAttrIsExit);
+      newBB->SetKindReturn();
       newBB->SetAttributes(kBBAttrArtificial);
       bb->GetSucc().push_back(newBB);
       newBB->GetPred().push_back(bb);
@@ -699,7 +698,7 @@ void MeCFG::Dump() const {
   // BSF Dump the cfg
   LogInfo::MapleLogger() << "####### CFG Dump: ";
   ASSERT(func.NumBBs() != 0, "size to be allocated is 0");
-  bool *visitedMap = static_cast<bool*>(calloc(func.NumBBs(), sizeof(bool)));
+  auto *visitedMap = static_cast<bool*>(calloc(func.NumBBs(), sizeof(bool)));
   if (visitedMap != nullptr) {
     std::queue<BB*> qu;
     qu.push(func.GetFirstBB());
