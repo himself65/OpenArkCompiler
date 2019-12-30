@@ -42,13 +42,12 @@ std::string FileUtils::GetFileExtension(const std::string &filePath) {
 
 std::string FileUtils::GetFileFolder(const std::string &filePath) {
   std::string folder = StringUtils::GetStrBeforeLast(filePath, kFileSeperatorStr, true);
+#ifdef _WIN32
+  if (folder.empty()) {
+    folder = StringUtils::GetStrBeforeLast(filePath, kFileSeperatorWindowsStyleStr, true);
+  }
+#endif
   return folder.empty() ? ("." + kFileSeperatorStr) : (folder + kFileSeperatorStr);
-}
-
-std::string FileUtils::ConvertPathIfNeeded(const std::string &src) {
-  std::string ret = src;
-  ret = StringUtils::Replace(ret, kFileSeperatorWindowsStyleStr, kFileSeperatorLinuxStyleStr);
-  return ret;
 }
 
 int FileUtils::Remove(const std::string &filePath) {

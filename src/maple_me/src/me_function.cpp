@@ -178,8 +178,7 @@ void MeFunction::CreateBasicBlocks() {
           curBB->SetFirst(stmt);
         }
         curBB->SetLast(stmt);
-        curBB->SetKind(kBBReturn);
-        curBB->SetAttributes(kBBAttrIsExit);
+        curBB->SetKindReturn();
         if (nextStmt != nullptr) {
           BB *newBB = NewBasicBlock();
           if (tryStmt != nullptr) {
@@ -385,10 +384,9 @@ void MeFunction::CreateBasicBlocks() {
     // insert a return statement
     lastBB->SetFirst(mirModule.GetMIRBuilder()->CreateStmtReturn(nullptr));
     lastBB->SetLast(lastBB->GetStmtNodes().begin().d());
-    lastBB->SetAttributes(kBBAttrIsExit);
-    lastBB->SetKind(kBBReturn);
+    lastBB->SetKindReturn();
   } else if (lastBB->GetKind() == kBBUnknown) {
-    lastBB->SetKind(kBBReturn);
+    lastBB->SetKindReturn();
   }
 }
 

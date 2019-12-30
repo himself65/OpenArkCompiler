@@ -212,10 +212,6 @@ class MIRFunction {
     return funcAttrs.GetAttr(FUNCATTR_protected);
   }
 
-  bool IsPackagePrivate() const {
-    return !IsPublic() && !IsPrivate() && !IsProtected();
-  }
-
   bool IsConstructor() const {
     return funcAttrs.GetAttr(FUNCATTR_constructor);
   }
@@ -667,7 +663,7 @@ class MIRFunction {
     formals.clear();
   }
 
-  uint32 GetSymbolTabSize() const {
+  size_t GetSymbolTabSize() const {
     return symTab->GetSymbolTableSize();
   }
   MIRSymbol *GetSymbolTabItem(uint32 idx, bool checkFirst = false) const {

@@ -27,7 +27,6 @@ class FileUtils {
   static std::string GetFileName(const std::string &filePath, bool isWithExtension);
   static std::string GetFileExtension(const std::string &filePath);
   static std::string GetFileFolder(const std::string &filePath);
-  static std::string ConvertPathIfNeeded(const std::string &src);
   static int Remove(const std::string &filePath);
   static std::string AppendMapleRootIfNeeded(bool needRootPath, const std::string &path,
                                              const std::string &defaultRoot = "." + kFileSeperatorStr);

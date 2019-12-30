@@ -226,6 +226,9 @@ Options *MapleCombCompiler::MakeMpl2MplOptions(const MplOptions &options, MemPoo
       case kMpl2MplNoInline:
         mpl2mplOption->useInline = false;
         break;
+      case kMpl2MplNoInlineFuncList:
+        mpl2mplOption->noInlineFuncList = opt.Args();
+        break;
       case kMpl2MplUseCrossModuleInline:
         mpl2mplOption->useCrossModuleInline = true;
         break;
@@ -238,14 +241,6 @@ Options *MapleCombCompiler::MakeMpl2MplOptions(const MplOptions &options, MemPoo
           exit(1);
         } else {
           mpl2mplOption->inlineSmallFunctionThreshold = std::stoul(opt.Args());
-        }
-        break;
-      case kInlineSyntheticFunctionThreshold:
-        if (opt.Args().empty()) {
-          LogInfo::MapleLogger(kLlErr) << "expecting not empty for --inline-synthetic-function-threshold\n";
-          exit(1);
-        } else {
-          mpl2mplOption->inlineSyntheticFunctionThreshold = std::stoul(opt.Args());
         }
         break;
       case kInlineHotFunctionThreshold:

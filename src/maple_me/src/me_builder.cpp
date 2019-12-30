@@ -41,7 +41,7 @@ MeExpr &MeBuilder::CreateMeExpr(int32 exprId, MeExpr &meExpr) const {
       resultExpr = New<SizeoftypeMeExpr>(exprId, static_cast<SizeoftypeMeExpr&>(meExpr).GetTyIdx());
       break;
     case kMeOpFieldsDist: {
-      FieldsDistMeExpr &expr = static_cast<FieldsDistMeExpr&>(meExpr);
+      auto &expr = static_cast<FieldsDistMeExpr&>(meExpr);
       resultExpr = New<FieldsDistMeExpr>(exprId, expr.GetTyIdx(), expr.GetFieldID1(), expr.GetFieldID2());
       break;
     }
@@ -83,7 +83,7 @@ MeExpr *MeBuilder::BuildMeExpr(BaseNode &mirNode) const {
 }
 
 MeExpr *MeBuilder::BuildAddrofMeExpr(BaseNode &mirNode) const {
-  AddrofSSANode &addrofNode = static_cast<AddrofSSANode&>(mirNode);
+  auto &addrofNode = static_cast<AddrofSSANode&>(mirNode);
   AddrofMeExpr &meExpr = *New<AddrofMeExpr>(kInvalidExprID, addrofNode.GetSSAVar()->GetOrigSt()->GetIndex());
   meExpr.InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
   meExpr.SetFieldID(addrofNode.GetFieldID());
@@ -109,7 +109,7 @@ MeExpr *MeBuilder::BuildSizeoftypeMeExpr(BaseNode &mirNode) const {
 }
 
 MeExpr *MeBuilder::BuildFieldsDistMeExpr(BaseNode &mirNode) const {
-  FieldsDistNode &fieldsDistNode = static_cast<FieldsDistNode&>(mirNode);
+  auto &fieldsDistNode = static_cast<FieldsDistNode&>(mirNode);
   FieldsDistMeExpr &meExpr = *New<FieldsDistMeExpr>(kInvalidExprID, fieldsDistNode.GetTyIdx(),
                                                     fieldsDistNode.GetFiledID1(), fieldsDistNode.GetFiledID2());
   meExpr.InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
@@ -117,7 +117,7 @@ MeExpr *MeBuilder::BuildFieldsDistMeExpr(BaseNode &mirNode) const {
 }
 
 MeExpr *MeBuilder::BuildIvarMeExpr(BaseNode &mirNode) const {
-  IreadSSANode &ireadSSANode = static_cast<IreadSSANode&>(mirNode);
+  auto &ireadSSANode = static_cast<IreadSSANode&>(mirNode);
   IvarMeExpr &meExpr = *New<IvarMeExpr>(kInvalidExprID);
   meExpr.SetFieldID(ireadSSANode.GetFieldID());
   meExpr.SetTyIdx(ireadSSANode.GetTyIdx());
@@ -126,7 +126,7 @@ MeExpr *MeBuilder::BuildIvarMeExpr(BaseNode &mirNode) const {
 }
 
 MeExpr *MeBuilder::BuildConstMeExpr(BaseNode &mirNode) const {
-  ConstvalNode &constvalNode = static_cast<ConstvalNode &>(mirNode);
+  auto &constvalNode = static_cast<ConstvalNode &>(mirNode);
   ConstMeExpr &meExpr = *New<ConstMeExpr>(kInvalidExprID, constvalNode.GetConstVal());
   meExpr.SetOp(OP_constval);
   meExpr.SetPtyp(constvalNode.GetPrimType());
@@ -158,7 +158,7 @@ MeExpr *MeBuilder::BuildOpMeExprForTypeCvt(BaseNode &mirNode) const {
 }
 
 MeExpr *MeBuilder::BuildOpMeExprForRetype(BaseNode &mirNode) const {
-  RetypeNode &retypeNode = static_cast<RetypeNode&>(mirNode);
+  auto &retypeNode = static_cast<RetypeNode&>(mirNode);
   OpMeExpr *meExpr = BuildOpMeExpr(mirNode);
   meExpr->SetOpndType(retypeNode.FromType());
   meExpr->SetTyIdx(retypeNode.GetTyIdx());
@@ -166,7 +166,7 @@ MeExpr *MeBuilder::BuildOpMeExprForRetype(BaseNode &mirNode) const {
 }
 
 MeExpr *MeBuilder::BuildOpMeExprForIread(BaseNode &mirNode) const {
-  IreadNode &ireadNode = static_cast<IreadNode&>(mirNode);
+  auto &ireadNode = static_cast<IreadNode&>(mirNode);
   OpMeExpr *meExpr = BuildOpMeExpr(mirNode);
   meExpr->SetTyIdx(ireadNode.GetTyIdx());
   meExpr->SetFieldID(ireadNode.GetFieldID());
@@ -174,7 +174,7 @@ MeExpr *MeBuilder::BuildOpMeExprForIread(BaseNode &mirNode) const {
 }
 
 MeExpr *MeBuilder::BuildOpMeExprForExtractbits(BaseNode &mirNode) const {
-  ExtractbitsNode &extractbitsNode = static_cast<ExtractbitsNode&>(mirNode);
+  auto &extractbitsNode = static_cast<ExtractbitsNode&>(mirNode);
   OpMeExpr *meExpr = BuildOpMeExpr(mirNode);
   meExpr->SetBitsOffSet(extractbitsNode.GetBitsOffset());
   meExpr->SetBitsSize(extractbitsNode.GetBitsSize());
@@ -194,7 +194,7 @@ MeExpr *MeBuilder::BuildOpMeExprForResolveFunc(BaseNode &mirNode) const {
 }
 
 MeExpr *MeBuilder::BuildNaryMeExprForArray(BaseNode &mirNode) const {
-  ArrayNode &arrayNode = static_cast<ArrayNode&>(mirNode);
+  auto &arrayNode = static_cast<ArrayNode&>(mirNode);
   NaryMeExpr &meExpr =
       *NewInPool<NaryMeExpr>(kInvalidExprID, arrayNode.GetTyIdx(), INTRN_UNDEFINED, arrayNode.GetBoundsCheck());
   meExpr.InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
@@ -209,7 +209,7 @@ MeExpr *MeBuilder::BuildNaryMeExprForIntrinsicop(BaseNode &mirNode) const {
 }
 
 MeExpr *MeBuilder::BuildNaryMeExprForIntrinsicWithType(BaseNode &mirNode) const {
-  IntrinsicopNode &intrinNode = static_cast<IntrinsicopNode&>(mirNode);
+  auto &intrinNode = static_cast<IntrinsicopNode&>(mirNode);
   NaryMeExpr &meExpr = *NewInPool<NaryMeExpr>(kInvalidExprID, intrinNode.GetTyIdx(), intrinNode.GetIntrinsic(), false);
   meExpr.InitBase(mirNode.GetOpCode(), mirNode.GetPrimType(), mirNode.GetNumOpnds());
   return &meExpr;
