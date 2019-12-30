@@ -603,19 +603,19 @@ class ConstMeExpr : public MeExpr {
 
   uint32 GetHashIndex() const override {
     if (constVal->GetKind() == kConstInt) {
-      auto *intConst = static_cast<MIRIntConst*>(constVal);
+      auto *intConst = safe_cast<MIRIntConst>(constVal);
       return intConst->GetValue();
     }
     if (constVal->GetKind() == kConstFloatConst) {
-      auto *floatConst = static_cast<MIRFloatConst*>(constVal);
+      auto *floatConst = safe_cast<MIRFloatConst>(constVal);
       return floatConst->GetIntValue();
     }
     if (constVal->GetKind() == kConstDoubleConst) {
-      auto *doubleConst = static_cast<MIRDoubleConst*>(constVal);
+      auto *doubleConst = safe_cast<MIRDoubleConst>(constVal);
       return doubleConst->GetIntValue();
     }
     if (constVal->GetKind() == kConstLblConst) {
-      auto *lblConst = static_cast<MIRLblConst*>(constVal);
+      auto *lblConst = safe_cast<MIRLblConst>(constVal);
       return lblConst->GetValue();
     }
     ASSERT(false, "ComputeHash: const type not yet implemented");

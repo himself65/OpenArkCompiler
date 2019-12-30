@@ -191,7 +191,7 @@ BlockNode *JavaEHLowerer::DoLowerBlock(BlockNode &block) {
         BaseNode *opnd0 = DoLowerExpr(*(tstmt->Opnd(0)), *newBlock);
         if (opnd0->GetOpCode() == OP_constval) {
           CHECK_FATAL(IsPrimitiveInteger(opnd0->GetPrimType()), "must be integer or something wrong");
-          auto *intConst = static_cast<MIRIntConst*>(static_cast<ConstvalNode*>(opnd0)->GetConstVal());
+          auto *intConst = safe_cast<MIRIntConst>(static_cast<ConstvalNode*>(opnd0)->GetConstVal());
           CHECK_FATAL(intConst->IsZero(), "can only be zero");
           MIRFunction *func =
             GetMIRModule().GetMIRBuilder()->GetOrCreateFunction(strMCCThrowNullPointerException, TyIdx(PTY_void));

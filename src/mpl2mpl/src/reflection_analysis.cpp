@@ -1390,7 +1390,7 @@ void ReflectionAnalysis::GenClassMetaData(Klass &klass) {
   if (!hasAdded) {
     MIRSymbol *fieldsSt = GenFieldsMetaData(klass);
     if (fieldsSt != nullptr) {
-      numOfFields = static_cast<MIRAggConst*>(fieldsSt->GetKonst())->GetConstVec().size();
+      numOfFields = safe_cast<MIRAggConst>(fieldsSt->GetKonst())->GetConstVec().size();
       // All meta data will be weak if dummy constructors.
       mirBuilder.AddAddrofFieldConst(classMetadataROType, *newConst, fieldID++, *fieldsSt);
     } else {
@@ -1402,7 +1402,7 @@ void ReflectionAnalysis::GenClassMetaData(Klass &klass) {
   MIRSymbol *methodsSt;
   methodsSt = GenMethodsMetaData(klass);
   if (methodsSt != nullptr) {
-    numOfMethods = static_cast<MIRAggConst*>(methodsSt->GetKonst())->GetConstVec().size();
+    numOfMethods = safe_cast<MIRAggConst>(methodsSt->GetKonst())->GetConstVec().size();
     mirBuilder.AddAddrofFieldConst(classMetadataROType, *newConst, fieldID++, *methodsSt);
   } else {
     mirBuilder.AddIntFieldConst(classMetadataROType, *newConst, fieldID++, 0);

@@ -34,6 +34,7 @@ namespace NameMangler {
 #define PRIMITIVECLASSINFO_PREFIX __pinf_
 #define CLASS_INIT_BRIDGE_PREFIX  __ClassInitBridge__
 #define GCTIB_PREFIX              MCC_GCTIB__
+#define REF_PREFIX                REF_
 #define JARRAY_PREFIX             A
 
 #define VTAB_PREFIX_STR               TO_STR(VTAB_PREFIX)
@@ -45,6 +46,7 @@ namespace NameMangler {
 #define PRIMITIVECLASSINFO_PREFIX_STR TO_STR(PRIMITIVECLASSINFO_PREFIX)
 #define CLASS_INIT_BRIDGE_PREFIX_STR  TO_STR(CLASS_INIT_BRIDGE_PREFIX)
 #define GCTIB_PREFIX_STR              TO_STR(GCTIB_PREFIX)
+#define REF_PREFIX_STR                TO_STR(REF_PREFIX)
 #define JARRAY_PREFIX_STR             TO_STR(JARRAY_PREFIX)
 
 // Names of all compiler-generated tables and accessed by runtime

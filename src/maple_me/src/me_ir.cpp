@@ -515,7 +515,7 @@ bool ConstMeExpr::GtZero() const {
   if (constVal->GetKind() != kConstInt) {
     return false;
   }
-  return (static_cast<MIRIntConst*>(constVal)->GetValue() > 0);
+  return (safe_cast<MIRIntConst>(constVal)->GetValue() > 0);
 }
 
 bool ConstMeExpr::IsZero() const {
@@ -526,12 +526,12 @@ bool ConstMeExpr::IsOne() const {
   if (constVal->GetKind() != kConstInt) {
     return false;
   }
-  return (static_cast<MIRIntConst*>(constVal)->GetValue() == 1);
+  return (safe_cast<MIRIntConst>(constVal)->GetValue() == 1);
 }
 
 int64 ConstMeExpr::GetIntValue() const {
   CHECK_FATAL(constVal->GetKind() == kConstInt, "expect int const");
-  return static_cast<MIRIntConst*>(constVal)->GetValue();
+  return safe_cast<MIRIntConst>(constVal)->GetValue();
 }
 
 MeExpr *ConstMeExpr::GetIdenticalExpr(MeExpr &expr) const {
