@@ -15,44 +15,32 @@
 #ifndef MAPLE_UTIL_INCLUDE_UTILS_H
 #define MAPLE_UTIL_INCLUDE_UTILS_H
 #include <type_traits>
+#include <limits>
 #include "mpl_logging.h"
 
 namespace maple { namespace utils {
 // Operations on char
-inline constexpr bool IsDigit(char c) {
+constexpr bool IsDigit(char c) {
   return (c >= '0' && c <= '9');
 }
 
-inline constexpr bool IsLower(char c) {
+constexpr bool IsLower(char c) {
   return (c >= 'a' && c <= 'z');
 }
 
-inline constexpr bool IsUpper(char c) {
+constexpr bool IsUpper(char c) {
   return (c >= 'A' && c <= 'Z');
 }
 
-inline constexpr bool IsAlpha(char c) {
+constexpr bool IsAlpha(char c) {
   return (IsLower(c) || IsUpper(c));
 }
 
-inline constexpr bool IsAlnum(char c) {
+constexpr bool IsAlnum(char c) {
   return (IsAlpha(c) || IsDigit(c));
 }
 
 namespace __ToDigitImpl {
-template <typename T>
-struct TypeMax {};
-
-template <>
-struct TypeMax<uint8_t> {
-  enum {value = UINT8_MAX};
-};
-
-template <>
-struct TypeMax<int32_t> {
-  enum {value = INT32_MAX};
-};
-
 template <uint8_t Scale, typename T>
 struct ToDigitImpl {};
 
@@ -62,7 +50,7 @@ struct ToDigitImpl<10, T> {
     if (utils::IsDigit(c)) {
       return c - '0';
     }
-    return TypeMax<T>::value;
+    return std::numeric_limits<T>::max();
   }
 };
 
@@ -72,7 +60,7 @@ struct ToDigitImpl<8, T> {
     if (c >= '0' && c < '8') {
       return c - '0';
     }
-    return TypeMax<T>::value;
+    return std::numeric_limits<T>::max();
   }
 };
 
@@ -88,13 +76,13 @@ struct ToDigitImpl<16, T> {
     if (c >= 'A' && c <= 'F') {
       return c - 'A' + 10;
     }
-    return TypeMax<T>::value;
+    return std::numeric_limits<T>::max();
   }
 };
 }
 
 template <uint8_t Scale = 10, typename T = uint8_t>
-inline constexpr T ToDigit(char c) {
+constexpr T ToDigit(char c) {
   return __ToDigitImpl::ToDigitImpl<Scale, T>::DoIt(c);
 }
 

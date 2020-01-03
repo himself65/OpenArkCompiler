@@ -30,6 +30,9 @@ const std::string kFileSeperatorStr = kFileSeperatorLinuxStyleStr;
 
 std::string FileUtils::GetFileName(const std::string &filePath, bool isWithExtension) {
   std::string fullFileName = StringUtils::GetStrAfterLast(filePath, kFileSeperatorStr);
+#ifdef _WIN32
+  fullFileName = StringUtils::GetStrAfterLast(fullFileName, kFileSeperatorLinuxStyleStr);
+#endif
   if (isWithExtension) {
     return fullFileName;
   }
@@ -42,12 +45,14 @@ std::string FileUtils::GetFileExtension(const std::string &filePath) {
 
 std::string FileUtils::GetFileFolder(const std::string &filePath) {
   std::string folder = StringUtils::GetStrBeforeLast(filePath, kFileSeperatorStr, true);
+  std::string curSlashType = kFileSeperatorStr;
 #ifdef _WIN32
   if (folder.empty()) {
-    folder = StringUtils::GetStrBeforeLast(filePath, kFileSeperatorWindowsStyleStr, true);
+    curSlashType = kFileSeperatorLinuxStyleStr;
+    folder = StringUtils::GetStrBeforeLast(filePath, curSlashType, true);
   }
 #endif
-  return folder.empty() ? ("." + kFileSeperatorStr) : (folder + kFileSeperatorStr);
+  return folder.empty() ? ("." + curSlashType) : (folder + curSlashType);
 }
 
 int FileUtils::Remove(const std::string &filePath) {

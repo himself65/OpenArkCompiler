@@ -20,8 +20,10 @@
 namespace maple {
 #ifdef USE_32BIT_REF
 constexpr unsigned int kTabEntrySize = 4;
+constexpr unsigned int kShiftCountBit = 4 * 4;  // Get the low 16bit
 #else   // !USE_32BIT_REF
 constexpr unsigned int kTabEntrySize = 8;
+constexpr unsigned int kShiftCountBit = 8 * 4;  // Get the low 32bit
 #endif  // USE_32BIT_REF
 
 class VtableAnalysis : public FuncOptimizeImpl {

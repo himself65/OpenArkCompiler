@@ -827,6 +827,8 @@ class OpMeExpr : public MeExpr {
   OpMeExpr &operator=(const OpMeExpr&) = delete;
 
   bool IsIdentical(const OpMeExpr &meexpr) const;
+  bool IsAllOpndsIdentical(const OpMeExpr &meExpr) const;
+  bool IsCompareIdentical(const OpMeExpr &meExpr) const;
   void Dump(IRMap*, int32 indent = 0) const override;
   bool IsUseSameSymbol(const MeExpr&) const override;
   MeExpr *GetIdenticalExpr(MeExpr &expr) const override;

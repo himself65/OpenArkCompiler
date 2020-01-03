@@ -131,12 +131,10 @@ AliasElem *AliasClass::CreateAliasElemsExpr(BaseNode &expr) {
       AliasElem *aliasElem = FindOrCreateExtraLevAliasElem(*iread.Opnd(0), iread.GetTyIdx(), iread.GetFieldID());
       return &FindOrCreateAliasElemOfAddrofOSt(aliasElem->GetOriginalSt());
     }
-    case OP_malloc:
-    case OP_gcmalloc:
-      return nullptr;
     case OP_add:
     case OP_sub:
-    case OP_array: {
+    case OP_array:
+    case OP_retype: {
       for (size_t i = 1; i < expr.NumOpnds(); ++i) {
         CreateAliasElemsExpr(*expr.Opnd(i));
       }
