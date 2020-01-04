@@ -292,7 +292,7 @@ void GSymbolTable::Dump(bool isLocal, int32 indent) const {
   for (size_t i = 1; i < symbolTable.size(); ++i) {
     const MIRSymbol *symbol = symbolTable[i];
     if (symbol != nullptr) {
-      symbol->Dump(module, isLocal, indent);
+      symbol->Dump(isLocal, indent);
     }
   }
 }
