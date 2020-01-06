@@ -254,7 +254,7 @@ void VtableAnalysis::GenItableDefinition(const Klass &klass) {
   std::vector<MIRFunction*> secondItab(kItabSecondHashSize, nullptr);
   std::vector<bool> secondConflictFlag(kItabSecondHashSize, false);
   std::vector<MIRFunction*> secondConflictList;
-  uint32 count = 0;
+  uint64 count = 0;
   for (MIRFunction *func : firstConflictList) {
     ASSERT(func != nullptr, "null ptr check!");
     uint32 secondHashCode = GetSecondHashIndex(DecodeBaseNameWithType(*func).c_str());
@@ -295,6 +295,7 @@ void VtableAnalysis::GenItableDefinition(const Klass &klass) {
   if (count != 0) {
     auto *secondItabEmitArray = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), *voidPtrType);
     // remember count in secondItabVec
+    count = ((secondConflictList.size() | (1UL << (kShiftCountBit - 1))) << kShiftCountBit) + count;
     secondItabEmitArray->PushBack(GetMIRModule().GetMemPool()->New<MIRIntConst>(count, *voidPtrType));
     secondItabEmitArray->PushBack(oneConst);  // padding
     for (uint32 i = 0; i < kItabSecondHashSize; ++i) {

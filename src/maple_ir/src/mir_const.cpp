@@ -48,6 +48,45 @@ bool MIRIntConst::operator==(const MIRConst &rhs) const {
   return ((&intConst.GetType() == &GetType()) && (intConst.value == value));
 }
 
+uint8 MIRIntConst::GetBitWidth() const {
+  if (value == 0) {
+    return 1;
+  }
+  uint8 width = 0;
+  uint64 tmp = value < 0 ? -(value + 1) : value;
+  while (tmp != 0) {
+    ++width;
+    tmp = tmp >> 1u;
+  }
+  return width;
+}
+
+void MIRIntConst::Trunc(uint8 width) {
+  int32 shiftBitNum = 64u - width;
+  if (shiftBitNum < 0) {
+    CHECK_FATAL(false, "shiftBitNum should not be less than zero");
+  }
+  auto unsignShiftBitNum = static_cast<uint32>(shiftBitNum);
+  if (IsSignedInteger(GetType().GetPrimType())) {
+    value = (value << unsignShiftBitNum) >> unsignShiftBitNum;
+  } else {
+    value = ((static_cast<uint64>(value)) << unsignShiftBitNum) >> unsignShiftBitNum;
+  }
+}
+
+int64 MIRIntConst::GetValueUnderType() const {
+  uint32 bitSize = GetPrimTypeBitSize(GetNonDynType(GetType().GetPrimType()));
+  int32 shiftBitNum = 64u - bitSize;
+  if (shiftBitNum < 0) {
+    CHECK_FATAL(false, "shiftBitNum should not be less than zero");
+  }
+  if (IsSignedInteger(GetType().GetPrimType())) {
+    return static_cast<int64>(((value) << shiftBitNum) >> shiftBitNum);
+  }
+  auto unsignedVal = static_cast<uint64>(value);
+  return static_cast<int64>((unsignedVal << shiftBitNum) >> shiftBitNum);
+}
+
 void MIRAddrofConst::Dump() const {
   MIRConst::Dump();
   LogInfo::MapleLogger() << "addrof " << GetPrimTypeName(PTY_ptr);
@@ -203,9 +242,7 @@ void MIRAggConst::Dump() const {
 }
 
 MIRStrConst::MIRStrConst(const std::string &str, MIRType &type)
-    : MIRConst(type), value(GlobalTables::GetUStrTable().GetOrCreateStrIdxFromName(str)) {
-  SetKind(kConstStrConst);
-}
+    : MIRConst(type, kConstStrConst), value(GlobalTables::GetUStrTable().GetOrCreateStrIdxFromName(str)) {}
 
 void MIRStrConst::Dump() const {
   MIRConst::Dump();
@@ -226,9 +263,7 @@ bool MIRStrConst::operator==(const MIRConst &rhs) const {
 }
 
 MIRStr16Const::MIRStr16Const(const std::u16string &str, MIRType &type)
-    : MIRConst(type), value(GlobalTables::GetU16StrTable().GetOrCreateStrIdxFromName(str)) {
-  SetKind(kConstStr16Const);
-}
+    : MIRConst(type, kConstStr16Const), value(GlobalTables::GetU16StrTable().GetOrCreateStrIdxFromName(str)) {}
 
 void MIRStr16Const::Dump() const {
   MIRConst::Dump();

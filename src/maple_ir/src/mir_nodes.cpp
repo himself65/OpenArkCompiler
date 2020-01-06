@@ -422,7 +422,7 @@ MIRType *ArrayNode::GetArrayType(const TypeTable &tt) {
 
 const BaseNode *ArrayNode::GetDim(const MIRModule &mod, TypeTable &tt, int i) const {
   const auto *arrayType = static_cast<const MIRArrayType*>(GetArrayType(tt));
-  auto *mirConst = mod.CurFuncCodeMemPool()->New<MIRConst>(*tt.GetTypeFromTyIdx(arrayType->GetElemTyIdx()));
+  auto *mirConst = mod.CurFuncCodeMemPool()->New<MIRIntConst>(i, *tt.GetTypeFromTyIdx(arrayType->GetElemTyIdx()));
   return mod.CurFuncCodeMemPool()->New<ConstvalNode>(mirConst);
 }
 BaseNode *ArrayNode::GetDim(const MIRModule &mod, TypeTable &tt, int i) {

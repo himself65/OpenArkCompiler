@@ -16,7 +16,7 @@
 #define MAPLE_UTIL_INCLUDE_MPL_NUMBER_H
 #include <algorithm>
 #include <string>
-#include "meta.h"
+#include "utils/meta.h"
 
 namespace maple { namespace utils {
 
@@ -175,7 +175,7 @@ inline Number<T, Tag> operator+(const Number<T, Tag> &lhs, const Number<T, Tag> 
 
 template <typename T, typename Tag>
 inline Number<T, Tag> operator-(const Number<T, Tag> &lhs, const Number<T, Tag> &rhs) {
-  return Number<T, Tag>(lhs.get() + rhs.get());
+  return Number<T, Tag>(lhs.get() - rhs.get());
 }
 
 template <typename T, typename Tag, typename U,
@@ -262,12 +262,12 @@ inline Number<T, Tag> operator+(const U &lhs, const Number<T, Tag> &rhs) {
 
 template <typename T, typename Tag, typename U, typename = std::enable_if_t<std::is_integral<U>::value>>
 inline Number<T, Tag> operator-(const Number<T, Tag> &lhs, const U &rhs) {
-  return Number<T, Tag>(lhs.get() + rhs);
+  return Number<T, Tag>(lhs.get() - rhs);
 }
 
 template <typename T, typename Tag, typename U, typename = std::enable_if_t<std::is_integral<U>::value>>
 inline Number<T, Tag> operator-(const U &lhs, const Number<T, Tag> &rhs) {
-  return Number<T, Tag>(lhs + rhs.get());
+  return Number<T, Tag>(lhs - rhs.get());
 }
 
 template <typename T, typename Tag, typename OS>

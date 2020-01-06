@@ -42,6 +42,25 @@ inline constexpr bool IsBranch(Opcode opcode) {
   return (opcode == OP_goto || opcode == OP_brtrue || opcode == OP_brfalse || opcode == OP_switch);
 }
 
+constexpr bool IsCommutative(Opcode opcode) {
+  switch (opcode) {
+    case OP_add:
+    case OP_mul:
+    case OP_max:
+    case OP_min:
+    case OP_band:
+    case OP_bior:
+    case OP_bxor:
+    case OP_eq:
+    case OP_ne:
+    case OP_land:
+    case OP_lior:
+      return true;
+    default:
+      return false;
+  }
+}
+
 constexpr bool IsStmtMustRequire(Opcode opcode) {
   switch (opcode) {
     case OP_jstry:

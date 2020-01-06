@@ -56,7 +56,7 @@ BaseNode &ConstMeExpr::EmitExpr(SSATab &ssaTab) {
       ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<ConstvalNode>(PrimType(GetPrimType()), constVal);
   // if int const has been promoted from dyn int const, remove the type tag
   if (IsPrimitiveInteger(exprConst->GetPrimType())) {
-    auto *intConst = static_cast<MIRIntConst*>(exprConst->GetConstVal());
+    auto *intConst = safe_cast<MIRIntConst>(exprConst->GetConstVal());
     intConst->SetValue(intConst->GetValueUnderType());
   }
   return *exprConst;

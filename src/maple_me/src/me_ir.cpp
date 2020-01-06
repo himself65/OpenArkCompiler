@@ -277,6 +277,46 @@ bool MeExpr::IsAllOpndsIdentical(const MeExpr &meExpr) const {
   return true;
 }
 
+bool OpMeExpr::IsAllOpndsIdentical(const OpMeExpr &meExpr) const {
+  // add/mul/or/xor/and/etc..., need not to consider opnd order
+  if (IsCommutative(meExpr.GetOp())) {
+    ASSERT(meExpr.GetNumOpnds() == 2, "not supported opcode: %d", meExpr.GetOp());
+    return (meExpr.GetOpnd(0) == this->GetOpnd(0) && meExpr.GetOpnd(1) == this->GetOpnd(1)) ||
+           (meExpr.GetOpnd(1) == this->GetOpnd(0) && meExpr.GetOpnd(0) == this->GetOpnd(1));
+  }
+  return MeExpr::IsAllOpndsIdentical(meExpr);
+}
+
+bool OpMeExpr::IsCompareIdentical(const OpMeExpr &meExpr) const {
+  // x > y <==> y < x; x <= y <==> y >= x;
+  switch (meExpr.GetOp()) {
+    case OP_ge:
+      if (this->GetOp() != OP_le) {
+        return false;
+      }
+      break;
+    case OP_le:
+      if (this->GetOp() != OP_ge) {
+        return false;
+      }
+      break;
+    case OP_gt:
+      if (this->GetOp() != OP_lt) {
+        return false;
+      }
+      break;
+    case OP_lt:
+      if (this->GetOp() != OP_gt) {
+        return false;
+      }
+      break;
+    default:
+      return false;
+  }
+
+  return (meExpr.GetOpnd(1) == this->GetOpnd(0)) && (meExpr.GetOpnd(0) == this->GetOpnd(1));
+}
+
 bool OpMeExpr::IsIdentical(const OpMeExpr &meExpr) const {
   if (meExpr.GetOp() != GetOp()) {
     return false;
@@ -285,7 +325,15 @@ bool OpMeExpr::IsIdentical(const OpMeExpr &meExpr) const {
       meExpr.bitsSize != bitsSize || meExpr.tyIdx != tyIdx || meExpr.fieldID != fieldID) {
     return false;
   }
-  return IsAllOpndsIdentical(meExpr);
+  if (IsAllOpndsIdentical(meExpr)) {
+    return true;
+  }
+
+  if (IsCompareIdentical(meExpr)) {
+    return true;
+  }
+
+  return false;
 }
 
 bool NaryMeExpr::IsIdentical(NaryMeExpr &meExpr) const {
@@ -515,7 +563,7 @@ bool ConstMeExpr::GtZero() const {
   if (constVal->GetKind() != kConstInt) {
     return false;
   }
-  return (static_cast<MIRIntConst*>(constVal)->GetValue() > 0);
+  return (safe_cast<MIRIntConst>(constVal)->GetValue() > 0);
 }
 
 bool ConstMeExpr::IsZero() const {
@@ -526,12 +574,12 @@ bool ConstMeExpr::IsOne() const {
   if (constVal->GetKind() != kConstInt) {
     return false;
   }
-  return (static_cast<MIRIntConst*>(constVal)->GetValue() == 1);
+  return (safe_cast<MIRIntConst>(constVal)->GetValue() == 1);
 }
 
 int64 ConstMeExpr::GetIntValue() const {
   CHECK_FATAL(constVal->GetKind() == kConstInt, "expect int const");
-  return static_cast<MIRIntConst*>(constVal)->GetValue();
+  return safe_cast<MIRIntConst>(constVal)->GetValue();
 }
 
 MeExpr *ConstMeExpr::GetIdenticalExpr(MeExpr &expr) const {

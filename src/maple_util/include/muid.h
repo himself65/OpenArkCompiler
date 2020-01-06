@@ -30,12 +30,6 @@ constexpr unsigned int kSystemNamespace = 0xc0;
 constexpr unsigned int kApkNamespace = 0x80;
 constexpr unsigned int kBitMask = 0x3f;
 
-// For Lazy decoupling load
-const uint32_t kMplLazyLoadMagicNumber = 0x1a2;                     // For trigger SIGSEGV
-const uint32_t kMplStaticLazyLoadMagicNumber = 0x1a1;               // For static lazy load trigger SIGSEGV
-const uint64_t kMplLazyLoadSentryNumber = 0x1a27b10d10810ade;       // Sentry for offset table
-const uint64_t kMplStaticLazyLoadSentryNumber = 0x1a27b10d10810ad1; // Sentry for static offset table
-
 #ifdef USE_64BIT_MUID
 #undef MUID_LENGTH
 #define MUID_LENGTH 8

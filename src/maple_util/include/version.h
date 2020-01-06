@@ -17,7 +17,7 @@
 
 namespace Version {
 
-static constexpr const int kMajorMplVersion = 2;
+static constexpr const int kMajorMplVersion = 3;
 static constexpr const int kMinorCompilerVersion = 0;
 static constexpr const int kMinorRuntimeVersion = 0;
 

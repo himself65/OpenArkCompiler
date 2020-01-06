@@ -107,6 +107,34 @@ struct DataRef {
   inline void SetDataRef(void *ref, DataRefFormat format = kDataRefIsDirect);
 };
 
+/* GctibRef aims to represent a reference to gctib in maple file, which is an offset by default.
+   GctibRef is meant to have pointer size and aligned to at least 4 bytes.
+   GctibRef allows 2 formats of value:
+   0. "label_name - . + 0" for reference in offset format
+   1. "indirect.label_name - . + 1" for indirect reference
+      this format aims to support lld which does not support expression "global_symbol - ."
+   GctibRef is self-decoded by also encoding the format and is defined for binary compatibility.
+   If no compatibility problem is involved, DataRef is preferred.
+ */
+enum GctibRefFormat {
+  kGctibRefIsOffset = 0, // default
+  kGctibRefIsIndirect = 1,
+  kGctibRefBitMask = 3
+};
+
+struct GctibRef32 {
+  // be careful when *refVal* is treated as an offset which is a signed integer actually.
+  uint32_t refVal;
+  inline void *GetGctibRef() const;
+  inline void SetGctibRef(void *ref, GctibRefFormat format = kGctibRefIsOffset);
+};
+
+struct GctibRef {
+  void *refVal;
+  inline void *GetGctibRef() const;
+  inline void SetGctibRef(void *ref, GctibRefFormat format = kGctibRefIsOffset);
+};
+
 // MByteRef is meant to represent a reference to data defined in maple file. It is a direct reference or an offset.
 // MByteRef is self-encoded/decoded and aligned to 1 byte.
 // Unlike DataRef, the format of MByteRef is determined by its value.
@@ -239,7 +267,7 @@ struct ClassMetadata {
 
   DataRef iTable;  // iTable of current class, used for virtual call, will insert the content into classinfo
   DataRef vTable;  // vTable of current class, used for interface call, will insert the content into classinfo
-  void *gctib; // for rc
+  GctibRef gctib;  // for rc
 
   union {
     DataRef classinforo64; // ifndef USE_32BIT_REF
