@@ -250,7 +250,7 @@ void RCLowering::HandleRetOfCallAssignedMeStmt(MeStmt &stmt, MeExpr &pendingDec)
   RegassignMeStmt *backup = irMap.CreateRegassignMeStmt(*irMap.CreateRegMeExpr(PTY_ref), pendingDec, *bb);
   std::vector<MeExpr*> opnds = { backup->GetRegLHS() };
   IntrinsiccallMeStmt *decRefCall = CreateRCIntrinsic(INTRN_MCCDecRef, stmt, opnds);
-  if (!dynamic_cast<CallMeStmt*>(&stmt)) {
+  if (!instance_of<CallMeStmt>(stmt)) {
     bb->InsertMeStmtBefore(&stmt, backup);
     bb->InsertMeStmtAfter(&stmt, decRefCall);
   } else {
@@ -395,9 +395,8 @@ bool RCLowering::IsInitialized(IvarMeExpr &ivar) {
     return true;
   }
   MIRType *baseType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ivar.GetTyIdx());
-  ASSERT(baseType->IsMIRPtrType(), "unexpect type");
-  auto *ptype = static_cast<MIRPtrType*>(baseType)->GetPointedType();
-  auto *classType = dynamic_cast<MIRClassType*>(ptype);
+  auto *ptype = utils::ToRef(safe_cast<MIRPtrType>(baseType)).GetPointedType();
+  auto *classType = safe_cast<MIRClassType>(ptype);
   return classType == nullptr || !classType->IsOwnField(fieldID);
 }
 
@@ -406,9 +405,8 @@ void RCLowering::HandleAssignMeStmtIvarLHS(MeStmt &stmt) {
   IvarMeExpr *lhsInner = iassign.GetLHSVal();
   FieldID fieldID = lhsInner->GetFieldID();
   MIRType *baseType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(lhsInner->GetTyIdx());
-  ASSERT(baseType->IsMIRPtrType(), "unexpect type");
-  auto *ptype = static_cast<MIRPtrType*>(baseType)->GetPointedType();
-  auto *classType = dynamic_cast<MIRClassType*>(ptype);
+  auto *ptype = utils::ToRef(safe_cast<MIRPtrType>(baseType)).GetPointedType();
+  auto *classType = safe_cast<MIRClassType>(ptype);
   // skip RC operation if the field is unowned
   if (classType != nullptr && classType->IsFieldRCUnownedRef(fieldID)) {
     return;

@@ -3116,4 +3116,8 @@ class CommentNode : public StmtNode {
 
 void DumpCallReturns(const MIRModule &mod, CallReturnVector nrets, int32 indent);
 }  // namespace maple
+
+#define LOAD_SAFE_CAST_FOR_MIR_NODE
+#include "ir_safe_cast_traits.def"
+
 #endif  // MAPLE_IR_INCLUDE_MIR_NODES_H
