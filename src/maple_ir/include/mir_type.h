@@ -19,6 +19,7 @@
 #include "prim_types.h"
 #include "mir_pragma.h"
 #include "mpl_logging.h"
+#include "safe_cast.h"
 #if MIR_FEATURE_FULL
 #include "mempool.h"
 #include "mempool_allocator.h"
@@ -1579,4 +1580,8 @@ class MIRGenericInstantType : public MIRInstantVectorType {
 };
 #endif  // MIR_FEATURE_FULL
 }  // namespace maple
+
+#define LOAD_SAFE_CAST_FOR_MIR_TYPE
+#include "ir_safe_cast_traits.def"
+
 #endif  // MAPLE_IR_INCLUDE_MIR_TYPE_H

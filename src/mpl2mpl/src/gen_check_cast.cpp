@@ -42,7 +42,9 @@ CheckCastGenerator::CheckCastGenerator(MIRModule *mod, KlassHierarchy *kh, bool 
 
 
 void CheckCastGenerator::InitTypes() {
-  pointerObjType = GlobalTables::GetTypeTable().GetOrCreatePointerType(*WKTypes::Util::GetJavaLangObjectType());
+  const MIRType *javaLangObjectType = WKTypes::Util::GetJavaLangObjectType();
+  CHECK_FATAL(javaLangObjectType != nullptr, "The pointerObjType in InitTypes is null!");
+  pointerObjType = GlobalTables::GetTypeTable().GetOrCreatePointerType(*javaLangObjectType);
   classinfoType = GlobalTables::GetTypeTable().GetOrCreateClassType(NameMangler::kClassMetadataTypeName,
                                                                     GetMIRModule());
   pointerClassMetaType = GlobalTables::GetTypeTable().GetOrCreatePointerType(*classinfoType);

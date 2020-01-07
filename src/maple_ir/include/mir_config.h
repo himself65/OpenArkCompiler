@@ -39,7 +39,6 @@
   do {                   \
   } while (0)
 #define MIR_CAST_TO(var, totype) ((totype)(var))
-#define MIR_DYN_CAST(var, totype) ((totype)(var))
 #include <stdlib.h>
 #if DEBUG
 #include <stdio.h>
@@ -81,7 +80,6 @@ namespace maple {
 #define MIR_PRINTF(...) printf(__VA_ARGS__)
 #define MIR_INFO(...) printf(__VA_ARGS__)
 #define MIR_CAST_TO(var, totype) static_cast<totype>(var)
-#define MIR_DYN_CAST(var, totype) dynamic_cast<totype>(var)
 #endif  // !MIR_FEATURE_FULL
 
 // MIR specific configurations.

@@ -17,52 +17,228 @@
 namespace maple {
 #ifdef LOAD_SAFE_CAST_FOR_MIR_CONST
 #undef LOAD_SAFE_CAST_FOR_MIR_CONST
-inline MIRConstKind safe_cast_traits(const MIRConst &mirConst) {
-  return mirConst.GetKind();
-};
+REGISTER_SAFE_CAST(MIRIntConst, from.GetKind() == kConstInt);
+REGISTER_SAFE_CAST(MIRAddrofConst, from.GetKind() == kConstAddrof);
+REGISTER_SAFE_CAST(MIRAddroffuncConst, from.GetKind() == kConstAddrofFunc);
+REGISTER_SAFE_CAST(MIRLblConst, from.GetKind() == kConstLblConst);
+REGISTER_SAFE_CAST(MIRStrConst, from.GetKind() == kConstStrConst);
+REGISTER_SAFE_CAST(MIRStr16Const, from.GetKind() == kConstStr16Const);
+REGISTER_SAFE_CAST(MIRFloatConst, from.GetKind() == kConstFloatConst);
+REGISTER_SAFE_CAST(MIRDoubleConst, from.GetKind() == kConstDoubleConst);
+REGISTER_SAFE_CAST(MIRFloat128Const, from.GetKind() == kConstFloat128Const);
+REGISTER_SAFE_CAST(MIRAggConst, from.GetKind() == kConstAggConst);
+REGISTER_SAFE_CAST(MIRStConst, from.GetKind() == kConstStConst);
+#endif
 
-template <> struct ExtractCode<MIRIntConst> {
-  enum {value = kConstInt};
-};
+#ifdef LOAD_SAFE_CAST_FOR_MIR_TYPE
+#undef LOAD_SAFE_CAST_FOR_MIR_TYPE
+REGISTER_SAFE_CAST(MIRPtrType, from.GetKind() == kTypePointer);
+REGISTER_SAFE_CAST(MIRArrayType, from.GetKind() == kTypeArray);
+REGISTER_SAFE_CAST(MIRFarrayType, from.GetKind() == kTypeFArray ||
+                                  instance_of<MIRJarrayType>(from));
+REGISTER_SAFE_CAST(MIRStructType, from.GetKind() == kTypeStruct ||
+                                  from.GetKind() == kTypeStructIncomplete ||
+                                  from.GetKind() == kTypeUnion ||
+                                  instance_of<MIRClassType>(from) ||
+                                  instance_of<MIRInterfaceType>(from));
+REGISTER_SAFE_CAST(MIRJarrayType, from.GetKind() == kTypeJArray);
+REGISTER_SAFE_CAST(MIRClassType, from.GetKind() == kTypeClass ||
+                                 from.GetKind() == kTypeClassIncomplete);
+REGISTER_SAFE_CAST(MIRInterfaceType, from.GetKind() == kTypeInterface ||
+                                     from.GetKind() == kTypeInterfaceIncomplete);
+REGISTER_SAFE_CAST(MIRBitFieldType, from.GetKind() == kTypeBitField);
+REGISTER_SAFE_CAST(MIRFuncType, from.GetKind() == kTypeFunction);
+REGISTER_SAFE_CAST(MIRTypeByName, from.GetKind() == kTypeByName);
+REGISTER_SAFE_CAST(MIRTypeParam, from.GetKind() == kTypeParam);
+REGISTER_SAFE_CAST(MIRInstantVectorType, from.GetKind() == kTypeInstantVector);
+REGISTER_SAFE_CAST(MIRGenericInstantType, from.GetKind() == kTypeGenericInstant);
+#endif
 
-template <> struct ExtractCode<MIRAddrofConst> {
-  enum {value = kConstAddrof};
-};
-
-template <> struct ExtractCode<MIRAddroffuncConst> {
-  enum {value = kConstAddrofFunc};
-};
-
-template <> struct ExtractCode<MIRLblConst> {
-  enum {value = kConstLblConst};
-};
-
-template <> struct ExtractCode<MIRStrConst> {
-  enum {value = kConstStrConst};
-};
-
-template <> struct ExtractCode<MIRStr16Const> {
-  enum {value = kConstStr16Const};
-};
-
-template <> struct ExtractCode<MIRFloatConst> {
-  enum {value = kConstFloatConst};
-};
-
-template <> struct ExtractCode<MIRDoubleConst> {
-  enum {value = kConstDoubleConst};
-};
-
-template <> struct ExtractCode<MIRFloat128Const> {
-  enum {value = kConstFloat128Const};
-};
-
-template <> struct ExtractCode<MIRAggConst> {
-  enum {value = kConstAggConst};
-};
-
-template <> struct ExtractCode<MIRStConst> {
-  enum {value = kConstStConst};
-};
+#ifdef LOAD_SAFE_CAST_FOR_MIR_NODE
+#undef LOAD_SAFE_CAST_FOR_MIR_NODE
+REGISTER_SAFE_CAST(UnaryNode, from.GetOpCode() == OP_abs ||
+                              from.GetOpCode() == OP_bnot ||
+                              from.GetOpCode() == OP_lnot ||
+                              from.GetOpCode() == OP_neg ||
+                              from.GetOpCode() == OP_recip ||
+                              from.GetOpCode() == OP_sqrt ||
+                              from.GetOpCode() == OP_alloca ||
+                              from.GetOpCode() == OP_malloc ||
+                              instance_of<TypeCvtNode>(from) ||
+                              instance_of<ExtractbitsNode>(from) ||
+                              instance_of<JarrayMallocNode>(from) ||
+                              instance_of<IreadNode>(from) ||
+                              instance_of<IreadoffNode>(from));
+REGISTER_SAFE_CAST(TypeCvtNode, from.GetOpCode() == OP_ceil ||
+                                from.GetOpCode() == OP_cvt ||
+                                from.GetOpCode() == OP_floor ||
+                                from.GetOpCode() == OP_round ||
+                                from.GetOpCode() == OP_trunc ||
+                                instance_of<RetypeNode>(from));
+REGISTER_SAFE_CAST(RetypeNode, from.GetOpCode() == OP_retype);
+REGISTER_SAFE_CAST(ExtractbitsNode, from.GetOpCode() == OP_extractbits ||
+                                    from.GetOpCode() == OP_sext ||
+                                    from.GetOpCode() == OP_zext);
+REGISTER_SAFE_CAST(GCMallocNode, from.GetOpCode() == OP_gcmalloc ||
+                                 from.GetOpCode() = OP_gcpermalloc);
+REGISTER_SAFE_CAST(JarrayMallocNode, from.GetOpCode() == OP_gcmallocjarray ||
+                                     from.GetOpCode() = OP_gcpermallocjarray);
+REGISTER_SAFE_CAST(IreadNode, from.GetOpCode() == OP_iread ||
+                              from.GetOpCode() = OP_iaddrof);
+REGISTER_SAFE_CAST(IreadoffNode, from.GetOpCode() == OP_ireadoff);
+REGISTER_SAFE_CAST(IreadFPoffNode, from.GetOpCode() == OP_ireadfpoff);
+REGISTER_SAFE_CAST(BinaryNode, from.GetOpCode() == OP_add ||
+                               from.GetOpCode() == OP_sub ||
+                               from.GetOpCode() == OP_mul ||
+                               from.GetOpCode() == OP_div ||
+                               from.GetOpCode() == OP_rem ||
+                               from.GetOpCode() == OP_ashr ||
+                               from.GetOpCode() == OP_lshr ||
+                               from.GetOpCode() == OP_shl ||
+                               from.GetOpCode() == OP_max ||
+                               from.GetOpCode() == OP_min ||
+                               from.GetOpCode() == OP_band ||
+                               from.GetOpCode() == OP_bior ||
+                               from.GetOpCode() == OP_bxor ||
+                               from.GetOpCode() == OP_CG_array_elem_add ||
+                               from.GetOpCode() == OP_land ||
+                               from.GetOpCode() == OP_lior ||
+                               from.GetOpCode() == OP_cand ||
+                               from.GetOpCode() == OP_cior ||
+                               instance_of<CompareNode>(from) ||
+                               instance_of<DepositbitsNode>(from) ||
+                               instance_of<ResolveFuncNode>(from));
+REGISTER_SAFE_CAST(CompareNode, from.GetOpCode() == OP_eq ||
+                                from.GetOpCode() = OP_ge ||
+                                from.GetOpCode() = OP_gt ||
+                                from.GetOpCode() = OP_le ||
+                                from.GetOpCode() = OP_lt ||
+                                from.GetOpCode() = OP_ne ||
+                                from.GetOpCode() = OP_cmp ||
+                                from.GetOpCode() = OP_cmpl ||
+                                from.GetOpCode() = OP_cmpg);
+REGISTER_SAFE_CAST(DepositbitsNode, from.GetOpCode() == OP_depositbits);
+REGISTER_SAFE_CAST(ResolveFuncNode, from.GetOpCode() == OP_resolveinterfacefunc ||
+                                    from.GetOpCode() == OP_resolvevirtualfunc);
+REGISTER_SAFE_CAST(TernaryNode, from.GetOpCode() == OP_select);
+REGISTER_SAFE_CAST(NaryNode, instance_of<IntrinsicopNode>(from) ||
+                             instance_of<ArrayNode>(from));
+REGISTER_SAFE_CAST(IntrinsicopNode, from.GetOpCode() == OP_intrinsicop ||
+                                    from.GetOpCode() == OP_intrinsicopwithtype);
+REGISTER_SAFE_CAST(ConstvalNode, from.GetOpCode() == OP_constval);
+REGISTER_SAFE_CAST(ConststrNode, from.GetOpCode() == OP_conststr);
+REGISTER_SAFE_CAST(Conststr16Node, from.GetOpCode() == OP_conststr16);
+REGISTER_SAFE_CAST(SizeoftypeNode, from.GetOpCode() == OP_sizeoftype);
+REGISTER_SAFE_CAST(FieldsDistNode, from.GetOpCode() == OP_fieldsdist);
+REGISTER_SAFE_CAST(ArrayNode, from.GetOpCode() == OP_array);
+REGISTER_SAFE_CAST(AddrofNode, from.GetOpCode() == OP_dread ||
+                               from.GetOpCode() == OP_addrof);
+REGISTER_SAFE_CAST(RegreadNode, from.GetOpCode() == OP_regread);
+REGISTER_SAFE_CAST(AddroffuncNode, from.GetOpCode() == OP_addroffunc);
+REGISTER_SAFE_CAST(AddroflabelNode, from.GetOpCode() == OP_addroflabel);
+REGISTER_SAFE_CAST(StmtNode, from.GetOpCode() == OP_finally ||
+                             from.GetOpCode() == OP_cleanuptry ||
+                             from.GetOpCode() == OP_endtry ||
+                             from.GetOpCode() == OP_retsub ||
+                             from.GetOpCode() == OP_membaracquire ||
+                             from.GetOpCode() == OP_membarrelease ||
+                             from.GetOpCode() == OP_membarstoreload ||
+                             from.GetOpCode() == OP_membarstorestore ||
+                             instance_of<IassignNode>(from) ||
+                             instance_of<GotoNode>(from) ||
+                             instance_of<JsTryNode>(from) ||
+                             instance_of<TryNode>(from) ||
+                             instance_of<CatchNode>(from) ||
+                             instance_of<SwitchNode>(from) ||
+                             instance_of<MultiwayNode>(from) ||
+                             instance_of<UnaryStmtNode>(from) ||
+                             instance_of<BlockNode>(from) ||
+                             instance_of<DoloopNode>(from) ||
+                             instance_of<ForeachelemNode>(from) ||
+                             instance_of<NaryStmtNode>(from) ||
+                             instance_of<LabelNode>(from) ||
+                             instance_of<CommentNode>(from));
+REGISTER_SAFE_CAST(IassignNode, from.GetOpCode() == OP_iassign);
+REGISTER_SAFE_CAST(GotoNode, from.GetOpCode() == OP_goto ||
+                             from.GetOpCode() == OP_gosub);
+REGISTER_SAFE_CAST(JsTryNode, from.GetOpCode() == OP_jstry);
+REGISTER_SAFE_CAST(TryNode, from.GetOpCode() == OP_try);
+REGISTER_SAFE_CAST(CatchNode, from.GetOpCode() == OP_catch);
+REGISTER_SAFE_CAST(SwitchNode, from.GetOpCode() == OP_switch);
+REGISTER_SAFE_CAST(MultiwayNode, from.GetOpCode() == OP_multiway);
+REGISTER_SAFE_CAST(UnaryStmtNode, from.GetOpCode() == OP_eval ||
+                                  from.GetOpCode() == OP_throw ||
+                                  from.GetOpCode() == OP_free ||
+                                  from.GetOpCode() == OP_decref ||
+                                  from.GetOpCode() == OP_incref ||
+                                  from.GetOpCode() == OP_decrefreset ||
+                                  from.GetOpCode() == OP_assertnonnull ||
+                                  instance_of<DassignNode>(from) ||
+                                  instance_of<RegassignNode>(from) ||
+                                  instance_of<CondGotoNode>(from) ||
+                                  instance_of<RangeGotoNode>(from) ||
+                                  instance_of<IfStmtNode>(from) ||
+                                  instance_of<WhileStmtNode>(from) ||
+                                  instance_of<IassignFPoffNode>(from));
+REGISTER_SAFE_CAST(DassignNode, from.GetOpCode() == OP_dassign ||
+                                from.GetOpCode() == OP_maydassign);
+REGISTER_SAFE_CAST(RegassignNode, from.GetOpCode() == OP_regassign);
+REGISTER_SAFE_CAST(CondGotoNode, from.GetOpCode() == OP_brtrue ||
+                                 from.GetOpCode() == OP_brfalse);
+REGISTER_SAFE_CAST(RangeGotoNode, from.GetOpCode() == OP_rangegoto);
+REGISTER_SAFE_CAST(BlockNode, from.GetOpCode() == OP_block);
+REGISTER_SAFE_CAST(IfStmtNode, from.GetOpCode() == OP_if);
+REGISTER_SAFE_CAST(WhileStmtNode, from.GetOpCode() == OP_while ||
+                                  from.GetOpCode() == OP_dowhile);
+REGISTER_SAFE_CAST(DoloopNode, from.GetOpCode() == OP_doloop);
+REGISTER_SAFE_CAST(ForeachelemNode, from.GetOpCode() == OP_foreachelem);
+REGISTER_SAFE_CAST(BinaryStmtNode, from.GetOpCode() == OP_assertge ||
+                                   from.GetOpCode() == OP_assertlt ||
+                                   instance_of<IassignoffNode>(from) ||
+                                   instance_of<AssertStmtNode>(from));
+REGISTER_SAFE_CAST(IassignoffNode, from.GetOpCode() == OP_iassignoff);
+REGISTER_SAFE_CAST(IassignFPoffNode, from.GetOpCode() == OP_iassignfpoff);
+REGISTER_SAFE_CAST(NaryStmtNode, from.GetOpCode() == OP_return ||
+                                 from.GetOpCode() == OP_syncenter ||
+                                 from.GetOpCode() == OP_syncexit ||
+                                 instance_of<CallNode>(from) ||
+                                 instance_of<IcallNode>(from) ||
+                                 instance_of<IntrinsiccallNode>(from));
+REGISTER_SAFE_CAST(CallNode, from.GetOpCode() == OP_call ||
+                             from.GetOpCode() == OP_virtualcall ||
+                             from.GetOpCode() == OP_superclasscall ||
+                             from.GetOpCode() == OP_interfacecall ||
+                             from.GetOpCode() == OP_customcall ||
+                             from.GetOpCode() == OP_polymorphiccall ||
+                             from.GetOpCode() == OP_interfaceicall ||
+                             from.GetOpCode() == OP_virtualicall ||
+                             from.GetOpCode() == OP_callassigned ||
+                             from.GetOpCode() == OP_virtualcallassigned ||
+                             from.GetOpCode() == OP_superclasscallassigned ||
+                             from.GetOpCode() == OP_interfacecallassigned ||
+                             from.GetOpCode() == OP_customcallassigned ||
+                             from.GetOpCode() == OP_polymorphiccallassigned ||
+                             from.GetOpCode() == OP_interfaceicallassigned ||
+                             from.GetOpCode() == OP_virtualicallassigned ||
+                             instance_of<CallinstantNode>(from));
+REGISTER_SAFE_CAST(IcallNode, from.GetOpCode() == OP_icall ||
+                              from.GetOpCode() == OP_icallassigned);
+REGISTER_SAFE_CAST(IntrinsiccallNode, from.GetOpCode() == OP_intrinsiccall ||
+                                      from.GetOpCode() == OP_intrinsiccallwithtype ||
+                                      from.GetOpCode() == OP_xintrinsiccall ||
+                                      from.GetOpCode() == OP_intrinsiccallassigned ||
+                                      from.GetOpCode() == OP_intrinsiccallwithtypeassigned ||
+                                      from.GetOpCode() == OP_xintrinsiccallassigned);
+REGISTER_SAFE_CAST(CallinstantNode, from.GetOpCode() == OP_callinstant ||
+                                    from.GetOpCode() == OP_virtualcallinstant ||
+                                    from.GetOpCode() == OP_superclasscallinstant ||
+                                    from.GetOpCode() == OP_interfacecallinstant ||
+                                    from.GetOpCode() == OP_callinstantassigned ||
+                                    from.GetOpCode() == OP_virtualcallinstantassigned ||
+                                    from.GetOpCode() == OP_superclasscallinstantassigned ||
+                                    from.GetOpCode() == OP_interfacecallinstantassigned);
+REGISTER_SAFE_CAST(AssertStmtNode, false);
+REGISTER_SAFE_CAST(LabelNode, from.GetOpCode() == OP_label);
+REGISTER_SAFE_CAST(CommentNode, from.GetOpCode() == OP_comment);
 #endif
 }

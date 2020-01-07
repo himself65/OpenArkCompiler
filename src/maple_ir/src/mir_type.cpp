@@ -631,8 +631,7 @@ FieldID MIRClassType::GetFirstLocalFieldID() const {
   constexpr uint8 lastFieldIDOffset = 2;
   constexpr uint8 firstLocalFieldIDOffset = 1;
   const auto *parentClassType =
-      MIR_DYN_CAST(GlobalTables::GetTypeTable().GetTypeFromTyIdx(parentTyIdx), const MIRClassType*);
-  CHECK_FATAL(parentClassType != nullptr, "null pointer check");
+      static_cast<const MIRClassType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(parentTyIdx));
   return !parentClassType->IsLocal() ? parentClassType->GetLastFieldID() + lastFieldIDOffset
                                      : parentClassType->GetFirstLocalFieldID() + firstLocalFieldIDOffset;
 }
@@ -665,7 +664,7 @@ FieldID MIRClassType::GetLastFieldID() const {
   FieldID fieldID = fields.size();
   if (parentTyIdx != 0) {
     const auto *parentClassType =
-        MIR_DYN_CAST(GlobalTables::GetTypeTable().GetTypeFromTyIdx(parentTyIdx), const MIRClassType*);
+        static_cast<const MIRClassType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(parentTyIdx));
     if (parentClassType != nullptr) {
       fieldID += parentClassType->GetLastFieldID() + 1;
     }
@@ -1369,7 +1368,8 @@ bool MIRInterfaceType::HasTypeParam() const {
 
 FieldPair MIRClassType::TraverseToFieldRef(FieldID &fieldID) const {
   if (parentTyIdx != 0) {
-    auto *parentClassType = MIR_DYN_CAST(GlobalTables::GetTypeTable().GetTypeFromTyIdx(parentTyIdx), MIRClassType*);
+    auto *parentClassType =
+        static_cast<MIRClassType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(parentTyIdx));
     if (parentClassType != nullptr) {
       --fieldID;
       const FieldPair &curPair = parentClassType->TraverseToFieldRef(fieldID);

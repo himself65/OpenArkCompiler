@@ -17,43 +17,83 @@
 namespace maple {
 #ifdef LOAD_SAFE_CAST_FOR_ME_EXPR
 #undef LOAD_SAFE_CAST_FOR_ME_EXPR
-inline MeExprOp safe_cast_traits(const MeExpr &expr) {
-  return expr.GetMeOp();
-};
-
-template <> struct ExtractCode<VarMeExpr> {
-  enum {value = kMeOpVar};
-};
-
-template <> struct ExtractCode<OpMeExpr> {
-  enum {value = kMeOpOp};
-};
-
-template <> struct ExtractCode<NaryMeExpr> {
-  enum {value = kMeOpNary};
-};
-
-template <> struct ExtractCode<IvarMeExpr> {
-  enum {value = kMeOpIvar};
-};
+REGISTER_SAFE_CAST(VarMeExpr, from.GetMeOp() == kMeOpVar);
+REGISTER_SAFE_CAST(RegMeExpr, from.GetMeOp() == kMeOpReg);
+REGISTER_SAFE_CAST(ConstMeExpr, from.GetMeOp() == kMeOpConst);
+REGISTER_SAFE_CAST(ConststrMeExpr, from.GetMeOp() == kMeOpConststr);
+REGISTER_SAFE_CAST(Conststr16MeExpr, from.GetMeOp() == kMeOpConststr16);
+REGISTER_SAFE_CAST(SizeoftypeMeExpr, from.GetMeOp() == kMeOpSizeoftype);
+REGISTER_SAFE_CAST(FieldsDistMeExpr, from.GetMeOp() == kMeOpFieldsDist);
+REGISTER_SAFE_CAST(AddrofMeExpr, from.GetMeOp() == kMeOpAddrof);
+REGISTER_SAFE_CAST(AddroffuncMeExpr, from.GetMeOp() == kMeOpAddroffunc);
+REGISTER_SAFE_CAST(GcmallocMeExpr, from.GetMeOp() == kMeOpGcmalloc);
+REGISTER_SAFE_CAST(OpMeExpr, from.GetMeOp() == kMeOpOp);
+REGISTER_SAFE_CAST(IvarMeExpr, from.GetMeOp() == kMeOpIvar);
+REGISTER_SAFE_CAST(NaryMeExpr, from.GetMeOp() == kMeOpNary);
 #endif
 
 #ifdef LOAD_SAFE_CAST_FOR_ME_STMT
 #undef LOAD_SAFE_CAST_FOR_ME_STMT
-inline Opcode safe_cast_traits(const MeStmt &stmt) {
-  return stmt.GetOp();
-}
-
-template <> struct ExtractCode<DassignMeStmt> {
-  enum {value = OP_dassign};
-};
-
-template <> struct ExtractCode<MaydassignMeStmt> {
-  enum {value = OP_maydassign};
-};
-
-template <> struct ExtractCode<IassignMeStmt> {
-  enum {value = OP_iassign};
-};
+REGISTER_SAFE_CAST(PaiassignMeStmt, from.GetOp() == OP_paiassign);
+REGISTER_SAFE_CAST(DassignMeStmt, from.GetOp() == OP_dassign);
+REGISTER_SAFE_CAST(RegassignMeStmt, from.GetOp() == OP_regassign);
+REGISTER_SAFE_CAST(MaydassignMeStmt, from.GetOp() == OP_maydassign);
+REGISTER_SAFE_CAST(IassignMeStmt, from.GetOp() == OP_iassign);
+REGISTER_SAFE_CAST(NaryMeStmt, instance_of<CallMeStmt>(from) ||
+                               instance_of<IcallMeStmt>(from) ||
+                               instance_of<IntrinsiccallMeStmt>(from) ||
+                               instance_of<RetMeStmt>(from) ||
+                               instance_of<SyncMeStmt>(from));
+REGISTER_SAFE_CAST(CallMeStmt, from.GetOp() == OP_call ||
+                               from.GetOp() == OP_virtualcall ||
+                               from.GetOp() == OP_superclasscall ||
+                               from.GetOp() == OP_interfacecall ||
+                               from.GetOp() == OP_customcall ||
+                               from.GetOp() == OP_polymorphiccall ||
+                               from.GetOp() == OP_interfaceicall ||
+                               from.GetOp() == OP_virtualicall ||
+                               from.GetOp() == OP_callassigned ||
+                               from.GetOp() == OP_virtualcallassigned ||
+                               from.GetOp() == OP_superclasscallassigned ||
+                               from.GetOp() == OP_interfacecallassigned ||
+                               from.GetOp() == OP_customcallassigned ||
+                               from.GetOp() == OP_polymorphiccallassigned ||
+                               from.GetOp() == OP_interfaceicallassigned ||
+                               from.GetOp() == OP_virtualicallassigned);
+REGISTER_SAFE_CAST(IcallMeStmt, from.GetOp() == OP_icall ||
+                                from.GetOp() == OP_icallassigned);
+REGISTER_SAFE_CAST(IntrinsiccallMeStmt, from.GetOp() == OP_intrinsiccall ||
+                                        from.GetOp() == OP_intrinsiccallwithtype ||
+                                        from.GetOp() == OP_xintrinsiccall ||
+                                        from.GetOp() == OP_intrinsiccallassigned ||
+                                        from.GetOp() == OP_intrinsiccallwithtypeassigned ||
+                                        from.GetOp() == OP_xintrinsiccallassigned);
+REGISTER_SAFE_CAST(RetMeStmt, from.GetOp() == OP_return);
+REGISTER_SAFE_CAST(UnaryMeStmt, instance_of<CondGotoMeStmt>(from) ||
+                                instance_of<SwitchMeStmt>(from) ||
+                                instance_of<CondGotoMeStmt>(from) ||
+                                from.GetOp() == OP_eval ||
+                                from.GetOp() == OP_free ||
+                                from.GetOp() == OP_assertnonnull ||
+                                from.GetOp() == OP_incref ||
+                                from.GetOp() == OP_decref ||
+                                from.GetOp() == OP_decrefreset);
+REGISTER_SAFE_CAST(GotoMeStmt, from.GetOp() == OP_goto);
+REGISTER_SAFE_CAST(CondGotoMeStmt, from.GetOp() == OP_brtrue ||
+                                   from.GetOp() == OP_brfalse);
+REGISTER_SAFE_CAST(JsTryMeStmt, from.GetOp() == OP_jstry);
+REGISTER_SAFE_CAST(TryMeStmt, from.GetOp() == OP_try);
+REGISTER_SAFE_CAST(CatchMeStmt, from.GetOp() == OP_catch);
+REGISTER_SAFE_CAST(SwitchMeStmt, from.GetOp() == OP_switch);
+REGISTER_SAFE_CAST(CommentMeStmt, from.GetOp() == OP_comment);
+REGISTER_SAFE_CAST(WithMuMeStmt, instance_of<GosubMeStmt>(from) ||
+                                 instance_of<ThrowMeStmt>(from) ||
+                                 from.GetOp() == OP_retsub);
+REGISTER_SAFE_CAST(GosubMeStmt, from.GetOp() == OP_gosub);
+REGISTER_SAFE_CAST(ThrowMeStmt, from.GetOp() == OP_throw);
+REGISTER_SAFE_CAST(SyncMeStmt, from.GetOp() == OP_syncenter ||
+                               from.GetOp() == OP_syncexit);
+REGISTER_SAFE_CAST(AssertMeStmt, from.GetOp() == OP_assertge ||
+                                 from.GetOp() == OP_assertlt);
 #endif
 }
