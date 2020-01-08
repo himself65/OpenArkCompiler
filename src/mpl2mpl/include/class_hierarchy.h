@@ -391,5 +391,17 @@ class KlassHierarchy : public AnalysisResult {
   MapleMap<GStrIdx, Klass*> strIdx2KlassMap;
   MapleVector<Klass*> topoWorkList;
 };
+
+class DoKlassHierarchy : public ModulePhase {
+ public:
+    explicit DoKlassHierarchy(ModulePhaseID id) : ModulePhase(id) {}
+
+    AnalysisResult *Run(MIRModule *module, ModuleResultMgr *m) override;
+    std::string PhaseName() const override {
+      return "classhierarchy";
+    }
+
+    virtual ~DoKlassHierarchy() = default;
+};
 }  // namespace maple
 #endif  // MPL2MPL_INCLUDE_CLASS_HIERARCHY_H

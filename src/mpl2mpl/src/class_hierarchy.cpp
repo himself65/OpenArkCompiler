@@ -765,6 +765,25 @@ KlassHierarchy::KlassHierarchy(MIRModule *mirmodule, MemPool *memPool)
       strIdx2KlassMap(std::less<GStrIdx>(), alloc.Adapter()),
       topoWorkList(alloc.Adapter()) {}
 
+AnalysisResult *DoKlassHierarchy::Run(MIRModule *module, ModuleResultMgr *m) {
+  MemPool *memPool = memPoolCtrler.NewMemPool("classhierarchy mempool");
+  KlassHierarchy *kh = memPool->New<KlassHierarchy>(module, memPool);
+  KlassHierarchy::traceFlag = TRACE_PHASE;
+  kh->BuildHierarchy();
+#if MIR_JAVA
+  if (!Options::skipVirtualMethod) {
+    kh->CountVirtualMethods();
+  }
+#else
+  kh->CountVirtualMethods();
+#endif
+  if (KlassHierarchy::traceFlag) {
+    kh->Dump();
+  }
+  m->AddResult(GetPhaseID(), *module, *kh);
+  return kh;
+}
+
 MIRType *WKTypes::javaLangObject;
 MIRType *WKTypes::javaLangString;
 MIRType *WKTypes::javaLangObjectSerializable;

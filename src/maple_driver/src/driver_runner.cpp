@@ -166,22 +166,21 @@ void DriverRunner::InitPhases(InterleavedManager &mgr, const std::vector<std::st
   std::vector<std::string> curPhases;
 
   for (const std::string &phase : phases) {
-    auto temp = mgr.GetSupportPhaseManager(phase);
-    if (temp != nullptr) {
-      if (temp != curManager) {
-        if (curManager != nullptr) {
-          AddPhases(mgr, curPhases, *curManager);
-        }
-        curManager = temp;
+    const PhaseManager *supportManager = mgr.GetSupportPhaseManager(phase);
+    if (supportManager != nullptr) {
+      if (curManager != nullptr && curManager != supportManager && !curPhases.empty()) {
+        AddPhases(mgr, curPhases, *curManager);
         curPhases.clear();
       }
 
-      CHECK_FATAL(curManager != nullptr, "Invalid phase manager");
-      AddPhase(curPhases, phase, *curManager);
+      if (curManager != supportManager) {
+        curManager = supportManager;
+      }
+      AddPhase(curPhases, phase, *supportManager);
     }
   }
 
-  if (curManager != nullptr) {
+  if (curManager != nullptr && !curPhases.empty()) {
     AddPhases(mgr, curPhases, *curManager);
   }
 }

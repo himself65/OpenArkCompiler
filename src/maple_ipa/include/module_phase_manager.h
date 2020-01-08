@@ -14,22 +14,9 @@
  */
 #ifndef MAPLE_IPA_INCLUDE_MODULE_PHASE_MANAGER_H
 #define MAPLE_IPA_INCLUDE_MODULE_PHASE_MANAGER_H
-#include "module_phase.h"
 #include "me_phase_manager.h"
 
 namespace maple {
-class DoKlassHierarchy : public ModulePhase {
- public:
-  explicit DoKlassHierarchy(ModulePhaseID id) : ModulePhase(id) {}
-
-  AnalysisResult *Run(MIRModule *module, ModuleResultMgr *m) override;
-  std::string PhaseName() const override {
-    return "classhierarchy";
-  }
-
-  virtual ~DoKlassHierarchy() = default;
-};
-
 class ModulePhaseManager : public PhaseManager {
  public:
   ModulePhaseManager(MemPool *memPool, MIRModule &mod, ModuleResultMgr *mrm = nullptr)

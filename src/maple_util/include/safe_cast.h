@@ -25,7 +25,7 @@ struct safe_cast_condition : std::false_type {};
 template <>                                                             \
 struct safe_cast_condition<type> : std::true_type {                     \
   template <typename FromT>                                             \
-  static inline bool DoIt(FromT &from) {                                \
+  static inline bool DoIt(const FromT &from) {                                \
     return (condition);                                                 \
   }                                                                     \
 }
@@ -34,14 +34,14 @@ namespace __impl {
 template <typename ToT, typename FromT,
   typename = std::enable_if_t<std::is_base_of<FromT, ToT>::value>>
 struct instance_of_impl {
-  static inline bool DoIt(FromT &from) {
+  static inline bool DoIt(const FromT &from) {
     return (safe_cast_condition<ToT>::DoIt(from));
   }
 };
 
 template <typename ToT, typename FromT>
 struct instance_of_impl<ToT, FromT, typename std::enable_if_t<std::is_base_of<ToT, FromT>::value>> {
-  static inline bool DoIt(FromT&) {
+  static inline bool DoIt(const FromT&) {
     return true;
   }
 };
