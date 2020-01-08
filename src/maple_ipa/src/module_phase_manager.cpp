@@ -38,25 +38,6 @@ constexpr char kDotMplStr[] = ".mpl";
 namespace maple {
 // Manage the phases of middle and implement some maplecomb-options such as
 // skipAfter, skipFrom, quiet.
-AnalysisResult *DoKlassHierarchy::Run(MIRModule *module, ModuleResultMgr *m) {
-  MemPool *memPool = memPoolCtrler.NewMemPool("classhierarchy mempool");
-  KlassHierarchy *kh = memPool->New<KlassHierarchy>(module, memPool);
-  KlassHierarchy::traceFlag = TRACE_PHASE;
-  kh->BuildHierarchy();
-#if MIR_JAVA
-  if (!Options::skipVirtualMethod) {
-    kh->CountVirtualMethods();
-  }
-#else
-  kh->CountVirtualMethods();
-#endif
-  if (KlassHierarchy::traceFlag) {
-    kh->Dump();
-  }
-  m->AddResult(GetPhaseID(), *module, *kh);
-  return kh;
-}
-
 void ModulePhaseManager::RegisterModulePhases() {
 #define MODAPHASE(id, modphase)                                                    \
   do {                                                                             \
