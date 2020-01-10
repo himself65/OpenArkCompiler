@@ -35,6 +35,7 @@ constexpr uint64 kMethodNotVirtual = 0x00000001;
 constexpr uint64 kMethodFinalize = 0x00000002;
 constexpr uint64 kMethodAbstract = 0x00000010;
 constexpr uint64 kFieldOffsetIspOffset = 0x00000001;
+constexpr int32 kMethodNotFound = -10;
 
 constexpr int kModPublic = 1;                 // 0x00000001
 constexpr int kModPrivate = 2;                // 0x00000002
@@ -621,7 +622,7 @@ uint32 ReflectionAnalysis::GetMethodInVtabIndex(const Klass &klass, const MIRFun
     }
   }
   if (!findMethod) {
-    constexpr int notFoundMethod = -10;
+    constexpr int notFoundMethod = kMethodNotFound;
     methodInVtabIndex = notFoundMethod;
   }
   // Check VtabIndex, int16.

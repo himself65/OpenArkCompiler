@@ -51,7 +51,7 @@ VtableAnalysis::VtableAnalysis(MIRModule *mod, KlassHierarchy *kh, bool dump) : 
   }
 }
 
-bool VtableAnalysis::IsVtableCandidate(const MIRFunction &func) const {
+bool VtableAnalysis::IsVtableCandidate(const MIRFunction &func) {
   return func.GetAttr(FUNCATTR_virtual) && !func.GetAttr(FUNCATTR_private) && !func.GetAttr(FUNCATTR_static);
 }
 
@@ -107,10 +107,10 @@ void VtableAnalysis::GenVtableList(const Klass &klass) {
     }
   } else {  // it's a class
     MIRClassType *curType = klass.GetMIRClassType();
-    Klass *superKlass = klass.GetSuperKlass();
     // prepare vtable_methods
     // first is vtable from parents. since it's single inheritance, we copy it directly
-    if (superKlass != nullptr) {
+    if (klass.HasSuperKlass()) {
+      Klass *superKlass = klass.GetSuperKlass();
       MIRStructType *partenType = superKlass->GetMIRStructType();
       curType->GetVTableMethods() = partenType->GetVTableMethods();
     }
