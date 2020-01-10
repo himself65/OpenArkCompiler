@@ -31,13 +31,13 @@ class VtableAnalysis : public FuncOptimizeImpl {
   VtableAnalysis(MIRModule *mod, KlassHierarchy *kh, bool dump);
   ~VtableAnalysis() = default;
   static std::string DecodeBaseNameWithType(const MIRFunction &func);
+  static bool IsVtableCandidate(const MIRFunction &func);
   void ProcessFunc(MIRFunction *func) override;
   FuncOptimizeImpl *Clone() override {
     return new VtableAnalysis(*this);
   }
 
  private:
-  bool IsVtableCandidate(const MIRFunction &func) const;
   bool CheckOverrideForCrossPackage(const MIRFunction &baseMethod, const MIRFunction &currMethod) const;
   void AddMethodToTable(MethodPtrVector &methodTable, MethodPair &methodPair);
   void GenVtableList(const Klass &klass);
