@@ -969,6 +969,13 @@ bool MIRClassType::IsFinal() const {
   return kAttrString.find(" final ") != std::string::npos;
 }
 
+bool MIRClassType::IsAbstract() const {
+  uint32 attrStrIdx = GetInfo(GlobalTables::GetStrTable().GetOrCreateStrIdxFromName("INFO_attribute_string"));
+  CHECK(attrStrIdx < GlobalTables::GetStrTable().StringTableSize(), "out of range of vector");
+  const std::string &kAttrString = GlobalTables::GetStrTable().GetStringFromStrIdx(GStrIdx(attrStrIdx));
+  return kAttrString.find(" abstract ") != std::string::npos;
+}
+
 bool MIRClassType::IsInner() const {
   const std::string &name = GetName();
   return name.find("_24") != std::string::npos;

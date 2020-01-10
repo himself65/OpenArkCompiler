@@ -32,6 +32,17 @@ struct MIRAliasVars {
   GStrIdx sigStrIdx;
 };
 
+enum FuncAttrProp : uint32_t {
+  kNoThrowException = 0x1,
+  kNoRetNewlyAllocObj = 0x2,
+  kNoDefEffect = 0x4,
+  kNoDefArgEffect = 0x8,
+  kPureFunc = 0x10,
+  kIpaSeen = 0x20,
+  kUseEffect = 0x40,
+  kDefEffect = 0x80
+};
+
 class MeFunction;  // circular dependency exists, no other choice
 class EAConnectionGraph;  // circular dependency exists, no other choice
 class MIRFunction {
@@ -228,16 +239,16 @@ class MIRFunction {
     return funcAttrs.GetAttr(FUNCATTR_nodefeffect);
   }
 
-  bool IsNoRetNewlyAllocObj() const {
-    return funcAttrs.GetAttr(FUNCATTR_noret_newly_alloc_obj);
+  bool IsNoRetGlobal() const {
+    return funcAttrs.GetAttr(FUNCATTR_noretglobal);
   }
 
   bool IsNoThrowException() const {
     return funcAttrs.GetAttr(FUNCATTR_nothrow_exception);
   }
 
-  bool IsNoPrivateUseEffect() const {
-    return funcAttrs.GetAttr(FUNCATTR_noprivate_useeffect);
+  bool IsNoRetArg() const {
+    return funcAttrs.GetAttr(FUNCATTR_noretarg);
   }
 
   bool IsNoPrivateDefEffect() const {
@@ -264,16 +275,16 @@ class MIRFunction {
     funcAttrs.SetAttr(FUNCATTR_nodefeffect);
   }
 
-  void SetNoRetNewlyAllocObj() {
-    funcAttrs.SetAttr(FUNCATTR_noret_newly_alloc_obj);
+  void SetNoRetGlobal() {
+    funcAttrs.SetAttr(FUNCATTR_noretglobal);
   }
 
   void SetNoThrowException() {
     funcAttrs.SetAttr(FUNCATTR_nothrow_exception);
   }
 
-  void SetNoPrivateUseEffect() {
-    funcAttrs.SetAttr(FUNCATTR_noprivate_useeffect);
+  void SetNoRetArg() {
+    funcAttrs.SetAttr(FUNCATTR_noretarg);
   }
 
   void SetNoPrivateDefEffect() {
@@ -296,8 +307,8 @@ class MIRFunction {
     funcAttrs.SetAttr(FUNCATTR_nodefeffect, true);
   }
 
-  void UnsetNoRetNewlyAllocObj() {
-    funcAttrs.SetAttr(FUNCATTR_noret_newly_alloc_obj, true);
+  void UnsetNoRetGlobal() {
+    funcAttrs.SetAttr(FUNCATTR_noretglobal, true);
   }
 
   void UnsetNoThrowException() {
@@ -308,8 +319,8 @@ class MIRFunction {
     funcAttrs.SetAttr(FUNCATTR_pure, true);
   }
 
-  void UnsetNoPrivateUseEffect() {
-    funcAttrs.SetAttr(FUNCATTR_noprivate_useeffect, true);
+  void UnsetNoRetArg() {
+    funcAttrs.SetAttr(FUNCATTR_noretarg, true);
   }
 
   void UnsetNoPrivateDefEffect() {

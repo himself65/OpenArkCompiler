@@ -50,7 +50,7 @@ toolchain("clang") {
 
     #command = "${GN_CXX_COMPILER} -shared {{ldflags}} -o $soname -Wl,-soname=$soname @$rspfile {{libs}}"
     rspfile_content = "{{inputs}} {{solibs}} {{libs}}"
-    command = "${GN_CXX_COMPILER} {{ldflags}} -o $sofile -shared -Wl,-soname=$soname ${rspfile_content}"
+    command = "${GN_CXX_COMPILER} -fuse-ld=lld {{ldflags}} -o $sofile -shared -Wl,-soname=$soname ${rspfile_content}"
     description = "SOLINK $soname"
 
     # Use this for {{output_extension}} expansions unless a target manually
@@ -72,7 +72,7 @@ toolchain("clang") {
     outfile = "${GN_BINARY_OUTPUT_DIRECTORY}/{{target_output_name}}{{output_extension}}"
     rspfile = "$outfile.rsp"
     rspfile_content = "{{inputs}}"
-    command = "${GN_CXX_COMPILER} {{ldflags}} -o $outfile -Wl,--start-group ${rspfile_content} {{libs}} -Wl,--end-group {{solibs}}"
+    command = "${GN_CXX_COMPILER} -fuse-ld=lld {{ldflags}} -o $outfile -Wl,--start-group ${rspfile_content} {{libs}} -Wl,--end-group {{solibs}}"
     description = "LINK $outfile"
     rspfile_content = "{{inputs}}"
     outputs = [

@@ -669,6 +669,9 @@ void MeFunction::VerifySCC() {
 }
 
 void MeFunction::BuildSCC() {
+  sccTopologicalVec.clear();
+  sccOfBB.clear();
+  sccOfBB.assign(GetAllBBs().size(), nullptr);
   std::vector<uint32> visitedOrder(GetAllBBs().size(), 0);
   std::vector<uint32> lowestOrder(GetAllBBs().size(), 0);
   std::vector<bool> inStack(GetAllBBs().size(), false);

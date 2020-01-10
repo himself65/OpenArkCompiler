@@ -1877,8 +1877,8 @@ bool MIRParser::ParseFunction(uint32 fileIdx) {
       if (func->IsNoDefEffect()) {
         funcAttrs.SetAttr(FUNCATTR_nodefeffect);
       }
-      if (func->IsNoRetNewlyAllocObj()) {
-        funcAttrs.SetAttr(FUNCATTR_noret_newly_alloc_obj);
+      if (func->IsNoRetGlobal()) {
+        funcAttrs.SetAttr(FUNCATTR_noretglobal);
       }
       if (func->IsPure()) {
         funcAttrs.SetAttr(FUNCATTR_pure);
@@ -1889,8 +1889,8 @@ bool MIRParser::ParseFunction(uint32 fileIdx) {
       if (func->IsNoDefArgEffect()) {
         funcAttrs.SetAttr(FUNCATTR_nodefargeffect);
       }
-      if (func->IsNoPrivateUseEffect()) {
-        funcAttrs.SetAttr(FUNCATTR_noprivate_useeffect);
+      if (func->IsNoRetArg()) {
+        funcAttrs.SetAttr(FUNCATTR_noretarg);
       }
       if (func->IsNoPrivateDefEffect()) {
         funcAttrs.SetAttr(FUNCATTR_noprivate_defeffect);
@@ -2622,7 +2622,6 @@ bool MIRParser::ParseMIRForSrcFileInfo() {
 }
 
 bool MIRParser::ParseMIRForImport() {
-  bool firstImport = true;
   lexer.NextToken();
   if (lexer.GetTokenKind() != kTkString) {
     Error("expect file name string after import but get ");
@@ -2651,6 +2650,7 @@ bool MIRParser::ParseMIRForImport() {
         return false;
       }
     }
+    firstImport = false;
   } else {
     BinaryMplt binMplt(mod);
     if (!binMplt.Import(importFileName, paramIsIPA, false)) {  // not a binary mplt

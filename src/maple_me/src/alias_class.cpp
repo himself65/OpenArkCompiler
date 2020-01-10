@@ -40,7 +40,8 @@ bool AliasClass::CallHasNoSideEffectOrPrivateDefEffect(const CallNode &stmt, Fun
   if (callee->GetFuncAttrs().GetAttr(attrKind)) {
     hasAttr = true;
   } else if (!ignoreIPA) {
-    hasAttr = (attrKind == FUNCATTR_nosideeffect) ? callee->IsNoDefEffect() : callee->IsNoPrivateDefEffect();
+    hasAttr = (attrKind == FUNCATTR_nosideeffect) ? (callee->IsNoDefEffect() && callee->IsNoDefArgEffect()) :
+                                                    callee->IsNoPrivateDefEffect();
   }
   return hasAttr;
 }
