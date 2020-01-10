@@ -1152,6 +1152,7 @@ class MIRClassType : public MIRStructType {
   }
 
   bool IsFinal() const;
+  bool IsAbstract() const;
   bool IsInner() const;
   bool HasVolatileField() const override;
   bool HasTypeParam() const override;

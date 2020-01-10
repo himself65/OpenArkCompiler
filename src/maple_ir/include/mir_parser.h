@@ -271,20 +271,17 @@ class MIRParser {
   std::string message;
   std::string warningMessage;
   uint32 options = kKeepFirst;
-  MapleVector<bool> definedLabels;  // true if label at labidx is defined
+  MapleVector<bool> definedLabels;           // true if label at labidx is defined
   MIRFunction *dummyFunction = nullptr;
   MIRFunction *curFunc = nullptr;
   uint16 lastFileNum = 0;                    // to remember first number after LOC
   uint32 lastLineNum = 0;                    // to remember second number after LOC
   uint32 firstLineNum = 0;                   // to track function starting line
-  std::map<TyIdx, TyIdx> typeDefIdxMap;  // map previous declared tyIdx
+  std::map<TyIdx, TyIdx> typeDefIdxMap;      // map previous declared tyIdx
   uint32 maxPregNo = 0;                      // max pregNo seen so far in current function
-
-  // param for ParseTypedef
-  bool paramParseLocalType = false;
-
-  // param for ParseMIR()
-  uint32 paramFileIdx = 0;
+  bool firstImport = true;                   // Mark the first imported mplt file
+  bool paramParseLocalType = false;          // param for ParseTypedef
+  uint32 paramFileIdx = 0;                   // param for ParseMIR()
   bool paramIsIPA = false;
   bool paramIsComb = false;
   TokenKind paramTokenKind = kTkInvalid;

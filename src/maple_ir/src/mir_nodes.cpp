@@ -747,8 +747,8 @@ void SwitchNode::Dump(const MIRModule &mod, int32 indent) const {
   for (auto it = switchTable.begin(); it != switchTable.end(); it++) {
     LogInfo::MapleLogger() << '\n';
     PrintIndentation(indent + 1);
-    LogInfo::MapleLogger() << std::hex << "0x" << (it)->first << std::dec;
-    LogInfo::MapleLogger() << ": goto @" << mod.CurFunction()->GetLabelName((it)->second);
+    LogInfo::MapleLogger() << std::hex << "0x" << it->first << std::dec;
+    LogInfo::MapleLogger() << ": goto @" << mod.CurFunction()->GetLabelName(it->second);
   }
   LogInfo::MapleLogger() << " }\n";
 }
@@ -761,8 +761,8 @@ void RangeGotoNode::Dump(const MIRModule &mod, int32 indent) const {
   for (auto it = rangegotoTable.begin(); it != rangegotoTable.end(); it++) {
     LogInfo::MapleLogger() << '\n';
     PrintIndentation(indent + 1);
-    LogInfo::MapleLogger() << std::hex << "0x" << (it)->first << std::dec;
-    LogInfo::MapleLogger() << ": goto @" << mod.CurFunction()->GetLabelName((it)->second);
+    LogInfo::MapleLogger() << std::hex << "0x" << it->first << std::dec;
+    LogInfo::MapleLogger() << ": goto @" << mod.CurFunction()->GetLabelName(it->second);
   }
   LogInfo::MapleLogger() << " }\n";
 }
@@ -781,7 +781,7 @@ void MultiwayNode::Dump(const MIRModule &mod, int32 indent) const {
     PrintIndentation(indent);
     LogInfo::MapleLogger() << " (";
     it->first->Dump(mod, indent + 1);
-    LogInfo::MapleLogger() << "): goto @" << mod.CurFunction()->GetLabelName((it)->second);
+    LogInfo::MapleLogger() << "): goto @" << mod.CurFunction()->GetLabelName(it->second);
   }
   LogInfo::MapleLogger() << " }\n";
 }

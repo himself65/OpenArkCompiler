@@ -563,6 +563,12 @@ void BinaryMplExport::OutputInterfaceTypeData(const MIRInterfaceType &type) {
 }
 
 void BinaryMplExport::Init() {
+  BinaryMplExport::typeMarkOffset = 0;
+  gStrMark.clear();
+  uStrMark.clear();
+  symMark.clear();
+  funcMark.clear();
+  typMark.clear();
   gStrMark[GStrIdx(0)] = 0;
   uStrMark[UStrIdx(0)] = 0;
   symMark[nullptr] = 0;

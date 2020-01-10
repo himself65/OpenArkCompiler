@@ -31,17 +31,6 @@ enum FuncProp : uint32_t {
                                    // can only be printed at the beginning of a block
   kFuncPropNeverReturn = 1U << 4,  // the function when called never returns
 };
-
-enum FuncAttrProp : uint32_t {
-  kDefEffect = 0x80,
-  kUseEffect = 0x40,
-  kIpaSeen = 0x20,
-  kPureFunc = 0x10,
-  kNoDefArgEffect = 0x8,
-  kNoDefEffect = 0x4,
-  kNoRetNewlyAllocObj = 0x2,
-  kNoThrowException = 0x1,
-};
 }  // namespace
 
 namespace maple {
@@ -165,7 +154,7 @@ void MIRFunction::SetAttrsFromSe(uint8 specialEffect) {
   }
   // NoPrivateUseEffect
   if ((specialEffect & kUseEffect) == kUseEffect) {
-    funcAttrs.SetAttr(FUNCATTR_noprivate_useeffect);
+    funcAttrs.SetAttr(FUNCATTR_noretarg);
   }
   // IpaSeen
   if ((specialEffect & kIpaSeen) == kIpaSeen) {
@@ -185,7 +174,7 @@ void MIRFunction::SetAttrsFromSe(uint8 specialEffect) {
   }
   // NoRetNewlyAllocObj
   if ((specialEffect & kNoRetNewlyAllocObj) == kNoRetNewlyAllocObj) {
-    funcAttrs.SetAttr(FUNCATTR_noret_newly_alloc_obj);
+    funcAttrs.SetAttr(FUNCATTR_noretglobal);
   }
   // NoThrowException
   if ((specialEffect & kNoThrowException) == kNoThrowException) {

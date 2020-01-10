@@ -10,9 +10,11 @@ include_directories = [
 ]
 
 src_libmplme = [
+  "src/dse.cpp",
   "src/me_alias_class.cpp",
   "src/me_bb_layout.cpp",
   "src/me_cfg.cpp",
+  "src/me_dse.cpp",
   "src/me_dominance.cpp",
   "src/me_emit.cpp",
   "src/me_function.cpp",
