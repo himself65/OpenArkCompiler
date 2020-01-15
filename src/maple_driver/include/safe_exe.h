@@ -57,7 +57,7 @@ class SafeExe {
       // child process
       fflush(nullptr);
       if (execv(cmd.c_str(), argv) < 0) {
-        for (int j = 0; j < vectorArgs.size(); ++j) {
+        for (size_t j = 0; j < vectorArgs.size(); ++j) {
           delete [] argv[j];
         }
         delete [] argv;
@@ -76,7 +76,7 @@ class SafeExe {
       }
     }
 
-    for (int j = 0; j < vectorArgs.size(); ++j) {
+    for (size_t j = 0; j < vectorArgs.size(); ++j) {
       delete [] argv[j];
     }
     delete [] argv;

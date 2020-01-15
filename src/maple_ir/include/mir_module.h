@@ -141,11 +141,11 @@ class MIRModule {
     return functionList;
   }
 
-  const MIRFunction *GetFunction(int cnt) const {
+  const MIRFunction *GetFunction(size_t cnt) const {
     CHECK_FATAL(cnt < functionList.size(), "array index out of range");
     return functionList[cnt];
   }
-  MIRFunction *GetFunction(int cnt) {
+  MIRFunction *GetFunction(size_t cnt) {
     CHECK_FATAL(cnt < functionList.size(), "array index out of range");
     return functionList[cnt];
   }

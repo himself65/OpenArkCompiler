@@ -64,6 +64,12 @@ class MeOption {
   static bool ignoreIPA;
   static bool lessThrowAlias;
   static bool regreadAtReturn;
+  static bool propBase;
+  static bool propIloadRef;
+  static bool propGlobalRef;
+  static bool propFinaliLoadRef;
+  static bool propIloadRefNonParm;
+  static bool propAtPhi;
  private:
   std::unordered_set<std::string> skipPhases;
   MapleAllocator optionAlloc;

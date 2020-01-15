@@ -102,27 +102,27 @@ class MIRPragmaElement {
     return typeStrIdx;
   }
 
-  const PragmaValueType GetType() const {
+  PragmaValueType GetType() const {
     return valueType;
   }
 
-  const int32 GetI32Val() const {
+  int32 GetI32Val() const {
     return val.i;
   }
 
-  const int64 GetI64Val() const {
+  int64 GetI64Val() const {
     return val.j;
   }
 
-  const uint64 GetU64Val() const {
+  uint64 GetU64Val() const {
     return val.u;
   }
 
-  const float GetFloatVal() const {
+  float GetFloatVal() const {
     return val.f;
   }
 
-  const double GetDoubleVal() const {
+  double GetDoubleVal() const {
     return val.d;
   }
 

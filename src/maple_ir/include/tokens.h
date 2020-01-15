@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -17,47 +17,47 @@
 
 namespace maple {
 enum TokenKind {
-  kTkInvalid,
+  TK_invalid,
 // keywords from this file
 #define KEYWORD(STR) TK_##STR,
 #include "keywords.def"
 #undef KEYWORD
   // non-keywords starting here
   // constants
-  kTkIntconst,
-  kTkFloatconst,
-  kTkDoubleconst,
+  TK_intconst,
+  TK_floatconst,
+  TK_doubleconst,
   // local name
-  kTkLname,
+  TK_lname,
   // global name
-  kTkGname,
+  TK_gname,
   // function name
-  kTkFname,
+  TK_fname,
   // pseudo register
-  kTkPreg,
+  TK_preg,
   // special register
-  kTkSpecialreg,
+  TK_specialreg,
   // parent field
-  kTkPrntfield,
+  TK_prntfield,
   // type parameter name
-  kTkTypeparam,
+  TK_typeparam,
   // misc.
-  kTkNewline,
-  kTkLparen,     // (
-  kTkRparen,     // )
-  kTkLbrace,     // {
-  kTkRbrace,     // }
-  kTkLbrack,     // [
-  kTkRbrack,     // ]
-  kTkLangle,     // <
-  kTkRangle,     // >
-  kTkEqsign,     // =
-  kTkComa,       // ,
-  kTkDotdotdot,  // ...
-  kTkColon,      // :
-  kTkAsterisk,   // *
-  kTkString,     // a literal string enclosed between "
-  kTkEof
+  TK_newline,
+  TK_lparen,     // (
+  TK_rparen,     // )
+  TK_lbrace,     // {
+  TK_rbrace,     // }
+  TK_lbrack,     // [
+  TK_rbrack,     // ]
+  TK_langle,     // <
+  TK_rangle,     // >
+  TK_eqsign,     // =
+  TK_coma,       // ,
+  TK_dotdotdot,  // ...
+  TK_colon,      // :
+  TK_asterisk,   // *
+  TK_string,     // a literal string enclosed between "
+  TK_eof
 };
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_TOKENS_H

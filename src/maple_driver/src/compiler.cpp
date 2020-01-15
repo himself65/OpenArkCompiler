@@ -151,13 +151,13 @@ void Compiler::AppendOptions(std::map<std::string, MplOption> &finalOptions, con
   }
 }
 
-bool Compiler::CanAppendOptimization(const std::string &optionStr) const {
+bool Compiler::CanAppendOptimization() const {
   // there're some issues for passing -Ox to each component, let users determine self.
   return false;
 }
 
 std::string Compiler::AppendOptimization(const MplOptions &options, const std::string &optionStr) const {
-  if (!CanAppendOptimization(optionStr)) {
+  if (!CanAppendOptimization()) {
     return optionStr;
   }
   return optionStr + " " + options.OptimizationLevelStr();

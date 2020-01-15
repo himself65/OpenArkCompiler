@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -52,10 +52,10 @@ BB *Dominance::Intersect(BB &bb1, const BB &bb2) const {
   auto *ptrBB2 = &bb2;
   while (ptrBB1 != ptrBB2) {
     while (postOrderIDVec[ptrBB1->GetBBId()] < postOrderIDVec[ptrBB2->GetBBId()]) {
-      ptrBB1 = doms[ptrBB1->GetBBId()];
+      ptrBB1 = doms.at(ptrBB1->GetBBId());
     }
     while (postOrderIDVec[ptrBB2->GetBBId()] < postOrderIDVec[ptrBB1->GetBBId()]) {
-      ptrBB2 = doms[ptrBB2->GetBBId()];
+      ptrBB2 = doms.at(ptrBB2->GetBBId());
     }
   }
   return ptrBB1;
@@ -72,7 +72,7 @@ bool Dominance::CommonEntryBBIsPred(const BB &bb) const {
 
 // Figure 3 in "A Simple, Fast Dominance Algorithm" by Keith Cooper et al.
 void Dominance::ComputeDominance() {
-  doms.at(commonEntryBB.GetBBId()) = &commonEntryBB;
+  doms[commonEntryBB.GetBBId()] = &commonEntryBB;
   bool changed;
   do {
     changed = false;
@@ -158,7 +158,6 @@ bool Dominance::Dominate(const BB &bb1, BB &bb2) {
   if (&bb1 == &bb2) {
     return true;
   }
-  CHECK_FATAL(bb2.GetBBId() < doms.size(), "index out of range in Dominance::Dominate ");
   if (doms[bb2.GetBBId()] == nullptr) {
     return false;
   }
@@ -225,7 +224,7 @@ BB *Dominance::PdomIntersect(BB &bb1, const BB &bb2) {
 
 // Figure 3 in "A Simple, Fast Dominance Algorithm" by Keith Cooper et al.
 void Dominance::ComputePostDominance() {
-  pdoms.at(commonExitBB.GetBBId()) = &commonExitBB;
+  pdoms[commonExitBB.GetBBId()] = &commonExitBB;
   bool changed = false;
   do {
     changed = false;
@@ -313,7 +312,6 @@ bool Dominance::PostDominate(const BB &bb1, BB &bb2) {
   if (&bb1 == &bb2) {
     return true;
   }
-  CHECK_FATAL(bb2.GetBBId() < pdoms.size(), "index out of range in Dominance::PostDominate");
   if (pdoms[bb2.GetBBId()] == nullptr) {
     return false;
   }

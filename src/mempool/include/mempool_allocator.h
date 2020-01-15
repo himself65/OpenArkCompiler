@@ -199,11 +199,11 @@ class MapleAllocatorAdapter {
     return &x;
   }
 
-  pointer allocate(size_type n, MapleAllocatorAdapter<void>::pointer hint = nullptr) {
+  pointer allocate(size_type n) {
     return reinterpret_cast<T*>(mapleAllocator->Alloc(n * sizeof(T)));
   }
 
-  void deallocate(pointer p, size_type n) {}
+  void deallocate(pointer, size_type) {}
 
   void construct(const pointer p, const_reference val) {
     new (static_cast<void*>(p)) value_type(val);

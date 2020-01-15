@@ -181,7 +181,7 @@ class Klass {
     needDecoupling = flag;
   }
 
-  const MIRFunction * const GetClinit() const {
+  const MIRFunction *GetClinit() const {
     return clinitMethod;
   }
   void SetClinit(MIRFunction *m) {

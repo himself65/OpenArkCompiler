@@ -123,7 +123,7 @@ class MemPool {
   static constexpr size_t kMinBlockSize = 0x800;  // Minimum BlockSize is 2K
   static constexpr size_t kMemBlockOverhead = (BITS_ALIGN(sizeof(MemPoolCtrler::MemBlock)));
   MemPoolCtrler::MemBlock *GetLargeMemBlock(size_t size);  // Raw allocate large memory block
-  MemPoolCtrler::MemBlock *GetMemBlock(size_t size);
+  MemPoolCtrler::MemBlock *GetMemBlock();
   MemPoolCtrler *ctrler;  // Hookup controller object
   std::string name;       // Name of the memory pool
   // Save the memory block stack

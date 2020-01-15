@@ -57,7 +57,6 @@ class DriverRunner final {
   static bool FuncOrderLessThan(const MIRFunction *left, const MIRFunction *right);
 
   bool IsFramework() const;
-  bool VerifyModule(MIRModulePtr &mModule) const;
   ErrorCode ParseInput(const std::string &outputFile, const std::string &oriBasename) const;
   std::string GetPostfix() const;
   void InitPhases(InterleavedManager &mgr, const std::vector<std::string> &phases) const;

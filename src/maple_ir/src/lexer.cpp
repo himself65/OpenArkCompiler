@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -85,7 +85,7 @@ void MIRLexer::PrepareForFile(const std::string &filename) {
   } else {
     lineNum = 1;
   }
-  kind = kTkInvalid;
+  kind = TK_invalid;
 }
 
 void MIRLexer::PrepareForString(const std::string &src) {
@@ -122,7 +122,7 @@ TokenKind MIRLexer::GetConstVal(){
   if (c == '-') {
     c = GetNextCurrentCharWithUpperCheck();
     TokenKind tk = GetSpecialFloatConst();
-    if (tk != kTkInvalid) {
+    if (tk != TK_invalid) {
       return tk;
     }
     negative = true;
@@ -138,7 +138,7 @@ TokenKind MIRLexer::GetConstVal(){
   }
   char cs = GetCharAtWithUpperCheck(startIdx);
   if (!isdigit(cs) && c != '.') {
-    return kTkInvalid;
+    return TK_invalid;
   }
   if (c != '.' && c != 'f' && c != 'F' && c != 'e' && c != 'E') {
     curIdx = startIdx;
@@ -153,31 +153,31 @@ TokenKind MIRLexer::GetSpecialFloatConst() {
   if (line.compare(curIdx, lenSpecFloat, "inff") == 0 && !isalnum(GetCharAtWithUpperCheck(curIdx + lenSpecFloat))) {
     curIdx += lenSpecFloat;
     theFloatVal = -INFINITY;
-    return kTkFloatconst;
+    return TK_floatconst;
   }
   if (line.compare(curIdx, lenSpecDouble, "inf") == 0 && !isalnum(GetCharAtWithUpperCheck(curIdx + lenSpecDouble))) {
     curIdx += lenSpecDouble;
     theDoubleVal = -INFINITY;
-    return kTkDoubleconst;
+    return TK_doubleconst;
   }
   if (line.compare(curIdx, lenSpecFloat, "nanf") == 0 && !isalnum(GetCharAtWithUpperCheck(curIdx + lenSpecFloat))) {
     curIdx += lenSpecFloat;
     theFloatVal = -NAN;
-    return kTkFloatconst;
+    return TK_floatconst;
   }
   if (line.compare(curIdx, lenSpecDouble, "nan") == 0 && !isalnum(GetCharAtWithUpperCheck(curIdx + lenSpecDouble))) {
     curIdx += lenSpecDouble;
     theDoubleVal = -NAN;
-    return kTkDoubleconst;
+    return TK_doubleconst;
   }
-  return kTkInvalid;
+  return TK_invalid;
 }
 
 TokenKind MIRLexer::GetHexConst(uint32 valStart, bool negative) {
   char c = GetCharAtWithUpperCheck(curIdx);
   if (!isxdigit(c)) {
     name = line.substr(valStart, curIdx - valStart);
-    return kTkInvalid;
+    return TK_invalid;
   }
   uint64 tmp = static_cast<uint32>(HexCharToDigit(c));
   c = GetNextCurrentCharWithUpperCheck();
@@ -196,7 +196,7 @@ TokenKind MIRLexer::GetHexConst(uint32 valStart, bool negative) {
     theDoubleVal = -theDoubleVal;
   }
   name = line.substr(valStart, curIdx - valStart);
-  return kTkIntconst;
+  return TK_intconst;
 }
 
 TokenKind MIRLexer::GetIntConst(uint32 valStart, bool negative) {
@@ -236,7 +236,7 @@ TokenKind MIRLexer::GetIntConst(uint32 valStart, bool negative) {
     theFloatVal = -theFloatVal;
     theDoubleVal = -theDoubleVal;
   }
-  return kTkIntconst;
+  return TK_intconst;
 }
 
 TokenKind MIRLexer::GetFloatConst(uint32 valStart, uint32 startIdx, bool negative) {
@@ -252,7 +252,7 @@ TokenKind MIRLexer::GetFloatConst(uint32 valStart, uint32 startIdx, bool negativ
     c = GetNextCurrentCharWithUpperCheck();
     if (!isdigit(c) && c != '-' && c != '+') {
       name = line.substr(valStart, curIdx - valStart);
-      return kTkInvalid;
+      return TK_invalid;
     }
     if (c == '-' || c == '+') {
       c = GetNextCurrentCharWithUpperCheck();
@@ -285,7 +285,7 @@ TokenKind MIRLexer::GetFloatConst(uint32 valStart, uint32 startIdx, bool negativ
       theDoubleVal = -theDoubleVal;
     }
     name = line.substr(valStart, curIdx - valStart);
-    return kTkFloatconst;
+    return TK_floatconst;
   } else {
     int eNum = sscanf_s(floatStr.c_str(), "%le", &theDoubleVal);
     CHECK_FATAL(eNum == 1, "sscanf_s failed");
@@ -299,7 +299,7 @@ TokenKind MIRLexer::GetFloatConst(uint32 valStart, uint32 startIdx, bool negativ
       theFloatVal = -theFloatVal;
     }
     name = line.substr(valStart, curIdx - valStart);
-    return kTkDoubleconst;
+    return TK_doubleconst;
   }
 }
 
@@ -308,12 +308,12 @@ TokenKind MIRLexer::GetTokenWithPrefixDollar() {
   char c = GetCharAtWithUpperCheck(curIdx);
   if (isalpha(c) || c == '_' || c == '$') {
     GenName();
-    return kTkGname;
+    return TK_gname;
   } else {
     // for error reporting.
     const uint32 printLength = 2;
     name = line.substr(curIdx - 1, printLength);
-    return kTkInvalid;
+    return TK_invalid;
   }
 }
 
@@ -329,18 +329,18 @@ TokenKind MIRLexer::GetTokenWithPrefixPercent() {
       c = GetNextCurrentCharWithUpperCheck();
     }
     name = line.substr(valStart, curIdx - valStart);
-    return kTkPreg;
+    return TK_preg;
   }
   if (isalpha(c) || c == '_' || c == '$') {
     GenName();
-    return kTkLname;
+    return TK_lname;
   }
   if (c == '%' && isalpha(GetCharAtWithUpperCheck(curIdx + 1))) {
     ++curIdx;
     GenName();
-    return kTkSpecialreg;
+    return TK_specialreg;
   }
-  return kTkInvalid;
+  return TK_invalid;
 }
 
 TokenKind MIRLexer::GetTokenWithPrefixAmpersand() {
@@ -348,12 +348,12 @@ TokenKind MIRLexer::GetTokenWithPrefixAmpersand() {
   char c = GetCurrentCharWithUpperCheck();
   if (isalpha(c) || c == '_') {
     GenName();
-    return kTkFname;
+    return TK_fname;
   }
   // for error reporting.
   constexpr uint32 printLength = 2;
   name = line.substr(curIdx - 1, printLength);
-  return kTkInvalid;
+  return TK_invalid;
 }
 
 TokenKind MIRLexer::GetTokenWithPrefixAtOrCircumflex(char prefix) {
@@ -364,9 +364,9 @@ TokenKind MIRLexer::GetTokenWithPrefixAtOrCircumflex(char prefix) {
     if (prefix == '@') {
       return TK_label;
     }
-    return kTkPrntfield;
+    return TK_prntfield;
   }
-  return kTkInvalid;
+  return TK_invalid;
 }
 
 TokenKind MIRLexer::GetTokenWithPrefixExclamation() {
@@ -374,21 +374,21 @@ TokenKind MIRLexer::GetTokenWithPrefixExclamation() {
   char c = GetCurrentCharWithUpperCheck();
   if (isalpha(c)) {
     GenName();
-    return kTkTypeparam;
+    return TK_typeparam;
   }
   // for error reporting.
   const uint32 printLength = 2;
   name = line.substr(curIdx - 1, printLength);
-  return kTkInvalid;
+  return TK_invalid;
 }
 
 TokenKind MIRLexer::GetTokenWithPrefixQuotation() {
   if (GetCharAtWithUpperCheck(curIdx + 1) == '\'') {
     theIntVal = GetCharAtWithUpperCheck(curIdx);
     curIdx += 2;
-    return kTkIntconst;
+    return TK_intconst;
   }
-  return kTkInvalid;
+  return TK_invalid;
 }
 
 TokenKind MIRLexer::GetTokenWithPrefixDoubleQuotation() {
@@ -476,7 +476,7 @@ TokenKind MIRLexer::GetTokenWithPrefixDoubleQuotation() {
     c = GetNextCurrentCharWithUpperCheck();
   }
   if (c != '\"') {
-    return kTkInvalid;
+    return TK_invalid;
   }
   // for empty string
   if (startIdx == curIdx) {
@@ -485,7 +485,7 @@ TokenKind MIRLexer::GetTokenWithPrefixDoubleQuotation() {
     name = line.substr(startIdx, curIdx - startIdx - shift);
   }
   ++curIdx;
-  return kTkString;
+  return TK_string;
 }
 
 TokenKind MIRLexer::GetTokenSpecial() {
@@ -497,22 +497,22 @@ TokenKind MIRLexer::GetTokenSpecial() {
     switch (tk) {
       case TK_nanf:
         theFloatVal = NAN;
-        return kTkFloatconst;
+        return TK_floatconst;
       case TK_nan:
         theDoubleVal = NAN;
-        return kTkDoubleconst;
+        return TK_doubleconst;
       case TK_inff:
         theFloatVal = INFINITY;
-        return kTkFloatconst;
+        return TK_floatconst;
       case TK_inf:
         theDoubleVal = INFINITY;
-        return kTkDoubleconst;
+        return TK_doubleconst;
       default:
         return tk;
     }
   }
   MIR_ERROR("error in input file\n");
-  return kTkEof;
+  return TK_eof;
 }
 
 TokenKind MIRLexer::LexToken() {
@@ -527,7 +527,7 @@ TokenKind MIRLexer::LexToken() {
       seenComments.push_back(line.substr(curIdx + 1, currentLineSize - curIdx - 1));
     }
     if (ReadALine() < 0) {
-      return kTkEof;
+      return TK_eof;
     }
     ++lineNum;  // a new line readed.
     // skip spaces
@@ -540,36 +540,36 @@ TokenKind MIRLexer::LexToken() {
   ++curIdx;
   switch (curChar) {
     case '\n':
-      return kTkNewline;
+      return TK_newline;
     case '(':
-      return kTkLparen;
+      return TK_lparen;
     case ')':
-      return kTkRparen;
+      return TK_rparen;
     case '{':
-      return kTkLbrace;
+      return TK_lbrace;
     case '}':
-      return kTkRbrace;
+      return TK_rbrace;
     case '[':
-      return kTkLbrack;
+      return TK_lbrack;
     case ']':
-      return kTkRbrack;
+      return TK_rbrack;
     case '<':
-      return kTkLangle;
+      return TK_langle;
     case '>':
-      return kTkRangle;
+      return TK_rangle;
     case '=':
-      return kTkEqsign;
+      return TK_eqsign;
     case ',':
-      return kTkComa;
+      return TK_coma;
     case ':':
-      return kTkColon;
+      return TK_colon;
     case '*':
-      return kTkAsterisk;
+      return TK_asterisk;
     case '.':
       if (GetCharAtWithUpperCheck(curIdx) == '.') {
         const uint32 lenDotdot = 2;
         curIdx += lenDotdot;
-        return kTkDotdotdot;
+        return TK_dotdotdot;
       }
     // fall thru for .9100 == 0.9100
     case '0':
@@ -613,18 +613,18 @@ TokenKind MIRLexer::NextToken() {
 std::string MIRLexer::GetTokenString() const {
   std::string temp;
   switch (kind) {
-    case kTkGname: {
+    case TK_gname: {
       temp = "$";
       temp.append(name);
       return temp;
     }
-    case kTkLname:
-    case kTkPreg: {
+    case TK_lname:
+    case TK_preg: {
       temp = "%";
       temp.append(name);
       return temp;
     }
-    case kTkSpecialreg: {
+    case TK_specialreg: {
       temp = "%%";
       temp.append(name);
       return temp;
@@ -634,81 +634,81 @@ std::string MIRLexer::GetTokenString() const {
       temp.append(name);
       return temp;
     }
-    case kTkPrntfield: {
+    case TK_prntfield: {
       temp = "^";
       temp.append(name);
       return temp;
     }
-    case kTkIntconst: {
+    case TK_intconst: {
       temp = std::to_string(theIntVal);
       return temp;
     }
-    case kTkFloatconst: {
+    case TK_floatconst: {
       temp = std::to_string(theFloatVal);
       return temp;
     }
-    case kTkDoubleconst: {
+    case TK_doubleconst: {
       temp = std::to_string(theDoubleVal);
       return temp;
     }
     // misc.
-    case kTkNewline: {
+    case TK_newline: {
       temp = "\\n";
       return temp;
     }
-    case kTkLparen: {
+    case TK_lparen: {
       temp = "(";
       return temp;
     }
-    case kTkRparen: {
+    case TK_rparen: {
       temp = ")";
       return temp;
     }
-    case kTkLbrace: {
+    case TK_lbrace: {
       temp = "{";
       return temp;
     }
-    case kTkRbrace: {
+    case TK_rbrace: {
       temp = "}";
       return temp;
     }
-    case kTkLbrack: {
+    case TK_lbrack: {
       temp = "[";
       return temp;
     }
-    case kTkRbrack: {
+    case TK_rbrack: {
       temp = "]";
       return temp;
     }
-    case kTkLangle: {
+    case TK_langle: {
       temp = "<";
       return temp;
     }
-    case kTkRangle: {
+    case TK_rangle: {
       temp = ">";
       return temp;
     }
-    case kTkEqsign: {
+    case TK_eqsign: {
       temp = "=";
       return temp;
     }
-    case kTkComa: {
+    case TK_coma: {
       temp = ",";
       return temp;
     }
-    case kTkDotdotdot: {
+    case TK_dotdotdot: {
       temp = "...";
       return temp;
     }
-    case kTkColon: {
+    case TK_colon: {
       temp = ":";
       return temp;
     }
-    case kTkAsterisk: {
+    case TK_asterisk: {
       temp = "*";
       return temp;
     }
-    case kTkString: {
+    case TK_string: {
       temp = "\"";
       temp.append(name);
       temp.append("\"");

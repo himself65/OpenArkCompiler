@@ -33,7 +33,7 @@ class PhiNode {
 
   ~PhiNode() = default;
 
-  void Dump(const MIRModule *mod);
+  void Dump();
 
   VersionSt *GetResult() {
     return result;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -170,7 +170,7 @@ class MeExpr {
  private:
   MeExpr *FindSymAppearance(OStIdx oidx);  // find the appearance of the symbol
 
-  Opcode op = kOpUndef;
+  Opcode op = OP_undef;
   PrimType primType = kPtyInvalid;
   uint8 numOpnds = 0;
   MeExprOp meOp;
@@ -262,7 +262,7 @@ class VarMeExpr final : public MeExpr {
     inferredTypeCandidates.push_back(idx);
   }
 
-  void ClearInferredTypeCandidates(TyIdx idx) {
+  void ClearInferredTypeCandidates() {
     inferredTypeCandidates.clear();
   }
 

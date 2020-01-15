@@ -95,15 +95,15 @@ void BB::DumpHeader(MIRModule *mod) const {
 
 void BB::Dump(MIRModule *mod) {
   DumpHeader(mod);
-  DumpPhi(mod);
+  DumpPhi();
   for (auto &stmt : stmtNodeList) {
     stmt.Dump(*mod, 1);
   }
 }
 
-void BB::DumpPhi(MIRModule *mod) {
+void BB::DumpPhi() {
   for (auto &phi : phiList) {
-    phi.second.Dump(mod);
+    phi.second.Dump();
   }
 }
 
@@ -421,6 +421,20 @@ void SCCOfBBs::SetUp(MapleVector<SCCOfBBs*> &sccOfBB) {
       }
       predSCC.insert(sccOfBB[pred->UintID()]);
     }
+  }
+}
+
+bool ControlFlowInInfiniteLoop(const BB &bb, Opcode opcode) {
+  switch (opcode) {
+    // goto always return true
+    case OP_goto:
+      return true;
+    case OP_brtrue:
+    case OP_brfalse:
+    case OP_switch:
+      return bb.GetAttributes(kBBAttrWontExit);
+    default:
+      return false;
   }
 }
 }  // namespace maple

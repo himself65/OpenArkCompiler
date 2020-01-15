@@ -74,7 +74,7 @@ class Compiler {
     return std::vector<std::string>();
   }
 
-  bool CanAppendOptimization(const std::string &optionStr) const;
+  bool CanAppendOptimization() const;
 
  private:
   const std::string name;
