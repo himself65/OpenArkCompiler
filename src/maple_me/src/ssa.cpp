@@ -152,11 +152,11 @@ void SSA::RenamePhiUseInSucc(BB &bb) {
   }
 }
 
-void PhiNode::Dump(const MIRModule *mod) {
-  GetResult()->Dump(mod);
+void PhiNode::Dump() {
+  GetResult()->Dump();
   LogInfo::MapleLogger() << " = PHI(";
   for (size_t i = 0; i < GetPhiOpnds().size(); ++i) {
-    GetPhiOpnd(i)->Dump(mod);
+    GetPhiOpnd(i)->Dump();
     if (i < GetPhiOpnds().size() - 1) {
       LogInfo::MapleLogger() << ',';
     }

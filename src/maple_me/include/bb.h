@@ -114,7 +114,7 @@ class BB {
 
   void Dump(MIRModule *mod);
   void DumpHeader(MIRModule *mod) const;
-  void DumpPhi(MIRModule* mod);
+  void DumpPhi();
   void DumpBBAttribute(MIRModule *mod) const;
   std::string StrAttribute() const;
 
@@ -428,6 +428,8 @@ class SCCOfBBs {
   MapleSet<SCCOfBBs*> predSCC;
   MapleSet<SCCOfBBs*> succSCC;
 };
+
+bool ControlFlowInInfiniteLoop(const BB &bb, Opcode opcode);
 }  // namespace maple
 
 namespace std {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -18,11 +18,11 @@
 
 namespace maple {
 enum Opcode : uint8 {
-  kOpUndef,
+  OP_undef,
 #define OPCODE(STR, YY, ZZ, SS) OP_##STR,
 #include "opcodes.def"
 #undef OPCODE
-  kOpLast,
+  OP_last,
 };
 
 inline constexpr bool IsDAssign(Opcode code) {
@@ -106,7 +106,10 @@ constexpr bool IsStmtMustRequire(Opcode opcode) {
     case OP_membarstorestore:
     case OP_assertnonnull:
     case OP_eval:
-    case OP_free: {
+    case OP_free:
+    case OP_incref:
+    case OP_decref:
+    case OP_decrefreset: {
       return true;
     }
     default:

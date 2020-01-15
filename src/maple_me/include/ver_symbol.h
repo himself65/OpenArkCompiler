@@ -137,7 +137,7 @@ class VersionSt {
     return isReturn;
   }
 
-  void Dump(const MIRModule *mod, bool omitName = false) const {
+  void Dump(bool omitName = false) const {
     if (!omitName) {
       ost->Dump();
     }

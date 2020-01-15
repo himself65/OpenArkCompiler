@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -59,86 +59,86 @@ class OpcodeTable {
   ~OpcodeTable() = default;
 
   OpcodeDesc GetTableItemAt(Opcode o) const {
-    ASSERT(o < kOpLast, "invalid opcode");
+    ASSERT(o < OP_last, "invalid opcode");
     return table[o];
   }
 
   bool IsStmt(Opcode o) const {
-    ASSERT(o < kOpLast, "invalid opcode");
+    ASSERT(o < OP_last, "invalid opcode");
     return table[o].flag & OPCODEISSTMT;
   }
 
   bool IsVarSize(Opcode o) const {
-    ASSERT(o < kOpLast, "invalid opcode");
+    ASSERT(o < OP_last, "invalid opcode");
     return table[o].flag & OPCODEISVARSIZE;
   }
 
   bool NotMMPL(Opcode o) const {
-    ASSERT(o < kOpLast, "invalid opcode");
+    ASSERT(o < OP_last, "invalid opcode");
     return table[o].flag & OPCODENOTMMPL;
   }
 
   bool IsCompare(Opcode o) const {
-    ASSERT(o < kOpLast, "invalid opcode");
+    ASSERT(o < OP_last, "invalid opcode");
     return table[o].flag & OPCODEISCOMPARE;
   }
 
   bool IsTypeCvt(Opcode o) const {
-    ASSERT(o < kOpLast, "invalid opcode");
+    ASSERT(o < OP_last, "invalid opcode");
     return table[o].flag & OPCODEISTYPECVT;
   }
 
   bool HasSSAUse(Opcode o) const {
-    ASSERT(o < kOpLast, "invalid opcode");
+    ASSERT(o < OP_last, "invalid opcode");
     return table[o].flag & OPCODEHASSSAUSE;
   }
 
   bool HasSSADef(Opcode o) const {
-    ASSERT(o < kOpLast, "invalid opcode");
+    ASSERT(o < OP_last, "invalid opcode");
     return table[o].flag & OPCODEHASSSADEF;
   }
 
   bool IsCall(Opcode o) const {
-    ASSERT(o < kOpLast, "invalid opcode");
+    ASSERT(o < OP_last, "invalid opcode");
     return table[o].flag & OPCODEISCALL;
   }
 
   bool IsCallAssigned(Opcode o) const {
-    ASSERT(o < kOpLast, "invalid opcode");
+    ASSERT(o < OP_last, "invalid opcode");
     return table[o].flag & OPCODEISCALLASSIGNED;
   }
 
   bool NotPure(Opcode o) const {
-    ASSERT(o < kOpLast, "invalid opcode");
+    ASSERT(o < OP_last, "invalid opcode");
     return table[o].flag & OPCODENOTPURE;
   }
 
   bool MayThrowException(Opcode o) const {
-    ASSERT(o < kOpLast, "invalid opcode");
+    ASSERT(o < OP_last, "invalid opcode");
     return table[o].flag & OPCODEMAYTHROWEXCEPTION;
   }
 
   bool HasSideEffect(Opcode o) const {
-    ASSERT(o < kOpLast, "invalid opcode");
+    ASSERT(o < OP_last, "invalid opcode");
     return MayThrowException(o);
   }
 
   const char *GetName(Opcode o) const {
-    ASSERT(o < kOpLast, "invalid opcode");
+    ASSERT(o < OP_last, "invalid opcode");
     return table[o].name;
   }
 
   bool IsCondBr(Opcode o) const {
-    ASSERT(o < kOpLast, "invalid opcode");
+    ASSERT(o < OP_last, "invalid opcode");
     return o == OP_brtrue || o == OP_brfalse;
   }
 
   bool AssignActualVar(Opcode o) const {
-    ASSERT(o < kOpLast, "invalid opcode");
+    ASSERT(o < OP_last, "invalid opcode");
     return o == OP_dassign || o == OP_regassign;
   }
  private:
-  OpcodeDesc table[kOpLast];
+  OpcodeDesc table[OP_last];
 };
 extern const OpcodeTable kOpcodeInfo;
 }  // namespace maple

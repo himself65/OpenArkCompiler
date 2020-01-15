@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -43,7 +43,7 @@ bool MIRParser::ParseStmtDassign(StmtNodePtr &stmt) {
   assignStmt->SetStIdx(stidx);
   TokenKind nextToken = lexer.NextToken();
   // parse field id
-  if (nextToken == kTkIntconst) {  // may be a field id
+  if (nextToken == TK_intconst) {  // may be a field id
     assignStmt->SetFieldID(lexer.GetTheIntVal());
     (void)lexer.NextToken();
   }
@@ -66,14 +66,14 @@ bool MIRParser::ParseStmtRegassign(StmtNodePtr &stmt) {
   auto *regAssign = mod.CurFuncCodeMemPool()->New<RegassignNode>();
   regAssign->SetPrimType(GetPrimitiveType(lexer.GetTokenKind()));
   lexer.NextToken();
-  if (lexer.GetTokenKind() == kTkSpecialreg) {
+  if (lexer.GetTokenKind() == TK_specialreg) {
     PregIdx tempPregIdx = regAssign->GetRegIdx();
     bool isSuccess = ParseSpecialReg(tempPregIdx);
     regAssign->SetRegIdx(tempPregIdx);
     if (!isSuccess) {
       return false;
     }
-  } else if (lexer.GetTokenKind() == kTkPreg) {
+  } else if (lexer.GetTokenKind() == TK_preg) {
     PregIdx tempPregIdx = regAssign->GetRegIdx();
     bool isSuccess = ParsePseudoReg(regAssign->GetPrimType(), tempPregIdx);
     regAssign->SetRegIdx(tempPregIdx);
@@ -126,7 +126,7 @@ bool MIRParser::ParseStmtIassign(StmtNodePtr &stmt) {
   }
   auto *iAssign = mod.CurFuncCodeMemPool()->New<IassignNode>();
   iAssign->SetTyIdx(tyIdx);
-  if (lexer.GetTokenKind() == kTkIntconst) {
+  if (lexer.GetTokenKind() == TK_intconst) {
     iAssign->SetFieldID(lexer.theIntVal);
     lexer.NextToken();
   }
@@ -151,7 +151,7 @@ bool MIRParser::ParseStmtIassignoff(StmtNodePtr &stmt) {
   // iassign <prim-type> <offset> ( <addr-expr>, <rhs-expr> )
   auto *iAssignOff = mod.CurFuncCodeMemPool()->New<IassignoffNode>();
   iAssignOff->SetPrimType(GetPrimitiveType(lexer.GetTokenKind()));
-  if (lexer.NextToken() != kTkIntconst) {
+  if (lexer.NextToken() != TK_intconst) {
     Error("expect offset but get ");
     return false;
   }
@@ -177,7 +177,7 @@ bool MIRParser::ParseStmtIassignFPoff(StmtNodePtr &stmt) {
   // iassignfpoff <prim-type> <offset> (<rhs-expr> )
   auto *iAssignOff = mod.CurFuncCodeMemPool()->New<IassignFPoffNode>();
   iAssignOff->SetPrimType(GetPrimitiveType(lexer.GetTokenKind()));
-  if (lexer.NextToken() != kTkIntconst) {
+  if (lexer.NextToken() != TK_intconst) {
     Error("expect offset but get ");
     return false;
   }
@@ -199,7 +199,7 @@ bool MIRParser::ParseStmtDoloop(StmtNodePtr &stmt) {
   auto *doLoopNode = mod.CurFuncCodeMemPool()->New<DoloopNode>();
   stmt = doLoopNode;
   lexer.NextToken();
-  if (lexer.GetTokenKind() == kTkPreg) {
+  if (lexer.GetTokenKind() == TK_preg) {
     PregIdx pregIdx = LookupOrCreatePregIdx(static_cast<uint32>(lexer.GetTheIntVal()), false, *mod.CurFunction());
     doLoopNode->SetIsPreg(true);
     doLoopNode->SetDoVarStFullIdx(pregIdx);
@@ -220,7 +220,7 @@ bool MIRParser::ParseStmtDoloop(StmtNodePtr &stmt) {
     doLoopNode->SetDoVarStIdx(stIdx);
   }
   // parse (
-  if (lexer.NextToken() != kTkLparen) {
+  if (lexer.NextToken() != TK_lparen) {
     Error("expect ( but get ");
     return false;
   }
@@ -239,7 +239,7 @@ bool MIRParser::ParseStmtDoloop(StmtNodePtr &stmt) {
       mpReg->SetPrimType(start->GetPrimType());
     }
   }
-  if (lexer.GetTokenKind() != kTkComa) {
+  if (lexer.GetTokenKind() != TK_coma) {
     Error("expect , after start expression but get ");
     return false;
   }
@@ -251,7 +251,7 @@ bool MIRParser::ParseStmtDoloop(StmtNodePtr &stmt) {
     Error("ParseStmtDoloop when parsing end expression");
     return false;
   }
-  if (lexer.GetTokenKind() != kTkComa) {
+  if (lexer.GetTokenKind() != TK_coma) {
     Error("expect , after condition expression but get ");
     return false;
   }
@@ -264,7 +264,7 @@ bool MIRParser::ParseStmtDoloop(StmtNodePtr &stmt) {
     return false;
   }
   // parse )
-  if (lexer.GetTokenKind() != kTkRparen) {
+  if (lexer.GetTokenKind() != TK_rparen) {
     Error("expect ) parsing doloop but get ");
     return false;
   }
@@ -331,7 +331,7 @@ bool MIRParser::ParseStmtIf(StmtNodePtr &stmt) {
     return false;
   }
   ifStmt->SetOpnd(expr);
-  if (lexer.NextToken() != kTkLbrace) {
+  if (lexer.NextToken() != TK_lbrace) {
     Error("expect { begin if body but get ");
     return false;
   }
@@ -344,7 +344,7 @@ bool MIRParser::ParseStmtIf(StmtNodePtr &stmt) {
   BlockNode *elseBlock = nullptr;
   if (lexer.GetTokenKind() == TK_else) {
     // has else part
-    if (lexer.NextToken() != kTkLbrace) {
+    if (lexer.NextToken() != TK_lbrace) {
       Error("expect { begin if body but get ");
       return false;
     }
@@ -373,7 +373,7 @@ bool MIRParser::ParseStmtWhile(StmtNodePtr &stmt) {
     return false;
   }
   whileStmt->SetOpnd(expr);
-  if (lexer.NextToken() != kTkLbrace) {
+  if (lexer.NextToken() != TK_lbrace) {
     Error("expect { begin if body but get ");
     return false;
   }
@@ -393,7 +393,7 @@ bool MIRParser::ParseStmtDowhile(StmtNodePtr &stmt) {
     return false;
   }
   auto *whileStmt = mod.CurFuncCodeMemPool()->New<WhileStmtNode>(OP_dowhile);
-  if (lexer.NextToken() != kTkLbrace) {
+  if (lexer.NextToken() != TK_lbrace) {
     Error("expect { begin if body but get ");
     return false;
   }
@@ -493,12 +493,12 @@ bool MIRParser::ParseStmtBr(StmtNodePtr &stmt) {
 
 bool MIRParser::ParseSwitchCase(int32 &constVal, LabelIdx &lblIdx) {
   // syntax <intconst0>: goto <label0>
-  if (lexer.GetTokenKind() != kTkIntconst) {
+  if (lexer.GetTokenKind() != TK_intconst) {
     Error("expect intconst in switch but get ");
     return false;
   }
   constVal = lexer.GetTheIntVal();
-  if (lexer.NextToken() != kTkColon) {
+  if (lexer.NextToken() != TK_colon) {
     Error("expect : in switch but get ");
     return false;
   }
@@ -534,7 +534,7 @@ bool MIRParser::ParseStmtSwitch(StmtNodePtr &stmt) {
     Error("expect label in switch but get ");
     return false;
   }
-  if (lexer.NextToken() != kTkLbrace) {
+  if (lexer.NextToken() != TK_lbrace) {
     Error("expect { in switch but get ");
     return false;
   }
@@ -544,7 +544,7 @@ bool MIRParser::ParseStmtSwitch(StmtNodePtr &stmt) {
   // <intconstn>: goto <labeln>
   TokenKind tk = lexer.NextToken();
   std::set<int32> casesSet;
-  while (tk != kTkRbrace) {
+  while (tk != TK_rbrace) {
     int32 constVal = 0;
     LabelIdx lbl = 0;
     if (!ParseSwitchCase(constVal, lbl)) {
@@ -576,13 +576,13 @@ bool MIRParser::ParseStmtRangegoto(StmtNodePtr &stmt) {
     Error("expect expression return integer but get ");
     return false;
   }
-  if (lexer.NextToken() == kTkIntconst) {
+  if (lexer.NextToken() == TK_intconst) {
     rangeGotoNode->SetTagOffset(lexer.GetTheIntVal());
   } else {
     Error("expect tag offset in rangegoto but get ");
     return false;
   }
-  if (lexer.NextToken() != kTkLbrace) {
+  if (lexer.NextToken() != TK_lbrace) {
     Error("expect { in switch but get ");
     return false;
   }
@@ -594,7 +594,7 @@ bool MIRParser::ParseStmtRangegoto(StmtNodePtr &stmt) {
   std::set<uint16> casesSet;
   int32 minIdx = UINT16_MAX;
   int32 maxIdx = 0;
-  while (tk != kTkRbrace) {
+  while (tk != TK_rbrace) {
     int32 constVal = 0;
     LabelIdx lbl = 0;
     if (!ParseSwitchCase(constVal, lbl)) {
@@ -644,7 +644,7 @@ bool MIRParser::ParseStmtMultiway(StmtNodePtr &stmt) {
     Error("expect label in multiway but get ");
     return false;
   }
-  if (lexer.NextToken() != kTkLbrace) {
+  if (lexer.NextToken() != TK_lbrace) {
     Error("expect { in switch but get ");
     return false;
   }
@@ -653,12 +653,12 @@ bool MIRParser::ParseStmtMultiway(StmtNodePtr &stmt) {
   // ...
   // (<exprn>): goto <labeln>
   TokenKind tk = lexer.NextToken();
-  while (tk != kTkRbrace) {
+  while (tk != TK_rbrace) {
     BaseNode *x = nullptr;
     if (!ParseExprOneOperand(x)) {
       return false;
     }
-    if (lexer.NextToken() != kTkColon) {
+    if (lexer.NextToken() != TK_colon) {
       Error("expect : parsing multiway case tag specification but get ");
       return false;
     }
@@ -751,7 +751,7 @@ bool MIRParser::ParseStmtCall(StmtNodePtr &stmt) {
   TyIdx polymophicTyidx(0);
   if (o == OP_polymorphiccallassigned || o == OP_polymorphiccall) {
     TokenKind nextTk = lexer.NextToken();
-    if (nextTk == kTkLangle) {
+    if (nextTk == TK_langle) {
       nextTk = lexer.NextToken();
       if (nextTk == TK_func) {
         lexer.NextToken();
@@ -769,7 +769,7 @@ bool MIRParser::ParseStmtCall(StmtNodePtr &stmt) {
     }
   }
   TokenKind funcTk = lexer.NextToken();
-  if (funcTk != kTkFname) {
+  if (funcTk != TK_fname) {
     Error("expect func name in call but get ");
     return false;
   }
@@ -789,12 +789,12 @@ bool MIRParser::ParseStmtCall(StmtNodePtr &stmt) {
     callStmt->SetTyIdx(polymophicTyidx);
   } else if (hasInstant) {
     TokenKind langleTk = lexer.GetTokenKind();
-    if (langleTk != kTkLangle) {
+    if (langleTk != TK_langle) {
       Error("missing < in generic method instantiation at ");
       return false;
     }
     TokenKind lbraceTk = lexer.NextToken();
-    if (lbraceTk != kTkLbrace) {
+    if (lbraceTk != TK_lbrace) {
       Error("missing { in generic method instantiation at ");
       return false;
     }
@@ -804,7 +804,7 @@ bool MIRParser::ParseStmtCall(StmtNodePtr &stmt) {
       return false;
     }
     TokenKind rangleTk = lexer.GetTokenKind();
-    if (rangleTk != kTkRangle) {
+    if (rangleTk != TK_rangle) {
       Error("missing > in generic method instantiation at ");
       return false;
     }
@@ -982,12 +982,12 @@ bool MIRParser::ParseCallReturns(CallReturnVector &retsvec) {
   //               regassign <type> <reg2>
   //               regassign <type> <reg3>
   //             }
-  if (lexer.NextToken() != kTkLbrace) {
+  if (lexer.NextToken() != TK_lbrace) {
     Error("expect { parsing call return values. ");
     return false;
   }
   TokenKind tk = lexer.NextToken();
-  while (tk != kTkRbrace) {
+  while (tk != TK_rbrace) {
     if (lexer.GetTokenKind() != TK_dassign && lexer.GetTokenKind() != TK_regassign) {
       Error("expect dassign/regassign but get ");
       return false;
@@ -1001,7 +1001,7 @@ bool MIRParser::ParseCallReturns(CallReturnVector &retsvec) {
       if (!ParseDeclaredSt(stidx)) {
         return false;
       }
-      if (lexer.GetTokenKind() == kTkLname) {
+      if (lexer.GetTokenKind() == TK_lname) {
         MIRSymbolTable *lSymTab = mod.CurFunction()->GetSymTab();
         MIRSymbol *lSym = lSymTab->GetSymbolFromStIdx(stidx.Idx(), 0);
         ASSERT(lSym != nullptr, "lsym MIRSymbol is null");
@@ -1022,7 +1022,7 @@ bool MIRParser::ParseCallReturns(CallReturnVector &retsvec) {
       uint16 fieldId = 0;
       TokenKind nextToken = lexer.NextToken();
       // parse field id
-      if (nextToken == kTkIntconst) {
+      if (nextToken == TK_intconst) {
         fieldId = lexer.GetTheIntVal();
       } else {
         Error("expect a fieldID parsing ParseCallAssignedStmts. ");
@@ -1047,12 +1047,12 @@ bool MIRParser::ParseCallReturns(CallReturnVector &retsvec) {
       }
       PrimType ptype = GlobalTables::GetTypeTable().GetPrimTypeFromTyIdx(tyidx);
       PregIdx pregIdx;
-      if (lexer.GetTokenKind() == kTkSpecialreg) {
+      if (lexer.GetTokenKind() == TK_specialreg) {
         if (!ParseSpecialReg(pregIdx)) {
           Error("expect specialreg parsing callassign CallReturnVector");
           return false;
         }
-      } else if (lexer.GetTokenKind() == kTkPreg) {
+      } else if (lexer.GetTokenKind() == TK_preg) {
         if (!ParsePseudoReg(ptype, pregIdx)) {
           Error("expect pseudoreg parsing callassign CallReturnVector");
           return false;
@@ -1076,7 +1076,7 @@ bool MIRParser::ParseStmtJsTry(StmtNodePtr &stmt) {
   auto *tryNode = mod.CurFuncCodeMemPool()->New<JsTryNode>();
   lexer.NextToken();
   // parse handler label
-  if (lexer.GetTokenKind() == kTkIntconst && lexer.GetTheIntVal() == 0) {
+  if (lexer.GetTokenKind() == TK_intconst && lexer.GetTheIntVal() == 0) {
     tryNode->SetCatchOffset(0);
   } else {
     if (lexer.GetTokenKind() != TK_label) {
@@ -1094,7 +1094,7 @@ bool MIRParser::ParseStmtJsTry(StmtNodePtr &stmt) {
   }
   lexer.NextToken();
   // parse finally label
-  if (lexer.GetTokenKind() == kTkIntconst && lexer.GetTheIntVal() == 0) {
+  if (lexer.GetTokenKind() == TK_intconst && lexer.GetTheIntVal() == 0) {
     tryNode->SetFinallyOffset(0);
   } else {
     if (lexer.GetTokenKind() != TK_label) {
@@ -1118,10 +1118,10 @@ bool MIRParser::ParseStmtJsTry(StmtNodePtr &stmt) {
 bool MIRParser::ParseStmtTry(StmtNodePtr &stmt) {
   auto *tryNode = mod.CurFuncCodeMemPool()->New<TryNode>(mod);
   lexer.NextToken();
-  ASSERT(lexer.GetTokenKind() == kTkLbrace, "expect left brace in try but get ");
+  ASSERT(lexer.GetTokenKind() == TK_lbrace, "expect left brace in try but get ");
   lexer.NextToken();
   // parse handler label
-  while (lexer.GetTokenKind() != kTkRbrace) {
+  while (lexer.GetTokenKind() != TK_rbrace) {
     if (lexer.GetTokenKind() != TK_label) {
       Error("expect handler label in try but get ");
       return false;
@@ -1144,9 +1144,9 @@ bool MIRParser::ParseStmtTry(StmtNodePtr &stmt) {
 bool MIRParser::ParseStmtCatch(StmtNodePtr &stmt) {
   auto *catchNode = mod.CurFuncCodeMemPool()->New<CatchNode>(mod);
   lexer.NextToken();
-  ASSERT(lexer.GetTokenKind() == kTkLbrace, "expect left brace in catch but get ");
+  ASSERT(lexer.GetTokenKind() == TK_lbrace, "expect left brace in catch but get ");
   lexer.NextToken();
-  while (lexer.GetTokenKind() != kTkRbrace) {
+  while (lexer.GetTokenKind() != TK_rbrace) {
     TyIdx tyidx(0);
     if (!ParseType(tyidx)) {
       Error("expect type parsing java catch statement");
@@ -1284,12 +1284,12 @@ bool MIRParser::ParseBinaryStmtAssertLT(StmtNodePtr &stmt) {
 
 bool MIRParser::ParseNaryStmt(StmtNodePtr &stmt, Opcode op) {
   auto *stmtReturn = mod.CurFuncCodeMemPool()->New<NaryStmtNode>(mod, op);
-  if (lexer.NextToken() != kTkLparen) {
+  if (lexer.NextToken() != TK_lparen) {
     Error("expect return with ( but get ");
     return false;
   }
   TokenKind exprTk = lexer.NextToken();
-  if (exprTk == kTkRparen) {  // no operand
+  if (exprTk == TK_rparen) {  // no operand
     stmt = stmtReturn;
     lexer.NextToken();
     return true;
@@ -1301,7 +1301,7 @@ bool MIRParser::ParseNaryStmt(StmtNodePtr &stmt, Opcode op) {
   }
   stmtReturn->GetNopnd().push_back(expr);
   if (op == OP_syncenter) {
-    if (lexer.GetTokenKind() == kTkComa) {
+    if (lexer.GetTokenKind() == TK_coma) {
       lexer.NextToken();
       BaseNode *exprSync = nullptr;
       if (!ParseExpression(exprSync)) {
@@ -1320,7 +1320,7 @@ bool MIRParser::ParseNaryStmt(StmtNodePtr &stmt, Opcode op) {
       stmtReturn->SetNumOpnds(stmtReturn->GetNopndSize());
     }
   }
-  if (lexer.GetTokenKind() != kTkRparen) {
+  if (lexer.GetTokenKind() != TK_rparen) {
     Error("expect ) parsing return but get ");
     return false;
   }
@@ -1343,12 +1343,12 @@ bool MIRParser::ParseNaryStmtSyncExit(StmtNodePtr &stmt) {
 }
 
 bool MIRParser::ParseLoc(StmtNodePtr &stmt) {
-  if (lexer.NextToken() != kTkIntconst) {
+  if (lexer.NextToken() != TK_intconst) {
     Error("expect intconst in LOC but get ");
     return false;
   }
   lastFileNum = lexer.GetTheIntVal();
-  if (lexer.NextToken() != kTkIntconst) {
+  if (lexer.NextToken() != TK_intconst) {
     Error("expect intconst in LOC but get ");
     return false;
   }
@@ -1384,7 +1384,7 @@ bool MIRParser::ParseStatement(StmtNodePtr &stmt) {
 /* parse the statements enclosed by { and }
  */
 bool MIRParser::ParseStmtBlock(BlockNodePtr &blk) {
-  if (lexer.GetTokenKind() != kTkLbrace) {
+  if (lexer.GetTokenKind() != TK_lbrace) {
     Error("expect { for func body but get ");
     return false;
   }
@@ -1418,7 +1418,7 @@ bool MIRParser::ParseStmtBlock(BlockNodePtr &blk) {
     } else {
       std::map<TokenKind, FuncPtrParseStmtBlock>::iterator itFuncPtr = funcPtrMapForParseStmtBlock.find(stmtTk);
       if (itFuncPtr == funcPtrMapForParseStmtBlock.end()) {
-        if (stmtTk == kTkRbrace) {
+        if (stmtTk == TK_rbrace) {
           ParseStmtBlockForSeenComment(blk, mplNum);
           lexer.NextToken();
           return true;
@@ -1476,7 +1476,7 @@ bool MIRParser::ParseStmtBlockForTempVar() {
 
 bool MIRParser::ParseStmtBlockForReg() {
   lexer.NextToken();
-  if (lexer.GetTokenKind() != kTkPreg) {
+  if (lexer.GetTokenKind() != TK_preg) {
     Error("expect %%preg after reg");
     return false;
   }
@@ -1493,7 +1493,7 @@ bool MIRParser::ParseStmtBlockForReg() {
   ASSERT(tyidx > 0, "parse declare var failed ");
   MIRType *mirType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyidx);
   preg->SetMIRType(mirType);
-  if (lexer.GetTokenKind() == kTkIntconst) {
+  if (lexer.GetTokenKind() == TK_intconst) {
     int64 theIntVal = lexer.GetTheIntVal();
     if (theIntVal != 0 && theIntVal != 1) {
       Error("parseDeclareReg failed");
@@ -1519,7 +1519,7 @@ bool MIRParser::ParseStmtBlockForType() {
 bool MIRParser::ParseStmtBlockForFrameSize() {
   MIRFunction *fn = paramCurrFuncForParseStmtBlock;
   lexer.NextToken();
-  if (lexer.GetTokenKind() != kTkIntconst) {
+  if (lexer.GetTokenKind() != TK_intconst) {
     Error("expect integer after frameSize but get ");
     return false;
   }
@@ -1531,7 +1531,7 @@ bool MIRParser::ParseStmtBlockForFrameSize() {
 bool MIRParser::ParseStmtBlockForUpformalSize() {
   MIRFunction *fn = paramCurrFuncForParseStmtBlock;
   lexer.NextToken();
-  if (lexer.GetTokenKind() != kTkIntconst) {
+  if (lexer.GetTokenKind() != TK_intconst) {
     Error("expect integer after upFormalSize but get ");
     return false;
   }
@@ -1543,7 +1543,7 @@ bool MIRParser::ParseStmtBlockForUpformalSize() {
 bool MIRParser::ParseStmtBlockForModuleID() {
   MIRFunction *fn = paramCurrFuncForParseStmtBlock;
   lexer.NextToken();
-  if (lexer.GetTokenKind() != kTkIntconst) {
+  if (lexer.GetTokenKind() != TK_intconst) {
     Error("expect integer after moduleid but get ");
     return false;
   }
@@ -1555,7 +1555,7 @@ bool MIRParser::ParseStmtBlockForModuleID() {
 bool MIRParser::ParseStmtBlockForFuncSize() {
   MIRFunction *fn = paramCurrFuncForParseStmtBlock;
   lexer.NextToken();
-  if (lexer.GetTokenKind() != kTkIntconst) {
+  if (lexer.GetTokenKind() != TK_intconst) {
     Error("expect integer after funcSize but get ");
     return false;
   }
@@ -1568,7 +1568,7 @@ bool MIRParser::ParseStmtBlockForFuncID() {
   // funcid is for debugging purpose
   MIRFunction *fn = paramCurrFuncForParseStmtBlock;
   lexer.NextToken();
-  if (lexer.GetTokenKind() != kTkIntconst) {
+  if (lexer.GetTokenKind() != TK_intconst) {
     Error("expect integer after funcid but get ");
     return false;
   }
@@ -1638,7 +1638,7 @@ static Opcode GetUnaryOp(TokenKind tk) {
 #include "unary_op.def"
 #undef UNARYOP
     default:
-      return kOpUndef;
+      return OP_undef;
   }
 }
 
@@ -1650,7 +1650,7 @@ static Opcode GetBinaryOp(TokenKind tk) {
 #include "binary_op.def"
 #undef BINARYOP
     default:
-      return kOpUndef;
+      return OP_undef;
   }
 }
 
@@ -1667,12 +1667,12 @@ static Opcode GetConvertOp(TokenKind tk) {
     case TK_trunc:
       return OP_trunc;
     default:
-      return kOpUndef;
+      return OP_undef;
   }
 }
 
 bool MIRParser::ParseExprOneOperand(BaseNodePtr &expr) {
-  if (lexer.GetTokenKind() != kTkLparen) {
+  if (lexer.GetTokenKind() != TK_lparen) {
     Error("expect ( parsing operand parsing unary ");
     return false;
   }
@@ -1681,7 +1681,7 @@ bool MIRParser::ParseExprOneOperand(BaseNodePtr &expr) {
     Error("expect expression as openrand of unary expression ");
     return false;
   }
-  if (lexer.GetTokenKind() != kTkRparen) {
+  if (lexer.GetTokenKind() != TK_rparen) {
     Error("expect ) parsing operand parsing unary ");
     return false;
   }
@@ -1689,7 +1689,7 @@ bool MIRParser::ParseExprOneOperand(BaseNodePtr &expr) {
 }
 
 bool MIRParser::ParseExprTwoOperand(BaseNodePtr &opnd0, BaseNodePtr &opnd1) {
-  if (lexer.GetTokenKind() != kTkLparen) {
+  if (lexer.GetTokenKind() != TK_lparen) {
     Error("expect ( parsing operand parsing unary ");
     return false;
   }
@@ -1697,7 +1697,7 @@ bool MIRParser::ParseExprTwoOperand(BaseNodePtr &opnd0, BaseNodePtr &opnd1) {
   if (!ParseExpression(opnd0)) {
     return false;
   }
-  if (lexer.GetTokenKind() != kTkComa) {
+  if (lexer.GetTokenKind() != TK_coma) {
     Error("expect , between two operands but get ");
     return false;
   }
@@ -1705,7 +1705,7 @@ bool MIRParser::ParseExprTwoOperand(BaseNodePtr &opnd0, BaseNodePtr &opnd1) {
   if (!ParseExpression(opnd1)) {
     return false;
   }
-  if (lexer.GetTokenKind() != kTkRparen) {
+  if (lexer.GetTokenKind() != TK_rparen) {
     Error("expect ) parsing operand parsing unary ");
     return false;
   }
@@ -1713,12 +1713,12 @@ bool MIRParser::ParseExprTwoOperand(BaseNodePtr &opnd0, BaseNodePtr &opnd1) {
 }
 
 bool MIRParser::ParseExprNaryOperand(MapleVector<BaseNode*> &opndVec) {
-  if (lexer.GetTokenKind() != kTkLparen) {
+  if (lexer.GetTokenKind() != TK_lparen) {
     Error("expect ( parsing operand parsing nary operands ");
     return false;
   }
   TokenKind tk = lexer.NextToken();
-  while (tk != kTkRparen) {
+  while (tk != TK_rparen) {
     BaseNode *opnd = nullptr;
     if (!ParseExpression(opnd)) {
       Error("expect expression parsing nary operands ");
@@ -1726,7 +1726,7 @@ bool MIRParser::ParseExprNaryOperand(MapleVector<BaseNode*> &opndVec) {
     }
     opndVec.push_back(opnd);
     tk = lexer.GetTokenKind();
-    if (tk == kTkComa) {
+    if (tk == TK_coma) {
       tk = lexer.NextToken();
     }
   }
@@ -1742,13 +1742,13 @@ bool MIRParser::ParseDeclaredSt(StIdx &stidx) {
     stidx.SetFullIdx(0);
     return false;
   }
-  if (varTk == kTkGname) {
+  if (varTk == TK_gname) {
     stidx = GlobalTables::GetGsymTable().GetStIdxFromStrIdx(stridx);
     if (stidx.FullIdx() == 0) {
       Error("global symbol not declared ");
       return false;
     }
-  } else if (varTk == kTkLname) {
+  } else if (varTk == TK_lname) {
     stidx = mod.CurFunction()->GetSymTab()->GetStIdxFromStrIdx(stridx);
     if (stidx.FullIdx() == 0) {
       Error("local symbol not declared ");
@@ -1807,7 +1807,7 @@ bool MIRParser::ParseExprDread(BaseNodePtr &expr) {
   }
   dexpr->SetStIdx(stidx);
   TokenKind endtk = lexer.NextToken();
-  if (endtk == kTkIntconst) {
+  if (endtk == TK_intconst) {
     dexpr->SetFieldID(lexer.GetTheIntVal());
     lexer.NextToken();
   } else if (!IsDelimitationTK(endtk)) {
@@ -1836,13 +1836,13 @@ bool MIRParser::ParseExprRegread(BaseNodePtr &expr) {
     return false;
   }
   expr->SetPrimType(GlobalTables::GetTypeTable().GetPrimTypeFromTyIdx(tyidx));
-  if (lexer.GetTokenKind() == kTkSpecialreg) {
+  if (lexer.GetTokenKind() == TK_specialreg) {
     PregIdx tempPregIdx = regRead->GetRegIdx();
     bool isSuccess = ParseSpecialReg(tempPregIdx);
     regRead->SetRegIdx(tempPregIdx);
     return isSuccess;
   }
-  if (lexer.GetTokenKind() == kTkPreg) {
+  if (lexer.GetTokenKind() == TK_preg) {
     if (expr->GetPrimType() == PTY_ptr || expr->GetPrimType() == PTY_ref) {
       PregIdx tempPregIdx = regRead->GetRegIdx();
       bool isSuccess = ParseRefPseudoReg(tempPregIdx);
@@ -1892,7 +1892,7 @@ bool MIRParser::ParseExprConststr(BaseNodePtr &expr) {
     return false;
   }
   tk = lexer.NextToken();
-  if (tk != kTkString) {
+  if (tk != TK_string) {
     Error("expect string literal for conststr but get ");
     return false;
   }
@@ -1915,7 +1915,7 @@ bool MIRParser::ParseExprConststr16(BaseNodePtr &expr) {
     return false;
   }
   tk = lexer.NextToken();
-  if (tk != kTkString) {
+  if (tk != TK_string) {
     Error("expect string literal for conststr16 but get ");
     return false;
   }
@@ -1966,13 +1966,13 @@ bool MIRParser::ParseExprFieldsDist(BaseNodePtr &expr) {
   }
   node->SetTyIdx(tyIdx);
   TokenKind tk = lexer.GetTokenKind();
-  if (tk != kTkIntconst) {
+  if (tk != TK_intconst) {
     Error("expect type int but get");
     return false;
   }
   node->SetFiledID1(lexer.GetTheIntVal());
   tk = lexer.NextToken();
-  if (tk != kTkIntconst) {
+  if (tk != TK_intconst) {
     Error("expect type int but get");
     return false;
   }
@@ -1984,7 +1984,7 @@ bool MIRParser::ParseExprFieldsDist(BaseNodePtr &expr) {
 
 bool MIRParser::ParseExprBinary(BaseNodePtr &expr) {
   Opcode opcode = GetBinaryOp(lexer.GetTokenKind());
-  if (opcode == kOpUndef) {
+  if (opcode == OP_undef) {
     Error("expect add operator but get ");
     return false;
   }
@@ -2047,12 +2047,12 @@ bool MIRParser::ParseExprDepositbits(BaseNodePtr &expr) {
     return false;
   }
   dpsbNode->SetPrimType(ptyp);
-  if (lexer.NextToken() != kTkIntconst) {
+  if (lexer.NextToken() != TK_intconst) {
     Error("expect boffset but get ");
     return false;
   }
   dpsbNode->SetBitsOffset(lexer.GetTheIntVal());
-  if (lexer.NextToken() != kTkIntconst) {
+  if (lexer.NextToken() != TK_intconst) {
     Error("expect bSize but get ");
     return false;
   }
@@ -2087,7 +2087,7 @@ bool MIRParser::ParseExprIreadIaddrof(IreadNode &expr) {
     return false;
   }
   expr.SetTyIdx(tyidx);
-  if (lexer.GetTokenKind() == kTkIntconst) {
+  if (lexer.GetTokenKind() == TK_intconst) {
     expr.SetFieldID(lexer.theIntVal);
     lexer.NextToken();
   }
@@ -2139,7 +2139,7 @@ bool MIRParser::ParseExprIreadoff(BaseNodePtr &expr) {
     Error("only scalar types allowed for ireadoff");
     return false;
   }
-  if (lexer.GetTokenKind() != kTkIntconst) {
+  if (lexer.GetTokenKind() != TK_intconst) {
     Error("expect offset but get ");
     return false;
   }
@@ -2172,7 +2172,7 @@ bool MIRParser::ParseExprIreadFPoff(BaseNodePtr &expr) {
     Error("only scalar types allowed for ireadoff");
     return false;
   }
-  if (lexer.GetTokenKind() != kTkIntconst) {
+  if (lexer.GetTokenKind() != TK_intconst) {
     Error("expect offset but get ");
     return false;
   }
@@ -2208,7 +2208,7 @@ bool MIRParser::ParseExprAddrof(BaseNodePtr &expr) {
   TokenKind tk = lexer.NextToken();
   if (IsDelimitationTK(tk)) {
     addrofNode->SetFieldID(0);
-  } else if (tk == kTkIntconst) {
+  } else if (tk == TK_intconst) {
     addrofNode->SetFieldID(lexer.GetTheIntVal());
     lexer.NextToken();
   } else {
@@ -2231,7 +2231,7 @@ bool MIRParser::ParseExprAddroffunc(BaseNodePtr &expr) {
     return false;
   }
   addrOfFuncNode->SetPrimType(GlobalTables::GetTypeTable().GetPrimTypeFromTyIdx(tyidx));
-  if (lexer.GetTokenKind() != kTkFname) {
+  if (lexer.GetTokenKind() != TK_fname) {
     Error("expect function name but get ");
     return false;
   }
@@ -2276,7 +2276,7 @@ bool MIRParser::ParseExprAddroflabel(BaseNodePtr &expr) {
 bool MIRParser::ParseExprUnary(BaseNodePtr &expr) {
   // syntax op <prim-type> <label>
   Opcode op = GetUnaryOp(lexer.GetTokenKind());
-  if (op == kOpUndef) {
+  if (op == OP_undef) {
     Error("expect unary op but get ");
     return false;
   }
@@ -2364,7 +2364,7 @@ bool MIRParser::ParseExprJarray(BaseNodePtr &expr) {
 bool MIRParser::ParseExprExtractbits(BaseNodePtr &expr) {
   // extractbits <int-type> <boffset> <bSize> (<opnd0>)
   Opcode op = GetUnaryOp(lexer.GetTokenKind());
-  if (op == kOpUndef) {
+  if (op == OP_undef) {
     Error("expect unary op but get ");
     return false;
   }
@@ -2383,14 +2383,14 @@ bool MIRParser::ParseExprExtractbits(BaseNodePtr &expr) {
   }
   extrctNode->SetPrimType(ptyp);
   if (op == OP_extractbits) {
-    if (lexer.GetTokenKind() != kTkIntconst) {
+    if (lexer.GetTokenKind() != TK_intconst) {
       Error("expect boffset but get ");
       return false;
     }
     extrctNode->SetBitsOffset(lexer.GetTheIntVal());
     lexer.NextToken();
   }
-  if (lexer.GetTokenKind() != kTkIntconst) {
+  if (lexer.GetTokenKind() != TK_intconst) {
     Error("expect bSize but get ");
     return false;
   }
@@ -2408,7 +2408,7 @@ bool MIRParser::ParseExprExtractbits(BaseNodePtr &expr) {
 
 bool MIRParser::ParseExprTyconvert(BaseNodePtr &expr) {
   Opcode op = GetConvertOp(lexer.GetTokenKind());
-  if (op == kOpUndef) {
+  if (op == OP_undef) {
     Error("expect covertion operator but get ");
     return false;
   }
@@ -2505,7 +2505,7 @@ bool MIRParser::ParseExprArray(BaseNodePtr &expr) {
     return false;
   }
   lexer.NextToken();
-  if (lexer.GetTokenKind() == kTkIntconst) {
+  if (lexer.GetTokenKind() == TK_intconst) {
     if (lexer.GetTheIntVal() == 1) {
       arrayNode->SetBoundsCheck(true);
     } else if (lexer.GetTheIntVal() == 0) {
@@ -2599,20 +2599,20 @@ bool MIRParser::ParseExprIntrinsicop(BaseNodePtr &expr) {
 bool MIRParser::ParseScalarValue(MIRConstPtr &stype, MIRType &type) {
   PrimType ptp = type.GetPrimType();
   if (IsPrimitiveInteger(ptp) || IsPrimitiveDynType(ptp) || ptp == PTY_gen) {
-    if (lexer.GetTokenKind() != kTkIntconst) {
+    if (lexer.GetTokenKind() != TK_intconst) {
       Error("constant value incompatible with integer type at ");
       return false;
     }
     stype = mod.GetMemPool()->New<MIRIntConst>(lexer.GetTheIntVal(), type);
   } else if (ptp == PTY_f32) {
-    if (lexer.GetTokenKind() != kTkFloatconst) {
+    if (lexer.GetTokenKind() != TK_floatconst) {
       Error("constant value incompatible with single-precision float type at ");
       return false;
     }
     MIRFloatConst *fConst = GlobalTables::GetFpConstTable().GetOrCreateFloatConst(lexer.GetTheFloatVal());
     stype = fConst;
   } else if (ptp == PTY_f64) {
-    if (lexer.GetTokenKind() != kTkDoubleconst && lexer.GetTokenKind() != kTkIntconst) {
+    if (lexer.GetTokenKind() != TK_doubleconst && lexer.GetTokenKind() != TK_intconst) {
       Error("constant value incompatible with double-precision float type at ");
       return false;
     }

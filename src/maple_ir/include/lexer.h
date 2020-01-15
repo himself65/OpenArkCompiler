@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -73,7 +73,7 @@ class MIRLexer {
  private:
   MIRModule &module;
   // for storing the different types of constant values
-  int64 theIntVal = 0;  // also indicates preg number under kTkPreg
+  int64 theIntVal = 0;  // also indicates preg number under TK_preg
   float theFloatVal = 0.0;
   double theDoubleVal = 0.0;
   MapleVector<std::string> seenComments;
@@ -84,7 +84,7 @@ class MIRLexer {
   uint32 currentLineSize = 0;
   uint32 curIdx = 0;
   uint32 lineNum = 0;
-  TokenKind kind = kTkInvalid;
+  TokenKind kind = TK_invalid;
   std::string name = "";  // store the name token without the % or $ prefix
   MapleUnorderedMap<std::string, TokenKind> keywordMap;
 
@@ -152,7 +152,7 @@ inline bool IsPrimitiveType(TokenKind tk) {
 }
 
 inline bool IsVarName(TokenKind tk) {
-  return (tk == kTkLname) || (tk == kTkGname);
+  return (tk == TK_lname) || (tk == TK_gname);
 }
 
 inline bool IsExprBinary(TokenKind tk) {
@@ -160,7 +160,7 @@ inline bool IsExprBinary(TokenKind tk) {
 }
 
 inline bool IsConstValue(TokenKind tk) {
-  return (tk >= kTkIntconst) && (tk <= kTkDoubleconst);
+  return (tk >= TK_intconst) && (tk <= TK_doubleconst);
 }
 
 inline bool IsConstAddrExpr(TokenKind tk) {

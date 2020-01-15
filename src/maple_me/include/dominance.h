@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -29,10 +29,10 @@ class Dominance : public AnalysisResult {
         commonExitBB(commonExitBB),
         postOrderIDVec(bbVec.size(), -1, tmpAllocator.Adapter()),
         reversePostOrder(tmpAllocator.Adapter()),
-        doms(bbVec.size(), nullptr, domAllocator.Adapter()),
+        doms(domAllocator.Adapter()),
         pdomPostOrderIDVec(bbVec.size(), -1, tmpAllocator.Adapter()),
         pdomReversePostOrder(tmpAllocator.Adapter()),
-        pdoms(bbVec.size(), nullptr, domAllocator.Adapter()),
+        pdoms(domAllocator.Adapter()),
         domFrontier(bbVec.size(), MapleSet<BBId>(domAllocator.Adapter()), domAllocator.Adapter()),
         domChildren(bbVec.size(), MapleSet<BBId>(domAllocator.Adapter()), domAllocator.Adapter()),
         dtPreOrder(bbVec.size(), BBId(0), domAllocator.Adapter()),
@@ -93,7 +93,7 @@ class Dominance : public AnalysisResult {
     return reversePostOrder;
   }
 
-  const MapleVector<BB*> &GetDoms() const {
+  const MapleUnorderedMap<BBId, BB*> &GetDoms() const {
     return doms;
   }
 
@@ -141,8 +141,8 @@ class Dominance : public AnalysisResult {
     return pdtDfn[idx];
   }
 
-  BB *GetDom(size_t idx) {
-    return doms[idx];
+  BB *GetDom(BBId id) {
+    return doms[id];
   }
 
   size_t GetDomsSize() const {
@@ -185,8 +185,8 @@ class Dominance : public AnalysisResult {
     return domChildren.size();
   }
 
-  BB *GetPdom(size_t idx) {
-    return pdoms[idx];
+  BB *GetPdom(BBId id) {
+    return pdoms[id];
   }
 
  protected:
@@ -205,11 +205,11 @@ class Dominance : public AnalysisResult {
   BB &commonExitBB;
   MapleVector<int32> postOrderIDVec;  // index is bb id
   MapleVector<BB*> reversePostOrder;  // an ordering of the BB in reverse postorder
-  MapleVector<BB*> doms;              // index is bb id; immediate dominator for each BB
+  MapleUnorderedMap<BBId, BB*> doms;  // index is bb id; immediate dominator for each BB
   // following is for post-dominance
   MapleVector<int32> pdomPostOrderIDVec;     // index is bb id
   MapleVector<BB*> pdomReversePostOrder;     // an ordering of the BB in reverse postorder
-  MapleVector<BB*> pdoms;                    // index is bb id; immediate dominator for each BB
+  MapleUnorderedMap<BBId, BB*> pdoms;        // index is bb id; immediate dominator for each BB
   MapleVector<MapleSet<BBId>> domFrontier;   // index is bb id
   MapleVector<MapleSet<BBId>> domChildren;   // index is bb id; for dom tree
   MapleVector<BBId> dtPreOrder;              // ordering of the BBs in a preorder traversal of the dominator tree

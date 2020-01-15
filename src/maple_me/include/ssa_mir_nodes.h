@@ -55,10 +55,10 @@ class MayDefNode {
     result = sym;
   }
 
-  void Dump(const MIRModule *mod) const {
-    result->Dump(mod);
+  void Dump() const {
+    result->Dump();
     LogInfo::MapleLogger() << " = MAYD(";
-    opnd->Dump(mod);
+    opnd->Dump();
     LogInfo::MapleLogger() << ")\n";
   }
 
@@ -82,9 +82,9 @@ class MayUseNode {
     opnd = sym;
   }
 
-  void Dump(const MIRModule *mod) const {
+  void Dump() const {
     LogInfo::MapleLogger() << " MAYU(";
-    opnd->Dump(mod);
+    opnd->Dump();
     LogInfo::MapleLogger() << ")";
   }
 
@@ -119,8 +119,8 @@ class MustDefNode {
     return stmt;
   }
 
-  void Dump(const MIRModule *mod) const {
-    result->Dump(mod);
+  void Dump() const {
+    result->Dump();
     LogInfo::MapleLogger() << " = MUSTDEF\n";
   }
 
@@ -171,19 +171,19 @@ class AccessSSANodes {
 
   virtual void DumpMayDefNodes(const MIRModule &mod) const {
     for (const auto &mayDefNode : GetMayDefNodes()) {
-      mayDefNode.second.Dump(&mod);
+      mayDefNode.second.Dump();
     }
   }
 
   virtual void DumpMayUseNodes(const MIRModule &mod) const {
     for (const auto &mapItem : GetMayUseNodes()) {
-      mapItem.second.Dump(&mod);
+      mapItem.second.Dump();
     }
   }
 
   virtual void DumpMustDefNodes(const MIRModule &mod) const {
     for (const auto &mustDefNode : GetMustDefNodes()) {
-      mustDefNode.Dump(&mod);
+      mustDefNode.Dump();
     }
   }
 
@@ -483,7 +483,7 @@ class AddrofSSANode : public SSANode {
   void Dump(const MIRModule &mod, int32 indent) const override {
     addrofNode->Dump(mod, indent);
     if (GetSSAVar() != nullptr) {
-      GetSSAVar()->Dump(&mod, true);
+      GetSSAVar()->Dump(true);
     }
   }
 
@@ -507,7 +507,7 @@ class IreadSSANode : public SSANode {
 
   void Dump(const MIRModule &mod, int32 indent) const override {
     if (GetSSAVar() != nullptr) {
-      GetSSAVar()->Dump(&mod, true);
+      GetSSAVar()->Dump(true);
     }
     ireadNode->Dump(mod, indent);
   }
@@ -541,7 +541,7 @@ class RegreadSSANode : public SSANode {
   void Dump(const MIRModule &mod, int32 indent) const override {
     regreadNode->Dump(mod, indent);
     if (GetSSAVar() != nullptr) {
-      GetSSAVar()->Dump(&mod, true);
+      GetSSAVar()->Dump(true);
     }
   }
 

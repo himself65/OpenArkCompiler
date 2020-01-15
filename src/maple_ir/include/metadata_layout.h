@@ -144,7 +144,7 @@ struct MByteRef {
     kBiasBitPosition = sizeof(refVal) * 8 - 4, // the most significant 3 bits
   };
 
-  static constexpr uintptr_t FarthestOffset = 256*1024*1024; // according to kDsoLoadedAddessEnd = 0xF0000000
+  static constexpr uintptr_t FarthestOffset = 256 * 1024 * 1024; // according to kDsoLoadedAddessEnd = 0xF0000000
 
   static constexpr uintptr_t PositiveOffsetBias = static_cast<uintptr_t>(6) << kBiasBitPosition;
   static constexpr uintptr_t PositiveOffsetMin = 0 + PositiveOffsetBias;
@@ -157,7 +157,7 @@ struct MByteRef {
 
 struct MByteRef32 {
   uint32_t refVal;
-  static constexpr uint32_t FarthestOffset = 256*1024*1024; // according to kDsoLoadedAddessEnd = 0xF0000000
+  static constexpr uint32_t FarthestOffset = 256 * 1024 * 1024; // according to kDsoLoadedAddessEnd = 0xF0000000
 
   static constexpr uint32_t PositiveOffsetBias = 0x60000000; // the most significant 4 bits 0110
   static constexpr uint32_t PositiveOffsetMin = 0 + PositiveOffsetBias;
@@ -166,7 +166,7 @@ struct MByteRef32 {
   static constexpr uint32_t DirectRefMin = 0xC0000000; // according to kDsoLoadedAddessStart = 0xC0000000
   static constexpr uint32_t DirectRefMax = 0xF0000000; // according to kDsoLoadedAddessEnd = 0xF0000000
 
-  static constexpr int32_t NegativeOffsetMin = - FarthestOffset;
+  static constexpr int32_t NegativeOffsetMin = -FarthestOffset;
   static constexpr int32_t NegativeOffsetMax = 0;
 
   inline void *GetRef() const;

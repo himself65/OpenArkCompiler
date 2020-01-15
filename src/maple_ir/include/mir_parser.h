@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -262,8 +262,8 @@ class MIRParser {
   void SetSrcPos(StmtNodePtr stmt, uint32 mplNum);
 
   // func for ParseExpr
-  Opcode paramOpForStmt = kOpUndef;
-  TokenKind paramTokenKindForStmt = kTkInvalid;
+  Opcode paramOpForStmt = OP_undef;
+  TokenKind paramTokenKindForStmt = TK_invalid;
   // func and param for ParseStmtBlock
   MIRFunction *paramCurrFuncForParseStmtBlock = nullptr;
   MIRLexer lexer;
@@ -284,7 +284,7 @@ class MIRParser {
   uint32 paramFileIdx = 0;                   // param for ParseMIR()
   bool paramIsIPA = false;
   bool paramIsComb = false;
-  TokenKind paramTokenKind = kTkInvalid;
+  TokenKind paramTokenKind = TK_invalid;
   std::vector<std::string> paramImportFileList;
 };
 }  // namespace maple

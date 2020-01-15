@@ -2,6 +2,7 @@ include_directories = [
   "${MAPLEALL_ROOT}/maple_ir/include",
   "${MAPLEALL_ROOT}/mpl2mpl/include",
   "${MAPLEALL_ROOT}/maple_util/include",
+  "${MAPLEALL_ROOT}/maple_driver/include",
   "${MAPLEALL_ROOT}/mempool/include",
   "${MAPLEALL_ROOT}/huawei_secure_c/include",
   "${MAPLEALL_ROOT}/maple_ipa/include",
@@ -44,6 +45,9 @@ static_library("libmplir") {
   output_dir = "${root_out_dir}/lib/${HOST_ARCH}"
   libs = []
   libs += [ "${OPENSOURCE_DEPS}/libmplutil.a" ]
+  deps = [
+    "${MAPLEALL_ROOT}/maple_driver:liboption_parser",
+  ]
 }
 
 executable("irbuild") {
@@ -52,12 +56,13 @@ executable("irbuild") {
   deps = [
     ":libmplir",
     "${MAPLEALL_ROOT}/huawei_secure_c:libHWSecureC",
+    "${MAPLEALL_ROOT}/maple_driver:liboption_parser",
     "${MAPLEALL_ROOT}/mpl2mpl:libmpl2mpl",
   ]
   libs = []
   libs += [
     "${OPENSOURCE_DEPS}/libmplphase.a",
     "${OPENSOURCE_DEPS}/libmempool.a",
-    "${OPENSOURCE_DEPS}/libmaple_driverutil.a",
+    "${OPENSOURCE_DEPS}/libmplutil.a",
   ]
 }

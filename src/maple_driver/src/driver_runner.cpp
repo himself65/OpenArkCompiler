@@ -78,7 +78,6 @@ ErrorCode DriverRunner::Run() {
   std::string outputFile = baseName.append(GetPostfix());
 
   ErrorCode ret = ParseInput(outputFile, originBaseName);
-
   if (ret != kErrorNoError) {
     return kErrorExit;
   }
@@ -127,13 +126,6 @@ ErrorCode DriverRunner::ParseInput(const std::string &outputFile, const std::str
   LogInfo::MapleLogger() << "Parse consumed " << timer.Elapsed() << "s" << '\n';
 
   return ret;
-}
-
-bool DriverRunner::VerifyModule(MIRModulePtr &mModule) const {
-  LogInfo::MapleLogger() << "========== Starting Verify Module =====================" << '\n';
-  bool res = true;
-  LogInfo::MapleLogger() << "========== Finished Verify Module =====================" << '\n';
-  return res;
 }
 
 void DriverRunner::ProcessMpl2mplAndMePhases(const std::string &outputFile, const std::string &vtableImplFile) const {

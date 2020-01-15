@@ -95,7 +95,7 @@ bool BBLayout::BBContainsOnlyCondGoto(const BB &bb) const {
 
 // Return the opposite opcode for condition/compare opcode.
 static Opcode GetOppositeOp(Opcode opcInput) {
-  Opcode opc = kOpUndef;
+  Opcode opc = OP_undef;
   switch (opcInput) {
     case OP_brtrue:
       opc = OP_brfalse;

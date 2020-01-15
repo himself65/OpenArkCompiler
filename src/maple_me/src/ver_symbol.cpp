@@ -28,13 +28,13 @@ void VersionSt::DumpDefStmt(const MIRModule *mod) const {
       defStmt.assign->Dump(*mod, 0);
       return;
     case kPhi:
-      defStmt.phi->Dump(mod);
+      defStmt.phi->Dump();
       return;
     case kMayDef:
-      defStmt.mayDef->Dump(mod);
+      defStmt.mayDef->Dump();
       return;
     case kMustDef:
-      defStmt.mustDef->Dump(mod);
+      defStmt.mustDef->Dump();
       return;
     default:
       ASSERT(false, "not yet implement");
@@ -70,7 +70,7 @@ void VersionStTable::Dump(MIRModule *mod) const {
   LogInfo::MapleLogger() << "=======version st table entries=======\n";
   for (size_t i = 1; i < versionStVector.size(); ++i) {
     const VersionSt *vst = versionStVector[i];
-    vst->Dump(mod);
+    vst->Dump();
     if (vst->GetVersion() > 0) {
       LogInfo::MapleLogger() << " defined BB" << vst->GetDefBB()->GetBBId() << ": ";
       vst->DumpDefStmt(mod);

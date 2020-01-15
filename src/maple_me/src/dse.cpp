@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -23,8 +23,7 @@
 // This phase do dead store elimination. This optimization is done on SSA
 // version basis.
 // This optimization consider all stmt are not needed at first. The whole
-// algorithm is
-// as follow:
+// algorithm is as follow:
 // 1. mark all stmt are not needed. init an empty worklist to put live node.
 // 2. mark some special stmts which has side effect as needed, such as
 //    return/eh/call and some assigned stmts who have volatile fileds and so on.
@@ -99,20 +98,6 @@ bool DSE::HasNonDeletableExpr(const StmtNode &stmt) {
               ExprNonDeletable(ToRef(node.Opnd(0))) ||
               ExprNonDeletable(ToRef(node.GetRHS())));
     }
-    default:
-      return false;
-  }
-}
-
-bool ControlFlowInInfiniteLoop(const BB& bb, Opcode opcode) {
-  switch (opcode) {
-    // goto always return true
-    case OP_goto:
-      return true;
-    case OP_brtrue:
-    case OP_brfalse:
-    case OP_switch:
-      return bb.GetAttributes(kBBAttrWontExit);
     default:
       return false;
   }
@@ -244,7 +229,7 @@ void DSE::MarkLastBranchStmtInPDomBBRequired(const BB &bb) {
   ASSERT(bb.GetBBId() < postDom.GetPdomFrontierSize(), "index out of range in DSE::MarkBBLive ");
   for (BBId pdomBBID : postDom.GetPdomFrontierItem(bb.GetBBId())) {
     const BB *cdBB = bbVec[pdomBBID];
-    CHECK_FATAL(cdBB != nullptr, "cd_bb is null in DSE::MarkBBLive");
+    CHECK_FATAL(cdBB != nullptr, "cd_bb is null in DSE::MarkLastBranchStmtInPDomBBRequired");
     if (cdBB == &bb || cdBB->IsEmpty()) {
       continue;
     }

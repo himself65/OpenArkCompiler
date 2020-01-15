@@ -38,6 +38,11 @@ uint8 MeOption::optLevel = 0;
 bool MeOption::ignoreIPA = true;
 bool MeOption::lessThrowAlias = true;
 bool MeOption::regreadAtReturn = true;
+bool MeOption::propBase = true;
+bool MeOption::propIloadRef = false;
+bool MeOption::propGlobalRef = false;
+bool MeOption::propFinaliLoadRef = true;
+bool MeOption::propIloadRefNonParm = false;
 
 void MeOption::SplitPhases(const std::string &str, std::unordered_set<std::string> &set) const {
   std::string s{ str };

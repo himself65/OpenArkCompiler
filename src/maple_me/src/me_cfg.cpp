@@ -778,7 +778,7 @@ void MeCFG::DumpToFileInStrs(std::ofstream &cfgFile) const {
       cfgFile << "@" << func.GetMirFunc()->GetLabelName(bb->GetBBLabel()) << ":\n";
     }
     for (auto &phiPair : bb->GetPhiList()) {
-      phiPair.second.Dump(&(func.GetMIRModule()));
+      phiPair.second.Dump();
     }
     for (auto &stmt : bb->GetStmtNodes()) {
       // avoid printing content that may contain " as this needs to be quoted
