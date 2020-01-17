@@ -74,10 +74,8 @@ enum OptionIndex : uint64 {
   kInlineWithProfile,
   kInlineWithoutProfile,
   kMpl2MplUseInline,
-  kMpl2MplNoInline,
   kMpl2MplNoInlineFuncList,
   kMpl2MplUseCrossModuleInline,
-  kMpl2MplNoCrossModuleInline,
   kInlineSmallFunctionThreshold,
   kInlineHotFunctionThreshold,
   kInlineModuleGrowth,
@@ -92,6 +90,8 @@ enum OptionIndex : uint64 {
   kPic,
   kVerbose,
   kCGMapleLinker,
+  kDuplicateToDelPlt,
+// ----------mplcg end-----------
 };
 
 enum EnabledIndex {

@@ -32,6 +32,5 @@ enum LayoutType : uint8_t {
 // this used for c string layout
 static uint8_t kCStringShift = 1;
 std::string GetLayoutTypeString(uint32_t type);
-
 } // namespace maple
 #endif
