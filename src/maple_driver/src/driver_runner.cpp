@@ -20,6 +20,7 @@
 #include "mir_function.h"
 #include "mir_parser.h"
 
+
 #define JAVALANG (theModule->IsJavaModule())
 
 #define CHECK_MODULE(errorCode...)                                              \
@@ -51,7 +52,6 @@
   }
 
 namespace maple {
-
 const std::string mpl2Mpl = "mpl2mpl";
 const std::string mplME = "me";
 
@@ -142,7 +142,12 @@ void DriverRunner::ProcessMpl2mplAndMePhases(const std::string &outputFile, cons
     InitPhases(mgr, phases);
     mgr.Run();
 
-    theModule->Emit(vtableImplFile);
+    // emit after module phase
+    if (printOutExe == mpl2Mpl || printOutExe == mplME) {
+      theModule->Emit(outputFile);
+    } else if (genVtableImpl || Options::emitVtableImpl) {
+      theModule->Emit(vtableImplFile);
+    }
 
     timer.Stop();
     LogInfo::MapleLogger() << "Mpl2mpl&mplme consumed " << timer.Elapsed() << "s" << '\n';

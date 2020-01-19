@@ -35,3 +35,5 @@ DEF_MIR_INTRINSIC(JAVA_POLYMORPHIC_CALL,\
                   "__java_polymorphic_call", INTRNISJAVA, kArgTyDynany, kArgTyDynany, kArgTyDynany, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
 DEF_MIR_INTRINSIC(JAVA_THROW_ARITHMETIC,\
                   "MCC_ThrowArithmeticException", INTRNISJAVA | INTRNNEVERRETURN, kArgTyVoid, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
+DEF_MIR_INTRINSIC(JAVA_GET_CLASS,\
+                 "MCC_GetClass", INTRNISJAVA | INTRNNOSIDEEFFECT, kArgTyPtr, kArgTyPtr, kArgTyPtr, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)

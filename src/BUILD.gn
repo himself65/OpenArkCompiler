@@ -6,12 +6,8 @@ config("mapleallcompilecfg") {
   ]
 
   if (GN_BUILD_TYPE == "DEBUG") {
-    cflags_c += [
-      "-DDEBUG",
-    ]
-    cflags_cc += [
-      "-DDEBUG",
-    ]
+    cflags_c += [ "-DDEBUG" ]
+    cflags_cc += [ "-DDEBUG" ]
   }
 
   if (HOST_ARCH == 64) {

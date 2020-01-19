@@ -21,20 +21,100 @@
 using namespace maple;
 using namespace mapleOption;
 
-OptionParser::OptionParser(const Descriptor usage[]) : rawUsages(usage) {
+OptionParser::OptionParser(const Descriptor usage[]) {
   for (size_t i = 0; usage[i].help != nullptr; ++i) {
+    rawUsages.push_back(usage[i]);
     if (usage[i].shortOption != nullptr) {
       InsertOption(std::string(usage[i].shortOption), usage[i]);
     }
     if (usage[i].longOption != nullptr) {
       InsertOption(std::string(usage[i].longOption), usage[i]);
     }
+#ifdef OPTION_PARSER_EXTRAOPT
+    // Insert usage for extra options
+    InsertExtraUsage(usage[i]);
+#endif
+    // Add --no-opt for boolean option
+    if (usage[i].checkPolicy == kArgCheckPolicyBool) {
+      CreateNoOption(usage[i]);
+    }
   }
 }
 
+#ifdef OPTION_PARSER_EXTRAOPT
+void OptionParser::InsertExtraUsage(const Descriptor &usage) {
+  unsigned int index = 0;
+  while (index < kMaxExtraOptions && usage.extras[index].exeName != nullptr) {
+    Descriptor tempUsage = { usage.index,
+                             usage.type,
+                             usage.shortOption,
+                             usage.longOption,
+                             nullptr,
+                             false,
+                             nullptr,
+                             usage.enableBuildType,
+                             usage.checkPolicy,
+                             usage.help,
+                             usage.extras[index].exeName,
+                             { { nullptr } } };
+    if (usage.shortOption != nullptr) {
+      InsertOption(std::string(usage.shortOption), tempUsage);
+    }
+    if (usage.longOption != nullptr) {
+      InsertOption(std::string(usage.longOption), tempUsage);
+    }
+    rawUsages.push_back(tempUsage);
+    index++;
+  }
+}
+#endif
+
+void OptionParser::CreateNoOption(const Descriptor &usage) {
+  std::string longOpt = "";
+  std::string shortOpt = "";
+  std::string newHelpInfo = "";
+  if (usage.shortOption != nullptr) {
+    std::ostringstream optionString;
+    optionString << "no-" << usage.shortOption; // Generate short option: no-opt
+    shortOpt = optionString.str();
+  }
+  if (usage.longOption != nullptr) {
+    std::ostringstream optionString;
+    optionString << "no-" << usage.longOption; // Generate long option: no-opt
+    longOpt = optionString.str();
+  }
+  Descriptor tempUsage = { usage.index,
+                           kDisable, // Change to disable
+                           (usage.shortOption != nullptr) ? shortOpt.c_str() : nullptr,
+                           (usage.longOption != nullptr) ? longOpt.c_str() : nullptr,
+#ifdef OPTION_PARSER_EXTRAOPT
+                           nullptr,
+                           false,
+                           nullptr,
+#endif
+                           usage.enableBuildType,
+                           usage.checkPolicy,
+                           usage.help,
+#ifdef OPTION_PARSER_EXTRAOPT
+                           usage.exeName,
+                           usage.extras
+#endif
+  };
+  if (usage.shortOption != nullptr) {
+    InsertOption(shortOpt, tempUsage);
+  }
+  if (usage.longOption != nullptr) {
+    InsertOption(longOpt, tempUsage);
+  }
+#ifdef OPTION_PARSER_EXTRAOPT
+  // Insert usage for extra options
+  InsertExtraUsage(tempUsage);
+#endif
+}
+
 void OptionParser::PrintUsage() const {
-  for (size_t i = 0; rawUsages[i].help != nullptr; ++i) {
-    if (rawUsages[i].IsEnabledForCurrentBuild()) {
+  for (size_t i = 0; i < rawUsages.size(); ++i) {
+    if (rawUsages[i].help != nullptr && rawUsages[i].IsEnabledForCurrentBuild()) {
       LogInfo::MapleLogger() << rawUsages[i].help << '\n';
     }
   }
@@ -42,8 +122,8 @@ void OptionParser::PrintUsage() const {
 
 #ifdef OPTION_PARSER_EXTRAOPT
 void OptionParser::PrintUsage(const std::string &helpType) const {
-  for (size_t i = 0; rawUsages[i].help != nullptr; ++i) {
-    if (rawUsages[i].IsEnabledForCurrentBuild() && rawUsages[i].exeName == helpType) {
+  for (size_t i = 0; i < rawUsages.size(); ++i) {
+    if (rawUsages[i].help != nullptr && rawUsages[i].IsEnabledForCurrentBuild() && rawUsages[i].exeName == helpType) {
       LogInfo::MapleLogger() << rawUsages[i].help << '\n';
     }
   }

@@ -15,8 +15,12 @@
 #include <cstdlib>
 #include "compiler.h"
 #include "default_options.def"
+#include "mpl_logging.h"
+#include "usages.h"
+#include "driver_runner.h"
 
 namespace maple {
+using namespace mapleOption;
 
 DefaultOption MplcgCompiler::GetDefaultOptions(const MplOptions &options) const {
   DefaultOption defaultOptions = { nullptr, 0 };
@@ -47,5 +51,4 @@ std::string MplcgCompiler::GetInputFileName(const MplOptions &options) const {
   }
   return options.GetOutputFolder() + outputName + ".VtableImpl.mpl";
 }
-
 }  // namespace maple

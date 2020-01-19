@@ -94,7 +94,7 @@ MeOption *MapleCombCompiler::MakeMeOptions(const MplOptions &options, MemPool &o
         meOption->GetRange(opt.Args());
         break;
       case kMeDumpAfter:
-        meOption->dumpAfter = true;
+        meOption->dumpAfter = (opt.Type() == kEnable);
         break;
       case kMeDumpFunc:
         meOption->dumpFunc = opt.Args();
@@ -103,16 +103,16 @@ MeOption *MapleCombCompiler::MakeMeOptions(const MplOptions &options, MemPool &o
         meOption->SplitPhases(opt.Args(), meOption->dumpPhases);
         break;
       case kMeQuiet:
-        meOption->quiet = true;
+        meOption->quiet = (opt.Type() == kEnable);
         break;
       case kSetCalleeHasSideEffect:
-        meOption->setCalleeHasSideEffect = true;
+        meOption->setCalleeHasSideEffect = (opt.Type() == kEnable);
         break;
       case kNoSteensgaard:
-        meOption->noSteensgaard = true;
+        meOption->noSteensgaard = (opt.Type() == kEnable);
         break;
       case kNoTBAA:
-        meOption->noTBAA = true;
+        meOption->noTBAA = (opt.Type() == kEnable);
         break;
       case kAliasAnalysisLevel:
         meOption->aliasAnalysisLevel = std::stoul(opt.Args(), nullptr);
@@ -143,18 +143,24 @@ MeOption *MapleCombCompiler::MakeMeOptions(const MplOptions &options, MemPool &o
           default:
             break;
         }
+        if (options.HasSetDebugFlag()) {
+          LogInfo::MapleLogger() << "--sub options: setCalleeHasSideEffect "
+                                 << meOption->setCalleeHasSideEffect << '\n';
+          LogInfo::MapleLogger() << "--sub options: noSteensgaard " << meOption->noSteensgaard << '\n';
+          LogInfo::MapleLogger() << "--sub options: noTBAA " << meOption->noTBAA << '\n';
+        }
         break;
       case kMeNoDot:
-        meOption->noDot = true;
+        meOption->noDot = (opt.Type() == kEnable);
         break;
       case kStmtNum:
-        meOption->stmtNum = true;
+        meOption->stmtNum = (opt.Type() == kEnable);
         break;
       case kLessThrowAlias:
-        meOption->lessThrowAlias = true;
+        meOption->lessThrowAlias = (opt.Type() == kEnable);
         break;
       case kRegReadAtReturn:
-        meOption->regreadAtReturn = true;
+        meOption->regreadAtReturn = (opt.Type() == kEnable);
         break;
       default:
         WARN(kLncWarn, "input invalid key for me " + opt.OptionKey());
@@ -179,16 +185,16 @@ Options *MapleCombCompiler::MakeMpl2MplOptions(const MplOptions &options, MemPoo
     }
     switch (opt.Index()) {
       case kMpl2MplDumpBefore:
-        mpl2mplOption->dumpBefore = true;
+        mpl2mplOption->dumpBefore = (opt.Type() == kEnable);
         break;
       case kMpl2MplDumpAfter:
-        mpl2mplOption->dumpAfter = true;
+        mpl2mplOption->dumpAfter = (opt.Type() == kEnable);
         break;
       case kMpl2MplDumpFunc:
         mpl2mplOption->dumpFunc = opt.Args();
         break;
       case kMpl2MplQuiet:
-        mpl2mplOption->quiet = true;
+        mpl2mplOption->quiet = (opt.Type() == kEnable);
         break;
       case kMpl2MplDumpPhase:
         mpl2mplOption->dumpPhase = opt.Args();
@@ -203,37 +209,28 @@ Options *MapleCombCompiler::MakeMpl2MplOptions(const MplOptions &options, MemPoo
         mpl2mplOption->skipAfter = opt.Args();
         break;
       case kRegNativeDynamicOnly:
-        mpl2mplOption->regNativeDynamicOnly = true;
+        mpl2mplOption->regNativeDynamicOnly = (opt.Type() == kEnable);
         break;
       case kRegNativeStaticBindingList:
         mpl2mplOption->staticBindingList = opt.Args();
         break;
       case kMpl2MplStubJniFunc:
-        mpl2mplOption->regNativeFunc = true;
+        mpl2mplOption->regNativeFunc = (opt.Type() == kEnable);
         break;
       case kNativeWrapper:
-        mpl2mplOption->nativeWrapper = opt.Type() > 0;
+        mpl2mplOption->nativeWrapper = (opt.Type() == kEnable);
         break;
       case kInlineWithProfile:
-        mpl2mplOption->inlineWithProfile = true;
-        break;
-      case kInlineWithoutProfile:
-        mpl2mplOption->inlineWithProfile = false;
+        mpl2mplOption->inlineWithProfile = (opt.Type() == kEnable);
         break;
       case kMpl2MplUseInline:
-        mpl2mplOption->useInline = true;
-        break;
-      case kMpl2MplNoInline:
-        mpl2mplOption->useInline = false;
+        mpl2mplOption->useInline = (opt.Type() == kEnable);
         break;
       case kMpl2MplNoInlineFuncList:
         mpl2mplOption->noInlineFuncList = opt.Args();
         break;
       case kMpl2MplUseCrossModuleInline:
-        mpl2mplOption->useCrossModuleInline = true;
-        break;
-      case kMpl2MplNoCrossModuleInline:
-        mpl2mplOption->useCrossModuleInline = false;
+        mpl2mplOption->useCrossModuleInline = (opt.Type() == kEnable);
         break;
       case kInlineSmallFunctionThreshold:
         if (opt.Args().empty()) {
@@ -300,18 +297,21 @@ Options *MapleCombCompiler::MakeMpl2MplOptions(const MplOptions &options, MemPoo
         }
         break;
       case kMpl2MplMapleLinker:
-        mpl2mplOption->mapleLinker = true;
-        mpl2mplOption->dumpMuidFile = true;
+        mpl2mplOption->mapleLinker = (opt.Type() == kEnable);
+        mpl2mplOption->dumpMuidFile = (opt.Type() == kEnable);
+        if (options.HasSetDebugFlag()) {
+          LogInfo::MapleLogger() << "--sub options: dumpMuidFile " << mpl2mplOption->dumpMuidFile << '\n';
+        }
         break;
       case kMplnkDumpMuid:
-        mpl2mplOption->dumpMuidFile = true;
+        mpl2mplOption->dumpMuidFile = (opt.Type() == kEnable);
         break;
       case kEmitVtableImpl:
-        mpl2mplOption->emitVtableImpl = true;
+        mpl2mplOption->emitVtableImpl = (opt.Type() == kEnable);
         break;
 #if MIR_JAVA
       case kMpl2MplSkipVirtual:
-        mpl2mplOption->skipVirtualMethod = true;
+        mpl2mplOption->skipVirtualMethod = (opt.Type() == kEnable);
         break;
 #endif
       default:
@@ -341,7 +341,7 @@ ErrorCode MapleCombCompiler::Compile(const MplOptions &options, MIRModulePtr &th
   PrintCommand(options);
   DriverRunner runner(theModule, options.GetRunningExes(), mpl2mplOptions.get(), fileName, meOptions.get(),
                       fileName, fileName, optMp,
-                      options.HasSetTimePhases(), options.HasSetGenMeMpl());
+                      options.HasSetTimePhases(), options.HasSetGenVtableImpl(), options.HasSetGenMeMpl());
   ErrorCode nErr = runner.Run();
 
   memPoolCtrler.DeleteMemPool(optMp);

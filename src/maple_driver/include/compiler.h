@@ -130,14 +130,11 @@ class MplcgCompiler : public Compiler {
   explicit MplcgCompiler(const std::string &name) : Compiler(name) {}
 
   ~MplcgCompiler() = default;
-
-
  private:
   std::string GetInputFileName(const MplOptions &options) const override;
   DefaultOption GetDefaultOptions(const MplOptions &options) const override;
   std::string GetBinName() const override;
   std::vector<std::string> GetBinNames() const override;
 };
-
 }  // namespace maple
 #endif  // MAPLE_DRIVER_INCLUDE_COMPILER_H
