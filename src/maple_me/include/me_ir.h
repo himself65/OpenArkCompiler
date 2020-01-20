@@ -399,12 +399,12 @@ class MeVarPhiNode {
     lhs = value;
   }
 
-  void SetPaiAdded() {
-    isPaiAdded = true;
+  void SetPiAdded() {
+    isPiAdded = true;
   }
 
-  bool IsPaiAdded() const {
-    return isPaiAdded;
+  bool IsPiAdded() const {
+    return isPiAdded;
   }
 
  private:
@@ -412,7 +412,7 @@ class MeVarPhiNode {
   MapleVector<VarMeExpr*> opnds;
   bool isLive = true;
   BB *defBB = nullptr;  // the bb that defines this phi
-  bool isPaiAdded = false;
+  bool isPiAdded = false;
 };
 
 class RegMeExpr : public MeExpr {
@@ -1445,11 +1445,11 @@ class MustDefMeNode {
   bool isLive = true;
 };
 
-class PaiassignMeStmt : public MeStmt {
+class PiassignMeStmt : public MeStmt {
  public:
-  explicit PaiassignMeStmt(MapleAllocator *alloc)
-      : MeStmt(OP_paiassign) {}
-  ~PaiassignMeStmt() = default;
+  explicit PiassignMeStmt(MapleAllocator *alloc)
+      : MeStmt(OP_piassign) {}
+  ~PiassignMeStmt() = default;
 
   void SetLHS(VarMeExpr &l) {
     lhs = &l;

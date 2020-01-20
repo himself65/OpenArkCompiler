@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -30,11 +30,10 @@ class ModulePhaseManager : public PhaseManager {
 
   ~ModulePhaseManager() = default;
 
-  // register all module phases defined in module_phases.def
+  // Register all module phases defined in module_phases.def
   void RegisterModulePhases();
   // Add module phases which are going to be run
   void AddModulePhases(const std::vector<std::string> &phases);
-  void RunModulePhases() const;
   ModuleResultMgr *GetModResultMgr() override {
     return arModuleMgr;
   }

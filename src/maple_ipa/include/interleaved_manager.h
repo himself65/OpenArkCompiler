@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -46,20 +46,13 @@ class InterleavedManager {
     return &allocator;
   }
 
-  MemPool *GetMempool() {
+  MemPool *GetMemPool() {
     return allocator.GetMemPool();
   }
 
   void AddPhases(const std::vector<std::string> &phases, bool isModulePhase, bool timePhases = false,
                  bool genMpl = false);
-  void AddIPAPhases(std::vector<std::string> &phases, bool timePhases = false, bool genMpl = false);
   void Run();
-  void IPARun(MeFuncPhaseManager&);
-
-  const PhaseManager *AccessPhaseManager(size_t i) const {
-    return phaseManagers.at(i);
-  }
-
   const PhaseManager *GetSupportPhaseManager(const std::string &phase);
 
  private:

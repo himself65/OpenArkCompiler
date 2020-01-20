@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -16,7 +16,6 @@
 #include <string>
 #include <vector>
 #include <iomanip>
-
 #include "module_phase.h"
 #include "mir_function.h"
 #include "me_option.h"
@@ -24,7 +23,6 @@
 #include "phase_manager.h"
 
 namespace maple {
-
 void InterleavedManager::AddPhases(const std::vector<std::string> &phases, bool isModulePhase, bool timePhases,
                                    bool genMpl) {
   ModuleResultMgr *mrm = nullptr;
@@ -35,7 +33,7 @@ void InterleavedManager::AddPhases(const std::vector<std::string> &phases, bool 
   }
 
   if (isModulePhase) {
-    auto *mpm = GetMempool()->New<ModulePhaseManager>(GetMempool(), mirModule, mrm);
+    auto *mpm = GetMemPool()->New<ModulePhaseManager>(GetMemPool(), mirModule, mrm);
     mpm->RegisterModulePhases();
     mpm->AddModulePhases(phases);
     if (timePhases) {
@@ -43,7 +41,7 @@ void InterleavedManager::AddPhases(const std::vector<std::string> &phases, bool 
     }
     phaseManagers.push_back(mpm);
   } else {  // MeFuncPhase
-    auto *fpm = GetMempool()->New<MeFuncPhaseManager>(GetMempool(), mirModule, mrm);
+    auto *fpm = GetMemPool()->New<MeFuncPhaseManager>(GetMemPool(), mirModule, mrm);
     fpm->RegisterFuncPhases();
     if (genMpl) {
       fpm->SetGenMeMpl(true);
@@ -128,13 +126,13 @@ void InterleavedManager::DumpTimers() {
 void InterleavedManager::InitSupportPhaseManagers() {
   ASSERT(supportPhaseManagers.empty(), "Phase managers already initialized");
 
-  auto *mpm = GetMempool()->New<ModulePhaseManager>(GetMempool(), mirModule, nullptr);
+  auto *mpm = GetMemPool()->New<ModulePhaseManager>(GetMemPool(), mirModule, nullptr);
   mpm->RegisterModulePhases();
   supportPhaseManagers.push_back(mpm);
 
   ModuleResultMgr *mrm = mpm->GetModResultMgr();
 
-  auto *fpm = GetMempool()->New<MeFuncPhaseManager>(GetMempool(), mirModule, mrm);
+  auto *fpm = GetMemPool()->New<MeFuncPhaseManager>(GetMemPool(), mirModule, mrm);
   fpm->RegisterFuncPhases();
   supportPhaseManagers.push_back(fpm);
 }

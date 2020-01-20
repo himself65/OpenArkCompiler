@@ -343,19 +343,19 @@ void BB::DumpMeBB(IRMap &irMap) {
   }
 }
 
-void BB::DumpMeVarPaiList(IRMap *irMap) {
-  if (meVarPaiList.empty()) {
+void BB::DumpMeVarPiList(IRMap *irMap) {
+  if (meVarPiList.empty()) {
     return;
   }
-  std::cout << "<<<<<<<<<<<<<<  PAI Node Start >>>>>>>>>>>>>>>>>>\n";
-  for (const auto &pair : meVarPaiList) {
+  std::cout << "<<<<<<<<<<<<<<  PI Node Start >>>>>>>>>>>>>>>>>>\n";
+  for (const auto &pair : meVarPiList) {
     BB *bb = pair.first;
     std::cout << "Frome BB : " << bb->GetBBId() << '\n';
     for (const auto *stmt : pair.second) {
       stmt->Dump(irMap);
     }
   }
-  std::cout << "<<<<<<<<<<<<<<  PAI Node End >>>>>>>>>>>>>>>>>>>>\n";
+  std::cout << "<<<<<<<<<<<<<<  PI Node End >>>>>>>>>>>>>>>>>>>>\n";
 }
 
 void BB::DumpMeVarPhiList(IRMap *irMap) {

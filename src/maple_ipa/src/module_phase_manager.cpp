@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -16,6 +16,8 @@
 #include "class_hierarchy.h"
 #include "class_init.h"
 #include "option.h"
+#include "bin_mpl_export.h"
+#include "mpl_timer.h"
 #if MIR_JAVA
 #include "native_stub_func.h"
 #include "vtable_analysis.h"
@@ -26,32 +28,29 @@
 #include "native_stub_func.h"
 #include "muid_replacement.h"
 #include "gen_check_cast.h"
-#endif
-#include "bin_mpl_export.h"
-#include "mpl_timer.h"
+#endif  // ~MIR_JAVA
 
 namespace {
 constexpr char kDotStr[] = ".";
 constexpr char kDotMplStr[] = ".mpl";
-} // namespace
+}
 
 namespace maple {
-// Manage the phases of middle and implement some maplecomb-options such as
-// skipAfter, skipFrom, quiet.
 void ModulePhaseManager::RegisterModulePhases() {
 #define MODAPHASE(id, modphase)                                                    \
   do {                                                                             \
     MemPool *memPool = GetMemPool();                                               \
     ModulePhase *phase = new (memPool->Malloc(sizeof(modphase(id)))) modphase(id); \
-    CHECK_FATAL(phase != nullptr, "null ptr check ");                              \
+    CHECK_NULL_FATAL(phase);                                                       \
     RegisterPhase(id, *phase);                                                     \
     arModuleMgr->AddAnalysisPhase(id, phase);                                      \
   } while (0);
-#define MODTPHASE(id, modphase)                                                    \
+
+#define MODTPHASE(id, modPhase)                                                    \
   do {                                                                             \
     MemPool *memPool = GetMemPool();                                               \
-    ModulePhase *phase = new (memPool->Malloc(sizeof(modphase(id)))) modphase(id); \
-    CHECK_FATAL(phase != nullptr, "null ptr check ");                              \
+    ModulePhase *phase = new (memPool->Malloc(sizeof(modPhase(id)))) modPhase(id); \
+    CHECK_NULL_FATAL(phase);                                                       \
     RegisterPhase(id, *phase);                                                     \
   } while (0);
 #include "module_phases.def"
@@ -64,8 +63,6 @@ void ModulePhaseManager::AddModulePhases(const std::vector<std::string> &phases)
     AddPhase(phase);
   }
 }
-
-void ModulePhaseManager::RunModulePhases() const {}
 
 void ModulePhaseManager::Run() {
   int phaseIndex = 0;
@@ -96,7 +93,6 @@ void ModulePhaseManager::Run() {
 }
 
 void ModulePhaseManager::Emit(const std::string &passName) {
-  // Form output file name.
   std::string outFileName;
   std::string moduleFileName = mirModule.GetFileName();
   std::string::size_type lastDot = moduleFileName.find_last_of(kDotStr);
@@ -105,8 +101,7 @@ void ModulePhaseManager::Emit(const std::string &passName) {
   } else {
     outFileName = moduleFileName.substr(0, lastDot) + kDotStr;
   }
-  outFileName = outFileName.append(passName);
-  outFileName = outFileName.append(kDotMplStr);
+  outFileName = outFileName.append(passName).append(kDotMplStr);
   mirModule.DumpToFile(outFileName);
 }
 }  // namespace maple

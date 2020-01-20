@@ -277,6 +277,9 @@ class MIRModule {
   void SetPuIdxFieldSet(PUIdx puIdx, MapleSet<FieldID> *fieldIDSet) {
     puIdxFieldInitializedMap[puIdx] = fieldIDSet;
   }
+  auto &GetRealCaller() {
+    return realCaller;
+  }
 
   MapleSet<FieldID> *GetPUIdxFieldInitializedMapItem(PUIdx key) {
     return puIdxFieldInitializedMap[key];
@@ -519,6 +522,7 @@ class MIRModule {
   // if puIdx appears in the map, and the value of first corresponding MapleSet is 0, the puIdx appears in this module
   // and writes to all field id otherwise, it writes the field ids in MapleSet
   MapleMap<PUIdx, MapleSet<FieldID>*> puIdxFieldInitializedMap;
+  std::map<std::pair<GStrIdx, GStrIdx>, GStrIdx> realCaller;
 };
 #endif  // MIR_FEATURE_FULL
 }  // namespace maple

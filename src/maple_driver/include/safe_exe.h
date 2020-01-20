@@ -44,7 +44,7 @@ class SafeExe {
     // argv[0] is program name
     // copy args
     for (size_t j = 0; j < vectorArgs.size(); ++j) {
-      int strLength = vectorArgs[j].size();
+      size_t strLength = vectorArgs[j].size();
       argv[j] = new char[strLength + 1];
       strncpy_s(argv[j], strLength + 1, vectorArgs[j].c_str(), strLength);
       argv[j][strLength] = '\0';

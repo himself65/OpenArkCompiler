@@ -41,8 +41,10 @@ std::vector<std::string> MplcgCompiler::GetBinNames() const {
 }
 
 std::string MplcgCompiler::GetInputFileName(const MplOptions &options) const {
-  if (options.GetRunningExes()[0] == kBinNameMplcg) {
-    return options.GetInputFiles();
+  if (!options.GetRunningExes().empty()) {
+    if (options.GetRunningExes()[0] == kBinNameMplcg) {
+      return options.GetInputFiles();
+    }
   }
   auto idx = options.GetOutputName().find(".VtableImpl");
   std::string outputName = options.GetOutputName();

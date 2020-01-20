@@ -495,13 +495,6 @@ void ReflectionAnalysis::GenAllFieldHash(std::vector<std::pair<FieldPair, uint16
     uint16 h = field.second;
     hashVector.push_back(h);
   }
-  for (auto &field : fieldV) {
-    uint16 h = field.second;
-    int c = std::count(hashVector.begin(), hashVector.end(), h);
-    if (c > 1) {
-      field.second = kHashConflictFlag;  // Conflict flag.
-    }
-  }
 }
 
 uint16 GetFieldHash(const std::vector<std::pair<FieldPair, uint16>> &fieldV, const FieldPair &fieldSources) {

@@ -924,7 +924,6 @@ SwitchNode *MIRBuilder::CreateStmtSwitch(BaseNode *opnd, LabelIdx defaultLabel, 
   auto *switchNode = GetCurrentFuncCodeMp()->New<SwitchNode>(*GetCurrentFuncCodeMpAllocator(),
                                                              defaultLabel, opnd);
   switchNode->SetSwitchTable(switchTable);
-  switchNode->SetNumOpnds(switchTable.size());
   return switchNode;
 }
 

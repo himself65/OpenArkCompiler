@@ -692,8 +692,8 @@ MeExpr *AddroffuncMeExpr::GetIdenticalExpr(MeExpr &expr) const {
 }
 
 void MeVarPhiNode::Dump(IRMap *irMap) const {
-  if (isPaiAdded) {
-    LogInfo::MapleLogger() << "PAI_ADD VAR:";
+  if (isPiAdded) {
+    LogInfo::MapleLogger() << "PI_ADD VAR:";
   }
   LogInfo::MapleLogger() << "VAR:";
   irMap->GetSSATab().GetOriginalStFromID(lhs->GetOStIdx())->Dump();
@@ -981,8 +981,8 @@ MeStmt *MeStmt::GetNextMeStmt() const {
   return nextMeStmt;
 }
 
-void PaiassignMeStmt::Dump(IRMap *irMap) const {
-  LogInfo::MapleLogger() << "||MEIR PAI|| " << kOpcodeInfo.GetTableItemAt(GetOp()).name << " ";
+void PiassignMeStmt::Dump(IRMap *irMap) const {
+  LogInfo::MapleLogger() << "||MEIR PI|| " << kOpcodeInfo.GetTableItemAt(GetOp()).name << " ";
   lhs->Dump(irMap);
   LogInfo::MapleLogger() << '\n';
   PrintIndentation(kDefaultPrintIndentNum);
