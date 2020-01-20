@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -17,12 +17,8 @@
 #include "default_options.def"
 
 namespace maple {
-std::string Jbc2MplCompiler::GetBinName() const {
+const std::string &Jbc2MplCompiler::GetBinName() const {
   return kBinNameJbc2mpl;
-}
-
-std::vector<std::string> Jbc2MplCompiler::GetBinNames() const {
-  return std::vector<std::string> { kBinNameJbc2mpl };
 }
 
 DefaultOption Jbc2MplCompiler::GetDefaultOptions(const MplOptions &options) const {

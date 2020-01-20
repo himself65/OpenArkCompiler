@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -31,13 +31,8 @@ DefaultOption MplcgCompiler::GetDefaultOptions(const MplOptions &options) const 
   return defaultOptions;
 }
 
-std::string MplcgCompiler::GetBinName() const {
+const std::string &MplcgCompiler::GetBinName() const {
   return kBinNameMplcg;
-}
-
-std::vector<std::string> MplcgCompiler::GetBinNames() const {
-  std::vector<std::string> binNames{ kBinNameMplcg };
-  return binNames;
 }
 
 std::string MplcgCompiler::GetInputFileName(const MplOptions &options) const {

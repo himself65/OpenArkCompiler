@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -24,11 +24,12 @@
 #include "mir_parser.h"
 
 namespace maple {
-extern const std::string kBinNameJbc2mpl;
-extern const std::string kBinNameMe;
-extern const std::string kBinNameMpl2mpl;
-extern const std::string kBinNameMplcg;
-extern const std::string kBinNameMapleComb;
+const std::string kBinNameNone = "";
+const std::string kBinNameJbc2mpl = "jbc2mpl";
+const std::string kBinNameMe = "me";
+const std::string kBinNameMpl2mpl = "mpl2mpl";
+const std::string kBinNameMplcg = "mplcg";
+const std::string kBinNameMapleComb = "maplecomb";
 
 class Compiler {
  public:
@@ -48,8 +49,8 @@ class Compiler {
 
  protected:
   virtual std::string GetBinPath(const MplOptions &mplOptions) const;
-  virtual std::string GetBinName() const {
-    return "";
+  virtual const std::string &GetBinName() const {
+    return kBinNameNone;
   }
 
   virtual std::string GetInputFileName(const MplOptions &options) const {
@@ -69,10 +70,6 @@ class Compiler {
   }
 
   virtual std::string AppendOptimization(const MplOptions &options, const std::string &optionStr) const;
-
-  virtual std::vector<std::string> GetBinNames() const {
-    return std::vector<std::string>();
-  }
 
   bool CanAppendOptimization() const;
 
@@ -101,11 +98,10 @@ class Jbc2MplCompiler : public Compiler {
   ~Jbc2MplCompiler() = default;
 
  private:
-  std::string GetBinName() const override;
+  const std::string &GetBinName() const override;
   DefaultOption GetDefaultOptions(const MplOptions &options) const override;
   void GetTmpFilesToDelete(const MplOptions &mplOptions, std::vector<std::string> &tempFiles) const override;
   std::unordered_set<std::string> GetFinalOutputs(const MplOptions &mplOptions) const override;
-  std::vector<std::string> GetBinNames() const override;
 };
 
 class MapleCombCompiler : public Compiler {
@@ -133,8 +129,7 @@ class MplcgCompiler : public Compiler {
  private:
   std::string GetInputFileName(const MplOptions &options) const override;
   DefaultOption GetDefaultOptions(const MplOptions &options) const override;
-  std::string GetBinName() const override;
-  std::vector<std::string> GetBinNames() const override;
+  const std::string &GetBinName() const override;
 };
 }  // namespace maple
 #endif  // MAPLE_DRIVER_INCLUDE_COMPILER_H

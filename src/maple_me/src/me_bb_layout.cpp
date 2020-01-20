@@ -276,10 +276,9 @@ void BBLayout::OptimizeBranchTarget(BB &bb) {
     // update CFG
     bb.ReplaceSucc(brTargetBB, newTargetBB);
     bb.RemoveBBFromVector(brTargetBB->GetPred());
-    if (brTargetBB->GetPred().empty() && !laidOut[brTargetBB->GetBBId()]) {
+    if (brTargetBB->GetPred().empty()) {
       laidOut[brTargetBB->GetBBId()] = true;
-      brTargetBB->RemoveBBFromVector(newTargetBB->GetPred());
-      func.NullifyBBByID(brTargetBB->GetBBId());
+      RemoveUnreachable(*brTargetBB);
     }
   } while (true);
 }
@@ -334,11 +333,13 @@ BB *BBLayout::GetFallThruBBSkippingEmpty(BB &bb) {
       }
     }
     laidOut[fallthru->GetBBId()] = true;
-    fallthru->RemoveBBFromPred(&bb);
-    BB *oldFallthru = fallthru;
-    fallthru = oldFallthru->GetSucc().front();
-    bb.ReplaceSucc(oldFallthru, fallthru);
-    oldFallthru->RemoveBBFromSucc(fallthru);
+    BB *oldFallThru = fallthru;
+    fallthru = fallthru->GetSucc().front();
+    bb.ReplaceSucc(oldFallThru, fallthru);
+    oldFallThru->RemoveBBFromPred(&bb);
+    if (oldFallThru->GetPred().empty()) {
+      RemoveUnreachable(*oldFallThru);
+    }
   } while (true);
 }
 
@@ -376,6 +377,24 @@ void BBLayout::ResolveUnconditionalFallThru(BB &bb, BB &nextBB) {
   }
 }
 
+// remove unnessary bb whose pred size is zero
+// keep cfg correct to rebuild dominance
+void BBLayout::RemoveUnreachable(BB &bb) {
+  if (bb.GetAttributes(kBBAttrIsEntry)) {
+    return;
+  }
+  MapleVector<BB*> succBBs = bb.GetSucc();
+  for (BB *succ : succBBs) {
+    MapleVector<BB*> preds = succ->GetPred();
+    bb.RemoveBBFromVector(preds);
+    if (preds.empty()) {
+        RemoveUnreachable(*succ);
+    }
+  }
+  succBBs.clear();
+  func.NullifyBBByID(bb.GetBBId());
+}
+
 AnalysisResult *MeDoBBLayout::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, ModuleResultMgr *moduleResMgr) {
   // mempool used in analysisresult
   MemPool *layoutMp = NewMemPool();
@@ -409,9 +428,11 @@ AnalysisResult *MeDoBBLayout::Run(MeFunction *func, MeFuncResultMgr *funcResMgr,
     if (bb->GetKind() == kBBFallthru) {
       bbLayout->ResolveUnconditionalFallThru(*bb, *nextBB);
     } else if (bb->GetKind() == kBBCondGoto) {
+      BB *oldFallThru = bb->GetSucc(0);
       BB *fallthru = bbLayout->GetFallThruBBSkippingEmpty(*bb);
       BB *brTargetBB = bb->GetSucc(1);
-      if (brTargetBB != fallthru && fallthru->GetPred().size() > 1 && bbLayout->BBCanBeMoved(*brTargetBB, *bb)) {
+      if (brTargetBB != fallthru && (oldFallThru != fallthru || fallthru->GetPred().size() > 1) &&
+          bbLayout->BBCanBeMoved(*brTargetBB, *bb)) {
         // flip the sense of the condgoto and lay out brTargetBB right here
         LabelIdx fallthruLabel = func->GetOrCreateBBLabel(*fallthru);
         if (func->GetIRMap() != nullptr) {
@@ -456,8 +477,6 @@ AnalysisResult *MeDoBBLayout::Run(MeFunction *func, MeFuncResultMgr *funcResMgr,
           // replace pred and succ
           bb->ReplaceSucc(fallthru, newFallthru);
           fallthru->ReplacePred(bb, newFallthru);
-          newFallthru->GetPred().push_back(bb);
-          newFallthru->GetSucc().push_back(fallthru);
           newFallthru->SetFrequency(fallthru->GetFrequency());
           if (DEBUGFUNC(func)) {
             LogInfo::MapleLogger() << "Created fallthru and goto original fallthru" << '\n';

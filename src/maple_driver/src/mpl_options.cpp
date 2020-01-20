@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -175,7 +175,7 @@ const mapleOption::Descriptor USAGES[] = {
     "                              \t--run.\n",
     "all",
     { { nullptr } } },
-  { kCombTimePhases,
+  { kTimePhases,
     0,
     "time-phases",
     nullptr,
@@ -1074,7 +1074,7 @@ ErrorCode MplOptions::HandleGeneralOptions() {
       case kMpl2MplHelp:
         optionParser->PrintUsage(kBinNameMpl2mpl);
         return kErrorExitHelp;
-      case kCombTimePhases:
+      case kTimePhases:
         timePhases = true;
         printCommandStr += " -time-phases";
         break;

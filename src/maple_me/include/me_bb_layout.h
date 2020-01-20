@@ -55,6 +55,7 @@ class BBLayout : public AnalysisResult {
   BB *GetFallThruBBSkippingEmpty(BB &bb);
   void ResolveUnconditionalFallThru(BB &bb, BB &nextBB);
   void ChangeToFallthruFromGoto(BB &bb);
+  void RemoveUnreachable(BB &bb);
   const MapleVector<BB*> &GetBBs() const {
     return layoutBBs;
   }
