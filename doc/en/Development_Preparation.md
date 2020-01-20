@@ -38,7 +38,7 @@ ${MAPLE_ROOT} is the root directory of the OpenArkCompiler source code.
 
 Download **Ninja(v1.9.0)** and **GN(Linux Version)**
 Ninja download address: https://github.com/ninja-build/ninja/releases
-GN download address: https://archive.softwareheritage.org/browse/content/sha1_git:2dc0d5b26caef44f467de8120b26f8aad8b878be/raw/?filename=gn
+GN download address: https://gitee.com/xlnb/gn_binary
 
 Place the executable programs of GN and Ninja in the openarkcompiler/tools directory, modify these two files to be executable.
 
