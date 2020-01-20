@@ -186,7 +186,7 @@ class IRMap : public AnalysisResult {
   uint32 mapHashLength;                            // size of hashTable
   MapleVector<MeExpr*> hashTable;                  // the value number hash table
   MapleVector<MeExpr*> vst2MeExprTable;            // map versionst to MeExpr.
-  MapleVector<RegMeExpr*> regMeExprTable;          // record all the regmeexpr created by ssapre
+  MapleVector<RegMeExpr*> regMeExprTable;          // record all the regmeexpr created by ssa_pre
   bool needAnotherPass = false;                    // set to true if CFG has changed
   bool dumpStmtNum = false;
   BB *curBB = nullptr;  // current maple_me::BB being visited

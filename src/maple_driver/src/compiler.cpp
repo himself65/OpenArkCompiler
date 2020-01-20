@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -20,12 +20,6 @@
 
 namespace maple {
 using namespace mapleOption;
-
-const std::string kBinNameJbc2mpl = "jbc2mpl";
-const std::string kBinNameMe = "me";
-const std::string kBinNameMpl2mpl = "mpl2mpl";
-const std::string kBinNameMplcg = "mplcg";
-const std::string kBinNameMapleComb = "maplecomb";
 
 int Compiler::Exe(const MplOptions &mplOptions, const std::string &options) const {
   std::ostringstream ostrStream;
@@ -68,11 +62,9 @@ std::string Compiler::MakeOption(const MplOptions &options) const {
   std::map<std::string, MplOption> finalOptions;
   std::map<std::string, MplOption> defaultOptions = MakeDefaultOptions(options);
   AppendDefaultOptions(finalOptions, defaultOptions);
-  for (const auto &binName : GetBinNames()) {
-    auto userOption = options.GetOptions().find(binName);
-    if (userOption != options.GetOptions().end()) {
-      AppendUserOptions(finalOptions, userOption->second);
-    }
+  auto userOption = options.GetOptions().find(GetBinName());
+  if (userOption != options.GetOptions().end()) {
+    AppendUserOptions(finalOptions, userOption->second);
   }
   AppendExtraOptions(finalOptions, options.GetExtras());
   std::ostringstream strOption;
@@ -99,27 +91,24 @@ void Compiler::AppendDefaultOptions(std::map<std::string, MplOption> &finalOptio
 
 void Compiler::AppendUserOptions(std::map<std::string, MplOption> &finalOptions,
                                  const std::vector<Option> &userOptions) const {
-  for (const auto &binName : GetBinNames()) {
-    for (const auto &userOption : userOptions) {
-      auto extra = userOption.FindExtra(binName);
-      if (extra != nullptr) {
-        AppendOptions(finalOptions, extra->optionKey, userOption.Args(), userOption.ConnectSymbol(binName));
-      }
+  const std::string &binName = GetBinName();
+  for (const auto &userOption : userOptions) {
+    auto extra = userOption.FindExtra(binName);
+    if (extra != nullptr) {
+      AppendOptions(finalOptions, extra->optionKey, userOption.Args(), userOption.ConnectSymbol(binName));
     }
   }
 }
 
 void Compiler::AppendExtraOptions(std::map<std::string, MplOption> &finalOptions,
                                   const std::map<std::string, std::vector<MplOption>> &extraOptions) const {
-  auto binNames = GetBinNames();
-  for (const auto &binNamesIt : binNames) {
-    auto extras = extraOptions.find(binNamesIt);
-    if (extras == extraOptions.end()) {
-      continue;
-    }
-    for (const auto &secondExtras : extras->second) {
-      AppendOptions(finalOptions, secondExtras.GetKey(), secondExtras.GetValue(), secondExtras.GetconnectSymbol());
-    }
+  const std::string &binName = GetBinName();
+  auto extras = extraOptions.find(binName);
+  if (extras == extraOptions.end()) {
+    return;
+  }
+  for (const auto &secondExtras : extras->second) {
+    AppendOptions(finalOptions, secondExtras.GetKey(), secondExtras.GetValue(), secondExtras.GetconnectSymbol());
   }
 }
 

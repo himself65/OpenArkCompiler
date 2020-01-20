@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -52,8 +52,8 @@
   }
 
 namespace maple {
-const std::string mpl2Mpl = "mpl2mpl";
-const std::string mplME = "me";
+const std::string kMpl2mpl = "mpl2mpl";
+const std::string kMplMe = "me";
 
 enum OptLevel {
   kLevelO0,
@@ -99,10 +99,10 @@ bool DriverRunner::IsFramework() const {
 }
 
 std::string DriverRunner::GetPostfix() const {
-  if (printOutExe == mplME) {
+  if (printOutExe == kMplMe) {
     return ".me.mpl";
   }
-  if (printOutExe == mpl2Mpl) {
+  if (printOutExe == kMpl2mpl) {
     return ".VtableImpl.mpl";
   }
   return "";
@@ -143,7 +143,7 @@ void DriverRunner::ProcessMpl2mplAndMePhases(const std::string &outputFile, cons
     mgr.Run();
 
     // emit after module phase
-    if (printOutExe == mpl2Mpl || printOutExe == mplME) {
+    if (printOutExe == kMpl2mpl || printOutExe == kMplMe) {
       theModule->Emit(outputFile);
     } else if (genVtableImpl || Options::emitVtableImpl) {
       theModule->Emit(vtableImplFile);

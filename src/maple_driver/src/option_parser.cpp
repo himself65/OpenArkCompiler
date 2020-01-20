@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -62,7 +62,7 @@ bool OptionParser::HandleKeyValue(const std::string &key, const std::string &val
     nonOptionsArgs.push_back(value);
     return true;
   }
-  int count = usages.count(key);
+  size_t count = usages.count(key);
   auto item = usages.find(key);
 #ifdef OPTION_PARSER_EXTRAOPT
   while (count > 0 && item->second.exeName != exeName) {
@@ -191,16 +191,16 @@ ErrorCode OptionParser::HandleInputArgs(const std::vector<std::string> &inputArg
     }
     bool isMatchLongOpt = false;
     bool isMatchShortOpt = false;
-    int index = 0;
+    MatchedIndex index = kMatchNone;
     if (inputArgs[i][0] == '-') {
-      index = 1;
+      index = kMatchShortOpt;
       if (inputArgs[i][1] == '-') {
-        index = 2;
+        index = kMatchLongOpt;
       }
     }
-    if (index == 1) {
+    if (index == kMatchShortOpt) {
       isMatchShortOpt = true;
-    } else if (index == 2) {
+    } else if (index == kMatchLongOpt) {
       isMatchLongOpt = true;
     }
     std::string arg = inputArgs[i].substr(index);
