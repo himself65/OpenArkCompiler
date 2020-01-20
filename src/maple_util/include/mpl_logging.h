@@ -234,7 +234,7 @@ class LogInfo {
 #define CHECK_FATAL(cond, fmt, ...)                                                 \
   do {                                                                              \
     if (!(cond)) {                                                                  \
-      logInfo.EmitErrorMessage(#cond, __FILE__, __LINE__, fmt "\n", ##__VA_ARGS__); \
+      maple::logInfo.EmitErrorMessage(#cond, __FILE__, __LINE__, fmt "\n", ##__VA_ARGS__); \
       if (DEBUG_TEST) {                                                             \
         abort();                                                                    \
       } else {                                                                         \
@@ -249,7 +249,7 @@ class LogInfo {
 #define ASSERT(cond, fmt, ...)                                                      \
   do {                                                                              \
     if (!(cond)) {                                                                  \
-      logInfo.EmitErrorMessage(#cond, __FILE__, __LINE__, fmt "\n", ##__VA_ARGS__); \
+      maple::logInfo.EmitErrorMessage(#cond, __FILE__, __LINE__, fmt "\n", ##__VA_ARGS__); \
       abort();                                                                      \
     }                                                                               \
   } while (0)

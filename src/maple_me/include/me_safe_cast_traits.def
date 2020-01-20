@@ -34,7 +34,7 @@ REGISTER_SAFE_CAST(NaryMeExpr, from.GetMeOp() == kMeOpNary);
 
 #ifdef LOAD_SAFE_CAST_FOR_ME_STMT
 #undef LOAD_SAFE_CAST_FOR_ME_STMT
-REGISTER_SAFE_CAST(PaiassignMeStmt, from.GetOp() == OP_paiassign);
+REGISTER_SAFE_CAST(PiassignMeStmt, from.GetOp() == OP_piassign);
 REGISTER_SAFE_CAST(DassignMeStmt, from.GetOp() == OP_dassign);
 REGISTER_SAFE_CAST(RegassignMeStmt, from.GetOp() == OP_regassign);
 REGISTER_SAFE_CAST(MaydassignMeStmt, from.GetOp() == OP_maydassign);

@@ -44,17 +44,28 @@ GN_RANLIB_CROSS_COMPILER = "/usr/bin/aarch64-linux-gnu-ranlib"
 
 # C/CXX Build flags
 cflags = []
+cflags_cc = []
+cflags_c = []
 if (GN_BUILD_TYPE == "RELEASE") {
-  cflags_cc = [ "-O3" ]
-  cflags_c = [ "-O3" ]
+  cflags_cc += [ "-O2" ]
+  cflags_c += [ "-O2" ]
 } else if (GN_BUILD_TYPE == "DEBUG") {
-  cflags_cc = [
+  cflags_cc += [
     "-O0",
     "-g3",
   ]
-  cflags_c = [
+  cflags_c += [
     "-O0",
     "-g3",
+  ]
+} else {
+  cflags_cc += [
+    "-O2",
+    "-g",
+  ]
+  cflags_c += [
+    "-O2",
+    "-g",
   ]
 }
 

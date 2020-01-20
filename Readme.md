@@ -1,4 +1,4 @@
-﻿# OpenArkCompiler
+# OpenArkCompiler
 
 ## 概述
 -----------------
@@ -16,7 +16,7 @@ OpenArkCompiler是来自华为方舟编译器的开源项目。
 
 ## 开源计划
 **编译器框架代码开源**
-- 时间：2019年8月 
+- 时间：2019年8月
 - 开源范围：编译器IR+中端语言实现
 - 开放能力：
    - 框架开源供参考学习，了解方舟编译器架构及框架代码
@@ -24,6 +24,13 @@ OpenArkCompiler是来自华为方舟编译器的开源项目。
 
 **后续开源范围**
 陆续开源编译器前端、后端、编译优化；完整支持Java程序编译、JavaScript语言应用的编译等。
+
+|开源范围          |2020年3月       |2020年5月             |
+| ------------ | -------------------|--------------------- |
+|编译器前端    |jbc前端基础框架     |前端全量开源          |
+|编译器中端    |独立优化Phase每周持续开源                  ||
+|编译器后端    |后端开源(O0) (aarch64)|独立优化按周开源(O2) (aarch64)|
+|测试框架      |测试框架+基础用例开源| |
 
 **计划持续更新...**
 
@@ -65,7 +72,7 @@ Compiles code of different languages into a set of executable files and efficien
 
 ## Open Source Plan
 **Open source compiler framework code**
-- Time: August, 2019 
+- Time: August, 2019
 - Scope: Compiler IR and middle-end language implementation
 - Benefits:
    - Provides an open source framework for understanding the architecture and framework code of OpenArkCompiler.
@@ -73,6 +80,13 @@ Compiles code of different languages into a set of executable files and efficien
 
 **Subsequent open source scope**
 Open the front end, back end, and compilation optimization of compilers. Support the full compilation of Java programs and JavaScript applications.
+
+|Open Source Scope|March 2020 |May 2020 |
+| ------------ | -------------------|--------------------- |
+|Front end| Jbc front-end basic framework | Front-end full open source |
+|Middle end |Weekly open source optimization phase |       |
+|Back end |Backend open source (O0) (aarch64)|Weekly open source optimization (O2) (aarch64)|
+|Test framework|Test framework and basic Cases|     |
 
 **Updating...**
 

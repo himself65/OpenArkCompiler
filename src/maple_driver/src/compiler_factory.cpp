@@ -84,6 +84,10 @@ ErrorCode CompilerFactory::DeleteTmpFiles(const MplOptions &mplOptions, const st
 
 ErrorCode CompilerFactory::Compile(const MplOptions &mplOptions) {
   std::vector<Compiler*> compilers;
+  if (compilerSelector == nullptr) {
+    LogInfo::MapleLogger() << "Failed! Compiler is null." << "\n";
+    return kErrorCompileFail;
+  }
   ErrorCode ret = compilerSelector->Select(supportedCompilers, mplOptions, compilers);
   if (ret != kErrorNoError) {
     return ret;

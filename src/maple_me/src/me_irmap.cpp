@@ -39,7 +39,7 @@ void MeIRMap::Dump() {
     auto *bb = *bIt;
     bb->DumpHeader(&GetMIRModule());
     LogInfo::MapleLogger() << "frequency : " << bb->GetFrequency() << "\n";
-    bb->DumpMeVarPaiList(this);
+    bb->DumpMeVarPiList(this);
     bb->DumpMeVarPhiList(this);
     bb->DumpMeRegPhiList(this);
     int i = 0;
@@ -47,7 +47,7 @@ void MeIRMap::Dump() {
       if (GetDumpStmtNum()) {
         LogInfo::MapleLogger() << "(" << i++ << ") ";
       }
-      if (meStmt.GetOp() != OP_paiassign) {
+      if (meStmt.GetOp() != OP_piassign) {
         meStmt.EmitStmt(GetSSATab()).Dump(GetMIRModule(), 0);
       }
       meStmt.Dump(this);

@@ -25,7 +25,7 @@ namespace maple {
 class MeStmt;  // circular dependency exists, no other choice
 class MeVarPhiNode;  // circular dependency exists, no other choice
 class MeRegPhiNode;  // circular dependency exists, no other choice
-class PaiassignMeStmt;  // circular dependency exists, no other choice
+class PiassignMeStmt;  // circular dependency exists, no other choice
 class IRMap;  // circular dependency exists, no other choice
 enum BBKind {
   kBBUnknown,  // uninitialized
@@ -68,7 +68,7 @@ class BB {
         phiList(versAlloc->Adapter()),
         meVarPhiList(alloc->Adapter()),
         meRegPhiList(alloc->Adapter()),
-        meVarPaiList(alloc->Adapter()) {
+        meVarPiList(alloc->Adapter()) {
     pred.pop_back();
     pred.pop_back();
     succ.pop_back();
@@ -82,7 +82,7 @@ class BB {
         phiList(versAlloc->Adapter()),
         meVarPhiList(alloc->Adapter()),
         meRegPhiList(alloc->Adapter()),
-        meVarPaiList(alloc->Adapter()),
+        meVarPiList(alloc->Adapter()),
         stmtNodeList(firstStmt, lastStmt) {
     pred.pop_back();
     pred.pop_back();
@@ -218,16 +218,16 @@ class BB {
     RemoveBBFromSucc(succBB);
   }
 
-  void InsertPai(BB &bb, PaiassignMeStmt &s) {
-    if (meVarPaiList.find(&bb) == meVarPaiList.end()) {
-      std::vector<PaiassignMeStmt*> tmp;
-      meVarPaiList[&bb] = tmp;
+  void InsertPi(BB &bb, PiassignMeStmt &s) {
+    if (meVarPiList.find(&bb) == meVarPiList.end()) {
+      std::vector<PiassignMeStmt*> tmp;
+      meVarPiList[&bb] = tmp;
     }
-    meVarPaiList[&bb].push_back(&s);
+    meVarPiList[&bb].push_back(&s);
   }
 
-  MapleMap<BB*, std::vector<PaiassignMeStmt*>> &GetPaiList() {
-    return meVarPaiList;
+  MapleMap<BB*, std::vector<PiassignMeStmt*>> &GetPiList() {
+    return meVarPiList;
   }
 
   bool IsMeStmtEmpty() const {
@@ -248,7 +248,7 @@ class BB {
   void ReplaceMeStmt(MeStmt *stmt, MeStmt *newStmt);
   void DumpMeVarPhiList(IRMap *irMap);
   void DumpMeRegPhiList(IRMap *irMap);
-  void DumpMeVarPaiList(IRMap *irMap);
+  void DumpMeVarPiList(IRMap *irMap);
   StmtNodes &GetStmtNodes() {
     return stmtNodeList;
   }
@@ -374,7 +374,7 @@ class BB {
   MapleMap<const OriginalSt*, PhiNode> phiList;
   MapleMap<OStIdx, MeVarPhiNode*> meVarPhiList;
   MapleMap<OStIdx, MeRegPhiNode*> meRegPhiList;
-  MapleMap<BB*, std::vector<PaiassignMeStmt*>> meVarPaiList;
+  MapleMap<BB*, std::vector<PiassignMeStmt*>> meVarPiList;
   uint32 frequency = 0;
   BBKind kind = kBBUnknown;
   uint32 attributes = 0;

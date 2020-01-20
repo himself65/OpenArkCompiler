@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -17,6 +17,7 @@
 #include "class_hierarchy.h"
 #include "mir_builder.h"
 #include "mpl_scheduler.h"
+#include "utils.h"
 
 namespace maple {
 class FuncOptimizeImpl : public MplTaskParam {
@@ -68,7 +69,7 @@ class FuncOptimizeIterator {
 
 #define OPT_TEMPLATE(OPT_NAME)                                                                 \
   auto *kh = static_cast<KlassHierarchy*>(mrm->GetAnalysisResult(MoPhase_CHA, mod));           \
-  ASSERT(kh, "null ptr check");                                                                \
+  ASSERT_NOT_NULL(kh);                                                                         \
   FuncOptimizeIterator opt(PhaseName(), new OPT_NAME(mod, kh, TRACE_PHASE));                   \
   opt.Run();
 }  // namespace maple

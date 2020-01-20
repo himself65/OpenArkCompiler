@@ -174,8 +174,8 @@ BaseNode &OpMeExpr::EmitExpr(SSATab &ssaTab) {
     case OP_select: {
       auto *ternaryNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<TernaryNode>(
           Opcode(GetOp()), PrimType(GetPrimType()));
-      constexpr size_t kOpndNumOfTernary = 3;
-      for (size_t i = 0; i < kOpndNumOfTernary; ++i) {
+      const size_t opndNumOfTernary = 3;
+      for (size_t i = 0; i < opndNumOfTernary; ++i) {
         ternaryNode->SetOpnd(&opnds[i]->EmitExpr(ssaTab), i);
       }
       return *ternaryNode;
@@ -253,6 +253,7 @@ BaseNode &NaryMeExpr::EmitExpr(SSATab &ssaTab) {
 }
 
 BaseNode &IvarMeExpr::EmitExpr(SSATab &ssaTab) {
+  CHECK_NULL_FATAL(base);
   auto *ireadNode =
       ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<IreadNode>(OP_iread, PrimType(GetPrimType()));
   ireadNode->SetOpnd(&base->EmitExpr(ssaTab));
@@ -284,6 +285,8 @@ StmtNode &DassignMeStmt::EmitStmt(SSATab &ssaTab) {
 }
 
 StmtNode &RegassignMeStmt::EmitStmt(SSATab &ssaTab) {
+  CHECK_NULL_FATAL(lhs);
+  CHECK_NULL_FATAL(rhs);
   RegassignNode *regassignStmt = ssaTab.GetModule().GetMIRBuilder()->CreateStmtRegassign(
       lhs->GetPrimType(), lhs->GetRegIdx(), &rhs->EmitExpr(ssaTab));
   regassignStmt->SetSrcPos(GetSrcPosition());
@@ -291,6 +294,7 @@ StmtNode &RegassignMeStmt::EmitStmt(SSATab &ssaTab) {
 }
 
 StmtNode &MaydassignMeStmt::EmitStmt(SSATab &ssaTab) {
+  CHECK_NULL_FATAL(rhs);
   auto *dassignStmt = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<DassignNode>();
   MIRSymbol *symbol = mayDSSym->GetMIRSymbol();
   if (symbol->IsLocal()) {
@@ -319,6 +323,8 @@ void MeStmt::EmitCallReturnVector(SSATab &ssaTab, CallReturnVector &nRets) {
 }
 
 StmtNode &IassignMeStmt::EmitStmt(SSATab &ssaTab) {
+  CHECK_NULL_FATAL(lhsVar);
+  CHECK_NULL_FATAL(rhs);
   auto *iassignNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<IassignNode>();
   iassignNode->SetTyIdx(tyIdx);
   iassignNode->SetFieldID(lhsVar->GetFieldID());
@@ -470,6 +476,7 @@ StmtNode &NaryMeStmt::EmitStmt(SSATab &ssaTab) {
 
 StmtNode &UnaryMeStmt::EmitStmt(SSATab &ssaTab) {
   auto *unaryStmt = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<UnaryStmtNode>(Opcode(GetOp()));
+  CHECK_NULL_FATAL(opnd);
   unaryStmt->SetOpnd(&opnd->EmitExpr(ssaTab), 0);
   unaryStmt->SetSrcPos(GetSrcPosition());
   return *unaryStmt;
@@ -534,6 +541,7 @@ StmtNode &CommentMeStmt::EmitStmt(SSATab &ssaTab) {
 
 StmtNode &ThrowMeStmt::EmitStmt(SSATab &ssaTab) {
   auto *unaryStmt = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<UnaryStmtNode>(OP_throw);
+  CHECK_NULL_FATAL(opnd);
   unaryStmt->SetOpnd(&opnd->EmitExpr(ssaTab), 0);
   unaryStmt->SetSrcPos(GetSrcPosition());
   return *unaryStmt;

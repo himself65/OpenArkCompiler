@@ -22,16 +22,8 @@
 #include "types_def.h"
 
 namespace maple {
-constexpr uint32 kNoDecouple = 0;
-constexpr uint32 kConservativeDecouple = 1;
-constexpr uint32 kRadicalDecouple = 2;
 class Options {
  public:
-  enum Level {
-    kMpl2MplLevelZero = 0,
-    kMpl2MplLevelOne = 1,
-    kMpl2MplLevelTwo = 2
-  };
   explicit Options(MemPool &memPool) : optionAlloc(&memPool) {}
 
   bool ParseOptions(int argc, char **argv, std::string &fileName) const;
@@ -46,6 +38,17 @@ class Options {
     return phaseSeq.empty() ? "noopt" : phaseSeq[phaseSeq.size() - 1];
   }
 
+  enum Level {
+    kMpl2MplLevelZero = 0,
+    kMpl2MplLevelOne = 1,
+    kMpl2MplLevelTwo = 2
+  };
+  enum DecoupleLevel {
+    kNoDecouple = 0,
+    kConservativeDecouple = 1,
+    kAggressiveDecouple = 2,
+    kDecoupleAndLazy = 3
+  };
   static bool dumpBefore;
   static bool dumpAfter;
   static std::string dumpPhase;

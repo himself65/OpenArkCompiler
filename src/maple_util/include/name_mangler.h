@@ -120,6 +120,8 @@ static constexpr const char kBssSectionStr[] = "__bss_section";
 static constexpr const char kLinkerHashSoStr[] = "__linkerHashSo";
 
 static constexpr const char kStaticFieldNamePrefixStr[] = "__static_field_name";
+static constexpr const char kMplSuffix[] = ".mpl";
+static constexpr const char kClinvocation[] = ".clinvocation";
 static constexpr const char kPackageNameSplitterStr[] = "_2F";
 static constexpr const char kFileNameSplitterStr[] = "$$";
 static constexpr const char kNameSplitterStr[] = "_7C";  // 7C is the ascii code for |
@@ -127,6 +129,7 @@ static constexpr const char kRigthBracketStr[] = "_29";  // 29 is the ascii code
 static constexpr const char kClassNameSplitterStr[] = "_3B_7C";
 static constexpr const char kJavaLangClassStr[] = "Ljava_2Flang_2FClass_3B";
 static constexpr const char kJavaLangObjectStr[] = "Ljava_2Flang_2FObject_3B";
+static constexpr const char kJavaLangClassloader[] = "Ljava_2Flang_2FClassLoader_3B";
 static constexpr const char kJavaLangObjectStrJVersion[] = "Ljava/lang/Object;";
 static constexpr const char kJavaLangStringStr[] = "Ljava_2Flang_2FString_3B";
 static constexpr const char kJavaLangExceptionStr[] = "Ljava_2Flang_2FException_3B";
@@ -149,6 +152,7 @@ static constexpr const char kBindingProtectedRegionStr[] = "__BindingProtectRegi
 
 static constexpr const char kClassNamePrefixStr[] = "L";
 static constexpr const char kClassMethodSplitterStr[] = "_3B";
+static constexpr const char kFuncGetCurrentCl[] = "MCC_GetCurrentClassLoader";
 // Serve as a global flag to indicate whether frequent strings have been compressed
 extern bool doCompression;
 
