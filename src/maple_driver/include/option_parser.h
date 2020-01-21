@@ -31,7 +31,8 @@ enum ArgCheckPolicy {
   kArgCheckPolicyNone,
   kArgCheckPolicyOptional,
   kArgCheckPolicyRequired,
-  kArgCheckPolicyNumeric
+  kArgCheckPolicyNumeric,
+  kArgCheckPolicyBool
 };
 
 struct ExtraOption {
@@ -90,7 +91,7 @@ struct Descriptor {
   const char * const exeName;
 
   // option key mapping to target tool
-  const ExtraOption extras[kMaxExtraOptions];
+  const std::vector<ExtraOption> extras;
 #endif
 
   bool IsEnabledForCurrentBuild() const {
@@ -203,6 +204,12 @@ class OptionParser {
     return nonOptionsArgs.size();
   }
 
+#ifdef OPTION_PARSER_EXTRAOPT
+  void InsertExtraUsage(const Descriptor &usage);
+#endif
+
+  void CreateNoOption(const Descriptor &usage);
+
   void PrintUsage() const;
 
 #ifdef OPTION_PARSER_EXTRAOPT
@@ -223,7 +230,7 @@ class OptionParser {
     }
   }
   bool CheckSpecialOption(const std::string &option, std::string &key, std::string &value);
-  const Descriptor *rawUsages;
+  std::vector<Descriptor> rawUsages;
   std::multimap<std::string, Descriptor> usages;
   std::vector<Option> options;
   std::vector<std::string> nonOptionsArgs;
@@ -232,6 +239,10 @@ enum MatchedIndex {
   kMatchNone,
   kMatchShortOpt,
   kMatchLongOpt
+};
+enum EnabledIndex {
+  kDisable,
+  kEnable
 };
 }  // namespace mapleOption
 

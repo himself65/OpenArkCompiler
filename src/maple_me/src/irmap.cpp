@@ -85,13 +85,18 @@ VarMeExpr *IRMap::CreateVarMeExprVersion(const VarMeExpr &origExpr) {
   return varMeExpr;
 }
 
+MeExpr *IRMap::CreateAddrofMeExpr(OStIdx ostIdx) {
+  AddrofMeExpr addrofMeExpr(-1, ostIdx);
+  addrofMeExpr.SetOp(OP_addrof);
+  addrofMeExpr.SetPtyp(PTY_ptr);
+  addrofMeExpr.SetNumOpnds(0);
+  return HashMeExpr(addrofMeExpr);
+}
+
 MeExpr *IRMap::CreateAddrofMeExpr(MeExpr &expr) {
   if (expr.GetMeOp() == kMeOpVar) {
     auto &varMeExpr = static_cast<VarMeExpr&>(expr);
-    AddrofMeExpr addrOfMe(kInvalidExprID, varMeExpr.GetOStIdx());
-    addrOfMe.SetOp(OP_addrof);
-    addrOfMe.SetPtyp(PTY_ptr);
-    return HashMeExpr(addrOfMe);
+    return CreateAddrofMeExpr(varMeExpr.GetOStIdx());
   } else {
     ASSERT(expr.GetMeOp() == kMeOpIvar, "expecting IVarMeExpr");
     auto &ivarExpr = static_cast<IvarMeExpr&>(expr);
@@ -106,8 +111,42 @@ MeExpr *IRMap::CreateAddrofMeExpr(MeExpr &expr) {
   }
 }
 
-VarMeExpr *IRMap::CreateNewVarMeExpr(OStIdx oStIdx, PrimType pType, FieldID fieldID) {
-  VarMeExpr *varMeExpr = meBuilder.BuildVarMeExpr(exprID++, oStIdx, vst2MeExprTable.size(), pType, fieldID);
+MeExpr *IRMap::CreateAddroffuncMeExpr(PUIdx puIdx) {
+  AddroffuncMeExpr addroffuncMeExpr(-1, puIdx);
+  addroffuncMeExpr.SetOp(OP_addroffunc);
+  addroffuncMeExpr.SetPtyp(PTY_ptr);
+  addroffuncMeExpr.SetNumOpnds(0);
+  return HashMeExpr(addroffuncMeExpr);
+}
+
+MeExpr *IRMap::CreateIaddrofMeExpr(MeExpr &expr, TyIdx tyIdx, MeExpr &base) {
+  ASSERT(expr.GetMeOp() == kMeOpIvar, "expecting IVarMeExpr");
+  auto &ivarExpr = static_cast<IvarMeExpr&>(expr);
+  OpMeExpr opMeExpr(kInvalidExprID);
+  opMeExpr.SetFieldID(ivarExpr.GetFieldID());
+  opMeExpr.SetTyIdx(tyIdx);
+  opMeExpr.SetOpnd(0, &base);
+  opMeExpr.SetOp(OP_iaddrof);
+  opMeExpr.SetPtyp(PTY_ptr);
+  opMeExpr.SetNumOpnds(1);
+  return HashMeExpr(opMeExpr);
+}
+
+MeExpr *IRMap::CreateIvarMeExpr(MeExpr &expr, TyIdx tyIdx, MeExpr &base) {
+  ASSERT(expr.GetMeOp() == kMeOpVar, "expecting IVarMeExpr");
+  auto &varMeExpr = static_cast<VarMeExpr&>(expr);
+  IvarMeExpr ivarMeExpr(-1);
+  ivarMeExpr.SetFieldID(varMeExpr.GetFieldID());
+  ivarMeExpr.SetTyIdx(tyIdx);
+  ivarMeExpr.SetBase(&base);
+  ivarMeExpr.InitBase(varMeExpr.GetOp(), varMeExpr.GetPrimType(), 1);
+  ivarMeExpr.SetOp(OP_iread);
+  ivarMeExpr.SetMuVal(&varMeExpr);
+  return HashMeExpr(ivarMeExpr);
+}
+
+VarMeExpr *IRMap::CreateNewVarMeExpr(OStIdx ostIdx, PrimType pType, FieldID fieldID) {
+  VarMeExpr *varMeExpr = meBuilder.BuildVarMeExpr(exprID++, ostIdx, vst2MeExprTable.size(), pType, fieldID);
   PushBackVerst2MeExprTable(varMeExpr);
   return varMeExpr;
 }
@@ -876,8 +915,8 @@ IntrinsiccallMeStmt *IRMap::CreateIntrinsicCallAssignedMeStmt(MIRIntrinsicID idx
   return meStmt;
 }
 
-MeExpr *IRMap::CreateAddrofMeExprFromNewSymbol(MIRSymbol &st, PUIdx puIdx) {
-  OriginalSt *baseOst = ssaTab.CreateSymbolOriginalSt(st, puIdx, 0);
+MeExpr *IRMap::CreateAddrofMeExprFromSymbol(MIRSymbol &st, PUIdx puIdx) {
+  OriginalSt *baseOst = ssaTab.FindOrCreateSymbolOriginalSt(st, puIdx, 0);
   AddrofMeExpr addrOfMe(kInvalidExprID, baseOst->GetIndex());
   addrOfMe.SetOp(OP_addrof);
   addrOfMe.SetPtyp(PTY_ptr);
