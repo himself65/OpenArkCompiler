@@ -62,6 +62,7 @@ class MeOption {
   static bool stmtNum;
   static uint8 optLevel;
   static bool ignoreIPA;
+  static bool dseKeepRef;
   static bool lessThrowAlias;
   static bool regreadAtReturn;
   static bool propBase;

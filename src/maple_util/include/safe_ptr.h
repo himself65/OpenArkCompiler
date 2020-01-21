@@ -202,6 +202,11 @@ inline bool operator>=(const SafePtr<T> &lhs, std::nullptr_t) = delete;
 template<typename T>
 inline bool operator>=(std::nullptr_t, const SafePtr<T> &rhs) = delete;
 
+template <typename T>
+inline T &ToRef(SafePtr<T> ptr) {
+  return *ptr;
+}
+
 }}
 
 namespace std
