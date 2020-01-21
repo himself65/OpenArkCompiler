@@ -139,7 +139,7 @@ struct GctibRef {
 // MByteRef is self-encoded/decoded and aligned to 1 byte.
 // Unlike DataRef, the format of MByteRef is determined by its value.
 struct MByteRef {
-  void* refVal; // initializer prefers this field to be a pointer
+  void *refVal; // initializer prefers this field to be a pointer
   enum {
     kBiasBitPosition = sizeof(refVal) * 8 - 4, // the most significant 3 bits
   };

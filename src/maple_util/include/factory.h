@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -20,30 +20,25 @@
 
 namespace maple {
 template <typename TKey, typename TObject, typename... TArgs>
-class ObjectFactory {
-  using PtrObject = std::unique_ptr<TObject>;
-  using CreatFunc = std::function<PtrObject(TArgs...)>;
-  using CreatorHolder = std::map<TKey, CreatFunc>;
-
+class ObjectFactory final {
  public:
-  using Key = TKey;
-  using Value = TObject;
+  using key_type = TKey;
+  using creator_type = std::function<std::unique_ptr<TObject>(TArgs...)>;
 
-  void Register(const TKey &key, CreatFunc func) {
-    auto it = objectCreator.find(key);
-    if (it == objectCreator.end()) {
-      objectCreator[key] = func;
+  void Register(const key_type &key, creator_type func) {
+    if (creator.find(key) == creator.end()) {
+      creator[key] = func;
     }
   }
 
-  std::unique_ptr<TObject> Create(const TKey &key, TArgs... Args) const {
-    auto it = objectCreator.find(key);
-    return it == objectCreator.end() ? PtrObject() : (it->second)(Args...);
+  std::unique_ptr<TObject> Create(const key_type &key, TArgs &&...Args) const {
+    auto it = creator.find(key);
+    return it == creator.end() ? std::unique_ptr<TObject>() : (it->second)(std::forward<TArgs>(Args)...);
   }
 
   template <typename TObjectImpl>
-  static PtrObject DefaultCreator(TArgs... Args) {
-    return PtrObject(new TObjectImpl(Args...));
+  static std::unique_ptr<TObject> DefaultCreator(TArgs &&...Args) {
+    return std::make_unique<TObjectImpl>(std::forward<TArgs>(Args)...);
   }
 
   static ObjectFactory &ins() {
@@ -51,50 +46,45 @@ class ObjectFactory {
     return factory;
   }
 
- private:
-  ObjectFactory() = default;
   ObjectFactory(const ObjectFactory&) = delete;
   ObjectFactory &operator=(const ObjectFactory&) = delete;
   ObjectFactory(const ObjectFactory&&) = delete;
   ObjectFactory &operator=(const ObjectFactory&&) = delete;
+
+ private:
+  ObjectFactory() = default;
   ~ObjectFactory() = default;
-  CreatorHolder objectCreator;
+
+ private:
+  using CreatorHolder = std::map<key_type, creator_type>;
+  CreatorHolder creator;
 };
 
-template <typename TFactory, typename TFactory::key TKey, typename TObjectImpl>
-inline bool RegisterFactoryObject() {
-  TFactory::ins().Register(TKey, TFactory::template DefaultCreator<TObjectImpl>);
-  return true;
+template <typename TFactory, typename TFactory::key_type Key, typename TObjectImpl>
+inline void RegisterFactoryObject() {
+  TFactory::ins().Register(Key, TFactory::template DefaultCreator<TObjectImpl>);
 }
 
 template <typename TFactory, typename... TArgs>
-inline auto CreateProductObject(const typename TFactory::key &Key, TArgs... Args)
-    -> std::unique_ptr<typename TFactory::value> {
-  return TFactory::ins().Create(Key, Args...);
+inline auto CreateProductObject(const typename TFactory::key_type &key, TArgs &&...Args) {
+  return TFactory::ins().Create(key, std::forward<TArgs>(Args)...);
 }
 
 template <typename TKey, typename TRet, typename... TArgs>
-class FunctionFactory {
-  using FuncObject = std::function<TRet(TArgs...)>;
-  using FuncHolder = std::map<TKey, FuncObject>;
-
+class FunctionFactory final {
  public:
-  using Key = TKey;
-  using Value = FuncObject;
+  using key_type = TKey;
+  using creator_type = std::function<TRet(TArgs...)>;
 
-  void Register(const TKey &key, FuncObject func) {
-    auto it = funcCreator.find(key);
-    if (it == funcCreator.end()) {
-      funcCreator[key] = func;
+  void Register(const key_type &key, creator_type func) {
+    if (creator.find(key) == creator.end()) {
+      creator[key] = func;
     }
   }
 
-  FuncObject Create(const TKey &key) const {
-    auto it = funcCreator.find(key);
-    if (it == funcCreator.end()) {
-      return nullptr;
-    }
-    return it->second;
+  creator_type Create(const key_type &key) const {
+    auto it = creator.find(key);
+    return it == creator.end() ? nullptr : it->second;
   }
 
   static FunctionFactory &ins() {
@@ -102,23 +92,27 @@ class FunctionFactory {
     return factory;
   }
 
- private:
-  FunctionFactory() = default;
   FunctionFactory(const FunctionFactory&) = delete;
   FunctionFactory &operator=(const FunctionFactory&) = delete;
   FunctionFactory(const FunctionFactory&&) = delete;
   FunctionFactory &operator=(const FunctionFactory&&) = delete;
+
+ private:
+  FunctionFactory() = default;
   ~FunctionFactory() = default;
-  FuncHolder funcCreator;
+
+ private:
+  using CreatorHolder = std::map<key_type, creator_type>;
+  CreatorHolder creator;
 };
 
 template <typename TFactory>
-inline void RegisterFactoryFunction(const typename TFactory::Key &key, typename TFactory::Value func) {
+inline void RegisterFactoryFunction(const typename TFactory::key_type &key, typename TFactory::creator_type func) {
   TFactory::ins().Register(key, func);
 }
 
 template <typename TFactory>
-inline auto CreateProductFunction(const typename TFactory::Key &key) -> typename TFactory::Value {
+inline auto CreateProductFunction(const typename TFactory::key_type &key) {
   return TFactory::ins().Create(key);
 }
 }  // namespace maple

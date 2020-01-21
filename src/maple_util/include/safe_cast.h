@@ -25,7 +25,7 @@ struct safe_cast_condition : std::false_type {};
 template <>                                                             \
 struct safe_cast_condition<type> : std::true_type {                     \
   template <typename FromT>                                             \
-  static inline bool DoIt(const FromT &from) {                                \
+  static inline bool DoIt(const FromT &from) {                          \
     return (condition);                                                 \
   }                                                                     \
 }
