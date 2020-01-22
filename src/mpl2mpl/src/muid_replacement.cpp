@@ -488,8 +488,11 @@ void MUIDReplacement::ReplaceFieldMetaStaticAddr(MIRSymbol &mirSymbol, int64 ind
     return;
   }
   MIRAggConst *aggConst = safe_cast<MIRAggConst>(fieldOffsetDataSt->GetKonst());
+  CHECK_NULL_FATAL(aggConst);
   MIRAggConst *agg = safe_cast<MIRAggConst>(aggConst->GetConstVecItem(0));
+  CHECK_NULL_FATAL(agg);
   MIRConst *elem = agg->GetConstVecItem(0);
+  CHECK_NULL_FATAL(elem);
   CHECK_FATAL(elem->GetKind() == kConstAddrof, "static field must kConstAddrof.");
 
   MIRType &type = elem->GetType();
@@ -758,8 +761,9 @@ void MUIDReplacement::ReplaceFuncTable(const std::string &name) {
     isVtab = true;
   }
   for (auto *&oldTabEntry : safe_cast<MIRAggConst>(oldConst)->GetConstVec()) {
+    CHECK_NULL_FATAL(oldTabEntry);
     if (oldTabEntry->GetKind() == kConstAggConst) {
-      auto *aggrC = safe_cast<MIRAggConst>(oldTabEntry);
+      auto *aggrC = static_cast<MIRAggConst*>(oldTabEntry);
       for (size_t i = 0; i < aggrC->GetConstVec().size(); ++i) {
         ReplaceAddroffuncConst(aggrC->GetConstVecItem(i), i + 1, isVtab);
       }
@@ -770,11 +774,12 @@ void MUIDReplacement::ReplaceFuncTable(const std::string &name) {
 }
 
 void MUIDReplacement::ReplaceAddroffuncConst(MIRConst *&entry, uint32 fieldID, bool isVtab = false) {
+  CHECK_NULL_FATAL(entry);
   if (entry->GetKind() != kConstAddrofFunc) {
     return;
   }
   MIRType &voidType = *GlobalTables::GetTypeTable().GetVoidPtr();
-  auto *funcAddr = safe_cast<MIRAddroffuncConst>(entry);
+  auto *funcAddr = static_cast<MIRAddroffuncConst*>(entry);
   MIRFunction *func = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(funcAddr->GetValue());
   uint64 offset = 0;
   MIRIntConst *constNode = nullptr;
@@ -815,11 +820,11 @@ void MUIDReplacement::ReplaceDataTable(const std::string &name) {
     return;
   }
   for (MIRConst *&oldTabEntry : oldConst->GetConstVec()) {
-    ASSERT(oldTabEntry != nullptr, "null ptr check!");
+    CHECK_NULL_FATAL(oldTabEntry);
     if (oldTabEntry->GetKind() == kConstAggConst) {
-      auto *aggrC = safe_cast<MIRAggConst>(oldTabEntry);
+      auto *aggrC = static_cast<MIRAggConst*>(oldTabEntry);
       for (size_t i = 0; i < aggrC->GetConstVec().size(); ++i) {
-        ASSERT(aggrC->GetConstVecItem(i) != nullptr, "null ptr check!");
+        CHECK_NULL_FATAL(aggrC->GetConstVecItem(i));
         ReplaceAddrofConst(aggrC->GetConstVecItem(i));
         aggrC->GetConstVecItem(i)->SetFieldID(i + 1);
       }
@@ -834,11 +839,11 @@ void MUIDReplacement::ReplaceDecoupleKeyTable(MIRAggConst* oldConst) {
     return;
   }
   for (MIRConst *&oldTabEntry : oldConst->GetConstVec()) {
-    ASSERT(oldTabEntry != nullptr, "null ptr check!");
+    CHECK_NULL_FATAL(oldTabEntry);
     if (oldTabEntry->GetKind() == kConstAggConst) {
-      auto *aggrC = safe_cast<MIRAggConst>(oldTabEntry);
+      auto *aggrC = static_cast<MIRAggConst*>(oldTabEntry);
       for (size_t i = 0; i < aggrC->GetConstVec().size(); ++i) {
-        ASSERT(aggrC->GetConstVecItem(i) != nullptr, "null ptr check!");
+        CHECK_NULL_FATAL(aggrC->GetConstVecItem(i));
         if (aggrC->GetConstVecItem(i)->GetKind() == kConstAggConst) {
           ReplaceDecoupleKeyTable(safe_cast<MIRAggConst>(aggrC->GetConstVecItem(i)));
         } else {
@@ -857,9 +862,9 @@ void MUIDReplacement::ReplaceAddrofConst(MIRConst *&entry) {
     return;
   }
   MIRType &voidType = *GlobalTables::GetTypeTable().GetVoidPtr();
-  auto *addr = safe_cast<MIRAddrofConst>(entry);
+  auto *addr = static_cast<MIRAddrofConst*>(entry);
   MIRSymbol *addrSym = GlobalTables::GetGsymTable().GetSymbolFromStidx(addr->GetSymbolIndex().Idx());
-  ASSERT(addrSym != nullptr, "Invalid MIRSymbol");
+  CHECK_NULL_FATAL(addrSym);
   if (!addrSym->IsReflectionClassInfo() && !addrSym->IsStatic()) {
     return;
   }

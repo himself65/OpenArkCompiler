@@ -27,12 +27,8 @@ bool IsCvtSafe(PrimType typeA, PrimType typeB) {
     return false;
   }
 
-  if ((IsPrimitiveInteger(typeA) && IsPrimitiveInteger(typeB)) ||
-      (IsPrimitiveFloat(typeA) && IsPrimitiveFloat(typeB))) {
-    return true;
-  }
-
-  return false;
+  return (IsPrimitiveInteger(typeA) && IsPrimitiveInteger(typeB)) ||
+         (IsPrimitiveFloat(typeA) && IsPrimitiveFloat(typeB));
 }
 } // namespace
 
@@ -390,8 +386,8 @@ MeExpr &Prop::PropVar(VarMeExpr &varMeExpr, bool atParm, bool checkPhi) {
     }
     MapleVector<VarMeExpr*> opndsVec = defPhi.GetOpnds();
     for (auto it = opndsVec.rbegin() + 1; it != opndsVec.rend(); ++it) {
-      VarMeExpr *phiopnd = *it;
-      MeExpr &opndProp = PropVar(utils::ToRef(phiopnd), atParm, false);
+      VarMeExpr *phiOpnd = *it;
+      MeExpr &opndProp = PropVar(utils::ToRef(phiOpnd), atParm, false);
       if (&opndProp != opndLastProp) {
         return varMeExpr;
       }
