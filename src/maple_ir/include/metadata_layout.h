@@ -288,14 +288,10 @@ struct ClassMetadata {
     return reinterpret_cast<intptr_t>(&(base->initState));
   }
 
-  bool IsInitialized();
-
-  ClassInitState GetInitState();
   void *GetInitStateRawValue() {
     return __atomic_load_n(&initState, __ATOMIC_ACQUIRE);
   }
 
-  void SetInitState(ClassInitState state);
   void SetInitStateRawValue(void *val) {
     __atomic_store_n(&initState, val, __ATOMIC_RELEASE);
   }

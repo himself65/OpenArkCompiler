@@ -30,6 +30,7 @@ src_libmplme = [
   "src/me_phase_manager.cpp",
   "src/me_prop.cpp",
   "src/me_rc_lowering.cpp",
+  "src/me_rename2preg.cpp",
   "src/me_ssa.cpp",
   "src/me_ssa_tab.cpp",
   "src/me_ssa_update.cpp",
