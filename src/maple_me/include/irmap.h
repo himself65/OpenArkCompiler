@@ -55,7 +55,12 @@ class IRMap : public AnalysisResult {
   RegMeExpr *CreateRegRefMeExpr(MeExpr&);
   RegMeExpr *CreateRegRefMeExpr(MIRType&);
   VarMeExpr *CreateVarMeExprVersion(const VarMeExpr&);
+  MeExpr *CreateAddrofMeExpr(OStIdx ostIdx);
   MeExpr *CreateAddrofMeExpr(MeExpr&);
+  MeExpr *CreateAddroffuncMeExpr(PUIdx);
+  MeExpr *CreateAddrofMeExprFromSymbol(MIRSymbol& sym, PUIdx  puIdx);
+  MeExpr *CreateIaddrofMeExpr(MeExpr &expr, TyIdx tyIdx, MeExpr &base);
+  MeExpr *CreateIvarMeExpr(MeExpr &expr, TyIdx tyIdx, MeExpr &base);
   RegMeExpr *CreateRegMeExpr(PrimType);
   RegMeExpr *CreateRegMeExprVersion(const OriginalSt&);
   RegMeExpr *CreateRegMeExprVersion(const RegMeExpr&);
@@ -200,7 +205,6 @@ class IRMap : public AnalysisResult {
   MeExpr *BuildLHSReg(const VersionSt &vst, RegassignMeStmt &defMeStmt, const RegassignNode &regassign);
   RegMeExpr *CreateRefRegMeExpr(const MIRSymbol&);
   MeExpr *CreateMeExprCompare(Opcode, PrimType, PrimType, MeExpr&, MeExpr&);
-  MeExpr *CreateAddrofMeExprFromNewSymbol(MIRSymbol&, PUIdx);
   VarMeExpr *GetOrCreateVarFromVerSt(const VersionSt &vst);
   RegMeExpr *GetOrCreateRegFromVerSt(const VersionSt &vst);
   void BuildChiList(MeStmt&, MapleMap<OStIdx, MayDefNode>&, MapleMap<OStIdx, ChiMeNode*>&);
