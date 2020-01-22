@@ -38,7 +38,7 @@ GN_AR_COMPILER = "${MAPLE_ROOT}/tools/clang_llvm-8.0.0-x86_64-linux-gnu-ubuntu-1
 
 下载**Ninja(v1.9.0)**及**GN(Linux Version)**
 Ninja下载地址：https://github.com/ninja-build/ninja/releases
-GN下载地址：https://archive.softwareheritage.org/browse/content/sha1_git:2dc0d5b26caef44f467de8120b26f8aad8b878be/raw/?filename=gn
+GN下载地址：https://gitee.com/xlnb/gn_binary
 
 将GN和Ninja可执行程序放置到openarkcompiler/tools目录，然后修改这两个文件为可执行:
 ```
