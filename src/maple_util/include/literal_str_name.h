@@ -27,7 +27,7 @@
 
 const std::string kConstString = "_C_STR_";
 const std::string kConstStringPtr = "_PTR_C_STR_";
-constexpr int  kConstStringLen = 7;
+constexpr int kConstStringLen = 7;
 const std::string kLocalStringPrefix = "L_STR_";
 
 union DigestHash {
