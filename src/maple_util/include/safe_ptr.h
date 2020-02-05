@@ -14,10 +14,8 @@
  */
 #ifndef MAPLE_UTIL_SAFE_PTR_H
 #define MAPLE_UTIL_SAFE_PTR_H
-#include <cassert>
 #include <mpl_logging.h>
 #include "ptr.h"
-#include "mir_nodes.h"
 
 namespace maple { namespace utils {
 
