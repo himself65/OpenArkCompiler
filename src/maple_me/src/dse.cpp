@@ -125,7 +125,7 @@ bool DSE::StmtMustRequired(const StmtNode &stmt, BB &bb) {
 void DSE::DumpStmt(const StmtNode &stmt, const std::string &msg) {
   if (enableDebug) {
     LogInfo::MapleLogger() << msg;
-    stmt.Dump(mirModule);
+    stmt.Dump();
   }
 }
 

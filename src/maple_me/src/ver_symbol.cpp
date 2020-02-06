@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -25,7 +25,7 @@ void VersionSt::DumpDefStmt(const MIRModule *mod) const {
   }
   switch (defType) {
     case kAssign:
-      defStmt.assign->Dump(*mod, 0);
+      defStmt.assign->Dump(0);
       return;
     case kPhi:
       defStmt.phi->Dump();

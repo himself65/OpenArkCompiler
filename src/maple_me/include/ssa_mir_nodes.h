@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -480,8 +480,8 @@ class AddrofSSANode : public SSANode {
 
   ~AddrofSSANode() override = default;
 
-  void Dump(const MIRModule &mod, int32 indent) const override {
-    addrofNode->Dump(mod, indent);
+  void Dump(int32 indent) const override {
+    addrofNode->Dump(indent);
     if (GetSSAVar() != nullptr) {
       GetSSAVar()->Dump(true);
     }
@@ -505,11 +505,11 @@ class IreadSSANode : public SSANode {
 
   ~IreadSSANode() override = default;
 
-  void Dump(const MIRModule &mod, int32 indent) const override {
+  void Dump(int32 indent) const override {
     if (GetSSAVar() != nullptr) {
       GetSSAVar()->Dump(true);
     }
-    ireadNode->Dump(mod, indent);
+    ireadNode->Dump(indent);
   }
 
   FieldID GetFieldID() const {
@@ -538,8 +538,8 @@ class RegreadSSANode : public SSANode {
 
   ~RegreadSSANode() override = default;
 
-  void Dump(const MIRModule &mod, int32 indent) const override {
-    regreadNode->Dump(mod, indent);
+  void Dump(int32 indent) const override {
+    regreadNode->Dump(indent);
     if (GetSSAVar() != nullptr) {
       GetSSAVar()->Dump(true);
     }

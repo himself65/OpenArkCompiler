@@ -130,7 +130,7 @@ ErrorCode DriverRunner::ParseInput(const std::string &outputFile, const std::str
 
 void DriverRunner::ProcessMpl2mplAndMePhases(const std::string &outputFile, const std::string &vtableImplFile) const {
   CHECK_MODULE();
-
+  theMIRModule = theModule;
   if (mpl2mplOptions != nullptr || meOptions != nullptr) {
     LogInfo::MapleLogger() << "Processing mpl2mpl&mplme" << '\n';
     MPLTimer timer;
