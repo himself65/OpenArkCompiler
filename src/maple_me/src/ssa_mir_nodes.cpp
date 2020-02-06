@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -20,7 +20,7 @@
 
 namespace maple {
 void GenericSSAPrint(MIRModule &mod, const StmtNode &stmtNode, int32 indent, StmtsSSAPart &stmtsSSAPart) {
-  stmtNode.Dump(mod, indent);
+  stmtNode.Dump(indent);
   // print SSAPart
   Opcode op = stmtNode.GetOpCode();
   AccessSSANodes *ssaPart = stmtsSSAPart.SSAPartOf(stmtNode);

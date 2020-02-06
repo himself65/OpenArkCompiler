@@ -244,7 +244,7 @@ void MIRFunction::Dump(bool withoutBody) {
   MIRSymbol *symbol = GlobalTables::GetGsymTable().GetSymbolFromStidx(symbolTableIdx.Idx());
   ASSERT(symbol != nullptr, "symbol MIRSymbol is null");
   LogInfo::MapleLogger() << "func " << "&" << symbol->GetName();
-
+  theMIRModule = module;
   funcAttrs.DumpAttributes();
 
   if (module->GetFlavor() < kMmpl) {
@@ -257,7 +257,7 @@ void MIRFunction::Dump(bool withoutBody) {
     LogInfo::MapleLogger() << "# [WARNING] skipped dumping because codeMemPool is nullptr " << '\n';
   } else if (GetBody() != nullptr && !withoutBody && symbol->GetStorageClass() != kScExtern) {
     ResetInfoPrinted();  // this ensures funcinfo will be printed
-    GetBody()->Dump(*module, 0, module->GetFlavor() < kMmpl ? GetSymTab() : nullptr,
+    GetBody()->Dump(0, module->GetFlavor() < kMmpl ? GetSymTab() : nullptr,
                     module->GetFlavor() < kMmpl ? GetPregTab() : nullptr, false, true);  // Dump body
   } else {
     LogInfo::MapleLogger() << '\n';

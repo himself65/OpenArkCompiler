@@ -28,7 +28,8 @@ class DSE {
  public:
   DSE(MIRModule &mod, std::vector<BB*> &&bbVec, BB &commonEntryBB, BB &commonExitBB, SSATab &ssaTab,
       Dominance &postDom, bool enableDebug = false)
-      : enableDebug(enableDebug), mirModule(mod), bbVec(bbVec), commonEntryBB(commonEntryBB),
+      : enableDebug(enableDebug),
+        bbVec(bbVec), commonEntryBB(commonEntryBB),
         commonExitBB(commonExitBB), ssaTab(ssaTab),
         postDom(postDom), bbRequired(bbVec.size(), false) {}
 
@@ -106,7 +107,6 @@ class DSE {
   bool StmtMustRequired(const StmtNode &stmt, BB &bb);
   void DumpStmt(const StmtNode &stmt, const std::string &msg);
 
-  MIRModule &mirModule;
   std::vector<BB*> bbVec;
   BB &commonEntryBB;
   BB &commonExitBB;

@@ -1724,7 +1724,8 @@ bool MIRParser::ParseDeclareVar(MIRSymbol &symbol) {
     bool allowEmpty = false;
     // allow empty initialization for vtable, itable, vtableOffsetTable and fieldOffsetTable
     if (symbolStrName.find(VTAB_PREFIX_STR) == 0 || symbolStrName.find(NameMangler::kVtabOffsetTabStr) == 0 ||
-        symbolStrName.find(ITAB_PREFIX_STR) == 0 || symbolStrName.find(NameMangler::kFieldOffsetTabStr) == 0) {
+        symbolStrName.find(ITAB_PREFIX_STR) == 0 || symbolStrName.find(NameMangler::kFieldOffsetTabStr) == 0 ||
+        symbolStrName.find(ITAB_CONFLICT_PREFIX_STR) == 0) {
       allowEmpty = true;
     }
     if (!ParseInitValue(mirConst, tyIdx, allowEmpty)) {
