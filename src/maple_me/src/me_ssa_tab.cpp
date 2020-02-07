@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -18,7 +18,7 @@
 
 // allocate the data structure to store SSA information
 namespace maple {
-AnalysisResult *MeDoSSATab::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, ModuleResultMgr *moduleResMgr) {
+AnalysisResult *MeDoSSATab::Run(MeFunction *func, MeFuncResultMgr*, ModuleResultMgr*) {
   MPLTimer timer;
   timer.Start();
   if (DEBUGFUNC(func)) {
@@ -35,7 +35,7 @@ AnalysisResult *MeDoSSATab::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, M
   for (auto bIt = func->valid_begin(); bIt != func->valid_end(); ++bIt) {
     auto *bb = *bIt;
     for (auto &stmt : bb->GetStmtNodes()) {
-      ssaTab->CreateSSAStmt(stmt, *bb);  // this adds the SSANodes for exprs
+      ssaTab->CreateSSAStmt(stmt);  // this adds the SSANodes for exprs
     }
   }
   if (DEBUGFUNC(func)) {

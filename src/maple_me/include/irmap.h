@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -91,7 +91,7 @@ class IRMap : public AnalysisResult {
   MeVarPhiNode *CreateMeVarPhi(VarMeExpr&);
 
   virtual void Dump() = 0;
-  virtual void SetCurFunction(const BB &bb) {}
+  virtual void SetCurFunction(const BB&) {}
 
   MeExpr *CreateIntConstMeExpr(int64, PrimType);
   MeExpr *CreateConstMeExpr(PrimType, MIRConst&);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -275,7 +275,7 @@ bool MIRSymbol::IgnoreRC() const {
   // Ljava_2Flang_2Freflect_2FMethod_3B
   const auto *pType = static_cast<MIRPtrType*>(type);
   GStrIdx strIdx = GlobalTables::GetTypeTable().GetTypeFromTyIdx(pType->GetPointedTyIdx())->GetNameStrIdx();
-  if (reflectClassNameIdx == 0) {
+  if (reflectClassNameIdx == 0u) {
     reflectClassNameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(
         NameMangler::GetInternalNameLiteral("Ljava_2Flang_2FClass_3B"));
   }
@@ -315,7 +315,7 @@ void MIRSymbol::Dump(bool isLocal, int32 indent, bool suppressInit) const {
   } else if (GetStorageClass() == kScExtern) {
     LogInfo::MapleLogger() << "extern ";
   }
-  if (GetTyIdx() != 0) {
+  if (GetTyIdx() != 0u) {
     GlobalTables::GetTypeTable().GetTypeFromTyIdx(GetTyIdx())->Dump(indent + 1);
   }
   typeAttrs.DumpAttributes();
@@ -331,7 +331,7 @@ void MIRSymbol::Dump(bool isLocal, int32 indent, bool suppressInit) const {
   LogInfo::MapleLogger() << '\n';
 }
 
-void MIRSymbol::DumpAsLiteralVar(int32 indent) const {
+void MIRSymbol::DumpAsLiteralVar() const {
   if (IsLiteral()) {
     LogInfo::MapleLogger() << GetName();
   }
@@ -370,7 +370,7 @@ const std::string &MIRLabelTable::GetName(LabelIdx labelIdx) const {
 
 bool MIRLabelTable::AddToStringLabelMap(LabelIdx labelIdx) {
   CHECK_FATAL(labelIdx < labelTable.size(), "index out of range in MIRLabelTable::AddToStringLabelMap");
-  if (labelTable[labelIdx] == 0) {
+  if (labelTable[labelIdx] == 0u) {
     // generate a label name based on lab_idx
     std::ostringstream labelNameStream;
     labelNameStream << "@" << labelIdx;

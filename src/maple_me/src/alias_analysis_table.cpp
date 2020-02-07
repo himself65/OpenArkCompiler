@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -80,8 +80,8 @@ OriginalSt *AliasAnalysisTable::FindOrCreateExtraLevSymOrRegOriginalSt(OriginalS
   CHECK_FATAL(ost.GetIndirectLev() < INT8_MAX, "boundary check");
   nextLevOst->SetIndirectLev(ost.GetIndirectLev() + 1);
   prevLevelNode.insert(std::make_pair(nextLevOst->GetIndex(), &ost));
-  tyIdx = (tyIdx == 0) ? ost.GetTyIdx() : tyIdx;
-  if (tyIdx != 0) {
+  tyIdx = (tyIdx == 0u) ? ost.GetTyIdx() : tyIdx;
+  if (tyIdx != 0u) {
     // use the tyIdx info from the instruction
     const MIRType *mirType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
     if (mirType->GetKind() == kTypePointer) {

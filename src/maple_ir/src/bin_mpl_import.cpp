@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -407,7 +407,7 @@ void BinaryMplImport::ImportPragmaOfStructType(MIRStructType &type) {
 }
 
 void BinaryMplImport::SetClassTyidxOfMethods(MIRStructType &type) {
-  if (type.GetTypeIndex() != 0) {
+  if (type.GetTypeIndex() != 0u) {
     // set up classTyIdx for methods
     for (size_t i = 0; i < type.GetMethods().size(); ++i) {
       StIdx stidx = type.GetMethodsElement(i).first;
@@ -422,7 +422,7 @@ void BinaryMplImport::SetClassTyidxOfMethods(MIRStructType &type) {
 void BinaryMplImport::ImportClassTypeData(MIRClassType &type) {
   TyIdx tempType = ImportType();
   // Keep the parent_tyidx we first met.
-  if (type.GetParentTyIdx() == 0) {
+  if (type.GetParentTyIdx() == 0u) {
     type.SetParentTyIdx(tempType);
   }
   ImportInterfacesOfClassType(type.GetInterfaceImplemented());
@@ -697,7 +697,7 @@ inline static bool IsObject(const MIRType &type) {
 MIRType &BinaryMplImport::InsertInTypeTables(MIRType &type) {
   MIRType *resultTypePtr = &type;
   TyIdx prevTyIdx = mod.GetTypeNameTab()->GetTyIdxFromGStrIdx(type.GetNameStrIdx());
-  if (prevTyIdx != 0 && !type.IsNameIsLocal()) {
+  if (prevTyIdx != 0u && !type.IsNameIsLocal()) {
     MIRType *prevType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(prevTyIdx);
     if ((IsIncomplete(*prevType) && IsIncomplete(type)) || (!IsIncomplete(*prevType) && !IsIncomplete(type)) ||
         (!IsIncomplete(*prevType) && IsIncomplete(type))) {
@@ -744,12 +744,12 @@ MIRType &BinaryMplImport::InsertInTypeTables(MIRType &type) {
 void BinaryMplImport::SetupEHRootType() {
   // setup eh root type with most recent Ljava_2Flang_2FObject_3B
   GStrIdx gStrIdx = GlobalTables::GetStrTable().GetStrIdxFromName(NameMangler::kJavaLangObjectStr);
-  if (gStrIdx == 0) {
+  if (gStrIdx == 0u) {
     return;
   }
 
   TyIdx tyIdx = GlobalTables::GetTypeNameTable().GetTyIdxFromGStrIdx(gStrIdx);
-  if (tyIdx != 0) {
+  if (tyIdx != 0u) {
     mod.SetThrowableTyIdx(tyIdx);
   }
 }

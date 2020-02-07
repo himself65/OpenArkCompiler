@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -18,7 +18,7 @@
 
 namespace maple {
 MIRSymbol *MIRSymbolBuilder::GetLocalDecl(MIRSymbolTable &symbolTable, GStrIdx strIdx) const {
-  if (strIdx != 0) {
+  if (strIdx != 0u) {
     StIdx stIdx = symbolTable.GetStIdxFromStrIdx(strIdx);
     if (stIdx.FullIdx() != 0) {
       return symbolTable.GetSymbolFromStIdx(stIdx.Idx());
@@ -39,7 +39,7 @@ MIRSymbol *MIRSymbolBuilder::CreateLocalDecl(MIRSymbolTable &symbolTable, GStrId
 }
 
 MIRSymbol *MIRSymbolBuilder::GetGlobalDecl(GStrIdx strIdx) const {
-  if (strIdx != 0) {
+  if (strIdx != 0u) {
     StIdx stIdx = GlobalTables::GetGsymTable().GetStIdxFromStrIdx(strIdx);
     if (stIdx.FullIdx() != 0) {
       return GlobalTables::GetGsymTable().GetSymbolFromStidx(stIdx.Idx());

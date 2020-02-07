@@ -415,7 +415,7 @@ bool MIRParser::ParseStmtDowhile(StmtNodePtr &stmt) {
 
 bool MIRParser::ParseStmtLabel(StmtNodePtr &stmt) {
   GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName());
-  LabelIdx labIdx = mod.CurFunction()->GetLabelTab()->GetStIdxFromStrIdx(strIdx);
+  LabelIdx labIdx = mod.CurFunction()->GetLabelTab()->GetLabelIdxFromStrIdx(strIdx);
   if (labIdx == 0) {
     labIdx = mod.CurFunction()->GetLabelTab()->CreateLabel();
     mod.CurFunction()->GetLabelTab()->SetSymbolFromStIdx(labIdx, strIdx);
@@ -447,7 +447,7 @@ bool MIRParser::ParseStmtGoto(StmtNodePtr &stmt) {
     return false;
   }
   GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName());
-  LabelIdx labIdx = mod.CurFunction()->GetLabelTab()->GetStIdxFromStrIdx(strIdx);
+  LabelIdx labIdx = mod.CurFunction()->GetLabelTab()->GetLabelIdxFromStrIdx(strIdx);
   if (labIdx == 0) {
     labIdx = mod.CurFunction()->GetLabelTab()->CreateLabel();
     mod.CurFunction()->GetLabelTab()->SetSymbolFromStIdx(labIdx, strIdx);
@@ -471,7 +471,7 @@ bool MIRParser::ParseStmtBr(StmtNodePtr &stmt) {
     return false;
   }
   GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName());
-  LabelIdx labIdx = mod.CurFunction()->GetLabelTab()->GetStIdxFromStrIdx(strIdx);
+  LabelIdx labIdx = mod.CurFunction()->GetLabelTab()->GetLabelIdxFromStrIdx(strIdx);
   if (labIdx == 0) {
     labIdx = mod.CurFunction()->GetLabelTab()->CreateLabel();
     mod.CurFunction()->GetLabelTab()->SetSymbolFromStIdx(labIdx, strIdx);
@@ -1041,7 +1041,7 @@ bool MIRParser::ParseCallReturns(CallReturnVector &retsvec) {
         Error("call ParsePrimType failed in ParseCallReturns");
         return false;
       }
-      if (tyidx == 0) {
+      if (tyidx == 0u) {
         Error("expect primitive type but get ");
         return false;
       }
@@ -1084,7 +1084,7 @@ bool MIRParser::ParseStmtJsTry(StmtNodePtr &stmt) {
       return false;
     }
     GStrIdx stridx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName());
-    LabelIdx labidx = mod.CurFunction()->GetLabelTab()->GetStIdxFromStrIdx(stridx);
+    LabelIdx labidx = mod.CurFunction()->GetLabelTab()->GetLabelIdxFromStrIdx(stridx);
     if (labidx == 0) {
       labidx = mod.CurFunction()->GetLabelTab()->CreateLabel();
       mod.CurFunction()->GetLabelTab()->SetSymbolFromStIdx(labidx, stridx);
@@ -1102,7 +1102,7 @@ bool MIRParser::ParseStmtJsTry(StmtNodePtr &stmt) {
       return false;
     }
     GStrIdx stridx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName());
-    LabelIdx labidx = mod.CurFunction()->GetLabelTab()->GetStIdxFromStrIdx(stridx);
+    LabelIdx labidx = mod.CurFunction()->GetLabelTab()->GetLabelIdxFromStrIdx(stridx);
     if (labidx == 0) {
       labidx = mod.CurFunction()->GetLabelTab()->CreateLabel();
       mod.CurFunction()->GetLabelTab()->SetSymbolFromStIdx(labidx, stridx);
@@ -1127,7 +1127,7 @@ bool MIRParser::ParseStmtTry(StmtNodePtr &stmt) {
       return false;
     }
     GStrIdx stridx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName());
-    LabelIdx labidx = mod.CurFunction()->GetLabelTab()->GetStIdxFromStrIdx(stridx);
+    LabelIdx labidx = mod.CurFunction()->GetLabelTab()->GetLabelIdxFromStrIdx(stridx);
     if (labidx == 0) {
       labidx = mod.CurFunction()->GetLabelTab()->CreateLabel();
       mod.CurFunction()->GetLabelTab()->SetSymbolFromStIdx(labidx, stridx);
@@ -1246,7 +1246,7 @@ bool MIRParser::ParseStmtGosub(StmtNodePtr &stmt) {
     return false;
   }
   GStrIdx stridx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName());
-  LabelIdx labidx = mod.CurFunction()->GetLabelTab()->GetStIdxFromStrIdx(stridx);
+  LabelIdx labidx = mod.CurFunction()->GetLabelTab()->GetLabelIdxFromStrIdx(stridx);
   if (labidx == 0) {
     labidx = mod.CurFunction()->GetLabelTab()->CreateLabel();
     mod.CurFunction()->GetLabelTab()->SetSymbolFromStIdx(labidx, stridx);
@@ -1342,7 +1342,7 @@ bool MIRParser::ParseNaryStmtSyncExit(StmtNodePtr &stmt) {
   return ParseNaryStmt(stmt, OP_syncexit);
 }
 
-bool MIRParser::ParseLoc(StmtNodePtr &stmt) {
+bool MIRParser::ParseLoc(StmtNodePtr&) {
   if (lexer.NextToken() != TK_intconst) {
     Error("expect intconst in LOC but get ");
     return false;
@@ -1737,7 +1737,7 @@ bool MIRParser::ParseDeclaredSt(StIdx &stidx) {
   TokenKind varTk = lexer.GetTokenKind();
   stidx.SetFullIdx(0);
   GStrIdx stridx = GlobalTables::GetStrTable().GetStrIdxFromName(lexer.GetName());
-  if (stridx == 0) {
+  if (stridx == 0u) {
     Error("symbol not declared ");
     stidx.SetFullIdx(0);
     return false;
@@ -1763,7 +1763,7 @@ bool MIRParser::ParseDeclaredSt(StIdx &stidx) {
 
 bool MIRParser::ParseDeclaredFunc(PUIdx &puidx) {
   GStrIdx stridx = GlobalTables::GetStrTable().GetStrIdxFromName(lexer.GetName());
-  if (stridx == 0) {
+  if (stridx == 0u) {
     Error("symbol not declared ");
     return false;
   }
@@ -1792,7 +1792,7 @@ bool MIRParser::ParseExprDread(BaseNodePtr &expr) {
   lexer.NextToken();
   TyIdx tyidx(0);
   bool parseRet = ParsePrimType(tyidx);
-  if (tyidx == 0 || !parseRet) {
+  if (tyidx == 0u || !parseRet) {
     Error("expect primitive type but get ");
     return false;
   }
@@ -1831,7 +1831,7 @@ bool MIRParser::ParseExprRegread(BaseNodePtr &expr) {
   if (!ParsePrimType(tyidx)) {
     return false;
   }
-  if (tyidx == 0) {
+  if (tyidx == 0u) {
     Error("expect primitive type but get ");
     return false;
   }
@@ -2624,7 +2624,7 @@ bool MIRParser::ParseScalarValue(MIRConstPtr &stype, MIRType &type) {
   return true;
 }
 
-bool MIRParser::ParseConstAddrLeafExpr(MIRConstPtr &cexpr, MIRType &type) {
+bool MIRParser::ParseConstAddrLeafExpr(MIRConstPtr &cexpr) {
   BaseNode *expr = nullptr;
   if (!ParseExpression(expr)) {
     return false;

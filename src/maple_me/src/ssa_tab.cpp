@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -63,7 +63,7 @@ BaseNode *SSATab::CreateSSAExpr(BaseNode &expr) {
   return nullptr;
 }
 
-void SSATab::CreateSSAStmt(StmtNode &stmt, const BB &curbb) {
+void SSATab::CreateSSAStmt(StmtNode &stmt) {
   for (size_t i = 0; i < stmt.NumOpnds(); ++i) {
     BaseNode *newOpnd = CreateSSAExpr(*stmt.Opnd(i));
     if (newOpnd != nullptr) {

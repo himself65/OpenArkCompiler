@@ -184,7 +184,7 @@ void MeDoLoopCanon::Convert(MeFunction *func, BB *bb, BB *pred, MapleMap<Key, bo
   }
 }
 
-AnalysisResult *MeDoLoopCanon::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) {
+AnalysisResult *MeDoLoopCanon::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr*) {
   auto *dom = static_cast<Dominance*>(m->GetAnalysisResult(MeFuncPhase_DOMINANCE, func));
   ASSERT(dom != nullptr, "dom is null in MeDoLoopCanon::Run");
   // set MeCFG's has_do_while flag

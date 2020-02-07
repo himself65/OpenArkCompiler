@@ -97,7 +97,7 @@ void IdentifyLoops::MarkBB() {
   }
 }
 
-AnalysisResult *MeDoMeLoop::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) {
+AnalysisResult *MeDoMeLoop::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr*) {
   auto *dom = static_cast<Dominance*>(m->GetAnalysisResult(MeFuncPhase_DOMINANCE, func));
   ASSERT(dom, "dominance phase has problem");
   MemPool *meLoopMp = NewMemPool();

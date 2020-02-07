@@ -95,7 +95,7 @@ MIRType *MIRFunction::GetNthParamType(size_t i) {
 
 LabelIdx MIRFunction::GetOrCreateLableIdxFromName(const std::string &name) {
   GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(name);
-  LabelIdx labelIdx = GetLabelTab()->GetStIdxFromStrIdx(strIdx);
+  LabelIdx labelIdx = GetLabelTab()->GetLabelIdxFromStrIdx(strIdx);
   if (labelIdx == 0) {
     labelIdx = GetLabelTab()->CreateLabel();
     GetLabelTab()->SetSymbolFromStIdx(labelIdx, strIdx);
@@ -417,7 +417,7 @@ void MIRFunction::OverrideBaseClassFuncNames(GStrIdx strIdx) {
 // there are two ways to represent the delimiter: '|' or "_7C"
 // where 7C is the ascii value of char '|' in hex
 void MIRFunction::SetBaseClassFuncNames(GStrIdx strIdx) {
-  if (baseClassStrIdx != 0 || baseFuncStrIdx != 0) {
+  if (baseClassStrIdx != 0u || baseFuncStrIdx != 0u) {
     return;
   }
   const std::string name = GlobalTables::GetStrTable().GetStringFromStrIdx(strIdx);

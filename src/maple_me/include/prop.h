@@ -43,9 +43,10 @@ class Prop {
  protected:
   Dominance &dom;
 
-  virtual void UpdateCurFunction(BB &bb) {}
+  virtual void UpdateCurFunction(BB&) {
+  }
 
-  virtual bool LocalToDifferentPU(StIdx stidx, const BB &bb) const {
+  virtual bool LocalToDifferentPU(StIdx, const BB&) const {
     return false;
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -34,7 +34,7 @@ class SSATab : public AnalysisResult {
   ~SSATab() = default;
 
   BaseNode *CreateSSAExpr(BaseNode &expr);
-  void CreateSSAStmt(StmtNode &stmt, const BB &curbb);
+  void CreateSSAStmt(StmtNode &stmt);
   VersionSt *GetVerSt(size_t verIdx) {
     return versionStTable.GetVersionStFromID(verIdx);
   }

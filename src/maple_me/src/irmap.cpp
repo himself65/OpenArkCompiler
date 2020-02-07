@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -243,7 +243,7 @@ RegMeExpr *IRMap::CreateRegRefMeExpr(MeExpr &meExpr) {
     case kMeOpVar: {
       auto &varMeExpr = static_cast<VarMeExpr&>(meExpr);
       const OriginalSt *ost = ssaTab.GetOriginalStFromID(varMeExpr.GetOStIdx());
-      ASSERT(ost->GetTyIdx() != 0, "expect ost->tyIdx to be initialized");
+      ASSERT(ost->GetTyIdx() != 0u, "expect ost->tyIdx to be initialized");
       mirType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ost->GetTyIdx());
       break;
     }
@@ -267,7 +267,7 @@ RegMeExpr *IRMap::CreateRegRefMeExpr(MeExpr &meExpr) {
     case kMeOpOp:
       if (meExpr.GetOp() == OP_retype) {
         auto &opMeExpr = static_cast<OpMeExpr&>(meExpr);
-        ASSERT(opMeExpr.GetTyIdx() != 0, "expect opMeExpr.tyIdx to be initialized");
+        ASSERT(opMeExpr.GetTyIdx() != 0u, "expect opMeExpr.tyIdx to be initialized");
         mirType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(opMeExpr.GetTyIdx());
         break;
       }
@@ -893,7 +893,7 @@ MeExpr *IRMap::CreateMeExprTypeCvt(PrimType pType, PrimType opndptyp, MeExpr &op
 
 IntrinsiccallMeStmt *IRMap::CreateIntrinsicCallMeStmt(MIRIntrinsicID idx, std::vector<MeExpr*> &opnds, TyIdx tyIdx) {
   auto *meStmt =
-      NewInPool<IntrinsiccallMeStmt>(tyIdx == 0 ? OP_intrinsiccall : OP_intrinsiccallwithtype, idx, tyIdx);
+      NewInPool<IntrinsiccallMeStmt>(tyIdx == 0u ? OP_intrinsiccall : OP_intrinsiccallwithtype, idx, tyIdx);
   for (MeExpr *opnd : opnds) {
     meStmt->GetOpnds().push_back(opnd);
   }
@@ -903,7 +903,7 @@ IntrinsiccallMeStmt *IRMap::CreateIntrinsicCallMeStmt(MIRIntrinsicID idx, std::v
 IntrinsiccallMeStmt *IRMap::CreateIntrinsicCallAssignedMeStmt(MIRIntrinsicID idx, std::vector<MeExpr*> &opnds,
                                                               MeExpr *ret, TyIdx tyIdx) {
   auto *meStmt = NewInPool<IntrinsiccallMeStmt>(
-      tyIdx == 0 ? OP_intrinsiccallassigned : OP_intrinsiccallwithtypeassigned, idx, tyIdx);
+      tyIdx == 0u ? OP_intrinsiccallassigned : OP_intrinsiccallwithtypeassigned, idx, tyIdx);
   for (MeExpr *opnd : opnds) {
     meStmt->GetOpnds().push_back(opnd);
   }

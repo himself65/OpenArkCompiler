@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -348,7 +348,7 @@ class MIRSymbol {
   bool IsPrimordialObject() const;
   bool IgnoreRC() const;
   void Dump(bool isLocal, int32 indent, bool suppressinit = false) const;
-  void DumpAsLiteralVar(int32 indent) const;
+  void DumpAsLiteralVar() const;
   bool operator==(const MIRSymbol &msym) const {
     return nameStrIdx == msym.nameStrIdx;
   }
@@ -486,7 +486,7 @@ class MIRLabelTable {
     return labelIdx;
   }
 
-  LabelIdx GetStIdxFromStrIdx(GStrIdx idx) const {
+  LabelIdx GetLabelIdxFromStrIdx(GStrIdx idx) const {
     auto it = strIdxToLabIdxMap.find(idx);
     if (it == strIdxToLabIdxMap.end()) {
       return LabelIdx();

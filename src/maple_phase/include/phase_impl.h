@@ -46,7 +46,7 @@ class FuncOptimizeImpl : public MplTaskParam {
 
   virtual void ProcessBlock(StmtNode &stmt);
   // Each phase needs to implement its own ProcessStmt
-  virtual void ProcessStmt(StmtNode &stmt) {}
+  virtual void ProcessStmt(StmtNode&) {}
 
   KlassHierarchy *klassHierarchy = nullptr;
   MIRFunction *currFunc = nullptr;

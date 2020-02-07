@@ -314,7 +314,7 @@ bool MIRParser::ParseFarrayType(TyIdx &arrayTyIdx) {
     Error("unexpect token parsing flexible array element type ");
     return false;
   }
-  ASSERT(tyIdx != 0, "error encountered parsing flexible array element type ");
+  ASSERT(tyIdx != 0u, "error encountered parsing flexible array element type ");
   if (mod.IsJavaModule()) {
     MIRJarrayType jarrayType(tyIdx);
     arrayTyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&jarrayType);
@@ -361,7 +361,7 @@ bool MIRParser::ParseArrayType(TyIdx &arrayTyIdx) {
     Error("unexpect token parsing array type after ] ");
     return false;
   }
-  ASSERT(tyIdx != 0, "something wrong with parsing element type ");
+  ASSERT(tyIdx != 0u, "something wrong with parsing element type ");
   MIRArrayType arrayType(tyIdx, vec);
   arrayTyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&arrayType);
   return true;
@@ -682,7 +682,7 @@ bool MIRParser::ParseFields(MIRStructType &type) {
       Error("unexpected type parsing struct type at ");
       return false;
     }
-    ASSERT((fieldTyIdx != 0 || notaType), "something wrong parsing struct type");
+    ASSERT((fieldTyIdx != 0u || notaType), "something wrong parsing struct type");
     if (!notaType) {
       FieldAttrs tA;
       if (!ParseFieldAttrs(tA)) {
@@ -798,7 +798,7 @@ bool MIRParser::ParseFields(MIRStructType &type) {
       std::string nameStr = lexer.GetName();
       GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(nameStr);
       TyIdx tyIdx = mod.GetTypeNameTab()->GetTyIdxFromGStrIdx(strIdx);
-      if (tyIdx == 0) {
+      if (tyIdx == 0u) {
         MIRInterfaceType interfaceType(kTypeInterfaceIncomplete);
         interfaceType.SetNameStrIdx(strIdx);
         tyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&interfaceType);
@@ -843,7 +843,7 @@ bool MIRParser::ParseStructType(TyIdx &styIdx) {
   if (!ParseFields(structType)) {
     return false;
   }
-  if (styIdx != 0) {
+  if (styIdx != 0u) {
     MIRType *prevType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(styIdx);
     ASSERT(prevType->GetKind() == kTypeStruct || prevType->GetKind() == kTypeStructIncomplete,
            "type kind should be consistent.");
@@ -874,7 +874,7 @@ bool MIRParser::ParseClassType(TyIdx &styidx) {
   if (!ParseFields(classType)) {
     return false;
   }
-  if (styidx != 0) {
+  if (styidx != 0u) {
     MIRType *prevType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(styidx);
     ASSERT(prevType->GetKind() == kTypeClass || prevType->GetKind() == kTypeClassIncomplete,
            "type kind should be consistent.");
@@ -917,7 +917,7 @@ bool MIRParser::ParseInterfaceType(TyIdx &sTyIdx) {
   if (!ParseFields(interfaceType)) {
     return false;
   }
-  if (sTyIdx != 0) {
+  if (sTyIdx != 0u) {
     MIRType *prevType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(sTyIdx);
     ASSERT(prevType->GetKind() == kTypeInterface || prevType->GetKind() == kTypeInterfaceIncomplete,
            "type kind should be consistent.");
@@ -1114,7 +1114,7 @@ bool MIRParser::ParseDefinedTypename(TyIdx &definedTyIdx, MIRTypeKind kind) {
   }
   if (tk == TK_gname) {
     definedTyIdx = mod.GetTypeNameTab()->GetTyIdxFromGStrIdx(strIdx);
-    if (definedTyIdx == 0) {
+    if (definedTyIdx == 0u) {
       if (kind == kTypeInterface || kind == kTypeInterfaceIncomplete) {
         MIRInterfaceType interfaceType(kTypeInterfaceIncomplete);
         interfaceType.SetNameStrIdx(strIdx);
@@ -1137,14 +1137,14 @@ bool MIRParser::ParseDefinedTypename(TyIdx &definedTyIdx, MIRTypeKind kind) {
     }
   } else {
     definedTyIdx = mod.CurFunction()->GetTyIdxFromGStrIdx(strIdx);
-    if (definedTyIdx == 0) {
+    if (definedTyIdx == 0u) {
       MIRTypeByName nameType(strIdx);
       definedTyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&nameType);
       mod.GetTypeNameTab()->SetGStrIdxToTyIdx(strIdx, definedTyIdx);
     }
   }
   // replace prevTypeIdx with definedTyIdx
-  if (prevTypeIdx != 0 && prevTypeIdx != definedTyIdx) {
+  if (prevTypeIdx != 0u && prevTypeIdx != definedTyIdx) {
     // replace all uses of prevTypeIdx by tyIdx in type_table_
     typeDefIdxMap[prevTypeIdx] = definedTyIdx;
     // remove prevTypeIdx from classlist
@@ -1202,7 +1202,7 @@ bool MIRParser::ParsePointType(TyIdx &tyIdx) {
     Error("unexpect type ");
     return false;
   }
-  ASSERT(pointTypeIdx != 0, "something wrong with parsing element type ");
+  ASSERT(pointTypeIdx != 0u, "something wrong with parsing element type ");
   PrimType pty = mod.IsJavaModule() ? PTY_ref : PTY_ptr;
   if (pdtk == maple::TK_constStr) {
     pty = PTY_ptr;
@@ -1462,7 +1462,7 @@ bool MIRParser::ParseTypedef() {
       return false;
     }
     prevTyIdx = mod.GetTypeNameTab()->GetTyIdxFromGStrIdx(strIdx);
-    if (prevTyIdx != 0) {
+    if (prevTyIdx != 0u) {
       MIRType *prevType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(prevTyIdx);
       CHECK_FATAL(prevType->IsStructType(), "type error");
       prevStructType = static_cast<MIRStructType*>(prevType);
@@ -1488,7 +1488,7 @@ bool MIRParser::ParseTypedef() {
       return false;
     }
     prevTyIdx = mod.CurFunction()->GetTyIdxFromGStrIdx(strIdx);
-    if (prevTyIdx != 0) {
+    if (prevTyIdx != 0u) {
       MIRType *prevType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(prevTyIdx);
       if ((prevType->GetKind() != kTypeByName) && (prevType->IsStructType() && !prevType->IsIncomplete())) {
         Error("redefined local type name ");
@@ -1509,7 +1509,7 @@ bool MIRParser::ParseTypedef() {
     Error("error passing derived type at ");
     return false;
   }
-  if (prevTyIdx != 0) {
+  if (prevTyIdx != 0u) {
   return true;
   }
   // for class/interface types, prev_tyidx could also be set during processing
@@ -1518,7 +1518,7 @@ bool MIRParser::ParseTypedef() {
     prevTyIdx = mod.CurFunction()->GetTyIdxFromGStrIdx(strIdx);
     mod.CurFunction()->SetGStrIdxToTyIdx(strIdx, tyIdx);
     ASSERT(GlobalTables::GetTypeTable().GetTypeTable().empty() == false, "container check");
-    if (GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->GetNameStrIdx() == 0) {
+    if (GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->GetNameStrIdx() == 0u) {
       GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->SetNameStrIdx(strIdx);
       GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->SetNameIsLocal(true);
     }
@@ -1527,7 +1527,7 @@ bool MIRParser::ParseTypedef() {
     mod.GetTypeNameTab()->SetGStrIdxToTyIdx(strIdx, tyIdx);
     mod.PushbackTypeDefOrder(strIdx);
     ASSERT(GlobalTables::GetTypeTable().GetTypeTable().empty() == false, "container check");
-    if (GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->GetNameStrIdx() == 0) {
+    if (GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->GetNameStrIdx() == 0u) {
       GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->SetNameStrIdx(strIdx);
     }
   }
@@ -1537,12 +1537,12 @@ bool MIRParser::ParseTypedef() {
   if (!isLocal && (type->GetKind() == kTypeClass || type->GetKind() == kTypeClassIncomplete ||
                    type->GetKind() == kTypeInterface || type->GetKind() == kTypeInterfaceIncomplete)) {
     prevTyIdx = GlobalTables::GetTypeNameTable().GetTyIdxFromGStrIdx(strIdx);
-    if (prevTyIdx == 0) {
+    if (prevTyIdx == 0u) {
       GlobalTables::GetTypeNameTable().SetGStrIdxToTyIdx(strIdx, tyIdx);
     }
     // setup eh root type
     MIRType *ehType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
-    if (mod.GetThrowableTyIdx() == 0 &&
+    if (mod.GetThrowableTyIdx() == 0u &&
         (ehType->GetKind() == kTypeClass || ehType->GetKind() == kTypeClassIncomplete)) {
       GStrIdx ehTypeNameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(
           NameMangler::GetInternalNameLiteral(NameMangler::kJavaLangObjectStr));
@@ -1972,7 +1972,7 @@ bool MIRParser::ParseInitValue(MIRConstPtr &theConst, TyIdx tyIdx, bool allowEmp
       }
       lexer.NextToken();
     } else if (IsConstAddrExpr(tokenKind)) {
-      if (!ParseConstAddrLeafExpr(mirConst, type)) {
+      if (!ParseConstAddrLeafExpr(mirConst)) {
         Error("ParseInitValue expect const addr expr");
         return false;
       }
@@ -2007,7 +2007,7 @@ bool MIRParser::ParseInitValue(MIRConstPtr &theConst, TyIdx tyIdx, bool allowEmp
           }
           lexer.NextToken();
         } else if (IsConstAddrExpr(tokenKind)) {
-          if (!ParseConstAddrLeafExpr(subConst, type)) {
+          if (!ParseConstAddrLeafExpr(subConst)) {
             Error("ParseInitValue expect const addr expr");
             return false;
           }
@@ -2067,7 +2067,7 @@ bool MIRParser::ParseInitValue(MIRConstPtr &theConst, TyIdx tyIdx, bool allowEmp
           return false;
         }
         fieldTyIdx = static_cast<MIRStructType&>(type).GetFieldTyIdx(theFieldID);
-        if (fieldTyIdx == 0) {
+        if (fieldTyIdx == 0u) {
           Error("field ID out of range at struct initialization at ");
           return false;
         }
@@ -2080,7 +2080,7 @@ bool MIRParser::ParseInitValue(MIRConstPtr &theConst, TyIdx tyIdx, bool allowEmp
           }
           lexer.NextToken();
         } else if (IsConstAddrExpr(tokenKind)) {
-          if (!ParseConstAddrLeafExpr(subConst, type)) {
+          if (!ParseConstAddrLeafExpr(subConst)) {
             Error("ParseInitValue expect const addr expr");
             return false;
           }
@@ -2153,7 +2153,7 @@ bool MIRParser::ParseFuncInfo() {
   return false;
 }
 
-bool MIRParser::ParseAlias(StmtNodePtr &stmt) {
+bool MIRParser::ParseAlias(StmtNodePtr&) {
   TokenKind nameTk = lexer.NextToken();
   if (nameTk != TK_lname) {
     Error("expect local in ALIAS but get ");
@@ -2218,7 +2218,7 @@ static void GenJStringType(MIRModule &module) {
   // Global
   module.GetTypeNameTab()->SetGStrIdxToTyIdx(strIdx, tyIdx);
   ASSERT(GlobalTables::GetTypeTable().GetTypeTable().empty() == false, "container check");
-  if (GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->GetNameStrIdx() == 0) {
+  if (GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->GetNameStrIdx() == 0u) {
     GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->SetNameStrIdx(strIdx);
   }
 }
@@ -2665,7 +2665,7 @@ bool MIRParser::ParseMIRForImport() {
       }
     }
   }
-  if (GlobalTables::GetStrTable().GetStrIdxFromName("__class_meta__") == 0) {
+  if (GlobalTables::GetStrTable().GetStrIdxFromName("__class_meta__") == 0u) {
     GenJStringType(mod);
   }
   GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(importFileName);

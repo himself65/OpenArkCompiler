@@ -56,7 +56,7 @@ void OptionParser::InsertExtraUsage(const Descriptor &usage) {
                              usage.checkPolicy,
                              usage.help,
                              usage.extras[index].exeName,
-                             { { nullptr } } };
+                             { { nullptr, nullptr, nullptr, nullptr } } };
     if (usage.shortOption != nullptr) {
       InsertOption(std::string(usage.shortOption), tempUsage);
     }

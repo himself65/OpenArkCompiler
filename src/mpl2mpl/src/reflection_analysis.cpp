@@ -741,7 +741,7 @@ void ReflectionAnalysis::GenMethodMeta(const Klass &klass, MIRStructType &method
   mirBuilder.AddAddrofFieldConst(methodsInfoType, newConst, fieldID++, *dklassSt);
   // @addr : Function address or point function addr if lazyBinding or decouple
   if (isLazyBindingOrDecouple) {
-    MIRSymbol *methodAddrSt = GenMethodAddrData(klass, funcSym);
+    MIRSymbol *methodAddrSt = GenMethodAddrData(funcSym);
     if (methodAddrSt != nullptr) {
       mirBuilder.AddAddrofFieldConst(methodsInfoType, newConst, fieldID++, *methodAddrSt);
     } else {
@@ -807,7 +807,7 @@ MIRSymbol *ReflectionAnalysis::GenMethodsMeta(const Klass &klass,
   return methodsArraySt;
 }
 
-MIRSymbol *ReflectionAnalysis::GenMethodAddrData(const Klass &klass, const MIRSymbol &funcSym) {
+MIRSymbol *ReflectionAnalysis::GenMethodAddrData(const MIRSymbol &funcSym) {
   MIRModule &module = *mirModule;
   MIRStructType &methodAddrType =
       static_cast<MIRStructType&>(*GlobalTables::GetTypeTable().GetTypeFromTyIdx(methodAddrDataTyIdx));
@@ -1494,7 +1494,7 @@ void ReflectionAnalysis::GenClassMetaData(Klass &klass) {
 #endif  // USE_32BIT_REF
   // @itab
   GStrIdx strIdx = GlobalTables::GetStrTable().GetStrIdxFromName(ITAB_PREFIX_STR + klass.GetKlassName());
-  if (strIdx != 0) {
+  if (strIdx != 0u) {
     MIRSymbol *itableSymbolType = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(strIdx);
     mirBuilder.AddAddrofFieldConst(classMetadataType, *newConst, fieldID++, *itableSymbolType);
   } else {
@@ -1502,7 +1502,7 @@ void ReflectionAnalysis::GenClassMetaData(Klass &klass) {
   }
   // @vtab
   strIdx = GlobalTables::GetStrTable().GetStrIdxFromName(VTAB_PREFIX_STR + klass.GetKlassName());
-  if (strIdx != 0) {
+  if (strIdx != 0u) {
     MIRSymbol *vtableSymbolType = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(strIdx);
     mirBuilder.AddAddrofFieldConst(classMetadataType, *newConst, fieldID++, *vtableSymbolType);
   } else {
@@ -1572,7 +1572,7 @@ TyIdx ReflectionAnalysis::GenMetaStructType(MIRModule &mirModule, MIRStructType 
   // Global?
   mirModule.GetTypeNameTab()->SetGStrIdxToTyIdx(strIdx, tyIdx);
   mirModule.PushbackTypeDefOrder(strIdx);
-  if (GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->GetNameStrIdx() == 0) {
+  if (GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->GetNameStrIdx() == 0u) {
     GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->SetNameStrIdx(strIdx);
   }
   return tyIdx;
@@ -1587,7 +1587,7 @@ MIRType *ReflectionAnalysis::GetRefFieldType() {
 }
 
 void ReflectionAnalysis::GenMetadataType(MIRModule &mirModule) {
-  if (classMetadataTyIdx != 0) { // Types have been generated.
+  if (classMetadataTyIdx != 0u) { // Types have been generated.
     return;
   }
   // ClassMetaType

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -187,7 +187,7 @@ class ReflectionAnalysis : public AnalysisResult {
   uint32 GetMethodFlag(const MIRFunction &func) const;
   void GenFieldOffsetConst(MIRAggConst &newConst, const Klass &klass, const MIRStructType &type,
                            std::pair<FieldPair, int> &fieldInfo, uint32 metaFieldID);
-  MIRSymbol *GenMethodAddrData(const Klass &klass, const MIRSymbol &funcSym);
+  MIRSymbol *GenMethodAddrData(const MIRSymbol &funcSym);
   static void GenMetadataType(MIRModule &mirModule);
   static MIRType *GetRefFieldType();
   static TyIdx GenMetaStructType(MIRModule &mirModule, MIRStructType &metaType, const std::string &str);

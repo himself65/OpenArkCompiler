@@ -110,7 +110,9 @@ class MeExpr {
     this->numOpnds = static_cast<uint8>(numOpnds);
   }
 
-  virtual void Dump(IRMap*, int32 indent = 0) const {}
+  virtual void Dump(IRMap*, int32 indent = 0) const {
+    (void)indent;
+  }
 
   virtual bool IsZero() const {
     return false;
@@ -136,15 +138,15 @@ class MeExpr {
   bool IsTheSameWorkcand(const MeExpr&) const;
   virtual void SetDefByStmt(MeStmt&) {}
 
-  virtual MeExpr *GetOpnd(size_t i) const {
+  virtual MeExpr *GetOpnd(size_t) const {
     return nullptr;
   }
 
-  virtual void SetOpnd(size_t idx, MeExpr *opndsVal) {
+  virtual void SetOpnd(size_t, MeExpr*) {
     ASSERT(false, "Should not reach here");
   }
 
-  virtual MeExpr *GetIdenticalExpr(MeExpr &expr) const {
+  virtual MeExpr *GetIdenticalExpr(MeExpr&) const {
     ASSERT(false, "Should not reach here");
     return nullptr;
   }
@@ -1136,7 +1138,7 @@ class MeStmt {
     return nullptr;
   }
 
-  virtual void SetOpnd(uint32 idx, MeExpr *val) {}
+  virtual void SetOpnd(uint32, MeExpr*) {}
 
   bool IsAssertBce() const {
     return op == OP_assertlt || op == OP_assertge;
@@ -1222,7 +1224,7 @@ class MeStmt {
     return nullptr;
   }
 
-  virtual MeExpr *GetLHSRef(SSATab &ssaTab, bool excludeLocalRefVar) {
+  virtual MeExpr *GetLHSRef(SSATab&, bool) {
     return nullptr;
   }
 
@@ -1447,8 +1449,9 @@ class MustDefMeNode {
 
 class PiassignMeStmt : public MeStmt {
  public:
-  explicit PiassignMeStmt(MapleAllocator *alloc)
-      : MeStmt(OP_piassign) {}
+  explicit PiassignMeStmt(MapleAllocator*)
+      : MeStmt(OP_piassign) {
+  }
   ~PiassignMeStmt() = default;
 
   void SetLHS(VarMeExpr &l) {
@@ -1518,7 +1521,7 @@ class DassignMeStmt : public MeStmt {
     return rhs;
   }
 
-  void SetOpnd(uint32 idx, MeExpr *val) {
+  void SetOpnd(uint32, MeExpr *val) {
     rhs = val;
   }
 
@@ -1643,7 +1646,7 @@ class RegassignMeStmt : public MeStmt {
     return rhs;
   }
 
-  void SetOpnd(uint32 idx, MeExpr *val) {
+  void SetOpnd(uint32, MeExpr *val) {
     rhs = val;
   }
 
@@ -1704,7 +1707,7 @@ class MaydassignMeStmt : public MeStmt {
     return rhs;
   }
 
-  void SetOpnd(uint32 idx, MeExpr *val) {
+  void SetOpnd(uint32, MeExpr *val) {
     rhs = val;
   }
 
@@ -1791,14 +1794,15 @@ class IassignMeStmt : public MeStmt {
       : MeStmt(stt),
         chiList(std::less<OStIdx>(), alloc->Adapter()) {}
 
-  IassignMeStmt(MapleAllocator *alloc, const IassignMeStmt &iss)
+  IassignMeStmt(MapleAllocator*, const IassignMeStmt &iss)
       : MeStmt(iss),
         tyIdx(iss.tyIdx),
         lhsVar(iss.lhsVar),
         rhs(iss.rhs),
-        chiList(iss.chiList) {}
+        chiList(iss.chiList) {
+  }
 
-  IassignMeStmt(MapleAllocator *alloc, TyIdx tidx, IvarMeExpr *l, MeExpr *r, const MapleMap<OStIdx, ChiMeNode*> *clist)
+  IassignMeStmt(MapleAllocator*, TyIdx tidx, IvarMeExpr *l, MeExpr *r, const MapleMap<OStIdx, ChiMeNode*> *clist)
       : MeStmt(OP_iassign), tyIdx(tidx), lhsVar(l), rhs(r), chiList(*clist) {
     l->SetDefStmt(this);
   }
@@ -2325,11 +2329,11 @@ class UnaryMeStmt : public MeStmt {
     return kOperandNumUnary;
   }
 
-  MeExpr *GetOpnd(size_t idx) const {
+  MeExpr *GetOpnd(size_t) const {
     return opnd;
   }
 
-  void SetOpnd(uint32 idx, MeExpr *val) {
+  void SetOpnd(uint32, MeExpr *val) {
     opnd = val;
   }
 
@@ -2536,11 +2540,11 @@ class ThrowMeStmt : public WithMuMeStmt {
     return kOperandNumUnary;
   }
 
-  MeExpr *GetOpnd(size_t idx) const {
+  MeExpr *GetOpnd(size_t) const {
     return opnd;
   }
 
-  void SetOpnd(uint32 idx, MeExpr *val) {
+  void SetOpnd(uint32, MeExpr *val) {
     opnd = val;
   }
 
@@ -2640,7 +2644,7 @@ class AssertMeStmt : public MeStmt {
 };
 
 MapleMap<OStIdx, ChiMeNode*> *GenericGetChiListFromVarMeExpr(VarMeExpr &expr);
-void DumpMuList(IRMap *irMap, const MapleMap<OStIdx, VarMeExpr*> &muList, int32 indent);
+void DumpMuList(IRMap *irMap, const MapleMap<OStIdx, VarMeExpr*> &muList);
 void DumpChiList(IRMap *irMap, const MapleMap<OStIdx, ChiMeNode*> &chiList);
 class DumpOptions {
  public:

@@ -367,7 +367,7 @@ class MIRFunction {
 
   // tell whether this function is a Java method
   bool IsJava() const {
-    return classTyIdx != 0;
+    return classTyIdx != 0u;
   }
 
   const MIRType *GetNodeType(const BaseNode &node) const;
