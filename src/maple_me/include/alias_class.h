@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -32,7 +32,7 @@ class AliasElem {
 
   ~AliasElem() = default;
 
-  void Dump(const MIRModule &mod) const;
+  void Dump() const;
 
   uint32 GetClassID() const {
     return id;
@@ -152,7 +152,7 @@ class AliasClass : public AnalysisResult {
   void CollectNotAllDefsSeenAes();
   void CreateClassSets();
   void DumpClassSets();
-  void InsertMayDefUseCall(StmtNode &stmt, BBId bbID, bool hasSideEffect, bool hasNoPrivateDefEffect);
+  void InsertMayDefUseCall(StmtNode &stmt, bool hasSideEffect, bool hasNoPrivateDefEffect);
   void GenericInsertMayDefUse(StmtNode &stmt, BBId bbID);
 
  protected:
@@ -179,7 +179,7 @@ class AliasClass : public AnalysisResult {
   void CollectMayDefForMustDefs(const StmtNode &stmt, std::set<OriginalSt*> &mayDefOsts);
   void CollectMayUseForCallOpnd(const StmtNode &stmt, std::set<OriginalSt*> &mayUseOsts);
   void InsertMayDefNodeForCall(std::set<OriginalSt*> &mayDefOsts, MapleMap<OStIdx, MayDefNode> &mayDefNodes,
-                               StmtNode &stmt, BBId bbID, bool hasNoPrivateDefEffect);
+                               StmtNode &stmt, bool hasNoPrivateDefEffect);
   void InsertMayUseExpr(BaseNode &expr);
   void CollectMayUseFromGlobalsAffectedByCalls(std::set<OriginalSt*> &mayUseOsts);
   void CollectMayUseFromNADS(std::set<OriginalSt*> &mayUseOsts);

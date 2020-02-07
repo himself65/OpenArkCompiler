@@ -402,6 +402,7 @@ class MIRType {
   virtual bool IsStructType() {
     return false;
   }
+
   virtual MIRType *CopyMIRTypeNode() const {
     return new MIRType(*this);
   }
@@ -965,7 +966,7 @@ class MIRStructType : public MIRType {
     CHECK_FATAL(false, "can not use GetStaticValue");
   }
 
-  virtual void PushbackMIRInfo(const MIRInfoPair &pair) {
+  virtual void PushbackMIRInfo(const MIRInfoPair&) {
     CHECK_FATAL(false, "can not use PushbackMIRInfo");
   }
 
@@ -977,7 +978,7 @@ class MIRStructType : public MIRType {
     CHECK_FATAL(false, "can not use PushbackStaticValue");
   }
 
-  virtual void PushbackIsString(bool isString) {
+  virtual void PushbackIsString(bool) {
     CHECK_FATAL(false, "can not use PushbackIsString");
   }
 
@@ -1032,14 +1033,14 @@ class MIRJarrayType : public MIRFarrayType {
   const std::string &GetJavaName();
 
   bool IsPrimitiveArray() {
-    if (javaNameStrIdx == 0) {
+    if (javaNameStrIdx == 0u) {
       DetermineName();
     }
     return fromPrimitive;
   }
 
   int GetDim() {
-    if (javaNameStrIdx == 0) {
+    if (javaNameStrIdx == 0u) {
       DetermineName();
     }
     return dim;

@@ -166,7 +166,7 @@ MIRType *TypeTable::GetOrCreateClassOrInterface(const std::string &name, MIRModu
     }
     module.PushbackTypeDefOrder(strIdx);
     module.GetTypeNameTab()->SetGStrIdxToTyIdx(strIdx, tyIdx);
-    if (typeTable[tyIdx]->GetNameStrIdx() == 0) {
+    if (typeTable[tyIdx]->GetNameStrIdx() == 0u) {
       typeTable[tyIdx]->SetNameStrIdx(strIdx);
     }
   }

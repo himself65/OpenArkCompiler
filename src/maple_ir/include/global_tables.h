@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -371,7 +371,7 @@ class StringTable {
 
   U GetOrCreateStrIdxFromName(const T &str) {
     U strIdx = GetStrIdxFromName(str);
-    if (strIdx == 0) {
+    if (strIdx == 0u) {
       strIdx.reset(stringTable.size());
       T *newStr = new T(str);
       stringTable.push_back(newStr);

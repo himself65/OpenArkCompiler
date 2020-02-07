@@ -129,7 +129,7 @@ void DSE::DumpStmt(const StmtNode &stmt, const std::string &msg) {
   }
 }
 
-void DSE::CheckRemoveCallAssignedReturn(BB &bb, StmtNode &stmt) {
+void DSE::CheckRemoveCallAssignedReturn(StmtNode &stmt) {
   if (kOpcodeInfo.IsCallAssigned(stmt.GetOpCode())) {
     MapleVector<MustDefNode> &mustDefs = ssaTab.GetStmtMustDefNodes(stmt);
     for (auto &node : mustDefs) {
@@ -174,7 +174,7 @@ void DSE::RemoveNotRequiredStmtsInBB(BB &bb) {
       continue;
     }
 
-    CheckRemoveCallAssignedReturn(bb, stmt);
+    CheckRemoveCallAssignedReturn(stmt);
   }
 }
 

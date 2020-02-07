@@ -21,7 +21,7 @@ const std::string &Jbc2MplCompiler::GetBinName() const {
   return kBinNameJbc2mpl;
 }
 
-DefaultOption Jbc2MplCompiler::GetDefaultOptions(const MplOptions &options) const {
+DefaultOption Jbc2MplCompiler::GetDefaultOptions(const MplOptions&) const {
   DefaultOption defaultOptions = { nullptr, 0 };
   return defaultOptions;
 }

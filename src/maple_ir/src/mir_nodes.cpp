@@ -94,7 +94,7 @@ bool AddrofNode::CheckNode(const MIRModule &mod) const {
       return (subKind == kTypeBitField && VerifyPrimType(subType->GetPrimType(), GetPrimType())) ||
              (subKind == kTypeScalar && IsPrimitiveScalar(GetPrimType())) ||
              (subKind == kTypePointer && IsPrimitivePoint(GetPrimType())) ||
-             (subKind == kTypeStruct && GetPrimType() == PTY_agg) || (fTyIdx != 0 && GetPrimType() == PTY_agg);
+             (subKind == kTypeStruct && GetPrimType() == PTY_agg) || (fTyIdx != 0u && GetPrimType() == PTY_agg);
     }
     case kTypeClass:
     case kTypeClassIncomplete: {
@@ -465,7 +465,7 @@ void IntrinsicopNode::Dump(int32 indent) const {
   NaryOpnds::Dump(indent);
 }
 
-void ConstvalNode::Dump(int32 indent) const {
+void ConstvalNode::Dump(int32) const {
   if (GetConstVal()->GetType().GetKind() != kTypePointer) {
     BaseNode::DumpBase(0);
     LogInfo::MapleLogger() << " ";
@@ -473,13 +473,13 @@ void ConstvalNode::Dump(int32 indent) const {
   GetConstVal()->Dump();
 }
 
-void ConststrNode::Dump(int32 indent) const {
+void ConststrNode::Dump(int32) const {
   BaseNode::DumpBase(0);
   const std::string kStr = GlobalTables::GetUStrTable().GetStringFromStrIdx(UStrIdx(strIdx));
   PrintString(kStr);
 }
 
-void Conststr16Node::Dump(int32 indent) const {
+void Conststr16Node::Dump(int32) const {
   BaseNode::DumpBase(0);
   const std::u16string kStr16 = GlobalTables::GetU16StrTable().GetStringFromStrIdx(U16StrIdx(strIdx));
   // UTF-16 string are dumped as UTF-8 string in mpl to keep the printable chars in ascii form
@@ -488,20 +488,20 @@ void Conststr16Node::Dump(int32 indent) const {
   PrintString(str);
 }
 
-void SizeoftypeNode::Dump(int32 indent) const {
+void SizeoftypeNode::Dump(int32) const {
   BaseNode::DumpBase(0);
   LogInfo::MapleLogger() << " ";
   GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->Dump(0);
 }
 
-void FieldsDistNode::Dump(int32 indent) const {
+void FieldsDistNode::Dump(int32) const {
   BaseNode::DumpBase(0);
   LogInfo::MapleLogger() << " ";
   GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->Dump(0);
   LogInfo::MapleLogger() << " " << fieldID1 << " " << fieldID2;
 }
 
-void AddrofNode::Dump(int32 indent) const {
+void AddrofNode::Dump(int32) const {
   LogInfo::MapleLogger() << kOpcodeInfo.GetTableItemAt(GetOpCode()).name << " " << GetPrimTypeName(GetPrimType());
   const MIRSymbol *st = theMIRModule->CurFunction()->GetLocalOrGlobalSymbol(GetStIdx());
   LogInfo::MapleLogger() << (GetStIdx().Islocal() ? " %" : " $");
@@ -511,7 +511,7 @@ void AddrofNode::Dump(int32 indent) const {
   }
 }
 
-void RegreadNode::Dump(int32 indent) const {
+void RegreadNode::Dump(int32) const {
   LogInfo::MapleLogger() << kOpcodeInfo.GetTableItemAt(GetOpCode()).name << " " << GetPrimTypeName(GetPrimType());
   if (regIdx >= 0) {
     LogInfo::MapleLogger()
@@ -548,7 +548,7 @@ void AddroffuncNode::Dump(int32 indent) const {
   LogInfo::MapleLogger() << " &" << GlobalTables::GetGsymTable().GetSymbolFromStidx(func->GetStIdx().Idx())->GetName();
 }
 
-void AddroflabelNode::Dump(int32 indent) const {
+void AddroflabelNode::Dump(int32) const {
   LogInfo::MapleLogger() << kOpcodeInfo.GetTableItemAt(GetOpCode()).name << " " << GetPrimTypeName(GetPrimType());
   LogInfo::MapleLogger() << " @" << theMIRModule->CurFunction()->GetLabelName((LabelIdx)offset);
 }
@@ -805,7 +805,7 @@ void UnaryStmtNode::Dump() const {
   this->BaseNode::Dump();
 }
 
-void GCMallocNode::Dump(int32 indent) const {
+void GCMallocNode::Dump(int32) const {
   BaseNode::DumpBase(0);
   LogInfo::MapleLogger() << " ";
   GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->Dump(0);
@@ -987,7 +987,7 @@ const MIRSymbol *CallNode::GetCallReturnSymbol(const MIRModule &mod) const {
 
 void CallNode::Dump(int32 indent, bool newline) const {
   StmtNode::DumpBase(indent);
-  if (tyIdx != 0) {
+  if (tyIdx != 0u) {
     LogInfo::MapleLogger() << " ";
     GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->Dump(indent + 1);
   }
@@ -1024,7 +1024,7 @@ MIRType *IntrinsiccallNode::GetCallReturnType() {
 
 void IntrinsiccallNode::Dump(int32 indent, bool newline) const {
   StmtNode::DumpBase(indent);
-  if (tyIdx != 0) {
+  if (tyIdx != 0u) {
     LogInfo::MapleLogger() << " ";
     GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->Dump(indent + 1);
   }
@@ -1108,7 +1108,7 @@ void BlockNode::Dump(int32 indent, const MIRSymbolTable *theSymTab, MIRPregTable
   LogInfo::MapleLogger() << "}\n";
 }
 
-void LabelNode::Dump(int32 indent) const {
+void LabelNode::Dump(int32) const {
   if (srcPosition.FileNum() != 0 && srcPosition.LineNum() != 0 && srcPosition.LineNum() != lastPrintedLineNum &&
       theMIRModule->CurFunction()->WithLocInfo()) {
     LogInfo::MapleLogger() << "LOC " << srcPosition.FileNum() << " " << srcPosition.LineNum() << '\n';
@@ -1340,7 +1340,7 @@ bool GetFieldType(MIRSrcLang srcLang, const MIRStructType *structType, FieldID t
       const auto *classType = static_cast<const MIRClassType*>(structType);
       std::stack<MIRStructType*> inheritChain;
       TyIdx parentTyIdx = classType->GetParentTyIdx();
-      while (parentTyIdx > 0) {
+      while (parentTyIdx > 0u) {
         auto *parentType = static_cast<MIRStructType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(parentTyIdx));
         inheritChain.push(parentType);
         parentTyIdx = static_cast<MIRClassType*>(parentType)->GetParentTyIdx();

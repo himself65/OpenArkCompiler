@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -237,7 +237,7 @@ REGISTER_SAFE_CAST(CallinstantNode, from.GetOpCode() == OP_callinstant ||
                                     from.GetOpCode() == OP_virtualcallinstantassigned ||
                                     from.GetOpCode() == OP_superclasscallinstantassigned ||
                                     from.GetOpCode() == OP_interfacecallinstantassigned);
-REGISTER_SAFE_CAST(AssertStmtNode, false);
+// None of the base can be casted to AssertStmtNode
 REGISTER_SAFE_CAST(LabelNode, from.GetOpCode() == OP_label);
 REGISTER_SAFE_CAST(CommentNode, from.GetOpCode() == OP_comment);
 #endif

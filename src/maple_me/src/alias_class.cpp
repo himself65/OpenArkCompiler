@@ -57,7 +57,7 @@ bool AliasClass::CallHasNoPrivateDefEffect(const CallNode &stmt) const {
 // here starts pass 1 code
 AliasElem *AliasClass::FindOrCreateAliasElem(OriginalSt &ost) {
   OStIdx ostIdx = ost.GetIndex();
-  CHECK_FATAL(ostIdx > 0, "Invalid ost index");
+  CHECK_FATAL(ostIdx > 0u, "Invalid ost index");
   CHECK_FATAL(ostIdx < osym2Elem.size(), "Index out of range");
   AliasElem *aliasElem = osym2Elem[ostIdx];
   if (aliasElem != nullptr) {
@@ -299,12 +299,12 @@ void AliasClass::DumpAssignSets() {
 
     if (aliasElem->GetAssignSet() == nullptr) {
       LogInfo::MapleLogger() << "Alone: ";
-      aliasElem->Dump(mirModule);
+      aliasElem->Dump();
       LogInfo::MapleLogger() << '\n';
     } else {
       LogInfo::MapleLogger() << "Members of assign set " << aliasElem->GetClassID() << ": ";
       for (unsigned int elemID : *(aliasElem->GetAssignSet())) {
-        id2Elem[elemID]->Dump(mirModule);
+        id2Elem[elemID]->Dump();
       }
       LogInfo::MapleLogger() << '\n';
     }
@@ -581,7 +581,7 @@ void AliasClass::CreateClassSets() {
 #endif
 }
 
-void AliasElem::Dump(const MIRModule &mod) const {
+void AliasElem::Dump() const {
   ost.Dump();
   LogInfo::MapleLogger() << "id" << id << ((notAllDefsSeen) ? "? " : " ");
 }
@@ -595,12 +595,12 @@ void AliasClass::DumpClassSets() {
 
     if (aliaselem->GetClassSet() == nullptr) {
       LogInfo::MapleLogger() << "Alone: ";
-      aliaselem->Dump(mirModule);
+      aliaselem->Dump();
       LogInfo::MapleLogger() << '\n';
     } else {
       LogInfo::MapleLogger() << "Members of alias class " << aliaselem->GetClassID() << ": ";
       for (unsigned int elemID : *(aliaselem->GetClassSet())) {
-        id2Elem[elemID]->Dump(mirModule);
+        id2Elem[elemID]->Dump();
       }
       LogInfo::MapleLogger() << '\n';
     }
@@ -913,7 +913,7 @@ void AliasClass::CollectMayUseForCallOpnd(const StmtNode &stmt, std::set<Origina
 }
 
 void AliasClass::InsertMayDefNodeForCall(std::set<OriginalSt*> &mayDefOsts, MapleMap<OStIdx, MayDefNode> &mayDefNodes,
-                                         StmtNode &stmt, BBId bbID, bool hasNoPrivateDefEffect) {
+                                         StmtNode &stmt, bool hasNoPrivateDefEffect) {
   for (OriginalSt *mayDefOst : mayDefOsts) {
     if (!hasNoPrivateDefEffect || !mayDefOst->IsPrivate()) {
       mayDefNodes.insert(std::make_pair(
@@ -926,7 +926,7 @@ void AliasClass::InsertMayDefNodeForCall(std::set<OriginalSt*> &mayDefOsts, Mapl
 // Insert mayDefs and mayUses for the callees.
 // Four kinds of mayDefs and mayUses are inserted, which are caused by callee
 // opnds, not_all_def_seen_ae, globalsAffectedByCalls, and mustDefs.
-void AliasClass::InsertMayDefUseCall(StmtNode &stmt, BBId bbID, bool hasSideEffect, bool hasNoPrivateDefEffect) {
+void AliasClass::InsertMayDefUseCall(StmtNode &stmt, bool hasSideEffect, bool hasNoPrivateDefEffect) {
   auto *theSSAPart = static_cast<MayDefMayUsePart*>(ssaTab.GetStmtsSSAPart().SSAPartOf(stmt));
   std::set<OriginalSt*> mayDefUseOstsA;
   // 1. collect mayDefs and mayUses caused by callee-opnds
@@ -936,7 +936,7 @@ void AliasClass::InsertMayDefUseCall(StmtNode &stmt, BBId bbID, bool hasSideEffe
   InsertMayUseNode(mayDefUseOstsA, theSSAPart->GetMayUseNodes());
   // insert may def node, if the callee has side-effect.
   if (hasSideEffect) {
-    InsertMayDefNodeForCall(mayDefUseOstsA, theSSAPart->GetMayDefNodes(), stmt, bbID, hasNoPrivateDefEffect);
+    InsertMayDefNodeForCall(mayDefUseOstsA, theSSAPart->GetMayDefNodes(), stmt, hasNoPrivateDefEffect);
   }
   // 3. insert mayDefs and mayUses caused by globalsAffectedByCalls
   std::set<OriginalSt*> mayDefUseOstsB;
@@ -1050,7 +1050,7 @@ void AliasClass::GenericInsertMayDefUse(StmtNode &stmt, BBId bbID) {
     case OP_customcall:
     case OP_polymorphiccall:
     case OP_icall: {
-      InsertMayDefUseCall(stmt, bbID, CallHasSideEffect(static_cast<CallNode&>(stmt)),
+      InsertMayDefUseCall(stmt, CallHasSideEffect(static_cast<CallNode&>(stmt)),
           CallHasNoPrivateDefEffect(static_cast<CallNode&>(stmt)));
       return;
     }

@@ -206,7 +206,7 @@ class SSARename2Preg {
           LogInfo::MapleLogger() << " working on phi part of BB" << bb.GetBBId() << '\n';
         }
         for (auto &varPhi : bb.GetMevarPhiList()) {
-          Rename2PregPhi(aliasClass, utils::ToRef(varPhi.second), irMap, bb.GetMeRegPhiList());
+          Rename2PregPhi(aliasClass, utils::ToRef(varPhi.second), irMap);
         }
 
         if (enabledDebug) {
@@ -236,7 +236,7 @@ class SSARename2Preg {
       for (size_t i = 0; i < stmt.NumMeStmtOpnds(); ++i) {
         Rename2PregExpr(aliasClass, irMap, stmt, utils::ToRef(stmt.GetOpnd(i)));
       }
-      Rename2PregCallReturn(aliasClass, irMap, utils::ToRef(stmt.GetMustDefList()));
+      Rename2PregCallReturn(aliasClass, utils::ToRef(stmt.GetMustDefList()));
     } else if (auto *iAssignStmt = safe_cast<IassignMeStmt>(stmt)) {
       Rename2PregExpr(aliasClass, irMap, stmt, utils::ToRef(iAssignStmt->GetRHS()));
       Rename2PregExpr(aliasClass, irMap, stmt, utils::ToRef(utils::ToRef(iAssignStmt->GetLHSVal()).GetBase()));
@@ -247,8 +247,7 @@ class SSARename2Preg {
     }
   }
 
-  void Rename2PregCallReturn(const AliasClass &aliasClass, MeIRMap &irMap,
-                             MapleVector<MustDefMeNode> &mustDefNodes) {
+  void Rename2PregCallReturn(const AliasClass &aliasClass, MapleVector<MustDefMeNode> &mustDefNodes) {
     if (mustDefNodes.empty()) {
       return;
     }
@@ -261,7 +260,7 @@ class SSARename2Preg {
     }
 
     OriginalSt &ost = utils::ToRef(utils::ToRef(ssaTab).GetOriginalStFromID(lhs->GetOStIdx()));
-    RegMeExpr *regExpr = RenameVar(aliasClass, *lhs, irMap);
+    RegMeExpr *regExpr = RenameVar(aliasClass, *lhs);
     if (regExpr != nullptr) {
       mustDefNode.UpdateLHS(*regExpr);
     } else {
@@ -291,7 +290,7 @@ class SSARename2Preg {
   }
 
   void Rename2PregLeafRHS(const AliasClass &aliasClass, MeIRMap &irMap, MeStmt &stmt, VarMeExpr &varExpr) {
-    RegMeExpr *regExpr = RenameVar(aliasClass, varExpr, irMap);
+    RegMeExpr *regExpr = RenameVar(aliasClass, varExpr);
     if (regExpr != nullptr) {
       irMap.ReplaceMeExprStmt(stmt, varExpr, *regExpr);
     }
@@ -301,7 +300,7 @@ class SSARename2Preg {
                           const VarMeExpr &varExpr,
                           MeStmt &stmt,
                           MeIRMap &irMap) {
-    RegMeExpr *regExpr = RenameVar(aliasClass, varExpr, irMap);
+    RegMeExpr *regExpr = RenameVar(aliasClass, varExpr);
     if (regExpr != nullptr) {
       MeExpr *oldRhs = nullptr;
       if (auto *dAStmt = safe_cast<DassignMeStmt>(stmt)) {
@@ -319,32 +318,24 @@ class SSARename2Preg {
     }
   }
 
-  void Rename2PregPhi(const AliasClass &aliasClass,
-                      MeVarPhiNode &varPhiNode,
-                      MeIRMap &irMap,
-                      MapleMap<OStIdx, MeRegPhiNode*> &regPhiNodes) {
+  void Rename2PregPhi(const AliasClass &aliasClass, MeVarPhiNode &varPhiNode, MeIRMap &irMap) {
     VarMeExpr &varExpr = utils::ToRef(varPhiNode.GetLHS());
-    RegMeExpr *pRegExpr = RenameVar(aliasClass, varExpr, irMap);
+    RegMeExpr *pRegExpr = RenameVar(aliasClass, varExpr);
     if (pRegExpr == nullptr) {
       return;
     }
-
     RegMeExpr &regExpr = *pRegExpr;
     MeRegPhiNode &regPhiNode = utils::ToRef(irMap.CreateMeRegPhi(regExpr));
     regPhiNode.SetDefBB(varPhiNode.GetDefBB());
-    UpdateRegPhi(regExpr, varExpr.GetOStIdx(), varPhiNode.GetOpnds(), irMap, regPhiNode);
+    UpdateRegPhi(regExpr, varPhiNode.GetOpnds(), regPhiNode);
   }
 
   // update regphinode operands
-  void UpdateRegPhi(const RegMeExpr &curRegExpr,
-                    const OStIdx &lhsOStIdx,
-                    const MapleVector<VarMeExpr*> &phiNodeOpnds,
-                    MeIRMap &irMap,
+  void UpdateRegPhi(const RegMeExpr &curRegExpr, const MapleVector<VarMeExpr*> &phiNodeOpnds,
                     MeRegPhiNode &regPhiNode) {
     PregCache &pregCache = cacheProxy.Preg();
     for (VarMeExpr *phiOpnd : phiNodeOpnds) {
       const VarMeExpr &varExpr = utils::ToRef(phiOpnd);
-      ASSERT(varExpr.GetOStIdx() == lhsOStIdx, "phi is not correct");
       RegMeExpr &regExpr = pregCache.CloneRegExprIfNotExist(varExpr, [&curRegExpr](MeIRMap &irMap) {
         return irMap.CreateRegMeExprVersion(curRegExpr);
       });
@@ -353,7 +344,7 @@ class SSARename2Preg {
     }
   }
 
-  RegMeExpr *RenameVar(const AliasClass &aliasClass, const VarMeExpr &varExpr, MeIRMap &irMap) {
+  RegMeExpr *RenameVar(const AliasClass &aliasClass, const VarMeExpr &varExpr) {
     const OriginalSt &ost = utils::ToRef(utils::ToRef(ssaTab).GetOriginalStFromID(varExpr.GetOStIdx()));
     formal.MarkUsed(ost);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -22,7 +22,7 @@
 // the reverse CFG(The CFG with its edges reversed) is always useful,
 // so we also generates the above two structures on the reverse CFG.
 namespace maple {
-AnalysisResult *MeDoDominance::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, ModuleResultMgr *moduleResMgr) {
+AnalysisResult *MeDoDominance::Run(MeFunction *func, MeFuncResultMgr*, ModuleResultMgr*) {
   MemPool *memPool = NewMemPool();
   auto *dom = memPool->New<Dominance>(*memPool, *NewMemPool(), func->GetAllBBs(),
                                       *func->GetCommonEntryBB(), *func->GetCommonExitBB());

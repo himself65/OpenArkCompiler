@@ -135,7 +135,7 @@ class MIRBuilder {
   MIRFunction *CreateFunction(const std::string &name, const MIRType &returnType, const ArgVector &arguments,
                               bool isVarg = false, bool createBody = true) const;
   MIRFunction *CreateFunction(StIdx stIdx, bool addToTable = true) const;
-  virtual void UpdateFunction(MIRFunction &func, const MIRType *returnType, const ArgVector &arguments) {}
+  virtual void UpdateFunction(MIRFunction&, const MIRType*, const ArgVector&) {}
 
   MIRSymbol *GetSymbolFromEnclosingScope(StIdx stIdx) const;
   virtual MIRSymbol *GetOrCreateLocalDecl(const std::string &str, const MIRType &type);

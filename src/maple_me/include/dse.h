@@ -85,7 +85,7 @@ class DSE {
 
   void RemoveNotRequiredStmtsInBB(BB &bb);
   void OnRemoveBranchStmt(BB &bb, const StmtNode &stmt);
-  void CheckRemoveCallAssignedReturn(BB &bb, StmtNode &stmt);
+  void CheckRemoveCallAssignedReturn(StmtNode &stmt);
 
   bool IsStmtRequired(const utils::SafePtr<const StmtNode> &stmt) const {
     return stmtRequired.find(stmt) != stmtRequired.end();

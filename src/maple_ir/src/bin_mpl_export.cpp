@@ -49,7 +49,7 @@ void OutputConstAddrofFunc(const MIRConst &constVal, BinaryMplExport &mplExport)
   mplExport.OutputFunction(newConst.GetValue());
 }
 
-void OutputConstLbl(const MIRConst &constVal, BinaryMplExport &mplExport) {
+void OutputConstLbl(const MIRConst&, BinaryMplExport&) {
   ASSERT(false, "NYI");
 }
 
@@ -261,7 +261,7 @@ void OutputTypeInterface(const MIRType &ty, BinaryMplExport &mplExport) {
   }
 }
 
-void OutputTypeConstString(const MIRType &ty, BinaryMplExport &mplExport) {
+void OutputTypeConstString(const MIRType &ty, BinaryMplExport&) {
   ASSERT(false, "Type's kind not yet implemented: %d", ty.GetKind());
 }
 
@@ -389,7 +389,7 @@ void BinaryMplExport::OutputConst(MIRConst *constVal) {
 }
 
 void BinaryMplExport::OutputStr(const GStrIdx &gstr) {
-  if (gstr == 0) {
+  if (gstr == 0u) {
     WriteNum(0);
     return;
   }
@@ -408,7 +408,7 @@ void BinaryMplExport::OutputStr(const GStrIdx &gstr) {
 }
 
 void BinaryMplExport::OutputUsrStr(UStrIdx ustr) {
-  if (ustr == 0) {
+  if (ustr == 0u) {
     WriteNum(0);
     return;
   }
@@ -741,7 +741,7 @@ void BinaryMplExport::OutputTypeAttrs(const TypeAttrs &ta) {
 
 void BinaryMplExport::OutputType(TyIdx tyIdx) {
   MIRType *ty = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
-  if (tyIdx == 0) {
+  if (tyIdx == 0u) {
     WriteNum(0);
     return;
   }

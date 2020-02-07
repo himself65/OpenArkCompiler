@@ -489,7 +489,7 @@ void MeFunction::CloneBasicBlock(BB &newBB, const BB &orig) {
     newStmt->SetPrev(nullptr);
     newBB.AddStmtNode(newStmt);
     if (meSSATab != nullptr) {
-      meSSATab->CreateSSAStmt(*newStmt, newBB);
+      meSSATab->CreateSSAStmt(*newStmt);
     }
   }
 }
@@ -504,7 +504,7 @@ void MeFunction::SplitBBPhysically(BB &bb, StmtNode &splitPoint, BB &newBB) {
       StmtNode *nextStmt = stmt->GetNext();
       newBB.AddStmtNode(stmt);
       if (meSSATab != nullptr) {
-        meSSATab->CreateSSAStmt(*stmt, newBB);
+        meSSATab->CreateSSAStmt(*stmt);
       }
       stmt = nextStmt;
     }

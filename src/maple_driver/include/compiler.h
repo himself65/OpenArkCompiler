@@ -39,13 +39,13 @@ class Compiler {
 
   virtual ErrorCode Compile(const MplOptions &options, MIRModulePtr &theModule);
 
-  virtual void GetTmpFilesToDelete(const MplOptions &mplOptions, std::vector<std::string> &tempFiles) const {}
+  virtual void GetTmpFilesToDelete(const MplOptions&, std::vector<std::string>&) const {}
 
-  virtual std::unordered_set<std::string> GetFinalOutputs(const MplOptions &mplOptions) const {
+  virtual std::unordered_set<std::string> GetFinalOutputs(const MplOptions&) const {
     return std::unordered_set<std::string>();
   }
 
-  virtual void PrintCommand(const MplOptions &options) const {}
+  virtual void PrintCommand(const MplOptions&) const {}
 
  protected:
   virtual std::string GetBinPath(const MplOptions &mplOptions) const;
@@ -61,11 +61,11 @@ class Compiler {
     return stream.str();
   }
 
-  virtual DefaultOption GetDefaultOptions(const MplOptions &options) const {
+  virtual DefaultOption GetDefaultOptions(const MplOptions&) const {
     return DefaultOption();
   }
 
-  virtual std::string AppendSpecialOption(const MplOptions &options, const std::string &optionStr) const {
+  virtual std::string AppendSpecialOption(const MplOptions&, const std::string &optionStr) const {
     return optionStr;
   }
 

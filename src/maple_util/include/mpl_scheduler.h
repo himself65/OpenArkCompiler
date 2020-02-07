@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -44,11 +44,11 @@ class MplTask {
 
   virtual ~MplTask() {}
 
-  virtual int Run(MplTaskParam *param = nullptr) {
+  virtual int Run(MplTaskParam*) {
     return 0;
   }
 
-  virtual int Finish(MplTaskParam *param = nullptr) {
+  virtual int Finish(MplTaskParam*) {
     return 0;
   }
 
@@ -77,17 +77,17 @@ class MplScheduler {
 
   virtual void AddTask(MplTask *task);
   virtual int RunTask(uint32 nthreads, bool seq = false);
-  virtual MplSchedulerParam *EncodeThreadMainEnvironment(uint32 threadId) {
+  virtual MplSchedulerParam *EncodeThreadMainEnvironment(uint32) {
     return nullptr;
   }
 
-  virtual void DecodeThreadMainEnvironment(MplSchedulerParam *env) {}
+  virtual void DecodeThreadMainEnvironment(MplSchedulerParam*) {}
 
   virtual MplSchedulerParam *EncodeThreadFinishEnvironment() {
     return nullptr;
   }
 
-  virtual void DecodeThreadFinishEnvironment(MplSchedulerParam *env) {}
+  virtual void DecodeThreadFinishEnvironment(MplSchedulerParam*) {}
 
   void GlobalLock() {
     pthread_mutex_lock(&mutexGlobal);

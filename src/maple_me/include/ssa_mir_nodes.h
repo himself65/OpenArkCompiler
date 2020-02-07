@@ -165,23 +165,23 @@ class AccessSSANodes {
     CHECK_FATAL(false, "No ssaVar");
   }
 
-  virtual void SetSSAVar(VersionSt &vst) {
+  virtual void SetSSAVar(VersionSt&) {
     CHECK_FATAL(false, "No ssaVar");
   }
 
-  virtual void DumpMayDefNodes(const MIRModule &mod) const {
+  virtual void DumpMayDefNodes(const MIRModule&) const {
     for (const auto &mayDefNode : GetMayDefNodes()) {
       mayDefNode.second.Dump();
     }
   }
 
-  virtual void DumpMayUseNodes(const MIRModule &mod) const {
+  virtual void DumpMayUseNodes(const MIRModule&) const {
     for (const auto &mapItem : GetMayUseNodes()) {
       mapItem.second.Dump();
     }
   }
 
-  virtual void DumpMustDefNodes(const MIRModule &mod) const {
+  virtual void DumpMustDefNodes(const MIRModule&) const {
     for (const auto &mustDefNode : GetMustDefNodes()) {
       mustDefNode.Dump();
     }

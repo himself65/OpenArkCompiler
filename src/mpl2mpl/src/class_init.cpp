@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -36,12 +36,9 @@ bool ClassInit::CanRemoveClinitCheck(const std::string &clinitClassname) const {
   return false;
 }
 
-#undef CLINIT_CHECK
 void ClassInit::GenClassInitCheckProfile(MIRFunction &func, const MIRSymbol &classInfo, StmtNode *clinit) const {
-#ifdef CLINIT_CHECK
   GenPreClassInitCheck(func, classInfo, clinit);
   GenPostClassInitCheck(func, classInfo, clinit);
-#endif  // CLINIT_CHECK
 }
 
 void ClassInit::GenPreClassInitCheck(MIRFunction &func, const MIRSymbol &classInfo, StmtNode *clinit) const {
@@ -112,7 +109,9 @@ void ClassInit::ProcessFunc(MIRFunction *func) {
         StmtNode *intrinsicCall = builder->CreateStmtIntrinsicCall(INTRN_MPL_CLINIT_CHECK, args);
         func->GetBody()->InsertFirst(intrinsicCall);
         ASSERT(classInfo != nullptr, "null ptr check!");
+#ifdef CLINIT_CHECK
         GenClassInitCheckProfile(*func, *classInfo, intrinsicCall);
+#endif  // CLINIT_CHECK
       }
     }
   }
@@ -129,7 +128,7 @@ void ClassInit::ProcessFunc(MIRFunction *func) {
                     "index out of range");
         MIRType *classType = GlobalTables::GetTypeTable().GetTypeTable()[intrinsicCall->GetTyIdx()];
         ASSERT(classType != nullptr, "null ptr check!");
-        CHECK_FATAL(classType->GetNameStrIdx() != 0, "symbol name is null for type index %d",
+        CHECK_FATAL(classType->GetNameStrIdx() != 0u, "symbol name is null for type index %d",
                     static_cast<uint32>(intrinsicCall->GetTyIdx()));
         const std::string &className = GlobalTables::GetStrTable().GetStringFromStrIdx(classType->GetNameStrIdx());
         Klass *klass = klassHierarchy->GetKlassFromName(className);
@@ -152,7 +151,9 @@ void ClassInit::ProcessFunc(MIRFunction *func) {
                                    << func->GetName() << "()\n";
           }
           ASSERT(classInfo != nullptr, "null ptr check!");
+#ifdef CLINIT_CHECK
           GenClassInitCheckProfile(*func, *classInfo, mplIntrinsicCall);
+#endif  // CLINIT_CHECK
         } else {
           func->GetBody()->RemoveStmt(stmt);
         }

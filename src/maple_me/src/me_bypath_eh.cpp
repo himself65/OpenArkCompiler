@@ -326,7 +326,7 @@ void MeDoBypathEH::BypathException(MeFunction *func, KlassHierarchy *kh) {
   }
 }
 
-AnalysisResult *MeDoBypathEH::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) {
+AnalysisResult *MeDoBypathEH::Run(MeFunction *func, MeFuncResultMgr*, ModuleResultMgr *mrm) {
   auto *kh = static_cast<KlassHierarchy *>(mrm->GetAnalysisResult(MoPhase_CHA, &func->GetMIRModule()));
   CHECK_NULL_FATAL(kh);
   BypathException(func, kh);

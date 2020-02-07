@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -77,7 +77,7 @@ void MIRBuilder::TraverseToNamedFieldWithType(MIRStructType &structType, GStrIdx
     TyIdx fieldTyIdx = structType.GetFieldsElemt(fieldIdx).second.first;
     MIRType *fieldType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(fieldTyIdx);
     if (structType.GetFieldsElemt(fieldIdx).first == nameIdx) {
-      if (typeIdx == 0 || fieldTyIdx == typeIdx) {
+      if (typeIdx == 0u || fieldTyIdx == typeIdx) {
         idx = fieldID;
         continue;
       }
@@ -138,7 +138,7 @@ bool MIRBuilder::TraverseToNamedFieldWithTypeAndMatchStyle(MIRStructType &struct
     MIRType *fieldType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(fieldTyIdx);
     ASSERT(fieldType != nullptr, "fieldType is null");
     if (matchStyle && structType.GetFieldsElemt(fieldIdx).first == nameIdx) {
-      if (typeIdx == 0 || fieldTyIdx == typeIdx ||
+      if (typeIdx == 0u || fieldTyIdx == typeIdx ||
           fieldType->IsOfSameType(*GlobalTables::GetTypeTable().GetTypeFromTyIdx(typeIdx))) {
         return true;
       }
@@ -196,7 +196,7 @@ void MIRBuilder::SetStructFieldIDFromFieldName(MIRStructType &structType, const 
   GStrIdx strIdx = GetStringIndex(name);
   while (true) {
     if (structType.GetElemStrIdx(fieldID) == strIdx) {
-      if (newStrIdx != 0) {
+      if (newStrIdx != 0u) {
         structType.SetElemStrIdx(fieldID, newStrIdx);
       }
       structType.SetElemtTyIdx(fieldID, newFieldType.GetTypeIndex());
@@ -210,7 +210,7 @@ void MIRBuilder::SetStructFieldIDFromFieldName(MIRStructType &structType, const 
 MIRFunction *MIRBuilder::GetOrCreateFunction(const std::string &str, TyIdx retTyIdx) {
   GStrIdx strIdx = GetStringIndex(str);
   MIRSymbol *funcSt = nullptr;
-  if (strIdx != 0) {
+  if (strIdx != 0u) {
     funcSt = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(strIdx);
     if (funcSt == nullptr) {
       funcSt = CreateSymbol(TyIdx(0), strIdx, kStFunc, kScText, nullptr, kScopeGlobal);
@@ -303,7 +303,7 @@ MIRFunction *MIRBuilder::CreateFunction(StIdx stIdx, bool addToTable) const {
 
 MIRSymbol *MIRBuilder::GetOrCreateGlobalDecl(const std::string &str, TyIdx tyIdx, bool &created) const {
   GStrIdx strIdx = GetStringIndex(str);
-  if (strIdx != 0) {
+  if (strIdx != 0u) {
     StIdx stIdx = GlobalTables::GetGsymTable().GetStIdxFromStrIdx(strIdx);
     if (stIdx.Idx() != 0) {
       created = false;
@@ -322,7 +322,7 @@ MIRSymbol *MIRBuilder::GetOrCreateGlobalDecl(const std::string &str, TyIdx tyIdx
 MIRSymbol *MIRBuilder::GetOrCreateLocalDecl(const std::string &str, TyIdx tyIdx, MIRSymbolTable &symbolTable,
                                             bool &created) const {
   GStrIdx strIdx = GetStringIndex(str);
-  if (strIdx != 0) {
+  if (strIdx != 0u) {
     StIdx stIdx = symbolTable.GetStIdxFromStrIdx(strIdx);
     if (stIdx.Idx() != 0) {
       created = false;
@@ -375,7 +375,7 @@ MIRSymbol *MIRBuilder::GetLocalDecl(const std::string &str) {
 MIRSymbol *MIRBuilder::GetDecl(const std::string &str) {
   GStrIdx strIdx = GetStringIndex(str);
   MIRSymbol *sym = nullptr;
-  if (strIdx != 0) {
+  if (strIdx != 0u) {
     // try to find the decl in local scope first
     MIRFunction *currentFunctionInner = GetCurrentFunction();
     if (currentFunctionInner != nullptr) {
@@ -768,7 +768,7 @@ IcallNode *MIRBuilder::CreateStmtIcall(const MapleVector<BaseNode*> &args) {
 IntrinsiccallNode *MIRBuilder::CreateStmtIntrinsicCall(MIRIntrinsicID idx, const MapleVector<BaseNode*> &arguments,
                                                        TyIdx tyIdx) {
   auto *stmt = GetCurrentFuncCodeMp()->New<IntrinsiccallNode>(
-      *GetCurrentFuncCodeMpAllocator(), tyIdx == 0 ? OP_intrinsiccall : OP_intrinsiccallwithtype, idx);
+      *GetCurrentFuncCodeMpAllocator(), tyIdx == 0u ? OP_intrinsiccall : OP_intrinsiccallwithtype, idx);
   stmt->SetTyIdx(tyIdx);
   stmt->SetOpnds(arguments);
   return stmt;
@@ -839,7 +839,7 @@ IntrinsiccallNode *MIRBuilder::CreateStmtIntrinsicCallAssigned(MIRIntrinsicID id
 IntrinsiccallNode *MIRBuilder::CreateStmtIntrinsicCallAssigned(MIRIntrinsicID idx, const MapleVector<BaseNode*> &args,
                                                                const MIRSymbol *ret, TyIdx tyIdx) {
   auto *stmt = GetCurrentFuncCodeMp()->New<IntrinsiccallNode>(
-      *GetCurrentFuncCodeMpAllocator(), tyIdx == 0 ? OP_intrinsiccallassigned : OP_intrinsiccallwithtypeassigned, idx);
+      *GetCurrentFuncCodeMpAllocator(), tyIdx == 0u ? OP_intrinsiccallassigned : OP_intrinsiccallwithtypeassigned, idx);
   stmt->SetTyIdx(tyIdx);
   stmt->SetOpnds(args);
   CallReturnVector nrets(GetCurrentFuncCodeMpAllocator()->Adapter());
@@ -931,7 +931,7 @@ GotoNode *MIRBuilder::CreateStmtGoto(Opcode o, LabelIdx labIdx) {
   return GetCurrentFuncCodeMp()->New<GotoNode>(o, labIdx);
 }
 
-JsTryNode *MIRBuilder::CreateStmtJsTry(Opcode o, LabelIdx cLabIdx, LabelIdx fLabIdx) {
+JsTryNode *MIRBuilder::CreateStmtJsTry(Opcode, LabelIdx cLabIdx, LabelIdx fLabIdx) {
   return GetCurrentFuncCodeMp()->New<JsTryNode>(static_cast<uint16>(cLabIdx), static_cast<uint16>(fLabIdx));
 }
 
@@ -966,7 +966,7 @@ CondGotoNode *MIRBuilder::CreateStmtCondGoto(BaseNode *cond, Opcode op, LabelIdx
 LabelIdx MIRBuilder::GetOrCreateMIRLabel(const std::string &name) {
   GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(name);
   MIRFunction *currentFunctionInner = GetCurrentFunctionNotNull();
-  LabelIdx lableIdx = currentFunctionInner->GetLabelTab()->GetStIdxFromStrIdx(strIdx);
+  LabelIdx lableIdx = currentFunctionInner->GetLabelTab()->GetLabelIdxFromStrIdx(strIdx);
   if (lableIdx == 0) {
     lableIdx = currentFunctionInner->GetLabelTab()->CreateLabel();
     currentFunctionInner->GetLabelTab()->SetSymbolFromStIdx(lableIdx, strIdx);
