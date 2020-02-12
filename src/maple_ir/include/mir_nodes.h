@@ -1450,11 +1450,20 @@ class StmtNode : public BaseNode, public PtrListNodeBase<StmtNode> {
     return nullptr;
   }
 
+  bool GetIsLive() const {
+    return isLive;
+  }
+
+  void SetIsLive(bool live) const {
+    isLive = live;
+  }
  protected:
   SrcPosition srcPosition;
 
  private:
   uint32 stmtID;  // a unique ID assigned to it
+  mutable bool isLive = false;  // only used for dse to save compile time
+                                // mutable to keep const-ness at most situation
 };
 
 class IassignNode : public StmtNode {

@@ -325,7 +325,7 @@ void DSE::MarkStmtRequired(const StmtNode &stmt, const BB &bb) {
   // save only one line comment
   StmtNode *prev = stmt.GetPrev();
   if (prev != nullptr && prev->GetOpCode() == OP_comment) {
-    SetStmtRequired(prev);
+    SetStmtRequired(*prev);
   }
 
   MarkStmtUseLive(stmt);
@@ -339,15 +339,9 @@ void DSE::MarkSpecialStmtRequired() {
     if (bb == nullptr) {
       continue;
     }
-    auto &stmtNodes = bb->GetStmtNodes();
-    for (auto itStmt = stmtNodes.rbegin(); itStmt != stmtNodes.rend(); ++itStmt) {
-      StmtNode *pStmt = to_ptr(itStmt);
-      if (IsStmtRequired(pStmt)) {
-        continue;
-      }
-
-      if (StmtMustRequired(*itStmt, ToRef(bb))) {
-        MarkStmtRequired(*itStmt, ToRef(bb));
+    for (auto itStmt = bb->GetStmtNodes().rbegin(); itStmt != bb->GetStmtNodes().rend(); ++itStmt) {
+      if (StmtMustRequired(*itStmt, *bb)) {
+        MarkStmtRequired(*itStmt, *bb);
         continue;
       }
     }

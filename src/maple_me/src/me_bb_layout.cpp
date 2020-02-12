@@ -385,7 +385,7 @@ void BBLayout::RemoveUnreachable(BB &bb) {
   }
   MapleVector<BB*> succBBs = bb.GetSucc();
   for (BB *succ : succBBs) {
-    MapleVector<BB*> preds = succ->GetPred();
+    MapleVector<BB*> &preds = succ->GetPred();
     bb.RemoveBBFromVector(preds);
     if (preds.empty()) {
         RemoveUnreachable(*succ);

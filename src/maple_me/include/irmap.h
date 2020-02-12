@@ -35,6 +35,8 @@ class IRMap : public AnalysisResult {
         hashTable(mapHashLength, nullptr, irMapAlloc.Adapter()),
         vst2MeExprTable(ssaTab.GetVersionStTableSize(), nullptr, irMapAlloc.Adapter()),
         regMeExprTable(irMapAlloc.Adapter()),
+        lpreTmps(irMapAlloc.Adapter()),
+        vst2Decrefs(irMapAlloc.Adapter()),
         meBuilder(irMapAlloc) {
     InitMeStmtFactory();
   }
@@ -50,6 +52,7 @@ class IRMap : public AnalysisResult {
   MeExpr *HashMeExpr(MeExpr &meExpr);
   void BuildBB(BB &bb, std::vector<bool> &bbIRMapProcessed);
   MeExpr *BuildExpr(BaseNode&);
+  IvarMeExpr *BuildIvarFromOpMeExpr(OpMeExpr &opMeExpr);
   IvarMeExpr *BuildLHSIvarFromIassMeStmt(IassignMeStmt &iassignMeStmt);
   IvarMeExpr *BuildLHSIvar(MeExpr &baseAddr, IassignMeStmt &iassignMeStmt, FieldID fieldID);
   RegMeExpr *CreateRegRefMeExpr(MeExpr&);
@@ -85,6 +88,7 @@ class IRMap : public AnalysisResult {
   VarMeExpr *CreateNewGlobalTmp(GStrIdx strIdx, PrimType pType);
   VarMeExpr *CreateNewLocalRefVarTmp(GStrIdx strIdx, TyIdx tIdx);
   DassignMeStmt *CreateDassignMeStmt(MeExpr&, MeExpr&, BB&);
+  IassignMeStmt *CreateIassignMeStmt(TyIdx, IvarMeExpr&, MeExpr&, const MapleMap<OStIdx, ChiMeNode*>&);
   RegassignMeStmt *CreateRegassignMeStmt(MeExpr&, MeExpr&, BB&);
   void InsertMeStmtBefore(BB&, MeStmt&, MeStmt&);
   MeRegPhiNode *CreateMeRegPhi(RegMeExpr&);
@@ -164,6 +168,33 @@ class IRMap : public AnalysisResult {
     return regMeExprTable;
   }
 
+  MapleUnorderedMap<OStIdx, RegMeExpr*>::iterator GetLpreTmpsEnd() {
+    return lpreTmps.end();
+  }
+
+  MapleUnorderedMap<OStIdx, RegMeExpr*>::iterator FindLpreTmpsItem(OStIdx idx) {
+    return lpreTmps.find(idx);
+  }
+
+  void SetLpreTmps(OStIdx idx, RegMeExpr &expr) {
+    lpreTmps[idx] = &expr;
+  }
+
+  MapleUnorderedMap<VarMeExpr*, MapleSet<MeStmt*>*> &GetVerst2DecrefsMap() {
+    return vst2Decrefs;
+  }
+
+  MapleUnorderedMap<VarMeExpr*, MapleSet<MeStmt*>*>::iterator GetDecrefsEnd() {
+    return vst2Decrefs.end();
+  }
+
+  MapleUnorderedMap<VarMeExpr*, MapleSet<MeStmt*>*>::iterator FindDecrefItem(VarMeExpr &var) {
+    return vst2Decrefs.find(&var);
+  }
+
+  void SetDecrefs(VarMeExpr &var, MapleSet<MeStmt*> &set) {
+    vst2Decrefs[&var] = &set;
+  }
 
   void SetNeedAnotherPass(bool need) {
     needAnotherPass = need;
@@ -192,6 +223,8 @@ class IRMap : public AnalysisResult {
   MapleVector<MeExpr*> hashTable;                  // the value number hash table
   MapleVector<MeExpr*> vst2MeExprTable;            // map versionst to MeExpr.
   MapleVector<RegMeExpr*> regMeExprTable;          // record all the regmeexpr created by ssa_pre
+  MapleUnorderedMap<OStIdx, RegMeExpr*> lpreTmps;  // for passing LPRE's temp usage to SPRE
+  MapleUnorderedMap<VarMeExpr*, MapleSet<MeStmt*>*> vst2Decrefs;  // map versionst to decrefreset.
   bool needAnotherPass = false;                    // set to true if CFG has changed
   bool dumpStmtNum = false;
   BB *curBB = nullptr;  // current maple_me::BB being visited

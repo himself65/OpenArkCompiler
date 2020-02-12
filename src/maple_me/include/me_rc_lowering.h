@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -23,12 +23,11 @@
 namespace maple {
 class RCLowering {
  public:
-  RCLowering(MeFunction &f, KlassHierarchy &kh, bool enabledDebug)
+  RCLowering(MeFunction &f, bool enabledDebug)
       : func(f),
         mirModule(f.GetMIRModule()),
         irMap(*f.GetIRMap()),
         ssaTab(*f.GetMeSSATab()),
-        klassHierarchy(kh),
         enabledDebug(enabledDebug) {}
 
   virtual ~RCLowering() = default;
@@ -38,7 +37,9 @@ class RCLowering {
   void RCLower();
   void PostRCLower();
   void Finish();
-  void FastBBLower(BB &bb);
+  bool GetIsAnalyzed() const {
+    return isAnalyzed;
+  }
 
  private:
   void MarkLocalRefVar();
@@ -46,6 +47,11 @@ class RCLowering {
   void BBLower(BB &bb);
   void CreateCleanupIntrinsics();
   void HandleArguments();
+  void CompactRC(BB &bb);
+  void CompactIncAndDec(MeStmt &incStmt, MeStmt &decStmt);
+  void CompactIncAndDecReset(MeStmt &incStmt, MeStmt &resetStmt);
+  void ReplaceDecResetWithDec(MeStmt &prevStmt, MeStmt &stmt);
+  void CompactAdjacentDecReset(MeStmt &prevStmt, MeStmt &stmt);
   // create new symbol from name and return its ost
   OriginalSt *RetrieveOSt(const std::string &name, bool isLocalrefvar) const;
   // create new symbol from temp name and return its VarMeExpr
@@ -59,6 +65,7 @@ class RCLowering {
   MIRIntrinsicID PrepareVolatileCall(const MeStmt &stmt, MIRIntrinsicID index = INTRN_UNDEFINED);
   IntrinsiccallMeStmt *CreateRCIntrinsic(MIRIntrinsicID intrnID, const MeStmt &stmt, std::vector<MeExpr*> &opnds,
                                          bool assigned = false);
+  MeExpr *HandleIncRefAndDecRefStmt(MeStmt &stmt);
   void InitializedObjectFields(MeStmt &stmt);
   bool IsInitialized(IvarMeExpr &ivar);
   void PreprocessAssignMeStmt(MeStmt &stmt);
@@ -86,10 +93,10 @@ class RCLowering {
   MIRModule &mirModule;
   IRMap &irMap;
   SSATab &ssaTab;
-  KlassHierarchy &klassHierarchy;
   std::vector<MeStmt*> rets{};  // std::vector of return statement
   unsigned int tmpCount = 0;
   bool needSpecialHandleException = false;
+  bool isAnalyzed = false;
   std::set<const MIRSymbol*> assignedPtrSym;
   std::set<VarMeExpr*> tmpLocalRefVars;
   std::set<MeExpr*> gcMallocObjects{};
@@ -98,9 +105,6 @@ class RCLowering {
   // used to store initialized map, help to optimize dec ref in first assignment
   std::unordered_map<MeExpr*, MapleSet<FieldID>*> initializedFields{};
   bool enabledDebug;
-  bool checkRefFormal = false;
-  bool checkRefAssign = false;
-  bool checkRefReturn = false;
 };
 
 class MeDoRCLowering : public MeFuncPhase {

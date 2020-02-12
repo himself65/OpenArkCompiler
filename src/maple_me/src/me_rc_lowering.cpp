@@ -14,6 +14,7 @@
  */
 #include "me_rc_lowering.h"
 #include <cstring>
+#include "me_option.h"
 
 // RCLowering phase generate RC intrinsic for reference assignment
 // based on previous analyze results. RC intrinsic will later be lowered
@@ -38,11 +39,18 @@ void RCLowering::Prepare() {
   if (enabledDebug) {
     LogInfo::MapleLogger() << "Handling function " << mirFunction->GetName() << '\n';
   }
+  func.SetHints(func.GetHints() | kRcLowered);
+  isAnalyzed = (func.GetHints() & kAnalyzeRCed) != 0;
 }
 
 void RCLowering::PreRCLower() {
   // preparation steps before going through basicblocks
   MarkLocalRefVar();
+
+  // if analyze rc phase has run, skip this
+  if (isAnalyzed) {
+    return;
+  }
 
   MarkAllRefOpnds();
   CreateCleanupIntrinsics();
@@ -144,8 +152,10 @@ IntrinsiccallMeStmt *RCLowering::GetVarRHSHandleStmt(const MeStmt &stmt) {
   // load global into temp and update rhs to temp
   std::vector<MeExpr*> opnds;
   bool isVolatile = var->IsVolatile(ssaTab);
-  MIRIntrinsicID rcCallID = isVolatile ? PrepareVolatileCall(stmt, INTRN_MCCLoadRefSVol) : INTRN_MCCLoadRefS;
+  MIRIntrinsicID rcCallID = INTRN_UNDEFINED;
+  rcCallID = isVolatile ? PrepareVolatileCall(stmt, INTRN_MCCLoadRefSVol) : INTRN_MCCLoadRefS;
   opnds.push_back(irMap.CreateAddrofMeExpr(*var));
+
   // rhs is not special, skip
   if (rcCallID == INTRN_UNDEFINED) {
     return nullptr;
@@ -487,6 +497,32 @@ void RCLowering::RCLower() {
   }
 }
 
+MeExpr *RCLowering::HandleIncRefAndDecRefStmt(MeStmt &stmt) {
+  Opcode opCode = stmt.GetOp();
+  MIRIntrinsicID rcCallID = INTRN_UNDEFINED;
+
+  if (opCode == OP_incref) {
+    rcCallID = INTRN_MCCIncRef;
+  } else if (opCode == OP_decref) {
+    rcCallID = INTRN_MCCDecRef;
+  } else if (opCode == OP_decrefreset) {
+    rcCallID = INTRN_MCCDecRefReset;
+  }
+
+  if (rcCallID == INTRN_UNDEFINED) {
+    return nullptr;
+  }
+
+  auto &unaryMeStmt = static_cast<UnaryMeStmt&>(stmt);
+  if (opCode == OP_decref && !unaryMeStmt.GetDecrefBeforeExit()) {
+    stmt.GetBB()->RemoveMeStmt(&stmt);
+    return unaryMeStmt.GetOpnd();
+  }
+  std::vector<MeExpr*> opnds = { unaryMeStmt.GetOpnd() };
+  IntrinsiccallMeStmt *rcCall = CreateRCIntrinsic(rcCallID, stmt, opnds);
+  stmt.GetBB()->ReplaceMeStmt(&stmt, rcCall);
+  return nullptr;
+}
 
 // if a var me expr is initialized by constructor, record it's initialized map
 // if a field id is not in initialized map, means the field has not been assigned a value
@@ -533,7 +569,8 @@ void RCLowering::BBLower(BB &bb) {
     } else if (stmt.IsAssign()) {
       HandleAssignMeStmt(stmt, pendingDec);
     } else {
-      // handling is not necessary
+      MeExpr *ret = HandleIncRefAndDecRefStmt(stmt);
+      pendingDec = ret == nullptr ? pendingDec : ret;
     }
   }
   // there is no any statement exist whose opnd is the throw value, handle it
@@ -571,6 +608,11 @@ void RCLowering::HandleReturnVar(RetMeStmt &ret) {
   if (sym != nullptr && sym->IgnoreRC()) {
     return;
   }
+  // if dread is local assigned var, no need inc because we will skip its dec
+  // unless we are change it to regread in later optimization
+  if (assignedPtrSym.count(sym) > 0 && sym->GetStorageClass() == kScAuto && !MeOption::regreadAtReturn) {
+    return;
+  }
   if (sym != nullptr && sym->IsGlobal() && !sym->IsFinal()) {
     HandleReturnGlobal(ret);
   } else if (assignedPtrSym.count(sym) > 0 && sym->GetStorageClass() == kScAuto && sym->GetAttr(ATTR_localrefvar)) {
@@ -578,7 +620,6 @@ void RCLowering::HandleReturnVar(RetMeStmt &ret) {
     // checking localrefvar because some objects are meta
     HandleReturnRegread(ret);
   } else {
-    // if returning formal, incref unless placementRC is used and formal is NOT reassigned
     HandleReturnFormal(ret);
   }
 }
@@ -592,6 +633,7 @@ void RCLowering::HandleReturnGlobal(RetMeStmt &ret) {
   IntrinsiccallMeStmt *loadCall = CreateRCIntrinsic(INTRN_MCCLoadRefS, ret, opnds, true);
   bb->InsertMeStmtBefore(&ret, loadCall);
   ret.SetOpnd(0, loadCall->GetMustDefList()->front().GetLHS());
+
 }
 
 void RCLowering::HandleReturnRegread(RetMeStmt &ret) {
@@ -608,7 +650,7 @@ void RCLowering::HandleReturnRegread(RetMeStmt &ret) {
     // remove argument from intrinsiccall MPL_CLEANUP_LOCALREFVARS (dread ref %Reg1_R5678, ...
     MapleVector<MeExpr*> *opnds = &cleanup->GetOpnds();
     for (auto iter = opnds->begin(); iter != opnds->end(); ++iter) {
-      if (*iter == retVar || static_cast<VarMeExpr*>(*iter)->GetOStIdx() == retVar->GetOStIdx()) {
+      if (*iter == retVar || (!isAnalyzed && static_cast<VarMeExpr*>(*iter)->GetOStIdx() == retVar->GetOStIdx())) {
         opnds->erase(iter);
         opnds->push_back(retVar);  // pin it to end of std::vector
         cleanup->SetIntrinsic(INTRN_MPL_CLEANUP_LOCALREFVARS_SKIP);
@@ -647,6 +689,7 @@ void RCLowering::HandleReturnIvar(RetMeStmt &ret) {
     MeStmt *loadCall = CreateRCIntrinsic(INTRN_MCCLoadRef, ret, opnds, true);
     ret.GetBB()->InsertMeStmtBefore(&ret, loadCall);
     ret.SetOpnd(0, loadCall->GetMustDefList()->front().GetLHS());
+
   }
 }
 
@@ -771,6 +814,11 @@ void RCLowering::PostRCLower() {
   HandleArguments();
   // handle ret stmts
   HandleReturnStmt();
+  // compact RC
+  // to prevent valid_end from being called repeatedly, don't modify the definition of eIt
+  for (auto bIt = func.valid_begin(), eIt = func.valid_end(); bIt != eIt; ++bIt) {
+    CompactRC(**bIt);
+  }
 }
 
 void RCLowering::Finish() {
@@ -778,6 +826,99 @@ void RCLowering::Finish() {
     LogInfo::MapleLogger() << "\n============== After RC LOWERING =============" << '\n';
     func.Dump(false);
   }
+}
+
+
+static inline bool CheckIntrinsicID(MeStmt *stmt, MIRIntrinsicID id) {
+  if (!CheckOp(stmt, OP_intrinsiccall)) {
+    return false;
+  }
+  auto *intrinsicCall = static_cast<IntrinsiccallMeStmt*>(stmt);
+  return intrinsicCall->GetIntrinsic() == id;
+}
+
+static inline MeStmt *GetPrevMeStmt(const MeStmt &stmt) {
+  MeStmt *prevStmt = stmt.GetPrev();
+  while (CheckOp(prevStmt, OP_comment)) {
+    prevStmt = prevStmt->GetPrev();
+  }
+  return prevStmt;
+}
+
+// iterate over stmts and find back-to-back incref/decref
+// and merge them into one intrinsic if needed
+void RCLowering::CompactRC(BB &bb) {
+  for (auto &stmt : bb.GetMeStmts()) {
+    if (CheckIntrinsicID(&stmt, INTRN_MCCIncRef)) {
+      MeStmt *prevStmt = GetPrevMeStmt(stmt);
+      if (CheckIntrinsicID(prevStmt, INTRN_MCCDecRef)) {
+        CompactIncAndDec(stmt, *prevStmt);
+      }
+    }
+    if (CheckIntrinsicID(&stmt, INTRN_MCCDecRef)) {
+      MeStmt *prevStmt = GetPrevMeStmt(stmt);
+      if (CheckIntrinsicID(prevStmt, INTRN_MCCIncRef)) {
+        CompactIncAndDec(*prevStmt, stmt);
+      }
+    }
+  }
+}
+
+void RCLowering::CompactIncAndDec(MeStmt &incStmt, MeStmt &decStmt) {
+  BB *bb = incStmt.GetBB();
+  CHECK_FATAL(bb != nullptr, "bb nullptr check");
+  MeExpr *incOpnd = incStmt.GetOpnd(0);
+  MeExpr *decOpnd = decStmt.GetOpnd(0);
+  if (incOpnd == decOpnd) {
+    bb->RemoveMeStmt(&incStmt);
+  } else {
+    std::vector<MeExpr*> opnds = { incOpnd, decOpnd };
+    IntrinsiccallMeStmt *incDecCall = CreateRCIntrinsic(INTRN_MCCIncDecRef, incStmt, opnds);
+    bb->ReplaceMeStmt(&incStmt, incDecCall);
+  }
+  bb->RemoveMeStmt(&decStmt);
+}
+
+void RCLowering::CompactIncAndDecReset(MeStmt &incStmt, MeStmt &resetStmt) {
+  BB *bb = incStmt.GetBB();
+  CHECK_FATAL(bb != nullptr, "bb nullptr check");
+  MeExpr *incOpnd = incStmt.GetOpnd(0);
+  MeExpr *resetOpnd = resetStmt.GetOpnd(0);
+  if (incOpnd == resetOpnd) {
+    bb->RemoveMeStmt(&resetStmt);
+  } else {
+    std::vector<MeExpr*> opnds = { incOpnd, resetOpnd };
+    IntrinsiccallMeStmt *incDecReset = CreateRCIntrinsic(INTRN_MCCIncDecRefReset, resetStmt, opnds);
+    bb->ReplaceMeStmt(&resetStmt, incDecReset);
+  }
+  bb->RemoveMeStmt(&incStmt);
+}
+
+void RCLowering::ReplaceDecResetWithDec(MeStmt &prevStmt, MeStmt &stmt) {
+  auto *addrofMeExpr = static_cast<AddrofMeExpr*>(stmt.GetOpnd(0));
+  ASSERT_NOT_NULL(addrofMeExpr);
+  auto *dass = static_cast<DassignMeStmt*>(&prevStmt);
+  if (dass->GetRHS()->GetMeOp() != kMeOpReg || dass->GetVarLHS()->GetOStIdx() != addrofMeExpr->GetOstIdx()) {
+    return;
+  }
+  BB *bb = stmt.GetBB();
+  CHECK_FATAL(bb != nullptr, "bb nullptr check");
+  std::vector<MeExpr*> opnds = { dass->GetRHS() };
+  IntrinsiccallMeStmt *decRefCall = CreateRCIntrinsic(INTRN_MCCDecRef, stmt, opnds);
+  bb->ReplaceMeStmt(&stmt, decRefCall);
+  bb->RemoveMeStmt(&prevStmt);
+}
+
+void RCLowering::CompactAdjacentDecReset(MeStmt &prevStmt, MeStmt &stmt) {
+  MeExpr *prevOpnd = prevStmt.GetOpnd(0);
+  MeExpr *curOpnd = stmt.GetOpnd(0);
+  BB *bb = stmt.GetBB();
+  if (prevOpnd != curOpnd) {
+    std::vector<MeExpr*> opnds = { prevOpnd, curOpnd };
+    IntrinsiccallMeStmt *decRefCall = CreateRCIntrinsic(INTRN_MCCDecRefResetPair, stmt, opnds);
+    bb->ReplaceMeStmt(&stmt, decRefCall);
+  }
+  bb->RemoveMeStmt(&prevStmt);
 }
 
 OriginalSt *RCLowering::RetrieveOSt(const std::string &name, bool isLocalRefVar) const {
@@ -808,15 +949,13 @@ VarMeExpr *RCLowering::CreateNewTmpVarMeExpr(bool isLocalRefVar) {
 }
 
 AnalysisResult *MeDoRCLowering::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, ModuleResultMgr *moduleResMgr) {
-  auto *kh = static_cast<KlassHierarchy*>(moduleResMgr->GetAnalysisResult(MoPhase_CHA, &func->GetMIRModule()));
-  ASSERT_NOT_NULL(kh);
   if (func->GetIRMap() == nullptr) {
     auto *hmap = static_cast<MeIRMap*>(funcResMgr->GetAnalysisResult(MeFuncPhase_IRMAP, func));
     CHECK_FATAL(hmap != nullptr, "hssamap has problem");
     func->SetIRMap(hmap);
   }
   CHECK_FATAL(func->GetMeSSATab() != nullptr, "ssatab has problem");
-  RCLowering rcLowering(*func, *kh, DEBUGFUNC(func));
+  RCLowering rcLowering(*func, DEBUGFUNC(func));
 
   rcLowering.Prepare();
   rcLowering.PreRCLower();
