@@ -91,6 +91,12 @@ MeOption *MapleCombCompiler::MakeMeOptions(const MplOptions &options, MemPool &o
       case kMeSkipPhases:
         meOption->SplitSkipPhases(opt.Args());
         break;
+      case kMeOptL1:
+        // Already handled above in DecideMeRealLevel
+        break;
+      case kMeOptL2:
+        // Already handled above in DecideMeRealLevel
+        break;
       case kMeRange:
         meOption->useRange = true;
         meOption->GetRange(opt.Args());
@@ -152,17 +158,71 @@ MeOption *MapleCombCompiler::MakeMeOptions(const MplOptions &options, MemPool &o
           LogInfo::MapleLogger() << "--sub options: noTBAA " << meOption->noTBAA << '\n';
         }
         break;
+      case kRcLower:
+        meOption->rcLowering = (opt.Type() == kEnable);
+        break;
       case kMeNoDot:
         meOption->noDot = (opt.Type() == kEnable);
         break;
       case kStmtNum:
         meOption->stmtNum = (opt.Type() == kEnable);
         break;
+      case kEpreLimit:
+        meOption->epreLimit = std::stoul(opt.Args(), nullptr);
+        break;
+      case kEprepuLimit:
+        meOption->eprePULimit = std::stoul(opt.Args(), nullptr);
+        break;
+      case kStmtPrepuLimit:
+        meOption->stmtprePULimit = std::stoul(opt.Args(), nullptr);
+        break;
+      case kLpreLimit:
+        meOption->lpreLimit = std::stoul(opt.Args(), nullptr);
+        break;
+      case kLprepulLimit:
+        meOption->lprePULimit = std::stoul(opt.Args(), nullptr);
+        break;
+      case kDelrcpuLimit:
+        meOption->delRcPULimit = std::stoul(opt.Args(), nullptr);
+        break;
+      case kEpreIncludeRef:
+        meOption->epreIncludeRef = (opt.Type() == kEnable);
+        break;
+      case kEpreLocalRefVar:
+        meOption->epreLocalRefVar = (opt.Type() == kEnable);
+        break;
+      case kEprelhSivar:
+        meOption->epreLHSIvar = (opt.Type() == kEnable);
+        break;
       case kLessThrowAlias:
         meOption->lessThrowAlias = (opt.Type() == kEnable);
         break;
+      case kNodeLegateRc:
+        meOption->noDelegateRC = (opt.Type() == kEnable);
+        break;
+      case kNocondBasedRc:
+        meOption->noCondBasedRC = (opt.Type() == kEnable);
+        break;
+      case kNullcheckPre:
+        meOption->nullCheckPre = (opt.Type() == kEnable);
+        break;
+      case kClinitPre:
+        meOption->clinitPre = (opt.Type() == kEnable);
+        break;
+      case kDassignPre:
+        meOption->dassignPre = (opt.Type() == kEnable);
+        break;
+      case kAssign2finalPre:
+        meOption->assign2FinalPre = (opt.Type() == kEnable);
+        break;
       case kRegReadAtReturn:
         meOption->regreadAtReturn = (opt.Type() == kEnable);
+        break;
+      case kLpreSpeculate:
+        meOption->lpreSpeculate = (opt.Type() == kEnable);
+        break;
+      case kSpillatCatch:
+        meOption->spillAtCatch = (opt.Type() == kEnable);
         break;
       default:
         WARN(kLncWarn, "input invalid key for me " + opt.OptionKey());

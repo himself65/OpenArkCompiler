@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -139,7 +139,6 @@ bool FilterNullPtr(Iterator it, Iterator endIt) {
 
 enum MeFuncHint {
     kReserved      = 0x00,       // reserved
-    kPlacementRCed = 0x01,       // method processed by placementrc
     kAnalyzeRCed   = 0x02,       // method processed by analyzerc
     kRcLowered     = 0x04,       // method lowered by rclowering
 };

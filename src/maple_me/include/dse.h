@@ -31,7 +31,8 @@ class DSE {
       : enableDebug(enableDebug),
         bbVec(bbVec), commonEntryBB(commonEntryBB),
         commonExitBB(commonExitBB), ssaTab(ssaTab),
-        postDom(postDom), bbRequired(bbVec.size(), false) {}
+        postDom(postDom), bbRequired(bbVec.size(), false),
+        exprRequired(ssaTab.GetVersionStTableSize(), false) {}
 
   ~DSE() = default;
 
@@ -42,8 +43,8 @@ class DSE {
 
  protected:
   bool enableDebug = false;
-  bool IsSymbolLived(const utils::SafePtr<const VersionSt> &symbol) const {
-    return exprRequired.find(symbol) != exprRequired.end();
+  bool IsSymbolLived(const VersionSt &symbol) const {
+    return exprRequired[symbol.GetIndex()];
   }
 
  private:
@@ -87,15 +88,15 @@ class DSE {
   void OnRemoveBranchStmt(BB &bb, const StmtNode &stmt);
   void CheckRemoveCallAssignedReturn(StmtNode &stmt);
 
-  bool IsStmtRequired(const utils::SafePtr<const StmtNode> &stmt) const {
-    return stmtRequired.find(stmt) != stmtRequired.end();
+  bool IsStmtRequired(const StmtNode &stmt) const {
+    return stmt.GetIsLive();
   }
-  void SetStmtRequired(const utils::SafePtr<const StmtNode> &stmt) {
-    stmtRequired.insert(stmt);
+  void SetStmtRequired(const StmtNode &stmt) const {
+    stmt.SetIsLive(true);
   }
 
-  void SetSymbolLived(const utils::SafePtr<const VersionSt> &symbol) {
-    exprRequired.insert(symbol);
+  void SetSymbolLived(const VersionSt &symbol) {
+    exprRequired[symbol.GetIndex()] = true;
   }
 
   void AddToWorkList(const utils::SafePtr<const VersionSt> &symbol) {
@@ -113,8 +114,7 @@ class DSE {
   SSATab &ssaTab;
   Dominance &postDom;
   std::vector<bool> bbRequired;
-  std::unordered_set<utils::SafePtr<const StmtNode>> stmtRequired{};
-  std::unordered_set<utils::SafePtr<const VersionSt>> exprRequired{};
+  std::vector<bool> exprRequired;
   std::forward_list<utils::SafePtr<const VersionSt>> workList{};
   bool cfgUpdated = false;
 };

@@ -361,6 +361,14 @@ IvarMeExpr *IRMap::BuildLHSIvar(MeExpr &baseAddr, IassignMeStmt &iassignMeStmt, 
   return meDef;
 }
 
+IvarMeExpr *IRMap::BuildIvarFromOpMeExpr(OpMeExpr &opMeExpr) {
+  IvarMeExpr *ivar = New<IvarMeExpr>(exprID++);
+  ivar->SetFieldID(opMeExpr.GetFieldID());
+  ivar->SetTyIdx(opMeExpr.GetTyIdx());
+  ivar->SetBase(opMeExpr.GetOpnd(0));
+  return ivar;
+}
+
 IvarMeExpr *IRMap::BuildLHSIvarFromIassMeStmt(IassignMeStmt &iassignMeStmt) {
   return BuildLHSIvar(*iassignMeStmt.GetLHSVal()->GetBase(), iassignMeStmt, iassignMeStmt.GetLHSVal()->GetFieldID());
 }
@@ -814,6 +822,11 @@ DassignMeStmt *IRMap::CreateDassignMeStmt(MeExpr &lhs, MeExpr &rhs, BB &currBB) 
   var.SetDefStmt(meStmt);
   meStmt->SetBB(&currBB);
   return meStmt;
+}
+
+IassignMeStmt *IRMap::CreateIassignMeStmt(TyIdx tyIdx, IvarMeExpr &lhs, MeExpr &rhs,
+                                          const MapleMap<OStIdx, ChiMeNode*> &clist) {
+  return NewInPool<IassignMeStmt>(tyIdx, &lhs, &rhs, &clist);
 }
 
 RegassignMeStmt *IRMap::CreateRegassignMeStmt(MeExpr &lhs, MeExpr &rhs, BB &currBB) {

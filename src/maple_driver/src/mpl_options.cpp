@@ -421,6 +421,32 @@ const mapleOption::Descriptor USAGES[] = {
     "  --no-stmtnum                \tDon't print MeStmt index number in IR dump\n",
     "me",
     { { nullptr, nullptr, nullptr, nullptr } } },
+  { kRcLower,
+    kEnable,
+    nullptr,
+    "rclower",
+    nullptr,
+    false,
+    nullptr,
+    mapleOption::BuildType::kBuildTypeAll,
+    mapleOption::ArgCheckPolicy::kArgCheckPolicyBool,
+    "  --rclower                   \tEnable rc lowering\n"
+    "  --no-rclower                \tDisable rc lowering\n",
+    "me",
+    { { nullptr, nullptr, nullptr, nullptr } } },
+  { kMeDumpBefore,
+    kEnable,
+    nullptr,
+    "dump-before",
+    nullptr,
+    false,
+    nullptr,
+    mapleOption::BuildType::kBuildTypeAll,
+    mapleOption::ArgCheckPolicy::kArgCheckPolicyBool,
+    "  --dump-before               \tDo extra IR dump before the specified phase in me\n"
+    "  --no-dump-before            \tDon't extra IR dump before the specified phase in me\n",
+    "me",
+    { { nullptr, nullptr, nullptr, nullptr } } },
   { kMeDumpAfter,
     kEnable,
     nullptr,
@@ -445,6 +471,33 @@ const mapleOption::Descriptor USAGES[] = {
     mapleOption::ArgCheckPolicy::kArgCheckPolicyBool,
     "  --lessthrowalias            \tHandle aliases at java throw statements more accurately\n"
     "  --no-lessthrowalias         \tDisable lessthrowalias\n",
+    "me",
+    { { nullptr, nullptr, nullptr, nullptr } } },
+  { kNodeLegateRc,
+    kEnable,
+    nullptr,
+    "nodelegaterc",
+    nullptr,
+    false,
+    nullptr,
+    mapleOption::BuildType::kBuildTypeAll,
+    mapleOption::ArgCheckPolicy::kArgCheckPolicyBool,
+    "  --nodelegateerc             \tDo not apply RC delegation to local object reference pointers\n"
+    "  --no-nodelegateerc          \tDisable nodelegateerc\n",
+    "me",
+    { { nullptr, nullptr, nullptr, nullptr } } },
+  { kNocondBasedRc,
+    kEnable,
+    nullptr,
+    "nocondbasedrc",
+    nullptr,
+    false,
+    nullptr,
+    mapleOption::BuildType::kBuildTypeAll,
+    mapleOption::ArgCheckPolicy::kArgCheckPolicyBool,
+    "  --nocondbasedrc             \tDo not apply condition-based RC optimization to\n"
+    "                              \tlocal object reference pointers\n"
+    "  --no-nocondbasedrc          \tDisable nocondbasedrc\n",
     "me",
     { { nullptr, nullptr, nullptr, nullptr } } },
   { kRegReadAtReturn,
@@ -1285,7 +1338,12 @@ ErrorCode MplOptions::UpdatePhaseOption(const std::string &args, const std::stri
 
 ErrorCode MplOptions::UpdateExtraOptionOpt(const std::string &args) {
   std::vector<std::string> temp;
+#ifdef _WIN32
+  // Paths on windows may contain such string like "C:/", then it would be confused with the split symbol ":"
+  StringUtils::Split(args, temp, ';');
+#else
   StringUtils::Split(args, temp, ':');
+#endif
   if (temp.size() != runningExes.size()) {
     // parameter not match ignore
     LogInfo::MapleLogger(kLlErr) << "The --run and --option are not matched, please check them."

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -43,6 +43,25 @@ bool MeOption::propIloadRef = false;
 bool MeOption::propGlobalRef = false;
 bool MeOption::propFinaliLoadRef = true;
 bool MeOption::propIloadRefNonParm = false;
+uint32 MeOption::delRcPULimit = UINT32_MAX;
+uint32 MeOption::stmtprePULimit = UINT32_MAX;
+uint32 MeOption::epreLimit = UINT32_MAX;
+uint32 MeOption::eprePULimit = UINT32_MAX;
+uint32 MeOption::lpreLimit = UINT32_MAX;
+uint32 MeOption::lprePULimit = UINT32_MAX;
+bool MeOption::noDelegateRC = false;
+bool MeOption::noCondBasedRC = false;
+bool MeOption::clinitPre = true;
+bool MeOption::dassignPre = true;
+bool MeOption::nullCheckPre = false;
+bool MeOption::assign2FinalPre = false;
+bool MeOption::epreIncludeRef = false;
+bool MeOption::epreLocalRefVar = true;
+bool MeOption::epreLHSIvar = true;
+bool MeOption::lpreSpeculate = false;
+bool MeOption::spillAtCatch = false;
+bool MeOption::rcLowering = true;
+bool MeOption::optDirectCall = false;
 
 void MeOption::SplitPhases(const std::string &str, std::unordered_set<std::string> &set) const {
   std::string s{ str };

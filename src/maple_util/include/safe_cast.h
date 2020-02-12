@@ -47,10 +47,8 @@ struct instance_of_impl<ToT, FromT, typename std::enable_if_t<std::is_base_of<To
 };
 
 template <typename ToT, typename FromT>
-struct enabled_safe_cast :
-  std::conditional_t<utils::meta_or<std::is_base_of<ToT, FromT>, safe_cast_condition<ToT>>::value,
-                     std::true_type,
-                     std::false_type> {};
+struct enabled_safe_cast
+    : utils::meta_or<std::is_base_of<ToT, FromT>, safe_cast_condition<ToT>>::type {};
 }
 
 template <typename ToT, typename FromT,

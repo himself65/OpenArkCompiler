@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -48,11 +48,14 @@ class MeOption {
 
   static bool DumpPhase(const std::string &phase);
   static std::unordered_set<std::string> dumpPhases;
+  static bool dumpBefore;
   static bool dumpAfter;
   static constexpr int kRangeArrayLen = 2;
   static unsigned long range[kRangeArrayLen];
   static bool useRange;
   static std::string dumpFunc;
+  static std::string skipFrom;
+  static std::string skipAfter;
   static bool quiet;
   static bool setCalleeHasSideEffect;
   static bool noSteensgaard;
@@ -60,10 +63,26 @@ class MeOption {
   static uint8 aliasAnalysisLevel;
   static bool noDot;
   static bool stmtNum;
+  static bool rcLowering;
   static uint8 optLevel;
+  static uint32 stmtprePULimit;
+  static uint32 epreLimit;
+  static uint32 eprePULimit;
+  static uint32 lpreLimit;
+  static uint32 lprePULimit;
+  static uint32 delRcPULimit;
   static bool ignoreIPA;
+  static bool epreIncludeRef;
+  static bool epreLocalRefVar;
+  static bool epreLHSIvar;
   static bool dseKeepRef;
   static bool lessThrowAlias;
+  static bool noDelegateRC;
+  static bool noCondBasedRC;
+  static bool nullCheckPre;
+  static bool assign2FinalPre;
+  static bool clinitPre;
+  static bool dassignPre;
   static bool regreadAtReturn;
   static bool propBase;
   static bool propIloadRef;
@@ -71,6 +90,9 @@ class MeOption {
   static bool propFinaliLoadRef;
   static bool propIloadRefNonParm;
   static bool propAtPhi;
+  static bool lpreSpeculate;
+  static bool spillAtCatch;
+  static bool optDirectCall;
  private:
   std::unordered_set<std::string> skipPhases;
   MapleAllocator optionAlloc;

@@ -284,6 +284,14 @@ class VarMeExpr final : public MeExpr {
     maybeNull = maybeNullVal;
   }
 
+  bool GetNoDelegateRC() const {
+    return noDelegateRC;
+  }
+
+  void SetNoDelegateRC(bool noDelegateRCVal) {
+    noDelegateRC = noDelegateRCVal;
+  }
+
   MeStmt *GetDefStmt() const {
     return def.defStmt;
   }
@@ -320,6 +328,7 @@ class VarMeExpr final : public MeExpr {
   bool IsDefByPhi() const {
     return defBy == kDefByPhi;
   }
+  bool noDelegateRC = false;  // true if this cannot be optimized by delegaterc
   union {
     MeStmt *defStmt = nullptr;            // definition stmt of this var
     MeVarPhiNode *defPhi;
