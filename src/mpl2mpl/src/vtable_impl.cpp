@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -133,9 +133,9 @@ void VtableImpl::ReplaceResolveInterface(StmtNode &stmt, const ResolveFuncNode &
   opnds.push_back(builder->CreateExprRegread(PTY_ptr, pregItabAddress));
   opnds.push_back(builder->CreateIntConst(secondHashCode, PTY_u64));
   UStrIdx strIdx = GlobalTables::GetUStrTable().GetOrCreateStrIdxFromName(signature);
-  MemPool *CurrentFunMp = builder->GetCurrentFuncCodeMp();
-  CHECK_FATAL(CurrentFunMp != nullptr, "null ptr check");
-  ConststrNode *signatureNode = CurrentFunMp->New<ConststrNode>(strIdx);
+  MemPool *currentFunMp = builder->GetCurrentFuncCodeMp();
+  CHECK_FATAL(currentFunMp != nullptr, "null ptr check");
+  ConststrNode *signatureNode = currentFunMp->New<ConststrNode>(strIdx);
   signatureNode->SetPrimType(PTY_ptr);
   opnds.push_back(signatureNode);
   StmtNode *mccCallStmt =

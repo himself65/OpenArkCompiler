@@ -692,11 +692,11 @@ void MeFunction::BuildSCC() {
 }
 
 void MeFunction::SCCTopologicalSort(std::vector<SCCOfBBs*> &sccNodes) {
-  std::set<SCCOfBBs*> InQueue;
+  std::set<SCCOfBBs*> inQueue;
   for (SCCOfBBs *node : sccNodes) {
     if (!node->HasPred()) {
       sccTopologicalVec.push_back(node);
-      InQueue.insert(node);
+      inQueue.insert(node);
     }
   }
 
@@ -704,19 +704,19 @@ void MeFunction::SCCTopologicalSort(std::vector<SCCOfBBs*> &sccNodes) {
   for (size_t i = 0; i < sccTopologicalVec.size(); ++i) {
     SCCOfBBs *sccBB = sccTopologicalVec[i];
     for (SCCOfBBs *succ : sccBB->GetSucc()) {
-      if (InQueue.find(succ) == InQueue.end()) {
+      if (inQueue.find(succ) == inQueue.end()) {
         // successor has not been visited
         bool predAllVisited = true;
         // check whether all predecessors of the current successor have been visited
         for (SCCOfBBs *pred : succ->GetPred()) {
-          if (InQueue.find(pred) == InQueue.end()) {
+          if (inQueue.find(pred) == inQueue.end()) {
             predAllVisited = false;
             break;
           }
         }
         if (predAllVisited) {
           sccTopologicalVec.push_back(succ);
-          InQueue.insert(succ);
+          inQueue.insert(succ);
         }
       }
     }
@@ -724,14 +724,14 @@ void MeFunction::SCCTopologicalSort(std::vector<SCCOfBBs*> &sccNodes) {
 }
 
 void MeFunction::BBTopologicalSort(SCCOfBBs &scc) {
-  std::set<BB*> InQueue;
+  std::set<BB*> inQueue;
   std::vector<BB*> bbs;
   for (BB *bb : scc.GetBBs()) {
     bbs.push_back(bb);
   }
   scc.Clear();
   scc.AddBBNode(scc.GetEntry());
-  InQueue.insert(scc.GetEntry());
+  inQueue.insert(scc.GetEntry());
 
   for (size_t i = 0; i < scc.GetBBs().size(); ++i) {
     BB *bb = scc.GetBBs()[i];
@@ -739,7 +739,7 @@ void MeFunction::BBTopologicalSort(SCCOfBBs &scc) {
       if (succ == nullptr) {
         continue;
       }
-      if (InQueue.find(succ) != InQueue.end() ||
+      if (inQueue.find(succ) != inQueue.end() ||
           std::find(bbs.begin(), bbs.end(), succ) == bbs.end()) {
         continue;
       }
@@ -754,14 +754,14 @@ void MeFunction::BBTopologicalSort(SCCOfBBs &scc) {
         if (backEdges.find(std::pair<uint32, uint32>(pred->UintID(), succ->UintID())) != backEdges.end()) {
           continue;
         }
-        if (InQueue.find(pred) == InQueue.end()) {
+        if (inQueue.find(pred) == inQueue.end()) {
           predAllVisited = false;
           break;
         }
       }
       if (predAllVisited) {
         scc.AddBBNode(succ);
-        InQueue.insert(succ);
+        inQueue.insert(succ);
       }
     }
   }

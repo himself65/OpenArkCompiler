@@ -477,7 +477,7 @@ void BinaryMplImport::ImportTypePairs(MIRInstantVectorType &insVecType) {
   }
 }
 
-void BinaryMplImport::completeAggInfo(TyIdx tyIdx) {
+void BinaryMplImport::CompleteAggInfo(TyIdx tyIdx) {
   MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
   CHECK_FATAL(type != nullptr, "MIRType is null");
   if (type->GetKind() == kTypeInterface) {
@@ -492,7 +492,7 @@ void BinaryMplImport::completeAggInfo(TyIdx tyIdx) {
     auto *structType = static_cast<MIRStructType*>(type);
     ImportStructTypeData(*structType);
   } else {
-    ERR(kLncErr, "in BinaryMplImport::completeAggInfo, MIRType error");
+    ERR(kLncErr, "in BinaryMplImport::CompleteAggInfo, MIRType error");
   }
 }
 
@@ -528,7 +528,7 @@ TyIdx BinaryMplImport::ImportType(bool forPointedType) {
       if (typeNeedsComplete != nullptr && ptrLev == 0) {
         TyIdx tyIdxNeedsComplete = typeNeedsComplete->GetTypeIndex();
         typeNeedsComplete = nullptr;
-        completeAggInfo(tyIdxNeedsComplete);
+        CompleteAggInfo(tyIdxNeedsComplete);
       }
       return origType->GetTypeIndex();
     }

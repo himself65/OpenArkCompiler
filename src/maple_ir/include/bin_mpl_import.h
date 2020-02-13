@@ -85,7 +85,7 @@ class BinaryMplImport {
   MIRType *CreateMirType(MIRTypeKind kind, GStrIdx strIdx, int64 tag) const;
   MIRGenericInstantType *CreateMirGenericInstantType(GStrIdx strIdx) const;
   MIRBitFieldType *CreateBitFieldType(uint8 fieldsize, PrimType pt, GStrIdx strIdx) const;
-  void completeAggInfo(TyIdx tyIdx);
+  void CompleteAggInfo(TyIdx tyIdx);
   TyIdx ImportType(bool forPointedType = false);
   void ImportTypeBase(PrimType &primType, GStrIdx &strIdx, bool &nameIsLocal);
   void InSymTypeTable();
