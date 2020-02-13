@@ -1,4 +1,5 @@
-Checks: '-*,readability-identifier-naming,readability-function-size,misc-unused-parameters'
+Checks: '-*,readability-identifier-naming,readability-function-size,misc-unused-parameters,
+         readability-magic-numbers,modernize-use-nullptr,performance-move-const-arg'
 CheckOptions:
   - key:             readability-identifier-naming.ClassCase
     value:           CamelCase
