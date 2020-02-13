@@ -2988,13 +2988,16 @@ C标准的许多函数，没有将目标缓冲区的大小作为参数，并且�
 
 基于历史缓冲区溢出漏洞触发的情况统计，有很大一部分是因为调用了这些内存操作类函数但未考虑目标缓冲区大小而导致。
 以下列出了部分内存操作类危险函数：
-内存拷贝函数：memcpy(), wmemcpy(), memmove(), wmemmove() 
 
-内存初始化函数：memset()字符串拷贝函数：strcpy(), wcscpy(),strncpy(), wcsncpy() 
+内存拷贝函数：memcpy(), wmemcpy(), memmove(), wmemmove()
 
-字符串拼接函数：strcat(), wcscat(),strncat(), wcsncat() 
+内存初始化函数：memset()
 
-字符串格式化输出函数：sprintf(), swprintf(), vsprintf(), vswprintf(), snprintf(), vsnprintf() 
+字符串拷贝函数：strcpy(), wcscpy(),strncpy(), wcsncpy()
+
+字符串拼接函数：strcat(), wcscat(),strncat(), wcsncat()
+
+字符串格式化输出函数：sprintf(), swprintf(), vsprintf(), vswprintf(), snprintf(), vsnprintf()
 
 字符串格式化输入函数：scanf(), wscanf(), vscanf(), vwscanf(), fscanf(),fwscanf(),vfscanf(),vfwscanf(),sscanf(), swscanf(), vsscanf(), vswscanf() 
 
