@@ -140,12 +140,12 @@ class BaseNode {
     ptyp = type;
   }
 
-  virtual BaseNode *Opnd(size_t i = 0) const {
+  virtual BaseNode *Opnd(size_t) const {
     ASSERT(0, "override needed");
     return nullptr;
   }
 
-  virtual void SetOpnd(BaseNode *node, size_t i = 0) {
+  virtual void SetOpnd(BaseNode*, size_t) {
     ASSERT(0, "This should not happen");
   }
 
@@ -216,8 +216,7 @@ class UnaryNode : public BaseNode {
     return node;
   }
 
-  BaseNode *Opnd(size_t i = 0) const override {
-    ASSERT(i == 0, "Invalid operand idx in UnaryNode");
+  BaseNode *Opnd(size_t) const override {
     return uOpnd;
   }
 
@@ -225,7 +224,7 @@ class UnaryNode : public BaseNode {
     return 1;
   }
 
-  void SetOpnd(BaseNode *node, size_t i = 0) override {
+  void SetOpnd(BaseNode *node, size_t) override {
     uOpnd = node;
   }
 
@@ -288,7 +287,7 @@ class RetypeNode : public TypeCvtNode {
 
   RetypeNode *CloneTree(MapleAllocator &allocator) const override {
     auto *node = allocator.GetMemPool()->New<RetypeNode>(*this);
-    node->SetOpnd(Opnd()->CloneTree(allocator));
+    node->SetOpnd(Opnd(0)->CloneTree(allocator), 0);
     return node;
   }
 
@@ -324,7 +323,7 @@ class ExtractbitsNode : public UnaryNode {
 
   ExtractbitsNode *CloneTree(MapleAllocator &allocator) const override {
     auto *node = allocator.GetMemPool()->New<ExtractbitsNode>(*this);
-    node->SetOpnd(Opnd()->CloneTree(allocator));
+    node->SetOpnd(Opnd(0)->CloneTree(allocator), 0);
     return node;
   }
 
@@ -397,7 +396,7 @@ class JarrayMallocNode : public UnaryNode {
 
   JarrayMallocNode *CloneTree(MapleAllocator &allocator) const override {
     auto *node = allocator.GetMemPool()->New<JarrayMallocNode>(*this);
-    node->SetOpnd(Opnd()->CloneTree(allocator));
+    node->SetOpnd(Opnd(0)->CloneTree(allocator), 0);
     return node;
   }
 
@@ -431,7 +430,7 @@ class IreadNode : public UnaryNode {
 
   IreadNode *CloneTree(MapleAllocator &allocator) const override {
     auto *node = allocator.GetMemPool()->New<IreadNode>(*this);
-    node->SetOpnd(Opnd()->CloneTree(allocator));
+    node->SetOpnd(Opnd(0)->CloneTree(allocator), 0);
     return node;
   }
 
@@ -453,7 +452,7 @@ class IreadNode : public UnaryNode {
 
   // the base of an address expr is either a leaf or an iread
   BaseNode &GetAddrExprBase() const {
-    BaseNode *base = Opnd();
+    BaseNode *base = Opnd(0);
     while (base->NumOpnds() != 0 && base->GetOpCode() != OP_iread) {
       base = base->Opnd(0);
     }
@@ -483,7 +482,7 @@ class IreadoffNode : public UnaryNode {
 
   IreadoffNode *CloneTree(MapleAllocator &allocator) const override {
     auto *node = allocator.GetMemPool()->New<IreadoffNode>(*this);
-    node->SetOpnd(Opnd()->CloneTree(allocator));
+    node->SetOpnd(Opnd(0)->CloneTree(allocator), 0);
     return node;
   }
 
@@ -1782,13 +1781,11 @@ class SwitchNode : public StmtNode {
     return node;
   }
 
-  BaseNode *Opnd(size_t i) const override {
-    ASSERT(i == 0, "it is not same as original");
+  BaseNode *Opnd(size_t) const override {
     return switchOpnd;
   }
 
-  void SetOpnd(BaseNode *node, size_t i = 0) override {
-    ASSERT(i == 0, "it is not same as original");
+  void SetOpnd(BaseNode *node, size_t) override {
     switchOpnd = node;
   }
 
@@ -1928,7 +1925,7 @@ class UnaryStmtNode : public StmtNode {
   UnaryStmtNode *CloneTree(MapleAllocator &allocator) const override {
     auto *node = allocator.GetMemPool()->New<UnaryStmtNode>(*this);
     node->SetStmtID(stmtIDNext++);
-    node->SetOpnd(uOpnd->CloneTree(allocator));
+    node->SetOpnd(uOpnd->CloneTree(allocator), 0);
     return node;
   }
 
@@ -1944,13 +1941,11 @@ class UnaryStmtNode : public StmtNode {
     this->SetOpnd(rhs, 0);
   }
 
-  BaseNode *Opnd(size_t i = 0) const override {
-    ASSERT(i == 0, "Unary operand");
+  BaseNode *Opnd(size_t) const override {
     return uOpnd;
   }
 
-  void SetOpnd(BaseNode *node, size_t i = 0) override {
-    ASSERT(i == 0, "Unary operand");
+  void SetOpnd(BaseNode *node, size_t) override {
     uOpnd = node;
   }
 
@@ -1980,7 +1975,7 @@ class DassignNode : public UnaryStmtNode {
   DassignNode *CloneTree(MapleAllocator &allocator) const override {
     auto *node = allocator.GetMemPool()->New<DassignNode>(*this);
     node->SetStmtID(stmtIDNext++);
-    node->SetOpnd(Opnd()->CloneTree(allocator));
+    node->SetOpnd(Opnd(0)->CloneTree(allocator), 0);
     return node;
   }
 
@@ -2040,7 +2035,7 @@ class RegassignNode : public UnaryStmtNode {
   RegassignNode *CloneTree(MapleAllocator &allocator) const override {
     auto *node = allocator.GetMemPool()->New<RegassignNode>(*this);
     node->SetStmtID(stmtIDNext++);
-    node->SetOpnd(Opnd()->CloneTree(allocator));
+    node->SetOpnd(Opnd(0)->CloneTree(allocator), 0);
     return node;
   }
 
@@ -2088,7 +2083,7 @@ class CondGotoNode : public UnaryStmtNode {
   CondGotoNode *CloneTree(MapleAllocator &allocator) const override {
     auto *node = allocator.GetMemPool()->New<CondGotoNode>(*this);
     node->SetStmtID(stmtIDNext++);
-    node->SetOpnd(Opnd()->CloneTree(allocator));
+    node->SetOpnd(Opnd(0)->CloneTree(allocator), 0);
     return node;
   }
 
@@ -2121,7 +2116,7 @@ class RangeGotoNode : public UnaryStmtNode {
   bool Verify() const override;
   RangeGotoNode *CloneTree(MapleAllocator &allocator) const override {
     auto *node = allocator.GetMemPool()->New<RangeGotoNode>(allocator, *this);
-    node->SetOpnd(Opnd()->CloneTree(allocator));
+    node->SetOpnd(Opnd(0)->CloneTree(allocator), 0);
     for (size_t i = 0; i < rangegotoTable.size(); ++i) {
       node->rangegotoTable.push_back(rangegotoTable[i]);
     }
@@ -2269,7 +2264,7 @@ class IfStmtNode : public UnaryStmtNode {
   IfStmtNode *CloneTree(MapleAllocator &allocator) const override {
     auto *node = allocator.GetMemPool()->New<IfStmtNode>(*this);
     node->SetStmtID(stmtIDNext++);
-    node->SetOpnd(Opnd()->CloneTree(allocator));
+    node->SetOpnd(Opnd()->CloneTree(allocator), 0);
     node->thenPart = thenPart->CloneTree(allocator);
     if (elsePart != nullptr) {
       node->elsePart = elsePart->CloneTree(allocator);
@@ -2279,7 +2274,7 @@ class IfStmtNode : public UnaryStmtNode {
 
   BaseNode *Opnd(size_t i = 0) const override {
     if (i == 0) {
-      return UnaryStmtNode::Opnd();
+      return UnaryStmtNode::Opnd(0);
     } else if (i == 1) {
       return thenPart;
     } else if (i == 2) {
@@ -2331,7 +2326,7 @@ class WhileStmtNode : public UnaryStmtNode {
   WhileStmtNode *CloneTree(MapleAllocator &allocator) const override {
     auto *node = allocator.GetMemPool()->New<WhileStmtNode>(*this);
     node->SetStmtID(stmtIDNext++);
-    node->SetOpnd(Opnd()->CloneTree(allocator));
+    node->SetOpnd(Opnd(0)->CloneTree(allocator), 0);
     node->body = body->CloneTree(allocator);
     return node;
   }
@@ -2502,7 +2497,7 @@ class ForeachelemNode : public StmtNode {
     loopBody = loopBodyValue;
   }
 
-  BaseNode *Opnd(size_t i = 0) const override {
+  BaseNode *Opnd(size_t) const override {
     return loopBody;
   }
 
@@ -2606,7 +2601,7 @@ class IassignFPoffNode : public UnaryStmtNode {
 
   IassignFPoffNode(PrimType primType, int32 offset, BaseNode *src) : IassignFPoffNode(offset) {
     SetPrimType(primType);
-    SetOpnd(src);
+    SetOpnd(src, 0);
   }
 
   virtual ~IassignFPoffNode() = default;
@@ -2617,7 +2612,7 @@ class IassignFPoffNode : public UnaryStmtNode {
   IassignFPoffNode *CloneTree(MapleAllocator &allocator) const override {
     auto *node = allocator.GetMemPool()->New<IassignFPoffNode>(*this);
     node->SetStmtID(stmtIDNext++);
-    node->SetOpnd(Opnd()->CloneTree(allocator));
+    node->SetOpnd(Opnd(0)->CloneTree(allocator), 0);
     return node;
   }
 

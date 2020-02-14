@@ -37,8 +37,8 @@ bool MeDoBypathEH::DoBypathException(BB *tryBB, BB *catchBB, Klass *catchClass, 
         auto *node = static_cast<UnaryStmtNode*>(stmt);
         BaseNode *rhExpr = nullptr;
         Klass *throwClass = nullptr;
-        if (node->Opnd()->GetOpCode() == OP_dread) {
-          auto *dread = static_cast<AddrofNode*>(node->Opnd());
+        if (node->Opnd(0)->GetOpCode() == OP_dread) {
+          auto *dread = static_cast<AddrofNode*>(node->Opnd(0));
           StIdx ehObjIdx = dread->GetStIdx();
           const MIRSymbol *ehObjSymbol = func->GetMirFunc()->GetLocalOrGlobalSymbol(ehObjIdx);
           MIRType *pType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ehObjSymbol->GetTyIdx());
@@ -46,8 +46,8 @@ bool MeDoBypathEH::DoBypathException(BB *tryBB, BB *catchBB, Klass *catchClass, 
           TyIdx pTypeIdx = (static_cast<MIRPtrType*>(pType))->GetPointedType()->GetTypeIndex();
           throwClass = kh->GetKlassFromTyIdx(pTypeIdx);
           rhExpr = dread;
-        } else if (node->Opnd()->GetOpCode() == OP_iread) {
-          auto *iread = static_cast<IreadNode*>(node->Opnd());
+        } else if (node->Opnd(0)->GetOpCode() == OP_iread) {
+          auto *iread = static_cast<IreadNode*>(node->Opnd(0));
           MIRType *pType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(iread->GetTyIdx());
           CHECK_FATAL(pType->GetKind() == kTypePointer, "must be pointer");
           TyIdx pTypeIdx = (static_cast<MIRPtrType*>(pType))->GetPointedType()->GetTypeIndex();

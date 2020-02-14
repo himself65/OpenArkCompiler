@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -114,7 +114,7 @@ void JavaEHLowerer::DoLowerBoundaryCheck(IntrinsiccallNode &intrincall, BlockNod
   const size_t intrincallNopndSize = intrincall.GetNopndSize();
   CHECK_FATAL(intrincallNopndSize > 0, "null ptr check");
   CondGotoNode *brFalseStmt = GetMIRModule().CurFuncCodeMemPool()->New<CondGotoNode>(OP_brfalse);
-  brFalseStmt->SetOpnd(DoLowerExpr(*(intrincall.GetNopndAt(0)), newblk));
+  brFalseStmt->SetOpnd(DoLowerExpr(*(intrincall.GetNopndAt(0)), newblk), 0);
   brFalseStmt->SetSrcPos(intrincall.GetSrcPos());
   LabelIdx lbidx = GetMIRModule().CurFunction()->GetLabelTab()->CreateLabel();
   GetMIRModule().CurFunction()->GetLabelTab()->AddToStringLabelMap(lbidx);
@@ -154,7 +154,7 @@ BlockNode *JavaEHLowerer::DoLowerBlock(BlockNode &block) {
         BlockNode *thenPart = ifStmtNode->GetThenPart();
         BlockNode *elsePart = ifStmtNode->GetElsePart();
         ASSERT(ifStmtNode->Opnd() != nullptr, "null ptr check!");
-        ifStmtNode->SetOpnd(DoLowerExpr(*(ifStmtNode->Opnd()), *newBlock));
+        ifStmtNode->SetOpnd(DoLowerExpr(*(ifStmtNode->Opnd()), *newBlock), 0);
         ifStmtNode->SetThenPart(DoLowerBlock(*thenPart));
         if (elsePart != nullptr) {
           ifStmtNode->SetElsePart(DoLowerBlock(*elsePart));
@@ -166,7 +166,7 @@ BlockNode *JavaEHLowerer::DoLowerBlock(BlockNode &block) {
       case OP_dowhile: {
         auto *whileStmtNode = static_cast<WhileStmtNode*>(stmt);
         BaseNode *testOpnd = whileStmtNode->Opnd(0);
-        whileStmtNode->SetOpnd(DoLowerExpr(*testOpnd, *newBlock));
+        whileStmtNode->SetOpnd(DoLowerExpr(*testOpnd, *newBlock), 0);
         whileStmtNode->SetBody(DoLowerBlock(*(whileStmtNode->GetBody())));
         newBlock->AddStatement(whileStmtNode);
         break;

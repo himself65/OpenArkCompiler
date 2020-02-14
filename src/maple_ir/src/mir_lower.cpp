@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -19,7 +19,7 @@
 namespace maple {
 LabelIdx MIRLower::CreateCondGotoStmt(Opcode op, BlockNode &blk, const IfStmtNode &ifStmt) {
   auto *brStmt = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(op);
-  brStmt->SetOpnd(ifStmt.Opnd());
+  brStmt->SetOpnd(ifStmt.Opnd(), 0);
   brStmt->SetSrcPos(ifStmt.GetSrcPos());
   LabelIdx lableIdx = mirModule.CurFunction()->GetLabelTab()->CreateLabel();
   (void)mirModule.CurFunction()->GetLabelTab()->AddToStringLabelMap(lableIdx);
@@ -89,7 +89,7 @@ BlockNode *MIRLower::LowerIfStmt(IfStmtNode &ifStmt, bool recursive) {
   if (thenEmpty && elseEmpty) {
     // generate EVAL <cond> statement
     auto *evalStmt = mirModule.CurFuncCodeMemPool()->New<UnaryStmtNode>(OP_eval);
-    evalStmt->SetOpnd(ifStmt.Opnd());
+    evalStmt->SetOpnd(ifStmt.Opnd(), 0);
     evalStmt->SetSrcPos(ifStmt.GetSrcPos());
     blk->AddStatement(evalStmt);
   } else if (elseEmpty) {
@@ -126,7 +126,7 @@ BlockNode *MIRLower::LowerWhileStmt(WhileStmtNode &whileStmt) {
   whileStmt.SetBody(LowerBlock(*whileStmt.GetBody()));
   auto *blk = mirModule.CurFuncCodeMemPool()->New<BlockNode>();
   auto *brFalseStmt = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(OP_brfalse);
-  brFalseStmt->SetOpnd(whileStmt.Opnd());
+  brFalseStmt->SetOpnd(whileStmt.Opnd(0), 0);
   brFalseStmt->SetSrcPos(whileStmt.GetSrcPos());
   LabelIdx lalbeIdx = mirModule.CurFunction()->GetLabelTab()->CreateLabel();
   (void)mirModule.CurFunction()->GetLabelTab()->AddToStringLabelMap(lalbeIdx);
@@ -139,7 +139,7 @@ BlockNode *MIRLower::LowerWhileStmt(WhileStmtNode &whileStmt) {
   blk->AddStatement(lableStmt);
   blk->AppendStatementsFromBlock(*whileStmt.GetBody());
   auto *brTrueStmt = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(OP_brtrue);
-  brTrueStmt->SetOpnd(whileStmt.Opnd()->CloneTree(mirModule.GetCurFuncCodeMPAllocator()));
+  brTrueStmt->SetOpnd(whileStmt.Opnd(0)->CloneTree(mirModule.GetCurFuncCodeMPAllocator()), 0);
   brTrueStmt->SetOffset(bodyLableIdx);
   blk->AddStatement(brTrueStmt);
   lableStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
@@ -169,7 +169,7 @@ BlockNode *MIRLower::LowerDoloopStmt(DoloopNode &doloop) {
     auto *startRegassign = mirModule.CurFuncCodeMemPool()->New<RegassignNode>();
     startRegassign->SetRegIdx(regIdx);
     startRegassign->SetPrimType(primType);
-    startRegassign->SetOpnd(doloop.GetStartExpr());
+    startRegassign->SetOpnd(doloop.GetStartExpr(), 0);
     startRegassign->SetSrcPos(doloop.GetSrcPos());
     blk->AddStatement(startRegassign);
   } else {
@@ -180,7 +180,7 @@ BlockNode *MIRLower::LowerDoloopStmt(DoloopNode &doloop) {
     blk->AddStatement(startDassign);
   }
   auto *brFalseStmt = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(OP_brfalse);
-  brFalseStmt->SetOpnd(doloop.GetCondExpr());
+  brFalseStmt->SetOpnd(doloop.GetCondExpr(), 0);
   LabelIdx lIdx = mirModule.CurFunction()->GetLabelTab()->CreateLabel();
   (void)mirModule.CurFunction()->GetLabelTab()->AddToStringLabelMap(lIdx);
   brFalseStmt->SetOffset(lIdx);
@@ -204,7 +204,7 @@ BlockNode *MIRLower::LowerDoloopStmt(DoloopNode &doloop) {
     auto *endRegassign = mirModule.CurFuncCodeMemPool()->New<RegassignNode>();
     endRegassign->SetRegIdx(regIdx);
     endRegassign->SetPrimType(doVarPType);
-    endRegassign->SetOpnd(add);
+    endRegassign->SetOpnd(add, 0);
     blk->AddStatement(endRegassign);
   } else {
     const MIRSymbol *doVarSym = mirModule.CurFunction()->GetLocalOrGlobalSymbol(doloop.GetDoVarStIdx());
@@ -219,7 +219,7 @@ BlockNode *MIRLower::LowerDoloopStmt(DoloopNode &doloop) {
     blk->AddStatement(endDassign);
   }
   auto *brTrueStmt = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(OP_brtrue);
-  brTrueStmt->SetOpnd(doloop.GetCondExpr()->CloneTree(mirModule.GetCurFuncCodeMPAllocator()));
+  brTrueStmt->SetOpnd(doloop.GetCondExpr()->CloneTree(mirModule.GetCurFuncCodeMPAllocator()), 0);
   brTrueStmt->SetOffset(bodyLabelIdx);
   blk->AddStatement(brTrueStmt);
   labelStmt = mirModule.CurFuncCodeMemPool()->New<LabelNode>();
@@ -244,7 +244,7 @@ BlockNode *MIRLower::LowerDowhileStmt(WhileStmtNode &doWhileStmt) {
   blk->AddStatement(labelStmt);
   blk->AppendStatementsFromBlock(*doWhileStmt.GetBody());
   auto *brTrueStmt = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(OP_brtrue);
-  brTrueStmt->SetOpnd(doWhileStmt.Opnd());
+  brTrueStmt->SetOpnd(doWhileStmt.Opnd(0), 0);
   brTrueStmt->SetOffset(lIdx);
   blk->AddStatement(brTrueStmt);
   return blk;
@@ -299,14 +299,14 @@ void MIRLower::LowerBrCondition(BlockNode &block) {
     nextStmt = stmt->GetNext();
     if (stmt->IsCondBr()) {
       auto *condGoto = static_cast<CondGotoNode*>(stmt);
-      if (condGoto->Opnd()->GetOpCode() == OP_cand || condGoto->Opnd()->GetOpCode() == OP_cior) {
-        auto *cond = static_cast<BinaryNode*>(condGoto->Opnd());
+      if (condGoto->Opnd(0)->GetOpCode() == OP_cand || condGoto->Opnd(0)->GetOpCode() == OP_cior) {
+        auto *cond = static_cast<BinaryNode*>(condGoto->Opnd(0));
         if ((stmt->GetOpCode() == OP_brfalse && cond->GetOpCode() == OP_cand) ||
             (stmt->GetOpCode() == OP_brtrue && cond->GetOpCode() == OP_cior)) {
           // short-circuit target label is same as original condGoto stmt
-          condGoto->SetOpnd(cond->GetBOpnd(0));
+          condGoto->SetOpnd(cond->GetBOpnd(0), 0);
           auto *newCondGoto = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(Opcode(stmt->GetOpCode()));
-          newCondGoto->SetOpnd(cond->GetBOpnd(1));
+          newCondGoto->SetOpnd(cond->GetBOpnd(1), 0);
           newCondGoto->SetOffset(condGoto->GetOffset());
           block.InsertAfter(newCondGoto, condGoto);
           nextStmt = stmt;  // so it will be re-processed if another cand/cior
@@ -325,10 +325,10 @@ void MIRLower::LowerBrCondition(BlockNode &block) {
           }
           auto *newCondGoto = mirModule.CurFuncCodeMemPool()->New<CondGotoNode>(
               stmt->GetOpCode() == OP_brfalse ? OP_brtrue : OP_brfalse);
-          newCondGoto->SetOpnd(cond->GetBOpnd(0));
+          newCondGoto->SetOpnd(cond->GetBOpnd(0), 0);
           newCondGoto->SetOffset(lIdx);
           block.InsertBefore(condGoto, newCondGoto);
-          condGoto->SetOpnd(cond->GetBOpnd(1));
+          condGoto->SetOpnd(cond->GetBOpnd(1), 0);
           nextStmt = newCondGoto;  // so it will be re-processed if another cand/cior
         }
       }

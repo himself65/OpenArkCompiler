@@ -46,7 +46,7 @@ void VtableImpl::ProcessFunc(MIRFunction *func) {
     switch (opcode) {
       case OP_regassign: {
         auto *regassign = static_cast<RegassignNode*>(stmt);
-        BaseNode *rhs = regassign->Opnd();
+        BaseNode *rhs = regassign->Opnd(0);
         ASSERT_NOT_NULL(rhs);
         if (rhs->GetOpCode() == OP_resolveinterfacefunc) {
           ReplaceResolveInterface(*stmt, *(static_cast<ResolveFuncNode*>(rhs)));
@@ -148,7 +148,7 @@ void VtableImpl::ReplaceResolveInterface(StmtNode &stmt, const ResolveFuncNode &
   currFunc->GetBody()->InsertBefore(&stmt, ifStmt);
   if (stmt.GetOpCode() == OP_regassign) {
     auto *regAssign = static_cast<RegassignNode*>(&stmt);
-    regAssign->SetOpnd(builder->CreateExprRegread(compactPtrPrim, pregFuncPtr));
+    regAssign->SetOpnd(builder->CreateExprRegread(compactPtrPrim, pregFuncPtr), 0);
   } else {
     auto *icall = static_cast<IcallNode*>(&stmt);
     const size_t nopndSize = icall->GetNopndSize();

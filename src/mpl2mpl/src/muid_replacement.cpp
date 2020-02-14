@@ -168,7 +168,7 @@ void MUIDReplacement::CollectFuncAndDataFromFuncList() {
           break;
         }
         case OP_regassign: {
-          auto *rhs = static_cast<RegassignNode*>(stmt)->Opnd();
+          auto *rhs = static_cast<RegassignNode*>(stmt)->Opnd(0);
           if (rhs != nullptr && rhs->GetOpCode() == OP_addroffunc) {
             puidx = static_cast<AddroffuncNode*>(rhs)->GetPUIdx();
           }
@@ -199,7 +199,7 @@ void MUIDReplacement::CollectImplicitUndefClassInfo(StmtNode &stmt) {
     rhs = dNode->GetRHS();
   } else if (stmt.GetOpCode() == OP_regassign) {
     auto *rNode = static_cast<RegassignNode*>(&stmt);
-    rhs = rNode->Opnd();
+    rhs = rNode->Opnd(0);
   } else if (stmt.GetOpCode() == OP_catch) {
     auto *jNode = static_cast<CatchNode*>(&stmt);
     for (TyIdx typeIdx : jNode->GetExceptionTyIdxVec()) {
@@ -896,10 +896,10 @@ void MUIDReplacement::ReplaceDirectInvokeOrAddroffunc(MIRFunction &currentFunc, 
     puidx = static_cast<AddroffuncNode*>(dassignNode->GetRHS())->GetPUIdx();
   } else if (stmt.GetOpCode() == OP_regassign) {
     regassignNode = static_cast<RegassignNode*>(&stmt);
-    if (regassignNode->Opnd()->GetOpCode() != OP_addroffunc) {
+    if (regassignNode->Opnd(0)->GetOpCode() != OP_addroffunc) {
       return;
     }
-    puidx = static_cast<AddroffuncNode*>(regassignNode->Opnd())->GetPUIdx();
+    puidx = static_cast<AddroffuncNode*>(regassignNode->Opnd(0))->GetPUIdx();
   } else {
     CHECK_FATAL(false, "unexpected stmt type in ReplaceDirectInvokeOrAddroffunc");
   }
@@ -973,7 +973,7 @@ void MUIDReplacement::ReplaceDirectInvokeOrAddroffunc(MIRFunction &currentFunc, 
   } else if (dassignNode != nullptr) {
     dassignNode->SetRHS(readFuncPtr);
   } else if (regassignNode != nullptr) {
-    regassignNode->SetOpnd(readFuncPtr);
+    regassignNode->SetOpnd(readFuncPtr, 0);
   }
 }
 
@@ -1089,7 +1089,7 @@ BaseNode *MUIDReplacement::ReplaceDreadExpr(MIRFunction *currentFunc, StmtNode *
     default: {
       if (expr->IsUnaryNode()) {
         uOpnd = static_cast<UnaryNode*>(expr);
-        uOpnd->SetOpnd(ReplaceDreadExpr(currentFunc, stmt, uOpnd->Opnd()), i);
+        uOpnd->SetOpnd(ReplaceDreadExpr(currentFunc, stmt, uOpnd->Opnd(0)), i);
       } else if (expr->IsBinaryNode()) {
         bopnds = static_cast<BinaryNode*>(expr);
         for (i = 0; i < bopnds->NumOpnds(); ++i) {

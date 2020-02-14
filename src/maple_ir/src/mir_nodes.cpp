@@ -215,7 +215,7 @@ void CatchNode::Dump() const {
   this->BaseNode::Dump();
 }
 
-void UnaryNode::DumpOpnd(const MIRModule &mod, int indent) const {
+void UnaryNode::DumpOpnd(const MIRModule&, int indent) const {
   LogInfo::MapleLogger() << " (";
   uOpnd->Dump(indent);
   LogInfo::MapleLogger() << ")";
@@ -270,7 +270,7 @@ void IreadoffNode::Dump(int32 indent) const {
   DumpOpnd(*theMIRModule, indent);
 }
 
-void IreadFPoffNode::Dump(int32 indent) const {
+void IreadFPoffNode::Dump(int32) const {
   LogInfo::MapleLogger() << kOpcodeInfo.GetTableItemAt(GetOpCode()).name << " " << GetPrimTypeName(GetPrimType());
   LogInfo::MapleLogger() << " " << offset;
 }
@@ -542,7 +542,7 @@ void RegreadNode::Dump(int32) const {
   }
 }
 
-void AddroffuncNode::Dump(int32 indent) const {
+void AddroffuncNode::Dump(int32) const {
   LogInfo::MapleLogger() << kOpcodeInfo.GetTableItemAt(GetOpCode()).name << " " << GetPrimTypeName(GetPrimType());
   MIRFunction *func = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(puIdx);
   LogInfo::MapleLogger() << " &" << GlobalTables::GetGsymTable().GetSymbolFromStidx(func->GetStIdx().Idx())->GetName();
@@ -651,7 +651,7 @@ void RegassignNode::Dump(int32 indent) const {
     }
   }
   LogInfo::MapleLogger() << " (";
-  UnaryStmtNode::Opnd()->Dump(indent + 1);
+  UnaryStmtNode::Opnd(0)->Dump(indent + 1);
   LogInfo::MapleLogger() << ")\n";
 }
 
@@ -731,7 +731,7 @@ void CondGotoNode::Dump(int32 indent) const {
   StmtNode::DumpBase(indent);
   LogInfo::MapleLogger() << " @" << theMIRModule->CurFunction()->GetLabelName((LabelIdx)offset);
   LogInfo::MapleLogger() << " (";
-  Opnd()->Dump(indent);
+  Opnd(0)->Dump(indent);
   LogInfo::MapleLogger() << ")\n";
 }
 
@@ -756,7 +756,7 @@ void SwitchNode::Dump(int32 indent) const {
 void RangeGotoNode::Dump(int32 indent) const {
   StmtNode::DumpBase(indent);
   LogInfo::MapleLogger() << " (";
-  Opnd()->Dump(indent);
+  Opnd(0)->Dump(indent);
   LogInfo::MapleLogger() << ") " << tagOffset << " {";
   for (auto it = rangegotoTable.begin(); it != rangegotoTable.end(); it++) {
     LogInfo::MapleLogger() << '\n';
@@ -786,7 +786,7 @@ void MultiwayNode::Dump(int32 indent) const {
   LogInfo::MapleLogger() << " }\n";
 }
 
-void UnaryStmtNode::DumpOpnd(const MIRModule &mod, int indent) const {
+void UnaryStmtNode::DumpOpnd(const MIRModule&, int indent) const {
   LogInfo::MapleLogger() << " (";
   uOpnd->Dump(indent);
   LogInfo::MapleLogger() << ")";
@@ -839,7 +839,7 @@ void WhileStmtNode::Dump(int32 indent) const {
   StmtNode::DumpBase(indent);
   if (GetOpCode() == OP_while) {
     LogInfo::MapleLogger() << " (";
-    Opnd()->Dump(indent);
+    Opnd(0)->Dump(indent);
     LogInfo::MapleLogger() << ")";
     body->Dump(indent);
   } else {  // OP_dowhile
@@ -849,7 +849,7 @@ void WhileStmtNode::Dump(int32 indent) const {
     }
     PrintIndentation(indent);
     LogInfo::MapleLogger() << "} (";
-    Opnd()->Dump(indent);
+    Opnd(0)->Dump(indent);
     LogInfo::MapleLogger() << ")\n";
   }
 }
@@ -1463,19 +1463,19 @@ bool TypeCvtNode::Verify() const {
   bool opndTypeVerf = true;
   bool opndSizeVerf = true;
   if (GetOpCode() == OP_ceil || GetOpCode() == OP_floor || GetOpCode() == OP_round || GetOpCode() == OP_trunc) {
-    opndTypeVerf = FloatIntCvtTypeVerify(GetPrimType(), Opnd()->GetPrimType());
+    opndTypeVerf = FloatIntCvtTypeVerify(GetPrimType(), Opnd(0)->GetPrimType());
   } else if (GetOpCode() == OP_retype) {
-    if (GetPrimTypeSize(GetPrimType()) != GetPrimTypeSize(Opnd()->GetPrimType())) {
+    if (GetPrimTypeSize(GetPrimType()) != GetPrimTypeSize(Opnd(0)->GetPrimType())) {
       opndSizeVerf = false;
       LogInfo::MapleLogger() << "\n#Error:The size of opnd0 and prim-type must be the same\n";
     }
   }
-  bool opndExprVerf = Opnd()->Verify();
+  bool opndExprVerf = Opnd(0)->Verify();
   return opndTypeVerf && opndSizeVerf && opndExprVerf;
 }
 
 bool IreadNode::Verify() const {
-  bool addrExprVerf = Opnd()->Verify();
+  bool addrExprVerf = Opnd(0)->Verify();
   bool pTypeVerf = ReadTypeVerify(*this);
   bool structVerf = true;
   if (GetTypeKind(tyIdx) != kTypePointer) {
@@ -1532,12 +1532,12 @@ bool IreadFPoffNode::Verify() const {
 }
 
 bool ExtractbitsNode::Verify() const {
-  bool opndExprVerf = Opnd()->Verify();
-  bool opndTypeVerf = ArithTypeVerify(*Opnd());
-  bool compVerf = CompatibleTypeVerify(*Opnd(), *this);
+  bool opndExprVerf = Opnd(0)->Verify();
+  bool opndTypeVerf = ArithTypeVerify(*Opnd(0));
+  bool compVerf = CompatibleTypeVerify(*Opnd(0), *this);
   bool resTypeVerf = UnaryTypeVerify0(GetPrimType());
   constexpr int numBitsInByte = 8;
-  bool opnd0SizeVerf = (numBitsInByte * GetPrimTypeSize(Opnd()->GetPrimType()) >= bitsSize);
+  bool opnd0SizeVerf = (numBitsInByte * GetPrimTypeSize(Opnd(0)->GetPrimType()) >= bitsSize);
   if (!opnd0SizeVerf) {
     LogInfo::MapleLogger()
         << "\n#Error: The operand of extractbits must be large enough to contain the specified bitfield\n";
@@ -1734,21 +1734,21 @@ bool IassignoffNode::Verify() const {
 }
 
 bool IassignFPoffNode::Verify() const {
-  bool rhsVerf = Opnd()->Verify();
-  bool compVerf = CompatibleTypeVerify(*this, *Opnd());
+  bool rhsVerf = Opnd(0)->Verify();
+  bool compVerf = CompatibleTypeVerify(*this, *Opnd(0));
   return rhsVerf && compVerf;
 }
 
 bool RegassignNode::Verify() const {
-  bool rhsVerf = Opnd()->Verify();
-  bool compVerf = CompatibleTypeVerify(*this, *Opnd());
+  bool rhsVerf = Opnd(0)->Verify();
+  bool compVerf = CompatibleTypeVerify(*this, *Opnd(0));
   return rhsVerf && compVerf;
 }
 
 bool CondGotoNode::Verify() const {
-  bool opndExprVerf = UnaryStmtNode::Opnd()->Verify();
+  bool opndExprVerf = UnaryStmtNode::Opnd(0)->Verify();
   bool opndTypeVerf = true;
-  if (!IsPrimitiveInteger(UnaryStmtNode::Opnd()->GetPrimType())) {
+  if (!IsPrimitiveInteger(UnaryStmtNode::Opnd(0)->GetPrimType())) {
     opndTypeVerf = false;
     LogInfo::MapleLogger() << "\n#Error:the operand of brfalse and trfalse must be primitive integer\n";
   }
@@ -1770,8 +1770,8 @@ bool BinaryStmtNode::Verify() const {
 }
 
 bool RangeGotoNode::Verify() const {
-  bool opndExprVerf = Opnd()->Verify();
-  bool opndTypeVerf = IntTypeVerify(Opnd()->GetPrimType());
+  bool opndExprVerf = Opnd(0)->Verify();
+  bool opndTypeVerf = IntTypeVerify(Opnd(0)->GetPrimType());
   if (!opndTypeVerf) {
     LogInfo::MapleLogger() << "\n#Error: the operand of rangegoto must be in [i32,u32,i64,u64]\n";
   }
@@ -1812,7 +1812,7 @@ bool IfStmtNode::Verify() const {
 }
 
 bool WhileStmtNode::Verify() const {
-  bool condVerf = Opnd()->Verify();
+  bool condVerf = Opnd(0)->Verify();
   bool bodyVerf = true;
   if (body != nullptr) {
     bodyVerf = body->Verify();

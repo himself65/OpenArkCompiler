@@ -897,7 +897,7 @@ UnaryStmtNode *MIRBuilder::CreateStmtThrow(BaseNode *rVal) {
 
 IfStmtNode *MIRBuilder::CreateStmtIf(BaseNode *cond) {
   auto *ifStmt = GetCurrentFuncCodeMp()->New<IfStmtNode>();
-  ifStmt->SetOpnd(cond);
+  ifStmt->SetOpnd(cond, 0);
   BlockNode *thenBlock = GetCurrentFuncCodeMp()->New<BlockNode>();
   ifStmt->SetThenPart(thenBlock);
   return ifStmt;
@@ -905,7 +905,7 @@ IfStmtNode *MIRBuilder::CreateStmtIf(BaseNode *cond) {
 
 IfStmtNode *MIRBuilder::CreateStmtIfThenElse(BaseNode *cond) {
   auto *ifStmt = GetCurrentFuncCodeMp()->New<IfStmtNode>();
-  ifStmt->SetOpnd(cond);
+  ifStmt->SetOpnd(cond, 0);
   auto *thenBlock = GetCurrentFuncCodeMp()->New<BlockNode>();
   ifStmt->SetThenPart(thenBlock);
   auto *elseBlock = GetCurrentFuncCodeMp()->New<BlockNode>();

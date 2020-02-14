@@ -88,7 +88,7 @@ bool MIRParser::ParseStmtRegassign(StmtNodePtr &stmt) {
   if (!ParseExprOneOperand(expr)) {
     return false;
   }
-  regAssign->SetOpnd(expr);
+  regAssign->SetOpnd(expr, 0);
   if (regAssign->GetRegIdx() > 0) {  // check type consistenency for the preg
     MIRPreg *preg = mod.CurFunction()->GetPregTab()->PregFromPregIdx(regAssign->GetRegIdx());
     if (preg->GetPrimType() == kPtyInvalid) {
@@ -187,7 +187,7 @@ bool MIRParser::ParseStmtIassignFPoff(StmtNodePtr &stmt) {
   if (!ParseExprOneOperand(expr)) {
     return false;
   }
-  iAssignOff->SetOpnd(expr);
+  iAssignOff->SetOpnd(expr, 0);
   lexer.NextToken();
   stmt = iAssignOff;
   return true;
@@ -330,7 +330,7 @@ bool MIRParser::ParseStmtIf(StmtNodePtr &stmt) {
   if (!ParseExprOneOperand(expr)) {
     return false;
   }
-  ifStmt->SetOpnd(expr);
+  ifStmt->SetOpnd(expr, 0);
   if (lexer.NextToken() != TK_lbrace) {
     Error("expect { begin if body but get ");
     return false;
@@ -372,7 +372,7 @@ bool MIRParser::ParseStmtWhile(StmtNodePtr &stmt) {
   if (!ParseExprOneOperand(expr)) {
     return false;
   }
-  whileStmt->SetOpnd(expr);
+  whileStmt->SetOpnd(expr, 0);
   if (lexer.NextToken() != TK_lbrace) {
     Error("expect { begin if body but get ");
     return false;
@@ -407,7 +407,7 @@ bool MIRParser::ParseStmtDowhile(StmtNodePtr &stmt) {
   if (!ParseExprOneOperand(expr)) {
     return false;
   }
-  whileStmt->SetOpnd(expr);
+  whileStmt->SetOpnd(expr, 0);
   lexer.NextToken();
   stmt = whileStmt;
   return true;
@@ -485,7 +485,7 @@ bool MIRParser::ParseStmtBr(StmtNodePtr &stmt) {
   if (!ParseExprOneOperand(expr)) {
     return false;
   }
-  condGoto->SetOpnd(expr);
+  condGoto->SetOpnd(expr, 0);
   stmt = condGoto;
   lexer.NextToken();
   return true;
@@ -572,7 +572,7 @@ bool MIRParser::ParseStmtRangegoto(StmtNodePtr &stmt) {
     return false;
   }
   if (!IsPrimitiveInteger(expr->GetPrimType())) {
-    rangeGotoNode->SetOpnd(expr);
+    rangeGotoNode->SetOpnd(expr, 0);
     Error("expect expression return integer but get ");
     return false;
   }
@@ -1168,7 +1168,7 @@ bool MIRParser::ParseUnaryStmt(Opcode op, StmtNodePtr &stmt) {
   if (!ParseExprOneOperand(expr)) {
     return false;
   }
-  throwStmt->SetOpnd(expr);
+  throwStmt->SetOpnd(expr, 0);
   lexer.NextToken();
   return true;
 }
@@ -2095,7 +2095,7 @@ bool MIRParser::ParseExprIreadIaddrof(IreadNode &expr) {
   if (!ParseExprOneOperand(opnd0)) {
     return false;
   }
-  expr.SetOpnd(opnd0);
+  expr.SetOpnd(opnd0, 0);
   lexer.NextToken();
   return true;
 }
@@ -2150,7 +2150,7 @@ bool MIRParser::ParseExprIreadoff(BaseNodePtr &expr) {
     Error("ParseExprIreadoff when paring one operand");
     return false;
   }
-  iReadOff->SetOpnd(opnd);
+  iReadOff->SetOpnd(opnd, 0);
   lexer.NextToken();
   return true;
 }
@@ -2294,7 +2294,7 @@ bool MIRParser::ParseExprUnary(BaseNodePtr &expr) {
     Error("parsing unary wrong ");
     return false;
   }
-  unaryNode->SetOpnd(opnd);
+  unaryNode->SetOpnd(opnd, 0);
   lexer.NextToken();
   return true;
 }
@@ -2355,7 +2355,7 @@ bool MIRParser::ParseExprJarray(BaseNodePtr &expr) {
     Error("parsing unary wrong ");
     return false;
   }
-  jarrayNode->SetOpnd(opnd);
+  jarrayNode->SetOpnd(opnd, 0);
   lexer.NextToken();
   return true;
 }
@@ -2401,7 +2401,7 @@ bool MIRParser::ParseExprExtractbits(BaseNodePtr &expr) {
     Error("ParseExprExtractbits failed");
     return false;
   }
-  extrctNode->SetOpnd(opnd);
+  extrctNode->SetOpnd(opnd, 0);
   lexer.NextToken();
   return true;
 }
@@ -2432,7 +2432,7 @@ bool MIRParser::ParseExprTyconvert(BaseNodePtr &expr) {
   if (!ParseExprOneOperand(opnd)) {
     return false;
   }
-  cvtNode->SetOpnd(opnd);
+  cvtNode->SetOpnd(opnd, 0);
   if (op == OP_retype) {
     cvtNode->SetFromType(opnd->GetPrimType());
   }
@@ -2460,7 +2460,7 @@ bool MIRParser::ParseExprRetype(BaseNodePtr &expr) {
   if (!ParseExprOneOperand(opnd)) {
     return false;
   }
-  cvtNode->SetOpnd(opnd);
+  cvtNode->SetOpnd(opnd, 0);
   cvtNode->SetFromType(opnd->GetPrimType());
   lexer.NextToken();
   return true;

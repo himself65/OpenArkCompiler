@@ -261,9 +261,7 @@ void OutputTypeInterface(const MIRType &ty, BinaryMplExport &mplExport) {
   }
 }
 
-void OutputTypeConstString(const MIRType &ty, BinaryMplExport&) {
-  ASSERT(false, "Type's kind not yet implemented: %d", ty.GetKind());
-}
+void OutputTypeConstString(const MIRType&, BinaryMplExport&) {}
 
 void InitOutputTypeFactory() {
   RegisterFactoryFunction<OutputTypeFactory>(kTypeScalar, OutputTypeScalar);

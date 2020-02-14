@@ -26,7 +26,7 @@
 namespace maple {
 class DSE {
  public:
-  DSE(MIRModule &mod, std::vector<BB*> &&bbVec, BB &commonEntryBB, BB &commonExitBB, SSATab &ssaTab,
+  DSE(MIRModule&, std::vector<BB*> &&bbVec, BB &commonEntryBB, BB &commonExitBB, SSATab &ssaTab,
       Dominance &postDom, bool enableDebug = false)
       : enableDebug(enableDebug),
         bbVec(bbVec), commonEntryBB(commonEntryBB),
