@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -158,7 +158,7 @@ BaseNode &OpMeExpr::EmitExpr(SSATab &ssaTab) {
     case OP_malloc: {
       auto *unaryNode =
           ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<UnaryNode>(Opcode(GetOp()), PrimType(GetPrimType()));
-      unaryNode->SetOpnd(&opnds[0]->EmitExpr(ssaTab));
+      unaryNode->SetOpnd(&opnds[0]->EmitExpr(ssaTab), 0);
       return *unaryNode;
     }
     case OP_sext:
@@ -166,7 +166,7 @@ BaseNode &OpMeExpr::EmitExpr(SSATab &ssaTab) {
     case OP_extractbits: {
       auto *unode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<ExtractbitsNode>(
           Opcode(GetOp()), PrimType(GetPrimType()));
-      unode->SetOpnd(&opnds[0]->EmitExpr(ssaTab));
+      unode->SetOpnd(&opnds[0]->EmitExpr(ssaTab), 0);
       unode->SetBitsOffset(bitsOffset);
       unode->SetBitsSize(bitsSize);
       return *unode;
@@ -186,14 +186,14 @@ BaseNode &OpMeExpr::EmitExpr(SSATab &ssaTab) {
     case OP_trunc: {
       auto *cvtNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<TypeCvtNode>(
           Opcode(GetOp()), PrimType(GetPrimType()));
-      cvtNode->SetOpnd(&opnds[0]->EmitExpr(ssaTab));
+      cvtNode->SetOpnd(&opnds[0]->EmitExpr(ssaTab), 0);
       cvtNode->SetFromType(opndType);
       return *cvtNode;
     }
     case OP_retype: {
       auto *cvtNode =
           ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<RetypeNode>(PrimType(GetPrimType()));
-      cvtNode->SetOpnd(&opnds[0]->EmitExpr(ssaTab));
+      cvtNode->SetOpnd(&opnds[0]->EmitExpr(ssaTab), 0);
       cvtNode->SetFromType(opndType);
       cvtNode->SetTyIdx(tyIdx);
       return *cvtNode;
@@ -202,7 +202,7 @@ BaseNode &OpMeExpr::EmitExpr(SSATab &ssaTab) {
     case OP_gcpermallocjarray: {
       auto *arrayMalloc = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<JarrayMallocNode>(
           Opcode(GetOp()), PrimType(GetPrimType()));
-      arrayMalloc->SetOpnd(&opnds[0]->EmitExpr(ssaTab));
+      arrayMalloc->SetOpnd(&opnds[0]->EmitExpr(ssaTab), 0);
       arrayMalloc->SetTyIdx(tyIdx);
       return *arrayMalloc;
     }
@@ -218,7 +218,7 @@ BaseNode &OpMeExpr::EmitExpr(SSATab &ssaTab) {
     case OP_iaddrof: {
       auto *iaddrof =
           ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<IaddrofNode>(OP_iaddrof, PrimType(GetPrimType()));
-      iaddrof->SetOpnd(&opnds[0]->EmitExpr(ssaTab));
+      iaddrof->SetOpnd(&opnds[0]->EmitExpr(ssaTab), 0);
       iaddrof->SetTyIdx(tyIdx);
       iaddrof->SetFieldID(fieldID);
       return *iaddrof;
@@ -256,7 +256,7 @@ BaseNode &IvarMeExpr::EmitExpr(SSATab &ssaTab) {
   CHECK_NULL_FATAL(base);
   auto *ireadNode =
       ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<IreadNode>(OP_iread, PrimType(GetPrimType()));
-  ireadNode->SetOpnd(&base->EmitExpr(ssaTab));
+  ireadNode->SetOpnd(&base->EmitExpr(ssaTab), 0);
   ireadNode->SetFieldID(fieldID);
   ireadNode->SetTyIdx(tyIdx);
   ASSERT(ireadNode->GetPrimType() != kPtyInvalid, "");
@@ -492,7 +492,7 @@ StmtNode &GotoMeStmt::EmitStmt(SSATab &ssaTab) {
 StmtNode &CondGotoMeStmt::EmitStmt(SSATab &ssaTab) {
   auto *cgNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<CondGotoNode>(Opcode(GetOp()));
   cgNode->SetOffset(offset);
-  cgNode->SetOpnd(&GetOpnd()->EmitExpr(ssaTab));
+  cgNode->SetOpnd(&GetOpnd()->EmitExpr(ssaTab), 0);
   cgNode->SetSrcPos(GetSrcPosition());
   return *cgNode;
 }

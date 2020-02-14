@@ -19,7 +19,7 @@
 
 namespace maple {
 VersionSt VersionStTable::dummyVST(0, 0, nullptr);
-void VersionSt::DumpDefStmt(const MIRModule *mod) const {
+void VersionSt::DumpDefStmt(const MIRModule*) const {
   if (version <= 0) {
     return;
   }

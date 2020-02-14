@@ -130,10 +130,15 @@ void OptionParser::PrintUsage(const std::string &helpType) const {
 }
 #endif
 
-
+#ifdef OPTION_PARSER_EXTRAOPT
 bool OptionParser::HandleKeyValue(const std::string &key, const std::string &value, bool isValueEmpty,
                                   std::vector<mapleOption::Option> &inputOption, const std::string &exeName,
                                   bool isAllOption) {
+#else
+bool OptionParser::HandleKeyValue(const std::string &key, const std::string &value, bool isValueEmpty,
+                                  std::vector<mapleOption::Option> &inputOption, const std::string&,
+                                  bool isAllOption) {
+#endif
   if (key.empty()) {
     if (!isAllOption) {
       LogInfo::MapleLogger(kLlErr) << "Cannot recognize " << value << '\n';

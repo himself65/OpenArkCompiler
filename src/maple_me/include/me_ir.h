@@ -950,8 +950,7 @@ class IvarMeExpr : public MeExpr {
   bool IsUseSameSymbol(const MeExpr&) const override;
   bool IsIdentical(IvarMeExpr &expr) const;
   MeExpr *GetIdenticalExpr(MeExpr &expr) const override;
-  MeExpr *GetOpnd(size_t idx) const override {
-    ASSERT(idx == 0, "IvarMeExpr can only have 1 operand");
+  MeExpr *GetOpnd(size_t) const override {
     return base;
   }
 
