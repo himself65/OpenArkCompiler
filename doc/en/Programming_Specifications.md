@@ -2975,13 +2975,16 @@ Many C functions do not use the destination buffer size as a parameter or consid
 
 The historical statistics about buffer overflow vulnerabilities show that a majority of the vulnerabilities are caused by memory operation functions that do not consider the destination buffer size.
 The following lists the dangerous functions related to memory operations:
-Memory copy functions: memcpy(), wmemcpy(), memmove(), wmemmove() 
 
-Memory initialization function: memset() String copy functions: strcpy(), wcscpy(),strncpy(), wcsncpy() 
+Memory copy functions: memcpy(), wmemcpy(), memmove(), wmemmove()
 
-String concatenation functions: strcat(), wcscat(),strncat(), wcsncat() 
+Memory initialization function: memset()
 
-Formatted string output functions: sprintf(), swprintf(), vsprintf(), vswprintf(), snprintf(), vsnprintf() 
+String copy functions: strcpy(), wcscpy(),strncpy(), wcsncpy()
+
+String concatenation functions: strcat(), wcscat(),strncat(), wcsncat()
+
+Formatted string output functions: sprintf(), swprintf(), vsprintf(), vswprintf(), snprintf(), vsnprintf()
 
 Formatted string input functions: scanf(), wscanf(), vscanf(), vwscanf(), fscanf(),fwscanf(),vfscanf(),vfwscanf(),sscanf(), swscanf(), vsscanf(), vswscanf() 
 
