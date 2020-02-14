@@ -27,7 +27,7 @@
 
 namespace {
 using namespace maple;
-const mapleOption::Descriptor USAGES[] = {
+const mapleOption::Descriptor usages[] = {
   // index, type , shortOption , longOption, connector, isCanAppend, delimiter, enableBuildType, checkPolicy, help,
   // extra
   { kUnknown,
@@ -980,7 +980,7 @@ using namespace mapleOption;
 const std::string kMapleDriverVersion = "MapleDriver " + std::to_string(Version::kMajorMplVersion) + "." +
                                         std::to_string(Version::kMinorCompilerVersion) + " 20190929";
 int MplOptions::Parse(int argc, char **argv) {
-  optionParser.reset(new OptionParser(USAGES));
+  optionParser.reset(new OptionParser(usages));
   exeFolder = FileUtils::GetFileFolder(*argv);
   int ret = optionParser->Parse(argc, argv);
   if (ret != kErrorNoError) {
