@@ -1,5 +1,7 @@
 Checks: '-*,readability-identifier-naming,readability-function-size,misc-unused-parameters,
-         readability-magic-numbers,modernize-use-nullptr,performance-move-const-arg'
+         readability-magic-numbers,modernize-use-nullptr,performance-move-const-arg,
+         cppcoreguidelines-pro-type-cstyle-cast,cppcoreguidelines-pro-type-reinterpret-cast,
+         cppcoreguidelines-pro-type-const-cast'
 CheckOptions:
   - key:             readability-identifier-naming.ClassCase
     value:           CamelCase
