@@ -275,7 +275,7 @@ void PreWorkCand::AddRealOccSorted(Dominance &dom, MeRealOcc &occ, PUIdx pIdx) {
       AddRealOccAsLast(occ, pIdx);
     } else {
       auto rIt = realOccs.rbegin();
-      rIt++;
+      ++rIt;
       while (rIt != realOccs.rend()) {
         if (occDfn > dom.GetDtDfnItem((*rIt)->GetBB()->GetBBId())) {
           break;

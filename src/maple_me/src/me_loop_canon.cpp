@@ -254,7 +254,7 @@ AnalysisResult *MeDoLoopCanon::Run(MeFunction *func, MeFuncResultMgr *m, ModuleR
       LogInfo::MapleLogger() << "-----------------Dump mefunction before loop convert----------\n";
       func->Dump(true);
     }
-    for (auto it = backEdges.begin(); it != backEdges.end(); it++) {
+    for (auto it = backEdges.begin(); it != backEdges.end(); ++it) {
       Convert(func, (*it).first, (*it).second, swapSuccs);
       if (DEBUGFUNC(func)) {
         LogInfo::MapleLogger() << "-----------------Dump mefunction after loop convert-----------\n";

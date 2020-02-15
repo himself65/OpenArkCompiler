@@ -461,7 +461,7 @@ void MeSSUPre::CreateSortedOccs() {
         case kSOccPhi:
           // get the next real/use occ
           CHECK_FATAL(realOccIt != workCand->GetRealOccs().end(), "iterator check");
-          realOccIt++;
+          ++realOccIt;
           if (realOccIt != workCand->GetRealOccs().end()) {
             nextRealOcc = *realOccIt;
           } else {
@@ -470,7 +470,7 @@ void MeSSUPre::CreateSortedOccs() {
           break;
         case kSOccEntry:
           CHECK_FATAL(entryOccIt != entryOccs.end(), "iterator check");
-          entryOccIt++;
+          ++entryOccIt;
           if (entryOccIt != entryOccs.end()) {
             nextEntryOcc = *entryOccIt;
           } else {
@@ -480,7 +480,7 @@ void MeSSUPre::CreateSortedOccs() {
         case kSOccLambda:
           lambdaOccs.push_back(static_cast<SLambdaOcc*>(pickedOcc));
           CHECK_FATAL(lambdaDfnIt != lambdaDfns.end(), "iterator check");
-          lambdaDfnIt++;
+          ++lambdaDfnIt;
           if (lambdaDfnIt != lambdaDfns.end()) {
             nextLambdaOcc =
                 spreMp->New<SLambdaOcc>(func->GetAllBBs().at(dom->GetPdtPreOrderItem(*lambdaDfnIt)), &spreAllocator);
@@ -490,7 +490,7 @@ void MeSSUPre::CreateSortedOccs() {
           break;
         case kSOccLambdaRes:
           CHECK_FATAL(lambdaResDfnIt != lambdaResDfns.end(), "iterator check");
-          lambdaResDfnIt++;
+          ++lambdaResDfnIt;
           if (lambdaResDfnIt != lambdaResDfns.end()) {
             nextLambdaResOcc =
                 spreMp->New<SLambdaResOcc>(func->GetAllBBs().at(dom->GetPdtPreOrderItem(*lambdaResDfnIt)));

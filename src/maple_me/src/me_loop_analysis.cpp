@@ -67,7 +67,7 @@ void IdentifyLoops::ProcessBB(BB *bb) {
   }
   // recursive call
   const MapleSet<BBId> &domChildren = dominance->GetDomChildren(bb->GetBBId());
-  for (auto bbIt = domChildren.begin(); bbIt != domChildren.end(); bbIt++) {
+  for (auto bbIt = domChildren.begin(); bbIt != domChildren.end(); ++bbIt) {
     ProcessBB(func->GetAllBBs().at(*bbIt));
   }
 }
@@ -78,7 +78,7 @@ void IdentifyLoops::Dump() {
     LogInfo::MapleLogger() << "nest depth: " << mploop->nestDepth << " loop head BB: " << mploop->head->GetBBId()
                            << " tail BB:" << mploop->tail->GetBBId() << '\n';
     LogInfo::MapleLogger() << "loop body:";
-    for (auto it = mploop->loopBBs.begin(); it != mploop->loopBBs.end(); it++) {
+    for (auto it = mploop->loopBBs.begin(); it != mploop->loopBBs.end(); ++it) {
       BBId bbId = *it;
       LogInfo::MapleLogger() << bbId << " ";
     }
