@@ -1228,6 +1228,10 @@ class MeStmt {
     return nullptr;
   }
 
+  virtual VarMeExpr *GetVarLHS() {
+    return nullptr;
+  }
+
   virtual RegMeExpr *GetRegLHS() {
     return nullptr;
   }
@@ -1614,6 +1618,10 @@ class DassignMeStmt : public MeStmt {
     return lhs;
   }
 
+  VarMeExpr *GetVarLHS() {
+    return lhs;
+  }
+
   MeExpr *GetLHSRef(SSATab &ssaTab, bool excludeLocalRefVar);
   void UpdateLHS(VarMeExpr &var) {
     lhs = &var;
@@ -1781,6 +1789,10 @@ class MaydassignMeStmt : public MeStmt {
   }
 
   VarMeExpr *GetVarLHS() const {
+    return chiList.begin()->second->GetLHS();
+  }
+
+  VarMeExpr *GetVarLHS() {
     return chiList.begin()->second->GetLHS();
   }
 
@@ -2059,6 +2071,13 @@ class CallMeStmt : public NaryMeStmt, public MuChiMePart, public AssignedPart {
 
   MeExpr *GetLHSRef(SSATab &ssaTab, bool excludeLocalRefVar) {
     return GetAssignedPartLHSRef(ssaTab, excludeLocalRefVar);
+  }
+
+  VarMeExpr *GetVarLHS() {
+    if (mustDefList.empty() || mustDefList.front().GetLHS()->GetMeOp() != kMeOpVar) {
+      return nullptr;
+    }
+    return static_cast<VarMeExpr*>(mustDefList.front().GetLHS());
   }
 
   bool NeedDecref() const {

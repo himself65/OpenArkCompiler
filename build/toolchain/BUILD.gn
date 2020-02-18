@@ -72,7 +72,11 @@ toolchain("clang") {
     outfile = "${GN_BINARY_OUTPUT_DIRECTORY}/{{target_output_name}}{{output_extension}}"
     rspfile = "$outfile.rsp"
     rspfile_content = "{{inputs}}"
-    command = "${GN_CXX_COMPILER} -fuse-ld=lld {{ldflags}} -o $outfile -Wl,--start-group ${rspfile_content} {{libs}} -Wl,--end-group {{solibs}}"
+    if (GN_BUILD_TYPE == "RELEASE") {
+      command = "${GN_CXX_COMPILER} -s -fuse-ld=lld {{ldflags}} -o $outfile -Wl,--start-group ${rspfile_content} {{libs}} -Wl,--end-group {{solibs}}"
+    } else {
+      command = "${GN_CXX_COMPILER} -fuse-ld=lld {{ldflags}} -o $outfile -Wl,--start-group ${rspfile_content} {{libs}} -Wl,--end-group {{solibs}}"
+    }
     description = "LINK $outfile"
     rspfile_content = "{{inputs}}"
     outputs = [

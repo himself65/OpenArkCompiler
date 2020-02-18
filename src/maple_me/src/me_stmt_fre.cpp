@@ -50,13 +50,17 @@ void MeStmtPre::ComputeFullyAvail() {
 }
 
 bool MeStmtPre::AllVarsSameVersionStmtFre(MeRealOcc *topOcc, MeRealOcc *curOcc) const {
-  ASSERT(topOcc->GetOpcodeOfMeStmt() == OP_dassign, "AllVarsSameVersionStmtFre: only dassign is handled");
-  auto *dass1 = static_cast<DassignMeStmt*>(topOcc->GetMeStmt());
-  auto *dass2 = static_cast<DassignMeStmt*>(curOcc->GetMeStmt());
-  if (dass1->GetRHS() != dass2->GetRHS()) {
+  ASSERT(topOcc->GetOpcodeOfMeStmt() == OP_dassign || topOcc->GetOpcodeOfMeStmt() == OP_callassigned,
+      "AllVarsSameVersionStmtFre: only dassign or callassigned is handled");
+  if (topOcc->GetMeStmt()->NumMeStmtOpnds() != curOcc->GetMeStmt()->NumMeStmtOpnds()) {
     return false;
   }
-  return dass1->GetLHS() == curOcc->GetMeExpr();
+  for (size_t i = 0; i < topOcc->GetMeStmt()->NumMeStmtOpnds(); ++i) {
+    if (topOcc->GetMeStmt()->GetOpnd(i) != curOcc->GetMeStmt()->GetOpnd(i)) {
+      return false;
+    }
+  }
+  return topOcc->GetMeStmt()->GetVarLHS() == curOcc->GetMeExpr();
 }
 
 void MeStmtPre::Rename1StmtFre() {

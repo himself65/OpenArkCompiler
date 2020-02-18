@@ -147,7 +147,8 @@ void DSE::CheckRemoveCallAssignedReturn(StmtNode &stmt) {
 }
 
 void DSE::OnRemoveBranchStmt(BB &bb, const StmtNode &stmt) {
-  if (IsBranch(stmt.GetOpCode())) {
+  // switch is special, which can not be set to kBBFallthru
+  if (IsBranch(stmt.GetOpCode()) && stmt.GetOpCode() != OP_switch) {
     // update BB pred/succ
     bb.SetKind(kBBFallthru);
     cfgUpdated = true;  // tag cfg is changed

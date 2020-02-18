@@ -214,7 +214,6 @@ AnalysisResult *MeDoLoopCanon::Run(MeFunction *func, MeFuncResultMgr *m, ModuleR
   }
   MapleAllocator localAlloc(NewMemPool());
   MapleVector<std::pair<BB*, BB*>> backEdges(localAlloc.Adapter());
-  using Key = std::pair<BB*, BB*>;
   MapleMap<Key, bool> swapSuccs(std::less<Key>(), localAlloc.Adapter());
   // collect backedge first: if bb dominator its pred, then the edge pred->bb is a backedge
   eIt = func->valid_end();

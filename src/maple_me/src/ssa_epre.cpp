@@ -357,6 +357,8 @@ void SSAEPre::BuildWorkListExpr(MeStmt *meStmt, int32 seqStmt, MeExpr *meExpr, b
         BuildWorkListExpr(meStmt, seqStmt, ivarMeExpr->GetBase(), isRebuild, tempVar, false);
       } else if (ivarMeExpr->IsVolatile()) {
         break;
+      } else if (IsThreadObjField(*ivarMeExpr)) {
+        break;
       } else if (!epreIncludeRef && ivarMeExpr->GetPrimType() == PTY_ref) {
         break;
       } else if (!isRebuild || base->IsUseSameSymbol(*tempVar)) {
