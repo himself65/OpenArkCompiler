@@ -101,7 +101,7 @@ void MeDoHDSE::MakeEmptyTrysUnreachable(MeFunction &func) {
       }
       // tryBB has no phis, no need to update them
       for (auto bb : toDeleteTryPreds) {
-        bb->RemoveBBFromVector(tryBB->GetPred());
+        (void)bb->RemoveBBFromVector(tryBB->GetPred());
       }
     }
   }

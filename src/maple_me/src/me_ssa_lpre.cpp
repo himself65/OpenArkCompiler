@@ -27,7 +27,7 @@ void MeSSALPre::GenerateSaveRealOcc(MeRealOcc *realOcc) {
     regOrVar->SetDefByStmt(*newMeStmt);
     realOcc->GetMeStmt()->GetBB()->InsertMeStmtBefore(realOcc->GetMeStmt(), newMeStmt);
     // replace realOcc->GetMeStmt()'s occ with regOrVar
-    irMap->ReplaceMeExprStmt(*realOcc->GetMeStmt(), *realOcc->GetMeExpr(), *regOrVar);
+    (void)irMap->ReplaceMeExprStmt(*realOcc->GetMeStmt(), *realOcc->GetMeExpr(), *regOrVar);
   } else if (realOcc->IsFormalAtEntry()) {
     // no need generate any code, but change formal declaration to preg
     CHECK_FATAL(regOrVar->GetMeOp() == kMeOpReg, "formals not promoted to register");
@@ -114,7 +114,7 @@ void MeSSALPre::GenerateReloadRealOcc(MeRealOcc *realOcc) {
   }
   CHECK_NULL_FATAL(regOrVar);
   // replace realOcc->GetMeStmt()'s occ with regOrVar
-  irMap->ReplaceMeExprStmt(*realOcc->GetMeStmt(), *realOcc->GetMeExpr(), *regOrVar);
+  (void)irMap->ReplaceMeExprStmt(*realOcc->GetMeStmt(), *realOcc->GetMeExpr(), *regOrVar);
 }
 
 // the variable in realZ is defined by a phi; replace it by the jth phi opnd
@@ -207,7 +207,7 @@ void MeSSALPre::BuildWorkListLHSOcc(MeStmt *meStmt, int32 seqStmt) {
     if (lhs->GetPrimType() == PTY_agg) {
       return;
     }
-    CreateRealOcc(*meStmt, seqStmt, *lhs, false, true);
+    (void)CreateRealOcc(*meStmt, seqStmt, *lhs, false, true);
   } else if (kOpcodeInfo.IsCallAssigned(meStmt->GetOp())) {
     MapleVector<MustDefMeNode> *mustDefList = meStmt->GetMustDefList();
     if (mustDefList->empty()) {
@@ -230,7 +230,7 @@ void MeSSALPre::BuildWorkListLHSOcc(MeStmt *meStmt, int32 seqStmt) {
     if (theLHS->GetPrimType() == PTY_agg) {
       return;
     }
-    CreateRealOcc(*meStmt, seqStmt, *theLHS, false, true);
+    (void)CreateRealOcc(*meStmt, seqStmt, *theLHS, false, true);
   }
 }
 
@@ -275,7 +275,7 @@ void MeSSALPre::BuildWorkListExpr(MeStmt *meStmt, int32 seqStmt, MeExpr *meExpr,
       if (meExpr->GetPrimType() == PTY_agg) {
         break;
       }
-      CreateRealOcc(*meStmt, seqStmt, *meExpr, false);
+      (void)CreateRealOcc(*meStmt, seqStmt, *meExpr, false);
       break;
     }
     case kMeOpAddrof: {
@@ -287,14 +287,14 @@ void MeSSALPre::BuildWorkListExpr(MeStmt *meStmt, int32 seqStmt, MeExpr *meExpr,
       if (ost->IsLocal()) {  // skip lpre for stack addresses as they are cheap
         break;
       }
-      CreateRealOcc(*meStmt, seqStmt, *meExpr, false);
+      (void)CreateRealOcc(*meStmt, seqStmt, *meExpr, false);
       break;
     }
     case kMeOpAddroffunc: {
       if (preKind != kAddrPre) {
         break;
       }
-      CreateRealOcc(*meStmt, seqStmt, *meExpr, false);
+      (void)CreateRealOcc(*meStmt, seqStmt, *meExpr, false);
       break;
     }
     case kMeOpOp: {

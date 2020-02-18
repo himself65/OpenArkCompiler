@@ -68,7 +68,7 @@ void SSAEPre::GenerateSaveLHSRealocc(MeRealOcc *realOcc, MeExpr *regOrVar) {
   newIass->SetBB(savedBB);
   savedBB->InsertMeStmtAfter(rass, newIass);
   // go throu saved_Chi_List to update each chi base to point to newIass
-  for (auto it = newIass->GetChiList()->begin(); it != newIass->GetChiList()->end(); it++) {
+  for (auto it = newIass->GetChiList()->begin(); it != newIass->GetChiList()->end(); ++it) {
     ChiMeNode *chi = it->second;
     chi->SetBase(newIass);
   }
@@ -210,7 +210,7 @@ void SSAEPre::ComputeVarAndDfPhis() {
   dfPhiDfns.clear();
   const MapleVector<MeRealOcc*> &realOccList = workCand->GetRealOccs();
   CHECK_FATAL(!dom->IsBBVecEmpty(), "size to be allocated is 0");
-  for (auto it = realOccList.begin(); it != realOccList.end(); it++) {
+  for (auto it = realOccList.begin(); it != realOccList.end(); ++it) {
     MeRealOcc *realOcc = *it;
     BB *defBB = realOcc->GetBB();
     std::vector<bool> visitedMap(dom->GetBBVecSize(), false);
@@ -285,7 +285,7 @@ void SSAEPre::BuildWorkListExpr(MeStmt *meStmt, int32 seqStmt, MeExpr *meExpr, b
           (epreIncludeRef || meOpExpr->GetPrimType() != PTY_ref)) {
         // create a HypotheTemp for this expr
         // Exclude cmp operator
-        CreateRealOcc(*meStmt, seqStmt, *meExpr, isRebuild);
+        (void)CreateRealOcc(*meStmt, seqStmt, *meExpr, isRebuild);
       }
       break;
     }
@@ -294,7 +294,7 @@ void SSAEPre::BuildWorkListExpr(MeStmt *meStmt, int32 seqStmt, MeExpr *meExpr, b
       bool isHypo = true;
       bool hasTempVarAs1Opnd = false;
       MapleVector<MeExpr*> &opnds = naryMeExpr->GetOpnds();
-      for (auto it = opnds.begin(); it != opnds.end(); it++) {
+      for (auto it = opnds.begin(); it != opnds.end(); ++it) {
         MeExpr *opnd = *it;
         if (!opnd->IsLeaf()) {
           BuildWorkListExpr(meStmt, seqStmt, opnd, isRebuild, tempVar, false);
@@ -318,11 +318,11 @@ void SSAEPre::BuildWorkListExpr(MeStmt *meStmt, int32 seqStmt, MeExpr *meExpr, b
           auto *ptrMIRType = static_cast<MIRPtrType*>(mirType);
           MIRJarrayType *arryType = safe_cast<MIRJarrayType>(ptrMIRType->GetPointedType());
           if (arryType == nullptr) {
-            CreateRealOcc(*meStmt, seqStmt, *meExpr, isRebuild);
+            (void)CreateRealOcc(*meStmt, seqStmt, *meExpr, isRebuild);
           } else {
             int dim = arryType->GetDim();  // to compute the dim field
             if (dim < 2) {
-              CreateRealOcc(*meStmt, seqStmt, *meExpr, isRebuild);
+              (void)CreateRealOcc(*meStmt, seqStmt, *meExpr, isRebuild);
             } else {
               if (GetSSAPreDebug()) {
                 mirModule->GetOut() << "----- real occ suppressed for jarray with dim " << dim << '\n';
@@ -341,7 +341,7 @@ void SSAEPre::BuildWorkListExpr(MeStmt *meStmt, int32 seqStmt, MeExpr *meExpr, b
             }
           }
           if (!intrinDesc->IsLoadMem()) {
-            CreateRealOcc(*meStmt, seqStmt, *meExpr, isRebuild);
+            (void)CreateRealOcc(*meStmt, seqStmt, *meExpr, isRebuild);
           }
         }
       }
@@ -360,7 +360,7 @@ void SSAEPre::BuildWorkListExpr(MeStmt *meStmt, int32 seqStmt, MeExpr *meExpr, b
       } else if (!epreIncludeRef && ivarMeExpr->GetPrimType() == PTY_ref) {
         break;
       } else if (!isRebuild || base->IsUseSameSymbol(*tempVar)) {
-        CreateRealOcc(*meStmt, seqStmt, *meExpr, isRebuild);
+        (void)CreateRealOcc(*meStmt, seqStmt, *meExpr, isRebuild);
       }
       break;
     }
@@ -412,7 +412,7 @@ void SSAEPre::BuildWorkListIvarLHSOcc(MeStmt *meStmt, int32 seqStmt, bool isRebu
     return;
   }
   if (!isRebuild || base->IsUseSameSymbol(*tempVar)) {
-    CreateRealOcc(*meStmt, seqStmt, *ivarMeExpr, isRebuild, true);
+    (void)CreateRealOcc(*meStmt, seqStmt, *ivarMeExpr, isRebuild, true);
   }
 }
 

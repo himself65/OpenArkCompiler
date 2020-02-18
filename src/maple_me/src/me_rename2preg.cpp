@@ -292,7 +292,7 @@ class SSARename2Preg {
   void Rename2PregLeafRHS(const AliasClass &aliasClass, MeIRMap &irMap, MeStmt &stmt, VarMeExpr &varExpr) {
     RegMeExpr *regExpr = RenameVar(aliasClass, varExpr);
     if (regExpr != nullptr) {
-      irMap.ReplaceMeExprStmt(stmt, varExpr, *regExpr);
+      (void)irMap.ReplaceMeExprStmt(stmt, varExpr, *regExpr);
     }
   }
 

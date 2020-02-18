@@ -252,7 +252,7 @@ void MeStorePre::CreateSpreUseOccsThruAliasing(const OriginalSt *muOst, BB *bb) 
   if (ae->GetClassSet() == nullptr) {
     return;
   }
-  for (auto setIt = ae->GetClassSet()->begin(); setIt != ae->GetClassSet()->end(); setIt++) {
+  for (auto setIt = ae->GetClassSet()->begin(); setIt != ae->GetClassSet()->end(); ++setIt) {
     unsigned int elemId = *setIt;
     AliasElem *ae0 = aliasClass->FindID2Elem(elemId);
     if (ae0->GetOriginalSt().GetIndirectLev() == 0) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -73,7 +73,7 @@ void SSA::RenameDefs(StmtNode &stmt, BB &defBB) {
   }
   if (kOpcodeInfo.HasSSADef(opcode)) {
     MapleMap<OStIdx, MayDefNode> &mayDefList = theSSAPart->GetMayDefNodes();
-    for (auto it = mayDefList.begin(); it != mayDefList.end(); it++) {
+    for (auto it = mayDefList.begin(); it != mayDefList.end(); ++it) {
       MayDefNode &mayDef = it->second;
       VersionSt *vSym = mayDef.GetResult();
       CHECK_FATAL(vSym->GetOrigIdx() < vstStacks.size(), "index out of range in SSA::RenameMayDefs");
@@ -102,7 +102,7 @@ void SSA::RenameMustDefs(const StmtNode &stmt, BB &defBB) {
 void SSA::RenameMayUses(BaseNode &node) {
   MapleMap<OStIdx, MayUseNode> &mayUseList = ssaTab->GetStmtsSSAPart().GetMayUseNodesOf(static_cast<StmtNode&>(node));
   MapleMap<OStIdx, MayUseNode>::iterator it = mayUseList.begin();
-  for (; it != mayUseList.end(); it++) {
+  for (; it != mayUseList.end(); ++it) {
     MayUseNode &mayUse = it->second;
     VersionSt *vSym = mayUse.GetOpnd();
     CHECK_FATAL(vSym->GetOrigIdx() < vstStacks.size(), "index out of range in SSA::RenameMayUses");

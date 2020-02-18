@@ -68,7 +68,7 @@ void MeLowerGlobals::LowerGlobalDreads(MeStmt &stmt, MeExpr *x) {
       MIRPtrType ptrType(baseOst->GetTyIdx(), PTY_ptr);
       TyIdx addrTyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&ptrType);
       auto *ivarExpr = static_cast<IvarMeExpr*>(irMap->CreateIvarMeExpr(*varExpr, addrTyIdx, *addrofExpr));
-      irMap->ReplaceMeExprStmt(stmt, *varExpr, *ivarExpr);
+      (void)irMap->ReplaceMeExprStmt(stmt, *varExpr, *ivarExpr);
       break;
     }
     case kMeOpAddrof: {
@@ -88,7 +88,7 @@ void MeLowerGlobals::LowerGlobalDreads(MeStmt &stmt, MeExpr *x) {
       MIRPtrType ptrType(baseOst->GetTyIdx(), PTY_ptr);
       TyIdx addrTyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&ptrType);
       MeExpr *iaddrofExpr = irMap->CreateIaddrofMeExpr(*addrofExpr, addrTyIdx, *newAddrofExpr);
-      irMap->ReplaceMeExprStmt(stmt, *addrofExpr, *iaddrofExpr);
+      (void)irMap->ReplaceMeExprStmt(stmt, *addrofExpr, *iaddrofExpr);
       break;
     }
     default:

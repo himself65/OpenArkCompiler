@@ -169,7 +169,7 @@ void SSAPre::GenerateSavePhiOcc(MePhiOcc *phiOcc) {
 }
 
 void SSAPre::UpdateInsertedPhiOccOpnd() {
-  for (auto it = phiOccs.begin(); it != phiOccs.end(); it++) {
+  for (auto it = phiOccs.begin(); it != phiOccs.end(); ++it) {
     MePhiOcc *phiOcc = *it;
     if (phiOcc->IsWillBeAvail() && !phiOcc->IsExtraneous()) {
       if (phiOcc->GetRegPhi()) {
@@ -415,7 +415,7 @@ void SSAPre::SetSave(MeOccur *defX) {
 
 void SSAPre::SetReplacement(MePhiOcc *occg, MeOccur *repDef) {
   occg->SetIsRemoved(true);  // exclude recursive PhiOcc
-  for (auto it = phiOccs.begin(); it != phiOccs.end(); it++) {
+  for (auto it = phiOccs.begin(); it != phiOccs.end(); ++it) {
     MePhiOcc *phiOcc = *it;
     if (phiOcc->IsRemoved()) {
       continue;
@@ -433,7 +433,7 @@ void SSAPre::SetReplacement(MePhiOcc *occg, MeOccur *repDef) {
       }
     }
   }
-  for (auto it = workCand->GetRealOccs().begin(); it != workCand->GetRealOccs().end(); it++) {
+  for (auto it = workCand->GetRealOccs().begin(); it != workCand->GetRealOccs().end(); ++it) {
     MeRealOcc *realOcc = *it;
     // when realOcc satisfying reload and def of it is occg, do the replacement
     if (realOcc->IsReload() && realOcc->GetDef() == occg) {
@@ -444,7 +444,7 @@ void SSAPre::SetReplacement(MePhiOcc *occg, MeOccur *repDef) {
 }
 
 void SSAPre::Finalize2() {
-  for (auto it = phiOccs.begin(); it != phiOccs.end(); it++) {
+  for (auto it = phiOccs.begin(); it != phiOccs.end(); ++it) {
     MePhiOcc *phiOcc = *it;
     // initialize extraneouse for each MePhiOcc
     phiOcc->SetIsExtraneous(phiOcc->IsWillBeAvail());
@@ -453,13 +453,13 @@ void SSAPre::Finalize2() {
       phiOpnd->SetIsProcessed(false);
     }
   }
-  for (auto it = workCand->GetRealOccs().begin(); it != workCand->GetRealOccs().end(); it++) {
+  for (auto it = workCand->GetRealOccs().begin(); it != workCand->GetRealOccs().end(); ++it) {
     MeRealOcc *realOcc = *it;
     if (realOcc->IsReload()) {
       SetSave(realOcc->GetDef());
     }
   }
-  for (auto it = phiOccs.begin(); it != phiOccs.end(); it++) {
+  for (auto it = phiOccs.begin(); it != phiOccs.end(); ++it) {
     MePhiOcc *phiOcc = *it;
     if (phiOcc->IsRemoved() || !phiOcc->IsExtraneous()) {
       continue;
@@ -521,7 +521,7 @@ void SSAPre::Finalize2() {
 void SSAPre::ResetCanBeAvail(MePhiOcc *occg) {
   occg->SetIsCanBeAvail(false);
   // the following loop is to find occg's use list and reset them
-  for (auto it = phiOccs.begin(); it != phiOccs.end(); it++) {
+  for (auto it = phiOccs.begin(); it != phiOccs.end(); ++it) {
     MePhiOcc *phiOcc = *it;
     for (MePhiOpndOcc *phiOpnd : phiOcc->GetPhiOpnds()) {
       if (phiOpnd->GetDef() && phiOpnd->GetDef() == occg) {
@@ -535,7 +535,7 @@ void SSAPre::ResetCanBeAvail(MePhiOcc *occg) {
 }
 
 void SSAPre::ComputeCanBeAvail() {
-  for (auto it = phiOccs.begin(); it != phiOccs.end(); it++) {
+  for (auto it = phiOccs.begin(); it != phiOccs.end(); ++it) {
     MePhiOcc *phiOcc = *it;
     if (!phiOcc->IsDownSafe() && phiOcc->IsCanBeAvail()) {
       bool existNullDef = false;
@@ -567,7 +567,7 @@ void SSAPre::ComputeCanBeAvail() {
 void SSAPre::ResetLater(MePhiOcc *occg) {
   occg->SetIsLater(false);
   // the following loop is to find occg's use list and reset them
-  for (auto it = phiOccs.begin(); it != phiOccs.end(); it++) {
+  for (auto it = phiOccs.begin(); it != phiOccs.end(); ++it) {
     MePhiOcc *phiOcc = *it;
     for (MePhiOpndOcc *phiOpnd : phiOcc->GetPhiOpnds()) {
       if (phiOpnd->GetDef() && phiOpnd->GetDef() == occg) {
@@ -581,11 +581,11 @@ void SSAPre::ResetLater(MePhiOcc *occg) {
 }
 
 void SSAPre::ComputeLater() {
-  for (auto it = phiOccs.begin(); it != phiOccs.end(); it++) {
+  for (auto it = phiOccs.begin(); it != phiOccs.end(); ++it) {
     MePhiOcc *phiOcc = *it;
     phiOcc->SetIsLater(phiOcc->IsCanBeAvail());
   }
-  for (auto it = phiOccs.begin(); it != phiOccs.end(); it++) {
+  for (auto it = phiOccs.begin(); it != phiOccs.end(); ++it) {
     MePhiOcc *phiOcc = *it;
     if (phiOcc->IsLater()) {
       bool existNonNullDef = false;
@@ -603,7 +603,7 @@ void SSAPre::ComputeLater() {
   if (GetSSAPreDebug()) {
     mirModule->GetOut() << "========ssapre candidate " << workCand->GetIndex()
                         << " after WillBeAvail===================\n";
-    for (auto it = phiOccs.begin(); it != phiOccs.end(); it++) {
+    for (auto it = phiOccs.begin(); it != phiOccs.end(); ++it) {
       MePhiOcc *phiOcc = *it;
       phiOcc->Dump(*irMap);
       if (phiOcc->IsCanBeAvail()) {
@@ -651,7 +651,7 @@ void SSAPre::ResetDS(MePhiOpndOcc *phiOpnd) {
 
 // compute downsafety for each PHI
 void SSAPre::ComputeDS() {
-  for (auto it = phiOccs.begin(); it != phiOccs.end(); it++) {
+  for (auto it = phiOccs.begin(); it != phiOccs.end(); ++it) {
     MePhiOcc *phiOcc = *it;
     if (!phiOcc->IsDownSafe()) {
       // propagate not-downsafety along use-def edges
@@ -663,7 +663,7 @@ void SSAPre::ComputeDS() {
   if (GetSSAPreDebug()) {
     mirModule->GetOut() << "========ssapre candidate " << workCand->GetIndex()
                         << " after DownSafety===================\n";
-    for (auto it = phiOccs.begin(); it != phiOccs.end(); it++) {
+    for (auto it = phiOccs.begin(); it != phiOccs.end(); ++it) {
       MePhiOcc *phiOcc = *it;
       phiOcc->Dump(*irMap);
       if (phiOcc->SpeculativeDownSafe()) {
@@ -968,7 +968,7 @@ void SSAPre::SetVarPhis(MeExpr *meExpr) {
       BBId defbbid = phiMeNode->GetDefBB()->GetBBId();
       if (varPhiDfns.find(dom->GetDtDfnItem(defbbid)) == varPhiDfns.end() && ScreenPhiBB(defbbid)) {
         varPhiDfns.insert(dom->GetDtDfnItem(defbbid));
-        for (auto opndit = phiMeNode->GetOpnds().begin(); opndit != phiMeNode->GetOpnds().end(); opndit++) {
+        for (auto opndit = phiMeNode->GetOpnds().begin(); opndit != phiMeNode->GetOpnds().end(); ++opndit) {
           VarMeExpr *opnd = *opndit;
           SetVarPhis(opnd);
         }
@@ -1069,7 +1069,7 @@ void SSAPre::CreateSortedOccs() {
       switch (pickedOcc->GetOccType()) {
         case kOccReal:
         case kOccMembar:
-          realOccIt++;
+          ++realOccIt;
           if (realOccIt != workCand->GetRealOccs().end()) {
             nextRealOcc = *realOccIt;
           } else {
@@ -1077,7 +1077,7 @@ void SSAPre::CreateSortedOccs() {
           }
           break;
         case kOccExit:
-          exitOccIt++;
+          ++exitOccIt;
           if (exitOccIt != exitOccs.end()) {
             nextExitOcc = *exitOccIt;
           } else {
@@ -1086,7 +1086,7 @@ void SSAPre::CreateSortedOccs() {
           break;
         case kOccPhiocc:
           phiOccs.push_back(static_cast<MePhiOcc*>(pickedOcc));
-          phiDfnIt++;
+          ++phiDfnIt;
           if (phiDfnIt != dfPhiDfns.end()) {
             CHECK_FATAL(GetBB(dom->GetDtPreOrderItem(*phiDfnIt)) != nullptr,
                         "GetBB return null in SSAPre::CreateSortedOccs");
@@ -1096,7 +1096,7 @@ void SSAPre::CreateSortedOccs() {
           }
           break;
         case kOccPhiopnd:
-          phiOpndDfnIt++;
+          ++phiOpndDfnIt;
           if (phiOpndDfnIt != phiOpndDfns.end()) {
             nextPhiOpndOcc = perCandMemPool->New<MePhiOpndOcc>(GetBB(dom->GetDtPreOrderItem(*phiOpndDfnIt)));
             auto it = bb2phiopndMap.find(dom->GetDtPreOrderItem(*phiOpndDfnIt));
@@ -1481,7 +1481,7 @@ void SSAPre::BuildWorkListStmt(MeStmt *meStmt, uint32 seqStmt, bool isRebuilt, M
     case OP_syncexit: {
       auto *syncMeStmt = static_cast<SyncMeStmt*>(meStmt);
       MapleVector<MeExpr*> &opnds = syncMeStmt->GetOpnds();
-      for (auto it = opnds.begin(); it != opnds.end(); it++) {
+      for (auto it = opnds.begin(); it != opnds.end(); ++it) {
         BuildWorkListExpr(meStmt, seqStmt, *it, isRebuilt, tempVar, true);
       }
       break;
@@ -1529,7 +1529,7 @@ void SSAPre::BuildWorkListStmt(MeStmt *meStmt, uint32 seqStmt, bool isRebuilt, M
     case OP_icallassigned: {
       auto *naryMeStmt = static_cast<NaryMeStmt*>(meStmt);
       MapleVector<MeExpr*> &opnds = naryMeStmt->GetOpnds();
-      for (auto it = opnds.begin(); it != opnds.end(); it++) {
+      for (auto it = opnds.begin(); it != opnds.end(); ++it) {
         BuildWorkListExpr(meStmt, seqStmt, *it, isRebuilt, tempVar, true);
       }
       break;
@@ -1551,7 +1551,7 @@ void SSAPre::BuildWorkListStmt(MeStmt *meStmt, uint32 seqStmt, bool isRebuilt, M
     case OP_intrinsiccallwithtypeassigned: {
       auto *naryMeStmt = static_cast<NaryMeStmt*>(meStmt);
       MapleVector<MeExpr*> &opnds = naryMeStmt->GetOpnds();
-      for (auto it = opnds.begin(); it != opnds.end(); it++) {
+      for (auto it = opnds.begin(); it != opnds.end(); ++it) {
         if (!GetRcLoweringOn() && (*it)->IsLeaf() && (*it)->GetMeOp() == kMeOpVar) {
           // affects LPRE only; some later phase needs to transform dread to addrof
           auto *varMeExpr = static_cast<VarMeExpr*>(*it);
