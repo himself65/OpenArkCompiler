@@ -31,14 +31,14 @@ class ObjectFactory final {
     }
   }
 
-  std::unique_ptr<TObject> Create(const key_type &key, TArgs &&...Args) const {
+  std::unique_ptr<TObject> Create(const key_type &key, TArgs ...args) const {
     auto it = creator.find(key);
-    return it == creator.end() ? std::unique_ptr<TObject>() : (it->second)(std::forward<TArgs>(Args)...);
+    return it == creator.end() ? std::unique_ptr<TObject>() : (it->second)(std::forward<TArgs>(args)...);
   }
 
   template <typename TObjectImpl>
-  static std::unique_ptr<TObject> DefaultCreator(TArgs &&...Args) {
-    return std::make_unique<TObjectImpl>(std::forward<TArgs>(Args)...);
+  static std::unique_ptr<TObject> DefaultCreator(TArgs ...args) {
+    return std::make_unique<TObjectImpl>(std::forward<TArgs>(args)...);
   }
 
   static ObjectFactory &ins() {
@@ -66,8 +66,8 @@ inline void RegisterFactoryObject() {
 }
 
 template <typename TFactory, typename... TArgs>
-inline auto CreateProductObject(const typename TFactory::key_type &key, TArgs &&...Args) {
-  return TFactory::ins().Create(key, std::forward<TArgs>(Args)...);
+inline auto CreateProductObject(const typename TFactory::key_type &key, TArgs &&...args) {
+  return TFactory::ins().Create(key, std::forward<TArgs>(args)...);
 }
 
 template <typename TKey, typename TRet, typename... TArgs>

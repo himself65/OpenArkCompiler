@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -20,7 +20,8 @@ namespace maple {
 class MeBuilder {
  public:
   explicit MeBuilder(MapleAllocator &allocator) : allocator(allocator) {
-    InitMeExprBuildFactory();
+    static auto exprBuildPolicyLoader = InitMeExprBuildFactory();
+    (void)exprBuildPolicyLoader;
   }
 
   virtual ~MeBuilder() = default;
@@ -50,7 +51,7 @@ class MeBuilder {
     return meExpr;
   }
 
-  void InitMeExprBuildFactory() const;
+  static bool InitMeExprBuildFactory();
   MeExpr *BuildAddrofMeExpr(BaseNode &mirNode) const;
   MeExpr *BuildAddroffuncMeExpr(BaseNode &mirNode) const;
   MeExpr *BuildGCMallocMeExpr(BaseNode &mirNode) const;

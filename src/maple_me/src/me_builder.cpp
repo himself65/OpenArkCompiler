@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -233,7 +233,7 @@ UnaryMeStmt &MeBuilder::BuildUnaryMeStmt(Opcode op, MeExpr &opnd) const {
   return unaryMeStmt;
 }
 
-void MeBuilder::InitMeExprBuildFactory() const {
+bool MeBuilder::InitMeExprBuildFactory() {
   RegisterFactoryFunction<MeExprBuildFactory>(OP_addrof, &MeBuilder::BuildAddrofMeExpr);
   RegisterFactoryFunction<MeExprBuildFactory>(OP_addroffunc, &MeBuilder::BuildAddroffuncMeExpr);
   RegisterFactoryFunction<MeExprBuildFactory>(OP_gcmalloc, &MeBuilder::BuildGCMallocMeExpr);
@@ -293,5 +293,6 @@ void MeBuilder::InitMeExprBuildFactory() const {
   RegisterFactoryFunction<MeExprBuildFactory>(OP_array, &MeBuilder::BuildNaryMeExprForArray);
   RegisterFactoryFunction<MeExprBuildFactory>(OP_intrinsicop, &MeBuilder::BuildNaryMeExprForIntrinsicop);
   RegisterFactoryFunction<MeExprBuildFactory>(OP_intrinsicopwithtype, &MeBuilder::BuildNaryMeExprForIntrinsicWithType);
+  return true;
 }
 }  // namespace maple

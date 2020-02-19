@@ -936,7 +936,7 @@ MeExpr *IRMap::CreateAddrofMeExprFromSymbol(MIRSymbol &st, PUIdx puIdx) {
   return HashMeExpr(addrOfMe);
 }
 
-void IRMap::InitMeStmtFactory() const {
+bool IRMap::InitMeStmtFactory() {
   RegisterFactoryFunction<MeStmtFactory>(OP_dassign, &IRMap::BuildDassignMeStmt);
   RegisterFactoryFunction<MeStmtFactory>(OP_regassign, &IRMap::BuildRegassignMeStmt);
   RegisterFactoryFunction<MeStmtFactory>(OP_iassign, &IRMap::BuildIassignMeStmt);
@@ -970,5 +970,6 @@ void IRMap::InitMeStmtFactory() const {
   RegisterFactoryFunction<MeStmtFactory>(OP_throw, &IRMap::BuildThrowMeStmt);
   RegisterFactoryFunction<MeStmtFactory>(OP_syncenter, &IRMap::BuildSyncMeStmt);
   RegisterFactoryFunction<MeStmtFactory>(OP_syncexit, &IRMap::BuildSyncMeStmt);
+  return true;
 }
 }  // namespace maple
