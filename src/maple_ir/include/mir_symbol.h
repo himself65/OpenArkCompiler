@@ -17,6 +17,7 @@
 #include <sstream>
 #include "mir_const.h"
 #include "mir_preg.h"
+#include "global_tables.h"
 
 constexpr int kScopeLocal = 2;   // the default scope level for function variables
 constexpr int kScopeGlobal = 1;  // the scope level for global variables
@@ -224,7 +225,9 @@ class MIRSymbol {
 
   MIRType *GetType() const;
 
-  const std::string &GetName() const;
+  const std::string &GetName() const {
+    return GlobalTables::GetStrTable().GetStringFromStrIdx(nameStrIdx);
+  }
 
   MIRConst *GetKonst() const {
     ASSERT((sKind == kStConst || sKind == kStVar), "must be const symbol");

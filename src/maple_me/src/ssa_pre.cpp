@@ -968,8 +968,8 @@ void SSAPre::SetVarPhis(MeExpr *meExpr) {
       BBId defbbid = phiMeNode->GetDefBB()->GetBBId();
       if (varPhiDfns.find(dom->GetDtDfnItem(defbbid)) == varPhiDfns.end() && ScreenPhiBB(defbbid)) {
         varPhiDfns.insert(dom->GetDtDfnItem(defbbid));
-        for (auto opndit = phiMeNode->GetOpnds().begin(); opndit != phiMeNode->GetOpnds().end(); ++opndit) {
-          VarMeExpr *opnd = *opndit;
+        for (auto opndIt = phiMeNode->GetOpnds().begin(); opndIt != phiMeNode->GetOpnds().end(); ++opndIt) {
+          VarMeExpr *opnd = *opndIt;
           SetVarPhis(opnd);
         }
       }
@@ -1689,7 +1689,8 @@ void SSAPre::ApplySSAPRE() {
     Finalize2();
     // #6 CodeMotion and recompute worklist based on newly occurrence
     CodeMotion();
-    if (preKind == kStmtPre && workCand->GetRealOccs().front()->GetOpcodeOfMeStmt() == OP_dassign) {
+    if (preKind == kStmtPre && (workCand->GetRealOccs().front()->GetOpcodeOfMeStmt() == OP_dassign ||
+        workCand->GetRealOccs().front()->GetOpcodeOfMeStmt() == OP_callassigned)) {
       // apply full redundancy elimination
       DoSSAFRE();
     }

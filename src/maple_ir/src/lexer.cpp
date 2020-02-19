@@ -98,16 +98,14 @@ void MIRLexer::PrepareForString(const std::string &src) {
 
 void MIRLexer::GenName() {
   uint32 startIdx = curIdx;
-  char c = GetCharAtWithUpperCheck(curIdx);
-  if (isalnum(c) || c < 0 || c == '_' || c == '$' || c == '@') {
-    c = GetNextCurrentCharWithUpperCheck();
-  }
-  char cp = GetCharAtWithLowerCheck(curIdx - 1);
+  char c = GetNextCurrentCharWithUpperCheck();
+  char cp = GetCharAt(curIdx - 1);
   if (c == '@' && (cp == 'h' || cp == 'f')) {
     // special pattern for exception handling labels: catch or finally
     c = GetNextCurrentCharWithUpperCheck();
   }
-  while (isalnum(c) || c < 0 || c == '_' || c == '$' || c == ';' || c == '/' || c == '|' || c == '.' || c == '?' ||
+  while (utils::IsAlnum(c) || c < 0 || c == '_' || c == '$' || c == ';' ||
+         c == '/' || c == '|' || c == '.' || c == '?' ||
          c == '@') {
     c = GetNextCurrentCharWithUpperCheck();
   }
@@ -150,22 +148,26 @@ TokenKind MIRLexer::GetConstVal(){
 TokenKind MIRLexer::GetSpecialFloatConst() {
   constexpr uint32 lenSpecFloat = 4;
   constexpr uint32 lenSpecDouble = 3;
-  if (line.compare(curIdx, lenSpecFloat, "inff") == 0 && !isalnum(GetCharAtWithUpperCheck(curIdx + lenSpecFloat))) {
+  if (line.compare(curIdx, lenSpecFloat, "inff") == 0 &&
+      !utils::IsAlnum(GetCharAtWithUpperCheck(curIdx + lenSpecFloat))) {
     curIdx += lenSpecFloat;
     theFloatVal = -INFINITY;
     return TK_floatconst;
   }
-  if (line.compare(curIdx, lenSpecDouble, "inf") == 0 && !isalnum(GetCharAtWithUpperCheck(curIdx + lenSpecDouble))) {
+  if (line.compare(curIdx, lenSpecDouble, "inf") == 0 &&
+      !utils::IsAlnum(GetCharAtWithUpperCheck(curIdx + lenSpecDouble))) {
     curIdx += lenSpecDouble;
     theDoubleVal = -INFINITY;
     return TK_doubleconst;
   }
-  if (line.compare(curIdx, lenSpecFloat, "nanf") == 0 && !isalnum(GetCharAtWithUpperCheck(curIdx + lenSpecFloat))) {
+  if (line.compare(curIdx, lenSpecFloat, "nanf") == 0 &&
+      !utils::IsAlnum(GetCharAtWithUpperCheck(curIdx + lenSpecFloat))) {
     curIdx += lenSpecFloat;
     theFloatVal = -NAN;
     return TK_floatconst;
   }
-  if (line.compare(curIdx, lenSpecDouble, "nan") == 0 && !isalnum(GetCharAtWithUpperCheck(curIdx + lenSpecDouble))) {
+  if (line.compare(curIdx, lenSpecDouble, "nan") == 0 &&
+      !utils::IsAlnum(GetCharAtWithUpperCheck(curIdx + lenSpecDouble))) {
     curIdx += lenSpecDouble;
     theDoubleVal = -NAN;
     return TK_doubleconst;
@@ -306,7 +308,7 @@ TokenKind MIRLexer::GetFloatConst(uint32 valStart, uint32 startIdx, bool negativ
 TokenKind MIRLexer::GetTokenWithPrefixDollar() {
   // token with prefix '$'
   char c = GetCharAtWithUpperCheck(curIdx);
-  if (isalpha(c) || c == '_' || c == '$') {
+  if (utils::IsAlpha(c) || c == '_' || c == '$') {
     GenName();
     return TK_gname;
   } else {
@@ -331,11 +333,11 @@ TokenKind MIRLexer::GetTokenWithPrefixPercent() {
     name = line.substr(valStart, curIdx - valStart);
     return TK_preg;
   }
-  if (isalpha(c) || c == '_' || c == '$') {
+  if (utils::IsAlpha(c) || c == '_' || c == '$') {
     GenName();
     return TK_lname;
   }
-  if (c == '%' && isalpha(GetCharAtWithUpperCheck(curIdx + 1))) {
+  if (c == '%' && utils::IsAlpha(GetCharAtWithUpperCheck(curIdx + 1))) {
     ++curIdx;
     GenName();
     return TK_specialreg;
@@ -346,7 +348,7 @@ TokenKind MIRLexer::GetTokenWithPrefixPercent() {
 TokenKind MIRLexer::GetTokenWithPrefixAmpersand() {
   // token with prefix '&'
   char c = GetCurrentCharWithUpperCheck();
-  if (isalpha(c) || c == '_') {
+  if (utils::IsAlpha(c) || c == '_') {
     GenName();
     return TK_fname;
   }
@@ -359,7 +361,7 @@ TokenKind MIRLexer::GetTokenWithPrefixAmpersand() {
 TokenKind MIRLexer::GetTokenWithPrefixAtOrCircumflex(char prefix) {
   // token with prefix '@' or `^`
   char c = GetCurrentCharWithUpperCheck();
-  if (isalnum(c) || c < 0 || c == '_' || c == '@' || c == '$' || c == '|') {
+  if (utils::IsAlnum(c) || c < 0 || c == '_' || c == '@' || c == '$' || c == '|') {
     GenName();
     if (prefix == '@') {
       return TK_label;
@@ -372,7 +374,7 @@ TokenKind MIRLexer::GetTokenWithPrefixAtOrCircumflex(char prefix) {
 TokenKind MIRLexer::GetTokenWithPrefixExclamation() {
   // token with prefix '!'
   char c = GetCurrentCharWithUpperCheck();
-  if (isalpha(c)) {
+  if (utils::IsAlpha(c)) {
     GenName();
     return TK_typeparam;
   }
@@ -491,7 +493,7 @@ TokenKind MIRLexer::GetTokenWithPrefixDoubleQuotation() {
 TokenKind MIRLexer::GetTokenSpecial() {
   --curIdx;
   char c = GetCharAtWithLowerCheck(curIdx);
-  if (isalpha(c) || c < 0 || c == '_') {
+  if (utils::IsAlpha(c) || c < 0 || c == '_') {
     GenName();
     TokenKind tk = keywordMap[name];
     switch (tk) {

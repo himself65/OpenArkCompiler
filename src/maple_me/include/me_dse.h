@@ -27,7 +27,7 @@ namespace maple {
 class MeDSE : public DSE {
  public:
   MeDSE(MeFunction *f, Dominance *dom, bool enabledDebug)
-      : DSE(f->GetMIRModule(), std::vector<BB*>(f->GetAllBBs().begin(), f->GetAllBBs().end()),
+      : DSE(std::vector<BB*>(f->GetAllBBs().begin(), f->GetAllBBs().end()),
             *f->GetCommonEntryBB(), *f->GetCommonExitBB(), *f->GetMeSSATab(),
             *dom, enabledDebug),
         func(*f) {}

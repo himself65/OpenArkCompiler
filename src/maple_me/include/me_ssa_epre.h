@@ -19,18 +19,20 @@
 #include "me_irmap.h"
 #include "me_cfg.h"
 #include "ssa_epre.h"
+#include "class_hierarchy.h"
 
 namespace maple {
 class MeSSAEPre : public SSAEPre {
  public:
   // a symbol is a candidate for ssaupdate if its ostidx key exists in the map;
   // the mapped set gives bbs where dassign's are inserted by ssa_epre for the symbol
-  explicit MeSSAEPre(MeFunction *func, IRMap &map, Dominance &dom, MemPool &memPool, MemPool &mp2, uint32 limit,
-                     bool includeRef, bool epreLocalRefVar, bool lhsIvar)
+  explicit MeSSAEPre(MeFunction *func, IRMap &map, Dominance &dom, KlassHierarchy &kh, MemPool &memPool, MemPool &mp2,
+                     uint32 limit, bool includeRef, bool epreLocalRefVar, bool lhsIvar)
       : SSAEPre(map, dom, memPool, mp2, kExprPre, limit, includeRef, lhsIvar),
         candsForSSAUpdate(std::less<OStIdx>(), ssaPreAllocator.Adapter()),
         func(func),
-        epreLocalRefVar(epreLocalRefVar) {}
+        epreLocalRefVar(epreLocalRefVar),
+        klassHierarchy(kh) {}
 
   virtual ~MeSSAEPre() = default;
   void GetIterDomFrontier(BB &bb, MapleSet<uint32> &dfSet, std::vector<bool> &visitedMap) override;
@@ -46,9 +48,11 @@ class MeSSAEPre : public SSAEPre {
   MapleMap<OStIdx, MapleSet<BBId>*> candsForSSAUpdate;
   MeFunction *func;
   bool epreLocalRefVar;
+  KlassHierarchy &klassHierarchy;
 
  private:
   void BuildWorkList() override;
+  bool IsThreadObjField(const IvarMeExpr &expr) override;
   BB *GetBB(BBId id) override {
     return func->GetBBFromID(id);
   }

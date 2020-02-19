@@ -58,10 +58,6 @@ MIRType *MIRSymbol::GetType() const {
   return GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
 }
 
-const std::string &MIRSymbol::GetName() const {
-  return GlobalTables::GetStrTable().GetStringFromStrIdx(nameStrIdx);
-}
-
 bool MIRSymbol::PointsToConstString() const {
   MIRType *origType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
   if (origType->GetKind() == kTypePointer) {

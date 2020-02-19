@@ -31,6 +31,8 @@ class SOcc {
  public:
   SOcc(SOccType ty, BB *bb) : occTy(ty), classId(0), mirBB(bb), use(nullptr) {}
 
+  virtual ~SOcc() = default;
+
   virtual void Dump() = 0;
   bool IsPostDominate(Dominance *dom, SOcc *occ) {
     CHECK_NULL_FATAL(occ);
@@ -42,16 +44,16 @@ class SOcc {
     return occTy;
   }
 
-  void SetOccTy(SOccType occTy) {
-    this->occTy = occTy;
+  void SetOccTy(SOccType type) {
+    this->occTy = type;
   }
 
   uint32 GetClassId() {
     return classId;
   }
 
-  void SetClassId(uint32 classId) {
-    this->classId = classId;
+  void SetClassId(uint32 id) {
+    this->classId = id;
   }
 
   BB *GetBB() {
@@ -62,16 +64,16 @@ class SOcc {
     return mirBB;
   }
 
-  void SetBB(BB *mirBB) {
-    this->mirBB = mirBB;
+  void SetBB(BB *currMirBB) {
+    this->mirBB = currMirBB;
   }
 
   SOcc *GetUse() {
     return use;
   }
 
-  void SetUse(SOcc *use) {
-    this->use = use;
+  void SetUse(SOcc *currUse) {
+    this->use = currUse;
   }
  private:
   SOccType occTy;
@@ -110,16 +112,16 @@ class SRealOcc : public SOcc {
     return realFromDef;
   }
 
-  void SetRealFromDef(bool realFromDef) {
-    this->realFromDef = realFromDef;
+  void SetRealFromDef(bool real) {
+    this->realFromDef = real;
   }
 
   bool GetRedundant() {
     return redundant;
   }
 
-  void SetRedundant(bool redundant) {
-    this->redundant = redundant;
+  void SetRedundant(bool isRedundant) {
+    this->redundant = isRedundant;
   }
  private:
   MeStmt *meStmt;      // the stmt of this real occurrence; null for formal at entry
@@ -141,24 +143,24 @@ class SLambdaResOcc : public SOcc {
     return useLambdaOcc;
   }
 
-  void SetUseLambdaOcc(SLambdaOcc *useLambdaOcc) {
-    this->useLambdaOcc = useLambdaOcc;
+  void SetUseLambdaOcc(SLambdaOcc *currUseLambdaOcc) {
+    this->useLambdaOcc = currUseLambdaOcc;
   }
 
   bool GetHasRealUse() {
     return hasRealUse;
   }
 
-  void SetHasRealUse(bool hasRealUse) {
-    this->hasRealUse = hasRealUse;
+  void SetHasRealUse(bool has) {
+    this->hasRealUse = has;
   }
 
   bool GetInsertHere() {
     return insertHere;
   }
 
-  void SetInsertHere(bool insertHere) {
-    this->insertHere = insertHere;
+  void SetInsertHere(bool currInsertHere) {
+    this->insertHere = currInsertHere;
   }
  private:
   SLambdaOcc *useLambdaOcc;  // its rhs use
@@ -190,24 +192,24 @@ class SLambdaOcc : public SOcc {
     return isUpsafe;
   }
 
-  void SetIsUpsafe(bool isUpsafe) {
-    this->isUpsafe = isUpsafe;
+  void SetIsUpsafe(bool upsafe) {
+    this->isUpsafe = upsafe;
   }
 
   bool GetIsCanBeAnt() {
     return isCanBeAnt;
   }
 
-  void SetIsCanBeAnt(bool isCanBeAnt) {
-    this->isCanBeAnt = isCanBeAnt;
+  void SetIsCanBeAnt(bool canBeAnt) {
+    this->isCanBeAnt = canBeAnt;
   }
 
   bool GetIsEarlier() {
     return isEarlier;
   }
 
-  void SetIsEarlier(bool isEarlier) {
-    this->isEarlier = isEarlier;
+  void SetIsEarlier(bool earlier) {
+    this->isEarlier = earlier;
   }
 
   MapleVector<SLambdaResOcc*> &GetLambdaRes() {
@@ -290,8 +292,8 @@ class SpreWorkCand {
     return theVar;
   }
 
-  void SetTheVar(VarMeExpr *theVar) {
-    this->theVar = theVar;
+  void SetTheVar(VarMeExpr *var) {
+    this->theVar = var;
   }
 
   MapleVector<SOcc*> &GetRealOccs() {
@@ -302,16 +304,16 @@ class SpreWorkCand {
     return hasStoreOcc;
   }
 
-  void SetHasStoreOcc(bool hasStoreOcc) {
-    this->hasStoreOcc = hasStoreOcc;
+  void SetHasStoreOcc(bool has) {
+    this->hasStoreOcc = has;
   }
 
   bool GetHasCriticalEdge() {
     return hasCriticalEdge;
   }
 
-  void SetHasCriticalEdge(bool hasCriticalEdge) {
-    this->hasCriticalEdge = hasCriticalEdge;
+  void SetHasCriticalEdge(bool criticalEdge) {
+    this->hasCriticalEdge = criticalEdge;
   }
 
  private:
@@ -348,6 +350,8 @@ class MeSSUPre {
         entryOccs(spreAllocator.Adapter()),
         catchBlocks2Insert(spreAllocator.Adapter()),
         enabledDebug(enabledDebug) {}
+
+  virtual ~MeSSUPre() = default;
 
   void ApplySSUPre();
 

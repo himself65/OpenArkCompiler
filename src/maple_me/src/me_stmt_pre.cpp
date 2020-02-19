@@ -17,12 +17,14 @@
 #include "me_dominance.h"
 #include "me_option.h"
 #include "me_ssa_update.h"
+
 // Note: after the movement of assignments, some phi nodes that used to be dead
 // can become live.  Before we run another round of dead store elimination, we
 // should NOT trust the isLive flag in phi nodes.
 // accumulate the BBs that are in the iterated dominance frontiers of bb in
 // the set dfset, visiting each BB only once
 namespace maple {
+
 void MeStmtPre::GetIterDomFrontier(BB &bb, MapleSet<uint32> &dfSet, std::vector<bool> &visitedMap) {
   CHECK_FATAL(bb.GetBBId() < visitedMap.size(), "index out of range in MeStmtPre::GetIterDomFrontier");
   if (visitedMap[bb.GetBBId()]) {
@@ -240,7 +242,7 @@ bool MeStmtPre::AllVarsSameVersion(MeRealOcc *realOcc1, MeRealOcc *realOcc2) {
   if (op == OP_intrinsiccallwithtype) {
     return true;
   }
-  if (op == OP_dassign && realOcc1->GetMeExpr() != realOcc2->GetMeExpr()) {
+  if ((op == OP_dassign || op == OP_callassigned) && realOcc1->GetMeExpr() != realOcc2->GetMeExpr()) {
     return false;
   }
   MeStmt *stmt2 = realOcc2->GetMeStmt();
@@ -268,7 +270,7 @@ void MeStmtPre::CollectVarForMeStmt(MeStmt *meStmt, MeExpr *meExpr, std::vector<
       if (dassMeStmt->GetRHS()->GetMeOp() == kMeOpVar || dassMeStmt->GetRHS()->GetMeOp() == kMeOpReg) {
         varVec.push_back(dassMeStmt->GetRHS());
       }
-      if (meExpr) {
+      if (meExpr != nullptr) {
         CHECK_FATAL(meExpr->GetMeOp() == kMeOpVar, "CollectVarForMeStmt:bad meExpr field in realocc node");
         varVec.push_back(meExpr);
       }
@@ -282,6 +284,10 @@ void MeStmtPre::CollectVarForMeStmt(MeStmt *meStmt, MeExpr *meExpr, std::vector<
         if (nStmt->GetOpnds()[i]->GetMeOp() == kMeOpVar || nStmt->GetOpnds()[i]->GetMeOp() == kMeOpReg) {
           varVec.push_back(nStmt->GetOpnds()[i]);
         }
+      if (meExpr != nullptr) {
+        CHECK_FATAL(meExpr->GetMeOp() == kMeOpVar, "CollectVarForMeStmt:bad meExpr field in realocc node");
+        varVec.push_back(meExpr);
+      }
       break;
     }
     default:
@@ -346,10 +352,6 @@ MeStmt *MeStmtPre::PhiOpndFromRes4Stmt(MeRealOcc *realZ, size_t j, MeExpr *&lhsV
       if (retOpnd != nullptr) {
         dassQ->SetRHS(retOpnd);
       }
-      retOpnd = GetReplaceMeExpr(realZ->GetMeExpr(), ephiBB, j);
-      if (retOpnd != nullptr) {
-        lhsVar = retOpnd;
-      }
       break;
     }
     case OP_intrinsiccall:
@@ -366,6 +368,12 @@ MeStmt *MeStmtPre::PhiOpndFromRes4Stmt(MeRealOcc *realZ, size_t j, MeExpr *&lhsV
     }
     default:
       ASSERT(false, "MeStmtPre::PhiOpndFromRes4Stmt: NYI");
+  }
+  if (stmtQ->GetOp() == OP_dassign || stmtQ->GetOp() == OP_callassigned) {
+    MeExpr *retOpnd = GetReplaceMeExpr(realZ->GetMeExpr(), ephiBB, j);
+    if (retOpnd != nullptr) {
+      lhsVar = retOpnd;
+    }
   }
   return stmtQ;
 }
@@ -403,7 +411,7 @@ void MeStmtPre::Rename2() {
           bool hasSameVersion = true;
           size_t checkLimit = varVecY.size();
           if (varY != nullptr) {
-            if (varVecY[checkLimit - 1] == static_cast<DassignMeStmt*>(stmtY)->GetLHS()) {
+            if (varVecY[checkLimit - 1] == realDefX->GetMeStmt()->GetVarLHS()) {
               --checkLimit;
             }
           }
@@ -422,7 +430,7 @@ void MeStmtPre::Rename2() {
           CollectVarForMeStmt(stmtY, varY, varVecY);
           size_t checkLimit = varVecY.size();
           if (varY != nullptr) {
-            if (varVecY[checkLimit - 1] == static_cast<DassignMeStmt*>(stmtY)->GetLHS()) {
+            if (varVecY[checkLimit - 1] == stmtY->GetVarLHS()) {
               --checkLimit;
             }
           }
@@ -499,6 +507,9 @@ void MeStmtPre::ComputeVarAndDfPhis() {
         for (size_t i = 0; i < nStmt->NumMeStmtOpnds(); ++i) {
           SetVarPhis(nStmt->GetOpnds()[i]);
         }
+        if (realOcc->GetMeExpr() != nullptr) {
+          SetVarPhis(realOcc->GetMeExpr());
+        }
         break;
       }
       default:
@@ -515,12 +526,13 @@ void MeStmtPre::ComputeVarAndDfPhis() {
 // When a real_occ has uses before it in its bb, ignore (do not insert)
 // the real_occ.
 void MeStmtPre::CreateSortedOccs() {
-  // get set of bb dfns that contain uses if candidate is dassign
+  // get set of bb dfns that contain uses if candidate is dassign or callassigned
   MapleSet<uint32> *useDfns;
   PreWorkCand *workCand = GetWorkCand();
   auto *stmtWkCand = static_cast<PreStmtWorkCand*>(workCand);
-  if (stmtWkCand->GetTheMeStmt()->GetOp() == OP_dassign && !stmtWkCand->LHSIsFinal()) {
-    VarMeExpr *lhsVar = static_cast<DassignMeStmt*>(stmtWkCand->GetTheMeStmt())->GetVarLHS();
+  if ((stmtWkCand->GetTheMeStmt()->GetOp() == OP_dassign || stmtWkCand->GetTheMeStmt()->GetOp() == OP_callassigned) &&
+      !stmtWkCand->LHSIsFinal()) {
+    VarMeExpr *lhsVar = stmtWkCand->GetTheMeStmt()->GetVarLHS();
     OStIdx ostIdx = lhsVar->GetOStIdx();
     MapleMap<OStIdx, MapleSet<uint32>*>::iterator uMapIt = useOccurMap.find(ostIdx);
     CHECK_FATAL(uMapIt != useOccurMap.end(), "MeStmtPre::CreateSortedOccs: missing entry in useOccurMap");
@@ -711,13 +723,13 @@ void MeStmtPre::ConstructUseOccurMapExpr(uint32 bbDfn, MeExpr *x) {
 void MeStmtPre::ConstructUseOccurMap() {
   for (PreWorkCand *wkCand : workList) {
     auto *stmtWkCand = static_cast<PreStmtWorkCand*>(wkCand);
-    if (stmtWkCand->GetTheMeStmt()->GetOp() != OP_dassign) {
+    if (stmtWkCand->GetTheMeStmt()->GetOp() != OP_dassign && stmtWkCand->GetTheMeStmt()->GetOp() != OP_callassigned) {
       continue;
     }
     if (stmtWkCand->LHSIsFinal()) {
       continue;
     }
-    VarMeExpr *lhsVar = static_cast<DassignMeStmt*>(stmtWkCand->GetTheMeStmt())->GetVarLHS();
+    VarMeExpr *lhsVar = stmtWkCand->GetTheMeStmt()->GetVarLHS();
     OStIdx ostIdx = lhsVar->GetOStIdx();
     if (useOccurMap.find(ostIdx) == useOccurMap.end()) {
       // add an entry for ostIdx
@@ -749,9 +761,8 @@ PreStmtWorkCand *MeStmtPre::CreateStmtRealOcc(MeStmt &meStmt, int seqStmt) {
     wkCand = static_cast<PreStmtWorkCand*>(wkCand->GetNext());
   }
   MeExpr *meExpr = nullptr;
-  if (meStmt.GetOp() == OP_dassign) {
-    auto &dass = static_cast<DassignMeStmt&>(meStmt);
-    MapleStack<VarMeExpr*> *pStack = versionStackVec.at(dass.GetVarLHS()->GetOStIdx());
+  if (meStmt.GetOp() == OP_dassign || meStmt.GetOp() == OP_callassigned) {
+    MapleStack<VarMeExpr*> *pStack = versionStackVec.at(meStmt.GetVarLHS()->GetOStIdx());
     meExpr = pStack->top();
   }
   MeRealOcc *newOcc = ssaPreMemPool->New<MeRealOcc>(&meStmt, seqStmt, meExpr);

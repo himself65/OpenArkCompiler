@@ -40,6 +40,9 @@ class SSAEPre : public SSAPre {
     VarMeExpr *v = safe_cast<VarMeExpr>(x);
     return v != nullptr && v->IsVolatile(irMap->GetSSATab());
   }
+  virtual bool IsThreadObjField(const IvarMeExpr &expr) {
+    return false;
+  }
 
   virtual bool CfgHasDoWhile() {
     return false;

@@ -49,6 +49,8 @@ class SSAPre {
     PreWorkCand::GetWorkcandHashTable().fill(nullptr);
   }
 
+  virtual ~SSAPre() = default;
+
   void ApplySSAPRE();
   bool DefVarDominateOcc(MeExpr *meExpr, MeOccur *meOcc);
   virtual void CollectVarForMeExpr(MeExpr *meExpr, std::vector<MeExpr*> &varVec) = 0;

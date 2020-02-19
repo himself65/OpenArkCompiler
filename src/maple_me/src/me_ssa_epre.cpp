@@ -41,7 +41,25 @@ void MeSSAEPre::BuildWorkList() {
   }
 }
 
-AnalysisResult *MeDoSSAEPre::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr*) {
+bool MeSSAEPre::IsThreadObjField(const IvarMeExpr &expr) {
+  if (expr.GetFieldID() == 0) {
+    return false;
+  }
+  auto *type = static_cast<MIRPtrType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(expr.GetTyIdx()));
+  TyIdx runnableInterface = klassHierarchy.GetKlassFromLiteral("Ljava_2Flang_2FRunnable_3B")->GetTypeIdx();
+  Klass *klass = klassHierarchy.GetKlassFromTyIdx(type->GetPointedTyIdx());
+  if (klass == nullptr) {
+    return false;
+  }
+  for (Klass *inter : klass->GetImplInterfaces()) {
+    if (inter->GetTypeIdx() == runnableInterface) {
+      return true;
+    }
+  }
+  return false;
+}
+
+AnalysisResult *MeDoSSAEPre::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) {
   static uint32 puCount = 0;  // count PU to support the eprePULimit option
   if (puCount > MeOption::eprePULimit) {
     ++puCount;
@@ -51,12 +69,14 @@ AnalysisResult *MeDoSSAEPre::Run(MeFunction *func, MeFuncResultMgr *m, ModuleRes
   ASSERT(dom != nullptr, "dominance phase has problem");
   auto *irMap = static_cast<MeIRMap*>(m->GetAnalysisResult(MeFuncPhase_IRMAP, func));
   ASSERT(irMap != nullptr, "irMap phase has problem");
+  KlassHierarchy *kh = static_cast<KlassHierarchy*>(mrm->GetAnalysisResult(MoPhase_CHA, &func->GetMIRModule()));
+  CHECK_FATAL(kh != nullptr, "KlassHierarchy phase has problem");
   bool eprePULimitSpecified = MeOption::eprePULimit != UINT32_MAX;
   uint32 epreLimitUsed =
       (eprePULimitSpecified && puCount != MeOption::eprePULimit) ? UINT32_MAX : MeOption::epreLimit;
   MemPool *ssaPreMemPool = NewMemPool();
   bool epreIncludeRef = MeOption::epreIncludeRef;
-  MeSSAEPre ssaPre(func, *irMap, *dom, *ssaPreMemPool, *NewMemPool(), epreLimitUsed, epreIncludeRef,
+  MeSSAEPre ssaPre(func, *irMap, *dom, *kh, *ssaPreMemPool, *NewMemPool(), epreLimitUsed, epreIncludeRef,
                    MeOption::epreLocalRefVar, MeOption::epreLHSIvar);
   ssaPre.SetSpillAtCatch(MeOption::spillAtCatch);
   if (eprePULimitSpecified && puCount == MeOption::eprePULimit && epreLimitUsed != UINT32_MAX) {

@@ -199,6 +199,7 @@ bool HDSE::ExprNonDeletable(MeExpr &meExpr) {
       if (meExpr.GetOp() == OP_gcmallocjarray) {
         return true;
       }
+      break;
     }
     case kMeOpNary: {
       auto &opNary = static_cast<NaryMeExpr&>(meExpr);
@@ -206,6 +207,7 @@ bool HDSE::ExprNonDeletable(MeExpr &meExpr) {
         IntrinDesc *intrinDesc = &IntrinDesc::intrinTable[opNary.GetIntrinsic()];
         return (!intrinDesc->HasNoSideEffect());
       }
+      break;
     }
     default:
       break;
