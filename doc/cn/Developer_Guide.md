@@ -1,6 +1,6 @@
 # 开发者指南
 
-通过参考本文档，您可以下载编译器源码编译出OpenArkCompiler。
+通过参考本文档，您可以下载编译器源码编译出OpenArkCompiler。同时，本文档也为开发者提供了源码静态检查指南。
 
 ## 前提条件
 
@@ -60,3 +60,19 @@ jbc2mpl -injar java-core.jar -out libjava-core;
 ```
 source build/envsetup.sh; make; cd samples/helloworld/; make
 ```
+
+## 源码静态检查
+
+本部分内容将指导您使用clang-tidy进行源码静态检查。在对源码进行修改之后，对源码进行静态检查，可以检查源码是否符合编程规范，有效的提高代码质量。
+
+静态源码检查之前，需要先编译出OpenArkCompiler。此后，以检查src/maple_driver源码为例，在openarkcompiler目录下执行以下命令：
+
+```
+cp out/compile_commands.json ./
+./tools/clang_llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/share/clang/run-clang-tidy.py -clang-tidy-binary='./tools/clang_llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/bin/clang-tidy' -clang-apply-replacements-binary='./tools/clang_llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/bin/clang-apply-replacements' src/maple_driver/
+```
+命令说明：
+
+- `cp out/compile_commands.json ./` 将out目录之下的compile_commands.json复制到当前目录之下，它是clang-tidy运行所需要的编译命令；
+
+- `./tools/clang_llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/share/clang/run-clang-tidy.py` 调用clang-tidy进行批量检查的脚本run-clang-tidy.py，其中 `./tools/clang_llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/`目录是之前配置的clang编译器的发行包主目录； `-clang-tidy-binary` 是指明clang-tidy的具体位置； `-clang-apply-replacements-binary` 是指明run-clang-tidy.py所依赖的clang-apply-replacements的位置； `src/maple_driver/` 是要进行源码检查的目录。
