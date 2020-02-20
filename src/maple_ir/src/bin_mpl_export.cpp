@@ -112,7 +112,7 @@ void OutputConstSt(const MIRConst &constVal, BinaryMplExport &mplExport) {
   }
 }
 
-void InitOutputConstFactory() {
+static bool InitOutputConstFactory() {
   RegisterFactoryFunction<OutputConstFactory>(kConstInt, OutputConstInt);
   RegisterFactoryFunction<OutputConstFactory>(kConstAddrof, OutputConstAddrof);
   RegisterFactoryFunction<OutputConstFactory>(kConstAddrofFunc, OutputConstAddrofFunc);
@@ -123,6 +123,7 @@ void InitOutputConstFactory() {
   RegisterFactoryFunction<OutputConstFactory>(kConstDoubleConst, OutputConstDouble);
   RegisterFactoryFunction<OutputConstFactory>(kConstAggConst, OutputConstAgg);
   RegisterFactoryFunction<OutputConstFactory>(kConstStConst, OutputConstSt);
+  return true;
 }
 
 void OutputTypeScalar(const MIRType &ty, BinaryMplExport &mplExport) {
@@ -263,7 +264,7 @@ void OutputTypeInterface(const MIRType &ty, BinaryMplExport &mplExport) {
 
 void OutputTypeConstString(const MIRType&, BinaryMplExport&) {}
 
-void InitOutputTypeFactory() {
+static bool InitOutputTypeFactory() {
   RegisterFactoryFunction<OutputTypeFactory>(kTypeScalar, OutputTypeScalar);
   RegisterFactoryFunction<OutputTypeFactory>(kTypePointer, OutputTypePointer);
   RegisterFactoryFunction<OutputTypeFactory>(kTypeByName, OutputTypeByName);
@@ -283,6 +284,7 @@ void InitOutputTypeFactory() {
   RegisterFactoryFunction<OutputTypeFactory>(kTypeInterface, OutputTypeInterface);
   RegisterFactoryFunction<OutputTypeFactory>(kTypeInterfaceIncomplete, OutputTypeInterface);
   RegisterFactoryFunction<OutputTypeFactory>(kTypeConstString, OutputTypeConstString);
+  return true;
 }
 };  // namespace
 
@@ -291,8 +293,10 @@ int BinaryMplExport::typeMarkOffset = 0;
 
 BinaryMplExport::BinaryMplExport(MIRModule &md) : mod(md) {
   Init();
-  InitOutputConstFactory();
-  InitOutputTypeFactory();
+  static auto constPolicyLoader = InitOutputConstFactory();
+  (void)constPolicyLoader;
+  static auto typePolicyLoader = InitOutputTypeFactory();
+  (void)typePolicyLoader;
 }
 
 uint8 BinaryMplExport::Read() {

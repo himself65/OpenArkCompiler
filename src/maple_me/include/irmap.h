@@ -38,7 +38,8 @@ class IRMap : public AnalysisResult {
         lpreTmps(irMapAlloc.Adapter()),
         vst2Decrefs(irMapAlloc.Adapter()),
         meBuilder(irMapAlloc) {
-    InitMeStmtFactory();
+    static auto stmtBuildPolicyLoader = InitMeStmtFactory();
+    (void)stmtBuildPolicyLoader;
   }
 
   virtual ~IRMap() = default;
@@ -246,7 +247,7 @@ class IRMap : public AnalysisResult {
   void BuildPhiMeNode(BB&);
   BB *GetFalseBrBB(CondGotoMeStmt&);
   void SetMeExprOpnds(MeExpr &meExpr, BaseNode &mirNode);
-  void InitMeStmtFactory() const;
+  static bool InitMeStmtFactory();
   MeStmt *BuildDassignMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart);
   MeStmt *BuildRegassignMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart);
   MeStmt *BuildIassignMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart);
