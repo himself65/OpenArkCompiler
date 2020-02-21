@@ -119,7 +119,9 @@ void MeLowerGlobals::Run() {
         MeExpr *addrof = irMap->CreateAddrofMeExpr(baseOst->GetIndex());
         MIRPtrType ptrType(baseOst->GetTyIdx(), PTY_ptr);
         TyIdx addrTyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&ptrType);
-        auto *lhsIvar = static_cast<IvarMeExpr*>(irMap->CreateIvarMeExpr(*dass.GetLHS(), addrTyIdx, *addrof));
+        MeExpr *lhs = dass.GetLHS();
+        CHECK_NULL_FATAL(lhs);
+        auto *lhsIvar = static_cast<IvarMeExpr*>(irMap->CreateIvarMeExpr(*lhs, addrTyIdx, *addrof));
         IassignMeStmt *iass = irMap->NewInPool<IassignMeStmt>(addrTyIdx, lhsIvar, dass.GetRHS(),  &*dass.GetChiList());
         iass->SetBB(bb);
         iass->SetSrcPos(dass.GetSrcPosition());

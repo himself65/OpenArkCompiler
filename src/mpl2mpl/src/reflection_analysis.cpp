@@ -35,7 +35,6 @@ constexpr uint64 kMethodNotVirtual = 0x00000001;
 constexpr uint64 kMethodFinalize = 0x00000002;
 constexpr uint64 kMethodAbstract = 0x00000010;
 constexpr uint64 kFieldOffsetIspOffset = 0x00000001;
-constexpr int32 kMethodNotFound = -10;
 
 constexpr int kModPublic = 1;                 // 0x00000001
 constexpr int kModPrivate = 2;                // 0x00000002
@@ -66,6 +65,7 @@ constexpr uint32 kMetaDataKlassFieldID = static_cast<uint32>(ClassProperty::kSha
 constexpr bool kRADebug = false;
 constexpr uint32 kMethodFieldHashSize = 1022;
 constexpr uint16 kHashConflictFlag = 1023;
+constexpr int16 kMethodNotFound = -10;
 
 constexpr char kModStr[] = "mod";
 constexpr char kAddrStr[] = "addr";
@@ -477,15 +477,6 @@ void ReflectionAnalysis::GenAllMethodHash(std::vector<std::pair<MethodPair*, int
     func->SetHashCode(h);
     hashVector.push_back(h);
   }
-  for (auto &methodInfo : methodInfoVec) {
-    MIRSymbol *funcSym = GlobalTables::GetGsymTable().GetSymbolFromStidx(methodInfo.first->first.Idx());
-    MIRFunction *func = funcSym->GetFunction();
-    uint16 h = func->GetHashCode();
-    int c = std::count(hashVector.begin(), hashVector.end(), h);
-    if (c > 1) {
-      func->SetHashCode(kHashConflictFlag);  // conflict flag
-    }
-  }
 }
 
 void ReflectionAnalysis::GenAllFieldHash(std::vector<std::pair<FieldPair, uint16>> &fieldV) const {
@@ -583,8 +574,8 @@ bool RtRetentionPolicyCheck(const MIRSymbol &clInfo) {
   return false;
 }
 
-uint32 ReflectionAnalysis::GetMethodInVtabIndex(const Klass &klass, const MIRFunction &func) const {
-  int methodInVtabIndex = 0;
+uint16 ReflectionAnalysis::GetMethodInVtabIndex(const Klass &klass, const MIRFunction &func) const {
+  uint16 methodInVtabIndex = 0;
   bool findMethod = false;
   const MIRClassType *classType = klass.GetMIRClassType();
   const MIRSymbol *vtableSymbol = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(
@@ -615,16 +606,9 @@ uint32 ReflectionAnalysis::GetMethodInVtabIndex(const Klass &klass, const MIRFun
     }
   }
   if (!findMethod) {
-    constexpr int notFoundMethod = kMethodNotFound;
-    methodInVtabIndex = notFoundMethod;
+    methodInVtabIndex = static_cast<uint16>(kMethodNotFound);
   }
-  // Check VtabIndex, int16.
-  CHECK_FATAL((methodInVtabIndex > std::numeric_limits<int16>::min()) &&
-              (methodInVtabIndex < std::numeric_limits<int16>::max()),
-              "Error:the methodInVtabIndex is too large");
-  // clean up high 16bit
-  uint32 vtabIndex = static_cast<uint32>(methodInVtabIndex) & 0xFFFF;
-  return vtabIndex;
+  return methodInVtabIndex;
 }
 
 void ReflectionAnalysis::GetSignatureTypeNames(std::string &signature, std::vector<std::string> &typeNames) {
@@ -689,7 +673,7 @@ struct HashCodeComparator {
     CHECK_FATAL(fullNameB.find("|") != std::string::npos, "not found |");
     const std::string &signatureB = fullNameB.substr(fullNameB.find("|") + 1);
     // Make bridge the end.
-    if ((funcA->GetHashCode() == kHashConflictFlag) && (funcB->GetHashCode() == kHashConflictFlag)) {
+    if (funcA->GetHashCode() == funcB->GetHashCode() && funcA->GetBaseFuncName() == funcB->GetBaseFuncName())  {
       // Only deal with return type is different.
       if ((funcA->GetAttr(FUNCATTR_bridge)) && !(funcB->GetAttr(FUNCATTR_bridge))) {
         return true;

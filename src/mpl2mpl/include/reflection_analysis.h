@@ -218,7 +218,7 @@ class ReflectionAnalysis : public AnalysisResult {
 
   int GetDeflateStringIdx(const std::string &subStr, bool needSpecialFlag);
   uint32 GetAnnoCstrIndex(std::map<int, int> &idxNumMap, const std::string &annoArr, bool isField);
-  uint32 GetMethodInVtabIndex(const Klass &clazz, const MIRFunction &func) const;
+  uint16 GetMethodInVtabIndex(const Klass &clazz, const MIRFunction &func) const;
   void GetSignatureTypeNames(std::string &signature, std::vector<std::string> &typeNames);
   MIRSymbol *GetClinitFuncSymbol(const Klass &klass);
   int SolveAnnotation(MIRClassType &classType, MIRFunction &func);
