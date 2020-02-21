@@ -28,7 +28,7 @@ class MeCondBased {
   bool NullValueFromTestCond(VarMeExpr&, BB&, bool);
   bool IsNotNullValue(VarMeExpr&, UnaryMeStmt&, BB*);
 
-  MeFunction *GetFunc() const {
+  const MeFunction *GetFunc() const {
     return func;
   }
 

@@ -40,7 +40,7 @@ class SOcc {
     return dom->PostDominate(*mirBB, *occ->mirBB);
   }
 
-  SOccType GetOccTy() {
+  SOccType GetOccTy() const {
     return occTy;
   }
 
@@ -48,7 +48,7 @@ class SOcc {
     this->occTy = type;
   }
 
-  uint32 GetClassId() {
+  uint32 GetClassId() const {
     return classId;
   }
 
@@ -68,7 +68,7 @@ class SOcc {
     this->mirBB = currMirBB;
   }
 
-  SOcc *GetUse() {
+  SOcc *GetUse() const {
     return use;
   }
 
@@ -108,7 +108,7 @@ class SRealOcc : public SOcc {
     return vMeExpr;
   }
 
-  bool GetRealFromDef() {
+  bool GetRealFromDef() const {
     return realFromDef;
   }
 
@@ -139,7 +139,7 @@ class SLambdaResOcc : public SOcc {
     LogInfo::MapleLogger() << "LambdaResOcc at bb" << GetBB()->GetBBId() << " classId" << GetClassId();
   }
 
-  SLambdaOcc *GetUseLambdaOcc() {
+  const SLambdaOcc *GetUseLambdaOcc() const {
     return useLambdaOcc;
   }
 
@@ -147,7 +147,7 @@ class SLambdaResOcc : public SOcc {
     this->useLambdaOcc = currUseLambdaOcc;
   }
 
-  bool GetHasRealUse() {
+  bool GetHasRealUse() const {
     return hasRealUse;
   }
 
@@ -155,7 +155,7 @@ class SLambdaResOcc : public SOcc {
     this->hasRealUse = has;
   }
 
-  bool GetInsertHere() {
+  bool GetInsertHere() const {
     return insertHere;
   }
 
@@ -188,7 +188,7 @@ class SLambdaOcc : public SOcc {
     LogInfo::MapleLogger() << "]";
   }
 
-  bool GetIsUpsafe() {
+  bool GetIsUpsafe() const {
     return isUpsafe;
   }
 
@@ -196,7 +196,7 @@ class SLambdaOcc : public SOcc {
     this->isUpsafe = upsafe;
   }
 
-  bool GetIsCanBeAnt() {
+  bool GetIsCanBeAnt() const {
     return isCanBeAnt;
   }
 
@@ -204,7 +204,7 @@ class SLambdaOcc : public SOcc {
     this->isCanBeAnt = canBeAnt;
   }
 
-  bool GetIsEarlier() {
+  bool GetIsEarlier() const {
     return isEarlier;
   }
 
@@ -280,7 +280,7 @@ class SpreWorkCand {
 
   ~SpreWorkCand() = default;
 
-  SpreWorkCand *GetNext() {
+  const SpreWorkCand *GetNext() const {
     return next;
   }
 
@@ -288,7 +288,7 @@ class SpreWorkCand {
     return theOst;
   }
 
-  VarMeExpr *GetTheVar() {
+  const VarMeExpr *GetTheVar() const {
     return theVar;
   }
 
@@ -300,7 +300,7 @@ class SpreWorkCand {
     return realOccs;
   }
 
-  bool GetHasStoreOcc() {
+  bool GetHasStoreOcc() const {
     return hasStoreOcc;
   }
 
@@ -308,7 +308,7 @@ class SpreWorkCand {
     this->hasStoreOcc = has;
   }
 
-  bool GetHasCriticalEdge() {
+  bool GetHasCriticalEdge() const {
     return hasCriticalEdge;
   }
 
