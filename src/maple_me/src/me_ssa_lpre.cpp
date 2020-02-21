@@ -21,6 +21,7 @@ void MeSSALPre::GenerateSaveRealOcc(MeRealOcc *realOcc) {
   ASSERT(GetPUIdx() == workCand->GetPUIdx() || workCand->GetPUIdx() == 0,
          "GenerateSaveRealOcc: inconsistent puIdx");
   MeExpr *regOrVar = CreateNewCurTemp(realOcc->GetMeExpr());
+  CHECK_NULL_FATAL(regOrVar);
   if (!realOcc->IsLHS()) {
     // create a new meStmt before realOcc->GetMeStmt()
     MeStmt *newMeStmt = irMap->CreateRegassignMeStmt(*regOrVar, *realOcc->GetMeExpr(), *realOcc->GetMeStmt()->GetBB());
@@ -78,7 +79,7 @@ void MeSSALPre::GenerateSaveRealOcc(MeRealOcc *realOcc) {
                 "LHS real occurrence has unrecognized stmt type");
     MapleVector<MustDefMeNode> *mustDefList = realOcc->GetMeStmt()->GetMustDefList();
     CHECK_NULL_FATAL(mustDefList);
-    ASSERT(!mustDefList->empty(), "empty mustdef in callassigned stmt");
+    CHECK_FATAL(!mustDefList->empty(), "empty mustdef in callassigned stmt");
     MustDefMeNode *mustDefMeNode = &mustDefList->front();
     if (regOrVar->GetMeOp() == kMeOpReg) {
       auto *theLHS = static_cast<VarMeExpr*>(mustDefMeNode->GetLHS());

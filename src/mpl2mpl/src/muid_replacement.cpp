@@ -25,6 +25,7 @@ constexpr char kMuidSymPtrStr[] = "__muid_symptr";
 
 constexpr maple::uint64 kFromUndefIndexMask = 0x4000000000000000;
 constexpr maple::uint64 kFromDefIndexMask = 0x2000000000000000;
+
 } // namespace
 
 // MUIDReplacement

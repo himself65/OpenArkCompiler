@@ -996,6 +996,10 @@ int MplOptions::Parse(int argc, char **argv) {
   if (runMode == RunMode::kUnkownRun) {
     optimizationLevel = kO0;
   }
+  // Make sure in Auto mode
+  if (runMode != RunMode::kCustomRun) {
+    setDefaultLevel = true;
+  }
 
   // Check whether the input files were valid
   ret = CheckInputFileValidity();
