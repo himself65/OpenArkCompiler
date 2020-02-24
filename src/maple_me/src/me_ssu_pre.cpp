@@ -43,7 +43,7 @@ void MeSSUPre::Finalize() {
       }
       case kSOccLambdaRes: {
         auto *lambdaResOcc = static_cast<SLambdaResOcc*>(occ);
-        SLambdaOcc *lambdaOcc = lambdaResOcc->GetUseLambdaOcc();
+        const SLambdaOcc *lambdaOcc = lambdaResOcc->GetUseLambdaOcc();
         if (lambdaOcc->WillBeAnt()) {
           if (lambdaResOcc->GetUse() == nullptr || (!lambdaResOcc->GetHasRealUse() &&
                                                     lambdaResOcc->GetUse()->GetOccTy() == kSOccLambda &&
