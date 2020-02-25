@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -145,8 +145,8 @@ void NativeStubFuncGeneration::ProcessFunc(MIRFunction *func) {
         monitor = builder->CreateExprDread(*formal0St);
       }
     }
-    NaryStmtNode *synCenter = builder->CreateStmtNary(OP_syncenter, monitor);
-    func->GetBody()->AddStatement(synCenter);
+    NaryStmtNode *syncEnter = builder->CreateStmtNary(OP_syncenter, monitor);
+    func->GetBody()->AddStatement(syncEnter);
   }
   // Get Env pointer, skip for critical native functions who do not need Env
   // Generate stubfunc call/return stmt, extra args only for non-critical_native calls

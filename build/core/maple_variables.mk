@@ -9,10 +9,10 @@ APP_MPLT:=$(foreach APP, $(TARGETS), $(APP).mplt)
 APP_VTABLEIMPL_MPL := $(foreach APP, $(TARGETS), $(APP).VtableImpl.mpl)
 APP_S := $(foreach APP, $(TARGETS), $(APP).VtableImpl.s)
 
-JAVA2JAR := $(MAPLE_ROOT)/out/bin/java2jar
-JBC2MPL_BIN := $(MAPLE_ROOT)/out/bin/jbc2mpl
-MAPLE_BIN := $(MAPLE_ROOT)/out/bin/maple
-MPLCG_BIN := $(MAPLE_ROOT)/out/bin/mplcg
+JAVA2JAR := $(MAPLE_ROOT)/output/bin/java2jar
+JBC2MPL_BIN := $(MAPLE_ROOT)/output/bin/jbc2mpl
+MAPLE_BIN := $(MAPLE_ROOT)/output/bin/maple
+MPLCG_BIN := $(MAPLE_ROOT)/output/bin/mplcg
 MPLME_FLAGS := --quiet
 MPL2MPL_FLAGS := --quiet --regnativefunc --maplelinker
 MPLCG_SO_FLAGS := --fpic
