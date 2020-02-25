@@ -2,7 +2,7 @@
 # Makefile for OpenArkCompiler
 #
 
-INSTALL_DIR := ${MAPLE_ROOT}/out
+INSTALL_DIR := ${MAPLE_ROOT}/output
 BUILD_TYPE := RELEASE
 HOST_ARCH := 64
 MIR_JAVA := 1
@@ -24,17 +24,17 @@ mapleall:
 
 .PHONY: install
 install: mapleall
-	$(shell cp -rf $(MAPLE_ROOT)/src/bin/java2jar $(MAPLE_ROOT)/out/bin/)
-	$(shell cp -rf $(MAPLE_ROOT)/src/bin/jbc2mpl $(MAPLE_ROOT)/out/bin/)
-	$(shell cp -rf $(MAPLE_ROOT)/src/bin/mplcg $(MAPLE_ROOT)/out/bin/)
+	$(shell cp -rf $(MAPLE_ROOT)/src/bin/java2jar $(MAPLE_ROOT)/output/bin/)
+	$(shell cp -rf $(MAPLE_ROOT)/src/bin/jbc2mpl $(MAPLE_ROOT)/output/bin/)
+	$(shell cp -rf $(MAPLE_ROOT)/src/bin/mplcg $(MAPLE_ROOT)/output/bin/)
 
 .PHONY: clean
 clean:
-	@rm -rf out/
+	@rm -rf output/
 
 define build_gn
     mkdir -p ${INSTALL_DIR}; \
     $(GN) gen ${INSTALL_DIR} --args='$(1)' --export-compile-commands; \
     cd ${INSTALL_DIR}; \
-    $(NINJA) -v $(2);
+    $(NINJA) -v $(2) | tee ${MAPLE_ROOT}/build/logs/$(shell date +"%Y-%m-%d-%H-%M-%S").log;
 endef

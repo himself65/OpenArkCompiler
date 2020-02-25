@@ -1130,6 +1130,7 @@ std::string ReflectionAnalysis::GetAnnotationValue(const MapleVector<MIRPragmaEl
     annoArray += annoDelimiter;
     annoArray += GetAnnoValueNoArray(*arrayElem);
   }
+  annoArray += annoDelimiter;
   annoArray += annoArrayEndDelimiter;
   return annoArray;
 }
@@ -1137,17 +1138,20 @@ std::string ReflectionAnalysis::GetAnnotationValue(const MapleVector<MIRPragmaEl
 std::string ReflectionAnalysis::GetArrayValue(const MapleVector<MIRPragmaElement*> &subelemVector) {
   std::string annoArray;
   GStrIdx strIdx;
+  uint32_t idx;
   annoArray += (annoArrayStartDelimiter + std::to_string(subelemVector.size()) + annoDelimiter);
   if (!subelemVector.empty()) {
     annoArray += std::to_string(subelemVector[0]->GetType());
     annoArray += annoDelimiter;
-  }
-  for (MIRPragmaElement *arrayElem : subelemVector) {
+
     std::string javaDsp;
-    ConvertMapleClassName(GlobalTables::GetStrTable().GetStringFromStrIdx(arrayElem->GetTypeStrIdx()), javaDsp);
+    ConvertMapleClassName(GlobalTables::GetStrTable().GetStringFromStrIdx(subelemVector[0]->GetTypeStrIdx()), javaDsp);
     std::string typeStr = javaDsp;
-    uint32_t idx = ReflectionAnalysis::FindOrInsertReflectString(typeStr);
+    idx = ReflectionAnalysis::FindOrInsertReflectString(typeStr);
     annoArray += (annoDelimiterPrefix + std::to_string(idx) + annoDelimiter);
+  }
+
+  for (MIRPragmaElement *arrayElem : subelemVector) {
     MapleVector<MIRPragmaElement*> arrayElemVector = arrayElem->GetSubElemVec();
     switch (arrayElem->GetType()) {
       COMMON_CASE
@@ -1172,6 +1176,7 @@ std::string ReflectionAnalysis::GetArrayValue(const MapleVector<MIRPragmaElement
         annoArray += (GlobalTables::GetStrTable().GetStringFromStrIdx(strIdx) + annoDelimiter);
       }
     }
+    annoArray += annoDelimiter;
   }
   annoArray += annoArrayEndDelimiter;
   return annoArray;

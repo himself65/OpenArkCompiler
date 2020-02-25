@@ -1,4 +1,4 @@
-#!/bin/bash
+#! /bin/bash
 #
 # Copyright (c) [2020] Huawei Technologies Co.,Ltd.All rights reserved.
 #
@@ -13,10 +13,11 @@
 # FIT FOR A PARTICULAR PURPOSE.
 # See the Mulan PSL v1 for more details.
 #
+source build/envsetup.sh
+option=$@
+if [ "$option" = "DEBUG" ]; then
+  make BUILD_TYPE=DEBUG
+else
+  make
+fi
 
-curdir=$(pwd)
-unset MAPLE_ROOT
-export MAPLE_ROOT=${curdir}
-unset MAPLE_BUILD_CORE
-export MAPLE_BUILD_CORE=${MAPLE_ROOT}/build/core
-export PATH=$PATH:${MAPLE_ROOT}/output/bin
