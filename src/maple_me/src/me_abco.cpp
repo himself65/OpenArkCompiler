@@ -13,6 +13,10 @@
  * See the Mulan PSL v1 for more details.
  */
 #include "me_abco.h"
+
+// This phase removes redundant array bounds checks.
+// ABCD: Eliminating Array Bounds Checks on Demand.
+// Rastislav Bodik, Rajiv Gupta, Vivek Sarkar.
 namespace maple {
 bool MeABC::kDebug = false;
 constexpr int kNumOpnds = 2;

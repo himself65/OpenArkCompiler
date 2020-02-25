@@ -33,9 +33,9 @@ class MeCondBased {
   }
 
  private:
-  bool NullValueFromOneTestCond(VarMeExpr&, BB&, BB&, bool);
-  bool PointerWasDereferencedBefore(VarMeExpr&, UnaryMeStmt&, BB*);
-  bool PointerWasDereferencedRightAfter(VarMeExpr&, UnaryMeStmt&);
+  bool NullValueFromOneTestCond(const VarMeExpr&, BB&, BB&, bool);
+  bool PointerWasDereferencedBefore(VarMeExpr&, const UnaryMeStmt&, BB*);
+  bool PointerWasDereferencedRightAfter(VarMeExpr&, const UnaryMeStmt&);
   bool IsIreadWithTheBase(VarMeExpr&, MeExpr&);
   bool StmtHasDereferencedBase(MeStmt&, VarMeExpr&);
 

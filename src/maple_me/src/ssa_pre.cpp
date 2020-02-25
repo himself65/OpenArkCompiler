@@ -229,7 +229,7 @@ void SSAPre::CodeMotion() {
   curTemp = nullptr;
   curLocalRefVar = nullptr;
   temp2LocalRefVarMap.clear();
-  reBuiltOccIndex = workList.size();  // so we know the elements added due to rebuilding
+  reBuiltOccIndex = static_cast<int32>(workList.size());  // so we know the elements added due to rebuilding
   for (MeOccur *occ : allOccs) {
     switch (occ->GetOccType()) {
       case kOccReal: {
@@ -633,7 +633,7 @@ void SSAPre::ResetDS(MePhiOpndOcc *phiOpnd) {
     return;
   }
   MeOccur *defOcc = phiOpnd->GetDef();
-  if (!defOcc || defOcc->GetOccType() != kOccPhiocc) {
+  if (defOcc == nullptr || defOcc->GetOccType() != kOccPhiocc) {
     return;
   }
   auto *defPhiOcc = static_cast<MePhiOcc*>(defOcc);
@@ -880,7 +880,7 @@ void SSAPre::Rename2() {
     MeRealOcc *realOcc = workCand->GetRealOcc(*it);
     rename2Set.erase(it);
     MeOccur *defOcc = realOcc->GetDef();
-    if (!defOcc || defOcc->GetOccType() != kOccPhiocc) {
+    if (defOcc == nullptr || defOcc->GetOccType() != kOccPhiocc) {
       CHECK_FATAL(false, "should be def by phiOcc");
     }
     auto *defPhiOcc = static_cast<MePhiOcc*>(defOcc);
@@ -976,7 +976,7 @@ void SSAPre::SetVarPhis(MeExpr *meExpr) {
     }
   } else {
     MeRegPhiNode *phiMeNode = static_cast<RegMeExpr*>(meExpr)->GetMeRegPhiDef();
-    if (phiMeNode) {
+    if (phiMeNode != nullptr) {
       BBId defBbId = phiMeNode->GetDefBB()->GetBBId();
       CHECK(defBbId < dom->GetDtDfnSize(), "defBbId.idx out of range in SSAPre::SetVarPhis");
       if (varPhiDfns.find(dom->GetDtDfnItem(defBbId)) == varPhiDfns.end() && ScreenPhiBB(defBbId)) {
@@ -1217,7 +1217,7 @@ bool SSAPre::DefVarDominateOcc(MeExpr *meExpr, MeOccur *meOcc) {
       }
       case kDefByChi: {
         MeStmt *meStmt = varMeExpr->GetDefChi().GetBase();
-        if (!meStmt) {
+        if (meStmt == nullptr) {
           return true;  // it's a original variable dominate everything
         }
         BB *defBB = meStmt->GetBB();

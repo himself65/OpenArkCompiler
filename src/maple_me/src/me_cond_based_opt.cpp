@@ -36,7 +36,7 @@
 namespace maple {
 // check if varmeexpr is under the condition varmeexpr == 0 when expectedEq0 is true,
 // or varmeexpr != 0 if expectedEq0 is false
-bool MeCondBased::NullValueFromOneTestCond(VarMeExpr &varMeExpr, BB &cdBB, BB &bb, bool expectedEq0) {
+bool MeCondBased::NullValueFromOneTestCond(const VarMeExpr &varMeExpr, BB &cdBB, BB &bb, bool expectedEq0) {
   auto &meStmts = cdBB.GetMeStmts();
   if (meStmts.empty()) {
     return false;
@@ -140,7 +140,7 @@ bool MeCondBased::StmtHasDereferencedBase(MeStmt &stmt, VarMeExpr &var) {
   return false;
 }
 
-bool MeCondBased::PointerWasDereferencedBefore(VarMeExpr &var, UnaryMeStmt &assertMeStmt, BB *bb) {
+bool MeCondBased::PointerWasDereferencedBefore(VarMeExpr &var, const UnaryMeStmt &assertMeStmt, BB *bb) {
   // If var is defined in the function, let BBx be the BB that defines var.
   // If var is not defined, then let BBx be the function entry BB.
   // Let BBy be the current BB that contains the assertnonnull.
@@ -180,7 +180,7 @@ bool MeCondBased::PointerWasDereferencedBefore(VarMeExpr &var, UnaryMeStmt &asse
   return false;
 }
 
-bool MeCondBased::PointerWasDereferencedRightAfter(VarMeExpr &var, UnaryMeStmt &assertMeStmt) {
+bool MeCondBased::PointerWasDereferencedRightAfter(VarMeExpr &var, const UnaryMeStmt &assertMeStmt) {
   // assertnonnull(var)
   // t = iread(var, 0)
   // we can safely delete assertnonnull(var)

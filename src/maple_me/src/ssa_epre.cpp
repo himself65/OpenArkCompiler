@@ -180,7 +180,7 @@ MeExpr *SSAEPre::PhiOpndFromRes(MeRealOcc *realZ, size_t j) {
       MapleVector<MeExpr*> &opnds = naryMeExpr->GetOpnds();
       for (size_t i = 0; i < opnds.size(); i++) {
         MeExpr *retOpnd = GetReplaceMeExpr(opnds[i], ePhiBB, j);
-        if (retOpnd) {
+        if (retOpnd != nullptr) {
           opnds[i] = retOpnd;
         }
       }
@@ -232,7 +232,7 @@ void SSAEPre::ComputeVarAndDfPhis() {
         MapleVector<MeExpr*> &opnds = naryMeExpr->GetOpnds();
         for (size_t i = 0; i < opnds.size(); i++) {
           MeExpr *kidExpr = opnds[i];
-          if (kidExpr) {
+          if (kidExpr != nullptr) {
             SetVarPhis(kidExpr);
           }
         }

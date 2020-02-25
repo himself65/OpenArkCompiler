@@ -53,14 +53,14 @@ class HDSE {
   void MarkMuListRequired(MapleMap<OStIdx, VarMeExpr*> &);
   void MarkChiNodeRequired(ChiMeNode &chiNode);
   bool ExprNonDeletable(MeExpr &expr);
-  bool StmtMustRequired(const MeStmt &stmt, BB &bb);
+  bool StmtMustRequired(const MeStmt &stmt, const BB &bb);
   void MarkStmtRequired(MeStmt &stmt);
   bool HasNonDeletableExpr(const MeStmt &stmt);
   void MarkStmtUseLive(MeStmt &meStmt);
   void MarkSingleUseLive(MeExpr &meExpr);
   void MarkControlDependenceLive(BB &bb);
   void MarkLastBranchStmtInBBRequired(BB &bb);
-  void MarkLastStmtInPDomBBRequired(BB &bb);
+  void MarkLastStmtInPDomBBRequired(const BB &bb);
   void MarkLastUnconditionalGotoInPredBBRequired(BB &bb);
   void MarkVarDefByStmt(VarMeExpr &varMeExpr);
   void MarkRegDefByStmt(RegMeExpr &regMeExpr);

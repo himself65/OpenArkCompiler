@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -173,17 +173,7 @@ class ESSABaseNode {
     }
   };
   ESSABaseNode(int i, MeExpr *expr, ESSANodeKind k) : id(i), meExpr(expr), kind(k) {}
-  virtual ~ESSABaseNode() {
-    // delete edges
-    for (auto iter = inWithConstEdge.begin(); iter != inWithConstEdge.end(); ++iter) {
-      delete iter->second;
-      iter->second = nullptr;
-    }
-    for (auto iter = inWithVarEdge.begin(); iter != inWithVarEdge.end(); ++iter) {
-      delete iter->second;
-      iter->second = nullptr;
-    }
-  }
+  virtual ~ESSABaseNode() = default;
 
   virtual const MeExpr &GetMeExpr() const {
     return *meExpr;
@@ -225,6 +215,10 @@ class ESSABaseNode {
     inWithVarEdge.insert(std::pair<ESSABaseNode*, InequalEdge*>(&node, &e));
   }
 
+  virtual void InsertEdges(std::unique_ptr<InequalEdge> e) {
+    edges.push_back(std::move(e));
+  }
+
   virtual std::string GetExprID() const {
     CHECK_FATAL(meExpr != nullptr, "must be");
     return std::to_string(meExpr->GetExprID());
@@ -238,6 +232,7 @@ class ESSABaseNode {
   int id;
   MeExpr *meExpr;
   ESSANodeKind kind;
+  std::vector<std::unique_ptr<InequalEdge>> edges;
   std::multimap<ESSABaseNode*, InequalEdge*, ESSABaseNodeComparator> outWithConstEdge;
   std::multimap<ESSABaseNode*, InequalEdge*, ESSABaseNodeComparator> outWithVarEdge;
   std::multimap<ESSABaseNode*, InequalEdge*, ESSABaseNodeComparator> inWithConstEdge;
@@ -276,12 +271,7 @@ class ESSAArrayNode : public ESSABaseNode {
 class ESSAPhiNode : public ESSABaseNode {
  public:
   explicit ESSAPhiNode(int i, MeExpr &e) : ESSABaseNode(i, &e, kPhiNode) {}
-  ~ESSAPhiNode() {
-    for (auto pair : inPhiNodes) {
-      delete pair.second;
-      pair.second = nullptr;
-    }
-  }
+  ~ESSAPhiNode() = default;
 
   const std::vector<VarMeExpr*> &GetPhiOpnds() const {
     return phiOpnds;
@@ -316,21 +306,9 @@ class InequalityGraph {
  public:
   explicit InequalityGraph(MeFunction &func) : meFunction(&func) {
     nodeCount = 0;
-    ESSAConstNode *node = new ESSAConstNode(GetValidID(), 0);
-    constNodes[0] = node;
+    constNodes[0] = std::make_unique<ESSAConstNode>(GetValidID(), 0);
   }
-  ~InequalityGraph() {
-    // delete nodes
-    for (auto iter = varNodes.begin(); iter != varNodes.end(); ++iter) {
-      delete iter->second;
-      iter->second = nullptr;
-    }
-
-    for (auto iter = constNodes.begin(); iter != constNodes.end(); ++iter) {
-      delete iter->second;
-      iter->second = nullptr;
-    }
-  }
+  ~InequalityGraph() = default;
 
   ESSAConstNode *GetOrCreateConstNode(int value);
   ESSAVarNode *GetOrCreateVarNode(MeExpr &meExpr);
@@ -354,13 +332,14 @@ class InequalityGraph {
   InequalEdge *HasEdge(ESSABaseNode &from, ESSABaseNode &to, InequalEdge &type) const;
   std::string GetName(ESSABaseNode &node, IRMap &irMap) const;
   std::string GetName(const MeExpr &meExpr, IRMap &irMap) const;
-  void DumpDotNodes(IRMap &irMap, std::ostream &out, DumpType dumpType, std::map<int32, ESSABaseNode*> nodes) const;
+  void DumpDotNodes(IRMap &irMap, std::ostream &out, DumpType dumpType,
+                    const std::map<int32, std::unique_ptr<ESSABaseNode>> &nodes) const;
   void DumpDotEdges(IRMap &irMap, const std::pair<ESSABaseNode*, InequalEdge*> &map,
                     std::ostream &out, std::string &from) const;
 
   MeFunction *meFunction;
-  std::map<int32, ESSABaseNode*> varNodes;
-  std::map<int32, ESSABaseNode*> constNodes;
+  std::map<int32, std::unique_ptr<ESSABaseNode>> varNodes;
+  std::map<int32, std::unique_ptr<ESSABaseNode>> constNodes;
   int nodeCount;
 };
 

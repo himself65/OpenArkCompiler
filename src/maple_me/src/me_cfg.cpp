@@ -575,6 +575,9 @@ void MeCFG::ConvertMeregphiList2IdentityAssigns(BB &meBB) const {
 
 // used only after DSE because it looks at live field of VersionSt
 void MeCFG::ConvertPhis2IdentityAssigns(BB &meBB) const {
+  if (meBB.IsEmpty()) {
+    return;
+  }
   ConvertPhiList2IdentityAssigns(meBB);
   ConvertMevarPhiList2IdentityAssigns(meBB);
   ConvertMeregphiList2IdentityAssigns(meBB);
