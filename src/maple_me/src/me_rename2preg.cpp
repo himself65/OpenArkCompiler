@@ -147,7 +147,7 @@ class FormalRenaming final {
     }
   }
 
-  void Rename(MIRBuilder &irBuilder) {
+  void Rename(const MIRBuilder &irBuilder) {
     for (size_t i = 0; i < irFunc.GetFormalCount(); ++i) {
       if (!paramUsed[i]) {
         // in this case, the paramter is not used by any statement, promote it

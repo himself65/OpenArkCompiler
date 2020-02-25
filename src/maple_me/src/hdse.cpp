@@ -259,7 +259,7 @@ void HDSE::MarkLastUnconditionalGotoInPredBBRequired(BB &bb) {
   }
 }
 
-void HDSE::MarkLastStmtInPDomBBRequired(BB &bb) {
+void HDSE::MarkLastStmtInPDomBBRequired(const BB &bb) {
   CHECK(bb.GetBBId() < postDom.GetPdomFrontierSize(), "index out of range in HDSE::MarkLastStmtInPDomBBRequired");
   for (BBId cdBBId : postDom.GetPdomFrontierItem(bb.GetBBId())) {
     BB *cdBB = bbVec[cdBBId];
@@ -364,7 +364,7 @@ void HDSE::MarkStmtRequired(MeStmt &meStmt) {
   MarkControlDependenceLive(*meStmt.GetBB());
 }
 
-bool HDSE::StmtMustRequired(const MeStmt &meStmt, BB &bb) {
+bool HDSE::StmtMustRequired(const MeStmt &meStmt, const BB &bb) {
   Opcode op = meStmt.GetOp();
   // special opcode cannot be eliminated
   if (IsStmtMustRequire(op) || op == OP_comment) {

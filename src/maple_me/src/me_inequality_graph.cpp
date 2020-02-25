@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -17,36 +17,39 @@
 namespace maple {
   ESSAConstNode *InequalityGraph::GetOrCreateConstNode(int value) {
     if (HasNode(value)) {
-      return static_cast<ESSAConstNode*>(constNodes[value]);
+      return static_cast<ESSAConstNode*>(constNodes[value].get());
     }
-    ESSAConstNode *newConstNode = new ESSAConstNode(GetValidID(), value);
+    std::unique_ptr<ESSAConstNode> newConstNode = std::make_unique<ESSAConstNode>(GetValidID(), value);
     CHECK_FATAL(newConstNode != nullptr, "new failed");
-    constNodes[value] = newConstNode;
-    return newConstNode;
+    ESSAConstNode *newConst = newConstNode.get();
+    constNodes[value] = std::move(newConstNode);
+    return newConst;
   }
 
   ESSAVarNode *InequalityGraph::GetOrCreateVarNode(MeExpr &meExpr) {
     if (HasNode(meExpr)) {
-      return static_cast<ESSAVarNode*>(varNodes[meExpr.GetExprID()]);
+      return static_cast<ESSAVarNode*>(varNodes[meExpr.GetExprID()].get());
     }
     CHECK_FATAL(meExpr.GetMeOp() == kMeOpVar || meExpr.GetMeOp() == kMeOpIvar, "meExpr must be VarMeExpr");
-    ESSAVarNode *newVarNode = new ESSAVarNode(GetValidID(), meExpr);
+    std::unique_ptr<ESSAVarNode> newVarNode = std::make_unique<ESSAVarNode>(GetValidID(), meExpr);
     CHECK_FATAL(newVarNode != nullptr, "new failed");
-    varNodes[meExpr.GetExprID()] = newVarNode;
-    return newVarNode;
+    ESSAVarNode *newVar = newVarNode.get();
+    varNodes[meExpr.GetExprID()] = std::move(newVarNode);
+    return newVar;
   }
 
   ESSAPhiNode *InequalityGraph::GetOrCreatePhiNode(MeVarPhiNode &phiNode) {
     MeExpr *expr = phiNode.GetLHS();
     CHECK_FATAL(expr != nullptr, "meExpr phiNode must has lhs");
     if (HasNode(*expr)) {
-      return static_cast<ESSAPhiNode*>(varNodes[expr->GetExprID()]);
+      return static_cast<ESSAPhiNode*>(varNodes[expr->GetExprID()].get());
     }
     CHECK_FATAL(expr->GetMeOp() == kMeOpVar, "meExpr must be VarMeExpr");
-    ESSAPhiNode *newPhiNode = new ESSAPhiNode(GetValidID(), *expr);
+    std::unique_ptr<ESSAPhiNode> newPhiNode = std::make_unique<ESSAPhiNode>(GetValidID(), *expr);
     CHECK_FATAL(newPhiNode != nullptr, "new failed");
     newPhiNode->SetPhiOpnds(phiNode.GetOpnds());
-    varNodes[expr->GetExprID()] = newPhiNode;
+    ESSAPhiNode *newPhi = newPhiNode.get();
+    varNodes[expr->GetExprID()] = std::move(newPhiNode);
     for (VarMeExpr *phiRHS : phiNode.GetOpnds()) {
       ESSABaseNode *rhs = nullptr;
       if (phiRHS->GetDefBy() != kDefByPhi) {
@@ -55,22 +58,23 @@ namespace maple {
         MeVarPhiNode *defPhi = &(phiRHS->GetDefPhi());
         rhs = GetOrCreatePhiNode(*defPhi);
       }
-      AddPhiEdge(*rhs, *newPhiNode, EdgeType::kUpper);
-      AddPhiEdge(*newPhiNode, *rhs, EdgeType::kLower);
+      AddPhiEdge(*rhs, *newPhi, EdgeType::kUpper);
+      AddPhiEdge(*newPhi, *rhs, EdgeType::kLower);
     }
-    CHECK_FATAL(newPhiNode->GetPhiOpnds().size() == newPhiNode->GetInPhiEdgeMap().size(), "must be");
-    return newPhiNode;
+    CHECK_FATAL(newPhi->GetPhiOpnds().size() == newPhi->GetInPhiEdgeMap().size(), "must be");
+    return newPhi;
   }
 
   ESSAArrayNode *InequalityGraph::GetOrCreateArrayNode(MeExpr &meExpr) {
     if (HasNode(meExpr)) {
-      return static_cast<ESSAArrayNode*>(varNodes[meExpr.GetExprID()]);
+      return static_cast<ESSAArrayNode*>(varNodes[meExpr.GetExprID()].get());
     }
     CHECK_FATAL(meExpr.GetMeOp() == kMeOpVar, "meExpr must be VarMeExpr");
-    ESSAArrayNode *newArrayNode = new ESSAArrayNode(GetValidID(), meExpr);
+    std::unique_ptr<ESSAArrayNode> newArrayNode = std::make_unique<ESSAArrayNode>(GetValidID(), meExpr);
     CHECK_FATAL(newArrayNode != nullptr, "new failed");
-    varNodes[meExpr.GetExprID()] = newArrayNode;
-    return newArrayNode;
+    ESSAArrayNode *newArray = newArrayNode.get();
+    varNodes[meExpr.GetExprID()] = std::move(newArrayNode);
+    return newArray;
   }
 
   InequalEdge *InequalityGraph::AddEdge(ESSABaseNode &from, ESSABaseNode &to, int value, EdgeType type) {
@@ -79,24 +83,28 @@ namespace maple {
     if (edge != nullptr) {
       return edge;
     }
-    edge = new InequalEdge(value, type);
-    CHECK_FATAL(edge != nullptr, "new failed");
-    from.InsertOutWithConstEdgeMap(to, *edge);
-    to.InsertInWithConstEdgeMap(from, *edge);
-    return edge;
+    std::unique_ptr<InequalEdge> e = std::make_unique<InequalEdge>(value, type);
+    InequalEdge *ePtr = e.get();
+    CHECK_FATAL(e != nullptr, "new failed");
+    from.InsertOutWithConstEdgeMap(to, *e);
+    to.InsertInWithConstEdgeMap(from, *e);
+    from.InsertEdges(std::move(e));
+    return ePtr;
   }
 
   void InequalityGraph::AddPhiEdge(ESSABaseNode &from, ESSABaseNode &to, EdgeType type) {
-    InequalEdge *edge = new InequalEdge(0, type);
+    std::unique_ptr<InequalEdge> edge = std::make_unique<InequalEdge>(0, type);
     CHECK_FATAL(edge != nullptr, "new failed");
     if (type == EdgeType::kUpper) {
       from.InsertOutWithConstEdgeMap(to, *edge);
       CHECK_FATAL(to.GetKind() == kPhiNode, "must be");
       static_cast<ESSAPhiNode&>(to).InsertInPhiEdgeMap(from, *edge);
+      from.InsertEdges(std::move(edge));
     } else {
       CHECK_FATAL(from.GetKind() == kPhiNode, "must be");
       static_cast<ESSAPhiNode&>(from).InsertOutPhiEdgeMap(to, *edge);
       to.InsertInWithConstEdgeMap(from, *edge);
+      from.InsertEdges(std::move(edge));
     }
   }
 
@@ -105,10 +113,11 @@ namespace maple {
     if (HasEdge(from, to, tmpEdge)) {
       return;
     }
-    InequalEdge *edge = new InequalEdge(value, positive, type);
+    std::unique_ptr<InequalEdge> edge = std::make_unique<InequalEdge>(value, positive, type);
     CHECK_FATAL(edge != nullptr, "new failed");
     from.InsertOutWithVarEdgeMap(to, *edge);
     to.InsertInWithVarEdgeMap(from, *edge);
+    from.InsertEdges(std::move(edge));
   }
 
   bool InequalityGraph::HasNode(MeExpr &meExpr) const {
@@ -122,9 +131,9 @@ namespace maple {
   void InequalityGraph::ConnectTrivalEdge() {
     int32 prevValue = 0;
     ESSABaseNode* prevNode = nullptr;
-    for (auto pair : constNodes) {
+    for (auto &pair : constNodes) {
       int32 value = pair.first;
-      ESSABaseNode* node = pair.second;
+      ESSABaseNode* node = pair.second.get();
       if (prevNode == nullptr) {
         prevValue = value;
         prevNode = node;
@@ -247,12 +256,12 @@ namespace maple {
   }
 
   void InequalityGraph::DumpDotNodes(IRMap &irMap, std::ostream &out, DumpType dumpType,
-                                     std::map<int32, ESSABaseNode*> nodes) const {
+                                     const std::map<int32, std::unique_ptr<ESSABaseNode>> &nodes) const {
     for (auto iter = nodes.begin(); iter != nodes.end(); ++iter) {
       std::string from = GetName(*(iter->second), irMap);
       out << "\"" << from << "\";\n";
-      for (auto iterConstEdges = iter->second->GetOutWithConstEdgeMap().begin();
-           iterConstEdges != iter->second->GetOutWithConstEdgeMap().end(); ++iterConstEdges) {
+      for (auto iterConstEdges = iter->second.get()->GetOutWithConstEdgeMap().begin();
+           iterConstEdges != iter->second.get()->GetOutWithConstEdgeMap().end(); ++iterConstEdges) {
         EdgeType edgeType = iterConstEdges->second->GetEdgeType();
         if (dumpType == kDumpNone) {
           DumpDotEdges(irMap, *iterConstEdges, out, from);
@@ -264,8 +273,8 @@ namespace maple {
           DumpDotEdges(irMap, *iterConstEdges, out, from);
         }
       }
-      if (iter->second->GetKind() == kPhiNode) {
-        auto *phiNode = static_cast<ESSAPhiNode*>(iter->second);
+      if (iter->second.get()->GetKind() == kPhiNode) {
+        auto *phiNode = static_cast<ESSAPhiNode*>(iter->second.get());
         for (auto iterConstEdges = phiNode->GetOutPhiEdgeMap().begin();
              iterConstEdges != phiNode->GetOutPhiEdgeMap().end(); ++iterConstEdges) {
           EdgeType edgeType = iterConstEdges->second->GetEdgeType();
@@ -282,8 +291,8 @@ namespace maple {
           }
         }
       }
-      for (auto iterVarEdges = iter->second->GetOutWithVarEdgeMap().begin();
-           iterVarEdges != iter->second->GetOutWithVarEdgeMap().end(); ++iterVarEdges) {
+      for (auto iterVarEdges = iter->second.get()->GetOutWithVarEdgeMap().begin();
+           iterVarEdges != iter->second.get()->GetOutWithVarEdgeMap().end(); ++iterVarEdges) {
         EdgeType edgeType = iterVarEdges->second->GetEdgeType();
         if (dumpType == kDumpNone) {
           DumpDotEdges(irMap, *iterVarEdges, out, from);
@@ -327,10 +336,9 @@ namespace maple {
   }
 
   bool ABCD::DemandProve(ESSABaseNode &aNode, ESSABaseNode &bNode, EdgeType eType) {
-    InequalEdge *e = eType == kUpper ? new InequalEdge(kUpperBound, eType) : new InequalEdge(kLowerBound, eType);
+    std::unique_ptr<InequalEdge> e = std::make_unique<InequalEdge>(eType == kUpper ? kUpperBound : kLowerBound, eType);
     active.clear();
-    ProveResult res = Prove(aNode, bNode, *e);
-    delete(e);
+    ProveResult res = Prove(aNode, bNode, *e.get());
     return res == kTrue;
   }
 
