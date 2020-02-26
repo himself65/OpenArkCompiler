@@ -148,6 +148,8 @@ static constexpr const char kFunctionLayoutStr[] = "__func_layout__";
 
 static constexpr const char kFunctionProfileTabPrefixStr[] = "__muid_profile_func_tab";
 
+static constexpr const char kBBProfileTabPrefixStr[] = "__bb_profile_tab";
+
 static constexpr const char kBindingProtectedRegionStr[] = "__BindingProtectRegion__";
 
 static constexpr const char kClassNamePrefixStr[] = "L";

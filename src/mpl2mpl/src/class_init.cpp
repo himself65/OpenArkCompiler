@@ -19,7 +19,6 @@
 namespace {
 constexpr char kMCCPreClinitCheck[] = "MCC_PreClinitCheck";
 constexpr char kMCCPostClinitCheck[] = "MCC_PostClinitCheck";
-
 } // namespace
 
 // This phase does two things.
@@ -28,10 +27,6 @@ constexpr char kMCCPostClinitCheck[] = "MCC_PostClinitCheck";
 //   Insert clinit check for static native methods which are not private.
 // 2. Lower JAVA_CLINIT_CHECK to MPL_CLINIT_CHECK.
 namespace maple {
-ClassInit::ClassInit(MIRModule *mod, KlassHierarchy *kh, bool dump) : FuncOptimizeImpl(mod, kh, dump) {
-}
-
-
 bool ClassInit::CanRemoveClinitCheck(const std::string &clinitClassname) const {
   return false;
 }

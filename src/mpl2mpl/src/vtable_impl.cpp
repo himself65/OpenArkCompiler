@@ -32,7 +32,43 @@ VtableImpl::VtableImpl(MIRModule *mod, KlassHierarchy *kh, bool dump)
   mccItabFunc = builder->GetOrCreateFunction(kInterfaceMethod, TyIdx(PTY_ptr));
   mccItabFunc->SetAttr(FUNCATTR_nosideeffect);
 }
-
+#if TARGARM || TARGAARCH64
+void VtableImpl::Intrinsify(MIRFunction &func, CallNode &cnode) {
+  MIRFunction *calleeFunc = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(cnode.GetPUIdx());
+  const std::string funcName = calleeFunc->GetName();
+  MIRIntrinsicID intrnId = INTRN_UNDEFINED;
+  if (funcName == "Lsun_2Fmisc_2FUnsafe_3B_7CgetAndAddInt_7C_28Ljava_2Flang_2FObject_3BJI_29I") {
+    intrnId = INTRN_GET_AND_ADDI;
+  } else if (funcName == "Lsun_2Fmisc_2FUnsafe_3B_7CgetAndAddLong_7C_28Ljava_2Flang_2FObject_3BJJ_29J") {
+    intrnId = INTRN_GET_AND_ADDL;
+  } else if (funcName == "Lsun_2Fmisc_2FUnsafe_3B_7CgetAndSetInt_7C_28Ljava_2Flang_2FObject_3BJI_29I") {
+    intrnId = INTRN_GET_AND_SETI;
+  } else if (funcName == "Lsun_2Fmisc_2FUnsafe_3B_7CgetAndSetLong_7C_28Ljava_2Flang_2FObject_3BJJ_29J") {
+    intrnId = INTRN_GET_AND_SETL;
+  } else if (funcName == "Lsun_2Fmisc_2FUnsafe_3B_7CcompareAndSwapInt_7C_28Ljava_2Flang_2FObject_3BJII_29Z") {
+    intrnId = INTRN_COMP_AND_SWAPI;
+  } else if (funcName == "Lsun_2Fmisc_2FUnsafe_3B_7CcompareAndSwapLong_7C_28Ljava_2Flang_2FObject_3BJJJ_29Z") {
+    intrnId = INTRN_COMP_AND_SWAPL;
+  }
+  if (intrnId == INTRN_UNDEFINED) {
+    return;
+  }
+  CallReturnVector retvs = cnode.GetReturnVec();
+  if (!retvs.empty()) {
+    StIdx stidx = retvs.begin()->first;
+    StmtNode *intrnCallStmt = nullptr;
+    if (stidx.Idx() != 0) {
+      MIRSymbol *retSt = currFunc->GetLocalOrGlobalSymbol(stidx);
+      intrnCallStmt = builder->CreateStmtIntrinsicCallAssigned(intrnId, cnode.GetNopnd(), retSt);
+    } else {
+      ASSERT (retvs.begin()->second.IsReg(), "return value must be preg");
+      PregIdx pregIdx = retvs.begin()->second.GetPregIdx();
+      intrnCallStmt = builder->CreateStmtIntrinsicCallAssigned(intrnId, cnode.GetNopnd(), pregIdx);
+    }
+    func.GetBody()->ReplaceStmt1WithStmt2(&cnode, intrnCallStmt);
+  }
+}
+#endif
 void VtableImpl::ProcessFunc(MIRFunction *func) {
   if (func->IsEmpty()) {
     return;
@@ -43,6 +79,27 @@ void VtableImpl::ProcessFunc(MIRFunction *func) {
   while (stmt != nullptr) {
     next = stmt->GetNext();
     Opcode opcode = stmt->GetOpCode();
+#if TARGARM || TARGAARCH64
+    if (kOpcodeInfo.IsCallAssigned(opcode)) {
+      CallNode *cnode = static_cast<CallNode*>(stmt);
+      MIRFunction *calleefunc = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(cnode->GetPUIdx());
+      const std::set<std::string> intrisicsList {
+#define DEF_MIR_INTRINSIC(X, NAME, INTRN_CLASS, RETURN_TYPE, ...) NAME,
+#include "simplifyintrinsics.def"
+#undef DEF_MIR_INTRINSIC
+      };
+      const std::string funcName = calleefunc->GetName();
+      if (funcName == "Ljava_2Flang_2FString_3B_7CindexOf_7C_28Ljava_2Flang_2FString_3B_29I") {
+        stmt = next;
+        continue;
+      }
+      if (Options::O2 && intrisicsList.find(funcName) != intrisicsList.end()) {
+        Intrinsify(*func, *cnode);
+        stmt = next;
+        continue;
+      }
+    }
+#endif
     switch (opcode) {
       case OP_regassign: {
         auto *regassign = static_cast<RegassignNode*>(stmt);

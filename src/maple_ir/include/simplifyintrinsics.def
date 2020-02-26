@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
+ *
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
+ * You can use this software according to the terms and conditions of the Mulan PSL v1.
+ * You may obtain a copy of Mulan PSL v1 at:
+ *
+ *     http://license.coscl.org.cn/MulanPSL
+ *
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
+ */
+
+/* INTRINSIC(STR, NAME) */
+DEF_MIR_INTRINSIC(GET_AND_ADDI, "Lsun_2Fmisc_2FUnsafe_3B_7CgetAndAddInt_7C_28Ljava_2Flang_2FObject_3BJI_29I",\
+                  INTRNISJAVA | INTRNISSPECIAL, kArgTyI32, kArgTyRef, kArgTyRef, kArgTyI64, kArgTyI32)
+DEF_MIR_INTRINSIC(GET_AND_ADDL, "Lsun_2Fmisc_2FUnsafe_3B_7CgetAndAddLong_7C_28Ljava_2Flang_2FObject_3BJJ_29J",\
+                  INTRNISJAVA | INTRNISSPECIAL, kArgTyI64, kArgTyRef, kArgTyRef, kArgTyI64, kArgTyI64)
+DEF_MIR_INTRINSIC(GET_AND_SETI, "Lsun_2Fmisc_2FUnsafe_3B_7CgetAndSetInt_7C_28Ljava_2Flang_2FObject_3BJI_29I",\
+                  INTRNISJAVA | INTRNISSPECIAL, kArgTyI32, kArgTyRef, kArgTyRef, kArgTyI64, kArgTyI32)
+DEF_MIR_INTRINSIC(GET_AND_SETL, "Lsun_2Fmisc_2FUnsafe_3B_7CgetAndSetLong_7C_28Ljava_2Flang_2FObject_3BJJ_29J",\
+                  INTRNISJAVA | INTRNISSPECIAL, kArgTyI64, kArgTyRef, kArgTyRef, kArgTyI64, kArgTyI64)
+DEF_MIR_INTRINSIC(COMP_AND_SWAPI, "Lsun_2Fmisc_2FUnsafe_3B_7CcompareAndSwapInt_7C_28Ljava_2Flang_2FObject_3BJII_29Z",\
+                  INTRNISJAVA | INTRNISSPECIAL, kArgTyU1, kArgTyRef, kArgTyRef, kArgTyI64, kArgTyI32, kArgTyI32)
+DEF_MIR_INTRINSIC(COMP_AND_SWAPL, "Lsun_2Fmisc_2FUnsafe_3B_7CcompareAndSwapLong_7C_28Ljava_2Flang_2FObject_3BJJJ_29Z",\
+                  INTRNISJAVA | INTRNISSPECIAL, kArgTyU1, kArgTyRef, kArgTyRef, kArgTyI64, kArgTyI64, kArgTyI64)
+DEF_MIR_INTRINSIC(STR_INDEXOF, "Ljava_2Flang_2FString_3B_7CindexOf_7C_28Ljava_2Flang_2FString_3B_29I",\
+                  INTRNISJAVA | INTRNISSPECIAL, kArgTyI32, kArgTyRef, kArgTyRef)
+
