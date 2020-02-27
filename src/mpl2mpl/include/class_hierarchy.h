@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -39,6 +39,9 @@ constexpr uint32 kClassRuntimeVerify = 0x8000; // True if need verifier in runti
 constexpr char kJavaLangNoMethodStr[] = "Ljava_2Flang_2FNoSuchMethodException_3B";
 constexpr uint32 kClassReference = (kClassSoftreference | kClassWeakreference | kClassCleaner |
                                     kClassFinalizereference | kClassPhantomreference);
+
+bool IsSystemPreloadedClass(const std::string &className);
+
 // Klass is the basic node for building class hierarchy
 class Klass {
  public:

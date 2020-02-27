@@ -39,6 +39,10 @@
 namespace maple {
 bool KlassHierarchy::traceFlag = false;
 
+bool IsSystemPreloadedClass(const std::string &className) {
+  return false;
+}
+
 Klass::Klass(MIRStructType *type, MapleAllocator *alc)
     : structType(type),
       alloc(alc),
@@ -324,7 +328,7 @@ Klass *KlassHierarchy::GetKlassFromLiteral(const std::string &name) const {
 
 
 bool KlassHierarchy::IsSuperKlass(const Klass *super, const Klass *base) const {
-  if (super == nullptr || base == nullptr) {
+  if (super == nullptr || base == nullptr || base->IsInterface()) {
     return false;
   }
   while (base != nullptr) {

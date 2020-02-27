@@ -20,6 +20,7 @@
 #include "maple_string.h"
 #include "opcode_info.h"
 #include "name_mangler.h"
+#include "utils.h"
 
 namespace maple {
 MIRModule *theMIRModule = nullptr;
@@ -1236,8 +1237,8 @@ enum PTYGroup {
   kPTYGOthers
 };
 
-uint8 GetCompGroupID(const BaseNode &opnd) {
-  switch (opnd.GetPrimType()) {
+uint8 GetPTYGroup(PrimType primType) {
+  switch (primType) {
     case PTY_i32:
     case PTY_u32:
     case PTY_a32:
@@ -1269,6 +1270,10 @@ uint8 GetCompGroupID(const BaseNode &opnd) {
     default:
       return kPTYGOthers;
   }
+}
+
+uint8 GetCompGroupID(const BaseNode &opnd) {
+  return GetPTYGroup(opnd.GetPrimType());
 }
 
 /*
@@ -1473,6 +1478,7 @@ bool TypeCvtNode::Verify() const {
   bool opndExprVerf = Opnd(0)->Verify();
   return opndTypeVerf && opndSizeVerf && opndExprVerf;
 }
+
 
 bool IreadNode::Verify() const {
   bool addrExprVerf = Opnd(0)->Verify();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -18,7 +18,7 @@ DEF_MIR_INTRINSIC(UNDEFINED,\
 DEF_MIR_INTRINSIC(MPL_ATOMIC_EXCHANGE_PTR,\
                   "__mpl_atomic_exchange_ptr", kIntrnIsAtomic, kArgTyPtr, kArgTyPtr, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
 DEF_MIR_INTRINSIC(MPL_CLINIT_CHECK,\
-                  "__mpl_clinit_check", INTRNISJAVA | INTRNNOSIDEEFFECT, kArgTyVoid, kArgTyDynany, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
+                  "__mpl_clinit_check", INTRNISJAVA | INTRNNOSIDEEFFECT | INTRNISSPECIAL, kArgTyVoid, kArgTyDynany, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
 DEF_MIR_INTRINSIC(MPL_CLEAR_STACK,\
                   "__mpl_clear_stack", kIntrnUndef, kArgTyVoid, kArgTyDynany, kArgTyDynany, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
 DEF_MIR_INTRINSIC(MPL_GET_VTAB_FUNC,\
@@ -53,6 +53,8 @@ DEF_MIR_INTRINSIC(MCCSetObjectPermanent,\
                   "MCC_SetObjectPermanent", INTRNISRC | INTRNNOSIDEEFFECT, kArgTyVoid, kArgTyRef)
 
 // start of RC Intrinsics with two parameters
+DEF_MIR_INTRINSIC(MCCCheckArrayStore,\
+                  "MCC_Reflect_Check_Arraystore", INTRNISRC | INTRNNOSIDEEFFECT, kArgTyVoid, kArgTyRef, kArgTyRef)
 DEF_MIR_INTRINSIC(MCCIncDecRef,\
                   "MCC_IncDecRef_NaiveRCFast", INTRNISRC | INTRNNOSIDEEFFECT, kArgTyVoid, kArgTyRef, kArgTyRef)
 DEF_MIR_INTRINSIC(MCCIncDecRefReset,\
@@ -109,19 +111,20 @@ DEF_MIR_INTRINSIC(MCCWriteWeak,\
                   "MCC_WriteWeakField", INTRNISRC | INTRNNOSIDEEFFECT, kArgTyVoid, kArgTyRef, kArgTyRef, kArgTyRef)
 
 DEF_MIR_INTRINSIC(MPL_CLEANUP_LOCALREFVARS,\
-                  "__mpl_cleanup_localrefvars", INTRNISJAVA | INTRNNOSIDEEFFECT, kArgTyUndef, kArgTyRef, kArgTyRef, kArgTyRef, kArgTyRef, kArgTyRef, kArgTyRef)
+                  "__mpl_cleanup_localrefvars", INTRNISJAVA | INTRNNOSIDEEFFECT | INTRNISSPECIAL, kArgTyUndef, kArgTyRef, kArgTyRef, kArgTyRef, kArgTyRef, kArgTyRef, kArgTyRef)
 DEF_MIR_INTRINSIC(MPL_CLEANUP_LOCALREFVARS_SKIP,\
-                  "__mpl_cleanup_localrefvars_skip", INTRNISJAVA | INTRNNOSIDEEFFECT, kArgTyUndef, kArgTyRef, kArgTyRef, kArgTyRef, kArgTyRef, kArgTyRef, kArgTyRef)
+                  "__mpl_cleanup_localrefvars_skip", INTRNISJAVA | INTRNNOSIDEEFFECT | INTRNISSPECIAL, kArgTyUndef, kArgTyRef, kArgTyRef, kArgTyRef, kArgTyRef, kArgTyRef, kArgTyRef)
 DEF_MIR_INTRINSIC(MPL_MEMSET_LOCALVAR,\
                   "", kIntrnUndef, kArgTyPtr, kArgTyU32, kArgTyU8, kArgTyU32, kArgTyUndef, kArgTyUndef, kArgTyUndef)
 DEF_MIR_INTRINSIC(MPL_SET_CLASS,\
                   "", kIntrnUndef, kArgTyPtr, kArgTyPtr, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
 DEF_MIR_INTRINSIC(MPL_CLEANUP_NORETESCOBJS,\
-                  "__mpl_cleanup_noretescobjs", INTRNISJAVA | INTRNNOSIDEEFFECT, kArgTyUndef, kArgTyRef, kArgTyRef,\
+                  "__mpl_cleanup_noretescobjs", INTRNISJAVA | INTRNNOSIDEEFFECT | INTRNISSPECIAL, kArgTyUndef, kArgTyRef, kArgTyRef,\
                   kArgTyRef, kArgTyRef, kArgTyRef, kArgTyRef)
 
 // start of GC Intrinsics
 
 #include "intrinsic_java.def"
+#include "simplifyintrinsics.def"
 DEF_MIR_INTRINSIC(LAST,\
                   nullptr, kIntrnUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
