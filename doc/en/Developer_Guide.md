@@ -1,6 +1,6 @@
 # Developer Guide
 
-By referring to this document, you can download the OpenArkCompiler source code to compile it.
+By referring to this document, you can download the OpenArkCompiler source code to compile it. At the same time, this document also provide the guide of static code analysis to developers.
 
 ## Prerequisites
 
@@ -64,3 +64,19 @@ make
 cd samples/helloworld/
 make
 ```
+
+## Static code analysis
+
+This part will guide you to do the static code analysis by using the clang-tidy. After the code is changed, the static code analysis will check the coding specifications to improve the code quality.
+
+Before the static code analysis, we need compiled the OpenArkCompiler. After that, using the code of src/maple_driver as the tested directory, run the following commands in the openarkcompiler directory:
+
+```
+cp output/compile_commands.json ./
+./tools/clang_llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/share/clang/run-clang-tidy.py -clang-tidy-binary='./tools/clang_llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/bin/clang-tidy' -clang-apply-replacements-binary='./tools/clang_llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/bin/clang-apply-replacements' src/maple_driver/
+```
+Command description:
+
+- `cp output/compile_commands.json ./`: Copy the compile_commands.json in the output directory to the openarkcompiler directory, it is required by the clang-tidy, it contains the compile commands of OpenArkCompiler.
+
+- `./tools/clang_llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/share/clang/run-clang-tidy.py`: Call the run-clang-tidy.py which is the parallel clang-tidy runner. The `./tools/clang_llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/` directory is the directory of the release package of clang compiler. The `-clang-tidy-binary` set the path of clang-tidy binary. The `-clang-apply-replacements-binary` set the path of the clang-apply-replacements binary which is requried by the run-clang-tidy.py. The `src/maple_driver/` is the tested code directory.
