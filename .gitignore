@@ -3,5 +3,5 @@ tools/ninja*
 tools/gn*
 build/logs*
 libjava-core
-out
+output
 
