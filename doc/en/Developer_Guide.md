@@ -17,7 +17,7 @@ You can download the OpenArkCompiler source code in `Clone` or `Download` mode.
 ## Compiling Source Code
 
 
-Run the following command in the openarkcompiler directory to compile OpenArkCompiler. The output path is openarkcompiler/out/bin by default.
+Run the following command in the openarkcompiler directory to compile OpenArkCompiler. The output path is openarkcompiler/output/bin by default.
 
 ```
 source build/envsetup.sh
@@ -25,7 +25,7 @@ make
 ```
 Command description:
 
-- `source build/envsetup.sh`: Initialize the environment and add the toolchain path openarkcompiler/out/bin of OpenArkCompiler to environment variables.
+- `source build/envsetup.sh`: Initialize the environment and add the toolchain path openarkcompiler/output/bin of OpenArkCompiler to environment variables.
 - `make`: Compile the release version of OpenArkCompiler.
 - `make BUILD_TYPE=DEBUG`: Compile the debug version of OpenArkCompiler.
 

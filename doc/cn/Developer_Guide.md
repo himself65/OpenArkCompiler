@@ -16,7 +16,7 @@
 ## 源码编译
 
 
-在openarkcompiler目录下执行以下命令，编译出OpenArkCompiler，默认输出路径 openarkcompiler/out/bin。
+在openarkcompiler目录下执行以下命令，编译出OpenArkCompiler，默认输出路径 openarkcompiler/output/bin。
 
 ```
 source build/envsetup.sh
@@ -24,7 +24,7 @@ make
 ```
 命令说明：
 
-- `source build/envsetup.sh` 初始化环境，将OpenArkCompiler工具链路径openarkcompiler/out/bin设置到环境变量中；
+- `source build/envsetup.sh` 初始化环境，将OpenArkCompiler工具链路径openarkcompiler/output/bin设置到环境变量中；
 - `make` 编译OpenArkCompiler的Release版本；
 - `make BUILD_TYPE=DEBUG` 编译OpenArkCompiler的Debug版本。
 
