@@ -241,13 +241,13 @@ class ESSABaseNode {
 
 class ESSAVarNode : public ESSABaseNode {
  public:
-  explicit ESSAVarNode(int i, MeExpr &e) : ESSABaseNode(i, &e, kVarNode) {}
+  ESSAVarNode(int i, MeExpr &e) : ESSABaseNode(i, &e, kVarNode) {}
   ~ESSAVarNode() = default;
 };
 
 class ESSAConstNode : public ESSABaseNode {
  public:
-  explicit ESSAConstNode(int i, int v) : ESSABaseNode(i, nullptr, kConstNode), value(v) {}
+  ESSAConstNode(int i, int v) : ESSABaseNode(i, nullptr, kConstNode), value(v) {}
   ~ESSAConstNode() = default;
 
   int GetValue() const {
@@ -264,13 +264,13 @@ class ESSAConstNode : public ESSABaseNode {
 
 class ESSAArrayNode : public ESSABaseNode {
  public:
-  explicit ESSAArrayNode(int i, MeExpr &e) : ESSABaseNode(i, &e, kArrayNode) {}
+  ESSAArrayNode(int i, MeExpr &e) : ESSABaseNode(i, &e, kArrayNode) {}
   ~ESSAArrayNode() = default;
 };
 
 class ESSAPhiNode : public ESSABaseNode {
  public:
-  explicit ESSAPhiNode(int i, MeExpr &e) : ESSABaseNode(i, &e, kPhiNode) {}
+  ESSAPhiNode(int i, MeExpr &e) : ESSABaseNode(i, &e, kPhiNode) {}
   ~ESSAPhiNode() = default;
 
   const std::vector<VarMeExpr*> &GetPhiOpnds() const {

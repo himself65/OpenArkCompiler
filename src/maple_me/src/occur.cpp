@@ -38,7 +38,7 @@ void MeOccur::DumpOccur(IRMap &irMap) {
   mod->GetOut() << "MeOccur ";
   Dump(irMap);
   mod->GetOut() << "\n  class: " << classID << '\n';
-  if (def) {
+  if (def != nullptr) {
     mod->GetOut() << "  def by class: " << def->GetClassID();
   } else {
     mod->GetOut() << "  no-def";
@@ -111,7 +111,7 @@ MeExpr *MeOccur::GetSavedExpr() {
 // operand is nullptr (def is null), or
 // hasRealUse is false and defined by a PHI not will be avail
 bool MePhiOpndOcc::IsOkToInsert() {
-  if (!GetDef()) {
+  if (GetDef() == nullptr) {
     return true;
   }
   if (!hasRealUse) {
@@ -152,12 +152,12 @@ void MeRealOcc::Dump(IRMap &irMap) {
     } else {
       mod->GetOut() << "RealOcc(LHS) ";
     }
-    if (meExpr) {
+    if (meExpr != nullptr) {
       meExpr->Dump(&irMap);
     } else {
       meStmt->Dump(&irMap);
     }
-    if (meStmt && meStmt->GetBB()) {
+    if (meStmt != nullptr && meStmt->GetBB()) {
       mod->GetOut() << " at bb" << meStmt->GetBB()->GetBBId() << " seq " << seq << " classID " << GetClassID();
     } else {
       mod->GetOut() << " classID " << GetClassID();
@@ -229,19 +229,18 @@ uint32 PreWorkCand::ComputeWorkCandHashIndex(MeExpr &meExpr) {
     }
     case kMeOpOp: {
       hIdx = static_cast<uint32>(meExpr.GetOp());
-      for (size_t idx = 0; idx < kOperandNumTernary; idx++) {
+      for (size_t idx = 0; idx < kOperandNumTernary; ++idx) {
         MeExpr *opnd = meExpr.GetOpnd(idx);
-        if (opnd != nullptr) {
-          hIdx += ComputeWorkCandHashIndex(*opnd) << kOffsetOpMeExprOpnd;
-        } else {
+        if (opnd == nullptr) {
           break;
         }
+        hIdx += ComputeWorkCandHashIndex(*opnd) << kOffsetOpMeExprOpnd;
       }
       break;
     }
     case kMeOpNary: {
       hIdx = static_cast<uint32>(meExpr.GetOp());
-      for (uint8 i = 0; i < meExpr.GetNumOpnds(); i++) {
+      for (uint8 i = 0; i < meExpr.GetNumOpnds(); ++i) {
         hIdx += ComputeWorkCandHashIndex(*meExpr.GetOpnd(i)) << kOffsetNaryMeExprOpnd;
       }
       break;
@@ -292,10 +291,10 @@ void PreWorkCand::AddRealOccSorted(Dominance &dom, MeRealOcc &occ, PUIdx pIdx) {
     bool found = false;
     do {
       if (occDfn > dom.GetDtDfnItem((*it)->GetBB()->GetBBId())) {
-        it++;
+        ++it;
       } else if (occDfn == dom.GetDtDfnItem((*it)->GetBB()->GetBBId())) {
         if (occ.GetSequence() > (*it)->GetSequence()) {
-          it++;
+          ++it;
         } else {
           found = true;
         }
@@ -334,7 +333,7 @@ uint32 PreStmtWorkCand::ComputeStmtWorkCandHashIndex(MeStmt &stmt) {
       if (stmt.GetOp() == OP_intrinsiccallwithtype) {
         hIdx += static_cast<uint32>(intrnStmt.GetTyIdx()) << 1;
       }
-      for (size_t i = 0; i < intrnStmt.NumMeStmtOpnds(); i++) {
+      for (size_t i = 0; i < intrnStmt.NumMeStmtOpnds(); ++i) {
         hIdx += ComputeWorkCandHashIndex(*intrnStmt.GetOpnd(i)) << 1;
       }
       break;
@@ -342,7 +341,7 @@ uint32 PreStmtWorkCand::ComputeStmtWorkCandHashIndex(MeStmt &stmt) {
     case OP_callassigned: {
       auto &callAss = static_cast<CallMeStmt&>(stmt);
       hIdx += callAss.GetPUIdx();
-      for (size_t i = 0; i < callAss.NumMeStmtOpnds(); i++) {
+      for (size_t i = 0; i < callAss.NumMeStmtOpnds(); ++i) {
         hIdx += ComputeWorkCandHashIndex(*callAss.GetOpnd(i)) << kOffsetNaryMeStmtOpnd;
       }
       if (!callAss.GetMustDefList()->empty()) {

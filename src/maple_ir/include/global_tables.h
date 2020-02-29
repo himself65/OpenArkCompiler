@@ -88,10 +88,7 @@ class TypeTable {
     return typeTable.at(tyIdx)->GetPrimType();
   }
 
-  void SetTypeWithTyIdx(TyIdx tyIdx, MIRType *type) {
-    CHECK_FATAL(tyIdx < typeTable.size(), "array index out of range");
-    typeTable.at(tyIdx) = type;
-  }
+  void SetTypeWithTyIdx(TyIdx tyIdx, MIRType *type);
 
   TyIdx GetOrCreateMIRType(MIRType *pType);
 

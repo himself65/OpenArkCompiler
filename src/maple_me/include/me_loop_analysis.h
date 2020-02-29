@@ -58,7 +58,7 @@ class IdentifyLoops : public AnalysisResult {
   }
 
   LoopDesc *CreateLoopDesc(BB *hd, BB *tail);
-  void SetLoopParent4BB(const BB *bb, LoopDesc *aloop);
+  void SetLoopParent4BB(const BB *bb, LoopDesc *loopDesc);
   void ProcessBB(BB *bb);
   void MarkBB();
   void Dump();

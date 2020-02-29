@@ -60,7 +60,7 @@ class Prop {
   bool IsVersionConsistent(const std::vector<const MeExpr*> &vstVec,
                            const std::vector<std::stack<SafeMeExprPtr>> &vstLiveStack) const;
   bool IvarIsFinalField(const IvarMeExpr &ivarMeExpr) const;
-  bool Propagatable(const MeExpr &expr, const BB &frombb, bool atParm) const;
+  bool Propagatable(const MeExpr &expr, const BB &fromBB, bool atParm) const;
   MeExpr &PropVar(VarMeExpr &varmeExpr, bool atParm, bool checkPhi);
   MeExpr &PropReg(RegMeExpr &regmeExpr, bool atParm);
   MeExpr &PropIvar(IvarMeExpr &ivarMeExpr);

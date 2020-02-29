@@ -17,6 +17,7 @@
 #include "me_function.h"
 #include "me_irmap.h"
 #include "me_dominance.h"
+
 namespace maple {
 enum SOccType {
   kSOccUndef,
@@ -27,6 +28,7 @@ enum SOccType {
   kSOccUse,
   kSOccPhi
 };
+
 class SOcc {
  public:
   SOcc(SOccType ty, BB *bb) : occTy(ty), classId(0), mirBB(bb), use(nullptr) {}
@@ -81,6 +83,7 @@ class SOcc {
   BB *mirBB;  // the BB it occurs in
   SOcc *use;  // points to its single use
 };
+
 class SRealOcc : public SOcc {
  public:
   SRealOcc()
@@ -129,7 +132,9 @@ class SRealOcc : public SOcc {
   bool realFromDef;    // used only by placementRC
   bool redundant;
 };
+
 class SLambdaOcc;
+
 class SLambdaResOcc : public SOcc {
  public:
   SLambdaResOcc(BB *bb) : SOcc(kSOccLambdaRes, bb), useLambdaOcc(nullptr), hasRealUse(false), insertHere(false) {}
@@ -167,6 +172,7 @@ class SLambdaResOcc : public SOcc {
   bool hasRealUse;
   bool insertHere;
 };
+
 class SLambdaOcc : public SOcc {
  public:
   SLambdaOcc(BB *bb, MapleAllocator *alloc)
@@ -221,6 +227,7 @@ class SLambdaOcc : public SOcc {
   bool isEarlier;
   MapleVector<SLambdaResOcc*> lambdaRes;
 };
+
 class SEntryOcc : public SOcc {
  public:
   explicit SEntryOcc(BB *bb) : SOcc(kSOccEntry, bb) {}
@@ -230,6 +237,7 @@ class SEntryOcc : public SOcc {
     LogInfo::MapleLogger() << "EntryOcc at bb" << GetBB()->GetBBId();
   }
 };
+
 class SUseOcc : public SOcc {
  public:
   explicit SUseOcc(BB *bb) : SOcc(kSOccUse, bb) {}
@@ -239,6 +247,7 @@ class SUseOcc : public SOcc {
     LogInfo::MapleLogger() << "UseOcc at bb" << GetBB()->GetBBId();
   }
 };
+
 class SPhiOcc : public SOcc {
  public:
   SPhiOcc(BB *bb, MeVarPhiNode *p, VarMeExpr *v) : SOcc(kSOccPhi, bb), phi(p), vMeExpr(v) {};
@@ -268,6 +277,7 @@ class SPhiOcc : public SOcc {
   MeVarPhiNode *phi;      // the phinode of this real occurrence;
   VarMeExpr *vMeExpr;  // the varmeexpr of this real occurrence
 };
+
 class SpreWorkCand {
  public:
   SpreWorkCand(MapleAllocator *alloc, const OriginalSt *ost)
@@ -324,6 +334,7 @@ class SpreWorkCand {
   bool hasStoreOcc;             // true if there is any store occurrence
   bool hasCriticalEdge;         // determined by Finalize step
 };
+
 class MeSSUPre {
  public:
   enum PreKind {

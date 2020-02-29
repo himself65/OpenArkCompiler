@@ -191,7 +191,7 @@ bool MeCondBased::PointerWasDereferencedRightAfter(VarMeExpr &var, const UnaryMe
   // we can't remove assertnonnull(var) safely, because if var is null, then the position of throwing exception is
   // not the same.
   MeStmt *nextMeStmt = assertMeStmt.GetNextMeStmt();
-  return nextMeStmt && StmtHasDereferencedBase(*nextMeStmt, var);
+  return (nextMeStmt != nullptr) && StmtHasDereferencedBase(*nextMeStmt, var);
 }
 
 bool MeCondBased::IsNotNullValue(VarMeExpr &varMeExpr, UnaryMeStmt &assertMeStmt, BB *bb) {
@@ -215,10 +215,7 @@ bool MeCondBased::IsNotNullValue(VarMeExpr &varMeExpr, UnaryMeStmt &assertMeStmt
   if (PointerWasDereferencedBefore(varMeExpr, assertMeStmt, bb)) {
     return true;
   }
-  if (PointerWasDereferencedRightAfter(varMeExpr, assertMeStmt)) {
-    return true;
-  }
-  return false;
+  return PointerWasDereferencedRightAfter(varMeExpr, assertMeStmt);
 }
 
 void CondBasedNPC::DoCondBasedNPC() {
@@ -279,7 +276,7 @@ AnalysisResult *MeDoCondBasedRC::Run(MeFunction *func, MeFuncResultMgr *m, Modul
 
 AnalysisResult *MeDoCondBasedNPC::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr*) {
   auto *dom = static_cast<Dominance*>(m->GetAnalysisResult(MeFuncPhase_DOMINANCE, func));
-  ASSERT(dom, "dominance phase has problem");
+  ASSERT(dom != nullptr, "dominance phase has problem");
   CondBasedNPC condBasedNPC(func, dom);
   condBasedNPC.DoCondBasedNPC();
   return nullptr;

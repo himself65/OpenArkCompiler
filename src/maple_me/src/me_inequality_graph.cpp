@@ -354,7 +354,7 @@ namespace maple {
     if (recursiveCount > kDFSLimit) {
       return kFalse;
     }
-    // std::cout << "Traversing Node : " << bNode.GetExprID() << '\n';
+
     tracing.push_back(&bNode);
     if (&aNode == &bNode) {
       if (edge.geq(0)) {

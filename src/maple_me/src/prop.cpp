@@ -167,13 +167,11 @@ MeExpr *Prop::SimplifyMeExpr(OpMeExpr &opMeExpr) {
     return SimplifyCompareMeExpr(opMeExpr);
   }
 
-  switch (opcode) {
-    case OP_cvt: {
-      return SimplifyCvtMeExpr(opMeExpr);
-    }
-    default:
-      return nullptr;
+  if (opcode == OP_cvt) {
+    return SimplifyCvtMeExpr(opMeExpr);
   }
+
+  return nullptr;
 }
 
 void Prop::PropUpdateDef(MeExpr &meExpr) {
@@ -240,8 +238,7 @@ bool Prop::IsVersionConsistent(const std::vector<const MeExpr*> &vstVec,
       continue;
     }
     SafeMeExprPtr curDef = pStack.top();
-    CHECK_FATAL(curDef->GetMeOp() == kMeOpVar || curDef->GetMeOp() == kMeOpReg,
-        "error: cur def error");
+    CHECK_FATAL(curDef->GetMeOp() == kMeOpVar || curDef->GetMeOp() == kMeOpReg, "error: cur def error");
     if (subExpr != curDef.get()) {
       return false;
     }
@@ -278,14 +275,14 @@ bool Prop::Propagatable(const MeExpr &expr, const BB &fromBB, bool atParm) const
       break;
     }
     case kMeOpReg: {
-      auto &regreadx = static_cast<const RegMeExpr&>(expr);
-      if (regreadx.GetRegIdx() < 0) {
+      auto &regRead = static_cast<const RegMeExpr&>(expr);
+      if (regRead.GetRegIdx() < 0) {
         return false;
       }
       // get the current definition version
-      std::vector<const MeExpr*> regreadVec;
-      CollectSubVarMeExpr(expr, regreadVec);
-      if (!IsVersionConsistent(regreadVec, vstLiveStackVec)) {
+      std::vector<const MeExpr*> regReadVec;
+      CollectSubVarMeExpr(expr, regReadVec);
+      if (!IsVersionConsistent(regReadVec, vstLiveStackVec)) {
         return false;
       }
       break;

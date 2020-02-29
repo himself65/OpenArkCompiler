@@ -1757,6 +1757,7 @@ void ReflectionAnalysis::MarkWeakMethods() {
 
   GStrIdx classNames[] = { GetOrCreateGStrIdxFromName(NameMangler::kJavaLangClassStr),
                            GetOrCreateGStrIdxFromName(NameMangler::kJavaLangObjectStr),
+                           GetOrCreateGStrIdxFromName(NameMangler::kReflectionClassMethodStr),
                            GetOrCreateGStrIdxFromName(kReflectionReferencePrefixStr) };
   for (GStrIdx nameIdx : classNames) {
     Klass *klass = klassH->GetKlassFromStrIdx(nameIdx);

@@ -136,7 +136,7 @@ class MIRFunction {
   size_t GetParamSize() const {
     return funcType->GetParamTypeList().size();
   }
-  const std::vector<TyIdx> &GetParamTypes() const {
+  const MapleVector<TyIdx> &GetParamTypes() const {
     return funcType->GetParamTypeList();
   }
   TyIdx GetNthParamTyIdx(size_t i) const {

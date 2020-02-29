@@ -82,7 +82,6 @@ class Options {
 #if MIR_JAVA
   static bool skipVirtualMethod;
 #endif
-  static bool checkArrayStore;
  private:
   MapleAllocator optionAlloc;
   std::vector<std::string> phaseSeq;

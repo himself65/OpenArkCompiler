@@ -89,8 +89,6 @@ class RCLowering {
   void HandleReturnStmt();
   void HandleAssignMeStmt(MeStmt &stmt, MeExpr *pendingDec);
   MIRIntrinsicID SelectWriteBarrier(const MeStmt &stmt);
-  MIRType *GetArrayNodeType(VarMeExpr &var);
-  void CheckArrayStore(IntrinsiccallMeStmt &writeRefCall);
   MeFunction &func;
   MIRModule &mirModule;
   IRMap &irMap;

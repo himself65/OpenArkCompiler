@@ -15,8 +15,6 @@
 #include "me_store_pre.h"
 
 namespace maple {
-#define JAVALANG (mirModule->IsJavaModule())
-
 // ================ Step 6: Code Motion ================
 void MeStorePre::CheckCreateCurTemp() {
   if (curTemp != nullptr) {
@@ -261,25 +259,25 @@ void MeStorePre::CreateSpreUseOccsThruAliasing(const OriginalSt *muOst, BB *bb) 
   }
 }
 
-void MeStorePre::FindAndCreateSpreUseOccs(MeExpr *x, BB *bb) {
-  ASSERT_NOT_NULL(x);
+void MeStorePre::FindAndCreateSpreUseOccs(MeExpr *meExpr, BB *bb) {
+  ASSERT_NOT_NULL(meExpr);
   ASSERT_NOT_NULL(bb);
-  if (x->GetMeOp() == kMeOpVar) {
-    auto *varx = static_cast<VarMeExpr*>(x);
-    const OriginalSt *ost = ssaTab->GetOriginalStFromID(varx->GetOStIdx());
+  if (meExpr->GetMeOp() == kMeOpVar) {
+    auto *var = static_cast<VarMeExpr*>(meExpr);
+    const OriginalSt *ost = ssaTab->GetOriginalStFromID(var->GetOStIdx());
     if (!ost->IsVolatile()) {
-      CreateUseOcc(varx->GetOStIdx(), bb);
+      CreateUseOcc(var->GetOStIdx(), bb);
     }
     return;
   }
-  for (uint8 i = 0; i < x->GetNumOpnds(); i++) {
-    FindAndCreateSpreUseOccs(x->GetOpnd(i), bb);
+  for (uint8 i = 0; i < meExpr->GetNumOpnds(); i++) {
+    FindAndCreateSpreUseOccs(meExpr->GetOpnd(i), bb);
   }
-  if (JAVALANG) {
+  if (IsJavaLang()) {
     return;
   }
-  if (x->GetMeOp() == kMeOpIvar) {
-    auto *ivarMeExpr = static_cast<IvarMeExpr*>(x);
+  if (meExpr->GetMeOp() == kMeOpIvar) {
+    auto *ivarMeExpr = static_cast<IvarMeExpr*>(meExpr);
     if (ivarMeExpr->GetMu() != nullptr) {
       CreateSpreUseOccsThruAliasing(ssaTab->GetOriginalStFromID(ivarMeExpr->GetMu()->GetOStIdx()), bb);
     }
@@ -336,7 +334,7 @@ void MeStorePre::BuildWorkListBB(BB *bb) {
       CHECK_NULL_FATAL(stmt->GetOpnd(i));
       FindAndCreateSpreUseOccs(stmt->GetOpnd(i), stmt->GetBB());
     }
-    if (!JAVALANG) {
+    if (!IsJavaLang()) {
       // go thru mu list
       NaryMeStmt *naryMeStmt = safe_cast<NaryMeStmt>(to_ptr(stmt));
       if (naryMeStmt != nullptr) {

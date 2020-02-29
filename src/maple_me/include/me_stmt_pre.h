@@ -54,7 +54,7 @@ class MeStmtPre : public SSAEPre {
   void Finalize1() override;
   void Finalize2() override {};
   // fully available (replaces downsafety, canbeavail and later under SSAFRE)
-  void ResetFullyAvail(MePhiOcc *occg);
+  void ResetFullyAvail(MePhiOcc *occ);
   void ComputeFullyAvail();
   // rename phase
   bool AllVarsSameVersion(MeRealOcc *realOcc1, MeRealOcc *realOcc2) override;
@@ -68,7 +68,7 @@ class MeStmtPre : public SSAEPre {
   // phi insertion phase
   void ComputeVarAndDfPhis() override;
   void CreateSortedOccs() override;
-  void ConstructUseOccurMapExpr(uint32 bbDfn, MeExpr *x);
+  void ConstructUseOccurMapExpr(uint32 bbDfn, MeExpr *meExpr);
   void ConstructUseOccurMap() override;  // build useOccurMap for dassign candidates
   PreStmtWorkCand *CreateStmtRealOcc(MeStmt &meStmt, int seqStmt);
   void VersionStackChiListUpdate(const MapleMap<OStIdx, ChiMeNode*> &chiList);

@@ -431,7 +431,7 @@ BB *MeFunction::NewBasicBlock() {
 }
 
 // new a basic block and insert before position
-BB *MeFunction::InsertNewBasicBlock(const BB &position) {
+BB &MeFunction::InsertNewBasicBlock(const BB &position) {
   BB *newBB = memPool->New<BB>(&alloc, &versAlloc, BBId(nextBBId++));
 
   auto bIt = std::find(begin(), end(), &position);
@@ -445,7 +445,7 @@ BB *MeFunction::InsertNewBasicBlock(const BB &position) {
     }
     ++idx;
   }
-  return newBB;
+  return *newBB;
 }
 
 void MeFunction::DeleteBasicBlock(const BB &bb) {

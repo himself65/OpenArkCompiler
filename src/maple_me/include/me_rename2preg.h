@@ -18,16 +18,13 @@
 #include "me_function.h"
 
 namespace maple {
-
 class MeDoSSARename2Preg : public MeFuncPhase {
  public:
-  MeDoSSARename2Preg(MePhaseID id) : MeFuncPhase(id) {}
+  explicit MeDoSSARename2Preg(MePhaseID id) : MeFuncPhase(id) {}
 
   virtual ~MeDoSSARename2Preg() = default;
-  AnalysisResult *Run(MeFunction *func, MeFuncResultMgr *funcRst, ModuleResultMgr *) override;
+  AnalysisResult *Run(MeFunction *func, MeFuncResultMgr *funcRst, ModuleResultMgr*) override;
   std::string PhaseName() const override;
 };
-
 }  // namespace maple
-
 #endif  // MAPLE_ME_INCLUDE_MERENAME2PREG_H

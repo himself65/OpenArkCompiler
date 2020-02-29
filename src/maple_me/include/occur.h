@@ -260,8 +260,8 @@ class MeInsertedOcc : public MeOccur {
 
 class MePhiOpndOcc : public MeOccur {
  public:
-  MePhiOpndOcc(BB *dbb)
-      : MeOccur(kOccPhiopnd, 0, dbb, nullptr),
+  MePhiOpndOcc(BB *bb)
+      : MeOccur(kOccPhiopnd, 0, bb, nullptr),
         isProcessed(false),
         hasRealUse(false),
         isInsertedOcc(false),

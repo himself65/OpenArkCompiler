@@ -225,7 +225,7 @@ MIRFunction *MIRBuilder::GetOrCreateFunction(const std::string &str, TyIdx retTy
   auto *fn = mirModule->GetMemPool()->New<MIRFunction>(mirModule, funcSt->GetStIdx());
   fn->Init();
   fn->SetPuidx(GlobalTables::GetFunctionTable().GetFuncTable().size());
-  auto *funcType = mirModule->GetMemPool()->New<MIRFuncType>();
+  auto *funcType = mirModule->GetMemPool()->New<MIRFuncType>(mirModule->GetMPAllocator());
   fn->SetMIRFuncType(funcType);
   fn->SetReturnTyIdx(retTyIdx);
   GlobalTables::GetFunctionTable().GetFuncTable().push_back(fn);
@@ -296,7 +296,7 @@ MIRFunction *MIRBuilder::CreateFunction(StIdx stIdx, bool addToTable) const {
     GlobalTables::GetFunctionTable().GetFuncTable().push_back(fn);
   }
 
-  auto *funcType = mirModule->GetMemPool()->New<MIRFuncType>();
+  auto *funcType = mirModule->GetMemPool()->New<MIRFuncType>(mirModule->GetMPAllocator());
   fn->SetMIRFuncType(funcType);
   return fn;
 }

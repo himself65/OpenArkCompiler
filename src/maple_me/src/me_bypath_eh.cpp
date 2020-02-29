@@ -121,7 +121,7 @@ bool MeDoBypathEH::DoBypathException(BB *tryBB, BB *catchBB, Klass *catchClass, 
 StmtNode *MeDoBypathEH::IsSyncExit(BB *syncBB, MeFunction *func, LabelIdx secondLabel) {
   StmtNode *syncExitStmt = nullptr;
   StmtNode *stmt = syncBB->GetFirst().GetNext();
-  for (; stmt && stmt != syncBB->GetLast().GetNext(); stmt = stmt->GetNext()) {
+  for (; stmt != nullptr && stmt != syncBB->GetLast().GetNext(); stmt = stmt->GetNext()) {
     if (stmt->GetOpCode() != OP_comment) {
       break;
     }
@@ -135,7 +135,7 @@ StmtNode *MeDoBypathEH::IsSyncExit(BB *syncBB, MeFunction *func, LabelIdx second
   if (regreadNode->GetRegIdx() != -kSregThrownval) {
     return nullptr;
   }
-  for (stmt = stmt->GetNext(); stmt && stmt != syncBB->GetLast().GetNext(); stmt = stmt->GetNext()) {
+  for (stmt = stmt->GetNext(); stmt != nullptr && stmt != syncBB->GetLast().GetNext(); stmt = stmt->GetNext()) {
     if (stmt->GetOpCode() == OP_comment) {
       continue;
     }
@@ -162,7 +162,7 @@ StmtNode *MeDoBypathEH::IsSyncExit(BB *syncBB, MeFunction *func, LabelIdx second
       return nullptr;
     }
     bool findThrow = false;
-    for (stmt = &bbTmp->GetFirst(); stmt && stmt != bbTmp->GetLast().GetNext(); stmt = stmt->GetNext()) {
+    for (stmt = &bbTmp->GetFirst(); stmt != nullptr && stmt != bbTmp->GetLast().GetNext(); stmt = stmt->GetNext()) {
       if (stmt->GetOpCode() == OP_comment) {
         continue;
       }
@@ -211,116 +211,118 @@ void MeDoBypathEH::BypathException(MeFunction *func, KlassHierarchy *kh) {
       continue;
     }
     visited.emplace(bb);
-    for (StmtNode *stmt = &bb->GetFirst(); stmt && stmt != bb->GetLast().GetNext(); stmt = stmt->GetNext()) {
-      if (stmt->GetOpCode() == OP_try) {
+    for (StmtNode *stmt = &bb->GetFirst(); stmt != nullptr && stmt != bb->GetLast().GetNext(); stmt = stmt->GetNext()) {
+      if (stmt->GetOpCode() != OP_try) {
+        continue;
+      }
+      labelIdx = static_cast<LabelIdx>(-1);
+      StmtNode *syncExitStmt = nullptr;
+      auto *tryNode = static_cast<TryNode*>(stmt);
+      if (tryNode->GetOffsetsCount() == 1) {
+        labelIdx = tryNode->GetOffset(0);
+      } else if (tryNode->GetOffsetsCount() == 2) { // Deal with sync
+        BB *catchBB  = nullptr;
+        for (BB *bbInner : func->GetAllBBs()) {
+          if (bbInner == nullptr) {
+            continue;
+          }
+          if (bbInner->GetBBLabel() == tryNode->GetOffset(0)) {
+            catchBB = bbInner;
+          }
+        }
+        ASSERT(catchBB != nullptr, "must not be null");
+        StmtNode &stmtInner = catchBB->GetFirst();
+        if (stmtInner.GetOpCode() != OP_catch) { // Finally is not a catch
+          break;
+        }
+        auto &catchStmt = static_cast<CatchNode&>(stmtInner);
+        if (catchStmt.GetExceptionTyIdxVec().size() == 1) {
+          MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(catchStmt.GetExceptionTyIdxVecElement(0));
+          ASSERT(type->GetKind() == kTypePointer, "Must be pointer");
+          auto *pType = static_cast<MIRPtrType*>(type);
+          if (pType->GetPointedTyIdx() == PTY_void) {
+            syncExitStmt = IsSyncExit(catchBB, func, tryNode->GetOffset(1));
+            if (syncExitStmt != nullptr) {
+              labelIdx = tryNode->GetOffset(1);
+            }
+          }
+        }
+      }
+
+      if (labelIdx == static_cast<LabelIdx>(-1)) {
+        continue;
+      }
+      // Find catch label, and create a new bb
+      for (BB *bbInner : func->GetAllBBs()) {
+        if (bbInner == nullptr || bbInner->GetBBLabel() != labelIdx) {
+          continue;
+        }
+        StmtNode &stmtInner = bbInner->GetFirst();
+        ASSERT(stmtInner.GetOpCode() == OP_catch, "Must be java catch.");
+        auto &catchNode = static_cast<CatchNode&>(stmtInner);
+        if (catchNode.GetExceptionTyIdxVec().size() != 1) {
+          continue;
+        }
+        MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(catchNode.GetExceptionTyIdxVecElement(0));
+        ASSERT(type->GetKind() == kTypePointer, "Must be pointer");
+        auto *pType = static_cast<MIRPtrType*>(type);
+        Klass *catchClass = nullptr;
+        if (pType->GetPointedTyIdx() == PTY_void) {
+          catchClass = kh->GetKlassFromName(NameMangler::kJavaLangExceptionStr);
+        } else {
+          catchClass = kh->GetKlassFromTyIdx(pType->GetPointedTyIdx());
+        }
+        if (stmtInner.GetNext() == nullptr || stmtInner.GetNext()->GetOpCode() != OP_dassign) {
+          labelIdx = static_cast<LabelIdx>(-1);
+          continue;
+        }
+        auto *dassignNode = static_cast<DassignNode*>(stmtInner.GetNext());
+        ASSERT(dassignNode->Opnd(0)->GetOpCode() == OP_regread, "Must be regread");
+        auto *regreadNode = static_cast<RegreadNode*>(dassignNode->Opnd(0));
+        if (regreadNode->GetRegIdx() != -kSregThrownval) {
+          continue;
+        }
+        // Insert goto label
+        GStrIdx labelStrIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName("bypatheh" +
+            func->GetMirFunc()->GetLabelName(bbInner->GetBBLabel()));
+        BB *newBB = nullptr;
+        bool hasCreated = false;
+        auto it = func->GetMirFunc()->GetLabelTab()->GetStrIdxToLabelIdxMap().find(labelStrIdx);
+        if (it == func->GetMirFunc()->GetLabelTab()->GetStrIdxToLabelIdxMap().end()) {
+          LabelIdx labIdx = func->GetMirFunc()->GetLabelTab()->AddLabel(labelStrIdx);
+          newBB = func->NewBasicBlock();
+          func->SetLabelBBAt(labIdx, newBB);
+          newBB->SetBBLabel(labIdx);
+        } else {
+          hasCreated = true;
+          for (BB *newBBIter : func->GetAllBBs()) {
+            if (newBBIter == nullptr) {
+              continue;
+            }
+            if (newBBIter->GetBBLabel() == it->second) {
+              newBB = newBBIter;
+              break;
+            }
+          }
+        }
+        if (DoBypathException(bb, newBB, catchClass, dassignNode->GetStIdx(), kh, func, syncExitStmt)) {
+          if (!hasCreated) {
+            ASSERT(newBB == func->GetLastBB(), "newBB should be the last one");
+            func->GetAllBBs().pop_back();
+            newBB = &func->SplitBB(*bbInner, *stmtInner.GetNext(), newBB);
+          }
+        } else {
+          if (!hasCreated) {
+            func->GetAllBBs().pop_back();
+            func->DecNextBBId();
+            func->GetMirFunc()->GetLabelTab()->GetLabelTable().pop_back();
+            func->EraseLabelBBAt(
+                func->GetMirFunc()->GetLabelTab()->GetStrIdxToLabelIdxMap().at(labelStrIdx));
+            func->GetMirFunc()->GetLabelTab()->EraseStrIdxToLabelIdxElem(labelStrIdx);
+          }
+        }
         labelIdx = static_cast<LabelIdx>(-1);
-        StmtNode *syncExitStmt = nullptr;
-        auto *tryNode = static_cast<TryNode*>(stmt);
-        if (tryNode->GetOffsetsCount() == 1) {
-          labelIdx = tryNode->GetOffset(0);
-        } else if (tryNode->GetOffsetsCount() == 2) { // Deal with sync
-          BB *catchBB  = nullptr;
-          for (BB *bbInner : func->GetAllBBs()) {
-            if (bbInner == nullptr) {
-              continue;
-            }
-            if (bbInner->GetBBLabel() == tryNode->GetOffset(0)) {
-              catchBB = bbInner;
-            }
-          }
-          ASSERT(catchBB, "must not be null");
-          StmtNode &stmtInner = catchBB->GetFirst();
-          if (stmtInner.GetOpCode() != OP_catch) { // Finally is not a catch
-            break;
-          }
-          auto &catchStmt = static_cast<CatchNode&>(stmtInner);
-          if (catchStmt.GetExceptionTyIdxVec().size() == 1) {
-            MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(catchStmt.GetExceptionTyIdxVecElement(0));
-            ASSERT(type->GetKind() == kTypePointer, "Must be pointer");
-            auto *pType = static_cast<MIRPtrType*>(type);
-            if (pType->GetPointedTyIdx() == PTY_void) {
-              syncExitStmt = IsSyncExit(catchBB, func, tryNode->GetOffset(1));
-              if (syncExitStmt != nullptr) {
-                labelIdx = tryNode->GetOffset(1);
-              }
-            }
-          }
-        }
-        if (labelIdx != static_cast<LabelIdx>(-1)) {
-          // Find catch label, and create a new bb
-          for (BB *bbInner : func->GetAllBBs()) {
-            if (bbInner == nullptr) {
-              continue;
-            }
-            if (bbInner->GetBBLabel() == labelIdx) {
-              StmtNode &stmtInner = bbInner->GetFirst();
-              ASSERT(stmtInner.GetOpCode() == OP_catch, "Must be java catch.");
-              auto &catchNode = static_cast<CatchNode&>(stmtInner);
-              if (catchNode.GetExceptionTyIdxVec().size() == 1) {
-                MIRType *type =
-                    GlobalTables::GetTypeTable().GetTypeFromTyIdx(catchNode.GetExceptionTyIdxVecElement(0));
-                ASSERT(type->GetKind() == kTypePointer, "Must be pointer");
-                auto *pType = static_cast<MIRPtrType*>(type);
-                Klass *catchClass = nullptr;
-                if (pType->GetPointedTyIdx() == PTY_void)
-                  catchClass = kh->GetKlassFromName(NameMangler::kJavaLangExceptionStr);
-                else {
-                  catchClass = kh->GetKlassFromTyIdx(pType->GetPointedTyIdx());
-                }
-                if (stmtInner.GetNext() == nullptr || stmtInner.GetNext()->GetOpCode() != OP_dassign) {
-                  labelIdx = static_cast<LabelIdx>(-1);
-                } else {
-                  auto *dassignNode = static_cast<DassignNode*>(stmtInner.GetNext());
-                  ASSERT(dassignNode->Opnd(0)->GetOpCode() == OP_regread, "Must be regread");
-                  auto *regreadNode = static_cast<RegreadNode*>(dassignNode->Opnd(0));
-                  if (regreadNode->GetRegIdx() == -kSregThrownval) {
-                    // Insert goto label
-                    GStrIdx labelStrIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName("bypatheh" +
-                        func->GetMirFunc()->GetLabelName(bbInner->GetBBLabel()));
-                    BB *newBB = nullptr;
-                    bool hasCreated = false;
-                    auto it = func->GetMirFunc()->GetLabelTab()->GetStrIdxToLabelIdxMap().find(labelStrIdx);
-                    if (it == func->GetMirFunc()->GetLabelTab()->GetStrIdxToLabelIdxMap().end()) {
-                      LabelIdx labIdx = func->GetMirFunc()->GetLabelTab()->AddLabel(labelStrIdx);
-                      newBB = func->NewBasicBlock();
-                      func->SetLabelBBAt(labIdx, newBB);
-                      newBB->SetBBLabel(labIdx);
-                    } else {
-                      hasCreated = true;
-                      for (BB *newBBIter : func->GetAllBBs()) {
-                        if (newBBIter == nullptr) {
-                          continue;
-                        }
-                        if (newBBIter->GetBBLabel() == it->second) {
-                          newBB = newBBIter;
-                          break;
-                        }
-                      }
-                    }
-                    if (DoBypathException(bb, newBB, catchClass, dassignNode->GetStIdx(), kh, func, syncExitStmt)) {
-                      if (!hasCreated) {
-                        ASSERT(newBB == func->GetLastBB(), "newBB should be the last one");
-                        func->GetAllBBs().pop_back();
-                        newBB = &func->SplitBB(*bbInner, *stmtInner.GetNext(), newBB);
-                      }
-                    } else {
-                      if (!hasCreated) {
-                        func->GetAllBBs().pop_back();
-                        func->DecNextBBId();
-                        func->GetMirFunc()->GetLabelTab()->GetLabelTable().pop_back();
-                        func->EraseLabelBBAt(
-                            func->GetMirFunc()->GetLabelTab()->GetStrIdxToLabelIdxMap().at(labelStrIdx));
-                        func->GetMirFunc()->GetLabelTab()->EraseStrIdxToLabelIdxElem(labelStrIdx);
-                      }
-                    }
-                    labelIdx = static_cast<LabelIdx>(-1);
-                    break;
-                  }
-                }
-              }
-            }
-          }
-        }
+        break;
       }
     }
   }
