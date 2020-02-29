@@ -23,6 +23,7 @@ class CondBasedRC : public MeCondBased {
 
   virtual ~CondBasedRC() = default;
 };
+
 class MeDoCondBasedRC : public MeFuncPhase {
  public:
   explicit MeDoCondBasedRC(MePhaseID id) : MeFuncPhase(id) {}

@@ -175,14 +175,14 @@ class SSAPre {
   virtual void CodeMotion();
   // step 5 Finalize methods
   virtual void Finalize1();
-  void SetSave(MeOccur *defx);
-  void SetReplacement(MePhiOcc *occg, MeOccur *repDef);
+  void SetSave(MeOccur *defX);
+  void SetReplacement(MePhiOcc *occ, MeOccur *repDef);
   virtual void Finalize2();
   // step 4 willbevail methods
   void ComputeCanBeAvail();
-  void ResetCanBeAvail(MePhiOcc *occg);
+  void ResetCanBeAvail(MePhiOcc *occ);
   void ComputeLater();
-  void ResetLater(MePhiOcc *occg);
+  void ResetLater(MePhiOcc *occ);
   // step 3 downsafety methods
   void ResetDS(MePhiOpndOcc *phiOpnd);
   void ComputeDS();
@@ -220,7 +220,7 @@ class SSAPre {
     exitOccs.push_back(exitOcc);
   }
 
-  bool CheckIfAnyLocalOpnd(MeExpr *x);
+  bool CheckIfAnyLocalOpnd(MeExpr *meExpr);
   MeRealOcc *CreateRealOcc(MeStmt &meStmt, int32 seqStmt, MeExpr &meExpr, bool isRebuilt, bool isLHS = false);
   virtual bool ScreenPhiBB(BBId bbId) const = 0;
   virtual bool EpreLocalRefVar() {

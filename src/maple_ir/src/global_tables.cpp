@@ -42,6 +42,16 @@ TypeTable::TypeTable() {
   }
 }
 
+void TypeTable::SetTypeWithTyIdx(TyIdx tyIdx, MIRType *type) {
+  CHECK_FATAL(tyIdx < typeTable.size(), "array index out of range");
+  MIRType *oldType = typeTable.at(tyIdx);
+  typeTable.at(tyIdx) = type;
+  if (oldType != nullptr && oldType != type) {
+    typeHashTable.erase(oldType);
+    delete oldType;
+  }
+}
+
 TypeTable::~TypeTable() {
   for (auto index = static_cast<uint32>(PTY_void); index < typeTable.size(); ++index) {
     delete typeTable[index];
@@ -124,7 +134,7 @@ MIRType *TypeTable::GetOrCreateJarrayType(const MIRType &elem) {
 
 MIRType *TypeTable::GetOrCreateFunctionType(MIRModule &module, TyIdx retTyIdx, const std::vector<TyIdx> &vecType,
                                             const std::vector<TypeAttrs> &vecAttrs, bool isVarg, bool isSimpCreate) {
-  auto *funcType = module.GetMemPool()->New<MIRFuncType>(retTyIdx, vecType, vecAttrs);
+  auto *funcType = module.GetMemPool()->New<MIRFuncType>(retTyIdx, vecType, vecAttrs, module.GetMPAllocator());
   funcType->SetVarArgs(isVarg);
   if (isSimpCreate) {
     return funcType;

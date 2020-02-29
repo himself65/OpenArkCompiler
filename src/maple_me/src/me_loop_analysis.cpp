@@ -27,14 +27,14 @@ LoopDesc *IdentifyLoops::CreateLoopDesc(BB *hd, BB *tail) {
   return newLoop;
 }
 
-void IdentifyLoops::SetLoopParent4BB(const BB *bb, LoopDesc *loop) {
+void IdentifyLoops::SetLoopParent4BB(const BB *bb, LoopDesc *loopDesc) {
   if (bbLoopParent[bb->GetBBId()] != nullptr) {
-    if (loop->parent == nullptr) {
-      loop->parent = bbLoopParent[bb->GetBBId()];
-      loop->nestDepth = loop->parent->nestDepth + 1;
+    if (loopDesc->parent == nullptr) {
+      loopDesc->parent = bbLoopParent[bb->GetBBId()];
+      loopDesc->nestDepth = loopDesc->parent->nestDepth + 1;
     }
   }
-  bbLoopParent[bb->GetBBId()] = loop;
+  bbLoopParent[bb->GetBBId()] = loopDesc;
 }
 
 // process each BB in preorder traversal of dominator tree

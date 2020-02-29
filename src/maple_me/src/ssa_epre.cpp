@@ -142,7 +142,7 @@ void SSAEPre::GenerateReloadRealOcc(MeRealOcc *realOcc) {
   } else {
     CHECK_FATAL(false, "NYI");
   }
-  ASSERT(regOrVar, "temp not yet generated");
+  ASSERT(regOrVar != nullptr, "temp not yet generated");
   // replace realOcc->GetMeStmt()'s occ with regOrVar
   bool isReplaced = irMap->ReplaceMeExprStmt(*realOcc->GetMeStmt(), *realOcc->GetMeExpr(), *regOrVar);
   // update worklist
@@ -155,7 +155,7 @@ void SSAEPre::GenerateReloadRealOcc(MeRealOcc *realOcc) {
 // phi opnd
 MeExpr *SSAEPre::PhiOpndFromRes(MeRealOcc *realZ, size_t j) {
   MeOccur *defZ = realZ->GetDef();
-  CHECK_FATAL(defZ, "must be def by phiocc");
+  CHECK_FATAL(defZ != nullptr, "must be def by phiocc");
   CHECK_FATAL(defZ->GetOccType() == kOccPhiocc, "must be def by phiocc");
   MeExpr *exprQ = CopyMeExpr(utils::ToRef(realZ->GetMeExpr()));
   BB *ePhiBB = defZ->GetBB();

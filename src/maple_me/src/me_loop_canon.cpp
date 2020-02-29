@@ -83,7 +83,7 @@ bool MeDoLoopCanon::NeedConvert(BB *bb, BB *pred, MapleAllocator &localAlloc, Ma
     }
     inLoop.insert(curr->GetBBId());
     for (BB *tmpPred : curr->GetPred()) {
-      ASSERT(tmpPred != nullptr, "");
+      ASSERT_NOT_NULL(tmpPred);
       bodyList.push_back(tmpPred);
       tmpPred->SetAttributes(kBBAttrIsInLoop);
     }
@@ -225,7 +225,7 @@ AnalysisResult *MeDoLoopCanon::Run(MeFunction *func, MeFuncResultMgr *m, ModuleR
     MapleVector<BB*> &preds = bb->GetPred();
     for (BB *pred : preds) {
       ASSERT(func->GetCommonEntryBB(), "impossible");
-      ASSERT(pred, "impossible");
+      ASSERT_NOT_NULL(pred);
       // bb is reachable from entry && bb dominator pred
       if (dom->Dominate(*func->GetCommonEntryBB(), *bb) && dom->Dominate(*bb, *pred) &&
           !pred->GetAttributes(kBBAttrWontExit) && (NeedConvert(bb, pred, localAlloc, swapSuccs))) {

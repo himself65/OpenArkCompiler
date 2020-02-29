@@ -116,7 +116,7 @@ AnalysisResult *MeDoHDSE::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResult
   auto *postDom = static_cast<Dominance*>(m->GetAnalysisResult(MeFuncPhase_DOMINANCE, func));
   CHECK_NULL_FATAL(postDom);
   auto *hMap = static_cast<MeIRMap*>(m->GetAnalysisResult(MeFuncPhase_IRMAP, func));
-  CHECK_FATAL(hMap != nullptr, "hssamap is nullptr");
+  CHECK_NULL_FATAL(hMap);
   MeHDSE hdse(*func, *postDom, *hMap, DEBUGFUNC(func));
   hdse.RunHDSE();
   MakeEmptyTrysUnreachable(*func);

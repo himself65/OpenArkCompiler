@@ -22,22 +22,22 @@ void MeSSUPre::Finalize() {
   std::vector<SOcc*> anticipatedDefVec(classCount + 1, nullptr);
   // preorder traversal of post-dominator tree
   for (SOcc *occ : allOccs) {
-    size_t classx = static_cast<size_t>(occ->GetClassId());
+    size_t classId = static_cast<size_t>(occ->GetClassId());
     switch (occ->GetOccTy()) {
       case kSOccLambda: {
         auto *lambdaOcc = static_cast<SLambdaOcc*>(occ);
         if (lambdaOcc->WillBeAnt()) {
-          anticipatedDefVec[classx] = lambdaOcc;
+          anticipatedDefVec[classId] = lambdaOcc;
         }
         break;
       }
       case kSOccReal: {
-        auto *realocc = static_cast<SRealOcc*>(occ);
-        if (anticipatedDefVec[classx] == nullptr || !anticipatedDefVec[classx]->IsPostDominate(dom, occ)) {
-          realocc->SetRedundant(false);
-          anticipatedDefVec[classx] = realocc;
+        auto *realOcc = static_cast<SRealOcc*>(occ);
+        if (anticipatedDefVec[classId] == nullptr || !anticipatedDefVec[classId]->IsPostDominate(dom, occ)) {
+          realOcc->SetRedundant(false);
+          anticipatedDefVec[classId] = realOcc;
         } else {
-          realocc->SetRedundant(true);
+          realOcc->SetRedundant(true);
         }
         break;
       }
@@ -69,7 +69,7 @@ void MeSSUPre::Finalize() {
             }
             lambdaResOcc->SetInsertHere(true);
           } else {
-            lambdaResOcc->SetUse(anticipatedDefVec[classx]);
+            lambdaResOcc->SetUse(anticipatedDefVec[classId]);
           }
         }
         break;
@@ -86,8 +86,8 @@ void MeSSUPre::Finalize() {
     LogInfo::MapleLogger() << " _______ after finalize _______" << '\n';
     for (SOcc *occ : allOccs) {
       if (occ->GetOccTy() == kSOccReal) {
-        auto *realocc = static_cast<SRealOcc*>(occ);
-        if (realocc->GetRedundant()) {
+        auto *realOcc = static_cast<SRealOcc*>(occ);
+        if (realOcc->GetRedundant()) {
           occ->Dump();
           LogInfo::MapleLogger() << " deleted" << '\n';
         }
@@ -137,7 +137,7 @@ void MeSSUPre::ResetCanBeAnt(SLambdaOcc *lambda) {
   // the following loop finds lambda's defs and reset them
   for (SLambdaOcc *lambdaOcc : lambdaOccs) {
     for (SLambdaResOcc *lambdaResOcc : lambdaOcc->GetLambdaRes()) {
-      if (lambdaResOcc->GetUse() && lambdaResOcc->GetUse() == lambda) {
+      if (lambdaResOcc->GetUse() != nullptr && lambdaResOcc->GetUse() == lambda) {
         if (!lambdaResOcc->GetHasRealUse() && !lambdaOcc->GetIsUpsafe() && lambdaOcc->GetIsCanBeAnt()) {
           ResetCanBeAnt(lambdaOcc);
         }
@@ -169,7 +169,7 @@ void MeSSUPre::ResetEarlier(SLambdaOcc *lambda) {
   // the following loop finds lambda's defs and reset them
   for (SLambdaOcc *lambdaOcc : lambdaOccs) {
     for (SLambdaResOcc *lambdaResOcc : lambdaOcc->GetLambdaRes()) {
-      if (lambdaResOcc->GetUse() && lambdaResOcc->GetUse() == lambda) {
+      if (lambdaResOcc->GetUse() != nullptr && lambdaResOcc->GetUse() == lambda) {
         if (lambdaOcc->GetIsEarlier()) {
           ResetEarlier(lambdaOcc);
         }
@@ -186,7 +186,7 @@ void MeSSUPre::ComputeEarlier() {
     if (lambdaOcc->GetIsEarlier()) {
       bool existNonNullUse = false;
       for (SLambdaResOcc *lambdaResOcc : lambdaOcc->GetLambdaRes()) {
-        if (lambdaResOcc->GetUse() && lambdaResOcc->GetHasRealUse()) {
+        if (lambdaResOcc->GetUse() != nullptr && lambdaResOcc->GetHasRealUse()) {
           existNonNullUse = true;
           break;
         }
@@ -280,17 +280,17 @@ void MeSSUPre::Rename() {
           SOcc *topOcc = occStack.top();
           if (topOcc->GetOccTy() == kSOccLambda) {
             // make sure this lambda is dominated by at least one kill occurrence
-            for (SOcc *realocc : workCand->GetRealOccs()) {
-              if (realocc->GetOccTy() == kSOccUse || realocc->GetOccTy() == kSOccPhi) {
+            for (SOcc *realOcc : workCand->GetRealOccs()) {
+              if (realOcc->GetOccTy() == kSOccUse || realOcc->GetOccTy() == kSOccPhi) {
                 continue;
               }
-              CHECK_FATAL(realocc->GetOccTy() == kSOccReal, "just check");
+              CHECK_FATAL(realOcc->GetOccTy() == kSOccReal, "just check");
               if ((preKind == kDecrefPre || preKind == kSecondDecrefPre) &&
-                  !static_cast<SRealOcc*>(realocc)->GetRealFromDef()) {
+                  !static_cast<SRealOcc*>(realOcc)->GetRealFromDef()) {
                 continue;
               }
               CHECK_NULL_FATAL(dom);
-              if (!dom->Dominate(*realocc->GetBB(), *topOcc->GetBB())) {
+              if (!dom->Dominate(*realOcc->GetBB(), *topOcc->GetBB())) {
                 continue;
               }
               static_cast<SLambdaOcc*>(topOcc)->SetIsUpsafe(false);
@@ -441,16 +441,16 @@ void MeSSUPre::CreateSortedOccs() {
     if (nextLambdaOcc != nullptr) {
       pickedOcc = nextLambdaOcc;
     }
-    if (nextRealOcc && (pickedOcc == nullptr || dom->GetPdtDfnItem(nextRealOcc->GetBB()->GetBBId()) <
-                       dom->GetPdtDfnItem(pickedOcc->GetBB()->GetBBId()))) {
+    if (nextRealOcc != nullptr && (pickedOcc == nullptr || dom->GetPdtDfnItem(nextRealOcc->GetBB()->GetBBId()) <
+                                   dom->GetPdtDfnItem(pickedOcc->GetBB()->GetBBId()))) {
       pickedOcc = nextRealOcc;
     }
-    if (nextLambdaResOcc &&
+    if (nextLambdaResOcc != nullptr &&
         (pickedOcc == nullptr || *lambdaResDfnIt < dom->GetPdtDfnItem(pickedOcc->GetBB()->GetBBId()))) {
       pickedOcc = nextLambdaResOcc;
     }
-    if (nextEntryOcc && (pickedOcc == nullptr || dom->GetPdtDfnItem(nextEntryOcc->GetBB()->GetBBId()) <
-                        dom->GetPdtDfnItem(pickedOcc->GetBB()->GetBBId()))) {
+    if (nextEntryOcc != nullptr && (pickedOcc == nullptr || dom->GetPdtDfnItem(nextEntryOcc->GetBB()->GetBBId()) <
+                                    dom->GetPdtDfnItem(pickedOcc->GetBB()->GetBBId()))) {
       pickedOcc = nextEntryOcc;
     }
     if (pickedOcc != nullptr) {

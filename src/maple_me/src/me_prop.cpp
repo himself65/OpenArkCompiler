@@ -29,12 +29,12 @@ AnalysisResult *MeDoMeProp::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResu
   CHECK_NULL_FATAL(func);
   auto *dom = static_cast<Dominance*>(m->GetAnalysisResult(MeFuncPhase_DOMINANCE, func));
   CHECK_NULL_FATAL(dom);
-  auto *hmap = static_cast<MeIRMap*>(m->GetAnalysisResult(MeFuncPhase_IRMAP, func));
-  CHECK_NULL_FATAL(hmap);
-  MeProp meprop(*hmap, *dom, *NewMemPool(), Prop::PropConfig{ MeOption::propBase,
+  auto *hMap = static_cast<MeIRMap*>(m->GetAnalysisResult(MeFuncPhase_IRMAP, func));
+  CHECK_NULL_FATAL(hMap);
+  MeProp meProp(*hMap, *dom, *NewMemPool(), Prop::PropConfig { MeOption::propBase,
       MeOption::propIloadRef, MeOption::propGlobalRef, MeOption::propFinaliLoadRef,
       MeOption::propIloadRefNonParm, MeOption::propAtPhi });
-  meprop.DoProp();
+  meProp.DoProp();
   if (DEBUGFUNC(func)) {
     LogInfo::MapleLogger() << "\n============== After Copy Propagation  =============" << '\n';
     func->Dump(false);

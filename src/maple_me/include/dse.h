@@ -63,7 +63,7 @@ class DSE {
   void MarkStmtUseLive(const StmtNode &stmt);
   void MarkSingleUseLive(const BaseNode &exprNode);
 
-  // step 4: proppagate live
+  // step 4: propagate live
   void PropagateLive() {
     while (!workList.empty()) {
       auto vst = workList.front();

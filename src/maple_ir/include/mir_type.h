@@ -1345,15 +1345,28 @@ class MIRBitFieldType : public MIRType {
 
 class MIRFuncType : public MIRType {
  public:
-  MIRFuncType() : MIRType(kTypeFunction, PTY_ptr) {}
+  MIRFuncType(MapleAllocator &ma)
+      : MIRType(kTypeFunction, PTY_ptr),
+        paramTypeList(ma.Adapter()),
+        paramAttrsList(ma.Adapter()) {}
 
-  explicit MIRFuncType(GStrIdx strIdx) : MIRType(kTypeFunction, PTY_ptr, strIdx) {}
+  explicit MIRFuncType(GStrIdx strIdx, MapleAllocator &ma)
+      : MIRType(kTypeFunction, PTY_ptr, strIdx),
+        paramTypeList(ma.Adapter()),
+        paramAttrsList(ma.Adapter()) {}
 
-  MIRFuncType(TyIdx retTyIdx, const std::vector<TyIdx> &vecTy, const std::vector<TypeAttrs> &vecAt)
+  MIRFuncType(TyIdx retTyIdx, const std::vector<TyIdx> &vecTy, const std::vector<TypeAttrs> &vecAt, MapleAllocator &ma)
       : MIRType(kTypeFunction, PTY_ptr),
         retTyIdx(retTyIdx),
-        paramTypeList(vecTy),
-        paramAttrsList(vecAt) {}
+        paramTypeList(ma.Adapter()),
+        paramAttrsList(ma.Adapter()) {
+          for (auto tyIdx : vecTy) {
+            paramTypeList.push_back(tyIdx);
+          }
+          for (auto tyAttr : vecAt) {
+            paramAttrsList.push_back(tyAttr);
+          }
+        }
 
   ~MIRFuncType() override = default;
 
@@ -1375,11 +1388,11 @@ class MIRFuncType : public MIRType {
     retTyIdx = idx;
   }
 
-  const std::vector<TyIdx> &GetParamTypeList() const {
+  const MapleVector<TyIdx> &GetParamTypeList() const {
     return paramTypeList;
   }
 
-  std::vector<TyIdx> &GetParamTypeList() {
+  MapleVector<TyIdx> &GetParamTypeList() {
     return paramTypeList;
   }
 
@@ -1389,14 +1402,17 @@ class MIRFuncType : public MIRType {
   }
 
   void SetParamTypeList(const std::vector<TyIdx> &list) {
-    paramTypeList = list;
+    paramTypeList.clear();
+    for (auto tyIdx : list) {
+      paramTypeList.push_back(tyIdx);
+    }
   }
 
-  const std::vector<TypeAttrs> &GetParamAttrsList() const {
+  const MapleVector<TypeAttrs> &GetParamAttrsList() const {
     return paramAttrsList;
   }
 
-  std::vector<TypeAttrs> &GetParamAttrsList() {
+  MapleVector<TypeAttrs> &GetParamAttrsList() {
     return paramAttrsList;
   }
 
@@ -1411,7 +1427,10 @@ class MIRFuncType : public MIRType {
   }
 
   void SetParamAttrsList(const std::vector<TypeAttrs> &list) {
-    paramAttrsList = list;
+    paramAttrsList.clear();
+    for (auto tyAttr : list) {
+      paramAttrsList.push_back(tyAttr);
+    }
   }
 
   void SetNthParamAttrs(size_t i, const TypeAttrs &attrs) {
@@ -1437,8 +1456,8 @@ class MIRFuncType : public MIRType {
 
  private:
   TyIdx retTyIdx{ 0 };
-  std::vector<TyIdx> paramTypeList{};
-  std::vector<TypeAttrs> paramAttrsList{};
+  MapleVector<TyIdx> paramTypeList;
+  MapleVector<TypeAttrs> paramAttrsList;
   bool isVarArgs = false;
 };
 

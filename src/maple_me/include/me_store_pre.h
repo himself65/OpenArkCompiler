@@ -26,6 +26,9 @@ class MeStorePre : public MeSSUPre {
   virtual ~MeStorePre() = default;
 
  private:
+  inline bool IsJavaLang() {
+    return mirModule->IsJavaModule();
+  }
   AliasClass *aliasClass;
   // step 6 code motion
   RegMeExpr *curTemp;                               // the preg for the RHS of inserted stores
@@ -38,7 +41,7 @@ class MeStorePre : public MeSSUPre {
   void CreateRealOcc(OStIdx ostIdx, MeStmt *meStmt);
   void CreateUseOcc(OStIdx ostIdx, BB *bb);
   void CreateSpreUseOccsThruAliasing(const OriginalSt *muOst, BB *bb);
-  void FindAndCreateSpreUseOccs(MeExpr *x, BB *bb);
+  void FindAndCreateSpreUseOccs(MeExpr *meExpr, BB *bb);
   void CreateSpreUseOccsForAll(BB *bb);
   void BuildWorkListBB(BB *bb);
   void PerCandInit() {

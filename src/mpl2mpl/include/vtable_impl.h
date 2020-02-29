@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -37,7 +37,6 @@ class VtableImpl : public FuncOptimizeImpl {
 
  private:
   void ReplaceResolveInterface(StmtNode &stmt, const ResolveFuncNode &resolveNode);
-  void Intrinsify(MIRFunction &func, CallNode &cnode);
   MIRModule *mirModule;
   MIRFunction *mccItabFunc;
 };

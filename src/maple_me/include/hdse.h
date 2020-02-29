@@ -22,14 +22,14 @@ namespace maple {
 class MeIRMap;
 class HDSE {
  public:
-  HDSE(MIRModule &mod, const MapleVector<BB*> &bbVec, BB &commonEntryBB, BB &commonExitBB, SSATab &stab,
+  HDSE(MIRModule &mod, const MapleVector<BB*> &bbVec, BB &commonEntryBB, BB &commonExitBB, SSATab &ssaTab,
        Dominance &pDom, IRMap &map, bool enabledDebug = false)
       : hdseDebug(enabledDebug),
         mirModule(mod),
         bbVec(bbVec),
         commonEntryBB(commonEntryBB),
         commonExitBB(commonExitBB),
-        ssaTab(stab),
+        ssaTab(ssaTab),
         postDom(pDom),
         irMap(map),
         bbRequired(bbVec.size(), false) {}
@@ -65,17 +65,17 @@ class HDSE {
   void MarkVarDefByStmt(VarMeExpr &varMeExpr);
   void MarkRegDefByStmt(RegMeExpr &regMeExpr);
 
-  bool IsExprNeeded(const MeExpr *meExpr) {
-    return exprLive.at(meExpr->GetExprID());
+  bool IsExprNeeded(const MeExpr &meExpr) const {
+    return exprLive.at(meExpr.GetExprID());
   }
   void SetExprNeeded(const MeExpr *meExpr) {
     exprLive.at(meExpr->GetExprID()) = true;
   }
 
   void PropagateLive() {
-    while (!worklist.empty()) {
-      MeExpr *meExpr = worklist.front();
-      worklist.pop_front();
+    while (!workList.empty()) {
+      MeExpr *meExpr = workList.front();
+      workList.pop_front();
       PropagateUseLive(*meExpr);
     }
   }
@@ -98,7 +98,7 @@ class HDSE {
   IRMap &irMap;
   std::vector<bool> bbRequired;
   std::vector<bool> exprLive;
-  std::forward_list<MeExpr*> worklist;
+  std::forward_list<MeExpr*> workList;
 };
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_HDSE_H

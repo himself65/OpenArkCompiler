@@ -15,14 +15,14 @@
 #include "me_stmt_pre.h"
 
 namespace maple {
-void MeStmtPre::ResetFullyAvail(MePhiOcc *occg) {
-  occg->SetIsCanBeAvail(false);
+void MeStmtPre::ResetFullyAvail(MePhiOcc *occ) {
+  occ->SetIsCanBeAvail(false);
   // reset those phiocc nodes that have oc as one of its operands
   for (auto it = phiOccs.begin(); it != phiOccs.end(); ++it) {
     MePhiOcc *phiOcc = *it;
     for (MePhiOpndOcc *phiOpnd : phiOcc->GetPhiOpnds()) {
-      if (phiOpnd->GetDef() && phiOpnd->GetDef() == occg) {
-        // phiOpnd is a use of occg
+      if (phiOpnd->GetDef() != nullptr && phiOpnd->GetDef() == occ) {
+        // phiOpnd is a use of occ
         if (!phiOpnd->HasRealUse()) {
           ResetCanBeAvail(phiOcc);
         }

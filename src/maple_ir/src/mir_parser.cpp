@@ -700,7 +700,7 @@ PUIdx MIRParser::EnterUndeclaredFunction(bool isMcount) {
   fn->SetPuidx(GlobalTables::GetFunctionTable().GetFuncTable().size());
   GlobalTables::GetFunctionTable().GetFuncTable().push_back(fn);
   funcSt->SetFunction(fn);
-  auto *funcType = mod.GetMemPool()->New<MIRFuncType>();
+  auto *funcType = mod.GetMemPool()->New<MIRFuncType>(mod.GetMPAllocator());
   fn->SetMIRFuncType(funcType);
   if (isMcount) {
     MIRType *retType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(TyIdx(PTY_void));

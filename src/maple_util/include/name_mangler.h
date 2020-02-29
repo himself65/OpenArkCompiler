@@ -20,7 +20,6 @@
 // This is a general name mangler which is shared between maple compiler and runtime.
 // maple-compiler-specific data structure may NOT be used here.
 namespace NameMangler {
-
 #define TO_STR(s)  TO_STR2(s)
 #define TO_STR2(s) #s
 
@@ -135,6 +134,7 @@ static constexpr const char kJavaLangStringStr[] = "Ljava_2Flang_2FString_3B";
 static constexpr const char kJavaLangExceptionStr[] = "Ljava_2Flang_2FException_3B";
 static constexpr const char kThrowClassStr[] = "Ljava_2Flang_2FThrowable_3B";
 static constexpr const char kReflectionClassesPrefixStr[] = "Ljava_2Flang_2Freflect_2F";
+static constexpr const char kReflectionClassMethodStr[] = "Ljava_2Flang_2Freflect_2FMethod_241_3B";
 static constexpr const char kClassMetadataTypeName[] = "__class_meta__";
 static constexpr const char kPtrPrefixStr[] = "_PTR";
 static constexpr const char kClassINfoPtrPrefixStr[] = "_PTR__cinf_";
@@ -183,7 +183,6 @@ int64_t  GetSleb128Decode(uint64_t val);
 size_t GetUleb128Size(uint64_t val);
 size_t GetSleb128Size(int32_t val);
 bool NeedConvertUTF16(const std::string &str8);
-
 } // namespace NameMangler
 
 #endif

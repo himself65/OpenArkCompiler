@@ -58,8 +58,8 @@ bool DSE::ExprNonDeletable(const BaseNode &expr) {
       // may throw exception
       return true;
     case OP_intrinsicop: {
-      auto &innode = static_cast<const IntrinsicopNode&>(expr);
-      const IntrinDesc &intrinDesc = innode.GetIntrinDesc();
+      auto &node = static_cast<const IntrinsicopNode&>(expr);
+      const IntrinDesc &intrinDesc = node.GetIntrinDesc();
       return (!intrinDesc.HasNoSideEffect());
     }
     default: {
@@ -137,9 +137,9 @@ void DSE::CheckRemoveCallAssignedReturn(StmtNode &stmt) {
         continue;
       }
       DumpStmt(stmt, "**** DSE1 deleting return value assignment in: ");
-      CallReturnVector *nrets = stmt.GetCallReturnVector();
-      CHECK_FATAL(nrets != nullptr, "null ptr check  ");
-      nrets->clear();
+      CallReturnVector *rets = stmt.GetCallReturnVector();
+      CHECK_FATAL(rets != nullptr, "null ptr check  ");
+      rets->clear();
       mustDefs.clear();
       break;
     }
@@ -152,9 +152,8 @@ void DSE::OnRemoveBranchStmt(BB &bb, const StmtNode &stmt) {
     // update BB pred/succ
     bb.SetKind(kBBFallthru);
     cfgUpdated = true;  // tag cfg is changed
-    LabelIdx labelIdx = (stmt.GetOpCode() == OP_goto)
-        ? static_cast<const GotoNode&>(stmt).GetOffset()
-        : static_cast<const CondGotoNode&>(stmt).GetOffset();
+    LabelIdx labelIdx = (stmt.GetOpCode() == OP_goto) ? static_cast<const GotoNode&>(stmt).GetOffset()
+                                                      : static_cast<const CondGotoNode&>(stmt).GetOffset();
     for (size_t i = 0; i < bb.GetSucc().size(); ++i) {
       if (bb.GetSucc(i)->GetBBLabel() == labelIdx) {
         BB *succBB = bb.GetSucc(i);
@@ -196,15 +195,15 @@ void DSE::PropagateUseLive(const VersionSt &vst) {
     ASSERT(phi->GetResult() == &vst, "MarkVst: wrong corresponding version st in phi");
     MarkControlDependenceLive(ToRef(dfBB));
     for (size_t i = 0; i < phi->GetPhiOpnds().size(); ++i) {
-      const VersionSt *vsym = phi->GetPhiOpnds()[i];
-      AddToWorkList(vsym);
+      const VersionSt *verSt = phi->GetPhiOpnds()[i];
+      AddToWorkList(verSt);
     }
   } else if (vst.GetDefType() == VersionSt::kMayDef) {
-    const MayDefNode *mdef = vst.GetMayDef();
-    ASSERT(mdef->GetResult() == &vst, "MarkVst: wrong corresponding version st in maydef");
-    const VersionSt *vsym = mdef->GetOpnd();
-    MarkStmtRequired(ToRef(mdef->GetStmt()), ToRef(dfBB));
-    AddToWorkList(vsym);
+    const MayDefNode *mayDef = vst.GetMayDef();
+    ASSERT(mayDef->GetResult() == &vst, "MarkVst: wrong corresponding version st in maydef");
+    const VersionSt *verSt = mayDef->GetOpnd();
+    MarkStmtRequired(ToRef(mayDef->GetStmt()), ToRef(dfBB));
+    AddToWorkList(verSt);
   } else {
     const MustDefNode *mustdef = vst.GetMustDef();
     ASSERT(mustdef->GetResult() == &vst, "MarkVst: wrong corresponding version st in mustdef");
@@ -269,23 +268,23 @@ void DSE::MarkSingleUseLive(const BaseNode &mirNode) {
   switch (op) {
     case OP_dread: {
       auto &addrofSSANode = static_cast<const AddrofSSANode&>(mirNode);
-      const VersionSt *vsym = addrofSSANode.GetSSAVar();
-      AddToWorkList(vsym);
+      const VersionSt *verSt = addrofSSANode.GetSSAVar();
+      AddToWorkList(verSt);
       break;
     }
     case OP_regread: {
       auto &regreadSSANode = static_cast<const RegreadSSANode&>(mirNode);
-      const VersionSt *vsym = regreadSSANode.GetSSAVar();
-      AddToWorkList(vsym);
+      const VersionSt *verSt = regreadSSANode.GetSSAVar();
+      AddToWorkList(verSt);
       break;
     }
     case OP_iread: {
       auto &ireadSSANode = static_cast<const IreadSSANode&>(mirNode);
-      const VersionSt *vsym = ireadSSANode.GetSSAVar();
-      CHECK_FATAL(vsym != nullptr, "DSE::MarkSingleUseLive: iread has no mayUse opnd");
-      AddToWorkList(vsym);
-      if (!vsym->IsInitVersion()) {
-        auto *mayDefList = SSAGenericGetMayDefsFromVersionSt(ToRef(vsym), ssaTab.GetStmtsSSAPart());
+      const VersionSt *verSt = ireadSSANode.GetSSAVar();
+      CHECK_FATAL(verSt != nullptr, "DSE::MarkSingleUseLive: iread has no mayUse opnd");
+      AddToWorkList(verSt);
+      if (!verSt->IsInitVersion()) {
+        auto *mayDefList = SSAGenericGetMayDefsFromVersionSt(ToRef(verSt), ssaTab.GetStmtsSSAPart());
         if (mayDefList != nullptr) {
           for (auto it = mayDefList->begin(); it != mayDefList->end(); ++it) {
             AddToWorkList(it->second.GetResult());

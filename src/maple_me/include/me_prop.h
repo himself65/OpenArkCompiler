@@ -22,10 +22,10 @@
 namespace maple {
 class MeProp : public Prop {
  public:
-  MeProp(MeIRMap &hmap, Dominance &dom, MemPool &memPool, const PropConfig &config)
-      : Prop(hmap, dom, memPool, std::vector<BB*>(hmap.GetFunc().GetAllBBs().begin(),
-                                                  hmap.GetFunc().GetAllBBs().end()),
-             *hmap.GetFunc().GetCommonEntryBB(), config) {}
+  MeProp(MeIRMap &irMap, Dominance &dom, MemPool &memPool, const PropConfig &config)
+      : Prop(irMap, dom, memPool, std::vector<BB*>(irMap.GetFunc().GetAllBBs().begin(),
+                                                  irMap.GetFunc().GetAllBBs().end()),
+             *irMap.GetFunc().GetCommonEntryBB(), config) {}
 
   virtual ~MeProp() = default;
 };

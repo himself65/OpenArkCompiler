@@ -19,6 +19,7 @@
 #include "me_ir.h"
 #include "me_inequality_graph.h"
 #include "me_cfg.h"
+
 namespace maple {
 struct StmtComparator {
   bool operator()(const std::pair<MeStmt*, size_t> &lhs, const std::pair<MeStmt*, size_t> &rhs) const {
@@ -29,6 +30,7 @@ struct StmtComparator {
     }
   }
 };
+
 class CarePoint {
  public:
   enum CareKind {
@@ -81,6 +83,7 @@ class CarePoint {
   };
   CareStmt value;
 };
+
 class DefPoint {
  public:
   enum DefineKind {
@@ -191,6 +194,7 @@ class DefPoint {
   };
   DefStmt value;
 };
+
 class MeABC {
  public:
   static bool kDebug;
@@ -207,26 +211,6 @@ class MeABC {
   void executeABCO();
 
  private:
-  MeFunction *meFunc;
-  Dominance *dom;
-  MeIRMap *irMap;
-  MemPool *memPool;
-  MapleAllocator allocator;
-  std::unique_ptr<InequalityGraph> inequalityGraph;
-  std::unique_ptr<ABCD> prove;
-  MeStmt *forbidenPi;
-  std::map<MeStmt*, NaryMeExpr*> arrayChecks;
-  std::map<MeStmt*, NaryMeExpr*> arrayNewChecks;
-  std::set<MeStmt*> careMeStmts;
-  std::set<MeVarPhiNode*> careMePhis;
-  std::map<BB*, std::vector<MeStmt*>> containsBB;
-  std::vector<DefPoint*> newDefPoints;
-  std::vector<CarePoint*> carePoints;
-  std::map<DefPoint*, VarMeExpr*> newDef2Old;
-  std::map<std::pair<MeStmt*, size_t>, MeExpr*, StmtComparator> modifiedStmt;
-  std::map<MeVarPhiNode*, std::vector<VarMeExpr*>> modifiedPhi;
-  std::set<BB*> visitedBBs;
-  std::set<MeStmt*> targetMeStmt;
   bool CollectABC();
   void RemoveExtraNodes();
   void InsertPiNodes();
@@ -285,7 +269,29 @@ class MeABC {
   MeIRMap *GetIRMap() {
     return irMap;
   };
+
+  MeFunction *meFunc;
+  Dominance *dom;
+  MeIRMap *irMap;
+  MemPool *memPool;
+  MapleAllocator allocator;
+  std::unique_ptr<InequalityGraph> inequalityGraph;
+  std::unique_ptr<ABCD> prove;
+  MeStmt *forbidenPi;
+  std::map<MeStmt*, NaryMeExpr*> arrayChecks;
+  std::map<MeStmt*, NaryMeExpr*> arrayNewChecks;
+  std::set<MeStmt*> careMeStmts;
+  std::set<MeVarPhiNode*> careMePhis;
+  std::map<BB*, std::vector<MeStmt*>> containsBB;
+  std::vector<DefPoint*> newDefPoints;
+  std::vector<CarePoint*> carePoints;
+  std::map<DefPoint*, VarMeExpr*> newDef2Old;
+  std::map<std::pair<MeStmt*, size_t>, MeExpr*, StmtComparator> modifiedStmt;
+  std::map<MeVarPhiNode*, std::vector<VarMeExpr*>> modifiedPhi;
+  std::set<BB*> visitedBBs;
+  std::set<MeStmt*> targetMeStmt;
 };
+
 class MeDoABCOpt : public MeFuncPhase {
  public:
   explicit MeDoABCOpt(MePhaseID id) : MeFuncPhase(id) {}

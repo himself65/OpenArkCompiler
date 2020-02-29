@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -32,8 +32,7 @@ enum IntrinProperty {
   kIntrnIsPure,
   kIntrnNeverReturn,
   kIntrnIsAtomic,
-  kIntrnIsRC,
-  kIntrnIsSpecial
+  kIntrnIsRC
 };
 
 enum IntrinArgType {
@@ -86,7 +85,6 @@ constexpr uint32 INTRNISPURE = 1U << kIntrnIsPure;
 constexpr uint32 INTRNNEVERRETURN = 1U << kIntrnNeverReturn;
 constexpr uint32 INTRNATOMIC = 1U << kIntrnIsAtomic;
 constexpr uint32 INTRNISRC = 1U << kIntrnIsRC;
-constexpr uint32 INTRNISSPECIAL = 1U << kIntrnIsSpecial;
 class MIRType;    // circular dependency exists, no other choice
 class MIRModule;  // circular dependency exists, no other choice
 struct IntrinDesc {
@@ -136,10 +134,6 @@ struct IntrinDesc {
 
   bool IsRC() const {
     return properties & INTRNISRC;
-  }
-
-  bool IsSpecial() const {
-    return properties & INTRNISSPECIAL;
   }
 
   bool HasNoSideEffect() const {

@@ -47,8 +47,8 @@ void HDSE::RemoveNotRequiredStmtsInBB(BB &bb) {
       if (meStmt.GetOp() != OP_dassign && (meStmt.IsCondBr() || meStmt.GetOp() == OP_switch)) {
         // update CFG
         while (bb.GetSucc().size() != 1) {
-          BB *succbb = bb.GetSucc().back();
-          succbb->RemoveBBFromPred(&bb);
+          BB *succ = bb.GetSucc().back();
+          succ->RemoveBBFromPred(&bb);
           bb.GetSucc().pop_back();
         }
         bb.SetKind(kBBFallthru);
@@ -60,7 +60,7 @@ void HDSE::RemoveNotRequiredStmtsInBB(BB &bb) {
 
 void HDSE::MarkMuListRequired(MapleMap<OStIdx, VarMeExpr*> &muList) {
   for (auto &pair : muList) {
-    worklist.push_front(pair.second);
+    workList.push_front(pair.second);
   }
 }
 
@@ -69,7 +69,7 @@ void HDSE::MarkChiNodeRequired(ChiMeNode &chiNode) {
     return;
   }
   chiNode.SetIsLive(true);
-  worklist.push_front(chiNode.GetRHS());
+  workList.push_front(chiNode.GetRHS());
   MeStmt *meStmt = chiNode.GetBase();
   MarkStmtRequired(*meStmt);
 }
@@ -301,7 +301,7 @@ void HDSE::MarkControlDependenceLive(BB &bb) {
 }
 
 void HDSE::MarkSingleUseLive(MeExpr &meExpr) {
-  if (IsExprNeeded(&meExpr)) {
+  if (IsExprNeeded(meExpr)) {
     return;
   }
   SetExprNeeded(&meExpr);
@@ -309,7 +309,7 @@ void HDSE::MarkSingleUseLive(MeExpr &meExpr) {
   switch (meOp) {
     case kMeOpVar:
     case kMeOpReg: {
-      worklist.push_front(&meExpr);
+      workList.push_front(&meExpr);
       break;
     }
     case kMeOpIvar: {
