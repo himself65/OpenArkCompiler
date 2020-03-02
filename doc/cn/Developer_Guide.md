@@ -28,6 +28,12 @@ make
 - `make` 编译OpenArkCompiler的Release版本；
 - `make BUILD_TYPE=DEBUG` 编译OpenArkCompiler的Debug版本。
 
+此外，方舟编译器还提供了源码编译脚本，开发者也可以通过在openarkcompiler目录下执行该脚本，编译出OpenArkCompiler。执行命令如下：
+
+```
+source build/build.sh
+```
+
 ## Sample示例编译
 
 当前编译方舟编译器Sample应用需要使用到Java基础库，我们以Android系统提供的Java基础库为例，展示Sample样例的编译过程。

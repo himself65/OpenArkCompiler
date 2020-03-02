@@ -29,6 +29,12 @@ Command description:
 - `make`: Compile the release version of OpenArkCompiler.
 - `make BUILD_TYPE=DEBUG`: Compile the debug version of OpenArkCompiler.
 
+In addition, the OpenArkCompiler also provides a shell script which contains the command to compile OpenArkCompiler. The developer can run the script in the openarkcompiler directory to compile OpenArkCompiler. The command to run the script:
+
+```
+source build/build.sh
+```
+
 ## Compiling Sample
 
 The Java basic library is required for OpenArkCompiler to compile a sample. The following uses the Java basic library provided by the Android OS to describe the sample compilation process.
