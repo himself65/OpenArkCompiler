@@ -41,6 +41,7 @@ std::string MplcgCompiler::GetInputFileName(const MplOptions &options) const {
       return options.GetInputFiles();
     }
   }
+  // Get base file name
   auto idx = options.GetOutputName().find(".VtableImpl");
   std::string outputName = options.GetOutputName();
   if (idx != std::string::npos) {

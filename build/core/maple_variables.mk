@@ -13,8 +13,3 @@ JAVA2JAR := $(MAPLE_ROOT)/output/bin/java2jar
 JBC2MPL_BIN := $(MAPLE_ROOT)/output/bin/jbc2mpl
 MAPLE_BIN := $(MAPLE_ROOT)/output/bin/maple
 MPLCG_BIN := $(MAPLE_ROOT)/output/bin/mplcg
-MPLME_FLAGS := --quiet
-MPL2MPL_FLAGS := --quiet --regnativefunc --maplelinker
-MPLCG_SO_FLAGS := --fpic
-MPLCG_FLAGS := --quiet --no-pie --verbose-asm --maplelinker
-MPLCOMBO_FLAGS := --run=me:mpl2mpl:mplcg --option="$(MPLME_FLAGS):$(MPL2MPL_FLAGS):$(MPLCG_FLAGS) $(MPLCG_SO_FLAGS)"
