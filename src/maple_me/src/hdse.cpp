@@ -189,7 +189,8 @@ bool HDSE::ExprNonDeletable(MeExpr &meExpr) {
     }
     case kMeOpVar: {
       auto &varMeExpr = static_cast<VarMeExpr&>(meExpr);
-      return varMeExpr.IsVolatile(ssaTab);
+      return varMeExpr.IsVolatile(ssaTab) ||
+             (decoupleStatic && ssaTab.GetSymbolOriginalStFromID(varMeExpr.GetOStIdx())->GetMIRSymbol()->IsGlobal());
     }
     case kMeOpIvar: {
       auto &opIvar = static_cast<IvarMeExpr&>(meExpr);

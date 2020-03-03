@@ -117,6 +117,7 @@ class MapleCombCompiler : public Compiler {
  private:
   std::string realRunningExe;
   std::unordered_set<std::string> GetFinalOutputs(const MplOptions &mplOptions) const override;
+  void GetTmpFilesToDelete(const MplOptions &mplOptions, std::vector<std::string> &tempFiles) const override;
   MeOption *MakeMeOptions(const MplOptions &options, MemPool &memPool);
   Options *MakeMpl2MplOptions(const MplOptions &options, MemPool &memPool);
 };

@@ -95,11 +95,13 @@ struct MUID {
   std::string ToStr() const {
     std::stringstream sbuf;
 #ifdef USE_64BIT_MUID
-    sbuf << std::setfill('0') << std::setw(8) << std::hex << data.words[1] <<
-        std::setfill('0') << std::setw(8) << std::hex << data.words[0];
+    // 8 spaces to 64 bit
+    sbuf << std::setfill('0') << std::setw(8) << std::hex << data.words[1] << std::setfill('0') << std::setw(8) <<
+        std::hex << data.words[0];
 #else
-    sbuf << std::setfill('0') << std::setw(16) << std::hex << data.words[1] <<
-        std::setfill('0') << std::setw(16) << std::hex << data.words[0];
+    // 16 spaces to 32 bit
+    sbuf << std::setfill('0') << std::setw(16) << std::hex << data.words[1] << std::setfill('0') << std::setw(16) <<
+        std::hex << data.words[0];
 #endif // USE_64BIT_MUID
     return sbuf.str();
   }
