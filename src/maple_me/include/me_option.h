@@ -93,6 +93,7 @@ class MeOption {
   static bool lpreSpeculate;
   static bool spillAtCatch;
   static bool optDirectCall;
+  static bool decoupleStatic;
  private:
   std::unordered_set<std::string> skipPhases;
   MapleAllocator optionAlloc;

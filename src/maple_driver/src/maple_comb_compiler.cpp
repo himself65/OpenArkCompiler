@@ -35,6 +35,28 @@ std::string MapleCombCompiler::GetInputFileName(const MplOptions &options) const
   return options.GetOutputFolder() + options.GetOutputName() + ".mpl";
 }
 
+void MapleCombCompiler::GetTmpFilesToDelete(const MplOptions &mplOptions, std::vector<std::string> &tempFiles) const {
+  std::string filePath;
+  if ((realRunningExe == kBinNameMe) && !mplOptions.HasSetGenMeMpl()) {
+    filePath = mplOptions.GetOutputFolder() + mplOptions.GetOutputName() + ".me.mpl";
+  } else if (mplOptions.HasSetGenVtableImpl() == false) {
+    filePath = mplOptions.GetOutputFolder() + mplOptions.GetOutputName() + ".VtableImpl.mpl";
+  }
+  tempFiles.push_back(filePath);
+  filePath = mplOptions.GetOutputFolder() + mplOptions.GetOutputName() + ".data.muid";
+  tempFiles.push_back(filePath);
+  filePath = mplOptions.GetOutputFolder() + mplOptions.GetOutputName() + ".func.muid";
+  tempFiles.push_back(filePath);
+  for (auto iter = tempFiles.begin(); iter != tempFiles.end();) {
+    std::ifstream infile;
+    infile.open(*iter);
+    if (infile.fail()) {
+      iter = tempFiles.erase(iter);
+    } else {
+      ++iter;
+    }
+  }
+}
 
 std::unordered_set<std::string> MapleCombCompiler::GetFinalOutputs(const MplOptions &mplOptions) const {
   std::unordered_set<std::string> finalOutputs;

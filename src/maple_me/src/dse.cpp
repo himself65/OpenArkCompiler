@@ -42,7 +42,7 @@ bool DSE::ExprNonDeletable(const BaseNode &expr) {
     case OP_dread: {
       auto &dread = static_cast<const AddrofSSANode&>(expr);
       const MIRSymbol &sym = dread.GetMIRSymbol();
-      return sym.IsVolatile() || sym.IsTypeVolatile(dread.GetFieldID());
+      return sym.IsVolatile() || sym.IsTypeVolatile(dread.GetFieldID()) || (decoupleStatic && sym.IsGlobal());
     }
     case OP_iread: {
       auto &iread = static_cast<const IreadSSANode&>(expr);

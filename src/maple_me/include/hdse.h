@@ -23,7 +23,7 @@ class MeIRMap;
 class HDSE {
  public:
   HDSE(MIRModule &mod, const MapleVector<BB*> &bbVec, BB &commonEntryBB, BB &commonExitBB, SSATab &ssaTab,
-       Dominance &pDom, IRMap &map, bool enabledDebug = false)
+       Dominance &pDom, IRMap &map, bool enabledDebug = false, bool decouple = false)
       : hdseDebug(enabledDebug),
         mirModule(mod),
         bbVec(bbVec),
@@ -32,7 +32,8 @@ class HDSE {
         ssaTab(ssaTab),
         postDom(pDom),
         irMap(map),
-        bbRequired(bbVec.size(), false) {}
+        bbRequired(bbVec.size(), false),
+        decoupleStatic(decouple) {}
 
   virtual ~HDSE() = default;
 
@@ -99,6 +100,7 @@ class HDSE {
   std::vector<bool> bbRequired;
   std::vector<bool> exprLive;
   std::forward_list<MeExpr*> workList;
+  bool decoupleStatic = false;
 };
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_HDSE_H

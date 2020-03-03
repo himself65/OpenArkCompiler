@@ -19,7 +19,6 @@
 #include "muid.h"
 
 // literal string naming is shared between maple compiler and runtime, thus not in namespace maplert
-
 #ifdef MUID_LENGTH
 #undef MUID_LENGTH
 #define MUID_LENGTH 16
@@ -47,12 +46,12 @@ class LiteralStrName {
       const char *dataStart = reinterpret_cast<const char*>(data);
       const char *end = dataStart + len;
       while (dataStart < end) {
-        hash = (hash << 5) - hash + *dataStart++;
+        hash = (hash << 5) - hash + *dataStart++; // calculate the hash code of data
       }
     } else {
       const char16_t *end = data + len;
       while (data < end) {
-        hash = (static_cast<unsigned int>(hash) << 5) - hash + *data++;
+        hash = (static_cast<unsigned int>(hash) << 5) - hash + *data++; // calculate the hash code of data
       }
     }
     return hash;
