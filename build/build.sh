@@ -13,6 +13,7 @@
 # FIT FOR A PARTICULAR PURPOSE.
 # See the Mulan PSL v1 for more details.
 #
+set -e
 source build/envsetup.sh
 option=$@
 if [ "$option" = "DEBUG" ]; then

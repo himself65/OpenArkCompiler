@@ -395,10 +395,12 @@ class MeFunction : public FuncEmit {
   const MapleUnorderedMap<BB*, BB*> &GetEndTryBB2TryBB() const {
     return endTryBB2TryBB;
   }
+
   const BB *GetTryBBFromEndTryBB(BB *endTryBB) const {
     auto it = endTryBB2TryBB.find(endTryBB);
     return it == endTryBB2TryBB.end() ? nullptr : it->second;
   }
+
   void SetTryBBByOtherEndTryBB(BB *endTryBB, BB *otherTryBB) {
     endTryBB2TryBB[endTryBB] = endTryBB2TryBB[otherTryBB];
   }

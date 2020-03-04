@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -213,6 +213,7 @@ class MIRModule {
   void DumpInlineCandidateToFile(const std::string &fileNameStr) const;
   const std::string &GetFileNameFromFileNum(uint32 fileNum) const;
 
+  void DumpToHeaderFile(bool binaryMplt, const std::string &outputName = "");
   void DumpClassToFile(const std::string &path) const;
   void DumpFunctionList(bool skipBody = false) const;
   void DumpGlobalArraySymbol() const;
