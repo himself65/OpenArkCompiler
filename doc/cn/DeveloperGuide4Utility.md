@@ -413,18 +413,18 @@ enum BBAttr : uint32 {
 
 ```c++
 enum BBAttr : uint32 {
-  kBBAttrIsEntry       	= utils::bit_field_v<1>,
-  kBBAttrIsExit 		= utils::bit_field_v<2>,
-  kBBAttrWontExit 		= utils::bit_field_v<3>,
-  kBBAttrIsTry 			= utils::bit_field_v<4>,
-  kBBAttrIsTryEnd 		= utils::bit_field_v<5>,
-  kBBAttrIsJSCatch 		= utils::bit_field_v<6>,
-  kBBAttrIsJSFinally 	= utils::bit_field_v<7>,
-  kBBAttrIsCatch 		= utils::bit_field_v<8>,
-  kBBAttrIsJavaFinally 	= utils::bit_field_v<9>,
-  kBBAttrArtificial 	= utils::bit_field_v<10>,
-  kBBAttrIsInLoop 		= utils::bit_field_v<11>,
-  kBBAttrIsInLoopForEA 	= utils::bit_field_v<12>
+  kBBAttrIsEntry       = utils::bit_field_v<1>,
+  kBBAttrIsExit        = utils::bit_field_v<2>,
+  kBBAttrWontExit      = utils::bit_field_v<3>,
+  kBBAttrIsTry         = utils::bit_field_v<4>,
+  kBBAttrIsTryEnd      = utils::bit_field_v<5>,
+  kBBAttrIsJSCatch     = utils::bit_field_v<6>,
+  kBBAttrIsJSFinally   = utils::bit_field_v<7>,
+  kBBAttrIsCatch       = utils::bit_field_v<8>,
+  kBBAttrIsJavaFinally = utils::bit_field_v<9>,
+  kBBAttrArtificial    = utils::bit_field_v<10>,
+  kBBAttrIsInLoop      = utils::bit_field_v<11>,
+  kBBAttrIsInLoopForEA = utils::bit_field_v<12>
 };
 ```
 

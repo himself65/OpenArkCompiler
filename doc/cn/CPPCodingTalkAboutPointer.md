@@ -20,18 +20,18 @@
 
 ```c++
 class Int {
-    ...
-private:
-    int data;
+  ...
+ private:
+  int data;
 }
 
 void test(int* in) {
-    Int* tmp = new Int();
-    ...
-    goto LABEL;
-    ...
+  Int* tmp = new Int();
+  ...
+  goto LABEL;
+  ...
 
-    delete tmp;
+  delete tmp;
 LABEL:
 }
 ```
@@ -93,13 +93,13 @@ file->close();
 ```c++
 template <typename T, typename Func>
 class ResourceGuard {
-public:
-	ResourceGuard(T* _obj, Func _func) : obj(_obj), func(_func) {}
-	
-	~ResourceGuard() { obj.func(); }
-private:
-	T* obj;
-	Func func;
+ public:
+  ResourceGuard(T* _obj, Func _func) : obj(_obj), func(_func) {}
+
+  ~ResourceGuard() { obj.func(); }
+ private:
+  T* obj;
+  Func func;
 }
 
 FILE* file = open("xxx.txt");
@@ -113,16 +113,16 @@ auto fileGuard = ResourceGuard<FILE, std::function<void()>>(file, FILE::close);
 
 ```c++
 void func1(int* in) {
-	if (in == nullptr) return;
-    ...
+  if (in == nullptr) return;
+  ...
 }
 
 void func2() {
-    int* p = nullptr;
-    ...
-    if (p != nullptr) {
-        func1(p);
-    }
+  int* p = nullptr;
+  ...
+  if (p != nullptr) {
+    func1(p);
+  }
 }
 ```
 
@@ -130,15 +130,15 @@ void func2() {
 
 ```c++
 void func1(int& in) {
-	...
+  ...
 }
 
 void func2() {
-    int* p = nullptr;
-    ...
-    if (p != nullptr) {
-        func1(*p);
-    }
+  int* p = nullptr;
+  ...
+  if (p != nullptr) {
+    func1(*p);
+  }
 }
 ```
 
@@ -148,12 +148,12 @@ void func2() {
 
 ```c++
 void func(std::vector<int *>& in) {
-	for (auto *p : in) {
-        if (p == nullptr) {
-            continue;
-        }
-		...
-	}
+  for (auto *p : in) {
+    if (p == nullptr) {
+      continue;
+    }
+    ...
+  }
 }
 ```
 
@@ -162,27 +162,27 @@ void func(std::vector<int *>& in) {
 ```c++
 template <typename T>
 class Ref {
-public:
-    Ref() = delete;
-    Ref(T& ref) : data(&ref) {}
-    
-    ...
-    
-    operator T() const noexcept {
-    	return *data;
-  	}
-    
-private:
-    T* data;
+ public:
+  Ref() = delete;
+  Ref(T& ref) : data(&ref) {}
+
+  ...
+
+  operator T() const noexcept {
+    return *data;
+  }
+
+ private:
+  T* data;
 }
 
 template <typename T>
 using ref_vector = std::vector<Ref<T>>;
 void func(ref_vector<int>& in) {
-	for (auto p : in) {
-        int& data = p;
-		...
-	}
+  for (auto p : in) {
+    int& data = p;
+    ...
+  }
 }
 ```
 
@@ -194,7 +194,7 @@ void func(ref_vector<int>& in) {
 std::vector<int *> data;
 ...
 for (auto *p : data) {
-    delete p;
+  delete p;
 }
 ```
 
@@ -203,15 +203,15 @@ for (auto *p : data) {
 ```c++
 template <typename T>
 class ptr_vector {
-public:
-    ~ptr_vector() {
-        for (auto *p : data) {
-    		delete p;
-		}
+ public:
+  ~ptr_vector() {
+    for (auto *p : data) {
+      delete p;
     }
-    
-private:
-    std::vector<T *> data;
+  }
+
+ private:
+  std::vector<T *> data;
 }
 
 ptr_vector<int> data;
@@ -226,9 +226,9 @@ ptr_vector<int> data;
 
 ```c++
 std::vector<int> func() {
-	std::vector<int> data;
-	data.push_back(0);
-	return std::move(data);
+  std::vector<int> data;
+  data.push_back(0);
+  return std::move(data);
 }
 ```
 
@@ -236,10 +236,10 @@ std::vector<int> func() {
 
 ```c++
 Object* func() {
-	std::unique_ptr<Object> data = std::make_unique(new Object);
-	Object& rData = ToRef(data);
-	rData.push_back(0);
-	return data.release();
+  std::unique_ptr<Object> data = std::make_unique(new Object);
+  Object& rData = ToRef(data);
+  rData.push_back(0);
+  return data.release();
 }
 ```
 
@@ -247,10 +247,10 @@ Object* func() {
 
 ```c++
 std::unique_ptr<Object> func() {
-	std::unique_ptr<Object> data = std::make_unique(new Object);
-    Object& rData = ToRef(data);
-	rData.push_back(0);
-	return std::move(data);
+  std::unique_ptr<Object> data = std::make_unique(new Object);
+  Object& rData = ToRef(data);
+  rData.push_back(0);
+  return std::move(data);
 }
 ```
 
