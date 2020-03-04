@@ -189,7 +189,7 @@ MeExpr *SSAEPre::PhiOpndFromRes(MeRealOcc *realZ, size_t j) {
     case kMeOpIvar: {
       auto *ivarMeExpr = static_cast<IvarMeExpr*>(exprQ);
       MeExpr *retOpnd = GetReplaceMeExpr(ivarMeExpr->GetBase(), ePhiBB, j);
-      if (retOpnd) {
+      if (retOpnd != nullptr) {
         ivarMeExpr->SetBase(retOpnd);
       }
       MeExpr *muOpnd = GetReplaceMeExpr(ivarMeExpr->GetMu(), ePhiBB, j);

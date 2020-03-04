@@ -25,6 +25,7 @@ class BBLayout : public AnalysisResult {
         func(f),
         layoutAlloc(&memPool),
         layoutBBs(layoutAlloc.Adapter()),
+        startTryBBVec(func.GetAllBBs().size(), false),
         laidOut(func.GetAllBBs().size(), false, layoutAlloc.Adapter()),
         enabledDebug(enabledDebug) {
     laidOut[func.GetCommonEntryBB()->GetBBId()] = true;
@@ -85,9 +86,15 @@ class BBLayout : public AnalysisResult {
   }
 
  private:
+  void FixEndTryBB(BB &bb);
+  void FixTryBB(BB &startTryBB, BB &nextBB);
+  void DealWithStartTryBB();
+
   MeFunction &func;
   MapleAllocator layoutAlloc;
   MapleVector<BB*> layoutBBs;  // gives the determined layout order
+  std::vector<bool> startTryBBVec;  // record the try BB to fix the try&endtry map
+  bool needDealWithTryBB = false;
   BBId curBBId { 0 };          // to index into func.bb_vec_ to return the next BB
   bool bbCreated = false;      // new create bb will change mefunction::bb_vec_ and
   // related analysis result

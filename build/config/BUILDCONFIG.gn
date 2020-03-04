@@ -43,18 +43,7 @@ GN_LIBRARY_OUTPUT_DIRECTORY = "${GN_INSTALL_PREFIX}/output/lib"
 # Put all built binary files under bin
 GN_BINARY_OUTPUT_DIRECTORY = "${GN_INSTALL_PREFIX}/output/bin"
 
-# Toolchain setup
-GN_C_COMPILER = "${MAPLE_ROOT}/tools/clang_llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/bin/clang"
-GN_CXX_COMPILER = "${MAPLE_ROOT}/tools/clang_llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/bin/clang++"
-GN_AR_COMPILER = "${MAPLE_ROOT}/tools/clang_llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/bin/llvm-ar"
-target_toolchain = "//build/toolchain:clang"
-set_default_toolchain(target_toolchain)
-
-# Cross compile
-GN_C_CROSS_COMPILER = "/usr/bin/aarch64-linux-gnu-gcc-5"
-GN_CXX_CROSS_COMPILER = "/usr/bin/aarch64-linux-gnu-g++-5"
-GN_AR_CROSS_COMPILER = "/usr/bin/aarch64-linux-gnu-ar"
-GN_RANLIB_CROSS_COMPILER = "/usr/bin/aarch64-linux-gnu-ranlib"
+import("${MAPLE_ROOT}/build/config.gni")
 
 # C/CXX Build flags
 cflags = []

@@ -369,6 +369,47 @@ const std::string &MIRModule::GetFileNameFromFileNum(uint32 fileNum) const {
   return GlobalTables::GetStrTable().GetStringFromStrIdx(nameIdx);
 }
 
+void MIRModule::DumpToHeaderFile(bool binaryMplt, const std::string &outputName) {
+  std::string outfileName;
+  std::string fileNameLocal = !outputName.empty() ? outputName : fileName;
+  std::string::size_type lastDot = fileNameLocal.find_last_of('.');
+  if (lastDot == std::string::npos) {
+    outfileName = fileNameLocal.append(".mplt");
+  } else {
+    outfileName = fileNameLocal.substr(0, lastDot).append(".mplt");
+  }
+  if (binaryMplt) {
+    BinaryMplt binaryMpltTmp(*this);
+    binaryMpltTmp.Export(outfileName);
+  } else {
+    std::ofstream mpltFile;
+    mpltFile.open(outfileName, std::ios::trunc);
+    std::streambuf *backup = LogInfo::MapleLogger().rdbuf();
+    LogInfo::MapleLogger().rdbuf(mpltFile.rdbuf());  // change cout's buffer to that of file
+    for (std::pair<std::u16string, MIRSymbol*> entity : GlobalTables::GetConstPool().GetConstU16StringPool()) {
+      LogInfo::MapleLogger() << "var $";
+      entity.second->DumpAsLiteralVar();
+      LogInfo::MapleLogger() << '\n';
+    }
+    for (auto it = classList.begin(); it != classList.end(); ++it) {
+      TyIdx curTyIdx(*it);
+      MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(curTyIdx);
+      const std::string &name = GlobalTables::GetStrTable().GetStringFromStrIdx(type->GetNameStrIdx());
+      if (type->GetKind() == kTypeClass || type->GetKind() == kTypeInterface) {
+        auto *structType = static_cast<MIRStructType*>(type);
+        // skip imported class/interface and incomplete types
+        if (!structType->IsImported() && !structType->IsIncomplete()) {
+          LogInfo::MapleLogger() << "type $" << name << " ";
+          type->Dump(1, true);
+          LogInfo::MapleLogger() << '\n';
+        }
+      }
+    }
+    /* restore cout */
+    LogInfo::MapleLogger().rdbuf(backup);
+  }
+}
+
 
 void MIRModule::DumpClassToFile(const std::string &path) const {
   std::string strPath(path);

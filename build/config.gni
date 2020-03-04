@@ -1,0 +1,26 @@
+#
+# Copyright (c) [2020] Huawei Technologies Co.,Ltd.All rights reserved.
+#
+# OpenArkCompiler is licensed under the Mulan PSL v1.
+# You can use this software according to the terms and conditions of the Mulan PSL v1.
+# You may obtain a copy of Mulan PSL v1 at:
+#
+#     http://license.coscl.org.cn/MulanPSL
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
+# FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v1 for more details.
+#
+# Toolchain setup
+GN_C_COMPILER = "${MAPLE_ROOT}/tools/clang_llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/bin/clang"
+GN_CXX_COMPILER = "${MAPLE_ROOT}/tools/clang_llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/bin/clang++"
+GN_AR_COMPILER = "${MAPLE_ROOT}/tools/clang_llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/bin/llvm-ar"
+target_toolchain = "//build/toolchain:clang"
+set_default_toolchain(target_toolchain)
+
+# Cross compile
+GN_C_CROSS_COMPILER = "/usr/bin/aarch64-linux-gnu-gcc-5"
+GN_CXX_CROSS_COMPILER = "/usr/bin/aarch64-linux-gnu-g++-5"
+GN_AR_CROSS_COMPILER = "/usr/bin/aarch64-linux-gnu-ar"
+GN_RANLIB_CROSS_COMPILER = "/usr/bin/aarch64-linux-gnu-ranlib"

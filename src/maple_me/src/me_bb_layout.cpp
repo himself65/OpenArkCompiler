@@ -279,6 +279,9 @@ void BBLayout::OptimizeBranchTarget(BB &bb) {
     if (brTargetBB->GetPred().empty()) {
       laidOut[brTargetBB->GetBBId()] = true;
       RemoveUnreachable(*brTargetBB);
+      if (needDealWithTryBB) {
+        DealWithStartTryBB();
+      }
     }
   } while (true);
 }
@@ -339,6 +342,9 @@ BB *BBLayout::GetFallThruBBSkippingEmpty(BB &bb) {
     oldFallThru->RemoveBBFromPred(&bb);
     if (oldFallThru->GetPred().empty()) {
       RemoveUnreachable(*oldFallThru);
+      if (needDealWithTryBB) {
+        DealWithStartTryBB();
+      }
     }
   } while (true);
 }
@@ -377,6 +383,60 @@ void BBLayout::ResolveUnconditionalFallThru(BB &bb, BB &nextBB) {
   }
 }
 
+void BBLayout::FixEndTryBB(BB &bb) {
+  BBId prevID = bb.GetBBId() - 1;
+  for (BBId id = prevID; id != 0; --id) {
+    auto prevBB = func.GetBBFromID(id);
+    if (prevBB != nullptr) {
+      if (prevBB->GetAttributes(kBBAttrIsTry) && !prevBB->GetAttributes(kBBAttrIsTryEnd)) {
+        prevBB->SetAttributes(kBBAttrIsTryEnd);
+        func.SetTryBBByOtherEndTryBB(prevBB, &bb);
+      }
+      break;
+    }
+  }
+}
+
+void BBLayout::FixTryBB(BB &startTryBB, BB &nextBB) {
+  if (nextBB.GetBBLabel() != 0) {
+    startTryBB.SetBBLabel(nextBB.GetBBLabel());
+    nextBB.SetBBLabel(0);
+  }
+  startTryBB.GetPred().clear();
+  for (size_t i = 0; i < nextBB.GetPred().size(); ++i) {
+    nextBB.GetPred(i)->ReplaceSucc(&nextBB, &startTryBB);
+  }
+  nextBB.GetPred().clear();
+  startTryBB.ReplaceSucc(startTryBB.GetSucc(0), &nextBB);
+}
+
+void BBLayout::DealWithStartTryBB() {
+  size_t size = startTryBBVec.size();
+  for (size_t i = 0; i < size; ++i) {
+    if (!startTryBBVec[i]) {
+      continue;
+    }
+    auto curBB = func.GetBBFromID(BBId(i));
+    for (size_t j = i + 1; !startTryBBVec[j] && j < size; ++j) {
+      auto nextBB = func.GetBBFromID(BBId(j));
+      if (nextBB != nullptr) {
+        if (nextBB->GetAttributes(kBBAttrIsTry)) {
+          FixTryBB(*curBB, *nextBB);
+        } else {
+          curBB->GetSucc().clear();
+          func.NullifyBBByID(curBB->GetBBId());
+        }
+        break;
+      } else if (j == size - 1) {
+        curBB->GetSucc().clear();
+        func.NullifyBBByID(curBB->GetBBId());
+      }
+    }
+    startTryBBVec[i] = false;
+  }
+  needDealWithTryBB = false;
+}
+
 // remove unnessary bb whose pred size is zero
 // keep cfg correct to rebuild dominance
 void BBLayout::RemoveUnreachable(BB &bb) {
@@ -388,8 +448,20 @@ void BBLayout::RemoveUnreachable(BB &bb) {
     MapleVector<BB*> &preds = succ->GetPred();
     bb.RemoveBBFromVector(preds);
     if (preds.empty()) {
-        RemoveUnreachable(*succ);
+      RemoveUnreachable(*succ);
     }
+  }
+
+  if (bb.GetAttributes(kBBAttrIsTry) && !bb.GetAttributes(kBBAttrIsTryEnd)) {
+    // identify if try bb is the start try bb
+    if (!bb.GetMeStmts().empty() && bb.GetMeStmts().front().GetOp() == OP_try) {
+      startTryBBVec[bb.GetBBId()] = true;
+      needDealWithTryBB = true;
+      return;
+    }
+  }
+  if (bb.GetAttributes(kBBAttrIsTryEnd)) {
+    FixEndTryBB(bb);
   }
   succBBs.clear();
   func.NullifyBBByID(bb.GetBBId());
