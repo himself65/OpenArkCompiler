@@ -38,17 +38,17 @@ Open the front end, back end, and compilation optimization of compilers. Support
 
 - Architecture Design Principles
    - [MAPLE IR Design](doc/en/MapleIRDesign.md)
-   - [RC API](doc/en/RC_API.md)
-   - [Naive RC Insertion Principle](doc/en/Naive_RC_Insertion_Description.md)
-   - [Virtual Table and Interface Table Design](doc/en/Vtable_Itable_Description.md)
-   - [Phase Design](doc/en/Compiler_Phase_Description.md)
+   - [RC API](doc/en/RcApi.md)
+   - [Naive RC Insertion Principle](doc/en/NaiveRcInsertionDescription.md)
+   - [Virtual Table and Interface Table Design](doc/en/VtableItableDescription.md)
+   - [Phase Design](doc/en/CompilerPhaseDescription.md)
 
 
-- [Environment Configuration](doc/en/Development_Preparation.md)
+- [Environment Configuration](doc/en/DevelopmentPreparation.md)
 
-- [Developer Guide](doc/en/Developer_Guide.md)
+- [Developer Guide](doc/en/DeveloperGuide.md)
 
-- [Programming Specifications](doc/en/Programming_Specifications.md)
+- [Programming Specifications](doc/en/ProgrammingSpecifications.md)
 
 
 
