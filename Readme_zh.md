@@ -38,18 +38,19 @@ OpenArkCompiler是来自华为方舟编译器的开源项目。
 
 - 架构设计原理
    - [MAPLE IR Design](doc/en/MapleIRDesign.md)
-   - [RC API](doc/cn/RC_API.md)
-   - [Naive RC操作插入原理](doc/cn/Naive_RC_Insertion_Description.md)
-   - [虚函数表和接口函数表设计介绍](doc/cn/Vtable_Itable_Description.md)
-   - [Phase设计介绍](doc/cn/Compiler_Phase_Description.md)
+   - [RC API](doc/cn/RcApi.md)
+   - [Naive RC操作插入原理](doc/cn/NaiveRcInsertionDescription.md)
+   - [虚函数表和接口函数表设计介绍](doc/cn/VtableItableDescription.md)
+   - [Phase设计介绍](doc/cn/CompilerPhaseDescription.md)
+   - [Maple通用模块应用手册](doc/cn/DeveloperGuide4Utility.md)
 
-- [环境配置](doc/cn/Development_Preparation.md)
+- [环境配置](doc/cn/DevelopmentPreparation.md)
 
-- [开发者指南](doc/cn/Developer_Guide.md)
+- [开发者指南](doc/cn/DeveloperGuide.md)
 
-- [编程规范](doc/cn/Programming_Specifications.md)
+- [编程规范](doc/cn/ProgrammingSpecifications.md)
 
-
+- [C++编程探讨之指针](doc/cn/CPPCodingTalkAboutPointer.md)
 
 ## 许可证
 - [LICENSE](license/LICENSE)
