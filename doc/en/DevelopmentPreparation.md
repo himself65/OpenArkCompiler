@@ -24,7 +24,7 @@ sudo apt-get -y install gcc-5-aarch64-linux-gnu g++-5-aarch64-linux-gnu
 Download **clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04**
 LLVM download address: http://releases.llvm.org/download.html#8.0.0
 
-Place the downloaded files in the `openarkcompiler/tools` directory, open the `openarkcompiler/build/config/BUILDCONFIG.gn` file, and set the three variables `GN_C_COMPILER`, `GN_CXX_COMPILER`, and `GN_AR_COMPILER` to the path where Clang is located. For example:
+Place the downloaded files in the `openarkcompiler/tools` directory, open the `openarkcompiler/build/config.gni` file, and set the three variables `GN_C_COMPILER`, `GN_CXX_COMPILER`, and `GN_AR_COMPILER` to the path where Clang is located. For example:
 
 ```
 GN_C_COMPILER = "${MAPLE_ROOT}/tools/clang_llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/bin/clang"
