@@ -62,6 +62,7 @@ enum OptionIndex : uint64 {
   kStmtPrepuLimit,
   kLpreLimit,
   kLprepulLimit,
+  kPregreNameLimit,
   kDelrcpuLimit,
   kEpreIncludeRef,
   kNoEpreIncludeRef,
@@ -110,6 +111,10 @@ enum OptionIndex : uint64 {
   kProfileColdCount,
   kProfileHotRate,
   kProfileColdRate,
+  kMpl2MplNativeOpt,
+  kMpl2MplOptL1,
+  kMpl2MplOptL2,
+  kMpl2MplNoDot,
   // ----------mplcg begin---------
   kCGQuiet,
   kPie,

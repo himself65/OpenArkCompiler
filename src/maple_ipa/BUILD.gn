@@ -26,6 +26,9 @@ include_directories = [
 src_libmplipa = [
   "src/interleaved_manager.cpp",
   "src/module_phase_manager.cpp",
+  "src/clone.cpp",
+  "src/retype.cpp",
+  "src/callgraph.cpp",
 ]
 
 configs = [ "${MAPLEALL_ROOT}:mapleallcompilecfg" ]

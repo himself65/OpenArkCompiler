@@ -97,6 +97,9 @@ class MIRFunction {
     return baseFuncWithTypeStrIdx;
   }
 
+  GStrIdx GetBaseFuncSigStrIdx() const {
+    return baseFuncSigStrIdx;
+  }
 
   void SetBaseClassNameStrIdx(GStrIdx id) {
     baseClassStrIdx = id;
@@ -422,6 +425,12 @@ class MIRFunction {
     funcType = type;
   }
 
+  TyIdx GetInferredReturnTyIdx() const {
+    return inferredReturnTyIdx;
+  }
+  void SetInferredReturnTyIdx(TyIdx tyIdx) {
+    inferredReturnTyIdx = tyIdx;
+  }
 
   const MapleVector<TyIdx> &GetArgumentsTyIdx() const {
     return argumentsTyIdx;
@@ -563,6 +572,12 @@ class MIRFunction {
     layoutType = type;
   }
 
+  uint32 GetCallTimes() const {
+    return callTimes;
+  }
+  void SetCallTimes(uint32 times) {
+    callTimes = times;
+  }
 
   uint16 GetFrameSize() const {
     return frameSize;
@@ -728,6 +743,8 @@ class MIRFunction {
   StIdx symbolTableIdx;  // the symbol table index of this function
   MIRFuncType *funcType = nullptr;
   TyIdx returnTyIdx{0};                // the declared return type of this function
+  TyIdx inferredReturnTyIdx{0};        // the actual return type of of this function (may be a
+                                    // subclass of the above). 0 means can not be inferred.
   TyIdx classTyIdx{0};                 // class/interface type this function belongs to
   MapleVector<MIRSymbol*> formals{module->GetMPAllocator().Adapter()};  // formal parameter symbols of this function
   MapleSet<MIRSymbol*> retRefSym{module->GetMPAllocator().Adapter()};
@@ -742,6 +759,7 @@ class MIRFunction {
   MapleAllocator dataMPAllocator{dataMemPool};
   MemPool *codeMemPool = memPoolCtrler.NewMemPool("func code mempool");
   MapleAllocator codeMemPoolAllocator{codeMemPool};
+  uint32 callTimes = 0;
   BlockNode *body = nullptr;
   SrcPosition srcPosition{};
   FuncAttrs funcAttrs{};
@@ -798,6 +816,7 @@ class MIRFunction {
   // the string table index of base function name mangled with type info
   GStrIdx baseFuncWithTypeStrIdx{0};
   // funcname + types of args, no type of retv
+  GStrIdx baseFuncSigStrIdx{0};
   GStrIdx signatureStrIdx{0};
 
   void DumpFlavorLoweredThanMmpl() const;

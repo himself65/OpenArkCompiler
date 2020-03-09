@@ -44,14 +44,6 @@ class MplTask {
 
   virtual ~MplTask() {}
 
-  virtual int Run(MplTaskParam*) {
-    return 0;
-  }
-
-  virtual int Finish(MplTaskParam*) {
-    return 0;
-  }
-
   void SetTaskId(uint32 id) {
     taskId = id;
   }
@@ -60,7 +52,23 @@ class MplTask {
     return taskId;
   }
 
+  int Run(MplTaskParam *param = nullptr) {
+    return RunImpl(param);
+  }
+
+  int Finish(MplTaskParam *param = nullptr) {
+    return FinishImpl(param);
+  }
+
  protected:
+  virtual int RunImpl(MplTaskParam *param) {
+    return 0;
+  }
+
+  virtual int FinishImpl(MplTaskParam *param) {
+    return 0;
+  }
+
   uint32 taskId;
 };
 

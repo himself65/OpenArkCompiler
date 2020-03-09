@@ -55,6 +55,15 @@ bool Options::emitVtableImpl = false;
 #if MIR_JAVA
 bool Options::skipVirtualMethod = false;
 #endif
+bool Options::nativeOpt = true;
+bool Options::O1 = false;
+bool Options::O2 = false;
+bool Options::noDot = false;
+bool Options::profileStaticFields = false;
+std::string Options::proFileData = "";
+std::string Options::proFileFuncData = "";
+std::string Options::proFileClassData = "";
+bool Options::checkArrayStore = false;
 enum OptionIndex {
   kUnknown,
   kHelp,

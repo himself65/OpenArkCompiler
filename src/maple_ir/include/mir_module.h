@@ -20,6 +20,7 @@
 #include "opcodes.h"
 #include "mpl_logging.h"
 #include "muid.h"
+#include "profile.h"
 #if MIR_FEATURE_FULL
 #include <string>
 #include <unordered_set>
@@ -185,6 +186,10 @@ class MIRModule {
 
   const MapleSet<StIdx> &GetSymbolSet() const {
     return symbolSet;
+  }
+
+  Profile &GetProfile() {
+    return profile;
   }
 
   void SetSomeSymbolNeedForDecl(bool s) {
@@ -472,6 +477,7 @@ class MIRModule {
   MapleSet<TyIdx> externStructTypeSet;
   MapleSet<StIdx> symbolSet;
   MapleVector<StIdx> symbolDefOrder;
+  Profile profile;
   bool someSymbolNeedForwDecl = false;  // some symbols' addressses used in initialization
 
   std::ostream &out;

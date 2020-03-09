@@ -2372,17 +2372,12 @@ class UnaryMeStmt : public MeStmt {
     opnd = val;
   }
 
-  bool GetDecrefBeforeExit() const {
-    return decrefBeforeExit;
-  }
-
   void Dump(IRMap*) const;
 
   StmtNode &EmitStmt(SSATab &ssaTab);
 
  private:
   MeExpr *opnd = nullptr;
-  bool decrefBeforeExit = false;  // true if decref is inserted due to anticipated function exit
 };
 
 class GotoMeStmt : public MeStmt {

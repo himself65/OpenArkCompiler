@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -12,8 +12,10 @@
  * FIT FOR A PARTICULAR PURPOSE.
  * See the Mulan PSL v1 for more details.
  */
+MODAPHASE(MoPhase_CLONE, DoClone)
 MODAPHASE(MoPhase_CHA, DoKlassHierarchy)
 MODAPHASE(MoPhase_CLINIT, DoClassInit)
+MODAPHASE(MoPhase_CALLGRAPH_ANALYSIS, DoCallGraph)
 #if MIR_JAVA
 MODTPHASE(MoPhase_GENNATIVESTUBFUNC, DoGenerateNativeStubFunc)
 MODAPHASE(MoPhase_VTABLEANALYSIS, DoVtableAnalysis)
@@ -23,4 +25,7 @@ MODTPHASE(MoPhase_JAVAINTRNLOWERING, DoJavaIntrnLowering)
 MODTPHASE(MoPhase_JAVAEHLOWER, JavaEHLowererPhase)
 MODTPHASE(MoPhase_MUIDREPLACEMENT, DoMUIDReplacement)
 MODTPHASE(MoPhase_CHECKCASTGENERATION, DoCheckCastGeneration)
+MODTPHASE(MoPhase_ANALYZECTOR, DoAnalyzeCtor)
+MODTPHASE(MoPhase_CodeReLayout, DoCodeReLayout)
 #endif
+MODTPHASE(MoPhase_CONSTANTFOLD, DoConstantFold)

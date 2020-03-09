@@ -18,6 +18,8 @@
 #include "option.h"
 #include "bin_mpl_export.h"
 #include "mpl_timer.h"
+#include "clone.h"
+#include "callgraph.h"
 #if MIR_JAVA
 #include "native_stub_func.h"
 #include "vtable_analysis.h"
@@ -28,6 +30,9 @@
 #include "native_stub_func.h"
 #include "muid_replacement.h"
 #include "gen_check_cast.h"
+#include "analyzector.h"
+#include "coderelayout.h"
+#include "constantfold.h"
 #endif  // ~MIR_JAVA
 
 namespace {

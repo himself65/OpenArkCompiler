@@ -82,6 +82,15 @@ class Options {
 #if MIR_JAVA
   static bool skipVirtualMethod;
 #endif
+  static bool nativeOpt;
+  static bool O1;
+  static bool O2;
+  static bool noDot;
+  static std::string proFileData;
+  static std::string proFileFuncData;
+  static std::string proFileClassData;
+  static bool profileStaticFields;
+  static bool checkArrayStore;
  private:
   MapleAllocator optionAlloc;
   std::vector<std::string> phaseSeq;

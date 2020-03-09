@@ -27,13 +27,12 @@ namespace maple {
 class DSE {
  public:
   DSE(std::vector<BB*> &&bbVec, BB &commonEntryBB, BB &commonExitBB, SSATab &ssaTab,
-      Dominance &postDom, bool enableDebug = false, bool decouple = false)
+      Dominance &postDom, bool enableDebug = false)
       : enableDebug(enableDebug),
         bbVec(bbVec), commonEntryBB(commonEntryBB),
         commonExitBB(commonExitBB), ssaTab(ssaTab),
         postDom(postDom), bbRequired(bbVec.size(), false),
-        exprRequired(ssaTab.GetVersionStTableSize(), false),
-        decoupleStatic(decouple) {}
+        exprRequired(ssaTab.GetVersionStTableSize(), false) {}
 
   ~DSE() = default;
 
@@ -118,7 +117,6 @@ class DSE {
   std::vector<bool> exprRequired;
   std::forward_list<utils::SafePtr<const VersionSt>> workList{};
   bool cfgUpdated = false;
-  bool decoupleStatic = false;
 };
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_DSE_H

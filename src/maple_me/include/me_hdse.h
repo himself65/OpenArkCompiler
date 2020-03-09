@@ -26,7 +26,7 @@ class MeHDSE : public HDSE {
  public:
   MeHDSE(MeFunction &f, Dominance &pDom, IRMap &map, bool enabledDebug)
       : HDSE(f.GetMIRModule(), f.GetAllBBs(), *f.GetCommonEntryBB(), *f.GetCommonExitBB(), *f.GetMeSSATab(),
-             pDom, map, enabledDebug, MeOption::decoupleStatic) {}
+             pDom, map, enabledDebug) {}
 
   virtual ~MeHDSE() = default;
   void RunHDSE();

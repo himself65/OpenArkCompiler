@@ -35,6 +35,9 @@ src_libmpl2mpl = [
   "src/native_stub_func.cpp",
   "src/vtable_impl.cpp",
   "src/class_hierarchy.cpp",
+  "src/constantfold.cpp",
+  "src/analyzector.cpp",
+  "src/coderelayout.cpp",
 ]
 
 configs = [ "${MAPLEALL_ROOT}:mapleallcompilecfg" ]
