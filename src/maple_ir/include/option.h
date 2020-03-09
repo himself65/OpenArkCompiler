@@ -83,7 +83,6 @@ class Options {
   static bool skipVirtualMethod;
 #endif
   static bool nativeOpt;
-  static bool O1;
   static bool O2;
   static bool noDot;
   static std::string proFileData;
