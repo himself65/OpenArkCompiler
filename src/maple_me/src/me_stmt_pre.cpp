@@ -370,7 +370,7 @@ MeStmt *MeStmtPre::PhiOpndFromRes4Stmt(MeRealOcc *realZ, size_t j, MeExpr *&lhsV
     default:
       ASSERT(false, "MeStmtPre::PhiOpndFromRes4Stmt: NYI");
   }
-  if (stmtQ->GetOp() == OP_dassign || stmtQ->GetOp() == OP_callassigned) {
+  if ((stmtQ->GetOp() == OP_dassign || stmtQ->GetOp() == OP_callassigned) && realZ->GetMeExpr() != nullptr) {
     MeExpr *retOpnd = GetReplaceMeExpr(realZ->GetMeExpr(), phiBB, j);
     if (retOpnd != nullptr) {
       lhsVar = retOpnd;
@@ -532,7 +532,7 @@ void MeStmtPre::CreateSortedOccs() {
   PreWorkCand *workCand = GetWorkCand();
   auto *stmtWkCand = static_cast<PreStmtWorkCand*>(workCand);
   if ((stmtWkCand->GetTheMeStmt()->GetOp() == OP_dassign || stmtWkCand->GetTheMeStmt()->GetOp() == OP_callassigned) &&
-      !stmtWkCand->LHSIsFinal()) {
+       stmtWkCand->GetTheMeStmt()->GetVarLHS() != nullptr && !stmtWkCand->LHSIsFinal()) {
     VarMeExpr *lhsVar = stmtWkCand->GetTheMeStmt()->GetVarLHS();
     OStIdx ostIdx = lhsVar->GetOStIdx();
     MapleMap<OStIdx, MapleSet<uint32>*>::iterator uMapIt = useOccurMap.find(ostIdx);
@@ -732,6 +732,9 @@ void MeStmtPre::ConstructUseOccurMap() {
       continue;
     }
     VarMeExpr *lhsVar = stmtWkCand->GetTheMeStmt()->GetVarLHS();
+    if (lhsVar == nullptr) {
+      continue;
+    }
     OStIdx ostIdx = lhsVar->GetOStIdx();
     if (useOccurMap.find(ostIdx) == useOccurMap.end()) {
       // add an entry for ostIdx
@@ -763,7 +766,7 @@ PreStmtWorkCand *MeStmtPre::CreateStmtRealOcc(MeStmt &meStmt, int seqStmt) {
     wkCand = static_cast<PreStmtWorkCand*>(wkCand->GetNext());
   }
   MeExpr *meExpr = nullptr;
-  if (meStmt.GetOp() == OP_dassign || meStmt.GetOp() == OP_callassigned) {
+  if ((meStmt.GetOp() == OP_dassign || meStmt.GetOp() == OP_callassigned) && meStmt.GetVarLHS() != nullptr) {
     MapleStack<VarMeExpr*> *pStack = versionStackVec.at(meStmt.GetVarLHS()->GetOStIdx());
     meExpr = pStack->top();
   }

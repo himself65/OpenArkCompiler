@@ -70,6 +70,7 @@ class MeOption {
   static uint32 eprePULimit;
   static uint32 lpreLimit;
   static uint32 lprePULimit;
+  static uint32 pregRenameLimit;
   static uint32 delRcPULimit;
   static bool ignoreIPA;
   static bool epreIncludeRef;
@@ -93,7 +94,6 @@ class MeOption {
   static bool lpreSpeculate;
   static bool spillAtCatch;
   static bool optDirectCall;
-  static bool decoupleStatic;
  private:
   std::unordered_set<std::string> skipPhases;
   MapleAllocator optionAlloc;

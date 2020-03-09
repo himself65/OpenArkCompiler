@@ -49,6 +49,7 @@ uint32 MeOption::epreLimit = UINT32_MAX;
 uint32 MeOption::eprePULimit = UINT32_MAX;
 uint32 MeOption::lpreLimit = UINT32_MAX;
 uint32 MeOption::lprePULimit = UINT32_MAX;
+uint32 MeOption::pregRenameLimit = UINT32_MAX;
 bool MeOption::noDelegateRC = false;
 bool MeOption::noCondBasedRC = false;
 bool MeOption::clinitPre = true;
@@ -62,6 +63,8 @@ bool MeOption::lpreSpeculate = false;
 bool MeOption::spillAtCatch = false;
 bool MeOption::rcLowering = true;
 bool MeOption::optDirectCall = false;
+bool MeOption::propAtPhi = true;
+bool MeOption::dseKeepRef = false;
 
 void MeOption::SplitPhases(const std::string &str, std::unordered_set<std::string> &set) const {
   std::string s{ str };

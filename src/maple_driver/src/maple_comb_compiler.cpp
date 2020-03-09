@@ -97,6 +97,23 @@ void MapleCombCompiler::PrintCommand(const MplOptions &options) const {
                          << GetInputFileName(options) << options.GetPrintCommandStr() << '\n';
 }
 
+void MapleCombCompiler::DecideMeRealLevel(MeOption &meOption, const std::vector<mapleOption::Option> &inputOptions) {
+  for (const mapleOption::Option &opt : inputOptions) {
+    switch (opt.Index()) {
+      case kMeOptL1:
+        meOption.optLevel = MeOption::kLevelOne;
+        break;
+      case kMeOptL2:
+        meOption.optLevel = MeOption::kLevelTwo;
+        // Turn the followings ON only at O2
+        meOption.optDirectCall = true;
+        meOption.epreIncludeRef = true;
+        break;
+      default:
+        break;
+    }
+  }
+}
 
 MeOption *MapleCombCompiler::MakeMeOptions(const MplOptions &options, MemPool &optMp) {
   MeOption *meOption = new MeOption(optMp);
@@ -104,6 +121,10 @@ MeOption *MapleCombCompiler::MakeMeOptions(const MplOptions &options, MemPool &o
   if (it == options.GetExeOptions().end()) {
     LogInfo::MapleLogger() << "no me input options\n";
     return meOption;
+  }
+  DecideMeRealLevel(*meOption, it->second);
+  if (options.HasSetDebugFlag()) {
+    LogInfo::MapleLogger() << "Real Me level:" << std::to_string(meOption->optLevel) << "\n";
   }
   for (const mapleOption::Option &opt : it->second) {
     if (options.HasSetDebugFlag()) {
@@ -204,6 +225,9 @@ MeOption *MapleCombCompiler::MakeMeOptions(const MplOptions &options, MemPool &o
       case kLprepulLimit:
         meOption->lprePULimit = std::stoul(opt.Args(), nullptr);
         break;
+      case kPregreNameLimit:
+        meOption->pregRenameLimit = std::stoul(opt.Args(), nullptr);
+        break;
       case kDelrcpuLimit:
         meOption->delRcPULimit = std::stoul(opt.Args(), nullptr);
         break;
@@ -254,6 +278,25 @@ MeOption *MapleCombCompiler::MakeMeOptions(const MplOptions &options, MemPool &o
   return meOption;
 }
 
+void MapleCombCompiler::DecideMpl2MplRealLevel(Options &mpl2mplOption,
+                                               const std::vector<mapleOption::Option> &inputOptions,
+                                               const MplOptions &options) {
+  for (const mapleOption::Option &opt : inputOptions) {
+    switch (opt.Index()) {
+      case kMpl2MplOptL1:
+        mpl2mplOption.O1 = true;
+        mpl2mplOption.O2 = true;
+        mpl2mplOption.usePreg = true;
+        break;
+      case kMpl2MplOptL2:
+        mpl2mplOption.O2 = true;
+        mpl2mplOption.usePreg = true;
+        break;
+      default:
+        break;
+    }
+  }
+}
 
 Options *MapleCombCompiler::MakeMpl2MplOptions(const MplOptions &options, MemPool &optMp) {
   auto *mpl2mplOption = new Options(optMp);
@@ -262,6 +305,7 @@ Options *MapleCombCompiler::MakeMpl2MplOptions(const MplOptions &options, MemPoo
     LogInfo::MapleLogger() << "no mpl2mpl input options\n";
     return mpl2mplOption;
   }
+  DecideMpl2MplRealLevel(*mpl2mplOption, it->second, options);
   for (const mapleOption::Option &opt : it->second) {
     if (options.HasSetDebugFlag()) {
       LogInfo::MapleLogger() << "mpl2mpl options: " << opt.Index() << " " << opt.OptionKey() << " " << opt.Args()
@@ -398,6 +442,18 @@ Options *MapleCombCompiler::MakeMpl2MplOptions(const MplOptions &options, MemPoo
         mpl2mplOption->skipVirtualMethod = (opt.Type() == kEnable);
         break;
 #endif
+      case kMpl2MplNativeOpt:
+        mpl2mplOption->nativeOpt = (opt.Type() == kEnable);
+        break;
+      case kMpl2MplOptL1:
+        // Already handled above in DecideMpl2MplRealLevel
+        break;
+      case kMpl2MplOptL2:
+        // Already handled above in DecideMpl2MplRealLevel
+        break;
+      case kMpl2MplNoDot:
+        mpl2mplOption->noDot = (opt.Type() == kEnable);
+        break;
       default:
         WARN(kLncWarn, "input invalid key for mpl2mpl " + opt.OptionKey());
         break;

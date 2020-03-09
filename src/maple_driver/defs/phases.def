@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -14,23 +14,41 @@
  */
 // Phase arguments are: name, condition. By default, all phases are required, so the condition value is 'true'.
 // You can use condition to control these phases and your custom phases. E.g. ADD_PHASE("custom_phase", option1 == value1 [more conditions...])
+ADD_PHASE("clone", true)
 ADD_PHASE("classhierarchy", true)
+ADD_PHASE("callgraph", true)
 ADD_PHASE("vtableanalysis", true)
 ADD_PHASE("reflectionanalysis", true)
 ADD_PHASE("gencheckcast", true)
 ADD_PHASE("javaintrnlowering", true)
+ADD_PHASE("analyzector", true)
 // mephase begin
+ADD_PHASE("bypatheh", MeOption::optLevel == 2)
+ADD_PHASE("loopcanon", MeOption::optLevel == 2)
+ADD_PHASE("splitcriticaledge", MeOption::optLevel == 2)
 ADD_PHASE("ssatab", true)
 ADD_PHASE("aliasclass", true)
 ADD_PHASE("ssa", true)
-ADD_PHASE("analyzerc", true)
+ADD_PHASE("dse", MeOption::optLevel == 2)
+ADD_PHASE("abcopt", MeOption::optLevel == 2)
+ADD_PHASE("ssadevirt", MeOption::optLevel == 2)
+ADD_PHASE("hprop", MeOption::optLevel == 2)
+ADD_PHASE("hdse", MeOption::optLevel == 2)
+ADD_PHASE("may2dassign", MeOption::optLevel == 2)
+ADD_PHASE("condbasednpc", MeOption::optLevel == 2)
+ADD_PHASE("epre", MeOption::optLevel == 2)
+ADD_PHASE("stmtpre", MeOption::optLevel == 2)
+ADD_PHASE("analyzerc", MeOption::optLevel == 2)
 ADD_PHASE("rclowering", true)
-ADD_PHASE("gclowering", true)
+ADD_PHASE("rename2preg", MeOption::optLevel == 2)
+//ADD_PHASE("lpre", MeOption::optLevel == 2)
+ADD_PHASE("pregrename", MeOption::optLevel == 2)
 ADD_PHASE("emit", true)
 // mephase end
 ADD_PHASE("GenNativeStubFunc", true)
 ADD_PHASE("clinit", true)
 ADD_PHASE("VtableImpl", true)
+ADD_PHASE("CodeReLayout", MeOption::optLevel == 2)
 ADD_PHASE("javaehlower", true)
-ADD_PHASE("DecoupleStatic", true)
 ADD_PHASE("MUIDReplacement", true)
+ADD_PHASE("ConstantFold", true)

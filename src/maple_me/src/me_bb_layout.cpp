@@ -235,7 +235,7 @@ void BBLayout::OptimizeBranchTarget(BB &bb) {
   }
   do {
     ASSERT(!bb.GetSucc().empty(), "container check");
-    BB *brTargetBB = bb.GetKind() == kBBCondGoto ? bb.GetSucc(1) : bb.GetSucc(0);
+    BB *brTargetBB = bb.GetKind() == kBBCondGoto ? bb.GetSucc().back() : bb.GetSucc().front();
     if (brTargetBB->GetAttributes(kBBAttrWontExit)) {
       return;
     }
@@ -247,7 +247,7 @@ void BBLayout::OptimizeBranchTarget(BB &bb) {
     // optimize stmt
     BB *newTargetBB = brTargetBB->GetSucc().front();
     if (brTargetBB->GetKind() == kBBCondGoto) {
-      newTargetBB = brTargetBB->GetSucc(1);
+      newTargetBB = brTargetBB->GetSucc().back();
     }
     LabelIdx newTargetLabel = func.GetOrCreateBBLabel(*newTargetBB);
     if (func.GetIRMap() != nullptr) {

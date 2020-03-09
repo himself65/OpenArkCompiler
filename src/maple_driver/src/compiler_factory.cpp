@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -83,6 +83,11 @@ ErrorCode CompilerFactory::DeleteTmpFiles(const MplOptions &mplOptions, const st
 }
 
 ErrorCode CompilerFactory::Compile(const MplOptions &mplOptions) {
+  if (compileFinished) {
+    LogInfo::MapleLogger() <<
+        "Failed! Compilation has been completed in previous time and multi-instance compilation is not supported\n";
+    return kErrorCompileFail;
+  }
   std::vector<Compiler*> compilers;
   if (compilerSelector == nullptr) {
     LogInfo::MapleLogger() << "Failed! Compiler is null." << "\n";
@@ -103,6 +108,8 @@ ErrorCode CompilerFactory::Compile(const MplOptions &mplOptions) {
       return ret;
     }
   }
+  // Compiler finished
+  compileFinished = true;
 
   if (!mplOptions.HasSetSaveTmps() || !mplOptions.GetSaveFiles().empty()) {
     std::vector<std::string> tmpFiles;

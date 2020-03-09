@@ -499,26 +499,17 @@ void RCLowering::RCLower() {
 
 MeExpr *RCLowering::HandleIncRefAndDecRefStmt(MeStmt &stmt) {
   Opcode opCode = stmt.GetOp();
-  MIRIntrinsicID rcCallID = INTRN_UNDEFINED;
-
-  if (opCode == OP_incref) {
-    rcCallID = INTRN_MCCIncRef;
-  } else if (opCode == OP_decref) {
-    rcCallID = INTRN_MCCDecRef;
-  } else if (opCode == OP_decrefreset) {
-    rcCallID = INTRN_MCCDecRefReset;
+  if (opCode == OP_decref) {
+    stmt.GetBB()->RemoveMeStmt(&stmt);
+    return stmt.GetOpnd(0);
   }
 
-  if (rcCallID == INTRN_UNDEFINED) {
+  if (opCode != OP_incref && opCode != OP_decrefreset) {
     return nullptr;
   }
 
-  auto &unaryMeStmt = static_cast<UnaryMeStmt&>(stmt);
-  if (opCode == OP_decref && !unaryMeStmt.GetDecrefBeforeExit()) {
-    stmt.GetBB()->RemoveMeStmt(&stmt);
-    return unaryMeStmt.GetOpnd();
-  }
-  std::vector<MeExpr*> opnds = { unaryMeStmt.GetOpnd() };
+  MIRIntrinsicID rcCallID = opCode == OP_incref ? INTRN_MCCIncRef : INTRN_MCCDecRefReset;
+  std::vector<MeExpr*> opnds = { stmt.GetOpnd(0) };
   IntrinsiccallMeStmt *rcCall = CreateRCIntrinsic(rcCallID, stmt, opnds);
   stmt.GetBB()->ReplaceMeStmt(&stmt, rcCall);
   return nullptr;
@@ -556,7 +547,9 @@ void RCLowering::BBLower(BB &bb) {
   initializedFields.clear();
   needSpecialHandleException = bb.GetAttributes(kBBAttrIsCatch);
   for (auto &stmt : bb.GetMeStmts()) {
-    pendingDec = stmt.GetLHSRef(ssaTab, false);
+    if ((func.GetHints() & kAnalyzeRCed) == 0) {
+      pendingDec = stmt.GetLHSRef(ssaTab, false);
+    }
     Opcode opcode = stmt.GetOp();
     if (opcode == OP_return) {
       rets.push_back(&stmt);
