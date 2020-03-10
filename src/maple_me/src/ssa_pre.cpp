@@ -1425,8 +1425,6 @@ void SSAPre::BuildWorkListStmt(MeStmt *meStmt, uint32 seqStmt, bool isRebuilt, M
     case OP_throw: {
       auto *thrMeStmt = static_cast<ThrowMeStmt*>(meStmt);
       BuildWorkListExpr(meStmt, seqStmt, thrMeStmt->GetOpnd(), isRebuilt, tempVar, true);
-      //      if (!isRebuilt)
-      //        CreateExitOcc(bb);
       break;
     }
     case OP_iassign: {

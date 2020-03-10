@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -104,13 +104,17 @@ MeExpr *MeSSAUpdate::RenameExpr(MeExpr &meExpr, bool &changed) {
     case kMeOpIvar: {
       auto &ivarMeExpr = static_cast<IvarMeExpr&>(meExpr);
       IvarMeExpr newMeExpr(kInvalidExprID);
+      if (ivarMeExpr.GetMu() == nullptr) {
+        newMeExpr.SetMuVal(nullptr);
+      } else {
+        newMeExpr.SetMuVal(static_cast<VarMeExpr*>(RenameExpr(*ivarMeExpr.GetMu(), needRehash)));
+      }
       newMeExpr.SetBase(RenameExpr(*ivarMeExpr.GetBase(), needRehash));
       if (needRehash) {
         changed = true;
         newMeExpr.SetFieldID(ivarMeExpr.GetFieldID());
         newMeExpr.SetTyIdx(ivarMeExpr.GetTyIdx());
         newMeExpr.InitBase(ivarMeExpr.GetOp(), ivarMeExpr.GetPrimType(), ivarMeExpr.GetNumOpnds());
-        newMeExpr.SetMuVal(ivarMeExpr.GetMu());
         return irMap.HashMeExpr(newMeExpr);
       }
       return &meExpr;
@@ -158,17 +162,27 @@ MeExpr *MeSSAUpdate::RenameExpr(MeExpr &meExpr, bool &changed) {
 
 void MeSSAUpdate::RenameStmts(BB &bb) {
   for (auto &stmt : bb.GetMeStmts()) {
+    MapleMap<OStIdx, VarMeExpr*> *muList = stmt.GetMuList();
+    if (muList != nullptr) {
+      for (auto &mu : *muList) {
+        auto it = renameStacks.find(mu.first);
+        if (it != renameStacks.end()) {
+          mu.second = static_cast<VarMeExpr*>(it->second->top());
+        }
+      }
+    }
     // rename the expressions
-    bool changed = false;
     for (size_t i = 0; i < stmt.NumMeStmtOpnds(); ++i) {
+      bool changed = false;
       stmt.SetOpnd(i, RenameExpr(*stmt.GetOpnd(i), changed /* dummy */));
     }
     // process mayDef
     MapleMap<OStIdx, ChiMeNode*> *chiList = stmt.GetChiList();
     if (chiList != nullptr) {
-      for (const auto &chi : *chiList) {
+      for (auto &chi : *chiList) {
         auto it = renameStacks.find(chi.first);
         if (it != renameStacks.end() && chi.second != nullptr) {
+          chi.second->SetRHS(static_cast<VarMeExpr*>(it->second->top()));
           it->second->push(chi.second->GetLHS());
         }
       }

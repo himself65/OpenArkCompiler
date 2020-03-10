@@ -439,6 +439,26 @@ void MeCFG::FixMirCFG() {
   }
 }
 
+bool MeCFG::IsStartTryBB(maple::BB &meBB) const {
+  if (!meBB.GetAttributes(kBBAttrIsTry) || meBB.GetAttributes(kBBAttrIsTryEnd)) {
+    return false;
+  }
+  return (!meBB.GetStmtNodes().empty() && meBB.GetStmtNodes().front().GetOpCode() == OP_try);
+}
+
+void MeCFG::FixTryBB(maple::BB &startBB, maple::BB &nextBB) {
+  if (nextBB.GetBBLabel() != 0) {
+    startBB.SetBBLabel(nextBB.GetBBLabel());
+    func.SetLabelBBAt(nextBB.GetBBLabel(), &startBB);
+    nextBB.SetBBLabel(0);
+  }
+  startBB.GetPred().clear();
+  for (size_t i = 0; i < nextBB.GetPred().size(); ++i) {
+    nextBB.GetPred(i)->ReplaceSucc(&nextBB, &startBB);
+  }
+  nextBB.GetPred().clear();
+  startBB.ReplaceSucc(startBB.GetSucc(0), &nextBB);
+}
 
 // analyse the CFG to find the BBs that are not reachable from function entries
 // and delete them
@@ -454,6 +474,29 @@ void MeCFG::UnreachCodeAnalysis(bool updatePhi) {
     auto *bb = *bIt;
     BBId idx = bb->GetBBId();
     if (!visitedBBs[idx] && !bb->GetAttributes(kBBAttrIsEntry)) {
+      // if bb is StartTryBB, relationship between endtry and try should be maintained
+      if (IsStartTryBB(*bb)) {
+        bool needFixTryBB = false;
+        size_t size = func.GetAllBBs().size();
+        for (size_t nextIdx = idx + 1; nextIdx < size; ++nextIdx) {
+          auto nextBB = func.GetBBFromID(BBId(nextIdx));
+          if (nextBB == nullptr) {
+            continue;
+          }
+          if (!visitedBBs[nextIdx] && nextBB->GetAttributes(kBBAttrIsTryEnd)) {
+            break;
+          }
+          if (visitedBBs[nextIdx]) {
+            needFixTryBB = true;
+            visitedBBs[idx] = true;
+            FixTryBB(*bb, *nextBB);
+            break;
+          }
+        }
+        if (needFixTryBB) {
+          continue;
+        }
+      }
       bb->SetAttributes(kBBAttrWontExit);
       // avoid redundant pred before adding to common_exit_bb's pred list
       size_t pi = 0;

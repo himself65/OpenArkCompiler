@@ -400,6 +400,7 @@ void BBLayout::FixEndTryBB(BB &bb) {
 void BBLayout::FixTryBB(BB &startTryBB, BB &nextBB) {
   if (nextBB.GetBBLabel() != 0) {
     startTryBB.SetBBLabel(nextBB.GetBBLabel());
+    func.SetLabelBBAt(nextBB.GetBBLabel(), &startTryBB);
     nextBB.SetBBLabel(0);
   }
   startTryBB.GetPred().clear();
