@@ -2214,13 +2214,11 @@ static void GenJStringType(MIRModule &module) {
   GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName("dummy");
   metaClassType.GetFields().push_back(FieldPair(strIdx, TyIdxFieldAttrPair(TyIdx(PTY_ref), FieldAttrs())));
   strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName("__class_meta__");
+  metaClassType.SetNameStrIdx(strIdx);
   TyIdx tyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&metaClassType);
   // Global
   module.GetTypeNameTab()->SetGStrIdxToTyIdx(strIdx, tyIdx);
   ASSERT(GlobalTables::GetTypeTable().GetTypeTable().empty() == false, "container check");
-  if (GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->GetNameStrIdx() == 0u) {
-    GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->SetNameStrIdx(strIdx);
-  }
 }
 
 bool MIRParser::ParseMIR(std::ifstream &mplFile) {

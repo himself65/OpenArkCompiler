@@ -112,7 +112,6 @@ enum OptionIndex : uint64 {
   kProfileHotRate,
   kProfileColdRate,
   kMpl2MplNativeOpt,
-  kMpl2MplOptL1,
   kMpl2MplOptL2,
   kMpl2MplNoDot,
   // ----------mplcg begin---------

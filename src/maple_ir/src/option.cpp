@@ -56,7 +56,6 @@ bool Options::emitVtableImpl = false;
 bool Options::skipVirtualMethod = false;
 #endif
 bool Options::nativeOpt = true;
-bool Options::O1 = false;
 bool Options::O2 = false;
 bool Options::noDot = false;
 bool Options::profileStaticFields = false;

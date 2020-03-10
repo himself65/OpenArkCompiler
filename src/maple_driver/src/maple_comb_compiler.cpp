@@ -282,18 +282,10 @@ void MapleCombCompiler::DecideMpl2MplRealLevel(Options &mpl2mplOption,
                                                const std::vector<mapleOption::Option> &inputOptions,
                                                const MplOptions &options) {
   for (const mapleOption::Option &opt : inputOptions) {
-    switch (opt.Index()) {
-      case kMpl2MplOptL1:
-        mpl2mplOption.O1 = true;
-        mpl2mplOption.O2 = true;
-        mpl2mplOption.usePreg = true;
-        break;
-      case kMpl2MplOptL2:
-        mpl2mplOption.O2 = true;
-        mpl2mplOption.usePreg = true;
-        break;
-      default:
-        break;
+    if (opt.Index() == kMpl2MplOptL2) {
+      mpl2mplOption.O2 = true;
+      mpl2mplOption.usePreg = true;
+      break;
     }
   }
 }
@@ -444,9 +436,6 @@ Options *MapleCombCompiler::MakeMpl2MplOptions(const MplOptions &options, MemPoo
 #endif
       case kMpl2MplNativeOpt:
         mpl2mplOption->nativeOpt = (opt.Type() == kEnable);
-        break;
-      case kMpl2MplOptL1:
-        // Already handled above in DecideMpl2MplRealLevel
         break;
       case kMpl2MplOptL2:
         // Already handled above in DecideMpl2MplRealLevel
