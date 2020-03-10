@@ -42,6 +42,7 @@ Open the front end, back end, and compilation optimization of compilers. Support
    - [Naive RC Insertion Principle](doc/en/NaiveRcInsertionDescription.md)
    - [Virtual Table and Interface Table Design](doc/en/VtableItableDescription.md)
    - [Phase Design](doc/en/CompilerPhaseDescription.md)
+   - [Application Manual of Maple General Modules](doc/en/DeveloperGuide4Utility.md)
 
 
 - [Environment Configuration](doc/en/DevelopmentPreparation.md)
@@ -50,7 +51,7 @@ Open the front end, back end, and compilation optimization of compilers. Support
 
 - [Programming Specifications](doc/en/ProgrammingSpecifications.md)
 
-
+- [Discussion of Pointer in C++ Programming](doc/en/CPPCodingTalkAboutPointer.md)
 
 ## License
 - [LICENSE](license/LICENSE)
