@@ -427,33 +427,33 @@ class MIRModule {
     return classList;
   }
 
-  const std::map<PUIdx, std::vector<CallSite>> &GetMethod2TargetMap() const {
+  const std::map<PUIdx, std::vector<CallInfo*>> &GetMethod2TargetMap() const {
     return method2TargetMap;
   }
 
-  std::vector<CallSite> &GetMemFromMethod2TargetMap(PUIdx methodPuIdx) {
+  std::vector<CallInfo*> &GetMemFromMethod2TargetMap(PUIdx methodPuIdx) {
     return method2TargetMap[methodPuIdx];
   }
 
-  void SetMethod2TargetMap(const std::map<PUIdx, std::vector<CallSite>> &map) {
+  void SetMethod2TargetMap(const std::map<PUIdx, std::vector<CallInfo*>> &map) {
     method2TargetMap = map;
   }
 
-  void AddMemToMethod2TargetMap(PUIdx idx, const std::vector<CallSite> &callSite) {
+  void AddMemToMethod2TargetMap(PUIdx idx, const std::vector<CallInfo*> &callSite) {
     method2TargetMap[idx] = callSite;
   }
 
-  bool HasTargetHash(PUIdx idx, uint64 key) const {
+  bool HasTargetHash(PUIdx idx, uint32 key) const {
     auto it = method2TargetHash.find(idx);
     if (it == method2TargetHash.end()) {
         return false;
     }
     return it->second.find(key) != it->second.end();
   }
-  void InsertTargetHash(PUIdx idx, uint64 key) {
+  void InsertTargetHash(PUIdx idx, uint32 key) {
     method2TargetHash[idx].insert(key);
   }
-  void AddValueToMethod2TargetHash(PUIdx idx, const std::unordered_set<uint64> &value) {
+  void AddValueToMethod2TargetHash(PUIdx idx, const std::unordered_set<uint32> &value) {
     method2TargetHash[idx] = value;
   }
 
@@ -513,8 +513,8 @@ class MIRModule {
   MapleVector<GStrIdx> importPaths;
   MapleSet<uint32> classList;
 
-  std::map<PUIdx, std::vector<CallSite>> method2TargetMap;
-  std::map<PUIdx, std::unordered_set<uint64>> method2TargetHash;
+  std::map<PUIdx, std::vector<CallInfo*>> method2TargetMap;
+  std::map<PUIdx, std::unordered_set<uint32>> method2TargetHash;
   std::map<GStrIdx, EAConnectionGraph*> eaSummary;
 
   MIRFunction *entryFunc = nullptr;
