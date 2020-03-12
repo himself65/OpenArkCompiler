@@ -962,6 +962,10 @@ class MIRStructType : public MIRType {
     CHECK_FATAL(false, "can not use GetPragmaVec");
   }
 
+  virtual std::vector<MIRPragma*> &GetPragmaVec() {
+    CHECK_FATAL(false, "can not use GetPragmaVec");
+  }
+
   virtual const MIREncodedArray &GetStaticValue() const {
     CHECK_FATAL(false, "can not use GetStaticValue");
   }
@@ -1103,7 +1107,7 @@ class MIRClassType : public MIRStructType {
     return infoIsString.at(n);
   }
 
-  std::vector<MIRPragma*> &GetPragmaVec() {
+  std::vector<MIRPragma*> &GetPragmaVec() override {
     return pragmaVec;
   }
   const std::vector<MIRPragma*> &GetPragmaVec() const override {
@@ -1245,7 +1249,7 @@ class MIRInterfaceType : public MIRStructType {
     return infoIsString.at(n);
   }
 
-  std::vector<MIRPragma*> &GetPragmaVec() {
+  std::vector<MIRPragma*> &GetPragmaVec() override {
     return pragmaVec;
   }
   const std::vector<MIRPragma*> &GetPragmaVec() const override {

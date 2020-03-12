@@ -35,8 +35,8 @@ VtableAnalysis::VtableAnalysis(MIRModule *mod, KlassHierarchy *kh, bool dump) : 
   voidPtrType = GlobalTables::GetTypeTable().GetVoidPtr();
   // zeroConst and oneConst are shared amony itab entries. It is safe to share them because
   // they are never removed by anybody.
-  zeroConst = GetMIRModule().GetMemPool()->New<MIRIntConst>(0, *voidPtrType);
-  oneConst = GetMIRModule().GetMemPool()->New<MIRIntConst>(1, *voidPtrType);
+  zeroConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(0, *voidPtrType);
+  oneConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(1, *voidPtrType);
   for (Klass *klass : klassHierarchy->GetTopoSortedKlasses()) {
     ASSERT(klass != nullptr, "null ptr check!");
     GenVtableList(*klass);
@@ -296,13 +296,13 @@ void VtableAnalysis::GenItableDefinition(const Klass &klass) {
     auto *secondItabEmitArray = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), *voidPtrType);
     // remember count in secondItabVec
     count = ((secondConflictList.size() | (1UL << (kShiftCountBit - 1))) << kShiftCountBit) + count;
-    secondItabEmitArray->PushBack(GetMIRModule().GetMemPool()->New<MIRIntConst>(count, *voidPtrType));
+    secondItabEmitArray->PushBack(GlobalTables::GetIntConstTable().GetOrCreateIntConst(count, *voidPtrType));
     secondItabEmitArray->PushBack(oneConst);  // padding
     for (uint32 i = 0; i < kItabSecondHashSize; ++i) {
       if (!secondItab[i] && !secondConflictFlag[i]) {
         continue;
       } else {
-        secondItabEmitArray->PushBack(GetMIRModule().GetMemPool()->New<MIRIntConst>(i, *voidPtrType));
+        secondItabEmitArray->PushBack(GlobalTables::GetIntConstTable().GetOrCreateIntConst(i, *voidPtrType));
         if (secondItab[i]) {
           secondItabEmitArray->PushBack(
             GetMIRModule().GetMemPool()->New<MIRAddroffuncConst>(secondItab[i]->GetPuidx(), *voidPtrType));
@@ -316,7 +316,7 @@ void VtableAnalysis::GenItableDefinition(const Klass &klass) {
       ASSERT_NOT_NULL(func);
       const std::string &signatureName = DecodeBaseNameWithType(*func);
       uint32 nameIdx = ReflectionAnalysis::FindOrInsertRepeatString(signatureName);
-      secondItabEmitArray->PushBack(GetMIRModule().GetMemPool()->New<MIRIntConst>(nameIdx, *voidPtrType));
+      secondItabEmitArray->PushBack(GlobalTables::GetIntConstTable().GetOrCreateIntConst(nameIdx, *voidPtrType));
       secondItabEmitArray->PushBack(
         GetMIRModule().GetMemPool()->New<MIRAddroffuncConst>(func->GetPuidx(), *voidPtrType));
     }

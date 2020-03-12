@@ -423,7 +423,8 @@ MIRType *ArrayNode::GetArrayType(const TypeTable &tt) {
 
 const BaseNode *ArrayNode::GetDim(const MIRModule &mod, TypeTable &tt, int i) const {
   const auto *arrayType = static_cast<const MIRArrayType*>(GetArrayType(tt));
-  auto *mirConst = mod.CurFuncCodeMemPool()->New<MIRIntConst>(i, *tt.GetTypeFromTyIdx(arrayType->GetElemTyIdx()));
+  auto *mirConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(
+      i, *tt.GetTypeFromTyIdx(arrayType->GetElemTyIdx()));
   return mod.CurFuncCodeMemPool()->New<ConstvalNode>(mirConst);
 }
 BaseNode *ArrayNode::GetDim(const MIRModule &mod, TypeTable &tt, int i) {
@@ -1068,33 +1069,42 @@ void BlockNode::Dump(int32 indent, const MIRSymbolTable *theSymTab, MIRPregTable
   // output puid for debugging purpose
   if (isFuncbody) {
     theMIRModule->CurFunction()->DumpFuncBody(indent);
-    if (theSymTab != nullptr && thePregTab != nullptr) {
+    if (theSymTab != nullptr || thePregTab != nullptr) {
       // print the locally declared type names
-      for (auto it : theMIRModule->CurFunction()->GetGStrIdxToTyIdxMap()) {
-        const std::string &name = GlobalTables::GetStrTable().GetStringFromStrIdx(it.first);
-        MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(it.second);
-        PrintIndentation(indent + 1);
-        LogInfo::MapleLogger() << "type %" << name << " ";
-        if (type->GetKind() != kTypeByName) {
-          type->Dump(indent + 2, true);
-        } else {
-          type->Dump(indent + 2);
+      if (theMIRModule->CurFunction()->HaveTypeNameTab()) {
+        for (auto it : theMIRModule->CurFunction()->GetGStrIdxToTyIdxMap()) {
+          const std::string &name = GlobalTables::GetStrTable().GetStringFromStrIdx(it.first);
+          MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(it.second);
+          PrintIndentation(indent + 1);
+          LogInfo::MapleLogger() << "type %" << name << " ";
+          if (type->GetKind() != kTypeByName) {
+            type->Dump(indent + 2, true);
+          } else {
+            type->Dump(indent + 2);
+          }
+          LogInfo::MapleLogger() << '\n';
+        }
+      }
+      // print the locally declared variables
+      if (theSymTab != nullptr) {
+        theSymTab->Dump(true, indent + 1);
+      }
+      if (thePregTab != nullptr) {
+        thePregTab->DumpRef(indent + 1);
+      }
+    }
+    LogInfo::MapleLogger() << '\n';
+    if (theMIRModule->CurFunction()->NeedEmitAliasInfo()) {
+      for (std::pair<GStrIdx, MIRAliasVars> it : theMIRModule->CurFunction()->GetAliasVarMap()) {
+        LogInfo::MapleLogger() << "ALIAS %" << GlobalTables::GetStrTable().GetStringFromStrIdx(it.first) << " %"
+                               << GlobalTables::GetStrTable().GetStringFromStrIdx(it.second.memPoolStrIdx) << " ";
+        GlobalTables::GetTypeTable().GetTypeFromTyIdx(it.second.tyIdx)->Dump(0);
+        if (it.second.sigStrIdx) {
+          LogInfo::MapleLogger() << " \""
+                                 << GlobalTables::GetStrTable().GetStringFromStrIdx(it.second.sigStrIdx) << "\"";
         }
         LogInfo::MapleLogger() << '\n';
       }
-      // print the locally declared variables
-      theSymTab->Dump(true, indent + 1);
-      thePregTab->DumpRef(indent + 1);
-    }
-    LogInfo::MapleLogger() << '\n';
-    for (std::pair<GStrIdx, MIRAliasVars> it : theMIRModule->CurFunction()->GetAliasVarMap()) {
-      LogInfo::MapleLogger() << "ALIAS %" << GlobalTables::GetStrTable().GetStringFromStrIdx(it.first) << " %"
-                             << GlobalTables::GetStrTable().GetStringFromStrIdx(it.second.memPoolStrIdx) << " ";
-      GlobalTables::GetTypeTable().GetTypeFromTyIdx(it.second.tyIdx)->Dump(0);
-      if (it.second.sigStrIdx) {
-        LogInfo::MapleLogger() << " \"" << GlobalTables::GetStrTable().GetStringFromStrIdx(it.second.sigStrIdx) << "\"";
-      }
-      LogInfo::MapleLogger() << '\n';
     }
   }
   if (srcPosition.FileNum() != 0 && srcPosition.LineNum() != 0 && srcPosition.LineNum() != lastPrintedLineNum &&

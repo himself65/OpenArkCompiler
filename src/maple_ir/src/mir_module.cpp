@@ -30,7 +30,9 @@ namespace maple {
 #if MIR_FEATURE_FULL  // to avoid compilation error when MIR_FEATURE_FULL=0
 MIRModule::MIRModule(const std::string &fn)
     : memPool(memPoolCtrler.NewMemPool("maple_ir mempool")),
+      pragmaMemPool(memPoolCtrler.NewMemPool("pragma mempool")),
       memPoolAllocator(memPool),
+      pragmaMemPoolAllocator(pragmaMemPool),
       functionList(memPoolAllocator.Adapter()),
       compilationList(memPoolAllocator.Adapter()),
       importedMplt(memPoolAllocator.Adapter()),

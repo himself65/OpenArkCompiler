@@ -2094,7 +2094,12 @@ bool MIRParser::ParseInitValue(MIRConstPtr &theConst, TyIdx tyIdx, bool allowEmp
           return false;
         }
         ASSERT(subConst != nullptr, "subConst is null in MIRParser::ParseInitValue");
-        subConst->SetFieldID(theFieldID);
+        if (subConst->GetKind() == kConstInt) {
+          subConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(
+              static_cast<MIRIntConst*>(subConst)->GetValue(), subConst->GetType(), theFieldID);
+        } else {
+          subConst->SetFieldID(theFieldID);
+        }
         newConst->PushBack(subConst);
         tokenKind = lexer.GetTokenKind();
         // parse comma or rbrack

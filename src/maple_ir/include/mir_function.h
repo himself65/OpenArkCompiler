@@ -379,14 +379,23 @@ class MIRFunction {
   void ResetGDBEnv();
 
   MemPool *GetCodeMempool() {
+    if (codeMemPool == nullptr) {
+      codeMemPool = memPoolCtrler.NewMemPool("func code mempool");
+      codeMemPoolAllocator.SetMemPool(codeMemPool);
+    }
     return codeMemPool;
   }
 
   MapleAllocator &GetCodeMemPoolAllocator() {
+    GetCodeMempool();
     return codeMemPoolAllocator;
   }
 
   MapleAllocator &GetCodeMempoolAllocator() {
+    if (codeMemPool == nullptr) {
+      codeMemPool = memPoolCtrler.NewMemPool("func code mempool");
+      codeMemPoolAllocator.SetMemPool(codeMemPool);
+    }
     return codeMemPoolAllocator;
   }
 
@@ -452,7 +461,9 @@ class MIRFunction {
   void ClearArgumentsAttrs() {
     argumentsAttrs.clear();
   }
-
+  bool HaveTypeNameTab() {
+    return typeNameTab != nullptr;
+  }
   const MapleMap<GStrIdx, TyIdx> &GetGStrIdxToTyIdxMap() const {
     return typeNameTab->GetGStrIdxToTyIdxMap();
   }
@@ -481,10 +492,6 @@ class MIRFunction {
   }
   const MIRPreg *GetPregItem(PregIdx idx) const {
     return pregTab->PregFromPregIdx(idx);
-  }
-
-  MemPool *GetMemPool() {
-    return dataMemPool;
   }
 
   BlockNode *GetBody() {
@@ -549,11 +556,21 @@ class MIRFunction {
     infoIsString.push_back(isString);
   }
 
-  const MapleMap<GStrIdx, MIRAliasVars> &GetAliasVarMap() const {
-    return aliasVarMap;
+  bool NeedEmitAliasInfo() {
+    return aliasVarMap != nullptr;
+  }
+
+  const MapleMap<GStrIdx, MIRAliasVars> &GetAliasVarMap() {
+    if (aliasVarMap == nullptr) {
+      aliasVarMap = module->GetMemPool()->New<MapleMap<GStrIdx, MIRAliasVars>>(module->GetMPAllocator().Adapter());
+    }
+    return *aliasVarMap;
   }
   void SetAliasVarMap(GStrIdx idx, MIRAliasVars &vars) {
-    aliasVarMap[idx] = vars;
+    if (aliasVarMap == nullptr) {
+      aliasVarMap = module->GetMemPool()->New<MapleMap<GStrIdx, MIRAliasVars>>(module->GetMPAllocator().Adapter());
+    }
+    (*aliasVarMap)[idx] = vars;
   }
 
 
@@ -703,9 +720,13 @@ class MIRFunction {
   }
 
   const MIRLabelTable *GetLabelTab() const {
+    CHECK_FATAL(labelTab != nullptr, "must be");
     return labelTab;
   }
   MIRLabelTable *GetLabelTab() {
+    if (labelTab == nullptr) {
+      labelTab = module->GetMemPool()->New<MIRLabelTable>(module->GetMPAllocator());
+    }
     return labelTab;
   }
   void SetLabelTab(MIRLabelTable *currLabelTab) {
@@ -720,10 +741,14 @@ class MIRFunction {
   }
 
   MemPool *GetDataMemPool() {
-    return dataMemPool;
+    return module->GetMemPool();
   }
 
   MemPool *GetCodeMemPool() {
+    if (codeMemPool == nullptr) {
+      codeMemPool = memPoolCtrler.NewMemPool("func code mempool");
+      codeMemPoolAllocator.SetMemPool(codeMemPool);
+    }
     return codeMemPool;
   }
 
@@ -732,6 +757,7 @@ class MIRFunction {
   }
 
   MapleAllocator &GetCodeMPAllocator() {
+    GetCodeMemPool();
     return codeMemPoolAllocator;
   }
 
@@ -755,10 +781,8 @@ class MIRFunction {
   MIRTypeNameTable *typeNameTab = nullptr;
   MIRLabelTable *labelTab = nullptr;
   MIRPregTable *pregTab = nullptr;
-  MemPool *dataMemPool = memPoolCtrler.NewMemPool("func data mempool");
-  MapleAllocator dataMPAllocator{dataMemPool};
-  MemPool *codeMemPool = memPoolCtrler.NewMemPool("func code mempool");
-  MapleAllocator codeMemPoolAllocator{codeMemPool};
+  MemPool *codeMemPool = nullptr;
+  MapleAllocator codeMemPoolAllocator{nullptr};
   uint32 callTimes = 0;
   BlockNode *body = nullptr;
   SrcPosition srcPosition{};
@@ -768,7 +792,7 @@ class MIRFunction {
   uint32 fileIndex = 0;  // this function belongs to which file, used by VM for plugin manager
   MIRInfoVector info{module->GetMPAllocator().Adapter()};
   MapleVector<bool> infoIsString{module->GetMPAllocator().Adapter()};  // tells if an entry has string value
-  MapleMap<GStrIdx, MIRAliasVars> aliasVarMap{module->GetMPAllocator().Adapter()};  // source code alias variables
+  MapleMap<GStrIdx, MIRAliasVars> *aliasVarMap = nullptr;  // source code alias variables
                                                                                     // for debuginfo
   bool withLocInfo = true;
 

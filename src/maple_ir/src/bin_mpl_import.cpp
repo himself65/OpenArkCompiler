@@ -112,7 +112,7 @@ MIRConst *BinaryMplImport::ImportConst(MIRFunction *func) {
   switch (tag) {
     case kBinKindConstInt:
       ImportConstBase(kind, type, fieldID);
-      return mod.GetMemPool()->New<MIRIntConst>(ReadNum(), *type, fieldID);
+      return GlobalTables::GetIntConstTable().GetOrCreateIntConst(ReadNum(), *type, fieldID);
     case kBinKindConstAddrof: {
       ImportConstBase(kind, type, fieldID);
       MIRSymbol *sym = InSymbol(func);
@@ -225,7 +225,7 @@ UStrIdx BinaryMplImport::ImportUsrStr() {
 }
 
 MIRPragmaElement *BinaryMplImport::ImportPragmaElement() {
-  MIRPragmaElement *element = mod.GetMemPool()->New<MIRPragmaElement>(mod);
+  MIRPragmaElement *element = mod.GetPragmaMemPool()->New<MIRPragmaElement>(mod);
   element->SetNameStrIdx(ImportStr());
   element->SetTypeStrIdx(ImportStr());
   element->SetType((PragmaValueType)ReadNum());
@@ -243,7 +243,7 @@ MIRPragmaElement *BinaryMplImport::ImportPragmaElement() {
 }
 
 MIRPragma *BinaryMplImport::ImportPragma() {
-  MIRPragma *p = mod.GetMemPool()->New<MIRPragma>(mod);
+  MIRPragma *p = mod.GetPragmaMemPool()->New<MIRPragma>(mod);
   p->SetKind(static_cast<PragmaKind>(ReadNum()));
   p->SetVisibility(ReadNum());
   p->SetStrIdx(ImportStr());

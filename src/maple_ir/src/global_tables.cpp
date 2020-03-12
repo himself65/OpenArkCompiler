@@ -204,6 +204,22 @@ void FPConstTable::PostInit() {
   minusZeroDoubleConst = new MIRDoubleConst(-0.0, typeDouble);
 }
 
+MIRIntConst *IntConstTable::GetOrCreateIntConst(int64 val, MIRType &type, uint32 fieldID) {
+  uint64 idid = static_cast<uint64>(type.GetTypeIndex()) + (static_cast<uint64>(fieldID) << 32);
+  IntConstKey key(val, idid);
+  if (intConstTable.find(key) != intConstTable.end()) {
+    return intConstTable[key];
+  }
+  intConstTable[key] = new MIRIntConst(val, type, fieldID);
+  return intConstTable[key];
+}
+
+IntConstTable::~IntConstTable() {
+  for (auto pair : intConstTable) {
+    delete pair.second;
+  }
+}
+
 MIRFloatConst *FPConstTable::GetOrCreateFloatConst(float floatVal) {
   if (std::isnan(floatVal)) {
     return nanFloatConst;

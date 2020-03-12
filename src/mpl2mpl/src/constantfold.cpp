@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -315,10 +315,10 @@ MIRIntConst *ConstantFold::FoldIntConstComparisonMIRConst(Opcode opcode, PrimTyp
   // form the constant
   MIRIntConst *constValue = nullptr;
   if (type.GetPrimType() == PTY_dyni32) {
-    constValue = mirModule->GetMemPool()->New<MIRIntConst>(0, type);
+    constValue = GlobalTables::GetIntConstTable().GetOrCreateIntConst(0, type);
     constValue->SetValue(kJsTypeNumberInHigh32Bit | (static_cast<uint64>(result)));
   } else {
-    constValue = mirModule->GetMemPool()->New<MIRIntConst>(result, type);
+    constValue = GlobalTables::GetIntConstTable().GetOrCreateIntConst(result, type);
   }
   return constValue;
 }
@@ -522,12 +522,12 @@ ConstvalNode *ConstantFold::FoldIntConstBinary(Opcode opcode, PrimType resultTyp
   // form the constant
   MIRIntConst *constValue = nullptr;
   if (type.GetPrimType() == PTY_dyni32) {
-    constValue = mirModule->GetMemPool()->New<MIRIntConst>(0, type);
+    constValue = GlobalTables::GetIntConstTable().GetOrCreateIntConst(0, type);
     constValue->SetValue(kJsTypeNumberInHigh32Bit | (static_cast<uint64>(result32)));
   } else if (useResult64) {
-    constValue = mirModule->GetMemPool()->New<MIRIntConst>(result64, type);
+    constValue = GlobalTables::GetIntConstTable().GetOrCreateIntConst(result64, type);
   } else {
-    constValue = mirModule->GetMemPool()->New<MIRIntConst>(result32, type);
+    constValue = GlobalTables::GetIntConstTable().GetOrCreateIntConst(result32, type);
   }
   // form the ConstvalNode
   ConstvalNode *resultConst = mirModule->CurFuncCodeMemPool()->New<ConstvalNode>();
@@ -741,7 +741,7 @@ MIRIntConst *ConstantFold::FoldFPConstComparisonMIRConst(Opcode opcode, PrimType
     default:
       ASSERT(false, "Unknown opcode for FoldFPConstComparison");
   }
-  MIRIntConst *resultConst = mirModule->GetMemPool()->New<MIRIntConst>(constValue, type);
+  MIRIntConst *resultConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(constValue, type);
   return resultConst;
 }
 
@@ -859,12 +859,12 @@ ConstvalNode *ConstantFold::FoldIntConstUnary(Opcode opcode, PrimType resultType
   // form the constant
   MIRIntConst *constValue = nullptr;
   if (type.GetPrimType() == PTY_dyni32) {
-    constValue = mirModule->GetMemPool()->New<MIRIntConst>(0, type);
+    constValue = GlobalTables::GetIntConstTable().GetOrCreateIntConst(0, type);
     constValue->SetValue(kJsTypeNumberInHigh32Bit | (static_cast<uint64>(result32)));
   } else if (useResult64) {
-    constValue = mirModule->GetMemPool()->New<MIRIntConst>(result64, type);
+    constValue = GlobalTables::GetIntConstTable().GetOrCreateIntConst(result64, type);
   } else {
-    constValue = mirModule->GetMemPool()->New<MIRIntConst>(result32, type);
+    constValue = GlobalTables::GetIntConstTable().GetOrCreateIntConst(result32, type);
   }
   // form the ConstvalNode
   ConstvalNode *resultConst = mirModule->CurFuncCodeMemPool()->New<ConstvalNode>();
@@ -941,7 +941,8 @@ std::pair<BaseNode*, int64> ConstantFold::FoldSizeoftype(SizeoftypeNode *node) {
     uint32 size = GetPrimTypeSize(argType->GetPrimType());
     ConstvalNode *constValueNode = mirModule->CurFuncCodeMemPool()->New<ConstvalNode>();
     constValueNode->SetPrimType(node->GetPrimType());
-    constValueNode->SetConstVal(mirModule->GetMemPool()->New<MIRIntConst>(static_cast<int64>(size), resultType));
+    constValueNode->SetConstVal(GlobalTables::GetIntConstTable().GetOrCreateIntConst(
+        static_cast<int64>(size), resultType));
     result = constValueNode;
   }
   return std::make_pair(result, 0);
@@ -1010,11 +1011,13 @@ ConstvalNode *ConstantFold::FoldCeil(ConstvalNode *cst, PrimType fromType, PrimT
   if (fromType == PTY_f32) {
     MIRFloatConst *constValue = safe_cast<MIRFloatConst>(cst->GetConstVal());
     float floutValue = ceil(constValue->GetValue());
-    resultConst->SetConstVal(mirModule->GetMemPool()->New<MIRIntConst>(static_cast<int64>(floutValue), resultType));
+    resultConst->SetConstVal(GlobalTables::GetIntConstTable().GetOrCreateIntConst(
+        static_cast<int64>(floutValue), resultType));
   } else {
     MIRDoubleConst *constValue = safe_cast<MIRDoubleConst>(cst->GetConstVal());
     double doubleValue = ceil(constValue->GetValue());
-    resultConst->SetConstVal(mirModule->GetMemPool()->New<MIRIntConst>(static_cast<int64>(doubleValue), resultType));
+    resultConst->SetConstVal(GlobalTables::GetIntConstTable().GetOrCreateIntConst(
+        static_cast<int64>(doubleValue), resultType));
   }
   return resultConst;
 }
@@ -1025,11 +1028,11 @@ MIRConst *ConstantFold::FoldFloorMIRConst(MIRConst *cst, PrimType fromType, Prim
   if (fromType == PTY_f32) {
     MIRFloatConst *constValue = safe_cast<MIRFloatConst>(cst);
     float floutValue = floor(constValue->GetValue());
-    return mirModule->GetMemPool()->New<MIRIntConst>(static_cast<int64>(floutValue), resultType);
+    return GlobalTables::GetIntConstTable().GetOrCreateIntConst(static_cast<int64>(floutValue), resultType);
   } else {
     MIRDoubleConst *constValue = safe_cast<MIRDoubleConst>(cst);
     double doubleValue = floor(constValue->GetValue());
-    return mirModule->GetMemPool()->New<MIRIntConst>(static_cast<int64>(doubleValue), resultType);
+    return GlobalTables::GetIntConstTable().GetOrCreateIntConst(static_cast<int64>(doubleValue), resultType);
   }
 }
 
@@ -1045,11 +1048,11 @@ MIRConst *ConstantFold::FoldRoundMIRConst(MIRConst *cst, PrimType fromType, Prim
   if (fromType == PTY_f32) {
     MIRFloatConst *constValue = safe_cast<MIRFloatConst>(cst);
     float floutValue = round(constValue->GetValue());
-    return mirModule->GetMemPool()->New<MIRIntConst>(static_cast<int64>(floutValue), resultType);
+    return GlobalTables::GetIntConstTable().GetOrCreateIntConst(static_cast<int64>(floutValue), resultType);
   } else if (fromType == PTY_f64) {
     MIRDoubleConst *constValue = safe_cast<MIRDoubleConst>(cst);
     double doubleValue = round(constValue->GetValue());
-    return mirModule->GetMemPool()->New<MIRIntConst>(static_cast<int64>(doubleValue), resultType);
+    return GlobalTables::GetIntConstTable().GetOrCreateIntConst(static_cast<int64>(doubleValue), resultType);
   } else if (toType == PTY_f32 && IsPrimitiveInteger(fromType)) {
     MIRIntConst *constValue = safe_cast<MIRIntConst>(cst);
     int64 fromValue = constValue->GetValue();
@@ -1084,11 +1087,13 @@ ConstvalNode *ConstantFold::FoldTrunk(ConstvalNode *cst, PrimType fromType, Prim
   if (fromType == PTY_f32) {
     MIRFloatConst *constValue = safe_cast<MIRFloatConst>(cst->GetConstVal());
     float floutValue = trunc(constValue->GetValue());
-    resultConst->SetConstVal(mirModule->GetMemPool()->New<MIRIntConst>(static_cast<int64>(floutValue), resultType));
+    resultConst->SetConstVal(GlobalTables::GetIntConstTable().GetOrCreateIntConst(
+        static_cast<int64>(floutValue), resultType));
   } else {
     MIRDoubleConst *constValue = safe_cast<MIRDoubleConst>(cst->GetConstVal());
     double doubleValue = trunc(constValue->GetValue());
-    resultConst->SetConstVal(mirModule->GetMemPool()->New<MIRIntConst>(static_cast<int64>(doubleValue), resultType));
+    resultConst->SetConstVal(GlobalTables::GetIntConstTable().GetOrCreateIntConst(
+        static_cast<int64>(doubleValue), resultType));
   }
   return resultConst;
 }
@@ -1111,7 +1116,7 @@ MIRConst *ConstantFold::FoldTypeCvtMIRConst(MIRConst *cst, PrimType fromType, Pr
     } else {
       MIRIntConst *c = safe_cast<MIRIntConst>(cst);
       MIRType &type = *GlobalTables::GetTypeTable().GetPrimType(toType);
-      toConst = mirModule->GetMemPool()->New<MIRIntConst>(c->GetValue(), type);
+      toConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(c->GetValue(), type);
     }
     return toConst;
   }
@@ -1208,7 +1213,7 @@ MIRConst *ConstantFold::FoldSignExtendMIRConst(Opcode opcode, PrimType resultTyp
     result64 = ((static_cast<uint64>(c->GetValue())) << (64u - size)) >> (64u - size);
   }
   MIRType &type = *GlobalTables::GetTypeTable().GetPrimType(resultType);
-  MIRIntConst *constValue = mirModule->GetMemPool()->New<MIRIntConst>(result64, type);
+  MIRIntConst *constValue = GlobalTables::GetIntConstTable().GetOrCreateIntConst(result64, type);
   return constValue;
 }
 
@@ -1572,7 +1577,7 @@ std::pair<BaseNode*, int64> ConstantFold::FoldDepositbits(DepositbitsNode *node)
     ConstvalNode *resultConst = mirModule->CurFuncCodeMemPool()->New<ConstvalNode>();
     resultConst->SetPrimType(node->GetPrimType());
     MIRType &type = *GlobalTables::GetTypeTable().GetPrimType(node->GetPrimType());
-    MIRIntConst *constValue = mirModule->GetMemPool()->New<MIRIntConst>(0, type);
+    MIRIntConst *constValue = GlobalTables::GetIntConstTable().GetOrCreateIntConst(0, type);
     uint64 op0ExtractVal = 0;
     uint64 op1ExtractVal = 0;
     uint64 mask0 = (1LLU << (bSize + bOffset)) - 1;
@@ -1580,7 +1585,8 @@ std::pair<BaseNode*, int64> ConstantFold::FoldDepositbits(DepositbitsNode *node)
     uint64 op0Mask = ~(mask0 ^ mask1);
     op0ExtractVal = (static_cast<uint64>(intConst0->GetValue()) & op0Mask);
     op1ExtractVal = (static_cast<uint64>(intConst1->GetValue()) << bOffset) & ((1ULL << (bSize + bOffset)) - 1);
-    constValue->SetValue(op0ExtractVal | op1ExtractVal);
+    constValue = GlobalTables::GetIntConstTable().GetOrCreateIntConst(
+        op0ExtractVal | op1ExtractVal, constValue->GetType(), constValue->GetFieldId());
     resultConst->SetConstVal(constValue);
     result = resultConst;
   } else {

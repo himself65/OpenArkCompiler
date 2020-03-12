@@ -55,6 +55,30 @@ class UStrIdxHash {
   }
 };
 
+class IntConstKey {
+ friend class IntConstHash;
+ friend class IntConstCmp;
+ public:
+  IntConstKey(int64 v, uint64 id) : val(v), tyidxFieldID(id) {}
+ private:
+  int64 val;
+  uint64 tyidxFieldID;
+};
+
+class IntConstHash {
+ public:
+  std::size_t operator() (const IntConstKey &key) const {
+    return std::hash<int64>{}(key.val) ^ (std::hash<uint64>{}(key.tyidxFieldID) << 1);
+  }
+};
+
+class IntConstCmp {
+ public:
+  bool operator() (const IntConstKey &lkey, const IntConstKey &rkey) const {
+    return lkey.val == rkey.val && lkey.tyidxFieldID == rkey.tyidxFieldID;
+  }
+};
+
 class TypeTable {
  public:
   static MIRType *voidPtrType;
@@ -421,6 +445,24 @@ class FPConstTable {
   MIRDoubleConst *minusZeroDoubleConst = nullptr;
 };
 
+class IntConstTable {
+ public:
+  IntConstTable(const IntConstTable &p) = delete;
+  IntConstTable &operator=(const IntConstTable &p) = delete;
+  ~IntConstTable();
+
+  MIRIntConst *GetOrCreateIntConst(int64 val, MIRType &type, uint32 fieldID = 0);
+
+  static std::unique_ptr<IntConstTable> Create() {
+    auto p = std::unique_ptr<IntConstTable>(new IntConstTable());
+    return p;
+  }
+
+ private:
+  IntConstTable() = default;
+  std::unordered_map<IntConstKey, MIRIntConst*, IntConstHash, IntConstCmp> intConstTable;
+};
+
 // STypeNameTable is only used to store class and interface types.
 // Each module maintains its own MIRTypeNameTable.
 class STypeNameTable {
@@ -603,13 +645,18 @@ class GlobalTables {
     return globalTables.constPool;
   }
 
+  static IntConstTable &GetIntConstTable() {
+    return *(globalTables.intConstTablePtr);
+  }
+
   GlobalTables(const GlobalTables &globalTables) = delete;
   GlobalTables(const GlobalTables &&globalTables) = delete;
   GlobalTables &operator=(const GlobalTables &globalTables) = delete;
   GlobalTables &operator=(const GlobalTables &&globalTables) = delete;
 
  private:
-  GlobalTables() : fpConstTablePtr(FPConstTable::Create()) {
+  GlobalTables() : fpConstTablePtr(FPConstTable::Create()),
+                   intConstTablePtr(IntConstTable::Create()) {
     gStringTable.Init();
     uStrTable.Init();
     u16StringTable.Init();
@@ -623,6 +670,7 @@ class GlobalTables {
   GSymbolTable gSymbolTable;
   ConstPool constPool;
   std::unique_ptr<FPConstTable> fpConstTablePtr;
+  std::unique_ptr<IntConstTable> intConstTablePtr;
   StringTable<std::string, GStrIdx> gStringTable;
   StringTable<std::string, UStrIdx> uStrTable;
   StringTable<std::u16string, U16StrIdx> u16StringTable;

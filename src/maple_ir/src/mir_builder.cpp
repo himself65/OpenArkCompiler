@@ -19,7 +19,8 @@
 namespace maple {
 // This is for compiler-generated metadata 1-level struct
 void MIRBuilder::AddIntFieldConst(const MIRStructType &sType, MIRAggConst &newConst, uint32 fieldID, int64 constValue) {
-  auto *fieldConst = mirModule->GetMemPool()->New<MIRIntConst>(constValue, *sType.GetElemType(fieldID - 1), fieldID);
+  auto *fieldConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(
+      constValue, *sType.GetElemType(fieldID - 1), fieldID);
   newConst.PushBack(fieldConst);
 }
 
@@ -39,7 +40,7 @@ void MIRBuilder::AddAddroffuncFieldConst(const MIRStructType &structType, MIRAgg
   MIRConst *fieldConst = nullptr;
   MIRFunction *vMethod = funcSymbol.GetFunction();
   if (vMethod->IsAbstract()) {
-    fieldConst = mirModule->GetMemPool()->New<MIRIntConst>(0, *structType.GetElemType(fieldID - 1), fieldID);
+    fieldConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(0, *structType.GetElemType(fieldID - 1), fieldID);
   } else {
     AddroffuncNode *addrofFuncExpr =
         CreateExprAddroffunc(funcSymbol.GetFunction()->GetPuidx(), mirModule->GetMemPool());
@@ -466,9 +467,8 @@ MIRSymbol *MIRBuilder::CreatePregFormalSymbol(TyIdx tyIdx, PregIdx pRegIdx, MIRF
 }
 
 ConstvalNode *MIRBuilder::CreateIntConst(int64 val, PrimType pty) {
-  MIRFunction *currentFunctionInner = GetCurrentFunctionNotNull();
   auto *mirConst =
-      currentFunctionInner->GetDataMemPool()->New<MIRIntConst>(val, *GlobalTables::GetTypeTable().GetPrimType(pty));
+      GlobalTables::GetIntConstTable().GetOrCreateIntConst(val, *GlobalTables::GetTypeTable().GetPrimType(pty));
   return GetCurrentFuncCodeMp()->New<ConstvalNode>(pty, mirConst);
 }
 
@@ -494,7 +494,7 @@ ConstvalNode *MIRBuilder::CreateFloat128Const(const uint64 *val) {
 }
 
 ConstvalNode *MIRBuilder::GetConstInt(MemPool &memPool, int val) {
-  auto *mirConst = memPool.New<MIRIntConst>(val, *GlobalTables::GetTypeTable().GetInt64());
+  auto *mirConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(val, *GlobalTables::GetTypeTable().GetInt64());
   return memPool.New<ConstvalNode>(PTY_i32, mirConst);
 }
 

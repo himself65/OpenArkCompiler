@@ -51,7 +51,7 @@ MIRFunction &NativeStubFuncGeneration::GetOrCreateDefaultNativeFunc(MIRFunction 
   if (nativeFunc->GetBody() == nullptr) {
     builder->SetCurrentFunction(*nativeFunc);
     nativeFunc->SetAttr(FUNCATTR_weak);
-    nativeFunc->SetBody(nativeFunc->GetCodeMempool()->New<BlockNode>());
+    nativeFunc->NewBody();
     // We would not throw exception here.
     // Use regnative-dynamic-only option when run case expr14301a_setFields__IF as qemu solution.
     MIRType *voidPointerType = GlobalTables::GetTypeTable().GetVoidPtr();
@@ -297,8 +297,8 @@ void NativeStubFuncGeneration::GenerateRegFuncTabEntry() {
   constexpr uint64 locIdxMask = 0xFF00000000000000;
   uint64 locIdx = regFuncTabConst->GetConstVec().size();
   auto *newConst =
-    GetMIRModule().GetMemPool()->New<MIRIntConst>(static_cast<uint64>((locIdx << locIdxShift) | locIdxMask),
-                                                      *GlobalTables::GetTypeTable().GetVoidPtr());
+    GlobalTables::GetIntConstTable().GetOrCreateIntConst(static_cast<uint64>((locIdx << locIdxShift) | locIdxMask),
+                                                         *GlobalTables::GetTypeTable().GetVoidPtr());
   regFuncTabConst->PushBack(newConst);
 }
 
@@ -320,10 +320,10 @@ void NativeStubFuncGeneration::GenerateRegTabEntry(const MIRFunction &func) {
   uint32 classIdx = ReflectionAnalysis::FindOrInsertRepeatString(base, true);  // always used
   // Using MIRIntConst instead of MIRStruct for RegTable.
   auto *baseConst =
-    GetMIRModule().GetMemPool()->New<MIRIntConst>(classIdx, *GlobalTables::GetTypeTable().GetVoidPtr());
+      GlobalTables::GetIntConstTable().GetOrCreateIntConst(classIdx, *GlobalTables::GetTypeTable().GetVoidPtr());
   regTableConst->PushBack(baseConst);
-  auto *newConst = GetMIRModule().GetMemPool()->New<MIRIntConst>(nameIdx,
-                                                                 *GlobalTables::GetTypeTable().GetVoidPtr());
+  auto *newConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(nameIdx,
+                                                                        *GlobalTables::GetTypeTable().GetVoidPtr());
   regTableConst->PushBack(newConst);
 }
 

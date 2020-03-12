@@ -1312,7 +1312,7 @@ bool MIRParser::ParseNaryStmt(StmtNodePtr &stmt, Opcode op) {
     } else {
       MIRType *intType = GlobalTables::GetTypeTable().GetTypeFromTyIdx((TyIdx)PTY_i32);
       // default 2 for __sync_enter_fast()
-      MIRIntConst *intConst = mod.GetMemPool()->New<MIRIntConst>(2, *intType);
+      MIRIntConst *intConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(2, *intType);
       ConstvalNode *exprConst = mod.GetMemPool()->New<ConstvalNode>();
       exprConst->SetPrimType(PTY_i32);
       exprConst->SetConstVal(intConst);
@@ -2603,7 +2603,7 @@ bool MIRParser::ParseScalarValue(MIRConstPtr &stype, MIRType &type) {
       Error("constant value incompatible with integer type at ");
       return false;
     }
-    stype = mod.GetMemPool()->New<MIRIntConst>(lexer.GetTheIntVal(), type);
+    stype = GlobalTables::GetIntConstTable().GetOrCreateIntConst(lexer.GetTheIntVal(), type);
   } else if (ptp == PTY_f32) {
     if (lexer.GetTokenKind() != TK_floatconst) {
       Error("constant value incompatible with single-precision float type at ");

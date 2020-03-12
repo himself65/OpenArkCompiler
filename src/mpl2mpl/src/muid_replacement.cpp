@@ -267,7 +267,8 @@ void MUIDReplacement::GenerateFuncDefTable() {
     keyVal.second.second = idx++;
     // Use the muid index for now. It will be back-filled once we have the whole vector.
     MIRIntConst *indexConst =
-      GetMIRModule().GetMemPool()->New<MIRIntConst>(keyVal.second.second, *GlobalTables::GetTypeTable().GetUInt32());
+        GlobalTables::GetIntConstTable().GetOrCreateIntConst(keyVal.second.second,
+                                                             *GlobalTables::GetTypeTable().GetUInt32());
     muidIdxTabConst->PushBack(indexConst);
   }
   FieldVector parentFields;
@@ -318,12 +319,14 @@ void MUIDReplacement::GenerateFuncDefTable() {
     constexpr uint32 weakFuncFlag = 0x80000000; // 0b10000000 00000000 00000000 00000000
     auto *indexConst = safe_cast<MIRIntConst>(muidIdxTabConst->GetConstVecItem(muidIdx));
     uint32 tempIdx = (static_cast<uint64>(indexConst->GetValue()) & weakFuncFlag) | idx;
-    indexConst = GetMIRModule().GetMemPool()->New<MIRIntConst>(tempIdx, *GlobalTables::GetTypeTable().GetUInt32());
+    indexConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(tempIdx,
+                                                                      *GlobalTables::GetTypeTable().GetUInt32());
     muidIdxTabConst->SetConstVecItem(muidIdx, *indexConst);
     if (reflectionList.find(mirFunc->GetName()) != reflectionList.end()) {
       auto *tempConst = safe_cast<MIRIntConst>(muidIdxTabConst->GetConstVecItem(idx));
       tempIdx = weakFuncFlag | static_cast<uint64>(tempConst->GetValue());
-      tempConst = GetMIRModule().GetMemPool()->New<MIRIntConst>(tempIdx, *GlobalTables::GetTypeTable().GetUInt32());
+      tempConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(tempIdx,
+                                                                       *GlobalTables::GetTypeTable().GetUInt32());
       muidIdxTabConst->SetConstVecItem(idx, *tempConst);
     }
         // Store the real idx of funcdefTab, for ReplaceAddroffuncConst->FindIndexFromDefTable
@@ -401,7 +404,7 @@ void MUIDReplacement::ReplaceMethodMetaFuncAddr(MIRSymbol &funcSymbol, int64 ind
   MIRConst *elem = agg->GetConstVecItem(0);
   if (elem->GetKind() == kConstAddrofFunc) {
     MIRType &type = elem->GetType();
-    MIRConst *constNode = GetMIRModule().GetMemPool()->New<MIRIntConst>(index, type, 1);
+    MIRConst *constNode = GlobalTables::GetIntConstTable().GetOrCreateIntConst(index, type, 1);
     agg->SetConstVecItem(0, *constNode);
   }
 }
@@ -498,7 +501,7 @@ void MUIDReplacement::ReplaceFieldMetaStaticAddr(MIRSymbol &mirSymbol, int64 ind
 
   MIRType &type = elem->GetType();
   int64 idx = index * 2 + 1; // add flag to indicate that it's def tab index for emit.
-  MIRConst *constNode = GetMIRModule().GetMemPool()->New<MIRIntConst>(idx, type, 1);
+  MIRConst *constNode = GlobalTables::GetIntConstTable().GetOrCreateIntConst(idx, type, 1);
   agg->SetConstVecItem(0, *constNode);
   (void)idx;
 }
@@ -793,20 +796,21 @@ void MUIDReplacement::ReplaceAddroffuncConst(MIRConst *&entry, uint32 fieldID, b
     // The second least significant bit is set to 1, indicating
     // this is an index into the funcDefTab
     constexpr uint64 idxIntoFuncDefTabFlag = 2u;
-    constNode = GetMIRModule().GetMemPool()->New<MIRIntConst>(((offset + 1) << reservedBits) + idxIntoFuncDefTabFlag,
-                                                                  voidType);
+    constNode = GlobalTables::GetIntConstTable().GetOrCreateIntConst(
+        ((offset + 1) << reservedBits) + idxIntoFuncDefTabFlag, voidType);
   } else if (isVtab && func->IsAbstract()) {
     MIRType &type = *GlobalTables::GetTypeTable().GetVoidPtr();
-    constNode = GetMIRModule().GetMemPool()->New<MIRIntConst>(0, type);
+    constNode = GlobalTables::GetIntConstTable().GetOrCreateIntConst(0, type);
   } else {
     ASSERT(func->GetFuncSymbol() != nullptr, "null ptr check!");
     offset = FindIndexFromUndefTable(*(func->GetFuncSymbol()), true);
     // The second least significant bit is set to 0, indicating
     // this is an index into the funcUndefTab
-    constNode = GetMIRModule().GetMemPool()->New<MIRIntConst>((offset + 1) << reservedBits, voidType);
+    constNode = GlobalTables::GetIntConstTable().GetOrCreateIntConst((offset + 1) << reservedBits, voidType);
   }
   if (fieldID != 0xffffffff) {
-    constNode->SetFieldID(fieldID);
+    constNode = GlobalTables::GetIntConstTable().GetOrCreateIntConst(constNode->GetValue(),
+                                                                     constNode->GetType(), fieldID);
   }
   entry = constNode;
 }
@@ -827,7 +831,14 @@ void MUIDReplacement::ReplaceDataTable(const std::string &name) {
       for (size_t i = 0; i < aggrC->GetConstVec().size(); ++i) {
         CHECK_NULL_FATAL(aggrC->GetConstVecItem(i));
         ReplaceAddrofConst(aggrC->GetConstVecItem(i));
-        aggrC->GetConstVecItem(i)->SetFieldID(i + 1);
+        MIRConstPtr mirConst = aggrC->GetConstVecItem(i);
+        if (mirConst->GetKind() == kConstInt) {
+          MIRIntConst *newIntConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(
+              static_cast<MIRIntConst*>(mirConst)->GetValue(), mirConst->GetType(), i + 1);
+          aggrC->SetConstVecItem(i, *newIntConst);
+        } else {
+          aggrC->GetConstVecItem(i)->SetFieldID(i + 1);
+        }
       }
     } else if (oldTabEntry->GetKind() == kConstAddrof) {
       ReplaceAddrofConst(oldTabEntry);
@@ -849,7 +860,14 @@ void MUIDReplacement::ReplaceDecoupleKeyTable(MIRAggConst* oldConst) {
           ReplaceDecoupleKeyTable(safe_cast<MIRAggConst>(aggrC->GetConstVecItem(i)));
         } else {
           ReplaceAddrofConst(aggrC->GetConstVecItem(i));
-          aggrC->GetConstVecItem(i)->SetFieldID(i + 1);
+          MIRConstPtr mirConst = aggrC->GetConstVecItem(i);
+          if (mirConst->GetKind() == kConstInt) {
+            MIRIntConst *newIntConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(
+                static_cast<MIRIntConst*>(mirConst)->GetValue(), mirConst->GetType(), i + 1);
+            aggrC->SetConstVecItem(i, *newIntConst);
+          } else {
+            aggrC->GetConstVecItem(i)->SetFieldID(i + 1);
+          }
         }
       }
     } else if (oldTabEntry->GetKind() == kConstAddrof) {
@@ -873,10 +891,10 @@ void MUIDReplacement::ReplaceAddrofConst(MIRConst *&entry) {
   MIRIntConst *constNode = nullptr;
   if (addrSym->GetStorageClass() != kScExtern) {
     offset = FindIndexFromDefTable(*addrSym, false);
-    constNode = GetMIRModule().GetMemPool()->New<MIRIntConst>(offset | kFromDefIndexMask, voidType);
+    constNode = GlobalTables::GetIntConstTable().GetOrCreateIntConst(offset | kFromDefIndexMask, voidType);
   } else {
     offset = FindIndexFromUndefTable(*addrSym, false);
-    constNode = GetMIRModule().GetMemPool()->New<MIRIntConst>(offset | kFromUndefIndexMask, voidType);
+    constNode = GlobalTables::GetIntConstTable().GetOrCreateIntConst(offset | kFromUndefIndexMask, voidType);
   }
   entry = constNode;
 }
@@ -1225,8 +1243,8 @@ void MUIDReplacement::GenerateCompilerVersionNum() {
   MIRArrayType &arrayType = *GlobalTables::GetTypeTable().GetOrCreateArrayType(*ptrType, 0);
   MIRAggConst *newConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), arrayType);
   MIRType &type = *GlobalTables::GetTypeTable().GetInt32();
-  MIRConst *firstConst = GetMIRModule().GetMemPool()->New<MIRIntConst>(Version::kMajorMplVersion, type);
-  MIRConst *secondConst = GetMIRModule().GetMemPool()->New<MIRIntConst>(Version::kMinorCompilerVersion, type);
+  MIRConst *firstConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(Version::kMajorMplVersion, type);
+  MIRConst *secondConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(Version::kMinorCompilerVersion, type);
   newConst->PushBack(firstConst);
   newConst->PushBack(secondConst);
   std::string symName = NameMangler::kCompilerVersionNum + GetMIRModule().GetFileNameAsPostfix();

@@ -50,7 +50,8 @@ class MIRConst {
     return fieldID;
   }
 
-  void SetFieldID(uint32 fieldIdx) {
+  virtual void SetFieldID(uint32 fieldIdx) {
+    CHECK_FATAL(kind != kConstInt, "must be");
     fieldID = fieldIdx;
   }
 
@@ -90,6 +91,7 @@ class MIRConst {
  private:
   MIRType &type;
   MIRConstKind kind;
+ protected:
   uint32 fieldID;
 };
 
@@ -127,7 +129,7 @@ class MIRIntConst : public MIRConst {
     return value == -1 && IsPrimitiveInteger(GetType().GetPrimType());
   };
   void Neg() override {
-    value = -value;
+    CHECK_FATAL(false, "Can't Use This Interface in This Object");
   }
 
   int64 GetValue() const {
@@ -135,13 +137,18 @@ class MIRIntConst : public MIRConst {
   }
 
   void SetValue(int64 val) {
-    value = val;
+    CHECK_FATAL(false, "Can't Use This Interface in This Object");
+  }
+
+  void SetFieldID(uint32 fieldIdx) override {
+    CHECK_FATAL(false, "Can't Use This Interface in This Object");
   }
 
   bool operator==(const MIRConst &rhs) const override;
 
   MIRIntConst *Clone(MemPool &memPool) const override {
-    return memPool.New<MIRIntConst>(*this);
+    CHECK_FATAL(false, "Can't Use This Interface in This Object");
+    return nullptr;
   }
 
  private:

@@ -1731,7 +1731,8 @@ static void ReflectionAnalysisGenStrTab(MIRModule &mirModule, const std::string 
   }
   strTabSt->SetStorageClass(kScFstatic);
   for (char c : strTab) {
-    MIRConst *newConst = mirModule.GetMemPool()->New<MIRIntConst>(c, *GlobalTables::GetTypeTable().GetUInt8());
+    MIRConst *newConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(
+        c, *GlobalTables::GetTypeTable().GetUInt8());
     strTabAggconst->PushBack(newConst);
   }
   strTabSt->SetKonst(strTabAggconst);
@@ -1798,6 +1799,12 @@ void ReflectionAnalysis::Run() {
   reflectionMuidStr.clear();
   reflectionMuidStr.shrink_to_fit();
   GenClassHashMetaData();
+  for (Klass *klass : klasses) {
+    MIRStructType *mirStruct = klass->GetMIRStructType();
+    mirStruct->GetPragmaVec().clear();
+    mirStruct->GetPragmaVec().shrink_to_fit();
+  }
+  memPoolCtrler.DeleteMemPool(mirModule->GetPragmaMemPool());
 }
 
 AnalysisResult *DoReflectionAnalysis::Run(MIRModule *module, ModuleResultMgr *moduleResultMgr) {

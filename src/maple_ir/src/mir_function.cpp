@@ -35,13 +35,8 @@ enum FuncProp : uint32_t {
 
 namespace maple {
 void MIRFunction::Init() {
-  // Initially allocate symTab and pregTab on the module mempool for storing
-  // parameters. If later mirfunction turns out to be a definition, new
-  // tables will be allocated on the local data mempool.
   symTab = module->GetMemPool()->New<MIRSymbolTable>(module->GetMPAllocator());
-  pregTab = module->GetMemPool()->New<MIRPregTable>(module, &module->GetMPAllocator());
-  typeNameTab = module->GetMemPool()->New<MIRTypeNameTable>(module->GetMPAllocator());
-  labelTab = module->GetMemPool()->New<MIRLabelTable>(module->GetMPAllocator());
+  return;
 }
 
 const MIRSymbol *MIRFunction::GetFuncSymbol() const {
@@ -254,7 +249,6 @@ void MIRFunction::Dump(bool withoutBody) {
   // codeMemPool is nullptr, means maple_ir has been released for memory's sake
   if (codeMemPool == nullptr) {
     LogInfo::MapleLogger() << '\n';
-    LogInfo::MapleLogger() << "# [WARNING] skipped dumping because codeMemPool is nullptr " << '\n';
   } else if (GetBody() != nullptr && !withoutBody && symbol->GetStorageClass() != kScExtern) {
     ResetInfoPrinted();  // this ensures funcinfo will be printed
     GetBody()->Dump(0, module->GetFlavor() < kMmpl ? GetSymTab() : nullptr,
@@ -481,6 +475,10 @@ const MIRType *MIRFunction::GetNodeType(const BaseNode &node) const {
 }
 
 void MIRFunction::NewBody() {
+  if (codeMemPool == nullptr) {
+    codeMemPool = memPoolCtrler.NewMemPool("func code mempool");
+    codeMemPoolAllocator.SetMemPool(codeMemPool);
+  }
   SetBody(codeMemPool->New<BlockNode>());
   // If mir_function.has been seen as a declaration, its symtab has to be moved
   // from module mempool to function mempool.
@@ -488,10 +486,10 @@ void MIRFunction::NewBody() {
   MIRPregTable *oldPregTable = GetPregTab();
   MIRTypeNameTable *oldTypeNameTable = typeNameTab;
   MIRLabelTable *oldLabelTable = GetLabelTab();
-  symTab = dataMemPool->New<MIRSymbolTable>(dataMPAllocator);
-  SetPregTab(dataMemPool->New<MIRPregTable>(module, &dataMPAllocator));
-  typeNameTab = dataMemPool->New<MIRTypeNameTable>(dataMPAllocator);
-  SetLabelTab(dataMemPool->New<MIRLabelTable>(dataMPAllocator));
+  symTab = module->GetMemPool()->New<MIRSymbolTable>(module->GetMPAllocator());
+  pregTab = module->GetMemPool()->New<MIRPregTable>(module, &module->GetMPAllocator());
+  typeNameTab = module->GetMemPool()->New<MIRTypeNameTable>(module->GetMPAllocator());
+  labelTab = module->GetMemPool()->New<MIRLabelTable>(module->GetMPAllocator());
   if (oldSymTable != nullptr) {
     for (size_t i = 1; i < oldSymTable->GetSymbolTableSize(); ++i) {
       (void)GetSymTab()->AddStOutside(oldSymTable->GetSymbolFromStIdx(i));
