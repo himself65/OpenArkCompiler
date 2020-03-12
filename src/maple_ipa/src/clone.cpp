@@ -53,7 +53,7 @@ std::string ReplaceRetIgnored::GenerateNewFullName(const MIRFunction *originalFu
 }
 
 MIRSymbol *Clone::CloneLocalSymbol(const MIRSymbol *oldSym, MIRFunction *newFunc) {
-  MemPool *newMP = newFunc->GetMemPool();
+  MemPool *newMP = newFunc->GetDataMemPool();
   MIRSymbol *newSym = newMP->New<MIRSymbol>(*oldSym);
   if (oldSym->GetSKind() == kStConst) {
     newSym->SetKonst(oldSym->GetKonst()->Clone(*newMP));

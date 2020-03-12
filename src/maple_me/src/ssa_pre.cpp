@@ -1625,7 +1625,6 @@ void SSAPre::ApplySSAPRE() {
   }
   ConstructUseOccurMap();
   for (size_t i = 0; i < workList.size() && i <= preLimit; i++) {
-    perCandMemPool->Push();
     workCand = workList[i];
     if (workCand->GetRealOccs().empty()) {
       continue;
@@ -1697,7 +1696,7 @@ void SSAPre::ApplySSAPRE() {
       // apply full redundancy elimination
       DoSSAFRE();
     }
-    perCandMemPool->Pop();
+    perCandMemPool->ReleaseContainingMem();
   }
 }
 }  // namespace maple

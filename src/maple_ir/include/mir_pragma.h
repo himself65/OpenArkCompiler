@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -71,7 +71,7 @@ enum PragmaValueType {
 class MIRPragmaElement {
  public:
   explicit MIRPragmaElement(MIRModule &m)
-      : subElemVec(m.GetMPAllocator().Adapter()) {
+      : subElemVec(m.GetPragmaMPAllocator().Adapter()) {
     val.u = 0;
     subElemVec.clear();
   }
@@ -176,7 +176,7 @@ class MIRPragma {
  public:
   explicit MIRPragma(MIRModule &m)
       : mod(&m),
-        elementVec(m.GetMPAllocator().Adapter()) {}
+        elementVec(m.GetPragmaMPAllocator().Adapter()) {}
 
   ~MIRPragma() = default;
   MIRPragmaElement *GetPragmaElemFromSignature(const std::string &signature);

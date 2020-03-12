@@ -127,7 +127,12 @@ class MIRModule {
   MemPool *GetMemPool() {
     return memPool;
   }
-
+  MemPool *GetPragmaMemPool() {
+    return pragmaMemPool;
+  }
+  MapleAllocator &GetPragmaMPAllocator() {
+    return pragmaMemPoolAllocator;
+  }
   const MapleAllocator &GetMPAllocator() const {
     return memPoolAllocator;
   }
@@ -466,7 +471,9 @@ class MIRModule {
 
  private:
   MemPool *memPool;
+  MemPool *pragmaMemPool;
   MapleAllocator memPoolAllocator;
+  MapleAllocator pragmaMemPoolAllocator;
   MapleVector<MIRFunction*> functionList;  // function table in the order of the appearance of function bodies; it
   // excludes prototype-only functions
   MapleVector<MIRFunction*> compilationList;  // functions in the order of to be compiled.

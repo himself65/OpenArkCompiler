@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -39,12 +39,25 @@ class MemPoolCtrler {
   friend MemPool;
 
  public:  // Methods
+  static bool freeMemInTime;
   MemPoolCtrler() = default;
 
   ~MemPoolCtrler();
 
   MemPool *NewMemPool(const std::string&);
   void DeleteMemPool(MemPool *memPool);
+  void FreeMem() {
+    for (MemBlock *block : freeMemBlocks) {
+      free(block);
+    }
+    for (auto it = largeFreeMemBlocks.begin(); it != largeFreeMemBlocks.end(); ++it) {
+      for (auto itr = (*it).second.begin(); itr != (*it).second.end(); ++itr) {
+        free(*itr);
+      }
+    }
+    freeMemBlocks.clear();
+    largeFreeMemBlocks.clear();
+  }
   bool IsEmpty() const {
     return memPools.empty();
   }
@@ -83,8 +96,7 @@ class MemPool {
   void *Malloc(size_t size);
   void *Calloc(size_t size);
   void *Realloc(const void *ptr, size_t oldSize, size_t newSize);
-  void Push();
-  bool Pop();
+  void ReleaseContainingMem();
   const std::string &GetName() const {
     return name;
   }
@@ -129,8 +141,6 @@ class MemPool {
   // Save the memory block stack
   std::stack<MemPoolCtrler::MemBlock*> memBlockStack;
   std::stack<MemPoolCtrler::MemBlock*> largeMemBlockStack;
-  // Save mem_block and large_mem_block pointers when push()
-  std::stack<std::pair<MemPoolCtrler::MemBlock*, MemPoolCtrler::MemBlock*>> markerStack;
 };
 
 extern MemPoolCtrler memPoolCtrler;

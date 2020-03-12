@@ -57,7 +57,9 @@ BaseNode &ConstMeExpr::EmitExpr(SSATab &ssaTab) {
   // if int const has been promoted from dyn int const, remove the type tag
   if (IsPrimitiveInteger(exprConst->GetPrimType())) {
     auto *intConst = safe_cast<MIRIntConst>(exprConst->GetConstVal());
-    intConst->SetValue(intConst->GetValueUnderType());
+    MIRIntConst *newIntConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(intConst->GetValueUnderType(),
+        intConst->GetType(), intConst->GetFieldId());
+    exprConst->SetConstVal(newIntConst);
   }
   return *exprConst;
 }

@@ -447,7 +447,7 @@ void CallGraph::HandleBody(MIRFunction *func, BlockNode *body, CGNode *node, uin
           CallInfo *callInfo = GenCallInfo(kCallTypeVirtualCall, calleefunc, stmt, loopDepth, stmt->GetStmtID());
           // Retype makes object type more inaccurate.
           StmtNode *stmtPrev = static_cast<StmtNode*>(stmt)->GetPrev();
-          if (stmtPrev->GetOpCode() == OP_dassign) {
+          if (stmtPrev && stmtPrev->GetOpCode() == OP_dassign) {
             DassignNode *dassignNode = static_cast<DassignNode*>(stmtPrev);
             if (dassignNode->GetRHS()->GetOpCode() == OP_retype) {
               CallNode *callNode = static_cast<CallNode*>(stmt);

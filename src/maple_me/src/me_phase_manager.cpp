@@ -133,7 +133,7 @@ void MeFuncPhaseManager::Run(MIRFunction *mirFunc, uint64 rangeNum, const std::s
   }
   MemPool *funcMP = memPoolCtrler.NewMemPool("maple_me per-function mempool");
   MemPool *versMP = memPoolCtrler.NewMemPool("first verst mempool");
-  MeFunction func(&mirModule, mirFunc, funcMP, versMP, meInput);
+  MeFunction &func = *(funcMP->New<MeFunction>(&mirModule, mirFunc, funcMP, versMP, meInput));
   func.PartialInit(false);
 #if DEBUG
   globalMIRModule = &mirModule;

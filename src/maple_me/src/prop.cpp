@@ -137,7 +137,7 @@ MeExpr *Prop::SimplifyCompareMeExpr(OpMeExpr &opMeExpr) {
     }
     if (constOpnd->IsZero()) {
       // addrof will not be zero, so this comparison can be replaced with a constant
-      auto *resConst = mirModule.GetMemPool()->New<MIRIntConst>((opcode == OP_ne),
+      auto *resConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst((opcode == OP_ne),
           utils::ToRef(GlobalTables::GetTypeTable().GetUInt1()));
       return irMap.CreateConstMeExpr(opMeExpr.GetPrimType(), *resConst);
     }
