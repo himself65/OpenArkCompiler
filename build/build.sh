@@ -15,6 +15,7 @@
 #
 set -e
 source build/envsetup.sh
+make clean
 option=$@
 if [ "$option" = "DEBUG" ]; then
   make BUILD_TYPE=DEBUG

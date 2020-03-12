@@ -27,6 +27,9 @@ DefaultOption MplcgCompiler::GetDefaultOptions(const MplOptions &options) const 
   if (options.GetOptimizationLevel() == kO0 && options.HasSetDefaultLevel()) {
     defaultOptions.mplOptions = kMplcgDefaultOptionsO0;
     defaultOptions.length = sizeof(kMplcgDefaultOptionsO0) / sizeof(MplOption);
+  } else if (options.GetOptimizationLevel() == kO2 && options.HasSetDefaultLevel()) {
+    defaultOptions.mplOptions = kMplcgDefaultOptionsO2;
+    defaultOptions.length = sizeof(kMplcgDefaultOptionsO2) / sizeof(MplOption);
   }
   return defaultOptions;
 }

@@ -1,3 +1,4 @@
+OPT := O2
 TARGETS := $(APP)
 LIB_CORE_PATH := $(MAPLE_ROOT)/libjava-core
 LIB_CORE_JAR := $(LIB_CORE_PATH)/java-core.jar

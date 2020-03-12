@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -27,6 +27,18 @@ static MplOption kMpl2MplDefaultOptionsO0[] = {
 // O0 mplcg options
 static MplOption kMplcgDefaultOptionsO0[] = {
 #include "default/O0_options_mplcg.def"
+};
+// O2 ME options
+static MplOption kMeDefaultOptionsO2[] = {
+#include "default/O2_options_me.def"
+};
+// O2 mpl2mpl options
+static MplOption kMpl2MplDefaultOptionsO2[] = {
+#include "default/O2_options_mpl2mpl.def"
+};
+// O2 mplcg options
+static MplOption kMplcgDefaultOptionsO2[] = {
+#include "default/O2_options_mplcg.def"
 };
 }  // namespace maple
 #endif  // MAPLE_DRIVER_INCLUDE_DEFAULT_OPTIONS_H
