@@ -23,6 +23,7 @@ enum OptionIndex : uint64 {
   kInFile,
   kInMplt,
   kOptimization0,
+  kOptimization2,
   kMeOpt,
   kMpl2MplOpt,
   kSaveTemps,

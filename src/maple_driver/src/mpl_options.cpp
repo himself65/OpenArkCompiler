@@ -104,6 +104,18 @@ const mapleOption::Descriptor usages[] = {
     "  -O0                         \tNo optimization.\n",
     "all",
     { { nullptr, nullptr, nullptr, nullptr } } },
+  { kOptimization2,
+    0,
+    "O2",
+    nullptr,
+    nullptr,
+    false,
+    nullptr,
+    mapleOption::BuildType::kBuildTypeAll,
+    mapleOption::ArgCheckPolicy::kArgCheckPolicyNone,
+    "  -O2                         \tDo more optimization. (Default)\n",
+    "all",
+    { { nullptr, nullptr, nullptr, nullptr } } },
   { kMeOpt,
     0,
     nullptr,
@@ -1302,6 +1314,14 @@ ErrorCode MplOptions::DecideRunType() {
           optimizationLevel = kO0;
         }
         break;
+      case kOptimization2:
+        if (runMode == RunMode::kCustomRun) {  // O0 and run should not appear at the same time
+          runModeConflict = true;
+        } else {
+          runMode = RunMode::kAutoRun;
+          optimizationLevel = kO2;
+        }
+        break;
       case kRun:
         if (runMode == RunMode::kAutoRun) {    // O0 and run should not appear at the same time
           runModeConflict = true;
@@ -1476,15 +1496,23 @@ ErrorCode MplOptions::AppendDefaultCombOptions() {
     if (ret != kErrorNoError) {
       return ret;
     }
+  } else if (optimizationLevel == kO2) {
+    ret = AppendDefaultOptions(kBinNameMe, kMeDefaultOptionsO2, sizeof(kMeDefaultOptionsO2) / sizeof(MplOption));
+    if (ret != kErrorNoError) {
+      return ret;
+    }
+    ret = AppendDefaultOptions(kBinNameMpl2mpl, kMpl2MplDefaultOptionsO2,
+                               sizeof(kMpl2MplDefaultOptionsO2) / sizeof(MplOption));
+    if (ret != kErrorNoError) {
+      return ret;
+    }
   }
   return ret;
 }
 
 ErrorCode MplOptions::AppendDefaultCgOptions() {
   ErrorCode ret = kErrorNoError;
-  if (optimizationLevel == kO0) {
-    UpdateRunningExe(kBinNameMplcg);
-  }
+  UpdateRunningExe(kBinNameMplcg);
   return ret;
 }
 
