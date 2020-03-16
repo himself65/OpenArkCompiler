@@ -439,7 +439,7 @@ MeExpr *IvarMeExpr::GetIdenticalExpr(MeExpr &expr) const {
   return nullptr;
 }
 
-BB *VarMeExpr::GetDefByBBMeStmt(const Dominance &dominance, MeStmtPtr &defMeStmt) {
+BB *VarMeExpr::GetDefByBBMeStmt(const Dominance &dominance, MeStmtPtr &defMeStmt) const {
   switch (defBy) {
     case kDefByNo:
       return &dominance.GetCommonEntryBB();

@@ -1483,7 +1483,7 @@ void SSAPre::BuildWorkListStmt(MeStmt *meStmt, uint32 seqStmt, bool isRebuilt, M
     case OP_syncenter:
     case OP_syncexit: {
       auto *syncMeStmt = static_cast<SyncMeStmt*>(meStmt);
-      MapleVector<MeExpr*> &opnds = syncMeStmt->GetOpnds();
+      const MapleVector<MeExpr*> &opnds = syncMeStmt->GetOpnds();
       for (auto it = opnds.begin(); it != opnds.end(); ++it) {
         BuildWorkListExpr(meStmt, seqStmt, *it, isRebuilt, tempVar, true);
       }
@@ -1491,7 +1491,7 @@ void SSAPre::BuildWorkListStmt(MeStmt *meStmt, uint32 seqStmt, bool isRebuilt, M
     }
     case OP_return: {
       auto *retMeStmt = static_cast<RetMeStmt*>(meStmt);
-      MapleVector<MeExpr*> &opnds = retMeStmt->GetOpnds();
+      const MapleVector<MeExpr*> &opnds = retMeStmt->GetOpnds();
       for (auto it = opnds.begin(); it != opnds.end(); ++it) {
         if ((*it)->IsLeaf() && (*it)->GetPrimType() == PTY_ref) {
           // affects LPRE only; will cause CI failure if this is allowed
@@ -1531,7 +1531,7 @@ void SSAPre::BuildWorkListStmt(MeStmt *meStmt, uint32 seqStmt, bool isRebuilt, M
     case OP_polymorphiccallassigned:
     case OP_icallassigned: {
       auto *naryMeStmt = static_cast<NaryMeStmt*>(meStmt);
-      MapleVector<MeExpr*> &opnds = naryMeStmt->GetOpnds();
+      const MapleVector<MeExpr*> &opnds = naryMeStmt->GetOpnds();
       for (auto it = opnds.begin(); it != opnds.end(); ++it) {
         BuildWorkListExpr(meStmt, seqStmt, *it, isRebuilt, tempVar, true);
       }
@@ -1553,7 +1553,7 @@ void SSAPre::BuildWorkListStmt(MeStmt *meStmt, uint32 seqStmt, bool isRebuilt, M
     case OP_xintrinsiccallassigned:
     case OP_intrinsiccallwithtypeassigned: {
       auto *naryMeStmt = static_cast<NaryMeStmt*>(meStmt);
-      MapleVector<MeExpr*> &opnds = naryMeStmt->GetOpnds();
+      const MapleVector<MeExpr*> &opnds = naryMeStmt->GetOpnds();
       for (auto it = opnds.begin(); it != opnds.end(); ++it) {
         if (!GetRcLoweringOn() && (*it)->IsLeaf() && (*it)->GetMeOp() == kMeOpVar) {
           // affects LPRE only; some later phase needs to transform dread to addrof

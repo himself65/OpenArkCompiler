@@ -641,11 +641,11 @@ void RCLowering::HandleReturnRegread(RetMeStmt &ret) {
     bb->InsertMeStmtBefore(&ret, incCall);
   } else {
     // remove argument from intrinsiccall MPL_CLEANUP_LOCALREFVARS (dread ref %Reg1_R5678, ...
-    MapleVector<MeExpr*> *opnds = &cleanup->GetOpnds();
+    const MapleVector<MeExpr*> *opnds = &cleanup->GetOpnds();
     for (auto iter = opnds->begin(); iter != opnds->end(); ++iter) {
       if (*iter == retVar || (!isAnalyzed && static_cast<VarMeExpr*>(*iter)->GetOStIdx() == retVar->GetOStIdx())) {
-        opnds->erase(iter);
-        opnds->push_back(retVar);  // pin it to end of std::vector
+        cleanup->EraseOpnds(iter);
+        cleanup->PushBackOpnd(retVar);  // pin it to end of std::vector
         cleanup->SetIntrinsic(INTRN_MPL_CLEANUP_LOCALREFVARS_SKIP);
         break;
       }
@@ -712,7 +712,7 @@ void RCLowering::HandleReturnWithCleanup() {
     IntrinsiccallMeStmt *cleanup = FindCleanupIntrinsic(*ret);
     if (cleanup != nullptr && !tmpLocalRefVars.empty()) {  // new localrefvar introduced in this phase
       for (auto tmpVar : tmpLocalRefVars) {
-        cleanup->GetOpnds().push_back(tmpVar);
+        cleanup->PushBackOpnd(tmpVar);
       }
     }
     if (ret->GetOpnds().empty()) {

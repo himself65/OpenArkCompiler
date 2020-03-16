@@ -102,13 +102,13 @@ RCItem *AnalyzeRC::FindOrCreateRCItem(const OriginalSt &ost) {
   return rcItem;
 }
 
-OriginalSt *AnalyzeRC::GetOriginalSt(MeExpr &refLHS) {
+OriginalSt *AnalyzeRC::GetOriginalSt(const MeExpr &refLHS) {
   if (refLHS.GetMeOp() == kMeOpVar) {
-    auto &varMeExpr = static_cast<VarMeExpr&>(refLHS);
+    auto &varMeExpr = static_cast<const VarMeExpr&>(refLHS);
     return ssaTab.GetSymbolOriginalStFromID(varMeExpr.GetOStIdx());
   }
   ASSERT(refLHS.GetMeOp() == kMeOpIvar, "GetOriginalSt: unexpected node type");
-  auto &ivarMeExpr = static_cast<IvarMeExpr&>(refLHS);
+  auto &ivarMeExpr = static_cast<const IvarMeExpr&>(refLHS);
   if (ivarMeExpr.GetMu() != nullptr) {
     return ssaTab.GetSymbolOriginalStFromID(ivarMeExpr.GetMu()->GetOStIdx());
   }
@@ -371,7 +371,7 @@ bool AnalyzeRC::NeedDecRef(IvarMeExpr &ivar) {
   return ivar.GetMu()->GetVstIdx() != ost->GetZeroVersionIndex() && ivar.GetMu()->GetDefBy() != kDefByNo;
 }
 
-bool AnalyzeRC::NeedDecRef(VarMeExpr &var) {
+bool AnalyzeRC::NeedDecRef(const VarMeExpr &var) {
   OriginalSt *ost = GetOriginalSt(var);
   return var.GetVstIdx() != ost->GetZeroVersionIndex() && var.GetDefBy() != kDefByNo;
 }
@@ -394,17 +394,17 @@ void AnalyzeRC::RemoveUnneededCleanups() {
     size_t nextPos = 0;
     size_t i = 0;
     for (; i < intrn->NumMeStmtOpnds(); ++i) {
-      auto varMeExpr = static_cast<VarMeExpr*>(intrn->GetOpnds()[i]);
+      auto varMeExpr = static_cast<VarMeExpr*>(intrn->GetOpnd(i));
       if (varMeExpr->IsZeroVersion(ssaTab)) {
         continue;
       }
       if (nextPos != i) {
-        intrn->GetOpnds()[nextPos] = varMeExpr;
+        intrn->SetOpnd(nextPos, varMeExpr);
       }
       ++nextPos;
     }
     while (nextPos < i) {
-      intrn->GetOpnds().pop_back();
+      intrn->PopBackOpnd();
       --i;
     }
     if (intrn->NumMeStmtOpnds() > kCleanupLocalRefVarsLimit) {

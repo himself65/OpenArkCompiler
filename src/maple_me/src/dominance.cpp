@@ -154,14 +154,14 @@ void Dominance::ComputeDtDfn() {
 }
 
 // true if b1 dominates b2
-bool Dominance::Dominate(const BB &bb1, BB &bb2) {
+bool Dominance::Dominate(const BB &bb1, const BB &bb2) {
   if (&bb1 == &bb2) {
     return true;
   }
   if (doms[bb2.GetBBId()] == nullptr) {
     return false;
   }
-  BB *immediateDom = &bb2;
+  const BB *immediateDom = &bb2;
   do {
     if (immediateDom == nullptr) {
       return false;

@@ -22,6 +22,7 @@
 namespace maple {
 class BinaryMplImport {
  public:
+  using CallSite = std::pair<CallInfo*, PUIdx>;
   explicit BinaryMplImport(MIRModule &md) : mod(md), mirBuilder(&md) {}
   BinaryMplImport &operator=(const BinaryMplImport&) = delete;
   BinaryMplImport(const BinaryMplImport&) = delete;

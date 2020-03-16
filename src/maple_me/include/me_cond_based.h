@@ -25,19 +25,19 @@ class MeCondBased {
   MeCondBased(MeFunction *func, Dominance *dom) : func(func), dominance(dom) {}
 
   ~MeCondBased() = default;
-  bool NullValueFromTestCond(VarMeExpr&, BB&, bool);
-  bool IsNotNullValue(VarMeExpr&, UnaryMeStmt&, BB*);
+  bool NullValueFromTestCond(const VarMeExpr&, const BB&, bool);
+  bool IsNotNullValue(const VarMeExpr&, const UnaryMeStmt&, const BB*);
 
   const MeFunction *GetFunc() const {
     return func;
   }
 
  private:
-  bool NullValueFromOneTestCond(const VarMeExpr&, BB&, BB&, bool);
-  bool PointerWasDereferencedBefore(VarMeExpr&, const UnaryMeStmt&, BB*);
-  bool PointerWasDereferencedRightAfter(VarMeExpr&, const UnaryMeStmt&);
-  bool IsIreadWithTheBase(VarMeExpr&, MeExpr&);
-  bool StmtHasDereferencedBase(MeStmt&, VarMeExpr&);
+  bool NullValueFromOneTestCond(const VarMeExpr&, const BB&, const BB&, bool);
+  bool PointerWasDereferencedBefore(const VarMeExpr&, const UnaryMeStmt&, const BB*);
+  bool PointerWasDereferencedRightAfter(const VarMeExpr&, const UnaryMeStmt&);
+  bool IsIreadWithTheBase(const VarMeExpr&, const MeExpr&);
+  bool StmtHasDereferencedBase(const MeStmt&, const VarMeExpr&);
 
   MeFunction *func;
   Dominance *dominance;

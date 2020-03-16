@@ -41,7 +41,7 @@ class DelegateRC {
   void CleanUpDeadLocalRefVar(const std::set<OStIdx> &liveLocalrefvars);
 
  private:
-  bool IsCopiedOrDerefedOp(const Opcode op);
+  bool IsCopiedOrDerefedOp(const Opcode op) const;
   void CollectVstCantDecrefEarly(MeExpr &opnd0, MeExpr &opnd1);
   void CollectUseCounts(const MeExpr &x);
   void FindAndDecrUseCount(VarMeExpr *rhsVar, MeExpr *x, int32 &remainingUses);

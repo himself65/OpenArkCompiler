@@ -96,8 +96,7 @@ void SSADevirtual::ReplaceCall(CallMeStmt *callStmt, MIRFunction *targetFunc) {
   if (callStmt->GetOp() == OP_virtualicall || callStmt->GetOp() == OP_virtualicallassigned ||
       callStmt->GetOp() == OP_interfaceicall || callStmt->GetOp() == OP_interfaceicallassigned) {
     // delete 1st argument
-    MapleVector<MeExpr*>::iterator opndIt = callStmt->GetOpnds().begin();
-    callStmt->GetOpnds().erase(opndIt);
+    callStmt->EraseOpnds(callStmt->GetOpnds().begin());
   }
   MeExpr *receiver = callStmt->GetOpnd(0);
   if (NeedNullCheck(receiver)) {
@@ -401,8 +400,8 @@ void SSADevirtual::VisitMeExpr(MeExpr *meExpr) {
   }
 }
 
-void SSADevirtual::ReturnTyIdxInferring(RetMeStmt *retMeStmt) {
-  MapleVector<MeExpr*> &opnds = retMeStmt->GetOpnds();
+void SSADevirtual::ReturnTyIdxInferring(const RetMeStmt *retMeStmt) {
+  const MapleVector<MeExpr*> &opnds = retMeStmt->GetOpnds();
   CHECK_FATAL(opnds.size() <= 1, "Assume at most one return value for now");
   for (size_t i = 0; i < opnds.size(); ++i) {
     MeExpr *opnd = opnds[i];
@@ -447,7 +446,7 @@ void SSADevirtual::TraversalMeStmt(MeStmt *meStmt) {
     case OP_syncenter:
     case OP_syncexit: {
       auto *syncMeStmt = static_cast<SyncMeStmt*>(meStmt);
-      MapleVector<MeExpr*> &opnds = syncMeStmt->GetOpnds();
+      const MapleVector<MeExpr*> &opnds = syncMeStmt->GetOpnds();
       for (size_t i = 0; i < opnds.size(); ++i) {
         MeExpr *opnd = opnds[i];
         VisitMeExpr(opnd);
@@ -483,7 +482,7 @@ void SSADevirtual::TraversalMeStmt(MeStmt *meStmt) {
     case OP_customcallassigned:
     case OP_polymorphiccallassigned: {
       auto *callMeStmt = static_cast<CallMeStmt*>(meStmt);
-      MapleVector<MeExpr*> &opnds = callMeStmt->GetOpnds();
+      const MapleVector<MeExpr*> &opnds = callMeStmt->GetOpnds();
       for (size_t i = 0; i < opnds.size(); ++i) {
         MeExpr *opnd = opnds[i];
         VisitMeExpr(opnd);
@@ -498,7 +497,7 @@ void SSADevirtual::TraversalMeStmt(MeStmt *meStmt) {
     case OP_icall:
     case OP_icallassigned: {
       auto *icallMeStmt = static_cast<IcallMeStmt*>(meStmt);
-      MapleVector<MeExpr*> &opnds = icallMeStmt->GetOpnds();
+      const MapleVector<MeExpr*> &opnds = icallMeStmt->GetOpnds();
       for (size_t i = 0; i < opnds.size(); ++i) {
         MeExpr *opnd = opnds[i];
         VisitMeExpr(opnd);
@@ -512,7 +511,7 @@ void SSADevirtual::TraversalMeStmt(MeStmt *meStmt) {
     case OP_intrinsiccallassigned:
     case OP_xintrinsiccallassigned: {
       auto *intrinCallStmt = static_cast<IntrinsiccallMeStmt*>(meStmt);
-      MapleVector<MeExpr*> &opnds = intrinCallStmt->GetOpnds();
+      const MapleVector<MeExpr*> &opnds = intrinCallStmt->GetOpnds();
       for (size_t i = 0; i < opnds.size(); ++i) {
         MeExpr *opnd = opnds[i];
         VisitMeExpr(opnd);
@@ -532,7 +531,7 @@ void SSADevirtual::TraversalMeStmt(MeStmt *meStmt) {
     }
     case OP_return: {
       auto *retMeStmt = static_cast<RetMeStmt*>(meStmt);
-      MapleVector<MeExpr*> &opnds = retMeStmt->GetOpnds();
+      const MapleVector<MeExpr*> &opnds = retMeStmt->GetOpnds();
       for (size_t i = 0; i < opnds.size(); ++i) {
         MeExpr *opnd = opnds[i];
         VisitMeExpr(opnd);
