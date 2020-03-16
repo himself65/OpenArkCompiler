@@ -70,7 +70,7 @@ class AnalyzeRC {
   void RemoveUnneededCleanups();
   void RenameUses(MeStmt &meStmt);
   RCItem *FindOrCreateRCItem(const OriginalSt &ost);
-  OriginalSt *GetOriginalSt(MeExpr &refLHS);
+  OriginalSt *GetOriginalSt(const MeExpr &refLHS);
   VarMeExpr *GetZeroVersionVarMeExpr(const VarMeExpr &var);
   bool NeedIncref(const MeStmt &stmt);
   UnaryMeStmt *CreateIncrefZeroVersion(const OriginalSt &ost);
@@ -78,7 +78,7 @@ class AnalyzeRC {
   void TraverseStmt(BB &bb);
   bool NeedDecRef(RCItem &rcItem, MeExpr &expr);
   bool NeedDecRef(IvarMeExpr &ivar);
-  bool NeedDecRef(VarMeExpr &var);
+  bool NeedDecRef(const VarMeExpr &var);
 
   friend class MeDoAnalyzeRC;
   MeFunction &func;

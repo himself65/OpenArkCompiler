@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -105,7 +105,7 @@ void CGNode::DumpDetail() const {
       CallInfo *ci = callSite.first;
       CGNode *node = cgIt;
       MIRFunction *mf = node->GetMIRFunction();
-      if (mf != nullptr) {
+      if (mf) {
         LogInfo::MapleLogger() << "\tcallee in module : " << mf->GetName() << "  ";
       } else {
         LogInfo::MapleLogger() << "\tcallee external: " << ci->GetCalleeName();
@@ -131,12 +131,12 @@ void CGNode::Dump(std::ofstream &fout) const {
     for (auto &cgIt : *callSite.second) {
       CallInfo *ci = callSite.first;
       CGNode *node = cgIt;
-      if (node == nullptr) {
+      if (!node) {
         continue;
       }
       MIRFunction *func = node->GetMIRFunction();
       fout << "\"" << mirFunc->GetName() << "\" -> ";
-      if (func != nullptr) {
+      if (func) {
         if (node->GetSCCNode() != nullptr && node->GetSCCNode()->GetCGNodes().size() > 1) {
           fout << "\"" << func->GetName() << "\"[label=" << node->GetSCCNode()->id << " color=red];\n";
         } else {
@@ -530,7 +530,7 @@ void CallGraph::HandleBody(MIRFunction *func, BlockNode *body, CGNode *node, uin
           ASSERT(klass != nullptr, "Klass not found");
           MapleVector<MIRFunction*> *cands = klass->GetCandidates(calleeFunc->GetBaseFuncNameWithTypeStrIdx());
           // continue to search its implinterfaces
-          if (cands == nullptr) {
+          if (!cands) {
             for (Klass *implinterface : klass->GetImplInterfaces()) {
               cands = implinterface->GetCandidates(calleeFunc->GetBaseFuncNameWithTypeStrIdx());
               if (cands && !cands->empty()) {
@@ -538,7 +538,7 @@ void CallGraph::HandleBody(MIRFunction *func, BlockNode *body, CGNode *node, uin
               }
             }
           }
-          if (cands == nullptr || cands->empty()) {
+          if (!cands || cands->empty()) {
             continue;  // Fix CI
           }
           MIRFunction *actualMirfunc = cands->at(0);
@@ -600,7 +600,7 @@ static void ResetInferredType(std::vector<MIRSymbol*> &inferredSymbols) {
 }
 
 static void ResetInferredType(std::vector<MIRSymbol*> &inferredSymbols, MIRSymbol *s) {
-  if (s == nullptr) {
+  if (!s) {
     return;
   }
   if (s->GetInferredTyIdx() == kInitTyIdx || s->GetInferredTyIdx() == kNoneTyIdx) {
@@ -614,6 +614,7 @@ static void ResetInferredType(std::vector<MIRSymbol*> &inferredSymbols, MIRSymbo
       break;
     }
   }
+  // ASSERT(i<inferredSymbols.size(), "s must be in inferredSymbols");
 }
 
 static void SetInferredType(std::vector<MIRSymbol*> &inferredSymbols, MIRSymbol *s, TyIdx idx) {
@@ -874,7 +875,7 @@ void IPODevirtulize::SearchDefInMemberMethods(const Klass *klass) {
 void DoDevirtual(const Klass *klass, const KlassHierarchy *klassh) {
   MIRClassType *classtype = static_cast<MIRClassType*>(klass->GetMIRStructType());
   for (auto &func : klass->GetMethods()) {
-    if (func->GetBody() == nullptr) {
+    if (!func->GetBody()) {
       continue;
     }
     StmtNode *stmtNext = nullptr;
@@ -990,7 +991,7 @@ void DoDevirtual(const Klass *klass, const KlassHierarchy *klassh) {
                   for (MIRFunction *const &method : iklass->GetMethods()) {
                     if (calleefunc->GetBaseFuncNameWithTypeStrIdx() == method->GetBaseFuncNameWithTypeStrIdx() &&
                         !method->GetFuncAttrs().GetAttr(FUNCATTR_abstract)) {
-                      if (tmpInterface == nullptr || klassh->IsSuperKlassForInterface(tmpInterface, iklass)) {
+                      if (!tmpInterface || klassh->IsSuperKlassForInterface(tmpInterface, iklass)) {
                         tmpInterface = iklass;
                         tmpMethod = method;
                       }
@@ -999,7 +1000,7 @@ void DoDevirtual(const Klass *klass, const KlassHierarchy *klassh) {
                   }
                 }
                 // Add this check for the thirdparty APP compile
-                if (tmpMethod == nullptr) {
+                if (!tmpMethod) {
                   Klass *parentKlass = klassh->GetKlassFromName(calleefunc->GetBaseClassName());
                   CHECK_FATAL(parentKlass != nullptr, "null ptr check");
                   bool flag = false;
@@ -1028,7 +1029,7 @@ void DoDevirtual(const Klass *klass, const KlassHierarchy *klassh) {
                                            << currKlass->GetKlassName() << std::endl;
                   }
                 }
-                if (tmpMethod == nullptr) {  // SearchWithoutRettype, search only in current class now.
+                if (!tmpMethod) {  // SearchWithoutRettype, search only in current class now.
                   MIRType *retType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(calleefunc->GetReturnTyIdx());
                   Klass *targetKlass = nullptr;
                   bool isCalleeScalar = false;
@@ -1040,7 +1041,7 @@ void DoDevirtual(const Klass *klass, const KlassHierarchy *klassh) {
                   } else {
                     targetKlass = klassh->GetKlassFromTyIdx(retType->GetTypeIndex());
                   }
-                  if (targetKlass == nullptr && !isCalleeScalar) {
+                  if (!targetKlass && !isCalleeScalar) {
                     CHECK_FATAL(targetKlass != nullptr, "null ptr check");
                   }
                   Klass *curRetKlass = nullptr;
@@ -1058,7 +1059,7 @@ void DoDevirtual(const Klass *klass, const KlassHierarchy *klassh) {
                       } else {
                         tmpKlass = klassh->GetKlassFromTyIdx(tmpType->GetTypeIndex());
                       }
-                      if (tmpKlass == nullptr && !isCurrVtabScalar) {
+                      if (!tmpKlass && !isCurrVtabScalar) {
                         CHECK_FATAL(tmpKlass != nullptr, "null ptr check");
                       }
                       if (isCalleeScalar || isCurrVtabScalar) {
@@ -1073,7 +1074,7 @@ void DoDevirtual(const Klass *klass, const KlassHierarchy *klassh) {
                         continue;
                       }
                       if (targetKlass->IsClass() && klassh->IsSuperKlass(tmpKlass, targetKlass) &&
-                          (curRetKlass == nullptr || klassh->IsSuperKlass(curRetKlass, tmpKlass))) {
+                          (!curRetKlass || klassh->IsSuperKlass(curRetKlass, tmpKlass))) {
                         curRetKlass = tmpKlass;
                         tmpMethod = method;
                       }
@@ -1084,12 +1085,12 @@ void DoDevirtual(const Klass *klass, const KlassHierarchy *klassh) {
                       if (!targetKlass->IsClass()) {
                         CHECK_FATAL(tmpKlass != nullptr, "Klass null ptr check");
                         if (tmpKlass->IsClass() && klassh->IsInterfaceImplemented(targetKlass, tmpKlass) &&
-                            (curRetKlass == nullptr || klassh->IsSuperKlass(curRetKlass, tmpKlass))) {
+                            (!curRetKlass || klassh->IsSuperKlass(curRetKlass, tmpKlass))) {
                           curRetKlass = tmpKlass;
                           tmpMethod = method;
                         }
                         if (!tmpKlass->IsClass() && klassh->IsSuperKlassForInterface(tmpKlass, targetKlass) &&
-                            (curRetKlass == nullptr || klassh->IsSuperKlass(curRetKlass, tmpKlass))) {
+                            (!curRetKlass || klassh->IsSuperKlass(curRetKlass, tmpKlass))) {
                           curRetKlass = tmpKlass;
                           tmpMethod = method;
                         }
@@ -1097,12 +1098,12 @@ void DoDevirtual(const Klass *klass, const KlassHierarchy *klassh) {
                     }
                   }
                 }
-                if (tmpMethod == nullptr && (currKlass->IsClass() || currKlass->IsInterface())) {
+                if (!tmpMethod && (currKlass->IsClass() || currKlass->IsInterface())) {
                   LogInfo::MapleLogger() << "warning: func " << calleefunc->GetName()
                                          << " is not found in DeVirtual!" << std::endl;
                   stmt->SetOpCode(OP_callassigned);
                   break;
-                } else if (tmpMethod == nullptr) {
+                } else if (!tmpMethod) {
                   LogInfo::MapleLogger() << "Error: func " << calleefunc->GetName() << " is not found!" << std::endl;
                   ASSERT(tmpMethod, "Must not be null");
                 }
@@ -1215,24 +1216,25 @@ void IPODevirtulize::DevirtualFinal() {
   }
 }
 
+using CallSite = std::pair<CallInfo*, PUIdx>;
 void CallGraph::GenCallGraph() {
-  // Read existing call graph from mplt, std::map<PUIdx, std::vector<CallInfo*> >
+  // Read existing call graph from mplt, std::map<PUIdx, std::vector<CallSite> >
   // caller_PUIdx and all call site info are needed. Rebuild all other info of CGNode using CHA
   for (auto const &it : mirModule->GetMethod2TargetMap()) {
     CGNode *node = GetOrGenCGNode(it.first);
     CHECK_FATAL(node != nullptr, "node is null");
-    std::vector<CallInfo*> callees = it.second;
+    std::vector<CallSite> callees = it.second;
     for (auto itInner = callees.begin(); itInner != callees.end(); ++itInner) {
-      CallInfo *info = *itInner;
+      CallInfo *info = (*itInner).first;
       CGNode *calleeNode = GetOrGenCGNode(info->GetFunc()->GetPuidx(), info->GetCallType() == kCallTypeVirtualCall,
                                           info->GetCallType() == kCallTypeInterfaceCall);
       CHECK_FATAL(calleeNode != nullptr, "calleeNode is null");
       if (info->GetCallType() == kCallTypeVirtualCall) {
-        node->AddCallsite(*itInner, &calleeNode->GetVcallCandidates());
+        node->AddCallsite((*itInner).first, &calleeNode->GetVcallCandidates());
       } else if (info->GetCallType() == kCallTypeInterfaceCall) {
-        node->AddCallsite(*itInner, &calleeNode->GetIcallCandidates());
+        node->AddCallsite((*itInner).first, &calleeNode->GetIcallCandidates());
       } else if (info->GetCallType() == kCallTypeCall) {
-        node->AddCallsite(*itInner, calleeNode);
+        node->AddCallsite((*itInner).first, calleeNode);
       } else if (info->GetCallType() == kCallTypeSuperCall) {
         const MIRFunction *calleefunc = info->GetFunc();
         Klass *klass = klassh->GetKlassFromFunc(calleefunc);
@@ -1273,7 +1275,7 @@ void CallGraph::GenCallGraph() {
   for (auto it = GlobalTables::GetFunctionTable().GetFuncTable().begin();
        it != GlobalTables::GetFunctionTable().GetFuncTable().end(); it++) {
     MIRFunction *mirFunc = *it;
-    if (mirFunc == nullptr || mirFunc->GetBody() == nullptr) {
+    if (!mirFunc || !mirFunc->GetBody()) {
       continue;
     }
     mirModule->SetCurFunction(mirFunc);
@@ -1502,7 +1504,7 @@ void SCCNode::Setup() {
     for (auto &callSite : node->GetCallee()) {
       for (auto &cgIt : *callSite.second) {
         CGNode *calleeNode = cgIt;
-        if (calleeNode == nullptr) {
+        if (!calleeNode) {
           continue;
         }
         if (calleeNode->GetSCCNode() == this) {
@@ -1535,7 +1537,7 @@ void CallGraph::BuildSCCDFS(CGNode *caller, uint32 &visitIndex, std::vector<SCCN
   for (auto &callSite : caller->GetCallee()) {
     for (auto &cgIt : *callSite.second) {
       CGNode *calleeNode = cgIt;
-      if (calleeNode == nullptr) {
+      if (!calleeNode) {
         continue;
       }
       uint32 calleeId = calleeNode->GetID();
@@ -1646,9 +1648,9 @@ void CGNode::AddCandsForCallNode(const KlassHierarchy *kh) {
   }
   CHECK_FATAL(mirFunc != nullptr, "");
   Klass *klass = kh->GetKlassFromFunc(mirFunc);
-  if (klass != nullptr) {
+  if (klass) {
     MapleVector<MIRFunction*> *v = klass->GetCandidates(mirFunc->GetBaseFuncNameWithTypeStrIdx());
-    if (v != nullptr) {
+    if (v) {
       vcallCands = *v;  // Vector copy
     }
   }
@@ -1668,7 +1670,7 @@ MIRFunction *CGNode::HasOneCandidate() const {
     }
     if (!vcallCands[i]->IsEmpty()) {
       count++;
-      if (cand == nullptr) {
+      if (!cand) {
         cand = vcallCands[i];
       }
     }
@@ -1679,19 +1681,18 @@ MIRFunction *CGNode::HasOneCandidate() const {
 AnalysisResult *DoCallGraph::Run(MIRModule *module, ModuleResultMgr *m) {
   MemPool *memPool = memPoolCtrler.NewMemPool("callgraph mempool");
   KlassHierarchy *cha = static_cast<KlassHierarchy*>(m->GetAnalysisResult(MoPhase_CHA, module));
-  CHECK_FATAL(cha != nullptr, "CHA can't be null");
+  CHECK_FATAL(cha != nullptr, "");
   CallGraph *cg = memPool->New<CallGraph>(module, memPool, cha, module->GetFileName().c_str());
   cg->debug_flag = TRACE_PHASE;
   cg->BuildCallGraph();
   m->AddResult(GetPhaseID(), *module, *cg);
-  if (!module->IsInIPA()) {
-    // do retype
-    MemPool *localMp = memPoolCtrler.NewMemPool(PhaseName());
-    maple::MIRBuilder dexMirbuilder(module);
-    Retype retype(module, localMp, dexMirbuilder, cha);
-    retype.DoRetype();
-    memPoolCtrler.DeleteMemPool(localMp);
-  }
+  // do retype
+  MemPool *localMp = memPoolCtrler.NewMemPool(PhaseName());
+  maple::MIRBuilder dexMirbuilder(module);
+  KlassHierarchy *retypeKh = static_cast<KlassHierarchy*>(m->GetAnalysisResult(MoPhase_CHA, module));
+  Retype retype(module, localMp, dexMirbuilder, retypeKh);
+  retype.DoRetype();
+  memPoolCtrler.DeleteMemPool(localMp);
   return cg;
 }
 

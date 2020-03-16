@@ -525,7 +525,7 @@ void Prop::TraversalMeStmt(MeStmt &meStmt) {
     }
     case OP_return: {
       auto &retMeStmt = static_cast<RetMeStmt&>(meStmt);
-      MapleVector<MeExpr*> &opnds = retMeStmt.GetOpnds();
+      const MapleVector<MeExpr*> &opnds = retMeStmt.GetOpnds();
       // java return operand cannot be expression because cleanup intrinsic is
       // inserted before the return statement
       if (JAVALANG && opnds.size() == 1 && opnds[0]->GetMeOp() == kMeOpVar) {
@@ -533,7 +533,7 @@ void Prop::TraversalMeStmt(MeStmt &meStmt) {
       }
       for (size_t i = 0; i < opnds.size(); ++i) {
         MeExpr *opnd = opnds[i];
-        opnds[i] = &PropMeExpr(utils::ToRef(opnd), subProped, false);
+        retMeStmt.SetOpnd(i, &PropMeExpr(utils::ToRef(opnd), subProped, false));
       }
       break;
     }

@@ -245,7 +245,7 @@ class IRMap : public AnalysisResult {
   void BuildMustDefList(MeStmt &meStmt, MapleVector<MustDefNode>&, MapleVector<MustDefMeNode>&);
   void BuildMuList(MapleMap<OStIdx, MayUseNode>&, MapleMap<OStIdx, VarMeExpr*>&);
   void BuildPhiMeNode(BB&);
-  BB *GetFalseBrBB(CondGotoMeStmt&);
+  BB *GetFalseBrBB(const CondGotoMeStmt&);
   void SetMeExprOpnds(MeExpr &meExpr, BaseNode &mirNode);
   static bool InitMeStmtFactory();
   MeStmt *BuildDassignMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart);

@@ -107,7 +107,7 @@ void DelegateRC::SaveDerefedOrCopiedVst(const MeExpr *expr) {
   }
 }
 
-bool DelegateRC::IsCopiedOrDerefedOp(const Opcode op) {
+bool DelegateRC::IsCopiedOrDerefedOp(const Opcode op) const {
   return op == OP_dassign || op == OP_maydassign || op == OP_regassign || op == OP_syncenter ||
          op == OP_syncexit || op == OP_throw || op == OP_return || op == OP_iassign ||  // cause var copied
          kOpcodeInfo.IsCall(op);  // callstmt need considering parameter
@@ -763,7 +763,7 @@ void DelegateRC::CleanUpDeadLocalRefVar(const std::set<OStIdx> &liveLocalrefvars
       }
       ++nextPos;
     }
-    intrin->GetOpnds().erase(intrin->GetOpnds().begin() + nextPos, intrin->GetOpnds().end());
+    intrin->EraseOpnds(intrin->GetOpnds().begin() + nextPos, intrin->GetOpnds().end());
   }
 }
 

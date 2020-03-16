@@ -20,8 +20,8 @@
 #include "me_function.h"
 
 namespace maple {
-bool MeDoBypathEH::DoBypathException(BB *tryBB, BB *catchBB, Klass *catchClass, StIdx e, KlassHierarchy *kh,
-                                     MeFunction *func, StmtNode *syncExitStmt) {
+bool MeDoBypathEH::DoBypathException(BB *tryBB, BB *catchBB, const Klass *catchClass, const StIdx &stIdx,
+                                     const KlassHierarchy *kh, MeFunction *func, const StmtNode *syncExitStmt) {
   std::vector<BB*> tryBBV;
   std::set<BB*> tryBBS;
   tryBBV.push_back(tryBB);
@@ -65,7 +65,7 @@ bool MeDoBypathEH::DoBypathException(BB *tryBB, BB *catchBB, Klass *catchClass, 
           continue;
         }
         MIRBuilder *mBuilder = func->GetMIRModule().GetMIRBuilder();
-        DassignNode *copyStmt = mBuilder->CreateStmtDassign(e, 0, rhExpr);
+        DassignNode *copyStmt = mBuilder->CreateStmtDassign(stIdx, 0, rhExpr);
         bb->InsertStmtBefore(stmt, copyStmt);
         GotoNode *gotoNode = mBuilder->CreateStmtGoto(OP_goto, catchBB->GetBBLabel());
         bb->ReplaceStmt(stmt, gotoNode);
@@ -196,7 +196,7 @@ StmtNode *MeDoBypathEH::IsSyncExit(BB *syncBB, MeFunction *func, LabelIdx second
   return syncExitStmt;
 }
 
-void MeDoBypathEH::BypathException(MeFunction *func, KlassHierarchy *kh) {
+void MeDoBypathEH::BypathException(MeFunction *func, const KlassHierarchy *kh) {
   // Condition check:
   //  1. There is only one catch statement, and the catch can handle the thrown exception
   auto labelIdx = static_cast<LabelIdx>(-1);

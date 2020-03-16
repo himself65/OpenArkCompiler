@@ -143,12 +143,12 @@ void MeLowerGlobals::Run() {
         }
         MeExpr *addroffuncExpr = irMap->CreateAddroffuncMeExpr(callee.GetPuidx());
         auto insertpos = callStmt.GetOpnds().begin();
-        callStmt.GetOpnds().insert(insertpos, addroffuncExpr);
+        callStmt.InsertOpnds(insertpos, addroffuncExpr);
         IcallMeStmt *icallStmt = irMap->NewInPool<IcallMeStmt>(stmt.GetOp() == OP_call ? OP_icall : OP_icallassigned);
         icallStmt->SetIsLive(callStmt.GetIsLive());
         icallStmt->SetSrcPos(callStmt.GetSrcPosition());
         for (MeExpr *o : callStmt.GetOpnds()) {
-          icallStmt->GetOpnds().push_back(o);
+          icallStmt->PushBackOpnd(o);
         }
         icallStmt->GetMuList()->insert(callStmt.GetMuList()->begin(), callStmt.GetMuList()->end());
         icallStmt->GetChiList()->insert(callStmt.GetChiList()->begin(), callStmt.GetChiList()->end());

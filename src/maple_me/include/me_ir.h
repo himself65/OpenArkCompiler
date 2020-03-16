@@ -223,7 +223,7 @@ class VarMeExpr final : public MeExpr {
   // indicate if the variable is local variable but not a function formal variable
   bool IsPureLocal(const SSATab&, const MIRFunction&) const;
   bool IsZeroVersion(const SSATab&) const;
-  BB *GetDefByBBMeStmt(const Dominance&, MeStmtPtr&);
+  BB *GetDefByBBMeStmt(const Dominance&, MeStmtPtr&) const;
   bool IsSameVariableValue(const VarMeExpr&) const override;
   VarMeExpr &ResolveVarMeValue();
   bool PointsToStringLiteral();
@@ -1945,12 +1945,32 @@ class NaryMeStmt : public MeStmt {
     opnds[idx] = val;
   }
 
-  MapleVector<MeExpr*> &GetOpnds() {
+  const MapleVector<MeExpr*> &GetOpnds() const {
     return opnds;
+  }
+
+  void PushBackOpnd(MeExpr *val) {
+    opnds.push_back(val);
+  }
+
+  void PopBackOpnd() {
+    opnds.pop_back();
   }
 
   void SetOpnds(MapleVector<MeExpr*> &opndsVal) {
     opnds = opndsVal;
+  }
+
+  void EraseOpnds(const MapleVector<MeExpr*>::const_iterator begin, const MapleVector<MeExpr*>::const_iterator end) {
+    opnds.erase(begin, end);
+  }
+
+  void EraseOpnds(const MapleVector<MeExpr *>::const_iterator it) {
+    opnds.erase(it);
+  }
+
+  void InsertOpnds(const MapleVector<MeExpr*>::const_iterator begin, MeExpr *expr) {
+    opnds.insert(begin, expr);
   }
 
   void DumpOpnds(IRMap*) const;
@@ -2407,7 +2427,7 @@ class CondGotoMeStmt : public UnaryMeStmt {
 
   ~CondGotoMeStmt() = default;
 
-  uint32 GetOffset() {
+  uint32 GetOffset() const {
     return offset;
   }
 

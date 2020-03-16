@@ -282,8 +282,8 @@ void MeStmtPre::CollectVarForMeStmt(MeStmt *meStmt, MeExpr *meExpr, std::vector<
     case OP_callassigned: {
       auto *nStmt = static_cast<NaryMeStmt*>(meStmt);
       for (size_t i = 0; i < nStmt->NumMeStmtOpnds(); ++i)
-        if (nStmt->GetOpnds()[i]->GetMeOp() == kMeOpVar || nStmt->GetOpnds()[i]->GetMeOp() == kMeOpReg) {
-          varVec.push_back(nStmt->GetOpnds()[i]);
+        if (nStmt->GetOpnd(i)->GetMeOp() == kMeOpVar || nStmt->GetOpnd(i)->GetMeOp() == kMeOpReg) {
+          varVec.push_back(nStmt->GetOpnd(i));
         }
       if (meExpr != nullptr) {
         CHECK_FATAL(meExpr->GetMeOp() == kMeOpVar, "CollectVarForMeStmt:bad meExpr field in realocc node");
@@ -360,9 +360,9 @@ MeStmt *MeStmtPre::PhiOpndFromRes4Stmt(MeRealOcc *realZ, size_t j, MeExpr *&lhsV
     case OP_callassigned: {
       auto *nStmtQ = static_cast<NaryMeStmt*>(stmtQ);
       for (size_t i = 0; i < nStmtQ->NumMeStmtOpnds(); ++i) {
-        MeExpr *retOpnd = GetReplaceMeExpr(nStmtQ->GetOpnds()[i], phiBB, j);
+        MeExpr *retOpnd = GetReplaceMeExpr(nStmtQ->GetOpnd(i), phiBB, j);
         if (retOpnd != nullptr) {
-          nStmtQ->GetOpnds()[i] = retOpnd;
+          nStmtQ->SetOpnd(i, retOpnd);
         }
       }
       break;
@@ -506,7 +506,7 @@ void MeStmtPre::ComputeVarAndDfPhis() {
       case OP_callassigned: {
         auto *nStmt = static_cast<NaryMeStmt*>(stmt);
         for (size_t i = 0; i < nStmt->NumMeStmtOpnds(); ++i) {
-          SetVarPhis(nStmt->GetOpnds()[i]);
+          SetVarPhis(nStmt->GetOpnd(i));
         }
         if (realOcc->GetMeExpr() != nullptr) {
           SetVarPhis(realOcc->GetMeExpr());
@@ -971,7 +971,7 @@ void MeStmtPre::BuildWorkListBB(BB *bb) {
         auto &intrnStmt = static_cast<IntrinsiccallMeStmt&>(stmt);
         bool allOperandsAreLeaf = true;
         for (size_t i = 0; i < intrnStmt.NumMeStmtOpnds(); ++i) {
-          if (!intrnStmt.GetOpnds()[i]->IsLeaf()) {
+          if (!intrnStmt.GetOpnd(i)->IsLeaf()) {
             allOperandsAreLeaf = false;
             break;
           }

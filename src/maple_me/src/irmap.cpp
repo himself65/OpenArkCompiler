@@ -495,7 +495,7 @@ MeStmt *IRMap::BuildCallMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart) {
   auto &intrinNode = static_cast<CallNode&>(stmt);
   callMeStmt->SetPUIdx(intrinNode.GetPUIdx());
   for (size_t i = 0; i < intrinNode.NumOpnds(); ++i) {
-    callMeStmt->GetOpnds().push_back(BuildExpr(*intrinNode.Opnd(i)));
+    callMeStmt->PushBackOpnd(BuildExpr(*intrinNode.Opnd(i)));
   }
   BuildMuList(ssaPart.GetMayUseNodes(), *(callMeStmt->GetMuList()));
   if (kOpcodeInfo.IsCallAssigned(stmt.GetOpCode())) {
@@ -513,7 +513,7 @@ MeStmt *IRMap::BuildNaryMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart) {
                            : static_cast<NaryMeStmt*>(NewInPool<IntrinsiccallMeStmt>(&stmt));
   auto &naryStmtNode = static_cast<NaryStmtNode&>(stmt);
   for (size_t i = 0; i < naryStmtNode.NumOpnds(); ++i) {
-    naryMeStmt->GetOpnds().push_back(BuildExpr(*naryStmtNode.Opnd(i)));
+    naryMeStmt->PushBackOpnd(BuildExpr(*naryStmtNode.Opnd(i)));
   }
   BuildMuList(ssaPart.GetMayUseNodes(), *(naryMeStmt->GetMuList()));
   if (kOpcodeInfo.IsCallAssigned(op)) {
@@ -527,7 +527,7 @@ MeStmt *IRMap::BuildRetMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart) {
   auto &retStmt = static_cast<NaryStmtNode&>(stmt);
   auto *meStmt = NewInPool<RetMeStmt>(&stmt);
   for (size_t i = 0; i < retStmt.NumOpnds(); ++i) {
-    meStmt->GetOpnds().push_back(BuildExpr(*retStmt.Opnd(i)));
+    meStmt->PushBackOpnd(BuildExpr(*retStmt.Opnd(i)));
   }
   BuildMuList(ssaPart.GetMayUseNodes(), *(meStmt->GetMuList()));
   return meStmt;
@@ -557,7 +557,7 @@ MeStmt *IRMap::BuildSyncMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart) {
   auto &naryNode = static_cast<NaryStmtNode&>(stmt);
   auto *naryStmt = NewInPool<SyncMeStmt>(&stmt);
   for (size_t i = 0; i < naryNode.NumOpnds(); ++i) {
-    naryStmt->GetOpnds().push_back(BuildExpr(*naryNode.Opnd(i)));
+    naryStmt->PushBackOpnd(BuildExpr(*naryNode.Opnd(i)));
   }
   BuildMuList(ssaPart.GetMayUseNodes(), *(naryStmt->GetMuList()));
   BuildChiList(*naryStmt, ssaPart.GetMayDefNodes(), *(naryStmt->GetChiList()));
@@ -843,7 +843,7 @@ RegassignMeStmt *IRMap::CreateRegassignMeStmt(MeExpr &lhs, MeExpr &rhs, BB &curr
 
 // get the false goto bb, if condgoto is brtrue, take the other bb of brture @lable
 // otherwise, take the bb of @lable
-BB *IRMap::GetFalseBrBB(CondGotoMeStmt &condgoto) {
+BB *IRMap::GetFalseBrBB(const CondGotoMeStmt &condgoto) {
   LabelIdx lblIdx = (LabelIdx)condgoto.GetOffset();
   BB *gotoBB = GetBBForLabIdx(lblIdx);
   BB *bb = condgoto.GetBB();
@@ -908,7 +908,7 @@ IntrinsiccallMeStmt *IRMap::CreateIntrinsicCallMeStmt(MIRIntrinsicID idx, std::v
   auto *meStmt =
       NewInPool<IntrinsiccallMeStmt>(tyIdx == 0u ? OP_intrinsiccall : OP_intrinsiccallwithtype, idx, tyIdx);
   for (MeExpr *opnd : opnds) {
-    meStmt->GetOpnds().push_back(opnd);
+    meStmt->PushBackOpnd(opnd);
   }
   return meStmt;
 }
@@ -918,7 +918,7 @@ IntrinsiccallMeStmt *IRMap::CreateIntrinsicCallAssignedMeStmt(MIRIntrinsicID idx
   auto *meStmt = NewInPool<IntrinsiccallMeStmt>(
       tyIdx == 0u ? OP_intrinsiccallassigned : OP_intrinsiccallwithtypeassigned, idx, tyIdx);
   for (MeExpr *opnd : opnds) {
-    meStmt->GetOpnds().push_back(opnd);
+    meStmt->PushBackOpnd(opnd);
   }
   if (ret != nullptr) {
     ASSERT(ret->GetMeOp() == kMeOpReg || ret->GetMeOp() == kMeOpVar, "unexpected opcode");

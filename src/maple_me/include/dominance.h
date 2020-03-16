@@ -50,7 +50,7 @@ class Dominance : public AnalysisResult {
   void ComputeDomChildren();
   void ComputeDtPreorder(const BB &bb, size_t &num);
   void ComputeDtDfn();
-  bool Dominate(const BB &bb1, BB &bb2);  // true if bb1 dominates bb2
+  bool Dominate(const BB &bb1, const BB &bb2);  // true if bb1 dominates bb2
   void DumpDoms();
   void PdomGenPostOrderID();
   void ComputePostDominance();
