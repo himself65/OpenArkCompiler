@@ -24,29 +24,6 @@
 // to check nullptr, it will make the code more confusion and hard to maintain.
 // Based on that, the ref_vector picks up the meaning of keeping objects' reference, it won't destory any of its
 // elements or require to check null(Never to be nullptr).
-//
-// etc.
-// `std::vector<T*>`
-// ```
-//   int a = 0, b = 1;
-//
-//   std::vector<int*> data;
-//   data.push_back(&a);
-//   data.push_back(&b);
-//   ASSERT_EQ(*data[0], 0);
-//   ASSERT_EQ(*data[1], 1);
-// ```
-//
-// `utils::ref_vector<T>`
-// ```
-//   int a = 0, b = 1;
-//
-//   ref_vector<int> data;
-//   data.push_back(a);
-//   data.push_back(b);
-//   ASSERT_EQ(data[0], 0);
-//   ASSERT_EQ(data[1], 1);
-// ```
 
 namespace maple { namespace utils {
 class ref_vector_tag;

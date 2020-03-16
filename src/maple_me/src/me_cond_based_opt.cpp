@@ -260,15 +260,15 @@ AnalysisResult *MeDoCondBasedRC::Run(MeFunction *func, MeFuncResultMgr *m, Modul
         continue;
       }
       MeStmt *refAssign = stmt.GetNext();
-      if (condBasedRC.NullValueFromTestCond(*varMeExpr, *bb, true)) {
-        bb->RemoveMeStmt(&stmt);  // delete the decref
-        if (refAssign != nullptr) {
-          refAssign->DisableNeedDecref();
-        } else {
-          break;
-        }
-        stmt = *refAssign;  // next iteration will process the stmt after refassign
+      if (!condBasedRC.NullValueFromTestCond(*varMeExpr, *bb, true)) {
+        continue;
       }
+      bb->RemoveMeStmt(&stmt);  // delete the decref
+      if (refAssign == nullptr) {
+        break;
+      }
+      refAssign->DisableNeedDecref();
+      stmt = *refAssign;  // next iteration will process the stmt after refassign
     }
   }
   return nullptr;

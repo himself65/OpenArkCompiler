@@ -1661,7 +1661,7 @@ std::pair<BaseNode*, int64> ConstantFold::FoldTernary(TernaryNode *node) {
           BaseNode *tmpNode = node->Opnd(0);
           if (node->GetPrimType() != PTY_u1) {
             tmpNode = mirModule->CurFuncCodeMemPool()->New<TypeCvtNode>(OP_cvt, PrimType(node->GetPrimType()),
-                                                                     PTY_u1, node->Opnd(0));
+                                                                        PTY_u1, node->Opnd(0));
           }
           std::pair<BaseNode*, int64> pairTemp = DispatchFold(tmpNode);
           result = PairToExpr(node->GetPrimType(), pairTemp);
@@ -1747,8 +1747,8 @@ StmtNode *ConstantFold::SimplifyCondGoto(CondGotoNode *node) {
       return node;
     }
     MIRIntConst *intConst = safe_cast<MIRIntConst>(cst->GetConstVal());
-    if ((OP_brtrue == node->GetOpCode() && intConst->GetValueUnderType() != 0) ||
-        (OP_brfalse == node->GetOpCode() && intConst->GetValueUnderType() == 0)) {
+    if ((node->GetOpCode() == OP_brtrue && intConst->GetValueUnderType() != 0) ||
+        (node->GetOpCode() == OP_brfalse && intConst->GetValueUnderType() == 0)) {
       GotoNode *gotoNode = mirModule->CurFuncCodeMemPool()->New<GotoNode>(OP_goto);
       gotoNode->SetOffset(node->GetOffset());
       return gotoNode;
@@ -1894,7 +1894,7 @@ StmtNode *ConstantFold::SimplifyIf(IfStmtNode *node) {
       return node;
     }
     MIRIntConst *intConst = safe_cast<MIRIntConst>(cst->GetConstVal());
-    if (0 == intConst->GetValue()) {
+    if (intConst->GetValue() == 0) {
       return node->GetElsePart();
     } else {
       return node->GetThenPart();

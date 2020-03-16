@@ -20,6 +20,7 @@
 #include "me_irmap.h"
 #include "me_ssa.h"
 #include "hdse.h"
+
 namespace maple {
 void MeDoHDSE::MakeEmptyTrysUnreachable(MeFunction &func) {
   auto eIt = func.valid_end();

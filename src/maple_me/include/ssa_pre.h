@@ -17,6 +17,7 @@
 #include "irmap.h"
 #include "occur.h"
 #include "securec.h"
+
 namespace maple {
 enum PreKind {
   kExprPre,
@@ -63,6 +64,7 @@ class SSAPre {
   virtual MeStmt *CopyMeStmt(MeStmt &meStmt);
   virtual IassignMeStmt *CopyIassignMeStmt(const IassignMeStmt &iaStmt);
   void IncTreeid() {
+    // Incremented by 2 for each tree; purpose is to avoid processing a node the third time inside a tree
     curTreeId += 2;
   }
 
@@ -161,8 +163,8 @@ class SSAPre {
   MeExpr *curTemp = nullptr;            // the created temp for current workCand
   VarMeExpr *curLocalRefVar = nullptr;  // the created localrefvar for ref-type iread
   MapleMap<RegMeExpr*, VarMeExpr*> temp2LocalRefVarMap;
-  int32 reBuiltOccIndex = -1;  // stores the size of worklist every time when try to add new worklist, update before each
-  // code motion
+  int32 reBuiltOccIndex = -1;  // stores the size of worklist every time when try to add new worklist, update before
+  // each code motion
   uint32 strIdxCount = 0;  // ssapre will create a lot of temp variables if using var to store redundances, start from 0
   // step 6 codemotion methods
   MeExpr *CreateNewCurTemp(MeExpr *meExpr);

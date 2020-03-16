@@ -143,8 +143,6 @@ enum MeFuncHint {
     kRcLowered     = 0x04,       // method lowered by rclowering
 };
 
-// to suppress warning
-// lint -sem(maple::MeFunction::PartialInit,initializer)
 class MeFunction : public FuncEmit {
   using BBPtrHolder = MapleVector<BB*>;
 

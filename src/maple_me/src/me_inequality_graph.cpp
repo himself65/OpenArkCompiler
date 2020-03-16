@@ -357,7 +357,7 @@ namespace maple {
 
     tracing.push_back(&bNode);
     if (&aNode == &bNode) {
-      if (edge.geq(0)) {
+      if (edge.GreaterEqual(0)) {
         tracing.pop_back();
         return kTrue;
       } else {
@@ -382,7 +382,7 @@ namespace maple {
     }
 
     if (active.find(&bNode) != active.end()) {
-      if (active.find(&bNode)->second->leq(edge)) {
+      if (active.find(&bNode)->second->LessEqual(edge)) {
         tracing.pop_back();
         return kReduced;
       } else {

@@ -131,12 +131,12 @@ class InequalEdge {
     return pairEdge;
   }
 
-  bool leq(const InequalEdge &edge) const {
+  bool LessEqual(const InequalEdge &edge) const {
     ASSERT(edgeType == edge.GetEdgeType(), "two edges must have the same type: upper or lower");
     return edgeType == kUpper ? value.constValue <= edge.GetConstValue() : value.constValue >= edge.GetConstValue();
   }
 
-  bool geq(int32 val) const{
+  bool GreaterEqual(int32 val) const{
     return edgeType == kUpper ? value.constValue >= val : value.constValue <= val;
   }
 

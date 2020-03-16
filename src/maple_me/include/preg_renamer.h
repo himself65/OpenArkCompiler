@@ -16,6 +16,7 @@
 #define MAPLE_ME_INCLUDE_PREGRENAMER_H
 #include "me_irmap.h"
 #include "ssa_pre.h"
+
 namespace maple {
 class PregRenamer {
  public:
