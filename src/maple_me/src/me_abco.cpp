@@ -18,7 +18,7 @@
 // ABCD: Eliminating Array Bounds Checks on Demand.
 // Rastislav Bodik, Rajiv Gupta, Vivek Sarkar.
 namespace maple {
-bool MeABC::kDebug = false;
+bool MeABC::isDebug = false;
 constexpr int kNumOpnds = 2;
 constexpr int kPiStmtUpperBound = 2;
 constexpr int kPiListSize = 2;
@@ -82,7 +82,8 @@ VarMeExpr *MeABC::CreateNewPiExpr(MeExpr &opnd) {
   CHECK_FATAL(opnd.GetMeOp() == kMeOpVar, "must be");
   SSATab &ssaTab = irMap->GetSSATab();
   OriginalSt *ost = ssaTab.GetOriginalStFromID(static_cast<VarMeExpr*>(&opnd)->GetOStIdx());
-  CHECK_FATAL(ost != nullptr && !ost->IsVolatile(), "must be");
+  CHECK_NULL_FATAL(ost);
+  CHECK_FATAL(!ost->IsVolatile(), "must be");
   VarMeExpr *var = irMap->NewInPool<VarMeExpr>(irMap->GetExprID(), ost->GetIndex(),
                                                irMap->GetVerst2MeExprTable().size());
   irMap->SetExprID(irMap->GetExprID() + 1);
@@ -155,16 +156,16 @@ void MeABC::InsertPiNodes() {
     }
     std::vector<MeStmt*> &arryChk = it->second;
     for (MeStmt *meStmt : arryChk) {
-      NaryMeExpr *nMeExpr = arrayChecks[meStmt];
-      CHECK_FATAL(nMeExpr->GetOpnds().size() == kNumOpnds, "must be");
-      MeExpr *opnd1 = nMeExpr->GetOpnd(0);
-      MeExpr *opnd2 = nMeExpr->GetOpnd(1);
+      NaryMeExpr *naryMeExpr = arrayChecks[meStmt];
+      CHECK_FATAL(naryMeExpr->GetOpnds().size() == kNumOpnds, "must be");
+      MeExpr *opnd1 = naryMeExpr->GetOpnd(0);
+      MeExpr *opnd2 = naryMeExpr->GetOpnd(1);
       // consider whether we should create pi if opnd2 is const
       CHECK_FATAL(opnd1->GetMeOp() == kMeOpVar, "must be");
       CHECK_FATAL(opnd1->GetPrimType() == PTY_ref, "must be");
       CHECK_FATAL(opnd2->GetMeOp() == kMeOpVar || opnd2->GetMeOp() == kMeOpConst, "must be");
-      VarMeExpr *arracyCheckOpnd2 = CreateNewPiExpr(*opnd2);
-      CreateNewPiStmt(arracyCheckOpnd2, *opnd2, *meStmt);
+      VarMeExpr *arrayCheckOpnd2 = CreateNewPiExpr(*opnd2);
+      CreateNewPiStmt(arrayCheckOpnd2, *opnd2, *meStmt);
     }
   }
 }
@@ -192,7 +193,8 @@ bool MeABC::ExistedPiNode(BB &bb, BB &parentBB, VarMeExpr &rhs) {
     return false;
   }
   std::vector<PiassignMeStmt*> &piStmts = it->second;
-  CHECK_FATAL(piStmts.size() >= 1 && piStmts.size() <= kPiStmtUpperBound, "must be");
+  CHECK_FATAL(!piStmts.empty(), "should not be empty");
+  CHECK_FATAL(piStmts.size() <= kPiStmtUpperBound, "must be");
   PiassignMeStmt *pi1 = piStmts.at(0);
   if (pi1->GetLHS()->GetOStIdx() == rhs.GetOStIdx()) {
     return true;
@@ -226,8 +228,10 @@ void MeABC::InsertPhiNodes() {
     VarMeExpr *rhs = newDefStmt->GetRHS();
     if (newDefStmt->IsPiStmt()) {
       BB *genByBB = newDefStmt->GetGeneratedByBB();
-      if (!dom->Dominate(*genByBB, *newDefBB) && !ExistedPhiNode(*newDefBB, *rhs)) {
-        CreatePhi(*rhs, *newDefBB);
+      if (!dom->Dominate(*genByBB, *newDefBB)) {
+        if (!ExistedPhiNode(*newDefBB, *rhs)) {
+          CreatePhi(*rhs, *newDefBB);
+        }
         continue;
       }
     }
@@ -236,7 +240,8 @@ void MeABC::InsertPhiNodes() {
       oldDefBB = meFunc->GetCommonEntryBB();
       CHECK_FATAL(rhs->IsZeroVersion(irMap->GetSSATab()), "must be");
     }
-    CHECK_FATAL(newDefBB != nullptr && oldDefBB != nullptr, "must be");
+    CHECK_NULL_FATAL(newDefBB);
+    CHECK_NULL_FATAL(oldDefBB);
     MapleSet<BBId> &dfs = dom->GetDomFrontier(newDefBB->GetBBId());
     for (auto bbID : dfs) {
       BB *dfBB = meFunc->GetBBFromID(bbID);
@@ -320,7 +325,8 @@ void MeABC::ReplacePiPhiInSuccs(BB &bb, VarMeExpr &newVar) {
     if (it1 != piList.end()) {
       std::vector<PiassignMeStmt*> &piStmts = it1->second;
       // the size of pi statements must be 1 or 2
-      CHECK_FATAL(piStmts.size() >= 1 && piStmts.size() <= 2, "must be");
+      CHECK_FATAL(!piStmts.empty(), "should not be empty");
+      CHECK_FATAL(piStmts.size() <= 2, "must be");
       PiassignMeStmt *pi1 = piStmts.at(0);
       if (pi1->GetLHS()->GetOStIdx() == newVar.GetOStIdx()) {
         pi1->SetRHS(newVar);
@@ -565,7 +571,7 @@ void MeABC::ReplaceBB(BB &bb, BB &parentBB, DefPoint &newDefPoint) {
 
 void MeABC::RemoveExtraNodes() {
   for (DefPoint *defP : newDefPoints) {
-      defP->RemoveFromBB();
+    defP->RemoveFromBB();
   }
   for (auto pair : modifiedStmt) {
     MeStmt *meStmt = pair.first.first;
@@ -1038,17 +1044,16 @@ bool MeABC::BuildAssignInGraph(MeStmt &meStmt) {
     (void)inequalityGraph->AddEdge(*lhsNode, *arrLength, 0, EdgeType::kLower);
     return true;
   } else if (rhs->GetPrimType() == PTY_ref) {
-    if ((rhs->GetMeOp() == kMeOpVar || rhs->GetMeOp() == kMeOpIvar) && (lhs->GetPrimType() == PTY_ref)) {
-      ESSAVarNode *ivarNode = inequalityGraph->GetOrCreateVarNode(*rhs);
-      ESSAArrayNode *arrayNode = inequalityGraph->GetOrCreateArrayNode(*lhs);
-      InequalEdge *pairEdge1 = inequalityGraph->AddEdge(*ivarNode, *arrayNode, 0, EdgeType::kUpper);
-      InequalEdge *pairEdge2 = inequalityGraph->AddEdge(*arrayNode, *ivarNode, 0, EdgeType::kUpper);
-      pairEdge1->SetPairEdge(*pairEdge2);
-      pairEdge2->SetPairEdge(*pairEdge1);
-      return true;
-    } else {
+    if ((rhs->GetMeOp() != kMeOpVar && rhs->GetMeOp() != kMeOpIvar) || (lhs->GetPrimType() != PTY_ref)) {
       return false;
     }
+    ESSAVarNode *ivarNode = inequalityGraph->GetOrCreateVarNode(*rhs);
+    ESSAArrayNode *arrayNode = inequalityGraph->GetOrCreateArrayNode(*lhs);
+    InequalEdge *pairEdge1 = inequalityGraph->AddEdge(*ivarNode, *arrayNode, 0, EdgeType::kUpper);
+    InequalEdge *pairEdge2 = inequalityGraph->AddEdge(*arrayNode, *ivarNode, 0, EdgeType::kUpper);
+    pairEdge1->SetPairEdge(*pairEdge2);
+    pairEdge2->SetPairEdge(*pairEdge1);
+    return true;
   } else {
     CHECK_FATAL(rhs->GetMeOp() == kMeOpVar || rhs->GetMeOp() == kMeOpConst, "must be");
     ESSAVarNode *lhsNode = inequalityGraph->GetOrCreateVarNode(*lhs);
@@ -1157,8 +1162,8 @@ void MeABC::AddUseDef(MeExpr &meExpr) {
 void MeABC::CollectCareInsns() {
   for (auto pair : arrayChecks) {
     MeStmt *meStmt = pair.first;
-    for (size_t iii = 0; iii < meStmt->NumMeStmtOpnds(); ++iii) {
-      ABCCollectArrayExpr(*meStmt, *(meStmt->GetOpnd(iii)), true);
+    for (size_t i = 0; i < meStmt->NumMeStmtOpnds(); ++i) {
+      ABCCollectArrayExpr(*meStmt, *(meStmt->GetOpnd(i)), true);
     }
   }
   CHECK_FATAL(arrayNewChecks.size() == arrayChecks.size(), "must be");
@@ -1179,29 +1184,30 @@ void MeABC::BuildInequalityGraph() {
 void MeABC::FindRedundantABC(MeStmt &meStmt, NaryMeExpr &naryMeExpr) {
   MeExpr *opnd1 = naryMeExpr.GetOpnd(0);
   MeExpr *opnd2 = naryMeExpr.GetOpnd(1);
-  CHECK_FATAL(opnd1->GetMeOp() == kMeOpVar && opnd1->GetPrimType() == PTY_ref, "must be");
+  CHECK_FATAL(opnd1->GetMeOp() == kMeOpVar, "must be");
+  CHECK_FATAL(opnd1->GetPrimType() == PTY_ref, "must be");
   if (!inequalityGraph->HasNode(*opnd1)) {
-    if (MeABC::kDebug) {
+    if (MeABC::isDebug) {
       LogInfo::MapleLogger() << "Array Node Not Found" << '\n';
       meStmt.Dump(irMap);
     }
     return;
   }
   if (opnd2->GetMeOp() == kMeOpVar && !inequalityGraph->HasNode(*opnd2)) {
-    if (MeABC::kDebug) {
+    if (MeABC::isDebug) {
       LogInfo::MapleLogger() << "Array Index Not Found" << '\n';
       meStmt.Dump(irMap);
     }
     return;
   }
   if (prove->DemandProve(*opnd1, *opnd2)) {
-    if (MeABC::kDebug) {
+    if (MeABC::isDebug) {
       LogInfo::MapleLogger() << "Find One OPT" << '\n';
       meStmt.Dump(irMap);
     }
     targetMeStmt.insert(&meStmt);
   } else {
-    if (MeABC::kDebug) {
+    if (MeABC::isDebug) {
       LogInfo::MapleLogger() << "Can not OPT" << '\n';
       meStmt.Dump(irMap);
     }
@@ -1222,7 +1228,7 @@ MeExpr *MeABC::ReplaceArrayExpr(MeExpr &rhs, MeExpr &naryMeExpr, MeStmt *ivarStm
   }
   CHECK_FATAL(rhs.GetMeOp() == kMeOpIvar, "must be");
   MeExpr *newBase = ReplaceArrayExpr(*static_cast<IvarMeExpr&>(rhs).GetBase(), naryMeExpr, ivarStmt);
-  CHECK_FATAL(newBase, "must be");
+  CHECK_NULL_FATAL(newBase);
   MeExpr *newIvarExpr = nullptr;
   if (ivarStmt == nullptr) {
     auto *oldIvarExpr = static_cast<IvarMeExpr*>(&rhs);
@@ -1302,10 +1308,10 @@ void MeABC::InitNewStartPoint(MeStmt &meStmt, NaryMeExpr &nMeExpr) {
   CHECK_FATAL(forbidenPi->GetOp() == OP_piassign, "must be");
 }
 
-void MeABC::executeABCO() {
-  MeABC::kDebug = false;
+void MeABC::ExecuteABCO() {
+  MeABC::isDebug = false;
   if (CollectABC()) {
-    if (MeABC::kDebug) {
+    if (MeABC::isDebug) {
       LogInfo::MapleLogger() << meFunc->GetName() << "\n";
       irMap->Dump();
     }
@@ -1316,7 +1322,7 @@ void MeABC::executeABCO() {
     for (auto pair : arrayNewChecks) {
       InitNewStartPoint(*(pair.first), *(static_cast<NaryMeExpr*>(pair.second)));
       BuildInequalityGraph();
-      if (MeABC::kDebug) {
+      if (MeABC::isDebug) {
         meFunc->GetTheCfg()->DumpToFile(meFunc->GetName());
         inequalityGraph->DumpDotFile(*irMap, DumpType::kDumpUpperAndNone);
         inequalityGraph->DumpDotFile(*irMap, DumpType::kDumpLowerAndNone);
@@ -1341,7 +1347,7 @@ AnalysisResult *MeDoABCOpt::Run(MeFunction *func, MeFuncResultMgr *frm, ModuleRe
   CHECK_FATAL(irMap != nullptr, "irMap phase has problem");
   MemPool *abcoMemPool = memPoolCtrler.NewMemPool(PhaseName());
   MeABC meABC(*func, *dom, *irMap, *abcoMemPool);
-  meABC.executeABCO();
+  meABC.ExecuteABCO();
   if (DEBUGFUNC(func)) {
     LogInfo::MapleLogger() << "\n============== After boundary check optimization  =============" << std::endl;
     irMap->Dump();

@@ -15,6 +15,7 @@
 #include "me_delegate_rc.h"
 #include "mir_builder.h"
 #include "me_hdse.h"
+
 // This phase finds local ref pointer variables that are delegated and thus can
 // have their RC omitted.  This optimization is done on a per-SSA version basis.
 // As a result, an overall criterion is that the SSA version must not have
@@ -47,8 +48,7 @@
 // B2: The RHS of its definition is iread of a final field with this as base or
 //     dread of a static final field.
 // B3: Within the SSA version's live range, there is no operation that can result
-//     in decref of any object. (TODO)
-
+//     in decref of any object.
 namespace {
 // following intrinsics can throw exception
 const std::set<maple::MIRIntrinsicID> canThrowIntrinsicsList {
@@ -259,7 +259,7 @@ bool DelegateRC::MayThrowException(MeStmt &stmt) {
 // Traverse backwards from fromstmt to tostmt to see if the single use of rhsvar
 // in fromstmt is the last use of rhsvar; tostmt is the statement that defines
 // rhsvar, so it can be assumed that tostmt does not contain any use; this check
-// make use of verStUseCounts in its determination.  In addition, if it comes
+// make use of verStUseCounts in its determination. In addition, if it comes
 // across any stmt that can raise exception, also return false.
 bool DelegateRC::ContainAllTheUses(VarMeExpr *rhsVar, const MeStmt &fromStmt, const MeStmt *toStmt) {
   int32 remainingUses = static_cast<uint32>(verStUseCounts[rhsVar->GetVstIdx()]) - 1;
@@ -468,7 +468,8 @@ void DelegateRC::DelegateRCTemp(MeStmt &stmt) {
       }
       break;
     }
-    default:;
+    default:
+      break;
   }
 }
 
@@ -666,7 +667,7 @@ void DelegateRC::SetCantDelegateAndCountUses() {
         continue;
       }
       for (size_t i = 0; i < stmt.NumMeStmtOpnds(); i++) {
-        CHECK_FATAL(stmt.GetOpnd(i), "null mestmtopnd check");
+        CHECK_FATAL(stmt.GetOpnd(i) != nullptr, "null mestmtopnd check");
         CollectUsesInfo(*stmt.GetOpnd(i));
       }
       CollectDerefedOrCopied(stmt);
@@ -703,7 +704,7 @@ std::set<OStIdx> DelegateRC::RenameAndGetLiveLocalRefVar() {
         continue;
       }
       for (size_t i = 0; i < stmt.NumMeStmtOpnds(); ++i) {
-        CHECK_FATAL(stmt.GetOpnd(i), "null mestmtopnd check");
+        CHECK_FATAL(stmt.GetOpnd(i) != nullptr, "null mestmtopnd check");
         RenameDelegatedRefVarUses(stmt, stmt.GetOpnd(i));
       }
       // for live_localrefvars

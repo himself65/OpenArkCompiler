@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -614,7 +614,6 @@ static void ResetInferredType(std::vector<MIRSymbol*> &inferredSymbols, MIRSymbo
       break;
     }
   }
-  // ASSERT(i<inferredSymbols.size(), "s must be in inferredSymbols");
 }
 
 static void SetInferredType(std::vector<MIRSymbol*> &inferredSymbols, MIRSymbol *s, TyIdx idx) {
@@ -711,7 +710,6 @@ void IPODevirtulize::SearchDefInClinit(const Klass *klass) {
           if (node->GetOpCode() != OP_dread) {
             continue;
           }
-          // ASSERT(node->op == OP_dread, "Must be dread");
           DreadNode *dreadNode = static_cast<DreadNode*>(node);
           MIRSymbol *tmpSymbol = func->GetLocalOrGlobalSymbol(dreadNode->GetStIdx());
           ResetInferredType(gcmallocSymbols, tmpSymbol);
@@ -815,7 +813,6 @@ void IPODevirtulize::SearchDefInMemberMethods(const Klass *klass) {
             if (node->GetOpCode() != OP_dread) {
               continue;
             }
-            // ASSERT(node->op == OP_dread, "Must be dread");
             DreadNode *dreadNode = static_cast<DreadNode*>(node);
             MIRSymbol *tmpSymbol = func->GetLocalOrGlobalSymbol(dreadNode->GetStIdx());
             ResetInferredType(gcmallocSymbols, tmpSymbol);

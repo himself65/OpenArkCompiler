@@ -19,11 +19,8 @@
 // analysis costs a lot.
 //
 // For now, we only use a simple policy to help devirtualize, E.g.
-// {
-//   Base b = new Derived();
-//   b.foo();
-// }
-// We can devirtual the b.foo to be Derived::foo().
+// Base b is defined as new Derived(), and b.foo() denotes b invokes method foo().
+// We can devirtual the b.foo() to be Derived::foo().
 namespace maple {
 bool SSADevirtual::debug = false;
 

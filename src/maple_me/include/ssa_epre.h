@@ -15,6 +15,7 @@
 #ifndef MAPLE_ME_INCLUDE_SSAEPRE_H
 #define MAPLE_ME_INCLUDE_SSAEPRE_H
 #include "ssa_pre.h"
+
 namespace maple {
 class SSAEPre : public SSAPre {
  public:

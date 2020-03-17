@@ -20,6 +20,7 @@
 #include "dominance.h"
 #include "class_hierarchy.h"
 #include "clone.h"
+
 namespace maple {
 class SSADevirtual {
  public:
@@ -41,7 +42,7 @@ class SSADevirtual {
         optedInterfaceCalls(0),
         nullCheckCount(0) {}
 
-  virtual ~SSADevirtual() {}
+  virtual ~SSADevirtual() = default;
 
   void Perform(BB *entryBB);
 

@@ -30,9 +30,9 @@ bool MeDoBypathEH::DoBypathException(BB *tryBB, BB *catchBB, const Klass *catchC
   bool transformed = false;
   while (idx < tryBBV.size()) {
     BB *bb = tryBBV[idx];
-    idx++;
+    ++idx;
     // Deal with throw
-    for (StmtNode *stmt = &bb->GetFirst(); stmt && stmt != bb->GetLast().GetNext(); stmt = stmt->GetNext()) {
+    for (StmtNode *stmt = &bb->GetFirst(); stmt != nullptr && stmt != bb->GetLast().GetNext(); stmt = stmt->GetNext()) {
       if (stmt->GetOpCode() == OP_throw) {
         auto *node = static_cast<UnaryStmtNode*>(stmt);
         BaseNode *rhExpr = nullptr;
@@ -64,12 +64,12 @@ bool MeDoBypathEH::DoBypathException(BB *tryBB, BB *catchBB, const Klass *catchC
         if (!kh->IsSuperKlass(catchClass, throwClass)) {
           continue;
         }
-        MIRBuilder *mBuilder = func->GetMIRModule().GetMIRBuilder();
-        DassignNode *copyStmt = mBuilder->CreateStmtDassign(stIdx, 0, rhExpr);
+        MIRBuilder *mirBuilder = func->GetMIRModule().GetMIRBuilder();
+        DassignNode *copyStmt = mirBuilder->CreateStmtDassign(stIdx, 0, rhExpr);
         bb->InsertStmtBefore(stmt, copyStmt);
-        GotoNode *gotoNode = mBuilder->CreateStmtGoto(OP_goto, catchBB->GetBBLabel());
+        GotoNode *gotoNode = mirBuilder->CreateStmtGoto(OP_goto, catchBB->GetBBLabel());
         bb->ReplaceStmt(stmt, gotoNode);
-        if (syncExitStmt) {
+        if (syncExitStmt != nullptr) {
           bb->InsertStmtBefore(gotoNode, syncExitStmt->CloneTree(func->GetMIRModule().GetCurFuncCodeMPAllocator()));
         }
         transformed = true;

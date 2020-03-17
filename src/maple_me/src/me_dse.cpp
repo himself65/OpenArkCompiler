@@ -18,6 +18,7 @@
 #include "ver_symbol.h"
 #include "me_ssa.h"
 #include "me_cfg.h"
+
 namespace maple {
 void MeDSE::VerifyPhi() const {
   auto eIt = func.valid_end();
@@ -37,7 +38,7 @@ void MeDSE::VerifyPhi() const {
           CHECK_FATAL(!ost->IsSymbolOst() || ost->GetIndirectLev() != 0,
               "phi is live and non-virtual in bb with zero or one pred");
         } else if (pair.second.GetPhiOpnds().size() != predBBNums) {
-          ASSERT(0, "TODO: phi opnd num is not consistent with pred bb num(need update phi)");
+          ASSERT(false, "phi opnd num is not consistent with pred bb num(need update phi)");
         }
       }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -87,28 +87,19 @@
 // Since INFO, WARN, ERR and FATAL are for general consumption, each message
 // should provide an number code under enum LogNumberCode.
 //
-// Following are usage examples for the 10 types of logging actions supported:
+// Following are usage of logging actions supported:
 //
-// GDB(LT_MPLME, "symbol %s SSA version %d made required during DSE",
-//     vers->origsym->name, vers->id);
+// GDB,LOG,INFO,WARN,ERR,FATAL can be invoked as method.
+//   parameters:
+//     TAG
+//     formatted string
+//     variadic list
 //
-// LOG(LT_MPLME, "deleting BB %d because it is unreachable", bb->id_.GetIdx());
-//
-// INFO(kLncInfo, "function %s inlined into %s", callee->name, caller->name);
-//
-// WARN(kLncWarn, "variable %s defined but never used", sym->name);
-//
-// ERR(kLncErr, "syntax error at file %s line %d", filename, lineno);
-//
-// FATAL(kLncFatal, "segmentation error");
-//
-// CHECK(tyidx < type_table.size(), "%d is not a valid type index", tyidx);
-//
-// DCHECK(tyidx < type_table.size(), "%d is not a valid type index", tyidx);
-//
-// CHECK_FATAL(tyidx < type_table.size(), "%d is not a valid type index", tyidx);
-//
-// ASSERT(tyidx < type_table.size(), "%d is not a valid type index", tyidx);
+// CHECK,DCHECK,CHECK_FATAL,ASSERT also can be invoked as method.
+//   parameters:
+//     condition
+//     formatted string
+//     variadic list
 //
 // Each of the above are mapped to one of the following 3 methods in class LogInfo:
 //

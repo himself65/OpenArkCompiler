@@ -226,7 +226,7 @@ bool HDSE::HasNonDeletableExpr(const MeStmt &meStmt) {
     case OP_dassign: {
       auto &dasgn = static_cast<const DassignMeStmt&>(meStmt);
       VarMeExpr *varMeExpr = dasgn.GetVarLHS();
-      return (varMeExpr && varMeExpr->IsVolatile(ssaTab)) || ExprNonDeletable(*dasgn.GetRHS()) ||
+      return (varMeExpr != nullptr && varMeExpr->IsVolatile(ssaTab)) || ExprNonDeletable(*dasgn.GetRHS()) ||
           (hdseKeepRef && dasgn.Propagated()) || dasgn.GetWasMayDassign();
     }
     case OP_regassign: {

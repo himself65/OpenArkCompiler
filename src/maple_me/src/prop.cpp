@@ -215,7 +215,7 @@ void Prop::CollectSubVarMeExpr(const MeExpr &meExpr, std::vector<const MeExpr*> 
 
 // check at the current statement, if the version symbol is consistent with its definition in the top of the stack
 // for example:
-// x1 = a1 + b1;
+// x1 <- a1 + b1;
 // a2 <-
 //  <-x1
 // the version of progation of x1 is a1, but the top of the stack of symbol a is a2, so it's not consistent

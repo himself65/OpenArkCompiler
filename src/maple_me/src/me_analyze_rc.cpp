@@ -24,7 +24,7 @@
 // first definition since entering the function, the decref will be omitted.
 //
 // B. At each statement that assigns a new value to a ref pointer, insert an
-// incref after the assignment.  In cases where the incref has already been
+// incref after the assignment. In cases where the incref has already been
 // performed when the assigned value is computed, it will not insert the incref.
 //
 // C. A localrefvar need to be cleaned up before function exit.  This clean-up
@@ -46,7 +46,7 @@
 // Under placementRC, the CLEANUP_LOCALREFVARS intrinsiccall will still be
 // inserted for the decrefs being inserted before the return statement.
 //
-// When a formal parameters of ref type is ever assigned inside the function,
+// When a formal parameter of ref type is ever assigned inside the function,
 // an incref for it needs to be inserted at function entry.  This is done
 // by the placementRC phase. For such formal parameters, placementRC phase will
 // also insert decref's to clean them up after their last use.

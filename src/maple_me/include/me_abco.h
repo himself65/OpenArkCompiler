@@ -197,7 +197,7 @@ class DefPoint {
 
 class MeABC {
  public:
-  static bool kDebug;
+  static bool isDebug;
   MeABC(MeFunction &meFunction, Dominance &dom, MeIRMap &map, MemPool &pool)
       : meFunc(&meFunction),
         dom(&dom),
@@ -208,7 +208,7 @@ class MeABC {
         prove(nullptr),
         forbidenPi(nullptr) {}
   ~MeABC() = default;
-  void executeABCO();
+  void ExecuteABCO();
 
  private:
   bool CollectABC();
