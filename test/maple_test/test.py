@@ -22,8 +22,12 @@ from maple_test.utils import split_comment, filter_line
 
 class Case:
     def __init__(self, path, test_path, comment, encoding):
-        self.name = str(path).replace(".", "_")
-        self.path = test_path / path
+        if path != test_path:
+            self.name = str(path).replace(".", "_")
+            self.path = test_path / path
+        else:
+            self.name = "{}_{}".format(path.parent.name, path.name).replace(".", "_")
+            self.path = path
         self.relative_path = path
         self.test_path = test_path
         self.comment = comment

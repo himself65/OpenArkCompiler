@@ -45,7 +45,7 @@ def run_command(cmd, work_dir, timeout, logger, env=None):
         close_fds=True,
         start_new_session=True,
     )
-    logger.debug("execute cmd: %s", cmd)
+    logger.debug("execute cmd ===>>>: %s", cmd)
     return_code = com_out = com_err = None
     try:
         com_out, com_err = process_command.communicate(timeout=timeout)
@@ -77,6 +77,7 @@ def run_commands(position, commands, work_dir, timeout, log_config, env=None):
     logger = construct_logger(log_config[0], name)
     remain_time = timeout
     result = (PASS, None)
+    logger.debug("Work directory: {}".format(work_dir))
     if not commands:
         return position, (UNRESOLVED, None)
     for command in commands:
@@ -101,7 +102,7 @@ def run_commands(position, commands, work_dir, timeout, log_config, env=None):
                 "Run time: {:.2}, remain time: {:.2}".format(run_time, remain_time)
             )
     if result[0] == PASS:
-        logger.info("Task executed successfully")
+        logger.debug("Task executed successfully")
     handlers = logger.handlers[:]
     for handler in handlers:
         handler.close()
