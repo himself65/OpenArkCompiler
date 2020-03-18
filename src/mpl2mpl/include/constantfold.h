@@ -45,18 +45,18 @@ class ConstantFold : public FuncOptimizeImpl {
   void ProcessFunc(MIRFunction *func);
   virtual ~ConstantFold() = default;
 
-  MIRConst *FoldFloorMIRConst(MIRConst*, PrimType, PrimType);
-  MIRConst *FoldRoundMIRConst(MIRConst*, PrimType, PrimType);
-  MIRConst *FoldTypeCvtMIRConst(MIRConst*, PrimType, PrimType);
-  MIRConst *FoldSignExtendMIRConst(Opcode, PrimType, uint8, MIRConst*);
-  MIRConst *FoldConstComparisonMIRConst(Opcode, PrimType, PrimType, MIRConst&, MIRConst&);
+  MIRConst *FoldFloorMIRConst(const MIRConst*, PrimType, PrimType) const;
+  MIRConst *FoldRoundMIRConst(const MIRConst*, PrimType, PrimType) const;
+  MIRConst *FoldTypeCvtMIRConst(const MIRConst*, PrimType, PrimType) const;
+  MIRConst *FoldSignExtendMIRConst(Opcode, PrimType, uint8, const MIRConst*) const;
+  MIRConst *FoldConstComparisonMIRConst(Opcode, PrimType, PrimType, const MIRConst&, const MIRConst&);
 
  private:
   MIRModule *mirModule;
   StmtNode *SimplifyBinary(BinaryStmtNode *node);
   StmtNode *SimplifyBlock(BlockNode *node);
   StmtNode *SimplifyCondGoto(CondGotoNode *node);
-  StmtNode *SimplifyCondGotoSelect(CondGotoNode *node);
+  StmtNode *SimplifyCondGotoSelect(CondGotoNode *node) const;
   StmtNode *SimplifyDassign(DassignNode *node);
   StmtNode *SimplifyIassign(IassignNode *node);
   StmtNode *SimplifyNary(NaryStmtNode *node);
@@ -71,43 +71,47 @@ class ConstantFold : public FuncOptimizeImpl {
   std::pair<BaseNode*, int64> FoldCompare(CompareNode *node);
   std::pair<BaseNode*, int64> FoldDepositbits(DepositbitsNode *node);
   std::pair<BaseNode*, int64> FoldExtractbits(ExtractbitsNode *node);
-  ConstvalNode *FoldSignExtend(Opcode opcode, PrimType resultType, uint8 size, ConstvalNode *cst);
+  ConstvalNode *FoldSignExtend(Opcode opcode, PrimType resultType, uint8 size, const ConstvalNode *cst) const;
   std::pair<BaseNode*, int64> FoldIread(IreadNode *node);
-  std::pair<BaseNode*, int64> FoldSizeoftype(SizeoftypeNode *node);
+  std::pair<BaseNode*, int64> FoldSizeoftype(SizeoftypeNode *node) const;
   std::pair<BaseNode*, int64> FoldRetype(RetypeNode *node);
   std::pair<BaseNode*, int64> FoldGcmallocjarray(JarrayMallocNode *node);
   std::pair<BaseNode*, int64> FoldUnary(UnaryNode *node);
   std::pair<BaseNode*, int64> FoldTernary(TernaryNode *node);
   std::pair<BaseNode*, int64> FoldTypeCvt(TypeCvtNode *node);
-  ConstvalNode *FoldCeil(ConstvalNode *cst, PrimType fromType, PrimType toType);
-  ConstvalNode *FoldFloor(ConstvalNode *cst, PrimType fromType, PrimType toType);
-  ConstvalNode *FoldRound(ConstvalNode *cst, PrimType fromType, PrimType toType);
-  ConstvalNode *FoldTrunk(ConstvalNode *cst, PrimType fromType, PrimType toType);
-  ConstvalNode *FoldTypeCvt(ConstvalNode *cst, PrimType fromType, PrimType toType);
-  ConstvalNode *FoldConstComparison(Opcode opcode, PrimType resultType, PrimType opndType, ConstvalNode &const0,
-                                    ConstvalNode &const1);
-  ConstvalNode *FoldConstBinary(Opcode opcode, PrimType resultType, ConstvalNode &const0, ConstvalNode &const1);
-  ConstvalNode *FoldIntConstComparison(Opcode opcode, PrimType resultType, ConstvalNode &const0, ConstvalNode &const1);
-  MIRIntConst *FoldIntConstComparisonMIRConst(Opcode, PrimType, const MIRIntConst&, const MIRIntConst&);
-  ConstvalNode *FoldIntConstBinary(Opcode opcode, PrimType resultType, ConstvalNode &const0, ConstvalNode &const1);
-  ConstvalNode *FoldFPConstComparison(Opcode opcode, PrimType resultType, PrimType opndType, ConstvalNode &const0,
-                                      ConstvalNode &const1);
-  MIRIntConst *FoldFPConstComparisonMIRConst(Opcode opcode, PrimType resultType, PrimType opndType, MIRConst &const0,
-                                             MIRConst &const1);
-  ConstvalNode *FoldFPConstBinary(Opcode opcode, PrimType resultType, ConstvalNode &const0, ConstvalNode &const1);
-  ConstvalNode *FoldConstUnary(Opcode opcode, PrimType resultType, ConstvalNode *c);
-  ConstvalNode *FoldIntConstUnary(Opcode opcode, PrimType resultType, ConstvalNode *c);
+  ConstvalNode *FoldCeil(const ConstvalNode *cst, PrimType fromType, PrimType toType) const;
+  ConstvalNode *FoldFloor(const ConstvalNode *cst, PrimType fromType, PrimType toType) const;
+  ConstvalNode *FoldRound(const ConstvalNode *cst, PrimType fromType, PrimType toType) const;
+  ConstvalNode *FoldTrunk(const ConstvalNode *cst, PrimType fromType, PrimType toType) const;
+  ConstvalNode *FoldTypeCvt(const ConstvalNode *cst, PrimType fromType, PrimType toType) const;
+  ConstvalNode *FoldConstComparison(Opcode opcode, PrimType resultType, PrimType opndType, const ConstvalNode &const0,
+                                    const ConstvalNode &const1) const;
+  ConstvalNode *FoldConstBinary(Opcode opcode, PrimType resultType, const ConstvalNode &const0,
+                                const ConstvalNode &const1) const;
+  ConstvalNode *FoldIntConstComparison(Opcode opcode, PrimType resultType, const ConstvalNode &const0,
+                                       const ConstvalNode &const1) const;
+  MIRIntConst *FoldIntConstComparisonMIRConst(Opcode, PrimType, const MIRIntConst&, const MIRIntConst&) const;
+  ConstvalNode *FoldIntConstBinary(Opcode opcode, PrimType resultType, const ConstvalNode &const0,
+                                   const ConstvalNode &const1) const;
+  ConstvalNode *FoldFPConstComparison(Opcode opcode, PrimType resultType, PrimType opndType, const ConstvalNode &const0,
+                                      const ConstvalNode &const1) const;
+  MIRIntConst *FoldFPConstComparisonMIRConst(Opcode opcode, PrimType resultType, PrimType opndType,
+                                             const MIRConst &const0, const MIRConst &const1) const;
+  ConstvalNode *FoldFPConstBinary(Opcode opcode, PrimType resultType, const ConstvalNode &const0,
+                                  const ConstvalNode &const1) const;
+  ConstvalNode *FoldConstUnary(Opcode opcode, PrimType resultType, ConstvalNode *c) const;
+  ConstvalNode *FoldIntConstUnary(Opcode opcode, PrimType resultType, const ConstvalNode *c) const;
   template <typename T>
-  ConstvalNode *FoldFPConstUnary(Opcode opcode, PrimType resultType, ConstvalNode *c);
-  BaseNode *NegateTree(BaseNode *node);
-  BaseNode *Negate(BaseNode *node);
-  BaseNode *Negate(UnaryNode *node);
-  BaseNode *Negate(ConstvalNode *node);
-  BinaryNode *NewBinaryNode(BinaryNode *old, Opcode op, PrimType primeType, BaseNode *l, BaseNode *r);
-  UnaryNode *NewUnaryNode(UnaryNode *old, Opcode op, PrimType primeType, BaseNode *e);
+  ConstvalNode *FoldFPConstUnary(Opcode opcode, PrimType resultType, ConstvalNode *c) const;
+  BaseNode *NegateTree(BaseNode *node) const;
+  BaseNode *Negate(BaseNode *node) const;
+  BaseNode *Negate(UnaryNode *node) const;
+  BaseNode *Negate(const ConstvalNode *node) const;
+  BinaryNode *NewBinaryNode(BinaryNode *old, Opcode op, PrimType primeType, BaseNode *l, BaseNode *r) const;
+  UnaryNode *NewUnaryNode(UnaryNode *old, Opcode op, PrimType primeType, BaseNode *e) const;
   std::pair<BaseNode*, int64> DispatchFold(BaseNode *node);
-  BaseNode *PairToExpr(PrimType resultType, const std::pair<BaseNode*, int64> &p);
-  BaseNode *SimplifyDoubleCompare(CompareNode *node);
+  BaseNode *PairToExpr(PrimType resultType, const std::pair<BaseNode*, int64> &p) const;
+  BaseNode *SimplifyDoubleCompare(CompareNode *node) const;
 };
 
 class DoConstantFold : public ModulePhase {

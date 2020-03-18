@@ -17,9 +17,14 @@ set -e
 source build/envsetup.sh
 make clean
 option=$@
-if [ "$option" = "DEBUG" ]; then
-  make BUILD_TYPE=DEBUG
+logfile_name=$(date +"%Y-%m-%d-%H-%M-%S")
+logfile_path=${MAPLE_ROOT}/build/logs
+date_str=$(date "+%Y-%m-%d %H:%M:%S")
+echo "${date_str} INFO special log start" | tee ${logfile_path}/${logfile_name}.log
+if [ "x${option}" = "xDEBUG" ]; then
+  make BUILD_TYPE=DEBUG | tee -a ${logfile_path}/${logfile_name}.log
 else
-  make
+  make | tee -a ${logfile_path}/${logfile_name}.log
 fi
-
+date_str=$(date "+%Y-%m-%d %H:%M:%S")
+echo "${date_str} INFO special log end" | tee -a ${logfile_path}/${logfile_name}.log

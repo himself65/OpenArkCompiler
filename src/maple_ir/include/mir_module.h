@@ -288,6 +288,10 @@ class MIRModule {
   void SetPuIdxFieldSet(PUIdx puIdx, MapleSet<FieldID> *fieldIDSet) {
     puIdxFieldInitializedMap[puIdx] = fieldIDSet;
   }
+  const auto &GetRealCaller() const {
+    return realCaller;
+  }
+
   auto &GetRealCaller() {
     return realCaller;
   }
@@ -334,6 +338,12 @@ class MIRModule {
 
   bool IsInIPA() const {
     return inIPA;
+  }
+  bool IsWithMe() const {
+    return withMe;
+  }
+  void SetWithMe(bool isWithMe) {
+    withMe = isWithMe;
   }
   void SetInIPA(bool isInIPA) {
     inIPA = isInIPA;
@@ -496,6 +506,7 @@ class MIRModule {
   // for cg in mplt
   BinaryMplt *binMplt = nullptr;
   bool inIPA = false;
+  bool withMe = true;
   MIRInfoVector fileInfo;              // store info provided under fileInfo keyword
   MapleVector<bool> fileInfoIsString;  // tells if an entry has string value
   MIRDataVector fileData;

@@ -36,5 +36,5 @@ define build_gn
     mkdir -p ${INSTALL_DIR}; \
     $(GN) gen ${INSTALL_DIR} --args='$(1)' --export-compile-commands; \
     cd ${INSTALL_DIR}; \
-    $(NINJA) -v $(2) | tee ${MAPLE_ROOT}/build/logs/$(shell date +"%Y-%m-%d-%H-%M-%S").log;
+    $(NINJA) -v $(2);
 endef
