@@ -201,7 +201,6 @@ class TestSuiteTask:
     def serial_run_task(self):
         for tasks_name in self.task_set:
             for index, task in enumerate(self.task_set[tasks_name]):
-                print("Running task: {}. {}".format(index, task.name))
                 if task.result[0] == PASS:
                     continue
                 self.task_set_result[tasks_name][task.result[0]] -= 1
@@ -209,7 +208,6 @@ class TestSuiteTask:
                     (tasks_name, index), task.commands, **task.running_config
                 )
                 status, _ = task.result
-                print("Task result: {}".format(task.result))
                 self.task_set_result[tasks_name][status] += 1
 
     def parallel_run_task(self, process_num):
@@ -262,18 +260,11 @@ class TestSuiteTask:
         for line in self.gen_summary(print_type).splitlines():
             logger.info(line)
 
-    def gen_summary(self, print_type=None):
-        self.result = defaultdict(int)
-        for name in self.task_set_result:
-            for status, num in self.task_set_result[name].items():
-                self.result[status] += num
-        if print_type is None:
-            print_type = configs.get_val("print_type")
-
-        summary = "\nTestSuiteTask: {}\n".format(self.name)
-        summary += "Path: {}\n".format(self.path)
+    def gen_brief_summary(self):
         total = sum(self.result.values())
-        result = "".join(
+        total_summary = "TestSuiteTask: {}, Total: {}, ".format(
+            self.name, total
+        ) + "".join(
             [
                 "{}: {}, ".format(k, v)
                 for k, v in sorted(
@@ -281,30 +272,44 @@ class TestSuiteTask:
                 )
             ]
         )
-        summary += "Total: {}, {}\n".format(total, result)
-        if not total:
-            return summary
+        task_set_summary = ""
         for tasks_name in self.task_set:
-            result = "".join(
-                [
-                    "{}: {}, ".format(k, v)
-                    for k, v in sorted(
-                        self.task_set_result[tasks_name].items(),
-                        key=lambda item: item[1],
-                        reverse=True,
-                    )
-                ]
+            total = sum(self.task_set_result[tasks_name].values())
+            task_set_summary += (
+                "\n  "
+                + tasks_name
+                + ", total: {}, ".format(total)
+                + "".join(
+                    [
+                        "{}: {}, ".format(k, v)
+                        for k, v in sorted(
+                            self.task_set_result[tasks_name].items(),
+                            key=lambda item: item[1],
+                            reverse=True,
+                        )
+                    ]
+                )
             )
-            summary += "\n  {}, {}\n".format(tasks_name, result)
-            for task in self.task_set[tasks_name]:
-                reason = ""
-                if task.result[-1] is not None:
-                    reason = ", Reason: {}".format(task.result[-1])
+        return total_summary + task_set_summary + "\n"
+
+    def gen_summary(self, print_type=None):
+        self.result = defaultdict(int)
+        for name in self.task_set_result:
+            for status, num in self.task_set_result[name].items():
+                self.result[status] += num
+        if print_type is None:
+            print_type = configs.get_val("print_type")
+        brief_summary = self.gen_brief_summary()
+        summary = "-" * 120
+        summary += "\nTestSuite Path: {}\n".format(self.path)
+        for tasks_name in self.task_set:
+            for task in sorted(self.task_set[tasks_name], key=lambda task: task.name):
                 result = task.result[0]
                 if not print_type or task.result[0] in configs.get_val("print_type"):
-                    summary += "    {}, Case: {}, Result: {} {}\n".format(
-                        task.name, task.case_path, result, reason
+                    summary += "  {}, Case: {}, Result: {}\n".format(
+                        tasks_name, task.case_path, result
                     )
+        summary += "\n" + brief_summary
         summary += "-" * 120
         return summary
 

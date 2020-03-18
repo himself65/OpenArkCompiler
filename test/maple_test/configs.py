@@ -284,15 +284,18 @@ def init_config():
     global LOGGER
     maple_test_log_config = log_config.copy()
     maple_test_log_config["verbose"] = True
+    maple_test_log_config["level"] = min(20, maple_test_log_config.get("level"))
     stream_fmt = logging.Formatter("%(message)s")
     log_dir = maple_test_log_config.get("dir")
     if not log_dir.exists():
         log_dir.mkdir(parents=True, exist_ok=True)
     LOGGER = construct_logger(
-        maple_test_log_config, "Maple_Test", stream_fmt=stream_fmt
+        maple_test_log_config,
+        "Maple_Test",
+        stream_fmt=stream_fmt,
+        stream_level=min(20, maple_test_log_config.get("level")),
     )
     LOGGER.info("Test log saved to {}".format(log_dir))
-
     running_config["log_config"] = log_config.copy()
 
     return test_suite_config, running_config, log_config
@@ -325,7 +328,14 @@ class StoreDictKeyPair(argparse.Action):
         setattr(namespace, self.dest, my_dict)
 
 
-def construct_logger(log_config, name, stream_fmt=None, file_fmt=None):
+def construct_logger(
+    log_config,
+    name,
+    stream_fmt=None,
+    file_fmt=None,
+    stream_level=None,
+    file_level=logging.DEBUG,
+):
     name = str(name)
     log_dir = str(log_config["dir"])
     level = log_config["level"]
@@ -340,21 +350,25 @@ def construct_logger(log_config, name, stream_fmt=None, file_fmt=None):
     logger = logging.getLogger(name)
     if logger.handlers:
         return logger
-    logger.setLevel(level)
+    logger.setLevel(logging.DEBUG)
 
     handler1 = logging.StreamHandler()
-    handler1.setLevel(level)
     handler1.setFormatter(stream_fmt)
     if not verbose:
-        handler1.setLevel(logging.WARNING)
+        level = logging.WARNING
+    else:
+        level = logging.DEBUG
+    if stream_level:
+        level = stream_level
+    handler1.setLevel(level)
     logger.addHandler(handler1)
 
     handler2 = logging.FileHandler(filename="{}/{}.log".format(log_dir, name), mode="w")
-    handler2.setLevel(level)
+    handler2.setLevel(file_level)
     handler2.setFormatter(file_fmt)
     logger.addHandler(handler2)
 
-    logger.info("Log file at: {}/{}.log".format(log_dir, name))
+    logger.debug("Log file at: {}/{}.log".format(log_dir, name))
     return logger
 
 
