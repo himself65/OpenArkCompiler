@@ -17,6 +17,7 @@
 #include <fstream>
 #include <iostream>
 #include "profile.h"
+
 // This phase layout the function according the profile.
 // First parse the profile,find the corresponding dex file's
 // function type info,the profile file give three function type
@@ -66,10 +67,11 @@ CallNode *CodeReLayout::CreateRecordFieldStaticCall(BaseNode *node, const std::s
   return builder->CreateStmtCall(callee->GetPuidx(), args);
 }
 
-std::string CodeReLayout::StaticFieldFilename(const std::string &mplFile) {
+std::string CodeReLayout::StaticFieldFilename(const std::string &mplFile) const {
   size_t pos = mplFile.rfind(".mpl");
   size_t postfixSize = 4;
-  CHECK_FATAL(pos != std::string::npos && pos == mplFile.length() - postfixSize, "Not compiling .mpl file?");
+  CHECK_FATAL(pos != std::string::npos, "Not found .mpl postfix");
+  CHECK_FATAL(pos == mplFile.length() - postfixSize, "Not compiling .mpl file?");
   std::string smryFileName = mplFile.substr(0, pos) + ".staticfields";
   return smryFileName;
 }
@@ -93,7 +95,7 @@ void CodeReLayout::AddStaticFieldRecord() {
   }
 }
 
-void CodeReLayout::FindDreadRecur(StmtNode *stmt, BaseNode *node) {
+void CodeReLayout::FindDreadRecur(const StmtNode *stmt, BaseNode *node) {
   if (node == nullptr) {
     return;
   }
@@ -137,8 +139,8 @@ void CodeReLayout::FindDreadRecur(StmtNode *stmt, BaseNode *node) {
   }
 }
 
-void CodeReLayout::InsertProfileBeforeDread(StmtNode *stmt, BaseNode *opnd) {
-  if (!opnd || (opnd->GetOpCode() != OP_dread && opnd->GetOpCode() != OP_addrof)) {
+void CodeReLayout::InsertProfileBeforeDread(const StmtNode *stmt, BaseNode *opnd) {
+  if (opnd == nullptr || (opnd->GetOpCode() != OP_dread && opnd->GetOpCode() != OP_addrof)) {
     return;
   }
   DreadNode *dreadNode = static_cast<DreadNode*>(opnd);
@@ -234,22 +236,22 @@ void CodeReLayout::GenLayoutSym() {
   MIRAggConst *funcLayoutConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), arrayType);
   uint32 funcIdx = 0;
   MIRConst *fieldConst = nullptr;
-  MIRFunction *vMethod = nullptr;
+  MIRFunction *method = nullptr;
   for (uint32 i = 0; i < static_cast<uint32>(LayoutType::kLayoutTypeCount); ++i) {
     if (funcIdx < GetMIRModule().GetFunctionList().size()) {
-      vMethod = GetMIRModule().GetFunction(funcIdx);
+      method = GetMIRModule().GetFunction(funcIdx);
     } else {
       std::cerr << "no method for codelayout type " << GetLayoutTypeString(i) << "\n";
       return;
     }
-    while (vMethod->IsAbstract() || vMethod->GetBody() == nullptr) {
+    while (method->IsAbstract() || method->GetBody() == nullptr) {
       // find the function not Abstract
       if (trace) {
         LogInfo::MapleLogger() << "encounter valid method " << funcIdx << "\n";
       }
       funcIdx++;
       if (funcIdx < GetMIRModule().GetFunctionList().size()) {
-        vMethod = GetMIRModule().GetFunction(funcIdx);
+        method = GetMIRModule().GetFunction(funcIdx);
       } else {
         std::cerr << "no method for codelayout" << GetLayoutTypeString(i) << "\n";
         return;
@@ -257,9 +259,9 @@ void CodeReLayout::GenLayoutSym() {
     }
     if (trace) {
       LogInfo::MapleLogger() << "Start of category " << i << " in funcIdx " << funcIdx << " "
-                             << vMethod->GetName() << "\n";
+                             << method->GetName() << "\n";
     }
-    AddroffuncNode *addroffuncExpr = builder->CreateExprAddroffunc(vMethod->GetPuidx(), GetMIRModule().GetMemPool());
+    AddroffuncNode *addroffuncExpr = builder->CreateExprAddroffunc(method->GetPuidx(), GetMIRModule().GetMemPool());
     fieldConst =
         GetMIRModule().GetMemPool()->New<MIRAddroffuncConst>(addroffuncExpr->GetPUIdx(),
                                                              *GlobalTables::GetTypeTable().GetVoidPtr());

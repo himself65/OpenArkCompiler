@@ -805,7 +805,7 @@ class MIRStructType : public MIRType {
     isUsed = flag;
   }
 
-  GStrIdx GetFieldGStrIdx(FieldID id) {
+  GStrIdx GetFieldGStrIdx(FieldID id) const {
     const FieldPair &fieldPair = TraverseToField(id);
     return fieldPair.first;
   }

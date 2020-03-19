@@ -160,7 +160,7 @@ void BlockNode::ReplaceStmtWithBlock(StmtNode &stmtNode, BlockNode &blk) {
   stmtNode.SetNext(blk.GetLast()->GetNext());
 }
 
-void BlockNode::ReplaceStmt1WithStmt2(StmtNode *stmtNode1, StmtNode *stmtNode2) {
+void BlockNode::ReplaceStmt1WithStmt2(const StmtNode *stmtNode1, StmtNode *stmtNode2) {
   if (stmtNode2 == stmtNode1) {
     // do nothing
   } else if (stmtNode2 == nullptr) {
@@ -180,7 +180,7 @@ void BlockNode::RemoveStmt(StmtNode *stmtNode1) {
 }
 
 /// Insert stmtNode2 before stmtNode1 in current block.
-void BlockNode::InsertBefore(StmtNode *stmtNode1, StmtNode *stmtNode2) {
+void BlockNode::InsertBefore(const StmtNode *stmtNode1, StmtNode *stmtNode2) {
   stmtNodeList.insert(stmtNode1, stmtNode2);
 }
 

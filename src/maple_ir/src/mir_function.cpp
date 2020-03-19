@@ -36,6 +36,9 @@ enum FuncProp : uint32_t {
 namespace maple {
 void MIRFunction::Init() {
   symTab = module->GetMemPool()->New<MIRSymbolTable>(module->GetMPAllocator());
+  if (!module->IsWithMe()) {
+    pregTab = module->GetMemPool()->New<MIRPregTable>(module, &module->GetMPAllocator());
+  }
   return;
 }
 
