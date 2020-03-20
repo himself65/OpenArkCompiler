@@ -336,20 +336,45 @@ class SingleTask:
             "env": env,
         }
         self.case_path = case.relative_path
-        self.prepare_temp(case.path, self.work_dir)
+        self.prepare(case, self.work_dir, config)
         log_dir = (running_config.get("log_config").get("dir") / self.name).parent
         self.prepare_dir(log_dir)
         self.result = (NOT_RUN, None)
 
-    def prepare_temp(self, src, dest):
+    def prepare(self, case, dest, config):
+        dependence = case.dependence
+        src_path = case.path
+        src_dir = src_path.parent
         logger = configs.LOGGER
-        if not src.exists():
-            logger.debug("Source: {} is not existing.\n".format(src))
+        if not src_path.exists():
+            logger.debug("Source: {} is not existing.\n".format(src_path))
             return
         self.prepare_dir(dest)
-        shutil.copy(str(src), str(dest))
-        for command in self.commands:
-            self.move_needed_files(command, src, dest)
+        shutil.copy(str(src_path), str(dest))
+        logger.debug("Copy {} => {}".format(src_path, dest))
+        self.prepare_dependence(src_dir, dependence, dest, config)
+
+    @staticmethod
+    def prepare_dependence(src_dir, dependence, dest, config):
+        logger = configs.LOGGER
+        src_files = []
+        for file in dependence:
+            file = SingleTask._form_line(file, config)
+            src_path = src_dir / file
+            if src_path.exists():
+                src_files.append(src_path)
+        src_files = set(src_files)
+        for file in src_files:
+            if file.is_file():
+                shutil.copy(str(file), str(dest))
+            else:
+                name = file.name
+                try:
+                    shutil.copytree(str(file), str(dest / name))
+                except:
+                    pass
+        if src_files:
+            logger.debug("Copy {} => {}".format(src_files, dest))
 
     @staticmethod
     def prepare_dir(directory):
@@ -366,50 +391,29 @@ class SingleTask:
 
     def _form_commands(self, case, config):
         for command in case.commands:
-            for key, value in config.get("internal_var").items():
-                end = 0
-                while end < len(command):
-                    start = command.find("%{}".format(key), end)
-                    if start == -1:
-                        break
-                    end = len(key) + start + 1
-                    if end == len(command):
-                        command = command[:start] + value + command[end:]
-                        continue
-                    if command[end].isalnum() or command[end] == "_":
-                        continue
-                    else:
-                        command = command[:start] + value + command[end:]
+            command = self._form_line(command, config)
             compare_cmd = " {} {} --comment={} ".format(
                 EXECUTABLE, COMPARE, shlex.quote(case.comment)
             )
             self.commands.append(format_compare_command(command, compare_cmd))
 
     @staticmethod
-    def move_needed_files(command, src, dest):
-        """Move required files to temporary directory"""
-        logger = configs.LOGGER
-        copy_file = ""
-        for part in set(shlex.split(command)):
-            if not part:
-                continue
-            if part[0] in ["/", "|", "%", "$"] or part in [".", "..", "~"]:
-                pass
-            else:
-                temp_src = src.parent / part
-                if temp_src.exists():
-                    dest_path = (dest / part).parent
-                    if not dest_path.exists():
-                        dest_path.mkdir()
-                        logger.debug("Mkdir: {}".format(dest_path))
-                    if temp_src.is_file():
-                        shutil.copy(str(temp_src), str(dest_path))
-                        copy_file += "{}, ".format(temp_src)
-                    if temp_src.is_dir():
-                        shutil.copytree(str(temp_src), str(dest / part))
-                        copy_file += "{}, ".format(temp_src)
-        if copy_file:
-            logger.debug("copy file: {}to {}".format(copy_file, dest))
+    def _form_line(line, config):
+        for key, value in config.get("internal_var").items():
+            end = 0
+            while end < len(line):
+                start = line.find("%{}".format(key), end)
+                if start == -1:
+                    break
+                end = len(key) + start + 1
+                if end == len(line):
+                    line = line[:start] + value + line[end:]
+                    continue
+                if line[end].isalnum() or line[end] == "_":
+                    continue
+                else:
+                    line = line[:start] + value + line[end:]
+        return line
 
 
 def format_compare_command(raw_command, compare_cmd):

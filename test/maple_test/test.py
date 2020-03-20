@@ -14,8 +14,9 @@
 # FIT FOR A PARTICULAR PURPOSE.
 # See the Mulan PSL v1 for more details.
 #
+import shlex
 
-from maple_test.utils import PASS, EXEC_FLAG, EXPECT_FLAG
+from maple_test.utils import PASS, EXEC_FLAG, EXPECT_FLAG, DEPENDENCE_FLAG
 from maple_test.utils import read_file_with_multi_encoding
 from maple_test.utils import split_comment, filter_line
 
@@ -38,6 +39,7 @@ class Case:
             command for command in self.extract_commands(comment_lines) if command
         ]
         self.expect = self.extract_expect(comment_lines)
+        self.dependence = self.extract_dependence(comment_lines)
 
     @staticmethod
     def extract_expect(comment_lines):
@@ -48,6 +50,19 @@ class Case:
         else:
             expect = expect_line[-1]
         return expect
+
+    @staticmethod
+    def extract_dependence(comment_lines):
+        support_separartor = ",; "
+        dependence_line = [filter_line(line, DEPENDENCE_FLAG) for line in comment_lines]
+        dependence_line = [line for line in dependence_line if line]
+        dependence = []
+        for line in dependence_line:
+            parser = shlex.shlex(line)
+            parser.whitespace += support_separartor
+            parser.whitespace_split = True
+            dependence += list(parser)
+        return set(dependence)
 
     @staticmethod
     def extract_commands(comment_lines):
