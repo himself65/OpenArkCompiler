@@ -66,7 +66,7 @@ def main():
     temp_dir = running_config.get("temp_dir")
     if configs.get_val("debug"):
         logger.debug("Keep temp file at %s", temp_dir)
-    else:
+    elif temp_dir.exists():
         logger.debug("remove temp_dir %s", temp_dir)
         shutil.rmtree(str(temp_dir))
 
