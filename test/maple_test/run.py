@@ -72,14 +72,20 @@ def run_command(cmd, work_dir, timeout, logger, env=None):
         logger.debug("stderr : \n%s", indent(com_err, "@\t", lambda line: True))
 
 
-def run_commands(position, commands, work_dir, timeout, log_config, env=None):
+def run_commands(
+    position, old_result, commands, work_dir, timeout, log_config, env=None
+):
     name = "{}_{}".format(log_config[1], int(time.time()))
     logger = construct_logger(log_config[0], name)
+    if not commands:
+        err = "Run task exit unexpected : {}, Log file at: {}.log".format(
+            old_result[-1], log_config[0].get("dir") / name
+        )
+        logger.error(err)
+        return position, old_result
     remain_time = timeout
     result = (PASS, None)
     logger.debug("Work directory: {}".format(work_dir))
-    if not commands:
-        return position, (UNRESOLVED, None)
     for command in commands:
         start = timeit.default_timer()
         try:
