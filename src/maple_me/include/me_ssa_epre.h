@@ -26,16 +26,16 @@ class MeSSAEPre : public SSAEPre {
  public:
   // a symbol is a candidate for ssaupdate if its ostidx key exists in the map;
   // the mapped set gives bbs where dassign's are inserted by ssa_epre for the symbol
-  explicit MeSSAEPre(MeFunction *func, IRMap &map, Dominance &dom, KlassHierarchy &kh, MemPool &memPool, MemPool &mp2,
+  explicit MeSSAEPre(MeFunction &func, IRMap &map, Dominance &dom, KlassHierarchy &kh, MemPool &memPool, MemPool &mp2,
                      uint32 limit, bool includeRef, bool epreLocalRefVar, bool lhsIvar)
       : SSAEPre(map, dom, memPool, mp2, kExprPre, limit, includeRef, lhsIvar),
         candsForSSAUpdate(std::less<OStIdx>(), ssaPreAllocator.Adapter()),
-        func(func),
+        func(&func),
         epreLocalRefVar(epreLocalRefVar),
         klassHierarchy(kh) {}
 
   virtual ~MeSSAEPre() = default;
-  void GetIterDomFrontier(BB &bb, MapleSet<uint32> &dfSet, std::vector<bool> &visitedMap) override;
+  void GetIterDomFrontier(const BB &bb, MapleSet<uint32> &dfSet, std::vector<bool> &visitedMap) const override;
   bool ScreenPhiBB(BBId) const override {
     return true;
   }
@@ -52,8 +52,8 @@ class MeSSAEPre : public SSAEPre {
 
  private:
   void BuildWorkList() override;
-  bool IsThreadObjField(const IvarMeExpr &expr) override;
-  BB *GetBB(BBId id) override {
+  bool IsThreadObjField(const IvarMeExpr &expr) const override;
+  BB *GetBB(BBId id) const override {
     return func->GetBBFromID(id);
   }
 
@@ -61,21 +61,21 @@ class MeSSAEPre : public SSAEPre {
     return func->GetMirFunc()->GetPuidx();
   }
 
-  bool CfgHasDoWhile() override {
+  bool CfgHasDoWhile() const override {
     return func->GetTheCfg()->GetHasDoWhile();
   }
 
-  bool EpreLocalRefVar() override {
+  bool EpreLocalRefVar() const override {
     return epreLocalRefVar;
   }
 
-  void EnterCandsForSSAUpdate(OStIdx ostIdx, BB *bb) override {
+  void EnterCandsForSSAUpdate(OStIdx ostIdx, const BB &bb) override {
     if (candsForSSAUpdate.find(ostIdx) == candsForSSAUpdate.end()) {
       MapleSet<BBId> *bbSet = ssaPreMemPool->New<MapleSet<BBId>>(std::less<BBId>(), ssaPreAllocator.Adapter());
-      bbSet->insert(bb->GetBBId());
+      bbSet->insert(bb.GetBBId());
       candsForSSAUpdate[ostIdx] = bbSet;
     } else {
-      candsForSSAUpdate[ostIdx]->insert(bb->GetBBId());
+      candsForSSAUpdate[ostIdx]->insert(bb.GetBBId());
     }
   }
 };

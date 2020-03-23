@@ -21,7 +21,7 @@ namespace maple {
 // convert loop to do-while format
 class MeDoLoopCanon : public MeFuncPhase {
  public:
-  MeDoLoopCanon(MePhaseID id) : MeFuncPhase(id) {}
+  explicit MeDoLoopCanon(MePhaseID id) : MeFuncPhase(id) {}
 
   ~MeDoLoopCanon() = default;
 
@@ -32,8 +32,8 @@ class MeDoLoopCanon : public MeFuncPhase {
 
  private:
   using Key = std::pair<BB*, BB*>;
-  void Convert(MeFunction *func, BB *bb, BB *pred, MapleMap<Key, bool> &swapSuccs);
-  bool NeedConvert(BB *bb, BB *pred, MapleAllocator &alloc, MapleMap<Key, bool> &swapSuccs);
+  void Convert(MeFunction &func, BB &bb, BB &pred, MapleMap<Key, bool> &swapSuccs);
+  bool NeedConvert(BB &bb, BB &pred, MapleAllocator &alloc, MapleMap<Key, bool> &swapSuccs) const;
 };
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_MELOOPCANON_H

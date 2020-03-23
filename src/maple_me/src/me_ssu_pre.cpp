@@ -69,7 +69,7 @@ void MeSSUPre::Finalize() {
             }
             lambdaResOcc->SetInsertHere(true);
           } else {
-            lambdaResOcc->SetUse(anticipatedDefVec[classId]);
+            lambdaResOcc->SetUse(*anticipatedDefVec[classId]);
           }
         }
         break;
@@ -80,6 +80,7 @@ void MeSSUPre::Finalize() {
         break;
       default:
         ASSERT(false, "Finalize: unexpected occ type");
+        break;
     }
   }
   if (enabledDebug) {
@@ -103,20 +104,19 @@ void MeSSUPre::Finalize() {
 }
 
 // ================ Step 4: WillBeAnt Computation ================
-void MeSSUPre::ResetCanBeFullyAnt(SLambdaOcc *lambda) {
-  CHECK_NULL_FATAL(lambda);
-  lambda->SetIsCanBeAnt(false);
+void MeSSUPre::ResetCanBeFullyAnt(SLambdaOcc &lambda) const {
+  lambda.SetIsCanBeAnt(false);
   for (SLambdaOcc *lambdaOcc : lambdaOccs) {
     for (SLambdaResOcc *lambdaResOcc : lambdaOcc->GetLambdaRes()) {
-      if (lambdaResOcc->GetUse() && lambdaResOcc->GetUse() == lambda &&
+      if (lambdaResOcc->GetUse() != nullptr && lambdaResOcc->GetUse() == &lambda &&
           !lambdaResOcc->GetHasRealUse() && lambdaOcc->GetIsCanBeAnt()) {
-          ResetCanBeFullyAnt(lambdaOcc);
+          ResetCanBeFullyAnt(*lambdaOcc);
       }
     }
   }
 }
 
-void MeSSUPre::ComputeCanBeFullyAnt() {
+void MeSSUPre::ComputeCanBeFullyAnt() const {
   for (SLambdaOcc *lambdaOcc : lambdaOccs) {
     bool existNullUse = false;
     for (SLambdaResOcc *lambdaResOcc : lambdaOcc->GetLambdaRes()) {
@@ -126,27 +126,26 @@ void MeSSUPre::ComputeCanBeFullyAnt() {
       }
     }
     if (existNullUse) {
-      ResetCanBeFullyAnt(lambdaOcc);
+      ResetCanBeFullyAnt(*lambdaOcc);
     }
   }
 }
 
-void MeSSUPre::ResetCanBeAnt(SLambdaOcc *lambda) {
-  CHECK_NULL_FATAL(lambda);
-  lambda->SetIsCanBeAnt(false);
+void MeSSUPre::ResetCanBeAnt(SLambdaOcc &lambda) const {
+  lambda.SetIsCanBeAnt(false);
   // the following loop finds lambda's defs and reset them
   for (SLambdaOcc *lambdaOcc : lambdaOccs) {
     for (SLambdaResOcc *lambdaResOcc : lambdaOcc->GetLambdaRes()) {
-      if (lambdaResOcc->GetUse() != nullptr && lambdaResOcc->GetUse() == lambda) {
+      if (lambdaResOcc->GetUse() != nullptr && lambdaResOcc->GetUse() == &lambda) {
         if (!lambdaResOcc->GetHasRealUse() && !lambdaOcc->GetIsUpsafe() && lambdaOcc->GetIsCanBeAnt()) {
-          ResetCanBeAnt(lambdaOcc);
+          ResetCanBeAnt(*lambdaOcc);
         }
       }
     }
   }
 }
 
-void MeSSUPre::ComputeCanBeAnt() {
+void MeSSUPre::ComputeCanBeAnt() const {
   for (SLambdaOcc *lambdaOcc : lambdaOccs) {
     if (!lambdaOcc->GetIsUpsafe() && lambdaOcc->GetIsCanBeAnt()) {
       bool existNullUse = false;
@@ -157,28 +156,27 @@ void MeSSUPre::ComputeCanBeAnt() {
         }
       }
       if (existNullUse) {
-        ResetCanBeAnt(lambdaOcc);
+        ResetCanBeAnt(*lambdaOcc);
       }
     }
   }
 }
 
-void MeSSUPre::ResetEarlier(SLambdaOcc *lambda) {
-  CHECK_NULL_FATAL(lambda);
-  lambda->SetIsEarlier(false);
+void MeSSUPre::ResetEarlier(SLambdaOcc &lambda) const {
+  lambda.SetIsEarlier(false);
   // the following loop finds lambda's defs and reset them
   for (SLambdaOcc *lambdaOcc : lambdaOccs) {
     for (SLambdaResOcc *lambdaResOcc : lambdaOcc->GetLambdaRes()) {
-      if (lambdaResOcc->GetUse() != nullptr && lambdaResOcc->GetUse() == lambda) {
+      if (lambdaResOcc->GetUse() != nullptr && lambdaResOcc->GetUse() == &lambda) {
         if (lambdaOcc->GetIsEarlier()) {
-          ResetEarlier(lambdaOcc);
+          ResetEarlier(*lambdaOcc);
         }
       }
     }
   }
 }
 
-void MeSSUPre::ComputeEarlier() {
+void MeSSUPre::ComputeEarlier() const {
   for (SLambdaOcc *lambdaOcc : lambdaOccs) {
     lambdaOcc->SetIsEarlier(lambdaOcc->GetIsCanBeAnt());
   }
@@ -192,7 +190,7 @@ void MeSSUPre::ComputeEarlier() {
         }
       }
       if (existNonNullUse) {
-        ResetEarlier(lambdaOcc);
+        ResetEarlier(*lambdaOcc);
       }
     }
   }
@@ -215,12 +213,11 @@ void MeSSUPre::ComputeEarlier() {
 }
 
 // ================ Step 3: Upsafe Computation ================
-void MeSSUPre::ResetUpsafe(SLambdaResOcc *lambdaRes) {
-  CHECK_NULL_FATAL(lambdaRes);
-  if (lambdaRes->GetHasRealUse()) {
+void MeSSUPre::ResetUpsafe(const SLambdaResOcc &lambdaRes) const {
+  if (lambdaRes.GetHasRealUse()) {
     return;
   }
-  SOcc *useOcc = lambdaRes->GetUse();
+  SOcc *useOcc = lambdaRes.GetUse();
   if (useOcc == nullptr || useOcc->GetOccTy() != kSOccLambda) {
     return;
   }
@@ -230,16 +227,16 @@ void MeSSUPre::ResetUpsafe(SLambdaResOcc *lambdaRes) {
   }
   useLambdaOcc->SetIsUpsafe(false);
   for (SLambdaResOcc *lambdaResOcc : useLambdaOcc->GetLambdaRes()) {
-    ResetUpsafe(lambdaResOcc);
+    ResetUpsafe(*lambdaResOcc);
   }
 }
 
-void MeSSUPre::ComputeUpsafe() {
+void MeSSUPre::ComputeUpsafe() const {
   for (SLambdaOcc *lambdaOcc : lambdaOccs) {
     if (!lambdaOcc->GetIsUpsafe()) {
       // propagate not-upsafe forward along def-use edges
       for (SLambdaResOcc *lambdaResOcc : lambdaOcc->GetLambdaRes()) {
-        ResetUpsafe(lambdaResOcc);
+        ResetUpsafe(*lambdaResOcc);
       }
     }
   }
@@ -338,7 +335,7 @@ void MeSSUPre::Rename() {
         }
         ASSERT(topOcc->GetOccTy() == kSOccLambda || topOcc->GetOccTy() == kSOccReal,
                "Rename: unexpected top-of-stack occ");
-        occ->SetUse(topOcc);
+        occ->SetUse(*topOcc);
         occ->SetClassId(topOcc->GetClassId());
         if (topOcc->GetOccTy() == kSOccReal) {
           static_cast<SLambdaResOcc*>(occ)->SetHasRealUse(true);
@@ -349,6 +346,7 @@ void MeSSUPre::Rename() {
         break;
       default:
         ASSERT(false, "Rename: unexpected type of occurrence");
+        break;
     }
   }
   if (enabledDebug) {
@@ -361,22 +359,20 @@ void MeSSUPre::Rename() {
 }
 
 // ================ Step 1: insert lambdas ================
-void MeSSUPre::GetIterPdomFrontier(const BB *bb, MapleSet<uint32> *pdfSet, std::vector<bool> &visitedMap) {
-  CHECK_NULL_FATAL(bb);
-  CHECK_FATAL(bb->GetBBId() < visitedMap.size(), "index out of range in MeSSUPre::GetIterPdomFrontier");
-  if (visitedMap[bb->GetBBId()]) {
+void MeSSUPre::GetIterPdomFrontier(const BB &bb, MapleSet<uint32> &pdfSet, std::vector<bool> &visitedMap) {
+  CHECK_FATAL(bb.GetBBId() < visitedMap.size(), "index out of range in MeSSUPre::GetIterPdomFrontier");
+  if (visitedMap[bb.GetBBId()]) {
     return;
   }
   CHECK_FATAL(!visitedMap.empty(), "visitedMap in MeSSUPre::GetIterPdomFrontier is empty");
-  visitedMap[bb->GetBBId()] = true;
-  CHECK_NULL_FATAL(pdfSet);
-  for (BBId frontierBBId : dom->GetPdomFrontierItem(bb->GetBBId())) {
-    pdfSet->insert(dom->GetPdtDfnItem(frontierBBId));
+  visitedMap[bb.GetBBId()] = true;
+  for (BBId frontierBBId : dom->GetPdomFrontierItem(bb.GetBBId())) {
+    pdfSet.insert(dom->GetPdtDfnItem(frontierBBId));
   }
   CHECK_NULL_FATAL(func);
-  for (BBId frontierBBId : dom->GetPdomFrontierItem(bb->GetBBId())) {
+  for (BBId frontierBBId : dom->GetPdomFrontierItem(bb.GetBBId())) {
     BB *frontierBB = func->GetAllBBs().at(frontierBBId);
-    GetIterPdomFrontier(frontierBB, pdfSet, visitedMap);
+    GetIterPdomFrontier(*frontierBB, pdfSet, visitedMap);
   }
 }
 
@@ -387,7 +383,7 @@ void MeSSUPre::FormLambdas() {
   std::vector<bool> visitedMap(func->NumBBs(), false);
   CHECK_NULL_FATAL(workCand);
   for (SOcc *occ : workCand->GetRealOccs()) {
-    GetIterPdomFrontier(occ->GetBB(), &lambdaDfns, visitedMap);
+    GetIterPdomFrontier(*occ->GetBB(), lambdaDfns, visitedMap);
   }
 }
 
@@ -422,11 +418,11 @@ void MeSSUPre::CreateSortedOccs() {
   SLambdaOcc *nextLambdaOcc = nullptr;
   if (lambdaDfnIt != lambdaDfns.end()) {
     nextLambdaOcc =
-        spreMp->New<SLambdaOcc>(func->GetAllBBs().at(dom->GetPdtPreOrderItem(*lambdaDfnIt)), &spreAllocator);
+        spreMp->New<SLambdaOcc>(*func->GetAllBBs().at(dom->GetPdtPreOrderItem(*lambdaDfnIt)), spreAllocator);
   }
   SLambdaResOcc *nextLambdaResOcc = nullptr;
   if (lambdaResDfnIt != lambdaResDfns.end()) {
-    nextLambdaResOcc = spreMp->New<SLambdaResOcc>(func->GetAllBBs().at(dom->GetPdtPreOrderItem(*lambdaResDfnIt)));
+    nextLambdaResOcc = spreMp->New<SLambdaResOcc>(*func->GetAllBBs().at(dom->GetPdtPreOrderItem(*lambdaResDfnIt)));
     auto it = bb2lambdaResMap.find(dom->GetPdtPreOrderItem(*lambdaResDfnIt));
     if (it == bb2lambdaResMap.end()) {
       std::forward_list<SLambdaResOcc*> newlist = { nextLambdaResOcc };
@@ -483,7 +479,7 @@ void MeSSUPre::CreateSortedOccs() {
           ++lambdaDfnIt;
           if (lambdaDfnIt != lambdaDfns.end()) {
             nextLambdaOcc =
-                spreMp->New<SLambdaOcc>(func->GetAllBBs().at(dom->GetPdtPreOrderItem(*lambdaDfnIt)), &spreAllocator);
+                spreMp->New<SLambdaOcc>(*func->GetAllBBs().at(dom->GetPdtPreOrderItem(*lambdaDfnIt)), spreAllocator);
           } else {
             nextLambdaOcc = nullptr;
           }
@@ -493,7 +489,7 @@ void MeSSUPre::CreateSortedOccs() {
           ++lambdaResDfnIt;
           if (lambdaResDfnIt != lambdaResDfns.end()) {
             nextLambdaResOcc =
-                spreMp->New<SLambdaResOcc>(func->GetAllBBs().at(dom->GetPdtPreOrderItem(*lambdaResDfnIt)));
+                spreMp->New<SLambdaResOcc>(*func->GetAllBBs().at(dom->GetPdtPreOrderItem(*lambdaResDfnIt)));
             CHECK_NULL_FATAL(dom);
             auto it = bb2lambdaResMap.find(dom->GetPdtPreOrderItem(*lambdaResDfnIt));
             if (it == bb2lambdaResMap.end()) {
@@ -508,6 +504,7 @@ void MeSSUPre::CreateSortedOccs() {
           break;
         default:
           ASSERT(false, "CreateSortedOccs: unexpected occTy");
+          break;
       }
     }
   } while (pickedOcc != nullptr);
@@ -516,7 +513,7 @@ void MeSSUPre::CreateSortedOccs() {
     for (BB *succ : lambdaOcc->GetBB()->GetSucc()) {
       SLambdaResOcc *lambdaResOcc = bb2lambdaResMap[succ->GetBBId()].front();
       lambdaOcc->GetLambdaRes().push_back(lambdaResOcc);
-      lambdaResOcc->SetUseLambdaOcc(lambdaOcc);
+      lambdaResOcc->SetUseLambdaOcc(*lambdaOcc);
       bb2lambdaResMap[succ->GetBBId()].pop_front();
     }
   }
@@ -570,7 +567,7 @@ void MeSSUPre::ApplySSUPre() {
     }
     // #5 Finalize
     Finalize();
-    // #6 Code Mmotion
+    // #6 Code Motion
     CHECK_NULL_FATAL(workCand);
     if (!workCand->GetHasCriticalEdge()) {
       CodeMotion();

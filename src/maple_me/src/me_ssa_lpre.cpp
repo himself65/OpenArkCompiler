@@ -17,22 +17,22 @@
 #include "me_lower_globals.h"
 
 namespace maple {
-void MeSSALPre::GenerateSaveRealOcc(MeRealOcc *realOcc) {
+void MeSSALPre::GenerateSaveRealOcc(MeRealOcc &realOcc) {
   ASSERT(GetPUIdx() == workCand->GetPUIdx() || workCand->GetPUIdx() == 0,
          "GenerateSaveRealOcc: inconsistent puIdx");
-  MeExpr *regOrVar = CreateNewCurTemp(realOcc->GetMeExpr());
+  MeExpr *regOrVar = CreateNewCurTemp(*realOcc.GetMeExpr());
   CHECK_NULL_FATAL(regOrVar);
-  if (!realOcc->IsLHS()) {
+  if (!realOcc.IsLHS()) {
     // create a new meStmt before realOcc->GetMeStmt()
-    MeStmt *newMeStmt = irMap->CreateRegassignMeStmt(*regOrVar, *realOcc->GetMeExpr(), *realOcc->GetMeStmt()->GetBB());
+    MeStmt *newMeStmt = irMap->CreateRegassignMeStmt(*regOrVar, *realOcc.GetMeExpr(), *realOcc.GetMeStmt()->GetBB());
     regOrVar->SetDefByStmt(*newMeStmt);
-    realOcc->GetMeStmt()->GetBB()->InsertMeStmtBefore(realOcc->GetMeStmt(), newMeStmt);
+    realOcc.GetMeStmt()->GetBB()->InsertMeStmtBefore(realOcc.GetMeStmt(), newMeStmt);
     // replace realOcc->GetMeStmt()'s occ with regOrVar
-    (void)irMap->ReplaceMeExprStmt(*realOcc->GetMeStmt(), *realOcc->GetMeExpr(), *regOrVar);
-  } else if (realOcc->IsFormalAtEntry()) {
+    (void)irMap->ReplaceMeExprStmt(*realOcc.GetMeStmt(), *realOcc.GetMeExpr(), *regOrVar);
+  } else if (realOcc.IsFormalAtEntry()) {
     // no need generate any code, but change formal declaration to preg
     CHECK_FATAL(regOrVar->GetMeOp() == kMeOpReg, "formals not promoted to register");
-    auto *varMeExpr = static_cast<VarMeExpr*>(realOcc->GetMeExpr());
+    auto *varMeExpr = static_cast<VarMeExpr*>(realOcc.GetMeExpr());
     const MIRSymbol *oldFormalSt = ssaTab->GetMIRSymbolFromID(varMeExpr->GetOStIdx());
     auto *regFormal = static_cast<RegMeExpr*>(regOrVar);
     MIRSymbol *newFormalSt = mirModule->GetMIRBuilder()->CreatePregFormalSymbol(oldFormalSt->GetTyIdx(),
@@ -46,23 +46,23 @@ void MeSSALPre::GenerateSaveRealOcc(MeRealOcc *realOcc) {
       }
     }
     CHECK_FATAL(i < func->GetMirFunc()->GetFormalCount(), "Cannot replace promoted formal");
-  } else if (realOcc->GetOpcodeOfMeStmt() == OP_dassign || realOcc->GetOpcodeOfMeStmt() == OP_maydassign) {
-    VarMeExpr *theLHS = realOcc->GetMeStmt()->GetVarLHS();
-    MeExpr *savedRHS = realOcc->GetMeStmt()->GetRHS();
+  } else if (realOcc.GetOpcodeOfMeStmt() == OP_dassign || realOcc.GetOpcodeOfMeStmt() == OP_maydassign) {
+    VarMeExpr *theLHS = realOcc.GetMeStmt()->GetVarLHS();
+    MeExpr *savedRHS = realOcc.GetMeStmt()->GetRHS();
     CHECK_NULL_FATAL(theLHS);
     CHECK_NULL_FATAL(savedRHS);
-    CHECK_NULL_FATAL(realOcc->GetMeStmt()->GetChiList());
-    realOcc->GetMeStmt()->GetChiList()->clear();
-    SrcPosition savedSrcPos = realOcc->GetMeStmt()->GetSrcPosition();
-    BB *savedBB = realOcc->GetMeStmt()->GetBB();
-    MeStmt *savedPrev = realOcc->GetMeStmt()->GetPrev();
-    MeStmt *savedNext = realOcc->GetMeStmt()->GetNext();
+    CHECK_NULL_FATAL(realOcc.GetMeStmt()->GetChiList());
+    realOcc.GetMeStmt()->GetChiList()->clear();
+    SrcPosition savedSrcPos = realOcc.GetMeStmt()->GetSrcPosition();
+    BB *savedBB = realOcc.GetMeStmt()->GetBB();
+    MeStmt *savedPrev = realOcc.GetMeStmt()->GetPrev();
+    MeStmt *savedNext = realOcc.GetMeStmt()->GetNext();
     // change original dassign/maydassign to regassign;
     // use placement new to modify in place, because other occ nodes are pointing
     // to this statement in order to get to the rhs expression;
     // this assume RegassignMeStmt has smaller size then DassignMeStmt and
     // MaydassignMeStmt
-    RegassignMeStmt *rass = new (realOcc->GetMeStmt()) RegassignMeStmt();
+    RegassignMeStmt *rass = new (realOcc.GetMeStmt()) RegassignMeStmt();
     rass->SetLHS(static_cast<RegMeExpr*>(regOrVar));
     rass->SetRHS(savedRHS);
     rass->SetSrcPos(savedSrcPos);
@@ -73,11 +73,11 @@ void MeSSALPre::GenerateSaveRealOcc(MeRealOcc *realOcc) {
     // create new dassign for original lhs
     MeStmt *newDassign = irMap->CreateDassignMeStmt(*theLHS, *regOrVar, *savedBB);
     theLHS->SetDefByStmt(*newDassign);
-    savedBB->InsertMeStmtAfter(realOcc->GetMeStmt(), newDassign);
+    savedBB->InsertMeStmtAfter(realOcc.GetMeStmt(), newDassign);
   } else {
-    CHECK_FATAL(kOpcodeInfo.IsCallAssigned(realOcc->GetOpcodeOfMeStmt()),
+    CHECK_FATAL(kOpcodeInfo.IsCallAssigned(realOcc.GetOpcodeOfMeStmt()),
                 "LHS real occurrence has unrecognized stmt type");
-    MapleVector<MustDefMeNode> *mustDefList = realOcc->GetMeStmt()->GetMustDefList();
+    MapleVector<MustDefMeNode> *mustDefList = realOcc.GetMeStmt()->GetMustDefList();
     CHECK_NULL_FATAL(mustDefList);
     CHECK_FATAL(!mustDefList->empty(), "empty mustdef in callassigned stmt");
     MustDefMeNode *mustDefMeNode = &mustDefList->front();
@@ -86,20 +86,20 @@ void MeSSALPre::GenerateSaveRealOcc(MeRealOcc *realOcc) {
       // change mustDef lhs to regOrVar
       mustDefMeNode->UpdateLHS(*regOrVar);
       // create new dassign for original lhs
-      MeStmt *newDassign = irMap->CreateDassignMeStmt(*theLHS, *regOrVar, *realOcc->GetMeStmt()->GetBB());
+      MeStmt *newDassign = irMap->CreateDassignMeStmt(*theLHS, *regOrVar, *realOcc.GetMeStmt()->GetBB());
       theLHS->SetDefByStmt(*newDassign);
-      realOcc->GetMeStmt()->GetBB()->InsertMeStmtAfter(realOcc->GetMeStmt(), newDassign);
+      realOcc.GetMeStmt()->GetBB()->InsertMeStmtAfter(realOcc.GetMeStmt(), newDassign);
     } else {
       CHECK_FATAL(false, "GenerateSaveRealOcc: non-reg temp for callassigned LHS occurrence NYI");
     }
   }
-  realOcc->SetSavedExpr(*regOrVar);
+  realOcc.SetSavedExpr(*regOrVar);
 }
 
-void MeSSALPre::GenerateReloadRealOcc(MeRealOcc *realOcc) {
-  CHECK_FATAL(!realOcc->IsLHS(), "GenerateReloadRealOcc: cannot be LHS occurrence");
+void MeSSALPre::GenerateReloadRealOcc(MeRealOcc &realOcc) {
+  CHECK_FATAL(!realOcc.IsLHS(), "GenerateReloadRealOcc: cannot be LHS occurrence");
   MeExpr *regOrVar = nullptr;
-  MeOccur *defOcc = realOcc->GetDef();
+  MeOccur *defOcc = realOcc.GetDef();
   if (defOcc->GetOccType() == kOccReal) {
     auto *defRealOcc = static_cast<MeRealOcc*>(defOcc);
     regOrVar = defRealOcc->GetSavedExpr();
@@ -115,23 +115,23 @@ void MeSSALPre::GenerateReloadRealOcc(MeRealOcc *realOcc) {
   }
   CHECK_NULL_FATAL(regOrVar);
   // replace realOcc->GetMeStmt()'s occ with regOrVar
-  (void)irMap->ReplaceMeExprStmt(*realOcc->GetMeStmt(), *realOcc->GetMeExpr(), *regOrVar);
+  (void)irMap->ReplaceMeExprStmt(*realOcc.GetMeStmt(), *realOcc.GetMeExpr(), *regOrVar);
 }
 
 // the variable in realZ is defined by a phi; replace it by the jth phi opnd
-MeExpr *MeSSALPre::PhiOpndFromRes(MeRealOcc *realZ, size_t j) {
-  MeOccur *defZ = realZ->GetDef();
+MeExpr *MeSSALPre::PhiOpndFromRes(MeRealOcc &realZ, size_t j) const {
+  MeOccur *defZ = realZ.GetDef();
   CHECK_NULL_FATAL(defZ);
   CHECK_FATAL(defZ->GetOccType() == kOccPhiocc, "must be def by phiocc");
-  MeExpr *meExprZ = realZ->GetMeExpr();
+  MeExpr *meExprZ = realZ.GetMeExpr();
   BB *ePhiBB = static_cast<MePhiOcc*>(defZ)->GetBB();
-  MeExpr *retVar = GetReplaceMeExpr(meExprZ, ePhiBB, j);
+  MeExpr *retVar = GetReplaceMeExpr(*meExprZ, *ePhiBB, j);
   return (retVar != nullptr) ? retVar : meExprZ;
 }
 
 // accumulate the BBs that are in the iterated dominance frontiers of bb in
 // the set dfSet, visiting each BB only once
-void MeSSALPre::GetIterDomFrontier(BB &bb, MapleSet<uint32> &dfSet, std::vector<bool> &visitedMap) {
+void MeSSALPre::GetIterDomFrontier(const BB &bb, MapleSet<uint32> &dfSet, std::vector<bool> &visitedMap) const {
   CHECK_FATAL(bb.GetBBId() < visitedMap.size(), "index out of range in MeSSALPre::GetIterDomFrontier");
   if (visitedMap[bb.GetBBId()]) {
     return;
@@ -158,12 +158,12 @@ void MeSSALPre::ComputeVarAndDfPhis() {
     GetIterDomFrontier(*defBB, dfPhiDfns, visitedMap);
     MeExpr *meExpr = realOcc->GetMeExpr();
     if (meExpr->GetMeOp() == kMeOpVar) {
-      SetVarPhis(meExpr);
+      SetVarPhis(*meExpr);
     }
   }
 }
 
-void MeSSALPre::BuildEntryLHSOcc4Formals() {
+void MeSSALPre::BuildEntryLHSOcc4Formals() const {
   if (preKind == kAddrPre) {
     return;
   }
@@ -190,27 +190,27 @@ void MeSSALPre::BuildEntryLHSOcc4Formals() {
   occ->SetBB(*func->GetFirstBB());
 }
 
-void MeSSALPre::BuildWorkListLHSOcc(MeStmt *meStmt, int32 seqStmt) {
+void MeSSALPre::BuildWorkListLHSOcc(MeStmt &meStmt, int32 seqStmt) {
   if (preKind == kAddrPre) {
     return;
   }
-  if (meStmt->GetOp() == OP_dassign || meStmt->GetOp() == OP_maydassign) {
-    VarMeExpr *lhs = meStmt->GetVarLHS();
+  if (meStmt.GetOp() == OP_dassign || meStmt.GetOp() == OP_maydassign) {
+    VarMeExpr *lhs = meStmt.GetVarLHS();
     CHECK_NULL_FATAL(lhs);
     const OriginalSt *ost = ssaTab->GetSymbolOriginalStFromID(lhs->GetOStIdx());
     if (ost->IsFormal()) {
       assignedFormals.insert(ost->GetIndex());
     }
-    CHECK_NULL_FATAL(meStmt->GetRHS());
+    CHECK_NULL_FATAL(meStmt.GetRHS());
     if (ost->IsVolatile()) {
       return;
     }
     if (lhs->GetPrimType() == PTY_agg) {
       return;
     }
-    (void)CreateRealOcc(*meStmt, seqStmt, *lhs, false, true);
-  } else if (kOpcodeInfo.IsCallAssigned(meStmt->GetOp())) {
-    MapleVector<MustDefMeNode> *mustDefList = meStmt->GetMustDefList();
+    (void)CreateRealOcc(meStmt, seqStmt, *lhs, false, true);
+  } else if (kOpcodeInfo.IsCallAssigned(meStmt.GetOp())) {
+    MapleVector<MustDefMeNode> *mustDefList = meStmt.GetMustDefList();
     if (mustDefList->empty()) {
       return;
     }
@@ -231,7 +231,7 @@ void MeSSALPre::BuildWorkListLHSOcc(MeStmt *meStmt, int32 seqStmt) {
     if (theLHS->GetPrimType() == PTY_agg) {
       return;
     }
-    (void)CreateRealOcc(*meStmt, seqStmt, *theLHS, false, true);
+    (void)CreateRealOcc(meStmt, seqStmt, *theLHS, false, true);
   }
 }
 
@@ -256,14 +256,14 @@ void MeSSALPre::CreateMembarOccAtCatch(BB &bb) {
 
 // only handle the leaf of load, because all other expressions has been done by
 // previous SSAPre
-void MeSSALPre::BuildWorkListExpr(MeStmt *meStmt, int32 seqStmt, MeExpr *meExpr, bool, MeExpr*, bool) {
-  MeExprOp meOp = meExpr->GetMeOp();
+void MeSSALPre::BuildWorkListExpr(MeStmt &meStmt, int32 seqStmt, MeExpr &meExpr, bool, MeExpr*, bool) {
+  MeExprOp meOp = meExpr.GetMeOp();
   switch (meOp) {
     case kMeOpVar: {
       if (preKind != kLoadPre) {
         break;
       }
-      auto *varMeExpr = static_cast<VarMeExpr*>(meExpr);
+      auto *varMeExpr = static_cast<VarMeExpr*>(&meExpr);
       const OriginalSt *ost = ssaTab->GetOriginalStFromID(varMeExpr->GetOStIdx());
       if (ost->IsVolatile()) {
         break;
@@ -273,53 +273,53 @@ void MeSSALPre::BuildWorkListExpr(MeStmt *meStmt, int32 seqStmt, MeExpr *meExpr,
         // not doing because its SSA form is not complete
         break;
       }
-      if (meExpr->GetPrimType() == PTY_agg) {
+      if (meExpr.GetPrimType() == PTY_agg) {
         break;
       }
-      (void)CreateRealOcc(*meStmt, seqStmt, *meExpr, false);
+      (void)CreateRealOcc(meStmt, seqStmt, meExpr, false);
       break;
     }
     case kMeOpAddrof: {
       if (preKind != kAddrPre) {
         break;
       }
-      auto *addrOfMeExpr = static_cast<AddrofMeExpr*>(meExpr);
+      auto *addrOfMeExpr = static_cast<AddrofMeExpr*>(&meExpr);
       const OriginalSt *ost = ssaTab->GetOriginalStFromID(addrOfMeExpr->GetOstIdx());
       if (ost->IsLocal()) {  // skip lpre for stack addresses as they are cheap
         break;
       }
-      (void)CreateRealOcc(*meStmt, seqStmt, *meExpr, false);
+      (void)CreateRealOcc(meStmt, seqStmt, meExpr, false);
       break;
     }
     case kMeOpAddroffunc: {
       if (preKind != kAddrPre) {
         break;
       }
-      (void)CreateRealOcc(*meStmt, seqStmt, *meExpr, false);
+      (void)CreateRealOcc(meStmt, seqStmt, meExpr, false);
       break;
     }
     case kMeOpOp: {
-      auto *meOpExpr = static_cast<OpMeExpr*>(meExpr);
+      auto *meOpExpr = static_cast<OpMeExpr*>(&meExpr);
       for (size_t i = 0; i < kOperandNumTernary; ++i) {
         MeExpr *opnd = meOpExpr->GetOpnd(i);
         if (opnd != nullptr) {
-          BuildWorkListExpr(meStmt, seqStmt, opnd, false, nullptr, false);
+          BuildWorkListExpr(meStmt, seqStmt, *opnd, false, nullptr, false);
         }
       }
       break;
     }
     case kMeOpNary: {
-      auto *naryMeExpr = static_cast<NaryMeExpr*>(meExpr);
+      auto *naryMeExpr = static_cast<NaryMeExpr*>(&meExpr);
       MapleVector<MeExpr*> &opnds = naryMeExpr->GetOpnds();
       for (auto it = opnds.begin(); it != opnds.end(); ++it) {
         MeExpr *opnd = *it;
-        BuildWorkListExpr(meStmt, seqStmt, opnd, false, nullptr, false);
+        BuildWorkListExpr(meStmt, seqStmt, *opnd, false, nullptr, false);
       }
       break;
     }
     case kMeOpIvar: {
-      auto *ivarMeExpr = static_cast<IvarMeExpr*>(meExpr);
-      BuildWorkListExpr(meStmt, seqStmt, ivarMeExpr->GetBase(), false, nullptr, false);
+      auto *ivarMeExpr = static_cast<IvarMeExpr*>(&meExpr);
+      BuildWorkListExpr(meStmt, seqStmt, *ivarMeExpr->GetBase(), false, nullptr, false);
       break;
     }
     default:
@@ -340,8 +340,8 @@ void MeSSALPre::BuildWorkList() {
   }
 }
 
-void MeSSALPre::FindLoopHeadBBs(IdentifyLoops *identLoops) {
-  for (LoopDesc *mapleLoop : identLoops->GetMeLoops()) {
+void MeSSALPre::FindLoopHeadBBs(const IdentifyLoops &identLoops) {
+  for (LoopDesc *mapleLoop : identLoops.GetMeLoops()) {
     if (mapleLoop->head != nullptr) {
       loopHeadBBs.insert(mapleLoop->head->GetBBId());
     }
@@ -364,7 +364,7 @@ AnalysisResult *MeDoSSALPre::Run(MeFunction *irFunc, MeFuncResultMgr *funcMgr, M
   uint32 lpreLimitUsed =
       (lprePULimitSpecified && puCount != MeOption::lprePULimit) ? UINT32_MAX : MeOption::lpreLimit;
   {
-    MeSSALPre ssaLpre(irFunc, *irMap, *dom, *NewMemPool(), *NewMemPool(), kLoadPre, lpreLimitUsed);
+    MeSSALPre ssaLpre(*irFunc, *irMap, *dom, *NewMemPool(), *NewMemPool(), kLoadPre, lpreLimitUsed);
     ssaLpre.SetRcLoweringOn(MeOption::rcLowering);
     ssaLpre.SetRegReadAtReturn(MeOption::regreadAtReturn);
     ssaLpre.SetSpillAtCatch(MeOption::spillAtCatch);
@@ -376,7 +376,7 @@ AnalysisResult *MeDoSSALPre::Run(MeFunction *irFunc, MeFuncResultMgr *funcMgr, M
       ssaLpre.SetSSAPreDebug(true);
     }
     if (MeOption::lpreSpeculate && !irFunc->HasException()) {
-      ssaLpre.FindLoopHeadBBs(identLoops);
+      ssaLpre.FindLoopHeadBBs(*identLoops);
     }
     ssaLpre.ApplySSAPRE();
     if (DEBUGFUNC(irFunc)) {
@@ -387,13 +387,13 @@ AnalysisResult *MeDoSSALPre::Run(MeFunction *irFunc, MeFuncResultMgr *funcMgr, M
   MeLowerGlobals lowerGlobals(irFunc, irFunc->GetMeSSATab());
   lowerGlobals.Run();
   {
-    MeSSALPre ssaLpre(irFunc, *irMap, *dom, *NewMemPool(), *NewMemPool(), kAddrPre, lpreLimitUsed);
+    MeSSALPre ssaLpre(*irFunc, *irMap, *dom, *NewMemPool(), *NewMemPool(), kAddrPre, lpreLimitUsed);
     ssaLpre.SetSpillAtCatch(MeOption::spillAtCatch);
     if (DEBUGFUNC(irFunc)) {
       ssaLpre.SetSSAPreDebug(true);
     }
     if (MeOption::lpreSpeculate && !irFunc->HasException()) {
-      ssaLpre.FindLoopHeadBBs(identLoops);
+      ssaLpre.FindLoopHeadBBs(*identLoops);
     }
     ssaLpre.ApplySSAPRE();
     if (DEBUGFUNC(irFunc)) {

@@ -300,7 +300,7 @@ class MIRModule {
     return puIdxFieldInitializedMap[key];
   }
 
-  std::ostream &GetOut() {
+  std::ostream &GetOut() const {
     return out;
   }
 

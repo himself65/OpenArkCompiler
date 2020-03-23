@@ -552,7 +552,7 @@ class RegreadSSANode : public SSANode {
   RegreadNode *regreadNode;
 };
 
-void GenericSSAPrint(MIRModule &mod, const StmtNode &stmtNode, int32 indent, StmtsSSAPart &stmtsSSAPart);
+void GenericSSAPrint(const MIRModule &mod, const StmtNode &stmtNode, int32 indent, StmtsSSAPart &stmtsSSAPart);
 MapleMap<OStIdx, MayDefNode> *SSAGenericGetMayDefsFromVersionSt(const VersionSt &sym, StmtsSSAPart &stmtsSSAPart);
 bool HasMayUseOpnd(const BaseNode &baseNode, SSATab &func);
 }  // namespace maple

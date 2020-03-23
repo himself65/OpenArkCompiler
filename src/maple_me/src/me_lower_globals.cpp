@@ -27,34 +27,34 @@
 // The addroffunc is inserted as the extra first operand and the
 // call/callassinged is renamed to icall/icallassigned.
 namespace maple {
-void MeLowerGlobals::LowerGlobalDreads(MeStmt &stmt, MeExpr *x) {
-  switch (x->GetMeOp()) {
+void MeLowerGlobals::LowerGlobalDreads(MeStmt &stmt, MeExpr &expr) {
+  switch (expr.GetMeOp()) {
     case kMeOpOp: {
-      auto *meOpExpr = static_cast<OpMeExpr*>(x);
+      auto &meOpExpr = static_cast<OpMeExpr&>(expr);
       for (size_t i = 0; i < kOperandNumTernary; ++i) {
-        MeExpr *opnd = meOpExpr->GetOpnd(i);
+        MeExpr *opnd = meOpExpr.GetOpnd(i);
         if (opnd != nullptr) {
-          LowerGlobalDreads(stmt, opnd);
+          LowerGlobalDreads(stmt, *opnd);
         }
       }
       break;
     }
     case kMeOpNary: {
-      auto *naryMeExpr = static_cast<NaryMeExpr*>(x);
-      MapleVector<MeExpr*> &opnds = naryMeExpr->GetOpnds();
+      auto &naryMeExpr = static_cast<NaryMeExpr&>(expr);
+      MapleVector<MeExpr*> &opnds = naryMeExpr.GetOpnds();
       for (auto it = opnds.begin(); it != opnds.end(); ++it) {
-        LowerGlobalDreads(stmt, *it);
+        LowerGlobalDreads(stmt, **it);
       }
       break;
     }
     case kMeOpIvar: {
-      auto *ivarMeExpr = static_cast<IvarMeExpr*>(x);
-      LowerGlobalDreads(stmt, ivarMeExpr->GetBase());
+      auto &ivarMeExpr = static_cast<IvarMeExpr&>(expr);
+      LowerGlobalDreads(stmt, *ivarMeExpr.GetBase());
       break;
     }
     case kMeOpVar: {
-      auto *varExpr = static_cast<VarMeExpr*>(x);
-      OriginalSt *ost = ssaTable->GetSymbolOriginalStFromID(varExpr->GetOStIdx());
+      auto &varExpr = static_cast<VarMeExpr&>(expr);
+      OriginalSt *ost = ssaTable->GetSymbolOriginalStFromID(varExpr.GetOStIdx());
       if (ost->IsLocal()) {
         break;
       }
@@ -64,19 +64,19 @@ void MeLowerGlobals::LowerGlobalDreads(MeStmt &stmt, MeExpr *x) {
         PUIdx puIdx = func->GetMirFunc()->GetPuidx();
         baseOst = ssaTable->FindOrCreateSymbolOriginalSt(*ost->GetMIRSymbol(), puIdx, 0);
       }
-      auto *addrofExpr = static_cast<AddrofMeExpr*>(irMap->CreateAddrofMeExpr(*varExpr));
+      auto *addrofExpr = static_cast<AddrofMeExpr*>(irMap->CreateAddrofMeExpr(varExpr));
       MIRPtrType ptrType(baseOst->GetTyIdx(), PTY_ptr);
       TyIdx addrTyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&ptrType);
-      auto *ivarExpr = static_cast<IvarMeExpr*>(irMap->CreateIvarMeExpr(*varExpr, addrTyIdx, *addrofExpr));
-      (void)irMap->ReplaceMeExprStmt(stmt, *varExpr, *ivarExpr);
+      auto *ivarExpr = static_cast<IvarMeExpr*>(irMap->CreateIvarMeExpr(varExpr, addrTyIdx, *addrofExpr));
+      (void)irMap->ReplaceMeExprStmt(stmt, varExpr, *ivarExpr);
       break;
     }
     case kMeOpAddrof: {
-      auto *addrofExpr = static_cast<AddrofMeExpr*>(x);
-      if (addrofExpr->GetFieldID() == 0) {
+      auto &addrofExpr = static_cast<AddrofMeExpr&>(expr);
+      if (addrofExpr.GetFieldID() == 0) {
         break;
       }
-      OriginalSt *ost = ssaTable->GetSymbolOriginalStFromID(addrofExpr->GetOstIdx());
+      OriginalSt *ost = ssaTable->GetSymbolOriginalStFromID(addrofExpr.GetOstIdx());
       if (ost->IsLocal()) {
         break;
       }
@@ -87,8 +87,8 @@ void MeLowerGlobals::LowerGlobalDreads(MeStmt &stmt, MeExpr *x) {
       MeExpr *newAddrofExpr = irMap->CreateAddrofMeExprFromSymbol(*ost->GetMIRSymbol(), puIdx);
       MIRPtrType ptrType(baseOst->GetTyIdx(), PTY_ptr);
       TyIdx addrTyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&ptrType);
-      MeExpr *iaddrofExpr = irMap->CreateIaddrofMeExpr(*addrofExpr, addrTyIdx, *newAddrofExpr);
-      (void)irMap->ReplaceMeExprStmt(stmt, *addrofExpr, *iaddrofExpr);
+      MeExpr *iaddrofExpr = irMap->CreateIaddrofMeExpr(addrofExpr, addrTyIdx, *newAddrofExpr);
+      (void)irMap->ReplaceMeExprStmt(stmt, addrofExpr, *iaddrofExpr);
       break;
     }
     default:
@@ -102,7 +102,7 @@ void MeLowerGlobals::Run() {
     auto *bb = *bIt;
     for (auto &stmt : bb->GetMeStmts()) {
       for (size_t i = 0; i < stmt.NumMeStmtOpnds(); ++i) {
-        LowerGlobalDreads(stmt, stmt.GetOpnd(i));
+        LowerGlobalDreads(stmt, *stmt.GetOpnd(i));
       }
       if (stmt.GetOp() == OP_dassign) {
         auto &dass = static_cast<DassignMeStmt&>(stmt);

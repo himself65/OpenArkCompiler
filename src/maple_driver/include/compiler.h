@@ -117,8 +117,7 @@ class MapleCombCompiler : public Compiler {
  private:
   std::string realRunningExe;
   void DecideMeRealLevel(MeOption &meOption, const std::vector<mapleOption::Option> &inputOptions);
-  void DecideMpl2MplRealLevel(Options &mpl2mplOption, const std::vector<mapleOption::Option> &inputOptions,
-                              const MplOptions &options);
+  void DecideMpl2MplRealLevel(Options &mpl2mplOption, const std::vector<mapleOption::Option> &inputOptions) const;
   std::unordered_set<std::string> GetFinalOutputs(const MplOptions &mplOptions) const override;
   void GetTmpFilesToDelete(const MplOptions &mplOptions, std::vector<std::string> &tempFiles) const override;
   MeOption *MakeMeOptions(const MplOptions &options, MemPool &memPool);

@@ -691,7 +691,7 @@ MeExpr *AddroffuncMeExpr::GetIdenticalExpr(MeExpr &expr) const {
   return nullptr;
 }
 
-void MeVarPhiNode::Dump(IRMap *irMap) const {
+void MeVarPhiNode::Dump(const IRMap *irMap) const {
   if (isPiAdded) {
     LogInfo::MapleLogger() << "PI_ADD VAR:";
   }
@@ -712,7 +712,7 @@ void MeVarPhiNode::Dump(IRMap *irMap) const {
   LogInfo::MapleLogger() << '\n';
 }
 
-void MeRegPhiNode::Dump(IRMap *irMap) const {
+void MeRegPhiNode::Dump(const IRMap *irMap) const {
   LogInfo::MapleLogger() << "REGVAR: " << lhs->GetRegIdx();
   LogInfo::MapleLogger() << "(%"
                          << irMap->GetMIRModule().CurFunction()
@@ -731,7 +731,7 @@ void MeRegPhiNode::Dump(IRMap *irMap) const {
   LogInfo::MapleLogger() << "}" << '\n';
 }
 
-void VarMeExpr::Dump(IRMap *irMap, int32) const {
+void VarMeExpr::Dump(const IRMap *irMap, int32) const {
   LogInfo::MapleLogger() << "VAR ";
   irMap->GetSSATab().GetOriginalStFromID(ostIdx)->Dump();
   LogInfo::MapleLogger() << " (field)" << fieldID;
@@ -741,7 +741,7 @@ void VarMeExpr::Dump(IRMap *irMap, int32) const {
   }
 }
 
-void RegMeExpr::Dump(IRMap *irMap, int32) const {
+void RegMeExpr::Dump(const IRMap *irMap, int32) const {
   LogInfo::MapleLogger() << "REGINDX:" << regIdx;
   LogInfo::MapleLogger()
       << " %"
@@ -749,13 +749,13 @@ void RegMeExpr::Dump(IRMap *irMap, int32) const {
   LogInfo::MapleLogger() << " mx" << GetExprID();
 }
 
-void AddroffuncMeExpr::Dump(IRMap*, int32) const {
+void AddroffuncMeExpr::Dump(const IRMap*, int32) const {
   LogInfo::MapleLogger() << "ADDROFFUNC:";
   LogInfo::MapleLogger() << GlobalTables::GetFunctionTable().GetFunctionFromPuidx(puIdx)->GetName();
   LogInfo::MapleLogger() << " mx" << GetExprID();
 }
 
-void GcmallocMeExpr::Dump(IRMap*, int32) const {
+void GcmallocMeExpr::Dump(const IRMap*, int32) const {
   LogInfo::MapleLogger() << kOpcodeInfo.GetTableItemAt(GetOp()).name << " " << GetPrimTypeName(GetPrimType());
   LogInfo::MapleLogger() << " ";
   GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx)->Dump(0);
@@ -763,28 +763,28 @@ void GcmallocMeExpr::Dump(IRMap*, int32) const {
   LogInfo::MapleLogger() << " ";
 }
 
-void ConstMeExpr::Dump(IRMap*, int32) const {
+void ConstMeExpr::Dump(const IRMap*, int32) const {
   LogInfo::MapleLogger() << "CONST";
   LogInfo::MapleLogger() << " ";
   constVal->Dump();
   LogInfo::MapleLogger() << " mx" << GetExprID();
 }
 
-void ConststrMeExpr::Dump(IRMap*, int32) const {
+void ConststrMeExpr::Dump(const IRMap*, int32) const {
   LogInfo::MapleLogger() << "CONSTSTR";
   LogInfo::MapleLogger() << " ";
   LogInfo::MapleLogger() << strIdx;
   LogInfo::MapleLogger() << " mx" << GetExprID();
 }
 
-void Conststr16MeExpr::Dump(IRMap*, int32) const {
+void Conststr16MeExpr::Dump(const IRMap*, int32) const {
   LogInfo::MapleLogger() << "CONSTSTR16";
   LogInfo::MapleLogger() << " ";
   LogInfo::MapleLogger() << strIdx;
   LogInfo::MapleLogger() << " mx" << GetExprID();
 }
 
-void SizeoftypeMeExpr::Dump(IRMap*, int32) const {
+void SizeoftypeMeExpr::Dump(const IRMap*, int32) const {
   LogInfo::MapleLogger() << kOpcodeInfo.GetTableItemAt(GetOp()).name << " " << GetPrimTypeName(GetPrimType());
   LogInfo::MapleLogger() << " TYIDX:" << tyIdx;
   MIRType *mirType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
@@ -792,7 +792,7 @@ void SizeoftypeMeExpr::Dump(IRMap*, int32) const {
   LogInfo::MapleLogger() << " mx" << GetExprID();
 }
 
-void FieldsDistMeExpr::Dump(IRMap*, int32) const {
+void FieldsDistMeExpr::Dump(const IRMap*, int32) const {
   LogInfo::MapleLogger() << kOpcodeInfo.GetTableItemAt(GetOp()).name << " " << GetPrimTypeName(GetPrimType());
   LogInfo::MapleLogger() << " TYIDX:" << tyIdx;
   MIRType *mirType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
@@ -802,14 +802,14 @@ void FieldsDistMeExpr::Dump(IRMap*, int32) const {
   LogInfo::MapleLogger() << " mx" << GetExprID();
 }
 
-void AddrofMeExpr::Dump(IRMap *irMap, int32) const {
+void AddrofMeExpr::Dump(const IRMap *irMap, int32) const {
   LogInfo::MapleLogger() << "ADDROF:";
   irMap->GetSSATab().GetOriginalStFromID(ostIdx)->Dump();
   LogInfo::MapleLogger() << " (field)" << fieldID;
   LogInfo::MapleLogger() << " mx" << GetExprID();
 }
 
-void OpMeExpr::Dump(IRMap *irMap, int32 indent) const {
+void OpMeExpr::Dump(const IRMap *irMap, int32 indent) const {
   LogInfo::MapleLogger() << "OP " << kOpcodeInfo.GetTableItemAt(GetOp()).name;
   LogInfo::MapleLogger() << " mx" << GetExprID();
   LogInfo::MapleLogger() << '\n';
@@ -835,7 +835,7 @@ void OpMeExpr::Dump(IRMap *irMap, int32 indent) const {
   opnds[2]->Dump(irMap, indent + 1);
 }
 
-void IvarMeExpr::Dump(IRMap *irMap, int32 indent) const {
+void IvarMeExpr::Dump(const IRMap *irMap, int32 indent) const {
   LogInfo::MapleLogger() << "IVAR mx" << GetExprID();
   LogInfo::MapleLogger() << " " << GetPrimTypeName(GetPrimType());
   LogInfo::MapleLogger() << " TYIDX:" << tyIdx;
@@ -854,7 +854,7 @@ void IvarMeExpr::Dump(IRMap *irMap, int32 indent) const {
   LogInfo::MapleLogger() << "}";
 }
 
-void NaryMeExpr::Dump(IRMap *irMap, int32 indent) const {
+void NaryMeExpr::Dump(const IRMap *irMap, int32 indent) const {
   ASSERT(static_cast<size_t>(GetNumOpnds()) == opnds.size(), "array size error");
   if (GetOp() == OP_array) {
     LogInfo::MapleLogger() << "ARRAY ";
@@ -965,7 +965,7 @@ VarMeExpr *AssignedPart::GetAssignedPartLHSRef(SSATab &ssaTab, bool excludeLocal
 }
 
 // default Dump
-void MeStmt::Dump(IRMap *irMap) const {
+void MeStmt::Dump(const IRMap *irMap) const {
   if (op == OP_comment) {
     return;
   }
@@ -981,7 +981,7 @@ MeStmt *MeStmt::GetNextMeStmt() const {
   return nextMeStmt;
 }
 
-void PiassignMeStmt::Dump(IRMap *irMap) const {
+void PiassignMeStmt::Dump(const IRMap *irMap) const {
   LogInfo::MapleLogger() << "||MEIR PI|| " << kOpcodeInfo.GetTableItemAt(GetOp()).name << " ";
   lhs->Dump(irMap);
   LogInfo::MapleLogger() << '\n';
@@ -991,7 +991,7 @@ void PiassignMeStmt::Dump(IRMap *irMap) const {
   LogInfo::MapleLogger() << '\n';
 }
 
-void DassignMeStmt::Dump(IRMap *irMap) const {
+void DassignMeStmt::Dump(const IRMap *irMap) const {
   LogInfo::MapleLogger() << "||MEIR|| " << kOpcodeInfo.GetTableItemAt(GetOp()).name << " ";
   lhs->Dump(irMap);
   LogInfo::MapleLogger() << '\n';
@@ -1008,7 +1008,7 @@ void DassignMeStmt::Dump(IRMap *irMap) const {
   DumpChiList(irMap, chiList);
 }
 
-void RegassignMeStmt::Dump(IRMap *irMap) const {
+void RegassignMeStmt::Dump(const IRMap *irMap) const {
   LogInfo::MapleLogger() << "||MEIR|| " << kOpcodeInfo.GetTableItemAt(GetOp()).name << " ";
   lhs->Dump(irMap);
   LogInfo::MapleLogger() << '\n';
@@ -1021,7 +1021,7 @@ void RegassignMeStmt::Dump(IRMap *irMap) const {
   LogInfo::MapleLogger() << '\n';
 }
 
-void MaydassignMeStmt::Dump(IRMap *irMap) const {
+void MaydassignMeStmt::Dump(const IRMap *irMap) const {
   LogInfo::MapleLogger() << "||MEIR|| " << kOpcodeInfo.GetTableItemAt(GetOp()).name << '\n';
   PrintIndentation(kDefaultPrintIndentNum);
   LogInfo::MapleLogger() << "rhs = ";
@@ -1036,7 +1036,7 @@ void MaydassignMeStmt::Dump(IRMap *irMap) const {
   DumpChiList(irMap, chiList);
 }
 
-void ChiMeNode::Dump(IRMap *irMap) const {
+void ChiMeNode::Dump(const IRMap *irMap) const {
   auto *meLHS = static_cast<VarMeExpr*>(lhs);
   auto *meRHS = static_cast<VarMeExpr*>(rhs);
   CHECK_FATAL(meLHS != nullptr, "Node doesn't have lhs?");
@@ -1049,7 +1049,7 @@ void ChiMeNode::Dump(IRMap *irMap) const {
   LogInfo::MapleLogger() << "mx" << meRHS->GetExprID() << "}";
 }
 
-void DumpMuList(IRMap *irMap, const MapleMap<OStIdx, VarMeExpr*> &muList) {
+void DumpMuList(const IRMap *irMap, const MapleMap<OStIdx, VarMeExpr*> &muList) {
   if (muList.empty()) {
     return;
   }
@@ -1075,7 +1075,7 @@ void DumpMuList(IRMap *irMap, const MapleMap<OStIdx, VarMeExpr*> &muList) {
   LogInfo::MapleLogger() << " }\n";
 }
 
-void DumpChiList(IRMap *irMap, const MapleMap<OStIdx, ChiMeNode*> &chiList) {
+void DumpChiList(const IRMap *irMap, const MapleMap<OStIdx, ChiMeNode*> &chiList) {
   if (chiList.empty()) {
     return;
   }
@@ -1097,7 +1097,7 @@ void DumpChiList(IRMap *irMap, const MapleMap<OStIdx, ChiMeNode*> &chiList) {
   LogInfo::MapleLogger() << " }\n";
 }
 
-void IassignMeStmt::Dump(IRMap *irMap) const {
+void IassignMeStmt::Dump(const IRMap *irMap) const {
   LogInfo::MapleLogger() << "||MEIR|| " << kOpcodeInfo.GetTableItemAt(GetOp()).name << '\n';
   PrintIndentation(kDefaultPrintIndentNum);
   LogInfo::MapleLogger() << "lhs = ";
@@ -1116,7 +1116,7 @@ void IassignMeStmt::Dump(IRMap *irMap) const {
   DumpChiList(irMap, chiList);
 }
 
-void NaryMeStmt::DumpOpnds(IRMap *irMap) const {
+void NaryMeStmt::DumpOpnds(const IRMap *irMap) const {
   for (size_t i = 0; i < opnds.size(); ++i) {
     PrintIndentation(kDefaultPrintIndentNum);
     LogInfo::MapleLogger() << "opnd[" << i << "] = ";
@@ -1125,12 +1125,12 @@ void NaryMeStmt::DumpOpnds(IRMap *irMap) const {
   }
 }
 
-void NaryMeStmt::Dump(IRMap *irMap) const {
+void NaryMeStmt::Dump(const IRMap *irMap) const {
   LogInfo::MapleLogger() << "||MEIR|| " << kOpcodeInfo.GetTableItemAt(GetOp()).name << " ";
   DumpOpnds(irMap);
 }
 
-void AssignedPart::DumpAssignedPart(IRMap *irMap) const {
+void AssignedPart::DumpAssignedPart(const IRMap *irMap) const {
   LogInfo::MapleLogger() << "    assignedpart: {";
   for (auto it = mustDefList.begin(); it != mustDefList.end(); ++it) {
     const MeExpr *lhsVar = (*it).GetLHS();
@@ -1145,7 +1145,7 @@ void AssignedPart::DumpAssignedPart(IRMap *irMap) const {
   LogInfo::MapleLogger() << "}\n";
 }
 
-void CallMeStmt::Dump(IRMap *irMap) const {
+void CallMeStmt::Dump(const IRMap *irMap) const {
   LogInfo::MapleLogger() << "||MEIR|| " << kOpcodeInfo.GetTableItemAt(GetOp()).name << " ";
   if (tyIdx != 0u) {
     LogInfo::MapleLogger() << " TYIDX:" << tyIdx;
@@ -1161,7 +1161,7 @@ void CallMeStmt::Dump(IRMap *irMap) const {
   DumpAssignedPart(irMap);
 }
 
-void IcallMeStmt::Dump(IRMap *irMap) const {
+void IcallMeStmt::Dump(const IRMap *irMap) const {
   LogInfo::MapleLogger() << "||MEIR|| " << kOpcodeInfo.GetTableItemAt(GetOp()).name << " ";
   LogInfo::MapleLogger() << " TYIDX:" << retTyIdx;
   DumpOpnds(irMap);
@@ -1170,7 +1170,7 @@ void IcallMeStmt::Dump(IRMap *irMap) const {
   DumpAssignedPart(irMap);
 }
 
-void IntrinsiccallMeStmt::Dump(IRMap *irMap) const {
+void IntrinsiccallMeStmt::Dump(const IRMap *irMap) const {
   LogInfo::MapleLogger() << "||MEIR|| " << kOpcodeInfo.GetTableItemAt(GetOp()).name << " ";
   LogInfo::MapleLogger() << "TYIDX:" << tyIdx;
   MIRType *mirType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
@@ -1184,13 +1184,13 @@ void IntrinsiccallMeStmt::Dump(IRMap *irMap) const {
   DumpAssignedPart(irMap);
 }
 
-void RetMeStmt::Dump(IRMap *irMap) const {
+void RetMeStmt::Dump(const IRMap *irMap) const {
   LogInfo::MapleLogger() << "||MEIR|| " << kOpcodeInfo.GetTableItemAt(GetOp()).name << '\n';
   DumpOpnds(irMap);
   DumpMuList(irMap, muList);
 }
 
-void CondGotoMeStmt::Dump(IRMap *irMap) const {
+void CondGotoMeStmt::Dump(const IRMap *irMap) const {
   LogInfo::MapleLogger() << "||MEIR|| " << kOpcodeInfo.GetTableItemAt(GetOp()).name << '\n';
   PrintIndentation(kDefaultPrintIndentNum);
   LogInfo::MapleLogger() << "cond: ";
@@ -1198,7 +1198,7 @@ void CondGotoMeStmt::Dump(IRMap *irMap) const {
   LogInfo::MapleLogger() << '\n';
 }
 
-void UnaryMeStmt::Dump(IRMap *irMap) const {
+void UnaryMeStmt::Dump(const IRMap *irMap) const {
   LogInfo::MapleLogger() << "||MEIR|| " << kOpcodeInfo.GetTableItemAt(GetOp()).name << '\n';
   PrintIndentation(kDefaultPrintIndentNum);
   LogInfo::MapleLogger() << " unaryopnd: ";
@@ -1206,7 +1206,7 @@ void UnaryMeStmt::Dump(IRMap *irMap) const {
   LogInfo::MapleLogger() << '\n';
 }
 
-void SwitchMeStmt::Dump(IRMap *irMap) const {
+void SwitchMeStmt::Dump(const IRMap *irMap) const {
   LogInfo::MapleLogger() << "||MEIR|| " << kOpcodeInfo.GetTableItemAt(GetOp()).name << '\n';
   PrintIndentation(kDefaultPrintIndentNum);
   LogInfo::MapleLogger() << "switchOpnd: ";
@@ -1214,13 +1214,13 @@ void SwitchMeStmt::Dump(IRMap *irMap) const {
   LogInfo::MapleLogger() << '\n';
 }
 
-void GosubMeStmt::Dump(IRMap *irMap) const {
+void GosubMeStmt::Dump(const IRMap *irMap) const {
   LogInfo::MapleLogger() << "||MEIR|| " << kOpcodeInfo.GetTableItemAt(GetOp()).name << '\n';
   DumpMuList(irMap, *GetMuList());
   LogInfo::MapleLogger() << '\n';
 }
 
-void ThrowMeStmt::Dump(IRMap *irMap) const {
+void ThrowMeStmt::Dump(const IRMap *irMap) const {
   LogInfo::MapleLogger() << "||MEIR|| " << kOpcodeInfo.GetTableItemAt(GetOp()).name << '\n';
   PrintIndentation(kDefaultPrintIndentNum);
   LogInfo::MapleLogger() << "throwopnd: ";
@@ -1229,14 +1229,14 @@ void ThrowMeStmt::Dump(IRMap *irMap) const {
   DumpMuList(irMap, *GetMuList());
 }
 
-void SyncMeStmt::Dump(IRMap *irMap) const {
+void SyncMeStmt::Dump(const IRMap *irMap) const {
   LogInfo::MapleLogger() << "||MEIR|| " << kOpcodeInfo.GetTableItemAt(GetOp()).name << '\n';
   DumpOpnds(irMap);
   DumpMuList(irMap, muList);
   DumpChiList(irMap, chiList);
 }
 
-bool MeStmt::IsTheSameWorkcand(MeStmt &mestmt) const {
+bool MeStmt::IsTheSameWorkcand(const MeStmt &mestmt) const {
   if (op != mestmt.op) {
     return false;
   }
@@ -1246,16 +1246,16 @@ bool MeStmt::IsTheSameWorkcand(MeStmt &mestmt) const {
     }
   } else if (op == OP_intrinsiccallwithtype) {
     if (static_cast<const IntrinsiccallMeStmt*>(this)->GetTyIdx() !=
-        static_cast<IntrinsiccallMeStmt &>(mestmt).GetTyIdx()) {
+        static_cast<const IntrinsiccallMeStmt &>(mestmt).GetTyIdx()) {
       return false;
     }
     if (static_cast<const IntrinsiccallMeStmt*>(this)->GetIntrinsic() !=
-        static_cast<IntrinsiccallMeStmt &>(mestmt).GetIntrinsic()) {
+        static_cast<const IntrinsiccallMeStmt &>(mestmt).GetIntrinsic()) {
       return false;
     }
   } else if (op == OP_callassigned) {
     auto *thisCass = static_cast<const CallMeStmt*>(this);
-    auto &cass = static_cast<CallMeStmt &>(mestmt);
+    auto &cass = static_cast<const CallMeStmt &>(mestmt);
     if (thisCass->GetPUIdx() != cass.GetPUIdx()) {
       return false;
     }
@@ -1280,7 +1280,7 @@ bool MeStmt::IsTheSameWorkcand(MeStmt &mestmt) const {
   return true;
 }
 
-void AssertMeStmt::Dump(IRMap *irMap) const {
+void AssertMeStmt::Dump(const IRMap *irMap) const {
   LogInfo::MapleLogger() << "||MEIR|| " << kOpcodeInfo.GetTableItemAt(GetOp()).name << '\n';
   PrintIndentation(kDefaultPrintIndentNum);
   LogInfo::MapleLogger() << "opnd[0] = ";

@@ -237,18 +237,18 @@ RegMeExpr *IRMap::CreateRegRefMeExpr(MIRType &mirType) {
   return regReadExpr;
 }
 
-RegMeExpr *IRMap::CreateRegRefMeExpr(MeExpr &meExpr) {
+RegMeExpr *IRMap::CreateRegRefMeExpr(const MeExpr &meExpr) {
   MIRType *mirType = nullptr;
   switch (meExpr.GetMeOp()) {
     case kMeOpVar: {
-      auto &varMeExpr = static_cast<VarMeExpr&>(meExpr);
+      auto &varMeExpr = static_cast<const VarMeExpr&>(meExpr);
       const OriginalSt *ost = ssaTab.GetOriginalStFromID(varMeExpr.GetOStIdx());
       ASSERT(ost->GetTyIdx() != 0u, "expect ost->tyIdx to be initialized");
       mirType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ost->GetTyIdx());
       break;
     }
     case kMeOpIvar: {
-      auto &ivarMeExpr = static_cast<IvarMeExpr&>(meExpr);
+      auto &ivarMeExpr = static_cast<const IvarMeExpr&>(meExpr);
       MIRType *ptrMirType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ivarMeExpr.GetTyIdx());
       ASSERT(ptrMirType->GetKind() == kTypePointer, "must be point type for ivar");
       auto *realMirType = static_cast<MIRPtrType*>(ptrMirType);
@@ -266,7 +266,7 @@ RegMeExpr *IRMap::CreateRegRefMeExpr(MeExpr &meExpr) {
     }
     case kMeOpOp:
       if (meExpr.GetOp() == OP_retype) {
-        auto &opMeExpr = static_cast<OpMeExpr&>(meExpr);
+        auto &opMeExpr = static_cast<const OpMeExpr&>(meExpr);
         ASSERT(opMeExpr.GetTyIdx() != 0u, "expect opMeExpr.tyIdx to be initialized");
         mirType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(opMeExpr.GetTyIdx());
         break;
@@ -680,7 +680,8 @@ MeExpr *IRMap::HashMeExpr(MeExpr &meExpr) {
   return resultExpr;
 }
 
-MeExpr *IRMap::ReplaceMeExprExpr(MeExpr &origExpr, MeExpr &newExpr, size_t opndsSize, MeExpr &meExpr, MeExpr &repExpr) {
+MeExpr *IRMap::ReplaceMeExprExpr(MeExpr &origExpr, MeExpr &newExpr, size_t opndsSize,
+                                 const MeExpr &meExpr, MeExpr &repExpr) {
   bool needRehash = false;
 
   for (size_t i = 0; i < opndsSize; ++i) {
@@ -705,7 +706,7 @@ MeExpr *IRMap::ReplaceMeExprExpr(MeExpr &origExpr, MeExpr &newExpr, size_t opnds
 
 // replace meExpr with repexpr. meExpr must be a kid of origexpr
 // return repexpr's parent if replaced, otherwise return nullptr
-MeExpr *IRMap::ReplaceMeExprExpr(MeExpr &origExpr, MeExpr &meExpr, MeExpr &repExpr) {
+MeExpr *IRMap::ReplaceMeExprExpr(MeExpr &origExpr, const MeExpr &meExpr, MeExpr &repExpr) {
   if (origExpr.IsLeaf()) {
     return &origExpr;
   }
@@ -742,7 +743,7 @@ MeExpr *IRMap::ReplaceMeExprExpr(MeExpr &origExpr, MeExpr &meExpr, MeExpr &repEx
   }
 }
 
-bool IRMap::ReplaceMeExprStmtOpnd(uint32 opndID, MeStmt &meStmt, MeExpr &meExpr, MeExpr &repExpr) {
+bool IRMap::ReplaceMeExprStmtOpnd(uint32 opndID, MeStmt &meStmt, const MeExpr &meExpr, MeExpr &repExpr) {
   MeExpr *opnd = meStmt.GetOpnd(opndID);
 
   if (opnd == &meExpr) {
@@ -757,7 +758,7 @@ bool IRMap::ReplaceMeExprStmtOpnd(uint32 opndID, MeStmt &meStmt, MeExpr &meExpr,
 }
 
 // replace meExpr in meStmt with repexpr
-bool IRMap::ReplaceMeExprStmt(MeStmt &meStmt, MeExpr &meExpr, MeExpr &repexpr) {
+bool IRMap::ReplaceMeExprStmt(MeStmt &meStmt, const MeExpr &meExpr, MeExpr &repexpr) {
   bool isReplaced = false;
   Opcode op = meStmt.GetOp();
 

@@ -58,7 +58,7 @@ class Dominance : public AnalysisResult {
   void ComputePdomChildren();
   void ComputePdtPreorder(const BB &bb, size_t &num);
   void ComputePdtDfn();
-  bool PostDominate(const BB &bb1, BB &bb2);  // true if bb1 postdominates bb2
+  bool PostDominate(const BB &bb1, const BB &bb2);  // true if bb1 postdominates bb2
   void DumpPdoms();
 
   const MapleVector<BB*> &GetBBVec() const {

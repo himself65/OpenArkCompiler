@@ -36,15 +36,15 @@ void MeStorePre::CheckCreateCurTemp() {
 // bbCurTempMap maps bb to cur_temp_version and is used to avoid re-processing
 // each bb.  The return value is the curTemp version that contains the RHS value
 // at the entry to bb;
-RegMeExpr *MeStorePre::EnsureRHSInCurTemp(BB *bb) {
-  CHECK_FATAL(bb != func->GetCommonEntryBB(), "EnsureRHSInCurTemp: cannot find earlier definition");
+RegMeExpr *MeStorePre::EnsureRHSInCurTemp(BB &bb) {
+  CHECK_FATAL(&bb != func->GetCommonEntryBB(), "EnsureRHSInCurTemp: cannot find earlier definition");
   // see if processed before
-  auto mapIt = bbCurTempMap.find(bb);
+  auto mapIt = bbCurTempMap.find(&bb);
   if (mapIt != bbCurTempMap.end()) {
     return mapIt->second;
   }
   // traverse statements
-  auto &meStmts = bb->GetMeStmts();
+  auto &meStmts = bb.GetMeStmts();
   for (auto itStmt = meStmts.rbegin(); itStmt != meStmts.rend(); ++itStmt) {
     if (itStmt->GetOp() == OP_dassign) {
       auto *dass = static_cast<DassignMeStmt*>(to_ptr(itStmt));
@@ -52,7 +52,7 @@ RegMeExpr *MeStorePre::EnsureRHSInCurTemp(BB *bb) {
         continue;
       }
       if (enabledDebug) {
-        LogInfo::MapleLogger() << "EnsureRHSInCurTemp: found dassign at BB" << bb->GetBBId() << '\n';
+        LogInfo::MapleLogger() << "EnsureRHSInCurTemp: found dassign at BB" << bb.GetBBId() << '\n';
       }
       if (dass->GetRHS()->GetMeOp() == kMeOpReg &&
           static_cast<RegMeExpr*>(dass->GetRHS())->GetOstIdx() == curTemp->GetOstIdx()) {
@@ -60,13 +60,13 @@ RegMeExpr *MeStorePre::EnsureRHSInCurTemp(BB *bb) {
       }
       // create and insert regassign before dass
       RegMeExpr *lhsReg = irMap->CreateRegMeExprVersion(*curTemp);
-      RegassignMeStmt *rass = irMap->CreateRegassignMeStmt(*lhsReg, *dass->GetRHS(), *bb);
+      RegassignMeStmt *rass = irMap->CreateRegassignMeStmt(*lhsReg, *dass->GetRHS(), bb);
       rass->SetSrcPos(itStmt->GetSrcPosition());
       lhsReg->SetDefByStmt(*rass);
-      bb->InsertMeStmtBefore(dass, rass);
+      bb.InsertMeStmtBefore(dass, rass);
       // change dass's rhs to lhsReg
       dass->SetRHS(lhsReg);
-      bbCurTempMap[bb] = lhsReg;
+      bbCurTempMap[&bb] = lhsReg;
       return lhsReg;
     } else if (kOpcodeInfo.IsCallAssigned(itStmt->GetOp())) {
       MapleVector<MustDefMeNode> *mustDefList = itStmt->GetMustDefList();
@@ -81,51 +81,51 @@ RegMeExpr *MeStorePre::EnsureRHSInCurTemp(BB *bb) {
           continue;
         }
         if (enabledDebug) {
-          LogInfo::MapleLogger() << "EnsureRHSInCurTemp: found callassigned at BB" << bb->GetBBId() << '\n';
+          LogInfo::MapleLogger() << "EnsureRHSInCurTemp: found callassigned at BB" << bb.GetBBId() << '\n';
         }
         // change mustDefList
         RegMeExpr *lhsReg = irMap->CreateRegMeExprVersion(*curTemp);
         mustDefList->front().UpdateLHS(*lhsReg);
         // create dassign
-        DassignMeStmt *dass = irMap->CreateDassignMeStmt(*lhsVar, *lhsReg, *bb);
+        DassignMeStmt *dass = irMap->CreateDassignMeStmt(*lhsVar, *lhsReg, bb);
         dass->SetSrcPos(itStmt->GetSrcPosition());
         lhsVar->SetDefByStmt(*dass);
-        bb->InsertMeStmtAfter(to_ptr(itStmt), dass);
-        bbCurTempMap[bb] = lhsReg;
+        bb.InsertMeStmtAfter(to_ptr(itStmt), dass);
+        bbCurTempMap[&bb] = lhsReg;
         return lhsReg;
       }
     }
   }
   // check if there is def by phi
-  auto phiIt = bb->GetMevarPhiList().find(workCand->GetOst()->GetIndex());
-  if (phiIt != bb->GetMevarPhiList().end()) {
+  auto phiIt = bb.GetMevarPhiList().find(workCand->GetOst()->GetIndex());
+  if (phiIt != bb.GetMevarPhiList().end()) {
     if (enabledDebug) {
-      LogInfo::MapleLogger() << "EnsureRHSInCurTemp: found def-by-phi at BB" << bb->GetBBId() << '\n';
+      LogInfo::MapleLogger() << "EnsureRHSInCurTemp: found def-by-phi at BB" << bb.GetBBId() << '\n';
     }
     RegMeExpr *lhsReg = irMap->CreateRegMeExprVersion(*curTemp);
-    bbCurTempMap[bb] = lhsReg;
+    bbCurTempMap[&bb] = lhsReg;
     // form a new phi for the temp
     MeRegPhiNode *regPhi = irMap->NewInPool<MeRegPhiNode>();
     regPhi->SetLHS(lhsReg);
-    regPhi->SetDefBB(bb);
+    regPhi->SetDefBB(&bb);
     // call recursively for each varPhi operands
-    for (BB *pred : bb->GetPred()) {
-      RegMeExpr *regPhiOpnd = EnsureRHSInCurTemp(pred);
+    for (BB *pred : bb.GetPred()) {
+      RegMeExpr *regPhiOpnd = EnsureRHSInCurTemp(*pred);
       CHECK_NULL_FATAL(regPhiOpnd);
       regPhi->GetOpnds().push_back(regPhiOpnd);
       regPhiOpnd->GetPhiUseSet().insert(regPhi);
     }
     // insert the regPhi
-    bb->GetMeRegPhiList().insert(std::make_pair(lhsReg->GetOstIdx(), regPhi));
+    bb.GetMeRegPhiList().insert(std::make_pair(lhsReg->GetOstIdx(), regPhi));
     return lhsReg;
   }
   // continue at immediate dominator
   if (enabledDebug) {
-    LogInfo::MapleLogger() << "EnsureRHSInCurTemp: cannot find def at BB" << bb->GetBBId() << '\n';
+    LogInfo::MapleLogger() << "EnsureRHSInCurTemp: cannot find def at BB" << bb.GetBBId() << '\n';
   }
-  RegMeExpr *savedCurTemp = EnsureRHSInCurTemp(dom->GetDom(bb->GetBBId()));
+  RegMeExpr *savedCurTemp = EnsureRHSInCurTemp(*dom->GetDom(bb.GetBBId()));
   CHECK_NULL_FATAL(savedCurTemp);
-  bbCurTempMap[bb] = savedCurTemp;
+  bbCurTempMap[&bb] = savedCurTemp;
   return savedCurTemp;
 }
 
@@ -143,7 +143,7 @@ void MeStorePre::CodeMotion() {
       BB *insertBB = lambdaResOcc->GetBB();
       CheckCreateCurTemp();
       CHECK_FATAL(insertBB->GetPred().size() == 1, "CodeMotion: encountered critical edge");
-      RegMeExpr *rhsReg = EnsureRHSInCurTemp(insertBB->GetPred(0));
+      RegMeExpr *rhsReg = EnsureRHSInCurTemp(*insertBB->GetPred(0));
       DassignMeStmt *newDass = irMap->CreateDassignMeStmt(*lhsVar, *rhsReg, *insertBB);
       lhsVar->SetDefByStmt(*newDass);
       // insert at earliest point in BB, but after statements required to be
@@ -190,32 +190,31 @@ void MeStorePre::CodeMotion() {
 
 // ================ Step 0: collect occurrences ================
 // create a new real occurrence for the store of meStmt of symbol oidx
-void MeStorePre::CreateRealOcc(OStIdx ostIdx, MeStmt *meStmt) {
-  ASSERT_NOT_NULL(meStmt);
+void MeStorePre::CreateRealOcc(OStIdx ostIdx, MeStmt &meStmt) {
   SpreWorkCand *wkCand = nullptr;
   auto mapIt = workCandMap.find(ostIdx);
   if (mapIt != workCandMap.end()) {
     wkCand = mapIt->second;
   } else {
     const OriginalSt *ost = ssaTab->GetSymbolOriginalStFromID(ostIdx);
-    wkCand = spreMp->New<SpreWorkCand>(&spreAllocator, ost);
+    wkCand = spreMp->New<SpreWorkCand>(spreAllocator, *ost);
     workCandMap[ostIdx] = wkCand;
     // if it is local symbol, insert artificial real occ at common_exit_bb
     if (ost->IsLocal()) {
       SRealOcc *artOcc = spreMp->New<SRealOcc>();
-      artOcc->SetBB(func->GetCommonExitBB());
+      artOcc->SetBB(*func->GetCommonExitBB());
       wkCand->GetRealOccs().push_back(artOcc);
     }
   }
   if (wkCand->GetTheVar() == nullptr) {
-    if (meStmt->GetOp() == OP_dassign) {
-      wkCand->SetTheVar(static_cast<DassignMeStmt*>(meStmt)->GetVarLHS());
+    if (meStmt.GetOp() == OP_dassign) {
+      wkCand->SetTheVar(*static_cast<DassignMeStmt*>(&meStmt)->GetVarLHS());
     } else {
-      ASSERT(kOpcodeInfo.IsCallAssigned(meStmt->GetOp()), "CreateRealOcc: callassign expected");
-      MapleVector<MustDefMeNode> *mustDefList = meStmt->GetMustDefList();
+      ASSERT(kOpcodeInfo.IsCallAssigned(meStmt.GetOp()), "CreateRealOcc: callassign expected");
+      MapleVector<MustDefMeNode> *mustDefList = meStmt.GetMustDefList();
       CHECK_FATAL(mustDefList != nullptr, "CreateRealOcc: mustDefList cannot be empty");
       CHECK_FATAL(!mustDefList->empty(), "CreateRealOcc: mustDefList cannot be empty");
-      wkCand->SetTheVar(static_cast<VarMeExpr*>(mustDefList->front().GetLHS()));
+      wkCand->SetTheVar(*static_cast<VarMeExpr*>(mustDefList->front().GetLHS()));
     }
   }
   SRealOcc *newOcc = spreMp->New<SRealOcc>(meStmt);
@@ -224,7 +223,7 @@ void MeStorePre::CreateRealOcc(OStIdx ostIdx, MeStmt *meStmt) {
 }
 
 // create a new use occurrence for symbol oidx in given bb
-void MeStorePre::CreateUseOcc(OStIdx ostIdx, BB *bb) {
+void MeStorePre::CreateUseOcc(OStIdx ostIdx, BB &bb) const {
   SpreWorkCand *wkcand = nullptr;
   auto mapIt = workCandMap.find(ostIdx);
   if (mapIt == workCandMap.end()) {
@@ -233,7 +232,7 @@ void MeStorePre::CreateUseOcc(OStIdx ostIdx, BB *bb) {
   wkcand = mapIt->second;
   CHECK_FATAL(!wkcand->GetRealOccs().empty(), "empty container check");
   SOcc *lastOcc = wkcand->GetRealOccs().back();
-  if (lastOcc->GetOccTy() == kSOccUse && lastOcc->GetBB() == bb) {
+  if (lastOcc->GetOccTy() == kSOccUse && lastOcc->GetBB() == &bb) {
     return;  // no need to push consecutive use occurrences at same BB
   }
   SUseOcc *newOcc = spreMp->New<SUseOcc>(bb);
@@ -241,12 +240,11 @@ void MeStorePre::CreateUseOcc(OStIdx ostIdx, BB *bb) {
 }
 
 // create use occurs for all the symbols that alias with muost
-void MeStorePre::CreateSpreUseOccsThruAliasing(const OriginalSt *muOst, BB *bb) {
-  ASSERT_NOT_NULL(muOst);
-  if (muOst->GetIndex() >= aliasClass->GetAliasElemCount()) {
+void MeStorePre::CreateSpreUseOccsThruAliasing(const OriginalSt &muOst, BB &bb) const {
+  if (muOst.GetIndex() >= aliasClass->GetAliasElemCount()) {
     return;
   }
-  AliasElem *ae = aliasClass->FindAliasElem(*muOst);
+  AliasElem *ae = aliasClass->FindAliasElem(muOst);
   if (ae->GetClassSet() == nullptr) {
     return;
   }
@@ -259,39 +257,37 @@ void MeStorePre::CreateSpreUseOccsThruAliasing(const OriginalSt *muOst, BB *bb) 
   }
 }
 
-void MeStorePre::FindAndCreateSpreUseOccs(MeExpr *meExpr, BB *bb) {
-  ASSERT_NOT_NULL(meExpr);
-  ASSERT_NOT_NULL(bb);
-  if (meExpr->GetMeOp() == kMeOpVar) {
-    auto *var = static_cast<VarMeExpr*>(meExpr);
+void MeStorePre::FindAndCreateSpreUseOccs(const MeExpr &meExpr, BB &bb) const {
+  if (meExpr.GetMeOp() == kMeOpVar) {
+    auto *var = static_cast<const VarMeExpr*>(&meExpr);
     const OriginalSt *ost = ssaTab->GetOriginalStFromID(var->GetOStIdx());
     if (!ost->IsVolatile()) {
       CreateUseOcc(var->GetOStIdx(), bb);
     }
     return;
   }
-  for (uint8 i = 0; i < meExpr->GetNumOpnds(); i++) {
-    FindAndCreateSpreUseOccs(meExpr->GetOpnd(i), bb);
+  for (uint8 i = 0; i < meExpr.GetNumOpnds(); i++) {
+    FindAndCreateSpreUseOccs(*meExpr.GetOpnd(i), bb);
   }
   if (IsJavaLang()) {
     return;
   }
-  if (meExpr->GetMeOp() == kMeOpIvar) {
-    auto *ivarMeExpr = static_cast<IvarMeExpr*>(meExpr);
+  if (meExpr.GetMeOp() == kMeOpIvar) {
+    auto *ivarMeExpr = static_cast<const IvarMeExpr*>(&meExpr);
     if (ivarMeExpr->GetMu() != nullptr) {
-      CreateSpreUseOccsThruAliasing(ssaTab->GetOriginalStFromID(ivarMeExpr->GetMu()->GetOStIdx()), bb);
+      CreateSpreUseOccsThruAliasing(*ssaTab->GetOriginalStFromID(ivarMeExpr->GetMu()->GetOStIdx()), bb);
     }
   }
 }
 
-void MeStorePre::CreateSpreUseOccsForAll(BB *bb) {
+void MeStorePre::CreateSpreUseOccsForAll(BB &bb) const {
   // go thru all workcands and insert a use occurrence for each of them
   for (std::pair<OStIdx, SpreWorkCand*> wkCandPair : workCandMap) {
     SpreWorkCand *wkCand = wkCandPair.second;
     CHECK_NULL_FATAL(wkCand);
     CHECK_FATAL(!wkCand->GetRealOccs().empty(), "container empty check");
     SOcc *lastOcc = wkCand->GetRealOccs().back();
-    if (lastOcc->GetOccTy() == kSOccUse && lastOcc->GetBB() == bb) {
+    if (lastOcc->GetOccTy() == kSOccUse && lastOcc->GetBB() == &bb) {
       continue;  // no need to push consecutive use occurrences at same BB
     }
     SUseOcc *newOcc = spreMp->New<SUseOcc>(bb);
@@ -326,13 +322,12 @@ void MeStorePre::BuildWorkListBB(BB *bb) {
     if (lhsOstIdx != 0u) {
       const OriginalSt *ost = ssaTab->GetOriginalStFromID(lhsOstIdx);
       if (!ost->IsVolatile()) {
-        CreateRealOcc(lhsOstIdx, to_ptr(stmt));
+        CreateRealOcc(lhsOstIdx, *to_ptr(stmt));
       }
     }
     // look for use occurrence of stores
     for (size_t i = 0; i < stmt->NumMeStmtOpnds(); i++) {
-      CHECK_NULL_FATAL(stmt->GetOpnd(i));
-      FindAndCreateSpreUseOccs(stmt->GetOpnd(i), stmt->GetBB());
+      FindAndCreateSpreUseOccs(*stmt->GetOpnd(i), *stmt->GetBB());
     }
     if (!IsJavaLang()) {
       // go thru mu list
@@ -340,16 +335,16 @@ void MeStorePre::BuildWorkListBB(BB *bb) {
       if (naryMeStmt != nullptr) {
         CHECK_NULL_FATAL(naryMeStmt->GetMuList());
         for (std::pair<OStIdx, VarMeExpr*> muPair : *(naryMeStmt->GetMuList())) {
-          CreateSpreUseOccsThruAliasing(ssaTab->GetOriginalStFromID(muPair.second->GetOStIdx()), bb);
+          CreateSpreUseOccsThruAliasing(*ssaTab->GetOriginalStFromID(muPair.second->GetOStIdx()), *bb);
         }
       }
     }
   }
   if (bb->GetAttributes(kBBAttrIsCatch)) {
-    CreateSpreUseOccsForAll(bb);
+    CreateSpreUseOccsForAll(*bb);
   }
   if (bb->GetAttributes(kBBAttrIsEntry)) {
-    CreateEntryOcc(bb);
+    CreateEntryOcc(*bb);
   }
   // recurse on child BBs in post-dominator tree
   for (BBId bbId : dom->GetPdomChildrenItem(bb->GetBBId())) {
@@ -364,7 +359,7 @@ AnalysisResult *MeDoStorePre::Run(MeFunction *func, MeFuncResultMgr *m, ModuleRe
   ASSERT(aliasClass != nullptr, "aliasClass phase has problem");
   auto *meIrMap = static_cast<MeIRMap*>(m->GetAnalysisResult(MeFuncPhase_IRMAP, func));
   CHECK_FATAL(meIrMap != nullptr, "irmap phase has problem");
-  MeStorePre storePre(func, dom, aliasClass, NewMemPool(), DEBUGFUNC(func));
+  MeStorePre storePre(*func, *dom, *aliasClass, *NewMemPool(), DEBUGFUNC(func));
   storePre.ApplySSUPre();
   if (DEBUGFUNC(func)) {
     func->Dump(false);

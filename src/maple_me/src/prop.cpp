@@ -57,7 +57,7 @@ Prop::Prop(IRMap &irMap, Dominance &dom, MemPool &memPool, std::vector<BB*> &&bb
   }
 }
 
-MeExpr *Prop::SimplifyCvtMeExpr(const OpMeExpr &opMeExpr) {
+MeExpr *Prop::SimplifyCvtMeExpr(const OpMeExpr &opMeExpr) const {
   MeExpr *opnd0 = opMeExpr.GetOpnd(0);
 
 
@@ -79,7 +79,7 @@ MeExpr *Prop::SimplifyCvtMeExpr(const OpMeExpr &opMeExpr) {
 }
 
 MeExpr *Prop::SimplifyCompareSelectConstMeExpr(const OpMeExpr &opMeExpr, const MeExpr &opMeOpnd0, MeExpr &opnd1,
-    MeExpr &opnd01, MeExpr &opnd02) {
+    MeExpr &opnd01, MeExpr &opnd02) const {
   // b, c and compare operand are all constant
   auto *constOpnd1 = static_cast<ConstMeExpr&>(opnd1).GetConstVal();
   auto *constOpnd01 = static_cast<ConstMeExpr&>(opnd01).GetConstVal();
@@ -118,7 +118,7 @@ MeExpr *Prop::SimplifyCompareSelectConstMeExpr(const OpMeExpr &opMeExpr, const M
   return irMap.HashMeExpr(newopMeExpr);
 }
 
-MeExpr *Prop::SimplifyCompareMeExpr(OpMeExpr &opMeExpr) {
+MeExpr *Prop::SimplifyCompareMeExpr(OpMeExpr &opMeExpr) const {
   MeExpr *opnd0 = opMeExpr.GetOpnd(0);
   MeExpr *opnd1 = opMeExpr.GetOpnd(1);
 
@@ -161,7 +161,7 @@ MeExpr *Prop::SimplifyCompareMeExpr(OpMeExpr &opMeExpr) {
   return nullptr;
 }
 
-MeExpr *Prop::SimplifyMeExpr(OpMeExpr &opMeExpr) {
+MeExpr *Prop::SimplifyMeExpr(OpMeExpr &opMeExpr) const {
   Opcode opcode = opMeExpr.GetOp();
   if (kOpcodeInfo.IsCompare(opcode)) {
     return SimplifyCompareMeExpr(opMeExpr);
@@ -350,7 +350,7 @@ bool Prop::Propagatable(const MeExpr &expr, const BB &fromBB, bool atParm) const
 }
 
 // return varMeExpr itself if no propagation opportunity
-MeExpr &Prop::PropVar(VarMeExpr &varMeExpr, bool atParm, bool checkPhi) {
+MeExpr &Prop::PropVar(VarMeExpr &varMeExpr, bool atParm, bool checkPhi) const {
   const MIRSymbol *st = ssaTab.GetMIRSymbolFromID(varMeExpr.GetOStIdx());
   if (st->IsInstrumented() || varMeExpr.IsVolatile(ssaTab)) {
     return varMeExpr;
@@ -394,7 +394,7 @@ MeExpr &Prop::PropVar(VarMeExpr &varMeExpr, bool atParm, bool checkPhi) {
   return varMeExpr;
 }
 
-MeExpr &Prop::PropReg(RegMeExpr &regMeExpr, bool atParm) {
+MeExpr &Prop::PropReg(RegMeExpr &regMeExpr, bool atParm) const {
   if (regMeExpr.GetDefBy() == kDefByStmt) {
     RegassignMeStmt *defStmt = static_cast<RegassignMeStmt*>(regMeExpr.GetDefStmt());
     MeExpr &rhs = utils::ToRef(defStmt->GetRHS());
@@ -405,7 +405,7 @@ MeExpr &Prop::PropReg(RegMeExpr &regMeExpr, bool atParm) {
   return regMeExpr;
 }
 
-MeExpr &Prop::PropIvar(IvarMeExpr &ivarMeExpr) {
+MeExpr &Prop::PropIvar(IvarMeExpr &ivarMeExpr) const {
   IassignMeStmt *defStmt = ivarMeExpr.GetDefStmt();
   if (defStmt == nullptr || ivarMeExpr.IsVolatile()) {
     return ivarMeExpr;

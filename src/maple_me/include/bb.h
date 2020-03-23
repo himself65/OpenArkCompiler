@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -115,7 +115,7 @@ class BB {
   void Dump(MIRModule *mod);
   void DumpHeader(MIRModule *mod) const;
   void DumpPhi();
-  void DumpBBAttribute(MIRModule *mod) const;
+  void DumpBBAttribute(const MIRModule *mod) const;
   std::string StrAttribute() const;
 
   void AddPredBB(BB *predVal) {
@@ -188,7 +188,7 @@ class BB {
   bool IsSuccBB(const BB &bb) const {
     return IsInList(bb.succ);
   }
-  void DumpMeBB(IRMap &irMap);
+  void DumpMeBB(const IRMap &irMap);
 
   void AddSuccBB(BB *succPara) {
     succ.push_back(succPara);
@@ -239,16 +239,16 @@ class BB {
   const PhiNode *PhiofVerStInserted(const VersionSt &versionSt) const;
   void InsertPhi(MapleAllocator *alloc, VersionSt *versionSt);
   void PrependMeStmt(MeStmt *meStmt);
-  void RemoveMeStmt(MeStmt *meStmt);
+  void RemoveMeStmt(const MeStmt *meStmt);
   void AddMeStmtFirst(MeStmt *meStmt);
   void AddMeStmtLast(MeStmt *meStmt);
   void InsertMeStmtBefore(const MeStmt *meStmt, MeStmt *inStmt);
   void InsertMeStmtAfter(const MeStmt *meStmt, MeStmt *inStmt);
   void InsertMeStmtLastBr(MeStmt *inStmt);
-  void ReplaceMeStmt(MeStmt *stmt, MeStmt *newStmt);
-  void DumpMeVarPhiList(IRMap *irMap);
-  void DumpMeRegPhiList(IRMap *irMap);
-  void DumpMeVarPiList(IRMap *irMap);
+  void ReplaceMeStmt(const MeStmt *stmt, MeStmt *newStmt);
+  void DumpMeVarPhiList(const IRMap *irMap);
+  void DumpMeRegPhiList(const IRMap *irMap);
+  void DumpMeVarPiList(const IRMap *irMap);
   StmtNodes &GetStmtNodes() {
     return stmtNodeList;
   }

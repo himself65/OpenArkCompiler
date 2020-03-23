@@ -32,7 +32,7 @@ class MeDoSplitCEdge : public MeFuncPhase {
   }
 
  private:
-  void BreakCriticalEdge(MeFunction &func, BB &pred, BB &succ);
+  void BreakCriticalEdge(MeFunction &func, BB &pred, BB &succ) const;
 };
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_MECRITICALEDGE_H

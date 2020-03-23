@@ -49,19 +49,17 @@ static bool CompareBackedge(const std::pair<BB*, BB*> &a, const std::pair<BB*, B
   return (a.first)->GetBBId() < (b.first)->GetBBId();
 }
 
-bool MeDoLoopCanon::NeedConvert(BB *bb, BB *pred, MapleAllocator &localAlloc, MapleMap<Key, bool> &swapSuccs) {
-  CHECK_FATAL(bb != nullptr, "bb should not be null");
-  CHECK_FATAL(pred != nullptr, "pred should not be null");
-  bb->SetAttributes(kBBAttrIsInLoop);
-  pred->SetAttributes(kBBAttrIsInLoop);
+bool MeDoLoopCanon::NeedConvert(BB &bb, BB &pred, MapleAllocator &localAlloc, MapleMap<Key, bool> &swapSuccs) const {
+  bb.SetAttributes(kBBAttrIsInLoop);
+  pred.SetAttributes(kBBAttrIsInLoop);
   // do not convert do-while loop
-  if ((bb->GetKind() != kBBCondGoto) || (pred == bb) || bb->GetAttributes(kBBAttrIsTry) ||
-      bb->GetAttributes(kBBAttrIsCatch)) {
+  if ((bb.GetKind() != kBBCondGoto) || (&pred == &bb) || bb.GetAttributes(kBBAttrIsTry) ||
+      bb.GetAttributes(kBBAttrIsCatch)) {
     return false;
   }
-  ASSERT(bb->GetSucc().size() == 2, "the number of bb's successors must equal 2");
+  ASSERT(bb.GetSucc().size() == 2, "the number of bb's successors must equal 2");
   // if both succs are equal, return false
-  if (bb->GetSucc().front() == bb->GetSucc().back()) {
+  if (bb.GetSucc().front() == bb.GetSucc().back()) {
     return false;
   }
   // check bb's succ both in loop body or not, such as
@@ -73,12 +71,12 @@ bool MeDoLoopCanon::NeedConvert(BB *bb, BB *pred, MapleAllocator &localAlloc, Ma
   //  /
   MapleSet<BBId> inLoop(std::less<BBId>(), localAlloc.Adapter());
   MapleList<BB*> bodyList(localAlloc.Adapter());
-  bodyList.push_back(pred);
+  bodyList.push_back(&pred);
   while (!bodyList.empty()) {
     BB *curr = bodyList.front();
     bodyList.pop_front();
     // skip bb and bb is already in loop body(has been dealt with)
-    if (curr == bb || inLoop.count(curr->GetBBId()) == 1) {
+    if (curr == &bb || inLoop.count(curr->GetBBId()) == 1) {
       continue;
     }
     inLoop.insert(curr->GetBBId());
@@ -88,25 +86,23 @@ bool MeDoLoopCanon::NeedConvert(BB *bb, BB *pred, MapleAllocator &localAlloc, Ma
       tmpPred->SetAttributes(kBBAttrIsInLoop);
     }
   }
-  if ((inLoop.count(bb->GetSucc(0)->GetBBId()) == 1) && (inLoop.count(bb->GetSucc(1)->GetBBId()) == 1)) {
+  if ((inLoop.count(bb.GetSucc(0)->GetBBId()) == 1) && (inLoop.count(bb.GetSucc(1)->GetBBId()) == 1)) {
     return false;
   }
   // other case
   // fallthru is in loop body, latchBB need swap succs
-  if (inLoop.count(bb->GetSucc().at(0)->GetBBId()) == 1) {
-    swapSuccs.insert(make_pair(std::make_pair(bb, pred), true));
+  if (inLoop.count(bb.GetSucc().at(0)->GetBBId()) == 1) {
+    swapSuccs.insert(make_pair(std::make_pair(&bb, &pred), true));
   }
   return true;
 }
 
-void MeDoLoopCanon::Convert(MeFunction *func, BB *bb, BB *pred, MapleMap<Key, bool> &swapSuccs) {
-  ASSERT(bb != nullptr, "bb should not be null");
-  ASSERT(pred != nullptr, "pred should not be null");
+void MeDoLoopCanon::Convert(MeFunction &func, BB &bb, BB &pred, MapleMap<Key, bool> &swapSuccs) {
   // if bb->fallthru is in loopbody, latchBB need convert condgoto and make original target as its fallthru
-  bool swapSuccOfLatch = (swapSuccs.find(std::make_pair(bb, pred)) != swapSuccs.end());
-  if (DEBUGFUNC(func)) {
-    LogInfo::MapleLogger() << "***loop convert: backedge bb->id_ " << bb->GetBBId() << " pred->id_ "
-                           << pred->GetBBId();
+  bool swapSuccOfLatch = (swapSuccs.find(std::make_pair(&bb, &pred)) != swapSuccs.end());
+  if (DEBUGFUNC(&func)) {
+    LogInfo::MapleLogger() << "***loop convert: backedge bb->id_ " << bb.GetBBId() << " pred->id_ "
+                           << pred.GetBBId();
     if (swapSuccOfLatch) {
       LogInfo::MapleLogger() << " need swap succs\n";
     } else {
@@ -114,38 +110,38 @@ void MeDoLoopCanon::Convert(MeFunction *func, BB *bb, BB *pred, MapleMap<Key, bo
     }
   }
   // new latchBB
-  BB *latchBB = func->NewBasicBlock();
+  BB *latchBB = func.NewBasicBlock();
   latchBB->SetAttributes(kBBAttrArtificial);
   // update pred bb
-  bb->RemoveBBFromPred(pred);
-  pred->ReplaceSucc(bb, latchBB); // replace pred->succ with latchBB and set pred of latchBB
+  bb.RemoveBBFromPred(&pred);
+  pred.ReplaceSucc(&bb, latchBB); // replace pred.succ with latchBB and set pred of latchBB
   // update pred stmt if needed
-  if (pred->GetKind() == kBBGoto) {
-    ASSERT(pred->GetAttributes(kBBAttrIsTry) || pred->GetSucc().size() == 1, "impossible");
-    ASSERT(!pred->GetStmtNodes().empty(), "impossible");
-    ASSERT(pred->GetStmtNodes().back().GetOpCode() == OP_goto, "impossible");
+  if (pred.GetKind() == kBBGoto) {
+    ASSERT(pred.GetAttributes(kBBAttrIsTry) || pred.GetSucc().size() == 1, "impossible");
+    ASSERT(!pred.GetStmtNodes().empty(), "impossible");
+    ASSERT(pred.GetStmtNodes().back().GetOpCode() == OP_goto, "impossible");
     // delete goto stmt and make pred is fallthru
-    pred->RemoveLastStmt();
-    pred->SetKind(kBBFallthru);
-  } else if (pred->GetKind() == kBBCondGoto) {
+    pred.RemoveLastStmt();
+    pred.SetKind(kBBFallthru);
+  } else if (pred.GetKind() == kBBCondGoto) {
     // if replaced bb is goto target
-    ASSERT(pred->GetAttributes(kBBAttrIsTry) || pred->GetSucc().size() == 2,
+    ASSERT(pred.GetAttributes(kBBAttrIsTry) || pred.GetSucc().size() == 2,
            "pred should have attr kBBAttrIsTry or have 2 successors");
-    ASSERT(!pred->GetStmtNodes().empty(), "pred's stmtNodeList should not be empty");
-    auto &condGotoStmt = static_cast<CondGotoNode&>(pred->GetStmtNodes().back());
-    if (latchBB == pred->GetSucc().at(1)) {
+    ASSERT(!pred.GetStmtNodes().empty(), "pred's stmtNodeList should not be empty");
+    auto &condGotoStmt = static_cast<CondGotoNode&>(pred.GetStmtNodes().back());
+    if (latchBB == pred.GetSucc().at(1)) {
       // latchBB is the new target
-      LabelIdx label = func->GetOrCreateBBLabel(*latchBB);
+      LabelIdx label = func.GetOrCreateBBLabel(*latchBB);
       condGotoStmt.SetOffset(label);
     }
-  } else if (pred->GetKind() == kBBFallthru) {
+  } else if (pred.GetKind() == kBBFallthru) {
     // donothing
-  } else if (pred->GetKind() == kBBSwitch) {
-    ASSERT(!pred->GetStmtNodes().empty(), "");
-    auto &switchStmt = static_cast<SwitchNode&>(pred->GetStmtNodes().back());
-    ASSERT(bb->GetBBLabel() != 0, "");
-    LabelIdx oldlabIdx = bb->GetBBLabel();
-    LabelIdx label = func->GetOrCreateBBLabel(*latchBB);
+  } else if (pred.GetKind() == kBBSwitch) {
+    ASSERT(!pred.GetStmtNodes().empty(), "bb is empty");
+    auto &switchStmt = static_cast<SwitchNode&>(pred.GetStmtNodes().back());
+    ASSERT(bb.GetBBLabel() != 0, "wrong bb label");
+    LabelIdx oldlabIdx = bb.GetBBLabel();
+    LabelIdx label = func.GetOrCreateBBLabel(*latchBB);
     if (switchStmt.GetDefaultLabel() == oldlabIdx) {
       switchStmt.SetDefaultLabel(label);
     }
@@ -159,14 +155,14 @@ void MeDoLoopCanon::Convert(MeFunction *func, BB *bb, BB *pred, MapleMap<Key, bo
     CHECK_FATAL(false, "unexpected pred kind");
   }
   // clone instructions of bb to latchBB
-  func->CloneBasicBlock(*latchBB, *bb);
+  func.CloneBasicBlock(*latchBB, bb);
   // clone bb's succ to latchBB
-  for (BB *succ : bb->GetSucc()) {
+  for (BB *succ : bb.GetSucc()) {
     ASSERT(!latchBB->GetAttributes(kBBAttrIsTry) || latchBB->GetSucc().empty(),
-           "loopcanon TODO: tryblock should insert succ before handler");
+           "loopcanon : tryblock should insert succ before handler");
     latchBB->AddSuccBB(succ);
   }
-  latchBB->SetKind(bb->GetKind());
+  latchBB->SetKind(bb.GetKind());
   // swap latchBB's succ if needed
   if (swapSuccOfLatch) {
     // modify condBr stmt
@@ -175,7 +171,7 @@ void MeDoLoopCanon::Convert(MeFunction *func, BB *bb, BB *pred, MapleMap<Key, bo
     ASSERT(condGotoStmt.IsCondBr(), "impossible");
     condGotoStmt.SetOpCode((condGotoStmt.GetOpCode() == OP_brfalse) ? OP_brtrue : OP_brfalse);
     BB *fallthru = latchBB->GetSucc(0);
-    LabelIdx label = func->GetOrCreateBBLabel(*fallthru);
+    LabelIdx label = func.GetOrCreateBBLabel(*fallthru);
     condGotoStmt.SetOffset(label);
     // swap succ
     BB *tmp = latchBB->GetSucc(0);
@@ -228,7 +224,7 @@ AnalysisResult *MeDoLoopCanon::Run(MeFunction *func, MeFuncResultMgr *m, ModuleR
       ASSERT_NOT_NULL(pred);
       // bb is reachable from entry && bb dominator pred
       if (dom->Dominate(*func->GetCommonEntryBB(), *bb) && dom->Dominate(*bb, *pred) &&
-          !pred->GetAttributes(kBBAttrWontExit) && (NeedConvert(bb, pred, localAlloc, swapSuccs))) {
+          !pred->GetAttributes(kBBAttrWontExit) && (NeedConvert(*bb, *pred, localAlloc, swapSuccs))) {
         if (DEBUGFUNC(func)) {
           LogInfo::MapleLogger() << "find backedge " << bb->GetBBId() << " <-- " << pred->GetBBId() << '\n';
         }
@@ -254,7 +250,11 @@ AnalysisResult *MeDoLoopCanon::Run(MeFunction *func, MeFuncResultMgr *m, ModuleR
       func->Dump(true);
     }
     for (auto it = backEdges.begin(); it != backEdges.end(); ++it) {
-      Convert(func, (*it).first, (*it).second, swapSuccs);
+      BB *bb = it->first;
+      BB *pred = it->second;
+      ASSERT(bb != nullptr, "bb should not be nullptr");
+      ASSERT(pred != nullptr, "pred should not be nullptr");
+      Convert(*func, *bb, *pred, swapSuccs);
       if (DEBUGFUNC(func)) {
         LogInfo::MapleLogger() << "-----------------Dump mefunction after loop convert-----------\n";
         func->Dump(true);

@@ -18,12 +18,16 @@ GN_OPTIONS := \
 .PHONY: default
 default: install
 
-.PHONY: mapleall
-mapleall:
+.PHONY: maple
+maple:
 	$(call build_gn, ${GN_OPTIONS}, maple)
 
+.PHONY: irbuild
+irbuild:
+	$(call build_gn, ${GN_OPTIONS}, irbuild)
+
 .PHONY: install
-install: mapleall
+install: maple
 	$(shell cp -rf $(MAPLE_ROOT)/src/bin/java2jar $(MAPLE_ROOT)/output/bin/)
 	$(shell cp -rf $(MAPLE_ROOT)/src/bin/jbc2mpl $(MAPLE_ROOT)/output/bin/)
 	$(shell cp -rf $(MAPLE_ROOT)/src/bin/mplcg $(MAPLE_ROOT)/output/bin/)

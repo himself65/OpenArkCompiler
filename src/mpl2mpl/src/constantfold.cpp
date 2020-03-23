@@ -21,7 +21,7 @@
 #include "global_tables.h"
 
 namespace {
-constexpr maple::uint64 kJsTypeNumber = 4; // JSTYPE_NUMBER
+constexpr maple::uint64 kJsTypeNumber = 4;
 constexpr maple::uint64 kJsTypeNumberInHigh32Bit = kJsTypeNumber << 32; // set high 32 bit as JSTYPE_NUMBER
 constexpr maple::uint32 kByteSizeOfBit64 = 8; // byte number for 64 bit
 enum CompareRes : maple::int64 {
@@ -53,37 +53,37 @@ BinaryNode *ConstantFold::NewBinaryNode(BinaryNode *old, Opcode op, PrimType pri
   return result;
 }
 
-UnaryNode *ConstantFold::NewUnaryNode(UnaryNode *old, Opcode op, PrimType primType, BaseNode *e) const {
+UnaryNode *ConstantFold::NewUnaryNode(UnaryNode *old, Opcode op, PrimType primType, BaseNode *expr) const {
   CHECK_NULL_FATAL(old);
   UnaryNode *result = nullptr;
-  if (old->GetOpCode() == op && old->GetPrimType() == primType && old->Opnd(0) == e) {
+  if (old->GetOpCode() == op && old->GetPrimType() == primType && old->Opnd(0) == expr) {
     result = old;
   } else {
-    result = mirModule->CurFuncCodeMemPool()->New<UnaryNode>(op, primType, e);
+    result = mirModule->CurFuncCodeMemPool()->New<UnaryNode>(op, primType, expr);
   }
   return result;
 }
 
-BaseNode *ConstantFold::PairToExpr(PrimType resultType, const std::pair<BaseNode*, int64> &p) const {
-  CHECK_NULL_FATAL(p.first);
-  BaseNode *result = p.first;
-  if (p.second == 0) {
+BaseNode *ConstantFold::PairToExpr(PrimType resultType, const std::pair<BaseNode*, int64> &pair) const {
+  CHECK_NULL_FATAL(pair.first);
+  BaseNode *result = pair.first;
+  if (pair.second == 0) {
     return result;
   }
-  if (p.first->GetOpCode() == OP_neg && p.second > 0) {
+  if (pair.first->GetOpCode() == OP_neg && pair.second > 0) {
     // -a, 5 -> 5 - a
-    ConstvalNode *val = mirModule->GetMIRBuilder()->CreateIntConst(p.second, resultType);
-    BaseNode *r = static_cast<UnaryNode*>(p.first)->Opnd(0);
+    ConstvalNode *val = mirModule->GetMIRBuilder()->CreateIntConst(pair.second, resultType);
+    BaseNode *r = static_cast<UnaryNode*>(pair.first)->Opnd(0);
     result = mirModule->CurFuncCodeMemPool()->New<BinaryNode>(OP_sub, resultType, val, r);
   } else {
-    if (p.second > 0) {
+    if (pair.second > 0) {
       // +-a, 5 -> a + 5
-      ConstvalNode *val = mirModule->GetMIRBuilder()->CreateIntConst(p.second, resultType);
-      result = mirModule->CurFuncCodeMemPool()->New<BinaryNode>(OP_add, resultType, p.first, val);
+      ConstvalNode *val = mirModule->GetMIRBuilder()->CreateIntConst(pair.second, resultType);
+      result = mirModule->CurFuncCodeMemPool()->New<BinaryNode>(OP_add, resultType, pair.first, val);
     } else {
       // +-a, -5 -> a + -5
-      ConstvalNode *val = mirModule->GetMIRBuilder()->CreateIntConst(-p.second, resultType);
-      result = mirModule->CurFuncCodeMemPool()->New<BinaryNode>(OP_sub, resultType, p.first, val);
+      ConstvalNode *val = mirModule->GetMIRBuilder()->CreateIntConst(-pair.second, resultType);
+      result = mirModule->CurFuncCodeMemPool()->New<BinaryNode>(OP_sub, resultType, pair.first, val);
     }
   }
   return result;
@@ -800,9 +800,9 @@ ConstvalNode *ConstantFold::FoldConstBinary(Opcode opcode, PrimType resultType, 
   return returnValue;
 }
 
-ConstvalNode *ConstantFold::FoldIntConstUnary(Opcode opcode, PrimType resultType, const ConstvalNode *c) const {
-  CHECK_NULL_FATAL(c);
-  const MIRIntConst *cst = safe_cast<MIRIntConst>(c->GetConstVal());
+ConstvalNode *ConstantFold::FoldIntConstUnary(Opcode opcode, PrimType resultType, const ConstvalNode *constNode) const {
+  CHECK_NULL_FATAL(constNode);
+  const MIRIntConst *cst = safe_cast<MIRIntConst>(constNode->GetConstVal());
   uint32 result32 = 0;
   uint64 result64 = 0;
   bool useResult64 = (GetPrimTypeSize(resultType) == kByteSizeOfBit64);
@@ -880,11 +880,10 @@ ConstvalNode *ConstantFold::FoldIntConstUnary(Opcode opcode, PrimType resultType
 }
 
 template <typename T>
-ConstvalNode *ConstantFold::FoldFPConstUnary(Opcode opcode, PrimType resultType, ConstvalNode *c) const {
-  CHECK_NULL_FATAL(c);
-  ConstvalNode *resultConst = c;
+ConstvalNode *ConstantFold::FoldFPConstUnary(Opcode opcode, PrimType resultType, ConstvalNode *constNode) const {
+  CHECK_NULL_FATAL(constNode);
   typename T::value_type constValue = 0.0;
-  T *fpCst = static_cast<T*>(c->GetConstVal());
+  T *fpCst = static_cast<T*>(constNode->GetConstVal());
   switch (opcode) {
     case OP_recip:
     case OP_neg:
@@ -914,7 +913,7 @@ ConstvalNode *ConstantFold::FoldFPConstUnary(Opcode opcode, PrimType resultType,
       ASSERT(false, "Unknown opcode for FoldFPConstUnary");
       break;
   }
-  resultConst = mirModule->CurFuncCodeMemPool()->New<ConstvalNode>();
+  auto *resultConst = mirModule->CurFuncCodeMemPool()->New<ConstvalNode>();
   resultConst->SetPrimType(resultType);
   if (resultType == PTY_f32) {
     resultConst->SetConstVal(GlobalTables::GetFpConstTable().GetOrCreateFloatConst(constValue));
@@ -924,14 +923,14 @@ ConstvalNode *ConstantFold::FoldFPConstUnary(Opcode opcode, PrimType resultType,
   return resultConst;
 }
 
-ConstvalNode *ConstantFold::FoldConstUnary(Opcode opcode, PrimType resultType, ConstvalNode *c) const {
+ConstvalNode *ConstantFold::FoldConstUnary(Opcode opcode, PrimType resultType, ConstvalNode *constNode) const {
   ConstvalNode *returnValue = nullptr;
   if (IsPrimitiveInteger(resultType) || IsPrimitiveDynInteger(resultType)) {
-    returnValue = FoldIntConstUnary(opcode, resultType, c);
+    returnValue = FoldIntConstUnary(opcode, resultType, constNode);
   } else if (resultType == PTY_f32) {
-    returnValue = FoldFPConstUnary<MIRFloatConst>(opcode, resultType, c);
+    returnValue = FoldFPConstUnary<MIRFloatConst>(opcode, resultType, constNode);
   } else if (resultType == PTY_f64) {
-    returnValue = FoldFPConstUnary<MIRDoubleConst>(opcode, resultType, c);
+    returnValue = FoldFPConstUnary<MIRDoubleConst>(opcode, resultType, constNode);
   } else if (PTY_f128 == resultType) {
   } else {
     ASSERT(false, "Unhandled case for FoldConstUnary");
@@ -973,8 +972,7 @@ std::pair<BaseNode*, int64> ConstantFold::FoldGcmallocjarray(JarrayMallocNode *n
   BaseNode *result = node;
   std::pair<BaseNode*, int64> p = DispatchFold(node->Opnd(0));
   if (node->Opnd(0) != p.first) {
-    JarrayMallocNode *newRetNode;
-    newRetNode = node->CloneTree(mirModule->GetCurFuncCodeMPAllocator());
+    JarrayMallocNode *newRetNode = node->CloneTree(mirModule->GetCurFuncCodeMPAllocator());
     CHECK_FATAL(newRetNode != nullptr, "newRetNode is null in ConstantFold::FoldGcmallocjarray");
     newRetNode->SetOpnd(PairToExpr(node->Opnd(0)->GetPrimType(), p), 0);
     result = newRetNode;
@@ -1464,10 +1462,10 @@ std::pair<BaseNode*, int64> ConstantFold::FoldBinary(BinaryNode *node) {
   return std::make_pair(result, sum);
 }
 
-BaseNode *ConstantFold::SimplifyDoubleCompare(CompareNode *node) const {
+BaseNode *ConstantFold::SimplifyDoubleCompare(CompareNode &compareNode) const {
   // For cases on gitlab issue 636.
   // See arm manual B.cond(P2993) and FCMP(P1091)
-  CHECK_NULL_FATAL(node);
+  CompareNode *node = &compareNode;
   BaseNode *result = node;
   BaseNode *l = node->Opnd(0);
   BaseNode *r = node->Opnd(1);
@@ -1555,7 +1553,9 @@ std::pair<BaseNode*, int64> ConstantFold::FoldCompare(CompareNode *node) {
     } else {
       result = node;
     }
-    result = SimplifyDoubleCompare(static_cast<CompareNode*>(result));
+    auto *compareNode = static_cast<CompareNode*>(result);
+    CHECK_NULL_FATAL(compareNode);
+    result = SimplifyDoubleCompare(*compareNode);
   }
   return std::make_pair(result, 0);
 }

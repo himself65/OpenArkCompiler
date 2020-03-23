@@ -27,7 +27,7 @@ static inline bool CheckOp(const MeStmt *stmt, Opcode op) {
   return stmt != nullptr && stmt->GetOp() == op;
 }
 
-static inline void CheckRemove(MeStmt *stmt, Opcode op) {
+static inline void CheckRemove(const MeStmt *stmt, Opcode op) {
   if (CheckOp(stmt, op)) {
     stmt->GetBB()->RemoveMeStmt(stmt);
   }
@@ -342,7 +342,67 @@ void RCLowering::HandleAssignMeStmtVarLHS(MeStmt &stmt, MeExpr *pendingDec) {
   assignedPtrSym.insert(lsym);
 }
 
-void RCLowering::HandleAssignToGlobalVar(MeStmt &stmt) {
+MIRType *RCLowering::GetArrayNodeType(const VarMeExpr &var) {
+  const MIRSymbol *arrayElemSym = ssaTab.GetMIRSymbolFromID(var.GetOStIdx());
+  MIRType *baseType = arrayElemSym->GetType();
+  MIRType *arrayElemType = nullptr;
+  if (baseType != nullptr) {
+    MIRType *stType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(
+        static_cast<MIRPtrType*>(baseType)->GetPointedTyIdx());
+    while (kTypeJArray == stType->GetKind()) {
+      MIRJarrayType *baseType1 = static_cast<MIRJarrayType*>(stType);
+      MIRType *elemType = baseType1->GetElemType();
+      if (elemType->GetKind() == kTypePointer) {
+        const TyIdx &index = static_cast<MIRPtrType*>(elemType)->GetPointedTyIdx();
+        stType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(index);
+      } else {
+        stType = elemType;
+      }
+    }
+    arrayElemType = stType;
+  }
+  return arrayElemType;
+}
+
+void RCLowering::CheckArrayStore(const IntrinsiccallMeStmt &writeRefCall) {
+  if (!Options::checkArrayStore) {
+    return;
+  }
+  MIRIntrinsicID intrnID = writeRefCall.GetIntrinsic();
+  if (!((INTRN_MCCWriteVolNoInc <= intrnID) && (intrnID <= INTRN_MCCWrite))) {
+    return;
+  }
+  if (writeRefCall.GetOpnd(1)->GetOp() != OP_iaddrof) {
+    return;
+  }
+  OpMeExpr *opExpr = static_cast<OpMeExpr*>(writeRefCall.GetOpnd(1));
+  if (opExpr->GetOpnd(0)->GetOp() != OP_array) {
+    return;
+  }
+  MeExpr *arrayNode = writeRefCall.GetOpnd(0);
+  if (arrayNode->GetMeOp() != kMeOpVar) {
+    return;
+  }
+  VarMeExpr *arrayVar = static_cast<VarMeExpr*>(arrayNode);
+  MeExpr *valueNode = writeRefCall.GetOpnd(2);
+  if (valueNode->GetMeOp() != kMeOpVar) {
+    return;
+  }
+  MIRType *arrayElemType = GetArrayNodeType(*arrayVar);
+  MIRType *valueRealType = GetArrayNodeType(*(static_cast<VarMeExpr*>(valueNode)));
+  if ((arrayElemType != nullptr) && (arrayElemType->GetKind() == kTypeClass) &&
+      static_cast<MIRClassType*>(arrayElemType)->IsFinal() &&
+      (valueRealType != nullptr) && (valueRealType->GetKind() == kTypeClass) &&
+      static_cast<MIRClassType*>(valueRealType)->IsFinal() &&
+      (valueRealType->GetTypeIndex() == arrayElemType->GetTypeIndex())) {
+    return;
+  }
+  std::vector<MeExpr*> opnds = { arrayNode, valueNode };
+  IntrinsiccallMeStmt *checkStmt = irMap.CreateIntrinsicCallMeStmt(INTRN_MCCCheckArrayStore, opnds);
+  writeRefCall.GetBB()->InsertMeStmtBefore(&writeRefCall, checkStmt);
+}
+
+void RCLowering::HandleAssignToGlobalVar(const MeStmt &stmt) {
   MeExpr *lhs = stmt.GetLHS();
   CHECK_FATAL(lhs != nullptr, "null ptr check");
   MeExpr *rhs = stmt.GetRHS();
@@ -353,6 +413,7 @@ void RCLowering::HandleAssignToGlobalVar(MeStmt &stmt) {
   std::vector<MeExpr*> opnds = { irMap.CreateAddrofMeExpr(*lhs), rhs };
   IntrinsiccallMeStmt *writeRefCall = CreateRCIntrinsic(SelectWriteBarrier(stmt), stmt, opnds);
   bb->ReplaceMeStmt(&stmt, writeRefCall);
+  CheckArrayStore(*writeRefCall);
 }
 
 void RCLowering::HandleAssignToLocalVar(MeStmt &stmt, MeExpr *pendingDec) {
@@ -436,6 +497,7 @@ void RCLowering::HandleAssignMeStmtIvarLHS(MeStmt &stmt) {
       { &lhsInner->GetBase()->GetAddrExprBase(), irMap.CreateAddrofMeExpr(*lhsInner), rhsInner };
   IntrinsiccallMeStmt *writeRefCall = CreateRCIntrinsic(intrinsicID, stmt, opnds);
   stmt.GetBB()->ReplaceMeStmt(&stmt, writeRefCall);
+  CheckArrayStore(*writeRefCall);
 }
 
 void RCLowering::HandleAssignMeStmt(MeStmt &stmt, MeExpr *pendingDec) {
@@ -497,7 +559,7 @@ void RCLowering::RCLower() {
   }
 }
 
-MeExpr *RCLowering::HandleIncRefAndDecRefStmt(MeStmt &stmt) {
+MeExpr *RCLowering::HandleIncRefAndDecRefStmt(const MeStmt &stmt) {
   Opcode opCode = stmt.GetOp();
   if (opCode == OP_decref) {
     stmt.GetBB()->RemoveMeStmt(&stmt);
@@ -647,6 +709,10 @@ void RCLowering::HandleReturnRegread(RetMeStmt &ret) {
         cleanup->EraseOpnds(iter);
         cleanup->PushBackOpnd(retVar);  // pin it to end of std::vector
         cleanup->SetIntrinsic(INTRN_MPL_CLEANUP_LOCALREFVARS_SKIP);
+        MIRSymbol *sym = ssaTab.GetMIRSymbolFromID(retVar->GetOStIdx());
+        if (sym->GetAttr(ATTR_localrefvar)) {
+          func.GetMirFunc()->InsertMIRSymbol(sym);
+        }
         break;
       }
     }
@@ -857,7 +923,7 @@ void RCLowering::CompactRC(BB &bb) {
   }
 }
 
-void RCLowering::CompactIncAndDec(MeStmt &incStmt, MeStmt &decStmt) {
+void RCLowering::CompactIncAndDec(const MeStmt &incStmt, const MeStmt &decStmt) {
   BB *bb = incStmt.GetBB();
   CHECK_FATAL(bb != nullptr, "bb nullptr check");
   MeExpr *incOpnd = incStmt.GetOpnd(0);
@@ -872,7 +938,7 @@ void RCLowering::CompactIncAndDec(MeStmt &incStmt, MeStmt &decStmt) {
   bb->RemoveMeStmt(&decStmt);
 }
 
-void RCLowering::CompactIncAndDecReset(MeStmt &incStmt, MeStmt &resetStmt) {
+void RCLowering::CompactIncAndDecReset(const MeStmt &incStmt, const MeStmt &resetStmt) {
   BB *bb = incStmt.GetBB();
   CHECK_FATAL(bb != nullptr, "bb nullptr check");
   MeExpr *incOpnd = incStmt.GetOpnd(0);
@@ -887,7 +953,7 @@ void RCLowering::CompactIncAndDecReset(MeStmt &incStmt, MeStmt &resetStmt) {
   bb->RemoveMeStmt(&incStmt);
 }
 
-void RCLowering::ReplaceDecResetWithDec(MeStmt &prevStmt, MeStmt &stmt) {
+void RCLowering::ReplaceDecResetWithDec(MeStmt &prevStmt, const MeStmt &stmt) {
   auto *addrofMeExpr = static_cast<AddrofMeExpr*>(stmt.GetOpnd(0));
   ASSERT_NOT_NULL(addrofMeExpr);
   auto *dass = static_cast<DassignMeStmt*>(&prevStmt);
@@ -902,7 +968,7 @@ void RCLowering::ReplaceDecResetWithDec(MeStmt &prevStmt, MeStmt &stmt) {
   bb->RemoveMeStmt(&prevStmt);
 }
 
-void RCLowering::CompactAdjacentDecReset(MeStmt &prevStmt, MeStmt &stmt) {
+void RCLowering::CompactAdjacentDecReset(const MeStmt &prevStmt, const MeStmt &stmt) {
   MeExpr *prevOpnd = prevStmt.GetOpnd(0);
   MeExpr *curOpnd = stmt.GetOpnd(0);
   BB *bb = stmt.GetBB();

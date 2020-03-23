@@ -74,9 +74,11 @@ class InequalEdge {
   InequalEdge(int v, EdgeType t) : edgeType(t), isVarValue(false), pairEdge(nullptr) {
     value.constValue = v;
   }
+
   InequalEdge(MeExpr &expr, bool positive, EdgeType t) : edgeType(t), isVarValue(true), pairEdge(nullptr) {
     value.varValue = new VarValue(expr, positive);
   }
+
   InequalEdge(InequalEdge &edge, InequalEdge &nextEdge)
       : edgeType(edge.GetEdgeType()),
         isVarValue(false),
@@ -87,6 +89,7 @@ class InequalEdge {
       value.constValue = edge.value.constValue - nextEdge.GetConstValue();
     }
   }
+
   ~InequalEdge() {
     if (isVarValue) {
       delete(value.varValue);
@@ -319,13 +322,14 @@ class InequalityGraph {
   void AddEdge(ESSABaseNode &from, ESSABaseNode &to, MeExpr &value, bool positive, EdgeType type);
   void ConnectTrivalEdge();
   void DumpDotFile(IRMap &irMap, DumpType dumpType) const;
-  ESSABaseNode &GetNode(MeExpr &meExpr);
+  ESSABaseNode &GetNode(const MeExpr &meExpr);
   ESSABaseNode &GetNode(int32 value);
-  bool HasNode(MeExpr &meExpr) const;
+  bool HasNode(const MeExpr &meExpr) const;
   int GetValidID() {
     ++nodeCount;
     return nodeCount;
   }
+
  private:
   std::string GetColor(EdgeType type) const;
   bool HasNode(int value) const;
@@ -349,11 +353,11 @@ class ABCD {
   explicit ABCD(InequalityGraph &graph) : inequalityGraph(&graph), recursiveCount(0) {}
   ~ABCD() = default;
 
-  bool DemandProve(MeExpr &arrayNode, MeExpr &idx);
+  bool DemandProve(const MeExpr &arrayNode, const MeExpr &idx);
 
  private:
-  using meet_function = ProveResult (*)(ProveResult, ProveResult);
-  static ProveResult max(ProveResult res1, ProveResult res2) {
+  using MeetFunction = ProveResult (*)(ProveResult, ProveResult);
+  static ProveResult Max(ProveResult res1, ProveResult res2) {
     if (res1 == kTrue || res2 == kTrue) {
       return kTrue;
     }
@@ -362,7 +366,7 @@ class ABCD {
     }
     return kFalse;
   }
-  static ProveResult min(ProveResult res1, ProveResult res2) {
+  static ProveResult Min(ProveResult res1, ProveResult res2) {
     if (res1 == kFalse || res2 == kFalse) {
       return kFalse;
     }
@@ -371,9 +375,9 @@ class ABCD {
     }
     return kReduced;
   }
-  bool DemandProve(ESSABaseNode &aNode, ESSABaseNode &bNode, EdgeType eType);
+  bool DemandProve(ESSABaseNode &firstNode, ESSABaseNode &secondNode, EdgeType edgeType);
   ProveResult Prove(ESSABaseNode &a, ESSABaseNode &b, InequalEdge &e);
-  ProveResult UpdateCacheResult(ESSABaseNode &a, ESSABaseNode &b, InequalEdge &e, meet_function meet);
+  ProveResult UpdateCacheResult(ESSABaseNode &a, ESSABaseNode &b, InequalEdge &e, MeetFunction meet);
   void PrintTracing();
   InequalityGraph *inequalityGraph;
   std::map<ESSABaseNode*, InequalEdge*> active;

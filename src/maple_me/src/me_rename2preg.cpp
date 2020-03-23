@@ -107,11 +107,11 @@ class CacheProxy final {
     preg = std::make_unique<PregCache>(irMap);
   }
 
-  OStCache &OSt() {
+  OStCache &OSt() const {
     return utils::ToRef(ost);
   }
 
-  PregCache &Preg() {
+  PregCache &Preg() const {
     return utils::ToRef(preg);
   }
 
@@ -173,7 +173,7 @@ class FormalRenaming final {
 
   std::vector<bool> paramUsed; // if parameter is not used, it's false, otherwise true
   // if the parameter got promoted, the nth of func->mirfunc->_formal is the nth of reg_formal_vec, otherwise nullptr;
-  std::vector<RegMeExpr *> renamedReg;
+  std::vector<RegMeExpr*> renamedReg;
 };
 
 class SSARename2Preg {
@@ -201,7 +201,7 @@ class SSARename2Preg {
       for (auto it = func.valid_begin(), eIt = func.valid_end(); it != eIt; ++it) {
         BB &bb = utils::ToRef(*it);
 
-        // rename the phi'ss
+        // rename the phi's
         if (enabledDebug) {
           LogInfo::MapleLogger() << " working on phi part of BB" << bb.GetBBId() << '\n';
         }
@@ -278,7 +278,7 @@ class SSARename2Preg {
         }
       }
     } else if (auto *naryExpr = safe_cast<NaryMeExpr>(expr)) {
-      MapleVector<MeExpr *> &opnds = naryExpr->GetOpnds();
+      MapleVector<MeExpr*> &opnds = naryExpr->GetOpnds();
       for (auto *opnd : opnds) {
         Rename2PregExpr(aliasClass, irMap, stmt, utils::ToRef(opnd));
       }
@@ -289,7 +289,7 @@ class SSARename2Preg {
     }
   }
 
-  void Rename2PregLeafRHS(const AliasClass &aliasClass, MeIRMap &irMap, MeStmt &stmt, VarMeExpr &varExpr) {
+  void Rename2PregLeafRHS(const AliasClass &aliasClass, MeIRMap &irMap, MeStmt &stmt, const VarMeExpr &varExpr) {
     RegMeExpr *regExpr = RenameVar(aliasClass, varExpr);
     if (regExpr != nullptr) {
       (void)irMap.ReplaceMeExprStmt(stmt, varExpr, *regExpr);
@@ -332,7 +332,7 @@ class SSARename2Preg {
 
   // update regphinode operands
   void UpdateRegPhi(const RegMeExpr &curRegExpr, const MapleVector<VarMeExpr*> &phiNodeOpnds,
-                    MeRegPhiNode &regPhiNode) {
+                    MeRegPhiNode &regPhiNode) const {
     PregCache &pregCache = cacheProxy.Preg();
     for (VarMeExpr *phiOpnd : phiNodeOpnds) {
       const VarMeExpr &varExpr = utils::ToRef(phiOpnd);

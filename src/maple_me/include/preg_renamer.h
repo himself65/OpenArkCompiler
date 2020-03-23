@@ -20,13 +20,13 @@
 namespace maple {
 class PregRenamer {
  public:
-  PregRenamer(MemPool *memPool, MeFunction *f, MeIRMap *irMap, bool enabledDebug)
-      : alloc(memPool), func(f), irMap(irMap), enabledDebug(enabledDebug) {}
+  PregRenamer(MemPool &memPool, MeFunction &f, MeIRMap &irMap, bool enabledDebug)
+      : alloc(&memPool), func(&f), irMap(&irMap), enabledDebug(enabledDebug) {}
   virtual ~PregRenamer() = default;
-  void RunSelf();
+  void RunSelf() const;
 
  private:
-  void EnqueDefUses(std::list<RegMeExpr*> &qu, RegMeExpr *node, std::set<RegMeExpr*> &curVisited);
+  void EnqueDefUses(std::list<RegMeExpr*> &qu, RegMeExpr *node, std::set<RegMeExpr*> &curVisited) const;
   MapleAllocator alloc;
   MeFunction *func;
   MeIRMap *irMap;

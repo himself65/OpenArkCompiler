@@ -102,7 +102,7 @@ RCItem *AnalyzeRC::FindOrCreateRCItem(const OriginalSt &ost) {
   return rcItem;
 }
 
-OriginalSt *AnalyzeRC::GetOriginalSt(const MeExpr &refLHS) {
+OriginalSt *AnalyzeRC::GetOriginalSt(const MeExpr &refLHS) const {
   if (refLHS.GetMeOp() == kMeOpVar) {
     auto &varMeExpr = static_cast<const VarMeExpr&>(refLHS);
     return ssaTab.GetSymbolOriginalStFromID(varMeExpr.GetOStIdx());
@@ -127,7 +127,7 @@ VarMeExpr *AnalyzeRC::GetZeroVersionVarMeExpr(const VarMeExpr &var) {
 // if it is callassigned, the incref has already been done in the callee;
 // if rhs is gcmalloc/gcmallocjarray, the refcount is already 1;
 // if rhs is neither dread or iread, it cannot be a pointer, so incref not needed
-bool AnalyzeRC::NeedIncref(const MeStmt &stmt) {
+bool AnalyzeRC::NeedIncref(const MeStmt &stmt) const {
   if (kOpcodeInfo.IsCallAssigned(stmt.GetOp())) {
     return false;
   }
@@ -328,7 +328,7 @@ void AnalyzeRC::OptimizeRC() {
   }
 }
 
-bool AnalyzeRC::NeedDecRef(RCItem &rcItem, MeExpr &expr) {
+bool AnalyzeRC::NeedDecRef(RCItem &rcItem, MeExpr &expr) const {
   CHECK_FATAL((rcItem.nonLocal || rcItem.noAlias), "OptimizeRC: local pointers cannot have alias");
   // see if the decref can be optimized away
   if (rcItem.nonLocal) {
@@ -346,7 +346,7 @@ bool AnalyzeRC::NeedDecRef(RCItem &rcItem, MeExpr &expr) {
   return NeedDecRef(varMeExpr);
 }
 
-bool AnalyzeRC::NeedDecRef(IvarMeExpr &ivar) {
+bool AnalyzeRC::NeedDecRef(IvarMeExpr &ivar) const {
   auto *base = ivar.GetBase();
   if (base->GetMeOp() != kMeOpVar) {
     return true;
@@ -371,7 +371,7 @@ bool AnalyzeRC::NeedDecRef(IvarMeExpr &ivar) {
   return ivar.GetMu()->GetVstIdx() != ost->GetZeroVersionIndex() && ivar.GetMu()->GetDefBy() != kDefByNo;
 }
 
-bool AnalyzeRC::NeedDecRef(const VarMeExpr &var) {
+bool AnalyzeRC::NeedDecRef(const VarMeExpr &var) const {
   OriginalSt *ost = GetOriginalSt(var);
   return var.GetVstIdx() != ost->GetZeroVersionIndex() && var.GetDefBy() != kDefByNo;
 }

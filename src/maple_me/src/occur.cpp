@@ -47,38 +47,39 @@ void MeOccur::DumpOccur(IRMap &irMap) {
 }
 
 // return if this occur dominate occ
-bool MeOccur::IsDominate(Dominance *dom, MeOccur *occ) {
+bool MeOccur::IsDominate(Dominance &dom, MeOccur &occ) {
   switch (occTy) {
     case kOccReal: {
-      switch (occ->GetOccType()) {
+      switch (occ.GetOccType()) {
         case kOccReal: {
-          if (mirBB == occ->GetBB()) {
+          if (mirBB == occ.GetBB()) {
             auto *thisRealOcc = static_cast<MeRealOcc*>(this);
-            auto *domOcc = static_cast<MeRealOcc*>(occ);
+            auto *domOcc = static_cast<MeRealOcc*>(&occ);
             return thisRealOcc->GetSequence() <= domOcc->GetSequence();
           }
-          return dom->Dominate(*mirBB, *occ->GetBB());
+          return dom.Dominate(*mirBB, *occ.GetBB());
         }
         case kOccPhiocc: {
-          if (mirBB == occ->GetBB()) {
+          if (mirBB == occ.GetBB()) {
             return false;
           }
-          return dom->Dominate(*mirBB, *occ->GetBB());
+          return dom.Dominate(*mirBB, *occ.GetBB());
         }
         case kOccPhiopnd:
         case kOccExit:
         case kOccMembar:
         case kOccUse:
-          return dom->Dominate(*mirBB, *occ->GetBB());
+          return dom.Dominate(*mirBB, *occ.GetBB());
         default:
           ASSERT(false, "should not be here");
+          break;
       }
       break;
     }
     case kOccPhiocc:
     case kOccMembar:
     case kOccUse:
-      return dom->Dominate(*mirBB, *occ->GetBB());
+      return dom.Dominate(*mirBB, *occ.GetBB());
     default:
       ASSERT(false, "should not be here");
       return false;
@@ -110,20 +111,20 @@ MeExpr *MeOccur::GetSavedExpr() {
 // return true if either:
 // operand is nullptr (def is null), or
 // hasRealUse is false and defined by a PHI not will be avail
-bool MePhiOpndOcc::IsOkToInsert() {
+bool MePhiOpndOcc::IsOkToInsert() const {
   if (GetDef() == nullptr) {
     return true;
   }
   if (!hasRealUse) {
-    MeOccur *defOcc = GetDef();
-    if (defOcc->GetOccType() == kOccPhiocc && !static_cast<MePhiOcc*>(defOcc)->IsWillBeAvail()) {
+    const MeOccur *defOcc = GetDef();
+    if (defOcc->GetOccType() == kOccPhiocc && !static_cast<const MePhiOcc*>(defOcc)->IsWillBeAvail()) {
       return true;
     }
   }
   return false;
 }
 
-bool MePhiOcc::IsOpndDefByRealOrInserted() {
+bool MePhiOcc::IsOpndDefByRealOrInserted() const {
   for (MePhiOpndOcc *phiOpnd : phiOpnds) {
     MeOccur *defOcc = phiOpnd->GetDef();
     if (defOcc->GetOccType() == kOccReal || defOcc->GetOccType() == kOccInserted) {
@@ -133,7 +134,7 @@ bool MePhiOcc::IsOpndDefByRealOrInserted() {
   return false;
 }
 
-void MeOccur::Dump(IRMap &irMap) {
+void MeOccur::Dump(const IRMap &irMap) const {
   MIRModule *mod = &irMap.GetSSATab().GetModule();
   if (occTy == kOccExit) {
     mod->GetOut() << "ExitOcc at bb" << GetBB()->GetBBId();
@@ -144,7 +145,7 @@ void MeOccur::Dump(IRMap &irMap) {
   }
 }
 
-void MeRealOcc::Dump(IRMap &irMap) {
+void MeRealOcc::Dump(const IRMap &irMap) const {
   MIRModule *mod = &irMap.GetSSATab().GetModule();
   if (GetOccType() == kOccReal) {
     if (!isLHS) {
@@ -168,7 +169,7 @@ void MeRealOcc::Dump(IRMap &irMap) {
   }
 }
 
-void MePhiOcc::Dump(IRMap &irMap) {
+void MePhiOcc::Dump(const IRMap &irMap) const {
   MIRModule *mod = &irMap.GetSSATab().GetModule();
   mod->GetOut() << "PhiOcc ";
   mod->GetOut() << "PHI(";
@@ -183,7 +184,7 @@ void MePhiOcc::Dump(IRMap &irMap) {
   mod->GetOut() << " at bb" << GetBB()->GetBBId() << " classID " << GetClassID();
 }
 
-void MePhiOpndOcc::Dump(IRMap &irMap) {
+void MePhiOpndOcc::Dump(const IRMap &irMap) const {
   MIRModule *mod = &irMap.GetSSATab().GetModule();
   mod->GetOut() << "PhiOpndOcc at bb" << GetBB()->GetBBId() << " classID " << GetClassID();
   if (hasRealUse) {
@@ -191,14 +192,14 @@ void MePhiOpndOcc::Dump(IRMap &irMap) {
   }
 }
 
-void MeInsertedOcc::Dump(IRMap &irMap) {
+void MeInsertedOcc::Dump(const IRMap &irMap) const {
   MIRModule *mod = &irMap.GetSSATab().GetModule();
   mod->GetOut() << "InsertedOcc at bb" << GetBB()->GetBBId() << " classID " << GetClassID();
 }
 
 // compute bucket index for the work candidate in workCandHashTable
-uint32 PreWorkCand::ComputeWorkCandHashIndex(MeExpr &meExpr) {
-  uint32 hIdx = 0;
+uint32 PreWorkCand::ComputeWorkCandHashIndex(const MeExpr &meExpr) {
+  uint32 hashIdx = 0;
   MeExprOp meOp = meExpr.GetMeOp();
   switch (meOp) {
     case kMeOpAddrof:
@@ -209,50 +210,50 @@ uint32 PreWorkCand::ComputeWorkCandHashIndex(MeExpr &meExpr) {
     case kMeOpConststr16:
     case kMeOpSizeoftype:
     case kMeOpFieldsDist:
-      hIdx = (static_cast<uint32>(meExpr.GetExprID())) << kOffsetMeExprID;
+      hashIdx = (static_cast<uint32>(meExpr.GetExprID())) << kOffsetMeExprID;
       break;
     case kMeOpVar: {
-      auto &varMeExpr = static_cast<VarMeExpr&>(meExpr);
-      hIdx = static_cast<uint32_t>(varMeExpr.GetOStIdx()) << kOffsetVarMeExprOstIdx;
+      auto &varMeExpr = static_cast<const VarMeExpr&>(meExpr);
+      hashIdx = static_cast<uint32_t>(varMeExpr.GetOStIdx()) << kOffsetVarMeExprOstIdx;
       break;
     }
     case kMeOpReg: {
-      auto &regMeExpr = static_cast<RegMeExpr&>(meExpr);
-      hIdx = (static_cast<uint32>(static_cast<PregIdx>(regMeExpr.GetRegIdx()))) << kOffsetRegMeExprRegIdx;
+      auto &regMeExpr = static_cast<const RegMeExpr&>(meExpr);
+      hashIdx = (static_cast<uint32>(static_cast<PregIdx>(regMeExpr.GetRegIdx()))) << kOffsetRegMeExprRegIdx;
       break;
     }
     case kMeOpIvar: {
-      auto &iVar = static_cast<IvarMeExpr&>(meExpr);
-      hIdx = ComputeWorkCandHashIndex(*iVar.GetBase()) +
+      auto &iVar = static_cast<const IvarMeExpr&>(meExpr);
+      hashIdx = ComputeWorkCandHashIndex(*iVar.GetBase()) +
              (static_cast<uint32>(iVar.GetTyIdx()) << kOffsetIvarMeExprTyIdx) + iVar.GetFieldID();
       break;
     }
     case kMeOpOp: {
-      hIdx = static_cast<uint32>(meExpr.GetOp());
+      hashIdx = static_cast<uint32>(meExpr.GetOp());
       for (size_t idx = 0; idx < kOperandNumTernary; ++idx) {
         MeExpr *opnd = meExpr.GetOpnd(idx);
         if (opnd == nullptr) {
           break;
         }
-        hIdx += ComputeWorkCandHashIndex(*opnd) << kOffsetOpMeExprOpnd;
+        hashIdx += ComputeWorkCandHashIndex(*opnd) << kOffsetOpMeExprOpnd;
       }
       break;
     }
     case kMeOpNary: {
-      hIdx = static_cast<uint32>(meExpr.GetOp());
+      hashIdx = static_cast<uint32>(meExpr.GetOp());
       for (uint8 i = 0; i < meExpr.GetNumOpnds(); ++i) {
-        hIdx += ComputeWorkCandHashIndex(*meExpr.GetOpnd(i)) << kOffsetNaryMeExprOpnd;
+        hashIdx += ComputeWorkCandHashIndex(*meExpr.GetOpnd(i)) << kOffsetNaryMeExprOpnd;
       }
       break;
     }
     default:
       CHECK_FATAL(false, "MeOP NIY");
   }
-  return hIdx % kWorkCandHashLength;
+  return hashIdx % kWorkCandHashLength;
 }
 
 // insert occ as realOccs[pos] after shifting the vector elements further down
-void PreWorkCand::InsertRealOccAt(MeRealOcc &occ, MapleVector<MeRealOcc*>::iterator it, PUIdx pIdx) {
+void PreWorkCand::InsertRealOccAt(MeRealOcc &occ, const MapleVector<MeRealOcc*>::iterator it, PUIdx pIdx) {
   ASSERT(pIdx != 0, "puIdx of realocc cannot be 0");
   if (pIdx != puIdx) {
     ASSERT(!hasLocalOpnd, "candidate with local opnd cannot have real occurrences in more than one PU");
@@ -263,7 +264,7 @@ void PreWorkCand::InsertRealOccAt(MeRealOcc &occ, MapleVector<MeRealOcc*>::itera
 }
 
 // insert occ in realOccs maintaining sorted order according to dt_preorder
-void PreWorkCand::AddRealOccSorted(Dominance &dom, MeRealOcc &occ, PUIdx pIdx) {
+void PreWorkCand::AddRealOccSorted(const Dominance &dom, MeRealOcc &occ, PUIdx pIdx) {
   ASSERT(!realOccs.empty(), "AddRealOccSorted: realOccs is empty");
   uint32 occDfn = dom.GetDtDfnItem(occ.GetBB()->GetBBId());
   // check the end of realOccs first because inserting at end is most frequent
@@ -311,7 +312,7 @@ void PreWorkCand::AddRealOccSorted(Dominance &dom, MeRealOcc &occ, PUIdx pIdx) {
 }
 
 // compute bucket index for the work candidate in workCandHashTable
-uint32 PreStmtWorkCand::ComputeStmtWorkCandHashIndex(MeStmt &stmt) {
+uint32 PreStmtWorkCand::ComputeStmtWorkCandHashIndex(const MeStmt &stmt) {
   uint32 hIdx = (static_cast<uint32>(stmt.GetOp())) << kOffsetMeStmtOpcode;
   switch (stmt.GetOp()) {
     case OP_assertnonnull: {
@@ -328,7 +329,7 @@ uint32 PreStmtWorkCand::ComputeStmtWorkCandHashIndex(MeStmt &stmt) {
     }
     case OP_intrinsiccall:
     case OP_intrinsiccallwithtype: {
-      auto &intrnStmt = static_cast<IntrinsiccallMeStmt&>(stmt);
+      auto &intrnStmt = static_cast<const IntrinsiccallMeStmt&>(stmt);
       hIdx += (static_cast<uint32>(intrnStmt.GetIntrinsic())) << kOffsetIntrinsicCallMeStmtIntrinsic;
       if (stmt.GetOp() == OP_intrinsiccallwithtype) {
         hIdx += static_cast<uint32>(intrnStmt.GetTyIdx()) << 1;
@@ -339,14 +340,14 @@ uint32 PreStmtWorkCand::ComputeStmtWorkCandHashIndex(MeStmt &stmt) {
       break;
     }
     case OP_callassigned: {
-      auto &callAss = static_cast<CallMeStmt&>(stmt);
+      auto &callAss = static_cast<const CallMeStmt&>(stmt);
       hIdx += callAss.GetPUIdx();
       for (size_t i = 0; i < callAss.NumMeStmtOpnds(); ++i) {
         hIdx += ComputeWorkCandHashIndex(*callAss.GetOpnd(i)) << kOffsetNaryMeStmtOpnd;
       }
-      if (!callAss.GetMustDefList()->empty()) {
-        MeExpr *lhs = callAss.GetMustDefList()->front().GetLHS();
-        auto *lhsVar = static_cast<VarMeExpr*>(lhs);
+      if (!callAss.GetMustDefList().empty()) {
+        const MeExpr *lhs = callAss.GetMustDefList().front().GetLHS();
+        auto *lhsVar = static_cast<const VarMeExpr*>(lhs);
         hIdx += static_cast<uint32>(lhsVar->GetOStIdx()) << 1;
       }
       break;

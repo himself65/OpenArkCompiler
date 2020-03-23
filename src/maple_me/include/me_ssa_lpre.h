@@ -22,46 +22,46 @@ namespace maple {
 constexpr size_t kDoLpreBBsLimit = 0x7fffff;
 class MeSSALPre : public SSAPre {
  public:
-  MeSSALPre(MeFunction *f, MeIRMap &hMap, Dominance &dom, MemPool &memPool, MemPool &mp2, PreKind kind, uint32 limit)
+  MeSSALPre(MeFunction &f, MeIRMap &hMap, Dominance &dom, MemPool &memPool, MemPool &mp2, PreKind kind, uint32 limit)
       : SSAPre(hMap, dom, memPool, mp2, kind, limit),
         irMap(&hMap),
-        func(f),
+        func(&f),
         assignedFormals(ssaPreAllocator.Adapter()),
         loopHeadBBs(ssaPreAllocator.Adapter()) {}
 
   virtual ~MeSSALPre() = default;
-  void FindLoopHeadBBs(IdentifyLoops *identLoops);
+  void FindLoopHeadBBs(const IdentifyLoops &identLoops);
 
  private:
-  void GenerateSaveRealOcc(MeRealOcc*) override;
-  void GenerateReloadRealOcc(MeRealOcc*) override;
-  MeExpr *PhiOpndFromRes(MeRealOcc*, size_t) override;
-  void GetIterDomFrontier(BB &bb, MapleSet<uint32> &dfSet, std::vector<bool> &visitedMap) override;
+  void GenerateSaveRealOcc(MeRealOcc&) override;
+  void GenerateReloadRealOcc(MeRealOcc&) override;
+  MeExpr *PhiOpndFromRes(MeRealOcc&, size_t) const override;
+  void GetIterDomFrontier(const BB &bb, MapleSet<uint32> &dfSet, std::vector<bool> &visitedMap) const override;
   void ComputeVarAndDfPhis() override;
   bool ScreenPhiBB(BBId) const override {
     return true;
   }
 
-  void CollectVarForMeExpr(MeExpr *meExpr, std::vector<MeExpr*> &varVec) override {
-    if (meExpr->GetMeOp() == kMeOpAddrof || meExpr->GetMeOp() == kMeOpAddroffunc) {
+  void CollectVarForMeExpr(MeExpr &meExpr, std::vector<MeExpr*> &varVec) const override {
+    if (meExpr.GetMeOp() == kMeOpAddrof || meExpr.GetMeOp() == kMeOpAddroffunc) {
       return;
     }
-    varVec.push_back(meExpr);
+    varVec.push_back(&meExpr);
   }
 
-  void CollectVarForCand(MeRealOcc *realOcc, std::vector<MeExpr*> &varVec) override {
-    if (realOcc->GetMeExpr()->GetMeOp() == kMeOpAddrof || realOcc->GetMeExpr()->GetMeOp() == kMeOpAddroffunc) {
+  void CollectVarForCand(MeRealOcc &realOcc, std::vector<MeExpr*> &varVec) const override {
+    if (realOcc.GetMeExpr()->GetMeOp() == kMeOpAddrof || realOcc.GetMeExpr()->GetMeOp() == kMeOpAddroffunc) {
       return;
     }
-    varVec.push_back(realOcc->GetMeExpr());
+    varVec.push_back(realOcc.GetMeExpr());
   }
 
-  void BuildEntryLHSOcc4Formals() override;
-  void BuildWorkListLHSOcc(MeStmt *meStmt, int32 seqStmt) override;
+  void BuildEntryLHSOcc4Formals() const override;
+  void BuildWorkListLHSOcc(MeStmt &meStmt, int32 seqStmt) override;
   void CreateMembarOccAtCatch(BB &bb) override;
-  void BuildWorkListExpr(MeStmt*, int32, MeExpr*, bool, MeExpr*, bool isRootExpr) override;
+  void BuildWorkListExpr(MeStmt&, int32, MeExpr&, bool, MeExpr*, bool isRootExpr) override;
   void BuildWorkList() override;
-  BB *GetBB(BBId id) override {
+  BB *GetBB(BBId id) const override {
     return func->GetBBFromID(id);
   }
 

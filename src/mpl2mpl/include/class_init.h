@@ -32,7 +32,7 @@ class ClassInit : public FuncOptimizeImpl {
 
  private:
   void GenClassInitCheckProfile(MIRFunction &func, const MIRSymbol &classInfo, StmtNode *clinit) const;
-  void GenPreClassInitCheck(MIRFunction &func, const MIRSymbol &classInfo, StmtNode *clinit) const;
+  void GenPreClassInitCheck(MIRFunction &func, const MIRSymbol &classInfo, const StmtNode *clinit) const;
   void GenPostClassInitCheck(MIRFunction &func, const MIRSymbol &classInfo, StmtNode *clinit) const;
   MIRSymbol *GetClassInfo(const std::string &classname);
   bool CanRemoveClinitCheck(const std::string &clinitClassname) const;

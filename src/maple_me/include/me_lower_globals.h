@@ -32,7 +32,7 @@ class MeLowerGlobals {
   MeFunction *func;
   IRMap *irMap;
   SSATab *ssaTable;
-  void LowerGlobalDreads(MeStmt &stmt, MeExpr *x);
+  void LowerGlobalDreads(MeStmt &stmt, MeExpr &expr);
 };
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_MELOWERGLOBALS_H

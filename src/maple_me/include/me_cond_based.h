@@ -25,19 +25,19 @@ class MeCondBased {
   MeCondBased(MeFunction *func, Dominance *dom) : func(func), dominance(dom) {}
 
   ~MeCondBased() = default;
-  bool NullValueFromTestCond(const VarMeExpr&, const BB&, bool);
-  bool IsNotNullValue(const VarMeExpr&, const UnaryMeStmt&, const BB*);
+  bool NullValueFromTestCond(const VarMeExpr&, const BB&, bool) const;
+  bool IsNotNullValue(const VarMeExpr&, const UnaryMeStmt&, const BB&) const;
 
   const MeFunction *GetFunc() const {
     return func;
   }
 
  private:
-  bool NullValueFromOneTestCond(const VarMeExpr&, const BB&, const BB&, bool);
-  bool PointerWasDereferencedBefore(const VarMeExpr&, const UnaryMeStmt&, const BB*);
-  bool PointerWasDereferencedRightAfter(const VarMeExpr&, const UnaryMeStmt&);
-  bool IsIreadWithTheBase(const VarMeExpr&, const MeExpr&);
-  bool StmtHasDereferencedBase(const MeStmt&, const VarMeExpr&);
+  bool NullValueFromOneTestCond(const VarMeExpr&, const BB&, const BB&, bool) const;
+  bool PointerWasDereferencedBefore(const VarMeExpr&, const UnaryMeStmt&, const BB&) const;
+  bool PointerWasDereferencedRightAfter(const VarMeExpr&, const UnaryMeStmt&) const;
+  bool IsIreadWithTheBase(const VarMeExpr&, const MeExpr&) const;
+  bool StmtHasDereferencedBase(const MeStmt&, const VarMeExpr&) const;
 
   MeFunction *func;
   Dominance *dominance;

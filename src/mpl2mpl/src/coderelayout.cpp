@@ -54,7 +54,6 @@ CodeReLayout::CodeReLayout(MIRModule *mod, KlassHierarchy *kh, bool dump) : Func
     if (!staticFields.is_open()) {
       ERR(kLncErr, " %s open failed!", staticFieldsFile.c_str());
     }
-    staticFields.close();
   }
 }
 
@@ -132,9 +131,8 @@ void CodeReLayout::FindDreadRecur(const StmtNode *stmt, BaseNode *node) {
         bOpnds = static_cast<BinaryOpnds*>(bNode);
         FindDreadRecur(stmt, bOpnds->GetBOpnd(0));
         FindDreadRecur(stmt, bOpnds->GetBOpnd(1));
-      } else {
-        break;
       }
+      break;
     }
   }
 }

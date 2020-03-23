@@ -159,16 +159,14 @@ static constexpr const char kFuncGetCurrentCl[] = "MCC_GetCurrentClassLoader";
 extern bool doCompression;
 
 // Return the input string if the compression is not on; otherwise, return its compressed version
-std::string GetInternalNameLiteral(const std::string &name);
-std::string GetOriginalNameLiteral(const char *name);
+std::string GetInternalNameLiteral(std::string name);
+std::string GetOriginalNameLiteral(std::string name);
 
 std::string EncodeName(const std::string &name);
-std::string EncodeName(const char *name);
 std::string DecodeName(const std::string &name);
-std::string DecodeName(const char *name);
 void DecodeMapleNameToJavaDescriptor(const std::string &nameIn, std::string &nameOut);
 
-std::string NativeJavaName(const char *name, bool overLoaded = true);
+std::string NativeJavaName(const std::string &name, bool overLoaded = true);
 
 __attribute__((visibility("default"))) unsigned UTF16ToUTF8(std::string &str, const std::u16string &str16,
                                                             unsigned short num = 0, bool isBigEndian = false);

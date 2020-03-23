@@ -26,28 +26,29 @@ class SSAEPre : public SSAPre {
   virtual ~SSAEPre() = default;
 
  private:
-  bool epreIncludeRef;
-  bool enableLHSIvar;
-  void GenerateSaveLHSRealocc(MeRealOcc *realOcc, MeExpr *regOrVar);
-  void GenerateSaveRealOcc(MeRealOcc *realOcc);
-  void GenerateReloadRealOcc(MeRealOcc *realOcc);
-  MeExpr *PhiOpndFromRes(MeRealOcc *realZ, size_t j);
+  void GenerateSaveLHSRealocc(MeRealOcc &realOcc, MeExpr &regOrVar);
+  void GenerateSaveRealOcc(MeRealOcc &realOcc);
+  void GenerateReloadRealOcc(MeRealOcc &realOcc);
+  MeExpr *PhiOpndFromRes(MeRealOcc &realZ, size_t j) const;
   void ComputeVarAndDfPhis();
-  void BuildWorkListExpr(MeStmt *meStmt, int32 seqStmt, MeExpr*, bool isReBuild, MeExpr *tempVar, bool isRootExpr);
-  void BuildWorkListIvarLHSOcc(MeStmt *meStmt, int32 seqStmt, bool isReBuild, MeExpr *tempVar);
-  void CollectVarForMeExpr(MeExpr *meExpr, std::vector<MeExpr*> &varVec);
-  void CollectVarForCand(MeRealOcc *realOcc, std::vector<MeExpr*> &varVec);
-  bool LeafIsVolatile(MeExpr *x) {
-    VarMeExpr *v = safe_cast<VarMeExpr>(x);
+  void BuildWorkListExpr(MeStmt &meStmt, int32 seqStmt, MeExpr&, bool isReBuild, MeExpr *tempVar, bool isRootExpr);
+  void BuildWorkListIvarLHSOcc(MeStmt &meStmt, int32 seqStmt, bool isReBuild, MeExpr *tempVar);
+  void CollectVarForMeExpr(MeExpr &meExpr, std::vector<MeExpr*> &varVec) const ;
+  void CollectVarForCand(MeRealOcc &realOcc, std::vector<MeExpr*> &varVec) const;
+  bool LeafIsVolatile(const MeExpr *x) const {
+    const VarMeExpr *v = safe_cast<VarMeExpr>(x);
     return v != nullptr && v->IsVolatile(irMap->GetSSATab());
   }
-  virtual bool IsThreadObjField(const IvarMeExpr &expr) {
+  virtual bool IsThreadObjField(const IvarMeExpr &expr) const {
     return false;
   }
 
-  virtual bool CfgHasDoWhile() {
+  virtual bool CfgHasDoWhile() const {
     return false;
   }
+
+  bool epreIncludeRef;
+  bool enableLHSIvar;
 };
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_SSAEPRE_H

@@ -17,6 +17,7 @@
 #include "me_function.h"
 #include "me_phase.h"
 #include "me_irmap.h"
+
 namespace maple {
 class DelegateRC {
  public:
@@ -41,23 +42,23 @@ class DelegateRC {
   void CleanUpDeadLocalRefVar(const std::set<OStIdx> &liveLocalrefvars);
 
  private:
-  bool IsCopiedOrDerefedOp(const Opcode op) const;
+  bool IsCopiedOrDerefedOp(Opcode op) const;
   void CollectVstCantDecrefEarly(MeExpr &opnd0, MeExpr &opnd1);
-  void CollectUseCounts(const MeExpr &x);
-  void FindAndDecrUseCount(VarMeExpr *rhsVar, MeExpr *x, int32 &remainingUses);
-  bool MayThrowException(MeStmt &stmt);
-  bool ContainAllTheUses(VarMeExpr *rhsVar, const MeStmt &fromStmt, const MeStmt *toStmt);
-  RegMeExpr *RHSTempDelegated(MeExpr *rhs, MeStmt &useStmt);
-  bool FinalRefNoRC(const MeExpr &x);
+  void CollectUseCounts(const MeExpr &expr);
+  void FindAndDecrUseCount(const VarMeExpr &rhsVar, const MeExpr &expr, int32 &remainingUses) const;
+  bool MayThrowException(const MeStmt &stmt) const;
+  bool ContainAllTheUses(VarMeExpr &rhsVar, const MeStmt &fromStmt, const MeStmt &toStmt) const;
+  RegMeExpr *RHSTempDelegated(MeExpr &rhs, MeStmt &useStmt);
+  bool FinalRefNoRC(const MeExpr &expr) const;
   void SetCantDelegate(const MapleMap<OStIdx, MeVarPhiNode*> &meVarPhiList);
   void SaveDerefedOrCopiedVst(const MeExpr *expr);
   void CollectDerefedOrCopied(const MeStmt &stmt);
-  void CollectDerefedOrCopied(const MeExpr &x);
-  void CollectUsesInfo(const MeExpr &x);
-  bool CanOmitRC4LHSVar(const MeStmt &stmt, bool &onlyWithDecref);
+  void CollectDerefedOrCopied(const MeExpr &expr);
+  void CollectUsesInfo(const MeExpr &expr);
+  bool CanOmitRC4LHSVar(const MeStmt &stmt, bool &onlyWithDecref) const;
   void DelegateHandleNoRCStmt(MeStmt &stmt, bool addDecref);
   void DelegateRCTemp(MeStmt &stmt);
-  void RenameDelegatedRefVarUses(MeStmt &meStmt, MeExpr *meExpr);
+  void RenameDelegatedRefVarUses(MeStmt &meStmt, MeExpr &meExpr);
 
   MeFunction &func;
   IRMap &irMap;

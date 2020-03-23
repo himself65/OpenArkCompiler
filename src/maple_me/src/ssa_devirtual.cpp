@@ -24,15 +24,15 @@
 namespace maple {
 bool SSADevirtual::debug = false;
 
-static bool MaybeNull(MeExpr *expr) {
-  if (expr->GetMeOp() == kMeOpVar) {
-    return static_cast<VarMeExpr*>(expr)->GetMaybeNull();
+static bool MaybeNull(const MeExpr &expr) {
+  if (expr.GetMeOp() == kMeOpVar) {
+    return static_cast<const VarMeExpr*>(&expr)->GetMaybeNull();
   }
-  if (expr->GetMeOp() == kMeOpIvar) {
-    return static_cast<IvarMeExpr*>(expr)->GetMaybeNull();
+  if (expr.GetMeOp() == kMeOpIvar) {
+    return static_cast<const IvarMeExpr*>(&expr)->GetMaybeNull();
   }
-  if (expr->GetOp() == OP_retype) {
-    MeExpr *retypeRHS = (static_cast<OpMeExpr*>(expr))->GetOpnd(0);
+  if (expr.GetOp() == OP_retype) {
+    MeExpr *retypeRHS = (static_cast<const OpMeExpr*>(&expr))->GetOpnd(0);
     if (retypeRHS->GetMeOp() == kMeOpVar) {
       return static_cast<VarMeExpr*>(retypeRHS)->GetMaybeNull();
     }
@@ -49,9 +49,9 @@ static bool IsFinalMethod(const MIRFunction *mirFunc) {
   return (classType != nullptr && (mirFunc->IsFinal() || classType->IsFinal()));
 }
 
-TyIdx SSADevirtual::GetInferredTyIdx(MeExpr *expr) {
-  if (expr->GetMeOp() == kMeOpVar) {
-    auto *varMeExpr = static_cast<VarMeExpr*>(expr);
+TyIdx SSADevirtual::GetInferredTyIdx(MeExpr &expr) const {
+  if (expr.GetMeOp() == kMeOpVar) {
+    auto *varMeExpr = static_cast<VarMeExpr*>(&expr);
     if (varMeExpr->GetInferredTyIdx() == 0u) {
       // If varMeExpr->inferredTyIdx has not been set, we can double check
       // if it is coming from a static final field
@@ -72,11 +72,11 @@ TyIdx SSADevirtual::GetInferredTyIdx(MeExpr *expr) {
     }
     return varMeExpr->GetInferredTyIdx();
   }
-  if (expr->GetMeOp() == kMeOpIvar) {
-    return static_cast<IvarMeExpr*>(expr)->GetInferredTyIdx();
+  if (expr.GetMeOp() == kMeOpIvar) {
+    return static_cast<IvarMeExpr*>(&expr)->GetInferredTyIdx();
   }
-  if (expr->GetOp() == OP_retype) {
-    MeExpr *retypeRHS = (static_cast<OpMeExpr*>(expr))->GetOpnd(0);
+  if (expr.GetOp() == OP_retype) {
+    MeExpr *retypeRHS = (static_cast<OpMeExpr*>(&expr))->GetOpnd(0);
     if (retypeRHS->GetMeOp() == kMeOpVar) {
       return static_cast<VarMeExpr*>(retypeRHS)->GetInferredTyIdx();
     }
@@ -84,53 +84,53 @@ TyIdx SSADevirtual::GetInferredTyIdx(MeExpr *expr) {
   return TyIdx(0);
 }
 
-void SSADevirtual::ReplaceCall(CallMeStmt *callStmt, MIRFunction *targetFunc) {
+void SSADevirtual::ReplaceCall(CallMeStmt &callStmt, const MIRFunction &targetFunc) {
   if (SSADevirtual::debug) {
-    MIRFunction &mirFunc = callStmt->GetTargetFunction();
-    LogInfo::MapleLogger() << "[SSA-DEVIRT] " << kOpcodeInfo.GetTableItemAt(callStmt->GetOp()).name << " " <<
+    MIRFunction &mirFunc = callStmt.GetTargetFunction();
+    LogInfo::MapleLogger() << "[SSA-DEVIRT] " << kOpcodeInfo.GetTableItemAt(callStmt.GetOp()).name << " " <<
         NameMangler::DecodeName(mirFunc.GetName());
   }
-  if (callStmt->GetOp() == OP_virtualicall || callStmt->GetOp() == OP_virtualicallassigned ||
-      callStmt->GetOp() == OP_interfaceicall || callStmt->GetOp() == OP_interfaceicallassigned) {
+  if (callStmt.GetOp() == OP_virtualicall || callStmt.GetOp() == OP_virtualicallassigned ||
+      callStmt.GetOp() == OP_interfaceicall || callStmt.GetOp() == OP_interfaceicallassigned) {
     // delete 1st argument
-    callStmt->EraseOpnds(callStmt->GetOpnds().begin());
+    callStmt.EraseOpnds(callStmt.GetOpnds().begin());
   }
-  MeExpr *receiver = callStmt->GetOpnd(0);
-  if (NeedNullCheck(receiver)) {
-    InsertNullCheck(callStmt, receiver);
+  MeExpr *receiver = callStmt.GetOpnd(0);
+  if (NeedNullCheck(*receiver)) {
+    InsertNullCheck(callStmt, *receiver);
     ++nullCheckCount;
   }
   // Set the actuall callee puIdx
-  callStmt->SetPUIdx(targetFunc->GetPuidx());
-  if (callStmt->GetOp() == OP_virtualcall || callStmt->GetOp() == OP_virtualicall) {
-    callStmt->SetOp(OP_call);
+  callStmt.SetPUIdx(targetFunc.GetPuidx());
+  if (callStmt.GetOp() == OP_virtualcall || callStmt.GetOp() == OP_virtualicall) {
+    callStmt.SetOp(OP_call);
     ++optedVirtualCalls;
-  } else if (callStmt->GetOp() == OP_virtualcallassigned || callStmt->GetOp() == OP_virtualicallassigned) {
-    callStmt->SetOp(OP_callassigned);
+  } else if (callStmt.GetOp() == OP_virtualcallassigned || callStmt.GetOp() == OP_virtualicallassigned) {
+    callStmt.SetOp(OP_callassigned);
     ++optedVirtualCalls;
-  } else if (callStmt->GetOp() == OP_interfacecall || callStmt->GetOp() == OP_interfaceicall) {
-    callStmt->SetOp(OP_call);
+  } else if (callStmt.GetOp() == OP_interfacecall || callStmt.GetOp() == OP_interfaceicall) {
+    callStmt.SetOp(OP_call);
     ++optedInterfaceCalls;
-  } else if (callStmt->GetOp() == OP_interfacecallassigned || callStmt->GetOp() == OP_interfaceicallassigned) {
-    callStmt->SetOp(OP_callassigned);
+  } else if (callStmt.GetOp() == OP_interfacecallassigned || callStmt.GetOp() == OP_interfaceicallassigned) {
+    callStmt.SetOp(OP_callassigned);
     ++optedInterfaceCalls;
   }
-  if (clone != nullptr && OP_callassigned == callStmt->GetOp()) {
-    clone->UpdateReturnVoidIfPossible(callStmt, targetFunc);
+  if (clone != nullptr && OP_callassigned == callStmt.GetOp()) {
+    clone->UpdateReturnVoidIfPossible(&callStmt, &targetFunc);
   }
   if (SSADevirtual::debug) {
-    LogInfo::MapleLogger() << "\t -> \t" << kOpcodeInfo.GetTableItemAt(callStmt->GetOp()).name << " " <<
-        NameMangler::DecodeName(targetFunc->GetName());
-    if (NeedNullCheck(receiver)) {
+    LogInfo::MapleLogger() << "\t -> \t" << kOpcodeInfo.GetTableItemAt(callStmt.GetOp()).name << " " <<
+        NameMangler::DecodeName(targetFunc.GetName());
+    if (NeedNullCheck(*receiver)) {
       LogInfo::MapleLogger() << " with null-check ";
     }
-    LogInfo::MapleLogger() << "\t at " << mod->GetFileNameFromFileNum(callStmt->GetSrcPosition().FileNum()) << ":" <<
-        callStmt->GetSrcPosition().LineNum() << '\n';
+    LogInfo::MapleLogger() << "\t at " << mod->GetFileNameFromFileNum(callStmt.GetSrcPosition().FileNum()) << ":" <<
+        callStmt.GetSrcPosition().LineNum() << '\n';
   }
 }
 
-bool SSADevirtual::DevirtualizeCall(CallMeStmt *callStmt) {
-  switch (callStmt->GetOp()) {
+bool SSADevirtual::DevirtualizeCall(CallMeStmt &callStmt) {
+  switch (callStmt.GetOp()) {
     case OP_interfacecall:
     case OP_interfaceicall:
     case OP_interfacecallassigned:
@@ -141,17 +141,17 @@ bool SSADevirtual::DevirtualizeCall(CallMeStmt *callStmt) {
     case OP_virtualcallassigned:
     case OP_virtualicallassigned: {
       totalVirtualCalls++;  // actually the number of interfacecalls + virtualcalls
-      const MapleVector<MeExpr*> &parms = callStmt->GetOpnds();
+      const MapleVector<MeExpr*> &parms = callStmt.GetOpnds();
       if (parms.empty() || parms[0] == nullptr) {
         break;
       }
       MeExpr *thisParm = parms[0];
-      if (callStmt->GetOp() == OP_interfaceicall || callStmt->GetOp() == OP_interfaceicallassigned ||
-          callStmt->GetOp() == OP_virtualicall || callStmt->GetOp() == OP_virtualicallassigned) {
+      if (callStmt.GetOp() == OP_interfaceicall || callStmt.GetOp() == OP_interfaceicallassigned ||
+          callStmt.GetOp() == OP_virtualicall || callStmt.GetOp() == OP_virtualicallassigned) {
         thisParm = parms[1];
       }
-      TyIdx receiverInferredTyIdx = GetInferredTyIdx(thisParm);
-      MIRFunction &mirFunc = callStmt->GetTargetFunction();
+      TyIdx receiverInferredTyIdx = GetInferredTyIdx(*thisParm);
+      MIRFunction &mirFunc = callStmt.GetTargetFunction();
       if (thisParm->GetPrimType() == PTY_ref && receiverInferredTyIdx != 0u) {
         Klass *inferredKlass = kh->GetKlassFromTyIdx(receiverInferredTyIdx);
         if (inferredKlass == nullptr) {
@@ -169,7 +169,7 @@ bool SSADevirtual::DevirtualizeCall(CallMeStmt *callStmt) {
         if (thisParm->GetMeOp() != kMeOpVar && thisParm->GetMeOp() != kMeOpIvar) {
           break;
         }
-        ReplaceCall(callStmt, inferredFunction);
+        ReplaceCall(callStmt, *inferredFunction);
         return true;
       } else if (IsFinalMethod(&mirFunc)) {
         GStrIdx uniqFuncNameStrIdx = mirFunc.GetNameStrIdx();
@@ -178,10 +178,9 @@ bool SSADevirtual::DevirtualizeCall(CallMeStmt *callStmt) {
         ASSERT(uniqFuncSym != nullptr, "The real callee %s has not been seen in any imported .mplt file",
                mirFunc.GetName().c_str());
         MIRFunction *uniqFunc = uniqFuncSym->GetFunction();
-        ASSERT(uniqFunc != nullptr, "Invalid function replacement in devirtualization");
         ASSERT(mirFunc.GetBaseFuncNameWithType() == uniqFunc->GetBaseFuncNameWithType(),
                "Invalid function replacement in devirtualization");
-        ReplaceCall(callStmt, uniqFunc);
+        ReplaceCall(callStmt, *uniqFunc);
         return true;
       } else {
         if (thisParm->GetMeOp() == kMeOpVar) {
@@ -211,7 +210,7 @@ bool SSADevirtual::DevirtualizeCall(CallMeStmt *callStmt) {
                 LogInfo::MapleLogger() << "Devirutalize based on set of inferred types: In " <<
                     GetMIRFunction()->GetName() << "; Devirtualize: " << mirFunc.GetName() << '\n';
               }
-              ReplaceCall(callStmt, inferredFunction);
+              ReplaceCall(callStmt, *inferredFunction);
               return true;
             }
           }
@@ -225,59 +224,59 @@ bool SSADevirtual::DevirtualizeCall(CallMeStmt *callStmt) {
   return false;
 }
 
-bool SSADevirtual::NeedNullCheck(MeExpr *receiver) const {
+bool SSADevirtual::NeedNullCheck(const MeExpr &receiver) const {
   return MaybeNull(receiver);
 }
 
 // Java requires to throw Null-Pointer-Execption if the receiver of
 // the virtualcall is null. We insert an eval(iread recevier, 0)
 // statment perform the null-check.
-void SSADevirtual::InsertNullCheck(CallMeStmt *callStmt, MeExpr *receiver) {
+void SSADevirtual::InsertNullCheck(const CallMeStmt &callStmt, MeExpr &receiver) const {
   UnaryMeStmt *nullCheck = irMap->New<UnaryMeStmt>(OP_assertnonnull);
-  nullCheck->SetBB(callStmt->GetBB());
-  nullCheck->SetSrcPos(callStmt->GetSrcPosition());
-  nullCheck->SetMeStmtOpndValue(receiver);
-  callStmt->GetBB()->InsertMeStmtBefore(callStmt, nullCheck);
+  nullCheck->SetBB(callStmt.GetBB());
+  nullCheck->SetSrcPos(callStmt.GetSrcPosition());
+  nullCheck->SetMeStmtOpndValue(&receiver);
+  callStmt.GetBB()->InsertMeStmtBefore(&callStmt, nullCheck);
 }
 
-void SSADevirtual::PropVarInferredType(VarMeExpr *VarMeExpr) {
-  if (VarMeExpr->GetInferredTyIdx() != 0u) {
+void SSADevirtual::PropVarInferredType(VarMeExpr &VarMeExpr) const {
+  if (VarMeExpr.GetInferredTyIdx() != 0u) {
     return;
   }
-  if (VarMeExpr->GetDefBy() == kDefByStmt) {
-    DassignMeStmt &defStmt = utils::ToRef(safe_cast<DassignMeStmt>(VarMeExpr->GetDefStmt()));
+  if (VarMeExpr.GetDefBy() == kDefByStmt) {
+    DassignMeStmt &defStmt = utils::ToRef(safe_cast<DassignMeStmt>(VarMeExpr.GetDefStmt()));
     MeExpr *rhs = defStmt.GetRHS();
     if (rhs->GetOp() == OP_gcmalloc) {
-      VarMeExpr->SetInferredTyIdx(static_cast<GcmallocMeExpr*>(rhs)->GetTyIdx());
-      VarMeExpr->SetMaybeNull(false);
+      VarMeExpr.SetInferredTyIdx(static_cast<GcmallocMeExpr*>(rhs)->GetTyIdx());
+      VarMeExpr.SetMaybeNull(false);
       if (SSADevirtual::debug) {
-        MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(VarMeExpr->GetInferredTyIdx());
-        LogInfo::MapleLogger() << "[SSA-DEVIRT] [TYPE-INFERRING] mx" << VarMeExpr->GetExprID() << " ";
+        MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(VarMeExpr.GetInferredTyIdx());
+        LogInfo::MapleLogger() << "[SSA-DEVIRT] [TYPE-INFERRING] mx" << VarMeExpr.GetExprID() << " ";
         type->Dump(0, false);
         LogInfo::MapleLogger() << '\n';
       }
     } else {
-      TyIdx tyIdx = GetInferredTyIdx(rhs);
-      VarMeExpr->SetMaybeNull(MaybeNull(rhs));
+      TyIdx tyIdx = GetInferredTyIdx(*rhs);
+      VarMeExpr.SetMaybeNull(MaybeNull(*rhs));
       if (tyIdx != 0u) {
-        VarMeExpr->SetInferredTyIdx(tyIdx);
+        VarMeExpr.SetInferredTyIdx(tyIdx);
         if (SSADevirtual::debug) {
-          MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(VarMeExpr->GetInferredTyIdx());
-          LogInfo::MapleLogger() << "[SSA-DEVIRT] [TYPE-INFERRING] mx" << VarMeExpr->GetExprID() << " ";
+          MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(VarMeExpr.GetInferredTyIdx());
+          LogInfo::MapleLogger() << "[SSA-DEVIRT] [TYPE-INFERRING] mx" << VarMeExpr.GetExprID() << " ";
           type->Dump(0, false);
           LogInfo::MapleLogger() << '\n';
         }
       }
     }
-    if (VarMeExpr->GetInferredTyIdx() != 0u) {
+    if (VarMeExpr.GetInferredTyIdx() != 0u) {
       OriginalSt *ost = irMap->GetSSATab().GetOriginalStFromID(defStmt.GetVarLHS()->GetOStIdx());
       MIRSymbol *mirSym = ost->GetMIRSymbol();
       if (mirSym->IsStatic() && mirSym->IsFinal()) {
         // static final field can store and propagate inferred typeinfo
         if (mirSym->GetInferredTyIdx() == kInitTyIdx) {
           // mirSym->_inferred_tyIdx has not been set before
-          mirSym->SetInferredTyIdx(VarMeExpr->GetInferredTyIdx());
-        } else if (mirSym->GetInferredTyIdx() != VarMeExpr->GetInferredTyIdx()) {
+          mirSym->SetInferredTyIdx(VarMeExpr.GetInferredTyIdx());
+        } else if (mirSym->GetInferredTyIdx() != VarMeExpr.GetInferredTyIdx()) {
           // If mirSym->_inferred_tyIdx has been set before, it means we have
           // seen a divergence on control flow. Set to NONE if not all
           // branches reach the same conclusion.
@@ -285,40 +284,40 @@ void SSADevirtual::PropVarInferredType(VarMeExpr *VarMeExpr) {
         }
       }
     }
-  } else if (VarMeExpr->GetDefBy() == kDefByPhi) {
+  } else if (VarMeExpr.GetDefBy() == kDefByPhi) {
     if (SSADevirtual::debug) {
       LogInfo::MapleLogger() << "[SSA-DEVIRT] [TYPE-INFERRING] " << "Def by phi " << '\n';
     }
   }
 }
 
-void SSADevirtual::PropIvarInferredType(IvarMeExpr *ivar) {
-  if (ivar->GetInferredTyIdx() != 0u) {
+void SSADevirtual::PropIvarInferredType(IvarMeExpr &ivar) const {
+  if (ivar.GetInferredTyIdx() != 0u) {
     return;
   }
-  IassignMeStmt *defStmt = ivar->GetDefStmt();
+  IassignMeStmt *defStmt = ivar.GetDefStmt();
   if (defStmt == nullptr) {
     return;
   }
   MeExpr *rhs = defStmt->GetRHS();
   CHECK_NULL_FATAL(rhs);
   if (rhs->GetOp() == OP_gcmalloc) {
-    ivar->GetInferredTyIdx() = static_cast<GcmallocMeExpr*>(rhs)->GetTyIdx();
-    ivar->SetMaybeNull(false);
+    ivar.GetInferredTyIdx() = static_cast<GcmallocMeExpr*>(rhs)->GetTyIdx();
+    ivar.SetMaybeNull(false);
     if (SSADevirtual::debug) {
-      MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ivar->GetInferredTyIdx());
-      LogInfo::MapleLogger() << "[SSA-DEVIRT] [TYPE-INFERRING] mx" << ivar->GetExprID() << " ";
+      MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ivar.GetInferredTyIdx());
+      LogInfo::MapleLogger() << "[SSA-DEVIRT] [TYPE-INFERRING] mx" << ivar.GetExprID() << " ";
       type->Dump(0, false);
       LogInfo::MapleLogger() << '\n';
     }
   } else {
-    TyIdx tyIdx = GetInferredTyIdx(rhs);
-    ivar->SetMaybeNull(MaybeNull(rhs));
+    TyIdx tyIdx = GetInferredTyIdx(*rhs);
+    ivar.SetMaybeNull(MaybeNull(*rhs));
     if (tyIdx != 0u) {
-      ivar->SetInferredTyidx(tyIdx);
+      ivar.SetInferredTyidx(tyIdx);
       if (SSADevirtual::debug) {
-        MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ivar->GetInferredTyIdx());
-        LogInfo::MapleLogger() << "[SSA-DEVIRT] [TYPE-INFERRING] mx" << ivar->GetExprID() << " ";
+        MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ivar.GetInferredTyIdx());
+        LogInfo::MapleLogger() << "[SSA-DEVIRT] [TYPE-INFERRING] mx" << ivar.GetExprID() << " ";
         type->Dump(0, false);
         LogInfo::MapleLogger() << '\n';
       }
@@ -326,13 +325,13 @@ void SSADevirtual::PropIvarInferredType(IvarMeExpr *ivar) {
   }
 }
 
-void SSADevirtual::VisitVarPhiNode(MeVarPhiNode *varPhi) {
-  MapleVector<VarMeExpr*> opnds = varPhi->GetOpnds();
-  auto *lhs = varPhi->GetLHS();
+void SSADevirtual::VisitVarPhiNode(MeVarPhiNode &varPhi) const {
+  MapleVector<VarMeExpr*> opnds = varPhi.GetOpnds();
+  auto *lhs = varPhi.GetLHS();
   const MapleVector<TyIdx> &inferredTypeCandidates = lhs->GetInferredTypeCandidates();
   for (size_t i = 0; i < opnds.size(); ++i) {
     VarMeExpr *opnd = opnds[i];
-    PropVarInferredType(opnd);
+    PropVarInferredType(*opnd);
     if (opnd->GetInferredTyIdx() != 0u) {
       size_t j = 0;
       for (; j < inferredTypeCandidates.size(); j++) {
@@ -350,7 +349,7 @@ void SSADevirtual::VisitVarPhiNode(MeVarPhiNode *varPhi) {
   }
 }
 
-void SSADevirtual::VisitMeExpr(MeExpr *meExpr) {
+void SSADevirtual::VisitMeExpr(MeExpr *meExpr) const {
   if (meExpr == nullptr) {
     return;
   }
@@ -358,14 +357,14 @@ void SSADevirtual::VisitMeExpr(MeExpr *meExpr) {
   switch (meOp) {
     case kMeOpVar: {
       auto *varExpr = static_cast<VarMeExpr*>(meExpr);
-      PropVarInferredType(varExpr);
+      PropVarInferredType(*varExpr);
       break;
     }
     case kMeOpReg:
       break;
     case kMeOpIvar: {
       auto *iVar = static_cast<IvarMeExpr*>(meExpr);
-      PropIvarInferredType(iVar);
+      PropIvarInferredType(*iVar);
       break;
     }
     case kMeOpOp: {
@@ -397,12 +396,12 @@ void SSADevirtual::VisitMeExpr(MeExpr *meExpr) {
   }
 }
 
-void SSADevirtual::ReturnTyIdxInferring(const RetMeStmt *retMeStmt) {
-  const MapleVector<MeExpr*> &opnds = retMeStmt->GetOpnds();
+void SSADevirtual::ReturnTyIdxInferring(const RetMeStmt &retMeStmt) {
+  const MapleVector<MeExpr*> &opnds = retMeStmt.GetOpnds();
   CHECK_FATAL(opnds.size() <= 1, "Assume at most one return value for now");
   for (size_t i = 0; i < opnds.size(); ++i) {
     MeExpr *opnd = opnds[i];
-    TyIdx tyIdx = GetInferredTyIdx(opnd);
+    TyIdx tyIdx = GetInferredTyIdx(*opnd);
     if (retTy == kNotSeen) {
       // seen the first return stmt
       retTy = kSeen;
@@ -417,32 +416,32 @@ void SSADevirtual::ReturnTyIdxInferring(const RetMeStmt *retMeStmt) {
   }
 }
 
-void SSADevirtual::TraversalMeStmt(MeStmt *meStmt) {
-  Opcode op = meStmt->GetOp();
+void SSADevirtual::TraversalMeStmt(MeStmt &meStmt) {
+  Opcode op = meStmt.GetOp();
   switch (op) {
     case OP_dassign: {
-      auto *varMeStmt = static_cast<DassignMeStmt*>(meStmt);
+      auto *varMeStmt = static_cast<DassignMeStmt*>(&meStmt);
       VisitMeExpr(varMeStmt->GetRHS());
       break;
     }
     case OP_regassign: {
-      auto *regMeStmt = static_cast<RegassignMeStmt*>(meStmt);
+      auto *regMeStmt = static_cast<RegassignMeStmt*>(&meStmt);
       VisitMeExpr(regMeStmt->GetRHS());
       break;
     }
     case OP_maydassign: {
-      auto *maydStmt = static_cast<MaydassignMeStmt*>(meStmt);
+      auto *maydStmt = static_cast<MaydassignMeStmt*>(&meStmt);
       VisitMeExpr(maydStmt->GetRHS());
       break;
     }
     case OP_iassign: {
-      auto *ivarStmt = static_cast<IassignMeStmt*>(meStmt);
+      auto *ivarStmt = static_cast<IassignMeStmt*>(&meStmt);
       VisitMeExpr(ivarStmt->GetRHS());
       break;
     }
     case OP_syncenter:
     case OP_syncexit: {
-      auto *syncMeStmt = static_cast<SyncMeStmt*>(meStmt);
+      auto *syncMeStmt = static_cast<SyncMeStmt*>(&meStmt);
       const MapleVector<MeExpr*> &opnds = syncMeStmt->GetOpnds();
       for (size_t i = 0; i < opnds.size(); ++i) {
         MeExpr *opnd = opnds[i];
@@ -451,14 +450,14 @@ void SSADevirtual::TraversalMeStmt(MeStmt *meStmt) {
       break;
     }
     case OP_throw: {
-      auto *thrMeStmt = static_cast<ThrowMeStmt*>(meStmt);
+      auto *thrMeStmt = static_cast<ThrowMeStmt*>(&meStmt);
       VisitMeExpr(thrMeStmt->GetOpnd());
       break;
     }
     case OP_assertnonnull:
     case OP_eval:
     case OP_free: {
-      auto *umeStmt = static_cast<UnaryMeStmt*>(meStmt);
+      auto *umeStmt = static_cast<UnaryMeStmt*>(&meStmt);
       VisitMeExpr(umeStmt->GetOpnd());
       break;
     }
@@ -478,13 +477,13 @@ void SSADevirtual::TraversalMeStmt(MeStmt *meStmt) {
     case OP_interfaceicallassigned:
     case OP_customcallassigned:
     case OP_polymorphiccallassigned: {
-      auto *callMeStmt = static_cast<CallMeStmt*>(meStmt);
+      auto *callMeStmt = static_cast<CallMeStmt*>(&meStmt);
       const MapleVector<MeExpr*> &opnds = callMeStmt->GetOpnds();
       for (size_t i = 0; i < opnds.size(); ++i) {
         MeExpr *opnd = opnds[i];
         VisitMeExpr(opnd);
       }
-      (void)DevirtualizeCall(callMeStmt);
+      (void)DevirtualizeCall(*callMeStmt);
       if (clone != nullptr && OP_callassigned == callMeStmt->GetOp()) {
         MIRFunction &targetFunc = callMeStmt->GetTargetFunction();
         clone->UpdateReturnVoidIfPossible(callMeStmt, &targetFunc);
@@ -493,7 +492,7 @@ void SSADevirtual::TraversalMeStmt(MeStmt *meStmt) {
     }
     case OP_icall:
     case OP_icallassigned: {
-      auto *icallMeStmt = static_cast<IcallMeStmt*>(meStmt);
+      auto *icallMeStmt = static_cast<IcallMeStmt*>(&meStmt);
       const MapleVector<MeExpr*> &opnds = icallMeStmt->GetOpnds();
       for (size_t i = 0; i < opnds.size(); ++i) {
         MeExpr *opnd = opnds[i];
@@ -507,7 +506,7 @@ void SSADevirtual::TraversalMeStmt(MeStmt *meStmt) {
     case OP_intrinsiccallwithtypeassigned:
     case OP_intrinsiccallassigned:
     case OP_xintrinsiccallassigned: {
-      auto *intrinCallStmt = static_cast<IntrinsiccallMeStmt*>(meStmt);
+      auto *intrinCallStmt = static_cast<IntrinsiccallMeStmt*>(&meStmt);
       const MapleVector<MeExpr*> &opnds = intrinCallStmt->GetOpnds();
       for (size_t i = 0; i < opnds.size(); ++i) {
         MeExpr *opnd = opnds[i];
@@ -517,28 +516,28 @@ void SSADevirtual::TraversalMeStmt(MeStmt *meStmt) {
     }
     case OP_brtrue:
     case OP_brfalse: {
-      auto *condGotoStmt = static_cast<CondGotoMeStmt*>(meStmt);
+      auto *condGotoStmt = static_cast<CondGotoMeStmt*>(&meStmt);
       VisitMeExpr(condGotoStmt->GetOpnd());
       break;
     }
     case OP_switch: {
-      auto *switchStmt = static_cast<SwitchMeStmt*>(meStmt);
+      auto *switchStmt = static_cast<SwitchMeStmt*>(&meStmt);
       VisitMeExpr(switchStmt->GetOpnd());
       break;
     }
     case OP_return: {
-      auto *retMeStmt = static_cast<RetMeStmt*>(meStmt);
+      auto *retMeStmt = static_cast<RetMeStmt*>(&meStmt);
       const MapleVector<MeExpr*> &opnds = retMeStmt->GetOpnds();
       for (size_t i = 0; i < opnds.size(); ++i) {
         MeExpr *opnd = opnds[i];
         VisitMeExpr(opnd);
       }
-      ReturnTyIdxInferring(retMeStmt);
+      ReturnTyIdxInferring(*retMeStmt);
       break;
     }
     case OP_assertlt:
     case OP_assertge: {
-      auto *assMeStmt = static_cast<AssertMeStmt*>(meStmt);
+      auto *assMeStmt = static_cast<AssertMeStmt*>(&meStmt);
       VisitMeExpr(assMeStmt->GetOpnd(0));
       VisitMeExpr(assMeStmt->GetOpnd(1));
       break;
@@ -562,10 +561,10 @@ void SSADevirtual::TraversalMeStmt(MeStmt *meStmt) {
     default:
       CHECK_FATAL(false, "unexpected stmt in ssadevirt or NYI");
   }
-  if (meStmt->GetOp() != OP_callassigned) {
+  if (meStmt.GetOp() != OP_callassigned) {
     return;
   }
-  MapleVector<MustDefMeNode> *mustDefList = meStmt->GetMustDefList();
+  MapleVector<MustDefMeNode> *mustDefList = meStmt.GetMustDefList();
   if (mustDefList->empty()) {
     return;
   }
@@ -574,7 +573,7 @@ void SSADevirtual::TraversalMeStmt(MeStmt *meStmt) {
     return;
   }
   auto *lhsVar = static_cast<VarMeExpr*>(meLHS);
-  auto *callMeStmt = static_cast<CallMeStmt*>(meStmt);
+  auto *callMeStmt = static_cast<CallMeStmt*>(&meStmt);
   MIRFunction &called = callMeStmt->GetTargetFunction();
   if (called.GetInferredReturnTyIdx() != 0u) {
     lhsVar->SetInferredTyIdx(called.GetInferredReturnTyIdx());
@@ -599,20 +598,20 @@ void SSADevirtual::TraversalBB(BB *bb) {
   MapleMap<OStIdx, MeVarPhiNode*> &meVarPhiList = bb->GetMevarPhiList();
   for (auto it = meVarPhiList.begin(); it != meVarPhiList.end(); ++it) {
     MeVarPhiNode *phiMeNode = it->second;
-    VisitVarPhiNode(phiMeNode);
+    VisitVarPhiNode(*phiMeNode);
   }
   // traversal reg phi nodes (NYI)
   // traversal on stmt
   for (auto &meStmt : bb->GetMeStmts()) {
-    TraversalMeStmt(&meStmt);
+    TraversalMeStmt(meStmt);
   }
 }
 
-void SSADevirtual::Perform(BB *entryBB) {
+void SSADevirtual::Perform(BB &entryBB) {
   // Pre-order traverse the cominance tree, so that each def is traversed
   // before its use
   std::queue<BB*> bbList;
-  bbList.push(entryBB);
+  bbList.push(&entryBB);
   while (!bbList.empty()) {
     BB *bb = bbList.front();
     bbList.pop();

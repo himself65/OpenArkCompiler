@@ -94,12 +94,12 @@ class MUIDReplacement : public FuncOptimizeImpl {
   void ReplaceAddrofConst(MIRConst *&entry);
   void ReplaceDataTable(const std::string &name);
   void ReplaceDirectInvokeOrAddroffunc(MIRFunction &currentFunc, StmtNode &stmt);
-  void ReplaceDassign(MIRFunction &currentFunc, DassignNode &dassignNode);
+  void ReplaceDassign(MIRFunction &currentFunc, const DassignNode &dassignNode);
   void ReplaceDreadStmt(MIRFunction *currentFunc, StmtNode *stmt);
   void ClearVtabItab(const std::string &name);
   void ReplaceDecoupleKeyTable(MIRAggConst *oldConst);
   BaseNode *ReplaceDreadExpr(MIRFunction *currentFunc, StmtNode *stmt, BaseNode *expr);
-  BaseNode *ReplaceDread(MIRFunction &currentFunc, StmtNode *stmt, BaseNode *opnd);
+  BaseNode *ReplaceDread(MIRFunction &currentFunc, const StmtNode *stmt, BaseNode *opnd);
   void CollectDread(MIRFunction &currentFunc, StmtNode &stmt, BaseNode &opnd);
   void DumpMUIDFile(bool isFunc);
   void ReplaceStmts();

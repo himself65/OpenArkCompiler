@@ -22,7 +22,7 @@ class CondBasedNPC : public MeCondBased {
   CondBasedNPC(MeFunction *func, Dominance *dom) : MeCondBased(func, dom) {}
 
   ~CondBasedNPC() = default;
-  void DoCondBasedNPC();
+  void DoCondBasedNPC() const;
 };
 
 class MeDoCondBasedNPC : public MeFuncPhase {

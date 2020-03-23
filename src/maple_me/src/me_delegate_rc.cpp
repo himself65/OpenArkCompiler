@@ -107,7 +107,7 @@ void DelegateRC::SaveDerefedOrCopiedVst(const MeExpr *expr) {
   }
 }
 
-bool DelegateRC::IsCopiedOrDerefedOp(const Opcode op) const {
+bool DelegateRC::IsCopiedOrDerefedOp(Opcode op) const {
   return op == OP_dassign || op == OP_maydassign || op == OP_regassign || op == OP_syncenter ||
          op == OP_syncexit || op == OP_throw || op == OP_return || op == OP_iassign ||  // cause var copied
          kOpcodeInfo.IsCall(op);  // callstmt need considering parameter
@@ -124,11 +124,11 @@ void DelegateRC::CollectDerefedOrCopied(const MeStmt &stmt) {
   }
 }
 
-void DelegateRC::CollectDerefedOrCopied(const MeExpr &x) {
-  Opcode op = x.GetOp();
+void DelegateRC::CollectDerefedOrCopied(const MeExpr &expr) {
+  Opcode op = expr.GetOp();
   if (op == OP_iaddrof || op == OP_add) {
-    for (size_t i = 0; i < x.GetNumOpnds(); ++i) {
-      SaveDerefedOrCopiedVst(x.GetOpnd(i));
+    for (size_t i = 0; i < expr.GetNumOpnds(); ++i) {
+      SaveDerefedOrCopiedVst(expr.GetOpnd(i));
     }
     return;
   }
@@ -137,8 +137,8 @@ void DelegateRC::CollectDerefedOrCopied(const MeExpr &x) {
     // in some cases, we have cvt from int to ref
     // dassign %Reg0_I 0 (cvt i32 ref (dread ref %Reg0_XXXX))
     // cvt ref i32 (dread i32 %Reg0_I)
-    if (x.GetPrimType() == PTY_ref && x.GetOpnd(0)->GetMeOp() == kMeOpVar) {
-      auto *baseVar = static_cast<VarMeExpr*>(x.GetOpnd(0));
+    if (expr.GetPrimType() == PTY_ref && expr.GetOpnd(0)->GetMeOp() == kMeOpVar) {
+      auto *baseVar = static_cast<VarMeExpr*>(expr.GetOpnd(0));
       verStDerefedCopied[baseVar->GetVstIdx()] = true;
       // collect the def of basevar
       if (baseVar->GetDefBy() == kDefByStmt) {
@@ -162,15 +162,15 @@ void DelegateRC::CollectDerefedOrCopied(const MeExpr &x) {
   }
 
   if (op == OP_array ||
-      (op == OP_intrinsicop && static_cast<const NaryMeExpr&>(x).GetIntrinsic() == INTRN_JAVA_ARRAY_LENGTH) ||
-      (op == OP_intrinsicopwithtype && static_cast<const NaryMeExpr&>(x).GetIntrinsic() == INTRN_JAVA_INSTANCE_OF)) {
-    CHECK_FATAL(x.GetNumOpnds() != 0, "container check");
-    SaveDerefedOrCopiedVst(x.GetOpnd(0));
+      (op == OP_intrinsicop && static_cast<const NaryMeExpr&>(expr).GetIntrinsic() == INTRN_JAVA_ARRAY_LENGTH) ||
+      (op == OP_intrinsicopwithtype && static_cast<const NaryMeExpr&>(expr).GetIntrinsic() == INTRN_JAVA_INSTANCE_OF)) {
+    CHECK_FATAL(expr.GetNumOpnds() != 0, "container check");
+    SaveDerefedOrCopiedVst(expr.GetOpnd(0));
     return;
   }
 
-  if (x.GetMeOp() == kMeOpIvar) {
-    SaveDerefedOrCopiedVst(x.GetOpnd(0));
+  if (expr.GetMeOp() == kMeOpIvar) {
+    SaveDerefedOrCopiedVst(expr.GetOpnd(0));
   }
 }
 
@@ -196,43 +196,43 @@ void DelegateRC::CollectVstCantDecrefEarly(MeExpr &opnd0, MeExpr &opnd1) {
   }
 }
 
-void DelegateRC::CollectUseCounts(const MeExpr &x) {
-  if (x.GetMeOp() == kMeOpVar) {
-    const auto &varMeExpr = static_cast<const VarMeExpr&>(x);
+void DelegateRC::CollectUseCounts(const MeExpr &expr) {
+  if (expr.GetMeOp() == kMeOpVar) {
+    const auto &varMeExpr = static_cast<const VarMeExpr&>(expr);
     ASSERT(varMeExpr.GetVstIdx() < verStUseCounts.size(), "CollectUsesInfo: vstIdx out of bounds");
     verStUseCounts[varMeExpr.GetVstIdx()]++;
   }
 }
 
-void DelegateRC::CollectUsesInfo(const MeExpr &x) {
-  for (size_t i = 0; i < x.GetNumOpnds(); ++i) {
-    CollectUsesInfo(*x.GetOpnd(i));
+void DelegateRC::CollectUsesInfo(const MeExpr &expr) {
+  for (size_t i = 0; i < expr.GetNumOpnds(); ++i) {
+    CollectUsesInfo(*expr.GetOpnd(i));
   }
-  if ((x.GetOp() == OP_eq || x.GetOp() == OP_ne) && static_cast<const OpMeExpr&>(x).GetOpndType() == PTY_ref) {
-    CollectVstCantDecrefEarly(*x.GetOpnd(0), *x.GetOpnd(1));
+  if ((expr.GetOp() == OP_eq || expr.GetOp() == OP_ne) && static_cast<const OpMeExpr&>(expr).GetOpndType() == PTY_ref) {
+    CollectVstCantDecrefEarly(*expr.GetOpnd(0), *expr.GetOpnd(1));
   }
-  CollectDerefedOrCopied(x);
-  CollectUseCounts(x);
+  CollectDerefedOrCopied(expr);
+  CollectUseCounts(expr);
 }
 
 // traverse expression x; at each occurrence of rhsvar in x, decrement
 // remaining_uses
-void DelegateRC::FindAndDecrUseCount(VarMeExpr *rhsVar, MeExpr *x, int32 &remainingUses) {
-  for (size_t i = 0; i < x->GetNumOpnds(); ++i) {
-    FindAndDecrUseCount(rhsVar, x->GetOpnd(i), remainingUses);
+void DelegateRC::FindAndDecrUseCount(const VarMeExpr &rhsVar, const MeExpr &expr, int32 &remainingUses) const {
+  for (size_t i = 0; i < expr.GetNumOpnds(); ++i) {
+    FindAndDecrUseCount(rhsVar, *expr.GetOpnd(i), remainingUses);
   }
-  if (x == rhsVar) {
-    remainingUses--;
+  if (&expr == &rhsVar) {
+    --remainingUses;
   }
 }
 
-bool DelegateRC::MayThrowException(MeStmt &stmt) {
+bool DelegateRC::MayThrowException(const MeStmt &stmt) const {
   if (CheckOp(stmt, OP_maydassign) || CheckOp(stmt, OP_throw)) {
     return true;
   }
 
   if (CheckOp(stmt, OP_dassign)) {
-    auto &dass = static_cast<DassignMeStmt&>(stmt);
+    const auto &dass = static_cast<const DassignMeStmt&>(stmt);
     const MeExpr *rhs = dass.GetRHS();
     CHECK_NULL_FATAL(rhs);
     return dass.GetWasMayDassign() || rhs->GetOp() == OP_gcmalloc || rhs->GetOp() == OP_gcmallocjarray;
@@ -243,12 +243,12 @@ bool DelegateRC::MayThrowException(MeStmt &stmt) {
   }
 
   if (IsIntrinsic(stmt)) {
-    auto &intrn = static_cast<IntrinsiccallMeStmt&>(stmt);
+    const auto &intrn = static_cast<const IntrinsiccallMeStmt&>(stmt);
     return canThrowIntrinsicsList.find(intrn.GetIntrinsic()) != canThrowIntrinsicsList.end();
   }
 
   if (kOpcodeInfo.IsCall(stmt.GetOp())) {
-    auto &callStmt = static_cast<CallMeStmt&>(stmt);
+    const auto &callStmt = static_cast<const CallMeStmt&>(stmt);
     MIRFunction *callee = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(callStmt.GetPUIdx());
     return (!callee->GetFuncAttrs().GetAttr(FUNCATTR_nothrow_exception)) ||
            (!MeOption::ignoreIPA && !callee->IsNoThrowException());
@@ -261,9 +261,9 @@ bool DelegateRC::MayThrowException(MeStmt &stmt) {
 // rhsvar, so it can be assumed that tostmt does not contain any use; this check
 // make use of verStUseCounts in its determination. In addition, if it comes
 // across any stmt that can raise exception, also return false.
-bool DelegateRC::ContainAllTheUses(VarMeExpr *rhsVar, const MeStmt &fromStmt, const MeStmt *toStmt) {
-  int32 remainingUses = static_cast<uint32>(verStUseCounts[rhsVar->GetVstIdx()]) - 1;
-  for (MeStmt *cur = fromStmt.GetPrev(); cur != toStmt; cur = cur->GetPrev()) {
+bool DelegateRC::ContainAllTheUses(VarMeExpr &rhsVar, const MeStmt &fromStmt, const MeStmt &toStmt) const {
+  int32 remainingUses = static_cast<uint32>(verStUseCounts[rhsVar.GetVstIdx()]) - 1;
+  for (MeStmt *cur = fromStmt.GetPrev(); cur != &toStmt; cur = cur->GetPrev()) {
     // do not count decref operands
     if (IsVarDecRefStmt(*cur)) {
       continue;
@@ -275,7 +275,7 @@ bool DelegateRC::ContainAllTheUses(VarMeExpr *rhsVar, const MeStmt &fromStmt, co
       continue;
     }
     for (size_t i = 0; i < cur->NumMeStmtOpnds(); ++i) {
-      FindAndDecrUseCount(rhsVar, cur->GetOpnd(i), remainingUses);
+      FindAndDecrUseCount(rhsVar, *cur->GetOpnd(i), remainingUses);
     }
   }
   CHECK_FATAL(remainingUses >= 0, "ContainAllTheUses: inconsistent use count");
@@ -283,29 +283,29 @@ bool DelegateRC::ContainAllTheUses(VarMeExpr *rhsVar, const MeStmt &fromStmt, co
 }
 
 // return the RegMeExpr node to replace the original temp; nullptr if not successful
-RegMeExpr *DelegateRC::RHSTempDelegated(MeExpr *rhs, MeStmt &useStmt) {
-  if (rhs->GetMeOp() != kMeOpVar) {
+RegMeExpr *DelegateRC::RHSTempDelegated(MeExpr &rhs, MeStmt &useStmt) {
+  if (rhs.GetMeOp() != kMeOpVar) {
     return nullptr;
   }
-  auto *rhsVar = static_cast<VarMeExpr*>(rhs);
-  if (verStCantDelegate[rhsVar->GetVstIdx()]) {
+  auto &rhsVar = static_cast<VarMeExpr&>(rhs);
+  if (verStCantDelegate[rhsVar.GetVstIdx()]) {
     return nullptr;
   }
-  if (refVar2RegMap.find(rhsVar) != refVar2RegMap.end()) {
+  if (refVar2RegMap.find(&rhsVar) != refVar2RegMap.end()) {
     return nullptr;  // already delegated by another assignment
   }
-  const OriginalSt *ost = ssaTab.GetOriginalStFromID(rhsVar->GetOStIdx());
+  const OriginalSt *ost = ssaTab.GetOriginalStFromID(rhsVar.GetOStIdx());
   if (ost->IsFormal() || ost->GetMIRSymbol()->IsGlobal()) {
     return nullptr;
   }
-  if (rhsVar->GetDefBy() == kDefByMustDef) {
-    MustDefMeNode &mustDef = rhsVar->GetDefMustDef();
-    ASSERT(mustDef.GetLHS() == rhsVar, "DelegateRCTemp: inconsistent mustdef");
+  if (rhsVar.GetDefBy() == kDefByMustDef) {
+    MustDefMeNode &mustDef = rhsVar.GetDefMustDef();
+    ASSERT(mustDef.GetLHS() == &rhsVar, "DelegateRCTemp: inconsistent mustdef");
     MeStmt *callStmt = mustDef.GetBase();
     if (callStmt->GetBB() != useStmt.GetBB()) {
       return nullptr;
     }
-    if (!ContainAllTheUses(rhsVar, useStmt, callStmt)) {
+    if (!ContainAllTheUses(rhsVar, useStmt, *callStmt)) {
       return nullptr;
     }
     if (enabledDebug) {
@@ -314,42 +314,42 @@ RegMeExpr *DelegateRC::RHSTempDelegated(MeExpr *rhs, MeStmt &useStmt) {
       callStmt->Dump(func.GetIRMap());
     }
     // replace temp by a new preg
-    rhsVar->SetDefBy(kDefByNo);
+    rhsVar.SetDefBy(kDefByNo);
     RegMeExpr *curReg = nullptr;
     if (ost->GetMIRSymbol()->GetType()->GetPrimType() == PTY_ptr) {
       curReg = irMap.CreateRegMeExpr(PTY_ptr);
     } else {
-      curReg = irMap.CreateRegRefMeExpr(*rhsVar);
+      curReg = irMap.CreateRegRefMeExpr(rhsVar);
     }
-    refVar2RegMap[rhsVar] = curReg;  // record this replacement
+    refVar2RegMap[&rhsVar] = curReg;  // record this replacement
     mustDef.UpdateLHS(*curReg);
     if (enabledDebug) {
       LogInfo::MapleLogger() << "with stmt :\n" << '\n';
       mustDef.GetBase()->Dump(func.GetIRMap());
     }
     return curReg;
-  } else if (rhsVar->GetDefBy() == kDefByStmt) {
-    MeStmt *defStmt = rhsVar->GetDefStmt();
+  } else if (rhsVar.GetDefBy() == kDefByStmt) {
+    MeStmt *defStmt = rhsVar.GetDefStmt();
     if (defStmt->GetBB() != useStmt.GetBB()) {
       return nullptr;
     }
-    if (!ContainAllTheUses(rhsVar, useStmt, defStmt)) {
+    if (!ContainAllTheUses(rhsVar, useStmt, *defStmt)) {
       return nullptr;
     }
     MeExpr *rhsExpr = defStmt->GetRHS();
     bool defStmtNeedIncref = defStmt->NeedIncref();
     CHECK_FATAL(defStmt->GetOp() == OP_dassign || defStmt->GetOp() == OP_maydassign,
                 "DelegateRCTemp: unexpected stmt op for kDefByStmt");
-    ASSERT(defStmt->GetVarLHS() == rhsVar, "DelegateRCTemp: inconsistent def by dassign");
+    ASSERT(defStmt->GetVarLHS() == &rhsVar, "DelegateRCTemp: inconsistent def by dassign");
     if (enabledDebug) {
       LogInfo::MapleLogger() << "delegaterc of form A for func " << func.GetName() << '\n';
       LogInfo::MapleLogger() << "\nreplace stmt :\n" << '\n';
       defStmt->Dump(func.GetIRMap());
     }
     // replace temp by a new preg
-    rhsVar->SetDefBy(kDefByNo);
-    RegMeExpr *curReg = irMap.CreateRegRefMeExpr(*rhsVar);
-    refVar2RegMap[rhsVar] = curReg;  // record this replacement
+    rhsVar.SetDefBy(kDefByNo);
+    RegMeExpr *curReg = irMap.CreateRegRefMeExpr(rhsVar);
+    refVar2RegMap[&rhsVar] = curReg;  // record this replacement
     // create new regassign statement
     MeStmt *regass = irMap.CreateRegassignMeStmt(*curReg, *rhsExpr, *defStmt->GetBB());
     curReg->SetDefByStmt(*regass);
@@ -393,7 +393,7 @@ void DelegateRC::DelegateRCTemp(MeStmt &stmt) {
       }
       MeExpr *rhs = stmt.GetRHS();
       CHECK_FATAL(rhs != nullptr, "null rhs check");
-      RegMeExpr *curReg = RHSTempDelegated(rhs, stmt);
+      RegMeExpr *curReg = RHSTempDelegated(*rhs, stmt);
       if (curReg != nullptr) {
         rhs = curReg;
         stmt.DisableNeedIncref();
@@ -408,7 +408,7 @@ void DelegateRC::DelegateRCTemp(MeStmt &stmt) {
       CHECK_FATAL(lhsVar != nullptr, "null lhs check");
       MeExpr *rhs = stmt.GetRHS();
       CHECK_FATAL(rhs != nullptr, "null rhs check");
-      RegMeExpr *curReg = RHSTempDelegated(rhs, stmt);
+      RegMeExpr *curReg = RHSTempDelegated(*rhs, stmt);
       if (curReg != nullptr) {
         rhs = curReg;
         stmt.DisableNeedIncref();
@@ -428,8 +428,8 @@ void DelegateRC::DelegateRCTemp(MeStmt &stmt) {
         auto *val = static_cast<VarMeExpr*>(ret);
         if (val->GetDefBy() == kDefByMustDef) {
           MeStmt *defStmt = val->GetDefMustDef().GetBase();
-          if (retStmt.GetBB() == defStmt->GetBB() && ContainAllTheUses(val, stmt, defStmt)) {
-            RegMeExpr *curReg = RHSTempDelegated(ret, stmt);
+          if (retStmt.GetBB() == defStmt->GetBB() && ContainAllTheUses(*val, stmt, *defStmt)) {
+            RegMeExpr *curReg = RHSTempDelegated(*ret, stmt);
             if (curReg != nullptr) {
               retStmt.SetOpnd(0, curReg);
             }
@@ -446,8 +446,8 @@ void DelegateRC::DelegateRCTemp(MeStmt &stmt) {
           if (rhs->IsGcmalloc() || (rhs->GetMeOp() == kMeOpIvar && !static_cast<IvarMeExpr*>(rhs)->IsFinal()) ||
               (rhs->GetMeOp() == kMeOpVar && !ost->IsFinal() && ost->GetMIRSymbol()->IsGlobal()) ||
               (rhs->GetOp() == OP_regread && static_cast<RegMeExpr*>(rhs)->GetRegIdx() == -kSregThrownval)) {
-            if (retStmt.GetBB() == defStmt->GetBB() && ContainAllTheUses(val, stmt, defStmt)) {
-              RegMeExpr *curReg = RHSTempDelegated(ret, stmt);
+            if (retStmt.GetBB() == defStmt->GetBB() && ContainAllTheUses(*val, stmt, *defStmt)) {
+              RegMeExpr *curReg = RHSTempDelegated(*ret, stmt);
               if (curReg != nullptr) {
                 retStmt.SetOpnd(0, curReg);
                 // Convert following cases:
@@ -473,17 +473,17 @@ void DelegateRC::DelegateRCTemp(MeStmt &stmt) {
   }
 }
 
-bool DelegateRC::FinalRefNoRC(const MeExpr &x) {
-  if (x.GetMeOp() == kMeOpVar) {
-    const auto &theVar = static_cast<const VarMeExpr&>(x);
+bool DelegateRC::FinalRefNoRC(const MeExpr &expr) const {
+  if (expr.GetMeOp() == kMeOpVar) {
+    const auto &theVar = static_cast<const VarMeExpr&>(expr);
     const OriginalSt *ost = ssaTab.GetSymbolOriginalStFromID(theVar.GetOStIdx());
     return ost->IsFinal() && ost->GetMIRSymbol()->IsGlobal();
-  } else if (x.GetMeOp() == kMeOpIvar) {
+  } else if (expr.GetMeOp() == kMeOpIvar) {
     if (func.GetMirFunc()->IsConstructor() || func.GetMirFunc()->IsStatic() ||
         func.GetMirFunc()->GetFormalCount() == 0) {
       return false;
     }
-    const auto &ivar = static_cast<const IvarMeExpr&>(x);
+    const auto &ivar = static_cast<const IvarMeExpr&>(expr);
     MIRType *ty = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ivar.GetTyIdx());
     ASSERT(ty->GetKind() == kTypePointer, "FinalRefNoRC: pointer type expected");
     MIRType *pointedTy = static_cast<MIRPtrType*>(ty)->GetPointedType();
@@ -508,7 +508,7 @@ bool DelegateRC::FinalRefNoRC(const MeExpr &x) {
 
 // return true if it is OK to omit reference counting for the LHS variable; if
 // returning true, only_with_decref specifies whether a decref needs inserted
-bool DelegateRC::CanOmitRC4LHSVar(const MeStmt &stmt, bool &onlyWithDecref) {
+bool DelegateRC::CanOmitRC4LHSVar(const MeStmt &stmt, bool &onlyWithDecref) const {
   onlyWithDecref = false;
   switch (stmt.GetOp()) {
     case OP_dassign:
@@ -638,16 +638,15 @@ void DelegateRC::DelegateHandleNoRCStmt(MeStmt &stmt, bool addDecref) {
   }
 }
 
-void DelegateRC::RenameDelegatedRefVarUses(MeStmt &meStmt, MeExpr *meExpr) {
-  CHECK_NULL_FATAL(meExpr);
-  for (size_t i = 0; i < meExpr->GetNumOpnds(); ++i) {
-    RenameDelegatedRefVarUses(meStmt, meExpr->GetOpnd(i));
+void DelegateRC::RenameDelegatedRefVarUses(MeStmt &meStmt, MeExpr &meExpr) {
+  for (size_t i = 0; i < meExpr.GetNumOpnds(); ++i) {
+    RenameDelegatedRefVarUses(meStmt, *meExpr.GetOpnd(i));
   }
-  if (meExpr->GetMeOp() == kMeOpVar) {
-    auto *varMeExpr = static_cast<VarMeExpr*>(meExpr);
-    auto it = refVar2RegMap.find(varMeExpr);
+  if (meExpr.GetMeOp() == kMeOpVar) {
+    auto &varMeExpr = static_cast<VarMeExpr&>(meExpr);
+    auto it = refVar2RegMap.find(&varMeExpr);
     if (it != refVar2RegMap.end()) {
-      irMap.ReplaceMeExprStmt(meStmt, *varMeExpr, *it->second);
+      irMap.ReplaceMeExprStmt(meStmt, varMeExpr, *it->second);
     }
   }
 }
@@ -705,7 +704,7 @@ std::set<OStIdx> DelegateRC::RenameAndGetLiveLocalRefVar() {
       }
       for (size_t i = 0; i < stmt.NumMeStmtOpnds(); ++i) {
         CHECK_FATAL(stmt.GetOpnd(i) != nullptr, "null mestmtopnd check");
-        RenameDelegatedRefVarUses(stmt, stmt.GetOpnd(i));
+        RenameDelegatedRefVarUses(stmt, *stmt.GetOpnd(i));
       }
       // for live_localrefvars
       if (CheckOp(stmt, OP_dassign) || CheckOp(stmt, OP_maydassign)) {

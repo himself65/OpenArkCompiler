@@ -16,17 +16,18 @@
 #define MAPLE_ME_INCLUDE_MESTOREPRE_H
 #include "me_ssu_pre.h"
 #include "me_alias_class.h"
+
 namespace maple {
 class MeStorePre : public MeSSUPre {
  public:
-  MeStorePre(MeFunction *f, Dominance *dom, AliasClass *ac, MemPool *memPool, bool enabledDebug)
-      : MeSSUPre(f, dom, memPool, kStorePre, enabledDebug), aliasClass(ac), curTemp(nullptr),
+  MeStorePre(MeFunction &f, Dominance &dom, AliasClass &ac, MemPool &memPool, bool enabledDebug)
+      : MeSSUPre(f, dom, memPool, kStorePre, enabledDebug), aliasClass(&ac), curTemp(nullptr),
         bbCurTempMap(spreAllocator.Adapter()) {}
 
   virtual ~MeStorePre() = default;
 
  private:
-  inline bool IsJavaLang() {
+  inline bool IsJavaLang() const {
     return mirModule->IsJavaModule();
   }
   AliasClass *aliasClass;
@@ -35,14 +36,14 @@ class MeStorePre : public MeSSUPre {
   MapleUnorderedMap<BB*, RegMeExpr*> bbCurTempMap;  // map bb to curTemp version
   // step 6 methods
   void CheckCreateCurTemp();
-  RegMeExpr *EnsureRHSInCurTemp(BB *bb);
+  RegMeExpr *EnsureRHSInCurTemp(BB &bb);
   void CodeMotion();
   // step 0 methods
-  void CreateRealOcc(OStIdx ostIdx, MeStmt *meStmt);
-  void CreateUseOcc(OStIdx ostIdx, BB *bb);
-  void CreateSpreUseOccsThruAliasing(const OriginalSt *muOst, BB *bb);
-  void FindAndCreateSpreUseOccs(MeExpr *meExpr, BB *bb);
-  void CreateSpreUseOccsForAll(BB *bb);
+  void CreateRealOcc(OStIdx ostIdx, MeStmt &meStmt);
+  void CreateUseOcc(OStIdx ostIdx, BB &bb) const;
+  void CreateSpreUseOccsThruAliasing(const OriginalSt &muOst, BB &bb) const;
+  void FindAndCreateSpreUseOccs(const MeExpr &meExpr, BB &bb) const;
+  void CreateSpreUseOccsForAll(BB &bb) const;
   void BuildWorkListBB(BB *bb);
   void PerCandInit() {
     curTemp = nullptr;

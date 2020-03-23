@@ -32,7 +32,7 @@
 //    Put all operands and mayUse nodes of the needed stmt into worklist.
 // 3. For the nodes in worklist mark the def stmt as needed just as step 2 and
 //    pop the node from the worklist.
-// 4. Repeat step 3 untile the worklist is empty.
+// 4. Repeat step 3 until the worklist is empty.
 
 namespace maple {
 using namespace utils;
@@ -178,21 +178,21 @@ void HDSE::PropagateUseLive(MeExpr &meExpr) {
   }
 }
 
-bool HDSE::ExprNonDeletable(MeExpr &meExpr) {
+bool HDSE::ExprNonDeletable(const MeExpr &meExpr) const {
   if (kOpcodeInfo.HasSideEffect(meExpr.GetOp())) {
     return true;
   }
   switch (meExpr.GetMeOp()) {
     case kMeOpReg: {
-      auto &regMeExpr = static_cast<RegMeExpr&>(meExpr);
+      auto &regMeExpr = static_cast<const RegMeExpr&>(meExpr);
       return (regMeExpr.GetRegIdx() == -kSregThrownval);
     }
     case kMeOpVar: {
-      auto &varMeExpr = static_cast<VarMeExpr&>(meExpr);
+      auto &varMeExpr = static_cast<const VarMeExpr&>(meExpr);
       return varMeExpr.IsVolatile(ssaTab);
     }
     case kMeOpIvar: {
-      auto &opIvar = static_cast<IvarMeExpr&>(meExpr);
+      auto &opIvar = static_cast<const IvarMeExpr&>(meExpr);
       return opIvar.IsVolatile() || ExprNonDeletable(*opIvar.GetBase());
     }
     case kMeOpOp: {
@@ -202,7 +202,7 @@ bool HDSE::ExprNonDeletable(MeExpr &meExpr) {
       break;
     }
     case kMeOpNary: {
-      auto &opNary = static_cast<NaryMeExpr&>(meExpr);
+      auto &opNary = static_cast<const NaryMeExpr&>(meExpr);
       if (meExpr.GetOp() == OP_intrinsicop) {
         IntrinDesc *intrinDesc = &IntrinDesc::intrinTable[opNary.GetIntrinsic()];
         return (!intrinDesc->HasNoSideEffect());
@@ -220,7 +220,7 @@ bool HDSE::ExprNonDeletable(MeExpr &meExpr) {
   return false;
 }
 
-bool HDSE::HasNonDeletableExpr(const MeStmt &meStmt) {
+bool HDSE::HasNonDeletableExpr(const MeStmt &meStmt) const {
   Opcode op = meStmt.GetOp();
   switch (op) {
     case OP_dassign: {
@@ -304,7 +304,7 @@ void HDSE::MarkSingleUseLive(MeExpr &meExpr) {
   if (IsExprNeeded(meExpr)) {
     return;
   }
-  SetExprNeeded(&meExpr);
+  SetExprNeeded(meExpr);
   MeExprOp meOp  = meExpr.GetMeOp();
   switch (meOp) {
     case kMeOpVar:
@@ -364,7 +364,7 @@ void HDSE::MarkStmtRequired(MeStmt &meStmt) {
   MarkControlDependenceLive(*meStmt.GetBB());
 }
 
-bool HDSE::StmtMustRequired(const MeStmt &meStmt, const BB &bb) {
+bool HDSE::StmtMustRequired(const MeStmt &meStmt, const BB &bb) const {
   Opcode op = meStmt.GetOp();
   // special opcode cannot be eliminated
   if (IsStmtMustRequire(op) || op == OP_comment) {

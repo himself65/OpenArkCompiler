@@ -308,14 +308,14 @@ void Dominance::ComputePdtDfn() {
 }
 
 // true if b1 postdominates b2
-bool Dominance::PostDominate(const BB &bb1, BB &bb2) {
+bool Dominance::PostDominate(const BB &bb1, const BB &bb2) {
   if (&bb1 == &bb2) {
     return true;
   }
   if (pdoms[bb2.GetBBId()] == nullptr) {
     return false;
   }
-  BB *impdom = &bb2;
+  const BB *impdom = &bb2;
   do {
     if (impdom == nullptr) {
       return false;

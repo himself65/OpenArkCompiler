@@ -20,8 +20,8 @@ namespace maple {
 AnalysisResult *MeDoSSADevirtual::Run(MeFunction *func, MeFuncResultMgr *frm, ModuleResultMgr *mrm) {
   auto *dom = static_cast<Dominance*>(frm->GetAnalysisResult(MeFuncPhase_DOMINANCE, func));
   ASSERT(dom != nullptr, "dominance phase has problem");
-  auto *hMap = static_cast<MeIRMap*>(frm->GetAnalysisResult(MeFuncPhase_IRMAP, func));
-  ASSERT(hMap != nullptr, "hssaMap has problem");
+  auto *irMap = static_cast<MeIRMap*>(frm->GetAnalysisResult(MeFuncPhase_IRMAP, func));
+  ASSERT(irMap != nullptr, "hssaMap has problem");
   CHECK_FATAL(mrm != nullptr, "Needs module result manager for ipa");
   auto *kh = static_cast<KlassHierarchy*>(mrm->GetAnalysisResult(MoPhase_CHA, &func->GetMIRModule()));
   ASSERT(kh != nullptr, "KlassHierarchy has problem");
@@ -29,11 +29,11 @@ AnalysisResult *MeDoSSADevirtual::Run(MeFunction *func, MeFuncResultMgr *frm, Mo
   if (Options::O2) {
     clone = static_cast<Clone*>(mrm->GetAnalysisResult(MoPhase_CLONE, &func->GetMIRModule()));
   }
-  MeSSADevirtual meSSADevirtual(NewMemPool(), &func->GetMIRModule(), func, hMap, kh, dom, clone);
+  MeSSADevirtual meSSADevirtual(*NewMemPool(), func->GetMIRModule(), *func, *irMap, *kh, *dom, *clone);
   if (DEBUGFUNC(func)) {
     SSADevirtual::debug = true;
   }
-  meSSADevirtual.Perform(func->GetCommonEntryBB());
+  meSSADevirtual.Perform(*func->GetCommonEntryBB());
   if (DEBUGFUNC(func)) {
     SSADevirtual::debug = false;
     LogInfo::MapleLogger() << "\n============== After SSA Devirtualization  =============" << "\n";
