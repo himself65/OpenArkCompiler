@@ -169,12 +169,7 @@ class TestSuiteTask:
             if test_path.is_file():
                 case_files = [test_path]
             else:
-                for glob_pattern in include:
-                    for include_path in test_path.glob(glob_pattern):
-                        case_files.update(ls_all(include_path, suffixes))
-                for glob_pattern in exclude:
-                    for exclude_path in test_path.glob(glob_pattern):
-                        case_files -= set(ls_all(exclude_path, suffixes))
+                case_files = self._search_case(include, exclude, test_path, suffixes)
                 case_files = [file.relative_to(test_path) for file in case_files]
             for case_file in case_files:
                 case_name = str(case_file).replace(".", "_")
@@ -185,6 +180,17 @@ class TestSuiteTask:
                     case = Case(case_file, test_path, comment, encoding,)
                     self.all_cases[case_name] = case
                     self.testlist_set[name].append(self.all_cases[case_name])
+    
+    @staticmethod
+    def _search_case(include, exclude, test_path, suffixes):
+        case_files = set()
+        for glob_pattern in include:
+            for include_path in test_path.glob(glob_pattern):
+                case_files.update(ls_all(include_path, suffixes))
+        for glob_pattern in exclude:
+                for exclude_path in test_path.glob(glob_pattern):
+                    case_files -= set(ls_all(exclude_path, suffixes))
+        return case_files
 
     def _form_task_set(self, running_config):
         for name in self.config_set:
@@ -447,16 +453,7 @@ def format_compare_command(raw_command, compare_cmd):
             prev_char = ""
         else:
             prev_char = raw_command[start - 1]
-        if end == len(raw_command):
-            next_char = ""
-        else:
-            next_char = raw_command[end]
-        if (
-            prev_char.isalnum()
-            or prev_char == "_"
-            or next_char.isalnum()
-            or next_char == "_"
-        ):
+        if prev_char.isalnum() or prev_char == "_":
             continue
         else:
             raw_command = raw_command[:start] + compare_cmd + raw_command[end:]
