@@ -42,7 +42,7 @@ class MeDSE : public DSE {
 
 class MeDoDSE : public MeFuncPhase {
  public:
-  MeDoDSE(MePhaseID id) : MeFuncPhase(id) {}
+  explicit MeDoDSE(MePhaseID id) : MeFuncPhase(id) {}
 
   virtual ~MeDoDSE() = default;
   AnalysisResult *Run(MeFunction *ir, MeFuncResultMgr *m, ModuleResultMgr *mrm) override;

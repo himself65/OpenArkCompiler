@@ -279,8 +279,7 @@ MeOption *MapleCombCompiler::MakeMeOptions(const MplOptions &options, MemPool &o
 }
 
 void MapleCombCompiler::DecideMpl2MplRealLevel(Options &mpl2mplOption,
-                                               const std::vector<mapleOption::Option> &inputOptions,
-                                               const MplOptions &options) {
+                                               const std::vector<mapleOption::Option> &inputOptions) const {
   for (const mapleOption::Option &opt : inputOptions) {
     if (opt.Index() == kMpl2MplOptL2) {
       mpl2mplOption.O2 = true;
@@ -297,7 +296,7 @@ Options *MapleCombCompiler::MakeMpl2MplOptions(const MplOptions &options, MemPoo
     LogInfo::MapleLogger() << "no mpl2mpl input options\n";
     return mpl2mplOption;
   }
-  DecideMpl2MplRealLevel(*mpl2mplOption, it->second, options);
+  DecideMpl2MplRealLevel(*mpl2mplOption, it->second);
   for (const mapleOption::Option &opt : it->second) {
     if (options.HasSetDebugFlag()) {
       LogInfo::MapleLogger() << "mpl2mpl options: " << opt.Index() << " " << opt.OptionKey() << " " << opt.Args()

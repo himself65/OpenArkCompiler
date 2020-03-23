@@ -250,7 +250,7 @@ class MIRStrConst : public MIRConst {
 
  private:
   UStrIdx value;
-  static const PrimType kPrimType = PTY_a64;
+  static const PrimType kPrimType = PTY_ptr;
 };
 
 class MIRStr16Const : public MIRConst {
@@ -277,7 +277,7 @@ class MIRStr16Const : public MIRConst {
   }
 
  private:
-  static const PrimType kPrimType = PTY_a64;
+  static const PrimType kPrimType = PTY_ptr;
   U16StrIdx value;
 };
 

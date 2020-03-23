@@ -21,18 +21,18 @@
 namespace maple {
 class MeSSADevirtual : public SSADevirtual {
  public:
-  MeSSADevirtual(MemPool *memPool, MIRModule *mod, MeFunction *func, IRMap *irMap, KlassHierarchy *kh, Dominance *dom,
-                 Clone *clone)
-      : SSADevirtual(memPool, mod, irMap, kh, dom, func->GetAllBBs().size(), clone), func(func) {}
+  MeSSADevirtual(MemPool &memPool, MIRModule &mod, MeFunction &func, IRMap &irMap, KlassHierarchy &kh, Dominance &dom,
+                 Clone &clone)
+      : SSADevirtual(memPool, mod, irMap, kh, dom, func.GetAllBBs().size(), clone), func(&func) {}
 
   ~MeSSADevirtual() = default;
 
  protected:
-  BB *GetBB(BBId id) override {
+  BB *GetBB(BBId id) const override {
     return func->GetAllBBs().at(id);
   }
 
-  MIRFunction *GetMIRFunction() override {
+  MIRFunction *GetMIRFunction() const override {
     return func->GetMirFunc();
   }
 

@@ -32,7 +32,7 @@ class MeStmtPre : public SSAEPre {
         useOccurMap(std::less<OStIdx>(), ssaPreAllocator.Adapter()) {}
 
   virtual ~MeStmtPre() = default;
-  void GetIterDomFrontier(BB &bb, MapleSet<uint32> &dfSet, std::vector<bool> &visitedMap) override;
+  void GetIterDomFrontier(const BB &bb, MapleSet<uint32> &dfSet, std::vector<bool> &visitedMap) const override;
   bool ScreenPhiBB(BBId) const override {
     return true;
   }
@@ -54,29 +54,29 @@ class MeStmtPre : public SSAEPre {
   void Finalize1() override;
   void Finalize2() override {};
   // fully available (replaces downsafety, canbeavail and later under SSAFRE)
-  void ResetFullyAvail(MePhiOcc *occ);
+  void ResetFullyAvail(MePhiOcc &occ);
   void ComputeFullyAvail();
   // rename phase
-  bool AllVarsSameVersion(MeRealOcc *realOcc1, MeRealOcc *realOcc2) override;
-  bool AllVarsSameVersionStmtFre(MeRealOcc *topOcc, MeRealOcc *curOcc) const;
-  void CollectVarForMeStmt(MeStmt *meStmt, MeExpr *meExpr, std::vector<MeExpr*> &varVec);
-  void CollectVarForCand(MeRealOcc *realOcc, std::vector<MeExpr*> &varVec) override;
-  MeStmt *CopyMeStmt(MeStmt &meStmt) override;
-  MeStmt *PhiOpndFromRes4Stmt(MeRealOcc *realZ, size_t j, MeExpr *&lhsVar);
+  bool AllVarsSameVersion(const MeRealOcc &realOcc1, const MeRealOcc &realOcc2) const override;
+  bool AllVarsSameVersionStmtFre(MeRealOcc &topOcc, MeRealOcc &curOcc) const;
+  void CollectVarForMeStmt(const MeStmt &meStmt, MeExpr *meExpr, std::vector<MeExpr*> &varVec) const;
+  void CollectVarForCand(MeRealOcc &realOcc, std::vector<MeExpr*> &varVec) const override;
+  MeStmt *CopyMeStmt(const MeStmt &meStmt) const override;
+  MeStmt *PhiOpndFromRes4Stmt(MeRealOcc &realZ, size_t j, MeExpr *&lhsVar) const;
   void Rename1StmtFre();
   void Rename2() override;
   // phi insertion phase
   void ComputeVarAndDfPhis() override;
   void CreateSortedOccs() override;
-  void ConstructUseOccurMapExpr(uint32 bbDfn, MeExpr *meExpr);
+  void ConstructUseOccurMapExpr(uint32 bbDfn, const MeExpr &meExpr);
   void ConstructUseOccurMap() override;  // build useOccurMap for dassign candidates
   PreStmtWorkCand *CreateStmtRealOcc(MeStmt &meStmt, int seqStmt);
   void VersionStackChiListUpdate(const MapleMap<OStIdx, ChiMeNode*> &chiList);
   void BuildWorkListBB(BB *bb) override;
   void BuildWorkList() override;
-  void RemoveUnnecessaryDassign(DassignMeStmt *dssMeStmt);
+  void RemoveUnnecessaryDassign(DassignMeStmt &dssMeStmt);
   void DoSSAFRE() override;
-  BB *GetBB(BBId id) override {
+  BB *GetBB(BBId id) const override {
     return func->GetBBFromID(id);
   }
 
@@ -87,7 +87,7 @@ class MeStmtPre : public SSAEPre {
 
 class MeDoStmtPre : public MeFuncPhase {
  public:
-  MeDoStmtPre(MePhaseID id) : MeFuncPhase(id) {}
+  explicit MeDoStmtPre(MePhaseID id) : MeFuncPhase(id) {}
 
   virtual ~MeDoStmtPre() = default;
   AnalysisResult *Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) override;

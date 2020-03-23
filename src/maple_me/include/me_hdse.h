@@ -21,6 +21,7 @@
 #include "me_option.h"
 #include "me_dominance.h"
 #include "hdse.h"
+
 namespace maple {
 class MeHDSE : public HDSE {
  public:

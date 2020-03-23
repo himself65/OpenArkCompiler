@@ -21,7 +21,7 @@
 
 namespace maple {
 bool MeDoBypathEH::DoBypathException(BB *tryBB, BB *catchBB, const Klass *catchClass, const StIdx &stIdx,
-                                     const KlassHierarchy *kh, MeFunction *func, const StmtNode *syncExitStmt) {
+                                     const KlassHierarchy &kh, MeFunction &func, const StmtNode *syncExitStmt) const {
   std::vector<BB*> tryBBV;
   std::set<BB*> tryBBS;
   tryBBV.push_back(tryBB);
@@ -40,11 +40,11 @@ bool MeDoBypathEH::DoBypathException(BB *tryBB, BB *catchBB, const Klass *catchC
         if (node->Opnd(0)->GetOpCode() == OP_dread) {
           auto *dread = static_cast<AddrofNode*>(node->Opnd(0));
           StIdx ehObjIdx = dread->GetStIdx();
-          const MIRSymbol *ehObjSymbol = func->GetMirFunc()->GetLocalOrGlobalSymbol(ehObjIdx);
+          const MIRSymbol *ehObjSymbol = func.GetMirFunc()->GetLocalOrGlobalSymbol(ehObjIdx);
           MIRType *pType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ehObjSymbol->GetTyIdx());
           CHECK_FATAL(pType->GetKind() == kTypePointer, "must be pointer");
           TyIdx pTypeIdx = (static_cast<MIRPtrType*>(pType))->GetPointedType()->GetTypeIndex();
-          throwClass = kh->GetKlassFromTyIdx(pTypeIdx);
+          throwClass = kh.GetKlassFromTyIdx(pTypeIdx);
           rhExpr = dread;
         } else if (node->Opnd(0)->GetOpCode() == OP_iread) {
           auto *iread = static_cast<IreadNode*>(node->Opnd(0));
@@ -56,21 +56,21 @@ bool MeDoBypathEH::DoBypathException(BB *tryBB, BB *catchBB, const Klass *catchC
           pType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(structType->GetFieldTyIdx(iread->GetFieldID()));
           CHECK_FATAL(pType->GetKind() == kTypePointer, "must be pointer");
           pTypeIdx = (static_cast<MIRPtrType*>(pType))->GetPointedType()->GetTypeIndex();
-          throwClass = kh->GetKlassFromTyIdx(pTypeIdx);
+          throwClass = kh.GetKlassFromTyIdx(pTypeIdx);
           rhExpr = iread;
         } else {
           CHECK_FATAL(false, "Can't be here!");
         }
-        if (!kh->IsSuperKlass(catchClass, throwClass)) {
+        if (!kh.IsSuperKlass(catchClass, throwClass)) {
           continue;
         }
-        MIRBuilder *mirBuilder = func->GetMIRModule().GetMIRBuilder();
+        MIRBuilder *mirBuilder = func.GetMIRModule().GetMIRBuilder();
         DassignNode *copyStmt = mirBuilder->CreateStmtDassign(stIdx, 0, rhExpr);
         bb->InsertStmtBefore(stmt, copyStmt);
         GotoNode *gotoNode = mirBuilder->CreateStmtGoto(OP_goto, catchBB->GetBBLabel());
         bb->ReplaceStmt(stmt, gotoNode);
         if (syncExitStmt != nullptr) {
-          bb->InsertStmtBefore(gotoNode, syncExitStmt->CloneTree(func->GetMIRModule().GetCurFuncCodeMPAllocator()));
+          bb->InsertStmtBefore(gotoNode, syncExitStmt->CloneTree(func.GetMIRModule().GetCurFuncCodeMPAllocator()));
         }
         transformed = true;
         bb->GetSucc().insert(bb->GetSucc().begin(), catchBB);
@@ -80,7 +80,7 @@ bool MeDoBypathEH::DoBypathException(BB *tryBB, BB *catchBB, const Klass *catchC
     // Add fall through bb
     if (bb->GetKind() == kBBFallthru && !bb->GetAttributes(kBBAttrIsTryEnd)) {
       bool findBB = false;
-      for (BB *bbTmp : func->GetAllBBs()) {
+      for (BB *bbTmp : func.GetAllBBs()) {
         if (findBB && bbTmp != nullptr) {
           if (bbTmp == catchBB || bbTmp->IsEmpty() || bbTmp->GetFirst().GetOpCode() == OP_try ||
               bbTmp->GetAttributes(kBBAttrIsCatch)) {
@@ -118,10 +118,10 @@ bool MeDoBypathEH::DoBypathException(BB *tryBB, BB *catchBB, const Klass *catchC
   return transformed;
 }
 
-StmtNode *MeDoBypathEH::IsSyncExit(BB *syncBB, MeFunction *func, LabelIdx secondLabel) {
+StmtNode *MeDoBypathEH::IsSyncExit(BB &syncBB, MeFunction &func, LabelIdx secondLabel) const {
   StmtNode *syncExitStmt = nullptr;
-  StmtNode *stmt = syncBB->GetFirst().GetNext();
-  for (; stmt != nullptr && stmt != syncBB->GetLast().GetNext(); stmt = stmt->GetNext()) {
+  StmtNode *stmt = syncBB.GetFirst().GetNext();
+  for (; stmt != nullptr && stmt != syncBB.GetLast().GetNext(); stmt = stmt->GetNext()) {
     if (stmt->GetOpCode() != OP_comment) {
       break;
     }
@@ -135,13 +135,13 @@ StmtNode *MeDoBypathEH::IsSyncExit(BB *syncBB, MeFunction *func, LabelIdx second
   if (regreadNode->GetRegIdx() != -kSregThrownval) {
     return nullptr;
   }
-  for (stmt = stmt->GetNext(); stmt != nullptr && stmt != syncBB->GetLast().GetNext(); stmt = stmt->GetNext()) {
+  for (stmt = stmt->GetNext(); stmt != nullptr && stmt != syncBB.GetLast().GetNext(); stmt = stmt->GetNext()) {
     if (stmt->GetOpCode() == OP_comment) {
       continue;
     }
     if (stmt->GetOpCode() == OP_syncexit) {
       syncExitStmt = stmt;
-      if (stmt != &syncBB->GetLast()) {
+      if (stmt != &syncBB.GetLast()) {
         return nullptr;
       }
     } else {
@@ -149,11 +149,11 @@ StmtNode *MeDoBypathEH::IsSyncExit(BB *syncBB, MeFunction *func, LabelIdx second
     }
   }
 
-  BB *prevBB = syncBB;
+  BB *prevBB = &syncBB;
   while (true) {
     BB *bbTmp = nullptr;
-    for (size_t i = prevBB->GetBBId() + 1; i < func->GetAllBBs().size(); i++) {
-      bbTmp = func->GetAllBBs()[i];
+    for (size_t i = prevBB->GetBBId() + 1; i < func.GetAllBBs().size(); ++i) {
+      bbTmp = func.GetAllBBs()[i];
       if (bbTmp != nullptr) {
         break;
       }
@@ -196,13 +196,13 @@ StmtNode *MeDoBypathEH::IsSyncExit(BB *syncBB, MeFunction *func, LabelIdx second
   return syncExitStmt;
 }
 
-void MeDoBypathEH::BypathException(MeFunction *func, const KlassHierarchy *kh) {
+void MeDoBypathEH::BypathException(MeFunction &func, const KlassHierarchy &kh) const {
   // Condition check:
-  //  1. There is only one catch statement, and the catch can handle the thrown exception
+  // 1. There is only one catch statement, and the catch can handle the thrown exception
   auto labelIdx = static_cast<LabelIdx>(-1);
   // Some new bb will be created, so use visited
   std::set<BB*> visited;
-  for (BB *bb : func->GetAllBBs()) {
+  for (BB *bb : func.GetAllBBs()) {
     if (bb == nullptr) {
       continue;
     }
@@ -222,7 +222,7 @@ void MeDoBypathEH::BypathException(MeFunction *func, const KlassHierarchy *kh) {
         labelIdx = tryNode->GetOffset(0);
       } else if (tryNode->GetOffsetsCount() == 2) { // Deal with sync
         BB *catchBB  = nullptr;
-        for (BB *bbInner : func->GetAllBBs()) {
+        for (BB *bbInner : func.GetAllBBs()) {
           if (bbInner == nullptr) {
             continue;
           }
@@ -241,7 +241,7 @@ void MeDoBypathEH::BypathException(MeFunction *func, const KlassHierarchy *kh) {
           ASSERT(type->GetKind() == kTypePointer, "Must be pointer");
           auto *pType = static_cast<MIRPtrType*>(type);
           if (pType->GetPointedTyIdx() == PTY_void) {
-            syncExitStmt = IsSyncExit(catchBB, func, tryNode->GetOffset(1));
+            syncExitStmt = IsSyncExit(*catchBB, func, tryNode->GetOffset(1));
             if (syncExitStmt != nullptr) {
               labelIdx = tryNode->GetOffset(1);
             }
@@ -253,7 +253,7 @@ void MeDoBypathEH::BypathException(MeFunction *func, const KlassHierarchy *kh) {
         continue;
       }
       // Find catch label, and create a new bb
-      for (BB *bbInner : func->GetAllBBs()) {
+      for (BB *bbInner : func.GetAllBBs()) {
         if (bbInner == nullptr || bbInner->GetBBLabel() != labelIdx) {
           continue;
         }
@@ -268,9 +268,9 @@ void MeDoBypathEH::BypathException(MeFunction *func, const KlassHierarchy *kh) {
         auto *pType = static_cast<MIRPtrType*>(type);
         Klass *catchClass = nullptr;
         if (pType->GetPointedTyIdx() == PTY_void) {
-          catchClass = kh->GetKlassFromName(NameMangler::kJavaLangExceptionStr);
+          catchClass = kh.GetKlassFromName(NameMangler::kJavaLangExceptionStr);
         } else {
-          catchClass = kh->GetKlassFromTyIdx(pType->GetPointedTyIdx());
+          catchClass = kh.GetKlassFromTyIdx(pType->GetPointedTyIdx());
         }
         if (stmtInner.GetNext() == nullptr || stmtInner.GetNext()->GetOpCode() != OP_dassign) {
           labelIdx = static_cast<LabelIdx>(-1);
@@ -284,18 +284,18 @@ void MeDoBypathEH::BypathException(MeFunction *func, const KlassHierarchy *kh) {
         }
         // Insert goto label
         GStrIdx labelStrIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName("bypatheh" +
-            func->GetMirFunc()->GetLabelName(bbInner->GetBBLabel()));
+            func.GetMirFunc()->GetLabelName(bbInner->GetBBLabel()));
         BB *newBB = nullptr;
         bool hasCreated = false;
-        auto it = func->GetMirFunc()->GetLabelTab()->GetStrIdxToLabelIdxMap().find(labelStrIdx);
-        if (it == func->GetMirFunc()->GetLabelTab()->GetStrIdxToLabelIdxMap().end()) {
-          LabelIdx labIdx = func->GetMirFunc()->GetLabelTab()->AddLabel(labelStrIdx);
-          newBB = func->NewBasicBlock();
-          func->SetLabelBBAt(labIdx, newBB);
+        auto it = func.GetMirFunc()->GetLabelTab()->GetStrIdxToLabelIdxMap().find(labelStrIdx);
+        if (it == func.GetMirFunc()->GetLabelTab()->GetStrIdxToLabelIdxMap().end()) {
+          LabelIdx labIdx = func.GetMirFunc()->GetLabelTab()->AddLabel(labelStrIdx);
+          newBB = func.NewBasicBlock();
+          func.SetLabelBBAt(labIdx, newBB);
           newBB->SetBBLabel(labIdx);
         } else {
           hasCreated = true;
-          for (BB *newBBIter : func->GetAllBBs()) {
+          for (BB *newBBIter : func.GetAllBBs()) {
             if (newBBIter == nullptr) {
               continue;
             }
@@ -307,18 +307,18 @@ void MeDoBypathEH::BypathException(MeFunction *func, const KlassHierarchy *kh) {
         }
         if (DoBypathException(bb, newBB, catchClass, dassignNode->GetStIdx(), kh, func, syncExitStmt)) {
           if (!hasCreated) {
-            ASSERT(newBB == func->GetLastBB(), "newBB should be the last one");
-            func->GetAllBBs().pop_back();
-            newBB = &func->SplitBB(*bbInner, *stmtInner.GetNext(), newBB);
+            ASSERT(newBB == func.GetLastBB(), "newBB should be the last one");
+            func.GetAllBBs().pop_back();
+            newBB = &func.SplitBB(*bbInner, *stmtInner.GetNext(), newBB);
           }
         } else {
           if (!hasCreated) {
-            func->GetAllBBs().pop_back();
-            func->DecNextBBId();
-            func->GetMirFunc()->GetLabelTab()->GetLabelTable().pop_back();
-            func->EraseLabelBBAt(
-                func->GetMirFunc()->GetLabelTab()->GetStrIdxToLabelIdxMap().at(labelStrIdx));
-            func->GetMirFunc()->GetLabelTab()->EraseStrIdxToLabelIdxElem(labelStrIdx);
+            func.GetAllBBs().pop_back();
+            func.DecNextBBId();
+            func.GetMirFunc()->GetLabelTab()->GetLabelTable().pop_back();
+            func.EraseLabelBBAt(
+                func.GetMirFunc()->GetLabelTab()->GetStrIdxToLabelIdxMap().at(labelStrIdx));
+            func.GetMirFunc()->GetLabelTab()->EraseStrIdxToLabelIdxElem(labelStrIdx);
           }
         }
         labelIdx = static_cast<LabelIdx>(-1);
@@ -331,7 +331,7 @@ void MeDoBypathEH::BypathException(MeFunction *func, const KlassHierarchy *kh) {
 AnalysisResult *MeDoBypathEH::Run(MeFunction *func, MeFuncResultMgr*, ModuleResultMgr *mrm) {
   auto *kh = static_cast<KlassHierarchy *>(mrm->GetAnalysisResult(MoPhase_CHA, &func->GetMIRModule()));
   CHECK_NULL_FATAL(kh);
-  BypathException(func, kh);
+  BypathException(*func, *kh);
   return nullptr;
 }
 }  // namespace maple

@@ -15,16 +15,16 @@
 #include "me_stmt_pre.h"
 
 namespace maple {
-void MeStmtPre::ResetFullyAvail(MePhiOcc *occ) {
-  occ->SetIsCanBeAvail(false);
+void MeStmtPre::ResetFullyAvail(MePhiOcc &occ) {
+  occ.SetIsCanBeAvail(false);
   // reset those phiocc nodes that have oc as one of its operands
   for (auto it = phiOccs.begin(); it != phiOccs.end(); ++it) {
     MePhiOcc *phiOcc = *it;
     for (MePhiOpndOcc *phiOpnd : phiOcc->GetPhiOpnds()) {
-      if (phiOpnd->GetDef() != nullptr && phiOpnd->GetDef() == occ) {
+      if (phiOpnd->GetDef() != nullptr && phiOpnd->GetDef() == &occ) {
         // phiOpnd is a use of occ
         if (!phiOpnd->HasRealUse()) {
-          ResetCanBeAvail(phiOcc);
+          ResetCanBeAvail(*phiOcc);
         }
       }
     }
@@ -44,23 +44,23 @@ void MeStmtPre::ComputeFullyAvail() {
       }
     }
     if (existNullDef) {
-      ResetFullyAvail(phiOcc);
+      ResetFullyAvail(*phiOcc);
     }
   }
 }
 
-bool MeStmtPre::AllVarsSameVersionStmtFre(MeRealOcc *topOcc, MeRealOcc *curOcc) const {
-  ASSERT(topOcc->GetOpcodeOfMeStmt() == OP_dassign || topOcc->GetOpcodeOfMeStmt() == OP_callassigned,
+bool MeStmtPre::AllVarsSameVersionStmtFre(MeRealOcc &topOcc, MeRealOcc &curOcc) const {
+  ASSERT(topOcc.GetOpcodeOfMeStmt() == OP_dassign || topOcc.GetOpcodeOfMeStmt() == OP_callassigned,
       "AllVarsSameVersionStmtFre: only dassign or callassigned is handled");
-  if (topOcc->GetMeStmt()->NumMeStmtOpnds() != curOcc->GetMeStmt()->NumMeStmtOpnds()) {
+  if (topOcc.GetMeStmt()->NumMeStmtOpnds() != curOcc.GetMeStmt()->NumMeStmtOpnds()) {
     return false;
   }
-  for (size_t i = 0; i < topOcc->GetMeStmt()->NumMeStmtOpnds(); ++i) {
-    if (topOcc->GetMeStmt()->GetOpnd(i) != curOcc->GetMeStmt()->GetOpnd(i)) {
+  for (size_t i = 0; i < topOcc.GetMeStmt()->NumMeStmtOpnds(); ++i) {
+    if (topOcc.GetMeStmt()->GetOpnd(i) != curOcc.GetMeStmt()->GetOpnd(i)) {
       return false;
     }
   }
-  return topOcc->GetMeStmt()->GetVarLHS() == curOcc->GetMeExpr();
+  return topOcc.GetMeStmt()->GetVarLHS() == curOcc.GetMeExpr();
 }
 
 void MeStmtPre::Rename1StmtFre() {
@@ -69,7 +69,7 @@ void MeStmtPre::Rename1StmtFre() {
   classCount = 1;
   // iterate the occurrence according to its preorder dominator tree
   for (MeOccur *occ : allOccs) {
-    while (!occStack.empty() && !occStack.top()->IsDominate(dom, occ)) {
+    while (!occStack.empty() && !occStack.top()->IsDominate(*dom, *occ)) {
       occStack.pop();
     }
     switch (occ->GetOccType()) {
@@ -89,7 +89,7 @@ void MeStmtPre::Rename1StmtFre() {
         auto *realOcc = static_cast<MeRealOcc*>(occ);
         if (topOccur->GetOccType() == kOccReal) {
           auto *realTopOccur = static_cast<MeRealOcc*>(topOccur);
-          if (AllVarsSameVersionStmtFre(realTopOccur, realOcc)) {
+          if (AllVarsSameVersionStmtFre(*realTopOccur, *realOcc)) {
             // all corresponding variables are the same
             realOcc->SetClassID(realTopOccur->GetClassID());
             realOcc->SetDef(realTopOccur);
@@ -101,11 +101,11 @@ void MeStmtPre::Rename1StmtFre() {
         } else {
           // top of stack is a PHI occurrence
           std::vector<MeExpr*> varVec;
-          CollectVarForCand(realOcc, varVec);
+          CollectVarForCand(*realOcc, varVec);
           bool isAllDom = true;
           for (auto varIt = varVec.begin(); varIt != varVec.end(); ++varIt) {
             MeExpr *varMeExpr = *varIt;
-            if (!DefVarDominateOcc(varMeExpr, topOccur)) {
+            if (!DefVarDominateOcc(varMeExpr, *topOccur)) {
               isAllDom = false;
             }
           }
@@ -150,12 +150,13 @@ void MeStmtPre::Rename1StmtFre() {
         break;
       default:
         ASSERT(false, "should not be here");
+        break;
     }
   }
   if (GetSSAPreDebug()) {
     PreWorkCand *curCand = workCand;
     mirModule->GetOut() << "======== ssafre candidate " << curCand->GetIndex() <<
-                           " after rename1StmtFre ===================\n";
+        " after rename1StmtFre ===================\n";
     for (MeOccur *occ : allOccs) {
       occ->Dump(*irMap);
       mirModule->GetOut() << "\n";
@@ -232,6 +233,7 @@ void MeStmtPre::DoSSAFRE() {
         break;
       default:
         ASSERT(false, "should not be here");
+        break;
     }
     if (hasInsertion) {
       break;

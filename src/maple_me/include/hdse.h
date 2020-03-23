@@ -53,10 +53,10 @@ class HDSE {
   void MarkPhiRequired(VarOrRegPhiNode &mePhiNode);
   void MarkMuListRequired(MapleMap<OStIdx, VarMeExpr*> &);
   void MarkChiNodeRequired(ChiMeNode &chiNode);
-  bool ExprNonDeletable(MeExpr &expr);
-  bool StmtMustRequired(const MeStmt &stmt, const BB &bb);
+  bool ExprNonDeletable(const MeExpr &expr) const;
+  bool StmtMustRequired(const MeStmt &stmt, const BB &bb) const;
   void MarkStmtRequired(MeStmt &stmt);
-  bool HasNonDeletableExpr(const MeStmt &stmt);
+  bool HasNonDeletableExpr(const MeStmt &stmt) const;
   void MarkStmtUseLive(MeStmt &meStmt);
   void MarkSingleUseLive(MeExpr &meExpr);
   void MarkControlDependenceLive(BB &bb);
@@ -69,8 +69,8 @@ class HDSE {
   bool IsExprNeeded(const MeExpr &meExpr) const {
     return exprLive.at(meExpr.GetExprID());
   }
-  void SetExprNeeded(const MeExpr *meExpr) {
-    exprLive.at(meExpr->GetExprID()) = true;
+  void SetExprNeeded(const MeExpr &meExpr) {
+    exprLive.at(meExpr.GetExprID()) = true;
   }
 
   void PropagateLive() {

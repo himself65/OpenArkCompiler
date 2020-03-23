@@ -33,7 +33,7 @@
 // The bblayout phase will determine the final layout order of the bbs.
 
 namespace maple {
-void MeDoSplitCEdge::BreakCriticalEdge(MeFunction &func, BB &pred, BB &succ) {
+void MeDoSplitCEdge::BreakCriticalEdge(MeFunction &func, BB &pred, BB &succ) const {
   if (DEBUGFUNC(&func)) {
     LogInfo::MapleLogger() << "******before break : critical edge : BB" << pred.GetBBId() << " -> BB" <<
         succ.GetBBId() << "\n";

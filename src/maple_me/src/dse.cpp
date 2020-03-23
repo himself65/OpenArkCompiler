@@ -30,11 +30,11 @@
 //    Put all operands and mayUse nodes of the needed stmt into worklist.
 // 3. For the nodes in worklist mark the def stmt as needed just as step 2 and
 //    pop the node from the worklist.
-// 4. Repeat step 3 untile the worklist is empty.
+// 4. Repeat step 3 until the worklist is empty.
 namespace maple {
 using namespace utils;
 
-bool DSE::ExprNonDeletable(const BaseNode &expr) {
+bool DSE::ExprNonDeletable(const BaseNode &expr) const {
   if (kOpcodeInfo.HasSideEffect(expr.GetOpCode())) {
     return true;
   }
@@ -74,7 +74,7 @@ bool DSE::ExprNonDeletable(const BaseNode &expr) {
   return false;
 }
 
-bool DSE::HasNonDeletableExpr(const StmtNode &stmt) {
+bool DSE::HasNonDeletableExpr(const StmtNode &stmt) const {
   Opcode op = stmt.GetOpCode();
 
   switch (op) {
@@ -103,7 +103,7 @@ bool DSE::HasNonDeletableExpr(const StmtNode &stmt) {
   }
 }
 
-bool DSE::StmtMustRequired(const StmtNode &stmt, BB &bb) {
+bool DSE::StmtMustRequired(const StmtNode &stmt, const BB &bb) const {
   Opcode op = stmt.GetOpCode();
   // special opcode stmt cannot be eliminated
   if (IsStmtMustRequire(op)) {
@@ -115,14 +115,10 @@ bool DSE::StmtMustRequired(const StmtNode &stmt, BB &bb) {
     return true;
   }
 
-  if (HasNonDeletableExpr(stmt)) {
-    return true;
-  }
-
-  return false;
+  return HasNonDeletableExpr(stmt);
 }
 
-void DSE::DumpStmt(const StmtNode &stmt, const std::string &msg) {
+void DSE::DumpStmt(const StmtNode &stmt, const std::string &msg) const {
   if (enableDebug) {
     LogInfo::MapleLogger() << msg;
     stmt.Dump();

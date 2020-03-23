@@ -21,7 +21,7 @@
 namespace maple {
 class May2Dassign {
  public:
-  May2Dassign(MeFunction *f) : func(f), irMap(f->GetIRMap()), ssaTab(f->GetMeSSATab()) {}
+  explicit May2Dassign(MeFunction *f) : func(f), irMap(f->GetIRMap()), ssaTab(f->GetMeSSATab()) {}
 
   ~May2Dassign() = default;
   void DoIt();
@@ -34,7 +34,7 @@ class May2Dassign {
 
 class MeDoMay2Dassign : public MeFuncPhase {
  public:
-  MeDoMay2Dassign(MePhaseID id) : MeFuncPhase(id) {}
+  explicit MeDoMay2Dassign(MePhaseID id) : MeFuncPhase(id) {}
 
   virtual ~MeDoMay2Dassign() = default;
   AnalysisResult *Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) override;

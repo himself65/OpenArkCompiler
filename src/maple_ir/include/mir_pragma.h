@@ -70,9 +70,10 @@ enum PragmaValueType {
 
 class MIRPragmaElement {
  public:
-  explicit MIRPragmaElement(MIRModule &m)
-      : subElemVec(m.GetPragmaMPAllocator().Adapter()) {
-    val.u = 0;
+  explicit MIRPragmaElement(MIRModule &m) : MIRPragmaElement(m.GetPragmaMPAllocator()) {}
+
+  explicit MIRPragmaElement(MapleAllocator &subElemAllocator)
+      : val{.u = 0}, subElemVec(subElemAllocator.Adapter()) {
     subElemVec.clear();
   }
 
@@ -174,9 +175,11 @@ class MIRPragmaElement {
 
 class MIRPragma {
  public:
-  explicit MIRPragma(MIRModule &m)
+  explicit MIRPragma(MIRModule &m) : MIRPragma(m, m.GetPragmaMPAllocator()) {}
+
+  MIRPragma(MIRModule &m, MapleAllocator &elemAllocator)
       : mod(&m),
-        elementVec(m.GetPragmaMPAllocator().Adapter()) {}
+        elementVec(elemAllocator.Adapter()) {}
 
   ~MIRPragma() = default;
   MIRPragmaElement *GetPragmaElemFromSignature(const std::string &signature);
@@ -219,10 +222,6 @@ class MIRPragma {
 
   const MIRPragmaElement *GetNthElement(uint32 i) const {
     return elementVec[i];
-  }
-
-  MapleVector<MIRPragmaElement*> &GetElementVector() {
-    return elementVec;
   }
 
   void ElementVecPushBack(MIRPragmaElement *elem) {

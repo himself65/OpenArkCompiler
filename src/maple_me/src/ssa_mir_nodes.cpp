@@ -19,7 +19,7 @@
 #include "ssa_tab.h"
 
 namespace maple {
-void GenericSSAPrint(MIRModule &mod, const StmtNode &stmtNode, int32 indent, StmtsSSAPart &stmtsSSAPart) {
+void GenericSSAPrint(const MIRModule &mod, const StmtNode &stmtNode, int32 indent, StmtsSSAPart &stmtsSSAPart) {
   stmtNode.Dump(indent);
   // print SSAPart
   Opcode op = stmtNode.GetOpCode();

@@ -53,29 +53,29 @@ class SSAPre {
   virtual ~SSAPre() = default;
 
   void ApplySSAPRE();
-  bool DefVarDominateOcc(MeExpr *meExpr, MeOccur *meOcc);
-  virtual void CollectVarForMeExpr(MeExpr *meExpr, std::vector<MeExpr*> &varVec) = 0;
-  virtual void CollectVarForCand(MeRealOcc *realOcc, std::vector<MeExpr*> &varVec) = 0;
+  bool DefVarDominateOcc(const MeExpr *meExpr, const MeOccur &meOcc) const;
+  virtual void CollectVarForMeExpr(MeExpr &meExpr, std::vector<MeExpr*> &varVec) const = 0;
+  virtual void CollectVarForCand(MeRealOcc &realOcc, std::vector<MeExpr*> &varVec) const = 0;
   const MapleVector<MeRealOcc*> &GetRealOccList() const {
     return workCand->GetRealOccs();
   }
 
-  virtual MeExpr *CopyMeExpr(MeExpr &expr);
-  virtual MeStmt *CopyMeStmt(MeStmt &meStmt);
-  virtual IassignMeStmt *CopyIassignMeStmt(const IassignMeStmt &iaStmt);
+  virtual MeExpr *CopyMeExpr(const MeExpr &expr) const;
+  virtual MeStmt *CopyMeStmt(const MeStmt &meStmt) const;
+  virtual IassignMeStmt *CopyIassignMeStmt(const IassignMeStmt &iaStmt) const;
   void IncTreeid() {
     // Incremented by 2 for each tree; purpose is to avoid processing a node the third time inside a tree
     curTreeId += 2;
   }
 
-  virtual void DumpWorkList();
-  virtual void DumpWorkListWrap();
+  virtual void DumpWorkList() const;
+  virtual void DumpWorkListWrap() const;
   GStrIdx NewTempStrIdx();
-  virtual BB *GetBB(BBId id) = 0;
+  virtual BB *GetBB(BBId id) const = 0;
   virtual PUIdx GetPUIdx() const = 0;
-  virtual void SetCurFunction(PUIdx) {}
+  virtual void SetCurFunction(PUIdx) const {}
 
-  virtual void GetIterDomFrontier(BB &bb, MapleSet<uint32> &dfSet, std::vector<bool> &visitedMap) = 0;
+  virtual void GetIterDomFrontier(const BB &bb, MapleSet<uint32> &dfSet, std::vector<bool> &visitedMap) const = 0;
   void SetSpillAtCatch(bool status) {
     spillAtCatch = status;
   }
@@ -129,6 +129,75 @@ class SSAPre {
   }
 
  protected:
+  // step 6 codemotion methods
+  MeExpr *CreateNewCurTemp(const MeExpr &meExpr);
+  VarMeExpr *CreateNewCurLocalRefVar();
+  virtual void GenerateSaveRealOcc(MeRealOcc &realOcc) = 0;
+  virtual void GenerateReloadRealOcc(MeRealOcc &realOcc) = 0;
+  void GenerateSaveInsertedOcc(MeInsertedOcc &insertedOcc);
+  void GenerateSavePhiOcc(MePhiOcc &phiOcc);
+  void UpdateInsertedPhiOccOpnd();
+  virtual void CodeMotion();
+  // step 5 Finalize methods
+  virtual void Finalize1();
+  void SetSave(MeOccur &defX);
+  void SetReplacement(MePhiOcc &occ, MeOccur *repDef);
+  virtual void Finalize2();
+  // step 4 willbevail methods
+  void ComputeCanBeAvail() const;
+  void ResetCanBeAvail(MePhiOcc &occ) const;
+  void ComputeLater() const;
+  void ResetLater(MePhiOcc *occ) const;
+  // step 3 downsafety methods
+  void ResetDS(MePhiOpndOcc &phiOpnd) const;
+  void ComputeDS() const;
+  // step 2 renaming methods
+  virtual bool AllVarsSameVersion(const MeRealOcc &realOcc1, const MeRealOcc &realOcc2) const {
+    return realOcc1.GetMeExpr() == realOcc2.GetMeExpr();
+  }
+
+  void Rename1();
+  MeExpr *GetReplaceMeExpr(const MeExpr &opnd, const BB &ePhiBB, size_t j) const;
+  virtual MeExpr *PhiOpndFromRes(MeRealOcc &realOcc, size_t i) const = 0;
+  virtual void Rename2();
+  // step 1 phi insertion methods
+  void SetVarPhis(const MeExpr &meExpr);
+  virtual void ComputeVarAndDfPhis() = 0;
+  virtual void CreateSortedOccs();
+  // phi insertion methods end
+  virtual void BuildWorkList() = 0;
+  virtual void BuildEntryLHSOcc4Formals() const {}
+
+  virtual void BuildWorkListLHSOcc(MeStmt&, int32) {}
+
+  virtual void BuildWorkListIvarLHSOcc(MeStmt&, int32, bool, MeExpr*) {}
+
+  virtual void BuildWorkListExpr(MeStmt &meStmt, int32 seqStmt, MeExpr &meExpr, bool isRebuilt, MeExpr *tempVar,
+                                 bool isRootExpr) = 0;
+  virtual void BuildWorkListStmt(MeStmt* meStmt, uint32 seqStmt, bool isRebuilt, MeExpr *tempVar = nullptr);
+  virtual void BuildWorkListBB(BB *bb);
+  virtual void ConstructUseOccurMap() {}
+
+  void CreateMembarOcc(MeStmt &meStmt, int seqStmt);
+  virtual void CreateMembarOccAtCatch(BB &bb);
+  void CreateExitOcc(BB &bb) {
+    MeOccur *exitOcc = ssaPreMemPool->New<MeOccur>(kOccExit, 0, bb, nullptr);
+    exitOccs.push_back(exitOcc);
+  }
+
+  bool CheckIfAnyLocalOpnd(const MeExpr &meExpr) const;
+  MeRealOcc *CreateRealOcc(MeStmt &meStmt, int32 seqStmt, MeExpr &meExpr, bool isRebuilt, bool isLHS = false);
+  virtual bool ScreenPhiBB(BBId bbId) const = 0;
+  virtual bool EpreLocalRefVar() const {
+    return false;
+  }
+
+  virtual void EnterCandsForSSAUpdate(OStIdx, const BB&) {}
+
+  virtual bool IsLoopHeadBB(BBId) const {
+    return false;
+  }
+
   IRMap *irMap;
   SSATab *ssaTab;
   MIRModule *mirModule;
@@ -166,83 +235,16 @@ class SSAPre {
   int32 reBuiltOccIndex = -1;  // stores the size of worklist every time when try to add new worklist, update before
   // each code motion
   uint32 strIdxCount = 0;  // ssapre will create a lot of temp variables if using var to store redundances, start from 0
-  // step 6 codemotion methods
-  MeExpr *CreateNewCurTemp(MeExpr *meExpr);
-  VarMeExpr *CreateNewCurLocalRefVar();
-  virtual void GenerateSaveRealOcc(MeRealOcc *realOcc) = 0;
-  virtual void GenerateReloadRealOcc(MeRealOcc *realOcc) = 0;
-  void GenerateSaveInsertedOcc(MeInsertedOcc *insertedOcc);
-  void GenerateSavePhiOcc(MePhiOcc *phiOcc);
-  void UpdateInsertedPhiOccOpnd();
-  virtual void CodeMotion();
-  // step 5 Finalize methods
-  virtual void Finalize1();
-  void SetSave(MeOccur *defX);
-  void SetReplacement(MePhiOcc *occ, MeOccur *repDef);
-  virtual void Finalize2();
-  // step 4 willbevail methods
-  void ComputeCanBeAvail();
-  void ResetCanBeAvail(MePhiOcc *occ);
-  void ComputeLater();
-  void ResetLater(MePhiOcc *occ);
-  // step 3 downsafety methods
-  void ResetDS(MePhiOpndOcc *phiOpnd);
-  void ComputeDS();
-  // step 2 renaming methods
-  virtual bool AllVarsSameVersion(MeRealOcc *realOcc1, MeRealOcc *realOcc2) {
-    return realOcc1->GetMeExpr() == realOcc2->GetMeExpr();
-  }
-
-  void Rename1();
-  MeExpr *GetReplaceMeExpr(MeExpr *opnd, const BB *ePhiBB, size_t j);
-  virtual MeExpr *PhiOpndFromRes(MeRealOcc *realOcc, size_t i) = 0;
-  virtual void Rename2();
-  // step 1 phi insertion methods
-  void SetVarPhis(MeExpr *meExpr);
-  virtual void ComputeVarAndDfPhis() = 0;
-  virtual void CreateSortedOccs();
-  // phi insertion methods end
-  virtual void BuildWorkList() = 0;
-  virtual void BuildEntryLHSOcc4Formals() {}
-
-  virtual void BuildWorkListLHSOcc(MeStmt*, int32) {}
-
-  virtual void BuildWorkListIvarLHSOcc(MeStmt*, int32, bool, MeExpr*) {}
-
-  virtual void BuildWorkListExpr(MeStmt *meStmt, int32 seqStmt, MeExpr *meExpr, bool isRebuilt, MeExpr *tempVar,
-                                 bool isRootExpr) = 0;
-  virtual void BuildWorkListStmt(MeStmt* meStmt, uint32 seqStmt, bool isRebuilt, MeExpr *tempVar = nullptr);
-  virtual void BuildWorkListBB(BB *bb);
-  virtual void ConstructUseOccurMap() {}
-
-  void CreateMembarOcc(MeStmt &meStmt, int seqStmt);
-  virtual void CreateMembarOccAtCatch(BB &bb);
-  void CreateExitOcc(BB *bb) {
-    MeOccur *exitOcc = ssaPreMemPool->New<MeOccur>(kOccExit, 0, bb, nullptr);
-    exitOccs.push_back(exitOcc);
-  }
-
-  bool CheckIfAnyLocalOpnd(MeExpr *meExpr);
-  MeRealOcc *CreateRealOcc(MeStmt &meStmt, int32 seqStmt, MeExpr &meExpr, bool isRebuilt, bool isLHS = false);
-  virtual bool ScreenPhiBB(BBId bbId) const = 0;
-  virtual bool EpreLocalRefVar() {
-    return false;
-  }
-
-  virtual void EnterCandsForSSAUpdate(OStIdx, BB*) {}
-
-  virtual bool IsLoopHeadBB(BBId) const {
-    return false;
-  }
 
  private:
+  virtual void DoSSAFRE() {};
+
   bool enableDebug = false;
   bool rcLoweringEnabled = false;
   bool regReadAtReturn = false;
   bool spillAtCatch = false;
   bool placementRCEnabled = false;
   bool addedNewLocalRefVars = false;
-  virtual void DoSSAFRE() {};
 };
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_SSAPRE_H

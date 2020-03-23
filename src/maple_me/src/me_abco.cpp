@@ -225,6 +225,7 @@ void MeABC::InsertPhiNodes() {
   for (size_t i = 0; i < newDefPoints.size(); ++i) {
     DefPoint *newDefStmt = newDefPoints[i];
     BB *newDefBB = newDefStmt->GetBB();
+    CHECK_NULL_FATAL(newDefBB);
     VarMeExpr *rhs = newDefStmt->GetRHS();
     if (newDefStmt->IsPiStmt()) {
       BB *genByBB = newDefStmt->GetGeneratedByBB();
@@ -240,7 +241,6 @@ void MeABC::InsertPhiNodes() {
       oldDefBB = meFunc->GetCommonEntryBB();
       CHECK_FATAL(rhs->IsZeroVersion(irMap->GetSSATab()), "must be");
     }
-    CHECK_NULL_FATAL(newDefBB);
     CHECK_NULL_FATAL(oldDefBB);
     MapleSet<BBId> &dfs = dom->GetDomFrontier(newDefBB->GetBBId());
     for (auto bbID : dfs) {
@@ -1226,6 +1226,19 @@ MeExpr *MeABC::ReplaceArrayExpr(MeExpr &rhs, MeExpr &naryMeExpr, MeStmt *ivarStm
     MeExpr *newNaryMeExpr = irMap->HashMeExpr(tmpNaryMeExpr);
     return newNaryMeExpr;
   }
+  if (rhs.GetMeOp() == kMeOpOp) {
+    auto &oldOpMeExpr = static_cast<OpMeExpr&>(rhs);
+    OpMeExpr newMeExpr(oldOpMeExpr, kInvalidExprID);
+    for (size_t i = 0; i < kOperandNumTernary; i++) {
+      if (oldOpMeExpr.GetOpnd(i) == nullptr) {
+        continue;
+      }
+      MeExpr *newOpnd = ReplaceArrayExpr(*(oldOpMeExpr.GetOpnd(i)), naryMeExpr, ivarStmt);
+      newMeExpr.SetOpnd(i, newOpnd);
+    }
+    MeExpr *newOpMeExpr = irMap->HashMeExpr(newMeExpr);
+    return newOpMeExpr;
+  }
   CHECK_FATAL(rhs.GetMeOp() == kMeOpIvar, "must be");
   MeExpr *newBase = ReplaceArrayExpr(*static_cast<IvarMeExpr&>(rhs).GetBase(), naryMeExpr, ivarStmt);
   CHECK_NULL_FATAL(newBase);
@@ -1255,7 +1268,6 @@ bool MeABC::CleanABCInStmt(MeStmt &meStmt, NaryMeExpr &naryMeExpr) {
       break;
     }
     case OP_iassign: {
-      CHECK_FATAL(meStmt.GetRHS()->IsLeaf(), "must be");
       MeExpr *lhs = static_cast<IassignMeStmt*>(&meStmt)->GetLHSVal();
       MeExpr *newLHS = ReplaceArrayExpr(*lhs, naryMeExpr, &meStmt);
       replaced = lhs != newLHS;

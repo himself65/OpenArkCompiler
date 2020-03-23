@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -32,7 +32,8 @@ enum IntrinProperty {
   kIntrnIsPure,
   kIntrnNeverReturn,
   kIntrnIsAtomic,
-  kIntrnIsRC
+  kIntrnIsRC,
+  kIntrnIsSpecial
 };
 
 enum IntrinArgType {
@@ -85,6 +86,7 @@ constexpr uint32 INTRNISPURE = 1U << kIntrnIsPure;
 constexpr uint32 INTRNNEVERRETURN = 1U << kIntrnNeverReturn;
 constexpr uint32 INTRNATOMIC = 1U << kIntrnIsAtomic;
 constexpr uint32 INTRNISRC = 1U << kIntrnIsRC;
+constexpr uint32 INTRNISSPECIAL = 1U << kIntrnIsSpecial;
 class MIRType;    // circular dependency exists, no other choice
 class MIRModule;  // circular dependency exists, no other choice
 struct IntrinDesc {
@@ -93,47 +95,51 @@ struct IntrinDesc {
   uint32 properties;
   IntrinArgType argTypes[1 + kMaxArgsNum];  // argTypes[0] is the return type
   bool IsJS() const {
-    return properties & INTRNISJS;
+    return static_cast<bool>(properties & INTRNISJS);
   }
 
   bool IsJava() const {
-    return properties & INTRNISJAVA;
+    return static_cast<bool>(properties & INTRNISJAVA);
   }
 
   bool IsJsUnary() const {
-    return properties & INTRNISJSUNARY;
+    return static_cast<bool>(properties & INTRNISJSUNARY);
   }
 
   bool IsJsBinary() const {
-    return properties & INTRNISJSBINARY;
+    return static_cast<bool>(properties & INTRNISJSBINARY);
   }
 
   bool IsJsOp() const {
-    return (properties & INTRNISJSUNARY) || (properties & INTRNISJSBINARY);
+    return static_cast<bool>(properties & INTRNISJSUNARY) || static_cast<bool>(properties & INTRNISJSBINARY);
   }
 
   bool IsLoadMem() const {
-    return properties & INTRNLOADMEM;
+    return static_cast<bool>(properties & INTRNLOADMEM);
   }
 
   bool IsJsReturnStruct() const {
-    return properties & INTRNRETURNSTRUCT;
+    return static_cast<bool>(properties & INTRNRETURNSTRUCT);
   }
 
   bool IsPure() const {
-    return properties & INTRNISPURE;
+    return static_cast<bool>(properties & INTRNISPURE);
   }
 
   bool IsNeverReturn() const {
-    return properties & INTRNNEVERRETURN;
+    return static_cast<bool>(properties & INTRNNEVERRETURN);
   }
 
   bool IsAtomic() const {
-    return properties & INTRNATOMIC;
+    return static_cast<bool>(properties & INTRNATOMIC);
   }
 
   bool IsRC() const {
-    return properties & INTRNISRC;
+    return static_cast<bool>(properties & INTRNISRC);
+  }
+
+  bool IsSpecial() const {
+    return static_cast<bool>(properties & INTRNISSPECIAL);
   }
 
   bool HasNoSideEffect() const {

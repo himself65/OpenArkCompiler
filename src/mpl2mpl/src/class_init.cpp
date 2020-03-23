@@ -36,7 +36,7 @@ void ClassInit::GenClassInitCheckProfile(MIRFunction &func, const MIRSymbol &cla
   GenPostClassInitCheck(func, classInfo, clinit);
 }
 
-void ClassInit::GenPreClassInitCheck(MIRFunction &func, const MIRSymbol &classInfo, StmtNode *clinit) const {
+void ClassInit::GenPreClassInitCheck(MIRFunction &func, const MIRSymbol &classInfo, const StmtNode *clinit) const {
   MIRFunction *preClinit = builder->GetOrCreateFunction(kMCCPreClinitCheck, (TyIdx)(PTY_void));
   BaseNode *classInfoNode = builder->CreateExprAddrof(0, classInfo);
   MapleVector<BaseNode*> args(builder->GetCurrentFuncCodeMpAllocator()->Adapter());

@@ -31,7 +31,7 @@ enum ProfileType : uint8_t {
   kReflectionStr = 0x04,
   kLiteral = 0x05,
   kBBInfo = 0x06,
-  kAll = 0x06,
+  kAll = 0x07,
   kFileDesc = 0xFF
 };
 

@@ -23,18 +23,19 @@
 namespace maple {
 class MeDoBypathEH : public MeFuncPhase {
  public:
-  MeDoBypathEH(MePhaseID id) : MeFuncPhase(id) {}
+  explicit MeDoBypathEH(MePhaseID id) : MeFuncPhase(id) {}
   ~MeDoBypathEH() = default;
 
   AnalysisResult *Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) override;
   std::string PhaseName() const override {
     return "bypatheh";
   }
+
  private:
   bool DoBypathException(BB *tryBB, BB *catchBB, const Klass *catchClass, const StIdx &stIdx,
-                         const KlassHierarchy *kh, MeFunction *func, const StmtNode *syncExitStmt);
-  StmtNode *IsSyncExit(BB *syncBB, MeFunction *func, LabelIdx secondLabel);
-  void BypathException(MeFunction *func, const KlassHierarchy *kh);
+                         const KlassHierarchy &kh, MeFunction &func, const StmtNode *syncExitStmt) const;
+  StmtNode *IsSyncExit(BB &syncBB, MeFunction &func, LabelIdx secondLabel) const;
+  void BypathException(MeFunction &func, const KlassHierarchy &kh) const;
 };
 }  // namespace maple
 #endif

@@ -16,11 +16,10 @@
 #include "me_dominance.h"
 #include "me_ssa_update.h"
 
-
 // accumulate the BBs that are in the iterated dominance frontiers of bb in
 // the set dfSet, visiting each BB only once
 namespace maple {
-void MeSSAEPre::GetIterDomFrontier(BB &bb, MapleSet<uint32> &dfSet, std::vector<bool> &visitedMap) {
+void MeSSAEPre::GetIterDomFrontier(const BB &bb, MapleSet<uint32> &dfSet, std::vector<bool> &visitedMap) const {
   CHECK_FATAL(bb.GetBBId() < visitedMap.size(), "index out of range in MeSSAEPre::GetIterDomFrontier");
   if (visitedMap[bb.GetBBId()]) {
     return;
@@ -41,7 +40,7 @@ void MeSSAEPre::BuildWorkList() {
   }
 }
 
-bool MeSSAEPre::IsThreadObjField(const IvarMeExpr &expr) {
+bool MeSSAEPre::IsThreadObjField(const IvarMeExpr &expr) const {
   if (expr.GetFieldID() == 0) {
     return false;
   }
@@ -76,7 +75,7 @@ AnalysisResult *MeDoSSAEPre::Run(MeFunction *func, MeFuncResultMgr *m, ModuleRes
       (eprePULimitSpecified && puCount != MeOption::eprePULimit) ? UINT32_MAX : MeOption::epreLimit;
   MemPool *ssaPreMemPool = NewMemPool();
   bool epreIncludeRef = MeOption::epreIncludeRef;
-  MeSSAEPre ssaPre(func, *irMap, *dom, *kh, *ssaPreMemPool, *NewMemPool(), epreLimitUsed, epreIncludeRef,
+  MeSSAEPre ssaPre(*func, *irMap, *dom, *kh, *ssaPreMemPool, *NewMemPool(), epreLimitUsed, epreIncludeRef,
                    MeOption::epreLocalRefVar, MeOption::epreLHSIvar);
   ssaPre.SetSpillAtCatch(MeOption::spillAtCatch);
   if (eprePULimitSpecified && puCount == MeOption::eprePULimit && epreLimitUsed != UINT32_MAX) {

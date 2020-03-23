@@ -56,7 +56,7 @@ class IRMap : public AnalysisResult {
   IvarMeExpr *BuildIvarFromOpMeExpr(OpMeExpr &opMeExpr);
   IvarMeExpr *BuildLHSIvarFromIassMeStmt(IassignMeStmt &iassignMeStmt);
   IvarMeExpr *BuildLHSIvar(MeExpr &baseAddr, IassignMeStmt &iassignMeStmt, FieldID fieldID);
-  RegMeExpr *CreateRegRefMeExpr(MeExpr&);
+  RegMeExpr *CreateRegRefMeExpr(const MeExpr&);
   RegMeExpr *CreateRegRefMeExpr(MIRType&);
   VarMeExpr *CreateVarMeExprVersion(const VarMeExpr&);
   MeExpr *CreateAddrofMeExpr(OStIdx ostIdx);
@@ -68,8 +68,8 @@ class IRMap : public AnalysisResult {
   RegMeExpr *CreateRegMeExpr(PrimType);
   RegMeExpr *CreateRegMeExprVersion(const OriginalSt&);
   RegMeExpr *CreateRegMeExprVersion(const RegMeExpr&);
-  MeExpr *ReplaceMeExprExpr(MeExpr&, MeExpr&, MeExpr&);
-  bool ReplaceMeExprStmt(MeStmt&, MeExpr&, MeExpr&);
+  MeExpr *ReplaceMeExprExpr(MeExpr&, const MeExpr&, MeExpr&);
+  bool ReplaceMeExprStmt(MeStmt&, const MeExpr&, MeExpr&);
   MeExpr *GetMeExprByVerID(uint32 verid) const {
     return vst2MeExprTable[verid];
   }
@@ -231,7 +231,7 @@ class IRMap : public AnalysisResult {
   BB *curBB = nullptr;  // current maple_me::BB being visited
   MeBuilder meBuilder;
 
-  bool ReplaceMeExprStmtOpnd(uint32, MeStmt&, MeExpr&, MeExpr&);
+  bool ReplaceMeExprStmtOpnd(uint32, MeStmt&, const MeExpr&, MeExpr&);
   MeExpr *BuildLHSVar(const VersionSt &vst, DassignMeStmt &defMeStmt);
   void PutToBucket(uint32, MeExpr&);
   MeStmt *BuildMeStmtWithNoSSAPart(StmtNode &stmt);
@@ -259,7 +259,7 @@ class IRMap : public AnalysisResult {
   MeStmt *BuildGosubMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart);
   MeStmt *BuildThrowMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart);
   MeStmt *BuildSyncMeStmt(StmtNode &stmt, AccessSSANodes &ssaPart);
-  MeExpr *ReplaceMeExprExpr(MeExpr &origExpr, MeExpr &newExpr, size_t opndsSize, MeExpr &meExpr, MeExpr &repExpr);
+  MeExpr *ReplaceMeExprExpr(MeExpr &origExpr, MeExpr &newExpr, size_t opndsSize, const MeExpr &meExpr, MeExpr &repExpr);
 };
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_IRMAP_H

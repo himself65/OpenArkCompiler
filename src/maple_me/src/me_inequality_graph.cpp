@@ -120,12 +120,12 @@ namespace maple {
     from.InsertEdges(std::move(edge));
   }
 
-  bool InequalityGraph::HasNode(MeExpr &meExpr) const {
-    return (varNodes.find(meExpr.GetExprID()) == varNodes.end()) ? false : true;
+  bool InequalityGraph::HasNode(const MeExpr &meExpr) const {
+    return varNodes.find(meExpr.GetExprID()) != varNodes.end();
   }
 
   bool InequalityGraph::HasNode(int32 value) const {
-    return (constNodes.find(value) == constNodes.end()) ? false : true;
+    return constNodes.find(value) != constNodes.end();
   }
 
   void InequalityGraph::ConnectTrivalEdge() {
@@ -149,7 +149,7 @@ namespace maple {
     }
   }
 
-  ESSABaseNode &InequalityGraph::GetNode(MeExpr &meExpr) {
+  ESSABaseNode &InequalityGraph::GetNode(const MeExpr &meExpr) {
     CHECK_FATAL(HasNode(meExpr), "node is not created");
     return *varNodes[meExpr.GetExprID()];
   }
@@ -320,14 +320,14 @@ namespace maple {
     fileBuf.close();
   }
 
-  bool ABCD::DemandProve(MeExpr &arrayNode, MeExpr &idx) {
+  bool ABCD::DemandProve(const MeExpr &arrayNode, const MeExpr &idx) {
     ESSABaseNode &aNode = inequalityGraph->GetNode(arrayNode);
     ESSABaseNode *idxNode = nullptr;
     if (idx.GetMeOp() == kMeOpVar) {
       idxNode = &(inequalityGraph->GetNode(idx));
     } else {
       CHECK_FATAL(idx.GetMeOp() == kMeOpConst, "must be");
-      idxNode = &(inequalityGraph->GetNode(static_cast<ConstMeExpr&>(idx).GetIntValue()));
+      idxNode = &(inequalityGraph->GetNode(static_cast<const ConstMeExpr&>(idx).GetIntValue()));
     }
     ESSABaseNode &zNode = inequalityGraph->GetNode(0);
     bool upperResult = ABCD::DemandProve(aNode, *idxNode, kUpper);
@@ -335,10 +335,11 @@ namespace maple {
     return  upperResult && lowerResult;
   }
 
-  bool ABCD::DemandProve(ESSABaseNode &aNode, ESSABaseNode &bNode, EdgeType eType) {
-    std::unique_ptr<InequalEdge> e = std::make_unique<InequalEdge>(eType == kUpper ? kUpperBound : kLowerBound, eType);
+  bool ABCD::DemandProve(ESSABaseNode &firstNode, ESSABaseNode &secondNode, EdgeType edgeType) {
+    std::unique_ptr<InequalEdge> e =
+        std::make_unique<InequalEdge>(edgeType == kUpper ? kUpperBound : kLowerBound, edgeType);
     active.clear();
-    ProveResult res = Prove(aNode, bNode, *e.get());
+    ProveResult res = Prove(firstNode, secondNode, *e.get());
     return res == kTrue;
   }
 
@@ -392,21 +393,21 @@ namespace maple {
     }
 
     active[&bNode] = &edge;
-    ProveResult res = bNode.GetKind() == kPhiNode ? UpdateCacheResult(aNode, bNode, edge, min)
-                                                  : UpdateCacheResult(aNode, bNode, edge, max);
+    ProveResult res = bNode.GetKind() == kPhiNode ? UpdateCacheResult(aNode, bNode, edge, Min)
+                                                  : UpdateCacheResult(aNode, bNode, edge, Max);
     active.erase(&bNode);
     tracing.pop_back();
     return res;
   }
 
-  ProveResult ABCD::UpdateCacheResult(ESSABaseNode &aNode, ESSABaseNode &bNode, InequalEdge &edge, meet_function meet) {
-    ProveResult res = meet == min ? kReduced : kFalse;
-    if (meet == min) {
+  ProveResult ABCD::UpdateCacheResult(ESSABaseNode &aNode, ESSABaseNode &bNode, InequalEdge &edge, MeetFunction meet) {
+    ProveResult res = meet == Min ? kReduced : kFalse;
+    if (meet == Min) {
       CHECK_FATAL(bNode.GetKind() == kPhiNode, "must be");
       auto& bPhiNode = static_cast<ESSAPhiNode&>(bNode);
       auto constEdgeMap = (edge.GetEdgeType() == kUpper) ? bPhiNode.GetInPhiEdgeMap() : bPhiNode.GetOutPhiEdgeMap();
       for (auto iter = constEdgeMap.begin(); iter != constEdgeMap.end(); ++iter) {
-        if (((res == kTrue) && (meet == max)) || ((res == kFalse) && (meet == min))) {
+        if (((res == kTrue) && (meet == Max)) || ((res == kFalse) && (meet == Min))) {
           break;
         }
         InequalEdge *in = iter->second;
@@ -433,7 +434,7 @@ namespace maple {
         if (in->GetPairEdge()) {
           in->GetPairEdge()->SetEdgeTypeInValid();
         }
-        res = max(res, Prove(aNode, *(iter->first), nextEdge));
+        res = Max(res, Prove(aNode, *(iter->first), nextEdge));
         if (in->GetPairEdge()) {
           in->GetPairEdge()->SetEdgeTypeValid();
         }

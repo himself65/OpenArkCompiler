@@ -21,20 +21,20 @@
 // always detected before its nested loop(s).  The building of the LoopDesc data
 // structure takes advantage of this ordering.
 namespace maple {
-LoopDesc *IdentifyLoops::CreateLoopDesc(BB *hd, BB *tail) {
-  LoopDesc *newLoop = meLoopMemPool->New<LoopDesc>(&meLoopAlloc, hd, tail);
+LoopDesc *IdentifyLoops::CreateLoopDesc(BB &hd, BB &tail) {
+  LoopDesc *newLoop = meLoopMemPool->New<LoopDesc>(&meLoopAlloc, &hd, &tail);
   meLoops.push_back(newLoop);
   return newLoop;
 }
 
-void IdentifyLoops::SetLoopParent4BB(const BB *bb, LoopDesc *loopDesc) {
-  if (bbLoopParent[bb->GetBBId()] != nullptr) {
-    if (loopDesc->parent == nullptr) {
-      loopDesc->parent = bbLoopParent[bb->GetBBId()];
-      loopDesc->nestDepth = loopDesc->parent->nestDepth + 1;
+void IdentifyLoops::SetLoopParent4BB(const BB &bb, LoopDesc &loopDesc) {
+  if (bbLoopParent[bb.GetBBId()] != nullptr) {
+    if (loopDesc.parent == nullptr) {
+      loopDesc.parent = bbLoopParent[bb.GetBBId()];
+      loopDesc.nestDepth = loopDesc.parent->nestDepth + 1;
     }
   }
-  bbLoopParent[bb->GetBBId()] = loopDesc;
+  bbLoopParent[bb.GetBBId()] = &loopDesc;
 }
 
 // process each BB in preorder traversal of dominator tree
@@ -45,7 +45,7 @@ void IdentifyLoops::ProcessBB(BB *bb) {
   for (BB *pred : bb->GetPred()) {
     if (dominance->Dominate(*bb, *pred)) {
       // create a loop with bb as loop head and pred as loop tail
-      LoopDesc *loop = CreateLoopDesc(bb, pred);
+      LoopDesc *loop = CreateLoopDesc(*bb, *pred);
       std::list<BB*> bodyList;
       bodyList.push_back(pred);
       while (!bodyList.empty()) {
@@ -56,13 +56,13 @@ void IdentifyLoops::ProcessBB(BB *bb) {
           continue;
         }
         loop->loopBBs.insert(curr->GetBBId());
-        SetLoopParent4BB(curr, loop);
+        SetLoopParent4BB(*curr, *loop);
         for (BB *curPred : curr->GetPred()) {
           bodyList.push_back(curPred);
         }
       }
       loop->loopBBs.insert(bb->GetBBId());
-      SetLoopParent4BB(bb, loop);
+      SetLoopParent4BB(*bb, *loop);
     }
   }
   // recursive call
@@ -99,7 +99,7 @@ void IdentifyLoops::MarkBB() {
 
 AnalysisResult *MeDoMeLoop::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr*) {
   auto *dom = static_cast<Dominance*>(m->GetAnalysisResult(MeFuncPhase_DOMINANCE, func));
-  ASSERT(dom, "dominance phase has problem");
+  ASSERT(dom != nullptr, "dominance phase has problem");
   MemPool *meLoopMp = NewMemPool();
   IdentifyLoops *identLoops = meLoopMp->New<IdentifyLoops>(meLoopMp, func, dom);
   identLoops->ProcessBB(func->GetCommonEntryBB());

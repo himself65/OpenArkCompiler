@@ -123,11 +123,11 @@ struct DataRef32 {
 };
 
 struct DataRef {
-  uint64_t refVal;
+  uintptr_t refVal;
   template<typename T>
   inline T GetDataRef() const;
   template<typename T>
-  inline void SetDataRef(T ref, DataRefFormat format = kDataRefIsDirect);
+  inline void SetDataRef(const T ref, const DataRefFormat format = kDataRefIsDirect);
   template<typename T>
   inline T GetRawValue() const;
 };
@@ -157,18 +157,18 @@ struct GctibRef32 {
 };
 
 struct GctibRef {
-  uint64_t refVal;
+  uintptr_t refVal;
   template<typename T>
   inline T GetGctibRef() const;
   template<typename T>
-  inline void SetGctibRef(T ref, GctibRefFormat format = kGctibRefIsOffset);
+  inline void SetGctibRef(const T ref, const GctibRefFormat format = kGctibRefIsOffset);
 };
 
 // MByteRef is meant to represent a reference to data defined in maple file. It is a direct reference or an offset.
 // MByteRef is self-encoded/decoded and aligned to 1 byte.
 // Unlike DataRef, the format of MByteRef is determined by its value.
 struct MByteRef {
-  uint64_t refVal; // initializer prefers this field to be a pointer
+  uintptr_t refVal; // initializer prefers this field to be a pointer
   enum {
     kBiasBitPosition = sizeof(refVal) * 8 - 4, // the most significant 3 bits
   };
@@ -182,7 +182,7 @@ struct MByteRef {
   template<typename T>
   inline T GetRef() const;
   template<typename T>
-  inline void SetRef(T ref);
+  inline void SetRef(const T ref);
   inline bool IsOffset() const;
 };
 
@@ -315,7 +315,7 @@ struct ClassMetadata {
   };
 
   union {
-    uint64_t initState; // a readable address for initState means initialized
+    uintptr_t initState; // a readable address for initState means initialized
     DataRef cacheTrueClass;
   };
 
@@ -325,13 +325,13 @@ struct ClassMetadata {
     return reinterpret_cast<intptr_t>(&(base->initState));
   }
 
-  uint64_t GetInitStateRawValue() {
+  uintptr_t GetInitStateRawValue() const {
     return __atomic_load_n(&initState, __ATOMIC_ACQUIRE);
   }
 
   template<typename T>
   void SetInitStateRawValue(T val) {
-    __atomic_store_n(&initState, reinterpret_cast<uint64_t>(val), __ATOMIC_RELEASE);
+    __atomic_store_n(&initState, reinterpret_cast<uintptr_t>(val), __ATOMIC_RELEASE);
   }
 };
 

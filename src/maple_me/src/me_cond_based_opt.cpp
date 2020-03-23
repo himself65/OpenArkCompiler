@@ -36,8 +36,9 @@
 namespace maple {
 // check if varmeexpr is under the condition varmeexpr == 0 when expectedEq0 is true,
 // or varmeexpr != 0 if expectedEq0 is false
-bool MeCondBased::NullValueFromOneTestCond(const VarMeExpr &varMeExpr, const BB &cdBB, const BB &bb, bool expectedEq0) {
-  auto &meStmts = cdBB.GetMeStmts();
+bool MeCondBased::NullValueFromOneTestCond(const VarMeExpr &varMeExpr, const BB &cdBB,
+                                           const BB &bb, bool expectedEq0) const {
+  const auto &meStmts = cdBB.GetMeStmts();
   if (meStmts.empty()) {
     return false;
   }
@@ -80,7 +81,7 @@ bool MeCondBased::NullValueFromOneTestCond(const VarMeExpr &varMeExpr, const BB 
   return isJumptoBB ? ((isTrueBr && !isEq) || (!isTrueBr && isEq)) : ((isTrueBr && isEq) || (!isTrueBr && !isEq));
 }
 
-bool MeCondBased::NullValueFromTestCond(const VarMeExpr &varMeExpr, const BB &bb, bool expectedEq0) {
+bool MeCondBased::NullValueFromTestCond(const VarMeExpr &varMeExpr, const BB &bb, bool expectedEq0) const {
   MapleSet<BBId> *pdomFrt = &dominance->GetPdomFrontierItem(bb.GetBBId());
   size_t bbSize = dominance->GetBBVecSize();
   std::vector<bool> visitedMap(bbSize, false);
@@ -100,9 +101,9 @@ bool MeCondBased::NullValueFromTestCond(const VarMeExpr &varMeExpr, const BB &bb
   return provenNull;
 }
 
-bool MeCondBased::IsIreadWithTheBase(const VarMeExpr &var, const MeExpr &meExpr) {
+bool MeCondBased::IsIreadWithTheBase(const VarMeExpr &var, const MeExpr &meExpr) const {
   if (meExpr.GetOp() == OP_iread) {
-    auto &ivarMeExpr = static_cast<const IvarMeExpr&>(meExpr);
+    const auto &ivarMeExpr = static_cast<const IvarMeExpr&>(meExpr);
     if (ivarMeExpr.GetBase()->GetExprID() == var.GetExprID()) {
       return true;
     }
@@ -115,15 +116,15 @@ bool MeCondBased::IsIreadWithTheBase(const VarMeExpr &var, const MeExpr &meExpr)
   return false;
 }
 
-bool MeCondBased::StmtHasDereferencedBase(const MeStmt &stmt, const VarMeExpr &var) {
+bool MeCondBased::StmtHasDereferencedBase(const MeStmt &stmt, const VarMeExpr &var) const {
   if (stmt.GetOp() == OP_iassign) {
-    auto &iassStmt = static_cast<const IassignMeStmt&>(stmt);
+    const auto &iassStmt = static_cast<const IassignMeStmt&>(stmt);
     if (iassStmt.GetLHSVal()->GetBase()->GetExprID() == var.GetExprID()) {
       return true;
     }
   }
   if (stmt.GetOp() == OP_syncenter || stmt.GetOp() == OP_syncexit) {
-    auto &syncMeStmt = static_cast<const SyncMeStmt&>(stmt);
+    const auto &syncMeStmt = static_cast<const SyncMeStmt&>(stmt);
     const MapleVector<MeExpr*> &opnds = syncMeStmt.GetOpnds();
     for (auto it = opnds.begin(); it != opnds.end(); ++it) {
       if ((*it)->GetExprID() == var.GetExprID()) {
@@ -140,7 +141,8 @@ bool MeCondBased::StmtHasDereferencedBase(const MeStmt &stmt, const VarMeExpr &v
   return false;
 }
 
-bool MeCondBased::PointerWasDereferencedBefore(const VarMeExpr &var, const UnaryMeStmt &assertMeStmt, const BB *bb) {
+bool MeCondBased::PointerWasDereferencedBefore(const VarMeExpr &var, const UnaryMeStmt &assertMeStmt,
+                                               const BB &bb) const {
   // If var is defined in the function, let BBx be the BB that defines var.
   // If var is not defined, then let BBx be the function entry BB.
   // Let BBy be the current BB that contains the assertnonnull.
@@ -151,16 +153,16 @@ bool MeCondBased::PointerWasDereferencedBefore(const VarMeExpr &var, const Unary
   if (bbx == nullptr) {
     return false;
   }
-  CHECK_FATAL(dominance->Dominate(*bbx, *bb), "bbx should dominate bb at this point");
+  CHECK_FATAL(dominance->Dominate(*bbx, bb), "bbx should dominate bb at this point");
   for (MeStmt *stmt = assertMeStmt.GetPrev(); stmt != nullptr; stmt = stmt->GetPrev()) {
     if (StmtHasDereferencedBase(*stmt, var)) {
       return true;
     }
   }
-  if (bbx == bb) {
+  if (bbx == &bb) {
     return false;
   }
-  BB *itBB = dominance->GetDom(bb->GetBBId());
+  BB *itBB = dominance->GetDom(bb.GetBBId());
   while (itBB != bbx) {
     // check if there is an iread or iassign in itbb whose base is var
     auto &meStmts = itBB->GetMeStmts();
@@ -180,7 +182,7 @@ bool MeCondBased::PointerWasDereferencedBefore(const VarMeExpr &var, const Unary
   return false;
 }
 
-bool MeCondBased::PointerWasDereferencedRightAfter(const VarMeExpr &var, const UnaryMeStmt &assertMeStmt) {
+bool MeCondBased::PointerWasDereferencedRightAfter(const VarMeExpr &var, const UnaryMeStmt &assertMeStmt) const {
   // assertnonnull(var)
   // t = iread(var, 0)
   // we can safely delete assertnonnull(var)
@@ -194,7 +196,7 @@ bool MeCondBased::PointerWasDereferencedRightAfter(const VarMeExpr &var, const U
   return (nextMeStmt != nullptr) && StmtHasDereferencedBase(*nextMeStmt, var);
 }
 
-bool MeCondBased::IsNotNullValue(const VarMeExpr &varMeExpr, const UnaryMeStmt &assertMeStmt, const BB *bb) {
+bool MeCondBased::IsNotNullValue(const VarMeExpr &varMeExpr, const UnaryMeStmt &assertMeStmt, const BB &bb) const {
   const OriginalSt *varOst = func->GetMeSSATab()->GetSymbolOriginalStFromID(varMeExpr.GetOStIdx());
   if (varOst->IsFormal() && varOst->GetMIRSymbol()->GetName() == kStrThisPointer) {
     return true;
@@ -218,7 +220,7 @@ bool MeCondBased::IsNotNullValue(const VarMeExpr &varMeExpr, const UnaryMeStmt &
   return PointerWasDereferencedRightAfter(varMeExpr, assertMeStmt);
 }
 
-void CondBasedNPC::DoCondBasedNPC() {
+void CondBasedNPC::DoCondBasedNPC() const {
   auto eIt = GetFunc()->valid_end();
   for (auto bIt = GetFunc()->valid_begin(); bIt != eIt; ++bIt) {
     auto *bb = *bIt;
@@ -231,7 +233,7 @@ void CondBasedNPC::DoCondBasedNPC() {
         continue;
       }
       auto *varMeExpr = static_cast<VarMeExpr*>(assertMeStmt.GetOpnd());
-      if (NullValueFromTestCond(*varMeExpr, *bb, false) || IsNotNullValue(*varMeExpr, assertMeStmt, bb)) {
+      if (NullValueFromTestCond(*varMeExpr, *bb, false) || IsNotNullValue(*varMeExpr, assertMeStmt, *bb)) {
         bb->RemoveMeStmt(&stmt);
       }
     }

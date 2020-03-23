@@ -103,10 +103,10 @@ class DSE {
     workList.push_front(symbol);
   }
 
-  bool ExprNonDeletable(const BaseNode &expr);
-  bool HasNonDeletableExpr(const StmtNode &stmt);
-  bool StmtMustRequired(const StmtNode &stmt, BB &bb);
-  void DumpStmt(const StmtNode &stmt, const std::string &msg);
+  bool ExprNonDeletable(const BaseNode &expr) const;
+  bool HasNonDeletableExpr(const StmtNode &stmt) const;
+  bool StmtMustRequired(const StmtNode &stmt, const BB &bb) const;
+  void DumpStmt(const StmtNode &stmt, const std::string &msg) const;
 
   std::vector<BB*> bbVec;
   BB &commonEntryBB;

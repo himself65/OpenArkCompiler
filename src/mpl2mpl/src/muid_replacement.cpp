@@ -131,11 +131,13 @@ void MUIDReplacement::CollectFuncAndDataFromGlobalTab() {
     CHECK_FATAL(mirSymbol != nullptr, "Invalid global data symbol at index %u", i);
     if (mirSymbol->GetStorageClass() == kScGlobal) {
       if (mirSymbol->IsReflectionClassInfo()) {
+        mirSymbol->SetStorageClass(kScFstatic);
         if (mirSymbol->GetKonst() != nullptr) {
           // Use this to exclude forward-declared classinfo symbol
           AddDefData(mirSymbol);
         }
       } else if (mirSymbol->IsStatic()) {
+        mirSymbol->SetStorageClass(kScFstatic);
         AddDefData(mirSymbol);
       }
     } else if (mirSymbol->GetStorageClass() == kScExtern &&
@@ -996,7 +998,7 @@ void MUIDReplacement::ReplaceDirectInvokeOrAddroffunc(MIRFunction &currentFunc, 
   }
 }
 
-void MUIDReplacement::ReplaceDassign(MIRFunction &currentFunc, DassignNode &dassignNode) {
+void MUIDReplacement::ReplaceDassign(MIRFunction &currentFunc, const DassignNode &dassignNode) {
   MIRSymbol *mirSymbol = currentFunc.GetLocalOrGlobalSymbol(dassignNode.GetStIdx());
   ASSERT(mirSymbol != nullptr, "null ptr check!");
   if (!mirSymbol->IsStatic()) {
@@ -1125,7 +1127,7 @@ BaseNode *MUIDReplacement::ReplaceDreadExpr(MIRFunction *currentFunc, StmtNode *
   return expr;
 }
 
-BaseNode *MUIDReplacement::ReplaceDread(MIRFunction &currentFunc, StmtNode *stmt, BaseNode *opnd) {
+BaseNode *MUIDReplacement::ReplaceDread(MIRFunction &currentFunc, const StmtNode *stmt, BaseNode *opnd) {
   if (opnd == nullptr || (opnd->GetOpCode() != OP_dread && opnd->GetOpCode() != OP_addrof)) {
     return opnd;
   }

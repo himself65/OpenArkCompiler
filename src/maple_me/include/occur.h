@@ -18,6 +18,7 @@
 #include "me_function.h"
 #include "irmap.h"
 const int kWorkCandHashLength = 229;
+
 namespace maple {
 enum OccType {
   kOccUndef,
@@ -35,11 +36,11 @@ class MePhiOcc;
 class MeOccur {
  public:
   MeOccur(OccType ty, int cId, MeOccur *df) : occTy(ty), classID(cId), mirBB(nullptr), def(df) {}
-  MeOccur(OccType ty, int cId, BB *bb, MeOccur *df) : occTy(ty), classID(cId), mirBB(bb), def(df) {}
+  MeOccur(OccType ty, int cId, BB &bb, MeOccur *df) : occTy(ty), classID(cId), mirBB(&bb), def(df) {}
   virtual ~MeOccur() = default;
-  virtual void Dump(IRMap&);
+  virtual void Dump(const IRMap&) const;
   void DumpOccur(IRMap&);
-  bool IsDominate(Dominance *dom, MeOccur*);
+  bool IsDominate(Dominance &dom, MeOccur&);
   const BB *GetBB() const {
     return mirBB;
   }
@@ -80,6 +81,7 @@ class MeOccur {
     def = define;
   }
   MeExpr *GetSavedExpr();
+
  private:
   OccType occTy;  // kinds of occ
   int classID;    // class id
@@ -106,7 +108,7 @@ class MeRealOcc : public MeOccur {
   }
 
   ~MeRealOcc() = default;
-  void Dump(IRMap&);
+  void Dump(const IRMap&) const;
   const MeStmt *GetMeStmt() const {
     return meStmt;
   }
@@ -194,6 +196,7 @@ class MeRealOcc : public MeOccur {
   void SetIsFormalAtEntry(bool isFormal) {
     isFormalAtEntry = isFormal;
   }
+
  private:
   MeStmt *meStmt;     // the stmt that has this occ
   MeExpr *meExpr;     // the expr it's corresponding to
@@ -208,11 +211,11 @@ class MeRealOcc : public MeOccur {
 
 class MeInsertedOcc : public MeOccur {
  public:
-  MeInsertedOcc(MeExpr *expr, MeStmt *stmt, BB *bb)
+  MeInsertedOcc(MeExpr *expr, MeStmt *stmt, BB &bb)
       : MeOccur(kOccInserted, 0, bb, nullptr), meExpr(expr), meStmt(stmt), savedExpr(nullptr) {}
 
   ~MeInsertedOcc() = default;
-  void Dump(IRMap&);
+  void Dump(const IRMap&) const;
   const MeStmt *GetMeStmt() const {
     return meStmt;
   }
@@ -252,6 +255,7 @@ class MeInsertedOcc : public MeOccur {
   void SetSavedExpr(MeExpr &expr) {
     savedExpr = &expr;
   }
+
  private:
   MeExpr *meExpr;
   MeStmt *meStmt;
@@ -260,7 +264,7 @@ class MeInsertedOcc : public MeOccur {
 
 class MePhiOpndOcc : public MeOccur {
  public:
-  MePhiOpndOcc(BB *bb)
+  explicit MePhiOpndOcc(BB &bb)
       : MeOccur(kOccPhiopnd, 0, bb, nullptr),
         isProcessed(false),
         hasRealUse(false),
@@ -271,8 +275,8 @@ class MePhiOpndOcc : public MeOccur {
   }
 
   ~MePhiOpndOcc() = default;
-  bool IsOkToInsert();
-  void Dump(IRMap&);
+  bool IsOkToInsert() const;
+  void Dump(const IRMap&) const;
   bool IsProcessed() const {
     return isProcessed;
   }
@@ -340,6 +344,7 @@ class MePhiOpndOcc : public MeOccur {
   void SetCurrentMeStmt(MeStmt &stmt) {
     currentExpr.meStmt = &stmt;
   }
+
  private:
   bool isProcessed;
   bool hasRealUse;
@@ -354,15 +359,15 @@ class MePhiOpndOcc : public MeOccur {
 
 class MePhiOcc : public MeOccur {
  public:
-  MePhiOcc(BB *bb, MapleAllocator *alloc)
+  MePhiOcc(BB &bb, MapleAllocator &alloc)
       : MeOccur(kOccPhiocc, 0, bb, nullptr),
-        isDownSafe(!bb->GetAttributes(kBBAttrIsCatch)),
+        isDownSafe(!bb.GetAttributes(kBBAttrIsCatch)),
         speculativeDownSafe(false),
         isCanBeAvail(true),
         isLater(true),
         isExtraneous(false),
         isRemoved(false),
-        phiOpnds(alloc->Adapter()),
+        phiOpnds(alloc.Adapter()),
         regPhi(nullptr),
         varPhi(nullptr) {}
 
@@ -464,8 +469,9 @@ class MePhiOcc : public MeOccur {
   void SetVarPhi(MeVarPhiNode &phi) {
     varPhi = &phi;
   }
-  bool IsOpndDefByRealOrInserted();
-  void Dump(IRMap&);
+
+  bool IsOpndDefByRealOrInserted() const;
+  void Dump(const IRMap&) const;
  private:
   bool isDownSafe;           // default is true
   bool speculativeDownSafe;  // is downsafe due to speculation
@@ -481,10 +487,10 @@ class MePhiOcc : public MeOccur {
 // each singly linked list repersents each bucket in workCandHashTable
 class PreWorkCand {
  public:
-  PreWorkCand(MapleAllocator *alloc, int32 idx, MeExpr *meExpr, PUIdx pIdx)
+  PreWorkCand(MapleAllocator &alloc, int32 idx, MeExpr *meExpr, PUIdx pIdx)
       : next(nullptr),
         index(idx),
-        realOccs(alloc->Adapter()),
+        realOccs(alloc.Adapter()),
         theMeExpr(meExpr),
         puIdx(pIdx),
         hasLocalOpnd(false),
@@ -494,10 +500,10 @@ class PreWorkCand {
   }
 
   virtual ~PreWorkCand() = default;
-  void Dump(IRMap *irMap) {
-    irMap->GetSSATab().GetModule().GetOut() << "========index: " << index << " has the following occ\n";
+  void Dump(const IRMap &irMap) const {
+    irMap.GetSSATab().GetModule().GetOut() << "========index: " << index << " has the following occ\n";
     for (MeOccur *occ : realOccs) {
-      occ->Dump(*irMap);
+      occ->Dump(irMap);
     }
   }
 
@@ -510,14 +516,14 @@ class PreWorkCand {
     }
   }
 
-  void AddRealOccSorted(Dominance &dom, MeRealOcc &occ, PUIdx pIdx);
+  void AddRealOccSorted(const Dominance &dom, MeRealOcc &occ, PUIdx pIdx);
   PrimType GetPrimType() const {
     PrimType pTyp = theMeExpr->GetPrimType();
     CHECK_FATAL(pTyp != kPtyInvalid, "invalid primtype");
     return pTyp;
   }
 
-  static uint32 ComputeWorkCandHashIndex(MeExpr &meExpr);
+  static uint32 ComputeWorkCandHashIndex(const MeExpr &meExpr);
   virtual void DumpCand(IRMap &irMap) {
     theMeExpr->Dump(&irMap);
   }
@@ -615,6 +621,7 @@ class PreWorkCand {
   static void SetWorkCandAt(size_t idx, PreWorkCand &workCand) {
     workCandHashTable[idx] = &workCand;
   }
+
  private:
   PreWorkCand *next;
   int32 index;
@@ -633,11 +640,11 @@ class PreWorkCand {
 
 class PreStmtWorkCand : public PreWorkCand {
  public:
-  PreStmtWorkCand(MapleAllocator *alloc, int32 idx, MeStmt *meStmt, PUIdx pIdx)
-      : PreWorkCand(alloc, idx, nullptr, pIdx), theMeStmt(meStmt), lhsIsFinal(false) {}
+  PreStmtWorkCand(MapleAllocator &alloc, int32 idx, MeStmt &meStmt, PUIdx pIdx)
+      : PreWorkCand(alloc, idx, nullptr, pIdx), theMeStmt(&meStmt), lhsIsFinal(false) {}
 
   virtual ~PreStmtWorkCand() = default;
-  static uint32 ComputeStmtWorkCandHashIndex(MeStmt &stmt);
+  static uint32 ComputeStmtWorkCandHashIndex(const MeStmt &stmt);
   void DumpCand(IRMap &irMap) {
     theMeStmt->Dump(&irMap);
   }
@@ -661,6 +668,7 @@ class PreStmtWorkCand : public PreWorkCand {
   void SetLHSIsFinal(bool isFinal) {
     lhsIsFinal = isFinal;
   }
+
  private:
   MeStmt *theMeStmt;  // the statement of this workcand
   bool lhsIsFinal;    // used only if candidate is an assignment

@@ -16,8 +16,9 @@
 #include "alias_class.h"
 #include "mir_builder.h"
 #include "me_irmap.h"
+
 namespace maple {
-void PregRenamer::EnqueDefUses(std::list<RegMeExpr*> &qu, RegMeExpr *node, std::set<RegMeExpr*> &curVisited) {
+void PregRenamer::EnqueDefUses(std::list<RegMeExpr*> &qu, RegMeExpr *node, std::set<RegMeExpr*> &curVisited) const {
   // get its define
   if (node->GetDefBy() == kDefByPhi) {
     MeRegPhiNode &defPhi = node->GetDefPhi();
@@ -48,7 +49,7 @@ void PregRenamer::EnqueDefUses(std::list<RegMeExpr*> &qu, RegMeExpr *node, std::
   }
 }
 
-void PregRenamer::RunSelf() {
+void PregRenamer::RunSelf() const {
   // BFS the graph of register phi node;
   std::set<RegMeExpr*> curVisited;
   const MapleVector<RegMeExpr*> &regMeExprTable = irMap->GetRegMeExprTable();
@@ -101,7 +102,7 @@ void PregRenamer::RunSelf() {
     ++renameCount;
     if (enabledDebug) {
       LogInfo::MapleLogger() << "%" <<
-                                pregTab->PregFromPregIdx(static_cast<PregIdx>(regMeExpr->GetRegIdx()))->GetPregNo();
+          pregTab->PregFromPregIdx(static_cast<PregIdx>(regMeExpr->GetRegIdx()))->GetPregNo();
       LogInfo::MapleLogger() << " renamed to %" << pregTab->PregFromPregIdx(newPregIdx)->GetPregNo() << '\n';
     }
     // reneme all the register
@@ -117,8 +118,7 @@ void PregRenamer::RunSelf() {
 
 AnalysisResult *MeDoPregRename::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr*) {
   auto *irMap = static_cast<MeIRMap*>(m->GetAnalysisResult(MeFuncPhase_IRMAP, func));
-  CHECK_NULL_FATAL(irMap);
-  PregRenamer pregRenamer(NewMemPool(), func, irMap, DEBUGFUNC(func));
+  PregRenamer pregRenamer(*NewMemPool(), *func, *irMap, DEBUGFUNC(func));
   pregRenamer.RunSelf();
   if (DEBUGFUNC(func)) {
     LogInfo::MapleLogger() << "------------after pregrename:-------------------\n";

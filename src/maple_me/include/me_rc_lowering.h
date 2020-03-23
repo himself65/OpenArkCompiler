@@ -48,10 +48,10 @@ class RCLowering {
   void CreateCleanupIntrinsics();
   void HandleArguments();
   void CompactRC(BB &bb);
-  void CompactIncAndDec(MeStmt &incStmt, MeStmt &decStmt);
-  void CompactIncAndDecReset(MeStmt &incStmt, MeStmt &resetStmt);
-  void ReplaceDecResetWithDec(MeStmt &prevStmt, MeStmt &stmt);
-  void CompactAdjacentDecReset(MeStmt &prevStmt, MeStmt &stmt);
+  void CompactIncAndDec(const MeStmt &incStmt, const MeStmt &decStmt);
+  void CompactIncAndDecReset(const MeStmt &incStmt, const MeStmt &resetStmt);
+  void ReplaceDecResetWithDec(MeStmt &prevStmt, const MeStmt &stmt);
+  void CompactAdjacentDecReset(const MeStmt &prevStmt, const MeStmt &stmt);
   // create new symbol from name and return its ost
   OriginalSt *RetrieveOSt(const std::string &name, bool isLocalrefvar) const;
   // create new symbol from temp name and return its VarMeExpr
@@ -65,13 +65,13 @@ class RCLowering {
   MIRIntrinsicID PrepareVolatileCall(const MeStmt &stmt, MIRIntrinsicID index = INTRN_UNDEFINED);
   IntrinsiccallMeStmt *CreateRCIntrinsic(MIRIntrinsicID intrnID, const MeStmt &stmt, std::vector<MeExpr*> &opnds,
                                          bool assigned = false);
-  MeExpr *HandleIncRefAndDecRefStmt(MeStmt &stmt);
+  MeExpr *HandleIncRefAndDecRefStmt(const MeStmt &stmt);
   void InitializedObjectFields(MeStmt &stmt);
   bool IsInitialized(IvarMeExpr &ivar);
   void PreprocessAssignMeStmt(MeStmt &stmt);
   void HandleAssignMeStmtRHS(MeStmt &stmt);
   void HandleAssignMeStmtRegLHS(MeStmt &stmt);
-  void HandleAssignToGlobalVar(MeStmt &stmt);
+  void HandleAssignToGlobalVar(const MeStmt &stmt);
   void HandleAssignToLocalVar(MeStmt &stmt, MeExpr *pendingDec);
   void HandleAssignMeStmtVarLHS(MeStmt &stmt, MeExpr *pendingDec);
   void HandleAssignMeStmtIvarLHS(MeStmt &stmt);
@@ -89,6 +89,8 @@ class RCLowering {
   void HandleReturnStmt();
   void HandleAssignMeStmt(MeStmt &stmt, MeExpr *pendingDec);
   MIRIntrinsicID SelectWriteBarrier(const MeStmt &stmt);
+  MIRType *GetArrayNodeType(const VarMeExpr &var);
+  void CheckArrayStore(const IntrinsiccallMeStmt &writeRefCall);
   MeFunction &func;
   MIRModule &mirModule;
   IRMap &irMap;

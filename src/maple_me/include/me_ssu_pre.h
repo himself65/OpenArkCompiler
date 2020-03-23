@@ -35,8 +35,8 @@ class SOcc {
 
   virtual ~SOcc() = default;
 
-  virtual void Dump() = 0;
-  bool IsPostDominate(Dominance *dom, SOcc *occ) {
+  virtual void Dump() const = 0;
+  bool IsPostDominate(Dominance *dom, const SOcc *occ) const {
     CHECK_NULL_FATAL(occ);
     CHECK_NULL_FATAL(dom);
     return dom->PostDominate(*mirBB, *occ->mirBB);
@@ -66,17 +66,18 @@ class SOcc {
     return mirBB;
   }
 
-  void SetBB(BB *currMirBB) {
-    this->mirBB = currMirBB;
+  void SetBB(BB &currMirBB) {
+    this->mirBB = &currMirBB;
   }
 
   SOcc *GetUse() const {
     return use;
   }
 
-  void SetUse(SOcc *currUse) {
-    this->use = currUse;
+  void SetUse(SOcc &currUse) {
+    this->use = &currUse;
   }
+
  private:
   SOccType occTy;
   uint32 classId;
@@ -88,14 +89,14 @@ class SRealOcc : public SOcc {
  public:
   SRealOcc()
       : SOcc(kSOccReal, nullptr), meStmt(nullptr), vMeExpr(nullptr), realFromDef(false), redundant(true) {}
-  SRealOcc(MeStmt *s)
-      : SOcc(kSOccReal, s->GetBB()), meStmt(s), vMeExpr(nullptr), realFromDef(false), redundant(true) {}
-  SRealOcc(MeStmt *s, VarMeExpr *v)
-      : SOcc(kSOccReal, s->GetBB()), meStmt(s), vMeExpr(v), realFromDef(false), redundant(true) {}
-  SRealOcc(BB *bb, VarMeExpr *v)
-      : SOcc(kSOccReal, bb), meStmt(nullptr), vMeExpr(v), realFromDef(false), redundant(true) {}
+  explicit SRealOcc(MeStmt &s)
+      : SOcc(kSOccReal, s.GetBB()), meStmt(&s), vMeExpr(nullptr), realFromDef(false), redundant(true) {}
+  SRealOcc(MeStmt &s, VarMeExpr &v)
+      : SOcc(kSOccReal, s.GetBB()), meStmt(&s), vMeExpr(&v), realFromDef(false), redundant(true) {}
+  SRealOcc(BB &bb, VarMeExpr &v)
+      : SOcc(kSOccReal, &bb), meStmt(nullptr), vMeExpr(&v), realFromDef(false), redundant(true) {}
   virtual ~SRealOcc() = default;
-  void Dump() {
+  void Dump() const {
     LogInfo::MapleLogger() << "RealOcc at bb" << GetBB()->GetBBId();
     if (realFromDef) {
       LogInfo::MapleLogger() << "(from-def)";
@@ -103,11 +104,11 @@ class SRealOcc : public SOcc {
     LogInfo::MapleLogger() << " classId" << GetClassId();
   }
 
-  MeStmt *GetStmt() {
+  MeStmt *GetStmt() const {
     return meStmt;
   }
 
-  VarMeExpr *GetVar() {
+  VarMeExpr *GetVar() const {
     return vMeExpr;
   }
 
@@ -119,13 +120,14 @@ class SRealOcc : public SOcc {
     this->realFromDef = real;
   }
 
-  bool GetRedundant() {
+  bool GetRedundant() const {
     return redundant;
   }
 
   void SetRedundant(bool isRedundant) {
     this->redundant = isRedundant;
   }
+
  private:
   MeStmt *meStmt;      // the stmt of this real occurrence; null for formal at entry
   VarMeExpr *vMeExpr;  // the varmeexpr of this real occurrence
@@ -137,10 +139,11 @@ class SLambdaOcc;
 
 class SLambdaResOcc : public SOcc {
  public:
-  SLambdaResOcc(BB *bb) : SOcc(kSOccLambdaRes, bb), useLambdaOcc(nullptr), hasRealUse(false), insertHere(false) {}
+  explicit SLambdaResOcc(BB &bb)
+      : SOcc(kSOccLambdaRes, &bb), useLambdaOcc(nullptr), hasRealUse(false), insertHere(false) {}
 
   virtual ~SLambdaResOcc() = default;
-  void Dump() {
+  void Dump() const {
     LogInfo::MapleLogger() << "LambdaResOcc at bb" << GetBB()->GetBBId() << " classId" << GetClassId();
   }
 
@@ -148,8 +151,8 @@ class SLambdaResOcc : public SOcc {
     return useLambdaOcc;
   }
 
-  void SetUseLambdaOcc(SLambdaOcc *currUseLambdaOcc) {
-    this->useLambdaOcc = currUseLambdaOcc;
+  void SetUseLambdaOcc(SLambdaOcc &currUseLambdaOcc) {
+    this->useLambdaOcc = &currUseLambdaOcc;
   }
 
   bool GetHasRealUse() const {
@@ -167,6 +170,7 @@ class SLambdaResOcc : public SOcc {
   void SetInsertHere(bool currInsertHere) {
     this->insertHere = currInsertHere;
   }
+
  private:
   SLambdaOcc *useLambdaOcc;  // its rhs use
   bool hasRealUse;
@@ -175,15 +179,15 @@ class SLambdaResOcc : public SOcc {
 
 class SLambdaOcc : public SOcc {
  public:
-  SLambdaOcc(BB *bb, MapleAllocator *alloc)
-      : SOcc(kSOccLambda, bb), isUpsafe(true), isCanBeAnt(true), isEarlier(true), lambdaRes(alloc->Adapter()) {}
+  SLambdaOcc(BB &bb, MapleAllocator &alloc)
+      : SOcc(kSOccLambda, &bb), isUpsafe(true), isCanBeAnt(true), isEarlier(true), lambdaRes(alloc.Adapter()) {}
 
   virtual ~SLambdaOcc() = default;
   bool WillBeAnt() const {
     return isCanBeAnt && !isEarlier;
   }
 
-  void Dump() {
+  void Dump() const {
     LogInfo::MapleLogger() << "LambdaOcc at bb" << GetBB()->GetBBId() << " classId" << GetClassId() << " Lambda[";
     for (size_t i = 0; i < lambdaRes.size(); i++) {
       lambdaRes[i]->Dump();
@@ -221,6 +225,7 @@ class SLambdaOcc : public SOcc {
   MapleVector<SLambdaResOcc*> &GetLambdaRes() {
     return lambdaRes;
   }
+
  private:
   bool isUpsafe;
   bool isCanBeAnt;
@@ -230,27 +235,27 @@ class SLambdaOcc : public SOcc {
 
 class SEntryOcc : public SOcc {
  public:
-  explicit SEntryOcc(BB *bb) : SOcc(kSOccEntry, bb) {}
+  explicit SEntryOcc(BB &bb) : SOcc(kSOccEntry, &bb) {}
 
   virtual ~SEntryOcc() = default;
-  void Dump() {
+  void Dump() const {
     LogInfo::MapleLogger() << "EntryOcc at bb" << GetBB()->GetBBId();
   }
 };
 
 class SUseOcc : public SOcc {
  public:
-  explicit SUseOcc(BB *bb) : SOcc(kSOccUse, bb) {}
+  explicit SUseOcc(BB &bb) : SOcc(kSOccUse, &bb) {}
 
   virtual ~SUseOcc() = default;
-  void Dump() {
+  void Dump() const {
     LogInfo::MapleLogger() << "UseOcc at bb" << GetBB()->GetBBId();
   }
 };
 
 class SPhiOcc : public SOcc {
  public:
-  SPhiOcc(BB *bb, MeVarPhiNode *p, VarMeExpr *v) : SOcc(kSOccPhi, bb), phi(p), vMeExpr(v) {};
+  SPhiOcc(BB &bb, MeVarPhiNode &p, VarMeExpr &v) : SOcc(kSOccPhi, &bb), phi(&p), vMeExpr(&v) {};
 
   virtual ~SPhiOcc() = default;
 
@@ -270,9 +275,10 @@ class SPhiOcc : public SOcc {
     return vMeExpr;
   }
 
-  void Dump() {
+  void Dump() const {
     LogInfo::MapleLogger() << "PhiOcc at bb" << GetBB()->GetBBId();
   }
+
  private:
   MeVarPhiNode *phi;      // the phinode of this real occurrence;
   VarMeExpr *vMeExpr;  // the varmeexpr of this real occurrence
@@ -280,11 +286,11 @@ class SPhiOcc : public SOcc {
 
 class SpreWorkCand {
  public:
-  SpreWorkCand(MapleAllocator *alloc, const OriginalSt *ost)
+  SpreWorkCand(MapleAllocator &alloc, const OriginalSt &ost)
       : next(nullptr),
-        theOst(ost),
+        theOst(&ost),
         theVar(nullptr),
-        realOccs(alloc->Adapter()),
+        realOccs(alloc.Adapter()),
         hasStoreOcc(false),
         hasCriticalEdge(false) {}
 
@@ -302,8 +308,8 @@ class SpreWorkCand {
     return theVar;
   }
 
-  void SetTheVar(VarMeExpr *var) {
-    this->theVar = var;
+  void SetTheVar(VarMeExpr &var) {
+    this->theVar = &var;
   }
 
   MapleVector<SOcc*> &GetRealOccs() {
@@ -343,15 +349,16 @@ class MeSSUPre {
     kSecondDecrefPre,
     kSubsumePre
   } preKind;
-  MeSSUPre(MeFunction *f, Dominance *dom, MemPool *memPool, PreKind kind, bool enabledDebug)
+
+  MeSSUPre(MeFunction &f, Dominance &dom, MemPool &memPool, PreKind kind, bool enabledDebug)
       : preKind(kind),
-        func(f),
-        ssaTab(f->GetMeSSATab()),
-        irMap(f->GetIRMap()),
-        mirModule(&f->GetMeSSATab()->GetModule()),
-        dom(dom),
-        spreMp(memPool),
-        spreAllocator(memPool),
+        func(&f),
+        ssaTab(f.GetMeSSATab()),
+        irMap(f.GetIRMap()),
+        mirModule(&f.GetMeSSATab()->GetModule()),
+        dom(&dom),
+        spreMp(&memPool),
+        spreAllocator(&memPool),
         workCandMap(std::less<OStIdx>(), spreAllocator.Adapter()),
         workCand(nullptr),
         lambdaDfns(std::less<uint32>(), spreAllocator.Adapter()),
@@ -394,24 +401,24 @@ class MeSSUPre {
   // step 5 methods
   void Finalize();
   // step 4 methods
-  void ResetCanBeAnt(SLambdaOcc *lambda);
-  void ComputeCanBeAnt();
-  void ResetEarlier(SLambdaOcc *lambda);
-  void ComputeEarlier();
-  void ResetCanBeFullyAnt(SLambdaOcc *lambda);
-  void ComputeCanBeFullyAnt();
+  void ResetCanBeAnt(SLambdaOcc &lambda) const;
+  void ComputeCanBeAnt() const;
+  void ResetEarlier(SLambdaOcc &lambda) const;
+  void ComputeEarlier() const;
+  void ResetCanBeFullyAnt(SLambdaOcc &lambda) const;
+  void ComputeCanBeFullyAnt() const;
   // step 3 methods
-  void ResetUpsafe(SLambdaResOcc *lambdaRes);
-  void ComputeUpsafe();
+  void ResetUpsafe(const SLambdaResOcc &lambdaRes) const;
+  void ComputeUpsafe() const;
   // step 2 methods
   void Rename();
   // step 1 methods
-  void GetIterPdomFrontier(const BB *bb, MapleSet<uint32> *pdfSet, std::vector<bool> &visitedMap);
+  void GetIterPdomFrontier(const BB &bb, MapleSet<uint32> &pdfSet, std::vector<bool> &visitedMap);
   void FormLambdas();
   void FormLambdaRes();
   void CreateSortedOccs();
   // step 0 methods
-  void CreateEntryOcc(BB *bb) {
+  void CreateEntryOcc(BB &bb) {
     SEntryOcc *entryOcc = spreMp->New<SEntryOcc>(bb);
     entryOccs.push_back(entryOcc);
   }

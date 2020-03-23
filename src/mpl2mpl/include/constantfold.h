@@ -99,19 +99,19 @@ class ConstantFold : public FuncOptimizeImpl {
                                              const MIRConst &const0, const MIRConst &const1) const;
   ConstvalNode *FoldFPConstBinary(Opcode opcode, PrimType resultType, const ConstvalNode &const0,
                                   const ConstvalNode &const1) const;
-  ConstvalNode *FoldConstUnary(Opcode opcode, PrimType resultType, ConstvalNode *c) const;
-  ConstvalNode *FoldIntConstUnary(Opcode opcode, PrimType resultType, const ConstvalNode *c) const;
+  ConstvalNode *FoldConstUnary(Opcode opcode, PrimType resultType, ConstvalNode *constNode) const;
+  ConstvalNode *FoldIntConstUnary(Opcode opcode, PrimType resultType, const ConstvalNode *constNode) const;
   template <typename T>
-  ConstvalNode *FoldFPConstUnary(Opcode opcode, PrimType resultType, ConstvalNode *c) const;
+  ConstvalNode *FoldFPConstUnary(Opcode opcode, PrimType resultType, ConstvalNode *constNode) const;
   BaseNode *NegateTree(BaseNode *node) const;
   BaseNode *Negate(BaseNode *node) const;
   BaseNode *Negate(UnaryNode *node) const;
   BaseNode *Negate(const ConstvalNode *node) const;
-  BinaryNode *NewBinaryNode(BinaryNode *old, Opcode op, PrimType primeType, BaseNode *l, BaseNode *r) const;
-  UnaryNode *NewUnaryNode(UnaryNode *old, Opcode op, PrimType primeType, BaseNode *e) const;
+  BinaryNode *NewBinaryNode(BinaryNode *old, Opcode op, PrimType primeType, BaseNode *lhs, BaseNode *rhs) const;
+  UnaryNode *NewUnaryNode(UnaryNode *old, Opcode op, PrimType primeType, BaseNode *expr) const;
   std::pair<BaseNode*, int64> DispatchFold(BaseNode *node);
-  BaseNode *PairToExpr(PrimType resultType, const std::pair<BaseNode*, int64> &p) const;
-  BaseNode *SimplifyDoubleCompare(CompareNode *node) const;
+  BaseNode *PairToExpr(PrimType resultType, const std::pair<BaseNode*, int64> &pair) const;
+  BaseNode *SimplifyDoubleCompare(CompareNode &node) const;
 };
 
 class DoConstantFold : public ModulePhase {

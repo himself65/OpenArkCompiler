@@ -23,7 +23,7 @@
 namespace maple {
 // accumulate the BBs that are in the iterated dominance frontiers of bb in
 // the set dfSet, visiting each BB only once
-void MeSSAUpdate::GetIterDomFrontier(const BB &bb, MapleSet<BBId> &dfSet, std::vector<bool> &visitedMap) {
+void MeSSAUpdate::GetIterDomFrontier(const BB &bb, MapleSet<BBId> &dfSet, std::vector<bool> &visitedMap) const {
   CHECK_FATAL(bb.GetBBId() < visitedMap.size(), "index out of range in MeSSAUpdate::GetIterDomFrontier");
   if (visitedMap[bb.GetBBId()]) {
     return;

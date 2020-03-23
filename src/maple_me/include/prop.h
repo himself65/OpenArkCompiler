@@ -43,7 +43,7 @@ class Prop {
  protected:
   Dominance &dom;
 
-  virtual void UpdateCurFunction(BB&) {
+  virtual void UpdateCurFunction(BB&) const {
   }
 
   virtual bool LocalToDifferentPU(StIdx, const BB&) const {
@@ -61,15 +61,15 @@ class Prop {
                            const std::vector<std::stack<SafeMeExprPtr>> &vstLiveStack) const;
   bool IvarIsFinalField(const IvarMeExpr &ivarMeExpr) const;
   bool Propagatable(const MeExpr &expr, const BB &fromBB, bool atParm) const;
-  MeExpr &PropVar(VarMeExpr &varmeExpr, bool atParm, bool checkPhi);
-  MeExpr &PropReg(RegMeExpr &regmeExpr, bool atParm);
-  MeExpr &PropIvar(IvarMeExpr &ivarMeExpr);
+  MeExpr &PropVar(VarMeExpr &varmeExpr, bool atParm, bool checkPhi) const;
+  MeExpr &PropReg(RegMeExpr &regmeExpr, bool atParm) const;
+  MeExpr &PropIvar(IvarMeExpr &ivarMeExpr) const;
   MeExpr &PropMeExpr(MeExpr &meExpr, bool &isproped, bool atParm);
-  MeExpr *SimplifyMeExpr(OpMeExpr &opMeExpr);
-  MeExpr *SimplifyCvtMeExpr(const OpMeExpr &opMeExpr);
-  MeExpr *SimplifyCompareMeExpr(OpMeExpr &opMeExpr);
+  MeExpr *SimplifyMeExpr(OpMeExpr &opMeExpr) const;
+  MeExpr *SimplifyCvtMeExpr(const OpMeExpr &opMeExpr) const;
+  MeExpr *SimplifyCompareMeExpr(OpMeExpr &opMeExpr) const;
   MeExpr *SimplifyCompareSelectConstMeExpr(const OpMeExpr &opMeExpr, const MeExpr &opMeOpnd0, MeExpr &opnd1,
-      MeExpr &opnd01, MeExpr &opnd02);
+      MeExpr &opnd01, MeExpr &opnd02) const;
 
   IRMap &irMap;
   SSATab &ssaTab;

@@ -39,7 +39,7 @@ struct LoopDesc {
 // IdentifyLoop records all the loops in a MeFunction.
 class IdentifyLoops : public AnalysisResult {
  public:
-  explicit IdentifyLoops(MemPool *memPool, MeFunction *mf, Dominance *dm)
+  IdentifyLoops(MemPool *memPool, MeFunction *mf, Dominance *dm)
       : AnalysisResult(memPool),
         meLoopMemPool(memPool),
         meLoopAlloc(memPool),
@@ -53,15 +53,17 @@ class IdentifyLoops : public AnalysisResult {
   const MapleVector<LoopDesc*> &GetMeLoops() const {
     return meLoops;
   }
-  void SetMeLoop(size_t i, LoopDesc *desc) {
-    meLoops[i] = desc;
+
+  void SetMeLoop(size_t i, LoopDesc &desc) {
+    meLoops[i] = &desc;
   }
 
-  LoopDesc *CreateLoopDesc(BB *hd, BB *tail);
-  void SetLoopParent4BB(const BB *bb, LoopDesc *loopDesc);
+  LoopDesc *CreateLoopDesc(BB &hd, BB &tail);
+  void SetLoopParent4BB(const BB &bb, LoopDesc &loopDesc);
   void ProcessBB(BB *bb);
   void MarkBB();
   void Dump();
+
  private:
   MemPool *meLoopMemPool;
   MapleAllocator meLoopAlloc;

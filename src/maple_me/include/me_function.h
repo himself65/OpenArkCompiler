@@ -174,7 +174,7 @@ class MeFunction : public FuncEmit {
         sccTopologicalVec(alloc.Adapter()),
         sccOfBB(GetAllBBs().size(), nullptr, alloc.Adapter()),
         backEdges(alloc.Adapter()),
-        fileName(fileName) {}
+        fileName(fileName, memPool) {}
 
   ~MeFunction() override = default;
 
@@ -374,7 +374,7 @@ class MeFunction : public FuncEmit {
     return *valid_rbegin();
   }
 
-  MIRModule &GetMIRModule() {
+  MIRModule &GetMIRModule() const {
     return mirModule;
   }
 
@@ -490,7 +490,7 @@ class MeFunction : public FuncEmit {
   MapleVector<SCCOfBBs*> sccOfBB;
   MapleSet<std::pair<uint32, uint32>> backEdges;
   /* input */
-  std::string fileName;
+  MapleString fileName;
   uint32 regNum = 0;    // count virtual registers
   uint32 hints = 0;
   bool hasEH = false;       /* current has try statement */

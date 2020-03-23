@@ -25,15 +25,15 @@ namespace maple {
 class SSADevirtual {
  public:
   static bool debug;
-  SSADevirtual(MemPool *memPool, MIRModule *currMod, IRMap *irMap, KlassHierarchy *currKh,
-               Dominance *currDom, size_t bbVecSize, Clone *currClone)
-      : devirtualAlloc(memPool),
-        mod(currMod),
-        irMap(irMap),
-        kh(currKh),
-        dom(currDom),
+  SSADevirtual(MemPool &memPool, MIRModule &currMod, IRMap &irMap, KlassHierarchy &currKh,
+               Dominance &currDom, size_t bbVecSize, Clone &currClone)
+      : devirtualAlloc(&memPool),
+        mod(&currMod),
+        irMap(&irMap),
+        kh(&currKh),
+        dom(&currDom),
         bbVisited(bbVecSize, false, devirtualAlloc.Adapter()),
-        clone(currClone),
+        clone(&currClone),
         retTy(kNotSeen),
         inferredRetTyIdx(0),
         totalVirtualCalls(0),
@@ -44,27 +44,27 @@ class SSADevirtual {
 
   virtual ~SSADevirtual() = default;
 
-  void Perform(BB *entryBB);
+  void Perform(BB &entryBB);
 
  protected:
-  virtual MIRFunction *GetMIRFunction() {
+  virtual MIRFunction *GetMIRFunction() const {
     return nullptr;
   }
 
-  virtual BB *GetBB(BBId id) = 0;
+  virtual BB *GetBB(BBId id) const = 0;
   void TraversalBB(BB*);
-  void TraversalMeStmt(MeStmt *Stmt);
-  void VisitVarPhiNode(MeVarPhiNode*);
-  void VisitMeExpr(MeExpr*);
-  void PropVarInferredType(VarMeExpr*);
-  void PropIvarInferredType(IvarMeExpr*);
-  void ReturnTyIdxInferring(const RetMeStmt*);
-  bool NeedNullCheck(MeExpr*) const;
-  void InsertNullCheck(CallMeStmt*, MeExpr*);
-  bool DevirtualizeCall(CallMeStmt*);
-  void SSADevirtualize(CallNode *stmt);
-  void ReplaceCall(CallMeStmt*, MIRFunction*);
-  TyIdx GetInferredTyIdx(MeExpr *expr);
+  void TraversalMeStmt(MeStmt &Stmt);
+  void VisitVarPhiNode(MeVarPhiNode&) const;
+  void VisitMeExpr(MeExpr*) const;
+  void PropVarInferredType(VarMeExpr&) const;
+  void PropIvarInferredType(IvarMeExpr&) const;
+  void ReturnTyIdxInferring(const RetMeStmt&);
+  bool NeedNullCheck(const MeExpr&) const;
+  void InsertNullCheck(const CallMeStmt&, MeExpr&) const;
+  bool DevirtualizeCall(CallMeStmt&);
+  void SSADevirtualize(CallNode &stmt);
+  void ReplaceCall(CallMeStmt&, const MIRFunction&);
+  TyIdx GetInferredTyIdx(MeExpr &expr) const;
 
  private:
   MapleAllocator devirtualAlloc;

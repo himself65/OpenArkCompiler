@@ -43,7 +43,7 @@ std::string BB::StrAttribute() const {
   return "NYI";
 }
 
-void BB::DumpBBAttribute(MIRModule *mod) const {
+void BB::DumpBBAttribute(const MIRModule *mod) const {
   if (GetAttributes(kBBAttrIsEntry)) {
     mod->GetOut() << " Entry ";
   }
@@ -287,7 +287,7 @@ MeStmt *BB::GetLastMe() {
   return &meStmtList.back();
 }
 
-void BB::RemoveMeStmt(MeStmt *meStmt) {
+void BB::RemoveMeStmt(const MeStmt *meStmt) {
   CHECK_FATAL(meStmt != nullptr, "null ptr check");
   meStmtList.erase(meStmt);
 }
@@ -332,18 +332,18 @@ void BB::InsertMeStmtLastBr(MeStmt *inStmt) {
   }
 }
 
-void BB::ReplaceMeStmt(MeStmt *stmt, MeStmt *newStmt) {
+void BB::ReplaceMeStmt(const MeStmt *stmt, MeStmt *newStmt) {
   InsertMeStmtBefore(stmt, newStmt);
   RemoveMeStmt(stmt);
 }
 
-void BB::DumpMeBB(IRMap &irMap) {
+void BB::DumpMeBB(const IRMap &irMap) {
   for (MeStmt &meStmt : GetMeStmts()) {
     meStmt.Dump(&irMap);
   }
 }
 
-void BB::DumpMeVarPiList(IRMap *irMap) {
+void BB::DumpMeVarPiList(const IRMap *irMap) {
   if (meVarPiList.empty()) {
     return;
   }
@@ -358,7 +358,7 @@ void BB::DumpMeVarPiList(IRMap *irMap) {
   std::cout << "<<<<<<<<<<<<<<  PI Node End >>>>>>>>>>>>>>>>>>>>\n";
 }
 
-void BB::DumpMeVarPhiList(IRMap *irMap) {
+void BB::DumpMeVarPhiList(const IRMap *irMap) {
   int count = 0;
   for (const auto &phi : meVarPhiList) {
     phi.second->Dump(irMap);
@@ -370,7 +370,7 @@ void BB::DumpMeVarPhiList(IRMap *irMap) {
   }
 }
 
-void BB::DumpMeRegPhiList(IRMap *irMap) {
+void BB::DumpMeRegPhiList(const IRMap *irMap) {
   for (const auto &phi : meRegPhiList) {
     phi.second->Dump(irMap);
   }

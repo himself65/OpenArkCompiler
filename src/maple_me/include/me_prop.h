@@ -24,8 +24,8 @@ class MeProp : public Prop {
  public:
   MeProp(MeIRMap &irMap, Dominance &dom, MemPool &memPool, const PropConfig &config)
       : Prop(irMap, dom, memPool, std::vector<BB*>(irMap.GetFunc().GetAllBBs().begin(),
-                                                  irMap.GetFunc().GetAllBBs().end()),
-             *irMap.GetFunc().GetCommonEntryBB(), config) {}
+                                                   irMap.GetFunc().GetAllBBs().end()),
+        *irMap.GetFunc().GetCommonEntryBB(), config) {}
 
   virtual ~MeProp() = default;
 };

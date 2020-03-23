@@ -256,19 +256,19 @@ class MeABC {
 
   Dominance *GetDominace() {
     return dom;
-  };
+  }
 
   MemPool *GetMemPool() {
     return memPool;
-  };
+  }
 
   MapleAllocator &GetAllocator() {
     return allocator;
-  };
+  }
 
-  MeIRMap *GetIRMap() {
+  const MeIRMap *GetIRMap() const {
     return irMap;
-  };
+  }
 
   MeFunction *meFunc;
   Dominance *dom;
