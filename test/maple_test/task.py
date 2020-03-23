@@ -29,6 +29,7 @@ from maple_test.utils import (
     EXECUTABLE,
     COMPARE,
     PASS,
+    FAIL,
     NOT_RUN,
     UNRESOLVED,
     read_config,
@@ -79,9 +80,8 @@ class TaskConfig:
             "internal_var": copy.deepcopy(self.internal_var),
             "env": copy.deepcopy(self.env),
         }
-        case_config["internal_var"]["f"] = str(case.path)
+        case_config["internal_var"]["f"] = str(case.path.name)
         case_config["internal_var"]["n"] = str(case.path.stem)
-        case_config["internal_var"]["d"] = str(case.path.parent)
         return case_config
 
 
@@ -195,17 +195,21 @@ class TestSuiteTask:
             self.task_set[name] = []
             self.task_set_result[name] = defaultdict(int)
             for case in cases:
-                self.task_set[name].append(SingleTask(case, config, running_config))
-                self.task_set_result[name][NOT_RUN] += 1
+                single_task = SingleTask(case, config, running_config)
+                self.task_set[name].append(single_task)
+                self.task_set_result[name][single_task.result[0]] += 1
 
     def serial_run_task(self):
         for tasks_name in self.task_set:
             for index, task in enumerate(self.task_set[tasks_name]):
-                if task.result[0] == PASS:
+                if task.result[0] == PASS or task.result[0] == UNRESOLVED:
                     continue
                 self.task_set_result[tasks_name][task.result[0]] -= 1
                 _, task.result = run_commands(
-                    (tasks_name, index), task.commands, **task.running_config
+                    (tasks_name, index),
+                    task.result,
+                    task.commands,
+                    **task.running_config
                 )
                 status, _ = task.result
                 self.task_set_result[tasks_name][status] += 1
@@ -216,17 +220,12 @@ class TestSuiteTask:
         result_queue = []
         for tasks_name in self.task_set:
             for index, task in enumerate(self.task_set[tasks_name]):
-                if not task.commands:
-                    self.task_set_result[tasks_name][task.result[0]] -= 1
-                    task.result = (UNRESOLVED, None)
-                    self.task_set_result[tasks_name][UNRESOLVED] += 1
-                    continue
-                if task.result[0] == PASS:
+                if task.result[0] == PASS or task.result[0] == UNRESOLVED:
                     continue
                 result_queue.append(
                     pool.apply_async(
                         run_commands,
-                        args=((tasks_name, index), task.commands,),
+                        args=((tasks_name, index), task.result, task.commands,),
                         kwds=task.running_config,
                     )
                 )
@@ -323,8 +322,6 @@ class SingleTask:
         self.name = "{}_task/{}".format(config.name, case.name)
         self.path = Path("{}_task/{}".format(config.name, case.name))
         config = config.get_case_config(case)
-        self.commands = []
-        self._form_commands(case, config)
         env = config["env"]
         temp_dir = "{}_{}".format(self.path.name.replace(".", "_"), int(time.time()))
         self.work_dir = running_config["temp_dir"] / self.path.parent / temp_dir
@@ -336,10 +333,25 @@ class SingleTask:
             "env": env,
         }
         self.case_path = case.relative_path
-        self.prepare(case, self.work_dir, config)
-        log_dir = (running_config.get("log_config").get("dir") / self.name).parent
-        self.prepare_dir(log_dir)
-        self.result = (NOT_RUN, None)
+        if case.commands:
+            prepare_result = self.prepare(case, self.work_dir, config)
+            if prepare_result[0]:
+                self.result = (NOT_RUN, None)
+                log_dir = (
+                    running_config.get("log_config").get("dir") / self.name
+                ).parent
+                self.prepare_dir(log_dir)
+            else:
+                self.result = (
+                    FAIL,
+                    prepare_result[-1],
+                )
+        else:
+            self.result = (UNRESOLVED, None)
+
+        self.commands = []
+        if self.result[0] == NOT_RUN:
+            self._form_commands(case, config)
 
     def prepare(self, case, dest, config):
         dependence = case.dependence
@@ -347,15 +359,15 @@ class SingleTask:
         src_dir = src_path.parent
         logger = configs.LOGGER
         if not src_path.exists():
-            logger.debug("Source: {} is not existing.\n".format(src_path))
-            return
+            err = "Source: {} is not existing.\n".format(src_path)
+            logger.debug(err)
+            return False, err
         self.prepare_dir(dest)
         shutil.copy(str(src_path), str(dest))
         logger.debug("Copy {} => {}".format(src_path, dest))
-        self.prepare_dependence(src_dir, dependence, dest, config)
+        return self.prepare_dependence(src_dir, dependence, dest, config)
 
-    @staticmethod
-    def prepare_dependence(src_dir, dependence, dest, config):
+    def prepare_dependence(self, src_dir, dependence, dest, config):
         logger = configs.LOGGER
         src_files = []
         for file in dependence:
@@ -363,6 +375,13 @@ class SingleTask:
             src_path = src_dir / file
             if src_path.exists():
                 src_files.append(src_path)
+            else:
+                return (
+                    False,
+                    "DEPENDENCE keyword error, DEPENDENCE file: {} NotFound".format(
+                        file
+                    ),
+                )
         src_files = set(src_files)
         for file in src_files:
             if file.is_file():
@@ -375,6 +394,7 @@ class SingleTask:
                     pass
         if src_files:
             logger.debug("Copy {} => {}".format(src_files, dest))
+        return True, ""
 
     @staticmethod
     def prepare_dir(directory):
