@@ -283,6 +283,7 @@ void PreWorkCand::AddRealOccSorted(const Dominance &dom, MeRealOcc &occ, PUIdx p
         if (occ.GetSequence() >= (*rIt)->GetSequence()) {
           break;
         }
+        ++rIt;
       }
       InsertRealOccAt(occ, rIt.base(), pIdx);
     }

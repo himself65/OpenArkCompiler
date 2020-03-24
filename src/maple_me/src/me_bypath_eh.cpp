@@ -67,6 +67,7 @@ bool MeDoBypathEH::DoBypathException(BB *tryBB, BB *catchBB, const Klass *catchC
         MIRBuilder *mirBuilder = func.GetMIRModule().GetMIRBuilder();
         DassignNode *copyStmt = mirBuilder->CreateStmtDassign(stIdx, 0, rhExpr);
         bb->InsertStmtBefore(stmt, copyStmt);
+        CHECK_NULL_FATAL(catchBB);
         GotoNode *gotoNode = mirBuilder->CreateStmtGoto(OP_goto, catchBB->GetBBLabel());
         bb->ReplaceStmt(stmt, gotoNode);
         if (syncExitStmt != nullptr) {

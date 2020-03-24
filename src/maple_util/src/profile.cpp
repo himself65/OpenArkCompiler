@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -213,28 +213,30 @@ bool Profile::DeCompress(const std::string &path, const std::string &dexNameInne
     return res;
   }
   this->isAppProfile = (header->profileFileType == kApp) ? true : false;
-  uint32 stringTabSize = byteCount - header->stringTabOff + 1;
+  size_t stringTabSize = byteCount - header->stringTabOff;
   if (debug) {
     LogInfo::MapleLogger() << "Header summary "
               << "profile num " << static_cast<uint32>(header->profileNum) << "string table size" << stringTabSize
               << std::endl;
   }
   const char *strBuf = buf + header->stringTabOff;
-  uint32 idx = 0;
-  strMap.push_back(strBuf);
-  while (idx < stringTabSize) {
-    if (*(strBuf + idx) == kStringEnd) {
-      strMap.push_back(strBuf + idx + 1);
-    }
-    idx++;
+  const char *cursor = strBuf;
+  const char *sentinel = strBuf + stringTabSize;
+  while (cursor < sentinel) {
+    size_t len = std::strlen(cursor);
+    const char *next = cursor + len + 1;
+    strMap.emplace_back(cursor);
+    cursor = next;
   }
+  ASSERT(strMap.size() == header->stringCount, "string count doesn't match");
   if (debug) {
-    LogInfo::MapleLogger() << "str size " << idx << std::endl;
+    LogInfo::MapleLogger() << "str size " << strMap.size() << std::endl;
     for (auto item : strMap) {
       LogInfo::MapleLogger() << item << std::endl;
     }
     LogInfo::MapleLogger() << "str size print end  " << std::endl;
   }
+  size_t idx = 0;
   for (idx = 0; idx < header->profileNum; idx++) {
     ProfileDataInfo *profileDataInfo = &(header->data[idx]);
     if (debug) {

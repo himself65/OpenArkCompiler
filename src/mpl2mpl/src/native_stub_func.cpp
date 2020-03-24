@@ -364,7 +364,7 @@ void NativeStubFuncGeneration::GenerateRegisteredNativeFuncCall(MIRFunction &fun
   BaseNode *regreadExpr = builder->CreateExprRegread(PTY_ptr, funcptrPreg);
   constexpr int intConstLength = 56;
   BaseNode *shiftExpr = builder->CreateExprBinary(OP_lshr, *GlobalTables::GetTypeTable().GetPtr(), regreadExpr,
-                                                  builder->CreateIntConst(intConstLength, PTY_u64));
+                                                  builder->CreateIntConst(intConstLength, PTY_u32));
   RegassignNode *funcptrshiftAssign = builder->CreateStmtRegassign(PTY_ptr, funcptrshiftPreg, shiftExpr);
   auto readFuncptrshift = builder->CreateExprRegread(PTY_ptr, funcptrshiftPreg);
   BaseNode *checkRegExpr =
