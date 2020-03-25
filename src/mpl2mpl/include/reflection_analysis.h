@@ -35,6 +35,12 @@ enum class ClassRO : uint32 {
   kClinitAddr
 };
 
+enum StaticFieldName {
+  kClassName = 0,
+  kFieldName = 1,
+  kTypeName = 2,
+};
+
 enum class ClassProperty : uint32 {
   kShadow,
   kMonitor,
