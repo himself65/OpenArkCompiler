@@ -25,6 +25,7 @@ import time
 from maple_test import configs
 from maple_test.task import TestSuiteTask
 from maple_test.utils import timer
+from maple_test.run import TestError
 
 
 @timer
@@ -33,22 +34,28 @@ def main():
     logger = configs.LOGGER
 
     test_paths = test_suite_config.get("test_paths")
+    test_cfg = test_suite_config.get("test_cfg")
     cli_running_config = test_suite_config.get("cli_running_config")
 
     retry = configs.get_val("retry")
     result = []
     for test in test_paths:
         if test.exists():
-            task = TestSuiteTask(
-                test, test / "test.cfg", running_config, cli_running_config
-            )
+            if not test_cfg:
+                test_cfg = test / "test.cfg"
+            try:
+                task = TestSuiteTask(test, test_cfg, running_config, cli_running_config)
+            except TestError as e:
+                logger.info(e)
+                continue
             if not task.task_set:
                 continue
-            for run_times in range(1, retry + 2):
+            for run_time in range(1, retry + 2):
+                logger.info("Run {} times".format(run_time))
                 task.run(configs.get_val("processes"))
                 result.append(task.gen_summary([]))
         else:
-            print("Test path: {} does not exist, please check".format(test))
+            logger.info("Test path: {} does not exist, please check".format(test))
 
     output = configs.get_val("output")
     if output:
