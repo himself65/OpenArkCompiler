@@ -192,3 +192,15 @@ def timer(func):
         return result
 
     return wrapper
+
+
+def is_relative(path1, path2):
+    """Is path1 relative to path2"""
+    _p1 = complete_path(path1)
+    _p2 = complete_path(path2)
+    try:
+        _p1.relative_to(_p2)
+    except ValueError:
+        return 0
+    else:
+        return 1

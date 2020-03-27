@@ -89,14 +89,13 @@ class TestSuiteTask:
     def __init__(self, test_path, cfg_path, running_config, cli_running_config=None):
         if cli_running_config is None:
             cli_running_config = {}
-        user_test_cfg = cli_running_config.get("test_cfg")
         user_test_list = cli_running_config.get("test_list")
         user_config_set = cli_running_config.get("user_config_set")
         user_config = cli_running_config.get("user_config")
         user_env = cli_running_config.get("user_env")
 
         self.path = test_path
-        self.cfg_path = user_test_cfg or cfg_path
+        self.cfg_path = cfg_path
 
         config = read_config(self.cfg_path)
         if config is None:
@@ -129,19 +128,24 @@ class TestSuiteTask:
 
     def _form_config(self, test_path, config, user_config_set, user_config, user_env):
         top_config = TaskConfig(self.name, self.cfg_path, None, user_config, user_env)
-        if not user_config_set:
+        if (
+            not user_config_set
+            or "default" in user_config_set
+            or self.name in user_config_set
+        ):
             self.config_set[self.name] = top_config
+        cfg_base = self.cfg_path.parent
         for name, config_path in config_section_to_dict(config, "config-set").items():
-            if not user_config_set or name == user_config_set:
+            if not user_config_set or name in user_config_set:
                 self.config_set[name] = TaskConfig(
-                    name, test_path / config_path, top_config, user_config, user_env
+                    name, cfg_base / config_path, top_config, user_config, user_env
                 )
 
     def _form_testlist(
         self, test_path, config, encoding, user_config_set, user_test_list
     ):
         for name, testlist_path in config_section_to_dict(config, "testlist").items():
-            if not user_config_set or name == user_config_set:
+            if not user_config_set or name in user_config_set:
                 if user_test_list is None:
                     self.testlist_set[name] = read_list(
                         test_path / testlist_path, encoding
@@ -149,14 +153,15 @@ class TestSuiteTask:
                 else:
                     self.testlist_set[name] = read_list(user_test_list, encoding)
         if self.testlist_set.get("default") is None:
-            self.testlist_set["default"] = set("*"), set()
-        if test_path.is_file():
-            self.testlist_set["default"] = set("."), set()
-        if (test_path / "testlist").exists():
-            testlist = read_list(test_path / "testlist", encoding)
-        else:
-            testlist = self.testlist_set["default"]
-        self.testlist_set[self.name] = testlist
+            testlist = set("*"), set()
+            if (test_path / "testlist").exists():
+                testlist = read_list(test_path / "testlist", encoding)
+            if test_path.is_file():
+                testlist = set("."), set()
+            if user_test_list:
+                testlist = read_list(user_test_list, encoding)
+            self.testlist_set["default"] = testlist
+        self.testlist_set[self.name] = self.testlist_set["default"]
         self.all_cases = {}
         self._search_list(test_path, encoding)
 
@@ -180,7 +185,7 @@ class TestSuiteTask:
                     case = Case(case_file, test_path, comment, encoding,)
                     self.all_cases[case_name] = case
                     self.testlist_set[name].append(self.all_cases[case_name])
-    
+
     @staticmethod
     def _search_case(include, exclude, test_path, suffixes):
         case_files = set()
@@ -188,8 +193,8 @@ class TestSuiteTask:
             for include_path in test_path.glob(glob_pattern):
                 case_files.update(ls_all(include_path, suffixes))
         for glob_pattern in exclude:
-                for exclude_path in test_path.glob(glob_pattern):
-                    case_files -= set(ls_all(exclude_path, suffixes))
+            for exclude_path in test_path.glob(glob_pattern):
+                case_files -= set(ls_all(exclude_path, suffixes))
         return case_files
 
     def _form_task_set(self, running_config):

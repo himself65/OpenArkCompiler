@@ -23,8 +23,8 @@ import logging
 import sys
 from pathlib import Path
 
-from maple_test.utils import ALL, ENCODING
-from maple_test.utils import complete_path, read_config, get_config_value, BASE_DIR
+from maple_test.utils import ALL, ENCODING, BASE_DIR
+from maple_test.utils import complete_path, read_config, get_config_value, is_relative
 
 TEST_CONFIG = {}
 LOGGER = None
@@ -104,6 +104,7 @@ def parse_args():
     test_suite_parser.add_argument(
         "-c",
         "--config_set",
+        action="append",
         dest="user_config_set",
         metavar="config_set_name",
         help="Run a test set with the specified config set name",
@@ -166,14 +167,6 @@ def parse_args():
     )
 
     args = parser.parse_args()
-    if args.test_paths:
-        for path in args.test_paths:
-            if path.is_file and not args.test_cfg:
-                print(
-                    "Error: When specify test case, need also specify test configure file\n"
-                )
-                parser.print_help()
-                sys.exit(0)
     if args.test_list and not args.test_cfg:
         print("Error: When specify test list, need also specify test configure file\n")
         parser.print_help()
@@ -195,10 +188,10 @@ def parse_args():
 
     test_suite_config = {
         "test_paths": args.test_paths or None,
+        "test_cfg": args.test_cfg or None,
         "cli_running_config": {
-            "test_cfg": args.test_cfg or None,
             "test_list": args.test_list or None,
-            "user_config_set": args.user_config_set or None,
+            "user_config_set": args.user_config_set or [],
             "user_config": args.user_config or {},
             "user_env": args.user_env or {},
         },
@@ -221,15 +214,13 @@ def parse_args():
 
 def parser_maple_test_config_file(maple_test_cfg_file):
     raw_config = read_config(maple_test_cfg_file)
+    test_paths = get_config_value(raw_config, "test-home", "dir")
+    if test_paths:
+        test_paths = test_paths.replace("\n", "").split(":")
+    else:
+        test_paths = []
     test_suite_config = {
-        "test_paths": [
-            BASE_DIR / path
-            for path in get_config_value(raw_config, "test-home", "dir")
-            .replace("\n", "")
-            .split(":")
-            if path
-        ]
-        or None,
+        "test_paths": [BASE_DIR / path for path in test_paths if path] or [],
     }
     log_config = {
         "dir": complete_path(
@@ -264,6 +255,18 @@ def init_config():
         file_running_config,
         file_log_config,
     ) = parser_maple_test_config_file(TEST_CONFIG.get("cfg"))
+
+    cli_test_paths = cli_test_suite_config.get("test_paths") or []
+    file_test_paths = file_test_suite_config.get("test_paths") or []
+
+    for path1 in cli_test_paths:
+        for path2 in file_test_paths:
+            if is_relative(path1, path2):
+                user_test_cfg = cli_test_suite_config.get("test_cfg")
+                if not user_test_cfg:
+                    cli_test_suite_config["test_cfg"] = complete_path(
+                        path2 / "test.cfg"
+                    )
 
     test_suite_config = merge_config(cli_test_suite_config, file_test_suite_config)
     running_config = merge_config(cli_running_config, file_running_config)
