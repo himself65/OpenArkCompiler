@@ -43,7 +43,7 @@ def parse_args():
     )
     test_framework_parser.add_argument(
         "-j",
-        type=int,
+        type=bigger_than_one_integer,
         metavar="<mum>",
         dest="processes",
         default=1,
@@ -53,7 +53,7 @@ def parse_args():
         "--retry",
         metavar="<num>",
         default=0,
-        type=int,
+        type=bigger_than_one_integer,
         help="Re-run unsuccessful test cases",
     )
     test_framework_parser.add_argument(
@@ -86,7 +86,7 @@ def parse_args():
 
     test_suite_parser = parser.add_argument_group("Test Suite arguments")
     test_suite_parser.add_argument(
-        "test_paths", nargs="*", type=complete_path, help="Test suite path"
+        "test_paths", nargs="*", type=complete_path, help="Test suite path",
     )
     test_suite_parser.add_argument(
         "--test_cfg",
@@ -99,6 +99,7 @@ def parse_args():
         "--test_list",
         metavar="<TEST_LIST_FILE>",
         type=complete_path,
+        default=None,
         help="testlist path for filter test cases",
     )
     test_suite_parser.add_argument(
@@ -106,6 +107,7 @@ def parse_args():
         "--config_set",
         action="append",
         dest="user_config_set",
+        default=[],
         metavar="config_set_name",
         help="Run a test set with the specified config set name",
         type=str,
@@ -135,6 +137,7 @@ def parse_args():
         "--temp_dir",
         metavar="<TEMP_DIR_PATH>",
         type=complete_path,
+        default=None,
         help="Location for test execute. ",
     )
     running_parser.add_argument(
@@ -154,12 +157,14 @@ def parse_args():
         "--log_dir",
         metavar="<LOG_DIR_FILE_PATH>",
         type=complete_path,
+        default=None,
         help="Where to store test log",
     )
     log_parser.add_argument(
         "--log_level",
         "-l",
         type=get_level_name,
+        default=None,
         help="set log level from: CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET",
     )
     log_parser.add_argument(
@@ -171,41 +176,37 @@ def parse_args():
         print("Error: When specify test list, need also specify test configure file\n")
         parser.print_help()
         sys.exit(0)
-    if args.retry < 0:
-        print("The number of retry must be a positive integer.\n")
-        parser.print_help()
-        sys.exit(0)
 
     test_framework_config = {
-        "cfg": args.cfg or None,
-        "processes": args.processes or None,
-        "retry": args.retry or 0,
-        "output": args.output or None,
-        "debug": args.debug or None,
+        "cfg": args.cfg,
+        "processes": args.processes,
+        "retry": args.retry,
+        "output": args.output,
+        "debug": args.debug,
         "print_type": args.print_type,
         "progress": args.progress,
     }
 
     test_suite_config = {
         "test_paths": args.test_paths or None,
-        "test_cfg": args.test_cfg or None,
+        "test_cfg": args.test_cfg,
         "cli_running_config": {
-            "test_list": args.test_list or None,
-            "user_config_set": args.user_config_set or [],
-            "user_config": args.user_config or {},
-            "user_env": args.user_env or {},
+            "test_list": args.test_list,
+            "user_config_set": args.user_config_set,
+            "user_config": args.user_config,
+            "user_env": args.user_env,
         },
     }
 
     running_config = {
-        "temp_dir": args.temp_dir or None,
-        "timeout": args.timeout or None,
-        "encoding": args.encoding or None,
+        "temp_dir": args.temp_dir,
+        "timeout": args.timeout,
+        "encoding": args.encoding,
     }
 
     log_config = {
-        "dir": args.log_dir or None,
-        "level": args.log_level or None,
+        "dir": args.log_dir,
+        "level": args.log_level,
         "verbose": args.verbose,
     }
 
@@ -220,22 +221,19 @@ def parser_maple_test_config_file(maple_test_cfg_file):
     else:
         test_paths = []
     test_suite_config = {
-        "test_paths": [BASE_DIR / path for path in test_paths if path] or [],
+        "test_paths": [BASE_DIR / path for path in test_paths if path],
     }
     log_config = {
         "dir": complete_path(
             BASE_DIR / Path(get_config_value(raw_config, "logging", "name"))
-        )
-        or None,
-        "level": get_level_name(get_config_value(raw_config, "logging", "level"))
-        or None,
+        ),
+        "level": get_level_name(get_config_value(raw_config, "logging", "level")),
     }
 
     running_config = {
         "temp_dir": complete_path(
             BASE_DIR / Path(get_config_value(raw_config, "running", "temp_dir"))
-        )
-        or None,
+        ),
     }
 
     return test_suite_config, running_config, log_config
@@ -378,3 +376,10 @@ def construct_logger(
 def get_level_name(name: str):
     name = name.upper()
     return logging.getLevelName(name)
+
+
+def bigger_than_one_integer(num):
+    inum = int(num)
+    if inum < 1:
+        raise argparse.ArgumentTypeError("{} is not bigger than one".format(num))
+    return inum

@@ -88,25 +88,23 @@ def run_commands(
     logger.debug("Work directory: {}".format(work_dir))
     for command in commands:
         start = timeit.default_timer()
-        try:
-            return_code, com_out, com_err = run_command(
-                command, work_dir, remain_time, logger, env
+
+        return_code, com_out, com_err = run_command(
+            command, work_dir, remain_time, logger, env
+        )
+        if return_code != 0:
+            result = (FAIL, (return_code, command, shorten(com_err, width=84)))
+            err = "Run task exit unexpected : {}, Log file at: {}.log".format(
+                result[-1], log_config[0].get("dir") / name
             )
-            if return_code != 0:
-                result = (FAIL, (return_code, command, shorten(com_err, width=84)))
-                err = "Run task exit unexpected : {}, Log file at: {}.log".format(
-                    result[-1], log_config[0].get("dir") / name
-                )
-                raise TestError(err)
-        except TestError as err:
             logger.error(err)
             break
-        else:
-            run_time = timeit.default_timer() - start
-            remain_time = remain_time - run_time
-            logger.debug(
-                "Run time: {:.2}, remain time: {:.2}".format(run_time, remain_time)
-            )
+
+        run_time = timeit.default_timer() - start
+        remain_time = remain_time - run_time
+        logger.debug(
+            "Run time: {:.2}, remain time: {:.2}".format(run_time, remain_time)
+        )
     if result[0] == PASS:
         logger.debug("Task executed successfully")
     handlers = logger.handlers[:]

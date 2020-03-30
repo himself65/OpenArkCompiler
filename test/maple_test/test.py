@@ -26,11 +26,13 @@ class Case:
         if path != test_path:
             self.name = str(path).replace(".", "_")
             self.path = test_path / path
+            self.test_name = test_path.name
         else:
             self.name = "{}_{}".format(path.parent.name, path.name).replace(".", "_")
             self.path = path
-        self.relative_path = path
+            self.test_name = path.parent.name
         self.test_path = test_path
+        self.relative_path = path
         self.comment = comment
         _, comment_lines = split_comment(
             comment, read_file_with_multi_encoding(self.path, encoding),
@@ -40,6 +42,7 @@ class Case:
         ]
         self.expect = self.extract_expect(comment_lines)
         self.dependence = self.extract_dependence(comment_lines)
+        self.result = {}
 
     @staticmethod
     def extract_expect(comment_lines):
