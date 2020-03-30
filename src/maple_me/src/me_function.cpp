@@ -420,6 +420,7 @@ void MeFunction::Prepare(unsigned long rangeNum) {
 }
 
 void MeFunction::Verify() const {
+  CHECK_FATAL(theCFG != nullptr, "theCFG is null");
   theCFG->Verify();
   theCFG->VerifyLabels();
 }

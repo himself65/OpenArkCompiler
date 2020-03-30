@@ -615,8 +615,8 @@ uint16 ReflectionAnalysis::GetMethodInVtabIndex(const Klass &klass, const MIRFun
 
 void ReflectionAnalysis::GetSignatureTypeNames(std::string &signature, std::vector<std::string> &typeNames) {
   ConvertMethodSig(signature);
-  int sigLen = signature.length();
-  int i = 0;
+  size_t sigLen = signature.length();
+  size_t i = 0;
   const char *methodSignature = signature.c_str();
   ++i;
   while (i < sigLen && methodSignature[i] != ')') {
@@ -860,6 +860,7 @@ void ReflectionAnalysis::GenFieldOffsetConst(MIRAggConst &newConst, const Klass 
     FieldID fldID = mirBuilder.GetStructFieldIDFromNameAndTypeParentFirstFoundInChild(
         *mirClassType, originFieldname, fieldP.second.first);
     // set LSB 0, and set LSB 1 in muid_replacement
+    CHECK_FATAL(fldID <= UINT32_MAX / 2, "filedId out of range");
     fldID = fldID * 2;
     mirBuilder.AddIntFieldConst(type, newConst, metaFieldID, fldID);
   }
@@ -1280,7 +1281,7 @@ uint32 ReflectionAnalysis::GetAnnoCstrIndex(std::map<int, int> &idxNumMap, const
       subStr += annoDelimiter;
     });
     subStr += annoArr;
-    signatureIdx = GetDeflateStringIdx(subStr, !isField);
+    signatureIdx = static_cast<uint32>(GetDeflateStringIdx(subStr, !isField));
   }
   return signatureIdx;
 }
@@ -1365,7 +1366,7 @@ void ReflectionAnalysis::GenClassMetaData(Klass &klass) {
   uint32 nameIdx = FindOrInsertReflectString(klassJavaDescriptor);
   mirBuilder.AddIntFieldConst(classMetadataROType, *newConst, fieldID++, nameIdx);
   // @iFields: All instance fields.
-  int numOfFields = 0;
+  uint32 numOfFields = 0;
   bool hasAdded = false;
   if (klass.GetKlassName() == NameMangler::GetInternalNameLiteral(NameMangler::kJavaLangObjectStr)) {
     const GStrIdx stridx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(
@@ -1387,7 +1388,7 @@ void ReflectionAnalysis::GenClassMetaData(Klass &klass) {
     }
   }
   // @methods: All methods.
-  int numOfMethods = 0;
+  uint32 numOfMethods = 0;
   MIRSymbol *methodsSt;
   methodsSt = GenMethodsMetaData(klass);
   if (methodsSt != nullptr) {

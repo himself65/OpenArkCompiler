@@ -406,6 +406,7 @@ void AliasClass::UnionForNotAllDefsSeen() {
   }
 }
 
+
 // fabricate the imaginary not_all_def_seen AliasElem
 AliasElem *AliasClass::FindOrCreateDummyNADSAe() {
   MIRSymbol *dummySym = mirModule.GetMIRBuilder()->GetOrCreateSymbol(TyIdx(PTY_i32), "__nads_dummysym__", kStVar,
@@ -720,13 +721,15 @@ void AliasClass::InsertMayUseAll(const StmtNode &stmt) {
 
 void AliasClass::CollectMayDefForDassign(const StmtNode &stmt, std::set<OriginalSt*> &mayDefOsts) {
   AliasElem *lhsAe = osym2Elem.at(ssaTab.GetStmtsSSAPart().GetAssignedVarOf(stmt)->GetOrigIdx());
+  FieldID fldIDA = lhsAe->GetOriginalSt().GetFieldID();
   ASSERT(lhsAe != nullptr, "aliaselem of lhs should not be null");
   if (lhsAe->GetClassSet() != nullptr) {
     for (unsigned int elemID : *(lhsAe->GetClassSet())) {
       if (elemID != lhsAe->GetClassID()) {
         OriginalSt &ostOfAliasAE = id2Elem[elemID]->GetOriginalSt();
-        if (ostOfAliasAE.GetTyIdx() == lhsAe->GetOriginalSt().GetMIRSymbol()->GetTyIdx()) {
-          mayDefOsts.insert(&ostOfAliasAE);
+        FieldID fldIDB = ostOfAliasAE.GetFieldID();
+        if (fldIDA == fldIDB || fldIDA == 0 || fldIDB == 0) {
+          (void)mayDefOsts.insert(&ostOfAliasAE);
         }
       }
     }

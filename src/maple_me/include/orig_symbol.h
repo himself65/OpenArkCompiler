@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -54,6 +54,7 @@ class OriginalSt {
     ASSERT(ostType == kSymbolOst, "OriginalSt must be SymbolOst");
     return symOrPreg.mirSt;
   }
+
   MIRSymbol *GetMIRSymbol() {
     ASSERT(ostType == kSymbolOst, "OriginalSt must be SymbolOst");
     return symOrPreg.mirSt;
@@ -228,6 +229,39 @@ class OriginalSt {
   PUIdx puIdx;
 };
 
+class SymbolFieldPair {
+ public:
+  SymbolFieldPair(uint32 stIndex, FieldID fld) : stIdx(stIndex), fldID(fld) {}
+  ~SymbolFieldPair() = default;
+  bool operator==(const SymbolFieldPair& pairA) const {
+    return (pairA.stIdx == stIdx) && (pairA.fldID == fldID);
+  }
+
+  uint32 GetSymbolIndex() const {
+    return stIdx;
+  }
+
+  FieldID GetFieldID() const {
+    return fldID;
+  }
+ private:
+  uint32 stIdx;
+  FieldID fldID;
+};
+
+struct HashSymbolFieldPair {
+  size_t operator()(const SymbolFieldPair& symbolFldID) const {
+    return symbolFldID.GetSymbolIndex();
+  }
+};
+
+struct EqualSymbolFieldPair {
+  bool operator()(const SymbolFieldPair& symbolFldIDA, const SymbolFieldPair& symbolFldIDB) const {
+    return symbolFldIDA.GetSymbolIndex() == symbolFldIDB.GetSymbolIndex() &&
+           symbolFldIDA.GetFieldID() == symbolFldIDB.GetFieldID();
+  }
+};
+
 // This Table is for original symobols only. There is no SSA info attached and SSA is built based on this table.
 class OriginalStTable {
  public:
@@ -304,7 +338,7 @@ class OriginalStTable {
   MIRModule &mirModule;
   MapleVector<OriginalSt*> originalStVector;  // the vector that map a OriginalSt's index to its pointer
   // mir symbol to original table, this only exists for no-original variables.
-  MapleUnorderedMap<const MIRSymbol*, OStIdx> mirSt2Ost;
+  MapleUnorderedMap<SymbolFieldPair, OStIdx, HashSymbolFieldPair, EqualSymbolFieldPair> mirSt2Ost;
   MapleUnorderedMap<PregIdx, OStIdx> preg2Ost;
   // mir type to virtual variables in original table. this only exists for no-original variables.
   MapleMap<TyIdx, OStIdx> pType2Ost;

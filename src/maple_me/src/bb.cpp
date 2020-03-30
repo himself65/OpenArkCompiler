@@ -147,6 +147,7 @@ int BB::RemoveBBFromVector(MapleVector<BB*> &bbVec) const {
 }
 
 void BB::RemoveBBFromPred(BB *bb) {
+  CHECK_NULL_FATAL(bb);
   int index = bb->RemoveBBFromVector(pred);
   ASSERT(index != -1, "-1 is a very large number in BB::RemoveBBFromPred");
   for (auto &phi : phiList) {
@@ -164,6 +165,7 @@ void BB::RemoveBBFromPred(BB *bb) {
 }
 
 void BB::RemoveBBFromSucc(BB *bb) {
+  CHECK_NULL_FATAL(bb);
   bb->RemoveBBFromVector(succ);
 }
 

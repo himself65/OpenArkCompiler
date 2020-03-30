@@ -129,14 +129,16 @@ void CheckCastGenerator::GenCheckCast(StmtNode &stmt) {
         CHECK_FATAL(callNodeNopndSize2 > 0, "container check");
         BaseNode *cond =
             builder->CreateExprCompare(OP_ne, *GlobalTables::GetTypeTable().GetUInt1(),
-                                       *GlobalTables::GetTypeTable().GetPtr(), callNode->GetNopndAt(0), nullPtrConst);
+                                       *GlobalTables::GetTypeTable().GetPtrType(), callNode->GetNopndAt(0),
+                                       nullPtrConst);
         auto *ifStmt = static_cast<IfStmtNode*>(builder->CreateStmtIf(cond));
         MIRType *mVoidPtr = GlobalTables::GetTypeTable().GetVoidPtr();
         CHECK_FATAL(mVoidPtr != nullptr, "builder->GetVoidPtr() is null in CheckCastGenerator::GenCheckCast");
         BaseNode *opnd = callNode->GetNopndAt(0);
         BaseNode *ireadExpr = GetObjectShadow(opnd);
         BaseNode *innerCond = builder->CreateExprCompare(OP_ne, *GlobalTables::GetTypeTable().GetUInt1(),
-                                                         *GlobalTables::GetTypeTable().GetPtr(), valueExpr, ireadExpr);
+                                                         *GlobalTables::GetTypeTable().GetPtrType(), valueExpr,
+                                                         ireadExpr);
         auto *innerIfStmt = static_cast<IfStmtNode*>(builder->CreateStmtIf(innerCond));
         MapleVector<BaseNode*> args(builder->GetCurrentFuncCodeMpAllocator()->Adapter());
         args.push_back(valueExpr);

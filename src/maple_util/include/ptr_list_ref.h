@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -289,6 +289,7 @@ class PtrListRef {
       _Value->SetPrev(nullptr);
       _Value->SetNext(nullptr);
     } else {
+      ASSERT(this->first != nullptr, "null ptr check");
       this->first->SetPrev(_Value);
       _Value->SetPrev(nullptr);
       _Value->SetNext(this->first);
@@ -385,6 +386,7 @@ class PtrListRef {
       this->first = &(_Other.front());
       this->last = &(_Other.back());
     } else if (_Where == this->cend() || _Where == const_iterator(this->last)) {
+      ASSERT(this->last != nullptr, "null ptr check");
       this->last->SetNext(&(_Other.front()));
       _Other.front().SetPrev(this->last);
       this->last = &(_Other.back());

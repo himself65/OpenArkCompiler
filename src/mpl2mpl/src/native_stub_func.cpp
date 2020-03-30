@@ -220,8 +220,7 @@ void NativeStubFuncGeneration::ProcessFunc(MIRFunction *func) {
   MIRFunction &nativeFunc = GetOrCreateDefaultNativeFunc(*func);
 
   if (Options::regNativeFunc) {
-    GenerateRegisteredNativeFuncCall(*func, nativeFunc, allocCallArgs, stubFuncRet, needNativeCall, *preFuncCall,
-                                     *postFuncCall);
+    GenerateRegisteredNativeFuncCall(*func, nativeFunc, allocCallArgs, stubFuncRet);
   } else if (Options::nativeWrapper) {
     GenerateNativeWrapperFuncCall(*func, nativeFunc, allocCallArgs, stubFuncRet);
   } else {
@@ -328,9 +327,7 @@ void NativeStubFuncGeneration::GenerateRegTabEntry(const MIRFunction &func) {
 }
 
 void NativeStubFuncGeneration::GenerateRegisteredNativeFuncCall(MIRFunction &func, const MIRFunction &nativeFunc,
-                                                                MapleVector<BaseNode*> &args, const MIRSymbol *ret,
-                                                                bool needNativeCall, CallNode &preNativeFuncCall,
-                                                                CallNode &postNativeFuncCall) {
+                                                                MapleVector<BaseNode*> &args, const MIRSymbol *ret) {
   // Generate registration table entry.
   GenerateRegTabEntry(func);
   GenerateRegFuncTabEntry();
@@ -422,13 +419,7 @@ void NativeStubFuncGeneration::GenerateRegisteredNativeFuncCall(MIRFunction &fun
           *GlobalTables::GetTypeTable().GetOrCreatePointerType(*elemType), 0, arrayExpr, nativeMethodPtr);
       subIfStmt->GetThenPart()->AddStatement(nativeFuncTableEntry);
       // Add if-statement to function body
-      if (!needNativeCall) {
-        ifStmt->GetThenPart()->AddStatement(&preNativeFuncCall);
-      }
       ifStmt->GetThenPart()->AddStatement(callGetFindNativeFunc);
-      if (!needNativeCall) {
-        ifStmt->GetThenPart()->AddStatement(&postNativeFuncCall);
-      }
       ifStmt->GetThenPart()->AddStatement(callDummyNativeFunc);
       ifStmt->GetThenPart()->AddStatement(subIfStmt);
       if (needCheckThrowPendingExceptionFunc) {
@@ -458,13 +449,7 @@ void NativeStubFuncGeneration::GenerateRegisteredNativeFuncCall(MIRFunction &fun
       CallNode *callGetFindNativeFunc = builder->CreateStmtCallRegassigned(findNativeFunc->GetPuidx(), dynamicStubOpnds,
                                                                            funcptrPreg, OP_callassigned);
       // Add if-statement to function body
-      if (!needNativeCall) {
-        ifStmt->GetThenPart()->AddStatement(&preNativeFuncCall);
-      }
       ifStmt->GetThenPart()->AddStatement(callGetFindNativeFunc);
-      if (!needNativeCall) {
-        ifStmt->GetThenPart()->AddStatement(&postNativeFuncCall);
-      }
       if (!needCheckThrowPendingExceptionFunc) {
         MapleVector<BaseNode*> opnds(builder->GetCurrentFuncCodeMpAllocator()->Adapter());
         CallNode *callGetExceptFunc = builder->CreateStmtCallAssigned(MRTCheckThrowPendingExceptionFunc->GetPuidx(),
@@ -514,7 +499,12 @@ StmtNode *NativeStubFuncGeneration::CreateNativeWrapperCallNode(MIRFunction &fun
   auto isFast = (func.GetAttr(FUNCATTR_fast_native) || func.GetAttr(FUNCATTR_critical_native));
   // Do not need native wrapper for critical natives
   // if num_of_args < 8
+#ifdef USE_ARM32_MACRO
+  constexpr size_t numOfArgs = 4;
+#else
   constexpr size_t numOfArgs = 8;
+#endif
+
   if (func.GetAttr(FUNCATTR_critical_native) && args.size() < numOfArgs) {
     auto *icall = func.GetCodeMempool()->New<IcallNode>(GetMIRModule(), OP_icallassigned);
     CallReturnVector nrets(func.GetCodeMempoolAllocator().Adapter());
@@ -677,8 +667,14 @@ void NativeStubFuncGeneration::Finish() {
   }
 }
 
+#ifdef USE_ARM32_MACRO
+const std::string NativeStubFuncGeneration::callSlowNativeFuncs[kSlownativeFuncnum] = {
+    "MCC_CallSlowNative0", "MCC_CallSlowNative1", "MCC_CallSlowNative2", "MCC_CallSlowNative3", "MCC_CallSlowNative4"
+};
+#else
 const std::string NativeStubFuncGeneration::callSlowNativeFuncs[kSlownativeFuncnum] = {
     "MCC_CallSlowNative0", "MCC_CallSlowNative1", "MCC_CallSlowNative2", "MCC_CallSlowNative3", "MCC_CallSlowNative4",
     "MCC_CallSlowNative5", "MCC_CallSlowNative6", "MCC_CallSlowNative7", "MCC_CallSlowNative8"
 };
+#endif
 }  // namespace maple

@@ -82,7 +82,6 @@ class MeSSALPre : public SSAPre {
 class MeDoSSALPre : public MeFuncPhase {
  public:
   explicit MeDoSSALPre(MePhaseID id) : MeFuncPhase(id) {}
-
   virtual ~MeDoSSALPre() = default;
   AnalysisResult *Run(MeFunction *irFunc, MeFuncResultMgr *funcMgr, ModuleResultMgr *moduleMgr) override;
   std::string PhaseName() const override {

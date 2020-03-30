@@ -72,7 +72,7 @@ void IdentifyLoops::ProcessBB(BB *bb) {
   }
 }
 
-void IdentifyLoops::Dump() {
+void IdentifyLoops::Dump() const {
   for (LoopDesc *mploop : meLoops) {
     // loop
     LogInfo::MapleLogger() << "nest depth: " << mploop->nestDepth << " loop head BB: " << mploop->head->GetBBId()

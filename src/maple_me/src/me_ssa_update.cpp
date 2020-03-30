@@ -174,7 +174,13 @@ void MeSSAUpdate::RenameStmts(BB &bb) {
     // rename the expressions
     for (size_t i = 0; i < stmt.NumMeStmtOpnds(); ++i) {
       bool changed = false;
-      stmt.SetOpnd(i, RenameExpr(*stmt.GetOpnd(i), changed /* dummy */));
+      stmt.SetOpnd(static_cast<uint32>(i), RenameExpr(*stmt.GetOpnd(i), changed));
+      // if base of iassign's ivar is changed, a new ivar is needed
+      if (stmt.GetOp() == OP_iassign && i == 0 && changed) {
+        auto &iAssign = static_cast<IassignMeStmt&>(stmt);
+        IvarMeExpr *iVar = irMap.BuildLHSIvarFromIassMeStmt(iAssign);
+        iAssign.SetLHSVal(iVar);
+      }
     }
     // process mayDef
     MapleMap<OStIdx, ChiMeNode*> *chiList = stmt.GetChiList();
@@ -205,8 +211,7 @@ void MeSSAUpdate::RenameStmts(BB &bb) {
     if (it == renameStacks.end()) {
       continue;
     }
-    MapleStack<VarMeExpr*> *renameStack = it->second;
-    renameStack->push(lhsVar);
+    it->second->push(lhsVar);
   }
 }
 

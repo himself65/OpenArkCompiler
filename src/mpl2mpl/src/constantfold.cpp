@@ -409,15 +409,15 @@ ConstvalNode *ConstantFold::FoldIntConstBinary(Opcode opcode, PrimType resultTyp
     }
     case OP_ashr: {
       if (useResult64) {
-        result64 = intValueOfConst0 >> intValueOfConst1;
+        result64 = intValueOfConst0 >> static_cast<uint64>(intValueOfConst1);
       } else {
-        result32 = static_cast<int32>(intValueOfConst0) >> static_cast<int32>(intValueOfConst1);
+        result32 = static_cast<int32>(intValueOfConst0) >> static_cast<uint32>(intValueOfConst1);
       }
       break;
     }
     case OP_lshr: {
       if (useResult64) {
-        result64 = static_cast<uint64>(intValueOfConst0) >> intValueOfConst1;
+        result64 = static_cast<uint64>(intValueOfConst0) >> static_cast<uint64>(intValueOfConst1);
       } else {
         result32 = static_cast<uint32>(intValueOfConst0) >> static_cast<uint32>(intValueOfConst1);
       }
@@ -764,8 +764,11 @@ MIRConst *ConstantFold::FoldConstComparisonMIRConst(Opcode opcode, PrimType resu
                                                     const MIRConst &const0, const MIRConst &const1) {
   MIRConst *returnValue = nullptr;
   if (IsPrimitiveInteger(opndType) || IsPrimitiveDynInteger(opndType)) {
-    returnValue = FoldIntConstComparisonMIRConst(opcode, resultType, *safe_cast<MIRIntConst>(&const0),
-                                                 *safe_cast<MIRIntConst>(&const1));
+    const auto *intConst0 = safe_cast<MIRIntConst>(&const0);
+    const auto *intConst1 = safe_cast<MIRIntConst>(&const1);
+    ASSERT_NOT_NULL(intConst0);
+    ASSERT_NOT_NULL(intConst1);
+    returnValue = FoldIntConstComparisonMIRConst(opcode, resultType, *intConst0, *intConst1);
   } else if (opndType == PTY_f32 || opndType == PTY_f64) {
     returnValue = FoldFPConstComparisonMIRConst(opcode, resultType, opndType, const0, const1);
   } else {
@@ -803,6 +806,7 @@ ConstvalNode *ConstantFold::FoldConstBinary(Opcode opcode, PrimType resultType, 
 ConstvalNode *ConstantFold::FoldIntConstUnary(Opcode opcode, PrimType resultType, const ConstvalNode *constNode) const {
   CHECK_NULL_FATAL(constNode);
   const MIRIntConst *cst = safe_cast<MIRIntConst>(constNode->GetConstVal());
+  ASSERT_NOT_NULL(cst);
   uint32 result32 = 0;
   uint64 result64 = 0;
   bool useResult64 = (GetPrimTypeSize(resultType) == kByteSizeOfBit64);
@@ -1015,11 +1019,13 @@ ConstvalNode *ConstantFold::FoldCeil(const ConstvalNode *cst, PrimType fromType,
   CHECK_NULL_FATAL(cst);
   if (fromType == PTY_f32) {
     const MIRFloatConst *constValue = safe_cast<MIRFloatConst>(cst->GetConstVal());
+    ASSERT_NOT_NULL(constValue);
     float floutValue = ceil(constValue->GetValue());
     resultConst->SetConstVal(GlobalTables::GetIntConstTable().GetOrCreateIntConst(
         static_cast<int64>(floutValue), resultType));
   } else {
     const MIRDoubleConst *constValue = safe_cast<MIRDoubleConst>(cst->GetConstVal());
+    ASSERT_NOT_NULL(constValue);
     double doubleValue = ceil(constValue->GetValue());
     resultConst->SetConstVal(GlobalTables::GetIntConstTable().GetOrCreateIntConst(
         static_cast<int64>(doubleValue), resultType));
@@ -1032,10 +1038,12 @@ MIRConst *ConstantFold::FoldFloorMIRConst(const MIRConst *cst, PrimType fromType
   CHECK_NULL_FATAL(cst);
   if (fromType == PTY_f32) {
     const MIRFloatConst *constValue = safe_cast<MIRFloatConst>(cst);
+    ASSERT_NOT_NULL(constValue);
     float floutValue = floor(constValue->GetValue());
     return GlobalTables::GetIntConstTable().GetOrCreateIntConst(static_cast<int64>(floutValue), resultType);
   } else {
     const MIRDoubleConst *constValue = safe_cast<MIRDoubleConst>(cst);
+    ASSERT_NOT_NULL(constValue);
     double doubleValue = floor(constValue->GetValue());
     return GlobalTables::GetIntConstTable().GetOrCreateIntConst(static_cast<int64>(doubleValue), resultType);
   }
@@ -1052,14 +1060,17 @@ MIRConst *ConstantFold::FoldRoundMIRConst(const MIRConst *cst, PrimType fromType
   MIRType &resultType = *GlobalTables::GetTypeTable().GetPrimType(toType);
   if (fromType == PTY_f32) {
     const MIRFloatConst *constValue = safe_cast<MIRFloatConst>(cst);
+    ASSERT_NOT_NULL(constValue);
     float floatValue = round(constValue->GetValue());
     return GlobalTables::GetIntConstTable().GetOrCreateIntConst(static_cast<int64>(floatValue), resultType);
   } else if (fromType == PTY_f64) {
     const MIRDoubleConst *constValue = safe_cast<MIRDoubleConst>(cst);
+    ASSERT_NOT_NULL(constValue);
     double doubleValue = round(constValue->GetValue());
     return GlobalTables::GetIntConstTable().GetOrCreateIntConst(static_cast<int64>(doubleValue), resultType);
   } else if (toType == PTY_f32 && IsPrimitiveInteger(fromType)) {
     const MIRIntConst *constValue = safe_cast<MIRIntConst>(cst);
+    ASSERT_NOT_NULL(constValue);
     int64 fromValue = constValue->GetValue();
     float floatValue = round(static_cast<float>(fromValue));
     if (static_cast<int64>(floatValue) == fromValue) {
@@ -1067,6 +1078,7 @@ MIRConst *ConstantFold::FoldRoundMIRConst(const MIRConst *cst, PrimType fromType
     }
   } else if (toType == PTY_f64 && IsPrimitiveInteger(fromType)) {
     const MIRIntConst *constValue = safe_cast<MIRIntConst>(cst);
+    ASSERT_NOT_NULL(constValue);
     int64 fromValue = constValue->GetValue();
     double doubleValue = round(static_cast<double>(fromValue));
     if (static_cast<int64>(doubleValue) == fromValue) {
@@ -1091,11 +1103,13 @@ ConstvalNode *ConstantFold::FoldTrunk(const ConstvalNode *cst, PrimType fromType
   CHECK_NULL_FATAL(cst);
   if (fromType == PTY_f32) {
     const MIRFloatConst *constValue = safe_cast<MIRFloatConst>(cst->GetConstVal());
+    CHECK_NULL_FATAL(constValue);
     float floutValue = trunc(constValue->GetValue());
     resultConst->SetConstVal(GlobalTables::GetIntConstTable().GetOrCreateIntConst(
         static_cast<int64>(floutValue), resultType));
   } else {
     const MIRDoubleConst *constValue = safe_cast<MIRDoubleConst>(cst->GetConstVal());
+    CHECK_NULL_FATAL(constValue);
     double doubleValue = trunc(constValue->GetValue());
     resultConst->SetConstVal(GlobalTables::GetIntConstTable().GetOrCreateIntConst(
         static_cast<int64>(doubleValue), resultType));
@@ -1119,9 +1133,10 @@ MIRConst *ConstantFold::FoldTypeCvtMIRConst(const MIRConst *cst, PrimType fromTy
       }
       toConst = FoldSignExtendMIRConst(op, toType, fromSize, cst);
     } else {
-      const MIRIntConst *c = safe_cast<MIRIntConst>(cst);
+      const MIRIntConst *constVal = safe_cast<MIRIntConst>(cst);
+      ASSERT_NOT_NULL(constVal);
       MIRType &type = *GlobalTables::GetTypeTable().GetPrimType(toType);
-      toConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(c->GetValue(), type);
+      toConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(constVal->GetValue(), type);
     }
     return toConst;
   }
@@ -1130,12 +1145,14 @@ MIRConst *ConstantFold::FoldTypeCvtMIRConst(const MIRConst *cst, PrimType fromTy
     if (GetPrimTypeBitSize(toType) < GetPrimTypeBitSize(fromType)) {
       ASSERT(GetPrimTypeBitSize(toType) == 32, "We suppot F32 and F64");
       const MIRDoubleConst *fromValue = safe_cast<MIRDoubleConst>(cst);
+      ASSERT_NOT_NULL(fromValue);
       float floutValue = static_cast<float>(fromValue->GetValue());
       MIRFloatConst *toValue = GlobalTables::GetFpConstTable().GetOrCreateFloatConst(floutValue);
       toConst = toValue;
     } else {
       ASSERT(GetPrimTypeBitSize(toType) == 64, "We suppot F32 and F64");
       const MIRFloatConst *fromValue = safe_cast<MIRFloatConst>(cst);
+      ASSERT_NOT_NULL(fromValue);
       double doubleValue = static_cast<double>(fromValue->GetValue());
       MIRDoubleConst *toValue = GlobalTables::GetFpConstTable().GetOrCreateDoubleConst(doubleValue);
       toConst = toValue;
@@ -1212,12 +1229,13 @@ std::pair<BaseNode*, int64> ConstantFold::FoldTypeCvt(TypeCvtNode *node) {
 
 MIRConst *ConstantFold::FoldSignExtendMIRConst(Opcode opcode, PrimType resultType, uint8 size,
                                                const MIRConst *cst) const {
-  const MIRIntConst *c = safe_cast<MIRIntConst>(cst);
+  const MIRIntConst *constVal = safe_cast<MIRIntConst>(cst);
+  ASSERT_NOT_NULL(constVal);
   uint64 result64 = 0;
   if (opcode == OP_sext) {
-    result64 = (c->GetValue() << (64u - size)) >> (64u - size);
+    result64 = (constVal->GetValue() << (64u - size)) >> (64u - size);
   } else {
-    result64 = ((static_cast<uint64>(c->GetValue())) << (64u - size)) >> (64u - size);
+    result64 = ((static_cast<uint64>(constVal->GetValue())) << (64u - size)) >> (64u - size);
   }
   MIRType &type = *GlobalTables::GetTypeTable().GetPrimType(resultType);
   MIRIntConst *constValue = GlobalTables::GetIntConstTable().GetOrCreateIntConst(result64, type);
@@ -1307,11 +1325,15 @@ std::pair<BaseNode*, int64> ConstantFold::FoldBinary(BinaryNode *node) {
   ConstvalNode *rConst = safe_cast<ConstvalNode>(r);
   bool isInt = IsPrimitiveInteger(primType);
   if (lConst != nullptr && rConst != nullptr) {
+    MIRIntConst *lConstVal = safe_cast<MIRIntConst>(lConst->GetConstVal());
+    MIRIntConst *rConstVal = safe_cast<MIRIntConst>(rConst->GetConstVal());
+    ASSERT_NOT_NULL(lConstVal);
+    ASSERT_NOT_NULL(rConstVal);
     // Don't fold div by 0, for floats div by 0 is well defined.
     if ((op == OP_div || op == OP_rem) && isInt &&
-        (safe_cast<MIRIntConst>(rConst->GetConstVal())->GetValue() == 0 ||
-         safe_cast<MIRIntConst>(lConst->GetConstVal())->GetValue() == LONG_MIN ||
-         safe_cast<MIRIntConst>(lConst->GetConstVal())->GetValue() == INT_MIN)) {
+        (rConstVal->GetValue() == 0 ||
+         lConstVal->GetValue() == LONG_MIN ||
+         lConstVal->GetValue() == INT_MIN)) {
       result = NewBinaryNode(node, op, primType, lConst, rConst);
       sum = 0;
     } else {
@@ -1325,6 +1347,7 @@ std::pair<BaseNode*, int64> ConstantFold::FoldBinary(BinaryNode *node) {
     }
   } else if (lConst != nullptr && isInt) {
     MIRIntConst *mcst = safe_cast<MIRIntConst>(lConst->GetConstVal());
+    ASSERT_NOT_NULL(mcst);
     PrimType cstTyp = mcst->GetType().GetPrimType();
     int64 cst = mcst->GetValue();
     if (op == OP_add) {
@@ -1378,6 +1401,7 @@ std::pair<BaseNode*, int64> ConstantFold::FoldBinary(BinaryNode *node) {
     }
   } else if (rConst != nullptr && isInt) {
     MIRIntConst *mcst = safe_cast<MIRIntConst>(rConst->GetConstVal());
+    ASSERT_NOT_NULL(mcst);
     PrimType cstTyp = mcst->GetType().GetPrimType();
     int64 cst = mcst->GetValue();
     if (op == OP_add) {
@@ -1584,6 +1608,8 @@ std::pair<BaseNode*, int64> ConstantFold::FoldDepositbits(DepositbitsNode *node)
   if (leftConst != nullptr && rightConst != nullptr) {
     MIRIntConst *intConst0 = safe_cast<MIRIntConst>(leftConst->GetConstVal());
     MIRIntConst *intConst1 = safe_cast<MIRIntConst>(rightConst->GetConstVal());
+    ASSERT_NOT_NULL(intConst0);
+    ASSERT_NOT_NULL(intConst1);
     ConstvalNode *resultConst = mirModule->CurFuncCodeMemPool()->New<ConstvalNode>();
     resultConst->SetPrimType(node->GetPrimType());
     MIRType &type = *GlobalTables::GetTypeTable().GetPrimType(node->GetPrimType());
@@ -1656,6 +1682,7 @@ std::pair<BaseNode*, int64> ConstantFold::FoldTernary(TernaryNode *node) {
     ConstvalNode *const0 = safe_cast<ConstvalNode>(p[0].first);
     if (const0 != nullptr) {
       MIRIntConst *intConst0 = safe_cast<MIRIntConst>(const0->GetConstVal());
+      ASSERT_NOT_NULL(intConst0);
       // Selecting the first value if not 0, selecting the second value otherwise.
       if (intConst0->GetValue()) {
         result = PairToExpr(primTypes[1], p[1]);
@@ -1667,8 +1694,10 @@ std::pair<BaseNode*, int64> ConstantFold::FoldTernary(TernaryNode *node) {
       ConstvalNode *const2 = safe_cast<ConstvalNode>(p[2].first);
       if (const1 != nullptr && const2 != nullptr) {
         MIRIntConst *intConst1 = safe_cast<MIRIntConst>(const1->GetConstVal());
-        MIRIntConst *int2 = safe_cast<MIRIntConst>(const2->GetConstVal());
-        if (intConst1->GetValue() == 1 && int2->GetValue() == 0) {
+        MIRIntConst *intConst2 = safe_cast<MIRIntConst>(const2->GetConstVal());
+        ASSERT_NOT_NULL(intConst1);
+        ASSERT_NOT_NULL(intConst2);
+        if (intConst1->GetValue() == 1 && intConst2->GetValue() == 0) {
           BaseNode *tmpNode = node->Opnd(0);
           if (node->GetPrimType() != PTY_u1) {
             tmpNode = mirModule->CurFuncCodeMemPool()->New<TypeCvtNode>(OP_cvt, PrimType(node->GetPrimType()),
@@ -1676,7 +1705,7 @@ std::pair<BaseNode*, int64> ConstantFold::FoldTernary(TernaryNode *node) {
           }
           std::pair<BaseNode*, int64> pairTemp = DispatchFold(tmpNode);
           result = PairToExpr(node->GetPrimType(), pairTemp);
-        } else if (intConst1->GetValue() == 0 && int2->GetValue() == 1) {
+        } else if (intConst1->GetValue() == 0 && intConst2->GetValue() == 1) {
           BaseNode *lnot = mirModule->CurFuncCodeMemPool()->New<UnaryNode>(OP_lnot, PTY_u1, node->Opnd(0));
           BaseNode *tmpNode = lnot;
           if (node->GetPrimType() != PTY_u1) {
@@ -1758,6 +1787,7 @@ StmtNode *ConstantFold::SimplifyCondGoto(CondGotoNode *node) {
       return node;
     }
     MIRIntConst *intConst = safe_cast<MIRIntConst>(cst->GetConstVal());
+    ASSERT_NOT_NULL(intConst);
     if ((node->GetOpCode() == OP_brtrue && intConst->GetValueUnderType() != 0) ||
         (node->GetOpCode() == OP_brfalse && intConst->GetValueUnderType() == 0)) {
       GotoNode *gotoNode = mirModule->CurFuncCodeMemPool()->New<GotoNode>(OP_goto);
@@ -1782,10 +1812,12 @@ StmtNode *ConstantFold::SimplifyCondGotoSelect(CondGotoNode *node) const {
   ConstvalNode *const2 = safe_cast<ConstvalNode>(sel->Opnd(2));
   if (const1 != nullptr && const2 != nullptr) {
     MIRIntConst *intConst1 = safe_cast<MIRIntConst>(const1->GetConstVal());
-    MIRIntConst *int2 = safe_cast<MIRIntConst>(const2->GetConstVal());
-    if (intConst1->GetValue() == 1 && int2->GetValue() == 0) {
+    MIRIntConst *intConst2 = safe_cast<MIRIntConst>(const2->GetConstVal());
+    ASSERT_NOT_NULL(intConst1);
+    ASSERT_NOT_NULL(intConst2);
+    if (intConst1->GetValue() == 1 && intConst2->GetValue() == 0) {
       node->SetOpnd(sel->Opnd(0), 0);
-    } else if (intConst1->GetValue() == 0 && int2->GetValue() == 1) {
+    } else if (intConst1->GetValue() == 0 && intConst2->GetValue() == 1) {
       node->SetOpCode((node->GetOpCode() == OP_brfalse) ? OP_brtrue : OP_brfalse);
       node->SetOpnd(sel->Opnd(0), 0);
     }
@@ -1804,6 +1836,7 @@ StmtNode *ConstantFold::SimplifySwitch(SwitchNode *node) {
       return node;
     }
     MIRIntConst *intConst = safe_cast<MIRIntConst>(cst->GetConstVal());
+    ASSERT_NOT_NULL(intConst);
     GotoNode *gotoNode = mirModule->CurFuncCodeMemPool()->New<GotoNode>(OP_goto);
     bool isdefault = true;
     for (unsigned i = 0; i < node->GetSwitchTable().size(); i++) {
@@ -1905,6 +1938,7 @@ StmtNode *ConstantFold::SimplifyIf(IfStmtNode *node) {
       return node;
     }
     MIRIntConst *intConst = safe_cast<MIRIntConst>(cst->GetConstVal());
+    ASSERT_NOT_NULL(intConst);
     if (intConst->GetValue() == 0) {
       return node->GetElsePart();
     } else {

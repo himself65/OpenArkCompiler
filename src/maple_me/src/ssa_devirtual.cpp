@@ -369,7 +369,7 @@ void SSADevirtual::VisitMeExpr(MeExpr *meExpr) const {
     }
     case kMeOpOp: {
       auto *meOpExpr = static_cast<OpMeExpr*>(meExpr);
-      for (uint32 i = 0; i < 3; ++i) {
+      for (uint32 i = 0; i < kOperandNumTernary; ++i) {
         VisitMeExpr(meOpExpr->GetOpnd(i));
       }
       break;

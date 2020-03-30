@@ -29,6 +29,5 @@ unsigned int DJBHash(const char *str);
 unsigned int GetHashIndex(const char *name);
 unsigned int GetSecondHashIndex(const char *name);
 
-
 }  // namespace maple
 #endif

@@ -15,7 +15,7 @@
 #include "analyzector.h"
 #include "utils.h"
 
-// AnalyzeCtor analyzes which fields are assigned inside of of each constructor
+// AnalyzeCtor analyzes which fields are assigned inside of each constructor
 namespace maple {
 void AnalyzeCtor::ProcessFunc(MIRFunction *func) {
   if (!func->IsConstructor() || func->IsEmpty() || func->GetParamSize() == 0) {

@@ -312,8 +312,10 @@ void SSAEPre::BuildWorkListExpr(MeStmt &meStmt, int32 seqStmt, MeExpr &meExpr, b
       if (meExpr.GetPrimType() == PTY_agg) {
         isHypo = false;
       }
+      constexpr uint32 minTypeSizeRequired = 4;
       if (isHypo && (!isRebuild || hasTempVarAs1Opnd) && naryMeExpr->GetPrimType() != PTY_u1 &&
-          (GetPrimTypeSize(naryMeExpr->GetPrimType()) >= 4 || IsPrimitivePoint(naryMeExpr->GetPrimType()) ||
+          (GetPrimTypeSize(naryMeExpr->GetPrimType()) >= minTypeSizeRequired ||
+           IsPrimitivePoint(naryMeExpr->GetPrimType()) ||
            (naryMeExpr->GetOp() == OP_intrinsicop && IntrinDesc::intrinTable[naryMeExpr->GetIntrinsic()].IsPure())) &&
           (epreIncludeRef || naryMeExpr->GetPrimType() != PTY_ref)) {
         if (meExpr.GetOp() == OP_array) {

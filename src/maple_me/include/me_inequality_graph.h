@@ -366,6 +366,7 @@ class ABCD {
     }
     return kFalse;
   }
+
   static ProveResult Min(ProveResult res1, ProveResult res2) {
     if (res1 == kFalse || res2 == kFalse) {
       return kFalse;
@@ -375,10 +376,11 @@ class ABCD {
     }
     return kReduced;
   }
+
   bool DemandProve(ESSABaseNode &firstNode, ESSABaseNode &secondNode, EdgeType edgeType);
   ProveResult Prove(ESSABaseNode &a, ESSABaseNode &b, InequalEdge &e);
   ProveResult UpdateCacheResult(ESSABaseNode &a, ESSABaseNode &b, InequalEdge &e, MeetFunction meet);
-  void PrintTracing();
+  void PrintTracing() const;
   InequalityGraph *inequalityGraph;
   std::map<ESSABaseNode*, InequalEdge*> active;
   std::vector<ESSABaseNode*> tracing;

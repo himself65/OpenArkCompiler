@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -17,7 +17,6 @@
 #include <cstdlib>
 
 // metadata layout is shared between maple compiler and runtime, thus not in namespace maplert
-
 // some of the reference field of metadata is stored as relative offset
 // for example, declaring class of Fields/Methods
 // which can be negative
@@ -26,33 +25,6 @@ using MetaRef = uint32_t;      // consistent with reffield_t in address.h
 #else
 using MetaRef = uintptr_t;     // consistent iwth reffield_t in address.h
 #endif // USE_32BIT_REF
-
-static inline void *DecodeValueAsRelOffset32(const int32_t *addr) {
-  intptr_t realAddr = reinterpret_cast<intptr_t>(addr) + *addr;
-  return reinterpret_cast<void*>(realAddr);
-}
-
-static inline void *DecodeValueAsRelOffset64(const int64_t *addr) {
-  intptr_t realAddr = reinterpret_cast<intptr_t>(addr) + *addr;
-  return reinterpret_cast<void*>(realAddr);
-}
-
-static inline void EncodeValueAsRelOffset32(const void *value, int32_t *addr) {
-  int32_t offset = reinterpret_cast<intptr_t>(value) - reinterpret_cast<intptr_t>(addr);
-  *addr = offset;
-  if (DecodeValueAsRelOffset32(addr) != value) {
-    std::abort();
-  }
-}
-
-static inline void EncodeValueAsRelOffset64(const void *value, int64_t *addr) {
-  int64_t offset = reinterpret_cast<intptr_t>(value) - reinterpret_cast<intptr_t>(addr);
-  *addr = offset;
-  if (DecodeValueAsRelOffset64(addr) != value) {
-    std::abort();
-  }
-}
-
 // DataRefOffset aims to represent a reference to data in maple file, which is already an offset.
 // DataRefOffset is meant to have pointer size and aligned to at least 4 bytes.
 struct DataRefOffset32 {
@@ -102,7 +74,6 @@ struct DataRefOffset {
    DataRef is self-decoded by also encoding the format and is defined for binary compatibility.
    If no compatibility problem is involved, DataRefOffset64 is preferred.
  */
-
 enum DataRefFormat {
   kDataRefIsDirect   = 0, // must be 0
   kDataRefIsCompact  = 1, // read-only
@@ -211,7 +182,6 @@ struct MByteRef32 {
 
 // MethodMeta defined in MethodMeta.h
 // FieldMeta  defined in FieldMeta.h
-
 // MethodDesc contains MethodMetadata and stack map
 struct MethodDesc {
   // relative offset for method metadata relative to current PC.

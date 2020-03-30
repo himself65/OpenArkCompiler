@@ -122,6 +122,7 @@ bool MeFuncPhaseManager::FuncFilter(const std::string &filter, const std::string
 }
 
 void MeFuncPhaseManager::IPACleanUp(MeFunction *func) {
+  ASSERT(func != nullptr, "null ptr check");
   GetAnalysisResultManager()->InvalidAllResults();
   memPoolCtrler.DeleteMemPool(func->GetMemPool());
 }

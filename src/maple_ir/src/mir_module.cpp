@@ -67,10 +67,12 @@ MemPool *MIRModule::CurFuncCodeMemPool() const {
 }
 
 MapleAllocator *MIRModule::CurFuncCodeMemPoolAllocator() const {
+  CHECK_FATAL(curFunction != nullptr, "curFunction is null");
   return &curFunction->GetCodeMempoolAllocator();
 }
 
 MapleAllocator &MIRModule::GetCurFuncCodeMPAllocator() const {
+  CHECK_FATAL(curFunction != nullptr, "curFunction is null");
   return curFunction->GetCodeMPAllocator();
 }
 

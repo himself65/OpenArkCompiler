@@ -261,6 +261,10 @@ class MIRModule {
     return srcLang == kSrcLangC || srcLang == kSrcLangCPlusPlus;
   }
 
+  bool IsCharModule() const {
+    return false;
+  }
+
   void addSuperCall(const std::string &func) {
     superCallSet.insert(func);
   }

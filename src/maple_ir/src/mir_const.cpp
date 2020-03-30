@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -62,7 +62,7 @@ uint8 MIRIntConst::GetBitWidth() const {
 }
 
 void MIRIntConst::Trunc(uint8 width) {
-  int32 shiftBitNum = 64u - width;
+  const int32 shiftBitNum = 64u - width;
   if (shiftBitNum < 0) {
     CHECK_FATAL(false, "shiftBitNum should not be less than zero");
   }
@@ -76,7 +76,7 @@ void MIRIntConst::Trunc(uint8 width) {
 
 int64 MIRIntConst::GetValueUnderType() const {
   uint32 bitSize = GetPrimTypeBitSize(GetNonDynType(GetType().GetPrimType()));
-  int32 shiftBitNum = 64u - bitSize;
+  const int32 shiftBitNum = 64u - bitSize;
   if (shiftBitNum < 0) {
     CHECK_FATAL(false, "shiftBitNum should not be less than zero");
   }

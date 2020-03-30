@@ -75,6 +75,7 @@ const std::string &MIRFunction::GetSignature() const {
 }
 
 const MIRType *MIRFunction::GetReturnType() const {
+  CHECK_FATAL(funcType != nullptr, "funcType should not be nullptr");
   return GlobalTables::GetTypeTable().GetTypeFromTyIdx(funcType->GetRetTyIdx());
 }
 MIRType *MIRFunction::GetReturnType() {
@@ -84,6 +85,7 @@ const MIRType *MIRFunction::GetClassType() const {
   return GlobalTables::GetTypeTable().GetTypeFromTyIdx(classTyIdx);
 }
 const MIRType *MIRFunction::GetNthParamType(size_t i) const {
+  CHECK_FATAL(funcType != nullptr, "funcType should not be nullptr");
   ASSERT(i < funcType->GetParamTypeList().size(), "array index out of range");
   return GlobalTables::GetTypeTable().GetTypeFromTyIdx(funcType->GetParamTypeList()[i]);
 }

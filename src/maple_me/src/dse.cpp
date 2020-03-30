@@ -201,9 +201,9 @@ void DSE::PropagateUseLive(const VersionSt &vst) {
     MarkStmtRequired(ToRef(mayDef->GetStmt()), ToRef(dfBB));
     AddToWorkList(verSt);
   } else {
-    const MustDefNode *mustdef = vst.GetMustDef();
-    ASSERT(mustdef->GetResult() == &vst, "MarkVst: wrong corresponding version st in mustdef");
-    MarkStmtRequired(ToRef(mustdef->GetStmt()), ToRef(dfBB));
+    const MustDefNode *mustDef = vst.GetMustDef();
+    ASSERT(mustDef->GetResult() == &vst, "MarkVst: wrong corresponding version st in mustDef");
+    MarkStmtRequired(ToRef(mustDef->GetStmt()), ToRef(dfBB));
   }
 }
 

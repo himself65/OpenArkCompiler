@@ -82,7 +82,7 @@ bool Profile::CheckDexValid(uint32 idx) {
 
 void Profile::ParseLiteral(const char *data, const char *end) {
   if(data > end) {
-    LogInfo::MapleLogger() << "parse Literal error" << std::endl;
+    LogInfo::MapleLogger() << "parse Literal error" << '\n';;
   }
   std::string str(data,end-data);
   std::stringstream ss;
@@ -134,7 +134,7 @@ void Profile::ParseMeta(const char *data, int fileNum, std::unordered_set<std::s
     metaProf = reinterpret_cast<const MapleFileProf<MetaItem>*>(data  + offset);
     if (CheckDexValid(metaProf->idx)) {
       if (debug) {
-        LogInfo::MapleLogger() << "dex name " << strMap.at(metaProf->idx) << std::endl;
+        LogInfo::MapleLogger() << "dex name " << strMap.at(metaProf->idx) << '\n';;
       }
       for (uint32 item = 0; item < metaProf->num; item++) {
         const MetaItem *metaItem = &(metaProf->items[item]);
@@ -152,7 +152,7 @@ void Profile::ParseReflectionStr(const char *data, int fileNum) {
     metaProf = reinterpret_cast<const MapleFileProf<ReflectionStrItem>*>(data  + offset);
     if (CheckDexValid(metaProf->idx)) {
       if (debug) {
-        LogInfo::MapleLogger() << "dex name " << strMap.at(metaProf->idx) << std::endl;
+        LogInfo::MapleLogger() << "dex name " << strMap.at(metaProf->idx) << '\n';;
       }
       for (uint32 item = 0; item < metaProf->num; item++) {
         const ReflectionStrItem *strItem = &(metaProf->items[item]);
@@ -181,33 +181,33 @@ bool Profile::DeCompress(const std::string &path, const std::string &dexNameInne
   if (!in) {
     if (errno != ENOENT && errno != EACCES) {
       LogInfo::MapleLogger() << "WARN: DeCompress("
-                << "), failed to open " << path << ", " << strerror(errno) << std::endl;
+                << "), failed to open " << path << ", " << strerror(errno) << '\n';;
     }
     res = false;
     return res;
   }
   in.seekg(0, std::ios::end);
-  size_t byteCount = in.tellg();
+  size_t byteCount = static_cast<size_t>(in.tellg());
   in.seekg(0, std::ios::beg);
   std::vector<char> bufVector;
   bufVector.resize(byteCount);
   char *buf = reinterpret_cast<char*>(bufVector.data());
   if (!in.read(buf, byteCount)) {
     LogInfo::MapleLogger() << "WARN: DeCompress("
-              << "), failed to read all data for " << path << ", " << strerror(errno) << std::endl;
+              << "), failed to read all data for " << path << ", " << strerror(errno) << '\n';;
     res = false;
     return res;
   }
   if (byteCount < sizeof(Header)) {
     LogInfo::MapleLogger() << "WARN: DeCompress("
-              << "), failed, read no data for " << path << ", " << strerror(errno) << std::endl;
+              << "), failed, read no data for " << path << ", " << strerror(errno) << '\n';;
     res = false;
     return res;
   }
   Header *header = reinterpret_cast<Header*>(buf);
   if (!CheckProfileHeader(header)) {
     if (debug) {
-      LogInfo::MapleLogger() << "invalid maigc number " << reinterpret_cast<char*>(header->magic) << std::endl;
+      LogInfo::MapleLogger() << "invalid maigc number " << header->magic << '\n';;
     }
     res = false;
     return res;
@@ -217,7 +217,7 @@ bool Profile::DeCompress(const std::string &path, const std::string &dexNameInne
   if (debug) {
     LogInfo::MapleLogger() << "Header summary "
               << "profile num " << static_cast<uint32>(header->profileNum) << "string table size" << stringTabSize
-              << std::endl;
+              << '\n';;
   }
   const char *strBuf = buf + header->stringTabOff;
   const char *cursor = strBuf;
@@ -230,21 +230,21 @@ bool Profile::DeCompress(const std::string &path, const std::string &dexNameInne
   }
   ASSERT(strMap.size() == header->stringCount, "string count doesn't match");
   if (debug) {
-    LogInfo::MapleLogger() << "str size " << strMap.size() << std::endl;
-    for (auto item : strMap) {
-      LogInfo::MapleLogger() << item << std::endl;
+    LogInfo::MapleLogger() << "str size " << strMap.size() << '\n';;
+    for (const auto &item : strMap) {
+      LogInfo::MapleLogger() << item << '\n';;
     }
-    LogInfo::MapleLogger() << "str size print end  " << std::endl;
+    LogInfo::MapleLogger() << "str size print end  " << '\n';;
   }
   size_t idx = 0;
   for (idx = 0; idx < header->profileNum; idx++) {
     ProfileDataInfo *profileDataInfo = &(header->data[idx]);
     if (debug) {
       LogInfo::MapleLogger() << "profile file num for type  " << GetProfileNameByType(profileDataInfo->profileType) << " "
-                << static_cast<uint32>(profileDataInfo->mapleFileNum) << std::endl;
+                << static_cast<uint32>(profileDataInfo->mapleFileNum) << '\n';;
       }
     if (debug) {
-      LogInfo::MapleLogger() << GetProfileNameByType(profileDataInfo->profileType) << " Start" << std::endl;
+      LogInfo::MapleLogger() << GetProfileNameByType(profileDataInfo->profileType) << " Start" << '\n';;
     }
     char *proFileData = buf + profileDataInfo->profileDataOff;
     if (type != kAll && type != profileDataInfo->profileType) {
@@ -274,17 +274,17 @@ bool Profile::DeCompress(const std::string &path, const std::string &dexNameInne
         this->appPackageName = strMap.at(appPackageNameIdx);
         if (!appPackageName.empty() && this->appPackageName != appPackageName) {
           LogInfo::MapleLogger() << "app profile doesnt match expect " << this->appPackageName
-                                 << " but got " << appPackageName << std::endl;
+                                 << " but got " << appPackageName << '\n';;
           return false;
         }
         break;
       }
       default:
-        LogInfo::MapleLogger() << "unsupported tag " << profileDataInfo->profileType << std::endl;
+        LogInfo::MapleLogger() << "unsupported tag " << profileDataInfo->profileType << '\n';;
         break;
     }
   }
-  LogInfo::MapleLogger() << "SUCC parse " << path << std::endl;
+  LogInfo::MapleLogger() << "SUCC parse " << path << '\n';;
   valid = true;
   return res;
 }
@@ -307,7 +307,7 @@ bool Profile::CheckFuncHot(const std::string &funcName) const {
         hotFuncCountThreshold = Options::profileHotCount;
       } else {
         std::vector<uint32> times;
-        for (auto item : funcProfData) {
+        for (auto &item : funcProfData) {
           times.push_back((item.second).callTimes);
         }
         std::sort(times.begin(), times.end(), std::greater<uint32>());
@@ -411,35 +411,35 @@ std::unordered_set<std::string> &Profile::GetMeta(uint8 type) {
 void Profile::Dump() const {
   std::ofstream outfile;
   outfile.open("prof.dump");
-  outfile << "classMeta profile start " <<std::endl;
-  for (auto item : classMeta) {
-    outfile << item << std::endl;
+  outfile << "classMeta profile start " <<'\n';;
+  for (const auto &item : classMeta) {
+    outfile << item << '\n';;
   }
 
-  outfile << "fieldMeta profile start " <<std::endl;
-  for (auto item : fieldMeta) {
-    outfile << item << std::endl;
+  outfile << "fieldMeta profile start " <<'\n';;
+  for (const auto &item : fieldMeta) {
+    outfile << item << '\n';;
   }
 
-  outfile << "methodMeta profile start " <<std::endl;
-  for (auto item : methodMeta) {
-    outfile << item << std::endl;
+  outfile << "methodMeta profile start " <<'\n';;
+  for (const auto &item : methodMeta) {
+    outfile << item << '\n';;
   }
 
-  outfile << "literal profile start " <<std::endl;
-  for (auto item : literal) {
-    outfile << item << std::endl;
+  outfile << "literal profile start " <<'\n';;
+  for (const auto &item : literal) {
+    outfile << item << '\n';;
   }
 
-  outfile << "func profile start " <<std::endl;
-  for (auto item : funcProfData) {
+  outfile << "func profile start " <<'\n';;
+  for (const auto &item : funcProfData) {
     outfile << item.first << " "
-            << static_cast<uint32>((item.second).type) << " " << (item.second).callTimes << std::endl;
+            << static_cast<uint32>((item.second).type) << " " << (item.second).callTimes << '\n';;
   }
 
-  outfile << "reflectStr profile start " <<std::endl;
-  for (auto item : reflectionStrData) {
-    outfile << item.first << " " << static_cast<uint32>(item.second) << std::endl;
+  outfile << "reflectStr profile start " <<'\n';;
+  for (const auto &item : reflectionStrData) {
+    outfile << item.first << " " << static_cast<uint32>(item.second) << '\n';;
   }
 }
 

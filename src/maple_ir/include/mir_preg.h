@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -114,7 +114,7 @@ class MIRPregTable {
     uint32 index = pregIndex++;
     MIRPreg *preg = mAllocator->GetMemPool()->New<MIRPreg>(index);
     preg->SetPrimType(primType);
-    PregIdx idx = pregTable.size();
+    PregIdx idx = static_cast<PregIdx>(pregTable.size());
     ASSERT(idx < USHRT_MAX, "will has problem if over 16 bits");
     pregTable.push_back(preg);
     pregNoToPregIdxMap[index] = idx;
@@ -135,7 +135,7 @@ class MIRPregTable {
     preg->SetPrimType(mirPreg.GetPrimType());
     preg->SetMIRType(mirPreg.GetMIRType());
     preg->SetNeedRC(mirPreg.NeedRC());
-    PregIdx idx = pregTable.size();
+    PregIdx idx = static_cast<PregIdx>(pregTable.size());
     ASSERT(idx < USHRT_MAX, "will has problem if over 16 bits");
     pregTable.push_back(preg);
     pregNoToPregIdxMap[index] = idx;
@@ -162,7 +162,7 @@ class MIRPregTable {
 
   void AddPreg(MIRPreg *preg) {
     CHECK_FATAL(preg != nullptr, "invalid nullptr in AddPreg");
-    PregIdx idx = pregTable.size();
+    PregIdx idx = static_cast<PregIdx>(pregTable.size());
     pregTable.push_back(preg);
     ASSERT(pregNoToPregIdxMap.find(preg->GetPregNo()) == pregNoToPregIdxMap.end(), "The same pregno is already taken");
     pregNoToPregIdxMap[preg->GetPregNo()] = idx;

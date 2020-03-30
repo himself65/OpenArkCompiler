@@ -127,7 +127,7 @@ StmtNode *MeDoBypathEH::IsSyncExit(BB &syncBB, MeFunction &func, LabelIdx second
       break;
     }
   }
-  if (stmt->GetOpCode() != OP_dassign) {
+  if (stmt == nullptr || stmt->GetOpCode() != OP_dassign) {
     return nullptr;
   }
   auto *dassignNode = static_cast<DassignNode*>(stmt);

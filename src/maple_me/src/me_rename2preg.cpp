@@ -170,7 +170,6 @@ class FormalRenaming final {
 
  private:
   MIRFunction &irFunc;
-
   std::vector<bool> paramUsed; // if parameter is not used, it's false, otherwise true
   // if the parameter got promoted, the nth of func->mirfunc->_formal is the nth of reg_formal_vec, otherwise nullptr;
   std::vector<RegMeExpr*> renamedReg;
@@ -237,7 +236,8 @@ class SSARename2Preg {
         Rename2PregExpr(aliasClass, irMap, stmt, utils::ToRef(stmt.GetOpnd(i)));
       }
       Rename2PregCallReturn(aliasClass, utils::ToRef(stmt.GetMustDefList()));
-    } else if (auto *iAssignStmt = safe_cast<IassignMeStmt>(stmt)) {
+    } else if (instance_of<IassignMeStmt>(stmt)) {
+      auto *iAssignStmt = static_cast<IassignMeStmt*>(&stmt);
       Rename2PregExpr(aliasClass, irMap, stmt, utils::ToRef(iAssignStmt->GetRHS()));
       Rename2PregExpr(aliasClass, irMap, stmt, utils::ToRef(utils::ToRef(iAssignStmt->GetLHSVal()).GetBase()));
     } else {
@@ -270,21 +270,25 @@ class SSARename2Preg {
 
   // only handle the leaf of load, because all other expressions has been done by previous SSAPre
   void Rename2PregExpr(const AliasClass &aliasClass, MeIRMap &irMap, MeStmt &stmt, MeExpr &expr) {
-    if (auto *opExpr = safe_cast<OpMeExpr>(expr)) {
+    if (instance_of<OpMeExpr>(expr)) {
+      auto *opExpr = static_cast<OpMeExpr*>(&expr);
       for (size_t i = 0; i < kOperandNumTernary; ++i) {
         MeExpr *opnd = opExpr->GetOpnd(i);
         if (opnd != nullptr) {
           Rename2PregExpr(aliasClass, irMap, stmt, *opnd);
         }
       }
-    } else if (auto *naryExpr = safe_cast<NaryMeExpr>(expr)) {
+    } else if (instance_of<NaryMeExpr>(expr)) {
+      auto *naryExpr = static_cast<NaryMeExpr*>(&expr);
       MapleVector<MeExpr*> &opnds = naryExpr->GetOpnds();
       for (auto *opnd : opnds) {
         Rename2PregExpr(aliasClass, irMap, stmt, utils::ToRef(opnd));
       }
-    } else if (auto *ivarExpr = safe_cast<IvarMeExpr>(expr)) {
+    } else if (instance_of<IvarMeExpr>(expr)) {
+      auto *ivarExpr = static_cast<IvarMeExpr*>(&expr);
       Rename2PregExpr(aliasClass, irMap, stmt, utils::ToRef(ivarExpr->GetBase()));
-    } else if (auto *varExpr = safe_cast<VarMeExpr>(expr)) {
+    } else if (instance_of<VarMeExpr>(expr)) {
+      auto *varExpr = static_cast<VarMeExpr*>(&expr);
       Rename2PregLeafRHS(aliasClass, irMap, stmt, *varExpr);
     }
   }
@@ -303,9 +307,11 @@ class SSARename2Preg {
     RegMeExpr *regExpr = RenameVar(aliasClass, varExpr);
     if (regExpr != nullptr) {
       MeExpr *oldRhs = nullptr;
-      if (auto *dAStmt = safe_cast<DassignMeStmt>(stmt)) {
+      if (instance_of<DassignMeStmt>(stmt)) {
+        auto *dAStmt = static_cast<DassignMeStmt*>(&stmt);
         oldRhs = dAStmt->GetRHS();
-      } else if (auto *mayDAStmt = safe_cast<MaydassignMeStmt>(stmt)) {
+      } else if (instance_of<MaydassignMeStmt>(stmt)) {
+        auto *mayDAStmt = static_cast<MaydassignMeStmt*>(&stmt);
         oldRhs = mayDAStmt->GetRHS();
       } else {
         CHECK_FATAL(false, "NYI");

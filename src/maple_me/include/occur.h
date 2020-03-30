@@ -480,8 +480,8 @@ class MePhiOcc : public MeOccur {
   bool isExtraneous;
   bool isRemoved;  // during finalize2, marked this phiocc is removed or not
   MapleVector<MePhiOpndOcc*> phiOpnds;
-  MeRegPhiNode *regPhi;  // the reg phi being inserted. TODO: maybe can delete it later
-  MeVarPhiNode *varPhi;  // the Var phi being inserted. TODO: maybe can delete it later
+  MeRegPhiNode *regPhi;  // the reg phi being inserted, maybe can delete it later
+  MeVarPhiNode *varPhi;  // the Var phi being inserted, maybe can delete it later
 };
 
 // each singly linked list repersents each bucket in workCandHashTable

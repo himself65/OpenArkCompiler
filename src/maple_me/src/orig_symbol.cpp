@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -65,7 +65,7 @@ void OriginalStTable::Dump() {
 }
 
 OriginalSt *OriginalStTable::FindOrCreateSymbolOriginalSt(MIRSymbol &mirst, PUIdx pidx, FieldID fld) {
-  auto it = mirSt2Ost.find(&mirst);
+  auto it = mirSt2Ost.find(SymbolFieldPair(mirst.GetStIndex(), fld));
   if (it == mirSt2Ost.end()) {
     // create a new OriginalSt
     return CreateSymbolOriginalSt(mirst, pidx, fld);
@@ -96,7 +96,7 @@ OriginalSt *OriginalStTable::CreateSymbolOriginalSt(MIRSymbol &mirst, PUIdx pidx
     ost->SetIsPrivate(fattrs.GetAttr(FLDATTR_private));
   }
   originalStVector.push_back(ost);
-  mirSt2Ost[&mirst] = ost->GetIndex();
+  mirSt2Ost[SymbolFieldPair(mirst.GetStIndex(), fld)] = ost->GetIndex();
   return ost;
 }
 
@@ -113,7 +113,7 @@ OriginalSt *OriginalStTable::CreatePregOriginalSt(PregIdx regidx, PUIdx pidx) {
 }
 
 OriginalSt *OriginalStTable::FindSymbolOriginalSt(MIRSymbol &mirst) {
-  auto it = mirSt2Ost.find(&mirst);
+  auto it = mirSt2Ost.find(SymbolFieldPair(mirst.GetStIndex(), 0));
   if (it == mirSt2Ost.end()) {
     return nullptr;
   }

@@ -47,6 +47,8 @@ class Klass {
  public:
   struct KlassComparator {
     bool operator()(const Klass *lhs, const Klass *rhs) const {
+      CHECK_NULL_FATAL(rhs);
+      CHECK_NULL_FATAL(lhs);
       return lhs->GetKlassName() < rhs->GetKlassName();
     }
   };
