@@ -188,6 +188,7 @@ class AccessSSANodes {
   }
 
   virtual void InsertMayDefNode(VersionSt *vst, StmtNode *stmtNode) {
+    CHECK_FATAL(vst != nullptr, "null ptr check");
     GetMayDefNodes().insert(std::make_pair(vst->GetOrigSt()->GetIndex(), MayDefNode(vst, stmtNode)));
   }
 

@@ -73,7 +73,7 @@ class MIRPragmaElement {
   explicit MIRPragmaElement(MIRModule &m) : MIRPragmaElement(m.GetPragmaMPAllocator()) {}
 
   explicit MIRPragmaElement(MapleAllocator &subElemAllocator)
-      : val{.u = 0}, subElemVec(subElemAllocator.Adapter()) {
+      : val{ 0 }, subElemVec(subElemAllocator.Adapter()) {
     subElemVec.clear();
   }
 

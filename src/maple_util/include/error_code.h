@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -15,6 +15,8 @@
 #ifndef MAPLE_UTIL_INCLUDE_ERROR_CODE_H
 #define MAPLE_UTIL_INCLUDE_ERROR_CODE_H
 
+#include<mpl_logging.h>
+
 namespace maple {
 enum ErrorCode {
   kErrorNoError,
@@ -27,5 +29,7 @@ enum ErrorCode {
   kErrorCompileFail,
   kErrorNotImplement
 };
+
+void PrintErrorMessage(int ret);
 }  // namespace maple
 #endif  // MAPLE_UTIL_INCLUDE_ERROR_CODE_H

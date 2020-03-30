@@ -183,6 +183,7 @@ bool CGNode::IsCalleeOf(CGNode *func) {
 }
 
 void CallGraph::DelNode(CGNode *node) {
+  ASSERT_NOT_NULL(node);
   if (!node->GetMIRFunction()) {
     return;
   }
@@ -533,7 +534,7 @@ void CallGraph::HandleBody(MIRFunction *func, BlockNode *body, CGNode *node, uin
           if (cands == nullptr) {
             for (Klass *implinterface : klass->GetImplInterfaces()) {
               cands = implinterface->GetCandidates(calleeFunc->GetBaseFuncNameWithTypeStrIdx());
-              if (cands && !cands->empty()) {
+              if (cands != nullptr && !cands->empty()) {
                 break;
               }
             }
@@ -568,6 +569,7 @@ void CallGraph::HandleBody(MIRFunction *func, BlockNode *body, CGNode *node, uin
 }
 
 void CallGraph::UpdateCallGraphNode(CGNode *node) {
+  ASSERT_NOT_NULL(node);
   node->Reset();
   MIRFunction *func = node->GetMIRFunction();
   BlockNode *body = func->GetBody();
@@ -1050,7 +1052,7 @@ void DoDevirtual(const Klass *klass, const KlassHierarchy *klassh) {
                         tmpKlass = klassh->GetKlassFromTyIdx(tmpType->GetTypeIndex());
                       }
                       if (tmpKlass == nullptr && !isCurrVtabScalar) {
-                        CHECK_FATAL(tmpKlass != nullptr, "null ptr check");
+                        CHECK_FATAL(false, "null ptr check");
                       }
                       if (isCalleeScalar || isCurrVtabScalar) {
                         if (isFindMethod) {
@@ -1632,6 +1634,7 @@ void CallGraph::SCCTopologicalSort(std::vector<SCCNode*> &sccNodes) {
 
 void CGNode::AddCandsForCallNode(const KlassHierarchy *kh) {
   /* already set vcall candidates information */
+  ASSERT_NOT_NULL(kh);
   if (HasSetVCallCandidates()) {
     return;
   }

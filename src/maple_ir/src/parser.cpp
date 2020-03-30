@@ -114,7 +114,9 @@ PregIdx MIRParser::LookupOrCreatePregIdx(uint32 pregNo, bool isRef, MIRFunction 
     if (isRef) {
       preg->SetPrimType(PTY_ref);
     }
-    idx = pRegTab->GetPregTable().size();
+    size_t pregIndex = pRegTab->GetPregTable().size();
+    CHECK_FATAL(pregIndex <= INT_MAX, "pregIndex out of range");
+    idx = static_cast<PregIdx>(pregIndex);
     pRegTab->GetPregTable().push_back(preg);
     pRegTab->SetPregNoToPregIdxMapItem(pregNo, idx);
   }
@@ -224,12 +226,12 @@ const std::string &MIRParser::GetWarning() const {
 
 bool MIRParser::ParseSpecialReg(PregIdx &pRegIdx) {
   const std::string &lexName = lexer.GetName();
-  int32 lexSize = lexName.size();
-  int32 retValSize = strlen(kLexerStringRetval);
+  size_t lexSize = lexName.size();
+  size_t retValSize = strlen(kLexerStringRetval);
   if (strncmp(lexName.c_str(), kLexerStringRetval, retValSize) == 0 && (lexSize > retValSize) &&
       isdigit(lexName[retValSize])) {
     int32 retValNo = lexName[retValSize] - '0';
-    for (int32 i = retValSize + 1; (i < lexSize) && isdigit(lexName[i]); ++i) {
+    for (size_t i = retValSize + 1; (i < lexSize) && isdigit(lexName[i]); ++i) {
       retValNo = retValNo * 10 + lexName[i] - '0';
     }
     pRegIdx = -kSregRetval0 - retValNo;
@@ -315,7 +317,7 @@ bool MIRParser::ParseFarrayType(TyIdx &arrayTyIdx) {
     return false;
   }
   ASSERT(tyIdx != 0u, "error encountered parsing flexible array element type ");
-  if (mod.IsJavaModule()) {
+  if (mod.IsJavaModule() || mod.IsCharModule()) {
     MIRJarrayType jarrayType(tyIdx);
     arrayTyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&jarrayType);
   } else {
@@ -517,7 +519,7 @@ bool MIRParser::ParsePragmaElementForAnnotation(MIRPragmaElement &elem) {
     Error("parsing pragma error: expecting , but get ");
     return false;
   }
-  for (int i = 0; i < size; ++i) {
+  for (int64 i = 0; i < size; ++i) {
     auto *e0 = mod.GetMemPool()->New<MIRPragmaElement>(mod);
     tk = lexer.NextToken();
     if (tk != TK_label) {

@@ -355,6 +355,7 @@ bool IvarMeExpr::IsUseSameSymbol(const MeExpr &expr) const {
     return false;
   }
   auto &ivarMeExpr = static_cast<const IvarMeExpr&>(expr);
+  CHECK_FATAL(base != nullptr, "base is null");
   if (base->IsUseSameSymbol(*ivarMeExpr.base) && fieldID == ivarMeExpr.fieldID) {
     return true;
   }
@@ -396,6 +397,7 @@ bool IvarMeExpr::IsRCWeak() const {
 // If self is the first use of the same ivar coming from an iassign
 // (argument expr), then update its mu: expr->mu = this->mu.
 bool IvarMeExpr::IsIdentical(IvarMeExpr &expr) const {
+  CHECK_FATAL(expr.base != nullptr, "null ptr check");
   if (base->GetExprID() != expr.base->GetExprID() || fieldID != expr.fieldID || tyIdx != expr.tyIdx) {
     return false;
   }
@@ -560,6 +562,7 @@ bool ConstMeExpr::GeZero() const {
 }
 
 bool ConstMeExpr::GtZero() const {
+  CHECK_FATAL(constVal != nullptr, "constVal is null");
   if (constVal->GetKind() != kConstInt) {
     return false;
   }
@@ -571,6 +574,7 @@ bool ConstMeExpr::IsZero() const {
 }
 
 bool ConstMeExpr::IsOne() const {
+  CHECK_FATAL(constVal != nullptr, "constVal is null");
   if (constVal->GetKind() != kConstInt) {
     return false;
   }
@@ -578,6 +582,7 @@ bool ConstMeExpr::IsOne() const {
 }
 
 int64 ConstMeExpr::GetIntValue() const {
+  CHECK_FATAL(constVal != nullptr, "constVal is null");
   CHECK_FATAL(constVal->GetKind() == kConstInt, "expect int const");
   return safe_cast<MIRIntConst>(constVal)->GetValue();
 }
@@ -696,6 +701,7 @@ void MeVarPhiNode::Dump(const IRMap *irMap) const {
     LogInfo::MapleLogger() << "PI_ADD VAR:";
   }
   LogInfo::MapleLogger() << "VAR:";
+  CHECK_FATAL(lhs != nullptr, "lsh is null");
   irMap->GetSSATab().GetOriginalStFromID(lhs->GetOStIdx())->Dump();
   LogInfo::MapleLogger() << " mx" << lhs->GetExprID();
   LogInfo::MapleLogger() << " = MEPHI{";
@@ -713,6 +719,7 @@ void MeVarPhiNode::Dump(const IRMap *irMap) const {
 }
 
 void MeRegPhiNode::Dump(const IRMap *irMap) const {
+  CHECK_FATAL(lhs != nullptr, "lhs is null");
   LogInfo::MapleLogger() << "REGVAR: " << lhs->GetRegIdx();
   LogInfo::MapleLogger() << "(%"
                          << irMap->GetMIRModule().CurFunction()
@@ -732,6 +739,7 @@ void MeRegPhiNode::Dump(const IRMap *irMap) const {
 }
 
 void VarMeExpr::Dump(const IRMap *irMap, int32) const {
+  CHECK_NULL_FATAL(irMap);
   LogInfo::MapleLogger() << "VAR ";
   irMap->GetSSATab().GetOriginalStFromID(ostIdx)->Dump();
   LogInfo::MapleLogger() << " (field)" << fieldID;
@@ -742,6 +750,7 @@ void VarMeExpr::Dump(const IRMap *irMap, int32) const {
 }
 
 void RegMeExpr::Dump(const IRMap *irMap, int32) const {
+  CHECK_NULL_FATAL(irMap);
   LogInfo::MapleLogger() << "REGINDX:" << regIdx;
   LogInfo::MapleLogger()
       << " %"
@@ -766,6 +775,7 @@ void GcmallocMeExpr::Dump(const IRMap*, int32) const {
 void ConstMeExpr::Dump(const IRMap*, int32) const {
   LogInfo::MapleLogger() << "CONST";
   LogInfo::MapleLogger() << " ";
+  CHECK_FATAL(constVal != nullptr, "constVal is null");
   constVal->Dump();
   LogInfo::MapleLogger() << " mx" << GetExprID();
 }
@@ -803,6 +813,7 @@ void FieldsDistMeExpr::Dump(const IRMap*, int32) const {
 }
 
 void AddrofMeExpr::Dump(const IRMap *irMap, int32) const {
+  CHECK_NULL_FATAL(irMap);
   LogInfo::MapleLogger() << "ADDROF:";
   irMap->GetSSATab().GetOriginalStFromID(ostIdx)->Dump();
   LogInfo::MapleLogger() << " (field)" << fieldID;
@@ -844,6 +855,7 @@ void IvarMeExpr::Dump(const IRMap *irMap, int32 indent) const {
   LogInfo::MapleLogger() << " (field)" << fieldID << '\n';
   PrintIndentation(indent + 1);
   LogInfo::MapleLogger() << "base = ";
+  CHECK_FATAL(base != nullptr, "base is null");
   base->Dump(irMap, indent + 1);
   LogInfo::MapleLogger() << '\n';
   PrintIndentation(indent + 1);
@@ -906,6 +918,7 @@ MeExpr *MaydassignMeStmt::GetLHSRef(SSATab &ssaTab, bool excludeLocalRefVar) {
 }
 
 MeExpr *IassignMeStmt::GetLHSRef(SSATab&, bool) {
+  CHECK_FATAL(lhsVar != nullptr, "lhsVar is null");
   MIRType *baseType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(lhsVar->GetTyIdx());
   ASSERT(baseType != nullptr, "null ptr check");
   auto *pType = static_cast<MIRPtrType*>(baseType)->GetPointedType();
@@ -969,6 +982,7 @@ void MeStmt::Dump(const IRMap *irMap) const {
   if (op == OP_comment) {
     return;
   }
+  CHECK_NULL_FATAL(irMap);
   irMap->GetMIRModule().GetOut() << "||MEIR|| " << kOpcodeInfo.GetTableItemAt(op).name << '\n';
 }
 
@@ -983,6 +997,7 @@ MeStmt *MeStmt::GetNextMeStmt() const {
 
 void PiassignMeStmt::Dump(const IRMap *irMap) const {
   LogInfo::MapleLogger() << "||MEIR PI|| " << kOpcodeInfo.GetTableItemAt(GetOp()).name << " ";
+  CHECK_FATAL(lhs != nullptr, "lhs is null");
   lhs->Dump(irMap);
   LogInfo::MapleLogger() << '\n';
   PrintIndentation(kDefaultPrintIndentNum);
@@ -993,10 +1008,12 @@ void PiassignMeStmt::Dump(const IRMap *irMap) const {
 
 void DassignMeStmt::Dump(const IRMap *irMap) const {
   LogInfo::MapleLogger() << "||MEIR|| " << kOpcodeInfo.GetTableItemAt(GetOp()).name << " ";
+  CHECK_FATAL(lhs != nullptr, "lhs is null");
   lhs->Dump(irMap);
   LogInfo::MapleLogger() << '\n';
   PrintIndentation(kDefaultPrintIndentNum);
   LogInfo::MapleLogger() << "rhs = ";
+  CHECK_FATAL(rhs != nullptr, "rhs is null");
   rhs->Dump(irMap, kDefaultPrintIndentNum);
   if (needIncref) {
     LogInfo::MapleLogger() << " [RC+]";
@@ -1010,10 +1027,12 @@ void DassignMeStmt::Dump(const IRMap *irMap) const {
 
 void RegassignMeStmt::Dump(const IRMap *irMap) const {
   LogInfo::MapleLogger() << "||MEIR|| " << kOpcodeInfo.GetTableItemAt(GetOp()).name << " ";
+  CHECK_FATAL(lhs != nullptr, "lhs is null");
   lhs->Dump(irMap);
   LogInfo::MapleLogger() << '\n';
   PrintIndentation(kDefaultPrintIndentNum);
   LogInfo::MapleLogger() << "rhs = ";
+  CHECK_FATAL(rhs != nullptr, "rhs is null");
   rhs->Dump(irMap, kDefaultPrintIndentNum);
   if (needIncref) {
     LogInfo::MapleLogger() << " [RC+]";
@@ -1025,6 +1044,7 @@ void MaydassignMeStmt::Dump(const IRMap *irMap) const {
   LogInfo::MapleLogger() << "||MEIR|| " << kOpcodeInfo.GetTableItemAt(GetOp()).name << '\n';
   PrintIndentation(kDefaultPrintIndentNum);
   LogInfo::MapleLogger() << "rhs = ";
+  CHECK_FATAL(rhs != nullptr, "rhs is null");
   rhs->Dump(irMap, kDefaultPrintIndentNum);
   if (needIncref) {
     LogInfo::MapleLogger() << " [RC+]";
@@ -1037,6 +1057,7 @@ void MaydassignMeStmt::Dump(const IRMap *irMap) const {
 }
 
 void ChiMeNode::Dump(const IRMap *irMap) const {
+  CHECK_NULL_FATAL(irMap);
   auto *meLHS = static_cast<VarMeExpr*>(lhs);
   auto *meRHS = static_cast<VarMeExpr*>(rhs);
   CHECK_FATAL(meLHS != nullptr, "Node doesn't have lhs?");
@@ -1101,10 +1122,12 @@ void IassignMeStmt::Dump(const IRMap *irMap) const {
   LogInfo::MapleLogger() << "||MEIR|| " << kOpcodeInfo.GetTableItemAt(GetOp()).name << '\n';
   PrintIndentation(kDefaultPrintIndentNum);
   LogInfo::MapleLogger() << "lhs = ";
+  CHECK_FATAL(lhsVar != nullptr, "lhsVar is null");
   lhsVar->Dump(irMap, kDefaultPrintIndentNum);
   LogInfo::MapleLogger() << '\n';
   PrintIndentation(kDefaultPrintIndentNum);
   LogInfo::MapleLogger() << "rhs = ";
+  CHECK_FATAL(rhs != nullptr, "rhs is null");
   rhs->Dump(irMap, kDefaultPrintIndentNum);
   if (needIncref) {
     LogInfo::MapleLogger() << " [RC+]";
@@ -1202,6 +1225,7 @@ void UnaryMeStmt::Dump(const IRMap *irMap) const {
   LogInfo::MapleLogger() << "||MEIR|| " << kOpcodeInfo.GetTableItemAt(GetOp()).name << '\n';
   PrintIndentation(kDefaultPrintIndentNum);
   LogInfo::MapleLogger() << " unaryopnd: ";
+  CHECK_FATAL(opnd != nullptr, "opnd is null");
   opnd->Dump(irMap, kDefaultPrintIndentNum);
   LogInfo::MapleLogger() << '\n';
 }
@@ -1224,6 +1248,7 @@ void ThrowMeStmt::Dump(const IRMap *irMap) const {
   LogInfo::MapleLogger() << "||MEIR|| " << kOpcodeInfo.GetTableItemAt(GetOp()).name << '\n';
   PrintIndentation(kDefaultPrintIndentNum);
   LogInfo::MapleLogger() << "throwopnd: ";
+  CHECK_FATAL(opnd != nullptr, "opnd is null");
   opnd->Dump(irMap, kDefaultPrintIndentNum);
   LogInfo::MapleLogger() << '\n';
   DumpMuList(irMap, *GetMuList());

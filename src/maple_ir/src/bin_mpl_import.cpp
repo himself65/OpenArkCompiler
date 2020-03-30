@@ -86,16 +86,19 @@ void BinaryMplImport::ReadFileAt(const std::string &name, int32 offset) {
   CHECK_FATAL(seekRet == 0, "call fseek failed");
   buf.resize(size);
 
-  long result = fread(&buf[0], sizeof(uint8), size, f);
+  size_t result = fread(&buf[0], sizeof(uint8), size, f);
   fclose(f);
-  CHECK_FATAL(result == size, "Error while reading the binary file: %s", name.c_str());
+  CHECK_FATAL(result == static_cast<size_t>(size), "Error while reading the binary file: %s", name.c_str());
 }
 
 void BinaryMplImport::ImportConstBase(MIRConstKind &kind, MIRTypePtr &type, uint32 &fieldID) {
   kind = static_cast<MIRConstKind>(ReadNum());
   TyIdx tyidx = ImportType();
   type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyidx);
-  fieldID = ReadNum();
+  int64 tmp = ReadNum();
+  CHECK_FATAL(tmp <= INT_MAX, "num out of range");
+  CHECK_FATAL(tmp >= INT_MIN, "num out of range");
+  fieldID = static_cast<uint32>(tmp);
 }
 
 MIRConst *BinaryMplImport::ImportConst(MIRFunction *func) {
@@ -874,7 +877,7 @@ void BinaryMplImport::ReadContentField() {
 }
 
 void BinaryMplImport::Jump2NextField() {
-  uint32 totalSize = ReadInt();
+  uint32 totalSize = static_cast<uint32>(ReadInt());
   bufI += (totalSize - sizeof(uint32));
   ReadNum();  // skip end tag for this field
 }

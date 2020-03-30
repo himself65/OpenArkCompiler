@@ -447,6 +447,7 @@ void ArrayNode::Dump(int32 indent) const {
 }
 
 bool ArrayNode::IsSameBase(ArrayNode *arry) {
+  ASSERT(arry != nullptr, "null ptr check");
   if (arry == this) {
     return true;
   }
@@ -922,7 +923,7 @@ void DumpCallReturns(const MIRModule &mod, CallReturnVector nrets, int32 indent)
     if (!regFieldPair.IsReg()) {
       const MIRSymbol *st = mirFunc->GetLocalOrGlobalSymbol(stIdx);
       ASSERT(st != nullptr, "st is null");
-      uint16 fieldID = regFieldPair.GetFieldID();
+      FieldID fieldID = regFieldPair.GetFieldID();
       LogInfo::MapleLogger() << " { dassign ";
       LogInfo::MapleLogger() << (stIdx.Islocal() ? "%" : "$");
       LogInfo::MapleLogger() << st->GetName() << " " << fieldID << " }\n";
@@ -943,7 +944,7 @@ void DumpCallReturns(const MIRModule &mod, CallReturnVector nrets, int32 indent)
     StIdx stIdx = (it)->first;
     RegFieldPair regFieldPair = it->second;
     if (!regFieldPair.IsReg()) {
-      uint16 fieldID = regFieldPair.GetFieldID();
+      FieldID fieldID = regFieldPair.GetFieldID();
       LogInfo::MapleLogger() << "dassign";
       const MIRSymbol *st = mirFunc->GetLocalOrGlobalSymbol(stIdx);
       ASSERT(st != nullptr, "st is null");

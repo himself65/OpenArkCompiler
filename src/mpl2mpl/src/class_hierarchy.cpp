@@ -410,6 +410,9 @@ bool KlassHierarchy::UpdateFieldID(TyIdx baseTypeIdx, TyIdx targetTypeIdx, Field
 }
 
 bool KlassHierarchy::NeedClinitCheckRecursively(const Klass &kl) const {
+  if (kl.HasFlag(kClassRuntimeVerify)) {
+    return true;
+  }
   const Klass *klass = &kl;
   if (klass->IsClass()) {
     while (klass != nullptr) {

@@ -637,20 +637,25 @@ class ConstMeExpr : public MeExpr {
   MeExpr *GetIdenticalExpr(MeExpr &expr) const override;
 
   uint32 GetHashIndex() const override {
+    CHECK_FATAL(constVal != nullptr, "constVal is null");
     if (constVal->GetKind() == kConstInt) {
       auto *intConst = safe_cast<MIRIntConst>(constVal);
+      CHECK_NULL_FATAL(intConst);
       return intConst->GetValue();
     }
     if (constVal->GetKind() == kConstFloatConst) {
       auto *floatConst = safe_cast<MIRFloatConst>(constVal);
+      CHECK_NULL_FATAL(floatConst);
       return floatConst->GetIntValue();
     }
     if (constVal->GetKind() == kConstDoubleConst) {
       auto *doubleConst = safe_cast<MIRDoubleConst>(constVal);
+      CHECK_NULL_FATAL(doubleConst);
       return doubleConst->GetIntValue();
     }
     if (constVal->GetKind() == kConstLblConst) {
       auto *lblConst = safe_cast<MIRLblConst>(constVal);
+      CHECK_NULL_FATAL(lblConst);
       return lblConst->GetValue();
     }
     ASSERT(false, "ComputeHash: const type not yet implemented");

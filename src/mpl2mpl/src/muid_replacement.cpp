@@ -483,7 +483,7 @@ void MUIDReplacement::GenerateDataDefTable() {
   }
 }
 
-void MUIDReplacement::ReplaceFieldMetaStaticAddr(MIRSymbol &mirSymbol, int64 index) {
+void MUIDReplacement::ReplaceFieldMetaStaticAddr(MIRSymbol &mirSymbol, uint32 index) {
   std::string symbolName = mirSymbol.GetName();
   MIRSymbol *fieldOffsetDataSt = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(
       GlobalTables::GetStrTable().GetStrIdxFromName(NameMangler::kFieldOffsetDataPrefixStr + symbolName));

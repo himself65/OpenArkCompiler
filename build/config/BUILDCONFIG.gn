@@ -50,16 +50,24 @@ cflags = []
 cflags_cc = []
 cflags_c = []
 if (GN_BUILD_TYPE == "RELEASE") {
-  cflags_cc += [ "-O2" ]
-  cflags_c += [ "-O2" ]
+  cflags_cc += [
+    "-O2",
+    "-D_FORTIFY_SOURCE=2",
+  ]
+  cflags_c += [
+    "-O2",
+    "-D_FORTIFY_SOURCE=2",
+  ]
 } else if (GN_BUILD_TYPE == "DEBUG") {
   cflags_cc += [
     "-O0",
     "-g3",
+    "-fstack-check",
   ]
   cflags_c += [
     "-O0",
     "-g3",
+    "-fstack-check",
   ]
 } else {
   cflags_cc += [
@@ -77,12 +85,14 @@ cflags_c += [
   "-fstack-protector-strong",
   "-fPIC",
   "-fPIE",
+  "-fvisibility=hidden",
 ]
 cflags_cc += [
   "-Wall",
   "-fstack-protector-strong",
   "-fPIC",
   "-fPIE",
+  "-fvisibility=hidden",
 ]
 
 if (HOST_ARCH == 64) {

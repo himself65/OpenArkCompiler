@@ -119,9 +119,11 @@ class MIRFunction {
     return GetReturnType()->GetPrimType() == PTY_void;
   }
   TyIdx GetReturnTyIdx() const {
+    CHECK_FATAL(funcType != nullptr, "funcType is nullptr");
     return funcType->GetRetTyIdx();
   }
   void SetReturnTyIdx(TyIdx tyidx) {
+    CHECK_FATAL(funcType != nullptr, "funcType is nullptr");
     funcType->SetRetTyIdx(tyidx);
   }
 
@@ -137,9 +139,11 @@ class MIRFunction {
   }
 
   size_t GetParamSize() const {
+    CHECK_FATAL(funcType != nullptr, "funcType is nullptr");
     return funcType->GetParamTypeList().size();
   }
   const MapleVector<TyIdx> &GetParamTypes() const {
+    CHECK_FATAL(funcType != nullptr, "funcType is nullptr");
     return funcType->GetParamTypeList();
   }
   TyIdx GetNthParamTyIdx(size_t i) const {
@@ -149,28 +153,33 @@ class MIRFunction {
   const MIRType *GetNthParamType(size_t i) const;
   MIRType *GetNthParamType(size_t i);
   const TypeAttrs &GetNthParamAttr(size_t i) const {
+    CHECK_FATAL(funcType != nullptr, "funcType is nullptr");
     ASSERT(i < funcType->GetParamAttrsList().size(), "array index out of range");
     return funcType->GetNthParamAttrs(i);
   }
 
   void SetNthParamAttr(size_t i, TypeAttrs attrs) {
+    CHECK_FATAL(funcType != nullptr, "funcType is nullptr");
     ASSERT(i < funcType->GetParamAttrsList().size(), "array index out of range");
     funcType->SetNthParamAttrs(i, attrs);
   }
 
   void SetNthParamAttrKind(size_t i, AttrKind x) const {
+    CHECK_FATAL(funcType != nullptr, "funcType is nullptr");
     CHECK_FATAL(i < funcType->GetParamAttrsList().size(), "array index out of range");
     funcType->GetNthParamAttrs(i).SetAttr(x);
   }
 
   void AddArgument(MIRSymbol *symbol) {
     formals.push_back(symbol);
+    CHECK_FATAL(funcType != nullptr, "funcType is nullptr");
     funcType->GetParamTypeList().push_back(symbol->GetTyIdx());
     funcType->GetParamAttrsList().push_back(symbol->GetAttrs());
   }
 
   LabelIdx GetOrCreateLableIdxFromName(const std::string &name);
   GStrIdx GetLabelStringIndex(LabelIdx labelIdx) const {
+    CHECK_FATAL(labelTab != nullptr, "labelTab is nullptr");
     ASSERT(labelIdx < labelTab->Size(), "index out of range in GetLabelStringIndex");
     return labelTab->GetSymbolFromStIdx(labelIdx);
   }
@@ -465,16 +474,20 @@ class MIRFunction {
     return typeNameTab != nullptr;
   }
   const MapleMap<GStrIdx, TyIdx> &GetGStrIdxToTyIdxMap() const {
+    CHECK_FATAL(typeNameTab != nullptr, "typeNameTab is nullptr");
     return typeNameTab->GetGStrIdxToTyIdxMap();
   }
   TyIdx GetTyIdxFromGStrIdx(GStrIdx idx) const {
+    CHECK_FATAL(typeNameTab != nullptr, "typeNameTab is nullptr");
     return typeNameTab->GetTyIdxFromGStrIdx(idx);
   }
   void SetGStrIdxToTyIdx(GStrIdx gStrIdx, TyIdx tyIdx) {
+    CHECK_FATAL(typeNameTab != nullptr, "typeNameTab is nullptr");
     typeNameTab->SetGStrIdxToTyIdx(gStrIdx, tyIdx);
   }
 
   const std::string &GetLabelTabItem(LabelIdx labelIdx) const {
+    CHECK_FATAL(labelTab != nullptr, "labelTab is nullptr");
     return labelTab->GetName(labelIdx);
   }
 
@@ -707,6 +720,7 @@ class MIRFunction {
   }
 
   size_t GetSymbolTabSize() const {
+    ASSERT(symTab != nullptr, "symTab is nullptr");
     return symTab->GetSymbolTableSize();
   }
   MIRSymbol *GetSymbolTabItem(uint32 idx, bool checkFirst = false) const {

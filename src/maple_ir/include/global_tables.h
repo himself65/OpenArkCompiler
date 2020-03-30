@@ -191,6 +191,28 @@ class TypeTable {
     return typeTable.at(PTY_ptr);
   }
 
+#ifdef USE_ARM32_MACRO
+  MIRType *GetUIntType() const {
+    ASSERT(PTY_u32 < typeTable.size(), "array index out of range");
+    return typeTable.at(PTY_u32);
+  }
+
+  MIRType *GetPtrType() const {
+    ASSERT(PTY_u32 < typeTable.size(), "array index out of range");
+    return typeTable.at(PTY_u32);
+  }
+#else
+  MIRType *GetUIntType() const {
+    ASSERT(PTY_u64 < typeTable.size(), "array index out of range");
+    return typeTable.at(PTY_u64);
+  }
+
+  MIRType *GetPtrType() const {
+    ASSERT(PTY_ptr < typeTable.size(), "array index out of range");
+    return typeTable.at(PTY_ptr);
+  }
+#endif
+
 #ifdef USE_32BIT_REF
   MIRType *GetCompactPtr() const {
     ASSERT(PTY_u32 < typeTable.size(), "array index out of range");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -18,36 +18,6 @@
 #include "mpl_logging.h"
 
 using namespace maple;
-void PrintErrorMessage(int ret) {
-  switch (ret) {
-    case kErrorNoError:
-    case kErrorExitHelp:
-      break;
-    case kErrorExit:
-      ERR(kLncErr, "Error Exit!");
-      break;
-    case kErrorInvalidParameter:
-      ERR(kLncErr, "Invalid Parameter!");
-      break;
-    case kErrorInitFail:
-      ERR(kLncErr, "Init Fail!");
-      break;
-    case kErrorFileNotFound:
-      ERR(kLncErr, "File Not Found!");
-      break;
-    case kErrorToolNotFound:
-      ERR(kLncErr, "Tool Not Found!");
-      break;
-    case kErrorCompileFail:
-      ERR(kLncErr, "Compile Fail!");
-      break;
-    case kErrorNotImplement:
-      ERR(kLncErr, "Not Implement!");
-      break;
-    default:
-      break;
-  }
-}
 
 int main(int argc, char **argv) {
   MplOptions mplOptions;

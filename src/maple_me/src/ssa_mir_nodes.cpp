@@ -28,12 +28,14 @@ void GenericSSAPrint(const MIRModule &mod, const StmtNode &stmtNode, int32 inden
     case OP_maydassign:
     case OP_dassign: {
       mod.GetOut() << " ";
+      CHECK_NULL_FATAL(ssaPart->GetSSAVar());
       ssaPart->GetSSAVar()->Dump();
       ssaPart->DumpMayDefNodes(mod);
       return;
     }
     case OP_regassign: {
       mod.GetOut() << "  ";
+      CHECK_NULL_FATAL(ssaPart->GetSSAVar());
       ssaPart->GetSSAVar()->Dump();
       return;
     }

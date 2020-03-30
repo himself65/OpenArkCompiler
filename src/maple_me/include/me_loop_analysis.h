@@ -62,7 +62,7 @@ class IdentifyLoops : public AnalysisResult {
   void SetLoopParent4BB(const BB &bb, LoopDesc &loopDesc);
   void ProcessBB(BB *bb);
   void MarkBB();
-  void Dump();
+  void Dump() const;
 
  private:
   MemPool *meLoopMemPool;

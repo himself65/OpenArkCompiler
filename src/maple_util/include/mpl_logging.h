@@ -164,7 +164,7 @@ class LogInfo {
   }
 
   static std::ostream &MapleLogger(LogLevel l = kLlLog);
-
+  static std::ios::fmtflags flags();
   void EmitLogForUser(enum LogNumberCode num, enum LogLevel ll, const char *fmt, ...) const;
   void EmitLogForUser(enum LogNumberCode num, enum LogLevel ll, const std::string &message) const;
   void EmitErrorMessage(const std::string &cond, const std::string &file, unsigned int line,

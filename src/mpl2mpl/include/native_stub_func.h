@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -18,7 +18,11 @@
 #include "phase_impl.h"
 
 namespace maple {
+#ifdef USE_ARM32_MACRO
+constexpr int kSlownativeFuncnum = 5;
+#else
 constexpr int kSlownativeFuncnum = 9;
+#endif
 constexpr int kJniTypeNormal = 0;
 constexpr int kJniTypeMapleCriticalNative = 1;
 constexpr int kJnitTypeCriticalNative = 2;
@@ -69,8 +73,7 @@ class NativeStubFuncGeneration : public FuncOptimizeImpl {
   bool IsStaticBindingMethod(const std::string &methodName) const;
   MIRFunction &GetOrCreateDefaultNativeFunc(MIRFunction &stubFunc);
   void GenerateRegisteredNativeFuncCall(MIRFunction &func, const MIRFunction &nativeFunc, MapleVector<BaseNode*> &args,
-                                        const MIRSymbol *ret, bool needNativeCall, CallNode &preNativeFuncCall,
-                                        CallNode &postNativeFuncCall);
+                                        const MIRSymbol *ret);
   StmtNode *CreateNativeWrapperCallNode(MIRFunction &func, BaseNode *funcPtr, MapleVector<BaseNode*> &args,
                                         const MIRSymbol *ret);
   void GenerateNativeWrapperFuncCall(MIRFunction &func, const MIRFunction &nativeFunc, MapleVector<BaseNode*> &args,
