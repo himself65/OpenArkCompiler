@@ -109,8 +109,7 @@ def ls_all(path, suffix=None):
     """Output all files in a directory"""
     all_files = []
     if path.is_file() and is_case(path, suffix):
-        all_files.append(path)
-        return all_files
+        return [path]
     for name, _, files in os.walk(str(path)):
         for file in files:
             if is_case(Path(name) / file, suffix):
@@ -146,8 +145,7 @@ def filter_line(line, flag=None):
         return line
     line_flag = line.strip().split(":")[0].strip()
     if line_flag == flag:
-        start = len(line_flag) + 1
-        new_line = line.strip()[start:].strip().lstrip(":").strip()
+        new_line = line.strip()[len(flag) + 1 :].strip().lstrip(":").strip()
         return new_line
     return None
 
@@ -202,5 +200,4 @@ def is_relative(path1, path2):
         _p1.relative_to(_p2)
     except ValueError:
         return 0
-    else:
-        return 1
+    return 1

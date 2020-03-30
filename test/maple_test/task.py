@@ -254,8 +254,6 @@ class TestSuiteTask:
 
     def run(self, process_num=1):
         logger = configs.LOGGER
-        if process_num < 0:
-            logger.error("The number of running processes needs to be greater than 1")
         if process_num == 1:
             logger.debug("The number of running processes is 1, which will run serial")
             self.serial_run_task()
@@ -330,33 +328,24 @@ class TestSuiteTask:
 
 class SingleTask:
     def __init__(self, case, config, running_config):
-        self.name = "{}_task/{}".format(config.name, case.name)
-        self.path = Path("{}_task/{}".format(config.name, case.name))
+        self.name = "{}/{}_{}".format(case.test_name, case.name, config.name)
+        self.path = Path(self.name)
         config = config.get_case_config(case)
-        env = config["env"]
         temp_dir = "{}_{}".format(self.path.name.replace(".", "_"), int(time.time()))
         self.work_dir = running_config["temp_dir"] / self.path.parent / temp_dir
-        timeout = running_config["timeout"]
         self.running_config = {
             "work_dir": self.work_dir,
             "log_config": (running_config["log_config"], self.name),
-            "timeout": timeout,
-            "env": env,
+            "timeout": running_config["timeout"],
+            "env": config["env"],
         }
         self.case_path = case.relative_path
         if case.commands:
             prepare_result = self.prepare(case, self.work_dir, config)
-            if prepare_result[0]:
-                self.result = (NOT_RUN, None)
-                log_dir = (
-                    running_config.get("log_config").get("dir") / self.name
-                ).parent
-                self.prepare_dir(log_dir)
-            else:
-                self.result = (
-                    FAIL,
-                    prepare_result[-1],
-                )
+            self.result = (NOT_RUN, None)
+            log_dir = (running_config.get("log_config").get("dir") / self.name).parent
+            self.prepare_dir(log_dir)
+            self.result = prepare_result
         else:
             self.result = (UNRESOLVED, None)
 
@@ -365,18 +354,16 @@ class SingleTask:
             self._form_commands(case, config)
 
     def prepare(self, case, dest, config):
-        dependence = case.dependence
         src_path = case.path
-        src_dir = src_path.parent
         logger = configs.LOGGER
         if not src_path.exists():
             err = "Source: {} is not existing.\n".format(src_path)
             logger.debug(err)
-            return False, err
+            return FAIL, err
         self.prepare_dir(dest)
         shutil.copy(str(src_path), str(dest))
         logger.debug("Copy {} => {}".format(src_path, dest))
-        return self.prepare_dependence(src_dir, dependence, dest, config)
+        return self.prepare_dependence(src_path.parent, case.dependence, dest, config)
 
     def prepare_dependence(self, src_dir, dependence, dest, config):
         logger = configs.LOGGER
@@ -388,7 +375,7 @@ class SingleTask:
                 src_files.append(src_path)
             else:
                 return (
-                    False,
+                    FAIL,
                     "DEPENDENCE keyword error, DEPENDENCE file: {} NotFound".format(
                         file
                     ),
@@ -405,7 +392,7 @@ class SingleTask:
                     pass
         if src_files:
             logger.debug("Copy {} => {}".format(src_files, dest))
-        return True, ""
+        return NOT_RUN, None
 
     @staticmethod
     def prepare_dir(directory):
@@ -439,10 +426,7 @@ class SingleTask:
                 end = len(key) + start + 1
                 if end == len(line):
                     line = line[:start] + value + line[end:]
-                    continue
-                if line[end].isalnum() or line[end] == "_":
-                    continue
-                else:
+                elif not line[end].isalnum() and line[end] != "_":
                     line = line[:start] + value + line[end:]
         return line
 
@@ -458,8 +442,6 @@ def format_compare_command(raw_command, compare_cmd):
             prev_char = ""
         else:
             prev_char = raw_command[start - 1]
-        if prev_char.isalnum() or prev_char == "_":
-            continue
-        else:
+        if not prev_char.isalnum() and prev_char != "_":
             raw_command = raw_command[:start] + compare_cmd + raw_command[end:]
     return raw_command
