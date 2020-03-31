@@ -447,11 +447,6 @@ bool MeCFG::IsStartTryBB(maple::BB &meBB) const {
 }
 
 void MeCFG::FixTryBB(maple::BB &startBB, maple::BB &nextBB) {
-  if (nextBB.GetBBLabel() != 0) {
-    startBB.SetBBLabel(nextBB.GetBBLabel());
-    func.SetLabelBBAt(nextBB.GetBBLabel(), &startBB);
-    nextBB.SetBBLabel(0);
-  }
   startBB.GetPred().clear();
   for (size_t i = 0; i < nextBB.GetPred().size(); ++i) {
     nextBB.GetPred(i)->ReplaceSucc(&nextBB, &startBB);

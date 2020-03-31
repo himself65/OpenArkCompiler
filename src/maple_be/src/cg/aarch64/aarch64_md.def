@@ -1,0 +1,841 @@
+/*
+ * Copyright (c) [2020] Huawei Technologies Co.,Ltd.All rights reserved.
+ *
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
+ * You can use this software according to the terms and conditions of the Mulan PSL v1.
+ * You may obtain a copy of Mulan PSL v1 at:
+ *
+ *     http://license.coscl.org.cn/MulanPSL
+ *
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
+ */
+/* {mop, opnds, prop, latency, name, format, length} */
+/* MOP_undef, */
+{MOP_undef, {},0,kLtUndef,"","",0},
+
+/* # Definitions */
+
+/* AARCH64 MOVES */
+/* MOP_xmovrr */
+{MOP_xmovrr, {mopdReg64ID,mopdReg64IS},ISMOVE,kLtAlu,"mov","0,1",1},
+/* MOP_wmovrr */
+{MOP_wmovrr, {mopdReg32ID,mopdReg32IS},ISMOVE,kLtAlu,"mov","0,1",1},
+/* MOP_xmovri32 */
+{MOP_xmovri32, {mopdReg32ID,mopdImm32},ISMOVE,kLtAlu,"mov","0,1",1},
+/* MOP_xmovri64 */
+{MOP_xmovri64, {mopdReg64ID,mopdImm64},ISMOVE,kLtAlu,"mov","0,1",1},
+
+/* MOP_xvmovsr */
+{MOP_xvmovsr, {mopdReg32FD,mopdReg32IS},ISMOVE,kLtR2f,"fmov","0,1",1},
+/* MOP_xvmovdr */
+{MOP_xvmovdr, {mopdReg64FD,mopdReg64IS},ISMOVE,kLtR2f,"fmov","0,1",1},
+/* MOP_xvmovrs */
+{MOP_xvmovrs, {mopdReg32ID,mopdReg32FS},ISMOVE,kLtF2r,"fmov","0,1",1},
+/* MOP_xvmovrd */
+{MOP_xvmovrd, {mopdReg64ID,mopdReg64FS},ISMOVE,kLtF2r,"fmov","0,1",1},
+/* MOP_xvmovs */
+{MOP_xvmovs, {mopdReg32FD,mopdReg32FS},ISMOVE,kLtFpalu,"fmov","0,1",1},
+/* MOP_xvmovd */
+{MOP_xvmovd, {mopdReg64FD,mopdReg64FS},ISMOVE,kLtFpalu,"fmov","0,1",1},
+
+/* Vector SIMD mov */
+/* MOP_xmovrv */
+{MOP_xvmovrv, {mopdReg32ID,mopdReg32FS},ISMOVE,kLtF2r,"mov","0,1",1},
+
+/* MOP_xadrp */
+{MOP_xadrp, {mopdReg64ID,mopdLiteral},ISLOADADDR,kLtShift,"adrp","0,1",1},
+/* MOP_xadr */
+{MOP_xadri64, {mopdReg64ID,mopdImm64},ISLOADADDR,kLtShift,"adr","0,1",1},
+/* MOP_xadrpl12 */
+{MOP_xadrpl12, {mopdReg64ID,mopdReg64IS,mopdLiteralL12},0,kLtAlu,"add","0,1,2",1},
+
+/* MOP_xaddrrr	AARCH64 Arithmetic: add */
+{MOP_xaddrrr, {mopdReg64ID,mopdReg64IS,mopdReg64IS},0,kLtAlu,"add","0,1,2",1},
+/* MOP_xaddrrrs */
+{MOP_xaddrrrs, {mopdReg64ID,mopdReg64IS,mopdReg64IS,mopdBitShift64},0,kLtAluShift,"add","0,1,2,3",1},
+
+/* MOP_xxwaddrrre */
+{MOP_xxwaddrrre, {mopdReg64ID,mopdReg64IS,mopdReg32IS,mopdExtendShift64},0,kLtAluShift,"add","0,1,2,3",1},
+/* MOP_xaddrri24 */
+
+{MOP_xaddrri24, {mopdReg64ID,mopdReg64IS,mopdImm12,mopdLSL12},0,kLtShift,"add","0,1,2,3",1},
+/* MOP_xaddrri12 */
+{MOP_xaddrri12, {mopdReg64ID,mopdReg64IS,mopdImm12},0,kLtAlu,"add","0,1,2",1},
+/* MOP_waddrrr */
+{MOP_waddrrr, {mopdReg32ID,mopdReg32IS,mopdReg32IS},0,kLtAlu,"add","0,1,2",1},
+/* MOP_waddrrrs */
+{MOP_waddrrrs, {mopdReg32ID,mopdReg32IS,mopdReg32IS,mopdBitShift32},0,kLtAluShift,"add","0,1,2,3",1},
+/* MOP_waddrri24 */
+{MOP_waddrri24, {mopdReg32ID,mopdReg32IS,mopdImm12,mopdLSL12},0,kLtAluShift,"add","0,1,2,3",1},
+/* MOP_waddrri12 */
+{MOP_waddrri12, {mopdReg32ID,mopdReg32IS,mopdImm12},0,kLtAlu,"add","0,1,2",1},
+/* MOP_dadd */
+{MOP_dadd, {mopdReg64FD,mopdReg64FS,mopdReg64FS},0,kLtFpalu,"fadd","0,1,2",1},
+/* MOP_sadd */
+{MOP_sadd, {mopdReg32FD,mopdReg32FS,mopdReg32FS},0,kLtFpalu,"fadd","0,1,2",1},
+
+/* MOP_xsubrrr	AARCH64 Arithmetic: sub */
+{MOP_xsubrrr, {mopdReg64ID,mopdReg64IS,mopdReg64IS},0,kLtAlu,"sub","0,1,2",1},
+/* MOP_xsubrrrs */
+{MOP_xsubrrrs, {mopdReg64ID,mopdReg64IS,mopdReg64IS,mopdBitShift64},0,kLtAluShift,"sub","0,1,2,3",1},
+/* MOP_xsubrri24 */
+{MOP_xsubrri24, {mopdReg64ID,mopdReg64IS,mopdImm12,mopdLSL12},0,kLtAluShift,"sub","0,1,2,3",1},
+/* MOP_xsubrri12 */
+{MOP_xsubrri12, {mopdReg64ID,mopdReg64IS,mopdImm12},0,kLtAlu,"sub","0,1,2",1},
+/* MOP_wsubrrr */
+{MOP_wsubrrr, {mopdReg32ID,mopdReg32IS,mopdReg32IS},0,kLtAlu,"sub","0,1,2",1},
+/* MOP_wsubrrrs */
+{MOP_wsubrrrs, {mopdReg32ID,mopdReg32IS,mopdReg32IS,mopdBitShift32},0,kLtAluShift,"sub","0,1,2,3",1},
+/* MOP_wsubrri24 */
+{MOP_wsubrri24, {mopdReg32ID,mopdReg32IS,mopdImm12,mopdLSL12},0,kLtAluShift,"sub","0,1,2,3",1},
+/* MOP_wsubrri12 */
+{MOP_wsubrri12, {mopdReg32ID,mopdReg32IS,mopdImm12},0,kLtAlu,"sub","0,1,2",1},
+/* MOP_dsub */
+{MOP_dsub, {mopdReg64FD,mopdReg64FS,mopdReg64FS},0,kLtFpalu,"fsub","0,1,2",1},
+/* MOP_ssub */
+{MOP_ssub, {mopdReg32FD,mopdReg32FS,mopdReg32FS},0,kLtFpalu,"fsub","0,1,2",1},
+
+/* AARCH64 Arithmetic: multiply */
+/* MOP_Tbxmulrrr */
+{MOP_xmulrrr, {mopdReg64ID,mopdReg64IS,mopdReg64IS},0,kLtMul,"mul","0,1,2",1},
+/* MOP_wmulrrr */
+{MOP_wmulrrr, {mopdReg32ID,mopdReg32IS,mopdReg32IS},0,kLtMul,"mul","0,1,2",1},
+/* MOP_Tbxvmuls */
+{MOP_xvmuls, {mopdReg32FD,mopdReg32FS,mopdReg32FS},0,kLtFpmul,"fmul","0,1,2",1},
+/* MOP_Tbxvmuld */
+{MOP_xvmuld, {mopdReg64FD,mopdReg64FS,mopdReg64FS},0,kLtFpmul,"fmul","0,1,2",1},
+/*MOP_xsmullrrr */
+{MOP_xsmullrrr, {mopdReg64ID,mopdReg32IS,mopdReg32IS},0,kLtMul,"smull","0,1,2",1},
+
+/* AARCH64 Conversions */
+/* MOP_xsxtb32 */
+{MOP_xsxtb32, {mopdReg32ID,mopdReg32IS},ISCONVERSION,kLtAluShift,"sxtb","0,1",1},
+/* MOP_xsxtb64 */
+{MOP_xsxtb64, {mopdReg64ID,mopdReg32IS},ISCONVERSION,kLtAluShift,"sxtb","0,1",1},
+/* MOP_xsxth32 */
+{MOP_xsxth32, {mopdReg32ID,mopdReg32IS},ISCONVERSION,kLtAluShift,"sxth","0,1",1},
+/* MOP_xsxth64 */
+{MOP_xsxth64, {mopdReg64ID,mopdReg32IS},ISCONVERSION,kLtAluShift,"sxth","0,1",1},
+/* MOP_xsxtw64 */
+{MOP_xsxtw64, {mopdReg64ID,mopdReg32IS},ISCONVERSION,kLtAluShift,"sxtw","0,1",1},
+
+/* MOP_xuxtb32 */
+{MOP_xuxtb32, {mopdReg32ID,mopdReg32IS},ISCONVERSION,kLtAluShift,"uxtb","0,1",1},
+/* MOP_xuxth32 */
+{MOP_xuxth32, {mopdReg32ID,mopdReg32IS},ISCONVERSION,kLtAluShift,"uxth","0,1",1},
+/* MOP_xuxtw64	Same as mov w0,w0 */
+{MOP_xuxtw64, {mopdReg64ID,mopdReg32IS},ISCONVERSION,kLtAluShift,"uxtw","0,1",1},
+
+/* MOP_xvcvtfd */
+{MOP_xvcvtfd, {mopdReg32FD,mopdReg64FS},ISCONVERSION,kLtFpalu,"fcvt","0,1",1},
+/* MOP_xvcvtdf */
+{MOP_xvcvtdf, {mopdReg64FD,mopdReg32FS},ISCONVERSION,kLtFpalu,"fcvt","0,1",1},
+
+/* MOP_vcvtrf		fcvtzs w,s */
+{MOP_vcvtrf, {mopdReg32ID,mopdReg32FS},ISCONVERSION,kLtF2rCvt,"fcvtzs","0,1",1},
+/* MOP_xvcvtrf	fcvtzs x,s */
+{MOP_xvcvtrf, {mopdReg64ID,mopdReg32FS},ISCONVERSION,kLtF2rCvt,"fcvtzs","0,1",1},
+/* MOP_vcvturf	fcvtzu w,s */
+{MOP_vcvturf, {mopdReg32ID,mopdReg32FS},ISCONVERSION,kLtF2rCvt,"fcvtzu","0,1",1},
+/* MOP_xvcvturf	fcvtzu x,s */
+{MOP_xvcvturf, {mopdReg64ID,mopdReg32FS},ISCONVERSION,kLtF2rCvt,"fcvtzu","0,1",1},
+
+/* MOP_vcvtas         fcvtas w,s (for round) */
+{MOP_vcvtas, {mopdReg32ID,mopdReg32FS},ISCONVERSION,kLtF2rCvt,"fcvtas","0,1",1},
+/* MOP_xvcvtas        fcvtas x,s */
+{MOP_xvcvtas, {mopdReg64ID,mopdReg64FS},ISCONVERSION,kLtF2rCvt,"fcvtas","0,1",1},
+/* MOP_vcvtms         fcvtms w,s (for floor) */
+{MOP_vcvtms, {mopdReg32ID,mopdReg32FS},ISCONVERSION,kLtF2rCvt,"fcvtms","0,1",1},
+/* MOP_xvcvtms        fcvtms x,s */
+{MOP_xvcvtms, {mopdReg64ID,mopdReg64FS},ISCONVERSION,kLtF2rCvt,"fcvtms","0,1",1},
+/* MOP_vcvtps        fcvtps w,s (for ceil) */
+{MOP_vcvtps, {mopdReg32ID,mopdReg32FS},ISCONVERSION,kLtF2rCvt,"fcvtps","0,1",1},
+/* MOP_xvcvtps       fcvtps x,d */
+{MOP_xvcvtps, {mopdReg64ID,mopdReg64FS},ISCONVERSION,kLtF2rCvt,"fcvtps","0,1",1},
+
+/* MOP_vcvtrd		fcvtzs w,d */
+{MOP_vcvtrd, {mopdReg32ID,mopdReg64FS},ISCONVERSION,kLtF2rCvt,"fcvtzs","0,1",1},
+/* MOP_xvcvtrd	fcvtzs x,d */
+{MOP_xvcvtrd, {mopdReg64ID,mopdReg64FS},ISCONVERSION,kLtF2rCvt,"fcvtzs","0,1",1},
+/* MOP_vcvturd	fcvtzu w,d */
+{MOP_vcvturd, {mopdReg32ID,mopdReg64FS},ISCONVERSION,kLtF2rCvt,"fcvtzu","0,1",1},
+/* MOP_xvcvturd	fcvtzu x,d */
+{MOP_xvcvturd, {mopdReg64ID,mopdReg64FS},ISCONVERSION,kLtF2rCvt,"fcvtzu","0,1",1},
+
+/* MOP_vcvtfr		scvtf s,w */
+{MOP_vcvtfr, {mopdReg32FD,mopdReg32IS},ISCONVERSION,kLtR2fCvt,"scvtf","0,1",1},
+/* MOP_xvcvtfr	scvtf s,x */
+{MOP_xvcvtfr, {mopdReg32FD,mopdReg64IS},ISCONVERSION,kLtR2fCvt,"scvtf","0,1",1},
+/* MOP_vcvtufr	ucvtf s,w */
+{MOP_vcvtufr, {mopdReg32FD,mopdReg32IS},ISCONVERSION,kLtR2fCvt,"ucvtf","0,1",1},
+/* MOP_xvcvtufr	ucvtf s,x */
+{MOP_xvcvtufr, {mopdReg32FD,mopdReg64IS},ISCONVERSION,kLtR2fCvt,"ucvtf","0,1",1},
+
+/* MOP_vcvtdr		scvtf d,w */
+{MOP_vcvtdr, {mopdReg64FD,mopdReg32IS},ISCONVERSION,kLtR2fCvt,"scvtf","0,1",1},
+/* MOP_xvcvtdr	scvtf d,x */
+{MOP_xvcvtdr, {mopdReg64FD,mopdReg64IS},ISCONVERSION,kLtR2fCvt,"scvtf","0,1",1},
+/* MOP_vcvtudr	ucvtf d,w */
+{MOP_vcvtudr, {mopdReg64FD,mopdReg32IS},ISCONVERSION,kLtR2fCvt,"ucvtf","0,1",1},
+/* MOP_xvcvtudr	ucvtf d,x */
+{MOP_xvcvtudr, {mopdReg64FD,mopdReg64IS},ISCONVERSION,kLtR2fCvt,"ucvtf","0,1",1},
+
+/* MOP_xcsel */
+{MOP_wcselrrrc, {mopdReg32ID,mopdReg32IS,mopdReg32IS,mopdCond},ISCONDDEF,kLtAlu,"csel","0,1,2,3",1},
+{MOP_xcselrrrc, {mopdReg64ID,mopdReg64IS,mopdReg64IS,mopdCond},ISCONDDEF,kLtAlu,"csel","0,1,2,3",1},
+
+/* MOP_xcset -- all conditions minus AL & NV */
+{MOP_wcsetrc, {mopdReg32ID,mopdCond},ISCONDSET | ISCONDDEF,kLtAlu,"cset","0,1",1},
+{MOP_xcsetrc, {mopdReg64ID,mopdCond},ISCONDSET | ISCONDDEF,kLtAlu,"cset","0,1",1},
+
+/* MOP_xcsinc */
+{MOP_wcsincrrrc, {mopdReg32ID,mopdReg32IS,mopdReg32IS,mopdCond},ISCONDDEF,kLtAlu,"csinc","0,1,2,3",1},
+{MOP_xcsincrrrc, {mopdReg64ID,mopdReg64IS,mopdReg64IS,mopdCond},ISCONDDEF,kLtAlu,"csinc","0,1,2,3",1},
+
+/* MOP_xcsinv */
+{MOP_wcsinvrrrc, {mopdReg32ID,mopdReg32IS,mopdReg32IS,mopdCond},ISCONDDEF,kLtAlu,"csinv","0,1,2,3",1},
+{MOP_xcsinvrrrc, {mopdReg64ID,mopdReg64IS,mopdReg64IS,mopdCond},ISCONDDEF,kLtAlu,"csinv","0,1,2,3",1},
+
+/* MOP_xandrrr */
+{MOP_xandrrr, {mopdReg64ID,mopdReg64IS,mopdReg64IS},0,kLtAlu,"and","0,1,2",1},
+/* MOP_xandrrrs */
+{MOP_xandrrrs, {mopdReg64ID,mopdReg64IS,mopdReg64IS,mopdBitShift64},0,kLtAluShift,"and","0,1,2,3",1},
+/* MOP_xandrri13 */
+{MOP_xandrri13, {mopdReg64ID,mopdReg64IS,mopdImm13},0,kLtAlu,"and","0,1,2",1},
+/* MOP_wandrrr */
+{MOP_wandrrr, {mopdReg32ID,mopdReg32IS,mopdReg32IS},0,kLtAlu,"and","0,1,2",1},
+/* MOP_wandrrrs */
+{MOP_wandrrrs, {mopdReg32ID,mopdReg32IS,mopdReg32IS,mopdBitShift32},0,kLtAluShift,"and","0,1,2,3",1},
+/* MOP_wandrri12 */
+{MOP_wandrri12, {mopdReg32ID,mopdReg32IS,mopdImm12},0,kLtAlu,"and","0,1,2",1},
+
+/* MOP_xiorrrr */
+{MOP_xiorrrr, {mopdReg64ID,mopdReg64IS,mopdReg64IS},0,kLtAlu,"orr","0,1,2",1},
+/* MOP_xiorrrrs */
+{MOP_xiorrrrs, {mopdReg64ID,mopdReg64IS,mopdReg64IS,mopdBitShift64},0,kLtAlu,"orr","0,1,2,3",1},
+/* MOP_xiorrri13 */
+{MOP_xiorrri13, {mopdReg64ID,mopdReg64IS,mopdImm13},0,kLtAlu,"orr","0,1,2",1},
+/* MOP_wiorrrr */
+{MOP_wiorrrr, {mopdReg32ID,mopdReg32IS,mopdReg32IS},0,kLtAlu,"orr","0,1,2",1},
+/* MOP_wiorrrrs */
+{MOP_wiorrrrs, {mopdReg32ID,mopdReg32IS,mopdReg32IS,mopdBitShift32},0,kLtAlu,"orr","0,1,2,3",1},
+/* MOP_wiorrri12 */
+{MOP_wiorrri12, {mopdReg32ID,mopdReg32IS,mopdImm12},0,kLtAlu,"orr","0,1,2",1},
+
+/* MOP_xiorri13r */
+{MOP_xiorri13r, {mopdReg64ID,mopdImm13,mopdReg64IS},0,kLtAlu,"orr","0,2,1",1},
+/* MOP_wiorri12r */
+{MOP_wiorri12r, {mopdReg32ID,mopdImm12,mopdReg32IS},0,kLtAlu,"orr","0,2,1",1},
+
+/* MOP_xeorrrr */
+{MOP_xeorrrr, {mopdReg64ID,mopdReg64IS,mopdReg64IS},0,kLtAlu,"eor","0,1,2",1},
+/* MOP_xeorrrrs */
+{MOP_xeorrrrs, {mopdReg64ID,mopdReg64IS,mopdReg64IS,mopdBitShift64},0,kLtAlu,"eor","0,1,2,3",1},
+/* MOP_xeorrri13 */
+{MOP_xeorrri13, {mopdReg64ID,mopdReg64IS,mopdImm13},0,kLtAlu,"eor","0,1,2",1},
+/* MOP_weorrrr */
+{MOP_weorrrr, {mopdReg32ID,mopdReg32IS,mopdReg32IS},0,kLtAlu,"eor","0,1,2",1},
+/* MOP_weorrrrs */
+{MOP_weorrrrs, {mopdReg32ID,mopdReg32IS,mopdReg32IS,mopdBitShift32},0,kLtAlu,"eor","0,1,2,3",1},
+/* MOP_weorrri12 */
+{MOP_weorrri12, {mopdReg32ID,mopdReg32IS,mopdImm12},0,kLtAlu,"eor","0,1,2",1},
+
+/* MOP_weorrri8m */
+{MOP_weorrri8m, {mopdReg32ID,mopdReg32IS,mopdImm8},0,kLtAlu,"eor","0,1,2",1},
+
+/* MOP_xnotrr */
+{MOP_xnotrr, {mopdReg64ID,mopdReg64IS},0,kLtAlu,"mvn","0,1",1},
+/* MOP_wnotrr */
+{MOP_wnotrr, {mopdReg32ID,mopdReg32IS},0,kLtAlu,"mvn","0,1",1},
+
+/* MOP_wfmaxrrr */
+{MOP_wfmaxrrr, {mopdReg32FD,mopdReg32FS,mopdReg32FS},0,kLtFpalu,"fmax","0,1,2",1},
+/* MOP_xfmaxrrr */
+{MOP_xfmaxrrr, {mopdReg64FD,mopdReg64FS,mopdReg64FS},0,kLtFpalu,"fmax","0,1,2",1},
+/* MOP_wfminrrr */
+{MOP_wfminrrr, {mopdReg32FD,mopdReg32FS,mopdReg32FS},0,kLtFpalu,"fmin","0,1,2",1},
+/* MOP_xfminrrr */
+{MOP_xfminrrr, {mopdReg64FD,mopdReg64FS,mopdReg64FS},0,kLtFpalu,"fmin","0,1,2",1},
+
+/* MOP_wsdivrrr */
+{MOP_wsdivrrr, {mopdReg32ID,mopdReg32IS,mopdReg32IS},CANTHROW,kLtDiv,"sdiv","0,1,2",1},
+/* MOP_xsdivrrr */
+{MOP_xsdivrrr, {mopdReg64ID,mopdReg64IS,mopdReg64IS},CANTHROW,kLtDiv,"sdiv","0,1,2",1},
+/* MOP_wudivrrr */
+{MOP_wudivrrr, {mopdReg32ID,mopdReg32IS,mopdReg32IS},CANTHROW,kLtDiv,"udiv","0,1,2",1},
+/* MOP_xudivrrr */
+{MOP_xudivrrr, {mopdReg64ID,mopdReg64IS,mopdReg64IS},CANTHROW,kLtDiv,"udiv","0,1,2",1},
+
+/* MOP_wmsubrrrr */
+{MOP_wmsubrrrr, {mopdReg32ID,mopdReg32IS,mopdReg32IS,mopdReg32IS},0,kLtMul,"msub","0,1,2,3",1},
+/* MOP_xmsubrrrr */
+{MOP_xmsubrrrr, {mopdReg64ID,mopdReg64IS,mopdReg64IS,mopdReg64IS},0,kLtMul,"msub","0,1,2,3",1},
+
+/* MPO_wubfxrri5i5 */
+{MOP_wubfxrri5i5, {mopdReg32ID,mopdReg32IS,mopdImm5,mopdImm5},0,kLtAluShift,"ubfx","0,1,2,3",1},
+/* MPO_xubfxrri6i6 */
+{MOP_xubfxrri6i6, {mopdReg64ID,mopdReg64IS,mopdImm6,mopdImm6},0,kLtAluShift,"ubfx","0,1,2,3",1},
+
+/* MPO_wsbfxrri5i5 -- Signed Bitfield Extract */
+{MOP_wsbfxrri5i5, {mopdReg32ID,mopdReg32IS,mopdImm5,mopdImm5},0,kLtAluShift,"sbfx","0,1,2,3",1},
+/* MPO_xsbfxrri6i6 */
+{MOP_xsbfxrri6i6, {mopdReg64ID,mopdReg64IS,mopdImm6,mopdImm6},0,kLtAluShift,"sbfx","0,1,2,3",1},
+
+/* MPO_wubfizrri5i5 -- Unsigned Bitfield Insert in Zero */
+{MOP_wubfizrri5i5, {mopdReg32ID,mopdReg32IS,mopdImm5,mopdImm5},0,kLtAluShift,"ubfiz","0,1,2,3",1},
+/* MPO_xubfizrri6i6 */
+{MOP_xubfizrri6i6, {mopdReg64ID,mopdReg64IS,mopdImm6,mopdImm6},0,kLtAluShift,"ubfiz","0,1,2,3",1},
+
+/* MPO_wbfirri5i5 -- Bitfield Insert */
+{MPO_wbfirri5i5, {mopdReg32ID,mopdReg32IS,mopdImm5,mopdImm5},0,kLtAluShift,"bfi","0,1,2,3",1},
+/* MPO_xbfirri6i6 */
+{MPO_xbfirri6i6, {mopdReg64ID,mopdReg64IS,mopdImm6,mopdImm6},0,kLtAluShift,"bfi","0,1,2,3",1},
+
+
+/* MOP_xlslrri6,--- Logical Shift Left */
+{MOP_xlslrri6, {mopdReg64ID,mopdReg64IS,mopdImm6},0,kLtAluShift,"lsl","0,1,2",1},
+/* MOP_wlslrri5 */
+{MOP_wlslrri5, {mopdReg32ID,mopdReg32IS,mopdImm8},0,kLtAluShift,"lsl","0,1,2",1},
+/* MOP_xasrrri6, */
+{MOP_xasrrri6, {mopdReg64ID,mopdReg64IS,mopdImm6},0,kLtAluShift,"asr","0,1,2",1},
+/* MOP_wasrrri5 */
+{MOP_wasrrri5, {mopdReg32ID,mopdReg32IS,mopdImm8},0,kLtAluShift,"asr","0,1,2",1},
+/* MOP_xlsrrri6, */
+{MOP_xlsrrri6, {mopdReg64ID,mopdReg64IS,mopdImm6},0,kLtAluShift,"lsr","0,1,2",1},
+/* MOP_wlsrrri5 */
+{MOP_wlsrrri5, {mopdReg32ID,mopdReg32IS,mopdImm8},0,kLtAluShift,"lsr","0,1,2",1},
+/* MOP_xlslrrr, */
+{MOP_xlslrrr, {mopdReg64ID,mopdReg64IS,mopdReg64IS},0,kLtAluShiftReg,"lsl","0,1,2",1},
+/* MOP_wlslrrr */
+{MOP_wlslrrr, {mopdReg32ID,mopdReg32IS,mopdReg32IS},0,kLtAluShiftReg,"lsl","0,1,2",1},
+/* MOP_xasrrrr, */
+{MOP_xasrrrr, {mopdReg64ID,mopdReg64IS,mopdReg64IS},0,kLtAluShiftReg,"asr","0,1,2",1},
+/* MOP_wasrrrr */
+{MOP_wasrrrr, {mopdReg32ID,mopdReg32IS,mopdReg32IS},0,kLtAluShiftReg,"asr","0,1,2",1},
+/* MOP_xlsrrrr, */
+{MOP_xlsrrrr, {mopdReg64ID,mopdReg64IS,mopdReg64IS},0,kLtAluShiftReg,"lsr","0,1,2",1},
+/* MOP_wlsrrrr */
+{MOP_wlsrrrr, {mopdReg32ID,mopdReg32IS,mopdReg32IS},0,kLtAluShiftReg,"lsr","0,1,2",1},
+
+/* MOP_wsfmovri imm8->s */
+{MOP_wsfmovri, {mopdReg32FD,mopdImm8},ISMOVE,kLtFconst,"fmov","0,1",1},
+/* MOP_xdfmovri imm8->d */
+{MOP_xdfmovri, {mopdReg64FD,mopdImm8},ISMOVE,kLtFconst,"fmov","0,1",1},
+
+/* MOP_xcsneg -- Conditional Select Negation */
+{MOP_wcsnegrrrc, {mopdReg32ID,mopdReg32IS,mopdReg32IS,mopdCond},ISCONDDEF,kLtAlu,"csneg","0,1,2,3",1},
+{MOP_xcsnegrrrc, {mopdReg64ID,mopdReg64IS,mopdReg64IS,mopdCond},ISCONDDEF,kLtAlu,"csneg","0,1,2,3",1},
+
+/* MOP_sabsrr */
+{MOP_sabsrr, {mopdReg32FD,mopdReg32FS},0,kLtFpalu,"fabs","0,1",1},
+/* MOP_dabsrr */
+{MOP_dabsrr, {mopdReg64FD,mopdReg64FS},0,kLtFpalu,"fabs","0,1",1},
+
+/* neg i32 */
+{MOP_winegrr, {mopdReg32ID,mopdReg32IS},0,kLtAlu,"neg","0,1",1},
+/* neg i64 */
+{MOP_xinegrr, {mopdReg64ID,mopdReg64IS},0,kLtAlu,"neg","0,1",1},
+/* neg f32 */
+{MOP_wfnegrr, {mopdReg32FD,mopdReg32FS},0,kLtFpalu,"fneg","0,1",1},
+/* neg f64 */
+{MOP_xfnegrr, {mopdReg64FD,mopdReg64FS},0,kLtFpalu,"fneg","0,1",1},
+
+/* MOP_sdivrrr */
+{MOP_sdivrrr, {mopdReg32FD,mopdReg32FS,mopdReg32FS},CANTHROW,kLtAdvsimdDivS,"fdiv","0,1,2",1},
+/* MOP_ddivrrr */
+{MOP_ddivrrr, {mopdReg64FD,mopdReg64FS,mopdReg64FS},CANTHROW,kLtAdvsimdDivD,"fdiv","0,1,2",1},
+
+/* MOP_hcselrrrc --- Floating-point Conditional Select */
+{MOP_hcselrrrc, {mopdReg16FD,mopdReg16FS,mopdReg16FS,mopdCond},ISCONDDEF,kLtFpalu,"fcsel","0,1,2,3",1},
+/* MOP_scselrrrc */
+{MOP_scselrrrc, {mopdReg32FD,mopdReg32FS,mopdReg32FS,mopdCond},ISCONDDEF,kLtFpalu,"fcsel","0,1,2,3",1},
+/* MOP_dcselrrrc */
+{MOP_dcselrrrc, {mopdReg64FD,mopdReg64FS,mopdReg64FS,mopdCond},ISCONDDEF,kLtFpalu,"fcsel","0,1,2,3",1},
+
+/* MOP_wldli -- load 32-bit literal */
+{MOP_wldli, {mopdReg32ID,mopdLabel},ISLOAD|CANTHROW,kLtLoad1,"ldr","0,1",1},
+/* MOP_xldli -- load 64-bit literal */
+{MOP_xldli, {mopdReg64ID,mopdLabel},ISLOAD|CANTHROW,kLtLoad2,"ldr","0,1",1},
+/* MOP_sldli -- load 32-bit literal */
+{MOP_sldli, {mopdReg32FD,mopdLabel},ISLOAD|CANTHROW,kLtLoad1,"ldr","0,1",1},
+/* MOP_dldli -- load 64-bit literal */
+{MOP_dldli, {mopdReg64FD,mopdLabel},ISLOAD|CANTHROW,kLtLoad2,"ldr","0,1",1},
+
+/* AArch64 branches/calls */
+/* MOP_xbl -- branch with link (call); this is a special definition */
+{MOP_xbl,  {mopdFuncName,mopdLISTS},ISCALL|CANTHROW,kLtBranch,"bl","0",1},
+/* MOP_xblr -- branch with link (call) to register; this is a special definition */
+{MOP_xblr, {mopdReg64IS,mopdLISTS},ISCALL|CANTHROW,kLtBranch,"blr","0",1},
+
+/* AARCH64 LOADS */
+/* MOP_wldrsb --- Load Register Signed Byte */
+{MOP_wldrsb, {mopdReg32ID,mopdMem8S},ISLOAD|CANTHROW,kLtLoad1,"ldrsb","0,1",1},
+/* MOP_wldrb */
+{MOP_wldrb, {mopdReg32ID,mopdMem8S},ISLOAD|CANTHROW,kLtLoad1,"ldrb","0,1",1},
+/* MOP_wldrsh  --- Load Register Signed Halfword */
+{MOP_wldrsh, {mopdReg32ID,mopdMem16S},ISLOAD|CANTHROW,kLtLoad1,"ldrsh","0,1",1},
+/* MOP_wldrh */
+{MOP_wldrh, {mopdReg32ID, mopdMem16S},ISLOAD|CANTHROW,kLtLoad1,"ldrh","0,1",1},
+/* MOP_wldr */
+{MOP_wldr, {mopdReg32ID,mopdMem32S},ISLOAD|CANTHROW,kLtLoad1,"ldr","0,1",1},
+/* MOP_xldr */
+{MOP_xldr, {mopdReg64ID,mopdMem64S},ISLOAD|CANTHROW,kLtLoad2,"ldr","0,1",1},
+/* MOP_bldr */
+{MOP_bldr, {mopdReg8FD,mopdMem8S},ISLOAD|CANTHROW,kLtFLoad64,"ldr","0,1",1},
+/* MOP_hldr */
+{MOP_hldr, {mopdReg16FD,mopdMem16S},ISLOAD|CANTHROW,kLtFLoad64,"ldr","0,1",1},
+/* MOP_sldr */
+{MOP_sldr, {mopdReg32FD,mopdMem32S},ISLOAD|CANTHROW,kLtFLoadMany,"ldr","0,1",1},
+/* MOP_dldr */
+{MOP_dldr, {mopdReg64FD,mopdMem64S},ISLOAD|CANTHROW,kLtFLoadMany,"ldr","0,1",1},
+
+/* AArch64 LDP/LDPSW */
+/* MOP_wldp */
+{MOP_wldp, {mopdReg32ID,mopdReg32ID,mopdMem32S},ISLOAD|ISLOADPAIR|CANTHROW,kLtLoad2,"ldp","0,1,2",1},
+/* MOP_xldp */
+{MOP_xldp, {mopdReg64ID,mopdReg64ID,mopdMem64S},ISLOAD|ISLOADPAIR|CANTHROW,kLtLoad3plus,"ldp","0,1,2",1},
+/* MOP_xldpsw */
+{MOP_xldpsw, {mopdReg64ID,mopdReg64ID,mopdMem32S},ISLOAD|ISLOADPAIR|CANTHROW,kLtLoad2,"ldpsw","0,1,2",1},
+/* MOP_sldp */
+{MOP_sldp, {mopdReg32FD,mopdReg32FD,mopdMem32S},ISLOAD|ISLOADPAIR|CANTHROW,kLtFLoad64,"ldp","0,1,2",1},
+/* MOP_dldp */
+{MOP_dldp, {mopdReg64FD,mopdReg64FD,mopdMem64S},ISLOAD|ISLOADPAIR|CANTHROW,kLtFLoadMany,"ldp","0,1,2",1},
+
+/* AARCH64 Load with Acquire semantics */
+/* MOP_wldarb */
+{MOP_wldarb, {mopdReg32ID,mopdMem8S},ISLOAD|HASACQUIRE|CANTHROW,kLtLoad1,"ldarb","0,1",1},
+/* MOP_wldarh */
+{MOP_wldarh, {mopdReg32ID, mopdMem16S},ISLOAD|HASACQUIRE|CANTHROW,kLtLoad1,"ldarh","0,1",1},
+/* MOP_wldar */
+{MOP_wldar, {mopdReg32ID,mopdMem32S},ISLOAD|HASACQUIRE|CANTHROW,kLtLoad1,"ldar","0,1",1},
+/* MOP_xldar */
+{MOP_xldar, {mopdReg64ID,mopdMem64S},ISLOAD|HASACQUIRE|CANTHROW,kLtLoad1,"ldar","0,1",1},
+
+/* MOP_wmovkri16 */
+{MOP_wmovkri16, {mopdReg32IDS,mopdImm16,mopdLSL4},ISMOVE|ISPARTDEF,kLtShift,"movk","0,1,2",1},
+/* MOP_xmovkri16 */
+{MOP_xmovkri16, {mopdReg64IDS,mopdImm16,mopdLSL6},ISMOVE|ISPARTDEF,kLtShift,"movk","0,1,2",1},
+
+/* MOP_wmovzri16 */
+{MOP_wmovzri16, {mopdReg32ID,mopdImm16,mopdLSL4},ISMOVE|ISPARTDEF,kLtShift,"movz","0,1,2",1},
+/* MOP_xmovzri16 */
+{MOP_xmovzri16, {mopdReg64ID,mopdImm16,mopdLSL6},ISMOVE|ISPARTDEF,kLtShift,"movz","0,1,2",1},
+
+/* MOP_wmovnri16 */
+{MOP_wmovnri16, {mopdReg32ID,mopdImm16,mopdLSL4},ISMOVE|ISPARTDEF,kLtShift,"movn","0,1,2",1},
+/* MOP_xmovnri16 */
+{MOP_xmovnri16, {mopdReg64ID,mopdImm16,mopdLSL6},ISMOVE|ISPARTDEF,kLtShift,"movn","0,1,2",1},
+
+/* AARCH64 Load exclusive with/without acquire semantics */
+{MOP_wldxrb, {mopdReg32ID,mopdMem8S, },ISLOAD|ISATOMIC|CANTHROW,kLtLoad1,"ldxrb","0,1",1},
+{MOP_wldxrh, {mopdReg32ID,mopdMem16S},ISLOAD|ISATOMIC|CANTHROW,kLtLoad1,"ldxrh","0,1",1},
+{MOP_wldxr,  {mopdReg32ID,mopdMem32S},ISLOAD|ISATOMIC|CANTHROW,kLtLoad1,"ldxr","0,1",1},
+{MOP_xldxr,  {mopdReg64ID,mopdMem64S},ISLOAD|ISATOMIC|CANTHROW,kLtLoad1,"ldxr","0,1",1},
+
+{MOP_wldaxrb,{mopdReg32ID,mopdMem8S, },ISLOAD|ISATOMIC|HASACQUIRE|CANTHROW,kLtLoad1,"ldaxrb","0,1",1},
+{MOP_wldaxrh,{mopdReg32ID,mopdMem16S},ISLOAD|ISATOMIC|HASACQUIRE|CANTHROW,kLtLoad1,"ldaxrh","0,1",1},
+{MOP_wldaxr, {mopdReg32ID,mopdMem32S},ISLOAD|ISATOMIC|HASACQUIRE|CANTHROW,kLtLoad1,"ldaxr","0,1",1},
+{MOP_xldaxr, {mopdReg64ID,mopdMem64S},ISLOAD|ISATOMIC|HASACQUIRE|CANTHROW,kLtLoad1,"ldaxr","0,1",1},
+
+{MOP_wldaxp, {mopdReg32ID,mopdReg32ID,mopdMem32S},ISLOAD|ISLOADPAIR|ISATOMIC|HASACQUIRE|CANTHROW,kLtLoad1,"ldaxp","0,1,2",1},
+{MOP_xldaxp, {mopdReg64ID,mopdReg64ID,mopdMem64S},ISLOAD|ISLOADPAIR|ISATOMIC|HASACQUIRE|CANTHROW,kLtLoad1,"ldaxp","0,1,2",1},
+
+/* MOP_vsqrts */
+{MOP_vsqrts, {mopdReg32FD,mopdReg32FS},CANTHROW,kLtAdvsimdDivS,"fsqrt","0,1",1},
+/* MOP_vsqrtd */
+{MOP_vsqrtd, {mopdReg64FD,mopdReg64FS},CANTHROW,kLtAdvsimdDivD,"fsqrt","0,1",1},
+
+
+/* # Non Definitions */
+/* # As far as register allocation is concerned, the instructions below are non-definitions. */
+
+/* MOP_beq */
+{MOP_beq, {mopdRegCCS,mopdLabel},ISCONDBRANCH,kLtBranch,"beq","1",1},
+/* MOP_bne */
+{MOP_bne, {mopdRegCCS,mopdLabel},ISCONDBRANCH,kLtBranch,"bne","1",1},
+/* MOP_blt */
+{MOP_blt, {mopdRegCCS,mopdLabel},ISCONDBRANCH,kLtBranch,"blt","1",1},
+/* MOP_ble */
+{MOP_ble, {mopdRegCCS,mopdLabel},ISCONDBRANCH,kLtBranch,"ble","1",1},
+/* MOP_bgt */
+{MOP_bgt, {mopdRegCCS,mopdLabel},ISCONDBRANCH,kLtBranch,"bgt","1",1},
+/* MOP_bge */
+{MOP_bge, {mopdRegCCS,mopdLabel},ISCONDBRANCH,kLtBranch,"bge","1",1},
+/* MOP_blo equal to MOP_blt for unsigned comparison */
+{MOP_blo, {mopdRegCCS,mopdLabel},ISCONDBRANCH,kLtBranch,"blo","1",1},
+/* MOP_bls equal to MOP_bls for unsigned comparison */
+{MOP_bls, {mopdRegCCS,mopdLabel},ISCONDBRANCH,kLtBranch,"bls","1",1},
+/* MOP_bhs equal to MOP_bge for unsigned comparison */
+{MOP_bhs, {mopdRegCCS,mopdLabel},ISCONDBRANCH,kLtBranch,"bhs","1",1},
+/* MOP_bhi equal to MOP_bgt for float comparison */
+{MOP_bhi, {mopdRegCCS,mopdLabel},ISCONDBRANCH,kLtBranch,"bhi","1",1},
+/* MOP_bpl equal to MOP_bge for float comparison */
+{MOP_bpl, {mopdRegCCS,mopdLabel},ISCONDBRANCH,kLtBranch,"bpl","1",1},
+{MOP_bmi, {mopdRegCCS,mopdLabel},ISCONDBRANCH,kLtBranch,"bmi","1",1},
+{MOP_bvc, {mopdRegCCS,mopdLabel},ISCONDBRANCH,kLtBranch,"bvc","1",1},
+{MOP_bvs, {mopdRegCCS,mopdLabel},ISCONDBRANCH,kLtBranch,"bvs","1",1},
+
+/* MOP_xret		AARCH64 Specific */
+{MOP_xret, {},CANTHROW,kLtBranch,"ret","",1},
+
+/* AARCH64 Floating-Point COMPARES signaling versions */
+/* MOP_hcmperi -- AArch64 cmp has no dest operand */
+{MOP_hcmperi, {mopdRegCCD, mopdReg16FS,mopdFPZeroImm8},0,kLtFpalu,"fcmpe","1,2",1},
+/* MOP_hcmperr -- register, shifted register, AArch64 cmp has no dest operand */
+{MOP_hcmperr, {mopdRegCCD, mopdReg16FS,mopdReg16FS},0,kLtFpalu,"fcmpe","1,2",1},
+
+/* MOP_scmperi -- AArch64 cmp has no dest operand */
+{MOP_scmperi, {mopdRegCCD, mopdReg32FS,mopdFPZeroImm8},0,kLtFpalu,"fcmpe","1,2",1},
+/* MOP_scmperr */
+{MOP_scmperr, {mopdRegCCD, mopdReg32FS,mopdReg32FS},0,kLtFpalu,"fcmpe","1,2",1},
+
+/* MOP_dcmperi -- AArch64 cmp has no dest operand */
+{MOP_dcmperi, {mopdRegCCD, mopdReg64FS,mopdFPZeroImm8},0,kLtFpalu,"fcmpe","1,2",1},
+/* MOP_dcmperr */
+{MOP_dcmperr, {mopdRegCCD, mopdReg64FS,mopdReg64FS},0,kLtFpalu,"fcmpe","1,2",1},
+
+/* AARCH64 Floating-Point COMPARES non-signaling (quiet) versions */
+/* MOP_hcmpqri -- AArch64 cmp has no dest operand */
+{MOP_hcmpqri, {mopdRegCCD, mopdReg16FS,mopdFPZeroImm8},0,kLtFpalu,"fcmp","1,2",1},
+/* MOP_hcmpqrr -- register, shifted register, AArch64 cmp has no dest operand */
+{MOP_hcmpqrr, {mopdRegCCD, mopdReg16FS,mopdReg16FS},0,kLtFpalu,"fcmp","1,2",1},
+
+/* MOP_scmpqri -- AArch64 cmp has no dest operand */
+{MOP_scmpqri, {mopdRegCCD, mopdReg32FS,mopdFPZeroImm8},0,kLtFpalu,"fcmp","1,2",1},
+/* MOP_scmpqrr */
+{MOP_scmpqrr, {mopdRegCCD, mopdReg32FS,mopdReg32FS},0,kLtFpalu,"fcmp","1,2",1},
+
+/* MOP_dcmpqri -- AArch64 cmp has no dest operand */
+{MOP_dcmpqri, {mopdRegCCD, mopdReg64FS,mopdFPZeroImm8},0,kLtFpalu,"fcmp","1,2",1},
+/* MOP_dcmpqrr */
+{MOP_dcmpqrr, {mopdRegCCD, mopdReg64FS,mopdReg64FS},0,kLtFpalu,"fcmp","1,2",1},
+
+/* AARCH64 Integer COMPARES */
+/* MOP_wcmpri -- AArch64 cmp has no dest operand */
+{MOP_wcmpri, {mopdRegCCD, mopdReg32IS,mopdImm12},0,kLtAlu,"cmp","1,2",1},
+/* MOP_wcmprr -- register, shifted register, AArch64 cmp has no dest operand */
+{MOP_wcmprr, {mopdRegCCD, mopdReg32IS,mopdReg32IS},0,kLtAlu,"cmp","1,2",1},
+/* MOP_xcmpri -- AArch64 cmp has no dest operand */
+{MOP_xcmpri, {mopdRegCCD, mopdReg64IS,mopdImm12},0,kLtAlu,"cmp","1,2",1},
+/* MOP_xcmprr -- register, shifted register, AArch64 cmp has no dest operand */
+{MOP_xcmprr, {mopdRegCCD, mopdReg64IS,mopdReg64IS},0,kLtAlu,"cmp","1,2",1},
+
+/* MOP_wccmpriic -- AArch64 cmp has no dest operand */
+{MOP_wccmpriic, {mopdRegCCD, mopdReg32IS,mopdImm5,mopdImm4,mopdCond},0,kLtAlu,"ccmp","1,2,3,4",1},
+/* MOP_wccmprric -- register, shifted register, AArch64 cmp has no dest operand */
+{MOP_wccmprric, {mopdRegCCD, mopdReg32IS,mopdReg32IS,mopdImm4,mopdCond},0,kLtAlu,"ccmp","1,2,3,4",1},
+/* MOP_xccmpriic -- AArch64 cmp has no dest operand */
+{MOP_xccmpriic, {mopdRegCCD, mopdReg64IS,mopdImm5,mopdImm4,mopdCond},0,kLtAlu,"ccmp","1,2,3,4",1},
+/* MOP_xccmprric -- register, shifted register, AArch64 cmp has no dest operand */
+{MOP_xccmprric, {mopdRegCCD, mopdReg64IS,mopdReg64IS,mopdImm4,mopdCond},0,kLtAlu,"ccmp","1,2,3,4",1},
+
+/* MOP_wcmnri -- AArch64 cmp has no dest operand */
+{MOP_wcmnri, {mopdRegCCD, mopdReg32IS,mopdImm12},0,kLtAlu,"cmn","1,2",1},
+/* MOP_wcmnrr -- register, shifted register, AArch64 cmp has no dest operand */
+{MOP_wcmnrr, {mopdRegCCD, mopdReg32IS,mopdReg32IS},0,kLtAlu,"cmn","1,2",1},
+/* MOP_xcmnri -- AArch64 cmp has no dest operand */
+{MOP_xcmnri, {mopdRegCCD, mopdReg64IS,mopdImm12},0,kLtAlu,"cmn","1,2",1},
+/* MOP_xcmnrr -- register, shifted register, AArch64 cmp has no dest operand */
+{MOP_xcmnrr, {mopdRegCCD, mopdReg64IS,mopdReg64IS},0,kLtAlu,"cmn","1,2",1},
+
+/* AArch64 branches */
+/* MOP_xbr -- branch to register */
+{MOP_xbr, {mopdReg64IS},ISUNCONDBRANCH,kLtBranch,"br","0",1},
+/* MOP_Tbbuncond */
+{MOP_xuncond, {mopdLabel},ISUNCONDBRANCH,kLtBranch,"b","0",1},
+
+/* MOP_wcbnz --- Compare and Branch on Nonzero */
+{MOP_wcbnz, {mopdReg32IS,mopdLabel},ISCONDBRANCH,kLtBranch,"cbnz","0,1",1},
+/* MOP_xcbnz */
+{MOP_xcbnz, {mopdReg64IS,mopdLabel},ISCONDBRANCH,kLtBranch,"cbnz","0,1",1},
+/* MOP_wcbz --- Compare and Branch on zero */
+{MOP_wcbz, {mopdReg32IS,mopdLabel},ISCONDBRANCH,kLtBranch,"cbz","0,1",1},
+/* MOP_xcbz */
+{MOP_xcbz, {mopdReg64IS,mopdLabel},ISCONDBRANCH,kLtBranch,"cbz","0,1",1},
+
+/* MOP_wtbnz --- Test bit and Branch if Nonzero */
+{MOP_wtbnz, {mopdReg32IS,mopdImm8,mopdLabel},ISCONDBRANCH,kLtBranch,"tbnz","0,1,2",1},
+/* MOP_xtbnz */
+{MOP_xtbnz, {mopdReg64IS,mopdImm8,mopdLabel},ISCONDBRANCH,kLtBranch,"tbnz","0,1,2",1},
+/* MOP_wtbz --- Test bit and Branch if Zero */
+{MOP_wtbz, {mopdReg32IS,mopdImm8,mopdLabel},ISCONDBRANCH,kLtBranch,"tbz","0,1,2",1},
+/* MOP_xtbz */
+{MOP_xtbz, {mopdReg64IS,mopdImm8,mopdLabel},ISCONDBRANCH,kLtBranch,"tbz","0,1,2",1},
+
+/* AARCH64 STORES */
+/* MOP_wstrb -- Store Register Byte */
+{MOP_wstrb, {mopdReg32IS,mopdMem8D},ISSTORE|CANTHROW,kLtStore1,"strb","0,1",1},
+/* MOP_wstrh -- Store Register Halfword */
+{MOP_wstrh, {mopdReg32IS,mopdMem16D},ISSTORE|CANTHROW,kLtStore1,"strh","0,1",1},
+/* MOP_wstr -- Store Register Word */
+{MOP_wstr, {mopdReg32IS,mopdMem32D},ISSTORE|CANTHROW,kLtStore1,"str","0,1",1},
+/* MOP_xstr -- Store Register Double word */
+{MOP_xstr, {mopdReg64IS,mopdMem64D},ISSTORE|CANTHROW,kLtStore2,"str","0,1",1},
+
+/* MOP_sstr -- Store Register SIMD/FP Float */
+{MOP_sstr, {mopdReg32FS,mopdMem32D},ISSTORE|CANTHROW,kLtStore2,"str","0,1",1},
+/* MOP_dstr -- Store Register SIMD/FP Double */
+{MOP_dstr, {mopdReg64FS,mopdMem64D},ISSTORE|CANTHROW,kLtStore3plus,"str","0,1",1},
+
+/* AArch64 STP. */
+/* MOP_wstp */
+{MOP_wstp, {mopdReg32IS,mopdReg32IS,mopdMem32D},ISSTORE|ISSTOREPAIR|CANTHROW,kLtStore2,"stp","0,1,2",1},
+/* MOP_xstp */
+{MOP_xstp, {mopdReg64IS,mopdReg64IS,mopdMem64D},ISSTORE|ISSTOREPAIR|CANTHROW,kLtStore3plus,"stp","0,1,2",1},
+/* AArch64 does not define STPSW. It has no practical value. */
+/* MOP_sstp */
+{MOP_sstp, {mopdReg32FS,mopdReg32FS,mopdMem32D},ISSTORE|ISSTOREPAIR|CANTHROW,kLtAdvsimdMulQ,"stp","0,1,2",1},
+/* MOP_dstp */
+{MOP_dstp, {mopdReg64FS,mopdReg64FS,mopdMem64D},ISSTORE|ISSTOREPAIR|CANTHROW,kLtAdvsimdMulQ,"stp","0,1,2",1},
+
+/* AARCH64 Store with Release semantics */
+/* MOP_wstlrb -- Store-Release Register Byte */
+{MOP_wstlrb, {mopdReg32IS,mopdMem8D},ISSTORE|HASRELEASE|CANTHROW,kLtStore1,"stlrb","0,1",1},
+/* MOP_wstlrh -- Store-Release Register Halfword */
+{MOP_wstlrh, {mopdReg32IS,mopdMem16D},ISSTORE|HASRELEASE|CANTHROW,kLtStore1,"stlrh","0,1",1},
+/* MOP_wstlr -- Store-Release Register Word */
+{MOP_wstlr, {mopdReg32IS,mopdMem32D},ISSTORE|HASRELEASE|CANTHROW,kLtStore1,"stlr","0,1",1},
+/* MOP_xstlr -- Store-Release Register Double word */
+{MOP_xstlr, {mopdReg64IS,mopdMem64D},ISSTORE|HASRELEASE|CANTHROW,kLtStore1,"stlr","0,1",1},
+
+/* AARCH64 Store exclusive with/without release semantics */
+{MOP_wstxrb, {mopdReg32ID,mopdReg32IS,mopdMem8D, },ISSTORE|ISATOMIC|CANTHROW,kLtStore1,"stxrb","0,1,2",1},
+{MOP_wstxrh, {mopdReg32ID,mopdReg32IS,mopdMem16D},ISSTORE|ISATOMIC|CANTHROW,kLtStore1,"stxrh","0,1,2",1},
+{MOP_wstxr,  {mopdReg32ID,mopdReg32IS,mopdMem32D},ISSTORE|ISATOMIC|CANTHROW,kLtStore1,"stxr","0,1,2",1},
+{MOP_xstxr,  {mopdReg32ID,mopdReg64IS,mopdMem64D},ISSTORE|ISATOMIC|CANTHROW,kLtStore1,"stxr","0,1,2",1},
+
+{MOP_wstlxrb,{mopdReg32ID,mopdReg32IS,mopdMem8D, },ISSTORE|ISATOMIC|HASRELEASE|CANTHROW,kLtStore1,"stlxrb","0,1,2",1},
+{MOP_wstlxrh,{mopdReg32ID,mopdReg32IS,mopdMem16D},ISSTORE|ISATOMIC|HASRELEASE|CANTHROW,kLtStore1,"stlxrh","0,1,2",1},
+{MOP_wstlxr, {mopdReg32ID,mopdReg32IS,mopdMem32D},ISSTORE|ISATOMIC|HASRELEASE|CANTHROW,kLtStore1,"stlxr","0,1,2",1},
+{MOP_xstlxr, {mopdReg32ID,mopdReg64IS,mopdMem64D},ISSTORE|ISATOMIC|HASRELEASE|CANTHROW,kLtStore1,"stlxr","0,1,2",1},
+
+{MOP_wstlxp, {mopdReg32ID,mopdReg32IS,mopdReg32IS,mopdMem64D},ISSTORE|ISSTOREPAIR|ISATOMIC|HASRELEASE|CANTHROW,kLtStore1,"stlxp","0,1,2,3",1},
+{MOP_xstlxp, {mopdReg32ID,mopdReg64IS,mopdReg64IS,mopdMem64D},ISSTORE|ISSTOREPAIR|ISATOMIC|HASRELEASE|CANTHROW,kLtStore1,"stlxp","0,1,2,3",1},
+
+/* Memory barriers */
+/* MOP_dmb_ishld */
+{MOP_dmb_ishld, {}, HASACQUIRE|ISDMB,kLtBranch, "dmb\tishld", "",1},
+/* MOP_dmb_ishst */
+{MOP_dmb_ishst, {}, HASRELEASE|ISDMB,kLtBranch, "dmb\tishst", "",1},
+/* MOP_dmb_ish */
+{MOP_dmb_ish,   {}, HASACQUIRE|HASRELEASE|ISDMB,kLtBranch, "dmb\tish", "",1},
+
+/*
+ * MOP_clinit
+ * will be emit to four instructions in a row:
+ * adrp  xd, :got:__classinfo__Ljava_2Futil_2Fconcurrent_2Fatomic_2FAtomicInteger_3B
+ * ldr xd, [xd,#:got_lo12:__classinfo__Ljava_2Futil_2Fconcurrent_2Fatomic_2FAtomicInteger_3B]
+ * ldr xd, [xd,#112]
+ * ldr wzr, [xd]
+ */
+{MOP_clinit, {mopdReg64ID,mopdLiteral},ISATOMIC|CANTHROW,kLtClinit,"intrinsic_clinit","0,1",4},
+
+/*
+ * will be emit to two instrunctions in a row:
+ * ldr wd, [xs]  // xd and xs should be differenct register
+ * ldr wd, [xd]
+ */
+{MOP_lazy_ldr, {mopdReg32ID,mopdReg64IS},ISATOMIC|CANTHROW,kLtClinitTail,"intrinsic_lazyload","0,1",2},
+
+/*
+ * will be emit to three instrunctions in a row:
+ * adrp  xd, :got:__staticDecoupleValueOffset$$xxx+offset
+ * ldr xd, [xd,#:got_lo12:__staticDecoupleValueOffset$$xx+offset]
+ * ldr xzr, [xd]
+ */
+{MOP_lazy_ldr_static, {mopdReg64ID,mopdLiteral},ISATOMIC|CANTHROW,kLtAdrpLdr,"intrinsic_lazyloadstatic","0,1",3},
+
+/* A pseudo instruction followed MOP_lazy_ldr, to make sure xs and xd be allocated to different physical registers. */
+{MOP_lazy_tail, {mopdReg32IS,mopdReg64IS},0,kLtUndef,"pseudo_lazy_tail","",0},
+
+/* will be emit to two instructions in a row:
+ * adrp    xd, _PTR__cinf_Ljava_2Flang_2FSystem_3B
+ * ldr     xd, [xd, #:lo12:_PTR__cinf_Ljava_2Flang_2FSystem_3B]
+ * MOP_adrp_ldr
+ */
+{MOP_adrp_ldr, {mopdReg64ID, mopdLiteral},ISATOMIC|CANTHROW,kLtAdrpLdr,"intrinsic_adrpldr","0,1",2},
+
+/*
+ * ldr x17, [xs,#112]
+ * ldr wzr, [x17]
+ */
+{MOP_clinit_tail, {mopdReg64IS},ISATOMIC|CANTHROW,kLtClinitTail,"intrinsic_clinit_tail","0",2},
+
+/*
+ * intrinsic Unsafe.getAndAddInt
+ * intrinsic_get_add_int w0, xt, wt, ws, x1, x2, w3, label
+ * add    xt, x1, x2
+ * label:
+ * ldaxr  w0, [xt]
+ * add    wt, w0, w3
+ * stlxr  ws, wt, [xt]
+ * cbnz   ws, label
+ */
+{MOP_get_and_addI, {mopdReg32ID,mopdReg64ID,mopdReg32ID,mopdReg32ID,mopdReg64IS,mopdReg64IS,mopdReg32IS,mopdLabel},HASLOOP|CANTHROW,kLtBranch,"intrinsic_get_add_int","",5},
+/*
+ * intrinsic Unsafe.getAndAddLong
+ * intrinsic_get_add_long x0, xt, xs, ws, x1, x2, x3, ws, label
+ * add    xt, x1, x2
+ * label:
+ * ldaxr  x0, [xt]
+ * add    xs, x0, x3
+ * stlxr  ws, x2, [xt]
+ * cbnz   ws, label
+ */
+{MOP_get_and_addL, {mopdReg64ID,mopdReg64ID,mopdReg64ID,mopdReg32ID,mopdReg64IS,mopdReg64IS,mopdReg64IS,mopdLabel},HASLOOP|CANTHROW,kLtBranch,"intrinsic_get_add_long","",5},
+
+/*
+ * intrinsic Unsafe.getAndSetInt
+ * intrinsic_get_set_int w0, xt, x1, x2, w3, label
+ * add    xt, x1, x2
+ * label:
+ * ldaxr  w0, [xt]
+ * stlxr  w2, w3, [xt]
+ * cbnz   w2, label
+ */
+{MOP_get_and_setI, {mopdReg32ID,mopdReg64ID,mopdReg32ID,mopdReg64IS,mopdReg64IDS,mopdReg32IS,mopdLabel},HASLOOP|CANTHROW,kLtBranch,"intrinsic_get_set_int","0,1,2,3,4",4},
+/*
+ * intrinsic Unsafe.getAndSetLong
+ * intrinsic_get_set_long x0, x1, x2, x3, label
+ * add    xt, x1, x2
+ * label:
+ * ldaxr  x0, [xt]
+ * stlxr  w2, x3, [xt]
+ * cbnz   w2, label
+ */
+{MOP_get_and_setL, {mopdReg64ID,mopdReg64ID,mopdReg32ID,mopdReg64IS,mopdReg64IDS,mopdReg64IS,mopdLabel},HASLOOP|CANTHROW,kLtBranch,"intrinsic_get_set_long","0,1,2,3,4",4},
+
+/*
+ * intrinsic Unsafe.compareAndSwapInt
+ * intrinsic_compare_swap_int x0, xt, ws, x1, x2, w3, w4, lable1, label2
+ * add       xt, x1, x2
+ * label1:
+ * ldaxr     ws, [xt]
+ * cmp       ws, w3
+ * b.ne      label2
+ * stlxr     ws, w4, [xt]
+ * cbnz      ws, label1
+ * label2:
+ * cset      x0, eq
+ */
+{MOP_compare_and_swapI, {mopdReg64ID,mopdReg64ID,mopdReg32ID,mopdReg64IS,mopdReg64IS,mopdReg32IS,mopdReg32IS,mopdLabel,mopdLabel},HASLOOP|CANTHROW,kLtBranch,"intrinsic_compare_swap_int","0,1,2,3,4,5,6",7},
+/*
+ * intrinsic Unsafe.compareAndSwapLong
+ * intrinsic_compare_swap_long x0, xt, xs, x1, x2, x3, x4, lable1, label2
+ * add       xt, x1, x2
+ * label1:
+ * ldaxr     xs, [xt]
+ * cmp       xs, x3
+ * b.ne      label2
+ * stlxr     ws, x4, [xt]
+ * cbnz      ws, label1
+ * label2:
+ * cset      x0, eq
+ */
+{MOP_compare_and_swapL, {mopdReg64ID,mopdReg64ID,mopdReg64ID,mopdReg64IS,mopdReg64IS,mopdReg64IS,mopdReg64IS,mopdLabel,mopdLabel},HASLOOP|CANTHROW,kLtBranch,"intrinsic_compare_swap_long","0,1,2,3,4,5,6",7},
+
+/*
+ * intrinsic String.indexOf(Ljava/lang/String;)I
+ * intrinsic_string_indexof w0, x1, w2, x3, w4, x5, x6, x7, x8, x9, w10, Label.FIRST_LOOP, Label.STR2_NEXT, Label.STR1_LOOP, Label.STR1_NEXT, Label.LAST_WORD, Label.NOMATCH, Label.RET
+ * cmp       w4, w2
+ * b.gt      .Label.NOMATCH
+ * sub       w2, w2, w4
+ * sub       w4, w4, #8
+ * mov       w10, w2
+ * uxtw      x4, w4
+ * uxtw      x2, w2
+ * add       x3, x3, x4
+ * add       x1, x1, x2
+ * neg       x4, x4
+ * neg       x2, x2
+ * ldr       x5, [x3,x4]
+ * .Label.FIRST_LOOP:
+ * ldr       x7, [x1,x2]
+ * cmp       x5, x7
+ * b.eq      .Label.STR1_LOOP
+ * .Label.STR2_NEXT:
+ * adds      x2, x2, #1
+ * b.le      .Label.FIRST_LOOP
+ * b         .Label.NOMATCH
+ * .Label.STR1_LOOP:
+ * adds      x8, x4, #8
+ * add       x9, x2, #8
+ * b.ge      .Label.LAST_WORD
+ * .Label.STR1_NEXT:
+ * ldr       x6, [x3,x8]
+ * ldr       x7, [x1,x9]
+ * cmp       x6, x7
+ * b.ne      .Label.STR2_NEXT
+ * adds      x8, x8, #8
+ * add       x9, x9, #8
+ * b.lt      .Label.STR1_NEXT
+ * .Label.LAST_WORD:
+ * ldr       x6, [x3]
+ * sub       x9, x1, x4
+ * ldr       x7, [x9,x2]
+ * cmp       x6, x7
+ * b.ne      .Label.STR2_NEXT
+ * add       w0, w10, w2
+ * b         .Label.RET
+ * .Label.NOMATCH:
+ * mov       w0, #-1
+ * .Label.RET:
+ */
+{MOP_string_indexof, {mopdReg32ID,mopdReg64IDS,mopdReg32IDS,mopdReg64IDS,mopdReg32IDS,mopdReg64ID,mopdReg64ID,mopdReg64ID,mopdReg64ID,mopdReg64ID,mopdReg32ID,mopdLabel,mopdLabel,mopdLabel,mopdLabel,mopdLabel,mopdLabel,mopdLabel},HASLOOP|CANTHROW,kLtBranch,"intrinsic_string_indexof","0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17",36},
+
+/* MOP_tail_call_opt_xbl -- branch without link (call); this is a special definition */
+{MOP_tail_call_opt_xbl,  {mopdFuncName,mopdLISTS},CANTHROW,kLtBranch,"b","0", 1},
+/* MOP_tail_call_opt_xblr -- branch without link (call) to register; this is a special definition */
+{MOP_tail_call_opt_xblr, {mopdReg64IS,mopdLISTS},CANTHROW,kLtBranch,"br","0", 1},
+
+/* MOP_pseudo_param_def_x, */
+{MOP_pseudo_param_def_x, {mopdReg64ID},0,kLtUndef,"//MOP_pseudo_param_def","0", 0},
+
+/* MOP_pseudo_param_def_w, */
+{MOP_pseudo_param_def_w, {mopdReg32ID},0,kLtUndef,"//MOP_pseudo_param_def","0", 0},
+
+/* MOP_pseudo_param_def_d, */
+{MOP_pseudo_param_def_d, {mopdReg64FD},0,kLtUndef,"//MOP_pseudo_param_def","0", 0},
+
+/* MOP_pseudo_param_def_s, */
+{MOP_pseudo_param_def_s, {mopdReg32FD},0,kLtUndef,"//MOP_pseudo_param_def","0", 0},
+
+/* MOP_pseudo_param_store_x, */
+{MOP_pseudo_param_store_x, {mopdMem64D},0,kLtUndef,"//MOP_pseudo_param_store_x","0", 0},
+
+/* MOP_pseudo_param_store_w, */
+{MOP_pseudo_param_store_w, {mopdMem32D},0,kLtUndef,"//MOP_pseudo_param_store_w","0", 0},
+
+/* MOP_pseudo_ref_init_x, */
+{MOP_pseudo_ref_init_x, {mopdMem64D},0,kLtUndef,"//MOP_pseudo_ref_init_x","0",  0},
+
+/* MOP_pseudo_ret_int, */
+{MOP_pseudo_ret_int, {mopdReg64IS},0,kLtUndef,"//MOP_pseudo_ret_int","", 0},
+
+/* MOP_pseudo_ret_float, */
+{MOP_pseudo_ret_float, {mopdReg64FS},0,kLtUndef,"//MOP_pseudo_ret_float","", 0},
+
+/* When exception occurs, R0 and R1 may be defined by runtime code. */
+/* MOP_pseudo_eh_def_x, */
+{MOP_pseudo_eh_def_x, {mopdReg64ID},0,kLtUndef,"//MOP_pseudo_eh_def_x","0", 0},
+
+/* for comments */
+/* MOP_comment */
+{MOP_comment, {mopdSTRING},0,kLtUndef,"//","0", 0},
+/*MOP_nop */
+{MOP_nop, {},0,kLtAlu,"nop","", 0},
+
+
+/* A pseudo instruction that used for seperating dependence graph. */
+/* MOP_pseudo_dependence_seperator, */
+{MOP_pseudo_dependence_seperator, {},0,kLtUndef,"//MOP_pseudo_dependence_seperator","0", 0},
+
+
+/* A pseudo instruction that used for replacing MOP_clinit_tail after clinit merge in scheduling. */
+/* MOP_pseudo_none, */
+{MOP_pseudo_none, {},0,kLtUndef,"//MOP_pseudo_none","0", 0},
+
+/* end of AArch64 instructions */

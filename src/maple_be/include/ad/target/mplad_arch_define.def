@@ -1,0 +1,2 @@
+/* cortex_a55 Architecture definition : */
+SetMaxParallelism(2);

@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) [2020] Huawei Technologies Co.,Ltd.All rights reserved.
+ *
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
+ * You can use this software according to the terms and conditions of the Mulan PSL v1.
+ * You may obtain a copy of Mulan PSL v1 at:
+ *
+ *     http://license.coscl.org.cn/MulanPSL
+ *
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
+ */
+// JBC_CONST(tag, tagName, className)
+JBC_CONST(kConstUTF8, "ConstUTF8", JBCConstUTF8)
+JBC_CONST(kConstInteger, "ConstInteger", JBCConst4Byte)
+JBC_CONST(kConstFloat, "ConstFloat", JBCConst4Byte)
+JBC_CONST(kConstLong, "ConstLong", JBCConst8Byte)
+JBC_CONST(kConstDouble, "ConstDouble", JBCConst8Byte)
+JBC_CONST(kConstClass, "ConstClass", JBCConstClass)
+JBC_CONST(kConstString, "ConstString", JBCConstString)
+JBC_CONST(kConstFieldRef, "ConstFieldRef", JBCConstRef)
+JBC_CONST(kConstMethodRef, "ConstMethodRef", JBCConstRef)
+JBC_CONST(kConstInterfaceMethodRef, "ConstInterfaceMethodRef", JBCConstRef)
+JBC_CONST(kConstNameAndType, "ConstNameAndType", JBCConstNameAndType)
+JBC_CONST(kConstMethodHandleInfo, "ConstMethodHandleInfo", JBCConstMethodHandleInfo)
+JBC_CONST(kConstMethodType, "ConstMethodType", JBCConstMethodType)
+JBC_CONST(kConstInvokeDynamic, "ConstInvokeDynamic", JBCConstInvokeDynamic)

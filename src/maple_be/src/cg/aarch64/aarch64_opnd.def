@@ -1,0 +1,156 @@
+/*
+ * Copyright (c) [2020] Huawei Technologies Co.,Ltd.All rights reserved.
+ *
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
+ * You can use this software according to the terms and conditions of the Mulan PSL v1.
+ * You may obtain a copy of Mulan PSL v1 at:
+ *
+ *     http://license.coscl.org.cn/MulanPSL
+ *
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
+ */
+AArch64OpndProp mopdInt32RegSrc = {Operand::kOpdRegister, {kRegTyInt, kAllRegNum, kRegPropUse }, 32};
+AArch64OpndProp mopdInt32RegDest = {Operand::kOpdRegister, {kRegTyInt, kAllRegNum, kRegPropDef}, 32};
+AArch64OpndProp mopdInt32RegDestSrc = {Operand::kOpdRegister, {kRegTyInt, kAllRegNum, kRegPropDef | kRegPropUse}, 32};
+AArch64OpndProp mopdInt64RegSrc = {Operand::kOpdRegister, {kRegTyInt, kAllRegNum, kRegPropUse}, 64};
+AArch64OpndProp mopdInt64RegDest = {Operand::kOpdRegister, {kRegTyInt, kAllRegNum, kRegPropDef}, 64};
+AArch64OpndProp mopdInt64RegDestSrc = {Operand::kOpdRegister, {kRegTyInt, kAllRegNum, kRegPropDef | kRegPropUse}, 64};
+AArch64OpndProp mopdF8RegSrc = {Operand::kOpdRegister, {kRegTyFloat, kAllRegNum, kRegPropUse}, 8};
+AArch64OpndProp mopdF8RegDest = {Operand::kOpdRegister, {kRegTyFloat, kAllRegNum, kRegPropDef}, 8};
+AArch64OpndProp mopdF16RegSrc = {Operand::kOpdRegister, {kRegTyFloat, kAllRegNum, kRegPropUse}, 16};
+AArch64OpndProp mopdF16RegDest = {Operand::kOpdRegister, {kRegTyFloat, kAllRegNum, kRegPropDef}, 16};
+AArch64OpndProp mopdF32RegSrc = {Operand::kOpdRegister, {kRegTyFloat, kAllRegNum, kRegPropUse}, 32};
+AArch64OpndProp mopdF32RegDest = {Operand::kOpdRegister, {kRegTyFloat, kAllRegNum, kRegPropDef}, 32};
+AArch64OpndProp mopdF32RegDestSrc = {Operand::kOpdRegister, {kRegTyFloat, kAllRegNum, kRegPropDef | kRegPropUse}, 32};
+AArch64OpndProp mopdF64RegSrc = {Operand::kOpdRegister, {kRegTyFloat, kAllRegNum, kRegPropUse}, 64};
+AArch64OpndProp mopdF64RegDest = {Operand::kOpdRegister, {kRegTyFloat, kAllRegNum, kRegPropDef}, 64};
+AArch64OpndProp mopdF64RegDestSrc = {Operand::kOpdRegister, {kRegTyFloat, kAllRegNum, kRegPropDef | kRegPropUse}, 64};
+AArch64OpndProp mopdIntImm4Src = {Operand::kOpdImmediate, {kRegTyUndef, kAllRegNum, kRegPropUse}, 4};
+AArch64OpndProp mopdIntImm5Src = {Operand::kOpdImmediate, {kRegTyUndef, kAllRegNum, kRegPropUse}, 5};
+AArch64OpndProp mopdIntImm6Src = {Operand::kOpdImmediate, {kRegTyUndef, kAllRegNum, kRegPropUse}, 6};
+AArch64OpndProp mopdIntImm8Src = {Operand::kOpdImmediate, {kRegTyUndef, kAllRegNum, kRegPropUse}, 8};
+AArch64OpndProp mopdIntImm12Src = {Operand::kOpdImmediate, {kRegTyUndef, kAllRegNum, kRegPropUse}, 12};
+AArch64OpndProp mopdIntImm13Src = {Operand::kOpdImmediate, {kRegTyUndef, kAllRegNum, kRegPropUse}, 13};
+AArch64OpndProp mopdIntImm16Src = {Operand::kOpdImmediate, {kRegTyUndef, kAllRegNum, kRegPropUse}, 16};
+AArch64OpndProp mopdIntImm24Src = {Operand::kOpdImmediate, {kRegTyUndef, kAllRegNum, kRegPropUse}, 24};
+AArch64OpndProp mopdIntImm32Src = {Operand::kOpdImmediate, {kRegTyUndef, kAllRegNum, kRegPropUse}, 32};
+AArch64OpndProp mopdIntImm32Literal = {Operand::kOpdImmediate, {kRegTyUndef, kAllRegNum, kRegPropUse | kLoadLiteral}, 32};
+AArch64OpndProp mopdIntImm64Src = {Operand::kOpdImmediate, {kRegTyUndef, kAllRegNum, kRegPropUse}, 64};
+AArch64OpndProp mopdIntImm64Literal = {Operand::kOpdImmediate, {kRegTyUndef, kAllRegNum, kRegPropUse | kLoadLiteral}, 64};
+AArch64OpndProp mopdFpzeroImm8Src = {Operand::kOpdFPZeroImmediate, {kRegTyUndef, kAllRegNum, kRegPropUse}, 8};
+AArch64OpndProp mopdMem8Src = {Operand::kOpdMem, {kRegTyUndef, kAllRegNum, kRegPropUse}, 8};
+AArch64OpndProp mopdMem16Src = {Operand::kOpdMem, {kRegTyUndef, kAllRegNum, kRegPropUse}, 16};
+AArch64OpndProp mopdMem32Src = {Operand::kOpdMem, {kRegTyUndef, kAllRegNum, kRegPropUse}, 32};
+AArch64OpndProp mopdMem32SrcH = {Operand::kOpdMem, {kRegTyUndef, kAllRegNum, kRegPropUse | kMemLow12}, 16};
+AArch64OpndProp mopdMem32SrcL = {Operand::kOpdMem, {kRegTyUndef, kAllRegNum, kRegPropUse | kMemLow12}, 16};
+AArch64OpndProp mopdMem64Src = {Operand::kOpdMem, {kRegTyUndef, kAllRegNum, kRegPropUse}, 64};
+AArch64OpndProp mopdMem64SrcL = {Operand::kOpdMem, {kRegTyUndef, kAllRegNum, kRegPropUse | kMemLow12}, 12};
+
+AArch64OpndProp mopdMem8Dest  = {Operand::kOpdMem, {kRegTyUndef, kAllRegNum, kRegPropDef }, 8};
+AArch64OpndProp mopdMem16Dest = {Operand::kOpdMem, {kRegTyUndef, kAllRegNum, kRegPropDef }, 16};
+AArch64OpndProp mopdMem32Dest = {Operand::kOpdMem, {kRegTyUndef, kAllRegNum, kRegPropDef }, 32};
+AArch64OpndProp mopdMem64Dest = {Operand::kOpdMem, {kRegTyUndef, kAllRegNum, kRegPropDef }, 64};
+
+AArch64OpndProp mopdLbl64Src = {Operand::kOpdBBAddress, {kRegTyUndef,kAllRegNum, kRegPropUse}, 64};
+AArch64OpndProp mopdLiteralSrc = {Operand::kOpdStImmediate, {kRegTyUndef,kAllRegNum, kRegPropUse}, 64};
+AArch64OpndProp mopdLiteralL12Src = {Operand::kOpdStImmediate, {kRegTyUndef, kAllRegNum, kLiteralLow12}, 12};
+AArch64OpndProp mopdListSrc = {Operand::kOpdList, {kRegTyUndef, kAllRegNum, kRegPropUse}, 1};
+AArch64OpndProp mopdCcRegSrc = {Operand::kOpdRegister, {kRegTyCc, kAllRegNum, kRegPropUse}, 1};
+AArch64OpndProp mopdCcRegDest = {Operand::kOpdRegister, {kRegTyCc, kAllRegNum, kRegPropDef}, 1};
+AArch64OpndProp mopdCcRegDestSrc = {Operand::kOpdRegister, {kRegTyCc, kAllRegNum, kRegPropDef | kRegPropUse}, 1};
+AArch64OpndProp mopdSpRegDest = {Operand::kOpdRegister, {kRegTyInt, RSP, kRegPropDef}, 32};
+AArch64OpndProp mopdMem32SrcPre = {Operand::kOpdMem, {kRegTyUndef, kAllRegNum, kRegPropUse | kPreInc}, 32};
+AArch64OpndProp mopdMem32SrcPost = {Operand::kOpdMem, {kRegTyUndef, kAllRegNum, kRegPropUse | kPostInc}, 32};
+AArch64OpndProp mopdMem64SrcPre = {Operand::kOpdMem, {kRegTyUndef, kAllRegNum, kRegPropUse | kPreInc}, 64};
+AArch64OpndProp mopdMem64SrcPost = {Operand::kOpdMem, {kRegTyUndef, kAllRegNum, kRegPropUse | kPostInc}, 64};
+AArch64OpndProp mopdMem32LiteralSrc = {Operand::kOpdMem, {kRegTyUndef, kAllRegNum, kRegPropUse}, 32};
+AArch64OpndProp mopdMem64LiteralSrc = {Operand::kOpdMem, {kRegTyUndef, kAllRegNum, kRegPropUse}, 64};
+
+AArch64OpndProp mopdCondSrc = {Operand::kOpdCond, {kRegTyCc, kAllRegNum, kRegPropUse}, 4};
+
+AArch64OpndProp mopdBitshift32Src = {Operand::kOpdShift, {kRegTyUndef, kAllRegNum, kRegPropUse}, 5};
+AArch64OpndProp mopdBitshift64Src = {Operand::kOpdShift, {kRegTyUndef, kAllRegNum, kRegPropUse}, 6};
+AArch64OpndProp mopdExtendshift64Src = {Operand::kOpdExtend, {kRegTyUndef, kAllRegNum, kRegPropUse}, 3};
+AArch64OpndProp mopdLsl4Src  = {Operand::kOpdShift, {kRegTyUndef, kAllRegNum, kRegPropUse}, 4};
+AArch64OpndProp mopdLsl6Src  = {Operand::kOpdShift, {kRegTyUndef, kAllRegNum, kRegPropUse}, 6};
+AArch64OpndProp mopdLsl12Src = {Operand::kOpdShift, {kRegTyUndef, kAllRegNum, kRegPropUse}, 12};
+
+AArch64OpndProp mopdString = {Operand::kOpdString, {kRegTyUndef, kAllRegNum, kRegPropUse}, 0};
+
+// physical register
+
+AArch64OpndProp *MOPDReg = &mopdInt32RegSrc;
+// in mopdReg32IS, Reg means register, 32 means 32-bits, I means integer(F means float),
+// S means source, D means dest, H means high harf bits, L means low harf bits
+AArch64OpndProp *mopdReg32IS = &mopdInt32RegSrc;
+AArch64OpndProp *mopdReg32ID = &mopdInt32RegDest;
+AArch64OpndProp *mopdReg32IDS = &mopdInt32RegDestSrc;
+AArch64OpndProp *mopdReg64IS = &mopdInt64RegSrc;
+AArch64OpndProp *mopdReg64ID = &mopdInt64RegDest;
+AArch64OpndProp *mopdReg64IDS = &mopdInt64RegDestSrc;
+AArch64OpndProp *mopdReg8FS = &mopdF8RegSrc;
+AArch64OpndProp *mopdReg8FD = &mopdF8RegDest;
+AArch64OpndProp *mopdReg16FS = &mopdF16RegSrc;
+AArch64OpndProp *mopdReg16FD = &mopdF16RegDest;
+AArch64OpndProp *mopdReg32FS = &mopdF32RegSrc;
+AArch64OpndProp *mopdReg32FD = &mopdF32RegDest;
+AArch64OpndProp *mopdReg32FDS = &mopdF32RegDestSrc;
+AArch64OpndProp *mopdReg64FS = &mopdF64RegSrc;
+AArch64OpndProp *mopdReg64FD = &mopdF64RegDest;
+AArch64OpndProp *mopdReg64FDS = &mopdF64RegDestSrc;
+AArch64OpndProp *mopdMem = &mopdMem32Src;
+AArch64OpndProp *mopdMem8S = &mopdMem8Src;
+AArch64OpndProp *mopdMem16S = &mopdMem16Src;
+AArch64OpndProp *mopdMem32S = &mopdMem32Src;
+AArch64OpndProp *mopdMem32SL = &mopdMem32SrcL;
+AArch64OpndProp *mopdMem32SH = &mopdMem32SrcH;
+AArch64OpndProp *mopdMem64S = &mopdMem64Src;
+AArch64OpndProp *mopdMem64SL = &mopdMem64SrcL;
+AArch64OpndProp *mopdMem8D  = &mopdMem8Dest;
+AArch64OpndProp *mopdMem16D = &mopdMem16Dest;
+AArch64OpndProp *mopdMem32D = &mopdMem32Dest;
+AArch64OpndProp *mopdMem64D = &mopdMem64Dest;
+AArch64OpndProp *mopdMem32SPRE = &mopdMem32SrcPre;
+AArch64OpndProp *mopdMem32SPOST = &mopdMem32SrcPost;
+AArch64OpndProp *mopdMem64SPRE = &mopdMem64SrcPre;
+AArch64OpndProp *mopdMem64SPOST = &mopdMem64SrcPost;
+AArch64OpndProp *mopdMem32LiteralS = &mopdMem32LiteralSrc;
+AArch64OpndProp *mopdMem64LiteralS = &mopdMem64LiteralSrc;
+AArch64OpndProp *mopdImm4 = &mopdIntImm4Src;
+AArch64OpndProp *mopdImm5 = &mopdIntImm5Src;
+AArch64OpndProp *mopdImm6 = &mopdIntImm6Src;
+AArch64OpndProp *mopdImm8 = &mopdIntImm8Src;
+AArch64OpndProp *mopdImm12 = &mopdIntImm12Src;
+AArch64OpndProp *mopdImm13 = &mopdIntImm13Src;
+AArch64OpndProp *mopdImm16 = &mopdIntImm16Src;
+AArch64OpndProp *mopdImm24 = &mopdIntImm24Src;
+AArch64OpndProp *mopdImm32 = &mopdIntImm32Src;
+AArch64OpndProp* mopdImm32LI = &mopdIntImm32Literal;
+AArch64OpndProp *mopdImm64 = &mopdIntImm64Src;
+AArch64OpndProp* mopdImm64LI = &mopdIntImm64Literal;
+AArch64OpndProp *mopdFPZeroImm8 = &mopdFpzeroImm8Src;
+AArch64OpndProp *mopdFuncName = &mopdLbl64Src;
+AArch64OpndProp *mopdLabel = &mopdLbl64Src;
+AArch64OpndProp *mopdLiteral = &mopdLiteralSrc;
+AArch64OpndProp *mopdLiteralL12 = &mopdLiteralL12Src;
+
+AArch64OpndProp *mopdRegCCS = &mopdCcRegSrc;
+AArch64OpndProp *mopdRegCCD = &mopdCcRegDest;
+AArch64OpndProp *mopdRegCCDS = &mopdCcRegDestSrc;
+
+AArch64OpndProp *mopdCond = &mopdCondSrc;
+
+AArch64OpndProp *mopdBitShift32 = &mopdBitshift32Src;
+AArch64OpndProp *mopdBitShift64 = &mopdBitshift64Src;
+AArch64OpndProp *mopdExtendShift64 = &mopdExtendshift64Src;
+AArch64OpndProp *mopdLSL4  = &mopdLsl4Src;
+AArch64OpndProp *mopdLSL6  = &mopdLsl6Src;
+AArch64OpndProp *mopdLSL12 = &mopdLsl12Src;
+
+AArch64OpndProp *mopdRSPD = &mopdSpRegDest;
+AArch64OpndProp *mopdLISTS = &mopdListSrc;
+AArch64OpndProp *mopdSTRING = &mopdString;
+AArch64OpndProp *mopdUndef = nullptr;

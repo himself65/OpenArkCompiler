@@ -16,7 +16,6 @@
 #define MAPLE_UTIL_INCLUDE_MUID_H
 
 // This is shared between maple compiler and runtime.
-
 #include <cstdint>
 #include <string>
 #include <sstream>
@@ -40,7 +39,6 @@ constexpr unsigned int kBitMask = 0x3f;
 
 // muid-related files are shared between maple compiler and runtime, thus not in
 // namespace maplert
-
 struct MuidContext {
   unsigned int a, b, c, d;
   unsigned int count[2];

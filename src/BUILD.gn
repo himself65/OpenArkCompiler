@@ -50,3 +50,15 @@ group("irbuild") {
     "${MAPLEALL_ROOT}/maple_ir:irbuild",
   ]
 }
+
+group("mplfe") {
+  deps = [
+    "${MAPLEALL_ROOT}/mplfe:mplfe",
+  ]
+}
+
+group("maplegen") {
+  deps = [
+    "${MAPLEALL_ROOT}/maple_be:maplegen",
+  ]
+}

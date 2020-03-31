@@ -20,7 +20,13 @@
 #include "me_option.h"
 #include "interleaved_manager.h"
 #include "error_code.h"
+#include "cg.h"
+#include "cg_option.h"
+#include "cg_phasemanager.h"
 namespace maple {
+using namespace maplebe;
+
+extern const std::string mplCG;
 extern const std::string mpl2Mpl;
 extern const std::string mplME;
 
@@ -50,6 +56,11 @@ class DriverRunner final {
   ~DriverRunner() = default;
 
   ErrorCode Run();
+  void ProcessCGPhase(const std::string &outputFile, const std::string &oriBasenam);
+  void SetCGInfo(CGOptions *cgOptions, const std::string &cgInput) {
+    this->cgOptions = cgOptions;
+    this->cgInput = cgInput;
+  }
  private:
   static bool FuncOrderLessThan(const MIRFunction *left, const MIRFunction *right);
 
@@ -61,6 +72,15 @@ class DriverRunner final {
                  const PhaseManager &phaseManager) const;
   void AddPhase(std::vector<std::string> &phases, const std::string phase, const PhaseManager &phaseManager) const;
   void ProcessMpl2mplAndMePhases(const std::string &outputFile, const std::string &vtableImplFile) const;
+  CGOptions *cgOptions = nullptr;
+  std::string cgInput;
+  BECommon *beCommon = nullptr;
+  CG *CreateCGAndBeCommon(const std::string &outputFile, const std::string &oriBasename);
+  void RunCGFunctions(CG &cg, CgFuncPhaseManager &cgfpm) const;
+  void EmitGlobalInfo(CG &cg) const;
+  void EmitDuplicatedAsmFunc(const CG &cg) const;
+  void ProcessExtraTime(const std::vector<long> &extraPhasesTime, const std::vector<std::string> &extraPhasesName,
+                        CgFuncPhaseManager &cgfpm) const;
   MIRModule *theModule;
   std::vector<std::string> exeNames;
   Options *mpl2mplOptions = nullptr;

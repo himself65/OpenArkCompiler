@@ -1,0 +1,129 @@
+#
+# Copyright (c) [2020] Huawei Technologies Co.,Ltd.All rights reserved.
+#
+# OpenArkCompiler is licensed under the Mulan PSL v1.
+# You can use this software according to the terms and conditions of the Mulan PSL v1.
+# You may obtain a copy of Mulan PSL v1 at:
+#
+#     http://license.coscl.org.cn/MulanPSL
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
+# FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v1 for more details.
+#
+configs = [ "${MAPLEALL_ROOT}:mapleallcompilecfg" ]
+
+include_directories = [
+  "${MAPLEALL_ROOT}/mplfe/common/include",
+  "${MAPLEALL_ROOT}/mplfe/jbc_input/include",
+  "${MAPLEALL_ROOT}/maple_ir/include",
+  "${MAPLEALL_ROOT}/maple_ipa/include",
+  "${MAPLEALL_ROOT}/maple_util/include",
+  "${MAPLEALL_ROOT}/maple_phase/include",
+  "${MAPLEALL_ROOT}/maple_driver/include",
+  "${MAPLEALL_ROOT}/mpl2mpl/include",
+  "${MAPLEALL_ROOT}/maple_me/include",
+  "${MAPLEALL_ROOT}/mempool/include",
+  "${MAPLEALL_ROOT}/huawei_secure_c/include",
+]
+
+static_library("lib_mplfe_util") {
+  sources = [
+    "${MAPLEALL_ROOT}/mplfe/common/src/base64.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/basic_io.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/fe_config_parallel.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/fe_file_ops.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/fe_file_type.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/fe_function.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/fe_function_phase_result.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/fe_input_helper.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/fe_manager.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/fe_options.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/fe_string_manager.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/fe_timer_ns.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/fe_type_hierarchy.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/fe_type_manager.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/fe_utils.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/fe_utils_java.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/feir_builder.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/feir_dfg.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/feir_stmt.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/feir_type.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/feir_type_helper.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/feir_type_infer.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/feir_var.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/feir_var_name.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/feir_var_reg.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/feir_var_type_scatter.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/general_bb.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/general_cfg.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/general_stmt.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/mplfe_compiler.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/mplfe_compiler_component.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/mplfe_env.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/mplfe_options.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/simple_xml.cpp",
+    "${MAPLEALL_ROOT}/mplfe/common/src/simple_zip.cpp",
+  ]
+  include_dirs = include_directories
+}
+
+static_library("lib_mplfe_input") {
+  sources = [
+    "${MAPLEALL_ROOT}/mplfe/common/src/fe_input_helper.cpp",
+  ]
+  include_dirs = include_directories
+}
+
+executable("mplfe") {
+  sources = [
+    "${MAPLEALL_ROOT}/mplfe/common/src/mplfe.cpp",
+  ]
+  include_dirs = include_directories
+  deps = [
+    ":lib_mplfe_input",
+    ":lib_mplfe_jbc_input",
+    ":lib_mplfe_util",
+    "${MAPLEALL_ROOT}/huawei_secure_c:libHWSecureC",
+    "${MAPLEALL_ROOT}/maple_ir:libmplir",
+    "${MAPLEALL_ROOT}/mpl2mpl:libmpl2mpl",
+  ]
+  libs = [
+    "${OPENSOURCE_DEPS}/libmempool.a",
+    "${OPENSOURCE_DEPS}/libmplutil.a",
+  ]
+  ldflags = [ "-lz" ]
+}
+
+include_jbc_input_directories = [
+  "${MAPLEALL_ROOT}/mplfe/common/include",
+  "${MAPLEALL_ROOT}/mplfe/jbc_input/include",
+  "${MAPLEALL_ROOT}/maple_ir/include",
+  "${MAPLEALL_ROOT}/maple_util/include",
+  "${MAPLEALL_ROOT}/maple_driver/include",
+  "${MAPLEALL_ROOT}/mempool/include",
+  "${MAPLEALL_ROOT}/huawei_secure_c/include",
+]
+
+static_library("lib_mplfe_jbc_input") {
+  sources = [
+    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_attr.cpp",
+    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_attr_item.cpp",
+    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_bb.cpp",
+    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_class.cpp",
+    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_class2fe_helper.cpp",
+    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_class_const.cpp",
+    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_class_const_pool.cpp",
+    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_compiler_component.cpp",
+    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_function.cpp",
+    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_input.cpp",
+    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_opcode.cpp",
+    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_opcode_helper.cpp",
+    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_stack2fe_helper.cpp",
+    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_stack_helper.cpp",
+    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_stmt.cpp",
+    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_util.cpp",
+  ]
+  include_dirs = include_jbc_input_directories
+}

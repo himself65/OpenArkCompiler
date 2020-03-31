@@ -1,0 +1,48 @@
+/*
+ * Copyright (c) [2020] Huawei Technologies Co.,Ltd.All rights reserved.
+ *
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
+ * You can use this software according to the terms and conditions of the Mulan PSL v1.
+ * You may obtain a copy of Mulan PSL v1 at:
+ *
+ *     http://license.coscl.org.cn/MulanPSL
+ *
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
+ */
+/* Binutiles 2.28 */
+/* https://sourceware.org/binutils/docs-2.28/as/CFI-directives.html#CFI-directives */
+CFI_DEFINE( sections,             , 1, List,        Undef,     Undef )
+CFI_DEFINE( startproc,            , 0, Undef,       Undef,     Undef )
+CFI_DEFINE( startproc,     _simple, 1, String,      Undef,     Undef ) /* "simple" */
+CFI_DEFINE( endproc,              , 0, Undef,       Undef,     Undef )
+CFI_DEFINE( personality,  _default, 1, Immediate,   Undef,     Undef )
+CFI_DEFINE( personality,   _symbol, 2, Immediate,   String,    Undef )
+CFI_DEFINE( personality, _constant, 2, Immediate,   Immediate, Undef )
+CFI_DEFINE( personality_id,       , 1, StImmediate, Undef,     Undef )
+CFI_DEFINE( fde_data,             , 1, List,        Undef,     Undef )
+CFI_DEFINE( lsda,         _default, 1, Immediate,   Undef,     Undef )
+CFI_DEFINE( lsda,           _label, 2, Immediate,   BBAddress, Undef )
+CFI_DEFINE( lsda,        _constant, 2, Immediate,   Immediate, Undef )
+CFI_DEFINE( inline_lsda,          , 0, Undef,       Undef,     Undef )
+CFI_DEFINE( inline_lsda,    _align, 1, Immediate,   Undef,     Undef ) /* power of 2 */
+CFI_DEFINE( def_cfa,              , 2, Register,    Immediate, Undef )
+CFI_DEFINE( def_cfa_register,     , 1, Register,    Undef,     Undef )
+CFI_DEFINE( def_cfa_offset,       , 1, Immediate,   Undef,     Undef )
+CFI_DEFINE( adjust_cfa_offset,    , 1, Immediate,   Undef,     Undef )
+CFI_DEFINE( offset,               , 2, Register,    Immediate, Undef )
+CFI_DEFINE( val_offset,           , 2, Register,    Immediate, Undef )
+CFI_DEFINE( rel_offset,           , 2, Register,    Immediate, Undef )
+CFI_DEFINE( register,             , 2, Register,    Register,  Undef )
+CFI_DEFINE( restore,              , 1, Register,    Undef,     Undef )
+CFI_DEFINE( undefined,            , 1, Register,    Undef,     Undef )
+CFI_DEFINE( same_value,           , 1, Register,    Undef,     Undef )
+CFI_DEFINE( remember_state,       , 0, Undef,       Undef,     Undef )
+CFI_DEFINE( restore_state,        , 0, Undef,       Undef,     Undef )
+CFI_DEFINE( return_column,        , 1, Register,    Undef,     Undef )
+CFI_DEFINE( signal_frame,         , 0, Undef,       Undef,     Undef )
+CFI_DEFINE( window_save,          , 0, Undef,       Undef,     Undef )
+CFI_DEFINE( escape,               , 2, StImmediate, List /*expression[, ...]*/, Undef )
+CFI_DEFINE( val_encoded_addr,     , 3, Register,    Immediate, StImmediate )

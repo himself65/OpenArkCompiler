@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) [2020] Huawei Technologies Co.,Ltd.All rights reserved.
+ *
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
+ * You can use this software according to the terms and conditions of the Mulan PSL v1.
+ * You may obtain a copy of Mulan PSL v1 at:
+ *
+ *     http://license.coscl.org.cn/MulanPSL
+ *
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
+ */
+"ALjava_2Flang_2FObject_3B",
+"ALjava_2Flang_2FClass_3B",
+"ALjava_2Flang_2FString_3B",
+"ALjava_2Futil_2FFormatter_24Flags_3B",
+"ALjava_2Futil_2FHashMap_24Node_3B",
+"ALjava_2Futil_2FFormatter_24FormatString_3B",
+"ALjava_2Flang_2FCharSequence_3B",
+"ALjava_2Flang_2FThreadLocal_24ThreadLocalMap_24Entry_3B",
+"ALjava_2Futil_2FHashtable_24HashtableEntry_3B",
+"ALlibcore_2Freflect_2FAnnotationMember_3B",
+"ALsun_2Fsecurity_2Futil_2FDerValue_3B",
+"ALsun_2Fsecurity_2Fx509_2FAVA_3B"
