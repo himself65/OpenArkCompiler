@@ -108,9 +108,9 @@ def parse_args():
         action="append",
         dest="user_config_set",
         default=[],
-        metavar="config_set_name",
-        help="Run a test set with the specified config set name",
-        type=str,
+        metavar="config set path",
+        help="Run a test set with the specified config set path",
+        type=complete_path,
     )
     test_suite_parser.add_argument(
         "-C",

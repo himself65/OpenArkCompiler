@@ -37,59 +37,59 @@ class Case:
         _, comment_lines = split_comment(
             comment, read_file_with_multi_encoding(self.path, encoding),
         )
-        self.commands = [
-            command for command in self.extract_commands(comment_lines) if command
-        ]
-        self.expect = self.extract_expect(comment_lines)
-        self.dependence = self.extract_dependence(comment_lines)
-        self.result = {}
+        self.commands = extract_commands(comment_lines)
+        self.expect = extract_expect(comment_lines)
+        self.dependence = extract_dependence(comment_lines)
 
-    @staticmethod
-    def extract_expect(comment_lines):
-        expect_line = [filter_line(line, EXPECT_FLAG) for line in comment_lines]
-        expect_line = [line for line in expect_line if line]
-        if not expect_line:
-            expect = PASS
+    def __repr__(self):
+        return str(self.relative_path)
+
+
+def extract_expect(comment_lines):
+    expect_line = [filter_line(line, EXPECT_FLAG) for line in comment_lines]
+    expect_line = [line for line in expect_line if line]
+    if not expect_line:
+        return PASS
+    return expect_line[-1]
+
+
+def extract_dependence(comment_lines):
+    support_separartor = ",; "
+    dependence = []
+    for line in comment_lines:
+        line = filter_line(line, DEPENDENCE_FLAG)
+        if not line:
+            continue
+        parser = shlex.shlex(line)
+        parser.whitespace += support_separartor
+        parser.whitespace_split = True
+        dependence += list(parser)
+    return set(dependence)
+
+
+def extract_commands(comment_lines):
+    commands = []
+    flag = False
+    merge_command = ""
+    for command in comment_lines:
+        command = filter_line(command, EXEC_FLAG)
+        if not command:
+            continue
+        if command.strip()[-1] == "\\":
+            flag = True
+            merge_command += "{} ".format(command.strip()[:-1])
         else:
-            expect = expect_line[-1]
-        return expect
-
-    @staticmethod
-    def extract_dependence(comment_lines):
-        support_separartor = ",; "
-        dependence_line = [filter_line(line, DEPENDENCE_FLAG) for line in comment_lines]
-        dependence_line = [line for line in dependence_line if line]
-        dependence = []
-        for line in dependence_line:
-            parser = shlex.shlex(line)
-            parser.whitespace += support_separartor
-            parser.whitespace_split = True
-            dependence += list(parser)
-        return set(dependence)
-
-    @staticmethod
-    def extract_commands(comment_lines):
-        commands = []
-        command_lines = [filter_line(line, EXEC_FLAG) for line in comment_lines]
-        flag = False
-        merge_command = ""
-        for command in command_lines:
-            if command is None:
-                continue
-            if command.strip()[-1] == "\\":
-                flag = True
-                merge_command += "{} ".format(command.strip()[:-1])
+            if flag:
+                merge_command += "{} ".format(command)
+            flag = False
+            if merge_command == "":
+                commands.append(command)
             else:
-                if flag:
-                    merge_command += "{} ".format(command)
-                flag = False
-                if merge_command == "":
-                    commands.append(command)
-                else:
-                    commands.append(merge_command)
-        if not commands:
-            commands.append(merge_command)
-        return commands
+                commands.append(merge_command)
+                merge_command = ""
+    if not commands and merge_command.strip():
+        commands.append(merge_command)
+    return commands
 
 
 def read_list(path, encoding):
@@ -100,18 +100,16 @@ def read_list(path, encoding):
     exclude_flag = "[EXCLUDE-TEST-CASE]"
     case_list = set()
     exclude_case_list = set()
-    is_exclude = True
+    is_exclude = False
     for line in valid_lines:
         if line.find(include_flag) != -1:
             is_exclude = False
-            continue
-        if line.find(exclude_flag) != -1:
+        elif line.find(exclude_flag) != -1:
             is_exclude = True
-            continue
-        if is_exclude:
+        elif is_exclude:
             exclude_case_list.add(line)
         else:
             case_list.add(line)
     if not case_list:
-        case_list = ["**"]
+        case_list = {"**"}
     return case_list, exclude_case_list

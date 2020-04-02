@@ -108,9 +108,10 @@ def config_section_to_dict(config, section):
 def ls_all(path, suffix=None):
     """Output all files in a directory"""
     all_files = []
-    if path.is_file() and is_case(path, suffix):
-        return [path]
-    for name, _, files in os.walk(str(path)):
+    _path = complete_path(path)
+    if _path.is_file() and is_case(_path, suffix):
+        return [_path]
+    for name, _, files in os.walk(str(_path)):
         for file in files:
             if is_case(Path(name) / file, suffix):
                 all_files.append(Path(name) / file)
@@ -201,3 +202,10 @@ def is_relative(path1, path2):
     except ValueError:
         return 0
     return 1
+
+
+def merge_result(multi_results):
+    for result in multi_results:
+        if result in UNSUCCESSFUL:
+            return result
+    return PASS
