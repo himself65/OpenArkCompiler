@@ -32,41 +32,48 @@ from maple_test.utils import (
     FAIL,
     NOT_RUN,
     UNRESOLVED,
+)
+from maple_test.utils import (
     read_config,
     config_section_to_dict,
+    get_config_value,
     ls_all,
+    complete_path,
+    is_relative,
 )
 
 
 class TaskConfig:
-    def __init__(self, name, path, upper_config, user_config=None, user_env=None):
-        if user_env is None:
-            user_env = {}
-        if user_config is None:
-            user_config = {}
-        if upper_config is None:
+    def __init__(self, path, config, top_config, user_config=None, user_env=None):
+        if top_config is None:
+            name = path.name
             self.internal_var = {}
             self.env = {}
             self.suffix_comments = {}
         else:
-            self.internal_var = copy.deepcopy(upper_config.internal_var)
-            self.env = copy.deepcopy(upper_config.env)
-            self.suffix_comments = copy.deepcopy(upper_config.suffix_comments)
-        if path.exists():
-            self.name = name
-        else:
-            self.name = upper_config.name
-        self.path = path
-        self.update_sub_config()
+            self.inherit_top_config(top_config)
+            name = str(path.relative_to(top_config.path.parent)).replace("/", "_")
+        self.name = name.replace(".", "_")
+        self.path = complete_path(path)
+        self.base_dir = self.path.parent
+        self.update_sub_config(config)
         self.update_by_user_config(user_config, user_env)
 
+    def inherit_top_config(self, top_config):
+        self.internal_var = copy.deepcopy(top_config.internal_var)
+        self.env = copy.deepcopy(top_config.env)
+        self.suffix_comments = copy.deepcopy(top_config.suffix_comments)
+
     def update_by_user_config(self, user_config, user_env):
+        if user_config is None:
+            user_config = {}
+        if user_env is None:
+            user_env = {}
         self.internal_var.update(user_config)
         self.env.update(user_env)
 
-    def update_sub_config(self):
+    def update_sub_config(self, config):
         if self.path.exists():
-            config = read_config(self.path)
             self.internal_var.update(config_section_to_dict(config, "internal-var"))
             self.env.update(config_section_to_dict(config, "env"))
             self.suffix_comments.update(config_section_to_dict(config, "suffix"))
@@ -84,6 +91,9 @@ class TaskConfig:
         case_config["internal_var"]["n"] = str(case.path.stem)
         return case_config
 
+    def __repr__(self):
+        return str(self.name)
+
 
 class TestSuiteTask:
     def __init__(self, test_path, cfg_path, running_config, cli_running_config=None):
@@ -94,7 +104,7 @@ class TestSuiteTask:
         user_config = cli_running_config.get("user_config")
         user_env = cli_running_config.get("user_env")
 
-        self.path = test_path
+        self.path = complete_path(test_path)
         self.cfg_path = cfg_path
 
         config = read_config(self.cfg_path)
@@ -105,7 +115,7 @@ class TestSuiteTask:
         try:
             self.name = config["description"]["title"].replace(" ", "")
         except KeyError:
-            self.name = test_path.name
+            self.name = self.path.name
         self.suffix_comments = config_section_to_dict(config, "suffix")
 
         self.result = defaultdict(int)
@@ -113,102 +123,92 @@ class TestSuiteTask:
         self.config_set = {}
         self.testlist_set = {}
 
-        self._form_config(test_path, config, user_config_set, user_config, user_env)
-        self._form_testlist(
-            test_path,
-            config,
-            running_config["encoding"],
-            user_config_set,
-            user_test_list,
-        )
-
-        self.task_set = {}
+        self.task_set = defaultdict(list)
         self.task_set_result = {}
-        self._form_task_set(running_config)
-
-    def _form_config(self, test_path, config, user_config_set, user_config, user_env):
-        top_config = TaskConfig(self.name, self.cfg_path, None, user_config, user_env)
-        if (
-            not user_config_set
-            or "default" in user_config_set
-            or self.name in user_config_set
-        ):
-            self.config_set[self.name] = top_config
-        cfg_base = self.cfg_path.parent
-        for name, config_path in config_section_to_dict(config, "config-set").items():
-            if not user_config_set or name in user_config_set:
-                self.config_set[name] = TaskConfig(
-                    name, cfg_base / config_path, top_config, user_config, user_env
-                )
-
-    def _form_testlist(
-        self, test_path, config, encoding, user_config_set, user_test_list
-    ):
-        for name, testlist_path in config_section_to_dict(config, "testlist").items():
-            if not user_config_set or name in user_config_set:
-                if user_test_list is None:
-                    self.testlist_set[name] = read_list(
-                        test_path / testlist_path, encoding
-                    )
-                else:
-                    self.testlist_set[name] = read_list(user_test_list, encoding)
-        if self.testlist_set.get("default") is None:
-            testlist = set("*"), set()
-            if (test_path / "testlist").exists():
-                testlist = read_list(test_path / "testlist", encoding)
-            if test_path.is_file():
-                testlist = set("."), set()
-            if user_test_list:
-                testlist = read_list(user_test_list, encoding)
-            self.testlist_set["default"] = testlist
-        self.testlist_set[self.name] = self.testlist_set["default"]
         self.all_cases = {}
-        self._search_list(test_path, encoding)
+        self._form_task_set(running_config, cli_running_config)
 
-    def _search_list(self, test_path, encoding):
-        suffixes = self.suffix_comments.keys()
-        for name, testlist in self.testlist_set.items():
-            self.testlist_set[name] = []
-            include, exclude = testlist
-            case_files = set()
-            if test_path.is_file():
-                case_files = [test_path]
-            else:
-                case_files = self._search_case(include, exclude, test_path, suffixes)
-                case_files = [file.relative_to(test_path) for file in case_files]
-            for case_file in case_files:
-                case_name = str(case_file).replace(".", "_")
-                comment = self.suffix_comments[case_file.suffix[1:]]
-                if case_name in self.all_cases:
-                    self.testlist_set[name].append(self.all_cases[case_name])
-                else:
-                    case = Case(case_file, test_path, comment, encoding,)
-                    self.all_cases[case_name] = case
-                    self.testlist_set[name].append(self.all_cases[case_name])
+    def _form_task_set(self, running_config, cli_running_config):
+        logger = configs.LOGGER
+        user_test_list = cli_running_config.get("test_list")
+        user_config_set = cli_running_config.get("user_config_set")
+        user_config = cli_running_config.get("user_config")
+        user_env = cli_running_config.get("user_env")
+        encoding = running_config.get("encoding")
+
+        raw_top_config = read_config(self.cfg_path)
+        top_config = TaskConfig(
+            self.cfg_path, raw_top_config, None, user_config, user_env
+        )
+        top_dir = top_config.base_dir
+        if user_test_list is None:
+            top_testlist = self._get_testlist(raw_top_config, top_dir, encoding)
+        else:
+            top_testlist = read_list(top_dir / user_test_list, encoding)
+
+        if user_config_set:
+            run_config_set = user_config_set
+        else:
+            run_config_set = list(top_dir.glob("**/*.cfg"))
+
+        for cfg in run_config_set:
+            if not cfg.exists():
+                logger.error("Error: cfg file: {} not found, will skip".format(cfg))
+                continue
+            raw_config = read_config(cfg)
+            config = TaskConfig(cfg, raw_config, top_config, user_config, user_env)
+            name = config.name
+            base_dir = config.base_dir
+            testlist = self._get_testlist(raw_config, base_dir, encoding)
+            self.task_set_result[name] = defaultdict(int)
+            for case in self._search_list(base_dir, testlist, encoding):
+                task = SingleTask(case, config, running_config)
+                self.task_set[name].append(task)
+                self.task_set_result[name][task.result[0]] += 1
 
     @staticmethod
-    def _search_case(include, exclude, test_path, suffixes):
+    def _get_testlist(config, base_dir, encoding):
+        testlist_path = get_config_value(config, "testlist", "path")
+        if testlist_path is None:
+            testlist_path = base_dir / "testlist"
+        else:
+            testlist_path = base_dir / testlist_path
+        testlist = read_list(testlist_path, encoding)
+        return testlist
+
+    def _search_list(self, base_dir, testlist, encoding):
+        suffixes = self.suffix_comments.keys()
+        include, exclude = testlist
+        case_files = set()
+        cases = []
+        case_files = self._search_case(include, exclude, base_dir, suffixes)
+        if self.path.is_file() and self.path in case_files:
+            case_files = [self.path]
+        else:
+            case_files = [
+                file.relative_to(self.path)
+                for file in case_files
+                if is_relative(file, self.path)
+            ]
+        for case_file in case_files:
+            case_name = str(case_file).replace(".", "_")
+            comment = self.suffix_comments[case_file.suffix[1:]]
+            if case_name not in self.all_cases:
+                case = Case(case_file, self.path, comment, encoding,)
+                self.all_cases[case_name] = case
+            cases.append(self.all_cases[case_name])
+        return cases
+
+    @staticmethod
+    def _search_case(include, exclude, base_dir, suffixes):
         case_files = set()
         for glob_pattern in include:
-            for include_path in test_path.glob(glob_pattern):
+            for include_path in base_dir.glob(glob_pattern):
                 case_files.update(ls_all(include_path, suffixes))
         for glob_pattern in exclude:
-            for exclude_path in test_path.glob(glob_pattern):
+            for exclude_path in base_dir.glob(glob_pattern):
                 case_files -= set(ls_all(exclude_path, suffixes))
         return case_files
-
-    def _form_task_set(self, running_config):
-        for name in self.config_set:
-            config = self.config_set.get(name)
-            cases = self.testlist_set.get(name)
-            if cases is None:
-                cases = self.testlist_set.get("default")
-            self.task_set[name] = []
-            self.task_set_result[name] = defaultdict(int)
-            for case in cases:
-                single_task = SingleTask(case, config, running_config)
-                self.task_set[name].append(single_task)
-                self.task_set_result[name][single_task.result[0]] += 1
 
     def serial_run_task(self):
         for tasks_name in self.task_set:
@@ -275,9 +275,7 @@ class TestSuiteTask:
         ) + "".join(
             [
                 "{}: {}, ".format(k, v)
-                for k, v in sorted(
-                    self.result.items(), key=lambda item: item[1], reverse=True
-                )
+                for k, v in sort_dict_items(self.result, index=1, reverse=True)
             ]
         )
         task_set_summary = ""
@@ -290,10 +288,8 @@ class TestSuiteTask:
                 + "".join(
                     [
                         "{}: {}, ".format(k, v)
-                        for k, v in sorted(
-                            self.task_set_result[tasks_name].items(),
-                            key=lambda item: item[1],
-                            reverse=True,
+                        for k, v in sort_dict_items(
+                            self.task_set_result[tasks_name], index=1, reverse=True
                         )
                     ]
                 )
@@ -320,10 +316,6 @@ class TestSuiteTask:
         summary += "\n" + brief_summary
         summary += "-" * 120
         return summary
-
-    @staticmethod
-    def _is_cli_mode(cli_running_config):
-        return bool([x for x in cli_running_config.values() if x])
 
 
 class SingleTask:
@@ -374,12 +366,9 @@ class SingleTask:
             if src_path.exists():
                 src_files.append(src_path)
             else:
-                return (
-                    FAIL,
-                    "DEPENDENCE keyword error, DEPENDENCE file: {} NotFound".format(
-                        file
-                    ),
-                )
+                err = "DEPENDENCE keyword error, file: {} NotFound".format(file)
+                logger.debug(err)
+                return FAIL, err
         src_files = set(src_files)
         for file in src_files:
             if file.is_file():
@@ -430,6 +419,9 @@ class SingleTask:
                     line = line[:start] + value + line[end:]
         return line
 
+    def __repr__(self):
+        return "{}".format(self.path)
+
 
 def format_compare_command(raw_command, compare_cmd):
     end = 0
@@ -445,3 +437,7 @@ def format_compare_command(raw_command, compare_cmd):
         if not prev_char.isalnum() and prev_char != "_":
             raw_command = raw_command[:start] + compare_cmd + raw_command[end:]
     return raw_command
+
+
+def sort_dict_items(d, index=0, reverse=False):
+    return sorted(d.items(), key=lambda item: item[index], reverse=reverse)

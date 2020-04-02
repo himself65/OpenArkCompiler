@@ -62,7 +62,9 @@ def main():
         if output.exists() and output.is_file():
             name = "{}_{}{}".format(output.stem, int(time.time()), output.suffix)
             logger.info(
-                "result file: {} exists, will rename as: {}".format(output, name)
+                "result file: {} exists, will move exists file to: {}".format(
+                    output, name
+                )
             )
             shutil.move(str(output), str(output.parent / name))
         logger.info("Save test result at: {}".format(output))
