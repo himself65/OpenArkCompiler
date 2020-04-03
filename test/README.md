@@ -2,22 +2,23 @@
 
 ## 目录结构
 
-```
+```shell
 test
-├── main.py   运行测试套路口
-├── README.md
-├── testsuite/irbuild_test    Maple测试套
-└── maple_test    测试框架代码
-    ├── compare.py    结果校验模块
-    ├── configs.py
-    ├── __init__.py
-    ├── main.py
-    ├── maple_test.cfg
-    ├── run.py
-    ├── template.cfg
-    ├── task.py
-    ├── test.py
-    └── utils.py
+├── main.py   运行测试套入口
+├── maple_test    测试框架代码
+│   ├── compare.py    结果校验模块
+│   ├── configs.py    参数设置与框架配置文件模块
+│   ├── __init__.py
+│   ├── main.py    内部入口
+│   ├── maple_test.cfg    测试框架配置文件
+│   ├── run.py    命令运行模块
+│   ├── task.py   测试任务准备与运行模块
+│   ├── template.cfg    测试套配置文件模板
+│   ├── test.py   测试用例模块
+│   └── utils.py    通用模块
+├── README.md   测试框架说明
+└── testsuite
+    └── irbuild_test    irbuild测试套
 ```
 
 ## 运行要求
@@ -72,9 +73,9 @@ python3 test/main.py -j20 --timeout=120
 usage: main.py [-h] [--cfg CFG] [-j <mum>] [--retry <num>] [--output <file>]
                [--debug]
                [-p {PASS,FAIL,XFAIL,XPASS,NOT_RUN,UNRESOLVED,UNSUPPORTED}]
-               [--progress {silent,normal,no_flush_progress}]
+               [--progress {silent,normal,no_flush_progress}] [--dry_run]
                [--test_cfg <TEST_CFG_FILE>] [--test_list <TEST_LIST_FILE>]
-               [-c config_set_name] [-C key=value] [-E key=value]
+               [-c config set path] [-C key=value] [-E key=value]
                [--temp_dir <TEMP_DIR_PATH>] [--timeout TIMEOUT]
                [--encoding ENCODING] [--log_dir <LOG_DIR_FILE_PATH>]
                [--log_level LOG_LEVEL] [--verbose]
@@ -97,6 +98,8 @@ Test FrameWork arguments:
                         normal: one line progress bar, update per
                         second,no_flush_progress: print test progress per 10
                         seconds
+  --dry_run             enable dry run, will generate test.sh under test case
+                        temp dir
 
 Test Suite arguments:
   test_paths            Test suite path
@@ -105,8 +108,8 @@ Test Suite arguments:
                         or with --test_list
   --test_list <TEST_LIST_FILE>
                         testlist path for filter test cases
-  -c config_set_name, --config_set config_set_name
-                        Run a test set with the specified config set name
+  -c config set path, --config_set config set path
+                        Run a test set with the specified config set path
   -C key=value, --config key=value
                         Add 'key' = 'val' to the user defined configs
   -E key=value, --env key=value

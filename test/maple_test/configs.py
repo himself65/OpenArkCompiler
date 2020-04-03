@@ -83,6 +83,11 @@ def parse_args():
         "normal: one line progress bar, update per second,"
         "no_flush_progress: print test progress per 10 seconds",
     )
+    test_framework_parser.add_argument(
+        "--dry_run",
+        action="store_true",
+        help="enable dry run, will generate test.sh under test case temp dir",
+    )
 
     test_suite_parser = parser.add_argument_group("Test Suite arguments")
     test_suite_parser.add_argument(
@@ -185,6 +190,7 @@ def parse_args():
         "debug": args.debug,
         "print_type": args.print_type,
         "progress": args.progress,
+        "dry_run": args.dry_run,
     }
 
     test_suite_config = {
