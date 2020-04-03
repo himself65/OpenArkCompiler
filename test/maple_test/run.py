@@ -22,8 +22,8 @@ import time
 import timeit
 from textwrap import indent, shorten
 
-from maple_test.configs import construct_logger
-from maple_test.utils import PASS, FAIL, UNRESOLVED, ENCODING
+from maple_test.configs import construct_logger, get_val
+from maple_test.utils import PASS, FAIL, UNRESOLVED, NOT_RUN, ENCODING
 from maple_test.utils import add_run_path
 
 
@@ -86,6 +86,16 @@ def run_commands(
     remain_time = timeout
     result = (PASS, None)
     logger.debug("Work directory: {}".format(work_dir))
+    if get_val("dry_run"):
+        with (work_dir / "test.sh").open("w") as f:
+            f.write("#!/bin/bash\n")
+            f.write("cd {}\n".format(work_dir))
+            for command in commands[:-1]:
+                f.write(command)
+                f.write(" && \\\n")
+            f.write(commands[-1])
+        return position, (NOT_RUN, None)
+
     for command in commands:
         start = timeit.default_timer()
 

@@ -38,7 +38,7 @@ def main():
     cli_running_config = test_suite_config.get("cli_running_config")
 
     retry = configs.get_val("retry")
-    result = []
+    result = None
     for test in test_paths:
         if test.exists():
             if not test_cfg:
@@ -53,7 +53,7 @@ def main():
             for run_time in range(1, retry + 2):
                 logger.info("Run {} times".format(run_time))
                 task.run(configs.get_val("processes"))
-                result.append(task.gen_summary([]))
+                result = task.gen_summary([])
         else:
             logger.info("Test path: {} does not exist, please check".format(test))
 
@@ -69,8 +69,7 @@ def main():
             shutil.move(str(output), str(output.parent / name))
         logger.info("Save test result at: {}".format(output))
         with output.open("w") as f:
-            for summary in result:
-                f.write(summary)
+            f.write(result)
 
     temp_dir = running_config.get("temp_dir")
     if configs.get_val("debug"):
