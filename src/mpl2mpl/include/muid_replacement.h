@@ -57,7 +57,7 @@ enum RangeIdx {
 
 class MUIDReplacement : public FuncOptimizeImpl {
  public:
-  MUIDReplacement(MIRModule *mod, KlassHierarchy *kh, bool dump);
+  MUIDReplacement(MIRModule &mod, KlassHierarchy *kh, bool dump);
   ~MUIDReplacement() = default;
 
   FuncOptimizeImpl *Clone() override {
@@ -82,6 +82,8 @@ class MUIDReplacement : public FuncOptimizeImpl {
     kRadicalLazyBinding = 2
   };
 
+  void InitRangeTabUseSym(std::vector<MIRSymbol*> &workList, MIRStructType &rangeTabEntryType,
+                          MIRAggConst &rangeTabConst);
   void GenerateTables();
   void GenerateFuncDefTable();
   void GenerateDataDefTable();
@@ -158,6 +160,7 @@ class MUIDReplacement : public FuncOptimizeImpl {
   MIRSymbol *funcMuidIdxTabSym = nullptr;
   MIRSymbol *rangeTabSym = nullptr;
   MIRSymbol *funcProfileTabSym = nullptr;
+  MIRSymbol *funcProfInfTabSym = nullptr;
   std::map<MUID, SymIdxPair> funcDefMap;
   std::map<MUID, SymIdxPair> dataDefMap;
   std::map<MUID, SymIdxPair> funcUndefMap;

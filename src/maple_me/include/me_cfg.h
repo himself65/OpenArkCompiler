@@ -32,7 +32,7 @@ class MeCFG {
   void Verify() const;
   void VerifyLabels() const;
   void Dump() const;
-  void DumpToFile(const std::string &prefix, bool dumpInStrs = false) const;
+  void DumpToFile(const std::string &prefix, bool dumpInStrs = false, bool dumpEdgeFreq = false) const;
   bool FindExprUse(const BaseNode &expr, StIdx stIdx) const;
   bool FindUse(const StmtNode &stmt, StIdx stIdx) const;
   bool FindDef(const StmtNode &stmt, StIdx stIdx) const;

@@ -23,7 +23,8 @@
 // This mainly contains the clone of funcbody(include labels, symbols, arguments,
 // etc.) and the update of the new func infomation.
 namespace maple {
-ReplaceRetIgnored::ReplaceRetIgnored(MemPool *memPool) : allocator(memPool) {
+ReplaceRetIgnored::ReplaceRetIgnored(MemPool *memPool)
+    : memPool(memPool), allocator(memPool), toBeClonedFuncNames(allocator.Adapter()) {
 }
 
 bool ReplaceRetIgnored::RealShouldReplaceWithVoidFunc(Opcode op, size_t nRetSize,
@@ -226,11 +227,11 @@ void Clone::UpdateReturnVoidIfPossible(CallMeStmt *callMeStmt, const MIRFunction
 
 void Clone::DoClone() {
   std::set<std::string> clonedNewFuncMap;
-  for (const std::string &funcName : *(replaceRetIgnored->GetTobeClonedFuncNames())) {
-    GStrIdx gStrIdx = GlobalTables::GetStrTable().GetStrIdxFromName(funcName);
+  for (const MapleString &funcName : *(replaceRetIgnored->GetTobeClonedFuncNames())) {
+    GStrIdx gStrIdx = GlobalTables::GetStrTable().GetStrIdxFromName(std::string(funcName.c_str()));
     MIRSymbol *symbol = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(gStrIdx);
     if (nullptr != symbol) {
-      GStrIdx gStrIdxOfFunc = GlobalTables::GetStrTable().GetStrIdxFromName(funcName);
+      GStrIdx gStrIdxOfFunc = GlobalTables::GetStrTable().GetStrIdxFromName(std::string(funcName.c_str()));
       MIRFunction *oriFunc = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(gStrIdxOfFunc)->GetFunction();
       mirModule->SetCurFunction(oriFunc);
       clonedNewFuncMap.insert(CloneFunctionNoReturn(oriFunc)->GetName());

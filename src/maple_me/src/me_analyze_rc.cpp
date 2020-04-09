@@ -62,7 +62,9 @@
 
 // if number of live localrefvars is more than this limit at a return, we will
 // not insert the intrinsiccall to CLEANUP_LOCALREFVARS
+namespace {
 constexpr int kCleanupLocalRefVarsLimit = 200;
+}  // namespace
 
 namespace maple {
 void RCItem::Dump() {

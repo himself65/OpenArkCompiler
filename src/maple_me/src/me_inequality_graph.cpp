@@ -14,6 +14,11 @@
  */
 #include "me_inequality_graph.h"
 
+namespace {
+constexpr maple::int32 kUpperBound = -1;
+constexpr maple::int32 kLowerBound = 0;
+}  // namespace
+
 namespace maple {
 ESSAConstNode *InequalityGraph::GetOrCreateConstNode(int value) {
   if (HasNode(value)) {
@@ -233,13 +238,14 @@ std::string InequalityGraph::GetColor(EdgeType type) const {
       return "color = blue, style=dashed";
     case kNone:
       return "color = black";
-    case kNoneInValid:
+    case kNoneInvalid:
       return "color = black, style=dashed";
   }
 }
 
 void InequalityGraph::DumpDotEdges(IRMap &irMap, const std::pair<ESSABaseNode*, InequalEdge*> &map,
                                    std::ostream &out, std::string &from) const {
+  ASSERT_NOT_NULL(map.second);
   if (map.second->IsVarValue()) {
     std::string to = GetName(*(map.first), irMap);
     std::string positive = map.second->GetVarValue().IsPositive() ? "" : "-";
@@ -266,10 +272,10 @@ void InequalityGraph::DumpDotNodes(IRMap &irMap, std::ostream &out, DumpType dum
       if (dumpType == kDumpNone) {
         DumpDotEdges(irMap, *iterConstEdges, out, from);
       } else if ((dumpType == kDumpUpperAndNone) &&
-                 (edgeType == kUpper || edgeType == kNone || edgeType == kUpperInvalid || edgeType == kNoneInValid)) {
+                 (edgeType == kUpper || edgeType == kNone || edgeType == kUpperInvalid || edgeType == kNoneInvalid)) {
         DumpDotEdges(irMap, *iterConstEdges, out, from);
       } else if ((dumpType == kDumpLowerAndNone) &&
-                 (edgeType == kLower || edgeType == kNone || edgeType == kLowerInvalid || edgeType == kNoneInValid)) {
+                 (edgeType == kLower || edgeType == kNone || edgeType == kLowerInvalid || edgeType == kNoneInvalid)) {
         DumpDotEdges(irMap, *iterConstEdges, out, from);
       }
     }
@@ -282,11 +288,11 @@ void InequalityGraph::DumpDotNodes(IRMap &irMap, std::ostream &out, DumpType dum
           DumpDotEdges(irMap, *iterConstEdges, out, from);
         } else if ((dumpType == kDumpUpperAndNone) &&
                    (edgeType == kUpper || edgeType == kNone ||
-                    edgeType == kUpperInvalid || edgeType == kNoneInValid)) {
+                    edgeType == kUpperInvalid || edgeType == kNoneInvalid)) {
           DumpDotEdges(irMap, *iterConstEdges, out, from);
         } else if ((dumpType == kDumpLowerAndNone) &&
                    (edgeType == kLower || edgeType == kNone ||
-                    edgeType == kLowerInvalid || edgeType == kNoneInValid)) {
+                    edgeType == kLowerInvalid || edgeType == kNoneInvalid)) {
           DumpDotEdges(irMap, *iterConstEdges, out, from);
         }
       }
@@ -297,10 +303,10 @@ void InequalityGraph::DumpDotNodes(IRMap &irMap, std::ostream &out, DumpType dum
       if (dumpType == kDumpNone) {
         DumpDotEdges(irMap, *iterVarEdges, out, from);
       } else if ((dumpType == kDumpUpperAndNone) &&
-                 (edgeType == kUpper || edgeType == kNone || edgeType == kUpperInvalid || edgeType == kNoneInValid)) {
+                 (edgeType == kUpper || edgeType == kNone || edgeType == kUpperInvalid || edgeType == kNoneInvalid)) {
         DumpDotEdges(irMap, *iterVarEdges, out, from);
       } else if ((dumpType == kDumpLowerAndNone) &&
-                 (edgeType == kLower || edgeType == kNone || edgeType == kLowerInvalid || edgeType == kNoneInValid)) {
+                 (edgeType == kLower || edgeType == kNone || edgeType == kLowerInvalid || edgeType == kNoneInvalid)) {
         DumpDotEdges(irMap, *iterVarEdges, out, from);
       }
     }
@@ -332,7 +338,7 @@ bool ABCD::DemandProve(const MeExpr &arrayNode, const MeExpr &idx) {
   ESSABaseNode &zNode = inequalityGraph->GetNode(0);
   bool upperResult = ABCD::DemandProve(aNode, *idxNode, kUpper);
   bool lowerResult = ABCD::DemandProve(zNode, *idxNode, kLower);
-  return  upperResult && lowerResult;
+  return upperResult && lowerResult;
 }
 
 bool ABCD::DemandProve(ESSABaseNode &firstNode, ESSABaseNode &secondNode, EdgeType edgeType) {

@@ -13,7 +13,7 @@
  * See the Mulan PSL v1 for more details.
  */
 #include "fe_utils_java.h"
-#include "name_mangler.h"
+#include "namemangler.h"
 
 namespace maple {
 std::vector<std::string> FEUtilJava::SolveMethodSignature(std::string signature, bool inMpl) {

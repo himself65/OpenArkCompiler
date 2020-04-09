@@ -22,6 +22,8 @@
 #include "me_alias_class.h"
 #include "me_bypath_eh.h"
 #include "me_critical_edge.h"
+#include "me_profile_gen.h"
+#include "me_profile_use.h"
 #include "me_loop_canon.h"
 #include "me_abco.h"
 #include "me_dse.h"
@@ -65,6 +67,7 @@ void MeFuncPhaseManager::RunFuncPhase(MeFunction *func, MeFuncPhase *phase) {
   if ((func->NumBBs() > 0) || (phaseID == MeFuncPhase_EMIT)) {
     analysisRes = phase->Run(func, &arFuncManager, modResMgr);
     phase->ReleaseMemPool(analysisRes == nullptr ? nullptr : analysisRes->GetMempool());
+    phase->ClearString();
   }
   if (analysisRes != nullptr) {
     // if phase is an analysis Phase, add result to arm

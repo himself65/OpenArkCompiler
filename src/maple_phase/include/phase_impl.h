@@ -22,7 +22,7 @@
 namespace maple {
 class FuncOptimizeImpl : public MplTaskParam {
  public:
-  explicit FuncOptimizeImpl(MIRModule *mod, KlassHierarchy *kh = nullptr, bool trace = false);
+  explicit FuncOptimizeImpl(MIRModule &mod, KlassHierarchy *kh = nullptr, bool trace = false);
   virtual ~FuncOptimizeImpl();
   // Each phase needs to implement its own Clone
   virtual FuncOptimizeImpl *Clone() = 0;
@@ -70,7 +70,7 @@ class FuncOptimizeIterator {
 #define OPT_TEMPLATE(OPT_NAME)                                                                 \
   auto *kh = static_cast<KlassHierarchy*>(mrm->GetAnalysisResult(MoPhase_CHA, mod));           \
   ASSERT_NOT_NULL(kh);                                                                         \
-  FuncOptimizeIterator opt(PhaseName(), new OPT_NAME(mod, kh, TRACE_PHASE));                   \
+  FuncOptimizeIterator opt(PhaseName(), new OPT_NAME(*mod, kh, TRACE_PHASE));                   \
   opt.Run();
 }  // namespace maple
 #endif  // MAPLE_PHASE_INCLUDE_PHASE_IMPL_H

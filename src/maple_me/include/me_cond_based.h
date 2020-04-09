@@ -22,7 +22,7 @@
 namespace maple {
 class MeCondBased {
  public:
-  MeCondBased(MeFunction *func, Dominance *dom) : func(func), dominance(dom) {}
+  MeCondBased(MeFunction &func, Dominance &dom) : func(&func), dominance(&dom) {}
 
   ~MeCondBased() = default;
   bool NullValueFromTestCond(const VarMeExpr&, const BB&, bool) const;

@@ -21,7 +21,7 @@
 #include "reflection_analysis.h"
 #include "printing.h"
 #include "native_stub_func.h"
-#include "literal_str_name.h"
+#include "literalstrname.h"
 #include "string_utils.h"
 
 namespace maple {

@@ -91,7 +91,7 @@ MeExpr *SSAPre::CreateNewCurTemp(const MeExpr &meExpr) {
 }
 
 VarMeExpr *SSAPre::CreateNewCurLocalRefVar() {
-  if (curLocalRefVar) {
+  if (curLocalRefVar != nullptr) {
     // only need to create a new version
     VarMeExpr *tempVar = irMap->CreateVarMeExprVersion(static_cast<VarMeExpr&>(*curLocalRefVar));
     return tempVar;
@@ -103,6 +103,7 @@ VarMeExpr *SSAPre::CreateNewCurLocalRefVar() {
     auto *realMIRType = static_cast<MIRPtrType*>(mirType);
     FieldID fieldID = ivarMeExpr->GetFieldID();
     curLocalRefVar = irMap->CreateNewLocalRefVarTmp(NewTempStrIdx(), realMIRType->GetPointedTyIdxWithFieldID(fieldID));
+    ASSERT_NOT_NULL(curLocalRefVar);
     ssaTab->SetEPreLocalRefVar(curLocalRefVar->GetOStIdx(), true);
     SetAddedNewLocalRefVars(true);
     return curLocalRefVar;
@@ -114,6 +115,7 @@ void SSAPre::GenerateSaveInsertedOcc(MeInsertedOcc &insertedOcc) {
          "GenerateSaveInsertedOcc: inconsistent puIdx");
   MeExpr *regOrVar = CreateNewCurTemp(*insertedOcc.GetMeExpr());
   MeStmt *newMeStmt = nullptr;
+  ASSERT_NOT_NULL(workCand);
   if (!workCand->NeedLocalRefVar() || GetPlacementRCOn()) {
     if (regOrVar->GetMeOp() == kMeOpReg) {
       newMeStmt = irMap->CreateRegassignMeStmt(*regOrVar, *insertedOcc.GetMeExpr(), *insertedOcc.GetBB());
@@ -156,6 +158,7 @@ void SSAPre::GenerateSavePhiOcc(MePhiOcc &phiOcc) {
     phiOcc.SetVarPhi(*phiVar);
   }
   // update the phi opnds later
+  ASSERT_NOT_NULL(workCand);
   if (workCand->NeedLocalRefVar() && !GetPlacementRCOn()) {
     VarMeExpr *localRefVar = CreateNewCurLocalRefVar();
     temp2LocalRefVarMap[static_cast<RegMeExpr*>(regOrVar)] = localRefVar;
@@ -417,7 +420,7 @@ void SSAPre::SetSave(MeOccur &defX) {
   }
 }
 
-void SSAPre::SetReplacement(MePhiOcc &occ, MeOccur *repDef) {
+void SSAPre::SetReplacement(MePhiOcc &occ, MeOccur &repDef) {
   occ.SetIsRemoved(true);  // exclude recursive PhiOcc
   for (auto it = phiOccs.begin(); it != phiOccs.end(); ++it) {
     MePhiOcc *phiOcc = *it;
@@ -430,19 +433,20 @@ void SSAPre::SetReplacement(MePhiOcc &occ, MeOccur *repDef) {
           // exclude recursive def
           SetReplacement(*phiOcc, repDef);
         } else {
-          phiOpnd->SetDef(repDef);  // replace phiOpnd of phiOcc by replacing def repDef
-          phiOpnd->SetClassID(repDef->GetClassID());
+          phiOpnd->SetDef(&repDef);  // replace phiOpnd of phiOcc by replacing def repDef
+          phiOpnd->SetClassID(repDef.GetClassID());
           phiOpnd->SetIsPhiOpndReload(true);
         }
       }
     }
   }
+  ASSERT_NOT_NULL(workCand);
   for (auto it = workCand->GetRealOccs().begin(); it != workCand->GetRealOccs().end(); ++it) {
     MeRealOcc *realOcc = *it;
     // when realOcc satisfying reload and def of it is occ, do the replacement
     if (realOcc->IsReload() && realOcc->GetDef() == &occ) {
-      realOcc->SetDef(repDef);
-      realOcc->SetClassID(repDef->GetClassID());
+      realOcc->SetDef(&repDef);
+      realOcc->SetClassID(repDef.GetClassID());
     }
   }
 }
@@ -477,11 +481,11 @@ void SSAPre::Finalize2() {
       switch (defOcc->GetOccType()) {
         case kOccReal:
         case kOccInserted:
-          SetReplacement(*phiOcc, defOcc);
+          SetReplacement(*phiOcc, *defOcc);
           break;
         case kOccPhiocc:
           if (!static_cast<MePhiOcc*>(defOcc)->IsExtraneous()) {
-            SetReplacement(*phiOcc, defOcc);
+            SetReplacement(*phiOcc, *defOcc);
           }
           break;
         default:
@@ -553,6 +557,7 @@ void SSAPre::ComputeCanBeAvail() const {
         ResetCanBeAvail(*phiOcc);
       }
     }
+    ASSERT_NOT_NULL(workCand);
     if (workCand->Redo2HandleCritEdges() && phiOcc->IsCanBeAvail()) {
       // check critical edges
       bool existCritEdge = false;
@@ -568,16 +573,16 @@ void SSAPre::ComputeCanBeAvail() const {
   }
 }
 
-void SSAPre::ResetLater(MePhiOcc *occ) const {
-  occ->SetIsLater(false);
+void SSAPre::ResetLater(MePhiOcc &occ) const {
+  occ.SetIsLater(false);
   // the following loop is to find occ's use list and reset them
   for (auto it = phiOccs.begin(); it != phiOccs.end(); ++it) {
     MePhiOcc *phiOcc = *it;
     for (MePhiOpndOcc *phiOpnd : phiOcc->GetPhiOpnds()) {
-      if (phiOpnd->GetDef() != nullptr && phiOpnd->GetDef() == occ) {
+      if (phiOpnd->GetDef() != nullptr && phiOpnd->GetDef() == &occ) {
         // when comes here, phiOpnd->GetDef() is a use of occ
         if (phiOcc->IsLater()) {
-          ResetLater(phiOcc);
+          ResetLater(*phiOcc);
         }
       }
     }
@@ -600,7 +605,7 @@ void SSAPre::ComputeLater() const {
         }
       }
       if (existNonNullDef || phiOcc->SpeculativeDownSafe()) {
-        ResetLater(phiOcc);
+        ResetLater(*phiOcc);
       }
     }
   }
@@ -874,6 +879,7 @@ MeExpr *SSAPre::GetReplaceMeExpr(const MeExpr &opnd, const BB &ePhiBB, size_t j)
     }
   }
   if (retExpr != nullptr && retExpr->GetPrimType() == kPtyInvalid) {
+    ASSERT_NOT_NULL(workCand);
     retExpr->SetPtyp(workCand->GetPrimType());
   }
   return retExpr;
@@ -1104,8 +1110,8 @@ void SSAPre::CreateSortedOccs() {
             nextPhiOpndOcc = perCandMemPool->New<MePhiOpndOcc>(*GetBB(dom->GetDtPreOrderItem(*phiOpndDfnIt)));
             auto it = bb2PhiOpndMap.find(dom->GetDtPreOrderItem(*phiOpndDfnIt));
             if (it == bb2PhiOpndMap.end()) {
-              std::forward_list<MePhiOpndOcc*> newlist = { nextPhiOpndOcc };
-              bb2PhiOpndMap[dom->GetDtPreOrderItem(*phiOpndDfnIt)] = newlist;
+              std::forward_list<MePhiOpndOcc*> newList = { nextPhiOpndOcc };
+              bb2PhiOpndMap[dom->GetDtPreOrderItem(*phiOpndDfnIt)] = newList;
             } else {
               it->second.push_front(nextPhiOpndOcc);
             }
@@ -1119,7 +1125,7 @@ void SSAPre::CreateSortedOccs() {
       }
     }
   } while (pickedOcc != nullptr);
-  // initialize phiOpnds vector in each MePhiOcc node and  defPhiOcc field in
+  // initialize phiOpnds vector in each MePhiOcc node and defPhiOcc field in
   // each MePhiOpndOcc node
   for (MePhiOcc *phiOcc : phiOccs)
     for (BB *pred : phiOcc->GetBB()->GetPred()) {
@@ -1152,6 +1158,7 @@ MeStmt *SSAPre::CopyMeStmt(const MeStmt &meStmt) const {
 }
 
 MeExpr *SSAPre::CopyMeExpr(const MeExpr &expr) const {
+  ASSERT_NOT_NULL(irMap);
   MapleAllocator *irMapAlloc = &irMap->GetIRMapAlloc();
   switch (expr.GetMeOp()) {
     case kMeOpOp: {
@@ -1191,7 +1198,7 @@ bool SSAPre::DefVarDominateOcc(const MeExpr *meExpr, const MeOccur &meOcc) const
         return true;  // it's an original variable which dominates everything
       case kDefByStmt: {
         MeStmt *meStmt = varMeExpr->GetDefStmt();
-        CHECK_FATAL(meStmt, "should have a def meStmt");
+        CHECK_FATAL(meStmt != nullptr, "should have a def meStmt");
         BB *defBB = meStmt->GetBB();
         if (occBB == defBB) {
           return false;
@@ -1229,7 +1236,7 @@ bool SSAPre::DefVarDominateOcc(const MeExpr *meExpr, const MeOccur &meOcc) const
         return dom->Dominate(*defBB, *occBB);
       }
       default:
-        CHECK_FATAL(false, "to be done");
+        CHECK_FATAL(false, "NYI");
     }
   } else {
     CHECK_FATAL(meExpr->GetMeOp() == kMeOpReg, "invalid value of meExpr->GetMeOp()");
@@ -1239,7 +1246,7 @@ bool SSAPre::DefVarDominateOcc(const MeExpr *meExpr, const MeOccur &meOcc) const
         return true;  // original st dominates everything
       case kDefByStmt: {
         MeStmt *meStmt = regMeExpr->GetDefStmt();
-        CHECK_FATAL(meStmt, "invalid value of meStmt");
+        CHECK_FATAL(meStmt != nullptr, "invalid value of meStmt");
         BB *defBB = meStmt->GetBB();
         if (occBB == defBB) {
           return false;
@@ -1266,7 +1273,7 @@ bool SSAPre::DefVarDominateOcc(const MeExpr *meExpr, const MeOccur &meOcc) const
         return dom->Dominate(*defBB, *occBB);
       }
       default:
-        CHECK_FATAL(false, "to be done");
+        CHECK_FATAL(false, "NYI");
     }
   }
 }
@@ -1397,8 +1404,9 @@ void SSAPre::CreateMembarOccAtCatch(BB &bb) {
   }
 }
 
-void SSAPre::BuildWorkListStmt(MeStmt *meStmt, uint32 seqStmt, bool isRebuilt, MeExpr *tempVar) {
+void SSAPre::BuildWorkListStmt(MeStmt &stmt, uint32 seqStmt, bool isRebuilt, MeExpr *tempVar) {
   IncTreeid();
+  MeStmt *meStmt = &stmt;
   Opcode op = meStmt->GetOp();
   switch (op) {
     case OP_jstry:
@@ -1543,7 +1551,7 @@ void SSAPre::BuildWorkListStmt(MeStmt *meStmt, uint32 seqStmt, bool isRebuilt, M
           intrn->GetIntrinsic() == INTRN_MCCSetObjectPermanent) {
         break;
       }
-      // fall thru
+    // fall thru
     }
     case OP_xintrinsiccall:
     case OP_intrinsiccallwithtype:
@@ -1583,12 +1591,13 @@ void SSAPre::BuildWorkListStmt(MeStmt *meStmt, uint32 seqStmt, bool isRebuilt, M
 }
 
 void SSAPre::BuildWorkListBB(BB *bb) {
+  ASSERT_NOT_NULL(bb);
   if (GetSpillAtCatch() && bb->GetAttributes(kBBAttrIsCatch)) {
     CreateMembarOccAtCatch(*bb);
   }
   uint32 seqStmt = 0;
   for (auto &stmt : bb->GetMeStmts()) {
-    BuildWorkListStmt(&stmt, ++seqStmt, false);
+    BuildWorkListStmt(stmt, ++seqStmt, false);
   }
   if (bb->GetAttributes(kBBAttrIsExit) || bb->GetAttributes(kBBAttrWontExit)) {
     CreateExitOcc(*bb);

@@ -61,6 +61,8 @@ def process(mdfilename, newmdfilename):
   if(os.path.exists(newmdfilename) and (os.stat(mdfilename).st_mtime < os.stat(newmdfilename).st_mtime)):
     pass
   else:
+    if (os.path.exists(newmdfilename)):
+      os.remove(newmdfilename)
     with open( mdfilename, "r" ) as infile:
       lines = []
       for l in infile:

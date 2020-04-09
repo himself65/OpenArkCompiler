@@ -175,12 +175,12 @@ class AArch64MemLayout : public MemLayout {
   MemSegment segSpillReg = MemSegment(kMsSpillReg);
   MemSegment segLocals = MemSegment(kMsLocals);  /* these are accessed via Frame Pointer */
   int32 fixStackSize = 0;
-  void setSegmentSize(AArch64SymbolAlloc &symbolAlloc, MemSegment &segment, uint32 typeIdx);
-  void layoutFormalParams();
-  void layoutActualParams();
-  void layoutLocalVariales(std::vector<MIRSymbol*> &tempVar, std::vector<MIRSymbol*> &returnDelays);
-  void layoutEAVariales(std::vector<MIRSymbol*> &tempVar);
-  void layoutReturnRef(std::vector<MIRSymbol*> &returnDelays);
+  void SetSegmentSize(AArch64SymbolAlloc &symbolAlloc, MemSegment &segment, uint32 typeIdx);
+  void LayoutFormalParams();
+  void LayoutActualParams();
+  void LayoutLocalVariales(std::vector<MIRSymbol*> &tempVar, std::vector<MIRSymbol*> &returnDelays);
+  void LayoutEAVariales(std::vector<MIRSymbol*> &tempVar);
+  void LayoutReturnRef(std::vector<MIRSymbol*> &returnDelays);
 };
 }  /* namespace maplebe */
 

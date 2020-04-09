@@ -19,7 +19,7 @@
 namespace maple {
 class AnalyzeCtor : public FuncOptimizeImpl {
  public:
-  AnalyzeCtor(MIRModule *mod, KlassHierarchy *kh, bool trace) : FuncOptimizeImpl(mod, kh, trace) {}
+  AnalyzeCtor(MIRModule &mod, KlassHierarchy *kh, bool trace) : FuncOptimizeImpl(mod, kh, trace) {}
   ~AnalyzeCtor() = default;
 
   FuncOptimizeImpl *Clone() override {
@@ -30,9 +30,9 @@ class AnalyzeCtor : public FuncOptimizeImpl {
   void Finish() override;
 
  private:
+  void ProcessStmt(StmtNode&) override;
   bool hasSideEffect = false;
   std::unordered_set<FieldID> fieldSet;
-  void ProcessStmt(StmtNode&) override;
 };
 
 class DoAnalyzeCtor : public ModulePhase {

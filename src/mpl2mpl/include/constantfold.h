@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -21,6 +21,10 @@
 namespace maple {
 class ConstantFold : public FuncOptimizeImpl {
  public:
+  ConstantFold(MIRModule &mod, KlassHierarchy *kh, bool trace) : FuncOptimizeImpl(mod, kh, trace), mirModule(&mod) {}
+
+  explicit ConstantFold(MIRModule &mod) : FuncOptimizeImpl(mod, nullptr, false), mirModule(&mod) {}
+
   // Fold an expression.
   //
   // It returns a new expression if there was something to fold, or
@@ -34,10 +38,6 @@ class ConstantFold : public FuncOptimizeImpl {
   // simplification, it returns nullptr.
   StmtNode *Simplify(StmtNode *node);
 
-  ConstantFold(MIRModule *mod, KlassHierarchy *kh, bool trace) : FuncOptimizeImpl(mod, kh, trace), mirModule(mod) {}
-
-  ConstantFold(MIRModule *mod) : FuncOptimizeImpl(mod, nullptr, false), mirModule(mod) {}
-
   FuncOptimizeImpl *Clone() {
     return new ConstantFold(*this);
   }
@@ -45,14 +45,13 @@ class ConstantFold : public FuncOptimizeImpl {
   void ProcessFunc(MIRFunction *func);
   virtual ~ConstantFold() = default;
 
-  MIRConst *FoldFloorMIRConst(const MIRConst*, PrimType, PrimType) const;
-  MIRConst *FoldRoundMIRConst(const MIRConst*, PrimType, PrimType) const;
-  MIRConst *FoldTypeCvtMIRConst(const MIRConst*, PrimType, PrimType) const;
-  MIRConst *FoldSignExtendMIRConst(Opcode, PrimType, uint8, const MIRConst*) const;
+  MIRConst *FoldFloorMIRConst(const MIRConst&, PrimType, PrimType) const;
+  MIRConst *FoldRoundMIRConst(const MIRConst&, PrimType, PrimType) const;
+  MIRConst *FoldTypeCvtMIRConst(const MIRConst&, PrimType, PrimType) const;
+  MIRConst *FoldSignExtendMIRConst(Opcode, PrimType, uint8, const MIRConst&) const;
   MIRConst *FoldConstComparisonMIRConst(Opcode, PrimType, PrimType, const MIRConst&, const MIRConst&);
 
  private:
-  MIRModule *mirModule;
   StmtNode *SimplifyBinary(BinaryStmtNode *node);
   StmtNode *SimplifyBlock(BlockNode *node);
   StmtNode *SimplifyCondGoto(CondGotoNode *node);
@@ -71,7 +70,7 @@ class ConstantFold : public FuncOptimizeImpl {
   std::pair<BaseNode*, int64> FoldCompare(CompareNode *node);
   std::pair<BaseNode*, int64> FoldDepositbits(DepositbitsNode *node);
   std::pair<BaseNode*, int64> FoldExtractbits(ExtractbitsNode *node);
-  ConstvalNode *FoldSignExtend(Opcode opcode, PrimType resultType, uint8 size, const ConstvalNode *cst) const;
+  ConstvalNode *FoldSignExtend(Opcode opcode, PrimType resultType, uint8 size, const ConstvalNode &cst) const;
   std::pair<BaseNode*, int64> FoldIread(IreadNode *node);
   std::pair<BaseNode*, int64> FoldSizeoftype(SizeoftypeNode *node) const;
   std::pair<BaseNode*, int64> FoldRetype(RetypeNode *node);
@@ -79,11 +78,11 @@ class ConstantFold : public FuncOptimizeImpl {
   std::pair<BaseNode*, int64> FoldUnary(UnaryNode *node);
   std::pair<BaseNode*, int64> FoldTernary(TernaryNode *node);
   std::pair<BaseNode*, int64> FoldTypeCvt(TypeCvtNode *node);
-  ConstvalNode *FoldCeil(const ConstvalNode *cst, PrimType fromType, PrimType toType) const;
-  ConstvalNode *FoldFloor(const ConstvalNode *cst, PrimType fromType, PrimType toType) const;
-  ConstvalNode *FoldRound(const ConstvalNode *cst, PrimType fromType, PrimType toType) const;
-  ConstvalNode *FoldTrunk(const ConstvalNode *cst, PrimType fromType, PrimType toType) const;
-  ConstvalNode *FoldTypeCvt(const ConstvalNode *cst, PrimType fromType, PrimType toType) const;
+  ConstvalNode *FoldCeil(const ConstvalNode &cst, PrimType fromType, PrimType toType) const;
+  ConstvalNode *FoldFloor(const ConstvalNode &cst, PrimType fromType, PrimType toType) const;
+  ConstvalNode *FoldRound(const ConstvalNode &cst, PrimType fromType, PrimType toType) const;
+  ConstvalNode *FoldTrunk(const ConstvalNode &cst, PrimType fromType, PrimType toType) const;
+  ConstvalNode *FoldTypeCvt(const ConstvalNode &cst, PrimType fromType, PrimType toType) const;
   ConstvalNode *FoldConstComparison(Opcode opcode, PrimType resultType, PrimType opndType, const ConstvalNode &const0,
                                     const ConstvalNode &const1) const;
   ConstvalNode *FoldConstBinary(Opcode opcode, PrimType resultType, const ConstvalNode &const0,
@@ -112,6 +111,7 @@ class ConstantFold : public FuncOptimizeImpl {
   std::pair<BaseNode*, int64> DispatchFold(BaseNode *node);
   BaseNode *PairToExpr(PrimType resultType, const std::pair<BaseNode*, int64> &pair) const;
   BaseNode *SimplifyDoubleCompare(CompareNode &node) const;
+  MIRModule *mirModule;
 };
 
 class DoConstantFold : public ModulePhase {

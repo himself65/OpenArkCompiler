@@ -49,16 +49,17 @@ void MeSSUPre::Finalize() {
                                                     lambdaResOcc->GetUse()->GetOccTy() == kSOccLambda &&
                                                     !static_cast<SLambdaOcc*>(lambdaResOcc->GetUse())->WillBeAnt())) {
             // insert a store
-            BB *insertBB = lambdaResOcc->GetBB();
+            BB *insertBB = &lambdaResOcc->GetBB();
             if (insertBB->GetAttributes(kBBAttrIsCatch)) {
               if (preKind == kDecrefPre) {
                 catchBlocks2Insert.insert(insertBB->GetBBId());
               } // else { kStorePre: omit insertion at entry of catch blocks }
               break;
             }
-            if (lambdaResOcc->GetBB()->GetPred().size() != 1) {  // critical edge
+            if (lambdaResOcc->GetBB().GetPred().size() != 1) {  // critical edge
               if (preKind != kDecrefPre && preKind != kSecondDecrefPre) {
                 CHECK_FATAL(false, "MeSSUPre::Finalize: insertion at critical edge");
+                ASSERT_NOT_NULL(workCand);
                 workCand->SetHasCriticalEdge(true);
                 return;
               }
@@ -287,7 +288,7 @@ void MeSSUPre::Rename() {
                 continue;
               }
               CHECK_NULL_FATAL(dom);
-              if (!dom->Dominate(*realOcc->GetBB(), *topOcc->GetBB())) {
+              if (!dom->Dominate(realOcc->GetBB(), topOcc->GetBB())) {
                 continue;
               }
               static_cast<SLambdaOcc*>(topOcc)->SetIsUpsafe(false);
@@ -383,14 +384,14 @@ void MeSSUPre::FormLambdas() {
   std::vector<bool> visitedMap(func->NumBBs(), false);
   CHECK_NULL_FATAL(workCand);
   for (SOcc *occ : workCand->GetRealOccs()) {
-    GetIterPdomFrontier(*occ->GetBB(), lambdaDfns, visitedMap);
+    GetIterPdomFrontier(occ->GetBB(), lambdaDfns, visitedMap);
   }
 }
 
 // form allOccs inclusive of real, use, lambda, lambdaRes, entry occurrences;
 // form lambdaOccs containing only the lambdas
 void MeSSUPre::CreateSortedOccs() {
-  // form lambdaRes occs based on the succs of the lambda occs ; result is
+  // form lambdaRes occs based on the succs of the lambda occs; result is
   // stored in lambdaResDfns
   std::multiset<uint32> lambdaResDfns;
   for (uint32 dfn : lambdaDfns) {
@@ -402,7 +403,7 @@ void MeSSUPre::CreateSortedOccs() {
   }
   allOccs.clear();
   lambdaOccs.clear();
-  std::unordered_map<BBId, std::forward_list<SLambdaResOcc*>> bb2lambdaResMap;
+  std::unordered_map<BBId, std::forward_list<SLambdaResOcc*>> bb2LambdaResMap;
   auto realOccIt = workCand->GetRealOccs().begin();
   auto entryOccIt = entryOccs.begin();
   auto lambdaDfnIt = lambdaDfns.begin();
@@ -423,10 +424,10 @@ void MeSSUPre::CreateSortedOccs() {
   SLambdaResOcc *nextLambdaResOcc = nullptr;
   if (lambdaResDfnIt != lambdaResDfns.end()) {
     nextLambdaResOcc = spreMp->New<SLambdaResOcc>(*func->GetAllBBs().at(dom->GetPdtPreOrderItem(*lambdaResDfnIt)));
-    auto it = bb2lambdaResMap.find(dom->GetPdtPreOrderItem(*lambdaResDfnIt));
-    if (it == bb2lambdaResMap.end()) {
+    auto it = bb2LambdaResMap.find(dom->GetPdtPreOrderItem(*lambdaResDfnIt));
+    if (it == bb2LambdaResMap.end()) {
       std::forward_list<SLambdaResOcc*> newlist = { nextLambdaResOcc };
-      bb2lambdaResMap[dom->GetPdtPreOrderItem(*lambdaResDfnIt)] = newlist;
+      bb2LambdaResMap[dom->GetPdtPreOrderItem(*lambdaResDfnIt)] = newlist;
     } else {
       it->second.push_front(nextLambdaResOcc);
     }
@@ -437,16 +438,16 @@ void MeSSUPre::CreateSortedOccs() {
     if (nextLambdaOcc != nullptr) {
       pickedOcc = nextLambdaOcc;
     }
-    if (nextRealOcc != nullptr && (pickedOcc == nullptr || dom->GetPdtDfnItem(nextRealOcc->GetBB()->GetBBId()) <
-                                   dom->GetPdtDfnItem(pickedOcc->GetBB()->GetBBId()))) {
+    if (nextRealOcc != nullptr && (pickedOcc == nullptr || dom->GetPdtDfnItem(nextRealOcc->GetBB().GetBBId()) <
+                                   dom->GetPdtDfnItem(pickedOcc->GetBB().GetBBId()))) {
       pickedOcc = nextRealOcc;
     }
     if (nextLambdaResOcc != nullptr &&
-        (pickedOcc == nullptr || *lambdaResDfnIt < dom->GetPdtDfnItem(pickedOcc->GetBB()->GetBBId()))) {
+        (pickedOcc == nullptr || *lambdaResDfnIt < dom->GetPdtDfnItem(pickedOcc->GetBB().GetBBId()))) {
       pickedOcc = nextLambdaResOcc;
     }
-    if (nextEntryOcc != nullptr && (pickedOcc == nullptr || dom->GetPdtDfnItem(nextEntryOcc->GetBB()->GetBBId()) <
-                                    dom->GetPdtDfnItem(pickedOcc->GetBB()->GetBBId()))) {
+    if (nextEntryOcc != nullptr && (pickedOcc == nullptr || dom->GetPdtDfnItem(nextEntryOcc->GetBB().GetBBId()) <
+                                    dom->GetPdtDfnItem(pickedOcc->GetBB().GetBBId()))) {
       pickedOcc = nextEntryOcc;
     }
     if (pickedOcc != nullptr) {
@@ -491,10 +492,10 @@ void MeSSUPre::CreateSortedOccs() {
             nextLambdaResOcc =
                 spreMp->New<SLambdaResOcc>(*func->GetAllBBs().at(dom->GetPdtPreOrderItem(*lambdaResDfnIt)));
             CHECK_NULL_FATAL(dom);
-            auto it = bb2lambdaResMap.find(dom->GetPdtPreOrderItem(*lambdaResDfnIt));
-            if (it == bb2lambdaResMap.end()) {
+            auto it = bb2LambdaResMap.find(dom->GetPdtPreOrderItem(*lambdaResDfnIt));
+            if (it == bb2LambdaResMap.end()) {
               std::forward_list<SLambdaResOcc*> newlist = { nextLambdaResOcc };
-              bb2lambdaResMap[dom->GetPdtPreOrderItem(*lambdaResDfnIt)] = newlist;
+              bb2LambdaResMap[dom->GetPdtPreOrderItem(*lambdaResDfnIt)] = newlist;
             } else {
               it->second.push_front(nextLambdaResOcc);
             }
@@ -510,11 +511,11 @@ void MeSSUPre::CreateSortedOccs() {
   } while (pickedOcc != nullptr);
   // initialize lambdaRes vector in each SLambdaOcc node
   for (SLambdaOcc *lambdaOcc : lambdaOccs) {
-    for (BB *succ : lambdaOcc->GetBB()->GetSucc()) {
-      SLambdaResOcc *lambdaResOcc = bb2lambdaResMap[succ->GetBBId()].front();
+    for (BB *succ : lambdaOcc->GetBB().GetSucc()) {
+      SLambdaResOcc *lambdaResOcc = bb2LambdaResMap[succ->GetBBId()].front();
       lambdaOcc->GetLambdaRes().push_back(lambdaResOcc);
       lambdaResOcc->SetUseLambdaOcc(*lambdaOcc);
-      bb2lambdaResMap[succ->GetBBId()].pop_front();
+      bb2LambdaResMap[succ->GetBBId()].pop_front();
     }
   }
   if (enabledDebug) {

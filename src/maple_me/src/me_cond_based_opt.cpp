@@ -243,7 +243,7 @@ void CondBasedNPC::DoCondBasedNPC() const {
 AnalysisResult *MeDoCondBasedRC::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr*) {
   auto *dom = static_cast<Dominance*>(m->GetAnalysisResult(MeFuncPhase_DOMINANCE, func));
   ASSERT(dom != nullptr, "dominance phase has problem");
-  CondBasedRC condBasedRC(func, dom);
+  CondBasedRC condBasedRC(*func, *dom);
   auto eIt = func->valid_end();
   for (auto bIt = func->valid_begin(); bIt != eIt; ++bIt) {
     auto *bb = *bIt;
@@ -279,7 +279,7 @@ AnalysisResult *MeDoCondBasedRC::Run(MeFunction *func, MeFuncResultMgr *m, Modul
 AnalysisResult *MeDoCondBasedNPC::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr*) {
   auto *dom = static_cast<Dominance*>(m->GetAnalysisResult(MeFuncPhase_DOMINANCE, func));
   ASSERT(dom != nullptr, "dominance phase has problem");
-  CondBasedNPC condBasedNPC(func, dom);
+  CondBasedNPC condBasedNPC(*func, *dom);
   condBasedNPC.DoCondBasedNPC();
   return nullptr;
 }

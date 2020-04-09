@@ -1882,9 +1882,9 @@ void GraphColorRegAllocator::SplitLr(LiveRange &lr) {
   }
 #ifdef REUSE_SPILLMEM
   /* Copy the original conflict vector for spill reuse optimization */
-  lr->SetOldConflict(cgFunc->GetMemoryPool()->NewArray<uint64>(regBuckets));
+  lr.SetOldConflict(cgFunc->GetMemoryPool()->NewArray<uint64>(regBuckets));
   for (uint32 i = 0; i < regBuckets; ++i) {
-    lr.GetOldConflict()[i] = lr.GetBBConflict()[i];
+    lr.SetBBConflictElem(i, lr.GetBBConflictElem(i));
   }
 #endif  /* REUSE_SPILLMEM */
 
@@ -2539,7 +2539,21 @@ MemOperand *GraphColorRegAllocator::GetSpillOrReuseMem(LiveRange &lr, uint32 reg
       lr.SetSpillSize((regSize <= k32) ? k32 : k64);
     } else {
 #endif  /* REUSE_SPILLMEM */
-      memOpnd = GetSpillMem(lr.GetRegNO(), isDef, insn, static_cast<AArch64reg>(lr.GetSpillReg()), isOutOfRange);
+      regno_t baseRegNO = kRinvalid;
+      if (isDef) {
+        MapleSet<uint32> &spillRegSet = (lr.GetRegType() == kRegTyInt) ? intSpillRegSet : fpSpillRegSet;
+        regno_t basis = (lr.GetRegType() == kRegTyInt) ? R0 : V0;
+        for (auto reg : spillRegSet) {
+          if ((reg + basis) != lr.GetSpillReg()) {
+            baseRegNO = (reg + basis);
+            break;
+          }
+        }
+      } else {
+        baseRegNO = lr.GetSpillReg();
+      }
+      ASSERT(baseRegNO != kRinvalid, "invalid base register number");
+      memOpnd = GetSpillMem(lr.GetRegNO(), isDef, insn, static_cast<AArch64reg>(baseRegNO), isOutOfRange);
 #ifdef REUSE_SPILLMEM
       if (isOutOfRange == 0) {
         lr.SetSpillMem(*memOpnd);
@@ -2690,7 +2704,6 @@ regno_t GraphColorRegAllocator::PickRegForSpill(uint64 &usedRegMask, RegType reg
       ++regNumIt;
     }
     spillReg = *regNumIt + base;
-    ASSERT((usedRegMask & (1UL << (spillReg - pregInterval))) == 0, "spillReg should not be used");
     return spillReg;
   } else {
     /* Temporary find a unused reg to spill */

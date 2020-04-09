@@ -14,6 +14,9 @@
  */
 #ifndef MPLFE_INCLUDE_COMMON_FE_CONFIG_PARALLEL_H
 #define MPLFE_INCLUDE_COMMON_FE_CONFIG_PARALLEL_H
+#include <mutex>
+#include <thread>
+#include <set>
 #include "types_def.h"
 #include "mpl_logging.h"
 
@@ -22,7 +25,7 @@ class FEConfigParallel {
  public:
   FEConfigParallel();
   ~FEConfigParallel() = default;
-  static FEConfigParallel GetInstance() {
+  static FEConfigParallel &GetInstance() {
     return instance;
   }
 
@@ -42,13 +45,34 @@ class FEConfigParallel {
     return enableParallel && (nThread > 1);
   }
 
+  void RegisterRunThreadID(std::thread::id tid) {
+    mtx.lock();
+    CHECK_FATAL(runThreadIDs.insert(tid).second == true, "failed to register thread id");
+    mtx.unlock();
+  }
+
+  bool RunThreadParallelForbidden() {
+    if (!enableParallel) {
+      return false;
+    }
+    std::thread::id tid = std::this_thread::get_id();
+    return runThreadIDs.find(tid) != runThreadIDs.end();
+  }
+
  private:
   static FEConfigParallel instance;
   uint32 nThread;
   bool enableParallel;
+  std::set<std::thread::id> runThreadIDs;
+  std::mutex mtx;
 };
 
-#define MPLFE_PARALLEL_FORBIDDEN()                                         \
-  CHECK_FATAL(FEConfigParallel::GetInstance().IsInParallelMode() == false, "this method is forbidden in parallel mode");
+#define MPLFE_PARALLEL_FORBIDDEN()                                                           \
+  do {                                                                                       \
+    if (FEConfigParallel::GetInstance().RunThreadParallelForbidden()) {                      \
+      maple::logInfo.EmitErrorMessage("MPLFE_PARALLEL_FORBIDDEN", __FILE__, __LINE__, "\n"); \
+      FATAL(kLncFatal, "Forbidden invocation in parallel run thread");                       \
+    }                                                                                        \
+  } while (0)
 }  // namespace maple
 #endif  // MPLFE_INCLUDE_COMMON_FE_PARALLEL_CONFIG_H

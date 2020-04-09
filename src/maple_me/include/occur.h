@@ -17,7 +17,6 @@
 // the data structures that represent occurrences and work candidates for SSAPRE
 #include "me_function.h"
 #include "irmap.h"
-const int kWorkCandHashLength = 229;
 
 namespace maple {
 enum OccType {
@@ -122,6 +121,7 @@ class MeRealOcc : public MeOccur {
   }
 
   Opcode GetOpcodeOfMeStmt() const {
+    ASSERT_NOT_NULL(meStmt);
     return meStmt->GetOp();
   }
 
@@ -229,6 +229,7 @@ class MeInsertedOcc : public MeOccur {
   }
 
   Opcode GetOpcodeOfMeStmt() const {
+    ASSERT_NOT_NULL(meStmt);
     return meStmt->GetOp();
   }
 
@@ -472,6 +473,7 @@ class MePhiOcc : public MeOccur {
 
   bool IsOpndDefByRealOrInserted() const;
   void Dump(const IRMap&) const;
+
  private:
   bool isDownSafe;           // default is true
   bool speculativeDownSafe;  // is downsafe due to speculation
@@ -487,6 +489,20 @@ class MePhiOcc : public MeOccur {
 // each singly linked list repersents each bucket in workCandHashTable
 class PreWorkCand {
  public:
+  static const uint32 workCandHashLength = 229;
+  static uint32 ComputeWorkCandHashIndex(const MeExpr &meExpr);
+  static std::array<PreWorkCand*, workCandHashLength> &GetWorkcandHashTable() {
+    return workCandHashTable;
+  }
+
+  static PreWorkCand *GetWorkcandFromIndex(size_t idx) {
+    return workCandHashTable[idx];
+  }
+
+  static void SetWorkCandAt(size_t idx, PreWorkCand &workCand) {
+    workCandHashTable[idx] = &workCand;
+  }
+
   PreWorkCand(MapleAllocator &alloc, int32 idx, MeExpr *meExpr, PUIdx pIdx)
       : next(nullptr),
         index(idx),
@@ -518,13 +534,14 @@ class PreWorkCand {
 
   void AddRealOccSorted(const Dominance &dom, MeRealOcc &occ, PUIdx pIdx);
   PrimType GetPrimType() const {
+    ASSERT_NOT_NULL(theMeExpr);
     PrimType pTyp = theMeExpr->GetPrimType();
     CHECK_FATAL(pTyp != kPtyInvalid, "invalid primtype");
     return pTyp;
   }
 
-  static uint32 ComputeWorkCandHashIndex(const MeExpr &meExpr);
-  virtual void DumpCand(IRMap &irMap) {
+  virtual void DumpCand(IRMap &irMap) const {
+    ASSERT_NOT_NULL(theMeExpr);
     theMeExpr->Dump(&irMap);
   }
 
@@ -610,19 +627,9 @@ class PreWorkCand {
     needLocalRefVar = need;
   }
 
-  static std::array<PreWorkCand*, kWorkCandHashLength> &GetWorkcandHashTable() {
-    return workCandHashTable;
-  }
-
-  static PreWorkCand *GetWorkcandFromIndex(size_t idx) {
-    return workCandHashTable[idx];
-  }
-
-  static void SetWorkCandAt(size_t idx, PreWorkCand &workCand) {
-    workCandHashTable[idx] = &workCand;
-  }
-
  private:
+  static std::array<PreWorkCand*, workCandHashLength> workCandHashTable;
+  void InsertRealOccAt(MeRealOcc &occ, MapleVector<MeRealOcc*>::iterator it, PUIdx pIdx);
   PreWorkCand *next;
   int32 index;
   MapleVector<MeRealOcc*> realOccs;  // maintained in order of dt_preorder
@@ -634,8 +641,6 @@ class PreWorkCand {
   bool redo2HandleCritEdges : 1;  // redo to make critical edges affect canbevail
   bool needLocalRefVar : 1;       // for the candidate, if necessary to introduce
   // localrefvar in addition to the temp register to for saving the value
-  static std::array<PreWorkCand*, kWorkCandHashLength> workCandHashTable;
-  void InsertRealOccAt(MeRealOcc &occ, MapleVector<MeRealOcc*>::iterator it, PUIdx pIdx);
 };
 
 class PreStmtWorkCand : public PreWorkCand {
@@ -645,7 +650,7 @@ class PreStmtWorkCand : public PreWorkCand {
 
   virtual ~PreStmtWorkCand() = default;
   static uint32 ComputeStmtWorkCandHashIndex(const MeStmt &stmt);
-  void DumpCand(IRMap &irMap) {
+  void DumpCand(IRMap &irMap) const {
     theMeStmt->Dump(&irMap);
   }
 
@@ -661,7 +666,7 @@ class PreStmtWorkCand : public PreWorkCand {
     theMeStmt = &stmt;
   }
 
-  bool LHSIsFinal() {
+  bool LHSIsFinal() const {
     return lhsIsFinal;
   }
 

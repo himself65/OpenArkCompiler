@@ -19,6 +19,8 @@ DEF_MIR_INTRINSIC(MPL_ATOMIC_EXCHANGE_PTR,\
                   "__mpl_atomic_exchange_ptr", kIntrnIsAtomic, kArgTyPtr, kArgTyPtr, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
 DEF_MIR_INTRINSIC(MPL_CLINIT_CHECK,\
                   "__mpl_clinit_check", INTRNISJAVA | INTRNNOSIDEEFFECT | INTRNISSPECIAL, kArgTyVoid, kArgTyDynany, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
+DEF_MIR_INTRINSIC(MPL_PROF_COUNTER_INC,\
+                  "__mpl_prof_counter_inc", INTRNNOSIDEEFFECT | INTRNISSPECIAL, kArgTyVoid, kArgTyU32, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
 DEF_MIR_INTRINSIC(MPL_CLEAR_STACK,\
                   "__mpl_clear_stack", kIntrnUndef, kArgTyVoid, kArgTyDynany, kArgTyDynany, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
 DEF_MIR_INTRINSIC(MPL_GET_VTAB_FUNC,\
@@ -123,6 +125,10 @@ DEF_MIR_INTRINSIC(MPL_CLEANUP_NORETESCOBJS,\
                   kArgTyRef, kArgTyRef, kArgTyRef, kArgTyRef)
 
 // start of GC Intrinsics
+
+// start of Profile Intrinsics
+DEF_MIR_INTRINSIC(MCCSaveProf,\
+                  "MCC_SaveProfile", INTRNISRC | INTRNNOSIDEEFFECT, kArgTyVoid, kArgTyRef)
 
 #include "intrinsic_java.def"
 #include "simplifyintrinsics.def"

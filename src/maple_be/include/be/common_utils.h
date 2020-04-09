@@ -66,8 +66,8 @@ constexpr int32 kInsnEighthOpnd = 7;
 /* Check whether the value is an even number. */
 constexpr int32 kDivide2 = 2;
 constexpr int32 kRegNum2 = 2;
-constexpr int32 kModNum2 = 2;
 constexpr int32 kStepNum2 = 2;
+constexpr int32 kSign4ByteSize = 4;
 
 /*
  * if the number of local refvar is less than 12, use stp or str to init local refvar

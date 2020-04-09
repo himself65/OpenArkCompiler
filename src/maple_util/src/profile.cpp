@@ -24,7 +24,7 @@
 #include <sys/types.h>
 #include <cerrno>
 #include <algorithm>
-#include "name_mangler.h"
+#include "namemangler.h"
 #include "file_layout.h"
 #include "types_def.h"
 
@@ -65,6 +65,10 @@ std::string Profile::GetProfileNameByType(uint8 type) const {
       return "ReflectionStr";
     case kLiteral:
       return "Literal";
+    case kBBInfo:
+      return "IRProfDescption";
+    case kIRCounter:
+      return "IRProfCounter";
     case kFileDesc:
       return "FileDescription";
     default:
@@ -96,70 +100,122 @@ void Profile::ParseLiteral(const char *data, const char *end) {
   }
 }
 
+std::string Profile::GetFunctionName(uint32 classIdx, uint32 methodIdx, uint32 sigIdx) {
+  std::string className = NameMangler::EncodeName(strMap.at(classIdx));
+  std::string methodName = NameMangler::EncodeName(strMap.at(methodIdx));
+  std::string sigName = NameMangler::EncodeName(strMap.at(sigIdx));
+  std::string funcName = className + "_7C" + methodName + "_7C" + sigName;
+  return funcName;
+}
+
 void Profile::ParseFunc(const char *data, int fileNum) {
-  const MapleFileProf<FunctionItem> *funcProf = nullptr;
+  const MapleFileProf *funcProf = nullptr;
   const FunctionItem *funcItem = nullptr;
   uint32 offset = 0;
   for (int32 mapleFileIdx = 0; mapleFileIdx < fileNum; mapleFileIdx++) {
-    funcProf = reinterpret_cast<const MapleFileProf<FunctionItem>*>(data + offset);
+    funcProf = reinterpret_cast<const MapleFileProf*>(data + offset);
     if (CheckDexValid(funcProf->idx))  {
       if (debug) {
         LogInfo::MapleLogger() << "FuncProfile" << ":" << strMap.at(funcProf->idx) << ":" << funcProf->num << "\n";
       }
-      for (uint32 item = 0; item < funcProf->num; item++) {
-        funcItem = &(funcProf->items[item]);
+      funcItem = reinterpret_cast<const FunctionItem*>(data + offset + sizeof(MapleFileProf));
+      for (uint32 item = 0; item < funcProf->num; item++, ++funcItem) {
         if (funcItem->type >= kLayoutTypeCount) {
           if (debug) {
             LogInfo::MapleLogger() << "ParseFunc Error usupport type " << funcItem->type << "\n";
           }
           continue;
         }
-        std::string className = NameMangler::EncodeName(strMap.at(funcItem->classIdx));
-        std::string methodName = NameMangler::EncodeName(strMap.at(funcItem->methodIdx));
-        std::string sigName = NameMangler::EncodeName(strMap.at(funcItem->sigIdx));
-        std::string funcName = className + "_7C" + methodName + "_7C" + sigName;
+        std::string funcName = GetFunctionName(funcItem->classIdx, funcItem->methodIdx, funcItem->sigIdx);
         funcProfData.insert(
             std::make_pair(funcName, (FuncItem){ .callTimes = funcItem->callTimes, .type = funcItem->type }));
       }
     }
     // new maple file's profile
-    offset += sizeof(MapleFileProf<FunctionItem>) + sizeof(FunctionItem) * (funcProf->num - 1);
+    offset += sizeof(MapleFileProf) + funcProf->size;
+  }
+}
+
+void Profile::ParseIRFuncDesc(const char *data, int fileNum) {
+  const MapleFileProf *funcProf = nullptr;
+  const FunctionIRProfItem *funcItem = nullptr;
+  uint32 offset = 0;
+  for (int32 mapleFileIdx = 0; mapleFileIdx < fileNum; mapleFileIdx++) {
+    funcProf = reinterpret_cast<const MapleFileProf*>(data + offset);
+    if (CheckDexValid(funcProf->idx))  {
+      if (debug) {
+        LogInfo::MapleLogger() << "IRFuncProfile" << ":" << strMap.at(funcProf->idx) << ":" << funcProf->num << "\n";
+      }
+      funcItem = reinterpret_cast<const FunctionIRProfItem*>(data + offset + sizeof(MapleFileProf));
+      for (uint32 item = 0; item < funcProf->num; ++item, ++funcItem) {
+        if ((funcItem->counterStart <= counterTab.size()) && (funcItem->counterEnd <= counterTab.size())) {
+          auto begin = counterTab.begin() + funcItem->counterStart;
+          auto end = counterTab.begin() + funcItem->counterEnd +  1;
+          std::vector<uint32> tempCounter(begin, end);
+          BBInfo bbInfo(funcItem->hash, tempCounter.size(), std::move(tempCounter));
+          std::string funcName = GetFunctionName(funcItem->classIdx, funcItem->methodIdx, funcItem->sigIdx);
+          funcBBProfData.emplace(std::make_pair(funcName, bbInfo));
+        }
+      }
+    }
+    // new maple file's profile
+    offset += sizeof(MapleFileProf) + funcProf->size;
+  }
+}
+
+void Profile::ParseCounterTab(const char *data, int fileNum) {
+  const MapleFileProf *counterProf = nullptr;
+  uint32 offset = 0;
+  for (int32 mapleFileIdx = 0; mapleFileIdx < fileNum; mapleFileIdx++) {
+    counterProf = reinterpret_cast<const MapleFileProf*>(data  + offset);
+    if (CheckDexValid(counterProf->idx)) {
+      if (debug) {
+        LogInfo::MapleLogger() << "module name " << strMap.at(counterProf->idx) << std::endl;
+      }
+      const FuncCounterItem *item = reinterpret_cast<const FuncCounterItem*>(data + offset + sizeof(MapleFileProf));
+      for (uint32 i = 0; i < counterProf->num; ++i, ++item) {
+        counterTab.emplace_back(item->callTimes);
+      }
+    }
+    offset += sizeof(MapleFileProf) + counterProf->size;
   }
 }
 
 void Profile::ParseMeta(const char *data, int fileNum, std::unordered_set<std::string> &metaData) {
-  const MapleFileProf<MetaItem> *metaProf = nullptr;
+  const MapleFileProf *metaProf = nullptr;
   uint32 offset = 0;
   for (int32 mapleFileIdx = 0; mapleFileIdx < fileNum; mapleFileIdx++) {
-    metaProf = reinterpret_cast<const MapleFileProf<MetaItem>*>(data  + offset);
+    metaProf = reinterpret_cast<const MapleFileProf*>(data  + offset);
     if (CheckDexValid(metaProf->idx)) {
       if (debug) {
-        LogInfo::MapleLogger() << "dex name " << strMap.at(metaProf->idx) << '\n';;
+        LogInfo::MapleLogger() << "module name " << strMap.at(metaProf->idx) << '\n';
       }
-      for (uint32 item = 0; item < metaProf->num; item++) {
-        const MetaItem *metaItem = &(metaProf->items[item]);
+      const MetaItem *metaItem = reinterpret_cast<const MetaItem*>(data + offset + sizeof(MapleFileProf));
+      for (uint32 item = 0; item < metaProf->num; ++item, ++metaItem) {
         metaData.insert(strMap.at(metaItem->idx));
       }
     }
-    offset += sizeof(MapleFileProf<MetaItem>) + sizeof(MetaItem) * (metaProf->num - 1);
+    offset += sizeof(MapleFileProf) + metaProf->size;
   }
 }
 
 void Profile::ParseReflectionStr(const char *data, int fileNum) {
-  const MapleFileProf<ReflectionStrItem> *metaProf = nullptr;
+  const MapleFileProf *metaProf = nullptr;
   uint32 offset = 0;
   for (int32 mapleFileIdx = 0; mapleFileIdx < fileNum; mapleFileIdx++) {
-    metaProf = reinterpret_cast<const MapleFileProf<ReflectionStrItem>*>(data  + offset);
+    metaProf = reinterpret_cast<const MapleFileProf*>(data  + offset);
     if (CheckDexValid(metaProf->idx)) {
       if (debug) {
-        LogInfo::MapleLogger() << "dex name " << strMap.at(metaProf->idx) << '\n';;
+        LogInfo::MapleLogger() << "module name " << strMap.at(metaProf->idx) << '\n';
       }
-      for (uint32 item = 0; item < metaProf->num; item++) {
-        const ReflectionStrItem *strItem = &(metaProf->items[item]);
+
+      const ReflectionStrItem *strItem =
+          reinterpret_cast<const ReflectionStrItem*>(data + offset + sizeof(MapleFileProf));
+      for (uint32 item = 0; item < metaProf->num; ++item, ++strItem) {
         reflectionStrData.insert(std::make_pair(strMap.at(strItem->idx), strItem->type));
       }
     }
-    offset += sizeof(MapleFileProf<ReflectionStrItem>) + sizeof(ReflectionStrItem) * (metaProf->num - 1);
+    offset += sizeof(MapleFileProf) + metaProf->size;
   }
 }
 
@@ -268,6 +324,12 @@ bool Profile::DeCompress(const std::string &path, const std::string &dexNameInne
         break;
       case kLiteral:
         ParseLiteral(proFileData,strBuf);
+        break;
+      case kBBInfo:
+        ParseIRFuncDesc(proFileData, profileDataInfo->mapleFileNum);
+        break;
+      case kIRCounter:
+        ParseCounterTab(proFileData, profileDataInfo->mapleFileNum);
         break;
       case kFileDesc: {
         uint32_t appPackageNameIdx = *reinterpret_cast<uint32_t*>(proFileData);
@@ -392,6 +454,15 @@ bool Profile::CheckReflectionStrHot(const std::string &str, uint8 &layoutType) c
 
 const std::unordered_map<std::string, Profile::FuncItem>& Profile::GetFunctionProf() const {
   return funcProfData;
+}
+
+bool Profile::GetFunctionBBProf(const std::string &funcName, Profile::BBInfo &result) {
+  auto item = funcBBProfData.find(funcName);
+  if (item == funcBBProfData.end()) {
+    return false;
+  }
+  result = item->second;
+  return true;
 }
 
 std::unordered_set<std::string> &Profile::GetMeta(uint8 type) {

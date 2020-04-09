@@ -141,13 +141,13 @@ class SSAPre {
   // step 5 Finalize methods
   virtual void Finalize1();
   void SetSave(MeOccur &defX);
-  void SetReplacement(MePhiOcc &occ, MeOccur *repDef);
+  void SetReplacement(MePhiOcc &occ, MeOccur &repDef);
   virtual void Finalize2();
   // step 4 willbevail methods
   void ComputeCanBeAvail() const;
   void ResetCanBeAvail(MePhiOcc &occ) const;
   void ComputeLater() const;
-  void ResetLater(MePhiOcc *occ) const;
+  void ResetLater(MePhiOcc &occ) const;
   // step 3 downsafety methods
   void ResetDS(MePhiOpndOcc &phiOpnd) const;
   void ComputeDS() const;
@@ -174,7 +174,7 @@ class SSAPre {
 
   virtual void BuildWorkListExpr(MeStmt &meStmt, int32 seqStmt, MeExpr &meExpr, bool isRebuilt, MeExpr *tempVar,
                                  bool isRootExpr) = 0;
-  virtual void BuildWorkListStmt(MeStmt* meStmt, uint32 seqStmt, bool isRebuilt, MeExpr *tempVar = nullptr);
+  virtual void BuildWorkListStmt(MeStmt &stmt, uint32 seqStmt, bool isRebuilt, MeExpr *tempVar = nullptr);
   virtual void BuildWorkListBB(BB *bb);
   virtual void ConstructUseOccurMap() {}
 

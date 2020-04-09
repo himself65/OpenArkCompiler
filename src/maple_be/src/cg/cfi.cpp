@@ -32,8 +32,11 @@ struct CfiDescr {
 static CfiDescr cfiDescrTable[kOpCfiLast + 1] = {
 #define CFI_DEFINE(k, sub, n, o0, o1, o2) \
   { ".cfi_" #k, n, { Operand::kOpd##o0, Operand::kOpd##o1, Operand::kOpd##o2 } },
+#define ARM_DIRECTIVES_DEFINE(k, sub, n, o0, o1, o2) \
+  { "." #k, n, { Operand::kOpd##o0, Operand::kOpd##o1, Operand::kOpd##o2 } },
 #include "cfi.def"
 #undef CFI_DEFINE
+#undef ARM_DIRECTIVES_DEFINE
   { ".cfi_undef", 0, { Operand::kOpdUndef, Operand::kOpdUndef, Operand::kOpdUndef } }
 };
 

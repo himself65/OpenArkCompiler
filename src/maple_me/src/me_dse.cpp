@@ -33,7 +33,7 @@ void MeDSE::VerifyPhi() const {
     size_t predBBNums = bb->GetPred().size();
     for (auto &pair : bb->GetPhiList()) {
       if (IsSymbolLived(*pair.second.GetResult())) {
-        if (predBBNums <= 1) {
+        if (predBBNums <= 1) {  // phi is live and non-virtual in bb with 0 or 1 pred
           const OriginalSt *ost = pair.first;
           CHECK_FATAL(!ost->IsSymbolOst() || ost->GetIndirectLev() != 0,
               "phi is live and non-virtual in bb with zero or one pred");
@@ -64,7 +64,7 @@ AnalysisResult *MeDoDSE::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultM
   CHECK_NULL_FATAL(func);
   auto *postDom = static_cast<Dominance*>(m->GetAnalysisResult(MeFuncPhase_DOMINANCE, func));
   CHECK_NULL_FATAL(postDom);
-  MeDSE dse(func, postDom, DEBUGFUNC(func));
+  MeDSE dse(*func, postDom, DEBUGFUNC(func));
   dse.RunDSE();
   func->Verify();
   // cfg change , invalid results in MeFuncResultMgr

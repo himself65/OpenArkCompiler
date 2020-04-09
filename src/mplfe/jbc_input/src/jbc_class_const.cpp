@@ -184,6 +184,7 @@ JBCConstClass::JBCConstClass(MapleAllocator &alloc, JBCConstTag t)
       nameOrin("", alloc.GetMemPool()),
       nameMpl("", alloc.GetMemPool()) {
   rawData.nameIdx = 0;
+  feType = alloc.GetMemPool()->New<FEIRTypeDefault>(PTY_ref);
 }
 
 JBCConstClass::JBCConstClass(MapleAllocator &alloc, JBCConstTag t, JBCConstPoolIdx argNameIdx)
@@ -195,6 +196,7 @@ JBCConstClass::JBCConstClass(MapleAllocator &alloc, JBCConstTag t, JBCConstPoolI
       nameMpl("", alloc.GetMemPool()) {
   CHECK_FATAL(t == kConstClass, "invalid tag");
   rawData.nameIdx = argNameIdx;
+  feType = alloc.GetMemPool()->New<FEIRTypeDefault>(PTY_ref);
 }
 
 JBCConstClass::~JBCConstClass() {
@@ -217,6 +219,7 @@ bool JBCConstClass::PreProcessImpl(const JBCConstPool &constPool) {
   strIdxOrin = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(MapleStringToStd(nameOrin));
   nameMpl = NameMangler::EncodeName(nameOrin.c_str());
   strIdxMpl = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(MapleStringToStd(nameMpl));
+  static_cast<FEIRTypeDefault*>(feType)->LoadFromJavaTypeName(MapleStringToStd(nameMpl), true);
   return true;
 }
 
@@ -297,12 +300,13 @@ bool JBCConstRef::PrepareFEStructElemInfo() {
   const std::string &className = constClass->GetClassNameOrin();
   const std::string &elemName = constNameAndType->GetName();
   const std::string &descName = constNameAndType->GetDesc();
-  std::string fullNameOrin = className + "." + elemName + descName;
-  std::string fullNameMpl = NameMangler::EncodeName(className + "|" + elemName + "|" + descName);
-  GStrIdx fullNameIdxOrin = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(fullNameOrin);
-  GStrIdx fullNameIdxMpl = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(fullNameMpl);
-  feStructElemInfo = FEManager::GetTypeManager().RegisterStructElemInfo(constClass->GetClassNameIdxMpl(),
-                                                                        fullNameIdxOrin, fullNameIdxMpl);
+  std::string fullName = NameMangler::EncodeName(className + "|" + elemName + "|" + descName);
+  GStrIdx fullNameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(fullName);
+  if (tag == kConstFieldRef) {
+    feStructElemInfo = FEManager::GetTypeManager().RegisterStructFieldInfo(fullNameIdx, kSrcLangJava, false);
+  } else {
+    feStructElemInfo = FEManager::GetTypeManager().RegisterStructMethodInfo(fullNameIdx, kSrcLangJava, false);
+  }
   return feStructElemInfo != nullptr;
 }
 

@@ -30,11 +30,9 @@ constexpr unsigned int kApkNamespace = 0x80;
 constexpr unsigned int kBitMask = 0x3f;
 
 #ifdef USE_64BIT_MUID
-#undef MUID_LENGTH
-#define MUID_LENGTH 8
+constexpr unsigned int kMuidLength = 8;
 #else
-#undef MUID_LENGTH
-#define MUID_LENGTH 16
+constexpr unsigned int kMuidLength = 16;
 #endif // USE_64BIT_MUID
 
 // muid-related files are shared between maple compiler and runtime, thus not in
@@ -51,10 +49,10 @@ struct MUID {
 #ifdef USE_64BIT_MUID
     uint64_t raw;
     uint32_t words[2];
-    uint8_t bytes[MUID_LENGTH];
+    uint8_t bytes[kMuidLength];
 #else
     uint64_t words[2];
-    uint8_t bytes[MUID_LENGTH];
+    uint8_t bytes[kMuidLength];
 #endif // USE_64BIT_MUID
   } data;
 
@@ -63,18 +61,18 @@ struct MUID {
     data.words[1] = 0;
   }
   inline bool IsSystemNameSpace() const {
-    return (data.bytes[MUID_LENGTH - 1] & ~kBitMask) == kSystemNamespace;
+    return (data.bytes[kMuidLength - 1] & ~kBitMask) == kSystemNamespace;
   }
   inline bool IsApkNameSpace() const {
-    return (data.bytes[MUID_LENGTH - 1] & ~kBitMask) == kApkNamespace;
+    return (data.bytes[kMuidLength - 1] & ~kBitMask) == kApkNamespace;
   }
   inline void SetSystemNameSpace() {
-    data.bytes[MUID_LENGTH - 1] &= kBitMask;
-    data.bytes[MUID_LENGTH - 1] |= kSystemNamespace;
+    data.bytes[kMuidLength - 1] &= kBitMask;
+    data.bytes[kMuidLength - 1] |= kSystemNamespace;
   }
   inline void SetApkNameSpace() {
-    data.bytes[MUID_LENGTH - 1] &= kBitMask;
-    data.bytes[MUID_LENGTH - 1] |= kApkNamespace;
+    data.bytes[kMuidLength - 1] &= kBitMask;
+    data.bytes[kMuidLength - 1] |= kApkNamespace;
   }
   bool operator<(const MUID &muid) const {
     return (data.words[1] < muid.data.words[1] ||

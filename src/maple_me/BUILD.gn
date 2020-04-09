@@ -32,6 +32,8 @@ src_libmplme = [
   "src/me_critical_edge.cpp",
   "src/me_bb_layout.cpp",
   "src/me_bypath_eh.cpp",
+  "src/me_profile_gen.cpp",
+  "src/me_profile_use.cpp",
   "src/me_cfg.cpp",
   "src/me_dse.cpp",
   "src/me_hdse.cpp",

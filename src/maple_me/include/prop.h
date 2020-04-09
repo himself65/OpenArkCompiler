@@ -41,14 +41,14 @@ class Prop {
   void DoProp();
 
  protected:
-  Dominance &dom;
-
   virtual void UpdateCurFunction(BB&) const {
   }
 
   virtual bool LocalToDifferentPU(StIdx, const BB&) const {
     return false;
   }
+
+  Dominance &dom;
 
  private:
   using SafeMeExprPtr = utils::SafePtr<MeExpr>;

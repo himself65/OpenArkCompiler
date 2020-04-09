@@ -31,7 +31,7 @@ enum SOccType {
 
 class SOcc {
  public:
-  SOcc(SOccType ty, BB *bb) : occTy(ty), classId(0), mirBB(bb), use(nullptr) {}
+  SOcc(SOccType ty, BB &bb) : occTy(ty), classId(0), mirBB(bb), use(nullptr) {}
 
   virtual ~SOcc() = default;
 
@@ -39,7 +39,7 @@ class SOcc {
   bool IsPostDominate(Dominance *dom, const SOcc *occ) const {
     CHECK_NULL_FATAL(occ);
     CHECK_NULL_FATAL(dom);
-    return dom->PostDominate(*mirBB, *occ->mirBB);
+    return dom->PostDominate(mirBB, occ->mirBB);
   }
 
   SOccType GetOccTy() const {
@@ -58,16 +58,12 @@ class SOcc {
     this->classId = id;
   }
 
-  BB *GetBB() {
+  BB &GetBB() {
     return mirBB;
   }
 
-  const BB *GetBB() const {
+  const BB &GetBB() const {
     return mirBB;
-  }
-
-  void SetBB(BB &currMirBB) {
-    this->mirBB = &currMirBB;
   }
 
   SOcc *GetUse() const {
@@ -81,23 +77,23 @@ class SOcc {
  private:
   SOccType occTy;
   uint32 classId;
-  BB *mirBB;  // the BB it occurs in
+  BB &mirBB;  // the BB it occurs in
   SOcc *use;  // points to its single use
 };
 
 class SRealOcc : public SOcc {
  public:
-  SRealOcc()
-      : SOcc(kSOccReal, nullptr), meStmt(nullptr), vMeExpr(nullptr), realFromDef(false), redundant(true) {}
+  SRealOcc(BB &bb)
+      : SOcc(kSOccReal, bb), meStmt(nullptr), vMeExpr(nullptr), realFromDef(false), redundant(true) {}
   explicit SRealOcc(MeStmt &s)
-      : SOcc(kSOccReal, s.GetBB()), meStmt(&s), vMeExpr(nullptr), realFromDef(false), redundant(true) {}
+      : SOcc(kSOccReal, *s.GetBB()), meStmt(&s), vMeExpr(nullptr), realFromDef(false), redundant(true) {}
   SRealOcc(MeStmt &s, VarMeExpr &v)
-      : SOcc(kSOccReal, s.GetBB()), meStmt(&s), vMeExpr(&v), realFromDef(false), redundant(true) {}
+      : SOcc(kSOccReal, *s.GetBB()), meStmt(&s), vMeExpr(&v), realFromDef(false), redundant(true) {}
   SRealOcc(BB &bb, VarMeExpr &v)
-      : SOcc(kSOccReal, &bb), meStmt(nullptr), vMeExpr(&v), realFromDef(false), redundant(true) {}
+      : SOcc(kSOccReal, bb), meStmt(nullptr), vMeExpr(&v), realFromDef(false), redundant(true) {}
   virtual ~SRealOcc() = default;
   void Dump() const {
-    LogInfo::MapleLogger() << "RealOcc at bb" << GetBB()->GetBBId();
+    LogInfo::MapleLogger() << "RealOcc at bb" << GetBB().GetBBId();
     if (realFromDef) {
       LogInfo::MapleLogger() << "(from-def)";
     }
@@ -140,11 +136,11 @@ class SLambdaOcc;
 class SLambdaResOcc : public SOcc {
  public:
   explicit SLambdaResOcc(BB &bb)
-      : SOcc(kSOccLambdaRes, &bb), useLambdaOcc(nullptr), hasRealUse(false), insertHere(false) {}
+      : SOcc(kSOccLambdaRes, bb), useLambdaOcc(nullptr), hasRealUse(false), insertHere(false) {}
 
   virtual ~SLambdaResOcc() = default;
   void Dump() const {
-    LogInfo::MapleLogger() << "LambdaResOcc at bb" << GetBB()->GetBBId() << " classId" << GetClassId();
+    LogInfo::MapleLogger() << "LambdaResOcc at bb" << GetBB().GetBBId() << " classId" << GetClassId();
   }
 
   const SLambdaOcc *GetUseLambdaOcc() const {
@@ -180,7 +176,7 @@ class SLambdaResOcc : public SOcc {
 class SLambdaOcc : public SOcc {
  public:
   SLambdaOcc(BB &bb, MapleAllocator &alloc)
-      : SOcc(kSOccLambda, &bb), isUpsafe(true), isCanBeAnt(true), isEarlier(true), lambdaRes(alloc.Adapter()) {}
+      : SOcc(kSOccLambda, bb), isUpsafe(true), isCanBeAnt(true), isEarlier(true), lambdaRes(alloc.Adapter()) {}
 
   virtual ~SLambdaOcc() = default;
   bool WillBeAnt() const {
@@ -188,7 +184,7 @@ class SLambdaOcc : public SOcc {
   }
 
   void Dump() const {
-    LogInfo::MapleLogger() << "LambdaOcc at bb" << GetBB()->GetBBId() << " classId" << GetClassId() << " Lambda[";
+    LogInfo::MapleLogger() << "LambdaOcc at bb" << GetBB().GetBBId() << " classId" << GetClassId() << " Lambda[";
     for (size_t i = 0; i < lambdaRes.size(); i++) {
       lambdaRes[i]->Dump();
       if (i != lambdaRes.size() - 1) {
@@ -235,27 +231,27 @@ class SLambdaOcc : public SOcc {
 
 class SEntryOcc : public SOcc {
  public:
-  explicit SEntryOcc(BB &bb) : SOcc(kSOccEntry, &bb) {}
+  explicit SEntryOcc(BB &bb) : SOcc(kSOccEntry, bb) {}
 
   virtual ~SEntryOcc() = default;
   void Dump() const {
-    LogInfo::MapleLogger() << "EntryOcc at bb" << GetBB()->GetBBId();
+    LogInfo::MapleLogger() << "EntryOcc at bb" << GetBB().GetBBId();
   }
 };
 
 class SUseOcc : public SOcc {
  public:
-  explicit SUseOcc(BB &bb) : SOcc(kSOccUse, &bb) {}
+  explicit SUseOcc(BB &bb) : SOcc(kSOccUse, bb) {}
 
   virtual ~SUseOcc() = default;
   void Dump() const {
-    LogInfo::MapleLogger() << "UseOcc at bb" << GetBB()->GetBBId();
+    LogInfo::MapleLogger() << "UseOcc at bb" << GetBB().GetBBId();
   }
 };
 
 class SPhiOcc : public SOcc {
  public:
-  SPhiOcc(BB &bb, MeVarPhiNode &p, VarMeExpr &v) : SOcc(kSOccPhi, &bb), phi(&p), vMeExpr(&v) {};
+  SPhiOcc(BB &bb, MeVarPhiNode &p, VarMeExpr &v) : SOcc(kSOccPhi, bb), phi(&p), vMeExpr(&v) {};
 
   virtual ~SPhiOcc() = default;
 
@@ -276,7 +272,7 @@ class SPhiOcc : public SOcc {
   }
 
   void Dump() const {
-    LogInfo::MapleLogger() << "PhiOcc at bb" << GetBB()->GetBBId();
+    LogInfo::MapleLogger() << "PhiOcc at bb" << GetBB().GetBBId();
   }
 
  private:
@@ -374,28 +370,6 @@ class MeSSUPre {
   void ApplySSUPre();
 
  protected:
-  MeFunction *func;
-  SSATab *ssaTab;
-  MeIRMap *irMap;
-  MIRModule *mirModule;
-  Dominance *dom;
-  MemPool *spreMp;
-  MapleAllocator spreAllocator;
-  MapleMap<OStIdx, SpreWorkCand*> workCandMap;
-  SpreWorkCand *workCand;  // current SpreWorkCand
-  // step 1 lambda insertion data structures:
-  // following are set of BBs in terms of their dfn's; index into
-  // dominance->pdt_preorder to get their bbid's
-  MapleSet<uint32> lambdaDfns;  // set by FormLambdas()
-  // step 2 renaming
-  uint32 classCount;  // for assigning new class id
-  // the following 3 lists are all maintained in order of pdt_preorder
-  MapleVector<SOcc*> allOccs;           // cleared at start of each workcand
-  MapleVector<SLambdaOcc*> lambdaOccs;  // cleared at start of each workcand
-  MapleVector<SEntryOcc*> entryOccs;    // this is shared by all workcands
-  // used in steps 5 and 6
-  MapleSet<BBId> catchBlocks2Insert;  // need insertions at entries to these catch blocks
-  bool enabledDebug;
   // step 6 methods
   virtual void CodeMotion() = 0;
   // step 5 methods
@@ -426,6 +400,29 @@ class MeSSUPre {
   virtual void BuildWorkListBB(BB *bb) = 0;
   virtual void PerCandInit() = 0;
   virtual void CreateEmptyCleanupIntrinsics() {}
+
+  MeFunction *func;
+  SSATab *ssaTab;
+  MeIRMap *irMap;
+  MIRModule *mirModule;
+  Dominance *dom;
+  MemPool *spreMp;
+  MapleAllocator spreAllocator;
+  MapleMap<OStIdx, SpreWorkCand*> workCandMap;
+  SpreWorkCand *workCand;  // current SpreWorkCand
+  // step 1 lambda insertion data structures:
+  // following are set of BBs in terms of their dfn's; index into
+  // dominance->pdt_preorder to get their bbid's
+  MapleSet<uint32> lambdaDfns;  // set by FormLambdas()
+  // step 2 renaming
+  uint32 classCount;  // for assigning new class id
+  // the following 3 lists are all maintained in order of pdt_preorder
+  MapleVector<SOcc*> allOccs;           // cleared at start of each workcand
+  MapleVector<SLambdaOcc*> lambdaOccs;  // cleared at start of each workcand
+  MapleVector<SEntryOcc*> entryOccs;    // this is shared by all workcands
+  // used in steps 5 and 6
+  MapleSet<BBId> catchBlocks2Insert;  // need insertions at entries to these catch blocks
+  bool enabledDebug;
 };
 };  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_MESSUPRE_H

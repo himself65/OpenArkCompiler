@@ -17,8 +17,8 @@
 // this phase converts all maydassign back to dassign
 namespace maple {
 void May2Dassign::DoIt() {
-  auto eIt = func->valid_end();
-  for (auto bIt = func->valid_begin(); bIt != eIt; ++bIt) {
+  auto eIt = func.valid_end();
+  for (auto bIt = func.valid_begin(); bIt != eIt; ++bIt) {
     auto *bb = *bIt;
     for (auto &stmt : bb->GetMeStmts()) {
       if (stmt.GetOp() != OP_maydassign) {
@@ -27,10 +27,10 @@ void May2Dassign::DoIt() {
       auto &mass = static_cast<MaydassignMeStmt&>(stmt);
       // chiList for Maydassign has only 1 element
       CHECK_FATAL(!mass.GetChiList()->empty(), "chiList is empty in DoIt");
-      VarMeExpr *thelhs = mass.GetChiList()->begin()->second->GetLHS();
-      ASSERT(mass.GetMayDassignSym() == ssaTab->GetOriginalStFromID(thelhs->GetOStIdx()),
+      VarMeExpr *theLhs = mass.GetChiList()->begin()->second->GetLHS();
+      ASSERT(mass.GetMayDassignSym() == ssaTab->GetOriginalStFromID(theLhs->GetOStIdx()),
              "MeDoMay2Dassign: cannot find maydassign lhs");
-      auto *dass = static_cast<DassignMeStmt*>(irMap->CreateDassignMeStmt(*thelhs, *mass.GetRHS(), *bb));
+      auto *dass = static_cast<DassignMeStmt*>(irMap->CreateDassignMeStmt(*theLhs, *mass.GetRHS(), *bb));
       dass->SetNeedDecref(mass.NeedDecref());
       dass->SetNeedIncref(mass.NeedIncref());
       dass->SetWasMayDassign(true);
@@ -42,8 +42,8 @@ void May2Dassign::DoIt() {
 }
 
 AnalysisResult *MeDoMay2Dassign::Run(MeFunction *func, MeFuncResultMgr*, ModuleResultMgr*) {
-  May2Dassign may2dassign(func);
-  may2dassign.DoIt();
+  May2Dassign may2Dassign(*func);
+  may2Dassign.DoIt();
   return nullptr;
 }
 }  // namespace maple

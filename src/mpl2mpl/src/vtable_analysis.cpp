@@ -31,7 +31,7 @@ constexpr uint32 kKlassVtabFieldID = static_cast<uint32>(ClassProperty::kVtab) +
 // table.If the hash number is conflicted,we stored the whole completed methodname at the
 // end of interface table.
 namespace maple {
-VtableAnalysis::VtableAnalysis(MIRModule *mod, KlassHierarchy *kh, bool dump) : FuncOptimizeImpl(mod, kh, dump) {
+VtableAnalysis::VtableAnalysis(MIRModule &mod, KlassHierarchy *kh, bool dump) : FuncOptimizeImpl(mod, kh, dump) {
   voidPtrType = GlobalTables::GetTypeTable().GetVoidPtr();
   // zeroConst and oneConst are shared amony itab entries. It is safe to share them because
   // they are never removed by anybody.

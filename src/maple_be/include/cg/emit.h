@@ -31,7 +31,7 @@
 #include "mir_const.h"
 #include "mempool_allocator.h"
 #include "muid_replacement.h"
-#include "name_mangler.h"
+#include "namemangler.h"
 
 namespace maplebe {
 constexpr int32 kSizeOfDecoupleStaticStruct = 4;

@@ -174,6 +174,20 @@ void Emitter::EmitFileInfo(const std::string &fileName) {
    */
   Emit("\t.arm\n");
   Emit("\t.fpu vfpv4\n");
+  Emit("\t.arch armv7-a\n");
+  Emit("\t.eabi_attribute 15, 1\n");
+  Emit("\t.eabi_attribute 16, 1\n");
+  Emit("\t.eabi_attribute 17, 2\n");
+  Emit("\t.eabi_attribute 28, 1\n");
+  Emit("\t.eabi_attribute 20, 1\n");
+  Emit("\t.eabi_attribute 21, 1\n");
+  Emit("\t.eabi_attribute 23, 3\n");
+  Emit("\t.eabi_attribute 24, 1\n");
+  Emit("\t.eabi_attribute 25, 1\n");
+  Emit("\t.eabi_attribute 26, 2\n");
+  Emit("\t.eabi_attribute 30, 6\n");
+  Emit("\t.eabi_attribute 34, 1\n");
+  Emit("\t.eabi_attribute 18, 4\n");
 #endif /* TARGARM32 */
 }
 
@@ -808,8 +822,9 @@ void Emitter::EmitAddrofSymbolConst(const MIRSymbol &mirSymbol, MIRConst &elemCo
     return;
   }
 #ifdef USE_32BIT_REF
-  if (mirSymbol.IsReflectionHashTabBucket() || (stName.find(ITAB_PREFIX_STR) == 0)) {
-    Emit("\t.long\t");
+  if (mirSymbol.IsReflectionHashTabBucket() || (stName.find(ITAB_PREFIX_STR) == 0) ||
+      (mirSymbol.IsReflectionClassInfo() && (idx == static_cast<uint32>(ClassProperty::kInfoRo)))) {
+    Emit("\t.word\t");
   } else {
 #if TARGAARCH64
     Emit("\t.quad\t");

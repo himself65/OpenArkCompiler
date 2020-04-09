@@ -23,8 +23,14 @@ constexpr char kMplLinkerVersionNumber[] = "MPL-LINKER V1.1";
 constexpr char kMuidFuncPtrStr[] = "__muid_funcptr";
 constexpr char kMuidSymPtrStr[] = "__muid_symptr";
 
+#ifdef USE_ARM32_MACRO
+constexpr maple::uint32 kFromUndefIndexMask = 0x40000000;
+constexpr maple::uint32 kFromDefIndexMask = 0x20000000;
+#else
 constexpr maple::uint64 kFromUndefIndexMask = 0x4000000000000000;
 constexpr maple::uint64 kFromDefIndexMask = 0x2000000000000000;
+#endif
+
 
 } // namespace
 
@@ -39,7 +45,7 @@ constexpr maple::uint64 kFromDefIndexMask = 0x2000000000000000;
 namespace maple {
 MUID MUIDReplacement::mplMuid;
 
-MUIDReplacement::MUIDReplacement(MIRModule *mod, KlassHierarchy *kh, bool dump)
+MUIDReplacement::MUIDReplacement(MIRModule &mod, KlassHierarchy *kh, bool dump)
     : FuncOptimizeImpl(mod, kh, dump) {
   isLibcore = (GetSymbolFromName(NameMangler::GetInternalNameLiteral(NameMangler::kJavaLangObjectStr)) != nullptr);
   GenerateTables();
@@ -286,6 +292,16 @@ void MUIDReplacement::GenerateFuncDefTable() {
                                                    *GlobalTables::GetTypeTable().GetUInt32());
   auto *funcInfTabEntryType = static_cast<MIRStructType*>(GlobalTables::GetTypeTable().GetOrCreateStructType(
       "MUIDFuncInfTabEntry", funcinffields, parentFields, GetMIRModule()));
+
+  FieldVector funcProfinffields;
+  GlobalTables::GetTypeTable().PushIntoFieldVector(funcProfinffields, "hash",
+                                                   *GlobalTables::GetTypeTable().GetUInt64());
+  GlobalTables::GetTypeTable().PushIntoFieldVector(funcProfinffields, "start",
+                                                   *GlobalTables::GetTypeTable().GetUInt32());
+  GlobalTables::GetTypeTable().PushIntoFieldVector(funcProfinffields, "end",
+                                                   *GlobalTables::GetTypeTable().GetUInt32());
+  auto *funcProfInfTabEntryType = static_cast<MIRStructType*>(GlobalTables::GetTypeTable().GetOrCreateStructType(
+      "FuncProfInfTabEntry", funcProfinffields, parentFields, GetMIRModule()));
   FieldVector muidFields;
 #ifdef USE_64BIT_MUID
   GlobalTables::GetTypeTable().PushIntoFieldVector(muidFields, "muidLow", *GlobalTables::GetTypeTable().GetUInt32());
@@ -303,6 +319,10 @@ void MUIDReplacement::GenerateFuncDefTable() {
   MIRAggConst *funcInfTabConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), funcInfArrayType);
   MIRArrayType &muidArrayType = *GlobalTables::GetTypeTable().GetOrCreateArrayType(*funcDefMuidTabEntryType, arraySize);
   MIRAggConst *funcDefMuidTabConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), muidArrayType);
+  MIRArrayType &funcProfInfArrayType =
+      *GlobalTables::GetTypeTable().GetOrCreateArrayType(*funcProfInfTabEntryType, arraySize);
+  MIRAggConst *funcProfInfTabConst =
+      GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), funcProfInfArrayType);
   // Create funcDefSet to store functions sorted by address
   std::vector<std::pair<MIRSymbol*, MUID>> funcDefArray;
   idx = 0;
@@ -330,6 +350,20 @@ void MUIDReplacement::GenerateFuncDefTable() {
       tempConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(tempIdx,
                                                                        *GlobalTables::GetTypeTable().GetUInt32());
       muidIdxTabConst->SetConstVecItem(idx, *tempConst);
+    }
+    if (Options::genIRProfile) {
+      auto funcProfInf = mirFunc->GetProfInf();
+      MIRAggConst *funcProfInfEntryConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(),
+          *funcProfInfTabEntryType);
+      uint32 funcProfInfFieldID = 1;
+
+      builder->AddIntFieldConst(*funcProfInfTabEntryType,
+          *funcProfInfEntryConst, funcProfInfFieldID++, funcProfInf->funcHash);
+      builder->AddIntFieldConst(*funcProfInfTabEntryType,
+          *funcProfInfEntryConst, funcProfInfFieldID++, funcProfInf->counterStart);
+      builder->AddIntFieldConst(*funcProfInfTabEntryType,
+          *funcProfInfEntryConst, funcProfInfFieldID++, funcProfInf->counterEnd);
+      funcProfInfTabConst->PushBack(funcProfInfEntryConst);
     }
         // Store the real idx of funcdefTab, for ReplaceAddroffuncConst->FindIndexFromDefTable
     defMuidIdxMap[muid] = idx;
@@ -389,6 +423,13 @@ void MUIDReplacement::GenerateFuncDefTable() {
     funcMuidIdxTabSym = builder->CreateGlobalDecl(muidIdxTabName, muidIdxArrayType);
     funcMuidIdxTabSym->SetKonst(muidIdxTabConst);
     funcMuidIdxTabSym->SetStorageClass(kScFstatic);
+  }
+
+  if (!funcProfInfTabConst->GetConstVec().empty()) {
+    std::string profInfTabName = NameMangler::kFuncIRProfInfTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
+    funcProfInfTabSym = builder->CreateGlobalDecl(profInfTabName, funcProfInfArrayType);
+    funcProfInfTabSym->SetKonst(funcProfInfTabConst);
+    funcProfInfTabSym->SetStorageClass(kScFstatic);
   }
   if (Options::dumpMuidFile) {
     DumpMUIDFile(true);
@@ -631,6 +672,22 @@ void MUIDReplacement::GenerateUnifiedUndefTable() {
   }
 }
 
+void MUIDReplacement::InitRangeTabUseSym(std::vector<MIRSymbol*> &workList, MIRStructType &rangeTabEntryType,
+                                         MIRAggConst &rangeTabConst) {
+  for (MIRSymbol *mirSymbol : workList) {
+    MIRAggConst *entryConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), rangeTabEntryType);
+    uint32 fieldID = 1;
+    if (mirSymbol != nullptr) {
+      builder->AddAddrofFieldConst(rangeTabEntryType, *entryConst, fieldID++, *mirSymbol);
+      builder->AddAddrofFieldConst(rangeTabEntryType, *entryConst, fieldID++, *mirSymbol);
+    } else {
+      builder->AddIntFieldConst(rangeTabEntryType, *entryConst, fieldID++, 0);
+      builder->AddIntFieldConst(rangeTabEntryType, *entryConst, fieldID++, 0);
+    }
+    rangeTabConst.PushBack(entryConst);
+  }
+}
+
 // RangeTable stores begin and end of all MUID tables
 void MUIDReplacement::GenerateRangeTable() {
   FieldVector parentFields;
@@ -687,18 +744,7 @@ void MUIDReplacement::GenerateRangeTable() {
     funcMuidIdxTabSym,
     funcProfileTabSym
   };
-  for (MIRSymbol *mirSymbol : workList) {
-    MIRAggConst *entryConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), rangeTabEntryType);
-    uint32 fieldID = 1;
-    if (mirSymbol != nullptr) {
-      builder->AddAddrofFieldConst(rangeTabEntryType, *entryConst, fieldID++, *mirSymbol);
-      builder->AddAddrofFieldConst(rangeTabEntryType, *entryConst, fieldID++, *mirSymbol);
-    } else {
-      builder->AddIntFieldConst(rangeTabEntryType, *entryConst, fieldID++, 0);
-      builder->AddIntFieldConst(rangeTabEntryType, *entryConst, fieldID++, 0);
-    }
-    rangeTabConst->PushBack(entryConst);
-  }
+  InitRangeTabUseSym(workList, rangeTabEntryType, *rangeTabConst);
   for (int i = RangeIdx::kOldMaxNum + 1; i < RangeIdx::kNewMaxNum; ++i) {
     uint32 fieldID = 1;
     MIRAggConst *entryConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), rangeTabEntryType);
@@ -706,6 +752,13 @@ void MUIDReplacement::GenerateRangeTable() {
     builder->AddIntFieldConst(rangeTabEntryType, *entryConst, fieldID++, i);
     rangeTabConst->PushBack(entryConst);
   }
+  std::string bbProfileName = NameMangler::kBBProfileTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
+  MIRSymbol *funcProfCounterTabSym = GetSymbolFromName(bbProfileName);
+  std::vector<MIRSymbol*> irProfWorkList = {
+    funcProfInfTabSym,
+    funcProfCounterTabSym
+  };
+  InitRangeTabUseSym(irProfWorkList, rangeTabEntryType, *rangeTabConst);
   if (!rangeTabConst->GetConstVec().empty()) {
     rangeArrayType.SetSizeArrayItem(0, rangeTabConst->GetConstVec().size());
     std::string rangeTabName = NameMangler::kMuidRangeTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();

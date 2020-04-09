@@ -35,12 +35,12 @@ class ReplaceRetIgnored {
   bool ShouldReplaceWithVoidFunc(const CallMeStmt *stmt, const MIRFunction *calleeFunc) const;
   std::string GenerateNewBaseName(const MIRFunction *originalFunc);
   std::string GenerateNewFullName(const MIRFunction *originalFunc);
-  const std::set<std::string> *GetTobeClonedFuncNames() const {
+  const MapleSet<MapleString> *GetTobeClonedFuncNames() const {
     return &toBeClonedFuncNames;
   }
 
   bool IsInCloneList(const std::string &funcName) const {
-    return toBeClonedFuncNames.find(funcName) != toBeClonedFuncNames.end();
+    return toBeClonedFuncNames.find(MapleString(funcName, memPool)) != toBeClonedFuncNames.end();
   }
 
   static bool IsClonedFunc(const std::string &funcName) {
@@ -48,8 +48,9 @@ class ReplaceRetIgnored {
   }
 
  private:
+  MemPool *memPool;
   maple::MapleAllocator allocator;
-  std::set<std::string> toBeClonedFuncNames;
+  MapleSet<MapleString> toBeClonedFuncNames;
   bool RealShouldReplaceWithVoidFunc(Opcode op, size_t nRetSize, const MIRFunction *calleeFunc) const;
 };
 class Clone : public AnalysisResult {

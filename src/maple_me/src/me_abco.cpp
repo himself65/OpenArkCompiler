@@ -210,6 +210,7 @@ bool MeABC::ExistedPiNode(BB &bb, BB &parentBB, VarMeExpr &rhs) {
 
 void MeABC::CreatePhi(VarMeExpr &rhs, BB &dfBB) {
   VarMeExpr *phiNewLHS = CreateNewPiExpr(rhs);
+  ASSERT_NOT_NULL(phiNewLHS);
   MeVarPhiNode *newPhi = GetMemPool()->New<MeVarPhiNode>(phiNewLHS, &GetAllocator());
   newPhi->SetDefBB(&dfBB);
   newPhi->GetOpnds().resize(dfBB.GetPred().size(), &rhs);
@@ -475,7 +476,7 @@ bool MeABC::ReplaceMeExprStmtOpnd(uint32 opndID, MeStmt &meStmt, MeExpr &oldVar,
     newExpr = ReplaceMeExprExpr(*opnd, oldVar, newVar);
     replaced = (newExpr != opnd);
     if (isFromIassign) {
-      static_cast<IassignMeStmt*>(&meStmt)->SetLHSVal(static_cast<IvarMeExpr *>(newExpr));
+      static_cast<IassignMeStmt*>(&meStmt)->SetLHSVal(static_cast<IvarMeExpr*>(newExpr));
     } else {
       meStmt.SetOpnd(opndID, newExpr);
     }
@@ -796,18 +797,24 @@ bool MeABC::BuildBrMeStmtInGraph(MeStmt &meStmt) {
 MeExpr *MeABC::TryToResolveVar(MeExpr &expr, std::set<MeVarPhiNode*> &visitedPhi, MeExpr &dummyExpr, bool isConst) {
   CHECK_FATAL(expr.GetMeOp() == kMeOpVar, "must be");
   auto *var = static_cast<VarMeExpr*>(&expr);
-  if (var->GetDefBy() == kDefByStmt && isConst && !var->GetDefStmt()->GetRHS()->IsLeaf()) {
-    return nullptr;
-  }
-  if (var->GetDefBy() == kDefByStmt && isConst && var->GetDefStmt()->GetRHS()->GetMeOp() == kMeOpConst) {
-    return var->GetDefStmt()->GetRHS();
-  }
-  if (var->GetDefBy() == kDefByStmt && !isConst && var->GetDefStmt()->GetRHS()->GetMeOp() == kMeOpIvar) {
-    return var->GetDefStmt()->GetRHS();
-  }
-  if (var->GetDefBy() == kDefByStmt && isConst) {
-    CHECK_FATAL(var->GetDefStmt()->GetRHS()->GetMeOp() == kMeOpVar, "must be");
-    return TryToResolveVar(*(var->GetDefStmt()->GetRHS()), visitedPhi, dummyExpr, isConst);
+
+  if (var->GetDefBy() == kDefByStmt) {
+    ASSERT_NOT_NULL(var->GetDefStmt());
+    auto *rhs = var->GetDefStmt()->GetRHS();
+    CHECK_NULL_FATAL(rhs);
+    if (isConst && !rhs->IsLeaf()) {
+      return nullptr;
+    }
+    if (isConst && rhs->GetMeOp() == kMeOpConst) {
+      return rhs;
+    }
+    if (!isConst && rhs->GetMeOp() == kMeOpIvar) {
+      return rhs;
+    }
+    if (isConst) {
+      CHECK_FATAL(rhs->GetMeOp() == kMeOpVar, "must be");
+      return TryToResolveVar(*rhs, visitedPhi, dummyExpr, isConst);
+    }
   }
 
   if (var->GetDefBy() == kDefByPhi) {
@@ -839,6 +846,7 @@ MeExpr *MeABC::TryToResolveVar(MeExpr &expr, std::set<MeVarPhiNode*> &visitedPhi
 bool MeABC::BuildAssignInGraph(MeStmt &meStmt) {
   MeExpr *lhs = meStmt.GetLHS();
   MeExpr *rhs = meStmt.GetRHS();
+  CHECK_NULL_FATAL(lhs);
   CHECK_NULL_FATAL(rhs);
   if (!lhs->IsLeaf()) {
     return false;
@@ -1261,6 +1269,7 @@ bool MeABC::CleanABCInStmt(MeStmt &meStmt, NaryMeExpr &naryMeExpr) {
     case OP_dassign:
     case OP_maydassign: {
       MeExpr *rhs = meStmt.GetRHS();
+      ASSERT_NOT_NULL(rhs);
       CHECK_FATAL(!rhs->IsLeaf(), "must be");
       MeExpr *newRHS = ReplaceArrayExpr(*rhs, naryMeExpr, nullptr);
       replaced = rhs != newRHS;

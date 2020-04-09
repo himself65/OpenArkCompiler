@@ -18,7 +18,7 @@
 #include "mir_module.h"
 #include "mir_builder.h"
 #include "fe_type_manager.h"
-#include "fe_string_manager.h"
+#include "fe_java_string_manager.h"
 
 namespace maple {
 class FEManager {
@@ -33,9 +33,9 @@ class FEManager {
     return manager->typeManager;
   }
 
-  static FEStringManager &GetStringManager() {
+  static FEJavaStringManager &GetJavaStringManager() {
     ASSERT(manager, "manager is not initialize");
-    return manager->stringManager;
+    return manager->javaStringManager;
   }
 
   static MIRBuilder &GetMIRBuilder() {
@@ -59,9 +59,10 @@ class FEManager {
   static FEManager *manager;
   MIRModule &module;
   FETypeManager typeManager;
-  FEStringManager stringManager;
+  FEJavaStringManager javaStringManager;
   MIRBuilder builder;
-  FEManager(MIRModule &moduleIn) : module(moduleIn), typeManager(module), stringManager(), builder(&module) {}
+  explicit FEManager(MIRModule &moduleIn)
+      : module(moduleIn), typeManager(module), javaStringManager(moduleIn), builder(&module) {}
   ~FEManager() = default;
 };
 }  // namespace maple

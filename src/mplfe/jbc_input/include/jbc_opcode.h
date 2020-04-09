@@ -23,6 +23,7 @@
 #include "mempool_allocator.h"
 #include "factory.h"
 #include "basic_io.h"
+#include "feir_type.h"
 
 namespace maple {
 namespace jbc {
@@ -557,6 +558,7 @@ class JBCOpNew : public JBCOp {
 
   GStrIdx GetTypeNameIdx(const JBCConstPool &constPool) const;
   std::string GetTypeName(const JBCConstPool &constPool) const;
+  const FEIRType *GetFEIRType(const JBCConstPool &constPool) const;
   uint16 GetRefTypeIdx() const {
     return refTypeIdx;
   }
@@ -582,6 +584,7 @@ class JBCOpNew : public JBCOp {
  private:
   static std::map<JBCOpcode, std::vector<JBCPrimType>> InitMapOpInputTypes();
   std::string GetPrimTypeName() const;
+  const UniqueFEIRType &GetPrimFEIRType() const;
 
   uint16 refTypeIdx;
   uint8 primType;
@@ -613,6 +616,7 @@ class JBCOpMultiANewArray : public JBCOp {
   const std::vector<JBCPrimType> &GetInputTypesFromStackImpl() const override;
   std::vector<JBCPrimType> GetInputTypesFromStackImpl(const JBCConstPool &constPool) const override;
   JBCPrimType GetOutputTypesToStackImpl() const override;
+  std::string DumpImpl(const JBCConstPool &constPool) const override;
 
  private:
   uint16 refTypeIdx;

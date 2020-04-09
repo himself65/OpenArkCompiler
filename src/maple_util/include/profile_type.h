@@ -31,7 +31,8 @@ enum ProfileType : uint8_t {
   kReflectionStr = 0x04,
   kLiteral = 0x05,
   kBBInfo = 0x06,
-  kAll = 0x07,
+  kIRCounter = 0x07,
+  kAll = 0x08,
   kFileDesc = 0xFF
 };
 
@@ -55,6 +56,23 @@ struct FunctionItem {
       : classIdx(classIdx), methodIdx(methodIdx), sigIdx(sigIdx), callTimes(callTimes), type(type) {}
 };
 
+struct FunctionIRProfItem {
+  uint64_t hash;
+  uint32_t classIdx;
+  uint32_t methodIdx;
+  uint32_t sigIdx;
+  uint32_t counterStart;
+  uint32_t counterEnd;
+  FunctionIRProfItem(uint64_t hash, uint32_t classIdx, uint32_t methodIdx, uint32_t sigIdx, uint32_t start,
+      uint32_t end) : hash(hash), classIdx(classIdx), methodIdx(methodIdx), sigIdx(sigIdx),
+      counterStart(start), counterEnd(end) {}
+};
+
+struct FuncCounterItem {
+  uint32_t callTimes;
+  FuncCounterItem(uint32_t callTimes) : callTimes(callTimes) {}
+};
+
 struct MetaItem {
   uint32_t idx;
   MetaItem(uint32_t idx) : idx(idx) {}
@@ -66,12 +84,11 @@ struct ReflectionStrItem {
   ReflectionStrItem(uint32_t idx, uint8_t type) : type(type), idx(idx) {}
 };
 
-template<typename T>
 struct MapleFileProf {
   uint32_t idx;
   uint32_t num;
   uint32_t size;
-  T items[1];
+  MapleFileProf(uint32_t idx, uint32_t num, uint32_t size) : idx(idx), num(num), size(size) {}
 };
 
 constexpr int kMagicNum = 14;

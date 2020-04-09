@@ -23,6 +23,7 @@
 #include "simple_xml.h"
 #include "basic_io.h"
 #include "fe_struct_elem_info.h"
+#include "feir_type.h"
 
 namespace maple {
 namespace jbc {
@@ -231,6 +232,10 @@ class JBCConstClass : public JBCConst {
     return MapleStringToStd(nameMpl);
   }
 
+  const FEIRType *GetFEIRType() const {
+    return feType;
+  }
+
  protected:
   bool ParseFileImpl(BasicIORead &io) override;
   bool PreProcessImpl(const JBCConstPool &constPool) override;
@@ -245,6 +250,7 @@ class JBCConstClass : public JBCConst {
   GStrIdx strIdxMpl;
   MapleString nameOrin;
   MapleString nameMpl;
+  FEIRType *feType = nullptr;
 };
 
 class JBCConstString : public JBCConst {
@@ -322,8 +328,14 @@ class JBCConstRef : public JBCConst {
     return constClass;
   }
 
-  const FEStructElemInfo *GetFEStructElemInfo() const {
+  FEStructElemInfo *GetFEStructElemInfo() const {
+    CHECK_NULL_FATAL(feStructElemInfo);
     return feStructElemInfo;
+  }
+
+  const FEIRType *GetOwnerFEIRType() const {
+    CHECK_NULL_FATAL(constClass);
+    return constClass->GetFEIRType();
   }
 
  protected:

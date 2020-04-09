@@ -836,7 +836,7 @@ void MeCFG::DumpToFileInStrs(std::ofstream &cfgFile) const {
 }
 
 // generate dot file for cfg
-void MeCFG::DumpToFile(const std::string &prefix, bool dumpInStrs) const {
+void MeCFG::DumpToFile(const std::string &prefix, bool dumpInStrs, bool dumpEdgeFreq) const {
   if (MeOption::noDot) {
     return;
   }
@@ -860,16 +860,24 @@ void MeCFG::DumpToFile(const std::string &prefix, bool dumpInStrs) const {
       }
       continue;
     }
+    if (bb->GetAttributes(kBBAttrIsInstrument)) {
+      cfgFile << "BB" << bb->GetBBId() << "[color=blue];\n";
+    }
+
     for (auto it = bb->GetSucc().begin(); it != bb->GetSucc().end(); ++it) {
       cfgFile << "BB" << bb->GetBBId() << " -> "
               << "BB" << (*it)->GetBBId();
       if (bb == func.GetCommonEntryBB()) {
-        cfgFile << "[style=dotted];\n";
+        cfgFile << "[style=dotted]";
         continue;
       }
       if ((*it)->GetAttributes(kBBAttrIsCatch)) {
         /* succ is exception handler */
-        cfgFile << "[color=red];\n";
+        cfgFile << "[color=red]";
+      }
+
+      if (dumpEdgeFreq) {
+        cfgFile << "[label=" << bb->GetEdgeFreq(*it) << "];\n";
       } else {
         cfgFile << ";\n";
       }

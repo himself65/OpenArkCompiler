@@ -25,8 +25,11 @@ using MetaRef = uint32_t;      // consistent with reffield_t in address.h
 #else
 using MetaRef = uintptr_t;     // consistent iwth reffield_t in address.h
 #endif // USE_32BIT_REF
+
 // DataRefOffset aims to represent a reference to data in maple file, which is already an offset.
 // DataRefOffset is meant to have pointer size and aligned to at least 4 bytes.
+// All Xx32 data types defined in this file aim to use 32 bits to save 64-bit address, and thus are
+// specific for 64-bit platforms.
 struct DataRefOffset32 {
   int32_t refOffset;
   template<typename T>
@@ -72,7 +75,7 @@ struct DataRefOffset {
    3. "indirect.label_name - . + 3" for indirect reference
       this format aims to support lld which does not support expression "global_symbol - ."
    DataRef is self-decoded by also encoding the format and is defined for binary compatibility.
-   If no compatibility problem is involved, DataRefOffset64 is preferred.
+   If no compatibility problem is involved, DataRefOffset is preferred.
  */
 enum DataRefFormat {
   kDataRefIsDirect   = 0, // must be 0
@@ -140,8 +143,17 @@ struct GctibRef {
 // Unlike DataRef, the format of MByteRef is determined by its value.
 struct MByteRef {
   uintptr_t refVal; // initializer prefers this field to be a pointer
+
+#if defined(__arm__) || defined(USE_ARM32_MACRO)
+  // assume address range 0 ~ 256MB is unused in arm runtime
+  // OffsetMin ~ OffsetMax is the value range of encoded offset
+  static constexpr intptr_t FarthestOffset = 128 * 1024 * 1024;
+  static constexpr intptr_t PositiveOffsetBias = 128 * 1024 * 1024;
+  static constexpr intptr_t OffsetMin = PositiveOffsetBias + 0;
+  static constexpr intptr_t OffsetMax = PositiveOffsetBias + FarthestOffset;
+#else
   enum {
-    kBiasBitPosition = sizeof(refVal) * 8 - 4, // the most significant 3 bits
+    kBiasBitPosition = sizeof(refVal) * 8 - 4, // the most significant 4 bits
   };
 
   static constexpr uintptr_t FarthestOffset = 256 * 1024 * 1024; // according to kDsoLoadedAddessEnd = 0xF0000000
@@ -149,6 +161,7 @@ struct MByteRef {
   static constexpr uintptr_t PositiveOffsetBias = static_cast<uintptr_t>(6) << kBiasBitPosition;
   static constexpr uintptr_t PositiveOffsetMin = 0 + PositiveOffsetBias;
   static constexpr uintptr_t PositiveOffsetMax = FarthestOffset + PositiveOffsetBias;
+#endif
 
   template<typename T>
   inline T GetRef() const;
@@ -272,17 +285,12 @@ struct ClassMetadata {
   DataRef vTable;  // vTable of current class, used for interface call, will insert the content into classinfo
   GctibRef gctib;  // for rc
 
-  union {
-    DataRef ro;
-    struct {
-  #ifdef USE_32BIT_REF
-      DataRef32 classinforo;
-      DataRef32 cacheFalseClass;
-  #else
-      DataRef classinforo;
-  #endif
-    };
-  };
+#ifdef USE_32BIT_REF
+  DataRef32 classInfoRo;
+  DataRef32 cacheFalseClass;
+#else
+  DataRef classInfoRo;
+#endif
 
   union {
     uintptr_t initState; // a readable address for initState means initialized

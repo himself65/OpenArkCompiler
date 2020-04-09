@@ -134,7 +134,7 @@ void DSE::CheckRemoveCallAssignedReturn(StmtNode &stmt) {
       }
       DumpStmt(stmt, "**** DSE1 deleting return value assignment in: ");
       CallReturnVector *rets = stmt.GetCallReturnVector();
-      CHECK_FATAL(rets != nullptr, "null ptr check  ");
+      CHECK_FATAL(rets != nullptr, "null ptr check");
       rets->clear();
       mustDefs.clear();
       break;

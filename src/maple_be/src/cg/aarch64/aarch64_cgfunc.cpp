@@ -693,6 +693,22 @@ AArch64MemOperand &AArch64CGFunc::CreateReplacementMemOperand(uint32 bitLen,
   return static_cast<AArch64MemOperand&>(CreateMemOpnd(baseReg, offset, bitLen));
 }
 
+bool AArch64CGFunc::CheckIfSplitOffsetWithAdd(const AArch64MemOperand &memOpnd, uint32 bitLen) {
+  if (memOpnd.GetAddrMode() != AArch64MemOperand::kAddrModeBOi || !memOpnd.IsIntactIndexed()) {
+    return false;
+  }
+  AArch64OfstOperand *ofstOpnd = memOpnd.GetOffsetImmediate();
+  int32 opndVal = ofstOpnd->GetOffsetValue();
+  int32 maxPimm = memOpnd.GetMaxPIMM(bitLen);
+  int32 q0 = opndVal / maxPimm;
+  int32 addend = q0 * maxPimm;
+  int32 r0 = opndVal - addend;
+  int32 alignment = memOpnd.GetImmediateOffsetAlignment(bitLen);
+  int32 r1 = static_cast<uint32>(r0) & ((1u << static_cast<uint32>(alignment)) - 1);
+  addend = addend + r1;
+  return (addend > 0);
+}
+
 AArch64MemOperand &AArch64CGFunc::SplitOffsetWithAddInstruction(const AArch64MemOperand &memOpnd, uint32 bitLen,
                                                                 AArch64reg baseRegNum, uint32 isDest, Insn *insn) {
   ASSERT((memOpnd.GetAddrMode() == AArch64MemOperand::kAddrModeBOi), "expect kAddrModeBOi memOpnd");
@@ -5568,11 +5584,14 @@ MemOperand *AArch64CGFunc::AdjustMemOperandIfOffsetOutOfRange(
   if (vrNum >= vRegTable.size()) {
     CHECK_FATAL(false, "index out of range in AArch64CGFunc::AdjustMemOperandIfOffsetOutOfRange");
   }
-  int32 dataSize = vRegTable[vrNum].GetSize() * kBitsPerByte;
-  if (IsImmediateOffsetOutOfRange(*static_cast<AArch64MemOperand*>(memOpnd), dataSize)) {
-    isOutOfRange = 1;
+  uint32 dataSize = vRegTable[vrNum].GetSize() * kBitsPerByte;
+  auto *a64MemOpnd = static_cast<AArch64MemOperand*>(memOpnd);
+  if (IsImmediateOffsetOutOfRange(*a64MemOpnd, dataSize)) {
+    if (CheckIfSplitOffsetWithAdd(*a64MemOpnd, dataSize)) {
+      isOutOfRange = 1;
+    }
     memOpnd =
-        &SplitOffsetWithAddInstruction(*static_cast<AArch64MemOperand*>(memOpnd), dataSize, regNum, isDest, &insn);
+        &SplitOffsetWithAddInstruction(*a64MemOpnd, dataSize, regNum, isDest, &insn);
   } else {
     isOutOfRange = 0;
   }
@@ -5908,6 +5927,34 @@ bool AArch64CGFunc::IsDuplicateAsmList(const MIRSymbol &sym) const {
   return false;
 }
 
+void AArch64CGFunc::SelectMPLProfCounterInc(IntrinsiccallNode &intrnNode) {
+  ASSERT(intrnNode.NumOpnds() == 1, "must be 1 operand");
+  BaseNode *arg1 = intrnNode.Opnd(0);
+  ASSERT(arg1 != nullptr, "nullptr check");
+  regno_t vRegNO1 = NewVReg(GetRegTyFromPrimTy(PTY_a64), GetPrimTypeSize(PTY_a64));
+  RegOperand &vReg1 = CreateVirtualRegisterOperand(vRegNO1);
+  vReg1.SetRegNotBBLocal();
+  static MIRSymbol *bbProfileTab = nullptr;
+  if (!bbProfileTab) {
+    std::string bbProfileName = NameMangler::kBBProfileTabPrefixStr + GetMirModule().GetFileNameAsPostfix();
+    bbProfileTab = GetMirModule().GetMIRBuilder()->GetGlobalDecl(bbProfileName);
+    CHECK_FATAL(bbProfileTab != nullptr, "expect bb profile tab");
+  }
+  ConstvalNode *constvalNode = static_cast<ConstvalNode*>(arg1);
+  MIRConst *mirConst = constvalNode->GetConstVal();
+  ASSERT(mirConst != nullptr, "nullptr check");
+  CHECK_FATAL(mirConst->GetKind() == kConstInt, "expect MIRIntConst type");
+  MIRIntConst *mirIntConst = safe_cast<MIRIntConst>(mirConst);
+  uint32 idx = GetPrimTypeSize(PTY_u32) * mirIntConst->GetValue();
+  if (!GetCG()->IsQuiet()) {
+    maple::logInfo.MapleLogger(kLlErr) << "Id index " << idx << std::endl;
+  }
+  StImmOperand &stOpnd = CreateStImmOperand(*bbProfileTab, idx, 0);
+  Insn &newInsn = GetCG()->BuildInstruction<AArch64Insn>(MOP_counter, vReg1, stOpnd);
+  newInsn.SetDoNotRemove(true);
+  GetCurBB()->AppendInsn(newInsn);
+}
+
 void AArch64CGFunc::SelectMPLClinitCheck(IntrinsiccallNode &intrnNode) {
   ASSERT(intrnNode.NumOpnds() == 1, "must be 1 operand");
   BaseNode *arg = intrnNode.Opnd(0);
@@ -5980,6 +6027,10 @@ void AArch64CGFunc::SelectIntrinCall(IntrinsiccallNode &intrinsiccallNode) {
    */
   if (intrinsic == INTRN_MPL_CLINIT_CHECK) {  /* special case */
     SelectMPLClinitCheck(intrinsiccallNode);
+    return;
+  }
+  if (intrinsic == INTRN_MPL_PROF_COUNTER_INC) {  /* special case */
+    SelectMPLProfCounterInc(intrinsiccallNode);
     return;
   }
   if ((intrinsic == INTRN_MPL_CLEANUP_LOCALREFVARS) || (intrinsic == INTRN_MPL_CLEANUP_LOCALREFVARS_SKIP) ||

@@ -19,9 +19,6 @@
 #include <irmap.h>
 #include <me_function.h>
 
-constexpr maple::int32 kUpperBound = -1;
-constexpr maple::int32 kLowerBound = 0;
-
 namespace maple {
 enum ESSANodeKind : std::uint8_t {
   kVarNode,
@@ -42,7 +39,7 @@ enum EdgeType : std::uint8_t {
   kNone,
   kUpperInvalid,
   kLowerInvalid,
-  kNoneInValid
+  kNoneInvalid
 };
 
 enum DumpType : std::uint8_t {
@@ -99,12 +96,12 @@ class InequalEdge {
 
   void SetEdgeTypeInValid() {
     CHECK_FATAL(edgeType == kLower || edgeType == kUpper || edgeType == kNone, "must be");
-    edgeType = edgeType == kLower ? kLowerInvalid : edgeType == kUpper ? kUpperInvalid : kNoneInValid;
+    edgeType = edgeType == kLower ? kLowerInvalid : (edgeType == kUpper ? kUpperInvalid : kNoneInvalid);
   }
 
   void SetEdgeTypeValid() {
-    CHECK_FATAL(edgeType == kLowerInvalid || edgeType == kUpperInvalid || edgeType == kNoneInValid, "must be");
-    edgeType = edgeType == kLowerInvalid ? kLower : edgeType == kUpperInvalid ? kUpper : kNone;
+    CHECK_FATAL(edgeType == kLowerInvalid || edgeType == kUpperInvalid || edgeType == kNoneInvalid, "must be");
+    edgeType = edgeType == kLowerInvalid ? kLower : (edgeType == kUpperInvalid ? kUpper : kNone);
   }
 
   EdgeType GetEdgeType() const {
@@ -139,7 +136,7 @@ class InequalEdge {
     return edgeType == kUpper ? value.constValue <= edge.GetConstValue() : value.constValue >= edge.GetConstValue();
   }
 
-  bool GreaterEqual(int32 val) const{
+  bool GreaterEqual(int32 val) const {
     return edgeType == kUpper ? value.constValue >= val : value.constValue <= val;
   }
 
@@ -172,6 +169,8 @@ class ESSABaseNode {
  public:
   struct ESSABaseNodeComparator {
     bool operator()(const ESSABaseNode *lhs, const ESSABaseNode *rhs) const {
+      ASSERT_NOT_NULL(lhs);
+      ASSERT_NOT_NULL(rhs);
       return lhs->GetID() < rhs->GetID();
     }
   };

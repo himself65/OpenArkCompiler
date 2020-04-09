@@ -35,6 +35,7 @@ class FEIRType {
   FEIRType(FEIRTypeKind argKind, PrimType argPrimType);
   virtual ~FEIRType() = default;
   static std::unique_ptr<FEIRType> NewType(FEIRTypeKind argKind = kFEIRTypeDefault);
+  MIRType *GenerateMIRTypeAuto(MIRSrcLang srcLang) const;
   bool IsSameKind(const FEIRType &type) const {
     return kind == type.kind;
   }
@@ -45,6 +46,10 @@ class FEIRType {
 
   PrimType GetPrimType() const {
     return primType;
+  }
+
+  PrimType GetRealPrimType() const {
+    return IsScalar() ? primType : PTY_ref;
   }
 
   void SetPrimType(PrimType argPrimType) {

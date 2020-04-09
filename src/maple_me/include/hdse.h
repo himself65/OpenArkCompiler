@@ -24,7 +24,6 @@ class HDSE {
  public:
   HDSE(MIRModule &mod, const MapleVector<BB*> &bbVec, BB &commonEntryBB, BB &commonExitBB, SSATab &ssaTab,
        Dominance &pDom, IRMap &map, bool enabledDebug = false)
-
       : hdseDebug(enabledDebug),
         mirModule(mod),
         bbVec(bbVec),
@@ -51,7 +50,7 @@ class HDSE {
   void RemoveNotRequiredStmtsInBB(BB &bb);
   template <class VarOrRegPhiNode>
   void MarkPhiRequired(VarOrRegPhiNode &mePhiNode);
-  void MarkMuListRequired(MapleMap<OStIdx, VarMeExpr*> &);
+  void MarkMuListRequired(MapleMap<OStIdx, VarMeExpr*>&);
   void MarkChiNodeRequired(ChiMeNode &chiNode);
   bool ExprNonDeletable(const MeExpr &expr) const;
   bool StmtMustRequired(const MeStmt &stmt, const BB &bb) const;

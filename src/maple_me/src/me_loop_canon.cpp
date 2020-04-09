@@ -135,19 +135,19 @@ void MeDoLoopCanon::Convert(MeFunction &func, BB &bb, BB &pred, MapleMap<Key, bo
       condGotoStmt.SetOffset(label);
     }
   } else if (pred.GetKind() == kBBFallthru) {
-    // donothing
+    // do nothing
   } else if (pred.GetKind() == kBBSwitch) {
     ASSERT(!pred.GetStmtNodes().empty(), "bb is empty");
     auto &switchStmt = static_cast<SwitchNode&>(pred.GetStmtNodes().back());
     ASSERT(bb.GetBBLabel() != 0, "wrong bb label");
-    LabelIdx oldlabIdx = bb.GetBBLabel();
+    LabelIdx oldLabIdx = bb.GetBBLabel();
     LabelIdx label = func.GetOrCreateBBLabel(*latchBB);
-    if (switchStmt.GetDefaultLabel() == oldlabIdx) {
+    if (switchStmt.GetDefaultLabel() == oldLabIdx) {
       switchStmt.SetDefaultLabel(label);
     }
     for (size_t i = 0; i < switchStmt.GetSwitchTable().size(); i++) {
       LabelIdx labelIdx = switchStmt.GetCasePair(i).second;
-      if (labelIdx == oldlabIdx) {
+      if (labelIdx == oldLabIdx) {
         switchStmt.UpdateCaseLabelAt(i, label);
       }
     }
@@ -220,7 +220,7 @@ AnalysisResult *MeDoLoopCanon::Run(MeFunction *func, MeFuncResultMgr *m, ModuleR
     auto *bb = *bIt;
     MapleVector<BB*> &preds = bb->GetPred();
     for (BB *pred : preds) {
-      ASSERT(func->GetCommonEntryBB(), "impossible");
+      ASSERT(func->GetCommonEntryBB() != nullptr, "impossible");
       ASSERT_NOT_NULL(pred);
       // bb is reachable from entry && bb dominator pred
       if (dom->Dominate(*func->GetCommonEntryBB(), *bb) && dom->Dominate(*bb, *pred) &&

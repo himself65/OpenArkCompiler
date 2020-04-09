@@ -265,7 +265,7 @@ class AArch64CGFunc : public CGFunc {
     return GetOrCreatePhysicalRegisterOperand(RFP, kSizeOfPtr * kBitsPerByte, kRegTyInt);
   }
 
-  MemOperand &GetOrCreateMemOpnd(const MIRSymbol &symbol, int32 offset, uint32 size, bool forLocalRef = false) override;
+  MemOperand &GetOrCreateMemOpnd(const MIRSymbol &symbol, int32 offset, uint32 size, bool forLocalRef = false);
 
   AArch64MemOperand &GetOrCreateMemOpnd(AArch64MemOperand::AArch64AddressingMode, uint32, RegOperand*, RegOperand*,
                                         OfstOperand*, const MIRSymbol*);
@@ -278,9 +278,9 @@ class AArch64CGFunc : public CGFunc {
     return CreateMemOpnd(baseOpnd, offset, size);
   }
 
-  MemOperand &CreateMemOpnd(RegOperand &baseOpnd, int32 offset, uint32 size) override;
+  MemOperand &CreateMemOpnd(RegOperand &baseOpnd, int32 offset, uint32 size);
 
-  MemOperand &CreateMemOpnd(RegOperand &baseOpnd, int32 offset, uint32 size, const MIRSymbol &sym) override;
+  MemOperand &CreateMemOpnd(RegOperand &baseOpnd, int32 offset, uint32 size, const MIRSymbol &sym);
 
   MemOperand &CreateMemOpnd(PrimType ptype, const BaseNode &parent, BaseNode &addrExpr, int32 offset = 0,
                             AArch64isa::MemoryOrdering memOrd = AArch64isa::kMoNone);
@@ -420,6 +420,7 @@ class AArch64CGFunc : public CGFunc {
   MOperator PickStInsn(uint32 bitSize, PrimType primType, AArch64isa::MemoryOrdering memOrd = AArch64isa::kMoNone);
   MOperator PickLdInsn(uint32 bitSize, PrimType primType, AArch64isa::MemoryOrdering memOrd = AArch64isa::kMoNone);
 
+  bool CheckIfSplitOffsetWithAdd(const AArch64MemOperand &memOpnd, uint32 bitLen);
   AArch64MemOperand &SplitOffsetWithAddInstruction(const AArch64MemOperand &memOpnd, uint32 bitLen,
                                                    AArch64reg baseRegNum = AArch64reg::kRinvalid, uint32 isDest = 0,
                                                    Insn *insn = nullptr);
@@ -567,6 +568,7 @@ class AArch64CGFunc : public CGFunc {
   bool GenerateCompareWithZeroInstruction(Opcode jmpOp, Opcode cmpOp, bool is64Bits,
                                           LabelOperand &targetOpnd, Operand &opnd0);
   void SelectMPLClinitCheck(IntrinsiccallNode&);
+  void SelectMPLProfCounterInc(IntrinsiccallNode &intrnNode);
   /* Helper functions for translating complex Maple IR instructions/inrinsics */
   void SelectDassign(StIdx stIdx, FieldID fieldId, PrimType rhsPType, Operand &opnd0);
   LabelIdx CreateLabeledBB(StmtNode &stmt);

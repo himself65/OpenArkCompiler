@@ -27,8 +27,8 @@ constexpr char kInterfaceMethod[] = "MCC_getFuncPtrFromItabSecondHash64";
 } // namespace
 
 namespace maple {
-VtableImpl::VtableImpl(MIRModule *mod, KlassHierarchy *kh, bool dump)
-    : FuncOptimizeImpl(mod, kh, dump), mirModule(mod) {
+VtableImpl::VtableImpl(MIRModule &mod, KlassHierarchy *kh, bool dump)
+    : FuncOptimizeImpl(mod, kh, dump), mirModule(&mod) {
   mccItabFunc = builder->GetOrCreateFunction(kInterfaceMethod, TyIdx(PTY_ptr));
   mccItabFunc->SetAttr(FUNCATTR_nosideeffect);
 }

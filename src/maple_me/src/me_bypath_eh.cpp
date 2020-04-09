@@ -181,6 +181,7 @@ StmtNode *MeDoBypathEH::IsSyncExit(BB &syncBB, MeFunction &func, LabelIdx second
           return nullptr;
         }
         auto *dreadNode = static_cast<AddrofNode*>(throwStmt->GetRHS());
+        ASSERT_NOT_NULL(dreadNode);
         if (dreadNode->GetStIdx() != dassignNode->GetStIdx()) {
           return nullptr;
         }
@@ -222,7 +223,7 @@ void MeDoBypathEH::BypathException(MeFunction &func, const KlassHierarchy &kh) c
       if (tryNode->GetOffsetsCount() == 1) {
         labelIdx = tryNode->GetOffset(0);
       } else if (tryNode->GetOffsetsCount() == 2) { // Deal with sync
-        BB *catchBB  = nullptr;
+        BB *catchBB = nullptr;
         for (BB *bbInner : func.GetAllBBs()) {
           if (bbInner == nullptr) {
             continue;
@@ -330,7 +331,7 @@ void MeDoBypathEH::BypathException(MeFunction &func, const KlassHierarchy &kh) c
 }
 
 AnalysisResult *MeDoBypathEH::Run(MeFunction *func, MeFuncResultMgr*, ModuleResultMgr *mrm) {
-  auto *kh = static_cast<KlassHierarchy *>(mrm->GetAnalysisResult(MoPhase_CHA, &func->GetMIRModule()));
+  auto *kh = static_cast<KlassHierarchy*>(mrm->GetAnalysisResult(MoPhase_CHA, &func->GetMIRModule()));
   CHECK_NULL_FATAL(kh);
   BypathException(*func, *kh);
   return nullptr;

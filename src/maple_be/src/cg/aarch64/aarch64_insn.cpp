@@ -550,6 +550,55 @@ void AArch64Insn::EmitGetAndSetInt(Emitter &emitter) const {
   emitter.Emit("\n");
 }
 
+void AArch64Insn::EmitCounter(const CG &cg, Emitter &emitter) const {
+  /*
+   * adrp    x1, __profile_bb_table$$GetBoolean_dex+4
+   * ldr     w17, [x1, #:lo12:__profile_bb_table$$GetBoolean_dex+4]
+   * add     w17, w17, #1
+   * str     w17, [x1, #:lo12:__profile_bb_table$$GetBoolean_dex+4]
+   */
+  const AArch64MD *md = &AArch64CG::kMd[MOP_counter];
+
+  Operand *opnd0 = opnds[kInsnFirstOpnd];
+  Operand *opnd1 = opnds[kInsnSecondOpnd];
+  OpndProp *prop0 = md->operand[kInsnFirstOpnd];
+  StImmOperand *stImmOpnd = static_cast<StImmOperand*>(opnd1);
+  CHECK_FATAL(stImmOpnd != nullptr, "stImmOpnd is null in AArch64Insn::EmitCounter");
+  /* emit nop for breakpoint */
+  if (cg.GetCGOptions().WithDwarf()) {
+    emitter.Emit("\t").Emit("nop").Emit("\n");
+  }
+
+  /* emit adrp */
+  emitter.Emit("\t").Emit("adrp").Emit("\t");
+  opnd0->Emit(emitter, prop0);
+  emitter.Emit(",");
+  emitter.Emit(stImmOpnd->GetName());
+  emitter.Emit("+").Emit(stImmOpnd->GetOffset());
+  emitter.Emit("\n");
+  /* emit ldr */
+  emitter.Emit("\t").Emit("ldr").Emit("\tw17, [");
+  opnd0->Emit(emitter, prop0);
+  emitter.Emit(",");
+  emitter.Emit("#");
+  emitter.Emit(":lo12:").Emit(stImmOpnd->GetName());
+  emitter.Emit("+").Emit(stImmOpnd->GetOffset());
+  emitter.Emit("]");
+  emitter.Emit("\n");
+  /* emit add */
+  emitter.Emit("\t").Emit("add").Emit("\tw17, w17, #1");
+  emitter.Emit("\n");
+  /* emit str */
+  emitter.Emit("\t").Emit("str").Emit("\tw17, [");
+  opnd0->Emit(emitter, prop0);
+  emitter.Emit(",");
+  emitter.Emit("#");
+  emitter.Emit(":lo12:").Emit(stImmOpnd->GetName());
+  emitter.Emit("+").Emit(stImmOpnd->GetOffset());
+  emitter.Emit("]");
+  emitter.Emit("\n");
+}
+
 void AArch64Insn::EmitClinit(const CG &cg, Emitter &emitter) const {
   /*
    * adrp    x3, __muid_data_undef_tab$$GetBoolean_dex+144
@@ -836,6 +885,10 @@ void AArch64Insn::Emit(const CG &cg, Emitter &emitter) const {
         EmitLazyBindingRoutine(emitter);
         emitter.IncreaseJavaInsnCount(kLazyBindingRoutineInsnCount + kAdrpLdrInsnCount);
       }
+      return;
+    }
+    case MOP_counter: {
+      EmitCounter(cg, emitter);
       return;
     }
     case MOP_clinit_tail: {

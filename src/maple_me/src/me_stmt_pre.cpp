@@ -97,6 +97,7 @@ void MeStmtPre::CodeMotion() {
               if (call->GetAssignedLHS() != nullptr) {
                 CHECK_FATAL(call->GetAssignedLHS()->GetMeOp() == kMeOpVar, "should be var");
                 auto *var = static_cast<VarMeExpr*>(call->GetAssignedLHS());
+                ASSERT_NOT_NULL(var);
                 OStIdx ostIdx = var->GetOStIdx();
                 if (candsForSSAUpdate.find(ostIdx) == candsForSSAUpdate.end()) {
                   MapleSet<BBId> *bbSet =
@@ -684,7 +685,7 @@ void MeStmtPre::CreateSortedOccs() {
   if (!realOccInserted) {
     workCand->GetRealOccs().clear();
   }
-  // initialize phiOpnds vector in each MePhiOcc node and  defPhiOcc field in
+  // initialize phiOpnds vector in each MePhiOcc node and defPhiOcc field in
   // each MePhiOpndOcc node
   for (MePhiOcc *phiOcc : phiOccs)
     for (BB *pred : phiOcc->GetBB()->GetPred()) {
@@ -944,7 +945,7 @@ void MeStmtPre::BuildWorkListBB(BB *bb) {
           if (NoPriorUseInBB(dassMeStmt.GetVarLHS(), &stmt)) {
             (void)CreateStmtRealOcc(stmt, seqStmt);
           }
-        } else if (dassMeStmt.GetLHS()->IsUseSameSymbol(*dassMeStmt.GetRHS())) {
+        } else if (dassMeStmt.GetLHS() != nullptr && dassMeStmt.GetLHS()->IsUseSameSymbol(*dassMeStmt.GetRHS())) {
           RemoveUnnecessaryDassign(dassMeStmt);
         }
         // update version stacks
@@ -1061,7 +1062,7 @@ AnalysisResult *MeDoStmtPre::Run(MeFunction *func, MeFuncResultMgr *m, ModuleRes
   ASSERT(dom != nullptr, "dominance phase has problem");
   auto *irMap = static_cast<MeIRMap*>(m->GetAnalysisResult(MeFuncPhase_IRMAP, func));
   ASSERT(irMap != nullptr, "irMap phase has problem");
-  MeStmtPre ssaPre(func, *irMap, *dom, *NewMemPool(), *NewMemPool(), MeOption::stmtprePULimit);
+  MeStmtPre ssaPre(*func, *irMap, *dom, *NewMemPool(), *NewMemPool(), MeOption::stmtprePULimit);
   if (DEBUGFUNC(func)) {
     ssaPre.SetSSAPreDebug(true);
   }

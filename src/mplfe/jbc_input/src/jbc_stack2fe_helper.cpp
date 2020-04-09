@@ -352,6 +352,18 @@ PrimType JBCStack2FEHelper::JBCStackItemTypeToPrimType(jbc::JBCPrimType itemType
   }
 }
 
+PrimType JBCStack2FEHelper::SimplifyPrimType(PrimType pty) {
+  switch (pty) {
+    case PTY_u1:   // boolean
+    case PTY_i8:   // byte
+    case PTY_i16:  // short
+    case PTY_u16:  // char
+      return PTY_i32;
+    default:
+      return pty;
+  }
+}
+
 std::vector<PrimType> JBCStack2FEHelper::JBCStackItemTypesToPrimTypes(const std::vector<jbc::JBCPrimType> itemTypes) {
   std::vector<PrimType> primTypes;
   for (jbc::JBCPrimType itemType : itemTypes) {

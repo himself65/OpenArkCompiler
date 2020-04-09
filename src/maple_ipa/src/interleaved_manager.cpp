@@ -79,6 +79,7 @@ void InterleavedManager::Run() {
     // If rangeNum < MeOption::range[0], Move to the next function with rangeNum++
     uint64 rangeNum = 0;
     for (auto *func : *compList) {
+      ASSERT_NOT_NULL(func);
       if (MeOption::useRange && (rangeNum < MeOption::range[0] || rangeNum > MeOption::range[1])) {
         ++rangeNum;
         continue;

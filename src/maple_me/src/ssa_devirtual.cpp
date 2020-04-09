@@ -13,6 +13,7 @@
  * See the Mulan PSL v1 for more details.
  */
 #include "ssa_devirtual.h"
+
 // This phase performs devirtualization based on SSA. Ideally, we should have
 // precise alias information, so that for each reference we know exactly the
 // objects it refers to, then the exact method it calls. However, precise alias
@@ -207,6 +208,7 @@ bool SSADevirtual::DevirtualizeCall(CallMeStmt &callStmt) {
             }
             if (i == inferredTypeCandidates.size() && inferredFunction != nullptr) {
               if (SSADevirtual::debug) {
+                ASSERT_NOT_NULL(GetMIRFunction());
                 LogInfo::MapleLogger() << "Devirutalize based on set of inferred types: In " <<
                     GetMIRFunction()->GetName() << "; Devirtualize: " << mirFunc.GetName() << '\n';
               }
@@ -239,44 +241,44 @@ void SSADevirtual::InsertNullCheck(const CallMeStmt &callStmt, MeExpr &receiver)
   callStmt.GetBB()->InsertMeStmtBefore(&callStmt, nullCheck);
 }
 
-void SSADevirtual::PropVarInferredType(VarMeExpr &VarMeExpr) const {
-  if (VarMeExpr.GetInferredTyIdx() != 0u) {
+void SSADevirtual::PropVarInferredType(VarMeExpr &varMeExpr) const {
+  if (varMeExpr.GetInferredTyIdx() != 0u) {
     return;
   }
-  if (VarMeExpr.GetDefBy() == kDefByStmt) {
-    DassignMeStmt &defStmt = utils::ToRef(safe_cast<DassignMeStmt>(VarMeExpr.GetDefStmt()));
+  if (varMeExpr.GetDefBy() == kDefByStmt) {
+    DassignMeStmt &defStmt = utils::ToRef(safe_cast<DassignMeStmt>(varMeExpr.GetDefStmt()));
     MeExpr *rhs = defStmt.GetRHS();
     if (rhs->GetOp() == OP_gcmalloc) {
-      VarMeExpr.SetInferredTyIdx(static_cast<GcmallocMeExpr*>(rhs)->GetTyIdx());
-      VarMeExpr.SetMaybeNull(false);
+      varMeExpr.SetInferredTyIdx(static_cast<GcmallocMeExpr*>(rhs)->GetTyIdx());
+      varMeExpr.SetMaybeNull(false);
       if (SSADevirtual::debug) {
-        MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(VarMeExpr.GetInferredTyIdx());
-        LogInfo::MapleLogger() << "[SSA-DEVIRT] [TYPE-INFERRING] mx" << VarMeExpr.GetExprID() << " ";
+        MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(varMeExpr.GetInferredTyIdx());
+        LogInfo::MapleLogger() << "[SSA-DEVIRT] [TYPE-INFERRING] mx" << varMeExpr.GetExprID() << " ";
         type->Dump(0, false);
         LogInfo::MapleLogger() << '\n';
       }
     } else {
       TyIdx tyIdx = GetInferredTyIdx(*rhs);
-      VarMeExpr.SetMaybeNull(MaybeNull(*rhs));
+      varMeExpr.SetMaybeNull(MaybeNull(*rhs));
       if (tyIdx != 0u) {
-        VarMeExpr.SetInferredTyIdx(tyIdx);
+        varMeExpr.SetInferredTyIdx(tyIdx);
         if (SSADevirtual::debug) {
-          MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(VarMeExpr.GetInferredTyIdx());
-          LogInfo::MapleLogger() << "[SSA-DEVIRT] [TYPE-INFERRING] mx" << VarMeExpr.GetExprID() << " ";
+          MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(varMeExpr.GetInferredTyIdx());
+          LogInfo::MapleLogger() << "[SSA-DEVIRT] [TYPE-INFERRING] mx" << varMeExpr.GetExprID() << " ";
           type->Dump(0, false);
           LogInfo::MapleLogger() << '\n';
         }
       }
     }
-    if (VarMeExpr.GetInferredTyIdx() != 0u) {
+    if (varMeExpr.GetInferredTyIdx() != 0u) {
       OriginalSt *ost = irMap->GetSSATab().GetOriginalStFromID(defStmt.GetVarLHS()->GetOStIdx());
       MIRSymbol *mirSym = ost->GetMIRSymbol();
       if (mirSym->IsStatic() && mirSym->IsFinal()) {
         // static final field can store and propagate inferred typeinfo
         if (mirSym->GetInferredTyIdx() == kInitTyIdx) {
           // mirSym->_inferred_tyIdx has not been set before
-          mirSym->SetInferredTyIdx(VarMeExpr.GetInferredTyIdx());
-        } else if (mirSym->GetInferredTyIdx() != VarMeExpr.GetInferredTyIdx()) {
+          mirSym->SetInferredTyIdx(varMeExpr.GetInferredTyIdx());
+        } else if (mirSym->GetInferredTyIdx() != varMeExpr.GetInferredTyIdx()) {
           // If mirSym->_inferred_tyIdx has been set before, it means we have
           // seen a divergence on control flow. Set to NONE if not all
           // branches reach the same conclusion.
@@ -284,7 +286,7 @@ void SSADevirtual::PropVarInferredType(VarMeExpr &VarMeExpr) const {
         }
       }
     }
-  } else if (VarMeExpr.GetDefBy() == kDefByPhi) {
+  } else if (varMeExpr.GetDefBy() == kDefByPhi) {
     if (SSADevirtual::debug) {
       LogInfo::MapleLogger() << "[SSA-DEVIRT] [TYPE-INFERRING] " << "Def by phi " << '\n';
     }
@@ -457,8 +459,8 @@ void SSADevirtual::TraversalMeStmt(MeStmt &meStmt) {
     case OP_assertnonnull:
     case OP_eval:
     case OP_free: {
-      auto *umeStmt = static_cast<UnaryMeStmt*>(&meStmt);
-      VisitMeExpr(umeStmt->GetOpnd());
+      auto *unaryStmt = static_cast<UnaryMeStmt*>(&meStmt);
+      VisitMeExpr(unaryStmt->GetOpnd());
       break;
     }
     case OP_call:

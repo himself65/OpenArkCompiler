@@ -143,7 +143,7 @@ void DelegateRC::CollectDerefedOrCopied(const MeExpr &expr) {
       // collect the def of basevar
       if (baseVar->GetDefBy() == kDefByStmt) {
         MeStmt *defStmt = baseVar->GetDefStmt();
-        if (defStmt->GetOp() == OP_dassign && defStmt->GetRHS()->GetOp() == OP_cvt) {
+        if (defStmt->GetOp() == OP_dassign && defStmt->GetRHS() != nullptr && defStmt->GetRHS()->GetOp() == OP_cvt) {
           SaveDerefedOrCopiedVst(defStmt->GetRHS()->GetOpnd(0));
         }
       } else if (baseVar->GetDefBy() == kDefByPhi) {
@@ -151,7 +151,8 @@ void DelegateRC::CollectDerefedOrCopied(const MeExpr &expr) {
         for (VarMeExpr *phiOpnd : defPhi.GetOpnds()) {
           if (phiOpnd->GetDefBy() == kDefByStmt) {
             MeStmt *defStmt = phiOpnd->GetDefStmt();
-            if (defStmt->GetOp() == OP_dassign && defStmt->GetRHS()->GetOp() == OP_cvt) {
+            if (defStmt->GetOp() == OP_dassign && defStmt->GetRHS() != nullptr &&
+                defStmt->GetRHS()->GetOp() == OP_cvt) {
               SaveDerefedOrCopiedVst(defStmt->GetRHS()->GetOpnd(0));
             }
           }
@@ -239,6 +240,7 @@ bool DelegateRC::MayThrowException(const MeStmt &stmt) const {
   }
 
   if (CheckOp(stmt, OP_regassign)) {
+    ASSERT_NOT_NULL(stmt.GetRHS());
     return stmt.GetRHS()->GetOp() == OP_gcmalloc || stmt.GetRHS()->GetOp() == OP_gcmallocjarray;
   }
 
@@ -768,7 +770,7 @@ void DelegateRC::CleanUpDeadLocalRefVar(const std::set<OStIdx> &liveLocalrefvars
 }
 
 AnalysisResult *MeDoDelegateRC::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr*) {
-  static uint32 pUcount = 0;
+  static uint32 puCount = 0;
   auto *dom = static_cast<Dominance*>(m->GetAnalysisResult(MeFuncPhase_DOMINANCE, func));
   ASSERT(dom != nullptr, "dominance phase has problem");
   {
@@ -780,11 +782,11 @@ AnalysisResult *MeDoDelegateRC::Run(MeFunction *func, MeFuncResultMgr *m, Module
     LogInfo::MapleLogger() << " Processing " << func->GetMirFunc()->GetName() << '\n';
   }
   DelegateRC delegaterc(*func, *dom, NewMemPool(), DEBUGFUNC(func));
-  if (pUcount > MeOption::delRcPULimit) {
-    ++pUcount;
+  if (puCount > MeOption::delRcPULimit) {
+    ++puCount;
     return nullptr;
   }
-  if (pUcount == MeOption::delRcPULimit) {
+  if (puCount == MeOption::delRcPULimit) {
     LogInfo::MapleLogger() << func->GetMirFunc()->GetName()
                            << " is last PU optimized by delegaterc under -delrcpulimit option" << '\n';
   }
@@ -795,14 +797,14 @@ AnalysisResult *MeDoDelegateRC::Run(MeFunction *func, MeFuncResultMgr *m, Module
   // final pass: rename the uses of the delegated ref pointer variable versions;
   // set live_localrefvars based on appearances on LHS
   // to detect dead localrefvars
-  std::set<OStIdx> liveLocalrefvars = delegaterc.RenameAndGetLiveLocalRefVar();
+  std::set<OStIdx> liveLocalRefVars = delegaterc.RenameAndGetLiveLocalRefVar();
   // postpass: go through the cleanup intrinsics to delete dead localrefvars
-  delegaterc.CleanUpDeadLocalRefVar(liveLocalrefvars);
+  delegaterc.CleanUpDeadLocalRefVar(liveLocalRefVars);
   if (DEBUGFUNC(func)) {
     LogInfo::MapleLogger() << "\n============== After DELEGATE RC =============" << '\n';
     func->GetIRMap()->Dump();
   }
-  ++pUcount;
+  ++puCount;
   return nullptr;
 }
 }  // namespace maple

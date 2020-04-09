@@ -634,6 +634,16 @@
 {MOP_clinit, {mopdReg64ID,mopdLiteral},ISATOMIC|CANTHROW,kLtClinit,"intrinsic_clinit","0,1",4},
 
 /*
+ * MOP_counter
+ * will be emit to five instructions in a row:
+ * adrp  x1, :got:__profile_table + idx
+ * ldr w17, [x1,#:got_lo12:__profile_table]
+ * add w17, w17, #1
+ * str w17,[x1,,#:got_lo12:__profile_table]
+ */
+{MOP_counter, {mopdReg64ID,mopdLiteral},ISATOMIC|CANTHROW,kLtClinit,"intrinsic_counter","0,1", 4},
+
+/*
  * will be emit to two instrunctions in a row:
  * ldr wd, [xs]  // xd and xs should be differenct register
  * ldr wd, [xd]

@@ -32,7 +32,6 @@ Insn *GenProEpilog::InsertCFIDefCfaOffset(int32 &cfiOffset, Insn &insertAfter) {
   Insn &cfiInsn = currCG->BuildInstruction<cfi::CfiInsn>(cfi::OP_CFI_def_cfa_offset,
                                                          cgFunc.CreateCfiImmOperand(cfiOffset, k64BitSize));
   Insn *newIPoint = cgFunc.GetCurBB()->InsertInsnAfter(insertAfter, cfiInsn);
-  CHECK_FATAL(cgFunc.GetDbgCallFrameOffset() == 0, "InsertCFIDefCfaOffset() should be called only once?");
   cgFunc.SetDbgCallFrameOffset(cfiOffset);
   return newIPoint;
 }

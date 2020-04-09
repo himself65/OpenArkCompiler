@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -22,7 +22,7 @@
 namespace maple {
 class JavaIntrnLowering : public FuncOptimizeImpl {
  public:
-  JavaIntrnLowering(MIRModule *mod, KlassHierarchy *kh, bool dump);
+  JavaIntrnLowering(MIRModule &mod, KlassHierarchy *kh, bool dump);
   ~JavaIntrnLowering() = default;
 
   FuncOptimizeImpl *Clone() override {
