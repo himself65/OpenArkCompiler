@@ -1,0 +1,160 @@
+#
+# Copyright (c) [2020] Huawei Technologies Co.,Ltd.All rights reserved.
+#
+# OpenArkCompiler is licensed under the Mulan PSL v1.
+# You can use this software according to the terms and conditions of the Mulan PSL v1.
+# You may obtain a copy of Mulan PSL v1 at:
+#
+#     http://license.coscl.org.cn/MulanPSL
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
+# FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v1 for more details.
+#
+include_directories = [
+  "${MAPLEALL_ROOT}/maple_be/include/cg",
+  "${MAPLEALL_ROOT}/maple_be/include/cg/aarch64",
+  "${MAPLEALL_ROOT}/maple_be/include/ad",
+  "${MAPLEALL_ROOT}/maple_be/include/ad/target",
+  "${MAPLEALL_ROOT}/maple_be/include/be/aarch64",
+  "${MAPLEALL_ROOT}/maple_be/include/be",
+  "${MAPLEALL_ROOT}/maple_driver/include",
+  "${MAPLEALL_ROOT}/maple_util/include",
+  "${MAPLEALL_ROOT}/maple_ir/include",
+  "${MAPLEALL_ROOT}/mpl2mpl/include",
+  "${MAPLEALL_ROOT}/mempool/include",
+  "${MAPLEALL_ROOT}/maple_ipa/include",
+  "${MAPLEALL_ROOT}/maple_phase/include",
+  "${MAPLEALL_ROOT}/huawei_secure_c/include",
+]
+
+src_libmplad = [ "src/ad/mad.cpp" ]
+
+src_libcglowerer = [
+  "src/be/bbt.cpp",
+  "src/be/trycatchblockslower.cpp",
+  "src/be/lower.cpp",
+]
+
+src_libmplbe = [
+  "src/be/becommon.cpp",
+  "src/be/switch_lowerer.cpp",
+  "src/be/rt.cpp",
+]
+
+deps_libmplbe = [
+  ":libcglowerer",
+  ":libbeaarch64",
+]
+
+src_libcgaarch64 = [
+  "src/cg/aarch64/aarch64_abi.cpp",
+  "src/cg/aarch64/mpl_atomic.cpp",
+  "src/cg/aarch64/aarch64_cgfunc.cpp",
+  "src/cg/aarch64/aarch64_emitter.cpp",
+  "src/cg/aarch64/aarch64_proepilog.cpp",
+  "src/cg/aarch64/aarch64_immediate.cpp",
+  "src/cg/aarch64/aarch64_operand.cpp",
+  "src/cg/aarch64/aarch64_color_ra.cpp",
+  "src/cg/aarch64/aarch64_reg_alloc.cpp",
+  "src/cg/aarch64/aarch64_cg.cpp",
+  "src/cg/aarch64/aarch64_insn.cpp",
+  "src/cg/aarch64/aarch64_isa.cpp",
+  "src/cg/aarch64/aarch64_memlayout.cpp",
+  "src/cg/aarch64/aarch64_args.cpp",
+  "src/cg/aarch64/aarch64_live.cpp",
+  "src/cg/aarch64/aarch64_yieldpoint.cpp",
+  "src/cg/aarch64/aarch64_offset_adjust.cpp",
+]
+
+src_libcg = [
+  "src/cg/cfi.cpp",
+  "src/cg/cg.cpp",
+  "src/cg/cgbb.cpp",
+  "src/cg/cgfunc.cpp",
+  "src/cg/proepilog.cpp",
+  "src/cg/args.cpp",
+  "src/cg/live.cpp",
+  "src/cg/cg_cfg.cpp",
+  "src/cg/eh_func.cpp",
+  "src/cg/emit.cpp",
+  "src/cg/cg_option.cpp",
+  "src/cg/cg_phasemanager.cpp",
+  "src/cg/loop.cpp",
+  "src/cg/memlayout.cpp",
+  "src/cg/yieldpoint.cpp",
+  "src/cg/label_creation.cpp",
+  "src/cg/offset_adjust.cpp",
+]
+
+deps_libcg = []
+deps_libcg += [ ":libcgaarch64" ]
+
+cflags_cc += [ "-DTARGAARCH64" ]
+cflags_cc -= [ "-DRC_NO_MMAP" ]
+cflags_cc -= [ "-DMIR_JAVA=1" ]
+
+configs = [ "${MAPLEALL_ROOT}:mapleallcompilecfg" ]
+
+static_library("libmplad") {
+  sources = src_libmplad
+  include_dirs = include_directories
+  output_dir = "${root_out_dir}/lib/${HOST_ARCH}"
+
+  cflags_cc += [ "-DRC_NO_MMAP" ]
+}
+
+source_set("libbeaarch64") {
+  include_dirs = include_directories
+}
+
+source_set("libcglowerer") {
+  sources = src_libcglowerer
+  include_dirs = include_directories
+}
+
+static_library("libmplbe") {
+  sources = src_libmplbe
+  deps = deps_libmplbe
+  include_dirs = include_directories
+  output_dir = "${root_out_dir}/lib/${HOST_ARCH}"
+}
+
+source_set("libcgaarch64") {
+  sources = src_libcgaarch64
+  include_dirs = include_directories
+}
+
+static_library("libcg") {
+  sources = src_libcg
+  include_dirs = include_directories
+  deps = deps_libcg
+  output_dir = "${root_out_dir}/lib/${HOST_ARCH}"
+}
+
+executable("maplegen") {
+  sources = [
+    "${MAPLEALL_ROOT}/maple_be/mdgen/src/mdgenerator.cpp",
+    "${MAPLEALL_ROOT}/maple_be/mdgen/src/mdlexer.cpp",
+    "${MAPLEALL_ROOT}/maple_be/mdgen/src/mdmain.cpp",
+    "${MAPLEALL_ROOT}/maple_be/mdgen/src/mdparser.cpp",
+    "${MAPLEALL_ROOT}/maple_be/mdgen/src/mdrecord.cpp",
+  ]
+  deps = [
+    "${MAPLEALL_ROOT}/huawei_secure_c:libHWSecureC",
+  ]
+  libs = [
+    "${OPENSOURCE_DEPS}/libmempool.a",
+    "${OPENSOURCE_DEPS}/libmplutil.a",
+  ]
+
+  include_dirs = [
+    "${MAPLEALL_ROOT}/maple_be/mdgen/include",
+    "${MAPLEALL_ROOT}/maple_util/include",
+    "${MAPLEALL_ROOT}/maple_ir/include",
+    "${MAPLEALL_ROOT}/mpl2mpl/include",
+    "${MAPLEALL_ROOT}/mempool/include",
+    "${MAPLEALL_ROOT}/huawei_secure_c/include",
+  ]
+}

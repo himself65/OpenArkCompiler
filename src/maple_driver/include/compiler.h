@@ -18,6 +18,7 @@
 #include <unordered_set>
 #include "error_code.h"
 #include "mpl_options.h"
+#include "cg_option.h"
 #include "me_option.h"
 #include "option.h"
 #include "mir_module.h"
@@ -129,9 +130,15 @@ class MplcgCompiler : public Compiler {
   explicit MplcgCompiler(const std::string &name) : Compiler(name) {}
 
   ~MplcgCompiler() = default;
+  ErrorCode Compile(const MplOptions &options, MIRModulePtr &theModule) override;
+  void PrintCommand(const MplOptions &options) const override;
  private:
   std::string GetInputFileName(const MplOptions &options) const override;
   DefaultOption GetDefaultOptions(const MplOptions &options) const override;
+  maplebe::CGOptions *MakeCGOptions(const MplOptions &options, MemPool &memPool);
+  void DecideMplcgRealLevel(maplebe::CGOptions &cgOption,
+                            const std::vector<mapleOption::Option> &inputOptions,
+                            const MplOptions &options);
   const std::string &GetBinName() const override;
 };
 }  // namespace maple

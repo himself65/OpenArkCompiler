@@ -1,0 +1,75 @@
+/*
+ * Copyright (c) [2020] Huawei Technologies Co.,Ltd.All rights reserved.
+ *
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
+ * You can use this software according to the terms and conditions of the Mulan PSL v1.
+ * You may obtain a copy of Mulan PSL v1 at:
+ *
+ *     http://license.coscl.org.cn/MulanPSL
+ *
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
+ */
+/*
+ * ARM Compiler armasm User Guide version 6.6.
+ * http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0473j/deb1353594352617.html
+ * (retrieved on 3/24/2017)
+ *
+ * $ 4.1 Registers in AArch64 state
+ *
+ * There is no register named W31 or X31.
+ * Depending on the instruction, register 31 is either the stack
+ * pointer or the zero register. When used as the stack pointer,
+ * you refer to it as "SP". When used as the zero register, you refer
+ * to it as WZR in a 32-bit context or XZR in a 64-bit context.
+ * The zero register returns 0 when read and discards data when
+ * written (e.g., when setting the status register for testing).
+ */
+/* ID, 32-bit prefix, 64-bit prefix, canBeAssigned, isCalleeSave, isParam, isSpill, isExtraSpill */
+INT_REG(0 , "W", "X", true, false, true, false, false)
+INT_REG(1 , "W", "X", true, false, true, false, false)
+INT_REG(2 , "W", "X", true, false, true, false, false)
+INT_REG(3 , "W", "X", true, false, true, false, false)
+INT_REG(4 , "W", "X", true, false, true, false, false)
+INT_REG(5 , "W", "X", true, false, true, false, false)
+INT_REG(6 , "W", "X", true, false, true, false, false)
+INT_REG(7 , "W", "X", true, false, true, false, false)
+INT_REG(8 , "W", "X", true, false, false, false, false)
+INT_REG(9 , "W", "X", true, false, false, false, false)
+INT_REG(10, "W", "X", true, false, false, false, false)
+INT_REG(11, "W", "X", true, false, false, false, false)
+INT_REG(12, "W", "X", true, false, false, false, false)
+INT_REG(13, "W", "X", true, false, false, false, false)
+INT_REG(14, "W", "X", true, false, false, false, false)
+INT_REG(15, "W", "X", true, false, false, false, true)
+INT_REG(16, "W", "X", true, false, false, true, false)
+INT_REG(17, "W", "X", true, false, false, true, false)
+INT_REG(18, "W", "X", true, false, false, false, false)
+INT_REG(19, "W", "X", true, true, false, false, false)
+INT_REG(20, "W", "X", true, true, false, false, false)
+INT_REG(21, "W", "X", true, true, false, false, false)
+INT_REG(22, "W", "X", true, true, false, false, false)
+INT_REG(23, "W", "X", true, true, false, false, false)
+INT_REG(24, "W", "X", true, true, false, false, false)
+INT_REG(25, "W", "X", true, true, false, false, false)
+INT_REG(26, "W", "X", true, true, false, false, false)
+INT_REG(27, "W", "X", true, true, false, false, false)
+INT_REG(28, "W", "X", true, true, false, false, false)
+INT_REG(29, "W", "X", false, true, false, false, false)
+INT_REG(30, "W", "X", false, true, false, false, false)
+/*
+ * Refer to ARM Compiler armasm User Guide version 6.6. $4.5 Predeclared core register names in AArch64 state
+ * We should not use "W" prefix in 64-bit context, though!!
+ */
+INT_REG(SP, "W", "" , false, false, false, false, false)
+INT_REG(ZR, "W", "X", false, false, false, false, false)
+
+/* Alias ID, ID, 32-bit prefix, 64-bit prefix */
+INT_REG_ALIAS(FP, 29, "", "" )
+INT_REG_ALIAS(LR, 30, "", "" )
+
+/* R19 is reserved for yieldpoint */
+INT_REG_ALIAS(YP, 19, "", "" )
+

@@ -1,6 +1,19 @@
 #
 # Makefile for OpenArkCompiler
 #
+# Copyright (c) [2020] Huawei Technologies Co.,Ltd.All rights reserved.
+#
+# OpenArkCompiler is licensed under the Mulan PSL v1.
+# You can use this software according to the terms and conditions of the Mulan PSL v1.
+# You may obtain a copy of Mulan PSL v1 at:
+#
+#     http://license.coscl.org.cn/MulanPSL
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
+# FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v1 for more details.
+#
 
 INSTALL_DIR := ${MAPLE_ROOT}/output
 BUILD_TYPE := RELEASE
@@ -18,19 +31,30 @@ GN_OPTIONS := \
 .PHONY: default
 default: install
 
+.PHONY: maplegen
+maplegen:
+	$(call build_gn, ${GN_OPTIONS}, maplegen)
+
+.PHONY: maplegendef
+maplegendef: maplegen
+	$(call build_gn, ${GN_OPTIONS}, aarch64isa_headers maplegendef)
+
 .PHONY: maple
-maple:
+maple: maplegendef
 	$(call build_gn, ${GN_OPTIONS}, maple)
 
 .PHONY: irbuild
 irbuild:
 	$(call build_gn, ${GN_OPTIONS}, irbuild)
 
+.PHONY: mplfe
+mplfe:
+	$(call build_gn, ${GN_OPTIONS}, mplfe)
+
 .PHONY: install
 install: maple
 	$(shell cp -rf $(MAPLE_ROOT)/src/bin/java2jar $(MAPLE_ROOT)/output/bin/)
 	$(shell cp -rf $(MAPLE_ROOT)/src/bin/jbc2mpl $(MAPLE_ROOT)/output/bin/)
-	$(shell cp -rf $(MAPLE_ROOT)/src/bin/mplcg $(MAPLE_ROOT)/output/bin/)
 
 .PHONY: clean
 clean:

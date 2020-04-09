@@ -23,3 +23,33 @@ group("irbuild") {
     "${MAPLE_ROOT}/src:irbuild",
   ]
 }
+
+group("mplfe") {
+  deps = [
+    "${MAPLE_ROOT}/src:mplfe",
+  ]
+}
+
+group("aarch64isa_headers") {
+  exec_script(
+      "${MAPLEALL_ROOT}/maple_be/src/cg/script/genmop.py",
+      [
+        rebase_path("${MAPLEALL_ROOT}/maple_be/src/cg/aarch64/aarch64_md.def",
+                    root_build_dir),
+        rebase_path(
+            "${MAPLEALL_ROOT}/maple_be/include/cg/aarch64/aarch64_isa.def",
+            root_build_dir),
+      ])
+}
+
+group("maplegendef") {
+  exec_script("${MAPLEALL_ROOT}/maple_be/mdgen/gendef.py",
+              [
+                rebase_path("${GN_BINARY_OUTPUT_DIRECTORY}/maplegen",
+                            root_build_dir),
+                rebase_path("${MAPLEALL_ROOT}/maple_be/include/ad/cortex_a55",
+                            root_build_dir),
+                rebase_path("${MAPLEALL_ROOT}/maple_be/include/ad/target",
+                            root_build_dir),
+              ])
+}

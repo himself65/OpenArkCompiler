@@ -1,0 +1,359 @@
+/* cortex_a55 reservations definition : */
+Reservation *resvInstkLtUndef = new Reservation(kLtUndef, 0, 0);
+if(resvInstkLtUndef == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtUndef failed." << std::endl;
+}
+ASSERT(resvInstkLtUndef, "Reservation allocation for kLtUndef failed.");
+
+Reservation *resvInstkLtShift = new Reservation(kLtShift, 2, 1,
+                                GetUnitByUnitId(kUnitIdSlotS));
+if(resvInstkLtShift == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtShift failed." << std::endl;
+}
+ASSERT(resvInstkLtShift, "Reservation allocation for kLtShift failed.");
+
+Reservation *resvInstkLtShiftReg = new Reservation(kLtShiftReg, 2, 2,
+                                   GetUnitByUnitId(kUnitIdSlotS),
+                                   GetUnitByUnitId(kUnitIdHazard));
+if(resvInstkLtShiftReg == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtShiftReg failed." << std::endl;
+}
+ASSERT(resvInstkLtShiftReg, "Reservation allocation for kLtShiftReg failed.");
+
+Reservation *resvInstkLtAlu = new Reservation(kLtAlu, 3, 1,
+                              GetUnitByUnitId(kUnitIdSlotS));
+if(resvInstkLtAlu == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtAlu failed." << std::endl;
+}
+ASSERT(resvInstkLtAlu, "Reservation allocation for kLtAlu failed.");
+
+Reservation *resvInstkLtAluShift = new Reservation(kLtAluShift, 3, 1,
+                                   GetUnitByUnitId(kUnitIdSlotS));
+if(resvInstkLtAluShift == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtAluShift failed." << std::endl;
+}
+ASSERT(resvInstkLtAluShift, "Reservation allocation for kLtAluShift failed.");
+
+Reservation *resvInstkLtAluShiftReg = new Reservation(kLtAluShiftReg, 3, 2,
+                                      GetUnitByUnitId(kUnitIdSlotS),
+                                      GetUnitByUnitId(kUnitIdHazard));
+if(resvInstkLtAluShiftReg == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtAluShiftReg failed." << std::endl;
+}
+ASSERT(resvInstkLtAluShiftReg, "Reservation allocation for kLtAluShiftReg failed.");
+
+Reservation *resvInstkLtAluExtr = new Reservation(kLtAluExtr, 3, 1,
+                                  GetUnitByUnitId(kUnitIdSlot1));
+if(resvInstkLtAluExtr == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtAluExtr failed." << std::endl;
+}
+ASSERT(resvInstkLtAluExtr, "Reservation allocation for kLtAluExtr failed.");
+
+Reservation *resvInstkLtMul = new Reservation(kLtMul, 4, 2,
+                              GetUnitByUnitId(kUnitIdSlotS),
+                              GetUnitByUnitId(kUnitIdMul));
+if(resvInstkLtMul == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtMul failed." << std::endl;
+}
+ASSERT(resvInstkLtMul, "Reservation allocation for kLtMul failed.");
+
+Reservation *resvInstkLtDiv = new Reservation(kLtDiv, 4, 3,
+                              GetUnitByUnitId(kUnitIdSlot0),
+                              GetUnitByUnitId(kUnitIdDiv),
+                              GetUnitByUnitId(kUnitIdDiv));
+if(resvInstkLtDiv == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtDiv failed." << std::endl;
+}
+ASSERT(resvInstkLtDiv, "Reservation allocation for kLtDiv failed.");
+
+Reservation *resvInstkLtLoad1 = new Reservation(kLtLoad1, 4, 2,
+                                GetUnitByUnitId(kUnitIdSlotSAgen),
+                                GetUnitByUnitId(kUnitIdLdAgu));
+if(resvInstkLtLoad1 == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtLoad1 failed." << std::endl;
+}
+ASSERT(resvInstkLtLoad1, "Reservation allocation for kLtLoad1 failed.");
+
+Reservation *resvInstkLtStore1 = new Reservation(kLtStore1, 2, 2,
+                                 GetUnitByUnitId(kUnitIdSlotSAgen),
+                                 GetUnitByUnitId(kUnitIdStAgu));
+if(resvInstkLtStore1 == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtStore1 failed." << std::endl;
+}
+ASSERT(resvInstkLtStore1, "Reservation allocation for kLtStore1 failed.");
+
+Reservation *resvInstkLtLoad2 = new Reservation(kLtLoad2, 4, 3,
+                                GetUnitByUnitId(kUnitIdSlotDAgen),
+                                GetUnitByUnitId(kUnitIdSlot0LdAgu),
+                                GetUnitByUnitId(kUnitIdLdAgu));
+if(resvInstkLtLoad2 == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtLoad2 failed." << std::endl;
+}
+ASSERT(resvInstkLtLoad2, "Reservation allocation for kLtLoad2 failed.");
+
+Reservation *resvInstkLtStore2 = new Reservation(kLtStore2, 2, 2,
+                                 GetUnitByUnitId(kUnitIdSlotSAgen),
+                                 GetUnitByUnitId(kUnitIdStAgu));
+if(resvInstkLtStore2 == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtStore2 failed." << std::endl;
+}
+ASSERT(resvInstkLtStore2, "Reservation allocation for kLtStore2 failed.");
+
+Reservation *resvInstkLtLoad3plus = new Reservation(kLtLoad3plus, 6, 3,
+                                    GetUnitByUnitId(kUnitIdSlotDAgen),
+                                    GetUnitByUnitId(kUnitIdSlot0LdAgu),
+                                    GetUnitByUnitId(kUnitIdLdAgu));
+if(resvInstkLtLoad3plus == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtLoad3plus failed." << std::endl;
+}
+ASSERT(resvInstkLtLoad3plus, "Reservation allocation for kLtLoad3plus failed.");
+
+Reservation *resvInstkLtStore3plus = new Reservation(kLtStore3plus, 2, 3,
+                                     GetUnitByUnitId(kUnitIdSlotDAgen),
+                                     GetUnitByUnitId(kUnitIdSlot0StAgu),
+                                     GetUnitByUnitId(kUnitIdStAgu));
+if(resvInstkLtStore3plus == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtStore3plus failed." << std::endl;
+}
+ASSERT(resvInstkLtStore3plus, "Reservation allocation for kLtStore3plus failed.");
+
+Reservation *resvInstkLtBranch = new Reservation(kLtBranch, 0, 1,
+                                 GetUnitByUnitId(kUnitIdSlotSBranch));
+if(resvInstkLtBranch == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtBranch failed." << std::endl;
+}
+ASSERT(resvInstkLtBranch, "Reservation allocation for kLtBranch failed.");
+
+Reservation *resvInstkLtFpalu = new Reservation(kLtFpalu, 4, 1,
+                                GetUnitByUnitId(kUnitIdSlotS));
+if(resvInstkLtFpalu == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtFpalu failed." << std::endl;
+}
+ASSERT(resvInstkLtFpalu, "Reservation allocation for kLtFpalu failed.");
+
+Reservation *resvInstkLtFconst = new Reservation(kLtFconst, 2, 2,
+                                 GetUnitByUnitId(kUnitIdSlotS),
+                                 GetUnitByUnitId(kUnitIdFpAluS));
+if(resvInstkLtFconst == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtFconst failed." << std::endl;
+}
+ASSERT(resvInstkLtFconst, "Reservation allocation for kLtFconst failed.");
+
+Reservation *resvInstkLtFpmul = new Reservation(kLtFpmul, 4, 2,
+                                GetUnitByUnitId(kUnitIdSlotS),
+                                GetUnitByUnitId(kUnitIdFpMulS));
+if(resvInstkLtFpmul == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtFpmul failed." << std::endl;
+}
+ASSERT(resvInstkLtFpmul, "Reservation allocation for kLtFpmul failed.");
+
+Reservation *resvInstkLtFpmac = new Reservation(kLtFpmac, 8, 6,
+                                GetUnitByUnitId(kUnitIdSlotS),
+                                GetUnitByUnitId(kUnitIdFpMulS),
+                                         nullptr,
+                                         nullptr,
+                                         nullptr,
+                                GetUnitByUnitId(kUnitIdFpAluS));
+if(resvInstkLtFpmac == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtFpmac failed." << std::endl;
+}
+ASSERT(resvInstkLtFpmac, "Reservation allocation for kLtFpmac failed.");
+
+Reservation *resvInstkLtR2f = new Reservation(kLtR2f, 2, 2,
+                              GetUnitByUnitId(kUnitIdSlotS),
+                              GetUnitByUnitId(kUnitIdFpAluS));
+if(resvInstkLtR2f == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtR2f failed." << std::endl;
+}
+ASSERT(resvInstkLtR2f, "Reservation allocation for kLtR2f failed.");
+
+Reservation *resvInstkLtF2r = new Reservation(kLtF2r, 4, 2,
+                              GetUnitByUnitId(kUnitIdSlotS),
+                              GetUnitByUnitId(kUnitIdFpAluS));
+if(resvInstkLtF2r == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtF2r failed." << std::endl;
+}
+ASSERT(resvInstkLtF2r, "Reservation allocation for kLtF2r failed.");
+
+Reservation *resvInstkLtR2fCvt = new Reservation(kLtR2fCvt, 4, 2,
+                                 GetUnitByUnitId(kUnitIdSlotS),
+                                 GetUnitByUnitId(kUnitIdFpAluS));
+if(resvInstkLtR2fCvt == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtR2fCvt failed." << std::endl;
+}
+ASSERT(resvInstkLtR2fCvt, "Reservation allocation for kLtR2fCvt failed.");
+
+Reservation *resvInstkLtF2rCvt = new Reservation(kLtF2rCvt, 5, 2,
+                                 GetUnitByUnitId(kUnitIdSlotS),
+                                 GetUnitByUnitId(kUnitIdFpAluS));
+if(resvInstkLtF2rCvt == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtF2rCvt failed." << std::endl;
+}
+ASSERT(resvInstkLtF2rCvt, "Reservation allocation for kLtF2rCvt failed.");
+
+Reservation *resvInstkLtFFlags = new Reservation(kLtFFlags, 5, 1,
+                                 GetUnitByUnitId(kUnitIdSlotS));
+if(resvInstkLtFFlags == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtFFlags failed." << std::endl;
+}
+ASSERT(resvInstkLtFFlags, "Reservation allocation for kLtFFlags failed.");
+
+Reservation *resvInstkLtFLoad64 = new Reservation(kLtFLoad64, 3, 2,
+                                  GetUnitByUnitId(kUnitIdSlotSAgen),
+                                  GetUnitByUnitId(kUnitIdLdAgu));
+if(resvInstkLtFLoad64 == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtFLoad64 failed." << std::endl;
+}
+ASSERT(resvInstkLtFLoad64, "Reservation allocation for kLtFLoad64 failed.");
+
+Reservation *resvInstkLtFLoadMany = new Reservation(kLtFLoadMany, 4, 3,
+                                    GetUnitByUnitId(kUnitIdSlotDAgen),
+                                    GetUnitByUnitId(kUnitIdSlot0LdAgu),
+                                    GetUnitByUnitId(kUnitIdLdAgu));
+if(resvInstkLtFLoadMany == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtFLoadMany failed." << std::endl;
+}
+ASSERT(resvInstkLtFLoadMany, "Reservation allocation for kLtFLoadMany failed.");
+
+Reservation *resvInstkLtFStore64 = new Reservation(kLtFStore64, 0, 2,
+                                   GetUnitByUnitId(kUnitIdSlotSAgen),
+                                   GetUnitByUnitId(kUnitIdStAgu));
+if(resvInstkLtFStore64 == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtFStore64 failed." << std::endl;
+}
+ASSERT(resvInstkLtFStore64, "Reservation allocation for kLtFStore64 failed.");
+
+Reservation *resvInstkLtFStoreMany = new Reservation(kLtFStoreMany, 0, 3,
+                                     GetUnitByUnitId(kUnitIdSlotSAgen),
+                                     GetUnitByUnitId(kUnitIdSlot0StAgu),
+                                     GetUnitByUnitId(kUnitIdStAgu));
+if(resvInstkLtFStoreMany == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtFStoreMany failed." << std::endl;
+}
+ASSERT(resvInstkLtFStoreMany, "Reservation allocation for kLtFStoreMany failed.");
+
+Reservation *resvInstkLtAdvsimdAlu = new Reservation(kLtAdvsimdAlu, 4, 2,
+                                     GetUnitByUnitId(kUnitIdSlotS),
+                                     GetUnitByUnitId(kUnitIdFpAluS));
+if(resvInstkLtAdvsimdAlu == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtAdvsimdAlu failed." << std::endl;
+}
+ASSERT(resvInstkLtAdvsimdAlu, "Reservation allocation for kLtAdvsimdAlu failed.");
+
+Reservation *resvInstkLtAdvsimdAluQ = new Reservation(kLtAdvsimdAluQ, 4, 2,
+                                      GetUnitByUnitId(kUnitIdSlot0),
+                                      GetUnitByUnitId(kUnitIdFpAluD));
+if(resvInstkLtAdvsimdAluQ == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtAdvsimdAluQ failed." << std::endl;
+}
+ASSERT(resvInstkLtAdvsimdAluQ, "Reservation allocation for kLtAdvsimdAluQ failed.");
+
+Reservation *resvInstkLtAdvsimdMul = new Reservation(kLtAdvsimdMul, 4, 2,
+                                     GetUnitByUnitId(kUnitIdSlotS),
+                                     GetUnitByUnitId(kUnitIdFpMulS));
+if(resvInstkLtAdvsimdMul == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtAdvsimdMul failed." << std::endl;
+}
+ASSERT(resvInstkLtAdvsimdMul, "Reservation allocation for kLtAdvsimdMul failed.");
+
+Reservation *resvInstkLtAdvsimdMulQ = new Reservation(kLtAdvsimdMulQ, 4, 2,
+                                      GetUnitByUnitId(kUnitIdSlot0),
+                                      GetUnitByUnitId(kUnitIdFpMulD));
+if(resvInstkLtAdvsimdMulQ == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtAdvsimdMulQ failed." << std::endl;
+}
+ASSERT(resvInstkLtAdvsimdMulQ, "Reservation allocation for kLtAdvsimdMulQ failed.");
+
+Reservation *resvInstkLtAdvsimdDivS = new Reservation(kLtAdvsimdDivS, 14, 3,
+                                      GetUnitByUnitId(kUnitIdSlot0),
+                                      GetUnitByUnitId(kUnitIdFpMulS),
+                                      GetUnitByUnitId(kUnitIdFpDivS));
+if(resvInstkLtAdvsimdDivS == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtAdvsimdDivS failed." << std::endl;
+}
+ASSERT(resvInstkLtAdvsimdDivS, "Reservation allocation for kLtAdvsimdDivS failed.");
+
+Reservation *resvInstkLtAdvsimdDivD = new Reservation(kLtAdvsimdDivD, 29, 3,
+                                      GetUnitByUnitId(kUnitIdSlot0),
+                                      GetUnitByUnitId(kUnitIdFpMulS),
+                                      GetUnitByUnitId(kUnitIdFpDivS));
+if(resvInstkLtAdvsimdDivD == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtAdvsimdDivD failed." << std::endl;
+}
+ASSERT(resvInstkLtAdvsimdDivD, "Reservation allocation for kLtAdvsimdDivD failed.");
+
+Reservation *resvInstkLtAdvsimdDivSQ = new Reservation(kLtAdvsimdDivSQ, 14, 3,
+                                       GetUnitByUnitId(kUnitIdSlotD),
+                                       GetUnitByUnitId(kUnitIdFpMulD),
+                                       GetUnitByUnitId(kUnitIdFpDivD));
+if(resvInstkLtAdvsimdDivSQ == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtAdvsimdDivSQ failed." << std::endl;
+}
+ASSERT(resvInstkLtAdvsimdDivSQ, "Reservation allocation for kLtAdvsimdDivSQ failed.");
+
+Reservation *resvInstkLtAdvsimdDivdQ = new Reservation(kLtAdvsimdDivdQ, 29, 3,
+                                       GetUnitByUnitId(kUnitIdSlotD),
+                                       GetUnitByUnitId(kUnitIdFpMulD),
+                                       GetUnitByUnitId(kUnitIdFpDivD));
+if(resvInstkLtAdvsimdDivdQ == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtAdvsimdDivdQ failed." << std::endl;
+}
+ASSERT(resvInstkLtAdvsimdDivdQ, "Reservation allocation for kLtAdvsimdDivdQ failed.");
+
+Reservation *resvInstkLtCryptoAese = new Reservation(kLtCryptoAese, 3, 1,
+                                     GetUnitByUnitId(kUnitIdSlot0));
+if(resvInstkLtCryptoAese == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtCryptoAese failed." << std::endl;
+}
+ASSERT(resvInstkLtCryptoAese, "Reservation allocation for kLtCryptoAese failed.");
+
+Reservation *resvInstkLtCryptoAesmc = new Reservation(kLtCryptoAesmc, 3, 1,
+                                      GetUnitByUnitId(kUnitIdSlotS));
+if(resvInstkLtCryptoAesmc == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtCryptoAesmc failed." << std::endl;
+}
+ASSERT(resvInstkLtCryptoAesmc, "Reservation allocation for kLtCryptoAesmc failed.");
+
+Reservation *resvInstkLtClinit = new Reservation(kLtClinit, 14, 13,
+                                 GetUnitByUnitId(kUnitIdSlotS),
+                                          nullptr,
+                                 GetUnitByUnitId(kUnitIdSlotDAgen),
+                                 GetUnitByUnitId(kUnitIdSlot0LdAgu),
+                                 GetUnitByUnitId(kUnitIdLdAgu),
+                                          nullptr,
+                                 GetUnitByUnitId(kUnitIdSlotDAgen),
+                                 GetUnitByUnitId(kUnitIdSlot0LdAgu),
+                                 GetUnitByUnitId(kUnitIdLdAgu),
+                                          nullptr,
+                                 GetUnitByUnitId(kUnitIdSlotDAgen),
+                                 GetUnitByUnitId(kUnitIdSlot0LdAgu),
+                                 GetUnitByUnitId(kUnitIdLdAgu));
+if(resvInstkLtClinit == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtClinit failed." << std::endl;
+}
+ASSERT(resvInstkLtClinit, "Reservation allocation for kLtClinit failed.");
+
+Reservation *resvInstkLtAdrpLdr = new Reservation(kLtAdrpLdr, 6, 5,
+                                  GetUnitByUnitId(kUnitIdSlotS),
+                                           nullptr,
+                                  GetUnitByUnitId(kUnitIdSlotDAgen),
+                                  GetUnitByUnitId(kUnitIdSlot0LdAgu),
+                                  GetUnitByUnitId(kUnitIdLdAgu));
+if(resvInstkLtAdrpLdr == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtAdrpLdr failed." << std::endl;
+}
+ASSERT(resvInstkLtAdrpLdr, "Reservation allocation for kLtAdrpLdr failed.");
+
+Reservation *resvInstkLtClinitTail = new Reservation(kLtClinitTail, 8, 7,
+                                     GetUnitByUnitId(kUnitIdSlotDAgen),
+                                     GetUnitByUnitId(kUnitIdSlot0LdAgu),
+                                     GetUnitByUnitId(kUnitIdLdAgu),
+                                              nullptr,
+                                     GetUnitByUnitId(kUnitIdSlotDAgen),
+                                     GetUnitByUnitId(kUnitIdSlot0LdAgu),
+                                     GetUnitByUnitId(kUnitIdLdAgu));
+if(resvInstkLtClinitTail == nullptr) {
+  maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtClinitTail failed." << std::endl;
+}
+ASSERT(resvInstkLtClinitTail, "Reservation allocation for kLtClinitTail failed.");
+

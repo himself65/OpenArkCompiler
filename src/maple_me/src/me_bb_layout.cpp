@@ -398,11 +398,6 @@ void BBLayout::FixEndTryBB(BB &bb) {
 }
 
 void BBLayout::FixTryBB(BB &startTryBB, BB &nextBB) {
-  if (nextBB.GetBBLabel() != 0) {
-    startTryBB.SetBBLabel(nextBB.GetBBLabel());
-    func.SetLabelBBAt(nextBB.GetBBLabel(), &startTryBB);
-    nextBB.SetBBLabel(0);
-  }
   startTryBB.GetPred().clear();
   for (size_t i = 0; i < nextBB.GetPred().size(); ++i) {
     nextBB.GetPred(i)->ReplaceSucc(&nextBB, &startTryBB);

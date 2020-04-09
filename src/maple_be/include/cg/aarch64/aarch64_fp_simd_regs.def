@@ -1,0 +1,75 @@
+/*
+ * Copyright (c) [2020] Huawei Technologies Co.,Ltd.All rights reserved.
+ *
+ * OpenArkCompiler is licensed under the Mulan PSL v1.
+ * You can use this software according to the terms and conditions of the Mulan PSL v1.
+ * You may obtain a copy of Mulan PSL v1 at:
+ *
+ *     http://license.coscl.org.cn/MulanPSL
+ *
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
+ * FIT FOR A PARTICULAR PURPOSE.
+ * See the Mulan PSL v1 for more details.
+ */
+/*
+ * ARM Compiler armasm User Guide version 6.6.
+ * http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0473j/deb1353594352617.html
+ * (retrieved on 3/24/2017)
+ */
+/*
+ * ID, 128 bit vector prefix, followed by scalar prefixes
+ * scalar prefixes: 8-bit, 16-bit, 32-bit, 64-bit, 128-bit, canBeAssigned, isCalleeSave, isParam, isSpill, isExtraSpill
+ * (e.g., we use D0 when V0 contains a 64-bit scalar FP number (aka, double))
+ */
+FP_SIMD_REG(0 , "V", "B", "H", "S", "D", "Q", true, false, true, false, false)
+FP_SIMD_REG(1 , "V", "B", "H", "S", "D", "Q", true, false, true, false, false)
+FP_SIMD_REG(2 , "V", "B", "H", "S", "D", "Q", true, false, true, false, false)
+FP_SIMD_REG(3 , "V", "B", "H", "S", "D", "Q", true, false, true, false, false)
+FP_SIMD_REG(4 , "V", "B", "H", "S", "D", "Q", true, false, true, false, false)
+FP_SIMD_REG(5 , "V", "B", "H", "S", "D", "Q", true, false, true, false, false)
+FP_SIMD_REG(6 , "V", "B", "H", "S", "D", "Q", true, false, true, false, false)
+FP_SIMD_REG(7 , "V", "B", "H", "S", "D", "Q", true, false, true, false, false)
+FP_SIMD_REG(8 , "V", "B", "H", "S", "D", "Q", true, true, false, false, false)
+FP_SIMD_REG(9 , "V", "B", "H", "S", "D", "Q", true, true, false, false, false)
+FP_SIMD_REG(10, "V", "B", "H", "S", "D", "Q", true, true, false, false, false)
+FP_SIMD_REG(11, "V", "B", "H", "S", "D", "Q", true, true, false, false, false)
+FP_SIMD_REG(12, "V", "B", "H", "S", "D", "Q", true, true, false, false, false)
+FP_SIMD_REG(13, "V", "B", "H", "S", "D", "Q", true, true, false, false, false)
+FP_SIMD_REG(14, "V", "B", "H", "S", "D", "Q", true, true, false, false, false)
+FP_SIMD_REG(15, "V", "B", "H", "S", "D", "Q", true, true, false, false, false)
+FP_SIMD_REG(16, "V", "B", "H", "S", "D", "Q", true, false, false, false, false)
+FP_SIMD_REG(17, "V", "B", "H", "S", "D", "Q", true, false, false, false, false)
+FP_SIMD_REG(18, "V", "B", "H", "S", "D", "Q", true, false, false, false, false)
+FP_SIMD_REG(19, "V", "B", "H", "S", "D", "Q", true, false, false, false, false)
+FP_SIMD_REG(20, "V", "B", "H", "S", "D", "Q", true, false, false, false, false)
+FP_SIMD_REG(21, "V", "B", "H", "S", "D", "Q", true, false, false, false, false)
+FP_SIMD_REG(22, "V", "B", "H", "S", "D", "Q", true, false, false, false, false)
+FP_SIMD_REG(23, "V", "B", "H", "S", "D", "Q", true, false, false, false, false)
+FP_SIMD_REG(24, "V", "B", "H", "S", "D", "Q", true, false, false, false, false)
+FP_SIMD_REG(25, "V", "B", "H", "S", "D", "Q", true, false, false, false, false)
+FP_SIMD_REG(26, "V", "B", "H", "S", "D", "Q", true, false, false, false, false)
+FP_SIMD_REG(27, "V", "B", "H", "S", "D", "Q", true, false, false, false, false)
+FP_SIMD_REG(28, "V", "B", "H", "S", "D", "Q", true, false, false, false, false)
+FP_SIMD_REG(29, "V", "B", "H", "S", "D", "Q", true, false, false, false, true)
+FP_SIMD_REG(30, "V", "B", "H", "S", "D", "Q", true, false, false, true, false)
+FP_SIMD_REG(31, "V", "B", "H", "S", "D", "Q", true, false, false, true, false)
+
+/* Alias ID */
+FP_SIMD_REG_ALIAS(0)
+FP_SIMD_REG_ALIAS(1)
+FP_SIMD_REG_ALIAS(2)
+FP_SIMD_REG_ALIAS(3)
+FP_SIMD_REG_ALIAS(4)
+FP_SIMD_REG_ALIAS(5)
+FP_SIMD_REG_ALIAS(6)
+FP_SIMD_REG_ALIAS(7)
+
+/* FP_SIMD_REG_ALIAS_64BIT_SCALAR(0) */
+/* FP_SIMD_REG_ALIAS_64BIT_SCALAR(1) */
+/* FP_SIMD_REG_ALIAS_64BIT_SCALAR(2) */
+/* FP_SIMD_REG_ALIAS_64BIT_SCALAR(3) */
+/* FP_SIMD_REG_ALIAS_64BIT_SCALAR(4) */
+/* FP_SIMD_REG_ALIAS_64BIT_SCALAR(5) */
+/* FP_SIMD_REG_ALIAS_64BIT_SCALAR(6) */
+/* FP_SIMD_REG_ALIAS_64BIT_SCALAR(7) */
