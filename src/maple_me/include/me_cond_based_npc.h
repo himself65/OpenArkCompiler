@@ -19,7 +19,7 @@
 namespace maple {
 class CondBasedNPC : public MeCondBased {
  public:
-  CondBasedNPC(MeFunction *func, Dominance *dom) : MeCondBased(func, dom) {}
+  CondBasedNPC(MeFunction &func, Dominance &dom) : MeCondBased(func, dom) {}
 
   ~CondBasedNPC() = default;
   void DoCondBasedNPC() const;

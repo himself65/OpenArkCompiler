@@ -14,15 +14,15 @@
  */
 #include "me_loop_analysis.h"
 
-// This phase analyses the CFG and identify the loops.  The implementation is
+// This phase analyses the CFG and identify the loops. The implementation is
 // based on the idea that, given two basic block a and b, if b is a's pred and
-// a dominates b, then there is a loop from a to b.  Loop identification is done
-// in a preorder traversal of the dominator tree.  In this order, outer loop is
-// always detected before its nested loop(s).  The building of the LoopDesc data
+// a dominates b, then there is a loop from a to b. Loop identification is done
+// in a preorder traversal of the dominator tree. In this order, outer loop is
+// always detected before its nested loop(s). The building of the LoopDesc data
 // structure takes advantage of this ordering.
 namespace maple {
 LoopDesc *IdentifyLoops::CreateLoopDesc(BB &hd, BB &tail) {
-  LoopDesc *newLoop = meLoopMemPool->New<LoopDesc>(&meLoopAlloc, &hd, &tail);
+  LoopDesc *newLoop = meLoopMemPool->New<LoopDesc>(meLoopAlloc, &hd, &tail);
   meLoops.push_back(newLoop);
   return newLoop;
 }
@@ -31,6 +31,7 @@ void IdentifyLoops::SetLoopParent4BB(const BB &bb, LoopDesc &loopDesc) {
   if (bbLoopParent[bb.GetBBId()] != nullptr) {
     if (loopDesc.parent == nullptr) {
       loopDesc.parent = bbLoopParent[bb.GetBBId()];
+      ASSERT_NOT_NULL(loopDesc.parent);
       loopDesc.nestDepth = loopDesc.parent->nestDepth + 1;
     }
   }
@@ -39,7 +40,7 @@ void IdentifyLoops::SetLoopParent4BB(const BB &bb, LoopDesc &loopDesc) {
 
 // process each BB in preorder traversal of dominator tree
 void IdentifyLoops::ProcessBB(BB *bb) {
-  if (bb == nullptr || bb == func->GetCommonExitBB()) {
+  if (bb == nullptr || bb == func.GetCommonExitBB()) {
     return;
   }
   for (BB *pred : bb->GetPred()) {
@@ -68,17 +69,17 @@ void IdentifyLoops::ProcessBB(BB *bb) {
   // recursive call
   const MapleSet<BBId> &domChildren = dominance->GetDomChildren(bb->GetBBId());
   for (auto bbIt = domChildren.begin(); bbIt != domChildren.end(); ++bbIt) {
-    ProcessBB(func->GetAllBBs().at(*bbIt));
+    ProcessBB(func.GetAllBBs().at(*bbIt));
   }
 }
 
 void IdentifyLoops::Dump() const {
-  for (LoopDesc *mploop : meLoops) {
+  for (LoopDesc *meLoop : meLoops) {
     // loop
-    LogInfo::MapleLogger() << "nest depth: " << mploop->nestDepth << " loop head BB: " << mploop->head->GetBBId()
-                           << " tail BB:" << mploop->tail->GetBBId() << '\n';
+    LogInfo::MapleLogger() << "nest depth: " << meLoop->nestDepth << " loop head BB: " << meLoop->head->GetBBId()
+                           << " tail BB:" << meLoop->tail->GetBBId() << '\n';
     LogInfo::MapleLogger() << "loop body:";
-    for (auto it = mploop->loopBBs.begin(); it != mploop->loopBBs.end(); ++it) {
+    for (auto it = meLoop->loopBBs.begin(); it != meLoop->loopBBs.end(); ++it) {
       BBId bbId = *it;
       LogInfo::MapleLogger() << bbId << " ";
     }
@@ -87,12 +88,12 @@ void IdentifyLoops::Dump() const {
 }
 
 void IdentifyLoops::MarkBB() {
-  for (LoopDesc *mploop : meLoops) {
-    for (BBId bbId : mploop->loopBBs) {
-      if (func->GetAllBBs().at(bbId) == nullptr) {
+  for (LoopDesc *meLoop : meLoops) {
+    for (BBId bbId : meLoop->loopBBs) {
+      if (func.GetAllBBs().at(bbId) == nullptr) {
         continue;
       }
-      func->GetAllBBs().at(bbId)->SetAttributes(kBBAttrIsInLoopForEA);
+      func.GetAllBBs().at(bbId)->SetAttributes(kBBAttrIsInLoopForEA);
     }
   }
 }
@@ -101,7 +102,7 @@ AnalysisResult *MeDoMeLoop::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResu
   auto *dom = static_cast<Dominance*>(m->GetAnalysisResult(MeFuncPhase_DOMINANCE, func));
   ASSERT(dom != nullptr, "dominance phase has problem");
   MemPool *meLoopMp = NewMemPool();
-  IdentifyLoops *identLoops = meLoopMp->New<IdentifyLoops>(meLoopMp, func, dom);
+  IdentifyLoops *identLoops = meLoopMp->New<IdentifyLoops>(meLoopMp, *func, dom);
   identLoops->ProcessBB(func->GetCommonEntryBB());
   if (DEBUGFUNC(func)) {
     identLoops->Dump();

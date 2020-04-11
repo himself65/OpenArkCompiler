@@ -19,7 +19,7 @@
 #include <limits>
 #include "bin_mpl_export.h"
 #include "mir_function.h"
-#include "name_mangler.h"
+#include "namemangler.h"
 #include "opcode_info.h"
 #include "mir_pragma.h"
 #include "mir_builder.h"

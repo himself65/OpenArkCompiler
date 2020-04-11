@@ -12,8 +12,8 @@
  * FIT FOR A PARTICULAR PURPOSE.
  * See the Mulan PSL v1 for more details.
  */
-#ifndef MAPLE_UTIL_INCLUDE_NAME_MANGLER_H
-#define MAPLE_UTIL_INCLUDE_NAME_MANGLER_H
+#ifndef NAMEMANGLER_H
+#define NAMEMANGLER_H
 #include <string>
 #include <vector>
 
@@ -148,7 +148,8 @@ static constexpr const char kFunctionLayoutStr[] = "__func_layout__";
 
 static constexpr const char kFunctionProfileTabPrefixStr[] = "__muid_profile_func_tab";
 
-static constexpr const char kBBProfileTabPrefixStr[] = "__bb_profile_tab";
+static constexpr const char kBBProfileTabPrefixStr[] = "__muid_prof_counter_tab";
+static constexpr const char kFuncIRProfInfTabPrefixStr[] = "__muid_prof_ir_desc_tab";
 
 static constexpr const char kBindingProtectedRegionStr[] = "__BindingProtectRegion__";
 

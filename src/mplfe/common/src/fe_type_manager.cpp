@@ -22,19 +22,32 @@
 #include "fe_config_parallel.h"
 
 namespace maple {
+const UniqueFEIRType FETypeManager::kPrimFEIRTypeUnknown = std::make_unique<FEIRTypeDefault>(PTY_unknown);
+const UniqueFEIRType FETypeManager::kPrimFEIRTypeU1 = std::make_unique<FEIRTypeDefault>(PTY_u1);
+const UniqueFEIRType FETypeManager::kPrimFEIRTypeI8 = std::make_unique<FEIRTypeDefault>(PTY_i8);
+const UniqueFEIRType FETypeManager::kPrimFEIRTypeU8 = std::make_unique<FEIRTypeDefault>(PTY_u8);
+const UniqueFEIRType FETypeManager::kPrimFEIRTypeI16 = std::make_unique<FEIRTypeDefault>(PTY_i16);
+const UniqueFEIRType FETypeManager::kPrimFEIRTypeU16 = std::make_unique<FEIRTypeDefault>(PTY_u16);
+const UniqueFEIRType FETypeManager::kPrimFEIRTypeI32 = std::make_unique<FEIRTypeDefault>(PTY_i32);
+const UniqueFEIRType FETypeManager::kPrimFEIRTypeU32 = std::make_unique<FEIRTypeDefault>(PTY_u32);
+const UniqueFEIRType FETypeManager::kPrimFEIRTypeI64 = std::make_unique<FEIRTypeDefault>(PTY_i64);
+const UniqueFEIRType FETypeManager::kPrimFEIRTypeU64 = std::make_unique<FEIRTypeDefault>(PTY_u64);
+const UniqueFEIRType FETypeManager::kPrimFEIRTypeF32 = std::make_unique<FEIRTypeDefault>(PTY_f32);
+const UniqueFEIRType FETypeManager::kPrimFEIRTypeF64 = std::make_unique<FEIRTypeDefault>(PTY_f64);
+const UniqueFEIRType FETypeManager::kFEIRTypeJavaObject = std::make_unique<FEIRTypeDefault>(PTY_ref);
+const UniqueFEIRType FETypeManager::kFEIRTypeJavaClass = std::make_unique<FEIRTypeDefault>(PTY_ref);
+const UniqueFEIRType FETypeManager::kFEIRTypeJavaString = std::make_unique<FEIRTypeDefault>(PTY_ref);
+
 FETypeManager::FETypeManager(MIRModule &moduleIn)
     : module(moduleIn),
       mp(memPoolCtrler.NewMemPool("mempool for FETypeManager")),
       allocator(mp),
       builder(&module),
-      structNameTypeMap(allocator.Adapter()),
-      structNameSrcMap(allocator.Adapter()),
-      structSameNameSrcList(allocator.Adapter()),
-      srcLang(kSrcLangJava),
-      nameFuncMap(allocator.Adapter()),
-      nameStaticFuncMap(allocator.Adapter()),
-      mpltNameFuncMap(allocator.Adapter()),
-      mpltNameStaticFuncMap(allocator.Adapter()) {}
+      srcLang(kSrcLangJava) {
+  static_cast<FEIRTypeDefault*>(kFEIRTypeJavaObject.get())->LoadFromJavaTypeName("Ljava/lang/Object;", false);
+  static_cast<FEIRTypeDefault*>(kFEIRTypeJavaClass.get())->LoadFromJavaTypeName("Ljava/lang/Class;", false);
+  static_cast<FEIRTypeDefault*>(kFEIRTypeJavaString.get())->LoadFromJavaTypeName("Ljava/lang/String;", false);
+}
 
 FETypeManager::~FETypeManager() {
   mp = nullptr;
@@ -200,6 +213,20 @@ MIRType *FETypeManager::GetOrCreateClassOrInterfacePtrType(const GStrIdx &nameId
   return ptrType;
 }
 
+MIRStructType *FETypeManager::GetStructTypeFromName(const std::string &name) {
+  GStrIdx nameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(name);
+  return GetStructTypeFromName(nameIdx);
+}
+
+MIRStructType *FETypeManager::GetStructTypeFromName(const GStrIdx &nameIdx) {
+  auto it = structNameTypeMap.find(nameIdx);
+  if (it == structNameTypeMap.end()) {
+    return nullptr;
+  } else {
+    return it->second.first;
+  }
+}
+
 MIRType *FETypeManager::GetOrCreateTypeFromName(const std::string &name, FETypeFlag typeFlag, bool usePtr) {
   CHECK_FATAL(!name.empty(), "type name is empty");
   PrimType pty = GetPrimType(name);
@@ -276,29 +303,40 @@ void FETypeManager::AddClassToModule(const MIRStructType &structType) {
   module.AddClass(structType.GetTypeIndex());
 }
 
-FEStructElemInfo *FETypeManager::RegisterStructElemInfo(const GStrIdx &structIdx, const GStrIdx &fullNameIdxOrin,
-                                                        const GStrIdx &fullNameIdxMpl) {
-  FEStructElemInfo *ptrInfo = GetStructElemInfo(structIdx, fullNameIdxMpl);
+FEStructElemInfo *FETypeManager::RegisterStructFieldInfo(const GStrIdx &fullNameIdx, MIRSrcLang srcLang,
+                                                         bool isStatic) {
+  FEStructElemInfo *ptrInfo = GetStructElemInfo(fullNameIdx);
   if (ptrInfo != nullptr) {
     return ptrInfo;
   }
-  UniqueFEStructElemInfo info = std::make_unique<FEStructElemInfo>(fullNameIdxOrin, fullNameIdxMpl);
+  UniqueFEStructElemInfo info = std::make_unique<FEStructFieldInfo>(fullNameIdx, srcLang, isStatic);
   ptrInfo = info.get();
   listStructElemInfo.push_back(std::move(info));
-  mapStructElemInfo[structIdx][fullNameIdxMpl] = ptrInfo;
+  CHECK_FATAL(mapStructElemInfo.insert(std::make_pair(fullNameIdx, ptrInfo)).second == true,
+              "register struct elem info failed");
   return ptrInfo;
 }
 
-FEStructElemInfo *FETypeManager::GetStructElemInfo(const GStrIdx &structIdx, const GStrIdx &fullNameIdxMpl) const {
-  auto itStruct = mapStructElemInfo.find(structIdx);
-  if (itStruct == mapStructElemInfo.end()) {
+FEStructElemInfo *FETypeManager::RegisterStructMethodInfo(const GStrIdx &fullNameIdx, MIRSrcLang srcLang,
+                                                          bool isStatic) {
+  FEStructElemInfo *ptrInfo = GetStructElemInfo(fullNameIdx);
+  if (ptrInfo != nullptr) {
+    return ptrInfo;
+  }
+  UniqueFEStructElemInfo info = std::make_unique<FEStructMethodInfo>(fullNameIdx, srcLang, isStatic);
+  ptrInfo = info.get();
+  listStructElemInfo.push_back(std::move(info));
+  CHECK_FATAL(mapStructElemInfo.insert(std::make_pair(fullNameIdx, ptrInfo)).second == true,
+              "register struct elem info failed");
+  return ptrInfo;
+}
+
+FEStructElemInfo *FETypeManager::GetStructElemInfo(const GStrIdx &fullNameIdx) const {
+  auto it = mapStructElemInfo.find(fullNameIdx);
+  if (it == mapStructElemInfo.end()) {
     return nullptr;
   }
-  auto itInfo = itStruct->second.find(fullNameIdxMpl);
-  if (itInfo == itStruct->second.end()) {
-    return nullptr;
-  }
-  return itInfo->second;
+  return it->second;
 }
 
 MIRFunction *FETypeManager::GetMIRFunction(const std::string &classMethodName, bool isStatic){
@@ -307,13 +345,13 @@ MIRFunction *FETypeManager::GetMIRFunction(const std::string &classMethodName, b
 }
 
 MIRFunction *FETypeManager::GetMIRFunction(const GStrIdx &nameIdx, bool isStatic) {
-  const MapleUnorderedMap<GStrIdx, MIRFunction*, GStrIdxHash> &funcMap = isStatic ? nameStaticFuncMap : nameFuncMap;
+  const std::unordered_map<GStrIdx, MIRFunction*, GStrIdxHash> &funcMap = isStatic ? nameStaticFuncMap : nameFuncMap;
   auto it = funcMap.find(nameIdx);
   if (it != funcMap.end()) {
     return it->second;
   }
-  const MapleUnorderedMap<GStrIdx, MIRFunction*, GStrIdxHash> &mpltFuncMap = isStatic ? mpltNameStaticFuncMap :
-                                                                                        mpltNameFuncMap;
+  const std::unordered_map<GStrIdx, MIRFunction*, GStrIdxHash> &mpltFuncMap = isStatic ? mpltNameStaticFuncMap :
+                                                                                         mpltNameFuncMap;
   auto it2 = mpltFuncMap.find(nameIdx);
   if (it2 != mpltFuncMap.end()) {
     return it2->second;
@@ -383,6 +421,10 @@ MIRFunction *FETypeManager::CreateFunction(const std::string &methodName, const 
     argsTypeIdx.push_back(argType->GetTypeIndex());
   }
   return CreateFunction(nameIdx, returnType->GetTypeIndex(), argsTypeIdx, isVarg, isStatic);
+}
+
+bool FETypeManager::IsAntiProguardFieldStruct(const GStrIdx &structNameIdx) {
+  return setAntiProguardFieldStructIdx.find(structNameIdx) != setAntiProguardFieldStructIdx.end();
 }
 
 bool FETypeManager::IsStructType(const MIRType &type) {
@@ -466,5 +508,32 @@ std::string FETypeManager::TypeAttrsToString(const TypeAttrs &attrs) {
 #undef TYPE_ATTR
   ss << " ";
   return ss.str();
+}
+
+void FETypeManager::InitMCCFunctions() {
+  InitFuncMCCGetOrInsertLiteral();
+}
+
+void FETypeManager::InitFuncMCCGetOrInsertLiteral() {
+  std::string funcName = "MCC_GetOrInsertLiteral";
+  GStrIdx nameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(funcName);
+  MIRType *typeString = kFEIRTypeJavaString->GenerateMIRTypeAuto(kSrcLangJava);
+  std::vector<TyIdx> argsType;
+  funcMCCGetOrInsertLiteral = CreateFunction(nameIdx, typeString->GetTypeIndex(), argsType, false, false);
+  nameMCCFuncMap[nameIdx] = funcMCCGetOrInsertLiteral;
+}
+
+MIRFunction *FETypeManager::GetMCCFunction(const std::string &funcName) const {
+  GStrIdx funcNameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(funcName);
+  return GetMCCFunction(funcNameIdx);
+}
+
+MIRFunction *FETypeManager::GetMCCFunction(const GStrIdx &funcNameIdx) const {
+  auto it = nameMCCFuncMap.find(funcNameIdx);
+  if (it == nameMCCFuncMap.end()) {
+    return nullptr;
+  } else {
+    return it->second;
+  }
 }
 }  // namespace maple

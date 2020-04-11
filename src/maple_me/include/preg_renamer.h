@@ -32,6 +32,7 @@ class PregRenamer {
   MeIRMap *irMap;
   bool enabledDebug;
 };
+
 class MeDoPregRename : public MeFuncPhase {
  public:
   explicit MeDoPregRename(MePhaseID id) : MeFuncPhase(id) {}

@@ -121,7 +121,7 @@ void SSAEPre::GenerateSaveRealOcc(MeRealOcc &realOcc) {
   bool isReplaced = irMap->ReplaceMeExprStmt(*realOcc.GetMeStmt(), *realOcc.GetMeExpr(), *regOrVar);
   // rebuild worklist
   if (isReplaced) {
-    BuildWorkListStmt(realOcc.GetMeStmt(), realOcc.GetSequence(), true, regOrVar);
+    BuildWorkListStmt(*realOcc.GetMeStmt(), realOcc.GetSequence(), true, regOrVar);
   }
   realOcc.SetSavedExpr(*regOrVar);
 }
@@ -152,7 +152,7 @@ void SSAEPre::GenerateReloadRealOcc(MeRealOcc &realOcc) {
   bool isReplaced = irMap->ReplaceMeExprStmt(*realOcc.GetMeStmt(), *realOcc.GetMeExpr(), *regOrVar);
   // update worklist
   if (isReplaced) {
-    BuildWorkListStmt(realOcc.GetMeStmt(), realOcc.GetSequence(), true, regOrVar);
+    BuildWorkListStmt(*realOcc.GetMeStmt(), realOcc.GetSequence(), true, regOrVar);
   }
 }
 

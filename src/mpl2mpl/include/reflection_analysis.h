@@ -54,6 +54,9 @@ enum class ClassProperty : uint32 {
   kVtab,
   kGctib,
   kInfoRo,
+#ifdef USE_32BIT_REF
+  kInstanceOfCacheFalse,
+#endif
   kClint
 };
 
@@ -197,11 +200,11 @@ class ReflectionAnalysis : public AnalysisResult {
   static void GenMetadataType(MIRModule &mirModule);
   static MIRType *GetRefFieldType();
   static TyIdx GenMetaStructType(MIRModule &mirModule, MIRStructType &metaType, const std::string &str);
-  int64 GetHashIndex(const std::string &strName);
+  uint32 GetHashIndex(const std::string &strName);
   static void GenHotClassNameString(const Klass &klass);
   uint32 FindOrInsertReflectString(const std::string &str);
   static void InitReflectString();
-  int64 BKDRHash(const std::string &strName, uint32 seed);
+  uint32 BKDRHash(const std::string &strName, uint32 seed);
   void GenClassHashMetaData();
   void MarkWeakMethods();
 

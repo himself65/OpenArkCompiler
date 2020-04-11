@@ -1351,10 +1351,10 @@ std::vector<std::pair<CGLowerer::BuiltinFunctionID, PUIdx>> CGLowerer::builtinFu
 std::unordered_map<IntrinDesc*, PUIdx> CGLowerer::intrinFuncIDs;
 
 /* get well known framework class 1st..6th element as pair first element */
-static std::vector<std::pair<std::string, uint64>> wellKnownFrameWorksClass{
+static std::vector<std::pair<std::string, uint32>> wellKnownFrameWorksClass{
 };
 
-static uint64 GetWellKnownFrameWorksClassFlag(const std::string &className) {
+static uint32 GetWellKnownFrameWorksClassFlag(const std::string &className) {
   for (auto it = wellKnownFrameWorksClass.begin(); it != wellKnownFrameWorksClass.end(); ++it) {
     if (className == (*it).first) {
       return (*it).second;
@@ -2535,11 +2535,21 @@ void CGLowerer::LowerGCMalloc(const BaseNode &node, const GCMallocNode &gcmalloc
   blkNode.AppendStatementsFromBlock(*LowerCallAssignedStmt(*callAssign));
 }
 
-void CGLowerer::LowerJarrayMalloc(const StmtNode &stmt, const JarrayMallocNode &node, BlockNode &blkNode, bool perm) {
-  MIRFunction *func = mirBuilder->GetOrCreateFunction((perm ? "MCC_NewPermanentArray" : "MCC_NewObj_flexible_cname"),
-                                                      (TyIdx)(LOWERED_PTR_TYPE));
-  MapleVector<BaseNode*> args(mirModule.GetMPAllocator().Adapter());
+std::string CGLowerer::GetNewArrayFuncName(const uint32 elemSize, const bool perm) const {
+  if (elemSize == 1) {
+    return perm ? "MCC_NewPermArray8" : "MCC_NewArray8";
+  }
+  if (elemSize == 2) {
+    return perm ? "MCC_NewPermArray16" : "MCC_NewArray16";
+  }
+  if (elemSize == 4) {
+    return perm ? "MCC_NewPermArray32" : "MCC_NewArray32";
+  }
+  CHECK_FATAL((elemSize == 8), "Invalid elemSize.");
+  return perm ? "MCC_NewPermArray64" : "MCC_NewArray64";
+}
 
+void CGLowerer::LowerJarrayMalloc(const StmtNode &stmt, const JarrayMallocNode &node, BlockNode &blkNode, bool perm) {
   /* Extract jarray type */
   TyIdx tyIdx = node.GetTyIdx();
   MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
@@ -2550,13 +2560,10 @@ void CGLowerer::LowerJarrayMalloc(const StmtNode &stmt, const JarrayMallocNode &
   /* Inspect element type */
   MIRType *elemType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(jaryType->GetElemTyIdx());
   PrimType elemPrimType = elemType->GetPrimType();
-  uint64 elemSize = GetPrimTypeSize(elemPrimType);
+  uint32 elemSize = GetPrimTypeSize(elemPrimType);
   if (elemType->GetKind() != kTypeScalar) {  /* element is reference */
     elemSize = AArch64RTSupport::kRefFieldSize;
   }
-
-  args.push_back(mirBuilder->CreateIntConst(elemSize, PTY_u64));  /* elem_size */
-  args.push_back(node.Opnd(0));                                   /* n_elems */
 
   std::string klassName = jaryType->GetJavaName();
   std::string arrayClassInfoName;
@@ -2568,7 +2575,13 @@ void CGLowerer::LowerJarrayMalloc(const StmtNode &stmt, const JarrayMallocNode &
     arrayClassInfoName = CLASSINFO_PREFIX_STR + klassName;
     isPredefinedArrayClass = true;
   }
+
+  std::string funcName;
+  MapleVector<BaseNode*> args(mirModule.GetMPAllocator().Adapter());
+  auto *curFunc = mirModule.CurFunction();
   if (isPredefinedArrayClass) {
+    funcName = GetNewArrayFuncName(elemSize, perm);
+    args.push_back(node.Opnd(0));                                   /* n_elems */
     GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(arrayClassInfoName);
     MIRSymbol *arrayClassSym = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(
         GlobalTables::GetStrTable().GetStrIdxFromName(arrayClassInfoName));
@@ -2587,21 +2600,21 @@ void CGLowerer::LowerJarrayMalloc(const StmtNode &stmt, const JarrayMallocNode &
     }
     args.push_back(mirBuilder->CreateExprAddrof(0, *arrayClassSym));
   } else {
+    funcName = perm ? "MCC_NewPermanentArray" : "MCC_NewObj_flexible_cname";
+    args.push_back(mirBuilder->CreateIntConst(elemSize, PTY_u32));  /* elem_size */
+    args.push_back(node.Opnd(0));                                   /* n_elems */
     std::string klassJavaDescriptor;
     NameMangler::DecodeMapleNameToJavaDescriptor(klassName, klassJavaDescriptor);
     UStrIdx classNameStrIdx = GlobalTables::GetUStrTable().GetOrCreateStrIdxFromName(klassJavaDescriptor);
     ConststrNode *classNameExpr = mirModule.GetMemPool()->New<ConststrNode>(classNameStrIdx);
     classNameExpr->SetPrimType(PTY_ptr);
     args.push_back(classNameExpr);  /* class_name */
+    args.push_back(GetBaseNodeFromCurFunc(*curFunc, true));
+    /* set class flag --> wellKnownClassFlag maybe 0 */
+    uint32 wellKnownClassFlag = GetWellKnownFrameWorksClassFlag(jaryType->GetJavaName());
+    args.push_back(mirBuilder->CreateIntConst(static_cast<int32>(wellKnownClassFlag), PTY_u32));
   }
-
-  auto *curFunc = mirModule.CurFunction();
-  args.push_back(GetBaseNodeFromCurFunc(*curFunc, true));
-  /* set class flag which is 11110000 */
-  const uint32 kClassObjectFlag = 0xF0;
-  uint64 wellKnownClassFlag = GetWellKnownFrameWorksClassFlag(jaryType->GetJavaName());
-  uint64 classFlag = isPredefinedArrayClass ? (wellKnownClassFlag | kClassObjectFlag) : wellKnownClassFlag;
-  args.push_back(mirBuilder->CreateIntConst(classFlag, PTY_u64));
+  MIRFunction *func = mirBuilder->GetOrCreateFunction(funcName, (TyIdx)(LOWERED_PTR_TYPE));
   CallNode *callAssign = nullptr;
   if (stmt.GetOpCode() == OP_dassign) {
     auto &dsNode = static_cast<const DassignNode&>(stmt);

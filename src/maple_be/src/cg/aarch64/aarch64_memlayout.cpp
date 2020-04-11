@@ -96,13 +96,14 @@ uint32 AArch64MemLayout::ComputeStackSpaceRequirementForCall(StmtNode &stmt, boo
   return sizeOfArgsToStkPass;
 }
 
-void AArch64MemLayout::setSegmentSize(AArch64SymbolAlloc &symbolAlloc, MemSegment &segment, uint32 typeIdx) {
+void AArch64MemLayout::SetSegmentSize(AArch64SymbolAlloc &symbolAlloc, MemSegment &segment, uint32 typeIdx) {
   segment.SetSize(static_cast<int32>(RoundUp(static_cast<uint64>(segment.GetSize()), be.GetTypeAlign(typeIdx))));
   symbolAlloc.SetOffset(segment.GetSize());
   segment.SetSize(segment.GetSize() + static_cast<int32>(be.GetTypeSize(typeIdx)));
   segment.SetSize(static_cast<int32>(RoundUp(static_cast<uint64>(segment.GetSize()), kSizeOfPtr)));
 }
-void AArch64MemLayout::layoutFormalParams() {
+
+void AArch64MemLayout::LayoutFormalParams() {
   ParmLocator parmLocator(be);
   PLocInfo ploc;
   for (size_t i = 0; i < mirFunction->GetFormalCount(); ++i) {
@@ -118,7 +119,7 @@ void AArch64MemLayout::layoutFormalParams() {
       symLoc->SetRegisters(ploc.reg0, ploc.reg1);
       if (mirFunction->GetNthParamAttr(i).GetAttr(ATTR_localrefvar)) {
         symLoc->SetMemSegment(segRefLocals);
-        setSegmentSize(*symLoc, segRefLocals, ptyIdx);
+        SetSegmentSize(*symLoc, segRefLocals, ptyIdx);
       } else if (!sym->IsPreg()) {
         symLoc->SetMemSegment(GetSegArgsRegPassed());
         /* the type's alignment requirement may be smaller than a registser's byte size */
@@ -138,14 +139,14 @@ void AArch64MemLayout::layoutFormalParams() {
         SetLocalRegLocInfo(sym->GetStIdx(), *symLoc);
         AArch64SymbolAlloc *symLoc1 = memAllocator->GetMemPool()->New<AArch64SymbolAlloc>();
         symLoc1->SetMemSegment(segRefLocals);
-        setSegmentSize(*symLoc1, segRefLocals, ptyIdx);
+        SetSegmentSize(*symLoc1, segRefLocals, ptyIdx);
         SetSymAllocInfo(stIndex, *symLoc1);
       }
     }
   }
 }
 
-void AArch64MemLayout::layoutLocalVariales(std::vector<MIRSymbol*> &tempVar, std::vector<MIRSymbol*> &returnDelays) {
+void AArch64MemLayout::LayoutLocalVariales(std::vector<MIRSymbol*> &tempVar, std::vector<MIRSymbol*> &returnDelays) {
   uint32 symTabSize = mirFunction->GetSymTab()->GetSymbolTableSize();
   for (uint32 i = 0; i < symTabSize; ++i) {
     MIRSymbol *sym = mirFunction->GetSymTab()->GetSymbolFromStIdx(i);
@@ -182,7 +183,7 @@ void AArch64MemLayout::layoutLocalVariales(std::vector<MIRSymbol*> &tempVar, std
   }
 }
 
-void AArch64MemLayout::layoutEAVariales(std::vector<MIRSymbol*> &tempVar) {
+void AArch64MemLayout::LayoutEAVariales(std::vector<MIRSymbol*> &tempVar) {
   for (auto sym : tempVar) {
     uint32 stIndex = sym->GetStIndex();
     TyIdx tyIdx = sym->GetTyIdx();
@@ -196,7 +197,7 @@ void AArch64MemLayout::layoutEAVariales(std::vector<MIRSymbol*> &tempVar) {
   }
 }
 
-void AArch64MemLayout::layoutReturnRef(std::vector<MIRSymbol*> &returnDelays) {
+void AArch64MemLayout::LayoutReturnRef(std::vector<MIRSymbol*> &returnDelays) {
   for (auto sym : returnDelays) {
     uint32 stIndex = sym->GetStIndex();
     TyIdx tyIdx = sym->GetTyIdx();
@@ -222,7 +223,7 @@ void AArch64MemLayout::layoutReturnRef(std::vector<MIRSymbol*> &returnDelays) {
   segLocals.SetSize(RoundUp(segLocals.GetSize(), kSizeOfPtr));
 }
 
-void AArch64MemLayout::layoutActualParams() {
+void AArch64MemLayout::LayoutActualParams() {
   for (size_t i = 0; i < mirFunction->GetFormalCount(); ++i) {
     MIRSymbol *sym = mirFunction->GetFormal(i);
     if (sym->IsPreg()) {
@@ -256,7 +257,7 @@ void AArch64MemLayout::layoutActualParams() {
 }
 
 void AArch64MemLayout::LayoutStackFrame() {
-  layoutFormalParams();
+  LayoutFormalParams();
   /*
    * We do need this as LDR/STR with immediate
    * requires imm be aligned at a 8/4-byte boundary,
@@ -268,17 +269,17 @@ void AArch64MemLayout::LayoutStackFrame() {
   /* allocate the local variables in the stack */
   std::vector<MIRSymbol*> EATempVar;
   std::vector<MIRSymbol*> retDelays;
-  layoutLocalVariales(EATempVar, retDelays);
-  layoutEAVariales(EATempVar);
+  LayoutLocalVariales(EATempVar, retDelays);
+  LayoutEAVariales(EATempVar);
 
   /* handle ret_ref sym now */
-  layoutReturnRef(retDelays);
+  LayoutReturnRef(retDelays);
 
   /*
    * for the actual arguments that cannot be pass through registers
    * need to allocate space for caller-save registers
    */
-  layoutActualParams();
+  LayoutActualParams();
 
   fixStackSize = RealStackFrameSize();
 }

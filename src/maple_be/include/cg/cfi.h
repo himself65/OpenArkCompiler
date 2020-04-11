@@ -47,8 +47,10 @@ using namespace maple;
 
 enum CfiOpcode : uint8 {
 #define CFI_DEFINE(k, sub, n, o0, o1, o2) OP_CFI_##k##sub,
+#define ARM_DIRECTIVES_DEFINE(k, sub, n, o0, o1, o2) OP_ARM_DIRECTIVES_##k##sub,
 #include "cfi.def"
 #undef CFI_DEFINE
+#undef ARM_DIRECTIVES_DEFINE
   kOpCfiLast
 };
 

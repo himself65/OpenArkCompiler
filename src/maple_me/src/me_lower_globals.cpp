@@ -61,7 +61,7 @@ void MeLowerGlobals::LowerGlobalDreads(MeStmt &stmt, MeExpr &expr) {
       // lower to ivar to expose addrof
       OriginalSt *baseOst = ost;
       if (ost->GetFieldID() != 0) {
-        PUIdx puIdx = func->GetMirFunc()->GetPuidx();
+        PUIdx puIdx = func.GetMirFunc()->GetPuidx();
         baseOst = ssaTable->FindOrCreateSymbolOriginalSt(*ost->GetMIRSymbol(), puIdx, 0);
       }
       auto *addrofExpr = static_cast<AddrofMeExpr*>(irMap->CreateAddrofMeExpr(varExpr));
@@ -81,12 +81,13 @@ void MeLowerGlobals::LowerGlobalDreads(MeStmt &stmt, MeExpr &expr) {
         break;
       }
       // lower to iaddrof to expose addrof with 0 fieldID
-      PUIdx puIdx = func->GetMirFunc()->GetPuidx();
+      PUIdx puIdx = func.GetMirFunc()->GetPuidx();
       OriginalSt *baseOst = ssaTable->FindOrCreateSymbolOriginalSt(*ost->GetMIRSymbol(),
-          func->GetMirFunc()->GetPuidx(), 0);
+          func.GetMirFunc()->GetPuidx(), 0);
       MeExpr *newAddrofExpr = irMap->CreateAddrofMeExprFromSymbol(*ost->GetMIRSymbol(), puIdx);
       MIRPtrType ptrType(baseOst->GetTyIdx(), PTY_ptr);
       TyIdx addrTyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&ptrType);
+      ASSERT_NOT_NULL(irMap);
       MeExpr *iaddrofExpr = irMap->CreateIaddrofMeExpr(addrofExpr, addrTyIdx, *newAddrofExpr);
       (void)irMap->ReplaceMeExprStmt(stmt, addrofExpr, *iaddrofExpr);
       break;
@@ -97,8 +98,8 @@ void MeLowerGlobals::LowerGlobalDreads(MeStmt &stmt, MeExpr &expr) {
 }
 
 void MeLowerGlobals::Run() {
-  auto eIt = func->valid_end();
-  for (auto bIt = func->valid_begin(); bIt != eIt; ++bIt) {
+  auto eIt = func.valid_end();
+  for (auto bIt = func.valid_begin(); bIt != eIt; ++bIt) {
     auto *bb = *bIt;
     for (auto &stmt : bb->GetMeStmts()) {
       for (size_t i = 0; i < stmt.NumMeStmtOpnds(); ++i) {
@@ -114,7 +115,7 @@ void MeLowerGlobals::Run() {
         OriginalSt *baseOst = ost;
         if (ost->GetFieldID() != 0) {
           baseOst = ssaTable->FindOrCreateSymbolOriginalSt(*ost->GetMIRSymbol(),
-              func->GetMirFunc()->GetPuidx(), 0);
+              func.GetMirFunc()->GetPuidx(), 0);
         }
         MeExpr *addrof = irMap->CreateAddrofMeExpr(baseOst->GetIndex());
         MIRPtrType ptrType(baseOst->GetTyIdx(), PTY_ptr);
@@ -122,7 +123,7 @@ void MeLowerGlobals::Run() {
         MeExpr *lhs = dass.GetLHS();
         CHECK_NULL_FATAL(lhs);
         auto *lhsIvar = static_cast<IvarMeExpr*>(irMap->CreateIvarMeExpr(*lhs, addrTyIdx, *addrof));
-        IassignMeStmt *iass = irMap->NewInPool<IassignMeStmt>(addrTyIdx, lhsIvar, dass.GetRHS(),  &*dass.GetChiList());
+        IassignMeStmt *iass = irMap->NewInPool<IassignMeStmt>(addrTyIdx, lhsIvar, dass.GetRHS(), &*dass.GetChiList());
         iass->SetBB(bb);
         iass->SetSrcPos(dass.GetSrcPosition());
         iass->SetIsLive(true);

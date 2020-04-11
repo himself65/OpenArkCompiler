@@ -34,7 +34,7 @@ constexpr char kMCCReflectCheckCastingArray[] = "MCC_Reflect_Check_Casting_Array
 //    before the stmt.
 // #2 optimise instance-of && cast
 namespace maple {
-CheckCastGenerator::CheckCastGenerator(MIRModule *mod, KlassHierarchy *kh, bool dump)
+CheckCastGenerator::CheckCastGenerator(MIRModule &mod, KlassHierarchy *kh, bool dump)
     : FuncOptimizeImpl(mod, kh, dump) {
   InitTypes();
   InitFuncs();

@@ -58,6 +58,17 @@ std::unique_ptr<FEIRType> FEIRType::NewType(FEIRTypeKind argKind) {
   }
 }
 
+MIRType *FEIRType::GenerateMIRTypeAuto(MIRSrcLang srcLang) const {
+  MPLFE_PARALLEL_FORBIDDEN();
+  switch (srcLang) {
+    case kSrcLangJava:
+      return GenerateMIRType(!IsScalar());
+    default:
+      CHECK_FATAL(kLncErr, "unsupported language");
+      return nullptr;
+  }
+}
+
 // ---------- FEIRTypeDefault ----------
 FEIRTypeDefault::FEIRTypeDefault()
     : FEIRTypeDefault(PTY_void, GStrIdx(0), 0) {}
@@ -235,7 +246,7 @@ MIRType *FEIRTypeDefault::GenerateMIRTypeInternal(const GStrIdx &argTypeNameIdx,
     baseType = GenerateMIRTypeForPrim();
     type = FEManager::GetTypeManager().GetOrCreateArrayType(*baseType, dim);
   }
-  if (primType != PTY_ref || argTypeNameIdx.GetIdx() == 0) {
+  if (IsScalar()) {
     return type;
   }
   return usePtr ? FEManager::GetTypeManager().GetOrCreatePointerType(*type) : type;

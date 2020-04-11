@@ -25,7 +25,7 @@
 //  2.both-hot       function which is hot in phone run phase and phone boot phase
 //  3.run-hot        function which is only hot in phone run phase
 // Every functon have just one layout type,layout the function
-// together according there layout type.Currently the layout is  below
+// together according there layout type.Currently the layout is below
 //
 // [BootHot]
 // [BothHot]
@@ -35,7 +35,7 @@
 // [Executed] function excuted in some condition
 // [Unused]
 namespace maple {
-CodeReLayout::CodeReLayout(MIRModule *mod, KlassHierarchy *kh, bool dump) : FuncOptimizeImpl(mod, kh, dump) {
+CodeReLayout::CodeReLayout(MIRModule &mod, KlassHierarchy *kh, bool dump) : FuncOptimizeImpl(mod, kh, dump) {
   if (!Options::proFileData.empty()) {
     size_t pos = 0;
     if ((pos = Options::proFileData.find(':')) != std::string::npos) {
@@ -185,7 +185,11 @@ void CodeReLayout::Finish() {
     }
   }
   std::stable_sort(GetMIRModule().GetFunctionList().begin(), GetMIRModule().GetFunctionList().end(),
-                   [](const MIRFunction *a, const MIRFunction *b) { return a->GetLayoutType() < b->GetLayoutType(); });
+                   [](const MIRFunction *a, const MIRFunction *b) {
+                     ASSERT_NOT_NULL(a);
+                     ASSERT_NOT_NULL(b);
+                     return a->GetLayoutType() < b->GetLayoutType();
+                   });
   uint32 last = 0;
   for (uint32 i = 0; i <= static_cast<uint32>(LayoutType::kLayoutRunHot); i++) {
     if (trace) {
@@ -193,7 +197,11 @@ void CodeReLayout::Finish() {
     }
     std::stable_sort(GetMIRModule().GetFunctionList().begin() + last,
                      GetMIRModule().GetFunctionList().begin() + last + layoutCount[i],
-                     [](const MIRFunction *a, const MIRFunction *b) { return a->GetCallTimes() < b->GetCallTimes(); });
+                     [](const MIRFunction *a, const MIRFunction *b) {
+                       ASSERT_NOT_NULL(a);
+                       ASSERT_NOT_NULL(b);
+                       return a->GetCallTimes() < b->GetCallTimes();
+                     });
     last += layoutCount[i];
   }
   // Create layoutInfo

@@ -87,6 +87,7 @@ class JBCStack2FEHelper {
   }
 
   static PrimType JBCStackItemTypeToPrimType(jbc::JBCPrimType itemType);
+  static PrimType SimplifyPrimType(PrimType pty);
 
  protected:
   bool useNestExpr;

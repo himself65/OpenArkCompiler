@@ -120,6 +120,8 @@ class CGLowerer {
 
   void LowerGCMalloc(const BaseNode &node, const GCMallocNode &gcNode, BlockNode &blkNode, bool perm = false);
 
+  std::string GetNewArrayFuncName(const uint32 elemSize, const bool perm) const;
+
   void LowerJarrayMalloc(const StmtNode &stmt, const JarrayMallocNode &node, BlockNode &block, bool perm = false);
 
   BaseNode *LowerAddrof(AddrofNode &addrof) {

@@ -50,7 +50,8 @@ enum BBAttr : uint32 {
   kBBAttrIsJavaFinally = utils::bit_field_v<9>,
   kBBAttrArtificial = utils::bit_field_v<10>,
   kBBAttrIsInLoop = utils::bit_field_v<11>,
-  kBBAttrIsInLoopForEA = utils::bit_field_v<12>
+  kBBAttrIsInLoopForEA = utils::bit_field_v<12>,
+  kBBAttrIsInstrument = utils::bit_field_v<13>
 };
 
 constexpr uint32 kBBVectorInitialSize = 2;
@@ -65,10 +66,12 @@ class BB {
       : id(id),
         pred(kBBVectorInitialSize, nullptr, alloc->Adapter()),
         succ(kBBVectorInitialSize, nullptr, alloc->Adapter()),
+        succFreq(alloc->Adapter()),
         phiList(versAlloc->Adapter()),
         meVarPhiList(alloc->Adapter()),
         meRegPhiList(alloc->Adapter()),
-        meVarPiList(alloc->Adapter()) {
+        meVarPiList(alloc->Adapter()),
+        group(this) {
     pred.pop_back();
     pred.pop_back();
     succ.pop_back();
@@ -79,11 +82,13 @@ class BB {
       : id(id),
         pred(kBBVectorInitialSize, nullptr, alloc->Adapter()),
         succ(kBBVectorInitialSize, nullptr, alloc->Adapter()),
+        succFreq(alloc->Adapter()),
         phiList(versAlloc->Adapter()),
         meVarPhiList(alloc->Adapter()),
         meRegPhiList(alloc->Adapter()),
         meVarPiList(alloc->Adapter()),
-        stmtNodeList(firstStmt, lastStmt) {
+        stmtNodeList(firstStmt, lastStmt),
+        group(this) {
     pred.pop_back();
     pred.pop_back();
     succ.pop_back();
@@ -366,11 +371,36 @@ class BB {
     return meRegPhiList;
   }
 
+  uint64 GetEdgeFreq(const BB *bb) const {
+    auto edgeFreq = succFreq.find(bb);
+    CHECK_FATAL(edgeFreq != succFreq.end(), "bb's edge freq must be set before use");
+    return edgeFreq->second;
+  }
+
+  void SetEdgeFreq(const BB *bb, uint64 freq) {
+    auto iter = std::find(succ.begin(), succ.end(), bb);
+    CHECK_FATAL(iter != std::end(succ), "%d is not the successor of %d", bb->UintID(), this->UintID());
+    succFreq[bb] = freq;
+  }
+
+  BB* GetGroup() const {
+    return group;
+  }
+
+  void SetGroup(BB *g) {
+    group = g;
+  }
+
+  void ClearGroup() {
+    group = this;
+  }
  private:
   BBId id;
   LabelIdx bbLabel = 0;       // the BB's label
   MapleVector<BB*> pred;  // predecessor list
   MapleVector<BB*> succ;  // successor list
+  // record the edge freq from curBB to succ BB
+  MapleMap<const BB*, uint64> succFreq;
   MapleMap<const OriginalSt*, PhiNode> phiList;
   MapleMap<OStIdx, MeVarPhiNode*> meVarPhiList;
   MapleMap<OStIdx, MeRegPhiNode*> meRegPhiList;
@@ -380,6 +410,7 @@ class BB {
   uint32 attributes = 0;
   StmtNodes stmtNodeList;
   MeStmts meStmtList;
+  BB *group;
 };
 
 using BBId = BB::BBId;

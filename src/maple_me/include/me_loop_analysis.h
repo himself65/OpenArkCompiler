@@ -28,25 +28,25 @@ struct LoopDesc {
   MapleSet<BBId> loopBBs;
   LoopDesc *parent;  // points to its closest nesting loop
   uint32 nestDepth;  // the nesting depth
-  LoopDesc(MapleAllocator *alloc, BB *headBB, BB *tailBB)
-      : head(headBB), tail(tailBB), loopBBs(alloc->Adapter()), parent(nullptr), nestDepth(0) {}
+  LoopDesc(MapleAllocator &alloc, BB *headBB, BB *tailBB)
+      : head(headBB), tail(tailBB), loopBBs(alloc.Adapter()), parent(nullptr), nestDepth(0) {}
 
-  bool Has(const BB *bb) const {
-    return loopBBs.find(bb->GetBBId()) != loopBBs.end();
+  bool Has(const BB &bb) const {
+    return loopBBs.find(bb.GetBBId()) != loopBBs.end();
   }
 };
 
 // IdentifyLoop records all the loops in a MeFunction.
 class IdentifyLoops : public AnalysisResult {
  public:
-  IdentifyLoops(MemPool *memPool, MeFunction *mf, Dominance *dm)
+  IdentifyLoops(MemPool *memPool, MeFunction &mf, Dominance *dm)
       : AnalysisResult(memPool),
         meLoopMemPool(memPool),
         meLoopAlloc(memPool),
         func(mf),
         dominance(dm),
         meLoops(meLoopAlloc.Adapter()),
-        bbLoopParent(func->GetAllBBs().size(), nullptr, meLoopAlloc.Adapter()) {}
+        bbLoopParent(func.GetAllBBs().size(), nullptr, meLoopAlloc.Adapter()) {}
 
   virtual ~IdentifyLoops() = default;
 
@@ -67,7 +67,7 @@ class IdentifyLoops : public AnalysisResult {
  private:
   MemPool *meLoopMemPool;
   MapleAllocator meLoopAlloc;
-  MeFunction *func;
+  MeFunction &func;
   Dominance *dominance;
   MapleVector<LoopDesc*> meLoops;
   MapleVector<LoopDesc*> bbLoopParent;  // gives closest nesting loop for each bb

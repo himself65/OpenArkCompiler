@@ -232,10 +232,6 @@ class CGFunc {
   virtual RegOperand &GetOrCreateFramePointerRegOperand() = 0;
   virtual RegOperand &GetOrCreateStackBaseRegOperand() = 0;
   virtual uint32 GetBaseOffset(const SymbolAlloc &symbolAlloc) = 0;
-  virtual MemOperand &GetOrCreateMemOpnd(const MIRSymbol &symbol, int32 offset,
-                                         uint32 size, bool forLocalRef = false) = 0;
-  virtual MemOperand &CreateMemOpnd(RegOperand &baseOpnd, int32 offset, uint32 size) = 0;
-  virtual MemOperand &CreateMemOpnd(RegOperand &baseOpnd, int32 offset, uint32 size, const MIRSymbol &sym) = 0;
   virtual Operand &GetZeroOpnd(uint32 size) = 0;
   virtual Operand &CreateCfiRegOperand(uint32 reg, uint32 size) = 0;
   virtual Operand &GetTargetRetOperand(PrimType primType) = 0;
@@ -246,6 +242,9 @@ class CGFunc {
   /* For ebo issue. */
   virtual Operand *GetTrueOpnd() {
     return nullptr;
+  }
+  virtual void ClearUnreachableGotInfos(BB &bb) {
+    return;
   }
   LabelIdx CreateLabel();
 

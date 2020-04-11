@@ -22,7 +22,7 @@
 #include "types_def.h"
 #include "prim_types.h"
 #include "mir_module.h"
-#include "name_mangler.h"
+#include "namemangler.h"
 #include "mir_type.h"
 #include "mir_const.h"
 

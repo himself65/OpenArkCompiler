@@ -30,6 +30,7 @@
 #include "fe_utils.h"
 #include "general_stmt.h"
 #include "feir_var.h"
+#include "fe_struct_elem_info.h"
 
 namespace maple {
 class FEIRBuilder;
@@ -41,6 +42,9 @@ enum FEIRNodeKind : uint8 {
   kStmtPesudo,
   kStmtDAssign,
   kStmtJavaTypeCheck,
+  kStmtJavaConstClass,
+  kStmtJavaConstString,
+  kStmtJavaMultiANewArray,
   kStmtCallAssign,
   kStmtIntrinsicCallAssign,
   kStmtIAssign,
@@ -51,6 +55,8 @@ enum FEIRNodeKind : uint8 {
   kStmtCondGoto,
   kStmtSwitch,
   kStmtArrayStore,
+  kStmtFieldStore,
+  kStmtFieldLoad,
   kExpr,
   kExprNestable,
   kExprNonNestable,
@@ -605,7 +611,6 @@ class FEIRStmtAssign : public FEIRStmt {
   }
 
   void SetVar(std::unique_ptr<FEIRVar> argVar) {
-    CHECK_FATAL(argVar != nullptr, "input var is nullptr");
     var = std::move(argVar);
   }
 
@@ -658,6 +663,55 @@ class FEIRStmtJavaTypeCheck : public FEIRStmtAssign {
   CheckKind checkKind;
   std::unique_ptr<FEIRExpr> expr;
   std::unique_ptr<FEIRType> type;
+};
+
+// ---------- FEIRStmtJavaConstClass ----------
+class FEIRStmtJavaConstClass : public FEIRStmtAssign {
+ public:
+  FEIRStmtJavaConstClass(std::unique_ptr<FEIRVar> argVar, std::unique_ptr<FEIRType> argType);
+  ~FEIRStmtJavaConstClass() = default;
+
+ protected:
+  std::list<StmtNode*> GenMIRStmtsImpl(MIRBuilder &mirBuilder) const override;
+  std::unique_ptr<FEIRType> type;
+};
+
+// ---------- FEIRStmtJavaConstString ----------
+class FEIRStmtJavaConstString : public FEIRStmtAssign {
+ public:
+  FEIRStmtJavaConstString(std::unique_ptr<FEIRVar> argVar, const GStrIdx &argStrIdx);
+  ~FEIRStmtJavaConstString() = default;
+
+ protected:
+  std::list<StmtNode*> GenMIRStmtsImpl(MIRBuilder &mirBuilder) const override;
+
+ private:
+  GStrIdx strIdx;
+};
+
+// ---------- FEIRStmtJavaMultiANewArray ----------
+class FEIRStmtJavaMultiANewArray : public FEIRStmtAssign {
+ public:
+  FEIRStmtJavaMultiANewArray(std::unique_ptr<FEIRVar> argVar, std::unique_ptr<FEIRType> argType);
+  ~FEIRStmtJavaMultiANewArray() = default;
+  void AddVarSize(std::unique_ptr<FEIRVar> varSize);
+  void AddVarSizeRev(std::unique_ptr<FEIRVar> varSize);
+
+ protected:
+  std::list<StmtNode*> GenMIRStmtsImpl(MIRBuilder &mirBuilder) const override;
+
+ private:
+  static const UniqueFEIRVar &GetVarSize();
+  static const UniqueFEIRVar &GetVarClass();
+  static const UniqueFEIRType &GetTypeAnnotation();
+  static FEStructMethodInfo &GetMethodInfoNewInstance();
+
+  std::unique_ptr<FEIRType> type;
+  std::list<std::unique_ptr<FEIRExpr>> exprSizes;
+  static UniqueFEIRVar varSize;
+  static UniqueFEIRVar varClass;
+  static UniqueFEIRType typeAnnotation;
+  static FEStructMethodInfo *methodInfoNewInstance;
 };
 
 // ---------- FEIRStmtUseOnly ----------
@@ -821,6 +875,76 @@ class FEIRStmtArrayStore : public FEIRStmt {
   UniqueFEIRExpr exprArray;
   UniqueFEIRExpr exprIndex;
   UniqueFEIRType typeArray;
+};
+
+// ---------- FEIRStmtFieldStore ----------
+class FEIRStmtFieldStore : public FEIRStmt {
+ public:
+  FEIRStmtFieldStore(UniqueFEIRVar argVarObj, UniqueFEIRVar argVarField, FEStructFieldInfo &argFieldInfo,
+                     bool argIsStatic);
+  ~FEIRStmtFieldStore() = default;
+
+ protected:
+  std::list<StmtNode*> GenMIRStmtsImpl(MIRBuilder &mirBuilder) const override;
+
+ private:
+  std::list<StmtNode*> GenMIRStmtsImplForStatic(MIRBuilder &mirBuilder) const;
+  std::list<StmtNode*> GenMIRStmtsImplForNonStatic(MIRBuilder &mirBuilder) const;
+
+  UniqueFEIRVar varObj;
+  UniqueFEIRVar varField;
+  FEStructFieldInfo &fieldInfo;
+  bool isStatic;
+};
+
+// ---------- FEIRStmtFieldLoad ----------
+class FEIRStmtFieldLoad : public FEIRStmtAssign {
+ public:
+  FEIRStmtFieldLoad(UniqueFEIRVar argVarObj, UniqueFEIRVar argVarField, FEStructFieldInfo &argFieldInfo,
+                    bool argIsStatic);
+  ~FEIRStmtFieldLoad() = default;
+
+ protected:
+  std::list<StmtNode*> GenMIRStmtsImpl(MIRBuilder &mirBuilder) const override;
+
+ private:
+  std::list<StmtNode*> GenMIRStmtsImplForStatic(MIRBuilder &mirBuilder) const;
+  std::list<StmtNode*> GenMIRStmtsImplForNonStatic(MIRBuilder &mirBuilder) const;
+
+  UniqueFEIRVar varObj;
+  FEStructFieldInfo &fieldInfo;
+  bool isStatic;
+};
+
+// ---------- FEIRStmtCallAssign ----------
+class FEIRStmtCallAssign : public FEIRStmtAssign {
+ public:
+  FEIRStmtCallAssign(FEStructMethodInfo &argMethodInfo, Opcode argMIROp, UniqueFEIRVar argVarRet, bool argIsStatic);
+  ~FEIRStmtCallAssign() = default;
+  void AddExprArg(UniqueFEIRExpr exprArg) {
+    exprArgs.push_back(std::move(exprArg));
+  }
+
+  void AddExprArgReverse(UniqueFEIRExpr exprArg) {
+    exprArgs.push_front(std::move(exprArg));
+  }
+
+  static std::map<Opcode, Opcode> InitMapOpAssignToOp();
+  static std::map<Opcode, Opcode> InitMapOpToOpAssign();
+
+ protected:
+  std::list<StmtNode*> GenMIRStmtsImpl(MIRBuilder &mirBuilder) const override;
+
+ private:
+  Opcode AdjustMIROp() const;
+
+  FEStructMethodInfo &methodInfo;
+  Opcode mirOp;
+  UniqueFEIRVar varRet;
+  bool isStatic;
+  std::list<UniqueFEIRExpr> exprArgs;
+  static std::map<Opcode, Opcode> mapOpAssignToOp;
+  static std::map<Opcode, Opcode> mapOpToOpAssign;
 };
 
 // ---------- FEIRStmtPesudoLOC ----------

@@ -17,7 +17,7 @@
 #include <cstring>
 #include "mir_symbol.h"
 #include "printing.h"
-#include "name_mangler.h"
+#include "namemangler.h"
 #include "global_tables.h"
 #include "mir_builder.h"
 #include "cfg_primitive_types.h"

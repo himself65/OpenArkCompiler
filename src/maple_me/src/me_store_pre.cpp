@@ -20,6 +20,7 @@ void MeStorePre::CheckCreateCurTemp() {
   if (curTemp != nullptr) {
     return;
   }
+  ASSERT_NOT_NULL(irMap);
   // try to use the same preg that LPRE used for the variable
   auto mapIt = irMap->FindLpreTmpsItem(workCand->GetOst()->GetIndex());
   if (mapIt == irMap->GetLpreTmpsEnd()) {
@@ -54,6 +55,7 @@ RegMeExpr *MeStorePre::EnsureRHSInCurTemp(BB &bb) {
       if (enabledDebug) {
         LogInfo::MapleLogger() << "EnsureRHSInCurTemp: found dassign at BB" << bb.GetBBId() << '\n';
       }
+      ASSERT_NOT_NULL(curTemp);
       if (dass->GetRHS()->GetMeOp() == kMeOpReg &&
           static_cast<RegMeExpr*>(dass->GetRHS())->GetOstIdx() == curTemp->GetOstIdx()) {
         return static_cast<RegMeExpr*>(dass->GetRHS());
@@ -140,7 +142,7 @@ void MeStorePre::CodeMotion() {
       // form the lhs VarMeExpr node
       VarMeExpr *lhsVar = irMap->CreateVarMeExprVersion(*workCand->GetTheVar());
       // create a new dassign
-      BB *insertBB = lambdaResOcc->GetBB();
+      BB *insertBB = &lambdaResOcc->GetBB();
       CheckCreateCurTemp();
       CHECK_FATAL(insertBB->GetPred().size() == 1, "CodeMotion: encountered critical edge");
       RegMeExpr *rhsReg = EnsureRHSInCurTemp(*insertBB->GetPred(0));
@@ -161,6 +163,7 @@ void MeStorePre::CodeMotion() {
     }
   }
   // pass 2 only doing deletion
+  ASSERT_NOT_NULL(workCand);
   for (SOcc *occ : workCand->GetRealOccs()) {
     if (occ->GetOccTy() != kSOccReal) {
       continue;
@@ -175,9 +178,9 @@ void MeStorePre::CodeMotion() {
           evalStmt->SetBB(dass->GetBB());
           evalStmt->SetSrcPos(dass->GetSrcPosition());
           evalStmt->SetMeStmtOpndValue(dass->GetRHS());
-          realOcc->GetBB()->InsertMeStmtBefore(dass, evalStmt);
+          realOcc->GetBB().InsertMeStmtBefore(dass, evalStmt);
         }
-        realOcc->GetBB()->RemoveMeStmt(dass);
+        realOcc->GetBB().RemoveMeStmt(dass);
       } else {
         CHECK_FATAL(kOpcodeInfo.IsCallAssigned(realOcc->GetStmt()->GetOp()), "CodeMotion: callassign expected");
         MapleVector<MustDefMeNode> *mustDefList = realOcc->GetStmt()->GetMustDefList();
@@ -201,8 +204,7 @@ void MeStorePre::CreateRealOcc(OStIdx ostIdx, MeStmt &meStmt) {
     workCandMap[ostIdx] = wkCand;
     // if it is local symbol, insert artificial real occ at common_exit_bb
     if (ost->IsLocal()) {
-      SRealOcc *artOcc = spreMp->New<SRealOcc>();
-      artOcc->SetBB(*func->GetCommonExitBB());
+      SRealOcc *artOcc = spreMp->New<SRealOcc>(*func->GetCommonExitBB());
       wkCand->GetRealOccs().push_back(artOcc);
     }
   }
@@ -224,19 +226,19 @@ void MeStorePre::CreateRealOcc(OStIdx ostIdx, MeStmt &meStmt) {
 
 // create a new use occurrence for symbol oidx in given bb
 void MeStorePre::CreateUseOcc(OStIdx ostIdx, BB &bb) const {
-  SpreWorkCand *wkcand = nullptr;
+  SpreWorkCand *wkCand = nullptr;
   auto mapIt = workCandMap.find(ostIdx);
   if (mapIt == workCandMap.end()) {
     return;
   }
-  wkcand = mapIt->second;
-  CHECK_FATAL(!wkcand->GetRealOccs().empty(), "empty container check");
-  SOcc *lastOcc = wkcand->GetRealOccs().back();
-  if (lastOcc->GetOccTy() == kSOccUse && lastOcc->GetBB() == &bb) {
+  wkCand = mapIt->second;
+  CHECK_FATAL(!wkCand->GetRealOccs().empty(), "empty container check");
+  SOcc *lastOcc = wkCand->GetRealOccs().back();
+  if (lastOcc->GetOccTy() == kSOccUse && &lastOcc->GetBB() == &bb) {
     return;  // no need to push consecutive use occurrences at same BB
   }
   SUseOcc *newOcc = spreMp->New<SUseOcc>(bb);
-  wkcand->GetRealOccs().push_back(newOcc);
+  wkCand->GetRealOccs().push_back(newOcc);
 }
 
 // create use occurs for all the symbols that alias with muost
@@ -287,7 +289,7 @@ void MeStorePre::CreateSpreUseOccsForAll(BB &bb) const {
     CHECK_NULL_FATAL(wkCand);
     CHECK_FATAL(!wkCand->GetRealOccs().empty(), "container empty check");
     SOcc *lastOcc = wkCand->GetRealOccs().back();
-    if (lastOcc->GetOccTy() == kSOccUse && lastOcc->GetBB() == &bb) {
+    if (lastOcc->GetOccTy() == kSOccUse && &lastOcc->GetBB() == &bb) {
       continue;  // no need to push consecutive use occurrences at same BB
     }
     SUseOcc *newOcc = spreMp->New<SUseOcc>(bb);

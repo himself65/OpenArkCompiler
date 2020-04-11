@@ -33,7 +33,7 @@ class SSAEPre : public SSAPre {
   void ComputeVarAndDfPhis();
   void BuildWorkListExpr(MeStmt &meStmt, int32 seqStmt, MeExpr&, bool isReBuild, MeExpr *tempVar, bool isRootExpr);
   void BuildWorkListIvarLHSOcc(MeStmt &meStmt, int32 seqStmt, bool isReBuild, MeExpr *tempVar);
-  void CollectVarForMeExpr(MeExpr &meExpr, std::vector<MeExpr*> &varVec) const ;
+  void CollectVarForMeExpr(MeExpr &meExpr, std::vector<MeExpr*> &varVec) const;
   void CollectVarForCand(MeRealOcc &realOcc, std::vector<MeExpr*> &varVec) const;
   bool LeafIsVolatile(const MeExpr *x) const {
     const VarMeExpr *v = safe_cast<VarMeExpr>(x);

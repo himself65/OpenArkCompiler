@@ -16,6 +16,7 @@
 #include <sstream>
 #include "fe_macros.h"
 #include "fe_timer.h"
+#include "fe_config_parallel.h"
 
 namespace maple {
 // ---------- FEFunctionProcessTask ----------
@@ -39,6 +40,14 @@ void FEFunctionProcessSchedular::AddFunctionProcessTask(const std::unique_ptr<FE
   std::unique_ptr<FEFunctionProcessTask> task = std::make_unique<FEFunctionProcessTask>(*ptrFunc);
   AddTask(task.get());
   tasks.push_back(std::move(task));
+}
+
+void FEFunctionProcessSchedular::CallbackThreadMainStart() {
+  std::thread::id tid = std::this_thread::get_id();
+  if (FEOptions::GetInstance().GetDumpLevel() >= FEOptions::kDumpLevelInfoDebug) {
+    INFO(kLncInfo, "Start Run Thread (tid=%lx)", tid);
+  }
+  FEConfigParallel::GetInstance().RegisterRunThreadID(tid);
 }
 
 // ---------- MPLFECompilerComponent ----------

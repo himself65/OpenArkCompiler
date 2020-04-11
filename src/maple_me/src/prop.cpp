@@ -100,6 +100,7 @@ MeExpr *Prop::SimplifyCompareSelectConstMeExpr(const OpMeExpr &opMeExpr, const M
     return nullptr;
   }
 
+  // negative one is invalid ExprID
   OpMeExpr newopMeExpr(-1);
   newopMeExpr.InitBase(OP_select, PTY_u1, 3);
   newopMeExpr.SetOpnd(0, opMeOpnd0.GetOpnd(0));
@@ -316,6 +317,7 @@ bool Prop::Propagatable(const MeExpr &expr, const BB &fromBB, bool atParm) const
           return false;
         }
       }
+      ASSERT_NOT_NULL(curBB);
       if (fromBB.GetAttributes(kBBAttrIsTry) && !curBB->GetAttributes(kBBAttrIsTry)) {
         return false;
       }

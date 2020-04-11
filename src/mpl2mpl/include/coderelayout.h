@@ -22,7 +22,7 @@
 namespace maple {
 class CodeReLayout : public FuncOptimizeImpl {
  public:
-  CodeReLayout(MIRModule *mod, KlassHierarchy *kh, bool dump);
+  CodeReLayout(MIRModule &mod, KlassHierarchy *kh, bool dump);
   ~CodeReLayout() = default;
 
   FuncOptimizeImpl *Clone() override {
@@ -33,11 +33,6 @@ class CodeReLayout : public FuncOptimizeImpl {
   void Finish() override;
 
  private:
-  const std::string exeFuncTag = "executedFuncStart";
-  const std::string profileStartTag = "#profile_start";
-  const std::string profileSummaryTag = "#profile_summary";
-  std::unordered_map<std::string, MIRSymbol*> str2SymMap;
-  uint32 layoutCount[static_cast<uint32>(LayoutType::kLayoutTypeCount)] = {};
   std::string StaticFieldFilename(const std::string &mplFile) const;
   void GenLayoutSym();
   void AddStaticFieldRecord();
@@ -46,6 +41,11 @@ class CodeReLayout : public FuncOptimizeImpl {
   void InsertProfileBeforeDread(const StmtNode *stmt, BaseNode *opnd);
   MIRSymbol *GetorCreateStaticFieldSym(const std::string &fieldName);
   MIRSymbol *GenStrSym(const std::string &str);
+  const std::string exeFuncTag = "executedFuncStart";
+  const std::string profileStartTag = "#profile_start";
+  const std::string profileSummaryTag = "#profile_summary";
+  std::unordered_map<std::string, MIRSymbol*> str2SymMap;
+  uint32 layoutCount[static_cast<uint32>(LayoutType::kLayoutTypeCount)] = {};
 };
 
 class DoCodeReLayout : public ModulePhase {

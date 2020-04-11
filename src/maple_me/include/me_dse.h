@@ -26,11 +26,11 @@
 namespace maple {
 class MeDSE : public DSE {
  public:
-  MeDSE(MeFunction *f, Dominance *dom, bool enabledDebug)
-      : DSE(std::vector<BB*>(f->GetAllBBs().begin(), f->GetAllBBs().end()),
-            *f->GetCommonEntryBB(), *f->GetCommonExitBB(), *f->GetMeSSATab(),
+  MeDSE(MeFunction &func, Dominance *dom, bool enabledDebug)
+      : DSE(std::vector<BB*>(func.GetAllBBs().begin(), func.GetAllBBs().end()),
+            *func.GetCommonEntryBB(), *func.GetCommonExitBB(), *func.GetMeSSATab(),
             *dom, enabledDebug),
-        func(*f) {}
+        func(func) {}
   virtual ~MeDSE() = default;
 
   void RunDSE();

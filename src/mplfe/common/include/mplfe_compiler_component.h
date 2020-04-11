@@ -47,6 +47,9 @@ class FEFunctionProcessSchedular : public MplScheduler {
     dumpTime = arg;
   }
 
+ protected:
+  void CallbackThreadMainStart() override;
+
  private:
   std::list<std::unique_ptr<FEFunctionProcessTask>> tasks;
 };

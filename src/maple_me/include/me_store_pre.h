@@ -30,10 +30,6 @@ class MeStorePre : public MeSSUPre {
   inline bool IsJavaLang() const {
     return mirModule->IsJavaModule();
   }
-  AliasClass *aliasClass;
-  // step 6 code motion
-  RegMeExpr *curTemp;                               // the preg for the RHS of inserted stores
-  MapleUnorderedMap<BB*, RegMeExpr*> bbCurTempMap;  // map bb to curTemp version
   // step 6 methods
   void CheckCreateCurTemp();
   RegMeExpr *EnsureRHSInCurTemp(BB &bb);
@@ -49,6 +45,11 @@ class MeStorePre : public MeSSUPre {
     curTemp = nullptr;
     bbCurTempMap.clear();
   }
+
+  AliasClass *aliasClass;
+  // step 6 code motion
+  RegMeExpr *curTemp;                               // the preg for the RHS of inserted stores
+  MapleUnorderedMap<BB*, RegMeExpr*> bbCurTempMap;  // map bb to curTemp version
 };
 
 class MeDoStorePre : public MeFuncPhase {

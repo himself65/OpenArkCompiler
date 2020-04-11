@@ -46,3 +46,8 @@ CFI_DEFINE( signal_frame,         , 0, Undef,       Undef,     Undef )
 CFI_DEFINE( window_save,          , 0, Undef,       Undef,     Undef )
 CFI_DEFINE( escape,               , 2, StImmediate, List /*expression[, ...]*/, Undef )
 CFI_DEFINE( val_encoded_addr,     , 3, Register,    Immediate, StImmediate )
+
+ARM_DIRECTIVES_DEFINE( save,      , 1, List,        Undef,     Undef )
+ARM_DIRECTIVES_DEFINE( vsave,     , 1, List,        Undef,     Undef )
+ARM_DIRECTIVES_DEFINE( setfp,     , 2, Register,    Immediate, Undef )
+ARM_DIRECTIVES_DEFINE( pad,       , 1, Immediate,   Undef,     Undef )

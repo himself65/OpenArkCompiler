@@ -28,7 +28,7 @@ constexpr unsigned int kShiftCountBit = 8 * 4;  // Get the low 32bit
 
 class VtableAnalysis : public FuncOptimizeImpl {
  public:
-  VtableAnalysis(MIRModule *mod, KlassHierarchy *kh, bool dump);
+  VtableAnalysis(MIRModule &mod, KlassHierarchy *kh, bool dump);
   ~VtableAnalysis() = default;
   static std::string DecodeBaseNameWithType(const MIRFunction &func);
   static bool IsVtableCandidate(const MIRFunction &func);

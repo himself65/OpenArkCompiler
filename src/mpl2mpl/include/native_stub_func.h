@@ -55,7 +55,7 @@ class NativeFuncProperty {
 
 class NativeStubFuncGeneration : public FuncOptimizeImpl {
  public:
-  NativeStubFuncGeneration(MIRModule *mod, KlassHierarchy *kh, bool dump);
+  NativeStubFuncGeneration(MIRModule &mod, KlassHierarchy *kh, bool dump);
   ~NativeStubFuncGeneration() = default;
 
   void ProcessFunc(MIRFunction *func) override;

@@ -19,6 +19,7 @@
 #include "fe_errno.h"
 #include "mpl_timer.h"
 #include "mplfe_env.h"
+#include "fe_manager.h"
 using namespace maple;
 
 int main(int argc, char **argv) {
@@ -42,6 +43,7 @@ int main(int argc, char **argv) {
   compiler.ParseInputs();
   compiler.PreProcessDecls();
   compiler.ProcessDecls();
+  FEManager::GetTypeManager().InitMCCFunctions();
   compiler.PreProcessWithFunctions();
   compiler.ProcessFunctions();
   CHECK_FATAL(success, "Compile Error");

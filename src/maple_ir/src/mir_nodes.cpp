@@ -19,7 +19,7 @@
 #include "printing.h"
 #include "maple_string.h"
 #include "opcode_info.h"
-#include "name_mangler.h"
+#include "namemangler.h"
 #include "utils.h"
 
 namespace maple {

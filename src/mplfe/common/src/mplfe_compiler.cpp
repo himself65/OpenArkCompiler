@@ -188,6 +188,7 @@ void MPLFECompiler::ProcessFunctions() {
     ASSERT(comp != nullptr, "nullptr check");
     uint32 nthreads = FEOptions::GetInstance().GetNThreads();
     if (comp->Parallelable() && nthreads > 0) {
+      FEConfigParallel::GetInstance().EnableParallel();
       success = comp->ProcessFunctionParallel(nthreads) && success;
     } else {
       success = comp->ProcessFunctionSerial() && success;

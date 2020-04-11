@@ -31,7 +31,7 @@ constexpr uint32_t kOffsetNaryMeStmtOpnd = 2;
 }
 
 namespace maple {
-std::array<PreWorkCand*, kWorkCandHashLength> PreWorkCand::workCandHashTable;
+std::array<PreWorkCand*, PreWorkCand::workCandHashLength> PreWorkCand::workCandHashTable;
 
 void MeOccur::DumpOccur(IRMap &irMap) {
   MIRModule *mod = &irMap.GetSSATab().GetModule();
@@ -156,6 +156,7 @@ void MeRealOcc::Dump(const IRMap &irMap) const {
     if (meExpr != nullptr) {
       meExpr->Dump(&irMap);
     } else {
+      ASSERT_NOT_NULL(meStmt);
       meStmt->Dump(&irMap);
     }
     if (meStmt != nullptr && meStmt->GetBB()) {
@@ -225,7 +226,7 @@ uint32 PreWorkCand::ComputeWorkCandHashIndex(const MeExpr &meExpr) {
     case kMeOpIvar: {
       auto &iVar = static_cast<const IvarMeExpr&>(meExpr);
       hashIdx = ComputeWorkCandHashIndex(*iVar.GetBase()) +
-             (static_cast<uint32>(iVar.GetTyIdx()) << kOffsetIvarMeExprTyIdx) + iVar.GetFieldID();
+          (static_cast<uint32>(iVar.GetTyIdx()) << kOffsetIvarMeExprTyIdx) + iVar.GetFieldID();
       break;
     }
     case kMeOpOp: {
@@ -249,7 +250,7 @@ uint32 PreWorkCand::ComputeWorkCandHashIndex(const MeExpr &meExpr) {
     default:
       CHECK_FATAL(false, "MeOP NIY");
   }
-  return hashIdx % kWorkCandHashLength;
+  return hashIdx % workCandHashLength;
 }
 
 // insert occ as realOccs[pos] after shifting the vector elements further down
@@ -356,6 +357,6 @@ uint32 PreStmtWorkCand::ComputeStmtWorkCandHashIndex(const MeStmt &stmt) {
     default:
       CHECK_FATAL(false, "ComputeStmtWorkCandHashIndex: NYI");
   }
-  return hIdx % kWorkCandHashLength;
+  return hIdx % workCandHashLength;
 }
 }  // namespace maple

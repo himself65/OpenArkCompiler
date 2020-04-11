@@ -20,16 +20,12 @@
 namespace maple {
 class MeLowerGlobals {
  public:
-  MeLowerGlobals(MeFunction *func, SSATab *ssaTab) : func(func), irMap(func->GetIRMap()), ssaTable(ssaTab) {}
-  MeLowerGlobals(const MeLowerGlobals &p) = default;
-
+  MeLowerGlobals(MeFunction &func, SSATab *ssaTab) : func(func), irMap(func.GetIRMap()), ssaTable(ssaTab) {}
   ~MeLowerGlobals() = default;
-  MeLowerGlobals &operator=(const MeLowerGlobals &p) = default;
-
   void Run();
 
  private:
-  MeFunction *func;
+  MeFunction &func;
   IRMap *irMap;
   SSATab *ssaTable;
   void LowerGlobalDreads(MeStmt &stmt, MeExpr &expr);

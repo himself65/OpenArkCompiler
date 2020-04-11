@@ -384,7 +384,7 @@ AnalysisResult *MeDoSSALPre::Run(MeFunction *irFunc, MeFuncResultMgr *funcMgr, M
       irFunc->Dump(false);
     }
   }
-  MeLowerGlobals lowerGlobals(irFunc, irFunc->GetMeSSATab());
+  MeLowerGlobals lowerGlobals(*irFunc, irFunc->GetMeSSATab());
   lowerGlobals.Run();
   {
     MeSSALPre ssaLpre(*irFunc, *irMap, *dom, *NewMemPool(), *NewMemPool(), kAddrPre, lpreLimitUsed);

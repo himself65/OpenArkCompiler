@@ -12,25 +12,21 @@
  * FIT FOR A PARTICULAR PURPOSE.
  * See the Mulan PSL v1 for more details.
  */
-#ifndef MAPLE_UTIL_INCLUDE_LITERAL_STR_NAME_H
-#define MAPLE_UTIL_INCLUDE_LITERAL_STR_NAME_H
+#ifndef MRT_INCLUDE_LITERALSTRNAME_H
+#define MRT_INCLUDE_LITERALSTRNAME_H
 #include <map>
 #include <cstring>
 #include "muid.h"
 
 // literal string naming is shared between maple compiler and runtime, thus not in namespace maplert
-#ifdef MUID_LENGTH
-#undef MUID_LENGTH
-#define MUID_LENGTH 16
-#endif
-
 const std::string kConstString = "_C_STR_";
 const std::string kConstStringPtr = "_PTR_C_STR_";
-constexpr int kConstStringLen = 7;
 const std::string kLocalStringPrefix = "L_STR_";
+constexpr int kConstStringLen = 7;
+constexpr unsigned int kDigestHashLength = 16;
 
 union DigestHash {
-  uint8_t bytes[MUID_LENGTH];
+  uint8_t bytes[kDigestHashLength];
   struct {
     uint64_t first;
     uint64_t second;
@@ -57,7 +53,7 @@ class LiteralStrName {
     return hash;
   }
 
-  static std::string GetHexStr(const uint8_t *bytes, unsigned len);
+  static std::string GetHexStr(const uint8_t *bytes, uint32_t len);
   static std::string GetLiteralStrName(const uint8_t *bytes, uint32_t len);
   static std::string ComputeMuid(const uint8_t *bytes, uint32_t len);
 };

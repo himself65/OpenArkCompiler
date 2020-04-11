@@ -16,6 +16,7 @@
 #include "jbc_class_const.h"
 #include "jbc_class_const_pool.h"
 #include "jbc_util.h"
+#include "fe_type_manager.h"
 
 namespace maple {
 namespace jbc {
@@ -1346,6 +1347,23 @@ std::string JBCOpNew::GetTypeName(const JBCConstPool &constPool) const {
   }
 }
 
+const FEIRType *JBCOpNew::GetFEIRType(const JBCConstPool &constPool) const {
+  switch (op) {
+    case jbc::kOpNew:
+    case jbc::kOpANewArray: {
+      const JBCConst *constRaw = constPool.GetConstByIdxWithTag(refTypeIdx, JBCConstTag::kConstClass);
+      CHECK_NULL_FATAL(constRaw);
+      const JBCConstClass *constClass = static_cast<const JBCConstClass*>(constRaw);
+      return constClass->GetFEIRType();
+    }
+    case jbc::kOpNewArray:
+      return GetPrimFEIRType().get();
+    default:
+      CHECK_FATAL(false, "Unexpected opcode %s for New", GetOpcodeName().c_str());
+      return FETypeManager::kPrimFEIRTypeUnknown.get();
+  }
+}
+
 std::string JBCOpNew::GetPrimTypeName() const {
   switch (primType) {
     case kPrimInt:
@@ -1366,6 +1384,29 @@ std::string JBCOpNew::GetPrimTypeName() const {
       return "D";
     default:
       return "undefined";
+  }
+}
+
+const UniqueFEIRType &JBCOpNew::GetPrimFEIRType() const {
+  switch (primType) {
+    case kPrimInt:
+      return FETypeManager::kPrimFEIRTypeI32;
+    case kPrimBoolean:
+      return FETypeManager::kPrimFEIRTypeU1;
+    case kPrimByte:
+      return FETypeManager::kPrimFEIRTypeI8;
+    case kPrimShort:
+      return FETypeManager::kPrimFEIRTypeI16;
+    case kPrimChar:
+      return FETypeManager::kPrimFEIRTypeU16;
+    case kPrimLong:
+      return FETypeManager::kPrimFEIRTypeI64;
+    case kPrimFloat:
+      return FETypeManager::kPrimFEIRTypeF32;
+    case kPrimDouble:
+      return FETypeManager::kPrimFEIRTypeF64;
+    default:
+      return FETypeManager::kPrimFEIRTypeUnknown;
   }
 }
 
@@ -1403,6 +1444,20 @@ std::vector<JBCPrimType> JBCOpMultiANewArray::GetInputTypesFromStackImpl(const J
 
 JBCPrimType JBCOpMultiANewArray::GetOutputTypesToStackImpl() const {
   return kTypeRef;
+}
+
+std::string JBCOpMultiANewArray::DumpImpl(const JBCConstPool &constPool) const {
+  std::stringstream ss;
+  ss << GetOpcodeName() << " ";
+  const JBCConst *constRaw = constPool.GetConstByIdx(refTypeIdx);
+  CHECK_NULL_FATAL(constRaw);
+  if (constRaw->GetTag() == kConstClass) {
+    const JBCConstClass *constClass = static_cast<const JBCConstClass*>(constRaw);
+    ss << constClass->GetClassNameOrin() << " dim=" << uint32{ dim };
+  } else {
+    ss << "invalid const tag";
+  }
+  return ss.str();
 }
 
 // ---------- JBCOpTypeCheck ----------

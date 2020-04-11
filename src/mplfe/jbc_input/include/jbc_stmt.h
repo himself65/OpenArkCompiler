@@ -183,6 +183,18 @@ class JBCStmtInst : public JBCStmt {
   std::list<UniqueFEIRStmt> EmitToFEIRForOpInvoke(JBCStack2FEHelper &stack2feHelper,
                                                   const jbc::JBCConstPool &constPool,
                                                   bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpInvokeVirtual(JBCStack2FEHelper &stack2feHelper,
+                                                         const jbc::JBCConstPool &constPool,
+                                                         bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpInvokeStatic(JBCStack2FEHelper &stack2feHelper,
+                                                        const jbc::JBCConstPool &constPool,
+                                                        bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpInvokeInterface(JBCStack2FEHelper &stack2feHelper,
+                                                           const jbc::JBCConstPool &constPool,
+                                                           bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpInvokeSpecial(JBCStack2FEHelper &stack2feHelper,
+                                                         const jbc::JBCConstPool &constPool,
+                                                         bool &success) const;
   std::list<UniqueFEIRStmt> EmitToFEIRForOpNew(JBCStack2FEHelper &stack2feHelper,
                                                const jbc::JBCConstPool &constPool,
                                                bool &success) const;
@@ -211,6 +223,8 @@ class JBCStmtInst : public JBCStmt {
   UniqueFEIRStmt GenerateStmtForConstI64(JBCStack2FEHelper &stack2feHelper, int64 val, bool &success) const;
   UniqueFEIRStmt GenerateStmtForConstF32(JBCStack2FEHelper &stack2feHelper, float val, bool &success) const;
   UniqueFEIRStmt GenerateStmtForConstF64(JBCStack2FEHelper &stack2feHelper, double val, bool &success) const;
+  void PrepareInvokeParametersAndReturn(JBCStack2FEHelper &stack2feHelper, const FEStructMethodInfo &info,
+                                        FEIRStmtCallAssign &callStmt, bool isStatic) const;
 };
 
 class JBCStmtPesudoLabel;

@@ -19,7 +19,7 @@
 namespace maple {
 class CondBasedRC : public MeCondBased {
  public:
-  CondBasedRC(MeFunction *f, Dominance *dom) : MeCondBased(f, dom) {}
+  CondBasedRC(MeFunction &f, Dominance &dom) : MeCondBased(f, dom) {}
 
   virtual ~CondBasedRC() = default;
 };

@@ -23,10 +23,10 @@ std::string FEIRVarName::GetNameImpl(const MIRType &mirType) const {
   ss << name;
   if (withType) {
     ss << "_";
-    if (type->IsPreciseRefType()) {
-      ss << "R" << mirType.GetTypeIndex().GetIdx();
-    } else {
+    if (type->IsScalar()) {
       ss << GetPrimTypeName(type->GetPrimType());
+    } else {
+      ss << "R" << mirType.GetTypeIndex().GetIdx();
     }
   }
   return ss.str();

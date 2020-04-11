@@ -24,10 +24,10 @@ class MeStmtPre : public SSAEPre {
  public:
   // a symbol is a candidate for ssaupdate if its ostidx key exists in the map;
   // the mapped set gives bbs where dassign's are inserted by stmtpre for the symbol
-  MeStmtPre(MeFunction *func, IRMap &map, Dominance &dom, MemPool &memPool, MemPool &mp2, uint32 limit)
+  MeStmtPre(MeFunction &func, IRMap &map, Dominance &dom, MemPool &memPool, MemPool &mp2, uint32 limit)
       : SSAEPre(map, dom, memPool, mp2, kStmtPre, limit, true, false),
         candsForSSAUpdate(std::less<OStIdx>(), ssaPreAllocator.Adapter()),
-        func(func),
+        func(&func),
         versionStackVec(ssaTab->GetOriginalStTable().GetOriginalStVector().size(), nullptr, ssaPreAllocator.Adapter()),
         useOccurMap(std::less<OStIdx>(), ssaPreAllocator.Adapter()) {}
 

@@ -31,7 +31,6 @@
 //
 // newbb is always appended at the end of bb_vec_ and pred/succ will be updated.
 // The bblayout phase will determine the final layout order of the bbs.
-
 namespace maple {
 void MeDoSplitCEdge::BreakCriticalEdge(MeFunction &func, BB &pred, BB &succ) const {
   if (DEBUGFUNC(&func)) {

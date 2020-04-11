@@ -23,7 +23,7 @@
 #include "option.h"
 #include "muid_replacement.h"
 #include "mir_builder.h"
-#include "name_mangler.h"
+#include "namemangler.h"
 #include "itab_util.h"
 #include "string_utils.h"
 #include "metadata_layout.h"
@@ -84,6 +84,8 @@ constexpr char kMonitorStr[] = "monitor";
 constexpr char kObjsizeStr[] = "objsize";
 #ifndef USE_32BIT_REF
 constexpr char kPaddingStr[] = "padding";
+#else
+constexpr char kInstanceOfCacheFalseStr[] = "instanceOfCacheFalse";
 #endif
 constexpr char kTypeNameStr[] = "typeName";
 constexpr char kClassNameStr[] = "classname";
@@ -1286,9 +1288,9 @@ uint32 ReflectionAnalysis::GetAnnoCstrIndex(std::map<int, int> &idxNumMap, const
   return signatureIdx;
 }
 
-int64 ReflectionAnalysis::BKDRHash(const std::string &strName, uint32 seed) {
+uint32 ReflectionAnalysis::BKDRHash(const std::string &strName, uint32 seed) {
   const char *name = strName.c_str();
-  int64 hash = 0;
+  uint32 hash = 0;
   while (*name) {
     uint8_t uName = *name++;
     hash = hash * seed + uName;
@@ -1296,12 +1298,15 @@ int64 ReflectionAnalysis::BKDRHash(const std::string &strName, uint32 seed) {
   return hash;
 }
 
-int64 ReflectionAnalysis::GetHashIndex(const std::string &strName) {
+uint32 ReflectionAnalysis::GetHashIndex(const std::string &strName) {
   constexpr int hashSeed = 211;
   return BKDRHash(strName, hashSeed);
 }
 
 void ReflectionAnalysis::GenHotClassNameString(const Klass &klass) {
+  if (klass.IsInterface()) {
+    return;
+  }
   MIRClassType *classType = klass.GetMIRClassType();
   if (!classType->IsLocal()) {
     // External class.
@@ -1353,7 +1358,7 @@ void ReflectionAnalysis::GenClassMetaData(Klass &klass) {
   reflectionMuidStr += klassName;
   std::string klassJavaDescriptor;
   NameMangler::DecodeMapleNameToJavaDescriptor(klassName, klassJavaDescriptor);
-  int64 hashIndex = GetHashIndex(klassJavaDescriptor);
+  uint32 hashIndex = GetHashIndex(klassJavaDescriptor);
   if (kRADebug) {
     LogInfo::MapleLogger(kLlErr) << "========= Gen Class: " << klassJavaDescriptor
                                  << " (" << hashIndex << ") ========\n";
@@ -1513,6 +1518,9 @@ void ReflectionAnalysis::GenClassMetaData(Klass &klass) {
   mirBuilder.AddAddrofFieldConst(classMetadataType, *newConst, fieldID++, *gctibSt);
   // @classinfo ro.
   mirBuilder.AddAddrofFieldConst(classMetadataType, *newConst, fieldID++, *classMetadataROSymbolType);
+#ifdef USE_32BIT_REF
+  mirBuilder.AddIntFieldConst(classMetadataType, *newConst, fieldID++, 0);
+#endif
 
   // Set default value to class initialization state.
   if (klassH->NeedClinitCheckRecursively(klass)) {
@@ -1607,7 +1615,12 @@ void ReflectionAnalysis::GenMetadataType(MIRModule &mirModule) {
   GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataType, kItabStr, *typeVoidPtr);
   GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataType, kVtabStr, *typeVoidPtr);
   GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataType, kGctibStr, *typeVoidPtr);
+#ifdef USE_32BIT_REF
+  GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataType, kClassinforoStr, *typeI32);
+  GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataType, kInstanceOfCacheFalseStr, *typeU32);
+#else
   GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataType, kClassinforoStr, *typeVoidPtr);
+#endif  // USE_32BIT_REF
   GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataType, kClinitbridgeStr, *typeVoidPtr);
   classMetadataTyIdx = GenMetaStructType(mirModule, classMetadataType, NameMangler::kClassMetadataTypeName);
   MIRStructType classMetadataROType(kTypeStruct);

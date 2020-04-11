@@ -16,64 +16,163 @@
 #define MPLFE_INCLUDE_COMMON_FE_STRUCT_ELEM_INFO_H
 #include <memory>
 #include "global_tables.h"
+#include "fe_configs.h"
+#include "feir_type.h"
 
 namespace maple {
 class FEStructElemInfo {
  public:
-  FEStructElemInfo(const GStrIdx &argFullNameIdxOrin, const GStrIdx &argFullNameIdxMpl)
-      : fullNameIdxOrin(argFullNameIdxOrin),
-        fullNameIdxMpl(argFullNameIdxMpl),
-        isMethod(false),
-        isStatic(false) {}
+  FEStructElemInfo(const GStrIdx &argFullNameIdx, MIRSrcLang argSrcLang, bool argIsStatic);
+  virtual ~FEStructElemInfo() = default;
 
-  ~FEStructElemInfo() = default;
-  void SetIsMethod(bool flag) {
-    isMethod = flag;
+  void Prepare(MIRBuilder &mirBuilder, bool argIsStatic) {
+    PrepareImpl(mirBuilder, argIsStatic);
   }
 
-  bool IsMethod() const {
-    return isMethod;
+  const std::string &GetStructName() const {
+    return GlobalTables::GetStrTable().GetStringFromStrIdx(structNameIdx);
   }
 
-  void SetIsStatic(bool flag) {
-    isStatic = flag;
+  const std::string &GetElemName() const {
+    return GlobalTables::GetStrTable().GetStringFromStrIdx(elemNameIdx);
+  }
+
+  const std::string &GetSignatureName() const {
+    return GlobalTables::GetStrTable().GetStringFromStrIdx(signatureNameIdx);
   }
 
   bool IsStatic() const {
     return isStatic;
   }
 
-  void SetFullNameIdxOrin(const GStrIdx &idx) {
-    fullNameIdxOrin = idx;
+  bool IsMethod() const {
+    return isMethod;
   }
 
-  GStrIdx GetFullNameIdxOrin() const {
-    return fullNameIdxOrin;
+  bool IsDefined() const {
+    return isDefined;
   }
 
-  void SetFullNameIdxMpl(const GStrIdx &idx) {
-    fullNameIdxMpl = idx;
+  void SetDefined() {
+    isDefined = true;
   }
 
-  GStrIdx GetFullNameIdxMpl() const {
-    return fullNameIdxMpl;
+  void SetUndefined() {
+    isDefined = false;
   }
 
-  const std::string &GetFullNameOrin() const {
-    return GlobalTables::GetStrTable().GetStringFromStrIdx(fullNameIdxOrin);
+  bool IsFromDex() const {
+    return isFromDex;
   }
 
-  const std::string &GetFullNameMpl() const {
-    return GlobalTables::GetStrTable().GetStringFromStrIdx(fullNameIdxMpl);
+  void SetFromDex() {
+    isFromDex = true;
   }
 
- private:
-  GStrIdx fullNameIdxOrin;
-  GStrIdx fullNameIdxMpl;
-  bool isMethod : 1;
+  MIRSrcLang GetSrcLang() const {
+    return srcLang;
+  }
+
+  void SetSrcLang(MIRSrcLang lang) {
+    srcLang = lang;
+  }
+
+ LLT_PROTECTED:
+  void Init();
+  void InitJava();
+  virtual void PrepareImpl(MIRBuilder &mirBuilder, bool argIsStatic) = 0;
+
+  GStrIdx fullNameIdx;  // in maple format
+  MIRSrcLang srcLang : 8;
   bool isStatic : 1;
-};  // class FEStructElemInfo
+  bool isMethod : 1;
+  bool isDefined : 1;
+  bool isFromDex : 1;
+  bool isPrepared : 1;
+  GStrIdx structNameIdx;  // in maple format
+  GStrIdx elemNameIdx;  // in maple format
+  GStrIdx signatureNameIdx;  // in maple format
+};
 
 using UniqueFEStructElemInfo = std::unique_ptr<FEStructElemInfo>;
+
+class FEStructFieldInfo : public FEStructElemInfo {
+ public:
+  FEStructFieldInfo(const GStrIdx &argFullNameIdx, MIRSrcLang argSrcLang, bool argIsStatic);
+  ~FEStructFieldInfo() = default;
+  GStrIdx GetFieldNameIdx() const {
+    return fieldNameIdx;
+  }
+
+  FieldID GetFieldID() const {
+    return fieldID;
+  }
+
+  const UniqueFEIRType &GetType() const {
+    return fieldType;
+  }
+
+ LLT_PROTECTED:
+  void PrepareImpl(MIRBuilder &mirBuilder, bool argIsStatic) override;
+
+ LLT_PRIVATE:
+  void LoadFieldType();
+  void LoadFieldTypeJava();
+  void PrepareStaticField(MIRStructType &structType);
+  void PrepareNonStaticField(MIRStructType &structType, MIRBuilder &mirBuilder);
+  bool SearchStructFieldJava(MIRStructType &structType, MIRBuilder &mirBuilder, bool argIsStatic,
+                             bool allowPrivate = true);
+  bool SearchStructFieldJava(const TyIdx &tyIdx, MIRBuilder &mirBuilder, bool argIsStatic, bool allowPrivate = true);
+  bool CompareFieldType(const FieldPair &fieldPair) const;
+
+  UniqueFEIRType fieldType;
+  GStrIdx fieldNameIdx;
+  FieldID fieldID;
+};
+
+class FEStructMethodInfo : public FEStructElemInfo {
+ public:
+  FEStructMethodInfo(const GStrIdx &argFullNameIdx, MIRSrcLang argSrcLang, bool argIsStatic);
+  ~FEStructMethodInfo() = default;
+  PUIdx GetPuIdx() const;
+  bool IsConstructor() const {
+    return isConstructor;
+  }
+
+  bool IsReturnVoid() const {
+    return isReturnVoid;
+  }
+
+  const UniqueFEIRType &GetReturnType() const {
+    return retType;
+  }
+
+  const UniqueFEIRType &GetOwnerType() const {
+    return ownerType;
+  }
+
+  const std::vector<UniqueFEIRType> &GetArgTypes() const {
+    return argTypes;
+  }
+
+ LLT_PROTECTED:
+  void PrepareImpl(MIRBuilder &mirBuilder, bool argIsStatic) override;
+
+ LLT_PRIVATE:
+  void LoadMethodType();
+  void LoadMethodTypeJava();
+  void PrepareMethod();
+  void PrepareImplJava(MIRBuilder &mirBuilder, bool argIsStatic);
+  bool SearchStructMethodJava(MIRStructType &structType, MIRBuilder &mirBuilder, bool argIsStatic,
+                              bool allowPrivate = true);
+  bool SearchStructMethodJava(const TyIdx &tyIdx, MIRBuilder &mirBuilder, bool argIsStatic, bool allowPrivate = true);
+  std::vector<UniqueFEIRType> argTypes;
+  UniqueFEIRType retType;
+  UniqueFEIRType ownerType;
+  GStrIdx methodNameIdx;
+  MIRFunction *mirFunc;
+  bool isReturnVoid;
+  bool isConstructor;
+};
 }  // namespace maple
 #endif  // MPLFE_INCLUDE_COMMON_FE_STRUCT_ELEM_INFO_H

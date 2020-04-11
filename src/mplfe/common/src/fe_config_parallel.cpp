@@ -16,8 +16,8 @@
 #include "mpl_logging.h"
 
 namespace maple {
+FEConfigParallel FEConfigParallel::instance;
+
 FEConfigParallel::FEConfigParallel()
     : nThread(1), enableParallel(false) {}
-
-FEConfigParallel FEConfigParallel::instance;
 }  // namespace maple

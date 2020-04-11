@@ -157,7 +157,13 @@ bool JBCClassField2FEHelper::ProcessDeclWithContainerImpl(MapleAllocator &alloca
   std::string name = field.IsStatic() ? (klassName + "|") : "";
   name += fieldName;
   name += withType ? ("|" + typeName) : "";
+  std::string fullName = klassName + "|" + fieldName + "|" + typeName;
   GStrIdx idx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(NameMangler::EncodeName(name));
+  GStrIdx fullNameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(NameMangler::EncodeName(fullName));
+  FEStructElemInfo *elemInfo = FEManager::GetTypeManager().RegisterStructFieldInfo(fullNameIdx, kSrcLangJava,
+                                                                                   field.IsStatic());
+  elemInfo->SetDefined();
+  elemInfo->SetFromDex();
   FieldAttrs attrs = AccessFlag2Attribute(field.GetAccessFlag());
   std::string typeNameMpl = NameMangler::EncodeName(typeName);
   MIRType *fieldType = FEManager::GetTypeManager().GetOrCreateTypeFromName(typeNameMpl, FETypeFlag::kSrcUnknown, true);
@@ -213,6 +219,16 @@ JBCClassMethod2FEHelper::JBCClassMethod2FEHelper(MapleAllocator &allocator, cons
     : FEInputMethodHelper(allocator),
       method(methodIn) {
   srcLang = kSrcLangJava;
+}
+
+bool JBCClassMethod2FEHelper::ProcessDeclImpl(MapleAllocator &allocator) {
+  std::string methodName = GetMethodName(true);
+  GStrIdx methodNameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(methodName);
+  FEStructElemInfo *elemInfo = FEManager::GetTypeManager().RegisterStructMethodInfo(methodNameIdx, kSrcLangJava,
+                                                                                    IsStatic());
+  elemInfo->SetDefined();
+  elemInfo->SetFromDex();
+  return FEInputMethodHelper::ProcessDeclImpl(allocator);
 }
 
 void JBCClassMethod2FEHelper::SolveReturnAndArgTypesImpl(MapleAllocator &allocator) {

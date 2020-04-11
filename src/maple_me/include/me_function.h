@@ -26,6 +26,7 @@
 #include "func_emit.h"
 #include "me_ir.h"
 #include "me_ssa.h"
+#include "profile.h"
 
 namespace maple {
 class MeCFG;  // circular dependency exists, no other choice
@@ -449,6 +450,18 @@ class MeFunction : public FuncEmit {
     return memPool;
   }
 
+  void AddProfileDesc(uint64 hash, uint32 start, uint32 end) {
+    mirFunc->AddProfileDesc(hash, start, end);
+  }
+
+  const IRProfileDesc *GetProfInf() {
+    if (profileDesc == nullptr) {
+      // return profileDesc with default value
+      profileDesc = memPool->New<IRProfileDesc>();
+    }
+    return profileDesc;
+  }
+
   void PartialInit(bool isSecondPass);
 
   const MapleVector<SCCOfBBs*> &GetSccTopologicalVec() const {
@@ -495,6 +508,7 @@ class MeFunction : public FuncEmit {
   uint32 hints = 0;
   bool hasEH = false;       /* current has try statement */
   bool secondPass = false;  // second pass for the same function
+  IRProfileDesc *profileDesc = nullptr;
 };
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_ME_FUNCTION_H

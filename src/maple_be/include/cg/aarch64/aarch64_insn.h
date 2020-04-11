@@ -167,6 +167,7 @@ class AArch64Insn : public Insn {
   void EmitGetAndSetInt(Emitter &emitter) const;
   void EmitCompareAndSwapInt(Emitter &emitter) const;
   void EmitStringIndexOf(Emitter &emitter) const;
+  void EmitCounter(const CG&, Emitter&) const;
 };
 
 class AArch64cleancallInsn : public AArch64Insn {

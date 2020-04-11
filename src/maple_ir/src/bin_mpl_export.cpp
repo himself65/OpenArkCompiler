@@ -16,7 +16,7 @@
 #include <sstream>
 #include <vector>
 #include "mir_function.h"
-#include "name_mangler.h"
+#include "namemangler.h"
 #include "opcode_info.h"
 #include "mir_pragma.h"
 #include "bin_mplt.h"

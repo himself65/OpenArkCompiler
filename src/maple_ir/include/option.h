@@ -89,6 +89,8 @@ class Options {
   static std::string proFileFuncData;
   static std::string proFileClassData;
   static bool profileStaticFields;
+  static bool genIRProfile;
+  static bool testCase;
   static bool checkArrayStore;
  private:
   MapleAllocator optionAlloc;

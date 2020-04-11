@@ -21,13 +21,13 @@
 namespace maple {
 class May2Dassign {
  public:
-  explicit May2Dassign(MeFunction *f) : func(f), irMap(f->GetIRMap()), ssaTab(f->GetMeSSATab()) {}
+  explicit May2Dassign(MeFunction &func) : func(func), irMap(func.GetIRMap()), ssaTab(func.GetMeSSATab()) {}
 
   ~May2Dassign() = default;
   void DoIt();
 
  private:
-  MeFunction *func;
+  MeFunction &func;
   IRMap *irMap;
   SSATab *ssaTab;
 };

@@ -15,7 +15,7 @@
 #include "native_stub_func.h"
 #include <iostream>
 #include <fstream>
-#include "name_mangler.h"
+#include "namemangler.h"
 #include "vtable_analysis.h"
 #include "reflection_analysis.h"
 
@@ -25,10 +25,10 @@
 // for the preparations before the actual native function is called,
 // including the parameter mapping, GC preparation, and so on.
 namespace maple {
-NativeStubFuncGeneration::NativeStubFuncGeneration(MIRModule *mod, KlassHierarchy *kh, bool dump)
+NativeStubFuncGeneration::NativeStubFuncGeneration(MIRModule &mod, KlassHierarchy *kh, bool dump)
     : FuncOptimizeImpl(mod, kh, dump) {
   MIRType *jstrType = GlobalTables::GetTypeTable().GetOrCreateClassType(
-      NameMangler::GetInternalNameLiteral(NameMangler::kJavaLangStringStr), *mod);
+      NameMangler::GetInternalNameLiteral(NameMangler::kJavaLangStringStr), mod);
   auto *jstrPointerType =
       static_cast<MIRPtrType*>(GlobalTables::GetTypeTable().GetOrCreatePointerType(*jstrType, PTY_ref));
   jstrPointerTypeIdx = jstrPointerType->GetTypeIndex();
@@ -284,7 +284,11 @@ void NativeStubFuncGeneration::ProcessFunc(MIRFunction *func) {
 
 void NativeStubFuncGeneration::GenerateRegFuncTabEntryType() {
   MIRArrayType &arrayType =
+#ifdef USE_ARM32_MACRO
+      *GlobalTables::GetTypeTable().GetOrCreateArrayType(*GlobalTables::GetTypeTable().GetUInt32(), 0);
+#else
       *GlobalTables::GetTypeTable().GetOrCreateArrayType(*GlobalTables::GetTypeTable().GetVoidPtr(), 0);
+#endif
   regFuncTabConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), arrayType);
   std::string regFuncTab = NameMangler::kRegJNIFuncTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
   regFuncSymbol = builder->CreateSymbol(regFuncTabConst->GetType().GetTypeIndex(), regFuncTab, kStVar,
@@ -292,12 +296,20 @@ void NativeStubFuncGeneration::GenerateRegFuncTabEntryType() {
 }
 
 void NativeStubFuncGeneration::GenerateRegFuncTabEntry() {
+#ifdef USE_ARM32_MACRO
+  constexpr int locIdxShift = 3;
+#else
   constexpr int locIdxShift = 4;
+#endif
   constexpr uint64 locIdxMask = 0xFF00000000000000;
   uint64 locIdx = regFuncTabConst->GetConstVec().size();
   auto *newConst =
     GlobalTables::GetIntConstTable().GetOrCreateIntConst(static_cast<uint64>((locIdx << locIdxShift) | locIdxMask),
+#ifdef USE_ARM32_MACRO
+                                                         *GlobalTables::GetTypeTable().GetUInt32());
+#else
                                                          *GlobalTables::GetTypeTable().GetVoidPtr());
+#endif
   regFuncTabConst->PushBack(newConst);
 }
 

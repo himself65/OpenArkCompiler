@@ -19,6 +19,7 @@
 
 namespace maple {
 void PregRenamer::EnqueDefUses(std::list<RegMeExpr*> &qu, RegMeExpr *node, std::set<RegMeExpr*> &curVisited) const {
+  CHECK_NULL_FATAL(node);
   // get its define
   if (node->GetDefBy() == kDefByPhi) {
     MeRegPhiNode &defPhi = node->GetDefPhi();
@@ -81,7 +82,7 @@ void PregRenamer::RunSelf() const {
       if (curNode->GetDefBy() == kDefByNo) {
         // if any use are from zero version, we stop renaming all the candidates related to it issue #1420
         useDefFromZeroVersion = true;
-      } else if (curNode->DefByBB()->GetAttributes(kBBAttrIsTry)) {
+      } else if (curNode->DefByBB() != nullptr && curNode->DefByBB()->GetAttributes(kBBAttrIsTry)) {
         definedInTryBlock = true;
       }
     }

@@ -66,6 +66,23 @@ using FEStructTypePair = std::pair<MIRStructType*, FETypeFlag>;
 
 class FETypeManager {
  public:
+  // ---------- prim FEIRType ----------
+  const static UniqueFEIRType kPrimFEIRTypeUnknown;
+  const static UniqueFEIRType kPrimFEIRTypeU1;
+  const static UniqueFEIRType kPrimFEIRTypeI8;
+  const static UniqueFEIRType kPrimFEIRTypeU8;
+  const static UniqueFEIRType kPrimFEIRTypeI16;
+  const static UniqueFEIRType kPrimFEIRTypeU16;
+  const static UniqueFEIRType kPrimFEIRTypeI32;
+  const static UniqueFEIRType kPrimFEIRTypeU32;
+  const static UniqueFEIRType kPrimFEIRTypeI64;
+  const static UniqueFEIRType kPrimFEIRTypeU64;
+  const static UniqueFEIRType kPrimFEIRTypeF32;
+  const static UniqueFEIRType kPrimFEIRTypeF64;
+  const static UniqueFEIRType kFEIRTypeJavaObject;
+  const static UniqueFEIRType kFEIRTypeJavaClass;
+  const static UniqueFEIRType kFEIRTypeJavaString;
+
   explicit FETypeManager(MIRModule &moduleIn);
   ~FETypeManager();
   void ReleaseMemPool();
@@ -107,6 +124,8 @@ class FETypeManager {
     return GetOrCreateClassOrInterfacePtrType(nameIdx, isInterface, typeFlag, isCreate);
   }
 
+  MIRStructType *GetStructTypeFromName(const std::string &name);
+  MIRStructType *GetStructTypeFromName(const GStrIdx &nameIdx);
   MIRType *GetOrCreateTypeFromName(const std::string &name, FETypeFlag typeFlag, bool usePtr);
   MIRType *GetOrCreatePointerType(const MIRType &type);
   MIRType *GetOrCreateArrayType(MIRType &elemType, uint8 dim);
@@ -115,9 +134,9 @@ class FETypeManager {
 
   // ---------- methods for StructElemInfo ----------
   // structIdx = 0: global field/function without owner structure
-  FEStructElemInfo *RegisterStructElemInfo(const GStrIdx &structIdx, const GStrIdx &fullNameIdxOrin,
-                                           const GStrIdx &fullNameIdxMpl);
-  FEStructElemInfo *GetStructElemInfo(const GStrIdx &structIdx, const GStrIdx &fullNameIdxMpl) const;
+  FEStructElemInfo *RegisterStructFieldInfo(const GStrIdx &fullNameIdx, MIRSrcLang srcLang, bool isStatic);
+  FEStructElemInfo *RegisterStructMethodInfo(const GStrIdx &fullNameIdx, MIRSrcLang srcLang, bool isStatic);
+  FEStructElemInfo *GetStructElemInfo(const GStrIdx &fullNameIdx) const;
 
   // ---------- methods for MIRFunction ----------
   /**
@@ -143,6 +162,17 @@ class FETypeManager {
   MIRFunction *CreateFunction(const std::string &methodName, const std::string &returnTypeName,
                               const std::vector<std::string> &argTypeNames, bool isVarg, bool isStatic);
 
+  // MCC function
+  void InitMCCFunctions();
+  MIRFunction *GetMCCFunction(const std::string &funcName) const;
+  MIRFunction *GetMCCFunction(const GStrIdx &funcNameIdx) const;
+  MIRFunction *GetMCCGetOrInsertLiteral() const {
+    return funcMCCGetOrInsertLiteral;
+  }
+
+  // anti-proguard
+  bool IsAntiProguardFieldStruct(const GStrIdx &structNameIdx);
+
   static bool IsStructType(const MIRType &type);
   static PrimType GetPrimType(const std::string &name);
   static MIRType *GetMIRTypeForPrim(char c);
@@ -165,28 +195,39 @@ class FETypeManager {
  private:
   void UpdateStructNameTypeMapFromTypeTable(const std::string &mpltName, FETypeFlag flag);
   void UpdateNameFuncMapFromTypeTable();
+
+  // MCC function
+  void InitFuncMCCGetOrInsertLiteral();
+
   MIRModule &module;
   MemPool *mp;
   MapleAllocator allocator;
   MIRBuilder builder;
   // map<structNameIdx, pair>
-  MapleUnorderedMap<GStrIdx, FEStructTypePair, GStrIdxHash> structNameTypeMap;
+  std::unordered_map<GStrIdx, FEStructTypePair, GStrIdxHash> structNameTypeMap;
   // map<structNameIdx, mpltNameIdx>
-  MapleUnorderedMap<GStrIdx, GStrIdx, GStrIdxHash> structNameSrcMap;
+  std::unordered_map<GStrIdx, GStrIdx, GStrIdxHash> structNameSrcMap;
   // list<pair<structNameIdx, mpltNameIdx>>
-  MapleList<std::pair<GStrIdx, GStrIdx>> structSameNameSrcList;
+  std::list<std::pair<GStrIdx, GStrIdx>> structSameNameSrcList;
   FETypeSameNamePolicy sameNamePolicy;
   MIRSrcLang srcLang;
 
   // ---------- struct elem info ----------
-  std::map<GStrIdx, std::map<GStrIdx, FEStructElemInfo*>> mapStructElemInfo;
+  std::map<GStrIdx, FEStructElemInfo*> mapStructElemInfo;
   std::list<UniqueFEStructElemInfo> listStructElemInfo;
 
   // ---------- function list ----------
-  MapleUnorderedMap<GStrIdx, MIRFunction*, GStrIdxHash> nameFuncMap;
-  MapleUnorderedMap<GStrIdx, MIRFunction*, GStrIdxHash> nameStaticFuncMap;
-  MapleUnorderedMap<GStrIdx, MIRFunction*, GStrIdxHash> mpltNameFuncMap;
-  MapleUnorderedMap<GStrIdx, MIRFunction*, GStrIdxHash> mpltNameStaticFuncMap;
+  std::unordered_map<GStrIdx, MIRFunction*, GStrIdxHash> nameFuncMap;
+  std::unordered_map<GStrIdx, MIRFunction*, GStrIdxHash> nameStaticFuncMap;
+  std::unordered_map<GStrIdx, MIRFunction*, GStrIdxHash> mpltNameFuncMap;
+  std::unordered_map<GStrIdx, MIRFunction*, GStrIdxHash> mpltNameStaticFuncMap;
+
+  // ---------- MCC function list  ----------
+  std::unordered_map<GStrIdx, MIRFunction*, GStrIdxHash> nameMCCFuncMap;
+  MIRFunction *funcMCCGetOrInsertLiteral;
+
+  // ---------- antiproguard ----------
+  std::set<GStrIdx> setAntiProguardFieldStructIdx;
 };
 }  // namespace maple
 #endif  // MPLFE_INCLUDE_COMMON_FE_TYPE_MANAGER_H

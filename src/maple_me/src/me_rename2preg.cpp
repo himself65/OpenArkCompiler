@@ -31,14 +31,14 @@ using namespace maple;
 template <MePhaseID id> struct ExtractPhaseClass {};
 
 template <> struct ExtractPhaseClass<MeFuncPhase_IRMAP> {
-  using type = MeIRMap;
+  using Type = MeIRMap;
 };
 
 template <> struct ExtractPhaseClass<MeFuncPhase_ALIASCLASS> {
-  using type = AliasClass;
+  using Type = AliasClass;
 };
 
-template <MePhaseID id, typename RetT = std::add_pointer_t<typename ExtractPhaseClass<id>::type>>
+template <MePhaseID id, typename RetT = std::add_pointer_t<typename ExtractPhaseClass<id>::Type>>
 inline RetT GetAnalysisResult(MeFunction &func, MeFuncResultMgr &funcRst) {
   return static_cast<RetT>(funcRst.GetAnalysisResult(id, &func));
 }
@@ -308,11 +308,11 @@ class SSARename2Preg {
     if (regExpr != nullptr) {
       MeExpr *oldRhs = nullptr;
       if (instance_of<DassignMeStmt>(stmt)) {
-        auto *dAStmt = static_cast<DassignMeStmt*>(&stmt);
-        oldRhs = dAStmt->GetRHS();
+        auto *dassStmt = static_cast<DassignMeStmt*>(&stmt);
+        oldRhs = dassStmt->GetRHS();
       } else if (instance_of<MaydassignMeStmt>(stmt)) {
-        auto *mayDAStmt = static_cast<MaydassignMeStmt*>(&stmt);
-        oldRhs = mayDAStmt->GetRHS();
+        auto *mayDassStmt = static_cast<MaydassignMeStmt*>(&stmt);
+        oldRhs = mayDassStmt->GetRHS();
       } else {
         CHECK_FATAL(false, "NYI");
       }
@@ -415,7 +415,6 @@ class SSARename2Preg {
   CacheProxy cacheProxy;
   FormalRenaming formal;
 };
-
 }
 
 namespace maple {
@@ -431,6 +430,5 @@ AnalysisResult *MeDoSSARename2Preg::Run(MeFunction *func, MeFuncResultMgr *funcR
 std::string MeDoSSARename2Preg::PhaseName() const {
   return SSARename2Preg::PhaseName();
 }
-
 }  // namespace maple
 

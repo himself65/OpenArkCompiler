@@ -17,6 +17,7 @@
 #include "global_tables.h"
 #include "feir_var_reg.h"
 #include "feir_var_name.h"
+#include "fe_type_manager.h"
 
 namespace maple {
 UniqueFEIRType FEIRBuilder::CreateType(PrimType basePty, const GStrIdx &baseNameIdx, uint32 dim) {
@@ -183,6 +184,20 @@ UniqueFEIRStmt FEIRBuilder::CreateStmtCondGoto(uint32 targetLabelIdx, Opcode op,
 UniqueFEIRStmt FEIRBuilder::CreateStmtSwitch(UniqueFEIRExpr expr) {
   UniqueFEIRStmt stmt = std::make_unique<FEIRStmtSwitch>(std::move(expr));
   CHECK_NULL_FATAL(stmt);
+  return stmt;
+}
+
+UniqueFEIRStmt FEIRBuilder::CreateStmtJavaConstClass(UniqueFEIRVar dstVar, UniqueFEIRType type) {
+  UniqueFEIRType dstType = FETypeManager::kFEIRTypeJavaClass->Clone();
+  dstVar->SetType(std::move(dstType));
+  UniqueFEIRStmt stmt = std::make_unique<FEIRStmtJavaConstClass>(std::move(dstVar), std::move(type));
+  return stmt;
+}
+
+UniqueFEIRStmt FEIRBuilder::CreateStmtJavaConstString(UniqueFEIRVar dstVar, const GStrIdx &strIdx) {
+  UniqueFEIRType dstType = FETypeManager::kFEIRTypeJavaClass->Clone();
+  dstVar->SetType(std::move(dstType));
+  UniqueFEIRStmt stmt = std::make_unique<FEIRStmtJavaConstString>(std::move(dstVar), strIdx);
   return stmt;
 }
 

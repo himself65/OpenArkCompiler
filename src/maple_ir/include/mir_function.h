@@ -22,6 +22,7 @@
 #include "intrinsics.h"
 #include "file_layout.h"
 #include "mir_nodes.h"
+#include "profile.h"
 
 
 namespace maple {
@@ -684,6 +685,7 @@ class MIRFunction {
   MeFunction *GetMeFunc() {
     return meFunc;
   }
+
   void SetMeFunc(MeFunction *func) {
     meFunc = func;
   }
@@ -776,6 +778,18 @@ class MIRFunction {
   }
 
 
+  void AddProfileDesc(uint64 hash, uint32 start, uint32 end) {
+    profileDesc = module->GetMemPool()->New<IRProfileDesc>(hash, start, end);
+  }
+
+  const IRProfileDesc *GetProfInf() {
+    if (profileDesc == nullptr) {
+      // return profileDesc with default value
+      profileDesc = module->GetMemPool()->New<IRProfileDesc>();
+    }
+    return profileDesc;
+  }
+
  private:
   MIRModule *module;     // the module that owns this function
   PUIdx puIdx = 0;           // the PU index of this function
@@ -849,6 +863,7 @@ class MIRFunction {
   // to hold unmangled class and function names
   MeFunction *meFunc = nullptr;
   EAConnectionGraph *eacg = nullptr;
+  IRProfileDesc *profileDesc = nullptr;
   GStrIdx baseClassStrIdx{0};  // the string table index of base class name
   GStrIdx baseFuncStrIdx{0};   // the string table index of base function name
   // the string table index of base function name mangled with type info

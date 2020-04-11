@@ -442,6 +442,12 @@ Options *MapleCombCompiler::MakeMpl2MplOptions(const MplOptions &options, MemPoo
       case kMpl2MplNoDot:
         mpl2mplOption->noDot = (opt.Type() == kEnable);
         break;
+      case kGenIRProfile:
+        mpl2mplOption->genIRProfile = (opt.Type() == kEnable);
+        break;
+      case kTestCase:
+        mpl2mplOption->testCase = (opt.Type() == kEnable);
+        break;
       default:
         WARN(kLncWarn, "input invalid key for mpl2mpl " + opt.OptionKey());
         break;

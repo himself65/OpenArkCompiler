@@ -21,7 +21,7 @@
 namespace maple {
 class ClassInit : public FuncOptimizeImpl {
  public:
-  ClassInit(MIRModule *mod, KlassHierarchy *kh, bool dump) : FuncOptimizeImpl(mod, kh, dump) {}
+  ClassInit(MIRModule &mod, KlassHierarchy *kh, bool dump) : FuncOptimizeImpl(mod, kh, dump) {}
   ~ClassInit() = default;
 
   FuncOptimizeImpl *Clone() override {

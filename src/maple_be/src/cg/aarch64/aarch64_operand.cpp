@@ -277,8 +277,10 @@ void AArch64MemOperand::Emit(Emitter &emitter, const OpndProp *opndProp) const {
       emitter.Emit(",");
       /* extend, #0, of #3/#2 */
       emitter.Emit(GetExtendAsString());
-      emitter.Emit(" #");
-      emitter.Emit(ShiftAmount());
+      if (GetExtendAsString() == "LSL" || ShiftAmount() != 0) {
+        emitter.Emit(" #");
+        emitter.Emit(ShiftAmount());
+      }
     }
     emitter.Emit("]");
   } else if (addressMode == AArch64MemOperand::kAddrModeLiteral) {

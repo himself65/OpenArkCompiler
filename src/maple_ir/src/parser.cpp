@@ -18,7 +18,7 @@
 #include <fstream>
 #include "mir_parser.h"
 #include "mir_function.h"
-#include "name_mangler.h"
+#include "namemangler.h"
 #include "opcode_info.h"
 #include "mir_pragma.h"
 #include "bin_mplt.h"

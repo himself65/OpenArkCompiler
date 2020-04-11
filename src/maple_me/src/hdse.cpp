@@ -33,7 +33,6 @@
 // 3. For the nodes in worklist mark the def stmt as needed just as step 2 and
 //    pop the node from the worklist.
 // 4. Repeat step 3 until the worklist is empty.
-
 namespace maple {
 using namespace utils;
 
@@ -272,7 +271,7 @@ void HDSE::MarkLastStmtInPDomBBRequired(const BB &bb) {
     CHECK_FATAL((lastStmt.IsCondBr() || op == OP_switch || op == OP_retsub || op == OP_throw ||
                  cdBB->GetAttributes(kBBAttrIsTry) || cdBB->GetAttributes(kBBAttrWontExit)),
                 "HDSE::MarkLastStmtInPDomBBRequired: control dependent on unexpected statement");
-    if ((IsBranch(op) || op == OP_retsub || op == OP_throw))   {
+    if ((IsBranch(op) || op == OP_retsub || op == OP_throw)) {
       MarkStmtRequired(lastStmt);
     }
   }
@@ -305,7 +304,7 @@ void HDSE::MarkSingleUseLive(MeExpr &meExpr) {
     return;
   }
   SetExprNeeded(meExpr);
-  MeExprOp meOp  = meExpr.GetMeOp();
+  MeExprOp meOp = meExpr.GetMeOp();
   switch (meOp) {
     case kMeOpVar:
     case kMeOpReg: {
@@ -401,12 +400,9 @@ void HDSE::MarkSpecialStmtRequired() {
 
 void HDSE::DseInit() {
   // Init bb's required flag
-  if (&commonEntryBB != *bbVec.begin()) {
-    bbRequired[commonEntryBB.GetBBId()] = true;
-  }
-  if (&commonExitBB != *bbVec.end()) {
-    bbRequired[commonExitBB.GetBBId()] = true;
-  }
+  bbRequired[commonEntryBB.GetBBId()] = true;
+  bbRequired[commonExitBB.GetBBId()] = true;
+
   // Init all MeExpr to be dead;
   exprLive.resize(irMap.GetExprID(), false);
 
