@@ -38,7 +38,7 @@ class JBCConstPool {
   const JBCConst *GetConstValue8ByteByIdx(uint16 idx, bool safe = false) const;
   std::string GetNameByClassInfoIdx(uint16 idx, bool safe = false) const;
   bool PreProcess(uint16 argMajorVersion);
-  bool PrepareFEStructElemInfo();
+  bool PrepareFEStructElemInfo(const std::string &ownerClassName);
   JBCConstUTF8 *NewConstUTF8(uint16 &idx, const std::string &str);
   JBCConst4Byte *NewConst4Byte(uint16 &idx, int32 value);
   JBCConst4Byte *NewConst4Byte(uint16 &idx, float value);

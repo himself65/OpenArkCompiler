@@ -14,6 +14,7 @@
  */
 #ifndef MPLFE_INCLUDE_COMMON_FE_CONFIGS_H
 #define MPLFE_INCLUDE_COMMON_FE_CONFIGS_H
+#include "types_def.h"
 
 #if ENABLE_COV_CHECK == 1
 #define LLT_MOCK_TARGET virtual
@@ -28,6 +29,15 @@
 #define LLT_PROTECTED protected
 #define LLT_PRIVATE private
 #endif
+
+namespace maple {
+using TypeDim = uint8;
+
+class FEConstants {
+ public:
+  const static uint8 kDimMax = UINT8_MAX;
+}; // class FEContants
+}  // namespace maple
 
 #include "fe_config_parallel.h"
 #endif  // MPLFE_INCLUDE_COMMON_FE_CONFIGS_H

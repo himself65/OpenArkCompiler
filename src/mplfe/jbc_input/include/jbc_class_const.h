@@ -392,9 +392,18 @@ class JBCConstInvokeDynamic : public JBCConst {
  public:
   JBCConstInvokeDynamic(MapleAllocator &alloc, JBCConstTag t);
   ~JBCConstInvokeDynamic();
+  bool PrepareFEStructElemInfo(const std::string &ownerClassName);
+  JBCConstPoolIdx GetBSMAttrIdx() const {
+    return rawData.bsmAttrIdx;
+  }
 
   const JBCConstNameAndType *GetConstNameAndType() const {
     return constNameAndType;
+  }
+
+  FEStructElemInfo *GetFEStructElemInfo() const {
+    CHECK_NULL_FATAL(feStructElemInfo);
+    return feStructElemInfo;
   }
 
  protected:
@@ -408,6 +417,7 @@ class JBCConstInvokeDynamic : public JBCConst {
     JBCConstPoolIdx nameAndTypeIdx;
   } rawData;
   const JBCConstNameAndType *constNameAndType;
+  FEStructElemInfo *feStructElemInfo;
 };
 }  // namespace jbc
 }  // namespace maple

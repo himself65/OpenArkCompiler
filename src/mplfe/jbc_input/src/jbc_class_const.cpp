@@ -449,13 +449,25 @@ SimpleXMLElem *JBCConstMethodType::GenXMLElemImpl(MapleAllocator &alloc, uint32 
 
 // ---------- JBCConstInvokeDynamic ----------
 JBCConstInvokeDynamic::JBCConstInvokeDynamic(MapleAllocator &alloc, JBCConstTag t)
-    : JBCConst(alloc, t), constNameAndType(nullptr) {
+    : JBCConst(alloc, t), constNameAndType(nullptr), feStructElemInfo(nullptr) {
   rawData.bsmAttrIdx = 0;
   rawData.nameAndTypeIdx = 0;
 }
 
 JBCConstInvokeDynamic::~JBCConstInvokeDynamic() {
   constNameAndType = nullptr;
+}
+
+bool JBCConstInvokeDynamic::PrepareFEStructElemInfo(const std::string &ownerClassName) {
+  CHECK_NULL_FATAL(constNameAndType);
+  const std::string &className = ownerClassName + "$DynamicCall$";
+  const std::string &elemName = constNameAndType->GetName();
+  const std::string &descName = constNameAndType->GetDesc();
+  std::string fullName = NameMangler::EncodeName(className + "|" + elemName + "|" + descName);
+  GStrIdx fullNameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(fullName);
+  feStructElemInfo = FEManager::GetTypeManager().RegisterStructMethodInfo(fullNameIdx, kSrcLangJava, false);
+  static_cast<FEStructMethodInfo*>(feStructElemInfo)->SetJavaDyamicCall();
+  return feStructElemInfo != nullptr;
 }
 
 bool JBCConstInvokeDynamic::ParseFileImpl(BasicIORead &io) {

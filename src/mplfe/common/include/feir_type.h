@@ -14,12 +14,14 @@
  */
 #ifndef MPLFE_INCLUDE_FEIR_TYPE_H
 #define MPLFE_INCLUDE_FEIR_TYPE_H
-#include <string>
 #include <memory>
+#include <string>
+#include <tuple>
 #include "prim_types.h"
 #include "types_def.h"
 #include "mir_type.h"
 #include "global_tables.h"
+#include "fe_configs.h"
 
 namespace maple {
 enum FEIRTypeKind {
@@ -30,11 +32,10 @@ enum FEIRTypeKind {
 
 class FEIRType {
  public:
-  const static uint8 kDimMax = 255;
   explicit FEIRType(FEIRTypeKind argKind);
-  FEIRType(FEIRTypeKind argKind, PrimType argPrimType);
   virtual ~FEIRType() = default;
   static std::unique_ptr<FEIRType> NewType(FEIRTypeKind argKind = kFEIRTypeDefault);
+  static std::map<MIRSrcLang, std::tuple<bool, PrimType>> InitLangConfig();
   MIRType *GenerateMIRTypeAuto(MIRSrcLang srcLang) const;
   bool IsSameKind(const FEIRType &type) const {
     return kind == type.kind;
@@ -45,15 +46,11 @@ class FEIRType {
   }
 
   PrimType GetPrimType() const {
-    return primType;
+    return GetPrimTypeImpl();
   }
 
-  PrimType GetRealPrimType() const {
-    return IsScalar() ? primType : PTY_ref;
-  }
-
-  void SetPrimType(PrimType argPrimType) {
-    primType = argPrimType;
+  void SetPrimType(PrimType pt) {
+    SetPrimTypeImpl(pt);
   }
 
   bool IsZero() const {
@@ -73,34 +70,46 @@ class FEIRType {
   }
 
   MIRType *GenerateMIRType(MIRSrcLang srcLang, bool usePtr) const {
-    return GenerateMIRTypeImpl(srcLang, usePtr);
-  }
-
-  MIRType *GenerateMIRType(bool usePtr) const {
-    return GenerateMIRTypeImpl(usePtr);
+    return GenerateMIRType(usePtr);
   }
 
   MIRType *GenerateMIRType() const {
-    return GenerateMIRTypeImpl();
+    return GenerateMIRType(false);
   }
 
   bool IsPreciseRefType() const {
-    return IsPreciseRefTypeImpl();
-  }
-
-  bool IsPreciseType() const {
-    return IsPreciseTypeImpl();
+    return IsPrecise() && IsRef();
   }
 
   bool IsScalar() const {
     return IsScalarImpl();
   }
 
-  uint8 ArrayIncrDim(uint8 delta = 1) {
+  bool IsRef() const {
+    return IsRefImpl();
+  }
+
+  bool IsArray() const {
+    return IsArrayImpl();
+  }
+
+  bool IsPrecise() const {
+    return IsPreciseImpl();
+  }
+
+  bool IsValid() const {
+    return IsValidImpl();
+  }
+
+  MIRType *GenerateMIRType(bool usePtr, PrimType ptyPtr = PTY_ref) const {
+    return GenerateMIRTypeImpl(usePtr, ptyPtr);
+  }
+
+  TypeDim ArrayIncrDim(TypeDim delta = 1) {
     return ArrayIncrDimImpl(delta);
   }
 
-  uint8 ArrayDecrDim(uint8 delta = 1) {
+  TypeDim ArrayDecrDim(TypeDim delta = 1) {
     return ArrayDecrDimImpl(delta);
   }
 
@@ -116,24 +125,27 @@ class FEIRType {
     return HashImpl();
   }
 
+  static std::map<MIRSrcLang, std::tuple<bool, PrimType>> langConfig;
+
  protected:
   virtual void CopyFromImpl(const FEIRType &type);
   virtual std::unique_ptr<FEIRType> CloneImpl() const = 0;
-  virtual MIRType *GenerateMIRTypeImpl(MIRSrcLang srcLang, bool usePtr) const = 0;
-  virtual MIRType *GenerateMIRTypeImpl(bool usePtr) const = 0;
-  virtual MIRType *GenerateMIRTypeImpl() const = 0;
-  virtual bool IsPreciseRefTypeImpl() const = 0;
-  virtual bool IsPreciseTypeImpl() const = 0;
+  virtual MIRType *GenerateMIRTypeImpl(bool usePtr, PrimType ptyPtr) const = 0;
   virtual bool IsScalarImpl() const = 0;
-  virtual uint8 ArrayIncrDimImpl(uint8 delta) = 0;
-  virtual uint8 ArrayDecrDimImpl(uint8 delta) = 0;
+  virtual TypeDim ArrayIncrDimImpl(TypeDim delta) = 0;
+  virtual TypeDim ArrayDecrDimImpl(TypeDim delta) = 0;
   virtual bool IsEqualToImpl(const std::unique_ptr<FEIRType> &argType) const;
   virtual bool IsEqualToImpl(const FEIRType &argType) const;
   virtual size_t HashImpl() const = 0;
+  virtual PrimType GetPrimTypeImpl() const = 0;
+  virtual void SetPrimTypeImpl(PrimType pt) = 0;
+  virtual bool IsRefImpl() const = 0;
+  virtual bool IsArrayImpl() const = 0;
+  virtual bool IsPreciseImpl() const = 0;
+  virtual bool IsValidImpl() const = 0;
 
   FEIRTypeKind kind : 7;
   bool isZero : 1;
-  PrimType primType;
 };  // class FEIRType
 
 using UniqueFEIRType = std::unique_ptr<FEIRType>;
@@ -143,7 +155,7 @@ class FEIRTypeDefault : public FEIRType {
   FEIRTypeDefault();
   explicit FEIRTypeDefault(PrimType argPrimType);
   FEIRTypeDefault(PrimType argPrimType, const GStrIdx &argTypeNameIdx);
-  FEIRTypeDefault(PrimType argPrimType, const GStrIdx &argTypeNameIdx, uint8 argDim);
+  FEIRTypeDefault(PrimType argPrimType, const GStrIdx &argTypeNameIdx, TypeDim argDim);
   ~FEIRTypeDefault() = default;
   FEIRTypeDefault(const FEIRTypeDefault&) = delete;
   FEIRTypeDefault &operator=(const FEIRTypeDefault&) = delete;
@@ -169,52 +181,76 @@ class FEIRTypeDefault : public FEIRType {
     return typeNameIdx;
   }
 
-  uint8 GetDim() const {
+  TypeDim GetDim() const {
     return dim;
   }
 
-  FEIRTypeDefault &SetDim(uint8 argDim) {
+  FEIRTypeDefault &SetDim(TypeDim argDim) {
     dim = argDim;
     return *this;
   }
 
- protected:
+ LLT_PROTECTED:
   void CopyFromImpl(const FEIRType &type) override;
   std::unique_ptr<FEIRType> CloneImpl() const override;
-  MIRType *GenerateMIRTypeImpl(MIRSrcLang srcLang, bool usePtr) const override;
-  MIRType *GenerateMIRTypeImpl(bool usePtr) const override;
-  MIRType *GenerateMIRTypeImpl() const override;
-  uint8 ArrayIncrDimImpl(uint8 delta) override;
-  uint8 ArrayDecrDimImpl(uint8 delta) override;
+  MIRType *GenerateMIRTypeImpl(bool usePtr, PrimType ptyPtr) const override;
+  TypeDim ArrayIncrDimImpl(TypeDim delta) override;
+  TypeDim ArrayDecrDimImpl(TypeDim delta) override;
   bool IsEqualToImpl(const FEIRType &argType) const override;
+  bool IsEqualToImpl(const std::unique_ptr<FEIRType> &argType) const override;
   size_t HashImpl() const override;
-  bool IsPreciseRefTypeImpl() const override;
-  bool IsPreciseTypeImpl() const override;
   bool IsScalarImpl() const override;
+  PrimType GetPrimTypeImpl() const override;
+  void SetPrimTypeImpl(PrimType pt) override;
   MIRType *GenerateMIRTypeInternal(const GStrIdx &argTypeNameIdx, bool usePtr) const;
+  MIRType *GenerateMIRTypeInternal(const GStrIdx &argTypeNameIdx, bool usePtr, PrimType ptyPtr) const;
 
+  bool IsRefImpl() const override {
+    return dim > 0 || !IsScalarPrimType(primType);
+  }
+
+  bool IsArrayImpl() const override {
+    return dim > 0;
+  }
+
+  bool IsPreciseImpl() const override {
+    return IsScalarPrimType(primType) || typeNameIdx != 0;
+  }
+
+  bool IsValidImpl() const override {
+    return !IsScalarPrimType(primType) || typeNameIdx == 0;
+  }
+
+  static bool IsScalarPrimType(PrimType pty) {
+    return pty != PTY_ref && (IsPrimitiveInteger(pty) || IsPrimitiveFloat(pty) || IsAddress(pty) || pty == PTY_void);
+  }
+
+  PrimType primType;
   GStrIdx typeNameIdx;
-  uint8 dim;
+  TypeDim dim;
 };
 
 // ---------- FEIRTypeByName ----------
 class FEIRTypeByName : public FEIRTypeDefault {
  public:
-  FEIRTypeByName(PrimType argPrimType, const std::string &argTypeName, uint8 argDim = 0);
+  FEIRTypeByName(PrimType argPrimType, const std::string &argTypeName, TypeDim argDim = 0);
   ~FEIRTypeByName() = default;
   FEIRTypeByName(const FEIRTypeByName&) = delete;
   FEIRTypeByName &operator=(const FEIRTypeByName&) = delete;
 
  protected:
   std::unique_ptr<FEIRType> CloneImpl() const override;
-  MIRType *GenerateMIRTypeImpl(MIRSrcLang srcLang, bool usePtr) const override;
-  MIRType *GenerateMIRTypeImpl(bool usePtr) const override;
-  MIRType *GenerateMIRTypeImpl() const override;
+  MIRType *GenerateMIRTypeImpl(bool usePtr, PrimType ptyPtr) const override;
   bool IsEqualToImpl(const FEIRType &argType) const override;
   size_t HashImpl() const override;
-  bool IsPreciseRefTypeImpl() const override;
-  bool IsPreciseTypeImpl() const override;
   bool IsScalarImpl() const override;
+  bool IsPreciseImpl() const override {
+    return IsScalarPrimType(primType) || !typeName.empty();
+  }
+
+  bool IsValidImpl() const override {
+    return !IsScalarPrimType(primType) || typeName.empty();
+  }
 
  private:
   std::string typeName;
@@ -223,7 +259,7 @@ class FEIRTypeByName : public FEIRTypeDefault {
 // ---------- FEIRTypePointer ----------
 class FEIRTypePointer : public FEIRType {
  public:
-  explicit FEIRTypePointer(std::unique_ptr<FEIRType> argBaseType, PrimType argPrimType = PTY_ptr);
+  explicit FEIRTypePointer(std::unique_ptr<FEIRType> argBaseType, PrimType argPrimType = PTY_ref);
   ~FEIRTypePointer() = default;
   FEIRTypePointer(const FEIRTypePointer&) = delete;
   FEIRTypePointer &operator=(const FEIRTypePointer&) = delete;
@@ -238,18 +274,32 @@ class FEIRTypePointer : public FEIRType {
 
  protected:
   std::unique_ptr<FEIRType> CloneImpl() const override;
-  MIRType *GenerateMIRTypeImpl(MIRSrcLang srcLang, bool usePtr) const override;
-  MIRType *GenerateMIRTypeImpl(bool usePtr) const override;
-  MIRType *GenerateMIRTypeImpl() const override;
+  MIRType *GenerateMIRTypeImpl(bool usePtr, PrimType ptyPtr) const override;
   bool IsEqualToImpl(const FEIRType &argType) const override;
   size_t HashImpl() const override;
-  bool IsPreciseRefTypeImpl() const override;
-  bool IsPreciseTypeImpl() const override;
   bool IsScalarImpl() const override;
-  uint8 ArrayIncrDimImpl(uint8 delta) override;
-  uint8 ArrayDecrDimImpl(uint8 delta) override;
+  TypeDim ArrayIncrDimImpl(TypeDim delta) override;
+  TypeDim ArrayDecrDimImpl(TypeDim delta) override;
+  virtual PrimType GetPrimTypeImpl() const override;
+  virtual void SetPrimTypeImpl(PrimType pt) override;
+  virtual bool IsRefImpl() const override {
+    return baseType->IsRef();
+  }
+
+  virtual bool IsArrayImpl() const override {
+    return baseType->IsArray();
+  }
+
+  virtual bool IsPreciseImpl() const override {
+    return baseType->IsPrecise();
+  }
+
+  virtual bool IsValidImpl() const override {
+    return baseType->IsValid();
+  }
 
  private:
+  PrimType primType;
   std::unique_ptr<FEIRType> baseType;
 };
 

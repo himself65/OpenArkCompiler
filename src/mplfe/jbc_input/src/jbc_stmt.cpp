@@ -719,8 +719,7 @@ std::list<UniqueFEIRStmt> JBCStmtInst::EmitToFEIRForOpInvoke(JBCStack2FEHelper &
     case jbc::kOpInvokeInterface:
       return EmitToFEIRForOpInvokeInterface(stack2feHelper, constPool, success);
     case jbc::kOpInvokeDynamic:
-      // WARN(kLncWarn, "unsupported op: invokedynamic");
-      break;
+      return EmitToFEIRForOpInvokeDynamic(stack2feHelper, constPool, success);
     default:
       CHECK_FATAL(false, "unsupported op: %s", op.GetOpcodeName().c_str());
       break;
@@ -735,7 +734,7 @@ void JBCStmtInst::PrepareInvokeParametersAndReturn(JBCStack2FEHelper &stack2feHe
   const std::vector<UniqueFEIRType> &argTypes = info.GetArgTypes();
   for (int i = argTypes.size() - 1; i >= 0; --i) {
     const UniqueFEIRType &argType = argTypes[static_cast<uint32>(i)];
-    PrimType pty = argType->GetRealPrimType();
+    PrimType pty = argType->GetPrimType();
     UniqueFEIRVar var = stack2feHelper.PopItem(JBCStack2FEHelper::SimplifyPrimType(pty));
     UniqueFEIRExpr expr = FEIRBuilder::CreateExprDRead(std::move(var));
     callStmt.AddExprArgReverse(std::move(expr));
@@ -743,14 +742,14 @@ void JBCStmtInst::PrepareInvokeParametersAndReturn(JBCStack2FEHelper &stack2feHe
   if (!isStatic) {
     // push this
     const UniqueFEIRType &thisType = info.GetOwnerType();
-    PrimType pty = thisType->GetRealPrimType();
+    PrimType pty = thisType->GetPrimType();
     UniqueFEIRVar var = stack2feHelper.PopItem(JBCStack2FEHelper::SimplifyPrimType(pty));
     UniqueFEIRExpr expr = FEIRBuilder::CreateExprDRead(std::move(var));
     callStmt.AddExprArgReverse(std::move(expr));
   }
   if (!info.IsReturnVoid()) {
     const UniqueFEIRType &retType = info.GetReturnType();
-    PrimType pty = retType->GetRealPrimType();
+    PrimType pty = retType->GetPrimType();
     UniqueFEIRVar var = stack2feHelper.PushItem(JBCStack2FEHelper::SimplifyPrimType(pty));
     callStmt.SetVar(std::move(var));
   }
@@ -837,6 +836,25 @@ std::list<UniqueFEIRStmt> JBCStmtInst::EmitToFEIRForOpInvokeSpecial(JBCStack2FEH
   UniqueFEIRStmt stmt = std::make_unique<FEIRStmtCallAssign>(*methodInfo, mirOp, nullptr, false);
   FEIRStmtCallAssign *ptrStmt = static_cast<FEIRStmtCallAssign*>(stmt.get());
   PrepareInvokeParametersAndReturn(stack2feHelper, *methodInfo, *ptrStmt, false);
+  ans.push_back(std::move(stmt));
+  return ans;
+}
+
+std::list<UniqueFEIRStmt> JBCStmtInst::EmitToFEIRForOpInvokeDynamic(JBCStack2FEHelper &stack2feHelper,
+                                                                    const jbc::JBCConstPool &constPool,
+                                                                    bool &success) const {
+  std::list<UniqueFEIRStmt> ans;
+  const jbc::JBCOpInvoke &opInvoke = static_cast<const jbc::JBCOpInvoke&>(op);
+  const jbc::JBCConst *constRaw = constPool.GetConstByIdx(opInvoke.GetMethodIdx());
+  if (constRaw == nullptr || constRaw->GetTag() != jbc::JBCConstTag::kConstInvokeDynamic) {
+    success = false;
+    return ans;
+  }
+  const jbc::JBCConstInvokeDynamic *constDynamic = static_cast<const jbc::JBCConstInvokeDynamic*>(constRaw);
+  FEStructMethodInfo *methodInfo = static_cast<FEStructMethodInfo*>(constDynamic->GetFEStructElemInfo());
+  UniqueFEIRStmt stmt = std::make_unique<FEIRStmtCallAssign>(*methodInfo, OP_call, nullptr, true);
+  FEIRStmtCallAssign *ptrStmt = static_cast<FEIRStmtCallAssign*>(stmt.get());
+  PrepareInvokeParametersAndReturn(stack2feHelper, *methodInfo, *ptrStmt, true);
   ans.push_back(std::move(stmt));
   return ans;
 }

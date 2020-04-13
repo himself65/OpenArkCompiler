@@ -208,7 +208,7 @@ bool JBCClass::ParseFileForAttrs(BasicIORead &io) {
 bool JBCClass::PreProcess() {
   bool success = true;
   success = success && constPool.PreProcess(header.majorVersion);
-  success = success && constPool.PrepareFEStructElemInfo();
+  success = success && constPool.PrepareFEStructElemInfo(GetClassNameOrin());
   for (JBCClassMethod *method : tbMethods) {
     success = success && method->PreProcess();
   }

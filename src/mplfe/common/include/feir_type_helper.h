@@ -16,12 +16,13 @@
 #define MPLFE_INCLUDE_FEIR_TYPE_HELPER_H
 #include <string>
 #include <memory>
+#include "fe_configs.h"
 #include "feir_type.h"
 
 namespace maple {
 class FEIRTypeHelper {
  public:
-  static UniqueFEIRType CreateTypeByPrimType(PrimType primType, uint8 dim = 0, bool usePtr = false);
+  static UniqueFEIRType CreateTypeByPrimType(PrimType primType, TypeDim dim = 0, bool usePtr = false);
   static UniqueFEIRType CreateTypeByJavaName(const std::string typeName, bool inMpl, bool usePtr);
   static UniqueFEIRType CreatePointerType(UniqueFEIRType baseType, PrimType primType = PTY_ptr);
   static UniqueFEIRType CreateTypeByDimIncr(const UniqueFEIRType &srcType, uint8 delta, bool usePtr = false,
@@ -29,6 +30,7 @@ class FEIRTypeHelper {
   static UniqueFEIRType CreateTypeByDimDecr(const UniqueFEIRType &srcType, uint8 delta);
   static UniqueFEIRType CreateTypeByGetAddress(const UniqueFEIRType &srcType, PrimType primType = PTY_ptr);
   static UniqueFEIRType CreateTypeByDereferrence(const UniqueFEIRType &srcType);
+  static UniqueFEIRType CreateTypeDefault(PrimType primType, const GStrIdx &typeNameIdx, TypeDim dim);
 
  private:
   FEIRTypeHelper() = default;

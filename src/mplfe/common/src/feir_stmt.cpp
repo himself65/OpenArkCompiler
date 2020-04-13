@@ -545,7 +545,6 @@ FEIRStmtCallAssign::FEIRStmtCallAssign(FEStructMethodInfo &argMethodInfo, Opcode
     : FEIRStmtAssign(FEIRNodeKind::kStmtCallAssign, std::move(argVarRet)),
       methodInfo(argMethodInfo),
       mirOp(argMIROp),
-      varRet(std::move(argVarRet)),
       isStatic(argIsStatic) {}
 
 std::map<Opcode, Opcode> FEIRStmtCallAssign::InitMapOpAssignToOp() {
@@ -571,6 +570,9 @@ std::list<StmtNode*> FEIRStmtCallAssign::GenMIRStmtsImpl(MIRBuilder &mirBuilder)
   StmtNode *stmtCall = nullptr;
   // prepare and find root
   methodInfo.Prepare(mirBuilder, isStatic);
+  if (methodInfo.IsJavaPolymorphicCall() || methodInfo.IsJavaDynamicCall()) {
+    return GenMIRStmtsUseZeroReturn(mirBuilder);
+  }
   Opcode op = AdjustMIROp();
   MapleVector<BaseNode*> args(mirBuilder.GetCurrentFuncCodeMpAllocator()->Adapter());
   for (const UniqueFEIRExpr &exprArg : exprArgs) {
@@ -585,6 +587,45 @@ std::list<StmtNode*> FEIRStmtCallAssign::GenMIRStmtsImpl(MIRBuilder &mirBuilder)
     stmtCall = mirBuilder.CreateStmtCallAssigned(puIdx, args, retVarSym, op);
   }
   ans.push_back(stmtCall);
+  return ans;
+}
+
+std::list<StmtNode*> FEIRStmtCallAssign::GenMIRStmtsUseZeroReturn(MIRBuilder &mirBuilder) const {
+  std::list<StmtNode*> ans;
+  if (methodInfo.IsReturnVoid()) {
+    return ans;
+  }
+  const UniqueFEIRType &retType = methodInfo.GetReturnType();
+  MIRType *mirRetType = retType->GenerateMIRTypeAuto(kSrcLangJava);
+  MIRSymbol *mirRetSym = var->GenerateLocalMIRSymbol(mirBuilder);
+  BaseNode *nodeZero;
+  if (mirRetType->IsScalarType()) {
+    switch (mirRetType->GetPrimType()) {
+      case PTY_u1:
+      case PTY_i8:
+      case PTY_i16:
+      case PTY_u16:
+      case PTY_i32:
+        nodeZero = mirBuilder.CreateIntConst(0, PTY_i32);
+        break;
+      case PTY_i64:
+        nodeZero = mirBuilder.CreateIntConst(0, PTY_i64);
+        break;
+      case PTY_f32:
+        nodeZero = mirBuilder.CreateFloatConst(0.0f);
+        break;
+      case PTY_f64:
+        nodeZero = mirBuilder.CreateDoubleConst(0.0);
+        break;
+      default:
+        nodeZero = mirBuilder.CreateIntConst(0, PTY_i32);
+        break;
+    }
+  } else {
+    nodeZero = mirBuilder.CreateIntConst(0, PTY_ref);
+  }
+  StmtNode *stmt = mirBuilder.CreateStmtDassign(mirRetSym->GetStIdx(), 0, nodeZero);
+  ans.push_back(stmt);
   return ans;
 }
 

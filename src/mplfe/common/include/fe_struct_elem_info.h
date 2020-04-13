@@ -15,6 +15,7 @@
 #ifndef MPLFE_INCLUDE_COMMON_FE_STRUCT_ELEM_INFO_H
 #define MPLFE_INCLUDE_COMMON_FE_STRUCT_ELEM_INFO_H
 #include <memory>
+#include <unordered_set>
 #include "global_tables.h"
 #include "fe_configs.h"
 #include "feir_type.h"
@@ -143,6 +144,22 @@ class FEStructMethodInfo : public FEStructElemInfo {
     return isReturnVoid;
   }
 
+  bool IsJavaPolymorphicCall() const {
+    return isJavaPolymorphicCall;
+  }
+
+  bool IsJavaDynamicCall() const {
+    return isJavaDynamicCall;
+  }
+
+  void SetJavaDyamicCall() {
+    isJavaDynamicCall = true;
+  }
+
+  void UnsetJavaDynamicCall() {
+    isJavaDynamicCall = false;
+  }
+
   const UniqueFEIRType &GetReturnType() const {
     return retType;
   }
@@ -155,6 +172,8 @@ class FEStructMethodInfo : public FEStructElemInfo {
     return argTypes;
   }
 
+  static std::map<GStrIdx, std::set<GStrIdx>> InitJavaPolymorphicWhiteList();
+
  LLT_PROTECTED:
   void PrepareImpl(MIRBuilder &mirBuilder, bool argIsStatic) override;
 
@@ -165,7 +184,9 @@ class FEStructMethodInfo : public FEStructElemInfo {
   void PrepareImplJava(MIRBuilder &mirBuilder, bool argIsStatic);
   bool SearchStructMethodJava(MIRStructType &structType, MIRBuilder &mirBuilder, bool argIsStatic,
                               bool allowPrivate = true);
+  bool SearchStructMethodJavaInParent(MIRStructType &structType, MIRBuilder &mirBuilder, bool argIsStatic);
   bool SearchStructMethodJava(const TyIdx &tyIdx, MIRBuilder &mirBuilder, bool argIsStatic, bool allowPrivate = true);
+  bool CheckJavaPolymorphicCall() const;
   std::vector<UniqueFEIRType> argTypes;
   UniqueFEIRType retType;
   UniqueFEIRType ownerType;
@@ -173,6 +194,9 @@ class FEStructMethodInfo : public FEStructElemInfo {
   MIRFunction *mirFunc;
   bool isReturnVoid;
   bool isConstructor;
+  bool isJavaPolymorphicCall;
+  bool isJavaDynamicCall;
+  static std::map<GStrIdx, std::set<GStrIdx>> javaPolymorphicWhiteList;
 };
 }  // namespace maple
 #endif  // MPLFE_INCLUDE_COMMON_FE_STRUCT_ELEM_INFO_H

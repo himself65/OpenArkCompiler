@@ -46,7 +46,7 @@ enum FEIRNodeKind : uint8 {
   kStmtJavaConstString,
   kStmtJavaMultiANewArray,
   kStmtCallAssign,
-  kStmtIntrinsicCallAssign,
+  kStmtJavaDynamicCallAssign,
   kStmtIAssign,
   kStmtUseOnly,
   kStmtReturn,
@@ -934,13 +934,13 @@ class FEIRStmtCallAssign : public FEIRStmtAssign {
 
  protected:
   std::list<StmtNode*> GenMIRStmtsImpl(MIRBuilder &mirBuilder) const override;
+  std::list<StmtNode*> GenMIRStmtsUseZeroReturn(MIRBuilder &mirBuilder) const;
 
  private:
   Opcode AdjustMIROp() const;
 
   FEStructMethodInfo &methodInfo;
   Opcode mirOp;
-  UniqueFEIRVar varRet;
   bool isStatic;
   std::list<UniqueFEIRExpr> exprArgs;
   static std::map<Opcode, Opcode> mapOpAssignToOp;

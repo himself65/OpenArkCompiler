@@ -269,29 +269,29 @@ MIRType *FETypeManager::GetOrCreateTypeFromName(const std::string &name, FETypeF
   }
 }
 
-MIRType *FETypeManager::GetOrCreatePointerType(const MIRType &type) {
-  MIRType *retType = GlobalTables::GetTypeTable().GetOrCreatePointerType(type, PTY_ref);
+MIRType *FETypeManager::GetOrCreatePointerType(const MIRType &type, PrimType ptyPtr) {
+  MIRType *retType = GlobalTables::GetTypeTable().GetOrCreatePointerType(type, ptyPtr);
   CHECK_NULL_FATAL(retType);
   return retType;
 }
 
-MIRType *FETypeManager::GetOrCreateArrayType(MIRType &elemType, uint8 dim) {
+MIRType *FETypeManager::GetOrCreateArrayType(MIRType &elemType, uint8 dim, PrimType ptyPtr) {
   switch (srcLang) {
     case kSrcLangJava:
-      return GetOrCreateJArrayType(elemType, dim);
+      return GetOrCreateJArrayType(elemType, dim, ptyPtr);
     default:
       CHECK_FATAL(false, "unsupported src lang: %d", srcLang);
       return nullptr;
   }
 }
 
-MIRType *FETypeManager::GetOrCreateJArrayType(MIRType &elem, uint8 dim) {
+MIRType *FETypeManager::GetOrCreateJArrayType(MIRType &elem, uint8 dim, PrimType ptyPtr) {
   MIRType *type = &elem;
   for (uint8 i = 0; i < dim; i++) {
     type = GlobalTables::GetTypeTable().GetOrCreateJarrayType(*type);
     CHECK_NULL_FATAL(type);
     if (i != dim - 1) {
-      type = GetOrCreatePointerType(*type);
+      type = GetOrCreatePointerType(*type, ptyPtr);
       CHECK_NULL_FATAL(type);
     }
   }
