@@ -249,7 +249,7 @@ void FEIRTypeInfer::ProcessVarDef(UniqueFEIRVar &varDef) {
       }
     }
   }
-  if (useTypes.size() == 1 && !(varDef->GetType()->IsPreciseType())) {
+  if (useTypes.size() == 1 && !(varDef->GetType()->IsPrecise())) {
     varDef->SetType((*(useTypes.begin())).GetType()->Clone());
     return;
   }

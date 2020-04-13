@@ -16,7 +16,7 @@
 #include "fe_type_manager.h"
 
 namespace maple {
-UniqueFEIRType FEIRTypeHelper::CreateTypeByPrimType(PrimType primType, uint8 dim, bool usePtr) {
+UniqueFEIRType FEIRTypeHelper::CreateTypeByPrimType(PrimType primType, TypeDim dim, bool usePtr) {
   UniqueFEIRType type = std::make_unique<FEIRTypeDefault>(primType, GStrIdx(0), dim);
   if (usePtr) {
     return FEIRTypeHelper::CreatePointerType(std::move(type));
@@ -28,7 +28,7 @@ UniqueFEIRType FEIRTypeHelper::CreateTypeByPrimType(PrimType primType, uint8 dim
 UniqueFEIRType FEIRTypeHelper::CreateTypeByJavaName(const std::string typeName, bool inMpl, bool usePtr) {
   uint32 dim = 0;
   std::string baseName = FETypeManager::GetBaseTypeName(typeName, dim, inMpl);
-  CHECK_FATAL(dim <= FEIRType::kDimMax, "invalid array type %s (dim is too big)", typeName.c_str());
+  CHECK_FATAL(dim <= FEConstants::kDimMax, "invalid array type %s (dim is too big)", typeName.c_str());
   uint8 dim8 = static_cast<uint8>(dim);
   UniqueFEIRType newType;
   if (baseName.length() == 1) {
@@ -127,5 +127,11 @@ UniqueFEIRType FEIRTypeHelper::CreateTypeByDereferrence(const UniqueFEIRType &sr
   const FEIRTypePointer *ptrSrcType = static_cast<const FEIRTypePointer*>(srcType.get());
   ASSERT(ptrSrcType != nullptr, "nullptr check");
   return ptrSrcType->GetBaseType()->Clone();
+}
+
+UniqueFEIRType FEIRTypeHelper::CreateTypeDefault(PrimType primType, const GStrIdx &typeNameIdx, TypeDim dim) {
+  UniqueFEIRType type = std::make_unique<FEIRTypeDefault>(primType, typeNameIdx, dim);
+  CHECK_FATAL(type->IsValid(), "invalid type");
+  return type;
 }
 }  // namespace maple

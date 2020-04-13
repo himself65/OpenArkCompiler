@@ -116,7 +116,7 @@ class JBCClassMethod : public JBCClassElem {
 class JBCClass {
  public:
   JBCClass(MapleAllocator &allocatorIn);
-  ~JBCClass() = default;
+  LLT_MOCK_TARGET ~JBCClass() = default;
 
   bool ParseFile(BasicIORead &io);
   bool PreProcess();

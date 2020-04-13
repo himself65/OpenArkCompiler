@@ -21,27 +21,25 @@
 
 namespace maple {
 // ---------- FEIRType ----------
-FEIRType::FEIRType(FEIRTypeKind argKind)
-    : kind(argKind), isZero(false), primType(PTY_void) {}
+std::map<MIRSrcLang, std::tuple<bool, PrimType>> FEIRType::langConfig = FEIRType::InitLangConfig();
 
-FEIRType::FEIRType(FEIRTypeKind argKind, PrimType argPrimType)
-    : kind(argKind), isZero(false), primType(argPrimType) {}
+FEIRType::FEIRType(FEIRTypeKind argKind)
+    : kind(argKind), isZero(false) {}
 
 void FEIRType::CopyFromImpl(const FEIRType &type) {
   kind = type.kind;
-  primType = type.primType;
 }
 
 bool FEIRType::IsEqualToImpl(const std::unique_ptr<FEIRType> &argType) const {
-  ASSERT(argType != nullptr, "nullptr check");
-  if (kind != argType->kind) {
+  CHECK_NULL_FATAL(argType.get());
+  if (kind != argType.get()->kind) {
     return false;
   }
   return IsEqualTo(*(argType.get()));
 }
 
 bool FEIRType::IsEqualToImpl(const FEIRType &argType) const {
-  if (kind == argType.kind && isZero == argType.isZero && primType == argType.primType) {
+  if (kind == argType.kind && isZero == argType.isZero) {
     return true;
   } else {
     return false;
@@ -58,15 +56,20 @@ std::unique_ptr<FEIRType> FEIRType::NewType(FEIRTypeKind argKind) {
   }
 }
 
+std::map<MIRSrcLang, std::tuple<bool, PrimType>> FEIRType::InitLangConfig() {
+  std::map<MIRSrcLang, std::tuple<bool, PrimType>> ans;
+  ans[kSrcLangJava] = std::make_tuple(true, PTY_ref);
+  return ans;
+}
+
 MIRType *FEIRType::GenerateMIRTypeAuto(MIRSrcLang srcLang) const {
   MPLFE_PARALLEL_FORBIDDEN();
-  switch (srcLang) {
-    case kSrcLangJava:
-      return GenerateMIRType(!IsScalar());
-    default:
-      CHECK_FATAL(kLncErr, "unsupported language");
-      return nullptr;
+  auto it = langConfig.find(srcLang);
+  if (it == langConfig.end()) {
+    CHECK_FATAL(kLncErr, "unsupported language");
+    return nullptr;
   }
+  return GenerateMIRType(std::get<0>(it->second), std::get<1>(it->second));
 }
 
 // ---------- FEIRTypeDefault ----------
@@ -79,8 +82,9 @@ FEIRTypeDefault::FEIRTypeDefault(PrimType argPrimType)
 FEIRTypeDefault::FEIRTypeDefault(PrimType argPrimType, const GStrIdx &argTypeNameIdx)
     : FEIRTypeDefault(argPrimType, argTypeNameIdx, 0) {}
 
-FEIRTypeDefault::FEIRTypeDefault(PrimType argPrimType, const GStrIdx &argTypeNameIdx, uint8 argDim)
-    : FEIRType(kFEIRTypeDefault, argPrimType),
+FEIRTypeDefault::FEIRTypeDefault(PrimType argPrimType, const GStrIdx &argTypeNameIdx, TypeDim argDim)
+    : FEIRType(kFEIRTypeDefault),
+      primType(argPrimType),
       typeNameIdx(argTypeNameIdx),
       dim(argDim) {}
 
@@ -97,28 +101,18 @@ std::unique_ptr<FEIRType> FEIRTypeDefault::CloneImpl() const {
   return type;
 }
 
-MIRType *FEIRTypeDefault::GenerateMIRTypeImpl(MIRSrcLang srcLang, bool usePtr) const {
+MIRType *FEIRTypeDefault::GenerateMIRTypeImpl(bool usePtr, PrimType ptyPtr) const {
   MPLFE_PARALLEL_FORBIDDEN();
-  return GenerateMIRType(usePtr);
+  return GenerateMIRTypeInternal(typeNameIdx, usePtr, ptyPtr);
 }
 
-MIRType *FEIRTypeDefault::GenerateMIRTypeImpl(bool usePtr) const {
-  MPLFE_PARALLEL_FORBIDDEN();
-  return GenerateMIRTypeInternal(typeNameIdx, usePtr);
-}
-
-MIRType *FEIRTypeDefault::GenerateMIRTypeImpl() const {
-  MPLFE_PARALLEL_FORBIDDEN();
-  return GenerateMIRType(false);
-}
-
-uint8 FEIRTypeDefault::ArrayIncrDimImpl(uint8 delta) {
-  CHECK_FATAL(kDimMax - dim >= delta, "dim delta is too large");
+TypeDim FEIRTypeDefault::ArrayIncrDimImpl(TypeDim delta) {
+  CHECK_FATAL(FEConstants::kDimMax - dim >= delta, "dim delta is too large");
   dim += delta;
   return dim;
 }
 
-uint8 FEIRTypeDefault::ArrayDecrDimImpl(uint8 delta) {
+TypeDim FEIRTypeDefault::ArrayDecrDimImpl(TypeDim delta) {
   CHECK_FATAL(dim >= delta, "dim delta is too large");
   dim -= delta;
   return dim;
@@ -129,38 +123,53 @@ bool FEIRTypeDefault::IsEqualToImpl(const FEIRType &argType) const {
     return false;
   }
   const FEIRTypeDefault &argTypeDefault = static_cast<const FEIRTypeDefault&>(argType);
-  if (typeNameIdx == argTypeDefault.typeNameIdx && dim == argTypeDefault.dim) {
+  if (typeNameIdx == argTypeDefault.typeNameIdx && dim == argTypeDefault.dim && primType == argTypeDefault.primType) {
     return true;
   } else {
     return false;
   }
 }
 
+bool FEIRTypeDefault::IsEqualToImpl(const std::unique_ptr<FEIRType> &argType) const {
+  CHECK_NULL_FATAL(argType.get());
+  return IsEqualToImpl(*(argType.get()));
+}
+
 size_t FEIRTypeDefault::HashImpl() const {
   return std::hash<uint32>{}(typeNameIdx);
-}
-
-bool FEIRTypeDefault::IsPreciseRefTypeImpl() const {
-  return primType == PTY_ref && typeNameIdx.GetIdx() != 0;
-}
-
-bool FEIRTypeDefault::IsPreciseTypeImpl() const {
-  return (primType != PTY_ref && IsPrimitiveInteger(primType)) ||
-         IsPrimitiveFloat(primType) ||
-         (primType == PTY_ref && typeNameIdx != 0) ||
-         isZero;
 }
 
 bool FEIRTypeDefault::IsScalarImpl() const {
   return (primType != PTY_ref && IsPrimitiveScalar(primType) && dim == 0);
 }
 
+PrimType FEIRTypeDefault::GetPrimTypeImpl() const {
+  if (dim == 0) {
+    return primType;
+  } else {
+    return PTY_ref;
+  }
+}
+
+void FEIRTypeDefault::SetPrimTypeImpl(PrimType pt) {
+  if (dim == 0) {
+    primType = pt;
+  } else {
+    if (pt == PTY_ref) {
+      primType = pt;
+    } else {
+      WARN(kLncWarn, "dim is set to zero");
+      dim = 0;
+    }
+  }
+}
+
 void FEIRTypeDefault::LoadFromJavaTypeName(const std::string &typeName, bool inMpl) {
   MPLFE_PARALLEL_FORBIDDEN();
   uint32 dimLocal = 0;
   std::string baseName = FETypeManager::GetBaseTypeName(typeName, dimLocal, inMpl);
-  CHECK_FATAL(dimLocal <= kDimMax, "invalid array type %s (dim is too big)", typeName.c_str());
-  dim = static_cast<uint8>(dimLocal);
+  CHECK_FATAL(dimLocal <= FEConstants::kDimMax, "invalid array type %s (dim is too big)", typeName.c_str());
+  dim = static_cast<TypeDim>(dimLocal);
   if (baseName.length() == 1) {
     typeNameIdx = GStrIdx(0);
     switch (baseName[0]) {
@@ -223,6 +232,8 @@ MIRType *FEIRTypeDefault::GenerateMIRTypeForPrim() const {
       return GlobalTables::GetTypeTable().GetVoid();
     case PTY_a32:
       return GlobalTables::GetTypeTable().GetAddr32();
+    case PTY_ref:
+      return GlobalTables::GetTypeTable().GetRef();
     default:
       CHECK_FATAL(false, "unsupported prim type");
   }
@@ -248,14 +259,37 @@ MIRType *FEIRTypeDefault::GenerateMIRTypeInternal(const GStrIdx &argTypeNameIdx,
     baseType = GenerateMIRTypeForPrim();
     type = FEManager::GetTypeManager().GetOrCreateArrayType(*baseType, dim);
   }
-  if (IsScalar()) {
+  if (IsScalar() || !IsPreciseRefType()) {
     return type;
   }
   return usePtr ? FEManager::GetTypeManager().GetOrCreatePointerType(*type) : type;
 }
 
+MIRType *FEIRTypeDefault::GenerateMIRTypeInternal(const GStrIdx &argTypeNameIdx, bool usePtr, PrimType ptyPtr) const {
+  MIRType *baseType = nullptr;
+  MIRType *type = nullptr;
+  bool baseTypeUseNoPtr = (IsScalarPrimType(primType) || argTypeNameIdx == 0);
+  bool typeUseNoPtr = !IsRef() || (!IsArray() && !IsPrecise());
+  if (baseTypeUseNoPtr) {
+    baseType = GenerateMIRTypeForPrim();
+    type = FEManager::GetTypeManager().GetOrCreateArrayType(*baseType, dim, ptyPtr);
+  } else {
+    bool isCreate = false;
+    baseType = FEManager::GetTypeManager().GetOrCreateClassOrInterfaceType(argTypeNameIdx, false,
+                                                                           FETypeFlag::kSrcUnknown, isCreate);
+    if (dim > 0) {
+      baseType = FEManager::GetTypeManager().GetOrCreatePointerType(*baseType, ptyPtr);
+    }
+    type = FEManager::GetTypeManager().GetOrCreateArrayType(*baseType, dim, ptyPtr);
+  }
+  if (typeUseNoPtr) {
+    return type;
+  }
+  return usePtr ? FEManager::GetTypeManager().GetOrCreatePointerType(*type, ptyPtr) : type;
+}
+
 // ---------- FEIRTypeByName ----------
-FEIRTypeByName::FEIRTypeByName(PrimType argPrimType, const std::string &argTypeName, uint8 argDim)
+FEIRTypeByName::FEIRTypeByName(PrimType argPrimType, const std::string &argTypeName, TypeDim argDim)
     : FEIRTypeDefault(argPrimType, GStrIdx(0), argDim),
       typeName(argTypeName) {
   kind = kFEIRTypeByName;
@@ -266,22 +300,10 @@ std::unique_ptr<FEIRType> FEIRTypeByName::CloneImpl() const {
   return newType;
 }
 
-MIRType *FEIRTypeByName::GenerateMIRTypeImpl(MIRSrcLang srcLang, bool usePtr) const {
+MIRType *FEIRTypeByName::GenerateMIRTypeImpl(bool usePtr, PrimType ptyPtr) const {
   MPLFE_PARALLEL_FORBIDDEN();
-  GStrIdx argTypeNameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(typeName.c_str());
-  return GenerateMIRTypeInternal(argTypeNameIdx, usePtr);
-}
-
-MIRType *FEIRTypeByName::GenerateMIRTypeImpl(bool usePtr) const {
-  MPLFE_PARALLEL_FORBIDDEN();
-  GStrIdx argTypeNameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(typeName.c_str());
-  return GenerateMIRTypeInternal(argTypeNameIdx, usePtr);
-}
-
-MIRType *FEIRTypeByName::GenerateMIRTypeImpl() const {
-  MPLFE_PARALLEL_FORBIDDEN();
-  GStrIdx argTypeNameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(typeName.c_str());
-  return GenerateMIRTypeInternal(argTypeNameIdx, false);
+  GStrIdx nameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(typeName);
+  return GenerateMIRTypeInternal(nameIdx, usePtr, ptyPtr);
 }
 
 bool FEIRTypeByName::IsEqualToImpl(const FEIRType &argType) const {
@@ -300,22 +322,14 @@ size_t FEIRTypeByName::HashImpl() const {
   return std::hash<std::string>{}(typeName);
 }
 
-bool FEIRTypeByName::IsPreciseRefTypeImpl() const {
-  return primType == PTY_ref && (!typeName.empty());
-}
-
-bool FEIRTypeByName::IsPreciseTypeImpl() const {
-  return IsPrimitiveInteger(primType) || IsPrimitiveFloat(primType) ||
-         (primType == PTY_ref && (!typeName.empty()));
-}
-
 bool FEIRTypeByName::IsScalarImpl() const {
   return false;
 }
 
 // ---------- FEIRTypePointer ----------
 FEIRTypePointer::FEIRTypePointer(std::unique_ptr<FEIRType> argBaseType, PrimType argPrimType)
-    : FEIRType(kFEIRTypePointer, argPrimType) {
+    : FEIRType(kFEIRTypePointer),
+      primType(argPrimType) {
   CHECK_FATAL(argBaseType != nullptr, "input type is nullptr");
   baseType = std::move(argBaseType);
 }
@@ -325,25 +339,9 @@ std::unique_ptr<FEIRType> FEIRTypePointer::CloneImpl() const {
   return newType;
 }
 
-MIRType *FEIRTypePointer::GenerateMIRTypeImpl(MIRSrcLang srcLang, bool usePtr) const {
-  ASSERT(baseType != nullptr, "base type is nullptr");
-  MIRType *mirBaseType = baseType->GenerateMIRType(srcLang, usePtr);
-  ASSERT(mirBaseType != nullptr, "base mir type is nullptr");
-  return GlobalTables::GetTypeTable().GetOrCreatePointerType(*mirBaseType, primType);
-}
-
-MIRType *FEIRTypePointer::GenerateMIRTypeImpl(bool usePtr) const {
-  ASSERT(baseType != nullptr, "base type is nullptr");
-  MIRType *mirBaseType = baseType->GenerateMIRType(usePtr);
-  ASSERT(mirBaseType != nullptr, "base mir type is nullptr");
-  return GlobalTables::GetTypeTable().GetOrCreatePointerType(*mirBaseType, primType);
-}
-
-MIRType *FEIRTypePointer::GenerateMIRTypeImpl() const {
-  ASSERT(baseType != nullptr, "base type is nullptr");
-  MIRType *mirBaseType = baseType->GenerateMIRType();
-  ASSERT(mirBaseType != nullptr, "base mir type is nullptr");
-  return GlobalTables::GetTypeTable().GetOrCreatePointerType(*mirBaseType, primType);
+MIRType *FEIRTypePointer::GenerateMIRTypeImpl(bool usePtr, PrimType ptyPtr) const {
+  MIRType *mirBaseType = baseType->GenerateMIRType(usePtr, ptyPtr);
+  return FEManager::GetTypeManager().GetOrCreatePointerType(*mirBaseType, ptyPtr);
 }
 
 bool FEIRTypePointer::IsEqualToImpl(const FEIRType &argType) const {
@@ -356,27 +354,25 @@ size_t FEIRTypePointer::HashImpl() const {
   return baseType->Hash();
 }
 
-bool FEIRTypePointer::IsPreciseRefTypeImpl() const {
-  ASSERT(baseType != nullptr, "base type is nullptr");
-  return baseType->IsPreciseRefType();
-}
-
-bool FEIRTypePointer::IsPreciseTypeImpl() const {
-  ASSERT(baseType != nullptr, "base type is nullptr");
-  return baseType->IsPreciseType();
-}
-
 bool FEIRTypePointer::IsScalarImpl() const {
   return false;
 }
 
-uint8 FEIRTypePointer::ArrayIncrDimImpl(uint8 delta) {
+TypeDim FEIRTypePointer::ArrayIncrDimImpl(TypeDim delta) {
   ASSERT(baseType != nullptr, "base type is nullptr");
   return baseType->ArrayIncrDim(delta);
 }
 
-uint8 FEIRTypePointer::ArrayDecrDimImpl(uint8 delta) {
+TypeDim FEIRTypePointer::ArrayDecrDimImpl(TypeDim delta) {
   ASSERT(baseType != nullptr, "base type is nullptr");
   return baseType->ArrayDecrDim(delta);
+}
+
+PrimType FEIRTypePointer::GetPrimTypeImpl() const {
+  return primType;
+}
+
+void FEIRTypePointer::SetPrimTypeImpl(PrimType pt) {
+  CHECK_FATAL(false, "should not run here");
 }
 }  // namespace maple

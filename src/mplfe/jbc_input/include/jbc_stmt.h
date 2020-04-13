@@ -200,6 +200,9 @@ class JBCStmtInst : public JBCStmt {
   std::list<UniqueFEIRStmt> EmitToFEIRForOpInvokeSpecial(JBCStack2FEHelper &stack2feHelper,
                                                          const jbc::JBCConstPool &constPool,
                                                          bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpInvokeDynamic(JBCStack2FEHelper &stack2feHelper,
+                                                         const jbc::JBCConstPool &constPool,
+                                                         bool &success) const;
   std::list<UniqueFEIRStmt> EmitToFEIRForOpNew(JBCStack2FEHelper &stack2feHelper,
                                                const jbc::JBCConstPool &constPool,
                                                bool &success) const;

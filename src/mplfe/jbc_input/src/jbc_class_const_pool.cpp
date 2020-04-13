@@ -118,7 +118,7 @@ bool JBCConstPool::PreProcess(uint16 argMajorVersion) {
   return true;
 }
 
-bool JBCConstPool::PrepareFEStructElemInfo() {
+bool JBCConstPool::PrepareFEStructElemInfo(const std::string &ownerClassName) {
   bool success = true;
   for (JBCConst *c : pool) {
     if (c == nullptr) {
@@ -129,6 +129,10 @@ bool JBCConstPool::PrepareFEStructElemInfo() {
         tag == JBCConstTag::kConstInterfaceMethodRef) {
       JBCConstRef *constRef = static_cast<JBCConstRef*>(c);
       success = success && constRef->PrepareFEStructElemInfo();
+    }
+    if (tag == JBCConstTag::kConstInvokeDynamic) {
+      JBCConstInvokeDynamic *constRef = static_cast<JBCConstInvokeDynamic*>(c);
+      success = success && constRef->PrepareFEStructElemInfo(ownerClassName);
     }
   }
   return success;

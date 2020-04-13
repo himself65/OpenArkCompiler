@@ -214,13 +214,31 @@ bool FEStructFieldInfo::CompareFieldType(const FieldPair &fieldPair) const {
 }
 
 // ---------- FEStructMethodInfo ----------
+std::map<GStrIdx, std::set<GStrIdx>> FEStructMethodInfo::javaPolymorphicWhiteList =
+    FEStructMethodInfo::InitJavaPolymorphicWhiteList();
+
 FEStructMethodInfo::FEStructMethodInfo(const GStrIdx &argFullNameIdx, MIRSrcLang argSrcLang, bool argIsStatic)
     : FEStructElemInfo(argFullNameIdx, argSrcLang, argIsStatic),
       methodNameIdx(fullNameIdx),
       mirFunc(nullptr),
-      isReturnVoid(false) {
+      isReturnVoid(false),
+      isJavaPolymorphicCall(false),
+      isJavaDynamicCall(false) {
   isMethod = true;
   LoadMethodType();
+}
+
+std::map<GStrIdx, std::set<GStrIdx>> FEStructMethodInfo::InitJavaPolymorphicWhiteList() {
+  MPLFE_PARALLEL_FORBIDDEN();
+  std::map<GStrIdx, std::set<GStrIdx>> ans;
+  StringTable<std::string, GStrIdx> &strTable = GlobalTables::GetStrTable();
+  GStrIdx idxMethodHandle =
+      strTable.GetOrCreateStrIdxFromName(NameMangler::EncodeName("Ljava/lang/invoke/MethodHandle;"));
+  bool success = true;
+  success = success && ans[idxMethodHandle].insert(strTable.GetOrCreateStrIdxFromName("invoke")).second;
+  success = success && ans[idxMethodHandle].insert(strTable.GetOrCreateStrIdxFromName("invokeBasic")).second;
+  success = success && ans[idxMethodHandle].insert(strTable.GetOrCreateStrIdxFromName("invokeExact")).second;
+  return ans;
 }
 
 PUIdx FEStructMethodInfo::GetPuIdx() const {
@@ -258,6 +276,11 @@ void FEStructMethodInfo::PrepareImplJava(MIRBuilder &mirBuilder, bool argIsStati
     if (isDefined) {
       return;
     }
+  } else if (isJavaDynamicCall) {
+    methodNameIdx = fullNameIdx;
+    isDefined = true;
+    PrepareMethod();
+    return;
   }
   std::string methodName = GlobalTables::GetStrTable().GetStringFromStrIdx(fullNameIdx);
   WARN(kLncWarn, "undefined %s method: %s", isStatic ? "static" : "", methodName.c_str());
@@ -324,6 +347,13 @@ bool FEStructMethodInfo::SearchStructMethodJava(MIRStructType &structType, MIRBu
   std::string fullName = structType.GetCompactMplTypeName() + NameMangler::kNameSplitterStr + GetElemName() +
                          NameMangler::kNameSplitterStr + GetSignatureName();
   GStrIdx nameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(fullName);
+  // PolymorphicCall Check
+  if (CheckJavaPolymorphicCall()) {
+    isJavaPolymorphicCall = true;
+    methodNameIdx = nameIdx;
+    PrepareMethod();
+    return true;
+  }
   for (const MethodPair &methodPair : structType.GetMethods()) {
     const MIRSymbol *sym = GlobalTables::GetGsymTable().GetSymbolFromStidx(methodPair.first.Idx(), true);
     CHECK_NULL_FATAL(sym);
@@ -343,6 +373,11 @@ bool FEStructMethodInfo::SearchStructMethodJava(MIRStructType &structType, MIRBu
     }
   }
   // search parent
+  return SearchStructMethodJavaInParent(structType, mirBuilder, argIsStatic);
+}
+
+bool FEStructMethodInfo::SearchStructMethodJavaInParent(MIRStructType &structType, MIRBuilder &mirBuilder,
+                                                        bool argIsStatic) {
   bool found = false;
   if (structType.GetKind() == kTypeClass) {
     // parent
@@ -380,5 +415,13 @@ bool FEStructMethodInfo::SearchStructMethodJava(const TyIdx &tyIdx, MIRBuilder &
     ERR(kLncErr, "parent type should be StructType");
     return false;
   }
+}
+
+bool FEStructMethodInfo::CheckJavaPolymorphicCall() const {
+  auto it = javaPolymorphicWhiteList.find(structNameIdx);
+  if (it == javaPolymorphicWhiteList.end()) {
+    return false;
+  }
+  return it->second.find(elemNameIdx) != it->second.end();
 }
 }  // namespace maple

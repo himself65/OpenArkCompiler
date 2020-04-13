@@ -1175,7 +1175,8 @@ std::string JBCOpInvoke::DumpImpl(const JBCConstPool &constPool) const {
     if (tag == kConstInvokeDynamic) {
       const JBCConstInvokeDynamic *constInvokdDynamic = static_cast<const JBCConstInvokeDynamic*>(constRaw);
       CHECK_NULL_FATAL(constInvokdDynamic->GetConstNameAndType());
-      ss << constInvokdDynamic->GetConstNameAndType()->GetName() << ":" <<
+      ss << constInvokdDynamic->GetBSMAttrIdx() << ":" <<
+            constInvokdDynamic->GetConstNameAndType()->GetName() << ":" <<
             constInvokdDynamic->GetConstNameAndType()->GetDesc();
     } else {
       ss << "invalid const tag";

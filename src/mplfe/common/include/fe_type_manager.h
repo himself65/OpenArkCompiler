@@ -127,9 +127,9 @@ class FETypeManager {
   MIRStructType *GetStructTypeFromName(const std::string &name);
   MIRStructType *GetStructTypeFromName(const GStrIdx &nameIdx);
   MIRType *GetOrCreateTypeFromName(const std::string &name, FETypeFlag typeFlag, bool usePtr);
-  MIRType *GetOrCreatePointerType(const MIRType &type);
-  MIRType *GetOrCreateArrayType(MIRType &elemType, uint8 dim);
-  MIRType *GetOrCreateJArrayType(MIRType &elemType, uint8 dim);
+  MIRType *GetOrCreatePointerType(const MIRType &type, PrimType ptyPtr = PTY_ref);
+  MIRType *GetOrCreateArrayType(MIRType &elemType, uint8 dim, PrimType ptyPtr = PTY_ref);
+  MIRType *GetOrCreateJArrayType(MIRType &elemType, uint8 dim, PrimType ptyPtr = PTY_ref);
   void AddClassToModule(const MIRStructType &structType);
 
   // ---------- methods for StructElemInfo ----------
