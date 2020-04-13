@@ -993,6 +993,7 @@ void MUIDReplacement::ReplaceDirectInvokeOrAddroffunc(MIRFunction &currentFunc, 
 
     std::string moduleName = GetMIRModule().GetFileNameAsPostfix();
     std::string baseName = calleeFunc->GetBaseClassName();
+    ASSERT(funcDefTabSym != nullptr, "null ptr check!");
     baseExpr = builder->CreateExprAddrof(0, *funcDefTabSym, GetMIRModule().GetMemPool());
     ASSERT(calleeFunc->GetFuncSymbol() != nullptr, "null ptr check!");
     index = FindIndexFromDefTable(*(calleeFunc->GetFuncSymbol()), true);
@@ -1003,6 +1004,7 @@ void MUIDReplacement::ReplaceDirectInvokeOrAddroffunc(MIRFunction &currentFunc, 
     std::string commentLabel = NameMangler::kMarkMuidFuncUndefStr + calleeFunc->GetName();
     currentFunc.GetBody()->InsertBefore(&stmt, builder->CreateStmtComment(commentLabel));
 
+    ASSERT(funcUndefTabSym != nullptr, "null ptr check!");
     baseExpr = builder->CreateExprAddrof(0, *funcUndefTabSym, GetMIRModule().GetMemPool());
     ASSERT(calleeFunc->GetFuncSymbol() != nullptr, "null ptr check!");
     index = FindIndexFromUndefTable(*(calleeFunc->GetFuncSymbol()), true);

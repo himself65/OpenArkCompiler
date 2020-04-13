@@ -928,7 +928,6 @@ static void ConvertFieldName(std::string &fieldname, bool staticfield) {
     std::stringstream ss(decodeFieldName);
     std::string item;
     std::vector<std::string> res;
-    std::string typeName, fieldName;
     while (std::getline(ss, item, '|')) {
       res.push_back(item);
     }

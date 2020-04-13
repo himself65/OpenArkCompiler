@@ -66,6 +66,8 @@ uint32 AArch64Insn::GetOpndNum() const {
 void AArch64Insn::EmitCompareAndSwapInt(Emitter &emitter) const {
   /* MOP_compare_and_swapI and MOP_compare_and_swapL have 8 operands */
   ASSERT(opnds.size() > kInsnEighthOpnd, "ensure the operands number");
+  const MOperator mOp = GetMachineOpcode();
+  const AArch64MD *md = &AArch64CG::kMd[mOp];
   Operand *temp0 = opnds[kInsnSecondOpnd];
   Operand *temp1 = opnds[kInsnThirdOpnd];
   Operand *obj = opnds[kInsnFourthOpnd];
@@ -89,11 +91,12 @@ void AArch64Insn::EmitCompareAndSwapInt(Emitter &emitter) const {
   temp0->Emit(emitter, nullptr);
   emitter.Emit("]\n");
   Operand *expectedValue = opnds[kInsnSixthOpnd];
+  OpndProp *expectedValueProp = md->operand[kInsnSixthOpnd];
   /* cmp       ws, w3 */
   emitter.Emit("\tcmp\t");
   temp1->Emit(emitter, nullptr);
   emitter.Emit(", ");
-  expectedValue->Emit(emitter, nullptr);
+  expectedValue->Emit(emitter, expectedValueProp);
   emitter.Emit("\n");
   constexpr uint32 kInsnNinethOpnd = 8;
   Operand *label2 = opnds[kInsnNinethOpnd];

@@ -221,6 +221,8 @@ MIRType *FEIRTypeDefault::GenerateMIRTypeForPrim() const {
       return GlobalTables::GetTypeTable().GetUInt16();
     case PTY_void:
       return GlobalTables::GetTypeTable().GetVoid();
+    case PTY_a32:
+      return GlobalTables::GetTypeTable().GetAddr32();
     default:
       CHECK_FATAL(false, "unsupported prim type");
   }
