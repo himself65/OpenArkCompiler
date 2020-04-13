@@ -103,7 +103,12 @@ bool JBCFunction::GenerateGeneralStmt(const std::string &phaseName) {
   phaseResult.RegisterPhaseNameAndStart(phaseName);
   const jbc::JBCAttrCode *code = method.GetCode();
   if (phaseResult.IsSuccess() && code != nullptr) {
-    BuildStmtFromInstruction(*code);
+    if (!PreBuildJsrInfo(*code)) {
+      return phaseResult.Finish(false);
+    }
+    if (!BuildStmtFromInstruction(*code)) {
+      return phaseResult.Finish(false);
+    }
     BuildStmtForCatch(*code);
     BuildStmtForTry(*code);
     BuildStmtForLOC(*code);
@@ -193,7 +198,7 @@ void JBCFunction::EmitToFEIRStmt(const JBCBB &bb) {
   const FELinkListNode *stmtNode = bb.GetStmtHead();
   while (stmtNode != nullptr && success) {
     const JBCStmt *stmt = static_cast<const JBCStmt*>(stmtNode);
-    if (stmt->GetKind() == JBCStmtKind::kJBCStmtInstBranch) {
+    if (stmt->IsBranch()) {
       const JBCStmtInstBranch *stmtBranch = static_cast<const JBCStmtInstBranch*>(stmt);
       feirStmts = stmtBranch->EmitToFEIRWithLabel(stack2feHelper, mapPCLabelStmt, success);
     } else {
@@ -298,7 +303,48 @@ bool JBCFunction::CheckJVMStackResult() {
   return true;
 }
 
-void JBCFunction::BuildStmtFromInstruction(const jbc::JBCAttrCode &code) {
+bool JBCFunction::PreBuildJsrInfo(const jbc::JBCAttrCode &code) {
+  const MapleMap<uint32, jbc::JBCOp*> &instMap = code.GetInstMap();
+  for (const std::pair<uint32, jbc::JBCOp*> &it : instMap) {
+    uint32 pc = it.first;
+    jbc::JBCOp *op = it.second;
+    ASSERT_NOT_NULL(op);
+    jbc::JBCOpcode opcode = op->GetOpcode();
+    jbc::JBCOpcodeKind kind = op->GetOpcodeKind();
+    if (kind != jbc::kOpKindJsr) {
+      continue;;
+    }
+    uint32 width = (opcode == jbc::kOpJsr ? 3 : 5);  // instruction width for jsr is 3, and for jsr_w is 5
+    uint32 nextPC = pc + width;
+    jbc::JBCOpJsr *opJsr = static_cast<jbc::JBCOpJsr*>(op);
+    auto itTarget = instMap.find(opJsr->GetTarget());
+    if (itTarget == instMap.end()) {
+      ERR(kLncErr, "invalid target %u for jsr @pc=%u", opJsr->GetTarget(), pc);
+      return false;
+    }
+    jbc::JBCOp *opTarget = itTarget->second;
+    if (opTarget->GetOpcodeKind() != jbc::kOpKindStore) {
+      ERR(kLncErr, "invalid target (without astore) for jsr @pc=%u", pc);
+      return false;
+    }
+    jbc::JBCOpSlotOpr *opSlotOpr = static_cast<jbc::JBCOpSlotOpr*>(opTarget);
+    uint16 slotIdx = opSlotOpr->GetSlotIdx();
+    opSlotOpr->SetAddressOpr();
+    opJsr->SetSlotIdx(slotIdx);
+    auto itInfo = mapJsrSlotRetAddr.find(slotIdx);
+    int32 jsrID;
+    if (itInfo == mapJsrSlotRetAddr.end()) {
+      jsrID = 0;
+    } else {
+      jsrID = itInfo->second.size();
+    }
+    opJsr->SetJsrID(jsrID);
+    mapJsrSlotRetAddr[slotIdx][jsrID] = nextPC;
+  }
+  return true;
+}
+
+bool JBCFunction::BuildStmtFromInstruction(const jbc::JBCAttrCode &code) {
   GeneralStmt *stmt = nullptr;
   const MapleMap<uint32, jbc::JBCOp*> &instMap = code.GetInstMap();
   for (const std::pair<uint32, jbc::JBCOp*> &it : instMap) {
@@ -306,39 +352,24 @@ void JBCFunction::BuildStmtFromInstruction(const jbc::JBCAttrCode &code) {
     const jbc::JBCOp *op = it.second;
     ASSERT(op != nullptr, "null ptr check");
     switch (op->GetOpcodeKind()) {
-      case jbc::kOpKindBranch: {
-        const std::unique_ptr<GeneralStmt> &uniStmt =
-            RegisterGeneralStmtUniqueReturn(std::make_unique<JBCStmtInstBranch>(*op));
-        stmt = uniStmt.get();
-        const jbc::JBCOpBranch *opBranch = static_cast<const jbc::JBCOpBranch*>(op);
-        GeneralStmt *target = BuildAndUpdateLabel(opBranch->GetTarget(), uniStmt);
-        static_cast<JBCStmtInstBranch*>(stmt)->AddSucc(target);
+      case jbc::kOpKindBranch:
+        stmt = BuildStmtFromInstructionForBranch(*op);
         break;
-      }
-      case jbc::kOpKindGoto: {
-        const std::unique_ptr<GeneralStmt> &uniStmt =
-            RegisterGeneralStmtUniqueReturn(std::make_unique<JBCStmtInstBranch>(*op));
-        stmt = uniStmt.get();
-        stmt->SetFallThru(false);
-        const jbc::JBCOpGoto *opGoto = static_cast<const jbc::JBCOpGoto*>(op);
-        GeneralStmt *target = BuildAndUpdateLabel(opGoto->GetTarget(), uniStmt);
-        static_cast<JBCStmtInstBranch*>(stmt)->AddSucc(target);
+      case jbc::kOpKindGoto:
+        stmt = BuildStmtFromInstructionForGoto(*op);
         break;
-      }
-      case jbc::kOpKindSwitch:{
-        const std::unique_ptr<GeneralStmt> &uniStmt =
-            RegisterGeneralStmtUniqueReturn(std::make_unique<JBCStmtInstBranch>(*op));
-        stmt = uniStmt.get();
-        stmt->SetFallThru(false);
-        const jbc::JBCOpSwitch *opSwitch = static_cast<const jbc::JBCOpSwitch*>(op);
-        for (const std::pair<int32, uint32> &targetInfo : opSwitch->GetTargets()) {
-          GeneralStmt *target = BuildAndUpdateLabel(targetInfo.second, uniStmt);
-          static_cast<JBCStmtInstBranch*>(stmt)->AddSucc(target);
+      case jbc::kOpKindSwitch:
+        stmt = BuildStmtFromInstructionForSwitch(*op);
+        break;
+      case jbc::kOpKindJsr:
+        stmt = BuildStmtFromInstructionForJsr(*op);
+        break;
+      case jbc::kOpKindRet:
+        stmt = BuildStmtFromInstructionForRet(*op);
+        if (stmt == nullptr) {
+          return false;
         }
-        GeneralStmt *target = BuildAndUpdateLabel(opSwitch->GetDefaultTarget(), uniStmt);
-        static_cast<JBCStmtInstBranch*>(stmt)->AddSucc(target);
         break;
-      }
       default:
         stmt = RegisterGeneralStmt(std::make_unique<JBCStmtInst>(*op));
         break;
@@ -347,6 +378,73 @@ void JBCFunction::BuildStmtFromInstruction(const jbc::JBCAttrCode &code) {
     mapPCStmtInst[pc] = stmt;
   }
   mapPCStmtInst[code.GetCodeLength()] = genStmtTail;
+  return true;
+}
+
+GeneralStmt *JBCFunction::BuildStmtFromInstructionForBranch(const jbc::JBCOp &op) {
+  const std::unique_ptr<GeneralStmt> &uniStmt =
+      RegisterGeneralStmtUniqueReturn(std::make_unique<JBCStmtInstBranch>(op));
+  GeneralStmt *stmt = uniStmt.get();
+  const jbc::JBCOpBranch &opBranch = static_cast<const jbc::JBCOpBranch&>(op);
+  GeneralStmt *target = BuildAndUpdateLabel(opBranch.GetTarget(), uniStmt);
+  static_cast<JBCStmtInstBranch*>(stmt)->AddSucc(target);
+  return stmt;
+}
+
+GeneralStmt *JBCFunction::BuildStmtFromInstructionForGoto(const jbc::JBCOp &op) {
+  const std::unique_ptr<GeneralStmt> &uniStmt =
+      RegisterGeneralStmtUniqueReturn(std::make_unique<JBCStmtInstBranch>(op));
+  GeneralStmt *stmt = uniStmt.get();
+  stmt->SetFallThru(false);
+  const jbc::JBCOpGoto &opGoto = static_cast<const jbc::JBCOpGoto&>(op);
+  GeneralStmt *target = BuildAndUpdateLabel(opGoto.GetTarget(), uniStmt);
+  static_cast<JBCStmtInstBranch*>(stmt)->AddSucc(target);
+  return stmt;
+}
+
+GeneralStmt *JBCFunction::BuildStmtFromInstructionForSwitch(const jbc::JBCOp &op) {
+  const std::unique_ptr<GeneralStmt> &uniStmt =
+      RegisterGeneralStmtUniqueReturn(std::make_unique<JBCStmtInstBranch>(op));
+  GeneralStmt *stmt = uniStmt.get();
+  stmt->SetFallThru(false);
+  const jbc::JBCOpSwitch &opSwitch = static_cast<const jbc::JBCOpSwitch&>(op);
+  for (const std::pair<int32, uint32> &targetInfo : opSwitch.GetTargets()) {
+    GeneralStmt *target = BuildAndUpdateLabel(targetInfo.second, uniStmt);
+    static_cast<JBCStmtInstBranch*>(stmt)->AddSucc(target);
+  }
+  GeneralStmt *target = BuildAndUpdateLabel(opSwitch.GetDefaultTarget(), uniStmt);
+  static_cast<JBCStmtInstBranch*>(stmt)->AddSucc(target);
+  return stmt;
+}
+
+GeneralStmt *JBCFunction::BuildStmtFromInstructionForJsr(const jbc::JBCOp &op) {
+  const std::unique_ptr<GeneralStmt> &uniStmt =
+      RegisterGeneralStmtUniqueReturn(std::make_unique<JBCStmtInstBranch>(op));
+  GeneralStmt *stmt = uniStmt.get();
+  stmt->SetFallThru(false);
+  const jbc::JBCOpJsr &opJsr = static_cast<const jbc::JBCOpJsr&>(op);
+  GeneralStmt *target = BuildAndUpdateLabel(opJsr.GetTarget(), uniStmt);
+  static_cast<JBCStmtInstBranch*>(stmt)->AddSucc(target);
+  return stmt;
+}
+
+GeneralStmt *JBCFunction::BuildStmtFromInstructionForRet(const jbc::JBCOp &op) {
+  const std::unique_ptr<GeneralStmt> &uniStmt =
+      RegisterGeneralStmtUniqueReturn(std::make_unique<JBCStmtInstBranchRet>(op, mapJsrSlotRetAddr));
+  GeneralStmt *stmt = uniStmt.get();
+  stmt->SetFallThru(false);
+  const jbc::JBCOpRet &opRet = static_cast<const jbc::JBCOpRet&>(op);
+  auto itJsrInfo = mapJsrSlotRetAddr.find(opRet.GetIndex());
+  if (itJsrInfo == mapJsrSlotRetAddr.end()) {
+    ERR(kLncWarn, "invalid slotIdx for ret instruction");
+    return nullptr;
+  }
+  for (auto itTarget : itJsrInfo->second) {
+    uint32 pc = itTarget.second;
+    GeneralStmt *target = BuildAndUpdateLabel(pc, uniStmt);
+    static_cast<JBCStmtInstBranch*>(stmt)->AddSucc(target);
+  }
+  return stmt;
 }
 
 void JBCFunction::BuildStmtForCatch(const jbc::JBCAttrCode &code) {

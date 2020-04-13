@@ -410,6 +410,13 @@ std::list<UniqueFEIRStmt> JBCStmtInst::EmitToFEIRForOpStore(JBCStack2FEHelper &s
                                                             bool &success) const {
   std::list<UniqueFEIRStmt> ans;
   const jbc::JBCOpSlotOpr &opStore = static_cast<const jbc::JBCOpSlotOpr&>(op);
+  if (opStore.IsAddressOpr()) {
+    UniqueFEIRVar varTmp = stack2feHelper.PopItem(PTY_a32);
+    if (varTmp.get() == nullptr) {
+      success = false;
+    }
+    return ans;
+  }
   std::vector<jbc::JBCPrimType> stackInTypes = op.GetInputTypesFromStack();
   CHECK_FATAL(stackInTypes.size() == 1, "store op need one stack opnd");
   PrimType pty = JBCStack2FEHelper::JBCStackItemTypeToPrimType(stackInTypes[0]);
@@ -1139,6 +1146,16 @@ std::list<UniqueFEIRStmt> JBCStmtInstBranch::EmitToFEIRImpl(JBCStack2FEHelper &s
   return ans;
 }
 
+JBCStmtPesudoLabel *JBCStmtInstBranch::GetTarget(const std::map<uint32, JBCStmtPesudoLabel*> &mapPCStmtLabel,
+                                                 uint32 pc) const {
+  auto itTarget = mapPCStmtLabel.find(pc);
+  if (itTarget == mapPCStmtLabel.end()) {
+    ERR(kLncErr, "target@pc=%u not found", pc);
+    return nullptr;
+  }
+  return itTarget->second;
+}
+
 std::list<UniqueFEIRStmt> JBCStmtInstBranch::EmitToFEIRWithLabel(
     JBCStack2FEHelper &stack2feHelper,
     const std::map<uint32, JBCStmtPesudoLabel*> &mapPCStmtLabel,
@@ -1156,6 +1173,8 @@ std::map<jbc::JBCOpcodeKind, JBCStmtInstBranch::FuncPtrEmitToFEIR> JBCStmtInstBr
   ans[jbc::JBCOpcodeKind::kOpKindGoto] = &JBCStmtInstBranch::EmitToFEIRForOpGoto;
   ans[jbc::JBCOpcodeKind::kOpKindBranch] = &JBCStmtInstBranch::EmitToFEIRForOpBranch;
   ans[jbc::JBCOpcodeKind::kOpKindSwitch] = &JBCStmtInstBranch::EmitToFEIRForOpSwitch;
+  ans[jbc::JBCOpcodeKind::kOpKindJsr] = &JBCStmtInstBranch::EmitToFEIRForOpJsr;
+  ans[jbc::JBCOpcodeKind::kOpKindRet] = &JBCStmtInstBranch::EmitToFEIRForOpRet;
   return ans;
 }
 
@@ -1266,6 +1285,38 @@ std::list<UniqueFEIRStmt> JBCStmtInstBranch::EmitToFEIRForOpSwitch(
   return ans;
 }
 
+std::list<UniqueFEIRStmt> JBCStmtInstBranch::EmitToFEIRForOpJsr(
+    JBCStack2FEHelper &stack2feHelper,
+    const std::map<uint32, JBCStmtPesudoLabel*> &mapPCStmtLabel,
+    bool &success) const {
+  std::list<UniqueFEIRStmt> ans;
+  const jbc::JBCOpJsr &opJsr = static_cast<const jbc::JBCOpJsr&>(op);
+  auto itTarget = mapPCStmtLabel.find(opJsr.GetTarget());
+  if (itTarget == mapPCStmtLabel.end()) {
+    ERR(kLncErr, "target not found for inst jsr");
+    success = false;
+    return ans;
+  }
+  JBCStmtPesudoLabel *stmtLabel = itTarget->second;
+  CHECK_NULL_FATAL(stmtLabel);
+  uint32 slotRegNum = stack2feHelper.GetRegNumForSlot(opJsr.GetSlotIdx());
+  UniqueFEIRVar var = FEIRBuilder::CreateVarReg(slotRegNum, PTY_i32, false);
+  stack2feHelper.PushItem(var->Clone(), PTY_a32);
+  UniqueFEIRExpr exprConst = FEIRBuilder::CreateExprConstI32(opJsr.GetJsrID());
+  UniqueFEIRStmt stmtJsr = FEIRBuilder::CreateStmtDAssign(std::move(var), std::move(exprConst));
+  UniqueFEIRStmt stmtGoto = FEIRBuilder::CreateStmtGoto(stmtLabel->GetLabelIdx());
+  ans.push_back(std::move(stmtJsr));
+  ans.push_back(std::move(stmtGoto));
+  return ans;
+}
+
+std::list<UniqueFEIRStmt> JBCStmtInstBranch::EmitToFEIRForOpRet(
+    JBCStack2FEHelper &stack2feHelper,
+    const std::map<uint32, JBCStmtPesudoLabel*> &mapPCStmtLabel,
+    bool &success) const {
+  return EmitToFEIRForOpRetImpl(stack2feHelper, mapPCStmtLabel, success);
+}
+
 std::list<UniqueFEIRStmt> JBCStmtInstBranch::EmitToFEIRCommon(
     JBCStack2FEHelper &stack2feHelper,
     const std::map<uint32, JBCStmtPesudoLabel*> &mapPCStmtLabel,
@@ -1310,6 +1361,61 @@ std::map<jbc::JBCOpcode, std::tuple<Opcode, Opcode, uint8>> JBCStmtInstBranch::I
   ans[jbc::kOpIfACmpne] = std::make_tuple(OP_brfalse, OP_eq, kModeUseRef);
   ans[jbc::kOpIfNull] = std::make_tuple(OP_brtrue, OP_eq, kModeUseRef | kModeUseZeroAsSecondOpnd);
   ans[jbc::kOpIfNonNull] = std::make_tuple(OP_brfalse, OP_eq, kModeUseRef | kModeUseZeroAsSecondOpnd);
+  return ans;
+}
+
+// ---------- JBCStmtInstBranchRet ----------
+JBCStmtInstBranchRet::JBCStmtInstBranchRet(const jbc::JBCOp &argOp,
+                                           const std::map<uint16, std::map<int32, uint32>> &argMapJsrSlotRetAddr)
+    : JBCStmtInstBranch(argOp),
+      mapJsrSlotRetAddr(argMapJsrSlotRetAddr) {
+  kind = kJBCStmtInstBranchRet;
+}
+
+std::list<UniqueFEIRStmt> JBCStmtInstBranchRet::EmitToFEIRForOpRetImpl(
+    JBCStack2FEHelper &stack2feHelper,
+    const std::map<uint32, JBCStmtPesudoLabel*> &mapPCStmtLabel,
+    bool &success) const {
+  std::list<UniqueFEIRStmt> ans;
+  const jbc::JBCOpRet &opRet = static_cast<const jbc::JBCOpRet&>(op);
+  uint16 slotIdx = opRet.GetIndex();
+  auto itJsrInfo = mapJsrSlotRetAddr.find(slotIdx);
+  if (itJsrInfo == mapJsrSlotRetAddr.end()) {
+    WARN(kLncWarn, "jsr info not found");
+    success = false;
+    return ans;
+  }
+  const std::map<int32, uint32> &jsrInfo = itJsrInfo->second;
+  if (jsrInfo.size() == 1) {
+    auto itInfo = jsrInfo.begin();
+    JBCStmtPesudoLabel *stmtLabel = GetTarget(mapPCStmtLabel, itInfo->second);
+    if (stmtLabel == nullptr) {
+      success = false;
+      return ans;
+    }
+    UniqueFEIRStmt stmtGoto = FEIRBuilder::CreateStmtGoto(stmtLabel->GetLabelIdx());
+    ans.push_back(std::move(stmtGoto));
+  } else {
+    uint32 idx = 0;
+    UniqueFEIRVar var = FEIRBuilder::CreateVarReg(slotIdx, PTY_i32);
+    UniqueFEIRExpr exprValue = FEIRBuilder::CreateExprDRead(std::move(var));
+    UniqueFEIRStmt stmtSwitch = FEIRBuilder::CreateStmtSwitch(std::move(exprValue));
+    FEIRStmtSwitch *ptrStmtSwitch = static_cast<FEIRStmtSwitch*>(stmtSwitch.get());
+    for (auto itInfo : jsrInfo) {
+      JBCStmtPesudoLabel *stmtLabel = GetTarget(mapPCStmtLabel, itInfo.second);
+      if (stmtLabel == nullptr) {
+        success = false;
+        return ans;
+      }
+      if (idx == jsrInfo.size() - 1) {
+        ptrStmtSwitch->SetDefaultLabelIdx(stmtLabel->GetLabelIdx());
+      } else {
+        ptrStmtSwitch->AddTarget(itInfo.first, stmtLabel->GetLabelIdx());
+      }
+      ++idx;
+    }
+    ans.push_back(std::move(stmtSwitch));
+  }
   return ans;
 }
 

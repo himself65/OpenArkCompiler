@@ -191,6 +191,15 @@ void EHThrow::Lower(CGFunc &cgFunc) {
       arg = retypeNode->CloneTree(mirModule->GetCurFuncCodeMPAllocator());
       break;
     }
+    case OP_cvt: {
+      TypeCvtNode *cvtNode = static_cast<TypeCvtNode*>(opnd0);
+      PrimType prmType = cvtNode->GetPrimType();
+      // prmType supposed to be Pointer.
+      if ((prmType == PTY_ptr) || (prmType == PTY_ref) || (prmType == PTY_a32) || (prmType == PTY_a64)) {
+        ConvertThrowToRethrow(cgFunc);
+      }
+      return;
+    }
     default:
       ASSERT(false, " NYI throw something");
   }

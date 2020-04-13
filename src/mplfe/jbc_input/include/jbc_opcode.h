@@ -300,12 +300,25 @@ class JBCOpSlotOpr : public JBCOp {
  public:
   JBCOpSlotOpr(MapleAllocator &allocator, JBCOpcode opIn, JBCOpcodeKind kindIn, bool wideIn);
   ~JBCOpSlotOpr() = default;
+  bool IsAStore() const;
   uint16 GetSlotIdx() const {
     return slotIdx;
   }
 
   void SetSlotIdx(uint16 argSlotIdx) {
     slotIdx = argSlotIdx;
+  }
+
+  bool IsAddressOpr() const {
+    return isAddressOpr;
+  }
+
+  void SetAddressOpr() {
+    isAddressOpr = true;
+  }
+
+  void UnsetAddressOpr() {
+    isAddressOpr = false;
   }
 
  protected:
@@ -320,9 +333,11 @@ class JBCOpSlotOpr : public JBCOp {
   static std::map<JBCOpcode, JBCPrimType> InitMapOpOutputType();
 
   uint16 slotIdx;
+  bool isAddressOpr;
   static std::map<JBCOpcode, std::pair<uint16, JBCPrimType>> mapSlotIdxAndType;
   static std::map<JBCOpcode, std::vector<JBCPrimType>> mapOpInputTypes;
   static std::map<JBCOpcode, JBCPrimType> mapOpOutputType;
+  static std::vector<JBCPrimType> inputTypesAddressOpr;
 };
 
 class JBCOpMathInc : public JBCOp {
@@ -513,11 +528,31 @@ class JBCOpJsr : public JBCOp {
     target = argTarget;
   }
 
+  uint16 GetSlotIdx() const {
+    return slotIdx;
+  }
+
+  void SetSlotIdx(uint32 argSlotIdx) {
+    slotIdx = argSlotIdx;
+  }
+
+  int32 GetJsrID() const {
+    return jsrID;
+  }
+
+  void SetJsrID(int32 argJsrID) {
+    jsrID = argJsrID;
+  }
+
  protected:
   bool ParseFileImpl(BasicIORead &io) override;
+  JBCPrimType GetOutputTypesToStackImpl() const override;
+  std::string DumpImpl(const JBCConstPool &constPool) const override;
 
  private:
   uint32 target;
+  uint16 slotIdx;
+  int32 jsrID;
 };
 
 class JBCOpRet : public JBCOp {
@@ -534,6 +569,7 @@ class JBCOpRet : public JBCOp {
 
  protected:
   bool ParseFileImpl(BasicIORead &io) override;
+  std::string DumpImpl(const JBCConstPool &constPool) const override;
 
  private:
   uint16 index;

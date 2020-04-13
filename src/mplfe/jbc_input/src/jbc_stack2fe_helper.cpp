@@ -343,7 +343,7 @@ PrimType JBCStack2FEHelper::JBCStackItemTypeToPrimType(jbc::JBCPrimType itemType
     case jbc::JBCPrimType::kTypeRef:
       return PTY_ref;
     case jbc::JBCPrimType::kTypeAddress:
-      return PTY_i32;
+      return PTY_a32;
     case jbc::JBCPrimType::kTypeDefault:
       return PTY_unknown;
     default:

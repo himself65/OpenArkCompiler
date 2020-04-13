@@ -1344,11 +1344,10 @@ std::pair<BaseNode*, int64> ConstantFold::FoldBinary(BinaryNode *node) {
     } else if (op == OP_sub) {
       sum = cst - rp.second;
       result = NegateTree(r);
-    } else if ((op == OP_mul || op == OP_div || op == OP_rem || op == OP_ashr || op == OP_lshr || op == OP_shl ||
+    } else if ((op == OP_mul || op == OP_rem || op == OP_ashr || op == OP_lshr || op == OP_shl ||
                 op == OP_band || op == OP_cand || op == OP_land) &&
                cst == 0) {
       // 0 * X -> 0
-      // 0 / X -> 0
       // 0 % X -> 0
       // 0 >> X -> 0
       // 0 << X -> 0

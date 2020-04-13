@@ -126,7 +126,7 @@ class JBCStack2FEHelper {
   }
 
   bool IsPrimTypeNormal(PrimType pty) const {
-    return pty == PTY_i32 || pty == PTY_f32 || pty == PTY_ref;
+    return pty == PTY_i32 || pty == PTY_f32 || pty == PTY_ref || pty == PTY_a32;
   }
 
   bool IsPrimTypeWide(PrimType pty) const {

@@ -612,9 +612,23 @@ std::map<JBCOpcode, std::pair<uint16, JBCPrimType>> JBCOpSlotOpr::mapSlotIdxAndT
     JBCOpSlotOpr::InitMapSlotIdxAndType();
 std::map<JBCOpcode, std::vector<JBCPrimType>> JBCOpSlotOpr::mapOpInputTypes = JBCOpSlotOpr::InitMapOpInputTypes();
 std::map<JBCOpcode, JBCPrimType> JBCOpSlotOpr::mapOpOutputType = JBCOpSlotOpr::InitMapOpOutputType();
+std::vector<JBCPrimType> JBCOpSlotOpr::inputTypesAddressOpr = { JBCPrimType::kTypeAddress };
 
 JBCOpSlotOpr::JBCOpSlotOpr(MapleAllocator &allocator, JBCOpcode opIn, JBCOpcodeKind kindIn, bool wideIn)
-    : JBCOp(allocator, opIn, kindIn, wideIn), slotIdx(0) {}
+    : JBCOp(allocator, opIn, kindIn, wideIn), slotIdx(0), isAddressOpr(false) {}
+
+bool JBCOpSlotOpr::IsAStore() const {
+  switch (op) {
+    case jbc::kOpAStore:
+    case jbc::kOpAStore0:
+    case jbc::kOpAStore1:
+    case jbc::kOpAStore2:
+    case jbc::kOpAStore3:
+      return true;
+    default:
+      return false;
+  }
+}
 
 bool JBCOpSlotOpr::ParseFileImpl(BasicIORead &io) {
   bool success = false;
@@ -650,6 +664,9 @@ bool JBCOpSlotOpr::ParseFileImpl(BasicIORead &io) {
 }
 
 const std::vector<JBCPrimType> &JBCOpSlotOpr::GetInputTypesFromStackImpl() const {
+  if (isAddressOpr) {
+    return inputTypesAddressOpr;
+  }
   auto it = mapOpInputTypes.find(op);
   CHECK_FATAL(it != mapOpInputTypes.end(), "Unsupported opcode %s", opcodeInfo.GetOpcodeName(op).c_str());
   return it->second;
@@ -1244,6 +1261,16 @@ bool JBCOpJsr::ParseFileImpl(BasicIORead &io) {
   return success;
 }
 
+JBCPrimType JBCOpJsr::GetOutputTypesToStackImpl() const {
+  return JBCPrimType::kTypeAddress;
+}
+
+std::string JBCOpJsr::DumpImpl(const JBCConstPool &constPool) const {
+  std::stringstream ss;
+  ss << GetOpcodeName() << " " << target;
+  return ss.str();
+}
+
 // ---------- JBCOpRet ----------
 JBCOpRet::JBCOpRet(MapleAllocator &allocator, JBCOpcode opIn, JBCOpcodeKind kindIn, bool wideIn)
     : JBCOp(allocator, opIn, kindIn, wideIn), index(0) {}
@@ -1256,6 +1283,12 @@ bool JBCOpRet::ParseFileImpl(BasicIORead &io) {
     index = io.ReadUInt8(success);
   }
   return success;
+}
+
+std::string JBCOpRet::DumpImpl(const JBCConstPool &constPool) const {
+  std::stringstream ss;
+  ss << GetOpcodeName() << " " << index;
+  return ss.str();
 }
 
 // ---------- JBCOpNew ----------

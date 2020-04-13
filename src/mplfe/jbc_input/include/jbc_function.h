@@ -102,8 +102,16 @@ class JBCFunction : public FEFunction {
   std::map<uint32, JBCStmtPesudoLabel*> mapPCLabelStmt;  // key: labelPC, value: stmt
   std::map<uint32, JBCStmtPesudoLOC*> mapPCStmtLOC; // key: locPC, value: stmt
   std::map<uint32, JBCStmtPesudoComment*> mapPCCommentStmt; // key: commentPC, value: stmt
+  std::map<uint16, std::map<int32, uint32>> mapJsrSlotRetAddr;  // key: slotIdx, value: map<jsrID, retAddr>
   GeneralBB *pesudoBBCatchPred;
-  void BuildStmtFromInstruction(const jbc::JBCAttrCode &code);
+
+  bool PreBuildJsrInfo(const jbc::JBCAttrCode &code);
+  bool BuildStmtFromInstruction(const jbc::JBCAttrCode &code);
+  GeneralStmt *BuildStmtFromInstructionForBranch(const jbc::JBCOp &op);
+  GeneralStmt *BuildStmtFromInstructionForGoto(const jbc::JBCOp &op);
+  GeneralStmt *BuildStmtFromInstructionForSwitch(const jbc::JBCOp &op);
+  GeneralStmt *BuildStmtFromInstructionForJsr(const jbc::JBCOp &op);
+  GeneralStmt *BuildStmtFromInstructionForRet(const jbc::JBCOp &op);
   void BuildStmtForCatch(const jbc::JBCAttrCode &code);
   void BuildStmtForTry(const jbc::JBCAttrCode &code);
   void BuildTryInfo(const std::map<std::pair<uint32, uint32>, std::vector<uint32>> &rawInfo,

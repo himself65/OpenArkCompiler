@@ -27,6 +27,7 @@ enum JBCStmtKind : uint8 {
   kJBCStmtFuncEnd,
   kJBCStmtInst,
   kJBCStmtInstBranch,
+  kJBCStmtInstBranchRet,
   kJBCStmtPesudoComment,
   kJBCStmtPesudoLOC,
   kJBCStmtPesudoLabel,
@@ -66,6 +67,10 @@ class JBCStmt : public GeneralStmt {
 
   void SetKind(JBCStmtKind argKind) {
     kind = argKind;
+  }
+
+  bool IsBranch() const {
+    return kind == JBCStmtKind::kJBCStmtInstBranch || kind == JBCStmtKind::kJBCStmtInstBranchRet;
   }
 
  protected:
@@ -248,6 +253,14 @@ class JBCStmtInstBranch : public JBCStmt {
   std::list<UniqueFEIRStmt> EmitToFEIRImpl(JBCStack2FEHelper &stack2feHelper,
                                            const jbc::JBCConstPool &constPool,
                                            bool &success) const override;
+  JBCStmtPesudoLabel *GetTarget(const std::map<uint32, JBCStmtPesudoLabel*> &mapPCStmtLabel, uint32 pc) const;
+  virtual std::list<UniqueFEIRStmt> EmitToFEIRForOpRetImpl(JBCStack2FEHelper &stack2feHelper,
+                                                           const std::map<uint32, JBCStmtPesudoLabel*> &mapPCStmtLabel,
+                                                           bool &success) const {
+    return std::list<UniqueFEIRStmt>();
+  }
+
+  const jbc::JBCOp &op;
 
  private:
   // bitwise mode
@@ -257,7 +270,6 @@ class JBCStmtInstBranch : public JBCStmt {
     kModeUseZeroAsSecondOpnd = 0x2  // bit1: 1 for using 0 for 2nd opnd, 0 for using normal opnd
   };
 
-  const jbc::JBCOp &op;
   using FuncPtrEmitToFEIR =
       std::list<UniqueFEIRStmt> (JBCStmtInstBranch::*)(JBCStack2FEHelper &stack2feHelper,
                                                        const std::map<uint32, JBCStmtPesudoLabel*> &mapPCStmtLabel,
@@ -275,9 +287,29 @@ class JBCStmtInstBranch : public JBCStmt {
   std::list<UniqueFEIRStmt> EmitToFEIRForOpSwitch(JBCStack2FEHelper &stack2feHelper,
                                                   const std::map<uint32, JBCStmtPesudoLabel*> &mapPCStmtLabel,
                                                   bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpJsr(JBCStack2FEHelper &stack2feHelper,
+                                               const std::map<uint32, JBCStmtPesudoLabel*> &mapPCStmtLabel,
+                                               bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpRet(JBCStack2FEHelper &stack2feHelper,
+                                               const std::map<uint32, JBCStmtPesudoLabel*> &mapPCStmtLabel,
+                                               bool &success) const;
   std::list<UniqueFEIRStmt> EmitToFEIRCommon(JBCStack2FEHelper &stack2feHelper,
                                              const std::map<uint32, JBCStmtPesudoLabel*> &mapPCStmtLabel,
                                              bool &success) const;
+};
+
+class JBCStmtInstBranchRet : public JBCStmtInstBranch {
+ public:
+  JBCStmtInstBranchRet(const jbc::JBCOp &argOp, const std::map<uint16, std::map<int32, uint32>> &argMapJsrSlotRetAddr);
+  ~JBCStmtInstBranchRet() = default;
+
+ protected:
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpRetImpl(JBCStack2FEHelper &stack2feHelper,
+                                                   const std::map<uint32, JBCStmtPesudoLabel*> &mapPCStmtLabel,
+                                                   bool &success) const override;
+
+ private:
+  const std::map<uint16, std::map<int32, uint32>> &mapJsrSlotRetAddr;
 };
 
 class JBCStmtPesudoLabel : public JBCStmt {
