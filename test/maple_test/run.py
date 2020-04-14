@@ -20,6 +20,7 @@ import subprocess
 import sys
 import time
 import timeit
+import logging
 from textwrap import indent, shorten
 
 from maple_test.configs import construct_logger, get_val
@@ -76,7 +77,11 @@ def run_commands(
     position, old_result, commands, work_dir, timeout, log_config, env=None
 ):
     name = "{}_{}".format(log_config[1], int(time.time()))
-    logger = construct_logger(log_config[0], name)
+    name = log_config[1]
+    formatter = logging.Formatter(
+        "%(asctime)s %(levelname)s %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+    )
+    logger = construct_logger(log_config[0], log_config[1], file_fmt=formatter)
     if not commands:
         err = "Run task exit unexpected : {}, Log file at: {}.log".format(
             old_result[-1], log_config[0].get("dir") / name
@@ -104,8 +109,8 @@ def run_commands(
         )
         if return_code != 0:
             result = (FAIL, (return_code, command, shorten(com_err, width=84)))
-            err = "Run task exit unexpected : {}, Log file at: {}.log".format(
-                result[-1], log_config[0].get("dir") / name
+            err = "Failed, Log file at: {}.log".format(
+                log_config[0].get("dir") / name
             )
             logger.error(err)
             break

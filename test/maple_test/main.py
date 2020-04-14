@@ -28,7 +28,6 @@ from maple_test.utils import timer
 from maple_test.run import TestError
 
 
-@timer
 def main():
     test_suite_config, running_config, log_config = configs.init_config()
     logger = configs.LOGGER

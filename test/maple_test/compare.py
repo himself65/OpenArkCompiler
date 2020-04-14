@@ -78,35 +78,10 @@ def main():
             pattern_flag, pattern = extract_pattern(assert_line, assert_flag)
             if not is_valid_pattern(pattern):
                 match_pass = False
-                break
+                raise CompareError("Not valid pattern: {!r}".format(pattern))
 
             keywords = pattern_flag.split("-")
-            valid_keywords = []
-            assert_mode = keywords[0]
-            match_func = None
-            if assert_mode == "scan":
-                match_func = regex_match
-                valid_keywords = SCAN_KEYWORDS
-            elif assert_mode == "cmp":
-                match_func = cmp_match
-                valid_keywords = CMP_KEYWORDS
-            else:
-                raise CompareError("scan mode: {} is not valid".format(assert_mode))
-            for keyword in keywords[1:]:
-                if keyword not in valid_keywords:
-                    raise CompareError(
-                        "keyword: {} is not valid for {}".format(keyword, assert_mode)
-                    )
-                if keyword == "auto":
-                    match_func = partial(auto_regex_match, match_func=match_func)
-                elif keyword == "not":
-                    match_func = partial(not_match, match_func=match_func)
-                elif keyword == "next":
-                    match_func = partial(next_match, match_func=match_func)
-                elif keyword == "end":
-                    match_func = end_match
-                elif keyword == "full":
-                    match_func = full_match
+            match_func = gen_match_func(keywords)
             if "next" not in keywords and "end" not in keywords:
                 start = 0
             result, start = match_func(content, line_map, pattern, start)
@@ -133,8 +108,37 @@ def main():
             )
         )
         return 0
-
     sys.exit(1)
+
+
+def gen_match_func(keywords):
+    valid_keywords = []
+    assert_mode = keywords[0]
+    match_func = None
+    if assert_mode == "scan":
+        match_func = regex_match
+        valid_keywords = SCAN_KEYWORDS
+    elif assert_mode == "cmp":
+        match_func = cmp_match
+        valid_keywords = CMP_KEYWORDS
+    else:
+        raise CompareError("scan mode: {} is not valid".format(assert_mode))
+    for keyword in keywords[1:]:
+        if keyword not in valid_keywords:
+            raise CompareError(
+                "keyword: {} is not valid for {}".format(keyword, assert_mode)
+            )
+        if keyword == "auto":
+            match_func = partial(auto_regex_match, match_func=match_func)
+        elif keyword == "not":
+            match_func = partial(not_match, match_func=match_func)
+        elif keyword == "next":
+            match_func = partial(next_match, match_func=match_func)
+        elif keyword == "end":
+            match_func = end_match
+        elif keyword == "full":
+            match_func = full_match
+    return match_func
 
 
 def extract_pattern(line, flag):
@@ -145,7 +149,7 @@ def extract_pattern(line, flag):
         pattern_flag, raw_pattern = pattern_line.lstrip().split(" ", 1)
     except ValueError:
         pattern_flag = pattern_line.lstrip()
-        raw_pattern = None
+        raw_pattern = ""
     return pattern_flag, raw_pattern
 
 
@@ -155,8 +159,9 @@ def is_valid_pattern(pattern):
     except re.error:
         logging.error("Error pattern: {!r}".format(pattern))
         return False
-    finally:
-        return True
+    except TypeError:
+        logging.error(type(pattern), repr(pattern))
+    return True
 
 
 def parse_cli():
@@ -183,6 +188,7 @@ def parse_cli():
 
 
 def regex_match(content, line_map, pattern, start=0):
+    pattern = r"\s*".join([word for word in pattern.split()])
     matches = re.finditer(str(pattern), content, re.MULTILINE)
     end = 0
     for _, match in enumerate(matches, start=1):
@@ -204,7 +210,7 @@ def cmp_match(content, line_map, pattern, start=0):
 
 
 def auto_regex_match(content, line_map, pattern, start=0, match_func=regex_match):
-    pattern = r"\s+".join([re.escape(word.strip()) for word in pattern.strip().split()])
+    pattern = r"\s+".join([re.escape(word) for word in pattern.split()])
     return match_func(content, line_map, pattern, start)
 
 
