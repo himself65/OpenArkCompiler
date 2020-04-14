@@ -165,6 +165,10 @@ class TestSuiteTask:
                 task = SingleTask(case, config, running_config)
                 self.task_set[name].append(task)
                 self.task_set_result[name][task.result[0]] += 1
+        if sum([len(case) for case in self.task_set.values()]) < 1:
+            logger.info(
+                "Path %s not in testlist, be sure add path to testlist", str(self.path),
+            )
 
     @staticmethod
     def _get_testlist(config, base_dir, encoding):
@@ -191,11 +195,6 @@ class TestSuiteTask:
                 for file in case_files
                 if is_relative(file, self.path)
             ]
-            if not case_files:
-                logger.info(
-                    "Path %s not in testlist, be sure add path to testlist",
-                    str(self.path),
-                )
         for case_file in case_files:
             case_name = str(case_file).replace(".", "_")
             comment = self.suffix_comments[case_file.suffix[1:]]
