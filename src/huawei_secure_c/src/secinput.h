@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -20,13 +20,12 @@
 #define SECUREC_SCANF_EINVAL             (-1)
 #define SECUREC_SCANF_ERROR_PARA         (-2)
 
-/* for internal stream flag */
+/* For internal stream flag */
 #define SECUREC_MEM_STR_FLAG             0X01
 #define SECUREC_FILE_STREAM_FLAG         0X02
-#define SECUREC_FROM_STDIN_FLAG          0X04
+#define SECUREC_PIPE_STREAM_FLAG         0X04
 #define SECUREC_LOAD_FILE_TO_MEM_FLAG    0X08
 
-#define SECUREC_UNINITIALIZED_FILE_POS   (-1)
 #define SECUREC_BOM_HEADER_SIZE          2
 #define SECUREC_BOM_HEADER_BE_1ST        0xFEU
 #define SECUREC_BOM_HEADER_BE_2ST        0xFFU
@@ -40,55 +39,88 @@
 #define SECUREC_UTF8_LEAD_2ND            0x80
 
 typedef struct {
-    unsigned int flag;          /* mark the properties of input stream */
-    int count;                  /* the size of buffered string in bytes */
-    const char *cur;            /* the pointer to next read position */
-    char *base;                 /* the pointer to the header of buffered string */
+    unsigned int flag;          /* Mark the properties of input stream */
+    int count;                  /* The size of buffered string in bytes */
+    const char *cur;            /* The pointer to next read position */
+    char *base;                 /* The pointer to the header of buffered string */
 #if SECUREC_ENABLE_SCANF_FILE
-    FILE *pf;                   /* the file pointer */
-    long oriFilePos;            /* the original position of file offset when fscanf is called */
+    FILE *pf;                   /* The file pointer */
+    long oriFilePos;            /* The original position of file offset when fscanf is called */
     int fileRealRead;
-#if defined(SECUREC_NO_STD_UNGETC)
-    unsigned int lastChar;      /* the char code of last input */
-    int fUnget;                 /* the boolean flag of pushing a char back to read stream */
+#ifdef SECUREC_NO_STD_UNGETC
+    unsigned int lastChar;      /* The char code of last input */
+    int fUnGet;                 /* The boolean flag of pushing a char back to read stream */
 #endif
 #endif
 } SecFileStream;
 
-
-#define SECUREC_INIT_SEC_FILE_STREAM_COMMON(fileStream, streamFlag, curPtr, strCount) do { \
-    (fileStream).flag = (streamFlag); \
-    (fileStream).count = (strCount); \
-    (fileStream).cur = (curPtr); \
-    (fileStream).base = NULL; \
-} SECUREC_WHILE_ZERO
-
+#ifdef SECUREC_INLINE_INIT_FILE_STREAM_STR
+/*
+ * This initialization for eliminating redundant initialization.
+ */
+SECUREC_INLINE void SecInitFileStreamFromString(SecFileStream *stream, const char *cur, int count)
+{
+    stream->flag = SECUREC_MEM_STR_FLAG;
+    stream->count = count;
+    stream->cur = cur;
+    stream->base = NULL;
 #if SECUREC_ENABLE_SCANF_FILE
-#if defined(SECUREC_NO_STD_UNGETC)
-/* This initialization for eliminating redundant initialization.
+    stream->pf = NULL;
+    stream->oriFilePos = 0;
+    stream->fileRealRead = 0;
+#ifdef SECUREC_NO_STD_UNGETC
+    stream->lastChar = 0;
+    stream->fUnGet = 0;
+#endif
+#endif
+}
+#endif
+
+#ifdef SECUREC_INLINE_INIT_FILE_STREAM_STDIN
+/*
+ * This initialization for eliminating redundant initialization.
+ */
+SECUREC_INLINE void SecInitFileStreamFromStdin(SecFileStream *stream)
+{
+    stream->flag = SECUREC_PIPE_STREAM_FLAG;
+    stream->count = 0;
+    stream->cur = NULL;
+    stream->base = NULL;
+#if SECUREC_ENABLE_SCANF_FILE
+    stream->pf = SECUREC_STREAM_STDIN;
+    stream->oriFilePos = 0;
+    stream->fileRealRead = 0;
+#ifdef SECUREC_NO_STD_UNGETC
+    stream->lastChar = 0;
+    stream->fUnGet = 0;
+#endif
+#endif
+}
+#endif
+
+
+#ifdef SECUREC_INLINE_INIT_FILE_STREAM_FILE
+/*
+ * This initialization for eliminating redundant initialization.
  * Compared with the previous version initialization 0,
  * the current code causes the binary size to increase by some bytes
  */
-#define SECUREC_INIT_SEC_FILE_STREAM(fileStream, streamFlag, stream, filePos, curPtr, strCount) do { \
-    SECUREC_INIT_SEC_FILE_STREAM_COMMON((fileStream), (streamFlag), (curPtr), (strCount)); \
-    (fileStream).pf = (stream); \
-    (fileStream).oriFilePos = (filePos); \
-    (fileStream).fileRealRead = 0; \
-    (fileStream).lastChar = 0; \
-    (fileStream).fUnget = 0; \
-} SECUREC_WHILE_ZERO
-#else
-#define SECUREC_INIT_SEC_FILE_STREAM(fileStream, streamFlag, stream, filePos, curPtr, strCount) do { \
-    SECUREC_INIT_SEC_FILE_STREAM_COMMON((fileStream), (streamFlag), (curPtr), (strCount)); \
-    (fileStream).pf = (stream); \
-    (fileStream).oriFilePos = (filePos); \
-    (fileStream).fileRealRead = 0; \
-} SECUREC_WHILE_ZERO
+SECUREC_INLINE void SecInitFileStreamFromFile(SecFileStream *stream, FILE *file)
+{
+    stream->flag = SECUREC_FILE_STREAM_FLAG;
+    stream->count = 0;
+    stream->cur = NULL;
+    stream->base = NULL;
+#if SECUREC_ENABLE_SCANF_FILE
+    stream->pf = file;
+    stream->oriFilePos = 0;
+    stream->fileRealRead = 0;
+#ifdef SECUREC_NO_STD_UNGETC
+    stream->lastChar = 0;
+    stream->fUnGet = 0;
 #endif
-#else /* No SECUREC_ENABLE_SCANF_FILE */
-#define SECUREC_INIT_SEC_FILE_STREAM(fileStream, streamFlag, stream, filePos, curPtr, strCount) do { \
-    SECUREC_INIT_SEC_FILE_STREAM_COMMON((fileStream), (streamFlag), (curPtr), (strCount)); \
-} SECUREC_WHILE_ZERO
+#endif
+}
 #endif
 
 #ifdef __cplusplus

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -22,9 +22,9 @@
  *
  * <INPUT PARAMETERS>
  *    strDest                  Storage location for the output.
- *    destMax                Size of strDest
- *    format                  Format specification.
- *    argList                   pointer to list of arguments
+ *    destMax                  Maximum number of characters to store
+ *    format                   Format specification.
+ *    argList                  pointer to list of arguments
  *
  * <OUTPUT PARAMETERS>
  *    strDest                 is updated
@@ -38,11 +38,8 @@
 int vswprintf_s(wchar_t *strDest, size_t destMax, const wchar_t *format, va_list argList)
 {
     int retVal;               /* If initialization causes  e838 */
-
-    if (format == NULL || strDest == NULL || destMax == 0 || destMax > (SECUREC_WCHAR_STRING_MAX_LEN)) {
-        if (strDest != NULL && destMax > 0) {
-            strDest[0] = '\0';
-        }
+    if (SECUREC_VSPRINTF_PARAM_ERROR(format, strDest, destMax, SECUREC_WCHAR_STRING_MAX_LEN)) {
+        SECUREC_VSPRINTF_CLEAR_DEST(strDest, destMax, SECUREC_WCHAR_STRING_MAX_LEN);
         SECUREC_ERROR_INVALID_PARAMTER("vswprintf_s");
         return -1;
     }

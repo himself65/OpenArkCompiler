@@ -16,6 +16,7 @@
 #define MAPLE_ME_INCLUDE_ME_BB_LAYOUT_H
 #include "me_function.h"
 #include "me_phase.h"
+#include "me_pgo_instrument.h"
 
 namespace maple {
 class BBLayout : public AnalysisResult {
@@ -26,8 +27,10 @@ class BBLayout : public AnalysisResult {
         layoutAlloc(&memPool),
         layoutBBs(layoutAlloc.Adapter()),
         startTryBBVec(func.GetAllBBs().size(), false, layoutAlloc.Adapter()),
+        allEdges(layoutAlloc.Adapter()),
         laidOut(func.GetAllBBs().size(), false, layoutAlloc.Adapter()),
-        enabledDebug(enabledDebug) {
+        enabledDebug(enabledDebug),
+        profValid(func.IsIRProfValid()) {
     laidOut[func.GetCommonEntryBB()->GetBBId()] = true;
     laidOut[func.GetCommonExitBB()->GetBBId()] = true;
   }
@@ -52,11 +55,17 @@ class BBLayout : public AnalysisResult {
   bool BBContainsOnlyCondGoto(const BB &bb) const;
   bool HasSameBranchCond(BB &bb1, BB &bb2) const;
   bool BBCanBeMoved(const BB &fromBB, const BB &toAfterBB) const;
+  bool BBCanBeMovedBasedProf(const BB &fromBB, const BB &toAfterBB) const;
   void AddBB(BB &bb);
+  void AddBBProf(BB &bb);
+  void BuildEdges();
   BB *GetFallThruBBSkippingEmpty(BB &bb);
   void ResolveUnconditionalFallThru(BB &bb, BB &nextBB);
   void ChangeToFallthruFromGoto(BB &bb);
   void RemoveUnreachable(BB &bb);
+  BB *CreateGotoBBAfterCondBB(BB &bb, BB &fallthru);
+  bool ChooseTargetAsFallthru(const BB &bb, const BB &targetBB, const BB &oldFallThru,
+                              const BB &fallThru) const;
   const MapleVector<BB*> &GetBBs() const {
     return layoutBBs;
   }
@@ -84,6 +93,13 @@ class BBLayout : public AnalysisResult {
   void AddLaidOut(bool val) {
     return laidOut.push_back(val);
   }
+  void OptimiseCFG();
+  BB *NextBBProf(BB &bb);
+  BB *GetBBFromEdges();
+  void LayoutWithProf();
+  void LayoutWithoutProf();
+  void RunLayout();
+  void DumpBBPhyOrder() const;
 
  private:
   void FixEndTryBB(BB &bb);
@@ -94,6 +110,7 @@ class BBLayout : public AnalysisResult {
   MapleAllocator layoutAlloc;
   MapleVector<BB*> layoutBBs;  // gives the determined layout order
   MapleVector<bool> startTryBBVec;  // record the try BB to fix the try&endtry map
+  MapleVector<BBEdge*> allEdges;
   bool needDealWithTryBB = false;
   BBId curBBId { 0 };          // to index into func.bb_vec_ to return the next BB
   bool bbCreated = false;      // new create bb will change mefunction::bb_vec_ and
@@ -101,6 +118,7 @@ class BBLayout : public AnalysisResult {
   MapleVector<bool> laidOut;   // indexed by bbid to tell if has been laid out
   bool tryOutstanding = false; // true if a try laid out but not its endtry
   bool enabledDebug;
+  bool profValid = false;
 };
 
 class MeDoBBLayout : public MeFuncPhase {

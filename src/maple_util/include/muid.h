@@ -28,6 +28,11 @@
 constexpr unsigned int kSystemNamespace = 0xc0;
 constexpr unsigned int kApkNamespace = 0x80;
 constexpr unsigned int kBitMask = 0x3f;
+constexpr unsigned int kGroupSize = 64;
+constexpr unsigned int kShiftAmount = 32;
+constexpr unsigned int kBlockLength = 16;
+constexpr unsigned int kByteLength = 8;
+constexpr unsigned int kNumLowAndHigh = 2;
 
 #ifdef USE_64BIT_MUID
 constexpr unsigned int kMuidLength = 8;
@@ -39,19 +44,19 @@ constexpr unsigned int kMuidLength = 16;
 // namespace maplert
 struct MuidContext {
   unsigned int a, b, c, d;
-  unsigned int count[2];
-  unsigned int block[16];
-  unsigned char buffer[64];
+  unsigned int count[kNumLowAndHigh];
+  unsigned int block[kBlockLength];
+  unsigned char buffer[kGroupSize];
 };
 
 struct MUID {
   union {
 #ifdef USE_64BIT_MUID
     uint64_t raw;
-    uint32_t words[2];
+    uint32_t words[kNumLowAndHigh];
     uint8_t bytes[kMuidLength];
 #else
-    uint64_t words[2];
+    uint64_t words[kNumLowAndHigh];
     uint8_t bytes[kMuidLength];
 #endif // USE_64BIT_MUID
   } data;

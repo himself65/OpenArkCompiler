@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -12,13 +12,93 @@
  * FIT FOR A PARTICULAR PURPOSE.
  * See the Mulan PSL v1 for more details.
  */
-#define SECUREC_INLINE_DO_MEMCPY    1
+
 #define SECUREC_FORMAT_OUTPUT_INPUT 1
+
 #ifdef SECUREC_FOR_WCHAR
 #undef SECUREC_FOR_WCHAR
 #endif
 
 #include "secureprintoutput.h"
+#if SECUREC_WARP_OUTPUT
+#define SECUREC_FORMAT_FLAG_TABLE_SIZE 128
+static const unsigned char g_flagTable[SECUREC_FORMAT_FLAG_TABLE_SIZE] = {
+    /*
+     * Known flag is  "0123456789 +-#hlLwZzjqt*I"
+     */
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x00, 0x01, 0x00, 0x00,
+    0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00,
+    0x00, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+
+SECUREC_INLINE const char *SecSkipKnownFlags(const char *format)
+{
+    const char *fmt = format;
+    while (*fmt != '\0') {
+        char fmtChar = *fmt;
+        if ((unsigned char)fmtChar > 0x7f) { /* 0x7f is upper limit of format char value */
+            break;
+        }
+        if (g_flagTable[(unsigned char)fmtChar] == 0) {
+            break;
+        }
+        ++fmt;
+    }
+    return fmt;
+}
+
+SECUREC_INLINE int SecFormatContainN(const char *format)
+{
+    const char *fmt = format;
+    while (*fmt != '\0') {
+        ++fmt;
+        /* Skip normal char */
+        if (*(fmt - 1) != '%') {
+            continue;
+        }
+        /* Meet %% */
+        if (*fmt == '%') {
+            ++fmt; /* Point to  the character after the %. Correct handling %%xx */
+            continue;
+        }
+        /* Now parse %..., fmt point to the character after the % */
+        fmt = SecSkipKnownFlags(fmt);
+        if (*fmt == 'n') {
+            return 1;
+        }
+    }
+    return 0;
+}
+/*
+ * Multi character formatted output implementation, the count include \0 character, must be greater than zero
+ */
+int SecVsnprintfImpl(char *string, size_t count, const char *format, va_list argList)
+{
+    int retVal;
+    if (SecFormatContainN(format)) {
+        string[0] = '\0';
+        return -1;
+    }
+    retVal = vsnprintf(string, count, format, argList);
+    if (retVal >= (int)count) { /* The size_t to int is ok, count max is SECUREC_STRING_MAX_LEN */
+        /* The buffer was too small; we return truncation */
+        string[count - 1] = '\0';
+        return SECUREC_PRINTF_TRUNCATE;
+    } else if (retVal < 0) {
+        string[0] = '\0'; /* Empty the dest strDest */
+        return -1;
+    }
+    return retVal;
+}
+#else
+#if SECUREC_IN_KERNEL
+#include <linux/ctype.h>
+#endif
 
 #define SECUREC_CHAR(x) x
 #define SECUREC_WRITE_MULTI_CHAR  SecWriteMultiChar
@@ -28,72 +108,66 @@
 #define EOF (-1)
 #endif
 
-/* put a char to output */
-#define SECUREC_PUTC(c, outStream)    ((--(outStream)->count >= 0) ? \
-    (int)((unsigned int)(unsigned char)(*((outStream)->cur++) = (char)(c)) & 0xff) : EOF)
-/* to clear e835 */
-#define SECUREC_PUTC_ZERO(outStream)    ((--(outStream)->count >= 0) ? \
-    ((*((outStream)->cur++) = (char)('\0'))) : EOF)
-
-static void SecWriteMultiChar(char ch, int num, SecPrintfStream *f, int *pnumwritten);
-static void SecWriteString(const char *string, int len, SecPrintfStream *f, int *pnumwritten);
+SECUREC_INLINE void SecWriteMultiChar(char ch, int num, SecPrintfStream *f, int *pnumwritten);
+SECUREC_INLINE void SecWriteString(const char *string, int len, SecPrintfStream *f, int *pnumwritten);
 
 #include "output.inl"
 
 /*
- * Wide character formatted output implementation
+ * Multi character formatted output implementation
  */
 int SecVsnprintfImpl(char *string, size_t count, const char *format, va_list argList)
 {
     SecPrintfStream str;
     int retVal;
 
-    str.count = (int)count; /* this count include \0 character, Must be greater than zero */
+    str.count = (int)count; /* The count include \0 character, must be greater than zero */
     str.cur = string;
 
     retVal = SecOutputS(&str, format, argList);
-    if ((retVal >= 0) && (SECUREC_PUTC_ZERO(&str) != EOF)) {
+    if (retVal >= 0 && SecPutZeroChar(&str) == 0) {
         return retVal;
     } else if (str.count < 0) {
-        /* the buffer was too small; we return truncation */
+        /* The buffer was too small; we return truncation */
         string[count - 1] = '\0';
         return SECUREC_PRINTF_TRUNCATE;
     }
-    string[0] = '\0'; /* empty the dest strDest */
+    string[0] = '\0'; /* Empty the dest strDest */
     return -1;
 }
 
 /*
- * Sec write Wide character
+ * Write a wide character
  */
-static void SecWriteMultiChar(char ch, int num, SecPrintfStream *f, int *pnumwritten)
+SECUREC_INLINE void SecWriteMultiChar(char ch, int num, SecPrintfStream *f, int *pnumwritten)
 {
     int count = num;
-    while (count-- > 0) {
-        if (SECUREC_PUTC(ch, f) == EOF) {
-            *pnumwritten = -1;
-            break;
-        } else {
-            *pnumwritten = *pnumwritten + 1;
-        }
+    while (count-- > 0 && --(f->count) >= 0) {
+        *(f->cur) = ch;
+        ++(f->cur);
+        *pnumwritten = *pnumwritten + 1;
+    }
+    if (f->count < 0) {
+        *pnumwritten = -1;
     }
 }
 
 /*
- * Sec write string function
+ * Write string function, where this function is called, make sure that len is greater than 0
  */
-static void SecWriteString(const char *string, int len, SecPrintfStream *f, int *pnumwritten)
+SECUREC_INLINE void SecWriteString(const char *string, int len, SecPrintfStream *f, int *pnumwritten)
 {
     const char *str = string;
     int count = len;
-    while (count-- > 0) {
-        if (SECUREC_PUTC(*str, f) == EOF) {
-            *pnumwritten = -1;
-            break;
-        } else {
-            *pnumwritten = *pnumwritten + 1;
-            ++str;
-        }
+    while (count-- > 0 && --(f->count) >= 0) {
+        *(f->cur) = *str;
+        ++(f->cur);
+        ++str;
+    }
+    *pnumwritten = *pnumwritten + (int)(size_t)(str - string);
+    if (f->count < 0) {
+        *pnumwritten = -1;
     }
 }
+#endif
 

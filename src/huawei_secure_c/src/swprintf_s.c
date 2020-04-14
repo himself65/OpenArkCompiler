@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -21,7 +21,7 @@
  *
  * <INPUT PARAMETERS>
  *    strDest                   Storage location for the output.
- *    destMax                  Maximum number of characters to store.
+ *    destMax                   Maximum number of characters to store.
  *    format                    Format-control string.
  *    ...                        Optional arguments
  *
@@ -42,7 +42,7 @@ int swprintf_s(wchar_t *strDest, size_t destMax, const wchar_t *format, ...)
     va_start(argList, format);
     ret = vswprintf_s(strDest, destMax, format, argList);
     va_end(argList);
-    (void)argList;              /* to clear e438 last value assigned not used , the compiler will optimize this code */
+    (void)argList;              /* To clear e438 last value assigned not used , the compiler will optimize this code */
 
     return ret;
 }

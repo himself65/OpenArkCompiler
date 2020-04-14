@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -17,8 +17,10 @@
 #define SECUREPRINTOUTPUT_H_E950DA2C_902F_4B15_BECD_948E99090D9C
 #include "securecutil.h"
 
-/* flag definitions */
-/* Using macros instead of enumerations is because some of the enumerated types under the compiler are 16bit. */
+/*
+ * Flag definitions.
+ * Using macros instead of enumerations is because some of the enumerated types under the compiler are 16bit.
+ */
 #define SECUREC_FLAG_SIGN           0x00001U
 #define SECUREC_FLAG_SIGN_SPACE     0x00002U
 #define SECUREC_FLAG_LEFT           0x00004U
@@ -41,7 +43,7 @@
 #define SECUREC_FLAG_INTMAX         0x40000U
 #endif
 
-/* state definitions. Identify the status of the current format */
+/* State definitions. Identify the status of the current format */
 typedef enum {
     STAT_NORMAL,
     STAT_PERCENT,
@@ -62,9 +64,12 @@ typedef struct {
 
 
 #ifndef SECUREC_BUFFER_SIZE
-#ifdef SECUREC_STACK_SIZE_LESS_THAN_1K
-/* SECUREC_BUFFER_SIZE Can not be less than 23 ,
- * the length of the octal representation of 64-bit integers with zero lead
+#if SECUREC_IN_KERNEL
+#define SECUREC_BUFFER_SIZE    32
+#elif defined(SECUREC_STACK_SIZE_LESS_THAN_1K)
+/*
+ * SECUREC BUFFER SIZE Can not be less than 23
+ * The length of the octal representation of 64-bit integers with zero lead
  */
 #define SECUREC_BUFFER_SIZE    256
 #else
@@ -74,12 +79,36 @@ typedef struct {
 #if SECUREC_BUFFER_SIZE < 23
 #error SECUREC_BUFFER_SIZE Can not be less than 23
 #endif
+/* Buffer size for wchar, use 4 to make the compiler aligns as 8 bytes as possible */
+#define SECUREC_WCHAR_BUFFER_SIZE 4
+
 
 #define SECUREC_MAX_PRECISION  SECUREC_BUFFER_SIZE
-/* max. # bytes in multibyte char  ,see MB_LEN_MAX */
+/* Max. # bytes in multibyte char  ,see MB_LEN_MAX */
 #define SECUREC_MB_LEN 16
 /* The return value of the internal function, which is returned when truncated */
 #define SECUREC_PRINTF_TRUNCATE (-2)
+
+#define SECUREC_VSPRINTF_PARAM_ERROR(format, strDest, destMax, maxLimit) \
+    ((format) == NULL || (strDest) == NULL || (destMax) == 0 || (destMax) > (maxLimit))
+
+#define SECUREC_VSPRINTF_CLEAR_DEST(strDest, destMax, maxLimit) do { \
+    if ((strDest) != NULL && (destMax) > 0 && (destMax) <= (maxLimit)) { \
+        *(strDest) = '\0'; \
+    } \
+} SECUREC_WHILE_ZERO
+
+#ifdef SECUREC_COMPATIBLE_WIN_FORMAT
+#define SECUREC_VSNPRINTF_PARAM_ERROR(format, strDest, destMax, count, maxLimit) \
+    (((format) == NULL || (strDest) == NULL || (destMax) == 0 || (destMax) > (maxLimit)) || \
+    ((count) > (SECUREC_STRING_MAX_LEN - 1) && (count) != (size_t)(-1)))
+
+#else
+#define SECUREC_VSNPRINTF_PARAM_ERROR(format, strDest, destMax, count, maxLimit) \
+    (((format) == NULL || (strDest) == NULL || (destMax) == 0 || (destMax) > (maxLimit)) || \
+    ((count) > (SECUREC_STRING_MAX_LEN - 1)))
+#endif
+
 
 #ifdef __cplusplus
 extern "C" {

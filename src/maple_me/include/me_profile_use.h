@@ -124,8 +124,7 @@ class BBUseInfo {
 
 class MeProfUse : public PGOInstrument<BBUseEdge> {
  public:
-  MeProfUse(MeFunction &func, MemPool &mp, bool dump) : PGOInstrument(func, mp, dump),
-      func(&func), mp(&mp), dump(dump) {}
+  MeProfUse(MeFunction &func, MemPool &mp, bool dump) : PGOInstrument(func, mp, dump), func(&func), mp(&mp) {}
   bool BuildEdgeCount();
   void SetFuncEdgeInfo();
   void DumpFuncCFGEdgeFreq() const;
@@ -144,7 +143,6 @@ class MeProfUse : public PGOInstrument<BBUseEdge> {
   BBUseInfo *GetOrCreateBBUseInfo(const BB &bb) ;
   MeFunction *func;
   MemPool *mp;
-  bool dump;
   bool succCalcuAllEdgeFreq = false;
   std::unordered_map<const BB*, BBUseInfo*> bbProfileInfo;
 };

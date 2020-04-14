@@ -111,6 +111,16 @@ void CFGMST<Edge>::ComputeMST() {
     }
     return;
   }
+  // first,put all critial edge,with destBB is eh-handle
+  // in mst,because current doesn't support split that edge
+  for (auto &e : allEdges) {
+    if (e->IsCritical()) {
+      auto destBB = e->GetDestBB();
+      if (destBB->GetAttributes(kBBAttrIsCatch) && UnionGroups(e->GetSrcBB(), e->GetDestBB())) {
+        e->SetInMST();
+      }
+    }
+  }
   for (auto &e : allEdges) {
     if (UnionGroups(e->GetSrcBB(), e->GetDestBB())) {
       e->SetInMST();
@@ -159,6 +169,10 @@ void CFGMST<Edge>::BuildEdges() {
       /* exitBB incoming edge allocate high weight */
       if (succBB->GetKind() == BBKind::kBBReturn) {
         AddEdge(bb, succBB, exitEdgeWeight);
+        continue;
+      }
+      if (IsCritialEdge(bb, succBB)) {
+        AddEdge(bb, succBB, criticalEdgeWeight, true);
         continue;
       }
       AddEdge(bb, succBB, normalEdgeWeight);

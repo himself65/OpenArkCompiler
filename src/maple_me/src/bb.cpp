@@ -166,7 +166,10 @@ void BB::RemoveBBFromPred(BB *bb) {
 
 void BB::RemoveBBFromSucc(BB *bb) {
   CHECK_NULL_FATAL(bb);
-  bb->RemoveBBFromVector(succ);
+  int ret = bb->RemoveBBFromVector(succ);
+  if (ret != -1 && frequency != 0) {
+    succFreq.erase(succFreq.cbegin() + ret);
+  }
 }
 
 // add stmtnode to bb and update first_stmt_ and last_stmt_

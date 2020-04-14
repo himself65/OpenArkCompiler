@@ -21,13 +21,19 @@
 // This BB layout strategy strictly obeys source ordering when inside try blocks.
 // This Optimization will reorder the bb layout. it start from the first bb of func.
 // All bbs will be put into layoutBBs and it gives the determined layout order.
-// The entry of the optimization is MeDoBBLayout::Run. It starts from the first bb.
+// The entry of the optimization is MeDoBBLayout::Run. If func's IR profile is
+// valid,use the Pettis & Hansen intra func bb layout.refer the following paper:
+// Profile Guided Code Positioning
+// The idea is when there's a branch, put the most probility target next to
+// the branch to get the minimum jump distance.
+// If the profile is invalid, do the normal bb layout:
+// It starts from the first bb.
 // 1. If curBB is condtion goto or goto kind, do OptimizeBranchTarget for bb.
 // 2. Find curBB's next bb nextBB, and based on nextBB do the following:
 // 3. (1) For fallthru/catch/finally, fix curBB's fallthru
 //    (2) For condtion goto curBB:
 //        i) If the target bb can be moved, then put it as currBB's next
-//        and retarget curBB to it's fallthru bb. add targetBB as next.
+//           and retarget curBB to it's fallthru bb. add targetBB as next.
 //        ii) If curBB's fallthru is not its next bb add fallthru as its next if
 //            fallthru can be moved else create a new fallthru contains a goto to
 //            the original fallthru
@@ -93,6 +99,34 @@ bool BBLayout::BBContainsOnlyCondGoto(const BB &bb) const {
   return bb.GetStmtNodes().back().IsCondBr();
 }
 
+bool BBLayout::ChooseTargetAsFallthru(const BB &bb, const BB &targetBB, const BB &oldFallThru,
+                                      const BB &fallthru) const {
+  if (&targetBB == &fallthru) {
+    return false;
+  }
+  if (profValid) {
+    uint64 freqToTargetBB = bb.GetEdgeFreq(&targetBB);
+    uint64 freqToFallthru = bb.GetEdgeFreq(&fallthru);
+    if (enabledDebug) {
+      LogInfo::MapleLogger() << func.GetName() << " " << bb.GetBBId() << "->" << targetBB.GetBBId() << " freq "
+                             << freqToTargetBB << " " << bb.GetBBId() << "->" << fallthru.GetBBId() << " freq "
+                             << freqToFallthru << '\n';
+    }
+    if ((freqToTargetBB > freqToFallthru) && BBCanBeMovedBasedProf(targetBB, bb)) {
+      if (enabledDebug) {
+        LogInfo::MapleLogger() << func.GetName() << bb.GetBBId() << " move targeBB " << targetBB.GetBBId()
+                               << " to fallthru" << '\n';
+      }
+      return true;
+    }
+  } else {
+    if ((&oldFallThru != &fallthru || fallthru.GetPred().size() > 1)
+        && BBCanBeMoved(targetBB, bb)) {
+      return true;
+    }
+  }
+  return false;
+}
 // Return the opposite opcode for condition/compare opcode.
 static Opcode GetOppositeOp(Opcode opcInput) {
   Opcode opc = OP_undef;
@@ -173,6 +207,22 @@ bool BBLayout::BBCanBeMoved(const BB &fromBB, const BB &toAfterBB) const {
   if (fromBB.GetAttributes(kBBAttrArtificial) ||
       (!fromBB.GetAttributes(kBBAttrIsTry) && !toAfterBB.GetAttributes(kBBAttrIsTry))) {
     return fromBB.GetSucc().size() == 1;
+  }
+  return BBContainsOnlyGoto(fromBB);
+}
+
+// Return true if all the following are satisfied:
+// 1.fromBB has not been laid out.
+// 2.fromBB has only one succor when fromBB is artifical or fromBB and
+//   toafter_bb are both not in try block.
+// The other case is fromBB contains only goto stmt.
+bool BBLayout::BBCanBeMovedBasedProf(const BB &fromBB, const BB &toAfterBB) const {
+  if (laidOut[fromBB.GetBBId()]) {
+    return false;
+  }
+  if (fromBB.GetAttributes(kBBAttrArtificial) ||
+      (!fromBB.GetAttributes(kBBAttrIsTry) && !toAfterBB.GetAttributes(kBBAttrIsTry))) {
+    return fromBB.GetSucc().size() <= 1;
   }
   return BBContainsOnlyGoto(fromBB);
 }
@@ -364,8 +414,7 @@ void BBLayout::ChangeToFallthruFromGoto(BB &bb) {
 // bb does not end with a branch statement; if its fallthru is not nextBB,
 // perform the fix by either laying out the fallthru immediately or adding a goto
 void BBLayout::ResolveUnconditionalFallThru(BB &bb, BB &nextBB) {
-  ASSERT(bb.GetKind() == kBBFallthru || bb.GetKind() == kBBGoto, "ResolveUnconditionalFallThru: unexpected BB kind");
-  if (bb.GetKind() == kBBGoto) {
+  if (bb.GetKind() != kBBFallthru) {
     return;
   }
   ASSERT(bb.GetAttributes(kBBAttrIsTry) || bb.GetAttributes(kBBAttrWontExit) || bb.GetSucc().size() == 1,
@@ -463,47 +512,102 @@ void BBLayout::RemoveUnreachable(BB &bb) {
   func.NullifyBBByID(bb.GetBBId());
 }
 
-AnalysisResult *MeDoBBLayout::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, ModuleResultMgr*) {
-  // mempool used in analysisresult
-  MemPool *layoutMp = NewMemPool();
-  auto *bbLayout = layoutMp->New<BBLayout>(*layoutMp, *func, DEBUGFUNC(func));
-  // assume common_entry_bb is always bb 0
-  ASSERT(func->front() == func->GetCommonEntryBB(), "assume bb[0] is the commont entry bb");
-  BB *bb = func->GetFirstBB();
-  while (bb != nullptr) {
-    bbLayout->AddBB(*bb);
-    if (bb->GetKind() == kBBCondGoto || bb->GetKind() == kBBGoto) {
-      bbLayout->OptimizeBranchTarget(*bb);
+// create a new fallthru that contains a goto to the original fallthru
+// bb              bb
+//  |     ====>    |
+//  |              [NewCreated]
+//  |              |
+// fallthru       fallthru
+BB *BBLayout::CreateGotoBBAfterCondBB(BB &bb, BB &fallthru) {
+  ASSERT(bb.GetKind() == kBBCondGoto, "CreateGotoBBAfterCondBB: unexpected BB kind");
+  BB *newFallthru = func.NewBasicBlock();
+  newFallthru->SetAttributes(kBBAttrArtificial);
+  AddLaidOut(false);
+  newFallthru->SetKind(kBBGoto);
+  SetNewBBInLayout();
+  LabelIdx fallthruLabel = func.GetOrCreateBBLabel(fallthru);
+  if (func.GetIRMap() != nullptr) {
+    GotoNode stmt(OP_goto);
+    auto *newGoto = func.GetIRMap()->New<GotoMeStmt>(&stmt);
+    newGoto->SetOffset(fallthruLabel);
+    newFallthru->SetFirstMe(newGoto);
+    newFallthru->SetLastMe(to_ptr(newFallthru->GetMeStmts().begin()));
+  } else {
+    auto *newGoto = func.GetMirFunc()->GetCodeMempool()->New<GotoNode>(OP_goto);
+    newGoto->SetOffset(fallthruLabel);
+    newFallthru->SetFirst(newGoto);
+    newFallthru->SetLast(newFallthru->GetStmtNodes().begin().d());
+  }
+  // replace pred and succ
+  bb.ReplaceSucc(&fallthru, newFallthru);
+  fallthru.ReplacePred(&bb, newFallthru);
+  newFallthru->SetFrequency(fallthru.GetFrequency());
+  if (enabledDebug) {
+    LogInfo::MapleLogger() << "Created fallthru and goto original fallthru" << '\n';
+  }
+  AddBB(*newFallthru);
+  return newFallthru;
+}
+
+void BBLayout::DumpBBPhyOrder() const {
+  LogInfo::MapleLogger() << func.GetName() << " final BB order " <<  '\n';
+  for (auto bb : layoutBBs) {
+    LogInfo::MapleLogger() << bb->GetBBId();
+    if (bb != layoutBBs.back()) {
+      LogInfo::MapleLogger() << "-->";
     }
-    BB *nextBB = bbLayout->NextBB();
+  }
+  LogInfo::MapleLogger() << '\n';
+}
+
+void BBLayout::OptimiseCFG() {
+  auto eIt = func.valid_end();
+  for (auto bIt = func.valid_begin(); bIt != eIt; ++bIt) {
+    if (bIt == func.common_entry() || bIt == func.common_exit()) {
+      continue;
+    }
+    auto *bb = *bIt;
+    if (bb->GetKind() == kBBCondGoto || bb->GetKind() == kBBGoto) {
+      OptimizeBranchTarget(*bb);
+    }
+  }
+}
+
+void BBLayout::LayoutWithoutProf() {
+  BB *bb = func.GetFirstBB();
+  while (bb != nullptr) {
+    AddBB(*bb);
+    if (bb->GetKind() == kBBCondGoto || bb->GetKind() == kBBGoto) {
+      OptimizeBranchTarget(*bb);
+    }
+    BB *nextBB = NextBB();
     if (nextBB != nullptr) {
       // check try-endtry correspondence
       bool isTry = false;
-      if (func->GetIRMap() != nullptr) {
+      if (func.GetIRMap() != nullptr) {
         isTry = !nextBB->GetMeStmts().empty() && nextBB->GetMeStmts().front().GetOp() == OP_try;
       } else {
         auto &stmtNodes = nextBB->GetStmtNodes();
         isTry = !stmtNodes.empty() && stmtNodes.front().GetOpCode() == OP_try;
       }
-      ASSERT(!(isTry && bbLayout->GetTryOutstanding()), "cannot emit another try if last try has not been ended");
+      ASSERT(!(isTry && GetTryOutstanding()), "cannot emit another try if last try has not been ended");
       if (nextBB->GetAttributes(kBBAttrIsTryEnd)) {
-        ASSERT(func->GetTryBBFromEndTryBB(nextBB) == nextBB ||
-               bbLayout->IsBBLaidOut(func->GetTryBBFromEndTryBB(nextBB)->GetBBId()),
+        ASSERT(func.GetTryBBFromEndTryBB(nextBB) == nextBB ||
+               IsBBLaidOut(func.GetTryBBFromEndTryBB(nextBB)->GetBBId()),
                "cannot emit endtry bb before its corresponding try bb");
       }
     }
     // based on nextBB, may need to fix current bb's fall-thru
     if (bb->GetKind() == kBBFallthru) {
-      bbLayout->ResolveUnconditionalFallThru(*bb, *nextBB);
+      ResolveUnconditionalFallThru(*bb, *nextBB);
     } else if (bb->GetKind() == kBBCondGoto) {
       BB *oldFallThru = bb->GetSucc(0);
-      BB *fallthru = bbLayout->GetFallThruBBSkippingEmpty(*bb);
+      BB *fallthru = GetFallThruBBSkippingEmpty(*bb);
       BB *brTargetBB = bb->GetSucc(1);
-      if (brTargetBB != fallthru && (oldFallThru != fallthru || fallthru->GetPred().size() > 1) &&
-          bbLayout->BBCanBeMoved(*brTargetBB, *bb)) {
+      if (ChooseTargetAsFallthru(*bb, *brTargetBB, *oldFallThru, *fallthru)) {
         // flip the sense of the condgoto and lay out brTargetBB right here
-        LabelIdx fallthruLabel = func->GetOrCreateBBLabel(*fallthru);
-        if (func->GetIRMap() != nullptr) {
+        LabelIdx fallthruLabel = func.GetOrCreateBBLabel(*fallthru);
+        if (func.GetIRMap() != nullptr) {
           auto &condGotoMeStmt = static_cast<CondGotoMeStmt&>(bb->GetMeStmts().back());
           ASSERT(brTargetBB->GetBBLabel() == condGotoMeStmt.GetOffset(), "bbLayout: wrong branch target BB");
           condGotoMeStmt.SetOffset(fallthruLabel);
@@ -514,43 +618,17 @@ AnalysisResult *MeDoBBLayout::Run(MeFunction *func, MeFuncResultMgr *funcResMgr,
           condGotoNode.SetOffset(fallthruLabel);
           condGotoNode.SetOpCode((condGotoNode.GetOpCode() == OP_brtrue) ? OP_brfalse : OP_brtrue);
         }
-        bbLayout->AddBB(*brTargetBB);
-        bbLayout->ResolveUnconditionalFallThru(*brTargetBB, *nextBB);
-        bbLayout->OptimizeBranchTarget(*brTargetBB);
+        AddBB(*brTargetBB);
+        ResolveUnconditionalFallThru(*brTargetBB, *nextBB);
+        OptimizeBranchTarget(*brTargetBB);
       } else if (fallthru != nextBB) {
-        if (bbLayout->BBCanBeMoved(*fallthru, *bb)) {
-          bbLayout->AddBB(*fallthru);
-          bbLayout->ResolveUnconditionalFallThru(*fallthru, *nextBB);
-          bbLayout->OptimizeBranchTarget(*fallthru);
+        if (BBCanBeMoved(*fallthru, *bb)) {
+          AddBB(*fallthru);
+          ResolveUnconditionalFallThru(*fallthru, *nextBB);
+          OptimizeBranchTarget(*fallthru);
         } else {
-          // create a new fallthru that contains a goto to the original fallthru
-          BB *newFallthru = func->NewBasicBlock();
-          newFallthru->SetAttributes(kBBAttrArtificial);
-          bbLayout->AddLaidOut(false);
-          newFallthru->SetKind(kBBGoto);
-          bbLayout->SetNewBBInLayout();
-          LabelIdx fallthruLabel = func->GetOrCreateBBLabel(*fallthru);
-          if (func->GetIRMap() != nullptr) {
-            GotoNode stmt(OP_goto);
-            auto *newGoto = func->GetIRMap()->New<GotoMeStmt>(&stmt);
-            newGoto->SetOffset(fallthruLabel);
-            newFallthru->SetFirstMe(newGoto);
-            newFallthru->SetLastMe(to_ptr(newFallthru->GetMeStmts().begin()));
-          } else {
-            auto *newGoto = func->GetMirFunc()->GetCodeMempool()->New<GotoNode>(OP_goto);
-            newGoto->SetOffset(fallthruLabel);
-            newFallthru->SetFirst(newGoto);
-            newFallthru->SetLast(newFallthru->GetStmtNodes().begin().d());
-          }
-          // replace pred and succ
-          bb->ReplaceSucc(fallthru, newFallthru);
-          fallthru->ReplacePred(bb, newFallthru);
-          newFallthru->SetFrequency(fallthru->GetFrequency());
-          if (DEBUGFUNC(func)) {
-            LogInfo::MapleLogger() << "Created fallthru and goto original fallthru" << '\n';
-          }
-          bbLayout->AddBB(*newFallthru);
-          bbLayout->OptimizeBranchTarget(*newFallthru);
+          BB *newFallthru = CreateGotoBBAfterCondBB(*bb, *fallthru);
+          OptimizeBranchTarget(*newFallthru);
         }
       }
     }
@@ -559,32 +637,173 @@ AnalysisResult *MeDoBBLayout::Run(MeFunction *func, MeFuncResultMgr *funcResMgr,
       BB *gotoTarget = bb->GetSucc().front();
       CHECK_FATAL(gotoTarget != nullptr, "null ptr check");
 
-      if (gotoTarget != nextBB && bbLayout->BBCanBeMoved(*gotoTarget, *bb)) {
-        bbLayout->AddBB(*gotoTarget);
-        bbLayout->ChangeToFallthruFromGoto(*bb);
-        bbLayout->ResolveUnconditionalFallThru(*gotoTarget, *nextBB);
-        bbLayout->OptimizeBranchTarget(*gotoTarget);
+      if (gotoTarget != nextBB && BBCanBeMoved(*gotoTarget, *bb)) {
+        AddBB(*gotoTarget);
+        ChangeToFallthruFromGoto(*bb);
+        ResolveUnconditionalFallThru(*gotoTarget, *nextBB);
+        OptimizeBranchTarget(*gotoTarget);
       } else if (gotoTarget->GetKind() == kBBCondGoto && gotoTarget->GetPred().size() == 1) {
         BB *targetNext = gotoTarget->GetSucc().front();
-        if (targetNext != nextBB && bbLayout->BBCanBeMoved(*targetNext, *bb)) {
-          bbLayout->AddBB(*gotoTarget);
-          bbLayout->ChangeToFallthruFromGoto(*bb);
-          bbLayout->OptimizeBranchTarget(*gotoTarget);
-          bbLayout->AddBB(*targetNext);
-          bbLayout->ResolveUnconditionalFallThru(*targetNext, *nextBB);
-          bbLayout->OptimizeBranchTarget(*targetNext);
+        if (targetNext != nextBB && BBCanBeMoved(*targetNext, *bb)) {
+          AddBB(*gotoTarget);
+          ChangeToFallthruFromGoto(*bb);
+          OptimizeBranchTarget(*gotoTarget);
+          AddBB(*targetNext);
+          ResolveUnconditionalFallThru(*targetNext, *nextBB);
+          OptimizeBranchTarget(*targetNext);
         }
       }
     }
-    if (nextBB != nullptr && bbLayout->IsBBLaidOut(nextBB->GetBBId())) {
-      nextBB = bbLayout->NextBB();
+    if (nextBB != nullptr && IsBBLaidOut(nextBB->GetBBId())) {
+      nextBB = NextBB();
     }
     bb = nextBB;
   }
+}
+
+void BBLayout::AddBBProf(BB &bb) {
+  if (layoutBBs.empty()) {
+    AddBB(bb);
+    return;
+  }
+  BB *curBB = layoutBBs.back();
+  if (curBB->GetKind() == kBBFallthru || curBB->GetKind() == kBBGoto) {
+    BB *targetBB = curBB->GetSucc().front();
+    if (curBB->GetKind() == kBBFallthru && (&bb != targetBB)) {
+      CreateGoto(*curBB, func, *targetBB);
+    }
+    if (curBB->GetKind() == kBBGoto && (&bb == targetBB)) {
+      // delete the goto stmt
+      ChangeToFallthruFromGoto(*curBB);
+    }
+  }
+  if (curBB->GetKind() == kBBCondGoto) {
+    BB *fallthru = curBB->GetSucc(0);
+    BB *targetBB = curBB->GetSucc(1);
+    if (targetBB == &bb) {
+      LabelIdx fallthruLabel = func.GetOrCreateBBLabel(*fallthru);
+      if (func.GetIRMap() != nullptr) {
+        auto &condGotoMeStmt = static_cast<CondGotoMeStmt&>(curBB->GetMeStmts().back());
+        ASSERT(targetBB->GetBBLabel() == condGotoMeStmt.GetOffset(), "bbLayout: wrong branch target BB");
+        condGotoMeStmt.SetOffset(fallthruLabel);
+        condGotoMeStmt.SetOp((condGotoMeStmt.GetOp() == OP_brtrue) ? OP_brfalse : OP_brtrue);
+      } else {
+        auto &condGotoNode = static_cast<CondGotoNode&>(curBB->GetStmtNodes().back());
+        ASSERT(targetBB->GetBBLabel() == condGotoNode.GetOffset(), "bbLayout: wrong branch target BB");
+        condGotoNode.SetOffset(fallthruLabel);
+        condGotoNode.SetOpCode((condGotoNode.GetOpCode() == OP_brtrue) ? OP_brfalse : OP_brtrue);
+      }
+    } else if (&bb != fallthru) {
+      CreateGotoBBAfterCondBB(bb, *fallthru);
+    }
+  }
+  AddBB(bb);
+}
+
+void BBLayout::BuildEdges() {
+  auto eIt = func.valid_end();
+  for (auto bIt = func.valid_begin(); bIt != eIt; ++bIt) {
+    if (bIt == func.common_entry() || bIt == func.common_exit()) {
+      continue;
+    }
+    auto *bb = *bIt;
+    for (size_t i = 0; i < bb->GetSucc().size(); ++i) {
+      BB *dest = bb->GetSucc(i);
+      uint64 w = bb->GetEdgeFreq(i);
+      allEdges.emplace_back(layoutAlloc.GetMemPool()->New<BBEdge>(bb, dest, w));
+    }
+  }
+  std::stable_sort(allEdges.begin(), allEdges.end(), [](const BBEdge *edge1, const BBEdge *edge2) {
+      return edge1->GetWeight() > edge2->GetWeight(); });
+}
+
+BB *BBLayout::GetBBFromEdges() {
+  static size_t idx = 0;
+  while (idx < allEdges.size()) {
+    BBEdge *edge = allEdges[idx];
+    BB *srcBB = edge->GetSrcBB();
+    BB *destBB = edge->GetDestBB();
+    if (!laidOut[srcBB->GetBBId()]) {
+      return srcBB;
+    }
+    if (!laidOut[destBB->GetBBId()]) {
+      return destBB;
+    }
+    idx++;
+  }
+  return nullptr;
+}
+// find the most probility succ,if bb's succ more then one
+// if no succ,choose the most weight edge in the edges
+BB *BBLayout::NextBBProf(BB &bb) {
+  if (bb.GetSucc().size() == 0) {
+    return GetBBFromEdges();
+  }
+
+  if (bb.GetSucc().size() == 1) {
+    BB *succBB = bb.GetSucc(0);
+    if (!laidOut[succBB->GetBBId()]) {
+      return succBB;
+    }
+    return NextBBProf(*succBB);
+  }
+
+  uint64 maxFreq  = 0;
+  size_t idx = 0;
+  bool found = false;
+  for (size_t i = 0; i < bb.GetSucc().size(); ++i) {
+    BB *succBB = bb.GetSucc(i);
+    if (!laidOut[succBB->GetBBId()]) {
+      uint64 edgeFreqFromBB = bb.GetEdgeFreq(i);
+      if (edgeFreqFromBB > maxFreq) {
+        maxFreq = edgeFreqFromBB;
+        idx = i;
+        found = true;
+      }
+    }
+  }
+  if (found) {
+    return bb.GetSucc(idx);
+  }
+  return GetBBFromEdges();
+}
+
+void BBLayout::LayoutWithProf() {
+  OptimiseCFG();
+  BuildEdges();
+  BB *bb = func.GetFirstBB();
+  while (bb != nullptr) {
+    AddBBProf(*bb);
+    bb = NextBBProf(*bb);
+  }
+  // adjust the last BB if kind is fallthru
+  BB *lastBB = layoutBBs.empty() ? nullptr : layoutBBs.back();
+  if (lastBB != nullptr && lastBB->GetKind() == kBBFallthru) {
+    BB *targetBB = lastBB->GetSucc().front();
+    CreateGoto(*lastBB, func, *targetBB);
+  }
+}
+
+void BBLayout::RunLayout() {
+  if (profValid) {
+    LayoutWithProf();
+  } else {
+    LayoutWithoutProf();
+  }
+}
+
+AnalysisResult *MeDoBBLayout::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, ModuleResultMgr*) {
+  // mempool used in analysisresult
+  MemPool *layoutMp = NewMemPool();
+  auto *bbLayout = layoutMp->New<BBLayout>(*layoutMp, *func, DEBUGFUNC(func));
+  // assume common_entry_bb is always bb 0
+  ASSERT(func->front() == func->GetCommonEntryBB(), "assume bb[0] is the commont entry bb");
+  bbLayout->RunLayout();
   if (bbLayout->IsNewBBInLayout()) {
     funcResMgr->InvalidAnalysisResult(MeFuncPhase_DOMINANCE, func);
   }
   if (DEBUGFUNC(func)) {
+    bbLayout->DumpBBPhyOrder();
     func->GetTheCfg()->DumpToFile("afterBBLayout", false);
   }
   return bbLayout;

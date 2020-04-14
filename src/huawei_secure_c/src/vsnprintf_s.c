@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -46,20 +46,17 @@ int vsnprintf_s(char *strDest, size_t destMax, size_t count, const char *format,
 {
     int retVal;
 
-    if (format == NULL || strDest == NULL || destMax == 0 || destMax > SECUREC_STRING_MAX_LEN ||
-        (count > (SECUREC_STRING_MAX_LEN - 1) && count != (size_t)(-1))) {
-        if (strDest != NULL && destMax > 0 && destMax <= SECUREC_STRING_MAX_LEN) {
-            strDest[0] = '\0';
-        }
+    if (SECUREC_VSNPRINTF_PARAM_ERROR(format, strDest, destMax, count, SECUREC_STRING_MAX_LEN)) {
+        SECUREC_VSPRINTF_CLEAR_DEST(strDest, destMax, SECUREC_STRING_MAX_LEN);
         SECUREC_ERROR_INVALID_PARAMTER("vsnprintf_s");
         return -1;
     }
 
     if (destMax > count) {
         retVal = SecVsnprintfImpl(strDest, count + 1, format, argList);
-        if (retVal == SECUREC_PRINTF_TRUNCATE) {  /* lsd add to keep dest buffer not destroyed 2014.2.18 */
-            /* the string has been truncated, return  -1 */
-            return -1;          /* to skip error handler,  return strlen(strDest) or -1 */
+        if (retVal == SECUREC_PRINTF_TRUNCATE) {  /* To keep dest buffer not destroyed 2014.2.18 */
+            /* The string has been truncated, return  -1 */
+            return -1;          /* To skip error handler,  return strlen(strDest) or -1 */
         }
     } else {
         retVal = SecVsnprintfImpl(strDest, destMax, format, argList);
@@ -71,7 +68,7 @@ int vsnprintf_s(char *strDest, size_t destMax, size_t count, const char *format,
     }
 
     if (retVal < 0) {
-        strDest[0] = '\0';      /* empty the dest strDest */
+        strDest[0] = '\0';      /* Empty the dest strDest */
 
         if (retVal == SECUREC_PRINTF_TRUNCATE) {
             /* Buffer too small */
@@ -119,10 +116,8 @@ int vsnprintf_truncated_s(char *strDest, size_t destMax, const char *format, va_
 {
     int retVal;
 
-    if (format == NULL || strDest == NULL || destMax == 0 || destMax > SECUREC_STRING_MAX_LEN) {
-        if (strDest != NULL && destMax > 0 && destMax <= SECUREC_STRING_MAX_LEN) {
-            strDest[0] = '\0';
-        }
+    if (SECUREC_VSPRINTF_PARAM_ERROR(format, strDest, destMax, SECUREC_STRING_MAX_LEN)) {
+        SECUREC_VSPRINTF_CLEAR_DEST(strDest, destMax, SECUREC_STRING_MAX_LEN);
         SECUREC_ERROR_INVALID_PARAMTER("vsnprintf_truncated_s");
         return -1;
     }
@@ -131,9 +126,9 @@ int vsnprintf_truncated_s(char *strDest, size_t destMax, const char *format, va_
 
     if (retVal < 0) {
         if (retVal == SECUREC_PRINTF_TRUNCATE) {
-            return (int)(destMax - 1);  /* to skip error handler,  return strlen(strDest) */
+            return (int)(destMax - 1);  /* To skip error handler,  return strlen(strDest) */
         }
-        strDest[0] = '\0';      /* empty the dest strDest */
+        strDest[0] = '\0';      /* Empty the dest strDest */
         SECUREC_ERROR_INVALID_PARAMTER("vsnprintf_truncated_s");
         return -1;
     }

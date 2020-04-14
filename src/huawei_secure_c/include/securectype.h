@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -12,7 +12,8 @@
  * FIT FOR A PARTICULAR PURPOSE.
  * See the Mulan PSL v1 for more details.
  */
-/* [Standardize-exceptions]: Performance-sensitive
+/*
+ * [Standardize-exceptions]: Performance-sensitive
  * [reason]: Strict parameter verification has been done before use
  */
 
@@ -61,7 +62,7 @@
 #ifdef _CRTIMP_ALTERNATIVE
 #undef _CRTIMP_ALTERNATIVE
 #endif
-#define _CRTIMP_ALTERNATIVE     /* comment microsoft *_s function */
+#define _CRTIMP_ALTERNATIVE     /* Comment microsoft *_s function */
 #endif
 
 /* Compile in kernel under macro control */
@@ -97,20 +98,20 @@
 
 #if SECUREC_USING_STD_SECURE_LIB
 #if defined(_MSC_VER) && _MSC_VER >= 1400
-/* Declare secure functions that are not available in the vs compiler */
+/* Declare secure functions that are not available in the VS compiler */
 #ifndef SECUREC_ENABLE_MEMSET
 #define SECUREC_ENABLE_MEMSET           1
 #endif
-/* vs 2005 have vsnprintf_s function */
+/* VS 2005 have vsnprintf_s function */
 #ifndef SECUREC_ENABLE_VSNPRINTF
 #define SECUREC_ENABLE_VSNPRINTF        0
 #endif
 #ifndef SECUREC_ENABLE_SNPRINTF
-/* vs 2005 have vsnprintf_s function Adapt the snprintf_s of the security function */
+/* VS 2005 have vsnprintf_s function Adapt the snprintf_s of the security function */
 #define snprintf_s _snprintf_s
 #define SECUREC_ENABLE_SNPRINTF         0
 #endif
-/* befor vs 2010 do not have v functions */
+/* Before VS 2010 do not have v functions */
 #if _MSC_VER <= 1600 || defined(SECUREC_FOR_V_SCANFS)
 #ifndef SECUREC_ENABLE_VFSCANF
 #define SECUREC_ENABLE_VFSCANF          1
@@ -123,7 +124,7 @@
 #endif
 #endif
 
-#else /* _MSC_VER */
+#else /* MSC VER */
 #ifndef SECUREC_ENABLE_MEMSET
 #define SECUREC_ENABLE_MEMSET           0
 #endif
@@ -185,7 +186,7 @@
 #define SECUREC_ENABLE_GETS             0
 #endif
 
-#else /* SECUREC_USE_STD_SECURE_LIB */
+#else /* SECUREC USE STD SECURE LIB */
 
 #ifndef SECUREC_ENABLE_MEMSET
 #define SECUREC_ENABLE_MEMSET           1
@@ -288,12 +289,28 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #else
+#ifndef SECUREC_HAVE_STDIO_H
+#define SECUREC_HAVE_STDIO_H 1
+#endif
+#ifndef SECUREC_HAVE_STRING_H
+#define SECUREC_HAVE_STRING_H 1
+#endif
+#ifndef SECUREC_HAVE_STDLIB_H
+#define SECUREC_HAVE_STDLIB_H 1
+#endif
+#if SECUREC_HAVE_STDIO_H
 #include <stdio.h>
+#endif
+#if SECUREC_HAVE_STRING_H
 #include <string.h>
+#endif
+#if SECUREC_HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
+#endif
 
-/* If you need high performance, enable the SECUREC_WITH_PERFORMANCE_ADDONS macro, default is enable .
+/*
+ * If you need high performance, enable the SECUREC_WITH_PERFORMANCE_ADDONS macro, default is enable.
  * The macro is automatically closed on the windows platform and linux kernel
  */
 #ifndef SECUREC_WITH_PERFORMANCE_ADDONS
@@ -304,15 +321,15 @@
 #endif
 #endif
 
-/* if enable SECUREC_COMPATIBLE_WIN_FORMAT, the output format will be compatible to Windows. */
+/* If enable SECUREC_COMPATIBLE_WIN_FORMAT, the output format will be compatible to Windows. */
 #if (defined(_WIN32) || defined(_WIN64) || defined(_MSC_VER)) && !defined(SECUREC_COMPATIBLE_LINUX_FORMAT)
-#if !defined(SECUREC_COMPATIBLE_WIN_FORMAT)
+#ifndef SECUREC_COMPATIBLE_WIN_FORMAT
 #define SECUREC_COMPATIBLE_WIN_FORMAT
 #endif
 #endif
 
 #if defined(SECUREC_COMPATIBLE_WIN_FORMAT)
-/* in windows platform, can't use optimized function for there is no __builtin_constant_p like function */
+/* On windows platform, can't use optimized function for there is no __builtin_constant_p like function */
 /* If need optimized macro, can define this: define __builtin_constant_p(x) 0 */
 #ifdef SECUREC_WITH_PERFORMANCE_ADDONS
 #undef SECUREC_WITH_PERFORMANCE_ADDONS
@@ -322,25 +339,32 @@
 
 #if defined(__VXWORKS__) || defined(__vxworks) || defined(__VXWORKS) || defined(_VXWORKS_PLATFORM_)  || \
     defined(SECUREC_VXWORKS_VERSION_5_4)
-#if !defined(SECUREC_VXWORKS_PLATFORM)
+#ifndef SECUREC_VXWORKS_PLATFORM
 #define SECUREC_VXWORKS_PLATFORM
 #endif
 #endif
 
-/* if enable SECUREC_COMPATIBLE_LINUX_FORMAT, the output format will be compatible to Linux. */
-#if !(defined(SECUREC_COMPATIBLE_WIN_FORMAT) || defined(SECUREC_VXWORKS_PLATFORM))
-#if !defined(SECUREC_COMPATIBLE_LINUX_FORMAT)
+/* If enable SECUREC_COMPATIBLE_LINUX_FORMAT, the output format will be compatible to Linux. */
+#if !defined(SECUREC_COMPATIBLE_WIN_FORMAT) && !defined(SECUREC_VXWORKS_PLATFORM)
+#ifndef SECUREC_COMPATIBLE_LINUX_FORMAT
 #define SECUREC_COMPATIBLE_LINUX_FORMAT
 #endif
 #endif
 
 #ifdef SECUREC_COMPATIBLE_LINUX_FORMAT
+#ifndef SECUREC_HAVE_STDDEF_H
+#define SECUREC_HAVE_STDDEF_H 1
+#endif
+/* Some system may no stddef.h */
+#if SECUREC_HAVE_STDDEF_H
 #include <stddef.h>
 #endif
+#endif
 
-/* add  the -DSECUREC_SUPPORT_FORMAT_WARNING  compiler option to supoort  -Wformat.
- * default does not check the format is that the same data type in the actual code
- * in the product is different in the original data type definition of VxWorks and Linux.
+/*
+ * Add  the -DSECUREC_SUPPORT_FORMAT_WARNING  compiler option to supoort  -Wformat.
+ * Default does not check the format is that the same data type in the actual code.
+ * In the product is different in the original data type definition of VxWorks and Linux.
  */
 #ifndef SECUREC_SUPPORT_FORMAT_WARNING
 #define SECUREC_SUPPORT_FORMAT_WARNING 0
@@ -357,10 +381,11 @@
 #if defined(__GNUC__) && \
     ((__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ > 3))) && \
     !defined(SECUREC_PCLINT)
-/* This is a built-in function that can be used without a declaration, if you encounter an undeclared compilation alarm,
- * you can add -DSECUREC_NEED_BUILTIN_EXPECT_DECLARE to compiler options
+/*
+ * This is a built-in function that can be used without a declaration, if you encounter an undeclared compilation alarm,
+ * you can add -DSECUREC_NEED_BUILTIN_EXPECT_DECLARE to complier options
  */
-#if defined(SECUREC_NEED_BUILTIN_EXPECT_DECLARE)
+#ifdef SECUREC_NEED_BUILTIN_EXPECT_DECLARE
 long __builtin_expect(long exp, long c);
 #endif
 #define SECUREC_LIKELY(x) __builtin_expect(!!(x), 1)
@@ -370,15 +395,15 @@ long __builtin_expect(long exp, long c);
 #define SECUREC_UNLIKELY(x) (x)
 #endif
 
-/* define the max length of the string */
+/* Define the max length of the string */
 #ifndef SECUREC_STRING_MAX_LEN
-#define SECUREC_STRING_MAX_LEN (0x7fffffffUL)
+#define SECUREC_STRING_MAX_LEN 0x7fffffffUL
 #endif
 #define SECUREC_WCHAR_STRING_MAX_LEN (SECUREC_STRING_MAX_LEN / sizeof(wchar_t))
 
-/* add SECUREC_MEM_MAX_LEN for memcpy and memmove */
+/* Add SECUREC_MEM_MAX_LEN for memcpy and memmove */
 #ifndef SECUREC_MEM_MAX_LEN
-#define SECUREC_MEM_MAX_LEN (0x7fffffffUL)
+#define SECUREC_MEM_MAX_LEN 0x7fffffffUL
 #endif
 #define SECUREC_WCHAR_MEM_MAX_LEN (SECUREC_MEM_MAX_LEN / sizeof(wchar_t))
 
@@ -410,11 +435,12 @@ long __builtin_expect(long exp, long c);
 #define SECUREC_ON_UNIX
 #endif
 
-/* codes should run under the macro SECUREC_COMPATIBLE_LINUX_FORMAT in unknow system on default,
- * and strtold. The function
- * strtold is referenced first at ISO9899:1999(C99), and some old compilers can
+/*
+ * Codes should run under the macro SECUREC_COMPATIBLE_LINUX_FORMAT in unknow system on default,
+ * and strtold.
+ * The function strtold is referenced first at ISO9899:1999(C99), and some old compilers can
  * not support these functions. Here provides a macro to open these functions:
- * SECUREC_SUPPORT_STRTOLD  -- if defined, strtold will   be used
+ * SECUREC_SUPPORT_STRTOLD  -- If defined, strtold will be used
  */
 #ifndef SECUREC_SUPPORT_STRTOLD
 #define SECUREC_SUPPORT_STRTOLD 0
@@ -441,7 +467,7 @@ long __builtin_expect(long exp, long c);
 #define SECUREC_TWO_MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
-/* for strncpy_s performance optimization */
+/* For strncpy_s performance optimization */
 #define SECUREC_STRNCPY_SM(dest, destMax, src, count) \
     (((void *)(dest) != NULL && (void *)(src) != NULL && (size_t)(destMax) > 0 && \
     (((unsigned long long)(destMax) & (unsigned long long)(-2)) < SECUREC_STRING_MAX_LEN) && \
@@ -455,7 +481,7 @@ long __builtin_expect(long exp, long c);
     (strlen(src) + 1) <= (size_t)(destMax)) ? (memcpy((dest), (src), strlen(src) + 1), EOK) : \
     (strcpy_error((dest), (destMax), (src))))
 
-/* for strcat_s performance optimization */
+/* For strcat_s performance optimization */
 #if defined(__GNUC__)
 #define SECUREC_STRCAT_SM(dest, destMax, src) ({ \
     int catRet = EOK; \
@@ -487,7 +513,7 @@ long __builtin_expect(long exp, long c);
 #define SECUREC_STRCAT_SM(dest, destMax, src) strcat_s((dest), (destMax), (src))
 #endif
 
-/* for strncat_s performance optimization */
+/* For strncat_s performance optimization */
 #if defined(__GNUC__)
 #define SECUREC_STRNCAT_SM(dest, destMax, src, count) ({ \
     int ncatRet = EOK; \
@@ -524,17 +550,16 @@ long __builtin_expect(long exp, long c);
 #define SECUREC_STRNCAT_SM(dest, destMax, src, count) strncat_s((dest), (destMax), (src), (count))
 #endif
 
-/* SECUREC_MEMCPY_SM do NOT check buffer overlap by default */
+/* This macro do not check buffer overlap by default */
 #define  SECUREC_MEMCPY_SM(dest, destMax, src, count) \
     (!(((size_t)(destMax) == 0) || \
         (((unsigned long long)(destMax) & (unsigned long long)(-2)) > SECUREC_MEM_MAX_LEN) || \
-        ((size_t)(count) > (size_t)(destMax)) || ((void *)(dest)) == NULL || ((void *)(src) == NULL))? \
+        ((size_t)(count) > (size_t)(destMax)) || ((void *)(dest)) == NULL || ((void *)(src) == NULL)) ? \
         (memcpy((dest), (src), (count)), EOK) : \
         (memcpy_s((dest), (destMax), (src), (count))))
 
 #define  SECUREC_MEMSET_SM(dest, destMax, c, count) \
-    (!(((size_t)(destMax) == 0) || \
-        (((unsigned long long)(destMax) & (unsigned long long)(-2)) > SECUREC_MEM_MAX_LEN) || \
+    (!((((unsigned long long)(destMax) & (unsigned long long)(-2)) > SECUREC_MEM_MAX_LEN) || \
         ((void *)(dest) == NULL) || ((size_t)(count) > (size_t)(destMax))) ? \
         (memset((dest), (c), (count)), EOK) : \
         (memset_s((dest), (destMax), (c), (count))))

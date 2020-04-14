@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -12,12 +12,11 @@
  * FIT FOR A PARTICULAR PURPOSE.
  * See the Mulan PSL v1 for more details.
  */
-/* [Standardize-exceptions] Use unsafe function: Performance-sensitive
+/*
+ * [Standardize-exceptions] Use unsafe function: Performance-sensitive
  * [reason] Always used in the performance critical path,
  *          and sufficient input validation is performed before calling
  */
-#define SECUREC_INLINE_STR_LEN 1
-#define SECUREC_INLINE_DO_MEMCPY 1
 
 #include "securecutil.h"
 
@@ -34,13 +33,13 @@
 /*
  * Check Src Count Range
  */
-static errno_t CheckSrcCountRange(char *strDest, size_t destMax, const char *strSrc, size_t count)
+SECUREC_INLINE errno_t CheckSrcCountRange(char *strDest, size_t destMax, const char *strSrc, size_t count)
 {
     size_t tmpDestMax = destMax;
     size_t tmpCount = count;
     const char *endPos = strSrc;
 
-    /* use destMax and  count as boundary checker and destMax must be greater than zero */
+    /* Use destMax and  count as boundary checker and destMax must be greater than zero */
     while (*(endPos) != '\0' && tmpDestMax > 0 && tmpCount > 0) {
         ++endPos;
         --tmpCount;
@@ -70,7 +69,7 @@ errno_t strncpy_error(char *strDest, size_t destMax, const char *strSrc, size_t 
         }
         return EINVAL;
     } else if (count > SECUREC_STRING_MAX_LEN) {
-        strDest[0] = '\0';      /* clear dest string */
+        strDest[0] = '\0';      /* Clear dest string */
         SECUREC_ERROR_INVALID_RANGE("strncpy_s");
         return ERANGE_AND_RESET;
     } else if (count == 0) {
@@ -108,9 +107,9 @@ errno_t strncpy_error(char *strDest, size_t destMax, const char *strSrc, size_t 
 errno_t strncpy_s(char *strDest, size_t destMax, const char *strSrc, size_t count)
 {
     if (SECUREC_STRNCPY_PARAM_OK(strDest, destMax, strSrc, count)) {
-        size_t minCpLen;        /* use it to store the maxi length limit */
+        size_t minCpLen;        /* Use it to store the maxi length limit */
         if (count < destMax) {
-            minCpLen = SecStrMinLen(strSrc, count); /* no ending terminator */
+            SECUREC_CALC_STR_LEN(strSrc, count, &minCpLen); /* No ending terminator */
         } else {
             size_t tmpCount = destMax;
 #ifdef  SECUREC_COMPATIBLE_WIN_FORMAT
@@ -118,7 +117,7 @@ errno_t strncpy_s(char *strDest, size_t destMax, const char *strSrc, size_t coun
                 tmpCount = destMax - 1;
             }
 #endif
-            minCpLen = SecStrMinLen(strSrc, tmpCount);
+            SECUREC_CALC_STR_LEN(strSrc, tmpCount, &minCpLen); /* No ending terminator */
             if (minCpLen == destMax) {
                 strDest[0] = '\0';
                 SECUREC_ERROR_INVALID_RANGE("strncpy_s");
@@ -127,7 +126,7 @@ errno_t strncpy_s(char *strDest, size_t destMax, const char *strSrc, size_t coun
         }
         if (SECUREC_STRING_NO_OVERLAP(strDest, strSrc, minCpLen) || strDest == strSrc) {
             /* Not overlap */
-            SecDoMemcpy(strDest, strSrc, minCpLen);    /* copy string without terminator */
+            SECUREC_MEMCPY_WARP_OPT(strDest, strSrc, minCpLen);    /* Copy string without terminator */
             strDest[minCpLen] = '\0';
             return EOK;
         } else {

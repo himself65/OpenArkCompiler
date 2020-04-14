@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -15,20 +15,19 @@
 
 #include "securecutil.h"
 
-static void SecTrimCRLF(char *buffer, size_t len)
+SECUREC_INLINE void SecTrimCRLF(char *buffer, size_t len)
 {
     int i;
     /* No need to determine whether integer overflow exists */
     for (i = (int)(len - 1); i >= 0 && (buffer[i] == '\r' || buffer[i] == '\n'); --i) {
         buffer[i] = '\0';
     }
-    return;
 }
 
 /*
  * <FUNCTION DESCRIPTION>
  *    The gets_s function reads at most one less than the number of characters
- *    specified by destMax from the stream pointed to by stdin, into the array pointed to by buffer
+ *    specified by destMax from the std input stream, into the array pointed to by buffer
  *    The line consists of all characters up to and including
  *    the first newline character ('\n'). gets_s then replaces the newline
  *    character with a null character ('\0') before returning the line.
@@ -60,7 +59,7 @@ char *gets_s(char *buffer, size_t numberOfElements)
         return NULL;
     }
 
-    if (fgets(buffer, (int)bufferSize, stdin) == NULL) {
+    if (fgets(buffer, (int)bufferSize, SECUREC_STREAM_STDIN) == NULL) {
         return NULL;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -20,4 +20,18 @@
 #include "secinput.h"
 
 #include "input.inl"
+
+SECUREC_INLINE int SecIsDigit(SecInt ch)
+{
+    /* SecInt to unsigned char clear  571 */
+    return isdigit((unsigned char)(ch) & 0x00ff);
+}
+SECUREC_INLINE int SecIsXdigit(SecInt ch)
+{
+    return isxdigit((unsigned char)(ch) & 0x00ff);
+}
+SECUREC_INLINE int SecIsSpace(SecInt ch)
+{
+    return isspace((unsigned char)(ch) & 0x00ff);
+}
 

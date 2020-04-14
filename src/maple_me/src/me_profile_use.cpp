@@ -225,6 +225,7 @@ void MeProfUse::SetFuncEdgeInfo() {
     }
     auto *bb = *bIt;
     auto *bbInfo = GetBBUseInfo(*bb);
+    bb->InitEdgeFreq();
     bb->SetFrequency(bbInfo->GetCount());
     auto outEdges = bbInfo->GetOutEdges();
     for (auto *e : outEdges) {
@@ -237,6 +238,7 @@ void MeProfUse::SetFuncEdgeInfo() {
       bb->SetEdgeFreq(destBB, e->GetCount());
     }
   }
+  func->SetProfValid();
 }
 
 void MeProfUse::DumpFuncCFGEdgeFreq() const {

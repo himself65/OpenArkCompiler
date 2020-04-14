@@ -25,7 +25,7 @@ class BBEdge;
 class MeProfGen : public PGOInstrument<BBEdge> {
  public:
   MeProfGen(MeFunction &func, MemPool &mp, MeIRMap &hMap, bool dump)
-      : PGOInstrument(func, mp, dump), func(&func), hMap(&hMap), dump(dump) {
+      : PGOInstrument(func, mp, dump), func(&func), hMap(&hMap) {
     Init();
   }
   void InstrumentFunc();
@@ -35,7 +35,6 @@ class MeProfGen : public PGOInstrument<BBEdge> {
   void SaveProfile();
   MeFunction *func;
   MeIRMap *hMap;
-  bool dump;
   static uint64 counterIdx;
   static uint64 totalBB;
   static uint64 instrumentBB;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -12,15 +12,14 @@
  * FIT FOR A PARTICULAR PURPOSE.
  * See the Mulan PSL v1 for more details.
  */
-#define SECUREC_INLINE_DO_MEMCPY 1
 
 #include "securecutil.h"
 
-static errno_t SecDoWcscpy(wchar_t *strDest, size_t destMax, const wchar_t *strSrc)
+SECUREC_INLINE errno_t SecDoCpyW(wchar_t *strDest, size_t destMax, const wchar_t *strSrc)
 {
     size_t srcStrLen;
-
     SECUREC_CALC_WSTR_LEN(strSrc, destMax, &srcStrLen);
+
     if (srcStrLen == destMax) {
         strDest[0] = '\0';
         SECUREC_ERROR_INVALID_RANGE("wcscpy_s");
@@ -31,8 +30,8 @@ static errno_t SecDoWcscpy(wchar_t *strDest, size_t destMax, const wchar_t *strS
     }
 
     if (SECUREC_STRING_NO_OVERLAP(strDest, strSrc, srcStrLen)) {
-        /* performance optimization srcStrLen include '\0' */
-        SecDoMemcpy(strDest, strSrc, (srcStrLen + 1) * sizeof(wchar_t)); /* single character length  include \0 */
+        /* Performance optimization, srcStrLen is single character length  include '\0' */
+        SECUREC_MEMCPY_WARP_OPT(strDest, strSrc, (srcStrLen + 1) * sizeof(wchar_t));
         return EOK;
     } else {
         strDest[0] = L'\0';
@@ -83,7 +82,7 @@ errno_t wcscpy_s(wchar_t *strDest, size_t destMax, const wchar_t *strSrc)
         }
         return EINVAL;
     }
-    return SecDoWcscpy(strDest, destMax, strSrc);
+    return SecDoCpyW(strDest, destMax, strSrc);
 }
 
 

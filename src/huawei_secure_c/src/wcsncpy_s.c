@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -12,11 +12,10 @@
  * FIT FOR A PARTICULAR PURPOSE.
  * See the Mulan PSL v1 for more details.
  */
-#define SECUREC_INLINE_DO_MEMCPY 1
 
 #include "securecutil.h"
 
-static errno_t SecDoWcsncpy(wchar_t *strDest, size_t destMax, const wchar_t *strSrc, size_t count)
+SECUREC_INLINE errno_t SecDoCpyLimitW(wchar_t *strDest, size_t destMax, const wchar_t *strSrc, size_t count)
 {
     size_t srcStrLen;
     if (count < destMax) {
@@ -33,8 +32,8 @@ static errno_t SecDoWcsncpy(wchar_t *strDest, size_t destMax, const wchar_t *str
         return EOK;
     }
     if (SECUREC_STRING_NO_OVERLAP(strDest, strSrc, srcStrLen)) {
-        /* performance optimization srcStrLen not include '\0' */
-        SecDoMemcpy(strDest, strSrc, srcStrLen * sizeof(wchar_t));
+        /* Performance optimization srcStrLen not include '\0' */
+        SECUREC_MEMCPY_WARP_OPT(strDest, strSrc, srcStrLen * sizeof(wchar_t));
         *(strDest + srcStrLen) = L'\0';
         return EOK;
     } else {
@@ -91,10 +90,10 @@ errno_t wcsncpy_s(wchar_t *strDest, size_t destMax, const wchar_t *strSrc, size_
     if (count > SECUREC_WCHAR_STRING_MAX_LEN) {
 #ifdef SECUREC_COMPATIBLE_WIN_FORMAT
         if (count == (size_t)(-1)) {
-            return SecDoWcsncpy(strDest, destMax, strSrc, destMax - 1);
+            return SecDoCpyLimitW(strDest, destMax, strSrc, destMax - 1);
         }
 #endif
-        strDest[0] = '\0';      /* clear dest string */
+        strDest[0] = '\0';      /* Clear dest string */
         SECUREC_ERROR_INVALID_RANGE("wcsncpy_s");
         return ERANGE_AND_RESET;
     }
@@ -104,6 +103,6 @@ errno_t wcsncpy_s(wchar_t *strDest, size_t destMax, const wchar_t *strSrc, size_
         return EOK;
     }
 
-    return SecDoWcsncpy(strDest, destMax, strSrc, count);
+    return SecDoCpyLimitW(strDest, destMax, strSrc, count);
 }
 

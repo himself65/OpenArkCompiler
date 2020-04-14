@@ -461,6 +461,13 @@ class MeFunction : public FuncEmit {
     }
     return profileDesc;
   }
+  bool IsIRProfValid() const {
+    return profValid;
+  }
+
+  void SetProfValid() {
+    profValid = true;
+  }
 
   void PartialInit(bool isSecondPass);
 
@@ -508,6 +515,7 @@ class MeFunction : public FuncEmit {
   uint32 hints = 0;
   bool hasEH = false;       /* current has try statement */
   bool secondPass = false;  // second pass for the same function
+  bool profValid = false;
   IRProfileDesc *profileDesc = nullptr;
 };
 }  // namespace maple
