@@ -75,7 +75,7 @@ template <typename Func>
 void GraphColorRegAllocator::ForEachBBArrElem(const uint64 *vec, Func functor) const {
   for (uint32 iBBArrElem = 0; iBBArrElem < bbBuckets; ++iBBArrElem) {
     for (uint32 bBBArrElem = 0; bBBArrElem < kU64; ++bBBArrElem) {
-      if ((vec[iBBArrElem] & (1UL << bBBArrElem)) != 0) {
+      if ((vec[iBBArrElem] & (1ULL << bBBArrElem)) != 0) {
         functor(iBBArrElem * kU64 + bBBArrElem);
       }
     }
@@ -86,7 +86,7 @@ template <typename Func>
 void GraphColorRegAllocator::ForEachBBArrElemWithInterrupt(const uint64 *vec, Func functor) const {
   for (uint32 iBBArrElem = 0; iBBArrElem < bbBuckets; ++iBBArrElem) {
     for (uint32 bBBArrElem = 0; bBBArrElem < kU64; ++bBBArrElem) {
-      if ((vec[iBBArrElem] & (1UL << bBBArrElem)) != 0) {
+      if ((vec[iBBArrElem] & (1ULL << bBBArrElem)) != 0) {
         if (functor(iBBArrElem * kU64 + bBBArrElem)) {
           return;
         }
@@ -99,7 +99,7 @@ template <typename Func>
 void GraphColorRegAllocator::ForEachRegArrElem(const uint64 *vec, Func functor) const {
   for (uint32 iBBArrElem = 0; iBBArrElem < regBuckets; ++iBBArrElem) {
     for (uint32 bBBArrElem = 0; bBBArrElem < kU64; ++bBBArrElem) {
-      if ((vec[iBBArrElem] & (1UL << bBBArrElem)) != 0) {
+      if ((vec[iBBArrElem] & (1ULL << bBBArrElem)) != 0) {
         functor(iBBArrElem * kU64 + bBBArrElem);
       }
     }
@@ -127,7 +127,7 @@ void GraphColorRegAllocator::PrintLiveRangeConflicts(const LiveRange &lr) const 
   for (uint32 i = 0; i < regBuckets; ++i) {
     uint64 chunk = lr.GetBBConflictElem(i);
     for (uint64 bit = 0; bit < kU64; ++bit) {
-      if (chunk & (1UL << bit)) {
+      if (chunk & (1ULL << bit)) {
         regno_t newNO = i * kU64 + bit;
         LogInfo::MapleLogger() << newNO << ",";
       }
@@ -454,10 +454,10 @@ bool GraphColorRegAllocator::CreateLiveRangeHandleLocal(regno_t regNO, BB &bb, b
     if (isDef) {
       /* movk is handled by different id for use/def in the same insn. */
       lraInfo->SetDefCntElem(regNO, lraInfo->GetDefCntElem(regNO) + 1);
-      lraInfo->SetLocalPregMask(lraInfo->GetLocalPregMask() | (1UL << regNO));
+      lraInfo->SetLocalPregMask(lraInfo->GetLocalPregMask() | (1ULL << regNO));
     } else {
       lraInfo->SetUseCntElem(regNO, lraInfo->GetUseCntElem(regNO) + 1);
-      lraInfo->SetLocalPregMask(lraInfo->GetLocalPregMask() | (1UL << regNO));
+      lraInfo->SetLocalPregMask(lraInfo->GetLocalPregMask() | (1ULL << regNO));
     }
     /* lr info is useful for lra, so continue lr info */
     return false;
@@ -990,7 +990,7 @@ bool GraphColorRegAllocator::CheckOverlap(uint64 val, uint32 &lastBitSet, uint32
     return false;
   }
   for (uint32 x = 0; x < kU64; ++x) {
-    if ((val & (1UL << x)) != 0) {
+    if ((val & (1ULL << x)) != 0) {
       ++overlapNum;
       lastBitSet = i * kU64 + x;
       if (overlapNum > 1) {
@@ -2080,7 +2080,7 @@ void GraphColorRegAllocator::HandleLocalRaDebug(regno_t regNO, const LocalRegAll
   regno_t base = isInt ? R0 : V0;
 
   for (uint32 i = 0; i < RZR; ++i) {
-    if ((regUsed & (1UL << i)) != 0) {
+    if ((regUsed & (1ULL << i)) != 0) {
       LogInfo::MapleLogger() << " " << (i + base);
     }
   }
@@ -2088,7 +2088,7 @@ void GraphColorRegAllocator::HandleLocalRaDebug(regno_t regNO, const LocalRegAll
   LogInfo::MapleLogger() << "\tregs:";
   uint64 regs = localRa.GetPregs(isInt);
   for (uint32 regnoInLoop = 0; regnoInLoop < RZR; ++regnoInLoop) {
-    if ((regs & (1UL << regnoInLoop)) != 0) {
+    if ((regs & (1ULL << regnoInLoop)) != 0) {
       LogInfo::MapleLogger() << " " << (regnoInLoop + base);
     }
   }
@@ -2357,7 +2357,7 @@ MemOperand *GraphColorRegAllocator::GetConsistentReuseMem(const uint64 *conflict
   regno_t regNO;
   for (uint32 i = 0; i < regBuckets; ++i) {
     for (uint32 b = 0; b < kU64; ++b) {
-      if ((conflict[i] & (1UL << b)) != 0) {
+      if ((conflict[i] & (1ULL << b)) != 0) {
         continue;
       }
       regNO = i * kU64 + b;
@@ -2386,7 +2386,7 @@ MemOperand *GraphColorRegAllocator::GetCommonReuseMem(const uint64 *conflict, co
   regno_t regNO;
   for (uint32 i = 0; i < regBuckets; ++i) {
     for (uint32 b = 0; b < kU64; ++b) {
-      if ((conflict[i] & (1UL << b)) != 0) {
+      if ((conflict[i] & (1ULL << b)) != 0) {
         continue;
       }
       regNO = i * kU64 + b;
@@ -2633,17 +2633,17 @@ bool GraphColorRegAllocator::SetAvailableSpillReg(std::set<regno_t> &cannotUseRe
 
   for (const auto &it : callerRegSet) {
     regno_t spillReg = it + base;
-    if (cannotUseReg.find(spillReg) == cannotUseReg.end() && (usedRegMask & (1UL << (spillReg - pregInterval))) == 0) {
+    if (cannotUseReg.find(spillReg) == cannotUseReg.end() && (usedRegMask & (1ULL << (spillReg - pregInterval))) == 0) {
       lr.SetAssignedRegNO(spillReg);
-      usedRegMask |= 1UL << (spillReg - pregInterval);
+      usedRegMask |= 1ULL << (spillReg - pregInterval);
       return true;
     }
   }
   for (const auto &it : calleeRegSet) {
     regno_t spillReg = it + base;
-    if (cannotUseReg.find(spillReg) == cannotUseReg.end() && (usedRegMask & (1UL << (spillReg - pregInterval))) == 0) {
+    if (cannotUseReg.find(spillReg) == cannotUseReg.end() && (usedRegMask & (1ULL << (spillReg - pregInterval))) == 0) {
       lr.SetAssignedRegNO(spillReg);
-      usedRegMask |= 1UL << (spillReg - pregInterval);
+      usedRegMask |= 1ULL << (spillReg - pregInterval);
       return true;
     }
   }
@@ -2712,8 +2712,8 @@ regno_t GraphColorRegAllocator::PickRegForSpill(uint64 &usedRegMask, RegType reg
       if (spillReg >= k64BitSize) {
         spillReg = k64BitSize - 1;
       }
-      if ((usedRegMask & (1UL << (spillReg - pregInterval))) == 0) {
-        usedRegMask |= (1UL << (spillReg - pregInterval));
+      if ((usedRegMask & (1ULL << (spillReg - pregInterval))) == 0) {
+        usedRegMask |= (1ULL << (spillReg - pregInterval));
         needSpillLr = true;
         return spillReg;
       }
@@ -2929,13 +2929,13 @@ void GraphColorRegAllocator::MarkUsedRegs(Operand &opnd, BBAssignInfo *bbInfo, u
   LiveRange *lr = lrVec[vregNO];
   if (lr != nullptr) {
     if (lr->GetAssignedRegNO() != 0) {
-      usedRegMask |= (1UL << (lr->GetAssignedRegNO() - pregInterval));
+      usedRegMask |= (1ULL << (lr->GetAssignedRegNO() - pregInterval));
     }
     if (lr->GetSplitLr() && lr->GetSplitLr()->GetAssignedRegNO()) {
-      usedRegMask |= (1UL << (lr->GetSplitLr()->GetAssignedRegNO() - pregInterval));
+      usedRegMask |= (1ULL << (lr->GetSplitLr()->GetAssignedRegNO() - pregInterval));
     }
   } else if (bbInfo != nullptr && bbInfo->HasRegMap(vregNO)) {
-    usedRegMask |= (1UL << (bbInfo->GetRegMapElem(vregNO) - pregInterval));
+    usedRegMask |= (1ULL << (bbInfo->GetRegMapElem(vregNO) - pregInterval));
   }
 }
 

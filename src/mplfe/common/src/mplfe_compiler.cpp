@@ -30,6 +30,7 @@ MPLFECompiler::~MPLFECompiler() {
 
 void MPLFECompiler::Init() {
   FEManager::Init(module);
+  FEStructMethodInfo::InitJavaPolymorphicWhiteList();
 }
 
 void MPLFECompiler::Release() {

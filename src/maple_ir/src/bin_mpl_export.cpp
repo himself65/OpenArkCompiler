@@ -676,7 +676,7 @@ void BinaryMplExport::WriteTypeField(uint64 contentIdx) {
 }
 
 
-void BinaryMplExport::WriteContentField(int fieldNum, size_t *fieldStartP) {
+void BinaryMplExport::WriteContentField(int fieldNum, uint64 *fieldStartP) {
   WriteNum(kBinContentStart);
   size_t totalSizeIdx = buf.size();
   ExpandFourBuffSize();  // total size of this field to ~BIN_SYM_START

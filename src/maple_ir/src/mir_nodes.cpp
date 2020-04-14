@@ -245,7 +245,6 @@ void RetypeNode::Dump(int32 indent) const {
     ty->Dump(indent + 1);
   }
   DumpOpnd(*theMIRModule, indent);
-  LogInfo::MapleLogger() << "\n";
 }
 
 void ExtractbitsNode::Dump(int32 indent) const {

@@ -214,8 +214,7 @@ bool FEStructFieldInfo::CompareFieldType(const FieldPair &fieldPair) const {
 }
 
 // ---------- FEStructMethodInfo ----------
-std::map<GStrIdx, std::set<GStrIdx>> FEStructMethodInfo::javaPolymorphicWhiteList =
-    FEStructMethodInfo::InitJavaPolymorphicWhiteList();
+std::map<GStrIdx, std::set<GStrIdx>> FEStructMethodInfo::javaPolymorphicWhiteList;
 
 FEStructMethodInfo::FEStructMethodInfo(const GStrIdx &argFullNameIdx, MIRSrcLang argSrcLang, bool argIsStatic)
     : FEStructElemInfo(argFullNameIdx, argSrcLang, argIsStatic),
@@ -228,9 +227,9 @@ FEStructMethodInfo::FEStructMethodInfo(const GStrIdx &argFullNameIdx, MIRSrcLang
   LoadMethodType();
 }
 
-std::map<GStrIdx, std::set<GStrIdx>> FEStructMethodInfo::InitJavaPolymorphicWhiteList() {
+void FEStructMethodInfo::InitJavaPolymorphicWhiteList() {
   MPLFE_PARALLEL_FORBIDDEN();
-  std::map<GStrIdx, std::set<GStrIdx>> ans;
+  std::map<GStrIdx, std::set<GStrIdx>> &ans = javaPolymorphicWhiteList;
   StringTable<std::string, GStrIdx> &strTable = GlobalTables::GetStrTable();
   GStrIdx idxMethodHandle =
       strTable.GetOrCreateStrIdxFromName(NameMangler::EncodeName("Ljava/lang/invoke/MethodHandle;"));
@@ -238,7 +237,7 @@ std::map<GStrIdx, std::set<GStrIdx>> FEStructMethodInfo::InitJavaPolymorphicWhit
   success = success && ans[idxMethodHandle].insert(strTable.GetOrCreateStrIdxFromName("invoke")).second;
   success = success && ans[idxMethodHandle].insert(strTable.GetOrCreateStrIdxFromName("invokeBasic")).second;
   success = success && ans[idxMethodHandle].insert(strTable.GetOrCreateStrIdxFromName("invokeExact")).second;
-  return ans;
+  CHECK_FATAL(success, "error occurs");
 }
 
 PUIdx FEStructMethodInfo::GetPuIdx() const {

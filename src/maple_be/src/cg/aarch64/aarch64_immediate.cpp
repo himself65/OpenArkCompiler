@@ -48,7 +48,7 @@ bool IsBitmaskImmediate(uint64 val, uint32 bitLen) {
   }
 
   if (bitLen == k32BitSize) {
-    val = (val << k32BitSize) | (val & ((1UL << k32BitSize) - 1));
+    val = (val << k32BitSize) | (val & ((1ULL << k32BitSize) - 1));
   }
 
   /* get the least significant bit set and add it to 'val' */
@@ -71,7 +71,7 @@ bool IsBitmaskImmediate(uint64 val, uint32 bitLen) {
   }
 
   int32 logDiff = __builtin_ctzll(diff);
-  int64 pattern = val & ((1UL << static_cast<uint64>(diff)) - 1);
+  int64 pattern = val & ((1ULL << static_cast<uint64>(diff)) - 1);
   return val == pattern * bitmaskImmMultTable[kMaxBitTableSize - logDiff];
 }
 

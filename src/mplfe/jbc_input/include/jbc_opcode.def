@@ -214,7 +214,7 @@ JBC_OP(MultiANewArray, 0xC5, MultiANewArray, "multianewarray", (kOpFlagFallThru 
 JBC_OP(IfNull, 0xC6, Branch, "ifnull", (kOpFlagFallThru | kOpFlagBranch))
 JBC_OP(IfNonNull, 0xC7, Branch, "ifnonnull", (kOpFlagFallThru | kOpFlagBranch))
 JBC_OP(GotoW, 0xC8, Goto, "goto_w", (kOpFlagBranch))
-JBC_OP(JsrW, 0xC9, Reversed, "jsr_w", (kOpFlagBranch))
+JBC_OP(JsrW, 0xC9, Jsr, "jsr_w", (kOpFlagBranch))
 JBC_OP(BreakPoint, 0xCA, Reversed, "breakpoint", (kOpFlagFallThru))
 JBC_OP(UnusedCB, 0xCB, Unused, "unused_cb", (kOpFlagFallThru))
 JBC_OP(UnusedCC, 0xCC, Unused, "unused_cc", (kOpFlagFallThru))

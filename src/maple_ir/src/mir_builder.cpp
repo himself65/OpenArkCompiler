@@ -765,6 +765,23 @@ IcallNode *MIRBuilder::CreateStmtIcall(const MapleVector<BaseNode*> &args) {
   return stmt;
 }
 
+IcallNode *MIRBuilder::CreateStmtIcallAssigned(const MapleVector<BaseNode*> &args, const MIRSymbol &ret) {
+  auto *stmt = GetCurrentFuncCodeMp()->New<IcallNode>(*GetCurrentFuncCodeMpAllocator(), OP_icallassigned);
+  CallReturnVector nrets(GetCurrentFuncCodeMpAllocator()->Adapter());
+  CHECK_FATAL((ret.GetStorageClass() == kScAuto || ret.GetStorageClass() == kScFormal ||
+               ret.GetStorageClass() == kScExtern || ret.GetStorageClass() == kScGlobal),
+              "unknown classtype! check it!");
+  nrets.push_back(CallReturnPair(ret.GetStIdx(), RegFieldPair(0, 0)));
+  stmt->SetNumOpnds(args.size());
+  stmt->GetNopnd().resize(stmt->GetNumOpnds());
+  stmt->SetReturnVec(nrets);
+  for (size_t i = 0; i < stmt->GetNopndSize(); ++i) {
+    stmt->SetNOpndAt(i, args.at(i));
+  }
+  stmt->SetRetTyIdx(ret.GetTyIdx());
+  return stmt;
+}
+
 IntrinsiccallNode *MIRBuilder::CreateStmtIntrinsicCall(MIRIntrinsicID idx, const MapleVector<BaseNode*> &arguments,
                                                        TyIdx tyIdx) {
   auto *stmt = GetCurrentFuncCodeMp()->New<IntrinsiccallNode>(

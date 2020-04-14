@@ -1563,6 +1563,10 @@ bool MIRParser::ParseJavaClassInterface(MIRSymbol &symbol, bool isClass) {
     return false;
   }
   symbol.SetNameStrIdx(lexer.GetName());
+  if (!GlobalTables::GetGsymTable().AddToStringSymbolMap(symbol)) {
+    Error("duplicate symbol name used in javainterface at ");
+    return false;
+  }
   lexer.NextToken();
   TyIdx tyidx(0);
   if (!ParseType(tyidx)) {
@@ -2390,14 +2394,7 @@ bool MIRParser::ParseMIRForClass() {
   ASSERT(st != nullptr, "st nullptr check");
   st->SetStorageClass(kScInvalid);
   st->SetSKind(kStJavaClass);
-  if (!ParseJavaClassInterface(*st, true)) {
-    return false;
-  }
-  if (!GlobalTables::GetGsymTable().AddToStringSymbolMap(*st)) {
-    Error("duplicate symbol name used in javaclass at ");
-    return false;
-  }
-  return true;
+  return ParseJavaClassInterface(*st, true);
 }
 
 bool MIRParser::ParseMIRForInterface() {
@@ -2405,14 +2402,7 @@ bool MIRParser::ParseMIRForInterface() {
   ASSERT(st != nullptr, "st nullptr check");
   st->SetStorageClass(kScInvalid);
   st->SetSKind(kStJavaInterface);
-  if (!ParseJavaClassInterface(*st, false)) {
-    return false;
-  }
-  if (!GlobalTables::GetGsymTable().AddToStringSymbolMap(*st)) {
-    Error("duplicate symbol name used in javainterface at ");
-    return false;
-  }
-  return true;
+  return ParseJavaClassInterface(*st, false);
 }
 
 bool MIRParser::ParseMIRForFlavor() {
