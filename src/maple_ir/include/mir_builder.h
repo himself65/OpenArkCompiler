@@ -240,6 +240,7 @@ class MIRBuilder {
   }
 
   IcallNode *CreateStmtIcall(const MapleVector<BaseNode*> &args);
+  IcallNode *CreateStmtIcallAssigned(const MapleVector<BaseNode*> &args, const MIRSymbol &ret);
   // For Call, VirtualCall, SuperclassCall, InterfaceCall
   IntrinsiccallNode *CreateStmtIntrinsicCall(MIRIntrinsicID idx, const MapleVector<BaseNode*> &arguments,
                                              TyIdx tyIdx = TyIdx());

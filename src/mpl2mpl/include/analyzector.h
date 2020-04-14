@@ -16,6 +16,7 @@
 #define MPL2MPL_INCLUDE_ANALYZECTOR_H
 #include "module_phase.h"
 #include "phase_impl.h"
+
 namespace maple {
 class AnalyzeCtor : public FuncOptimizeImpl {
  public:

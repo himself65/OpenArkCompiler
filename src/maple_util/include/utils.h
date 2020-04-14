@@ -108,7 +108,7 @@ constexpr uint32_t bit_field_v = bit_field<pos>::value;
 
 template <size_t pos, typename = std::enable_if_t<pos < 64>>
 struct lbit_field {
-  enum {value = 1UL << pos};
+  enum {value = 1ULL << pos};
 };
 
 template <size_t pos>

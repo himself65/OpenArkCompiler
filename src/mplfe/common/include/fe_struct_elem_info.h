@@ -172,7 +172,7 @@ class FEStructMethodInfo : public FEStructElemInfo {
     return argTypes;
   }
 
-  static std::map<GStrIdx, std::set<GStrIdx>> InitJavaPolymorphicWhiteList();
+  static void InitJavaPolymorphicWhiteList();
 
  LLT_PROTECTED:
   void PrepareImpl(MIRBuilder &mirBuilder, bool argIsStatic) override;

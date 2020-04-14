@@ -144,6 +144,18 @@ static constexpr const char kClinitSuffix[] = "_7C_3Cclinit_3E_7C_28_29V";
 static constexpr const char kCinitStr[] = "_7C_3Cinit_3E_7C_28";
 static constexpr const char kClinitSubStr[] = "7C_3Cinit_3E_7C";
 
+static constexpr const char kPreNativeFunc[] = "MCC_PreNativeCall";
+static constexpr const char kPostNativeFunc[] = "MCC_PostNativeCall";
+static constexpr const char kDecodeRefFunc[] = "MCC_DecodeReference";
+static constexpr const char kFindNativeFunc[] = "MCC_FindNativeMethodPtr";
+static constexpr const char kFindNativeFuncNoeh[] = "MCC_FindNativeMethodPtrWithoutException";
+static constexpr const char kDummyNativeFunc[] = "MCC_DummyNativeMethodPtr";
+static constexpr const char kCheckThrowPendingExceptionFunc[] = "MCC_CheckThrowPendingException";
+static constexpr const char kCallFastNative[] = "MCC_CallFastNative";
+static constexpr const char kCallFastNativeExt[] = "MCC_CallFastNativeExt";
+static constexpr const char kCallSlowNativeExt[] = "MCC_CallSlowNativeExt";
+static constexpr const char kSetReliableUnwindContextFunc[] = "MCC_SetReliableUnwindContext";
+
 static constexpr const char kFunctionLayoutStr[] = "__func_layout__";
 
 static constexpr const char kFunctionProfileTabPrefixStr[] = "__muid_profile_func_tab";

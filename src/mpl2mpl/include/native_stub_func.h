@@ -26,19 +26,8 @@ constexpr int kSlownativeFuncnum = 9;
 constexpr int kJniTypeNormal = 0;
 constexpr int kJniTypeMapleCriticalNative = 1;
 constexpr int kJnitTypeCriticalNative = 2;
-constexpr int kInvalidCode = 0xFF;
+constexpr int kInvalidCode = 0x01;
 
-constexpr char kPreNativeFunc[] = "MCC_PreNativeCall";
-constexpr char kPostNativeFunc[] = "MCC_PostNativeCall";
-constexpr char kDecodeRefFunc[] = "MCC_DecodeReference";
-constexpr char kFindNativeFunc[] = "MCC_FindNativeMethodPtr";
-constexpr char kFindNativeFuncNoeh[] = "MCC_FindNativeMethodPtrWithoutException";
-constexpr char kDummyNativeFunc[] = "MCC_DummyNativeMethodPtr";
-constexpr char kCheckThrowPendingExceptionFunc[] = "MCC_CheckThrowPendingException";
-constexpr char kCallFastNativeFunc[] = "MCC_CallFastNative";
-constexpr char kCallFastNativeExtFunc[] = "MCC_CallFastNativeExt";
-constexpr char kCallSlowNativeExtFunc[] = "MCC_CallSlowNativeExt";
-constexpr char kSetReliableUnwindContextFunc[] = "MCC_SetReliableUnwindContext";
 class NativeFuncProperty {
  public:
   NativeFuncProperty() = default;
@@ -95,8 +84,6 @@ class NativeStubFuncGeneration : public FuncOptimizeImpl {
   MIRFunction *MRTPostNativeFunc = nullptr;
   MIRFunction *MRTDecodeRefFunc = nullptr;
   MIRFunction *MRTCheckThrowPendingExceptionFunc = nullptr;
-  MIRFunction *MRTCallFastNativeFunc = nullptr;
-  MIRFunction *MRTCallFastNativeExtFunc = nullptr;
   MIRFunction *MRTCallSlowNativeFunc[kSlownativeFuncnum] = { nullptr };  // for native func which args <=8, use x0-x7
   MIRFunction *MRTCallSlowNativeExtFunc = nullptr;
   MIRFunction *MCCSetReliableUnwindContextFunc = nullptr;

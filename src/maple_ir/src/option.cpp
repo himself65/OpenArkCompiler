@@ -99,6 +99,7 @@ enum OptionIndex {
   kMapleLinker,
   kMplnkDumpMuid,
   kEmitVtableImpl,
+  kCheckArrayStore,
 };
 
 const Descriptor kUsage[] = {
@@ -173,6 +174,8 @@ const Descriptor kUsage[] = {
 #if MIR_JAVA
   { kSkipVirtual, 0, "", "skipvirtual", kBuildTypeAll, kArgCheckPolicyNone, "  --skipvirtual" },
 #endif
+  { kCheckArrayStore, 0, "", "check-array-store", kBuildTypeAll, kArgCheckPolicyNone,
+    "  --check-array-store               Check array store[default off]" },
   { 0, 0, nullptr, nullptr, kBuildTypeAll, kArgCheckPolicyNone, nullptr }
 };
 
@@ -288,6 +291,9 @@ bool Options::ParseOptions(int argc, char **argv, std::string &fileName) const {
         Options::skipVirtualMethod = true;
         break;
 #endif
+      case kCheckArrayStore:
+        Options::checkArrayStore = true;
+        break;
       default:
         result = false;
         ASSERT(false, "unhandled case in Options");

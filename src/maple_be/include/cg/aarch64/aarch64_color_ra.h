@@ -72,7 +72,7 @@ inline bool FindIn(const MapleList<T> &list, const T &item) {
 inline bool IsBitArrElemSet(const uint64 *vec, const uint32 num) {
   size_t index = num / kU64;
   uint64 bit = num % kU64;
-  return vec[index] & (1UL << bit);
+  return vec[index] & (1ULL << bit);
 }
 
 inline bool IsBBsetOverlap(const uint64 *vec1, const uint64 *vec2, uint32 bbBuckets) {
@@ -283,7 +283,7 @@ class LiveRange {
   void SetMemberBitArrElem(uint32 bbID) {
     uint32 index = bbID / kU64;
     uint64 bit = bbID % kU64;
-    uint64 mask = 1UL << bit;
+    uint64 mask = 1ULL << bit;
     if ((GetBBMemberElem(index) & mask) == 0) {
       IncNumBBMembers();
       SetBBMemberElem(index, GetBBMemberElem(index) | mask);
@@ -293,7 +293,7 @@ class LiveRange {
   void UnsetMemberBitArrElem(uint32 bbID) {
     uint32 index = bbID / kU64;
     uint64 bit = bbID % kU64;
-    uint64 mask = 1UL << bit;
+    uint64 mask = 1ULL << bit;
     if ((GetBBMemberElem(index) & mask) != 0) {
       DecNumBBMembers();
       SetBBMemberElem(index, GetBBMemberElem(index) & (~mask));
@@ -303,7 +303,7 @@ class LiveRange {
   void SetConflictBitArrElem(regno_t regNO) {
     uint32 index = regNO / kU64;
     uint64 bit = regNO % kU64;
-    uint64 mask = 1UL << bit;
+    uint64 mask = 1ULL << bit;
     if ((GetBBConflictElem(index) & mask) == 0) {
       IncNumBBConflicts();
       SetBBConflictElem(index, GetBBConflictElem(index) | mask);
@@ -313,7 +313,7 @@ class LiveRange {
   void UnsetConflictBitArrElem(regno_t regNO) {
     uint32 index = regNO / kU64;
     uint64 bit = regNO % kU64;
-    uint64 mask = 1UL << bit;
+    uint64 mask = 1ULL << bit;
     if ((GetBBConflictElem(index) & mask) != 0) {
       DecNumBBConflicts();
       SetBBConflictElem(index, GetBBConflictElem(index) & (~mask));
@@ -852,13 +852,13 @@ class LocalRegAllocator {
   void SetPregUsed(regno_t regNO, bool isInt) {
     uint64 mask = 0;
     if (isInt) {
-      mask = 1UL << (regNO - R0);
+      mask = 1ULL << (regNO - R0);
       if ((intPregUsed & mask) == 0) {
         ++numIntPregUsed;
         intPregUsed |= mask;
       }
     } else {
-      mask = 1UL << (regNO - V0);
+      mask = 1ULL << (regNO - V0);
       if ((fpPregUsed & mask) == 0) {
         ++numFpPregUsed;
         fpPregUsed |= mask;
@@ -894,26 +894,26 @@ class LocalRegAllocator {
 
   void SetPregs(regno_t regNO, bool isInt) {
     if (isInt) {
-      intPregs |= 1UL << (regNO - RegBaseUpdate(true));
+      intPregs |= 1ULL << (regNO - RegBaseUpdate(true));
     } else {
-      fpPregs |= 1UL << (regNO - RegBaseUpdate(false));
+      fpPregs |= 1ULL << (regNO - RegBaseUpdate(false));
     }
   }
 
   void ClearPregs(regno_t regNO, bool isInt) {
     if (isInt) {
-      intPregs &= ~(1UL << (regNO - RegBaseUpdate(true)));
+      intPregs &= ~(1ULL << (regNO - RegBaseUpdate(true)));
     } else {
-      fpPregs &= ~(1UL << (regNO - RegBaseUpdate(false)));
+      fpPregs &= ~(1ULL << (regNO - RegBaseUpdate(false)));
     }
   }
 
   bool IsPregAvailable(regno_t regNO, bool isInt) const {
     bool isAvailable;
     if (isInt) {
-      isAvailable = intPregs & (1UL << (regNO - RegBaseUpdate(true)));
+      isAvailable = intPregs & (1ULL << (regNO - RegBaseUpdate(true)));
     } else {
-      isAvailable = fpPregs & (1UL << (regNO - RegBaseUpdate(false)));
+      isAvailable = fpPregs & (1ULL << (regNO - RegBaseUpdate(false)));
     }
     return isAvailable;
   }
@@ -922,8 +922,8 @@ class LocalRegAllocator {
                  const MapleSet<uint32> &fpSpillRegSet) {
     uint32 intBase = R0;
     uint32 fpBase = V0;
-    intPregs = (1UL << (intMax + 1)) - 1;
-    fpPregs = (1UL << (((fpMax + 1) + fpBase) - RegBaseUpdate(false))) - 1;
+    intPregs = (1ULL << (intMax + 1)) - 1;
+    fpPregs = (1ULL << (((fpMax + 1) + fpBase) - RegBaseUpdate(false))) - 1;
     for (uint32 regNO : intSpillRegSet) {
       ClearPregs(regNO + intBase, true);
     }
@@ -934,8 +934,8 @@ class LocalRegAllocator {
       ClearPregs(RYP, true);
     }
 #ifdef RESERVED_REGS
-    intPregs &= ~(1UL << R16);
-    intPregs &= ~(1UL << R17);
+    intPregs &= ~(1ULL << R16);
+    intPregs &= ~(1ULL << R17);
 #endif  /* RESERVED_REGS */
   }
 
@@ -997,7 +997,7 @@ class LocalRegAllocator {
   void SetBitArrElement(uint64 *vec, regno_t regNO) {
     uint32 index = regNO / kU64;
     uint64 bit = regNO % kU64;
-    vec[index] |= 1UL << bit;
+    vec[index] |= 1ULL << bit;
   }
 
   /* The following local vars keeps track of allocation information in bb. */

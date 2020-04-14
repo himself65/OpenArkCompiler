@@ -416,7 +416,7 @@ class ImmOperand : public Operand {
   }
 
   void BitwiseNegate() {
-    value = ~(static_cast<uint64>(value)) & ((1UL << size) - 1UL);
+    value = ~(static_cast<uint64>(value)) & ((1ULL << size) - 1UL);
   }
 
   void DivideByPow2(int32 shift) {
@@ -424,7 +424,7 @@ class ImmOperand : public Operand {
   }
 
   void ModuloByPow2(int32 shift) {
-    value = (static_cast<uint64>(value)) & ((1UL << shift) - 1UL);
+    value = (static_cast<uint64>(value)) & ((1ULL << shift) - 1UL);
   }
 
   bool IsAllOnes() const {

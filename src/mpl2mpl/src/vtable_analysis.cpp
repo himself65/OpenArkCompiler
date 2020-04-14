@@ -295,7 +295,7 @@ void VtableAnalysis::GenItableDefinition(const Klass &klass) {
   if (count != 0) {
     auto *secondItabEmitArray = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), *voidPtrType);
     // remember count in secondItabVec
-    count = ((secondConflictList.size() | (1UL << (kShiftCountBit - 1))) << kShiftCountBit) + count;
+    count = ((secondConflictList.size() | (1ULL << (kShiftCountBit - 1))) << kShiftCountBit) + count;
     secondItabEmitArray->PushBack(GlobalTables::GetIntConstTable().GetOrCreateIntConst(count, *voidPtrType));
     secondItabEmitArray->PushBack(oneConst);  // padding
     for (uint32 i = 0; i < kItabSecondHashSize; ++i) {
