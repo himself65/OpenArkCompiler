@@ -177,12 +177,13 @@ class TestSuiteTask:
         return testlist
 
     def _search_list(self, base_dir, testlist, encoding):
+        logger = configs.LOGGER
         suffixes = self.suffix_comments.keys()
         include, exclude = testlist
         case_files = set()
         cases = []
         case_files = self._search_case(include, exclude, base_dir, suffixes)
-        if self.path.is_file() and self.path in case_files:
+        if self.path.is_file():
             case_files = [self.path]
         else:
             case_files = [
@@ -190,6 +191,11 @@ class TestSuiteTask:
                 for file in case_files
                 if is_relative(file, self.path)
             ]
+            if not case_files:
+                logger.info(
+                    "Path %s not in testlist, be sure add path to testlist",
+                    str(self.path),
+                )
         for case_file in case_files:
             case_name = str(case_file).replace(".", "_")
             comment = self.suffix_comments[case_file.suffix[1:]]
