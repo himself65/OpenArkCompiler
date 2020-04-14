@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -12,137 +12,131 @@
  * FIT FOR A PARTICULAR PURPOSE.
  * See the Mulan PSL v1 for more details.
  */
-/* [Standardize-exceptions] Use unsafe function: Performance-sensitive
+/*
+ * [Standardize-exceptions] Use unsafe function: Performance-sensitive
  * [reason] Always used in the performance critical path,
  *          and sufficient input validation is performed before calling
  */
 
-#define SECUREC_INLINE_STR_LEN   1
-#define SECUREC_INLINE_DO_MEMCPY 1
-
 #include "securecutil.h"
 
-#if SECUREC_IN_KERNEL== 0
+#ifndef SECUREC_STRCPY_WITH_PERFORMANCE
+#define SECUREC_STRCPY_WITH_PERFORMANCE 1
+#endif
+
+#if (SECUREC_IN_KERNEL == 0) && SECUREC_STRCPY_WITH_PERFORMANCE
 #ifndef SECUREC_STRCOPY_THRESHOLD_SIZE
 #define SECUREC_STRCOPY_THRESHOLD_SIZE   32UL
 #endif
 
-/*
- * Determine whether the address is 8-byte aligned, use static to increase performance
- * return 0 is aligned
- */
-static int SecIsAddrAligned8(const void *addr, const void *zeroAddr)
-{
-    return (int)(((size_t)((const char*)addr - (const char*)zeroAddr)) & 7); /* use 7 to check aligned 8 */
-}
 
 /* The purpose of converting to void is to clean up the alarm */
-#define SECUREC_SMALL_STR_COPY do { \
+#define SECUREC_SMALL_STR_COPY(strDest, strSrc, srcStrLen) do { \
     if (SECUREC_ADDR_ALIGNED_8(strDest) && SECUREC_ADDR_ALIGNED_8(strSrc)) { \
-        /* use struct assignment */ \
+        /* Use struct assignment */ \
         switch (srcStrLen) { \
             case 1: \
-                *(SecStrBuf1 *)(void *)strDest = *(const SecStrBuf1 *)(const void *)strSrc; \
+                *(SecStrBuf1 *)(void *)(strDest) = *(const SecStrBuf1 *)(const void *)(strSrc); \
                 break; \
             case 2: \
-                *(SecStrBuf2 *)(void *)strDest = *(const SecStrBuf2 *)(const void *)strSrc; \
+                *(SecStrBuf2 *)(void *)(strDest) = *(const SecStrBuf2 *)(const void *)(strSrc); \
                 break; \
             case 3: \
-                *(SecStrBuf3 *)(void *)strDest = *(const SecStrBuf3 *)(const void *)strSrc; \
+                *(SecStrBuf3 *)(void *)(strDest) = *(const SecStrBuf3 *)(const void *)(strSrc); \
                 break; \
             case 4: \
-                *(SecStrBuf4 *)(void *)strDest = *(const SecStrBuf4 *)(const void *)strSrc; \
+                *(SecStrBuf4 *)(void *)(strDest) = *(const SecStrBuf4 *)(const void *)(strSrc); \
                 break; \
             case 5: \
-                *(SecStrBuf5 *)(void *)strDest = *(const SecStrBuf5 *)(const void *)strSrc; \
+                *(SecStrBuf5 *)(void *)(strDest) = *(const SecStrBuf5 *)(const void *)(strSrc); \
                 break; \
             case 6: \
-                *(SecStrBuf6 *)(void *)strDest = *(const SecStrBuf6 *)(const void *)strSrc; \
+                *(SecStrBuf6 *)(void *)(strDest) = *(const SecStrBuf6 *)(const void *)(strSrc); \
                 break; \
             case 7: \
-                *(SecStrBuf7 *)(void *)strDest = *(const SecStrBuf7 *)(const void *)strSrc; \
+                *(SecStrBuf7 *)(void *)(strDest) = *(const SecStrBuf7 *)(const void *)(strSrc); \
                 break; \
             case 8: \
-                *(SecStrBuf8 *)(void *)strDest = *(const SecStrBuf8 *)(const void *)strSrc; \
+                *(SecStrBuf8 *)(void *)(strDest) = *(const SecStrBuf8 *)(const void *)(strSrc); \
                 break; \
             case 9: \
-                *(SecStrBuf9 *)(void *)strDest = *(const SecStrBuf9 *)(const void *)strSrc; \
+                *(SecStrBuf9 *)(void *)(strDest) = *(const SecStrBuf9 *)(const void *)(strSrc); \
                 break; \
             case 10: \
-                *(SecStrBuf10 *)(void *)strDest = *(const SecStrBuf10 *)(const void *)strSrc; \
+                *(SecStrBuf10 *)(void *)(strDest) = *(const SecStrBuf10 *)(const void *)(strSrc); \
                 break; \
             case 11: \
-                *(SecStrBuf11 *)(void *)strDest = *(const SecStrBuf11 *)(const void *)strSrc; \
+                *(SecStrBuf11 *)(void *)(strDest) = *(const SecStrBuf11 *)(const void *)(strSrc); \
                 break; \
             case 12: \
-                *(SecStrBuf12 *)(void *)strDest = *(const SecStrBuf12 *)(const void *)strSrc; \
+                *(SecStrBuf12 *)(void *)(strDest) = *(const SecStrBuf12 *)(const void *)(strSrc); \
                 break; \
             case 13: \
-                *(SecStrBuf13 *)(void *)strDest = *(const SecStrBuf13 *)(const void *)strSrc; \
+                *(SecStrBuf13 *)(void *)(strDest) = *(const SecStrBuf13 *)(const void *)(strSrc); \
                 break; \
             case 14: \
-                *(SecStrBuf14 *)(void *)strDest = *(const SecStrBuf14 *)(const void *)strSrc; \
+                *(SecStrBuf14 *)(void *)(strDest) = *(const SecStrBuf14 *)(const void *)(strSrc); \
                 break; \
             case 15: \
-                *(SecStrBuf15 *)(void *)strDest = *(const SecStrBuf15 *)(const void *)strSrc; \
+                *(SecStrBuf15 *)(void *)(strDest) = *(const SecStrBuf15 *)(const void *)(strSrc); \
                 break; \
             case 16: \
-                *(SecStrBuf16 *)(void *)strDest = *(const SecStrBuf16 *)(const void *)strSrc; \
+                *(SecStrBuf16 *)(void *)(strDest) = *(const SecStrBuf16 *)(const void *)(strSrc); \
                 break; \
             case 17: \
-                *(SecStrBuf17 *)(void *)strDest = *(const SecStrBuf17 *)(const void *)strSrc; \
+                *(SecStrBuf17 *)(void *)(strDest) = *(const SecStrBuf17 *)(const void *)(strSrc); \
                 break; \
             case 18: \
-                *(SecStrBuf18 *)(void *)strDest = *(const SecStrBuf18 *)(const void *)strSrc; \
+                *(SecStrBuf18 *)(void *)(strDest) = *(const SecStrBuf18 *)(const void *)(strSrc); \
                 break; \
             case 19: \
-                *(SecStrBuf19 *)(void *)strDest = *(const SecStrBuf19 *)(const void *)strSrc; \
+                *(SecStrBuf19 *)(void *)(strDest) = *(const SecStrBuf19 *)(const void *)(strSrc); \
                 break; \
             case 20: \
-                *(SecStrBuf20 *)(void *)strDest = *(const SecStrBuf20 *)(const void *)strSrc; \
+                *(SecStrBuf20 *)(void *)(strDest) = *(const SecStrBuf20 *)(const void *)(strSrc); \
                 break; \
             case 21: \
-                *(SecStrBuf21 *)(void *)strDest = *(const SecStrBuf21 *)(const void *)strSrc; \
+                *(SecStrBuf21 *)(void *)(strDest) = *(const SecStrBuf21 *)(const void *)(strSrc); \
                 break; \
             case 22: \
-                *(SecStrBuf22 *)(void *)strDest = *(const SecStrBuf22 *)(const void *)strSrc; \
+                *(SecStrBuf22 *)(void *)(strDest) = *(const SecStrBuf22 *)(const void *)(strSrc); \
                 break; \
             case 23: \
-                *(SecStrBuf23 *)(void *)strDest = *(const SecStrBuf23 *)(const void *)strSrc; \
+                *(SecStrBuf23 *)(void *)(strDest) = *(const SecStrBuf23 *)(const void *)(strSrc); \
                 break; \
             case 24: \
-                *(SecStrBuf24 *)(void *)strDest = *(const SecStrBuf24 *)(const void *)strSrc; \
+                *(SecStrBuf24 *)(void *)(strDest) = *(const SecStrBuf24 *)(const void *)(strSrc); \
                 break; \
             case 25: \
-                *(SecStrBuf25 *)(void *)strDest = *(const SecStrBuf25 *)(const void *)strSrc; \
+                *(SecStrBuf25 *)(void *)(strDest) = *(const SecStrBuf25 *)(const void *)(strSrc); \
                 break; \
             case 26: \
-                *(SecStrBuf26 *)(void *)strDest = *(const SecStrBuf26 *)(const void *)strSrc; \
+                *(SecStrBuf26 *)(void *)(strDest) = *(const SecStrBuf26 *)(const void *)(strSrc); \
                 break; \
             case 27: \
-                *(SecStrBuf27 *)(void *)strDest = *(const SecStrBuf27 *)(const void *)strSrc; \
+                *(SecStrBuf27 *)(void *)(strDest) = *(const SecStrBuf27 *)(const void *)(strSrc); \
                 break; \
             case 28: \
-                *(SecStrBuf28 *)(void *)strDest = *(const SecStrBuf28 *)(const void *)strSrc; \
+                *(SecStrBuf28 *)(void *)(strDest) = *(const SecStrBuf28 *)(const void *)(strSrc); \
                 break; \
             case 29: \
-                *(SecStrBuf29 *)(void *)strDest = *(const SecStrBuf29 *)(const void *)strSrc; \
+                *(SecStrBuf29 *)(void *)(strDest) = *(const SecStrBuf29 *)(const void *)(strSrc); \
                 break; \
             case 30: \
-                *(SecStrBuf30 *)(void *)strDest = *(const SecStrBuf30 *)(const void *)strSrc; \
+                *(SecStrBuf30 *)(void *)(strDest) = *(const SecStrBuf30 *)(const void *)(strSrc); \
                 break; \
             case 31: \
-                *(SecStrBuf31 *)(void *)strDest = *(const SecStrBuf31 *)(const void *)strSrc; \
+                *(SecStrBuf31 *)(void *)(strDest) = *(const SecStrBuf31 *)(const void *)(strSrc); \
                 break; \
             case 32: \
-                *(SecStrBuf32 *)(void *)strDest = *(const SecStrBuf32 *)(const void *)strSrc; \
+                *(SecStrBuf32 *)(void *)(strDest) = *(const SecStrBuf32 *)(const void *)(strSrc); \
                 break; \
             default: \
                 break; \
         } /* END switch */ \
     } else { \
-        char *tmpStrDest = (char *)strDest; \
-        const char *tmpStrSrc = (const char *)strSrc; \
+        char *tmpStrDest = (char *)(strDest); \
+        const char *tmpStrSrc = (const char *)(strSrc); \
         switch (srcStrLen) { \
             case 32: \
                 *(tmpStrDest++) = *(tmpStrSrc++); \
@@ -247,14 +241,31 @@ static int SecIsAddrAligned8(const void *addr, const void *zeroAddr)
 } SECUREC_WHILE_ZERO
 #endif
 
+
+
+#if SECUREC_IN_KERNEL || (SECUREC_STRCPY_WITH_PERFORMANCE == 0)
+#define SECUREC_STRCPY_OPT(dest, src, lenWithTerm) SECUREC_MEMCPY_WARP_OPT((dest), (src), (lenWithTerm))
+#else
+/*
+ * Performance optimization. lenWithTerm  include '\0'
+ */
+#define SECUREC_STRCPY_OPT(dest, src, lenWithTerm) do { \
+    if ((lenWithTerm) > SECUREC_STRCOPY_THRESHOLD_SIZE) { \
+        SECUREC_MEMCPY_WARP_OPT((dest), (src), (lenWithTerm)); \
+    } else { \
+        SECUREC_SMALL_STR_COPY((dest), (src), (lenWithTerm)); \
+    } \
+} SECUREC_WHILE_ZERO
+#endif
+
 /*
  * Check Src Range
  */
-static errno_t CheckSrcRange(char *strDest, size_t destMax, const char *strSrc)
+SECUREC_INLINE errno_t CheckSrcRange(char *strDest, size_t destMax, const char *strSrc)
 {
     size_t tmpDestMax = destMax;
     const char *tmpSrc = strSrc;
-    /* use destMax as boundary checker and destMax must be greater than zero */
+    /* Use destMax as boundary checker and destMax must be greater than zero */
     while (*(tmpSrc) != '\0' && tmpDestMax > 0) {
         ++tmpSrc;
         --tmpDestMax;
@@ -287,22 +298,6 @@ errno_t strcpy_error(char *strDest, size_t destMax, const char *strSrc)
 }
 
 /*
- * Performance optimization. srcStrLen  include '\0'
- */
-static void SecDoStrcpyOpt(char *strDest, const char *strSrc, size_t srcStrLen)
-{
-#if SECUREC_IN_KERNEL
-    SecDoMemcpy(strDest, strSrc, srcStrLen);
-#else
-    if (srcStrLen > SECUREC_STRCOPY_THRESHOLD_SIZE) {
-        SecDoMemcpy(strDest, strSrc, srcStrLen);
-    } else {
-        SECUREC_SMALL_STR_COPY;
-    }
-#endif
-}
-
-/*
  * <FUNCTION DESCRIPTION>
  *    The strcpy_s function copies the string pointed to  strSrc
  *          (including the terminating null character) into the array pointed to by strDest
@@ -331,12 +326,15 @@ static void SecDoStrcpyOpt(char *strDest, const char *strSrc, size_t srcStrLen)
 errno_t strcpy_s(char *strDest, size_t destMax, const char *strSrc)
 {
     if ((destMax > 0 && destMax <= SECUREC_STRING_MAX_LEN && strDest != NULL && strSrc != NULL && strDest != strSrc)) {
-        size_t srcStrLen = SecStrMinLen(strSrc, destMax) + 1; /* len  include \0 */
+        size_t srcStrLen;
+        SECUREC_CALC_STR_LEN(strSrc, destMax, &srcStrLen);
+        ++srcStrLen; /* The length include '\0' */
+
         if (srcStrLen <= destMax) {
-            /* use mem overlap check include \0 */
+            /* Use mem overlap check include '\0' */
             if (SECUREC_MEMORY_NO_OVERLAP(strDest, strSrc, srcStrLen)) {
-                /* performance optimization srcStrLen include '\0' */
-                SecDoStrcpyOpt(strDest, strSrc, srcStrLen);
+                /* Performance optimization srcStrLen include '\0' */
+                SECUREC_STRCPY_OPT(strDest, strSrc, srcStrLen);
                 return EOK;
             } else {
                 strDest[0] = '\0';

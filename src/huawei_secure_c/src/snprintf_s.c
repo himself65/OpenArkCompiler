@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -53,7 +53,7 @@ int snprintf_s(char *strDest, size_t destMax, size_t count, const char *format, 
     va_start(argList, format);
     ret = vsnprintf_s(strDest, destMax, count, format, argList);
     va_end(argList);
-    (void)argList;              /* to clear e438 last value assigned not used , the compiler will optimize this code */
+    (void)argList;              /* To clear e438 last value assigned not used , the compiler will optimize this code */
 
     return ret;
 }
@@ -99,7 +99,7 @@ int snprintf_truncated_s(char *strDest, size_t destMax, const char *format, ...)
     va_start(argList, format);
     ret = vsnprintf_truncated_s(strDest, destMax, format, argList);
     va_end(argList);
-    (void)argList;              /* to clear e438 last value assigned not used , the compiler will optimize this code */
+    (void)argList;              /* To clear e438 last value assigned not used , the compiler will optimize this code */
 
     return ret;
 }

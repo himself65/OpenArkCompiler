@@ -113,6 +113,11 @@ void MeProfGen::InstrumentFunc() {
 
 AnalysisResult *MeDoProfGen::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr*) {
   MemPool *tempMp = NewMemPool();
+  // function with try can't determine the instrument BB,because
+  // there have critial-edge which can't be split
+  if (func->HasException()) {
+    return nullptr;
+  }
   auto *hMap = static_cast<MeIRMap*>(m->GetAnalysisResult(MeFuncPhase_IRMAP, func));
   CHECK_FATAL(hMap != nullptr, "hssamap is nullptr");
   MeProfGen profGen(*func, *tempMp, *hMap, DEBUGFUNC(func));

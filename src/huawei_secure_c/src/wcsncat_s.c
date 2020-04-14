@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -12,19 +12,17 @@
  * FIT FOR A PARTICULAR PURPOSE.
  * See the Mulan PSL v1 for more details.
  */
-#define SECUREC_INLINE_DO_MEMCPY 1
 
 #include "securecutil.h"
 
 /*
  * Befor this function, the basic parameter checking has been done
  */
-static errno_t SecDoWcsncat(wchar_t *strDest, size_t destMax, const wchar_t *strSrc, size_t count)
+SECUREC_INLINE errno_t SecDoCatLimitW(wchar_t *strDest, size_t destMax, const wchar_t *strSrc, size_t count)
 {
+    /* To calculate the length of a wide character, the parameter must be a wide character */
     size_t destLen;
     size_t srcLen;
-
-    /* To calculate the length of a wide character, the parameter must be a wide character */
     SECUREC_CALC_WSTR_LEN(strDest, destMax, &destLen);
     SECUREC_CALC_WSTR_LEN(strSrc, count, &srcLen);
 
@@ -46,7 +44,7 @@ static errno_t SecDoWcsncat(wchar_t *strDest, size_t destMax, const wchar_t *str
         SECUREC_ERROR_INVALID_RANGE("wcsncat_s");
         return ERANGE_AND_RESET;
     }
-    SecDoMemcpy(strDest + destLen, strSrc, srcLen * sizeof(wchar_t)); /* no  terminator */
+    SECUREC_MEMCPY_WARP_OPT(strDest + destLen, strSrc, srcLen * sizeof(wchar_t)); /* no  terminator */
     *(strDest + destLen + srcLen) = L'\0';
     return EOK;
 }
@@ -103,14 +101,14 @@ errno_t wcsncat_s(wchar_t *strDest, size_t destMax, const wchar_t *strSrc, size_
 #ifdef  SECUREC_COMPATIBLE_WIN_FORMAT
         if (count == ((size_t)-1)) {
             /* Windows internal functions may pass in -1 when calling this function */
-            return SecDoWcsncat(strDest, destMax, strSrc, destMax);
+            return SecDoCatLimitW(strDest, destMax, strSrc, destMax);
         }
 #endif
         strDest[0] = L'\0';
         SECUREC_ERROR_INVALID_RANGE("wcsncat_s");
         return ERANGE_AND_RESET;
     }
-    return SecDoWcsncat(strDest, destMax, strSrc, count);
+    return SecDoCatLimitW(strDest, destMax, strSrc, count);
 }
 
 

@@ -372,15 +372,29 @@ class BB {
   }
 
   uint64 GetEdgeFreq(const BB *bb) const {
-    auto edgeFreq = succFreq.find(bb);
-    CHECK_FATAL(edgeFreq != succFreq.end(), "bb's edge freq must be set before use");
-    return edgeFreq->second;
+    auto iter = std::find(succ.begin(), succ.end(), bb);
+    CHECK_FATAL(iter != std::end(succ), "%d is not the successor of %d", bb->UintID(), this->UintID());
+    CHECK_FATAL(succ.size() == succFreq.size(), "succfreq size doesn't match succ size");
+    const size_t idx = std::distance(succ.begin(), iter);
+    return succFreq[idx];
+  }
+
+  uint64 GetEdgeFreq(size_t idx) const {
+    CHECK_FATAL(idx < succFreq.size(), "out of range in BB::GetEdgeFreq");
+    return succFreq[idx];
   }
 
   void SetEdgeFreq(const BB *bb, uint64 freq) {
     auto iter = std::find(succ.begin(), succ.end(), bb);
     CHECK_FATAL(iter != std::end(succ), "%d is not the successor of %d", bb->UintID(), this->UintID());
-    succFreq[bb] = freq;
+    CHECK_FATAL(succ.size() == succFreq.size(), "succfreq size %d doesn't match succ size %d",succFreq.size(),
+        succ.size());
+    const size_t idx = std::distance(succ.begin(), iter);
+    succFreq[idx] = freq;
+  }
+
+  void InitEdgeFreq() {
+    succFreq.resize(succ.size());
   }
 
   BB* GetGroup() const {
@@ -400,7 +414,7 @@ class BB {
   MapleVector<BB*> pred;  // predecessor list
   MapleVector<BB*> succ;  // successor list
   // record the edge freq from curBB to succ BB
-  MapleMap<const BB*, uint64> succFreq;
+  MapleVector<uint64> succFreq;
   MapleMap<const OriginalSt*, PhiNode> phiList;
   MapleMap<OStIdx, MeVarPhiNode*> meVarPhiList;
   MapleMap<OStIdx, MeRegPhiNode*> meRegPhiList;

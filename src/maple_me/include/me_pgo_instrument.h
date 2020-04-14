@@ -71,7 +71,7 @@ class BBEdge {
 template <class Edge>
 class PGOInstrument {
  public:
-  PGOInstrument(MeFunction &func, MemPool &mp, bool dump) : mst(func, mp, dump), func(&func), mp(&mp), dump(dump) {}
+  PGOInstrument(MeFunction &func, MemPool &mp, bool dump) : dump(dump), mst(func, mp, dump), func(&func), mp(&mp) {}
 
   void FindInstrumentEdges() {
     mst.ComputeMST();
@@ -105,7 +105,7 @@ class PGOInstrument {
       } else if (!edge->IsCritical()) {
         bbs.push_back(dest);
       } else {
-        LogInfo::MapleLogger() << "impossible case " << src->GetBBId() << " " <<  dest->GetBBId();
+        CHECK_FATAL(false, "impossible critial edge %d -> %d", src->UintID(), dest->UintID());
       }
     }
   }
@@ -139,13 +139,13 @@ class PGOInstrument {
       bb->ClearGroup();
     }
   }
-
+ protected:
+  bool dump;
  private:
   static constexpr uint32 edgeSizeInfoShift = 32;
   CFGMST<Edge> mst;
   MeFunction *func;
   MemPool *mp;
-  bool dump;
 };
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_PGOINSTRUMENT_H

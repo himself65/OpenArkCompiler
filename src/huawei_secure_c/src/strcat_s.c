@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -13,19 +13,20 @@
  * See the Mulan PSL v1 for more details.
  */
 
-#define SECUREC_INLINE_STR_LEN     1
-#define SECUREC_INLINE_STR_LEN_OPT 1
-#define SECUREC_INLINE_DO_MEMCPY   1
 #include "securecutil.h"
 
 /*
  * Befor this function, the basic parameter checking has been done
  */
-static errno_t SecDoStrcat(char *strDest, size_t destMax, const char *strSrc)
+SECUREC_INLINE errno_t SecDoCat(char *strDest, size_t destMax, const char *strSrc)
 {
-    size_t destLen = SecStrMinLen(strDest, destMax);
+    size_t destLen;
+    size_t srcLen;
+    size_t maxSrcLen;
+    SECUREC_CALC_STR_LEN(strDest, destMax, &destLen);
     /* Only optimize strSrc, do not apply this function to strDest */
-    size_t srcLen = SecStrMinLenOpt(strSrc, destMax - destLen);
+    maxSrcLen = destMax - destLen;
+    SECUREC_CALC_STR_LEN_OPT(strSrc, maxSrcLen, &srcLen);
 
     if (SECUREC_CAT_STRING_IS_OVERLAP(strDest, destLen, strSrc, srcLen)) {
         strDest[0] = '\0';
@@ -45,7 +46,7 @@ static errno_t SecDoStrcat(char *strDest, size_t destMax, const char *strSrc)
         SECUREC_ERROR_INVALID_RANGE("strcat_s");
         return ERANGE_AND_RESET;
     }
-    SecDoMemcpy(strDest + destLen, strSrc, srcLen + 1); /* single character length  include \0 */
+    SECUREC_MEMCPY_WARP_OPT(strDest + destLen, strSrc, srcLen + 1); /* Single character length  include \0 */
     return EOK;
 }
 
@@ -92,7 +93,7 @@ errno_t strcat_s(char *strDest, size_t destMax, const char *strSrc)
         }
         return EINVAL;
     }
-    return SecDoStrcat(strDest, destMax, strSrc);
+    return SecDoCat(strDest, destMax, strSrc);
 }
 
 #if SECUREC_IN_KERNEL

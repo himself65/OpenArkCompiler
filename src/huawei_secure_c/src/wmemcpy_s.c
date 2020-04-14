@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -12,7 +12,8 @@
  * FIT FOR A PARTICULAR PURPOSE.
  * See the Mulan PSL v1 for more details.
  */
-/* [Standardize-exceptions] Use unsafe function: Portability
+/*
+ * [Standardize-exceptions] Use unsafe function: Portability
  * [reason] Use unsafe function to implement security function to maintain platform compatibility.
  *          And sufficient input validation is performed before calling
  */

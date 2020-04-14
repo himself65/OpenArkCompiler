@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -13,6 +13,7 @@
  * See the Mulan PSL v1 for more details.
  */
 
+#define SECUREC_INLINE_INIT_FILE_STREAM_FILE 1
 #include "secinput.h"
 
 /*
@@ -43,16 +44,16 @@ int vfscanf_s(FILE *stream, const char *format, va_list argList)
     int retVal;                 /* If initialization causes  e838 */
     SecFileStream fStr;
 
-    if ((stream == NULL) || (format == NULL)) {
+    if (stream == NULL || format == NULL) {
         SECUREC_ERROR_INVALID_PARAMTER("vfscanf_s");
         return SECUREC_SCANF_EINVAL;
     }
-    if (stream == stdin) {
+    if (stream == SECUREC_STREAM_STDIN) {
         return vscanf_s(format, argList);
     }
 
     SECUREC_LOCK_FILE(stream);
-    SECUREC_INIT_SEC_FILE_STREAM(fStr, SECUREC_FILE_STREAM_FLAG, stream, SECUREC_UNINITIALIZED_FILE_POS, NULL, 0);
+    SecInitFileStreamFromFile(&fStr, stream);
     retVal = SecInputS(&fStr, format, argList);
     SECUREC_UNLOCK_FILE(stream);
     if (retVal < 0) {

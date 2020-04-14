@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -15,7 +15,6 @@
 
 /* Avoid duplicate header files,not include securecutil.h */
 #include "securecutil.h"
-
 
 #if defined(ANDROID) && (SECUREC_HAVE_WCTOMB || SECUREC_HAVE_MBTOWC)
 #include <wchar.h>
@@ -40,12 +39,13 @@ int mbtowc(wchar_t *pwc, const char *s, size_t n)
 #endif
 #endif
 
-/* high Num << 8 | num of SPC Ver */
+/* The V100R001C01 version num is 0x5 */
 #define SECUREC_C_VERSION     (0x5 << 8)
-#define SECUREC_SPC_VERSION   7
-#define SECUREC_VERSION_STR   "Huawei Secure C V100R001C01SPC007B002"
+#define SECUREC_SPC_VERSION   9
+#define SECUREC_VERSION_STR   "Huawei Secure C V100R001C01SPC009B003"
 
-/* SPC verNumber<->verStr like:
+/*
+ * SPC verNumber<->verStr like:
  * 0X201<->C01
  * 0X202<->SPC001   Redefine numbers after this version
  * 0X502<->SPC002
@@ -55,7 +55,8 @@ int mbtowc(wchar_t *pwc, const char *s, size_t n)
  * 0X50b<->SPC011
  * ...
  */
-/* CP  verNumber<->verStr like:
+/*
+ * CP  verNumber<->verStr like:
  * 0X601<->CP0001
  * 0X602<->CP0002
  * ...

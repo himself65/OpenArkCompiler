@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -13,9 +13,10 @@
  * See the Mulan PSL v1 for more details.
  */
 
+#define SECUREC_INLINE_INIT_FILE_STREAM_STR 1
 #include "secinput.h"
 
-static size_t SecWcslen(const wchar_t *s)
+SECUREC_INLINE size_t SecWcslen(const wchar_t *s)
 {
     const wchar_t *end = s;
     while (*end != L'\0') {
@@ -54,7 +55,7 @@ int vswscanf_s(const wchar_t *buffer, const wchar_t *format, va_list argList)
     SecFileStream fStr;
     int retVal;
 
-    /* validation section */
+    /* Validation section */
     if (buffer == NULL || format == NULL) {
         SECUREC_ERROR_INVALID_PARAMTER("vswscanf_s");
         return SECUREC_SCANF_EINVAL;
@@ -65,8 +66,7 @@ int vswscanf_s(const wchar_t *buffer, const wchar_t *format, va_list argList)
         SECUREC_ERROR_INVALID_PARAMTER("vswscanf_s");
         return SECUREC_SCANF_EINVAL;
     }
-    SECUREC_INIT_SEC_FILE_STREAM(fStr, SECUREC_MEM_STR_FLAG, NULL, 0,\
-                                 (const char *)buffer, (int)count * ((int)sizeof(wchar_t)));
+    SecInitFileStreamFromString(&fStr, (const char *)buffer, (int)count * ((int)sizeof(wchar_t)));
     retVal = SecInputSW(&fStr, format, argList);
     if (retVal < 0) {
         SECUREC_ERROR_INVALID_PARAMTER("vswscanf_s");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -12,14 +12,13 @@
  * FIT FOR A PARTICULAR PURPOSE.
  * See the Mulan PSL v1 for more details.
  */
-#define SECUREC_INLINE_DO_MEMCPY 1
 
 #include "securecutil.h"
 
 /*
  * Befor this function, the basic parameter checking has been done
  */
-static errno_t SecDoWcscat(wchar_t *strDest, size_t destMax, const wchar_t *strSrc)
+SECUREC_INLINE errno_t SecDoCatW(wchar_t *strDest, size_t destMax, const wchar_t *strSrc)
 {
     size_t destLen;
     size_t srcLen;
@@ -48,7 +47,8 @@ static errno_t SecDoWcscat(wchar_t *strDest, size_t destMax, const wchar_t *strS
         SECUREC_ERROR_INVALID_RANGE("wcscat_s");
         return ERANGE_AND_RESET;
     }
-    SecDoMemcpy(strDest + destLen, strSrc, (srcLen + 1) * sizeof(wchar_t)); /* single character length  include \0 */
+    /* Copy single character length  include \0 */
+    SECUREC_MEMCPY_WARP_OPT(strDest + destLen, strSrc, (srcLen + 1) * sizeof(wchar_t));
     return EOK;
 }
 
@@ -103,7 +103,7 @@ errno_t wcscat_s(wchar_t *strDest, size_t destMax, const wchar_t *strSrc)
         return EINVAL;
     }
 
-    return SecDoWcscat(strDest, destMax, strSrc);
+    return SecDoCatW(strDest, destMax, strSrc);
 }
 
 

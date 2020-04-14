@@ -64,8 +64,8 @@ struct FunctionIRProfItem {
   uint32_t counterStart;
   uint32_t counterEnd;
   FunctionIRProfItem(uint64_t hash, uint32_t classIdx, uint32_t methodIdx, uint32_t sigIdx, uint32_t start,
-      uint32_t end) : hash(hash), classIdx(classIdx), methodIdx(methodIdx), sigIdx(sigIdx),
-      counterStart(start), counterEnd(end) {}
+      uint32_t end)
+      : hash(hash), classIdx(classIdx), methodIdx(methodIdx), sigIdx(sigIdx), counterStart(start), counterEnd(end) {}
 };
 
 struct FuncCounterItem {

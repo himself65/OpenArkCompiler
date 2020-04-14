@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -12,7 +12,8 @@
  * FIT FOR A PARTICULAR PURPOSE.
  * See the Mulan PSL v1 for more details.
  */
-/* [Standardize-exceptions] Use unsafe function: Portability
+/*
+ * [Standardize-exceptions] Use unsafe function: Portability
  * [reason] Use unsafe function to implement security function to maintain platform compatibility.
  *          And sufficient input validation is performed before calling
  */
@@ -30,45 +31,115 @@
 #define SECUREC_RADIX_OCTAL                 8
 #define SECUREC_RADIX_DECIMAL               10
 #define SECUREC_RADIX_HEX                   16
-/* Use two displacements to eliminate compilation warnings */
-#define SECUREC_SHR_DWORD(x)                (((x) >> 16) >> 16)
 #define SECUREC_PREFIX_LEN                  2
-/* size include '+' and '\0' */
+/* Size include '+' and '\0' */
 #define SECUREC_FLOAT_BUF_EXT               2
 
-
-#ifdef SECUREC_STACK_SIZE_LESS_THAN_1K
-#define SECUREC_FMT_STR_LEN                 8
-#else
-#define SECUREC_FMT_STR_LEN                 16
+typedef union {
+    /* Integer formatting refers to the end of the buffer, plus 1 to prevent tool alarms */
+    char str[SECUREC_BUFFER_SIZE + 1];
+#if SECUREC_HAVE_WCHART
+    wchar_t wStr[SECUREC_WCHAR_BUFFER_SIZE]; /* Just for %lc */
 #endif
-
-typedef struct {
-    unsigned int flags;
-    int fldWidth;
-    int precision;
-    int bufferIsWide;           /* flag for buffer contains wide chars ;0 is not wide char */
-    int dynWidth;               /* %*   1 width from variable parameter ;0 not */
-    int dynPrecision;           /* %.*  1 precision from variable parameter ;0 not */
-} SecFormatAttr;
+} SecBuffer;
 
 typedef union {
-    char *str;                  /* not a null terminated  string */
+    char *str;                  /* Not a null terminated  string */
 #if SECUREC_HAVE_WCHART
     wchar_t *wStr;
 #endif
 } SecFormatBuf;
 
-typedef union {
-    char str[SECUREC_BUFFER_SIZE + 1];
-#ifdef SECUREC_FOR_WCHAR
-    wchar_t wStr[SECUREC_BUFFER_SIZE + 1];
-#endif
-} SecBuffer;
+typedef struct {
+    const char *digits;                 /* Point to the hexadecimal subset */
+    SecFormatBuf text;                  /* Point to formated string */
+    int textLen;                        /* Length of the text */
+    int textIsWide;                     /* Flag for text is wide chars ; 0 is not wide char */
+    unsigned int radix;                 /* Use for output number , default set to 10 */
+    unsigned int flags;
+    int fldWidth;
+    int precision;
+    int dynWidth;                       /* %*   1 width from variable parameter ;0 not */
+    int dynPrecision;                   /* %.*  1 precision from variable parameter ;0 not */
+    int padding;                        /* Padding len */
+    int prefixLen;                      /* Length of prefix, 0 or 1 or 2 */
+    SecChar prefix[SECUREC_PREFIX_LEN]; /* Prefix is  0 or 0x */
+    SecBuffer buffer;
+} SecFormatAttr;
 
 #if SECUREC_ENABLE_SPRINTF_FLOAT
-/* call system sprintf to format float value */
-static int SecIndirectSprintf(char *strDest, const char *format, ...)
+#ifdef SECUREC_STACK_SIZE_LESS_THAN_1K
+#define SECUREC_FMT_STR_LEN                 8
+#else
+#define SECUREC_FMT_STR_LEN                 16
+#endif
+typedef struct {
+    char buffer[SECUREC_FMT_STR_LEN];
+    char *fmtStr;                     /* Initialization must point to buffer */
+    char *allocatedFmtStr;            /* Initialization must be NULL  to store alloced point */
+    char *floatBuffer;                /* Use heap memory if the SecFormatAttr.buffer is not enough */
+    int bufferSize;                   /* The size of floatBuffer */
+} SecFloatAdapt;
+#endif
+
+
+
+
+static const char *g_itoaUpperDigits = "0123456789ABCDEFX";
+static const char *g_itoaLowerDigits = "0123456789abcdefx";
+static const unsigned char g_stateTable[SECUREC_STATE_TABLE_SIZE] = {
+    /*
+     * Type
+     * 0:    nospecial meanin;
+     * 1:    '%'
+     * 2:    '.'
+     * 3:    '*'
+     * 4:    '0'
+     * 5:    '1' ... '9'
+     * 6:    ' ', '+', '-', '#'
+     * 7:    'h', 'l', 'L', 'w' , 'N', 'z', 'q', 't', 'j'
+     * 8:    'd', 'o', 'u', 'i', 'x', 'X', 'e', 'f', 'g', 'E', 'F', 'G', 's', 'c', '[', 'p'
+     */
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x06, 0x00, 0x00, 0x06, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x03, 0x06, 0x00, 0x06, 0x02, 0x00,
+    0x04, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x08, 0x00, 0x08, 0x08, 0x08, 0x00, 0x07, 0x00, 0x00, 0x07, 0x00, 0x07, 0x00,
+    0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x08, 0x08, 0x08, 0x08, 0x08, 0x07, 0x08, 0x07, 0x00, 0x07, 0x00, 0x00, 0x08,
+    0x08, 0x07, 0x00, 0x08, 0x07, 0x08, 0x00, 0x07, 0x08, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00,
+    /* Fill zero  for normal char 128 byte for 0x80 - 0xff */
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    /*
+     * State
+     * 0: normal
+     * 1: percent
+     * 2: flag
+     * 3: width
+     * 4: dot
+     * 5: precis
+     * 6: size
+     * 7: type
+     * 8: invalid
+     */
+    0x00, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x00, 0x00, 0x01, 0x00, 0x08, 0x08, 0x08, 0x08, 0x08,
+    0x01, 0x00, 0x00, 0x04, 0x04, 0x04, 0x08, 0x08, 0x08, 0x00, 0x00, 0x00, 0x03, 0x03, 0x08, 0x05,
+    0x08, 0x08, 0x00, 0x00, 0x00, 0x02, 0x02, 0x03, 0x05, 0x05, 0x08, 0x00, 0x00, 0x00, 0x03, 0x03,
+    0x03, 0x05, 0x05, 0x08, 0x00, 0x00, 0x00, 0x02, 0x02, 0x02, 0x08, 0x08, 0x08, 0x00, 0x00, 0x00,
+    0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x00, 0x00, 0x00, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x00,
+    0x00
+};
+
+#if SECUREC_ENABLE_SPRINTF_FLOAT
+/* Call system sprintf to format float value */
+SECUREC_INLINE int SecFormatFloat(char *strDest, const char *format, ...)
 {
     int ret;                    /* If initialization causes  e838 */
     va_list argList;
@@ -78,84 +149,181 @@ static int SecIndirectSprintf(char *strDest, const char *format, ...)
     ret = vsprintf(strDest, format, argList);
     SECUREC_END_MASK_MSVC_CRT_WARNING
     va_end(argList);
-    (void)argList; /* to clear e438 last value assigned not used , the compiler will optimize this code */
+    (void)argList; /* To clear e438 last value assigned not used , the compiler will optimize this code */
 
     return ret;
 }
 
 #ifdef SECUREC_COMPATIBLE_LINUX_FORMAT
-/* out put long double value to dest */
-static int SecFormatLongDboule(char *strDest,const SecFormatAttr *formatAttr, const char *fmt, long double ldValue)
+/* Out put long double value to dest */
+SECUREC_INLINE void SecFormatLongDboule(SecFormatAttr *attr, const SecFloatAdapt *floatAdapt, long double ldValue)
 {
-    int fldWidth = ((formatAttr->flags & SECUREC_FLAG_LEFT) ? (-(formatAttr->fldWidth)) : formatAttr->fldWidth);
-    if (formatAttr->dynWidth && formatAttr->dynPrecision) {
-        return SecIndirectSprintf(strDest, fmt, fldWidth, formatAttr->precision, ldValue);
-    } else if (formatAttr->dynWidth) {
-        return SecIndirectSprintf(strDest, fmt, fldWidth, ldValue);
-    } else if (formatAttr->dynPrecision) {
-        return SecIndirectSprintf(strDest, fmt, formatAttr->precision, ldValue);
+    int fldWidth = ((attr->flags & SECUREC_FLAG_LEFT) ? (-attr->fldWidth) : attr->fldWidth);
+    if (attr->dynWidth && attr->dynPrecision) {
+        attr->textLen = SecFormatFloat(attr->text.str, floatAdapt->fmtStr, fldWidth, attr->precision, ldValue);
+    } else if (attr->dynWidth) {
+        attr->textLen = SecFormatFloat(attr->text.str, floatAdapt->fmtStr, fldWidth, ldValue);
+    } else if (attr->dynPrecision) {
+        attr->textLen = SecFormatFloat(attr->text.str, floatAdapt->fmtStr, attr->precision, ldValue);
+    } else {
+        attr->textLen = SecFormatFloat(attr->text.str, floatAdapt->fmtStr, ldValue);
     }
-    return SecIndirectSprintf(strDest, fmt, ldValue);
+    if (attr->textLen < 0 || attr->textLen >= floatAdapt->bufferSize) {
+        attr->textLen = 0;
+    }
 }
 #endif
 
-/* out put double value to dest */
-static int SecFormatDboule(char *strDest, const SecFormatAttr *formatAttr, const char *fmt, double dValue)
+/* Out put double value to dest */
+SECUREC_INLINE void SecFormatDboule(SecFormatAttr *attr, const SecFloatAdapt *floatAdapt, double dValue)
 {
-    int fldWidth = ((formatAttr->flags & SECUREC_FLAG_LEFT) ? (-(formatAttr->fldWidth)) : formatAttr->fldWidth);
-    if (formatAttr->dynWidth && formatAttr->dynPrecision) {
-        return SecIndirectSprintf(strDest, fmt, fldWidth, formatAttr->precision, dValue);
-    } else if (formatAttr->dynWidth) {
-        return SecIndirectSprintf(strDest, fmt, fldWidth, dValue);
-    } else if (formatAttr->dynPrecision) {
-        return SecIndirectSprintf(strDest, fmt, formatAttr->precision, dValue);
+    int fldWidth = ((attr->flags & SECUREC_FLAG_LEFT) ? (-attr->fldWidth) : attr->fldWidth);
+    if (attr->dynWidth && attr->dynPrecision) {
+        attr->textLen = SecFormatFloat(attr->text.str, floatAdapt->fmtStr, fldWidth, attr->precision, dValue);
+    } else if (attr->dynWidth) {
+        attr->textLen = SecFormatFloat(attr->text.str, floatAdapt->fmtStr, fldWidth, dValue);
+    } else if (attr->dynPrecision) {
+        attr->textLen = SecFormatFloat(attr->text.str, floatAdapt->fmtStr, attr->precision, dValue);
+    } else {
+        attr->textLen = SecFormatFloat(attr->text.str, floatAdapt->fmtStr, dValue);
     }
-    return SecIndirectSprintf(strDest, fmt, dValue);
+    if (attr->textLen < 0 || attr->textLen >= floatAdapt->bufferSize) {
+        attr->textLen = 0;
+    }
 }
 #endif
 
 #ifdef SECUREC_COMPATIBLE_LINUX_FORMAT
-/* to clear e506 warning */
-static int SecIsSameSize(size_t sizeA, size_t sizeB)
+/* To clear e506 warning */
+SECUREC_INLINE int SecIsSameSize(size_t sizeA, size_t sizeB)
 {
     return sizeA == sizeB;
 }
 #endif
 
-#define SECUREC_SPECIAL_DWORD(val32, numBase) do { \
-    --formatBuf.str; \
-    *(formatBuf.str) = digits[(val32) % (numBase)]; \
-} while (((val32) /= (numBase)) != 0)
+
+#ifndef SECUREC_ON_64BITS
+/*
+ * Compiler Optimized Division 8.
+ * The text.str point to buffer end, must be Large enough
+ */
+SECUREC_INLINE void SecNumber32ToOctalString(SecUnsignedInt32 number, SecFormatAttr *attr)
+{
+    SecUnsignedInt32 val32 = number;
+    do {
+        --attr->text.str;
+        /* Just use lowerDigits for 0 - 9 */
+        *(attr->text.str) = g_itoaLowerDigits[val32 % SECUREC_RADIX_OCTAL];
+    } while ((val32 /= SECUREC_RADIX_OCTAL) != 0);
+}
+
+#ifdef _AIX
+/*
+ * Compiler Optimized Division 10.
+ * The text.str point to buffer end, must be Large enough
+ */
+SECUREC_INLINE void SecNumber32ToDecString(SecUnsignedInt32 number, SecFormatAttr *attr)
+{
+    SecUnsignedInt32 val32 = number;
+    do {
+        --attr->text.str;
+        /* Just use lowerDigits for 0 - 9 */
+        *(attr->text.str) = g_itoaLowerDigits[val32 % SECUREC_RADIX_DECIMAL];
+    } while ((val32 /= SECUREC_RADIX_DECIMAL) != 0);
+}
+#endif
+/*
+ * Compiler Optimized Division 16.
+ * The text.str point to buffer end, must be Large enough
+ */
+SECUREC_INLINE void SecNumber32ToHexString(SecUnsignedInt32 number, SecFormatAttr *attr)
+{
+    SecUnsignedInt32 val32 = number;
+    do {
+        --attr->text.str;
+        *(attr->text.str) = attr->digits[val32 % SECUREC_RADIX_HEX];
+    } while ((val32 /= SECUREC_RADIX_HEX) != 0);
+}
+
+#ifndef _AIX
+/* Use fast div 10 */
+SECUREC_INLINE void SecNumber32ToDecStringFast(SecUnsignedInt32 number, SecFormatAttr *attr)
+{
+    SecUnsignedInt32 val32 = number;
+    do {
+        SecUnsignedInt32 quotient;
+        SecUnsignedInt32 remain;
+        --attr->text.str;
+        *(attr->text.str) = g_itoaLowerDigits[val32 % SECUREC_RADIX_DECIMAL];
+        quotient = (val32 >> 1) + (val32 >> 2); /* Fast div  magic 2 */
+        quotient = quotient + (quotient >> 4); /* Fast div  magic 4 */
+        quotient = quotient + (quotient >> 8); /* Fast div  magic 8 */
+        quotient = quotient + (quotient >> 16); /* Fast div  magic 16 */
+        quotient = quotient >> 3; /* Fast div  magic 3 */
+        remain = val32 - SECUREC_MUL_TEN(quotient);
+        val32 = (remain > 9) ? (quotient + 1) : quotient; /* Fast div  magic 9 */
+    } while (val32 != 0);
+}
+#endif
+
+SECUREC_INLINE void SecNumber32ToString(SecUnsignedInt32 number, SecFormatAttr *attr)
+{
+    switch (attr->radix) {
+        case SECUREC_RADIX_HEX:
+            SecNumber32ToHexString(number, attr);
+            break;
+        case SECUREC_RADIX_OCTAL:
+            SecNumber32ToOctalString(number, attr);
+            break;
+        case SECUREC_RADIX_DECIMAL:
+#ifdef _AIX
+            /* The compiler will optimize div 10 */
+            SecNumber32ToDecString(number, attr);
+#else
+            SecNumber32ToDecStringFast(number, attr);
+#endif
+            break;
+        default:
+            break;
+    }
+}
+#endif
 
 #if defined(SECUREC_USE_SPECIAL_DIV64) || (defined(SECUREC_VXWORKS_VERSION_5_4) && !defined(SECUREC_ON_64BITS))
+/*
+ * This function just to clear warning, on sume vxworks compiler shift 32 bit make warnigs
+ */
+SECUREC_INLINE SecUnsignedInt64 SecU64Shr32(SecUnsignedInt64 number)
+{
+    return (((number) >> 16) >> 16); /* Two shifts of 16 bits to realize shifts of 32 bits */
+}
 /*
  * Fast divide by 10 algorithm.
  * Calculation divisor multiply  0xcccccccccccccccdULL, resultHi64 >> 3 as quotient
  */
-static void SecU64Div10(SecUnsignedInt64 divisor, SecUnsignedInt64 *quotient, SecUnsignedInt32 *remainder)
+SECUREC_INLINE void SecU64Div10(SecUnsignedInt64 divisor, SecUnsignedInt64 *quotient, SecUnsignedInt32 *remainder)
 {
-    SecUnsignedInt64 mask = 0xffffffffULL; /* use 0xffffffffULL as 32 bit mask */
-    SecUnsignedInt64 magicHi = 0xccccccccULL; /* fast divide 10 magic numbers high 32bit 0xccccccccULL */
-    SecUnsignedInt64 magicLow = 0xcccccccdULL; /* fast divide 10 magic numbers low 32bit  0xcccccccdULL */
-    SecUnsignedInt64 divisorHi = (SecUnsignedInt64)(SECUREC_SHR_DWORD(divisor)); /* hig 32 bit use  */
-    SecUnsignedInt64 divisorLow = (SecUnsignedInt64)(divisor & mask); /* low 32 bit mask */
+    SecUnsignedInt64 mask = 0xffffffffULL; /* Use 0xffffffffULL as 32 bit mask */
+    SecUnsignedInt64 magicHi = 0xccccccccULL; /* Fast divide 10 magic numbers high 32bit 0xccccccccULL */
+    SecUnsignedInt64 magicLow = 0xcccccccdULL; /* Fast divide 10 magic numbers low 32bit  0xcccccccdULL */
+    SecUnsignedInt64 divisorHi = (SecUnsignedInt64)(SecU64Shr32(divisor)); /* High 32 bit use  */
+    SecUnsignedInt64 divisorLow = (SecUnsignedInt64)(divisor & mask); /* Low 32 bit mask */
     SecUnsignedInt64 factorHi = divisorHi * magicHi;
     SecUnsignedInt64 factorLow1 = divisorHi * magicLow;
     SecUnsignedInt64 factorLow2 = divisorLow * magicHi;
     SecUnsignedInt64 factorLow3 = divisorLow * magicLow;
-    SecUnsignedInt64 carry = (factorLow1 & mask) + (factorLow2 & mask) + SECUREC_SHR_DWORD(factorLow3);
-    SecUnsignedInt64 resultHi64 = factorHi + SECUREC_SHR_DWORD(factorLow1) + \
-                                   SECUREC_SHR_DWORD(factorLow2) + SECUREC_SHR_DWORD(carry);
+    SecUnsignedInt64 carry = (factorLow1 & mask) + (factorLow2 & mask) + SecU64Shr32(factorLow3);
+    SecUnsignedInt64 resultHi64 = factorHi + SecU64Shr32(factorLow1) + SecU64Shr32(factorLow2) + SecU64Shr32(carry);
 
-    *quotient = resultHi64 >> 3; /* fast divide 10 magic numbers 3 */
-    *remainder = (SecUnsignedInt32)(divisor - ((*quotient) * 10)); /* quotient mul 10 */
+    *quotient = resultHi64 >> 3; /* Fast divide 10 magic numbers 3 */
+    *remainder = (SecUnsignedInt32)(divisor - ((*quotient) * 10)); /* Quotient mul 10 */
     return;
 }
 #if defined(SECUREC_VXWORKS_VERSION_5_4) && !defined(SECUREC_ON_64BITS)
 /*
  * Divide function for VXWORKS
  */
-static int SecU64Div32(SecUnsignedInt64 divisor, SecUnsignedInt32 radix,
+SECUREC_INLINE int SecU64Div32(SecUnsignedInt64 divisor, SecUnsignedInt32 radix,
     SecUnsignedInt64 *quotient, SecUnsignedInt32 *remainder)
 {
     switch (radix) {
@@ -163,102 +331,383 @@ static int SecU64Div32(SecUnsignedInt64 divisor, SecUnsignedInt32 radix,
             SecU64Div10(divisor, quotient, remainder);
             break;
         case SECUREC_RADIX_HEX:
-            *quotient = divisor >> SECUREC_OFFSET_DIV_HEX;
-            *remainder = divisor & 0xfULL; /* mask one hex number by 0xfULL */
+            *quotient = (divisor >> SECUREC_OFFSET_DIV_HEX);
+            *remainder = (SecUnsignedInt32)(divisor & 0xfULL); /* Mask one hex number by 0xfULL */
             break;
         case SECUREC_RADIX_OCTAL:
-            *quotient = divisor >> SECUREC_OFFSET_DIV_OCTAL;
-            *remainder = divisor & 0x7ULL; /* mask one hex number by 0x7ULL */
+            *quotient = (divisor >> SECUREC_OFFSET_DIV_OCTAL);
+            *remainder = (SecUnsignedInt32)(divisor & 0x7ULL); /* Mask one hex number by 0x7ULL */
             break;
         default:
-            return -1;
+            return -1; /* This does not happen in the current file */
     }
     return 0;
+}
+SECUREC_INLINE void SecNumber64ToStringSpecial(SecUnsignedInt64 number, SecFormatAttr *attr)
+{
+    SecUnsignedInt64 val64 = number;
+    do {
+        SecUnsignedInt32 digit = 0; /* Ascii value of digit */
+        SecUnsignedInt64 quotient = 0;
+        if (SecU64Div32(val64, (SecUnsignedInt32)attr->radix, &quotient, &digit) != 0) {
+            /* Just break, when enter this function, no error is returned */
+            break;
+        }
+        --attr->text.str;
+        *(attr->text.str) = attr->digits[digit];
+        val64 = quotient;
+    } while (val64 != 0);
 }
 #endif
 #endif
 
+#if defined(SECUREC_ON_64BITS) || !defined(SECUREC_VXWORKS_VERSION_5_4)
 #if defined(SECUREC_USE_SPECIAL_DIV64)
 /* The compiler does not provide 64 bit division problems */
-#define SECUREC_SPECIAL_QWORD_BASE10(val64) do { \
-    SecUnsignedInt64 quotient = 0; \
-    SecUnsignedInt32 digit = 0; \
-    SecU64Div10((val64), &(quotient), &(digit)); \
-    --formatBuf.str; \
-    *(formatBuf.str) = digits[digit]; \
-    (val64) = quotient; \
-} while ((val64) != 0)
+SECUREC_INLINE void SecNumber64ToDecString(SecUnsignedInt64 number, SecFormatAttr *attr)
+{
+    SecUnsignedInt64 val64 = number;
+    do {
+        SecUnsignedInt64 quotient = 0;
+        SecUnsignedInt32 digit = 0;
+        SecU64Div10(val64, &quotient, &digit);
+        --attr->text.str;
+        /* Just use lowerDigits for 0 - 9 */
+        *(attr->text.str) = g_itoaLowerDigits[digit];
+        val64 = quotient;
+    } while (val64 != 0);
+}
 #else
-#define SECUREC_SPECIAL_QWORD_BASE10(val64) do { \
-    --formatBuf.str; \
-    *(formatBuf.str) = digits[(val64) % SECUREC_RADIX_DECIMAL]; \
-} while (((val64) /= SECUREC_RADIX_DECIMAL) != 0)
+/*
+ * Compiler Optimized Division 10.
+ * The text.str point to buffer end, must be Large enough
+ */
+SECUREC_INLINE void SecNumber64ToDecString(SecUnsignedInt64 number, SecFormatAttr *attr)
+{
+    SecUnsignedInt64 val64 = number;
+    do {
+        --attr->text.str;
+        /* Just use lowerDigits for 0 - 9 */
+        *(attr->text.str) = g_itoaLowerDigits[val64 % SECUREC_RADIX_DECIMAL];
+    } while ((val64 /= SECUREC_RADIX_DECIMAL) != 0);
+}
 #endif
-#define SECUREC_SPECIAL_QWORD(val64, numBase) do { \
-    --formatBuf.str; \
-    *(formatBuf.str) = digits[(val64) % (numBase)]; \
-} while (((val64) /= (numBase)) != 0)
+
+/*
+ * Compiler Optimized Division 8.
+ * The text.str point to buffer end, must be Large enough
+ */
+SECUREC_INLINE void SecNumber64ToOctalString(SecUnsignedInt64 number, SecFormatAttr *attr)
+{
+    SecUnsignedInt64 val64 = number;
+    do {
+        --attr->text.str;
+        /* Just use lowerDigits for 0 - 9 */
+        *(attr->text.str) = g_itoaLowerDigits[val64 % SECUREC_RADIX_OCTAL];
+    } while ((val64 /= SECUREC_RADIX_OCTAL) != 0);
+}
+/*
+ * Compiler Optimized Division 16.
+ * The text.str point to buffer end, must be Large enough
+ */
+SECUREC_INLINE void SecNumber64ToHexString(SecUnsignedInt64 number, SecFormatAttr *attr)
+{
+    SecUnsignedInt64 val64 = number;
+    do {
+        --attr->text.str;
+        *(attr->text.str) = attr->digits[val64 % SECUREC_RADIX_HEX];
+    } while ((val64 /= SECUREC_RADIX_HEX) != 0);
+}
 
 
-#define SECUREC_SAFE_WRITE_STR_OPT(src, txtLen, outStream, outChars) do { \
-    int ii_; \
-    for (ii_ = 0; ii_ < (txtLen); ++ii_) { \
-        *((SecChar *)(void *)((outStream)->cur)) = *(SecChar *)(src); \
-        (outStream)->cur += sizeof(SecChar); \
-        (src) = (src) + 1; \
-    } \
-    (outStream)->count -= (txtLen) * (int)(sizeof(SecChar)); \
-    *(outChars) = *(outChars) + (txtLen); \
-} SECUREC_WHILE_ZERO
+SECUREC_INLINE void SecNumber64ToString(SecUnsignedInt64 number, SecFormatAttr *attr)
+{
+    switch (attr->radix) {
+        /* The compiler will optimize div 10 */
+        case SECUREC_RADIX_DECIMAL:
+            SecNumber64ToDecString(number, attr);
+            break;
+        case SECUREC_RADIX_OCTAL:
+            SecNumber64ToOctalString(number, attr);
+            break;
+        case SECUREC_RADIX_HEX:
+            SecNumber64ToHexString(number, attr);
+            break;
+        default:
+            break;
+    }
+}
+#endif
 
-#define SECUREC_SAFE_WRITE_STR(src, txtLen, outStream, outChars) do { \
-    if ((txtLen) < 12) { /* performance optimization for mobile number length 12 */ \
-        SECUREC_SAFE_WRITE_STR_OPT((src), (txtLen), (outStream), (outChars)); \
-    } else { \
-        SecDoMemcpy((outStream)->cur, (src), ((size_t)(unsigned int)(txtLen) * (sizeof(SecChar)))); \
-        (outStream)->cur += (size_t)((size_t)(unsigned int)(txtLen) * (sizeof(SecChar))); \
-        (outStream)->count -= (txtLen) * (int)(sizeof(SecChar)); \
-        *(outChars) = *(outChars) + (txtLen); \
-    } \
-} SECUREC_WHILE_ZERO
+/*
+ * Converting integers to string
+ */
+SECUREC_INLINE void SecNumberToString(SecUnsignedInt64 number, SecFormatAttr *attr)
+{
+#ifdef SECUREC_ON_64BITS
+        SecNumber64ToString(number, attr);
+#else /* For 32 bits system */
+        if (number <= 0xFFFFFFFFUL) {
+            /* In most case, the value to be converted is small value */
+            SecUnsignedInt32 n32Tmp = (SecUnsignedInt32)number;
+            SecNumber32ToString(n32Tmp, attr);
+        } else {
+            /* The value to be converted is greater than 4G */
+#if defined(SECUREC_VXWORKS_VERSION_5_4)
+            SecNumber64ToStringSpecial(number, attr);
+#else
+            SecNumber64ToString(number, attr);
+#endif
+        }
+#endif
 
-#define SECUREC_SAFE_WRITE_CHAR(c, outStream, outChars) do { \
-    *((SecChar *)(void *)((outStream)->cur)) = (SecChar)(c); \
-    (outStream)->cur += sizeof(SecChar); \
-    (outStream)->count -= (int)(sizeof(SecChar)); \
-    *(outChars) = *(outChars) + 1; \
-} SECUREC_WHILE_ZERO
+}
 
-#define SECUREC_SAFE_PADDING(padChar, padLen, outStream, outChars) do { \
-    int ii_; \
-    for (ii_ = 0; ii_ < (padLen); ++ii_) { \
-        *((SecChar *)(void *)((outStream)->cur)) = (SecChar)(padChar); \
-        (outStream)->cur += sizeof(SecChar); \
-    } \
-    (outStream)->count -= (padLen) * (int)(sizeof(SecChar)); \
-    *(outChars) = *(outChars) + (padLen); \
-} SECUREC_WHILE_ZERO
+SECUREC_INLINE int SecIsNumberNeedTo32Bit(const SecFormatAttr *attr)
+{
+    return (((attr->flags & SECUREC_FLAG_I64) == 0) &&
+#ifdef SECUREC_COMPATIBLE_LINUX_FORMAT
+            ((attr->flags & SECUREC_FLAG_INTMAX) == 0) &&
+#endif
+#ifdef SECUREC_ON_64BITS
+            ((attr->flags & SECUREC_FLAG_PTRDIFF) == 0) &&
+            ((attr->flags & SECUREC_FLAG_SIZE) == 0) &&
+#if !defined(SECUREC_COMPATIBLE_WIN_FORMAT)  /* on window 64 system sizeof long is 32bit */
+            ((attr->flags & SECUREC_FLAG_LONG) == 0) &&
+#endif
+#endif
+            ((attr->flags & SECUREC_FLAG_LONGLONG) == 0));
+}
 
-/* The count variable can be reduced to 0, and the external function complements the \0 terminator. */
-#define SECUREC_IS_REST_BUF_ENOUGH(stream, needLen) ((int)((stream)->count - \
-    (int)(needLen) * (int)(sizeof(SecChar))) >= 0)
+SECUREC_INLINE void SecNumberToBuffer(SecFormatAttr *attr, SecInt64 num64)
+{
+    SecUnsignedInt64 number;
+    /* Check for negative; copy into number */
+    if ((attr->flags & SECUREC_FLAG_SIGNED) && num64 < 0) {
+        number = (SecUnsignedInt64)(-num64);
+        attr->flags |= SECUREC_FLAG_NEGATIVE;
+    } else {
+        number = (SecUnsignedInt64)num64;
+    }
+    if (SecIsNumberNeedTo32Bit(attr)) {
+        number = (number & (SecUnsignedInt64)0xffffffffUL);  /* Use 0xffffffff as 32 bit mask */
+    }
+
+    /* The text.str must be point to buffer.str, this pointer is used outside the function */
+    attr->text.str = &attr->buffer.str[SECUREC_BUFFER_SIZE];
+
+    if (number == 0) {
+        /* Turn off hex prefix default, and textLen is zero */
+        attr->prefixLen = 0;
+        attr->textLen = 0;
+        return;
+    }
+
+    /* Convert integer to string. It must be invoked when number > 0, otherwise the following logic is incorrect */
+    SecNumberToString(number, attr);
+    /* Compute length of number,  text.str must be in buffer.str */
+    attr->textLen = (int)(size_t)((char *)&attr->buffer.str[SECUREC_BUFFER_SIZE] - attr->text.str);
+}
+
+/* Use loop copy char or wchar_t string */
+SECUREC_INLINE void SecWriteStringToStreamOpt(SecPrintfStream *stream, const SecChar *str, int len)
+{
+    int i;
+    const SecChar *tmp = str;
+    for (i = 0; i < len; ++i) {
+        *((SecChar *)(void *)(stream->cur)) = *(const SecChar *)(tmp);
+        stream->cur += sizeof(SecChar);
+        tmp = tmp + 1;
+    }
+    stream->count -= len * (int)(sizeof(SecChar));
+}
+
+SECUREC_INLINE void SecWriteStringToStream(SecPrintfStream *stream, const SecChar *str, int len)
+{
+    if (len < 12) { /* Performance optimization for mobile number length 12 */
+        SecWriteStringToStreamOpt(stream, str, len);
+    } else {
+        size_t count = (size_t)(unsigned int)len * (sizeof(SecChar));
+        SECUREC_MEMCPY_WARP_OPT(stream->cur, str, count);
+        stream->cur += (size_t)((size_t)(unsigned int)len * (sizeof(SecChar)));
+        stream->count -= len * (int)(sizeof(SecChar));
+    }
+}
+
+/*
+ * Return if buffer length is enough
+ * The count variable can be reduced to 0, and the external function complements the \0 terminator.
+ */
+SECUREC_INLINE int SecIsStreamBufEnough(const SecPrintfStream *stream, int needLen)
+{
+    return ((int)(stream->count - (needLen * (int)(sizeof(SecChar)))) >= 0);
+}
+
+/* Write left padding */
+SECUREC_INLINE void SecWriteLeftPadding(SecPrintfStream *stream, const SecFormatAttr *attr, int *charsOut)
+{
+    if (!(attr->flags & (SECUREC_FLAG_LEFT | SECUREC_FLAG_LEADZERO)) && attr->padding > 0) {
+        /* Pad on left with blanks */
+        SECUREC_WRITE_MULTI_CHAR(SECUREC_CHAR(' '), attr->padding, stream, charsOut);
+    }
+}
+
+/* Write prefix */
+SECUREC_INLINE void SecWritePrefix(SecPrintfStream *stream, const SecFormatAttr *attr, int *charsOut)
+{
+    if (attr->prefixLen > 0) {
+        if (SecIsStreamBufEnough(stream, attr->prefixLen)) {
+            /* Max prefix len is 2, use loop copy */
+            SecWriteStringToStreamOpt(stream, attr->prefix, attr->prefixLen);
+            *charsOut += attr->prefixLen;
+        } else {
+            SECUREC_WRITE_STRING(attr->prefix, attr->prefixLen, stream, charsOut);
+        }
+    }
+}
+
+/* Write leading zeros */
+SECUREC_INLINE void SecWriteLeadingZero(SecPrintfStream *stream, const SecFormatAttr *attr, int *charsOut)
+{
+    if ((attr->flags & SECUREC_FLAG_LEADZERO) && !(attr->flags & SECUREC_FLAG_LEFT) &&
+        attr->padding > 0) {
+        SECUREC_WRITE_MULTI_CHAR(SECUREC_CHAR('0'), attr->padding, stream, charsOut);
+    }
+}
+
+/* Write right padding */
+SECUREC_INLINE void SecWriteRightPadding(SecPrintfStream *stream, const SecFormatAttr *attr, int *charsOut)
+{
+    if (*charsOut >= 0 && (attr->flags & SECUREC_FLAG_LEFT) && attr->padding > 0) {
+        /* Pad on right with blanks */
+        SECUREC_WRITE_MULTI_CHAR(SECUREC_CHAR(' '), attr->padding, stream, charsOut);
+    }
+}
+
+/* Write text string */
+SECUREC_INLINE void SecWriteStringChk(SecPrintfStream *stream, const SecChar *str, int len, int *charsOut)
+{
+    if (SecIsStreamBufEnough(stream, len)) {
+        SecWriteStringToStream(stream, str, len);
+        *charsOut += len;
+    } else {
+        SECUREC_WRITE_STRING(str, len, stream, charsOut);
+    }
+}
+
+#ifdef SECUREC_FOR_WCHAR
+#if SECUREC_HAVE_MBTOWC
+SECUREC_INLINE void SecWriteTextAfterMbtowc(SecPrintfStream *stream, const SecFormatAttr *attr, int *charsOut)
+{
+    char *p = attr->text.str;
+    int count = attr->textLen;
+    while (count > 0) {
+        wchar_t wChar = L'\0';
+        int retVal = mbtowc(&wChar, p, (size_t)MB_CUR_MAX);
+        if (retVal <= 0) {
+            *charsOut = -1;
+            break;
+        }
+        SecWriteCharW(wChar, stream, charsOut);
+        if (*charsOut == -1) {
+            break;
+        }
+        p += retVal;
+        count -= retVal;
+    }
+}
+#endif
+#else  /* Not SECUREC_FOR_WCHAR */
+#if SECUREC_HAVE_WCTOMB
+SECUREC_INLINE void SecWriteTextAfterWctomb(SecPrintfStream *stream, const SecFormatAttr *attr, int *charsOut)
+{
+    wchar_t *p = attr->text.wStr;
+    int count = attr->textLen;
+    while (count > 0) {
+        char tmpBuf[SECUREC_MB_LEN + 1];
+        SECUREC_MASK_MSVC_CRT_WARNING
+        int retVal = wctomb(tmpBuf, *p);
+        SECUREC_END_MASK_MSVC_CRT_WARNING
+        if (retVal <= 0) {
+            *charsOut = -1;
+            break;
+        }
+        SecWriteString(tmpBuf, retVal, stream, charsOut);
+        if (*charsOut == -1) {
+            break;
+        }
+        --count;
+        ++p;
+    }
+}
+#endif
+#endif
+
+#if SECUREC_ENABLE_SPRINTF_FLOAT
+/*
+ * Write text of float
+ * Using independent functions to optimize the expansion of inline functions by the compiler
+ */
+SECUREC_INLINE void SecWriteFloatText(SecPrintfStream *stream, const SecFormatAttr *attr, int *charsOut)
+{
+#ifdef SECUREC_FOR_WCHAR
+#if SECUREC_HAVE_MBTOWC
+    SecWriteTextAfterMbtowc(stream, attr, charsOut);
+#else
+    *charsOut = -1;
+    (void)stream; /* To clear e438 last value assigned not used , the compiler will optimize this code */
+    (void)attr;   /* To clear e438 last value assigned not used , the compiler will optimize this code */
+#endif
+#else /* Not SECUREC_FOR_WCHAR */
+    SecWriteString(attr->text.str, attr->textLen, stream, charsOut);
+#endif
+}
+#endif
+
+/* Write text of integer or string ... */
+SECUREC_INLINE void SecWriteText(SecPrintfStream *stream, const SecFormatAttr *attr, int *charsOut)
+{
+#ifdef SECUREC_FOR_WCHAR
+    if (attr->textIsWide != 0) {
+        SecWriteStringChk(stream, attr->text.wStr, attr->textLen, charsOut);
+    } else {
+#if SECUREC_HAVE_MBTOWC
+        SecWriteTextAfterMbtowc(stream, attr, charsOut);
+#else
+        *charsOut = -1;
+#endif
+    }
+
+#else /* Not SECUREC_FOR_WCHAR */
+    if (attr->textIsWide != 0) {
+#if SECUREC_HAVE_WCTOMB
+        SecWriteTextAfterWctomb(stream, attr, charsOut);
+#else
+        *charsOut = -1;
+#endif
+    } else {
+        SecWriteStringChk(stream, attr->text.str, attr->textLen, charsOut);
+    }
+#endif
+}
 
 #define SECUREC_FMT_STATE_OFFSET  256
+SECUREC_INLINE SecFmtState SecDecodeState(SecChar ch, SecFmtState lastState)
+{
 #ifdef SECUREC_FOR_WCHAR
-#define SECUREC_FMT_TYPE(c, fmtTable)  ((((unsigned int)(int)(c)) <= (unsigned int)(int)SECUREC_CHAR('~')) ? \
-    ((fmtTable)[(unsigned char)(c)]) : 0)
-#define SECUREC_DECODE_STATE(c, fmtTable, lastState) (SecFmtState)((((fmtTable)[(SECUREC_FMT_TYPE(c, (fmtTable))) * \
-    ((unsigned char)STAT_INVALID + 1) + \
-    (unsigned char)(lastState) + \
-    SECUREC_FMT_STATE_OFFSET])))
+    /* Convert to unsigned char to clear gcc 4.3.4 warning */
+    unsigned char fmtType = (unsigned char)((((unsigned int)(int)(ch)) <= (unsigned int)(int)(L'~')) ? \
+        (g_stateTable[(unsigned char)(ch)]) : 0);
+    return (SecFmtState)(g_stateTable[fmtType * ((unsigned char)STAT_INVALID + 1) +
+        (unsigned char)(lastState) + SECUREC_FMT_STATE_OFFSET]);
 #else
-#define SECUREC_DECODE_STATE(c, fmtTable, lastState) (SecFmtState)(((fmtTable)[((fmtTable)[(unsigned char)(c)]) * \
-    ((unsigned char)STAT_INVALID + 1) + \
-    (unsigned char)(lastState) + \
-    SECUREC_FMT_STATE_OFFSET]))
+    unsigned char fmtType = g_stateTable[(unsigned char)(ch)];
+    return (SecFmtState)(g_stateTable[fmtType * ((unsigned char)STAT_INVALID + 1) +
+        (unsigned char)(lastState) + SECUREC_FMT_STATE_OFFSET]);
 #endif
+}
 
-static void SecDecodeFlags(SecChar ch, SecFormatAttr *attr)
+SECUREC_INLINE void SecDecodeFlags(SecChar ch, SecFormatAttr *attr)
 {
     switch (ch) {
         case SECUREC_CHAR(' '):
@@ -271,10 +720,10 @@ static void SecDecodeFlags(SecChar ch, SecFormatAttr *attr)
             attr->flags |= SECUREC_FLAG_LEFT;
             break;
         case SECUREC_CHAR('0'):
-            attr->flags |= SECUREC_FLAG_LEADZERO;   /* add zero th the front */
+            attr->flags |= SECUREC_FLAG_LEADZERO;   /* Add zero th the front */
             break;
         case SECUREC_CHAR('#'):
-            attr->flags |= SECUREC_FLAG_ALTERNATE;  /* output %x with 0x */
+            attr->flags |= SECUREC_FLAG_ALTERNATE;  /* Output %x with 0x */
             break;
         default:
             break;
@@ -286,21 +735,21 @@ static void SecDecodeFlags(SecChar ch, SecFormatAttr *attr)
 /*
  * Decoded size identifier in format string to Reduce the number of lines of function code
  */
-static int SecDecodeSizeI(SecFormatAttr *attr, const SecChar **format)
+SECUREC_INLINE int SecDecodeSizeI(SecFormatAttr *attr, const SecChar **format)
 {
 #ifdef SECUREC_ON_64BITS
     attr->flags |= SECUREC_FLAG_I64;    /* %I  to  INT64 */
 #endif
     if ((**format == SECUREC_CHAR('6')) && (*((*format) + 1) == SECUREC_CHAR('4'))) {
-        (*format) += 2; /* add 2 to skip I64 */
+        (*format) += 2; /* Add 2 to skip I64 */
         attr->flags |= SECUREC_FLAG_I64;    /* %I64  to  INT64 */
     } else if ((**format == SECUREC_CHAR('3')) && (*((*format) + 1) == SECUREC_CHAR('2'))) {
-        (*format) += 2; /* add 2 to skip I32 */
+        (*format) += 2; /* Add 2 to skip I32 */
         attr->flags &= ~SECUREC_FLAG_I64;   /* %I64  to  INT32 */
     } else if ((**format == SECUREC_CHAR('d')) || (**format == SECUREC_CHAR('i')) ||
         (**format == SECUREC_CHAR('o')) || (**format == SECUREC_CHAR('u')) ||
         (**format == SECUREC_CHAR('x')) || (**format == SECUREC_CHAR('X'))) {
-        /* do nothing */
+        /* Do nothing */
     } else {
         /* Compatibility  code for "%I" just print I */
         return -1;
@@ -308,39 +757,35 @@ static int SecDecodeSizeI(SecFormatAttr *attr, const SecChar **format)
     return 0;
 }
 /*
- * Decoded size identifier in format string
+ * Decoded size identifier in format string, and skip format to next charater
  */
-static int SecDecodeSize(SecChar ch, SecFormatAttr *attr, const SecChar **format)
+SECUREC_INLINE int SecDecodeSize(SecChar ch, SecFormatAttr *attr, const SecChar **format)
 {
     switch (ch) {
+        case SECUREC_CHAR('l'):
+            if (**format == SECUREC_CHAR('l')) {
+                *format = *format + 1;
+                attr->flags |= SECUREC_FLAG_LONGLONG; /* For long long */
+            } else {
+                attr->flags |= SECUREC_FLAG_LONG;     /* For long int or wchar_t */
+            }
+            break;
 #ifdef SECUREC_COMPATIBLE_LINUX_FORMAT
+        case SECUREC_CHAR('z'): /* fall-through */ /* FALLTHRU */
+        case SECUREC_CHAR('Z'):
+            attr->flags |= SECUREC_FLAG_SIZE;
+            break;
         case SECUREC_CHAR('j'):
             attr->flags |= SECUREC_FLAG_INTMAX;
             break;
 #endif
-        case SECUREC_CHAR('q'):
-            /* fall-through */ /* FALLTHRU */
-        case SECUREC_CHAR('L'):
-            attr->flags |= SECUREC_FLAG_LONGLONG | SECUREC_FLAG_LONG_DOUBLE;
-            break;
-        case SECUREC_CHAR('l'):
-            if (**format == SECUREC_CHAR('l')) {
-                *format = *format + 1;
-                attr->flags |= SECUREC_FLAG_LONGLONG;   /* long long */
-            } else {
-                attr->flags |= SECUREC_FLAG_LONG;   /* long int or wchar_t */
-            }
-            break;
         case SECUREC_CHAR('t'):
             attr->flags |= SECUREC_FLAG_PTRDIFF;
             break;
-#ifdef SECUREC_COMPATIBLE_LINUX_FORMAT
-        case SECUREC_CHAR('z'):
-            /* fall-through */ /* FALLTHRU */
-        case SECUREC_CHAR('Z'):
-            attr->flags |= SECUREC_FLAG_SIZE;
+        case SECUREC_CHAR('q'): /* fall-through */ /* FALLTHRU */
+        case SECUREC_CHAR('L'):
+            attr->flags |= (SECUREC_FLAG_LONGLONG | SECUREC_FLAG_LONG_DOUBLE);
             break;
-#endif
         case SECUREC_CHAR('I'):
             if (SecDecodeSizeI(attr, format) != 0) {
                 /* Compatibility  code for "%I" just print I */
@@ -349,13 +794,14 @@ static int SecDecodeSize(SecChar ch, SecFormatAttr *attr, const SecChar **format
             break;
         case SECUREC_CHAR('h'):
             if (**format == SECUREC_CHAR('h')) {
-                attr->flags |= SECUREC_FLAG_CHAR;   /* char */
+                *format = *format + 1;
+                attr->flags |= SECUREC_FLAG_CHAR;   /* For char */
             } else {
-                attr->flags |= SECUREC_FLAG_SHORT;  /* short int */
+                attr->flags |= SECUREC_FLAG_SHORT;  /* For short int */
             }
             break;
         case SECUREC_CHAR('w'):
-            attr->flags |= SECUREC_FLAG_WIDECHAR;   /* wide char */
+            attr->flags |= SECUREC_FLAG_WIDECHAR;   /* For wide char */
             break;
         default:
             break;
@@ -363,121 +809,101 @@ static int SecDecodeSize(SecChar ch, SecFormatAttr *attr, const SecChar **format
     return 0;
 }
 
+
 /*
  * Decoded char type identifier
  */
-static int SecDecodeTypeC(SecFormatAttr *attr, unsigned int cValue, SecFormatBuf *formatBuf, SecBuffer *buffer)
+SECUREC_INLINE void SecDecodeTypeC(SecFormatAttr *attr, unsigned int c)
 {
+    attr->textLen = 1; /* Only 1 wide character */
+
 #if (defined(SECUREC_COMPATIBLE_LINUX_FORMAT)) && !(defined(__hpux)) && !(defined(SECUREC_ON_SOLARIS))
     attr->flags &= ~SECUREC_FLAG_LEADZERO;
 #endif
 
 #ifdef SECUREC_FOR_WCHAR
-    attr->bufferIsWide = 1;
     if (attr->flags & SECUREC_FLAG_SHORT) {
-#if SECUREC_HAVE_MBTOWC
-        /* multibyte character to wide  character */
-        char tmpChar[2]; /* One character string, length is 2 */
-        tmpChar[0] = (char)(cValue & 0x00ff);
-        tmpChar[1] = '\0';
-
-        if (mbtowc(buffer->wStr, tmpChar, sizeof(tmpChar)) < 0) {
-            return -1;
-        }
-#else
-        return -1;
-#endif
+        /* Get  multibyte character from argument */
+        attr->buffer.str[0] = (char)c;
+        attr->text.str = attr->buffer.str;
+        attr->textIsWide = 0;
     } else {
-        buffer->wStr[0] = (wchar_t)cValue;
+        attr->buffer.wStr[0] = (wchar_t)c;
+        attr->text.wStr = attr->buffer.wStr;
+        attr->textIsWide = 1;
     }
-    formatBuf->wStr = buffer->wStr;
-    return 1;                /* only 1 wide character */
-#else /* SECUREC_FOR_WCHAR */
-    attr->bufferIsWide = 0;
+#else /* Not SECUREC_FOR_WCHAR */
     if (attr->flags & (SECUREC_FLAG_LONG | SECUREC_FLAG_WIDECHAR)) {
-#if SECUREC_HAVE_WCTOMB
-        wchar_t wChar = (wchar_t)cValue;
-        int textLen;
-        /* wide  character  to multibyte character */
-        SECUREC_MASK_MSVC_CRT_WARNING
-        textLen = wctomb(buffer->str, wChar);
-        SECUREC_END_MASK_MSVC_CRT_WARNING
-        if (textLen < 0) {
-            return -1;
-        }
-        formatBuf->str = buffer->str;
-        return textLen;
+#if SECUREC_HAVE_WCHART
+        attr->buffer.wStr[0] = (wchar_t)c;
+        attr->text.wStr = attr->buffer.wStr;
+        attr->textIsWide = 1;
 #else
-        return -1;
+        attr->textLen = 0; /* Ignore unsupported characters */
+        attr->fldWidth = 0; /* No paddings  */
 #endif
     } else {
-        /* get  multibyte character from argument */
-        unsigned short temp;
-        temp = (unsigned short)cValue;
-        buffer->str[0] = (char)temp;
-        formatBuf->str = buffer->str;
-        return 1; /* only 1 character */
+        /* Get  multibyte character from argument */
+        attr->buffer.str[0] = (char)c;
+        attr->text.str = attr->buffer.str;
+        attr->textIsWide = 0;
     }
 #endif
-
 }
 
-/* literal string to print null ptr, define it as array rather than const text area
- * is to avoid gcc warning with pointing const text with variable
- */
-#if SECUREC_HAVE_WCHART
-static wchar_t g_wStrNullString[SECUREC_NULL_STRING_SIZE] = { L'(', L'n', L'u', L'l', L'l', L')', L'\0', L'\0' };
-#endif
-static char g_strNullString[SECUREC_NULL_STRING_SIZE] = "(null)";
-
-static int SecDecodeTypeSchar(const SecFormatAttr *attr, SecFormatBuf *formatBuf)
+SECUREC_INLINE void SecDecodeTypeSchar(SecFormatAttr *attr)
 {
-    int finalPrecision = (attr->precision == -1) ? SECUREC_INT_MAX : attr->precision;
-    int textLen;
-
-    if (formatBuf->str == NULL) {   /* NULL passed, use special string */
-        formatBuf->str = g_strNullString;
+    if (attr->text.str == NULL) {
+        /*
+         * Literal string to print null ptr, define it as array rather than const text area
+         * To avoid gcc warning with pointing const text with variable
+         */
+        static char strNullString[SECUREC_NULL_STRING_SIZE] = "(null)";
+        attr->text.str = strNullString;
     }
-    if (finalPrecision == SECUREC_INT_MAX) {
-        /* precision NOT assigned */
+    if (attr->precision == -1) {
+        /* Precision NOT assigned */
         /* The strlen performance is high when the string length is greater than 32 */
-        textLen = (int)strlen(formatBuf->str);
+        attr->textLen = (int)strlen(attr->text.str);
     } else {
-        /* precision assigned */
-        size_t tmpLen;
-        SECUREC_CALC_STR_LEN(formatBuf->str, (size_t)(unsigned int)finalPrecision, &tmpLen);
-        textLen = (int)tmpLen;
+        /* Precision assigned */
+        size_t textLen;
+        SECUREC_CALC_STR_LEN(attr->text.str, (size_t)(unsigned int)attr->precision, &textLen);
+        attr->textLen = (int)textLen;
     }
-    return textLen;
 }
 
-#if SECUREC_HAVE_WCHART
-static int SecDecodeTypeSwchar(SecFormatAttr *attr, SecFormatBuf *formatBuf)
+SECUREC_INLINE void SecDecodeTypeSwchar(SecFormatAttr *attr)
 {
-    int finalPrecision = (attr->precision == -1) ? SECUREC_INT_MAX : attr->precision;
-    int textLen;
-
-    attr->bufferIsWide = 1;
-    if (formatBuf->wStr == NULL) {  /* NULL passed, use special string */
-        formatBuf->wStr = g_wStrNullString;
+#if SECUREC_HAVE_WCHART
+    size_t textLen;
+    attr->textIsWide = 1;
+    if (attr->text.wStr == NULL) {
+        /*
+         * Literal string to print null ptr, define it as array rather than const text area
+         * To avoid gcc warning with pointing const text with variable
+         */
+        static wchar_t wStrNullString[SECUREC_NULL_STRING_SIZE] = { L'(', L'n', L'u', L'l', L'l', L')', L'\0', L'\0' };
+        attr->text.wStr = wStrNullString;
     }
-    /* textLen in wchar_t */
-    SECUREC_CALC_WSTR_LEN(formatBuf->wStr, finalPrecision, &textLen);
-
-    return textLen;
-}
+    /* The textLen in wchar_t,when precision is -1, it is unlimited  */
+    SECUREC_CALC_WSTR_LEN(attr->text.wStr, (size_t)(unsigned int)attr->precision, &textLen);
+    attr->textLen = (int)textLen;
+#else
+    attr->textLen = 0;
 #endif
+}
+
 
 /*
  * Decoded string identifier
  */
-static int SecDecodeTypeS(SecFormatAttr *attr, char *argPtr, SecFormatBuf *formatBuf)
+SECUREC_INLINE void SecDecodeTypeS(SecFormatAttr *attr, char *argPtr)
 {
-    int textLen;
 #if (defined(SECUREC_COMPATIBLE_LINUX_FORMAT)) && (!defined(SECUREC_ON_UNIX))
     attr->flags &= ~SECUREC_FLAG_LEADZERO;
 #endif
-    formatBuf->str = argPtr;
+    attr->text.str = argPtr;
 #ifdef SECUREC_FOR_WCHAR
 #if defined(SECUREC_COMPATIBLE_LINUX_FORMAT)
     if (!(attr->flags & SECUREC_FLAG_LONG)) {
@@ -485,64 +911,59 @@ static int SecDecodeTypeS(SecFormatAttr *attr, char *argPtr, SecFormatBuf *forma
     }
 #endif
     if (attr->flags & SECUREC_FLAG_SHORT) {
-        /* textLen now contains length in multibyte chars */
-        textLen = SecDecodeTypeSchar(attr, formatBuf);
+        /* The textLen now contains length in multibyte chars */
+        SecDecodeTypeSchar(attr);
     } else {
-        /* textLen now contains length in wide chars */
-        textLen = SecDecodeTypeSwchar(attr, formatBuf);
+        /* The textLen now contains length in wide chars */
+        SecDecodeTypeSwchar(attr);
     }
 #else /* SECUREC_FOR_WCHAR */
     if (attr->flags & (SECUREC_FLAG_LONG | SECUREC_FLAG_WIDECHAR)) {
-        /* textLen now contains length in wide chars */
-#if SECUREC_HAVE_WCHART
-        textLen = SecDecodeTypeSwchar(attr, formatBuf);
-#else
-        textLen = 0;
-#endif
+        /* The textLen now contains length in wide chars */
+        SecDecodeTypeSwchar(attr);
     } else {
-        /* textLen now contains length in multibyte chars */
-        textLen = SecDecodeTypeSchar(attr, formatBuf);
+        /* The textLen now contains length in multibyte chars */
+        SecDecodeTypeSchar(attr);
     }
 #endif /* SECUREC_FOR_WCHAR */
-    return textLen;
+    if (attr->textLen < 0) {
+        attr->textLen = 0;
+    }
 }
 
 /*
  * Write one character to dest buffer
  */
-static void SecOutputOneChar(SecChar ch, SecPrintfStream *stream, int *counter)
+SECUREC_INLINE void SecOutputOneChar(SecChar ch, SecPrintfStream *stream, int *counter)
 {
-    /* normal state, write character */
-    if (SECUREC_IS_REST_BUF_ENOUGH(stream, 1)) { /* only one char */
-        SECUREC_SAFE_WRITE_CHAR(ch, stream, counter); /* char * cast to wchar * */
-    } else {
-#ifdef SECUREC_FOR_WCHAR
-        SecWriteCharW(ch, stream, counter);
-#else
-        /* optimize function call to code */
-        *counter = -1;
-        stream->count = -1;
-#endif
+    /* Count must be reduced first, In order to identify insufficient length */
+    if ((stream->count -= (int)(sizeof(SecChar))) >= 0) {
+        *((SecChar *)(void *)(stream->cur)) = (SecChar)ch;
+        stream->cur += sizeof(SecChar);
+        *counter = *(counter) + 1;
+        return;
     }
+    /* No enough length */
+    *counter = -1;
 }
 
 /*
  * Check precison in format
  */
-static int SecDecodePrecision(SecChar ch, SecFormatAttr *formatAttr)
+SECUREC_INLINE int SecDecodePrecision(SecChar ch, SecFormatAttr *attr)
 {
-    if (formatAttr->dynPrecision == 0) {
-        /* add digit to current precision */
-        if (SECUREC_MUL_TEN_ADD_BEYOND_MAX(formatAttr->precision)) {
+    if (attr->dynPrecision == 0) {
+        /* Add digit to current precision */
+        if (SECUREC_MUL_TEN_ADD_BEYOND_MAX(attr->precision)) {
             return -1;
         }
-        formatAttr->precision = (int)SECUREC_MUL_TEN((unsigned int)formatAttr->precision) +
+        attr->precision = (int)SECUREC_MUL_TEN((unsigned int)attr->precision) +
             (unsigned char)(ch - SECUREC_CHAR('0'));
     } else {
-        if (formatAttr->precision < 0) {
-            formatAttr->precision = -1;
+        if (attr->precision < 0) {
+            attr->precision = -1;
         }
-        if (formatAttr->precision > SECUREC_MAX_WIDTH_LEN) {
+        if (attr->precision > SECUREC_MAX_WIDTH_LEN) {
             return -1;
         }
     }
@@ -553,151 +974,459 @@ static int SecDecodePrecision(SecChar ch, SecFormatAttr *formatAttr)
 /*
  * Check width in format
  */
-static int SecDecodeWidth(SecChar ch, SecFormatAttr *formatAttr, SecFmtState lastState)
+SECUREC_INLINE int SecDecodeWidth(SecChar ch, SecFormatAttr *attr, SecFmtState lastState)
 {
-    if (formatAttr->dynWidth == 0) {
+    if (attr->dynWidth == 0) {
         if (lastState != STAT_WIDTH) {
-            formatAttr->fldWidth = 0;
+            attr->fldWidth = 0;
         }
-        if (SECUREC_MUL_TEN_ADD_BEYOND_MAX(formatAttr->fldWidth)) {
+        if (SECUREC_MUL_TEN_ADD_BEYOND_MAX(attr->fldWidth)) {
             return -1;
         }
-        formatAttr->fldWidth = (int)SECUREC_MUL_TEN((unsigned int)formatAttr->fldWidth) +
+        attr->fldWidth = (int)SECUREC_MUL_TEN((unsigned int)attr->fldWidth) +
             (unsigned char)(ch - SECUREC_CHAR('0'));
     } else {
-        if (formatAttr->fldWidth < 0) {
-            formatAttr->flags |= SECUREC_FLAG_LEFT;
-            formatAttr->fldWidth = (-formatAttr->fldWidth);
-            if (formatAttr->fldWidth > SECUREC_MAX_WIDTH_LEN) {
+        if (attr->fldWidth < 0) {
+            attr->flags |= SECUREC_FLAG_LEFT;
+            attr->fldWidth = (-attr->fldWidth);
+            if (attr->fldWidth > SECUREC_MAX_WIDTH_LEN) {
                 return -1;
             }
         }
     }
     return 0;
 }
+
+
+/*
+ * The sprintf_s function processes the wide character as a parameter for %C
+ * The swprintf_s function processes the multiple character as a parameter for %C
+ */
+SECUREC_INLINE void SecUpdateWcharFlags(SecFormatAttr *attr)
+{
+    if (!(attr->flags & (SECUREC_FLAG_SHORT | SECUREC_FLAG_LONG | SECUREC_FLAG_WIDECHAR))) {
+#ifdef SECUREC_FOR_WCHAR
+        attr->flags |= SECUREC_FLAG_SHORT;
+#else
+        attr->flags |= SECUREC_FLAG_WIDECHAR;
+#endif
+    }
+}
+/*
+ * When encountering %S, current just same as %C
+ */
+SECUREC_INLINE void SecUpdateWstringFlags(SecFormatAttr *attr)
+{
+    SecUpdateWcharFlags(attr);
+}
+
+#if SECUREC_IN_KERNEL
+SECUREC_INLINE void SecUpdatePointFlagsForKernel(SecFormatAttr *attr)
+{
+    /* Width is not set */
+    if (attr->fldWidth <= 0) {
+        attr->flags |= SECUREC_FLAG_LEADZERO;
+        attr->fldWidth = 2 * sizeof(void *);  /* 2 x byte number is the length of hex */
+    }
+    if (attr->flags & SECUREC_FLAG_ALTERNATE) {
+        /* Alternate form means '0x' prefix */
+        attr->prefix[0] = SECUREC_CHAR('0');
+        attr->prefix[1] = SECUREC_CHAR('x');
+        attr->prefixLen = SECUREC_PREFIX_LEN;
+    }
+    attr->flags |= SECUREC_FLAG_LONG;  /* Converting a long */
+}
+#endif
+
+SECUREC_INLINE void SecUpdatePointFlags(SecFormatAttr *attr)
+{
+    attr->flags |= SECUREC_FLAG_POINTER;
+#if SECUREC_IN_KERNEL
+    SecUpdatePointFlagsForKernel(attr);
+#else
+#if (defined(SECUREC_COMPATIBLE_LINUX_FORMAT) || defined(SECUREC_VXWORKS_PLATFORM)) && (!defined(SECUREC_ON_UNIX))
+#if defined(SECUREC_VXWORKS_PLATFORM)
+    attr->precision = 1;
+#else
+    attr->precision = 0;
+#endif
+    attr->flags |= SECUREC_FLAG_ALTERNATE; /* "0x" is not default prefix in UNIX */
+    attr->digits = g_itoaLowerDigits;
+#else /* On unix or win */
+#if defined(_AIX) || defined(SECUREC_ON_SOLARIS)
+    attr->precision = 1;
+#else
+    attr->precision = 2 * sizeof(void *);  /* 2 x byte number is the length of hex */
+#endif
+#if defined(SECUREC_ON_UNIX)
+    attr->digits = g_itoaLowerDigits;
+#else
+    attr->digits = g_itoaUpperDigits;
+#endif
+#endif
+
+#if defined(SECUREC_COMPATIBLE_WIN_FORMAT)
+    attr->flags &= ~SECUREC_FLAG_LEADZERO;
+#endif
+
+#ifdef SECUREC_ON_64BITS
+    attr->flags |= SECUREC_FLAG_I64;   /* Converting an int64 */
+#else
+    attr->flags |= SECUREC_FLAG_LONG;  /* Converting a long */
+#endif
+    /* Set up for %#p on different system */
+    if (attr->flags & SECUREC_FLAG_ALTERNATE) {
+        /* Alternate form means '0x' prefix */
+        attr->prefix[0] = SECUREC_CHAR('0');
+#if (defined(SECUREC_COMPATIBLE_LINUX_FORMAT) || defined(SECUREC_VXWORKS_PLATFORM))
+        attr->prefix[1] = SECUREC_CHAR('x');
+#else
+        attr->prefix[1] = (SecChar)(attr->digits[16]); /* 16 for 'x' or 'X' */
+#endif
+#if defined(_AIX) || defined(SECUREC_ON_SOLARIS)
+        attr->prefixLen = 0;
+#else
+        attr->prefixLen = SECUREC_PREFIX_LEN;
+#endif
+    }
+#endif
+}
+
+SECUREC_INLINE void SecUpdateXpxFlags(SecFormatAttr *attr, SecChar ch)
+{
+    /* Use unsigned lower hex output for 'x' */
+    attr->digits = g_itoaLowerDigits;
+    attr->radix = SECUREC_RADIX_HEX;
+    switch (ch) {
+        case SECUREC_CHAR('p'):
+            /* Print a pointer */
+            SecUpdatePointFlags(attr);
+            break;
+        case SECUREC_CHAR('X'): /* fall-through */ /* FALLTHRU */
+            /* Unsigned upper hex output */
+            attr->digits = g_itoaUpperDigits;
+            /* fall-through */ /* FALLTHRU */
+        default:
+            /* For %#x or %#X */
+            if (attr->flags & SECUREC_FLAG_ALTERNATE) {
+                /* Alternate form means '0x' prefix */
+                attr->prefix[0] = SECUREC_CHAR('0');
+                attr->prefix[1] = (SecChar)(attr->digits[16]); /* 16 for 'x' or 'X' */
+                attr->prefixLen = SECUREC_PREFIX_LEN;
+            }
+            break;
+    }
+}
+SECUREC_INLINE void SecUpdateOudiFlags(SecFormatAttr *attr, SecChar ch)
+{
+    /* Do not set digits here */
+    switch (ch) {
+        case SECUREC_CHAR('i'): /* fall-through */ /* FALLTHRU */
+        case SECUREC_CHAR('d'): /* fall-through */ /* FALLTHRU */
+            /* For signed decimal output */
+            attr->flags |= SECUREC_FLAG_SIGNED;
+            /* fall-through */ /* FALLTHRU */
+        case SECUREC_CHAR('u'):
+            attr->radix = SECUREC_RADIX_DECIMAL;
+            attr->digits = g_itoaLowerDigits;
+            break;
+        case SECUREC_CHAR('o'):
+            /* For unsigned octal output */
+            attr->radix = SECUREC_RADIX_OCTAL;
+            attr->digits = g_itoaLowerDigits;
+            if (attr->flags & SECUREC_FLAG_ALTERNATE) {
+                /* Alternate form means force a leading 0 */
+                attr->flags |= SECUREC_FLAG_FORCE_OCTAL;
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+#if SECUREC_ENABLE_SPRINTF_FLOAT
+SECUREC_INLINE void SecFreeFloatBuffer(SecFloatAdapt *floatAdapt)
+{
+    if (floatAdapt->floatBuffer != NULL) {
+        SECUREC_FREE(floatAdapt->floatBuffer);
+    }
+    if (floatAdapt->allocatedFmtStr != NULL) {
+        SECUREC_FREE(floatAdapt->allocatedFmtStr);
+    }
+    floatAdapt->floatBuffer = NULL;
+    floatAdapt->allocatedFmtStr = NULL;
+    floatAdapt->fmtStr = NULL;
+    floatAdapt->bufferSize = 0;
+}
+
+SECUREC_INLINE void SecSeekToFrontPercent(const SecChar **format)
+{
+    const SecChar *fmt = *format;
+    while (*fmt != SECUREC_CHAR('%')) { /* Must meet '%' */
+        --fmt;
+    }
+    *format = fmt;
+}
+
+/* Init float format, return 0 is OK */
+SECUREC_INLINE int SecInitFloatFmt(SecFloatAdapt *floatFmt, const SecChar *format)
+{
+    const SecChar *fmt = format - 2;  /* Sub 2 to the position before 'f' or 'g' */
+    int fmtStrLen;
+    int i;
+
+    SecSeekToFrontPercent(&fmt);
+    /* Now fmt point to '%' */
+    fmtStrLen = (int)(size_t)(format - fmt) + 1;   /* With ending terminator */
+
+    if (fmtStrLen > (int)sizeof(floatFmt->buffer)) {
+        /* When buffer is NOT enough, alloc a new buffer */
+        floatFmt->allocatedFmtStr = (char *)SECUREC_MALLOC((size_t)((unsigned int)fmtStrLen));
+        if (floatFmt->allocatedFmtStr == NULL) {
+            return -1;
+        }
+        floatFmt->fmtStr = floatFmt->allocatedFmtStr;
+    } else {
+        floatFmt->fmtStr = floatFmt->buffer;
+        floatFmt->allocatedFmtStr = NULL; /* Must set to NULL, later code free memory based on this identity */
+    }
+
+    for (i = 0; i < fmtStrLen - 1; ++i) {
+        /* Convert wchar to char */
+        floatFmt->fmtStr[i] = (char)(fmt[i]);  /* Copy the format string */
+    }
+    floatFmt->fmtStr[fmtStrLen - 1] = '\0';
+
+    return 0;
+
+}
+
+/* Init float buffer and format, return 0 is OK */
+SECUREC_INLINE int SecInitFloatBuffer(SecFloatAdapt *floatAdapt, const SecChar *format, SecFormatAttr *attr)
+{
+    floatAdapt->allocatedFmtStr = NULL;
+    floatAdapt->fmtStr = NULL;
+    floatAdapt->floatBuffer = NULL;
+    /* Compute the precision value */
+    if (attr->precision < 0) {
+        attr->precision = SECUREC_FLOAT_DEFAULT_PRECISION;
+    }
+    /*
+     * Calc buffer size to store double value
+     * The maximum length of SECUREC_MAX_WIDTH_LEN is enough
+     */
+    if (attr->flags & SECUREC_FLAG_LONG_DOUBLE) {
+        if (attr->precision > (SECUREC_MAX_WIDTH_LEN - SECUREC_FLOAT_BUFSIZE_LB)) {
+            return -1;
+        }
+        /* Long double needs to meet the basic print length */
+        floatAdapt->bufferSize = SECUREC_FLOAT_BUFSIZE_LB + attr->precision + SECUREC_FLOAT_BUF_EXT;
+    } else {
+        if (attr->precision > (SECUREC_MAX_WIDTH_LEN - SECUREC_FLOAT_BUFSIZE)) {
+            return -1;
+        }
+        /* Double needs to meet the basic print length */
+        floatAdapt->bufferSize = SECUREC_FLOAT_BUFSIZE + attr->precision + SECUREC_FLOAT_BUF_EXT;
+    }
+    if (attr->fldWidth > floatAdapt->bufferSize) {
+        floatAdapt->bufferSize = attr->fldWidth + SECUREC_FLOAT_BUF_EXT;
+    }
+
+    if (floatAdapt->bufferSize > SECUREC_BUFFER_SIZE) {
+        /* The current vlaue of SECUREC_BUFFER_SIZE could NOT store the formatted float string */
+        floatAdapt->floatBuffer = (char *)SECUREC_MALLOC(((size_t)(unsigned int)floatAdapt->bufferSize));
+        if (floatAdapt->floatBuffer == NULL) {
+            return -1;
+        }
+        attr->text.str = floatAdapt->floatBuffer;
+    } else {
+        attr->text.str = attr->buffer.str; /* Output buffer for float string with default size */
+    }
+
+    if (SecInitFloatFmt(floatAdapt, format) != 0) {
+        if (floatAdapt->floatBuffer != NULL) {
+            SECUREC_FREE(floatAdapt->floatBuffer);
+            floatAdapt->floatBuffer = NULL;
+        }
+        return -1;
+    }
+    return 0;
+}
+#endif
+
+SECUREC_INLINE SecInt64 SecUpdateNegativeChar(SecFormatAttr *attr, char ch)
+{
+    SecInt64 num64 = ch; /* Sign extend */
+    if (num64 >= 128) { /* 128 on some platform, char is always unsigned */
+        unsigned char tmp = (unsigned char)(~((unsigned char)ch));
+        num64 = tmp + 1;
+        attr->flags |= SECUREC_FLAG_NEGATIVE;
+    }
+    return num64;
+}
+
+/*
+ * If the precision is not satisfied, zero is added before the string
+ */
+SECUREC_INLINE void SecNumberSatisfyPrecision(SecFormatAttr *attr)
+{
+    int precision;
+    if (attr->precision < 0) {
+        precision = 1; /* Default precision 1 */
+    } else {
+#if defined(SECUREC_COMPATIBLE_WIN_FORMAT)
+        attr->flags &= ~SECUREC_FLAG_LEADZERO;
+#else
+        if (!(attr->flags & SECUREC_FLAG_POINTER)) {
+            attr->flags &= ~SECUREC_FLAG_LEADZERO;
+        }
+#endif
+        if (attr->precision > SECUREC_MAX_PRECISION) {
+            attr->precision = SECUREC_MAX_PRECISION;
+        }
+        precision = attr->precision;
+    }
+    while (attr->textLen < precision) {
+        ++attr->textLen;
+        *(--attr->text.str) = '0';
+    }
+}
+
+/*
+ * Add leading zero for %#o
+ */
+SECUREC_INLINE void SecNumberForceOctal(SecFormatAttr *attr)
+{
+    /* Force a leading zero if FORCEOCTAL flag set */
+    if ((attr->flags & SECUREC_FLAG_FORCE_OCTAL) &&
+        (attr->textLen == 0 || attr->text.str[0] != '0')) {
+        *(--attr->text.str) = '0';
+        ++attr->textLen;
+    }
+}
+
+SECUREC_INLINE void SecUpdateSignedNumberPrefix(SecFormatAttr *attr)
+{
+    if (attr->flags & SECUREC_FLAG_SIGNED) {
+        if (attr->flags & SECUREC_FLAG_NEGATIVE) {
+            /* Prefix is '-' */
+            attr->prefix[0] = SECUREC_CHAR('-');
+            attr->prefixLen = 1;
+        } else if (attr->flags & SECUREC_FLAG_SIGN) {
+            /* Prefix is '+' */
+            attr->prefix[0] = SECUREC_CHAR('+');
+            attr->prefixLen = 1;
+        } else if (attr->flags & SECUREC_FLAG_SIGN_SPACE) {
+            /* Prefix is ' ' */
+            attr->prefix[0] = SECUREC_CHAR(' ');
+            attr->prefixLen = 1;
+        }
+    }
+}
+
+SECUREC_INLINE void SecNumberCompatZero(SecFormatAttr *attr)
+{
+#if SECUREC_IN_KERNEL
+    if (attr->flags & SECUREC_FLAG_POINTER) {
+        static char strNullPointer[SECUREC_NULL_STRING_SIZE] = "(null)";
+        attr->text.str = strNullPointer;
+        attr->textLen = 6; /* Length of (null) is 6 */
+        attr->flags &= ~SECUREC_FLAG_LEADZERO;
+        attr->prefixLen = 0;
+        if (attr->precision >= 0 && attr->precision < attr->textLen) {
+            attr->textLen = attr->precision;
+        }
+    }
+    if (!(attr->flags & SECUREC_FLAG_POINTER) && attr->radix == SECUREC_RADIX_HEX &&
+        (attr->flags & SECUREC_FLAG_ALTERNATE)) {
+        /* Add 0x prefix for %x or %X, the prefix string has been set before */
+        attr->prefixLen = SECUREC_PREFIX_LEN;
+    }
+#elif defined(SECUREC_COMPATIBLE_LINUX_FORMAT) && (!defined(SECUREC_ON_UNIX))
+    if (attr->flags & SECUREC_FLAG_POINTER) {
+        static char strNullPointer[SECUREC_NULL_STRING_SIZE] = "(nil)";
+        attr->text.str = strNullPointer;
+        attr->textLen = 5; /* Length of (nil) is 5 */
+        attr->flags &= ~SECUREC_FLAG_LEADZERO;
+    }
+#elif defined(SECUREC_VXWORKS_PLATFORM) || defined(__hpux)
+    if ((attr->flags & SECUREC_FLAG_POINTER) && (attr->flags & SECUREC_FLAG_ALTERNATE)) {
+        /* Add 0x prefix for %p, the prefix string has been set before */
+        attr->prefixLen = SECUREC_PREFIX_LEN;
+    }
+#endif
+    (void)attr; /* To clear e438 last value assigned not used , the compiler will optimize this code */
+}
+
 #ifdef SECUREC_FOR_WCHAR
 /*
  * Formatting output core functions for wchar version.Called by a function such as vswprintf_s
- * argList must not be declare as const
+ * The argList must not be declare as const
  */
-static int SecOutputSW(SecPrintfStream *stream, const wchar_t *cFormat, va_list argList)
+SECUREC_INLINE int SecOutputSW(SecPrintfStream *stream, const wchar_t *cFormat, va_list argList)
 #else
 /*
  * Formatting output core functions for char version.Called by a function such as vsnprintf_s
  */
-static int SecOutputS(SecPrintfStream *stream, const char *cFormat, va_list argList)
+SECUREC_INLINE int SecOutputS(SecPrintfStream *stream, const char *cFormat, va_list argList)
 #endif
 {
     const SecChar *format = cFormat;
-#if SECUREC_ENABLE_SPRINTF_FLOAT
-    char *floatBuf = NULL;
-#endif
-    SecFormatBuf formatBuf;
-    static const char *itoaUpperDigits = "0123456789ABCDEFX";
-    static const char *itoaLowerDigits = "0123456789abcdefx";
-    const char *digits = itoaUpperDigits;
-    unsigned int radix = SECUREC_RADIX_DECIMAL;
-    int charsOut;               /* characters written */
-    int prefixLen = 0;  /* Must be initialized or compiler alerts */
-    int padding = 0;
-    int textLen;                /* length of the text */
+    int charsOut;               /* Characters written */
     int noOutput = 0; /* Must be initialized or compiler alerts */
     SecFmtState state;
-    SecFmtState lastState;
-    SecChar prefix[SECUREC_PREFIX_LEN] = { 0 };
-    SecChar ch;                 /* currently read character */
-    static const unsigned char stateTable[SECUREC_STATE_TABLE_SIZE] = {
-        /* type 0:    nospecial meanin;
-         *  1:   '%';
-         *  2:    '.'
-         *  3:    '*'
-         *  4:    '0'
-         *  5:    '1' ... '9'
-         *  6:    ' ', '+', '-', '#'
-         *  7:     'h', 'l', 'L', 'F', 'w' , 'N','z','q','t','j'
-         *  8:     'd','o','u','i','x','X','e','f','g'
-         */
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x06, 0x00, 0x00, 0x06, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x03, 0x06, 0x00, 0x06, 0x02, 0x00,
-        0x04, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x08, 0x00, 0x08, 0x08, 0x08, 0x00, 0x07, 0x00, 0x00, 0x07, 0x00, 0x07, 0x00,
-        0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x08, 0x08, 0x08, 0x08, 0x08, 0x07, 0x08, 0x07, 0x00, 0x07, 0x00, 0x00, 0x08,
-        0x08, 0x07, 0x00, 0x08, 0x07, 0x08, 0x00, 0x07, 0x08, 0x00, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00,
-        /* fill zero  for normal char 128 byte for 0x80 - 0xff */
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        /* state  0: normal
-         *  1: percent
-         *  2: flag
-         *  3: width
-         *  4: dot
-         *  5: precis
-         *  6: size
-         *  7: type
-         *  8: invalid
-         */
-        0x00, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x00, 0x00, 0x01, 0x00, 0x08, 0x08, 0x08, 0x08, 0x08,
-        0x01, 0x00, 0x00, 0x04, 0x04, 0x04, 0x08, 0x08, 0x08, 0x00, 0x00, 0x00, 0x03, 0x03, 0x08, 0x05,
-        0x08, 0x08, 0x00, 0x00, 0x00, 0x02, 0x02, 0x03, 0x05, 0x05, 0x08, 0x00, 0x00, 0x00, 0x03, 0x03,
-        0x03, 0x05, 0x05, 0x08, 0x00, 0x00, 0x00, 0x02, 0x02, 0x02, 0x08, 0x08, 0x08, 0x00, 0x00, 0x00,
-        0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x00, 0x00, 0x00, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x00,
-        0x00
-    };
-
+    SecChar ch;                 /* Currently read character */
     SecFormatAttr formatAttr;
-    SecBuffer buffer;
+
     formatAttr.flags = 0;
-    formatAttr.bufferIsWide = 0;    /* flag for buffer contains wide chars */
+    formatAttr.textIsWide = 0;    /* Flag for buffer contains wide chars */
     formatAttr.fldWidth = 0;
     formatAttr.precision = 0;
     formatAttr.dynWidth = 0;
     formatAttr.dynPrecision = 0;
+    formatAttr.digits = g_itoaUpperDigits;
+    formatAttr.radix = SECUREC_RADIX_DECIMAL;
+    formatAttr.padding = 0;
+    formatAttr.textLen = 0;
+    formatAttr.text.str = NULL;
+    formatAttr.prefixLen = 0;
+    formatAttr.prefix[0] = SECUREC_CHAR('\0');
+    formatAttr.prefix[1] = SECUREC_CHAR('\0');
     charsOut = 0;
-    textLen = 0;
-    state = STAT_NORMAL;        /* starting state */
-    formatBuf.str = NULL;
+    state = STAT_NORMAL;        /* Starting state */
 
-    /* loop each format character */
-    /* remove format != NULL */
-    while ((ch = *format) != SECUREC_CHAR('\0') && charsOut >= 0) {
-        ++format;
-        lastState = state;
-        state = SECUREC_DECODE_STATE(ch, stateTable, lastState);
+    /* Loop each format character */
+    while (*format != SECUREC_CHAR('\0') && charsOut >= 0) {
+        SecFmtState lastState = state;
+        ch = *(format++);
+        state = SecDecodeState(ch, lastState);
         switch (state) {
             case STAT_NORMAL:
                 SecOutputOneChar(ch, stream, &charsOut);
                 continue;
             case STAT_PERCENT:
-                /* set default values */
-                prefixLen = 0;
+                /* Set default values */
                 noOutput = 0;
+                formatAttr.prefixLen = 0;
+                formatAttr.textLen = 0;
                 formatAttr.flags = 0;
                 formatAttr.fldWidth = 0;
                 formatAttr.precision = -1;
-                formatAttr.bufferIsWide = 0;
+                formatAttr.textIsWide = 0;
                 formatAttr.dynWidth = 0;
                 formatAttr.dynPrecision = 0;
                 break;
             case STAT_FLAG:
-                /* set flag based on which flag character */
+                /* Set flag based on which flag character */
                 SecDecodeFlags(ch, &formatAttr);
                 break;
             case STAT_WIDTH:
-                /* update width value */
+                /* Update width value */
+                formatAttr.dynWidth = 0;
                 if (ch == SECUREC_CHAR('*')) {
-                    /* get width */
+                    /* get width from arg list */
                     formatAttr.fldWidth = (int)va_arg(argList, int);
                     formatAttr.dynWidth = 1;
-                } else {
-                    formatAttr.dynWidth = 0;
                 }
                 if (SecDecodeWidth(ch, &formatAttr, lastState) != 0) {
                     return -1;
@@ -707,20 +1436,19 @@ static int SecOutputS(SecPrintfStream *stream, const char *cFormat, va_list argL
                 formatAttr.precision = 0;
                 break;
             case STAT_PRECIS:
-                /* update precison value */
+                /* Update precison value */
+                formatAttr.dynPrecision = 0;
                 if (ch == SECUREC_CHAR('*')) {
-                    /* get precision from arg list */
+                    /* Get precision from arg list */
                     formatAttr.precision = (int)va_arg(argList, int);
                     formatAttr.dynPrecision = 1;
-                } else {
-                    formatAttr.dynPrecision = 0;
                 }
                 if (SecDecodePrecision(ch, &formatAttr) != 0) {
                     return -1;
                 }
                 break;
             case STAT_SIZE:
-                /* read a size specifier, set the formatAttr.flags based on it */
+                /* Read a size specifier, set the formatAttr.flags based on it, and skip format to next charater */
                 if (SecDecodeSize(ch, &formatAttr, &format) != 0) {
                     /* Compatibility  code for "%I" just print I */
                     SecOutputOneChar(ch, stream, &charsOut);
@@ -730,667 +1458,156 @@ static int SecOutputS(SecPrintfStream *stream, const char *cFormat, va_list argL
                 break;
             case STAT_TYPE:
                 switch (ch) {
-                    case SECUREC_CHAR('C'):
-                        /* wide char */
-                        if (!(formatAttr.flags & (SECUREC_FLAG_SHORT | SECUREC_FLAG_LONG | SECUREC_FLAG_WIDECHAR))) {
-#ifdef SECUREC_FOR_WCHAR
-                            formatAttr.flags |= SECUREC_FLAG_SHORT;
-#else
-                            formatAttr.flags |= SECUREC_FLAG_WIDECHAR;
-#endif
-                        }
-                        /* fall-through */
-                        /* FALLTHRU */
-                    case SECUREC_CHAR('c'):
-                        do {
-                            unsigned int cValue = (unsigned int)va_arg(argList, int);
-                            textLen = SecDecodeTypeC(&formatAttr, cValue, &formatBuf, &buffer);
-                            if (textLen < 0) {
-                                noOutput = 1;
-                            }
-                        } SECUREC_WHILE_ZERO;
+                    case SECUREC_CHAR('C'): /* Wide char */
+                        SecUpdateWcharFlags(&formatAttr);
+                        /* fall-through */ /* FALLTHRU */
+                    case SECUREC_CHAR('c'): {
+                        unsigned int cValue = (unsigned int)va_arg(argList, int);
+                        SecDecodeTypeC(&formatAttr, cValue);
                         break;
-                    case SECUREC_CHAR('S'):    /* wide char string */
-                        if (!(formatAttr.flags & (SECUREC_FLAG_SHORT | SECUREC_FLAG_LONG | SECUREC_FLAG_WIDECHAR))) {
-#ifndef SECUREC_FOR_WCHAR
-                            formatAttr.flags |= SECUREC_FLAG_WIDECHAR;
-#else
-                            formatAttr.flags |= SECUREC_FLAG_SHORT;
-#endif
-                        }
-                        /* fall-through */
-                        /* FALLTHRU */
-                    case SECUREC_CHAR('s'):
-                        do {
-                            char *argPtr = (char *)va_arg(argList, char *);
-                            textLen = SecDecodeTypeS(&formatAttr, argPtr, &formatBuf);
-                        } SECUREC_WHILE_ZERO;
+                    }
+                    case SECUREC_CHAR('S'):    /* Wide char string */
+                        SecUpdateWstringFlags(&formatAttr);
+                        /* fall-through */ /* FALLTHRU */
+                    case SECUREC_CHAR('s'): {
+                        char *argPtr = (char *)va_arg(argList, char *);
+                        SecDecodeTypeS(&formatAttr, argPtr);
                         break;
-                    case SECUREC_CHAR('n'):
-                        /* higher risk disable it */
-                        return -1;
-                    case SECUREC_CHAR('E'):    /* fall-through */ /* FALLTHRU */
-                    case SECUREC_CHAR('F'):    /* fall-through */ /* FALLTHRU */
-                    case SECUREC_CHAR('G'):    /* fall-through */ /* FALLTHRU */
-                    case SECUREC_CHAR('A'):    /* fall-through */ /* FALLTHRU */
-                        /* convert format char to lower , use Explicit conversion to clean up compilation warning */
-                        ch = (SecChar)(ch + ((SecChar)(SECUREC_CHAR('a')) - (SECUREC_CHAR('A'))));
-                        /* fall-through */
-                        /* FALLTHRU */
-                    case SECUREC_CHAR('e'):    /* fall-through */ /* FALLTHRU */
-                    case SECUREC_CHAR('f'):    /* fall-through */ /* FALLTHRU */
-                    case SECUREC_CHAR('g'):    /* fall-through */ /* FALLTHRU */
-                    case SECUREC_CHAR('a'):
-#if SECUREC_ENABLE_SPRINTF_FLOAT
-                        do {
-                            int bufferSize = 0;         /* size of formatBuf.str */
-                            /* floating point conversion */
-                            formatBuf.str = buffer.str; /* output buffer for float string with default size */
-
-                            /* compute the precision value */
-                            if (formatAttr.precision < 0) {
-                                formatAttr.precision = SECUREC_FLOAT_DEFAULT_PRECISION;
-                            } else if (formatAttr.precision == 0 && ch == SECUREC_CHAR('g')) {
-                                formatAttr.precision = 1;
-                            }
-
-                            /* calc buffer size to store double value
-                             * The maximum length of SECUREC_MAX_WIDTH_LEN is enough
-                             */
-                            if (formatAttr.flags & SECUREC_FLAG_LONG_DOUBLE) {
-                                if (formatAttr.precision > (SECUREC_MAX_WIDTH_LEN - SECUREC_FLOAT_BUFSIZE_LB)) {
-                                    noOutput = 1;
-                                    break;
-                                }
-                                /* Long double needs to meet the basic print length */
-                                bufferSize = SECUREC_FLOAT_BUFSIZE_LB + formatAttr.precision + SECUREC_FLOAT_BUF_EXT;
-                            } else {
-                                if (formatAttr.precision > (SECUREC_MAX_WIDTH_LEN - SECUREC_FLOAT_BUFSIZE)) {
-                                    noOutput = 1;
-                                    break;
-                                }
-                                /* Double needs to meet the basic print length */
-                                bufferSize = SECUREC_FLOAT_BUFSIZE + formatAttr.precision + SECUREC_FLOAT_BUF_EXT;
-                            }
-                            if (formatAttr.fldWidth > bufferSize) {
-                                bufferSize = formatAttr.fldWidth + SECUREC_FLOAT_BUF_EXT;
-                            }
-
-                            if (bufferSize > SECUREC_BUFFER_SIZE) {
-                                /* the current vlaue of SECUREC_BUFFER_SIZE could NOT store the
-                                 * formatted float string
-                                 */
-                                floatBuf = (char *)SECUREC_MALLOC(((size_t)(unsigned int)bufferSize));
-                                if (floatBuf != NULL) {
-                                    formatBuf.str = floatBuf;
-                                } else {
-                                    noOutput = 1;
-                                    break;
-                                }
-                            }
-
-                            do {
-                                /* add following code to call system sprintf API for float number */
-                                const SecChar *pFloatFmt = format - 2;  /* sub 2 to the position before 'f' or 'g' */
-                                int k;
-                                int fFmtStrLen;
-                                char fFmtBuf[SECUREC_FMT_STR_LEN];
-                                char *fFmtStr = fFmtBuf;
-                                char *fFmtHeap = NULL;    /* to clear warning */
-
-                                while (SECUREC_CHAR('%') != *pFloatFmt) { /* must meet '%' */
-                                    --pFloatFmt;
-                                }
-                                fFmtStrLen = (int)((format - pFloatFmt) + 1);   /* with ending terminator */
-                                if (fFmtStrLen > SECUREC_FMT_STR_LEN) {
-                                    /* if SECUREC_FMT_STR_LEN is NOT enough, alloc a new buffer */
-                                    fFmtHeap = (char *)SECUREC_MALLOC((size_t)((unsigned int)fFmtStrLen));
-                                    if (fFmtHeap == NULL) {
-                                        noOutput = 1;
-                                        break;
-                                    } else {
-                                        for (k = 0; k < fFmtStrLen - 1; ++k) {
-                                            /* convert wchar to char */
-                                            fFmtHeap[k] = (char)(pFloatFmt[k]); /* copy the format string */
-                                        }
-                                        fFmtHeap[k] = '\0';
-
-                                        fFmtStr = fFmtHeap;
-                                    }
-                                } else {
-                                    /* purpose of the repeat code is to solve the tool alarm  Redundant_Null_Check */
-                                    for (k = 0; k < fFmtStrLen - 1; ++k) {
-                                        /* convert wchar to char */
-                                        fFmtBuf[k] = (char)(pFloatFmt[k]);  /* copy the format string */
-                                    }
-                                    fFmtBuf[k] = '\0';
-                                }
-
-                                if (formatAttr.flags & SECUREC_FLAG_LONG_DOUBLE) {
-#ifdef SECUREC_COMPATIBLE_LINUX_FORMAT
-                                    long double tmp = (long double)va_arg(argList, long double);
-                                    textLen = SecFormatLongDboule(formatBuf.str, &formatAttr, fFmtStr, tmp);
-#else
-                                    double tmp = (double)va_arg(argList, double);
-                                    textLen = SecFormatDboule(formatBuf.str, &formatAttr, fFmtStr, tmp);
-#endif
-                                } else {
-                                    double tmp = (double)va_arg(argList, double);
-                                    textLen = SecFormatDboule(formatBuf.str, &formatAttr, fFmtStr, tmp);
-                                }
-
-                                if (fFmtHeap != NULL) {
-                                    /* if buffer is alloced on heap, free it */
-                                    SECUREC_FREE(fFmtHeap);
-                                    fFmtHeap = NULL;
-                                    /* to clear e438 last value assigned not used , the compiler will
-                                     * optimize this code
-                                     */
-                                    (void)fFmtHeap;
-                                }
-                                if (textLen < 0 || textLen >= bufferSize) {
-                                    /* bufferSize is large enough, just validation the return value */
-                                    noOutput = 1;
-                                    break;
-                                }
-
-                                /* no padding ,this variable to calculate amount of padding */
-                                formatAttr.fldWidth = textLen;
-                                prefixLen = 0;  /* no padding ,this variable to  calculate amount of padding */
-                                formatAttr.flags = 0;   /* clear all internal formatAttr.flags */
-                                break;
-                            } SECUREC_WHILE_ZERO;
-                        } SECUREC_WHILE_ZERO;
-                        break;
-#else
-                        return -1;
-#endif
-                    case SECUREC_CHAR('p'): /* fall-through */ /* FALLTHRU */
-                    case SECUREC_CHAR('X'): /* fall-through */ /* FALLTHRU */
-                    case SECUREC_CHAR('x'):
-                        /* unsigned lower hex output */
-                        digits = itoaLowerDigits;
-                        radix = SECUREC_RADIX_HEX;
-                        switch (ch) {
-                            case SECUREC_CHAR('p'):
-                                /* print a pointer */
-#if defined(SECUREC_COMPATIBLE_WIN_FORMAT)
-                                formatAttr.flags &= ~SECUREC_FLAG_LEADZERO;
-#else
-                                formatAttr.flags |= SECUREC_FLAG_POINTER;
-#endif
-#ifdef SECUREC_ON_64BITS
-                                formatAttr.flags |= SECUREC_FLAG_I64;   /* converting an int64 */
-#else
-                                formatAttr.flags |= SECUREC_FLAG_LONG;  /* converting a long */
-#endif
-
-#if (defined(SECUREC_COMPATIBLE_LINUX_FORMAT) || defined(SECUREC_VXWORKS_PLATFORM)) && (!defined(SECUREC_ON_UNIX))
-#if defined(SECUREC_VXWORKS_PLATFORM)
-                                formatAttr.precision = 1;
-#else
-                                formatAttr.precision = 0;
-#endif
-                                formatAttr.flags |= SECUREC_FLAG_ALTERNATE; /* "0x" is not default prefix in UNIX */
-                                break;
-#else
-                /* not linux vxwoks */
-#if defined(_AIX) || defined(SECUREC_ON_SOLARIS)
-                                formatAttr.precision = 1;
-#else
-                                formatAttr.precision = 2 * sizeof(void *);  /* 2 precision of different systems */
-#endif
-#endif
-
-#if defined(SECUREC_ON_UNIX)
-                                break;
-#endif
-                                /* fall-through */ /* FALLTHRU */
-                            case SECUREC_CHAR('X'): /* fall-through */ /* FALLTHRU */
-                                /* unsigned upper hex output */
-                                digits = itoaUpperDigits;
-                                break;
-                            default:
-                                break;
-                        }
-
-                        if (formatAttr.flags & SECUREC_FLAG_ALTERNATE) {
-                            /* alternate form means '0x' prefix */
-                            prefix[0] = SECUREC_CHAR('0');
-                            prefix[1] = (SecChar)(digits[16]); /* 16 for 'x' or 'X' */
-
-#if (defined(SECUREC_COMPATIBLE_LINUX_FORMAT) || defined(SECUREC_VXWORKS_PLATFORM))
-                            if (ch == 'p') {
-                                prefix[1] = SECUREC_CHAR('x');
-                            }
-#endif
-#if defined(_AIX) || defined(SECUREC_ON_SOLARIS)
-                            if (ch == 'p') {
-                                prefixLen = 0;
-                            } else {
-                                prefixLen = SECUREC_PREFIX_LEN;
-                            }
-#else
-                            prefixLen = SECUREC_PREFIX_LEN;
-#endif
-
+                    }
+                    case SECUREC_CHAR('G'): /* fall-through */ /* FALLTHRU */
+                    case SECUREC_CHAR('g'): /* fall-through */ /* FALLTHRU */
+                        /* Default precision is 1 for g or G */
+                        if (formatAttr.precision == 0) {
+                            formatAttr.precision = 1;
                         }
                         /* fall-through */ /* FALLTHRU */
-                    case SECUREC_CHAR('i'):    /* fall-through */ /* FALLTHRU */
-                    case SECUREC_CHAR('d'):    /* fall-through */ /* FALLTHRU */
-                    case SECUREC_CHAR('u'):    /* fall-through */ /* FALLTHRU */
-                    case SECUREC_CHAR('o'):    /* fall-through */ /* FALLTHRU */
-                        switch (ch) {
-                            case SECUREC_CHAR('i'): /* fall-through */ /* FALLTHRU */
-                            case SECUREC_CHAR('d'): /* fall-through */ /* FALLTHRU */
-                                /* signed decimal output */
-                                formatAttr.flags |= SECUREC_FLAG_SIGNED;
-                                /* fall-through */ /* FALLTHRU */
-                            case SECUREC_CHAR('u'):
-                                radix = SECUREC_RADIX_DECIMAL;
-                                break;
-                            case SECUREC_CHAR('o'):
-                                /* unsigned octal output */
-                                radix = SECUREC_RADIX_OCTAL;
-                                if (formatAttr.flags & SECUREC_FLAG_ALTERNATE) {
-                                    /* alternate form means force a leading 0 */
-                                    formatAttr.flags |= SECUREC_FLAG_FORCE_OCTAL;
-                                }
-                                break;
-                            default:
-                                break;
+                    case SECUREC_CHAR('E'): /* fall-through */ /* FALLTHRU */
+                    case SECUREC_CHAR('F'): /* fall-through */ /* FALLTHRU */
+                    case SECUREC_CHAR('e'): /* fall-through */ /* FALLTHRU */
+                    case SECUREC_CHAR('f'): {
+#if SECUREC_ENABLE_SPRINTF_FLOAT
+                        /* Add following code to call system sprintf API for float number */
+                        SecFloatAdapt floatAdapt;
+                        noOutput = 1; /* It's no more data needs to be written */
+
+                        /* Now format is pointer to the next character of 'f' */
+                        if (SecInitFloatBuffer(&floatAdapt, format, &formatAttr) != 0) {
+                            break;
                         }
 
-                        do {
-
-                            SecUnsignedInt64 number = 0;    /* number to convert */
-                            SecInt64 l; /* temp long value */
-
-                            /* read argument into variable l */
-                            if (formatAttr.flags & SECUREC_FLAG_I64) {
-                                l = (SecInt64)va_arg(argList, SecInt64);
-                            } else if (formatAttr.flags & SECUREC_FLAG_LONGLONG) {
-                                l = (SecInt64)va_arg(argList, SecInt64);
-                            } else
-#ifdef SECUREC_ON_64BITS
-                            if (formatAttr.flags & SECUREC_FLAG_LONG) {
-                                l = (long)va_arg(argList, long);
-                            } else
-#endif /* SECUREC_ON_64BITS */
-                            if (formatAttr.flags & SECUREC_FLAG_CHAR) {
-                                if (formatAttr.flags & SECUREC_FLAG_SIGNED) {
-                                    l = (char)va_arg(argList, int); /* sign extend */
-                                    if (l >= 128) { /* 128 on some platform, char is always unsigned */
-                                        SecUnsignedInt64 tmpL = (SecUnsignedInt64)l;
-                                        unsigned char tmpCh = (unsigned char)(~(tmpL));
-                                        l = tmpCh + 1;
-                                        formatAttr.flags |= SECUREC_FLAG_NEGATIVE;
-                                    }
-                                } else {
-                                    l = (unsigned char)va_arg(argList, int);    /* zero-extend */
-                                }
-
-                            } else if (formatAttr.flags & SECUREC_FLAG_SHORT) {
-                                if (formatAttr.flags & SECUREC_FLAG_SIGNED) {
-                                    l = (short)va_arg(argList, int);    /* sign extend */
-                                } else {
-                                    l = (unsigned short)va_arg(argList, int);   /* zero-extend */
-                                }
-
-                            }
+                        if (formatAttr.flags & SECUREC_FLAG_LONG_DOUBLE) {
 #ifdef SECUREC_COMPATIBLE_LINUX_FORMAT
-                            else if (formatAttr.flags & SECUREC_FLAG_PTRDIFF) {
-                                l = (ptrdiff_t)va_arg(argList, ptrdiff_t);  /* sign extend */
-                            } else if (formatAttr.flags & SECUREC_FLAG_SIZE) {
-                                if (formatAttr.flags & SECUREC_FLAG_SIGNED) {
-                                    /* No suitable macros were found to handle the branch */
-                                    if (SecIsSameSize(sizeof(size_t), sizeof(long))) {
-                                        l = va_arg(argList, long);  /* sign extend */
-                                    } else if (SecIsSameSize(sizeof(size_t), sizeof(long long))) {
-                                        l = va_arg(argList, long long); /* sign extend */
-                                    } else {
-                                        l = va_arg(argList, int);   /* sign extend */
-                                    }
-                                } else {
-                                    l = (SecInt64)(size_t)va_arg(argList, size_t);  /* sign extend */
-                                }
-                            } else if (formatAttr.flags & SECUREC_FLAG_INTMAX) {
-                                if (formatAttr.flags & SECUREC_FLAG_SIGNED) {
-                                    l = va_arg(argList, SecInt64);  /* sign extend */
-                                } else {
-                                    /* sign extend */
-                                    l = (SecInt64)(SecUnsignedInt64)va_arg(argList, SecUnsignedInt64);
-                                }
-                            }
-#endif
-                            else {
-                                if (formatAttr.flags & SECUREC_FLAG_SIGNED) {
-                                    l = va_arg(argList, int);   /* sign extend */
-                                } else {
-                                    l = (unsigned int)va_arg(argList, int); /* zero-extend */
-                                }
-
-                            }
-
-                            /* check for negative; copy into number */
-                            if ((formatAttr.flags & SECUREC_FLAG_SIGNED) && l < 0) {
-                                number = (SecUnsignedInt64)(-l);
-                                formatAttr.flags |= SECUREC_FLAG_NEGATIVE;
-                            } else {
-                                number = (SecUnsignedInt64)l;
-                            }
-
-                            if (((formatAttr.flags & SECUREC_FLAG_I64) == 0) &&
-#ifdef SECUREC_COMPATIBLE_LINUX_FORMAT
-                                ((formatAttr.flags & SECUREC_FLAG_INTMAX) == 0) &&
-#endif
-#ifdef SECUREC_ON_64BITS
-                                ((formatAttr.flags & SECUREC_FLAG_PTRDIFF) == 0) &&
-                                ((formatAttr.flags & SECUREC_FLAG_SIZE) == 0) &&
-#if !defined(SECUREC_COMPATIBLE_WIN_FORMAT)  /* on window 64 system sizeof long is 32bit */
-                                ((formatAttr.flags & SECUREC_FLAG_LONG) == 0) &&
-#endif
-#endif
-                                ((formatAttr.flags & SECUREC_FLAG_LONGLONG) == 0)) {
-
-                                    number &= 0xffffffff;  /* use 0xffffffff as 32 bit mask */
-                            }
-
-                            /* check precision value for default */
-                            if (formatAttr.precision < 0) {
-                                formatAttr.precision = 1;   /* default precision */
-                            } else {
-#if defined(SECUREC_COMPATIBLE_WIN_FORMAT)
-                                formatAttr.flags &= ~SECUREC_FLAG_LEADZERO;
+                            long double tmp = (long double)va_arg(argList, long double);
+                            SecFormatLongDboule(&formatAttr, &floatAdapt, tmp);
 #else
-                                if (!(formatAttr.flags & SECUREC_FLAG_POINTER)) {
-                                    formatAttr.flags &= ~SECUREC_FLAG_LEADZERO;
-                                }
+                            double tmp = (double)va_arg(argList, double);
+                            SecFormatDboule(&formatAttr, &floatAdapt, tmp);
 #endif
-                                if (formatAttr.precision > SECUREC_MAX_PRECISION) {
-                                    formatAttr.precision = SECUREC_MAX_PRECISION;
-                                }
-                            }
+                        } else {
+                            double tmp = (double)va_arg(argList, double);
+                            SecFormatDboule(&formatAttr, &floatAdapt, tmp);
+                        }
 
-                            /* Check if data is 0; if so, turn off hex prefix,
-                             * 'p' add 0x prefix, otherwise not add prefix
-                             */
-                            if (number == 0) {
-#if !(defined(SECUREC_VXWORKS_PLATFORM) || defined(__hpux))
-                                prefixLen = 0;
-#else
-                                if ((ch == 'p') && (formatAttr.flags & SECUREC_FLAG_ALTERNATE)) {
-                                    prefixLen = SECUREC_PREFIX_LEN;
-                                } else {
-                                    prefixLen = 0;
-                                }
-#endif
-                            }
-
-                            /* Convert data to ASCII */
-                            formatBuf.str = &buffer.str[SECUREC_BUFFER_SIZE];
-
-                            if (number > 0) {
-#ifdef SECUREC_ON_64BITS
-                                switch (radix) {
-                                    /* the compiler will optimize each one */
-                                    case SECUREC_RADIX_DECIMAL:
-                                        SECUREC_SPECIAL_QWORD_BASE10(number);
-                                        break;
-                                    case SECUREC_RADIX_HEX:
-                                        SECUREC_SPECIAL_QWORD(number, SECUREC_RADIX_HEX);
-                                        break;
-                                    case SECUREC_RADIX_OCTAL:
-                                        SECUREC_SPECIAL_QWORD(number, SECUREC_RADIX_OCTAL);
-                                        break;
-                                    default:
-                                        break;
-                                }
-#else /* for 32 bits system */
-                                if (number <= 0xFFFFFFFFUL) {
-                                    /* in most case, the value to be converted is small value */
-                                    SecUnsignedInt32 n32Tmp = (SecUnsignedInt32)number;
-                                    switch (radix) {
-                                        case SECUREC_RADIX_HEX:
-                                            SECUREC_SPECIAL_DWORD(n32Tmp, SECUREC_RADIX_HEX);
-                                            break;
-                                        case SECUREC_RADIX_OCTAL:
-                                            SECUREC_SPECIAL_DWORD(n32Tmp, SECUREC_RADIX_OCTAL);
-                                            break;
-
-#ifdef _AIX
-                                        /* the compiler will optimize div 10 */
-                                        case SECUREC_RADIX_DECIMAL:
-                                            SECUREC_SPECIAL_DWORD(n32Tmp, SECUREC_RADIX_DECIMAL);
-                                            break;
-#else
-                                        case SECUREC_RADIX_DECIMAL:
-                                            do {
-                                                /* fast div 10 */
-                                                SecUnsignedInt32 q;
-                                                SecUnsignedInt32 r;
-                                                do {
-                                                    *--formatBuf.str = digits[n32Tmp % SECUREC_RADIX_DECIMAL];
-                                                    q = (n32Tmp >> 1) + (n32Tmp >> 2); /* fast div  magic 2 */
-                                                    q = q + (q >> 4); /* fast div  magic 4 */
-                                                    q = q + (q >> 8); /* fast div  magic 8 */
-                                                    q = q + (q >> 16); /* fast div  magic 16 */
-                                                    q = q >> 3; /* fast div  magic 3 */
-                                                    r = n32Tmp - SECUREC_MUL_TEN(q);
-                                                    n32Tmp = (r > 9) ? (q + 1) : q; /* fast div  magic 9 */
-                                                } while (n32Tmp != 0);
-                                            } SECUREC_WHILE_ZERO;
-                                            break;
-#endif
-                                        default:
-                                            break;
-                                    }   /* end switch */
-                                } else {
-                                    /* the value to be converted is greater than 4G */
-#if defined(SECUREC_VXWORKS_VERSION_5_4)
-                                    do {
-                                        SecUnsignedInt32 digit = 0; /* ascii value of digit */
-                                        SecUnsignedInt64 quotient = 0;
-                                        if (SecU64Div32(number,(SecUnsignedInt32)radix, &quotient, &digit) != 0) {
-                                            noOutput = 1;
-                                            break;
-                                        }
-                                        *--formatBuf.str = digits[digit];
-                                        number = quotient;
-                                    } while (number != 0);
-#else
-                                    switch (radix) {
-                                        /* the compiler will optimize div 10 */
-                                        case SECUREC_RADIX_DECIMAL:
-                                            SECUREC_SPECIAL_QWORD_BASE10(number);
-                                            break;
-                                        case SECUREC_RADIX_OCTAL:
-                                            SECUREC_SPECIAL_QWORD(number, SECUREC_RADIX_OCTAL);
-                                            break;
-                                        case SECUREC_RADIX_HEX:
-                                            SECUREC_SPECIAL_QWORD(number, SECUREC_RADIX_HEX);
-                                            break;
-                                        default:
-                                            break;
-                                    }
-#endif
-                                }
-#endif
-
-                            }
-                            /* compute length of number,.if textLen > 0, then formatBuf.str must be in buffer.str */
-                            textLen = (int)(size_t)((char *)&buffer.str[SECUREC_BUFFER_SIZE] - formatBuf.str);
-                            if (formatAttr.precision > textLen) {
-                                int ii;
-                                for (ii = 0; ii < formatAttr.precision - textLen; ++ii) {
-                                    *--formatBuf.str = '0';
-                                }
-                                textLen = formatAttr.precision;
-                            }
-
-                            /* Force a leading zero if FORCEOCTAL flag set */
-                            if ((formatAttr.flags & SECUREC_FLAG_FORCE_OCTAL) &&
-                                (textLen == 0 || formatBuf.str[0] != '0')) {
-                                *--formatBuf.str = '0';
-                                ++textLen;  /* add a zero */
-                            }
-                        } SECUREC_WHILE_ZERO;
+                        /* Only need write formated float string */
+                        SecWriteFloatText(stream, &formatAttr, &charsOut);
+                        SecFreeFloatBuffer(&floatAdapt);
                         break;
+#else
+                        return -1;
+#endif
+                    }
+
+                    case SECUREC_CHAR('X'): /* fall-through */ /* FALLTHRU */
+                    case SECUREC_CHAR('p'): /* fall-through */ /* FALLTHRU */
+                    case SECUREC_CHAR('x'): /* fall-through */ /* FALLTHRU */
+                        SecUpdateXpxFlags(&formatAttr, ch);
+                        /* fall-through */ /* FALLTHRU */
+                    case SECUREC_CHAR('i'): /* fall-through */ /* FALLTHRU */
+                    case SECUREC_CHAR('d'): /* fall-through */ /* FALLTHRU */
+                    case SECUREC_CHAR('u'): /* fall-through */ /* FALLTHRU */
+                    case SECUREC_CHAR('o'): {
+                        SecInt64 num64;
+                        SecUpdateOudiFlags(&formatAttr, ch);
+                        /* Read argument into variable num64 */
+                        if ((formatAttr.flags & SECUREC_FLAG_I64) || (formatAttr.flags & SECUREC_FLAG_LONGLONG)) {
+                            num64 = (SecInt64)va_arg(argList, SecInt64); /* Maximum Bit Width sign bit unchanged */
+                        } else if (formatAttr.flags & SECUREC_FLAG_LONG) {
+                            if (formatAttr.flags & SECUREC_FLAG_SIGNED) {
+                                num64 = (long)va_arg(argList, long); /* Sign extend */
+                            } else {
+                                num64 = (SecInt64)(unsigned long)va_arg(argList, long); /* Zero-extend */
+                            }
+                        } else if (formatAttr.flags & SECUREC_FLAG_CHAR) {
+                            if (formatAttr.flags & SECUREC_FLAG_SIGNED) {
+                                char tmp = (char)va_arg(argList, int); /* Sign extend */
+                                num64 = SecUpdateNegativeChar(&formatAttr, tmp);
+                            } else {
+                                num64 = (SecInt64)(unsigned char)va_arg(argList, int);    /* Zero-extend */
+                            }
+                        } else if (formatAttr.flags & SECUREC_FLAG_SHORT) {
+                            if (formatAttr.flags & SECUREC_FLAG_SIGNED) {
+                                num64 = (short)va_arg(argList, int);    /* Sign extend */
+                            } else {
+                                num64 = (SecInt64)(unsigned short)va_arg(argList, int);   /* Zero-extend */
+                            }
+                        }
+#ifdef SECUREC_COMPATIBLE_LINUX_FORMAT
+                        else if (formatAttr.flags & SECUREC_FLAG_PTRDIFF) {
+                            num64 = (ptrdiff_t)va_arg(argList, ptrdiff_t);  /* Sign extend */
+                        } else if (formatAttr.flags & SECUREC_FLAG_SIZE) {
+                            if (formatAttr.flags & SECUREC_FLAG_SIGNED) {
+                                /* No suitable macros were found to handle the branch */
+                                if (SecIsSameSize(sizeof(size_t), sizeof(long))) {
+                                    num64 = va_arg(argList, long);  /* Sign extend */
+                                } else if (SecIsSameSize(sizeof(size_t), sizeof(long long))) {
+                                    num64 = va_arg(argList, long long); /* Sign extend */
+                                } else {
+                                    num64 = va_arg(argList, int);   /* Sign extend */
+                                }
+                            } else {
+                                num64 = (SecInt64)(size_t)va_arg(argList, size_t);  /* Zero-extend */
+                            }
+                        } else if (formatAttr.flags & SECUREC_FLAG_INTMAX) {
+                            num64 = (SecInt64)va_arg(argList, SecInt64);
+                        }
+#endif
+                        else {
+                            if (formatAttr.flags & SECUREC_FLAG_SIGNED) {
+                                num64 = va_arg(argList, int);   /* Sign extend */
+                            } else {
+                                num64 = (SecInt64)(unsigned int)va_arg(argList, int); /* Zero-extend */
+                            }
+                        }
+
+                        /* The order of the following calls must be correct */
+                        SecNumberToBuffer(&formatAttr, num64);
+                        SecNumberSatisfyPrecision(&formatAttr);
+                        SecNumberForceOctal(&formatAttr);
+                        SecUpdateSignedNumberPrefix(&formatAttr);
+                        if (num64 == 0) {
+                            SecNumberCompatZero(&formatAttr);
+                        }
+                        break;
+                    }
                     default:
                         break;
                 }
 
-                while (noOutput < 1) {
-                    if (formatAttr.flags & SECUREC_FLAG_SIGNED) {
-                        if (formatAttr.flags & SECUREC_FLAG_NEGATIVE) {
-                            /* prefix is a '-' */
-                            prefix[0] = SECUREC_CHAR('-');
-                            prefixLen = 1;
-                        } else if (formatAttr.flags & SECUREC_FLAG_SIGN) {
-                            /* prefix is '+' */
-                            prefix[0] = SECUREC_CHAR('+');
-                            prefixLen = 1;
-                        } else if (formatAttr.flags & SECUREC_FLAG_SIGN_SPACE) {
-                            /* prefix is ' ' */
-                            prefix[0] = SECUREC_CHAR(' ');
-                            prefixLen = 1;
-                        }
-                    }
+                if (noOutput == 0) {
+                    /* Calculate amount of padding */
+                    formatAttr.padding = (formatAttr.fldWidth - formatAttr.textLen) - formatAttr.prefixLen;
 
-#if defined(SECUREC_COMPATIBLE_LINUX_FORMAT) && (!defined(SECUREC_ON_UNIX))
-                    if ((formatAttr.flags & SECUREC_FLAG_POINTER) && (textLen == 0)) {
-                        formatAttr.flags &= ~SECUREC_FLAG_LEADZERO;
-                        formatBuf.str = &buffer.str[SECUREC_BUFFER_SIZE - 1];
-                        *formatBuf.str-- = '\0';
-                        *formatBuf.str-- = ')';
-                        *formatBuf.str-- = 'l';
-                        *formatBuf.str-- = 'i';
-                        *formatBuf.str-- = 'n';
-                        *formatBuf.str = '(';
-                        textLen = 5; /* length of (nil) is 5 */
-                    }
-#endif
-
-                    /* calculate amount of padding */
-                    padding = (formatAttr.fldWidth - textLen) - prefixLen;
-
-                    /* put out the padding, prefix, and text, in the correct order */
-
-                    if (!(formatAttr.flags & (SECUREC_FLAG_LEFT | SECUREC_FLAG_LEADZERO)) && padding > 0) {
-                        /* pad on left with blanks */
-                        if (SECUREC_IS_REST_BUF_ENOUGH(stream, padding)) {
-                            /* char * cast to wchar * */
-                            SECUREC_SAFE_PADDING(SECUREC_CHAR(' '), padding, stream, &charsOut);
-                        } else {
-                            SECUREC_WRITE_MULTI_CHAR(SECUREC_CHAR(' '), padding, stream, &charsOut);
-                        }
-                    }
-
-                    /* write prefix */
-                    if (prefixLen > 0) {
-                        SecChar *pPrefix = prefix;
-                        if (SECUREC_IS_REST_BUF_ENOUGH(stream, prefixLen)) {
-                            /* max prefix len is 2, use loop copy */ /* char * cast to wchar * in WCHAR version */
-                            SECUREC_SAFE_WRITE_STR_OPT(pPrefix, prefixLen, stream, &charsOut);
-                        } else {
-                            SECUREC_WRITE_STRING(prefix, prefixLen, stream, &charsOut);
-                        }
-                    }
-
-                    if ((formatAttr.flags & SECUREC_FLAG_LEADZERO) && !(formatAttr.flags & SECUREC_FLAG_LEFT)
-                        && padding > 0) {
-                        /* write leading zeros */
-                        if (SECUREC_IS_REST_BUF_ENOUGH(stream, padding)) {
-                            /* char * cast to wchar * */
-                            SECUREC_SAFE_PADDING(SECUREC_CHAR('0'), padding, stream, &charsOut);
-                        } else {
-                            SECUREC_WRITE_MULTI_CHAR(SECUREC_CHAR('0'), padding, stream, &charsOut);
-                        }
-                    }
-
-                    /* write text */
-#ifndef SECUREC_FOR_WCHAR
-                    if (formatAttr.bufferIsWide != 0 && (textLen > 0)) {
-#if SECUREC_HAVE_WCTOMB
-                        wchar_t *p = formatBuf.wStr;
-                        int count = textLen;
-                        while (count > 0) {
-                            char tmpBuf[SECUREC_MB_LEN + 1];
-                            SECUREC_MASK_MSVC_CRT_WARNING
-                            int retVal = wctomb(tmpBuf, *p);
-                            SECUREC_END_MASK_MSVC_CRT_WARNING
-                            if (retVal <= 0) {
-                                charsOut = -1;
-                                break;
-                            }
-                            SECUREC_WRITE_STRING(tmpBuf, retVal, stream, &charsOut);
-                            --count;
-                            ++p;
-                        }
-#else
-                        charsOut = -1;
-                        break;
-#endif
-                    } else {
-                        if (SECUREC_IS_REST_BUF_ENOUGH(stream, textLen)) {
-                            SECUREC_SAFE_WRITE_STR(formatBuf.str, textLen, stream, &charsOut);
-                        } else {
-                            SECUREC_WRITE_STRING(formatBuf.str, textLen, stream, &charsOut);
-                        }
-                    }
-#else /* SECUREC_FOR_WCHAR */
-                    if (formatAttr.bufferIsWide == 0 && textLen > 0) {
-#if SECUREC_HAVE_MBTOWC
-                        int count = textLen;
-                        char *p = formatBuf.str;
-
-                        while (count > 0) {
-                            wchar_t wChar = L'\0';
-                            int retVal = mbtowc(&wChar, p, (size_t)MB_CUR_MAX);
-                            if (retVal <= 0) {
-                                charsOut = -1;
-                                break;
-                            }
-                            SecWriteCharW(wChar, stream, &charsOut);
-                            p += retVal;
-                            count -= retVal;
-                        }
-#else
-                        charsOut = -1;
-                        break;
-#endif
-                    } else {
-                        if (SECUREC_IS_REST_BUF_ENOUGH(stream, textLen)) {
-                            /* char * cast to wchar * */
-                            SECUREC_SAFE_WRITE_STR(formatBuf.wStr, textLen, stream, &charsOut);
-                        } else {
-                            SECUREC_WRITE_STRING(formatBuf.wStr, textLen, stream, &charsOut);
-                        }
-                    }
-#endif /* SECUREC_FOR_WCHAR */
-
-                    if (charsOut >= 0 && (formatAttr.flags & SECUREC_FLAG_LEFT) && padding > 0) {
-                        /* pad on right with blanks */
-                        if (SECUREC_IS_REST_BUF_ENOUGH(stream, padding)) {
-                            /* char * cast to wchar * */
-                            SECUREC_SAFE_PADDING(SECUREC_CHAR(' '), padding, stream, &charsOut);
-                        } else {
-                            SECUREC_WRITE_MULTI_CHAR(SECUREC_CHAR(' '), padding, stream, &charsOut);
-                        }
-                    }
-                    break;
+                    /* Put out the padding, prefix, and text, in the correct order */
+                    SecWriteLeftPadding(stream, &formatAttr, &charsOut);
+                    SecWritePrefix(stream, &formatAttr, &charsOut);
+                    SecWriteLeadingZero(stream, &formatAttr, &charsOut);
+                    SecWriteText(stream, &formatAttr, &charsOut);
+                    SecWriteRightPadding(stream, &formatAttr, &charsOut);
                 }
-#if SECUREC_ENABLE_SPRINTF_FLOAT
-                if (floatBuf != NULL) {
-                    SECUREC_FREE(floatBuf);
-                    floatBuf = NULL;
-                }
-#endif
                 break;
-            case STAT_INVALID:
-                return -1;
+            case STAT_INVALID: /* fall-through */ /* FALLTHRU */
             default:
-                return -1;          /* input format is wrong, directly return */
+                return -1;  /* Input format is wrong(STAT_INVALID), directly return */
         }
     }
 
@@ -1398,7 +1615,22 @@ static int SecOutputS(SecPrintfStream *stream, const char *cFormat, va_list argL
         return -1;
     }
 
-    return charsOut;            /* the number of characters written */
+    return charsOut;            /* The number of characters written */
 }
+
+/*
+ * Output one zero character zero into the SecPrintfStream structure
+ * If there is not enough space, make sure f->count is less than 0
+ */
+SECUREC_INLINE int SecPutZeroChar(SecPrintfStream *str)
+{
+    if (--(str->count) >= 0) {
+        *(str->cur) = '\0';
+        str->cur = str->cur + 1;
+        return 0;
+    }
+    return -1;
+}
+
 #endif /* OUTPUT_INL_2B263E9C_43D8_44BB_B17A_6D2033DECEE5 */
 

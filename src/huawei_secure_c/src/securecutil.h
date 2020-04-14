@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -18,8 +18,9 @@
 #include "securec.h"
 
 #if (defined(_MSC_VER)) && (_MSC_VER >= 1400)
+/* Shield compilation alerts using discarded functions and Constant  expression to maximize code compatibility */
 #define SECUREC_MASK_MSVC_CRT_WARNING __pragma(warning(push)) \
-    __pragma(warning(disable:4996 4127))
+    __pragma(warning(disable : 4996 4127))
 #define SECUREC_END_MASK_MSVC_CRT_WARNING  __pragma(warning(pop))
 #else
 #define SECUREC_MASK_MSVC_CRT_WARNING
@@ -27,6 +28,7 @@
 #endif
 #define SECUREC_WHILE_ZERO SECUREC_MASK_MSVC_CRT_WARNING while (0) SECUREC_END_MASK_MSVC_CRT_WARNING
 
+/* Automatically identify the platform that supports strnlen function, and use this function to improve performance */
 #ifndef SECUREC_HAVE_STRNLEN
 #if (defined(_XOPEN_SOURCE) && _XOPEN_SOURCE >= 700) || (defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE >= 200809L)
 #if SECUREC_IN_KERNEL
@@ -44,7 +46,7 @@
 #endif
 
 #if SECUREC_IN_KERNEL
-/* in kernel disbale functions */
+/* In kernel disbale functions */
 #ifndef SECUREC_ENABLE_SCANF_FILE
 #define SECUREC_ENABLE_SCANF_FILE 0
 #endif
@@ -63,7 +65,7 @@
 #ifndef SECUREC_HAVE_WCHART
 #define SECUREC_HAVE_WCHART 0
 #endif
-#else /* no in kernel */
+#else /* Not in kernel */
 /* Systems that do not support file, can define this macro to 0. */
 #ifndef SECUREC_ENABLE_SCANF_FILE
 #define SECUREC_ENABLE_SCANF_FILE 1
@@ -86,6 +88,29 @@
 #endif
 #endif
 
+#ifndef SECUREC_ENABLE_INLINE
+#define SECUREC_ENABLE_INLINE 0
+#endif
+
+#ifndef SECUREC_INLINE
+#if SECUREC_ENABLE_INLINE
+#define SECUREC_INLINE inline static
+#else
+#define SECUREC_INLINE static
+#endif
+#endif
+
+#ifndef SECUREC_WARP_OUTPUT
+#if SECUREC_IN_KERNEL
+#define SECUREC_WARP_OUTPUT 1
+#else
+#define SECUREC_WARP_OUTPUT 0
+#endif
+#endif
+
+#ifndef SECUREC_STREAM_STDIN
+#define SECUREC_STREAM_STDIN stdin
+#endif
 
 #define SECUREC_INT_MAX                     2147483647
 #define SECUREC_MUL_SIXTEEN(x)              ((x) << 4)
@@ -184,13 +209,22 @@
 
 #define SECUREC_CALC_WSTR_LEN(str, maxLen, outLen) do { \
     const wchar_t *strEnd = (const wchar_t *)(str); \
-    *(outLen) = 0; \
-    while (*(outLen) < (maxLen) && *strEnd != L'\0') { \
-        *(outLen) = *(outLen) + 1; \
+    size_t len = 0; \
+    while (len < (maxLen) && *strEnd != L'\0') { \
+        ++len; \
         ++strEnd; \
     } \
+    *(outLen) = len; \
 } SECUREC_WHILE_ZERO
 
+/* Performance optimization, product may disable inline function */
+#ifdef SECUREC_USE_ASM
+#define SECUREC_MEMCPY_WARP_OPT(dest, src, count)    (void)memcpy_opt((dest), (src), (count))
+#define SECUREC_MEMSET_WARP_OPT(dest, c, count)      (void)memset_opt((dest), (c), (count))
+#else
+#define SECUREC_MEMCPY_WARP_OPT(dest, src, count)    (void)memcpy((dest), (src), (count))
+#define SECUREC_MEMSET_WARP_OPT(dest, c, count)      (void)memset((dest), (c), (count))
+#endif
 
 #ifdef SECUREC_FORMAT_OUTPUT_INPUT
 #if defined(SECUREC_COMPATIBLE_WIN_FORMAT) || defined(__ARMCC_VERSION)
@@ -211,6 +245,9 @@ typedef unsigned long long SecUnsignedInt64;
 #if defined(SECUREC_VXWORKS_PLATFORM) && !defined(__WINT_TYPE__)
 typedef wchar_t wint_t;
 #endif
+#ifndef WEOF
+#define WEOF ((wchar_t)(-1))
+#endif
 typedef wchar_t SecChar;
 typedef wchar_t SecUnsignedChar;
 typedef wint_t SecInt;
@@ -223,13 +260,15 @@ typedef unsigned int SecUnsignedInt;
 #endif
 #endif
 
-/* Determine whether the address is 8-byte aligned
+/*
+ * Determine whether the address is 8-byte aligned
  * Some systems do not have uintptr_t type, so  use NULL to clear tool alarm 507
  */
-#define SECUREC_ADDR_ALIGNED_8(addr) (SecIsAddrAligned8((addr), NULL) == 0)
+#define SECUREC_ADDR_ALIGNED_8(addr) ((((size_t)(addr)) & 7) == 0) /* Use 7 to check aligned 8 */
 
-/* If you define the memory allocation function,
- * you need to define the function prototype. You can define this macro as a header file.
+/*
+ * If you define the memory allocation function, you need to define the function prototype.
+ * You can define this macro as a header file.
  */
 #if defined(SECUREC_MALLOC_PROTOTYPE)
 SECUREC_MALLOC_PROTOTYPE
@@ -243,7 +282,7 @@ SECUREC_MALLOC_PROTOTYPE
 #define SECUREC_FREE(x)   free((void *)(x))
 #endif
 
-/* struct for performance */
+/* Struct for performance */
 typedef struct {
     unsigned char buf[1]; /* Performance optimization code structure assignment length 1 bytes */
 } SecStrBuf1;
@@ -440,7 +479,8 @@ typedef struct {
 
 
 
-/* User can change the error handler by modify the following definition,
+/*
+ * User can change the error handler by modify the following definition,
  * such as logging the detail error in file.
  */
 #if defined(_DEBUG) || defined(DEBUG)
@@ -462,22 +502,26 @@ typedef struct {
 #define SECUREC_ERROR_INVALID_PARAMTER(msg) LogSecureCRuntimeError(msg " EINVAL\n")
 #define SECUREC_ERROR_INVALID_RANGE(msg)    LogSecureCRuntimeError(msg " ERANGE\n")
 #define SECUREC_ERROR_BUFFER_OVERLAP(msg)   LogSecureCRuntimeError(msg " EOVERLAP\n")
-#else /* no HANDLER is defined */
+#endif
+#endif
+
+/* Default handler is none */
+#ifndef SECUREC_ERROR_INVALID_PARAMTER
 #define SECUREC_ERROR_INVALID_PARAMTER(msg) ((void)0)
+#endif
+#ifndef SECUREC_ERROR_INVALID_RANGE
 #define SECUREC_ERROR_INVALID_RANGE(msg)    ((void)0)
+#endif
+#ifndef SECUREC_ERROR_BUFFER_OVERLAP
 #define SECUREC_ERROR_BUFFER_OVERLAP(msg)   ((void)0)
 #endif
-#else /* no DEBUG */
-#define SECUREC_ERROR_INVALID_PARAMTER(msg) ((void)0)
-#define SECUREC_ERROR_INVALID_RANGE(msg)    ((void)0)
-#define SECUREC_ERROR_BUFFER_OVERLAP(msg)   ((void)0)
-#endif
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* assembly language memory copy and memory set for X86 or MIPS ... */
+/* Assembly language memory copy and memory set for X86 or MIPS ... */
 #ifdef SECUREC_USE_ASM
     extern void *memcpy_opt(void *, const void *, size_t);
     extern void *memset_opt(void *, int, size_t);
@@ -485,52 +529,6 @@ extern "C" {
 
 #if defined(SECUREC_ERROR_HANDLER_BY_FILE_LOG)
     extern void LogSecureCRuntimeError(const char *errDetail);
-#endif
-
-#ifdef SECUREC_INLINE_DO_MEMCPY
-static void SecDoMemcpy(void *dest, const void *src, size_t count)
-{
-    /*
-     * if SECUREC_USE_ASM macro is enabled, it will call assembly language function to improve performance.
-     */
-#ifdef SECUREC_USE_ASM
-    (void)memcpy_opt(dest, src, count);
-#else
-    /* large enough, let system API do it */
-    (void)memcpy(dest, src, count);
-#endif
-}
-#endif
-
-#ifdef SECUREC_INLINE_DO_MEMSET
-static void SecDoMemset(void *dest, int c, size_t count)
-{
-#ifdef SECUREC_USE_ASM
-    (void)memset_opt(dest, c, count);
-#else
-    (void)memset(dest, c, count);
-#endif
-}
-#endif
-
-#ifdef SECUREC_INLINE_STR_LEN
-/* The function compiler will be inlined and not placed in other files */
-static size_t SecStrMinLen(const char *str, size_t maxLen)
-{
-    size_t len;
-    SECUREC_CALC_STR_LEN(str, maxLen, &len);
-    return len;
-}
-#endif
-
-#ifdef SECUREC_INLINE_STR_LEN_OPT
-/* The function compiler will be inlined and not placed in other files */
-static size_t SecStrMinLenOpt(const char *str, size_t maxLen)
-{
-    size_t len;
-    SECUREC_CALC_STR_LEN_OPT(str, maxLen, &len);
-    return len;
-}
 #endif
 
 #ifdef __cplusplus

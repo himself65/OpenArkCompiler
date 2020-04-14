@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -13,14 +13,12 @@
  * See the Mulan PSL v1 for more details.
  */
 
-/* if some platforms don't have wchar.h, dont't include it */
+/* If some platforms don't have wchar.h, dont't include it */
 #if !(defined(SECUREC_VXWORKS_PLATFORM))
-/* This header file is placed below secinput.h, which will cause tool alarm,
- * but if there is no macro above, it will cause compiling alarm
- */
+/* If there is no macro above, it will cause compiling alarm */
 #if defined(_MSC_VER) && (_MSC_VER >= 1400)
 #ifndef _CRTIMP_ALTERNATIVE
-#define _CRTIMP_ALTERNATIVE     /* comment microsoft *_s function */
+#define _CRTIMP_ALTERNATIVE     /* Comment microsoft *_s function */
 #endif
 #ifndef __STDC_WANT_SECURE_LIB__
 #define __STDC_WANT_SECURE_LIB__ 0
@@ -29,27 +27,30 @@
 #include <wchar.h>
 #endif
 
+/* Disable wchar func to clear vs warning */
 #define SECUREC_ENABLE_WCHAR_FUNC   0
-#define SECUREC_INLINE_DO_MEMCPY    1
 #define SECUREC_FORMAT_OUTPUT_INPUT 1
+
 #ifndef SECUREC_FOR_WCHAR
 #define SECUREC_FOR_WCHAR
 #endif
 
+#if defined(SECUREC_WARP_OUTPUT) && SECUREC_WARP_OUTPUT
+#undef SECUREC_WARP_OUTPUT
+#define SECUREC_WARP_OUTPUT 0
+#endif
+
 #include "secureprintoutput.h"
 
-#ifndef WEOF
-#define WEOF ((wchar_t)(-1))
-#endif
 
 #define SECUREC_CHAR(x) L ## x
 #define SECUREC_WRITE_MULTI_CHAR SecWriteMultiCharW
 #define SECUREC_WRITE_STRING     SecWriteStringW
 
-static void SecWriteCharW(wchar_t ch, SecPrintfStream *f, int *pnumwritten);
-static void SecWriteMultiCharW(wchar_t ch, int num, SecPrintfStream *f, int *pnumwritten);
-static void SecWriteStringW(const wchar_t *string, int len, SecPrintfStream *f, int *pnumwritten);
-static int SecPutWcharStrEndingZero(SecPrintfStream *str, int zeroCount);
+SECUREC_INLINE void SecWriteCharW(wchar_t ch, SecPrintfStream *f, int *pnumwritten);
+SECUREC_INLINE void SecWriteMultiCharW(wchar_t ch, int num, SecPrintfStream *f, int *pnumwritten);
+SECUREC_INLINE void SecWriteStringW(const wchar_t *string, int len, SecPrintfStream *f, int *pnumwritten);
+SECUREC_INLINE int SecPutWcharStrEndingZero(SecPrintfStream *str, int zeroCount);
 
 
 #include "output.inl"
@@ -63,14 +64,14 @@ int SecVswprintfImpl(wchar_t *string, size_t sizeInWchar, const wchar_t *format,
     int retVal; /* If initialization causes  e838 */
 
     str.cur = (char *)string;
-    /* this count include \0 character, Must be greater than zero */
+    /* This count include \0 character, Must be greater than zero */
     str.count = (int)(sizeInWchar * sizeof(wchar_t));
 
     retVal = SecOutputSW(&str, format, argList);
-    if ((retVal >= 0) && SecPutWcharStrEndingZero(&str, (int)sizeof(wchar_t))) {
+    if (retVal >= 0 && SecPutWcharStrEndingZero(&str, (int)sizeof(wchar_t)) == 0) {
         return (retVal);
     } else if (str.count < 0) {
-        /* the buffer was too small; we return truncation */
+        /* The buffer was too small; we return truncation */
         string[sizeInWchar - 1] = L'\0';
         return SECUREC_PRINTF_TRUNCATE;
     }
@@ -78,70 +79,53 @@ int SecVswprintfImpl(wchar_t *string, size_t sizeInWchar, const wchar_t *format,
     return -1;
 }
 
-/*
- * Output one zero character zero into the SecPrintfStream structure
- */
-static int SecPutZeroChar(SecPrintfStream *str)
-{
-    if (str->count > 0) {
-        *(str->cur) = (char)('\0');
-        str->count = str->count - 1;
-        str->cur = str->cur + 1;
-        return 0;
-    }
-    return -1;
-}
+
 
 /*
  * Output a wide character zero end into the SecPrintfStream structure
  */
-static int SecPutWcharStrEndingZero(SecPrintfStream *str, int zeroCount)
+SECUREC_INLINE int SecPutWcharStrEndingZero(SecPrintfStream *str, int zeroCount)
 {
-    int succeed = 0;
     int i = 0;
-
-    while (i < zeroCount && (SecPutZeroChar(str) == 0)) {
+    while (i < zeroCount && SecPutZeroChar(str) == 0) {
         ++i;
     }
     if (i == zeroCount) {
-        succeed = 1;
+        return 0;
     }
-    return succeed;
+    return -1;
 }
 
 
 /*
  * Output a wide character into the SecPrintfStream structure
  */
-static wchar_t SecPutCharW(wchar_t ch, SecPrintfStream *f)
+SECUREC_INLINE int SecPutCharW(wchar_t ch, SecPrintfStream *f)
 {
-    wchar_t wcRet = 0;
     if (((f)->count -= (int)sizeof(wchar_t)) >= 0) {
         *(wchar_t *)(void *)(f->cur) = ch;
         f->cur += sizeof(wchar_t);
-        wcRet = ch;
-    } else {
-        wcRet = (wchar_t)WEOF;
+        return 0;
     }
-    return wcRet;
+    return -1;
 }
 
 /*
  * Output a wide character into the SecPrintfStream structure, returns the number of characters written
  */
-static void SecWriteCharW(wchar_t ch, SecPrintfStream *f, int *pnumwritten)
+SECUREC_INLINE void SecWriteCharW(wchar_t ch, SecPrintfStream *f, int *pnumwritten)
 {
-    if (SecPutCharW(ch, f) == (wchar_t)WEOF) {
-        *pnumwritten = -1;
-    } else {
+    if (SecPutCharW(ch, f) == 0) {
         *pnumwritten = *pnumwritten + 1;
+    } else {
+        *pnumwritten = -1;
     }
 }
 
 /*
  * Output multiple wide character into the SecPrintfStream structure,  returns the number of characters written
  */
-static void SecWriteMultiCharW(wchar_t ch, int num, SecPrintfStream *f, int *pnumwritten)
+SECUREC_INLINE void SecWriteMultiCharW(wchar_t ch, int num, SecPrintfStream *f, int *pnumwritten)
 {
     int count = num;
     while (count-- > 0) {
@@ -155,12 +139,13 @@ static void SecWriteMultiCharW(wchar_t ch, int num, SecPrintfStream *f, int *pnu
 /*
  * Output a wide string into the SecPrintfStream structure,  returns the number of characters written
  */
-static void SecWriteStringW(const wchar_t *string, int len, SecPrintfStream *f, int *pnumwritten)
+SECUREC_INLINE void SecWriteStringW(const wchar_t *string, int len, SecPrintfStream *f, int *pnumwritten)
 {
     const wchar_t *str = string;
     int count = len;
     while (count-- > 0) {
-        SecWriteCharW(*str++, f, pnumwritten);
+        SecWriteCharW(*str, f, pnumwritten);
+        ++str;
         if (*pnumwritten == -1) {
             break;
         }

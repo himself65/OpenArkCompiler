@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -13,8 +13,10 @@
  * See the Mulan PSL v1 for more details.
  */
 
+#define SECUREC_INLINE_INIT_FILE_STREAM_STR 1
 #include "secinput.h"
-#if defined(SECUREC_VXWORKS_PLATFORM) && (!defined(SECUREC_SYSAPI4VXWORKS) && !defined(SECUREC_CTYPE_MACRO_ADAPT))
+#if defined(SECUREC_VXWORKS_PLATFORM) && !SECUREC_IN_KERNEL && \
+    (!defined(SECUREC_SYSAPI4VXWORKS) && !defined(SECUREC_CTYPE_MACRO_ADAPT))
 #include <ctype.h>
 #endif
 
@@ -52,7 +54,7 @@ int vsscanf_s(const char *buffer, const char *format, va_list argList)
     int retVal;
     SecFileStream fStr;
 
-    /* validation section */
+    /* Validation section */
     if (buffer == NULL || format == NULL) {
         SECUREC_ERROR_INVALID_PARAMTER("vsscanf_s");
         return SECUREC_SCANF_EINVAL;
@@ -63,17 +65,17 @@ int vsscanf_s(const char *buffer, const char *format, va_list argList)
         SECUREC_ERROR_INVALID_PARAMTER("vsscanf_s");
         return SECUREC_SCANF_EINVAL;
     }
-#ifdef SECUREC_VXWORKS_PLATFORM
+#if defined(SECUREC_VXWORKS_PLATFORM) && !SECUREC_IN_KERNEL
     /*
-     * in vxworks platform when buffer is white string, will set first %s argument tu zero.like following useage:
+     * On vxworks platform when buffer is white string, will set first %s argument tu zero.like following useage:
      * "   \v\f\t\r\n", "%s", str, strSize
-     * do not check all character, just first and last character then consider it is white string
+     * Do not check all character, just first and last character then consider it is white string
      */
     if (isspace((int)buffer[0]) && isspace((int)buffer[count - 1])) {
         SecClearDestBuf(buffer, format, argList);
     }
 #endif
-    SECUREC_INIT_SEC_FILE_STREAM(fStr, SECUREC_MEM_STR_FLAG, NULL, 0, buffer, (int)count);
+    SecInitFileStreamFromString(&fStr, buffer, (int)count);
     retVal = SecInputS(&fStr, format, argList);
     if (retVal < 0) {
         SECUREC_ERROR_INVALID_PARAMTER("vsscanf_s");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -12,21 +12,22 @@
  * FIT FOR A PARTICULAR PURPOSE.
  * See the Mulan PSL v1 for more details.
  */
-#define SECUREC_INLINE_STR_LEN   1
-#define SECUREC_INLINE_DO_MEMCPY 1
 
 #include "securecutil.h"
 
 /*
  * Befor this function, the basic parameter checking has been done
  */
-static errno_t SecDoStrncat(char *strDest, size_t destMax, const char *strSrc, size_t count)
+SECUREC_INLINE errno_t SecDoCatLimit(char *strDest, size_t destMax, const char *strSrc, size_t count)
 {
-    size_t destLen = SecStrMinLen(strDest, destMax);
-    /* The strSrc is no longer optimized. The reason is that when count is small,
+    size_t destLen;
+    size_t srcLen;
+    SECUREC_CALC_STR_LEN(strDest, destMax, &destLen);
+    /*
+     * The strSrc is no longer optimized. The reason is that when count is small,
      * the efficiency of strnlen is higher than that of self realization.
      */
-    size_t srcLen = SecStrMinLen(strSrc, count);
+    SECUREC_CALC_STR_LEN(strSrc, count, &srcLen);
 
     if (SECUREC_CAT_STRING_IS_OVERLAP(strDest, destLen, strSrc, srcLen)) {
         strDest[0] = '\0';
@@ -46,7 +47,7 @@ static errno_t SecDoStrncat(char *strDest, size_t destMax, const char *strSrc, s
         SECUREC_ERROR_INVALID_RANGE("strncat_s");
         return ERANGE_AND_RESET;
     }
-    SecDoMemcpy(strDest + destLen, strSrc, srcLen);    /* no  terminator */
+    SECUREC_MEMCPY_WARP_OPT(strDest + destLen, strSrc, srcLen);    /* No terminator */
     *(strDest + destLen + srcLen) = '\0';
     return EOK;
 }
@@ -103,14 +104,14 @@ errno_t strncat_s(char *strDest, size_t destMax, const char *strSrc, size_t coun
 #ifdef  SECUREC_COMPATIBLE_WIN_FORMAT
         if (count == (size_t)(-1)) {
             /* Windows internal functions may pass in -1 when calling this function */
-            return SecDoStrncat(strDest, destMax, strSrc, destMax);
+            return SecDoCatLimit(strDest, destMax, strSrc, destMax);
         }
 #endif
         strDest[0] = '\0';
         SECUREC_ERROR_INVALID_RANGE("strncat_s");
         return ERANGE_AND_RESET;
     }
-    return SecDoStrncat(strDest, destMax, strSrc, count);
+    return SecDoCatLimit(strDest, destMax, strSrc, count);
 }
 
 #if SECUREC_IN_KERNEL
