@@ -52,6 +52,7 @@ class HDSE {
   void MarkPhiRequired(VarOrRegPhiNode &mePhiNode);
   void MarkMuListRequired(MapleMap<OStIdx, VarMeExpr*>&);
   void MarkChiNodeRequired(ChiMeNode &chiNode);
+  bool ExprHasSideEffect(const MeExpr &meExpr) const;
   bool ExprNonDeletable(const MeExpr &expr) const;
   bool StmtMustRequired(const MeStmt &stmt, const BB &bb) const;
   void MarkStmtRequired(MeStmt &stmt);

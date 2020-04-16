@@ -119,7 +119,7 @@ class FEStructFieldInfo : public FEStructElemInfo {
  LLT_PRIVATE:
   void LoadFieldType();
   void LoadFieldTypeJava();
-  void PrepareStaticField(MIRStructType &structType);
+  void PrepareStaticField(const MIRStructType &structType);
   void PrepareNonStaticField(MIRStructType &structType, MIRBuilder &mirBuilder);
   bool SearchStructFieldJava(MIRStructType &structType, MIRBuilder &mirBuilder, bool argIsStatic,
                              bool allowPrivate = true);

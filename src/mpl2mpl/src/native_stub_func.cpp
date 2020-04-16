@@ -265,11 +265,7 @@ void NativeStubFuncGeneration::ProcessFunc(MIRFunction *func) {
 
 void NativeStubFuncGeneration::GenerateRegFuncTabEntryType() {
   MIRArrayType &arrayType =
-#ifdef USE_ARM32_MACRO
-      *GlobalTables::GetTypeTable().GetOrCreateArrayType(*GlobalTables::GetTypeTable().GetUInt32(), 0);
-#else
       *GlobalTables::GetTypeTable().GetOrCreateArrayType(*GlobalTables::GetTypeTable().GetVoidPtr(), 0);
-#endif
   regFuncTabConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), arrayType);
   std::string regFuncTab = NameMangler::kRegJNIFuncTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
   regFuncSymbol = builder->CreateSymbol(regFuncTabConst->GetType().GetTypeIndex(), regFuncTab, kStVar,
@@ -286,11 +282,7 @@ void NativeStubFuncGeneration::GenerateRegFuncTabEntry() {
   uint64 locIdx = regFuncTabConst->GetConstVec().size();
   auto *newConst =
     GlobalTables::GetIntConstTable().GetOrCreateIntConst(static_cast<uint64>((locIdx << locIdxShift) | locIdxMask),
-#ifdef USE_ARM32_MACRO
-                                                         *GlobalTables::GetTypeTable().GetUInt32());
-#else
                                                          *GlobalTables::GetTypeTable().GetVoidPtr());
-#endif
   regFuncTabConst->PushBack(newConst);
 }
 

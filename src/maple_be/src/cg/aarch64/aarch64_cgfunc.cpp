@@ -4572,10 +4572,9 @@ void AArch64CGFunc::SelectParmList(StmtNode &naryNode, AArch64ListOperand &srcOp
       srcOpnds.PushOpnd(parmRegOpnd);
     } else {  /* store to the memory segment for stack-passsed arguments. */
       Operand &actMemOpnd = CreateMemOpnd(RSP, ploc.memOffset, GetPrimTypeBitSize(primType));
-      uint32 dataSize = GetPrimTypeBitSize(primType);
-      dataSize = dataSize <= k32BitSize ? k32BitSize : dataSize;
       GetCurBB()->AppendInsn(
-          GetCG()->BuildInstruction<AArch64Insn>(PickStInsn(dataSize, primType), *expRegOpnd, actMemOpnd));
+          GetCG()->BuildInstruction<AArch64Insn>(PickStInsn(GetPrimTypeBitSize(primType), primType), *expRegOpnd,
+                                                 actMemOpnd));
       }
     ASSERT(ploc.reg1 == 0, "SelectCall NYI");
   }

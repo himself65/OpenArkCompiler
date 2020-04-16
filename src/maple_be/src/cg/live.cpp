@@ -92,7 +92,7 @@ bool LiveAnalysis::GenerateLiveIn(BB &bb) {
 
   if (!bb.GetEhSuccs().empty()) {
     /* If bb has eh successors, check if multi-gen exists. */
-    DataInfo allInOfEhSuccs(cgFunc->GetMaxVReg());
+    DataInfo allInOfEhSuccs(cgFunc->GetMaxVReg(), *memPool);
     for (auto ehSucc : bb.GetEhSuccs()) {
       allInOfEhSuccs.OrBits(*ehSucc->GetLiveIn());
     }
@@ -129,17 +129,11 @@ void LiveAnalysis::BuildInOutforFunc() {
 
 /* only reset to liveout/in_regno in schedule and ra phase. */
 void LiveAnalysis::ResetLiveSet() {
-  std::set<regno_t> setResult;
   FOR_ALL_BB(bb, cgFunc) {
-    setResult.clear();
-    setResult = bb->GetLiveIn()->GetBitsOfInfo();
-    for (const auto &rNO : setResult) {
+    for (const auto &rNO : bb->GetLiveIn()->GetBitsOfInfo()) {
       bb->InsertLiveInRegNO(rNO);
     }
-    setResult.clear();
-
-    setResult = bb->GetLiveOut()->GetBitsOfInfo();
-    for (const auto &rNO : setResult) {
+    for (const auto &rNO : bb->GetLiveOut()->GetBitsOfInfo()) {
       bb->InsertLiveOutRegNO(rNO);
     }
   }

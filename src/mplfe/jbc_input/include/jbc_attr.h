@@ -24,6 +24,9 @@
 
 namespace maple {
 namespace jbc {
+const static uint32 kInvalidPC = UINT32_MAX;
+const static uint32 kMaxPC32 = 0x0000FFFF;
+
 enum JBCAttrKind : uint8 {
   kAttrUnknown,
   kAttrRaw,
@@ -72,6 +75,7 @@ class JBCAttrMap {
   void RegisterAttr(JBCAttr *attr);
   std::list<JBCAttr*> GetAttrs(JBCAttrKind kind) const;
   const JBCAttr *GetAttr(JBCAttrKind kind) const;
+  bool PreProcess(const JBCConstPool &constPool);
 
  private:
   MapleAllocator &allocator;
@@ -90,6 +94,39 @@ class JBCAttrRaw : public JBCAttr {
 
  private:
   uint8 *rawData;
+};
+
+struct JavaAttrLocalVariableInfoItem {
+  JavaAttrLocalVariableInfoItem() : slotIdx(0), start(0), length(0), nameIdx(0), typeNameIdx(0), signatureNameIdx(0) {}
+
+  uint16 slotIdx;
+  uint16 start;
+  uint16 length;
+  GStrIdx nameIdx;          // in java format
+  GStrIdx typeNameIdx;      // in java format
+  GStrIdx signatureNameIdx; // in java format
+};
+
+class JBCAttrLocalVariableInfo {
+ public:
+  explicit JBCAttrLocalVariableInfo(MapleAllocator &argAllocator);
+  ~JBCAttrLocalVariableInfo() = default;
+  void RegisterItem(const attr::LocalVariableTableItem &itemAttr);
+  void RegisterTypeItem(const attr::LocalVariableTypeTableItem &itemAttr);
+  const JavaAttrLocalVariableInfoItem &GetItemByStart(uint16 slotIdx, uint16 start) const;
+  uint32 GetStart(uint16 slotIdx, uint16 pc) const;
+  std::list<std::string> EmitToStrings() const;
+  static bool IsInvalidLocalVariableInfoItem(const JavaAttrLocalVariableInfoItem &item);
+
+ private:
+  void AddSlotStartMap(uint16 slotIdx, uint16 startPC);
+  void CheckItemAvaiable(uint16 slotIdx, uint16 start) const;
+  JavaAttrLocalVariableInfoItem *GetItemByStartInternal(uint16 slotIdx, uint16 start);
+
+  MapleAllocator &allocator;
+  MapleMap<uint16, MapleSet<uint16>> slotStartMap;  // map<slotIdx, set<start>>
+  MapleMap<std::pair<uint16, uint16>, JavaAttrLocalVariableInfoItem> itemMap;
+  static JavaAttrLocalVariableInfoItem kInvalidInfoItem;
 };
 
 // ConstantValue Attribute
@@ -120,7 +157,7 @@ class JBCAttrCode : public JBCAttr {
  public:
   JBCAttrCode(MapleAllocator &allocator, uint16 nameIdx, uint32 length);
   ~JBCAttrCode();
-  void InitLocalVarInfo() const;
+  void InitLocalVarInfo();
   void SetLoadStoreType() const;
   const MapleMap<uint32, JBCOp*> &GetInstMap() const {
     return instructions;
@@ -150,6 +187,14 @@ class JBCAttrCode : public JBCAttr {
     return attrMap.GetAttrs(kind);
   }
 
+  std::list<std::string> GetLocalVarInfoByString() const {
+    return localVarInfo.EmitToStrings();
+  }
+
+  const JBCAttrLocalVariableInfo &GetLocalVarInfo() const {
+    return localVarInfo;
+  }
+
  protected:
   bool ParseFileImpl(MapleAllocator &allocator, BasicIORead &io, const JBCConstPool &constPool) override;
   bool PreProcessImpl(const JBCConstPool &constPool) override;
@@ -168,6 +213,7 @@ class JBCAttrCode : public JBCAttr {
   MapleVector<JBCAttr*> attrs;
   MapleMap<uint32, JBCOp*> instructions;
   JBCAttrMap attrMap;
+  JBCAttrLocalVariableInfo localVarInfo;
 };
 
 // StackMapTable Attribute
@@ -342,6 +388,9 @@ class JBCAttrLocalVariableTable : public JBCAttr {
  public:
   JBCAttrLocalVariableTable(MapleAllocator &allocator, uint16 nameIdx, uint32 length);
   ~JBCAttrLocalVariableTable() = default;
+  const MapleVector<attr::LocalVariableTableItem*> &GetLocalVarInfos() const {
+    return localVarInfos;
+  }
 
  protected:
   bool ParseFileImpl(MapleAllocator &allocator, BasicIORead &io, const JBCConstPool &constPool) override;
@@ -359,6 +408,9 @@ class JBCAttrLocalVariableTypeTable : public JBCAttr {
  public:
   JBCAttrLocalVariableTypeTable(MapleAllocator &allocator, uint16 nameIdx, uint32 length);
   ~JBCAttrLocalVariableTypeTable() = default;
+  const MapleVector<attr::LocalVariableTypeTableItem*> &GetLocalVarTypeInfos() const {
+    return localVarTypeInfos;
+  }
 
  protected:
   bool ParseFileImpl(MapleAllocator &allocator, BasicIORead &io, const JBCConstPool &constPool) override;

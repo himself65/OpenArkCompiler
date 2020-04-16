@@ -36,6 +36,7 @@ enum JBCStmtKind : uint8 {
   kJBCStmtPesudoCatch
 };
 
+class JBCFunctionContext;
 class JBCStmtKindHelper {
  public:
   static std::string JBCStmtKindName(JBCStmtKind kind);
@@ -55,10 +56,8 @@ class JBCStmt : public GeneralStmt {
         kind(argKind) {}
 
   virtual ~JBCStmt() = default;
-  std::list<UniqueFEIRStmt> EmitToFEIR(JBCStack2FEHelper &stack2feHelper,
-                                       const jbc::JBCConstPool &constPool,
-                                       bool &success) const {
-    return EmitToFEIRImpl(stack2feHelper, constPool, success);
+  std::list<UniqueFEIRStmt> EmitToFEIR(JBCFunctionContext &context, bool &success) const {
+    return EmitToFEIRImpl(context, success);
   }
 
   JBCStmtKind GetKind() const {
@@ -74,9 +73,7 @@ class JBCStmt : public GeneralStmt {
   }
 
  protected:
-  virtual std::list<UniqueFEIRStmt> EmitToFEIRImpl(JBCStack2FEHelper &stack2feHelper,
-                                                   const jbc::JBCConstPool &constPool,
-                                                   bool &success) const = 0;
+  virtual std::list<UniqueFEIRStmt> EmitToFEIRImpl(JBCFunctionContext &context, bool &success) const = 0;
 
   JBCStmtKind kind;
 };
@@ -93,15 +90,12 @@ class JBCStmtInst : public JBCStmt {
   bool IsStmtInstImpl() const override;
   void DumpImpl(const std::string &prefix) const override;
   std::string DumpDotStringImpl() const override;
-  std::list<UniqueFEIRStmt> EmitToFEIRImpl(JBCStack2FEHelper &stack2feHelper,
-                                           const jbc::JBCConstPool &constPool,
-                                           bool &success) const override;
+  std::list<UniqueFEIRStmt> EmitToFEIRImpl(JBCFunctionContext &context, bool &success) const override;
 
  private:
   const jbc::JBCOp &op;
-  using FuncPtrEmitToFEIR = std::list<UniqueFEIRStmt> (JBCStmtInst::*)(JBCStack2FEHelper &stack2feHelper,
-                                                                       const jbc::JBCConstPool &constPool,
-                                                                       bool &success) const;
+  using FuncPtrEmitToFEIR =
+      std::list<UniqueFEIRStmt> (JBCStmtInst::*)(JBCFunctionContext &context, bool &success) const;
   static std::map<jbc::JBCOpcodeKind, FuncPtrEmitToFEIR> funcPtrMapForEmitToFEIR;
   static std::map<jbc::JBCOpcodeKind, FuncPtrEmitToFEIR> InitFuncPtrMapForEmitToFEIR();
   static std::map<jbc::JBCOpcode, Opcode> opcodeMapForMathBinop;
@@ -110,123 +104,45 @@ class JBCStmtInst : public JBCStmt {
   static std::map<jbc::JBCOpcode, Opcode> InitOpcodeMapForMathUnop();
   static std::map<jbc::JBCOpcode, Opcode> opcodeMapForMonitor;
   static std::map<jbc::JBCOpcode, Opcode> InitOpcodeMapForMonitor();
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpConst(JBCStack2FEHelper &stack2feHelper,
-                                                 const jbc::JBCConstPool &constPool,
-                                                 bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpConstCommon(JBCStack2FEHelper &stack2feHelper,
-                                                       const jbc::JBCConstPool &constPool,
-                                                       bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpAConstNull(JBCStack2FEHelper &stack2feHelper,
-                                                      const jbc::JBCConstPool &constPool,
-                                                      bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpIConst(JBCStack2FEHelper &stack2feHelper,
-                                                  const jbc::JBCConstPool &constPool,
-                                                  bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpLConst(JBCStack2FEHelper &stack2feHelper,
-                                                  const jbc::JBCConstPool &constPool,
-                                                  bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpFConst(JBCStack2FEHelper &stack2feHelper,
-                                                  const jbc::JBCConstPool &constPool,
-                                                  bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpDConst(JBCStack2FEHelper &stack2feHelper,
-                                                  const jbc::JBCConstPool &constPool,
-                                                  bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpBiPush(JBCStack2FEHelper &stack2feHelper,
-                                                  const jbc::JBCConstPool &constPool,
-                                                  bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpSiPush(JBCStack2FEHelper &stack2feHelper,
-                                                  const jbc::JBCConstPool &constPool,
-                                                  bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpLdc(JBCStack2FEHelper &stack2feHelper,
-                                               const jbc::JBCConstPool &constPool,
-                                               bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpLoad(JBCStack2FEHelper &stack2feHelper,
-                                                const jbc::JBCConstPool &constPool,
-                                                bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpStore(JBCStack2FEHelper &stack2feHelper,
-                                                 const jbc::JBCConstPool &constPool,
-                                                 bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpArrayLoad(JBCStack2FEHelper &stack2feHelper,
-                                                     const jbc::JBCConstPool &constPool,
-                                                     bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpArrayStore(JBCStack2FEHelper &stack2feHelper,
-                                                      const jbc::JBCConstPool &constPool,
-                                                      bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpPop(JBCStack2FEHelper &stack2feHelper,
-                                               const jbc::JBCConstPool &constPool,
-                                               bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpDup(JBCStack2FEHelper &stack2feHelper,
-                                               const jbc::JBCConstPool &constPool,
-                                               bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpSwap(JBCStack2FEHelper &stack2feHelper,
-                                                const jbc::JBCConstPool &constPool,
-                                                bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpMathBinop(JBCStack2FEHelper &stack2feHelper,
-                                                     const jbc::JBCConstPool &constPool,
-                                                     bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpMathUnop(JBCStack2FEHelper &stack2feHelper,
-                                                    const jbc::JBCConstPool &constPool,
-                                                    bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpMathInc(JBCStack2FEHelper &stack2feHelper,
-                                                   const jbc::JBCConstPool &constPool,
-                                                   bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpConvert(JBCStack2FEHelper &stack2feHelper,
-                                                   const jbc::JBCConstPool &constPool,
-                                                   bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpCompare(JBCStack2FEHelper &stack2feHelper,
-                                                   const jbc::JBCConstPool &constPool,
-                                                   bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpReturn(JBCStack2FEHelper &stack2feHelper,
-                                                  const jbc::JBCConstPool &constPool,
-                                                  bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpStaticFieldOpr(JBCStack2FEHelper &stack2feHelper,
-                                                          const jbc::JBCConstPool &constPool,
-                                                          bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpFieldOpr(JBCStack2FEHelper &stack2feHelper,
-                                                    const jbc::JBCConstPool &constPool,
-                                                    bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpInvoke(JBCStack2FEHelper &stack2feHelper,
-                                                  const jbc::JBCConstPool &constPool,
-                                                  bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpInvokeVirtual(JBCStack2FEHelper &stack2feHelper,
-                                                         const jbc::JBCConstPool &constPool,
-                                                         bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpInvokeStatic(JBCStack2FEHelper &stack2feHelper,
-                                                        const jbc::JBCConstPool &constPool,
-                                                        bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpInvokeInterface(JBCStack2FEHelper &stack2feHelper,
-                                                           const jbc::JBCConstPool &constPool,
-                                                           bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpInvokeSpecial(JBCStack2FEHelper &stack2feHelper,
-                                                         const jbc::JBCConstPool &constPool,
-                                                         bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpInvokeDynamic(JBCStack2FEHelper &stack2feHelper,
-                                                         const jbc::JBCConstPool &constPool,
-                                                         bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpNew(JBCStack2FEHelper &stack2feHelper,
-                                               const jbc::JBCConstPool &constPool,
-                                               bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpMultiANewArray(JBCStack2FEHelper &stack2feHelper,
-                                                          const jbc::JBCConstPool &constPool,
-                                                          bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpThrow(JBCStack2FEHelper &stack2feHelper,
-                                                 const jbc::JBCConstPool &constPool,
-                                                 bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpTypeCheck(JBCStack2FEHelper &stack2feHelper,
-                                                     const jbc::JBCConstPool &constPool,
-                                                     bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpMonitor(JBCStack2FEHelper &stack2feHelper,
-                                                   const jbc::JBCConstPool &constPool,
-                                                   bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpArrayLength(JBCStack2FEHelper &stack2feHelper,
-                                                       const jbc::JBCConstPool &constPool,
-                                                       bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRCommon(JBCStack2FEHelper &stack2feHelper,
-                                             const jbc::JBCConstPool &constPool,
-                                             bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRCommon2(JBCStack2FEHelper &stack2feHelper,
-                                              const jbc::JBCConstPool &constPool,
-                                              bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpConst(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpConstCommon(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpAConstNull(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpIConst(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpLConst(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpFConst(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpDConst(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpBiPush(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpSiPush(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpLdc(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpLoad(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpStore(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpArrayLoad(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpArrayStore(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpPop(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpDup(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpSwap(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpMathBinop(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpMathUnop(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpMathInc(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpConvert(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpCompare(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpReturn(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpStaticFieldOpr(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpFieldOpr(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpInvoke(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpInvokeVirtual(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpInvokeStatic(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpInvokeInterface(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpInvokeSpecial(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpInvokeDynamic(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpNew(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpMultiANewArray(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpThrow(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpTypeCheck(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpMonitor(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpArrayLength(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRCommon(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRCommon2(JBCFunctionContext &context, bool &success) const;
   UniqueFEIRStmt GenerateStmtForConstI32(JBCStack2FEHelper &stack2feHelper, int32 val, bool &success) const;
   UniqueFEIRStmt GenerateStmtForConstI64(JBCStack2FEHelper &stack2feHelper, int64 val, bool &success) const;
   UniqueFEIRStmt GenerateStmtForConstF32(JBCStack2FEHelper &stack2feHelper, float val, bool &success) const;
@@ -241,10 +157,6 @@ class JBCStmtInstBranch : public JBCStmt {
  public:
   explicit JBCStmtInstBranch(const jbc::JBCOp &argOp);
   ~JBCStmtInstBranch() = default;
-  std::list<UniqueFEIRStmt> EmitToFEIRWithLabel(JBCStack2FEHelper &stack2feHelper,
-                                                const std::map<uint32, JBCStmtPesudoLabel*> &mapPCStmtLabel,
-                                                bool &success) const;
-
   const jbc::JBCOp &GetOp() const {
     return op;
   }
@@ -253,13 +165,9 @@ class JBCStmtInstBranch : public JBCStmt {
   bool IsStmtInstImpl() const override;
   void DumpImpl(const std::string &prefix) const override;
   std::string DumpDotStringImpl() const override;
-  std::list<UniqueFEIRStmt> EmitToFEIRImpl(JBCStack2FEHelper &stack2feHelper,
-                                           const jbc::JBCConstPool &constPool,
-                                           bool &success) const override;
+  std::list<UniqueFEIRStmt> EmitToFEIRImpl(JBCFunctionContext &context, bool &success) const override;
   JBCStmtPesudoLabel *GetTarget(const std::map<uint32, JBCStmtPesudoLabel*> &mapPCStmtLabel, uint32 pc) const;
-  virtual std::list<UniqueFEIRStmt> EmitToFEIRForOpRetImpl(JBCStack2FEHelper &stack2feHelper,
-                                                           const std::map<uint32, JBCStmtPesudoLabel*> &mapPCStmtLabel,
-                                                           bool &success) const {
+  virtual std::list<UniqueFEIRStmt> EmitToFEIRForOpRetImpl(JBCFunctionContext &context, bool &success) const {
     return std::list<UniqueFEIRStmt>();
   }
 
@@ -274,45 +182,26 @@ class JBCStmtInstBranch : public JBCStmt {
   };
 
   using FuncPtrEmitToFEIR =
-      std::list<UniqueFEIRStmt> (JBCStmtInstBranch::*)(JBCStack2FEHelper &stack2feHelper,
-                                                       const std::map<uint32, JBCStmtPesudoLabel*> &mapPCStmtLabel,
-                                                       bool &success) const;
+      std::list<UniqueFEIRStmt> (JBCStmtInstBranch::*)(JBCFunctionContext &context, bool &success) const;
   static std::map<jbc::JBCOpcodeKind, FuncPtrEmitToFEIR> funcPtrMapForEmitToFEIR;
   static std::map<jbc::JBCOpcodeKind, FuncPtrEmitToFEIR> InitFuncPtrMapForEmitToFEIR();
   static std::map<jbc::JBCOpcode, std::tuple<Opcode, Opcode, uint8>> opcodeMapForCondGoto;
   static std::map<jbc::JBCOpcode, std::tuple<Opcode, Opcode, uint8>> InitOpcodeMapForCondGoto();
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpGoto(JBCStack2FEHelper &stack2feHelper,
-                                                const std::map<uint32, JBCStmtPesudoLabel*> &mapPCStmtLabel,
-                                                bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpBranch(JBCStack2FEHelper &stack2feHelper,
-                                                  const std::map<uint32, JBCStmtPesudoLabel*> &mapPCStmtLabel,
-                                                  bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpSwitch(JBCStack2FEHelper &stack2feHelper,
-                                                  const std::map<uint32, JBCStmtPesudoLabel*> &mapPCStmtLabel,
-                                                  bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpJsr(JBCStack2FEHelper &stack2feHelper,
-                                               const std::map<uint32, JBCStmtPesudoLabel*> &mapPCStmtLabel,
-                                               bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpRet(JBCStack2FEHelper &stack2feHelper,
-                                               const std::map<uint32, JBCStmtPesudoLabel*> &mapPCStmtLabel,
-                                               bool &success) const;
-  std::list<UniqueFEIRStmt> EmitToFEIRCommon(JBCStack2FEHelper &stack2feHelper,
-                                             const std::map<uint32, JBCStmtPesudoLabel*> &mapPCStmtLabel,
-                                             bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpGoto(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpBranch(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpSwitch(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpJsr(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpRet(JBCFunctionContext &context, bool &success) const;
+  std::list<UniqueFEIRStmt> EmitToFEIRCommon(JBCFunctionContext &context, bool &success) const;
 };
 
 class JBCStmtInstBranchRet : public JBCStmtInstBranch {
  public:
-  JBCStmtInstBranchRet(const jbc::JBCOp &argOp, const std::map<uint16, std::map<int32, uint32>> &argMapJsrSlotRetAddr);
+  JBCStmtInstBranchRet(const jbc::JBCOp &argOp);
   ~JBCStmtInstBranchRet() = default;
 
  protected:
-  std::list<UniqueFEIRStmt> EmitToFEIRForOpRetImpl(JBCStack2FEHelper &stack2feHelper,
-                                                   const std::map<uint32, JBCStmtPesudoLabel*> &mapPCStmtLabel,
-                                                   bool &success) const override;
-
- private:
-  const std::map<uint16, std::map<int32, uint32>> &mapJsrSlotRetAddr;
+  std::list<UniqueFEIRStmt> EmitToFEIRForOpRetImpl(JBCFunctionContext &context, bool &success) const override;
 };
 
 class JBCStmtPesudoLabel : public JBCStmt {
@@ -333,9 +222,7 @@ class JBCStmtPesudoLabel : public JBCStmt {
  protected:
   void DumpImpl(const std::string &prefix) const override;
   std::string DumpDotStringImpl() const override;
-  std::list<UniqueFEIRStmt> EmitToFEIRImpl(JBCStack2FEHelper &stack2feHelper,
-                                           const jbc::JBCConstPool &constPool,
-                                           bool &success) const override;
+  std::list<UniqueFEIRStmt> EmitToFEIRImpl(JBCFunctionContext &context, bool &success) const override;
 
   uint32 labelIdx;
 };
@@ -356,9 +243,7 @@ class JBCStmtPesudoCatch : public JBCStmtPesudoLabel {
  protected:
   void DumpImpl(const std::string &prefix) const override;
   std::string DumpDotStringImpl() const override;
-  std::list<UniqueFEIRStmt> EmitToFEIRImpl(JBCStack2FEHelper &stack2feHelper,
-                                           const jbc::JBCConstPool &constPool,
-                                           bool &success) const override;
+  std::list<UniqueFEIRStmt> EmitToFEIRImpl(JBCFunctionContext &context, bool &success) const override;
 
  private:
   std::set<GStrIdx> catchTypeNames;
@@ -387,9 +272,7 @@ class JBCStmtPesudoTry : public JBCStmt {
  protected:
   void DumpImpl(const std::string &prefix) const override;
   std::string DumpDotStringImpl() const override;
-  std::list<UniqueFEIRStmt> EmitToFEIRImpl(JBCStack2FEHelper &stack2feHelper,
-                                           const jbc::JBCConstPool &constPool,
-                                           bool &success) const override;
+  std::list<UniqueFEIRStmt> EmitToFEIRImpl(JBCFunctionContext &context, bool &success) const override;
 
  private:
   std::vector<JBCStmtPesudoCatch*> catchStmts;
@@ -407,9 +290,7 @@ class JBCStmtPesudoEndTry : public JBCStmt {
  protected:
   void DumpImpl(const std::string &prefix) const override;
   std::string DumpDotStringImpl() const override;
-  std::list<UniqueFEIRStmt> EmitToFEIRImpl(JBCStack2FEHelper &stack2feHelper,
-                                           const jbc::JBCConstPool &constPool,
-                                           bool &success) const override;
+  std::list<UniqueFEIRStmt> EmitToFEIRImpl(JBCFunctionContext &context, bool &success) const override;
 };
 
 class JBCStmtPesudoComment : public JBCStmt {
@@ -428,9 +309,7 @@ class JBCStmtPesudoComment : public JBCStmt {
  protected:
   void DumpImpl(const std::string &prefix) const override;
   std::string DumpDotStringImpl() const override;
-  std::list<UniqueFEIRStmt> EmitToFEIRImpl(JBCStack2FEHelper &stack2feHelper,
-                                           const jbc::JBCConstPool &constPool,
-                                           bool &success) const override;
+  std::list<UniqueFEIRStmt> EmitToFEIRImpl(JBCFunctionContext &context, bool &success) const override;
 
  private:
   std::string content = "";
@@ -472,9 +351,7 @@ class JBCStmtPesudoLOC : public JBCStmt {
  protected:
   void DumpImpl(const std::string &prefix) const override;
   std::string DumpDotStringImpl() const override;
-  std::list<UniqueFEIRStmt> EmitToFEIRImpl(JBCStack2FEHelper &stack2feHelper,
-                                           const jbc::JBCConstPool &constPool,
-                                           bool &success) const override;
+  std::list<UniqueFEIRStmt> EmitToFEIRImpl(JBCFunctionContext &context, bool &success) const override;
 
  private:
   uint32 srcFileIdx;

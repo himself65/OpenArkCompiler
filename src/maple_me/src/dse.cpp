@@ -34,8 +34,26 @@
 namespace maple {
 using namespace utils;
 
+bool DSE::ExprHasSideEffect(const BaseNode &expr) const {
+  Opcode op = expr.GetOpCode();
+  if (kOpcodeInfo.HasSideEffect(op)) {
+    return true;
+  }
+  // may throw exception
+  if (op == OP_gcmallocjarray || op == OP_gcpermallocjarray) {
+    return true;
+  }
+  // create a instance of interface
+  if (op == OP_gcmalloc || op == OP_gcpermalloc) {
+    auto &gcMallocNode = static_cast<const GCMallocNode&>(expr);
+    MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(gcMallocNode.GetTyIdx());
+    return type->GetKind() == kTypeInterface;
+  }
+  return false;
+}
+
 bool DSE::ExprNonDeletable(const BaseNode &expr) const {
-  if (kOpcodeInfo.HasSideEffect(expr.GetOpCode())) {
+  if (ExprHasSideEffect(expr)) {
     return true;
   }
   switch (expr.GetOpCode()) {
@@ -53,10 +71,6 @@ bool DSE::ExprNonDeletable(const BaseNode &expr) const {
       auto &regreadNode = static_cast<const RegreadSSANode&>(expr);
       return (regreadNode.GetRegIdx() == -kSregThrownval);
     }
-    case OP_gcmallocjarray:
-    case OP_gcpermallocjarray:
-      // may throw exception
-      return true;
     case OP_intrinsicop: {
       auto &node = static_cast<const IntrinsicopNode&>(expr);
       const IntrinDesc &intrinDesc = node.GetIntrinDesc();

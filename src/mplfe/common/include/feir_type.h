@@ -36,7 +36,11 @@ class FEIRType {
   virtual ~FEIRType() = default;
   static std::unique_ptr<FEIRType> NewType(FEIRTypeKind argKind = kFEIRTypeDefault);
   static std::map<MIRSrcLang, std::tuple<bool, PrimType>> InitLangConfig();
-  MIRType *GenerateMIRTypeAuto(MIRSrcLang srcLang) const;
+  MIRType *GenerateMIRTypeAuto(MIRSrcLang argSrcLang) const;
+  MIRType *GenerateMIRTypeAuto() const {
+    return GenerateMIRTypeAuto(srcLang);
+  }
+
   bool IsSameKind(const FEIRType &type) const {
     return kind == type.kind;
   }
@@ -69,7 +73,7 @@ class FEIRType {
     return CloneImpl();
   }
 
-  MIRType *GenerateMIRType(MIRSrcLang srcLang, bool usePtr) const {
+  MIRType *GenerateMIRType(MIRSrcLang argSrcLang, bool usePtr) const {
     return GenerateMIRType(usePtr);
   }
 
@@ -146,6 +150,7 @@ class FEIRType {
 
   FEIRTypeKind kind : 7;
   bool isZero : 1;
+  MIRSrcLang srcLang : 8;
 };  // class FEIRType
 
 using UniqueFEIRType = std::unique_ptr<FEIRType>;

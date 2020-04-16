@@ -75,6 +75,7 @@ class MPLFEOptions {
   bool ProcessDumpJBCAll(const mapleOption::Option &opt);
   bool ProcessDumpJBCErrorOnly(const mapleOption::Option &opt);
   bool ProcessDumpJBCFuncName(const mapleOption::Option &opt);
+  bool ProcessEmitJBCLocalVarInfo(const mapleOption::Option &opt);
 
   // general stmt/bb/cfg debug options
   bool ProcessDumpGeneralCFGGraph(const mapleOption::Option &opt);

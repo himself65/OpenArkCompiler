@@ -118,6 +118,7 @@ static_library("lib_mplfe_jbc_input") {
     "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_class_const_pool.cpp",
     "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_compiler_component.cpp",
     "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_function.cpp",
+    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_function_context.cpp",
     "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_input.cpp",
     "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_opcode.cpp",
     "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_opcode_helper.cpp",

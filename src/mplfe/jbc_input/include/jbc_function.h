@@ -27,6 +27,7 @@
 #include "jbc_bb.h"
 #include "jbc_class2fe_helper.h"
 #include "jbc_stack2fe_helper.h"
+#include "jbc_function_context.h"
 
 namespace maple {
 class JBCBBPesudoCatchPred : public GeneralBB {
@@ -69,6 +70,7 @@ class JBCFunction : public FEFunction {
   bool CheckJVMStack(const std::string &phaseName);
   bool GenerateArgVarList(const std::string &phaseName) override;
   bool ProcessFunctionArgs(const std::string &phaseName);
+  bool EmitLocalVarInfo(const std::string &phaseName);
   bool EmitToFEIRStmt(const std::string &phaseName) override;
 
   // interface implement
@@ -94,16 +96,9 @@ class JBCFunction : public FEFunction {
   const JBCClassMethod2FEHelper &methodHelper;
   const jbc::JBCClassMethod &method;
   JBCStack2FEHelper stack2feHelper;
-  bool error;
-  std::map<uint32, GeneralStmt*> mapPCStmtInst;
-  std::map<uint32, JBCStmtPesudoTry*> mapPCTryStmt;  // key: tryStartPC, value: stmt
-  std::map<uint32, JBCStmtPesudoEndTry*> mapPCEndTryStmt;  // key: tryEndPC, value: stmt
-  std::map<uint32, JBCStmtPesudoCatch*> mapPCCatchStmt;  // key: handlePC, value: stmt
-  std::map<uint32, JBCStmtPesudoLabel*> mapPCLabelStmt;  // key: labelPC, value: stmt
-  std::map<uint32, JBCStmtPesudoLOC*> mapPCStmtLOC; // key: locPC, value: stmt
-  std::map<uint32, JBCStmtPesudoComment*> mapPCCommentStmt; // key: commentPC, value: stmt
-  std::map<uint16, std::map<int32, uint32>> mapJsrSlotRetAddr;  // key: slotIdx, value: map<jsrID, retAddr>
-  GeneralBB *pesudoBBCatchPred;
+  JBCFunctionContext context;
+  bool error = false;
+  GeneralBB *pesudoBBCatchPred = nullptr;
 
   bool PreBuildJsrInfo(const jbc::JBCAttrCode &code);
   bool BuildStmtFromInstruction(const jbc::JBCAttrCode &code);

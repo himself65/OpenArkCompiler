@@ -107,6 +107,23 @@ const JBCAttr *JBCAttrMap::GetAttr(JBCAttrKind kind) const {
   }
 }
 
+bool JBCAttrMap::PreProcess(const JBCConstPool &constPool) {
+  bool success = true;
+  for (auto itList : mapAttrs) {
+    for (JBCAttr *attr : *(itList.second)) {
+      switch (attr->GetKind()) {
+        case kAttrLocalVariableTable:
+        case kAttrLocalVariableTypeTable:
+          success = success && attr->PreProcess(constPool);
+          break;
+        default:
+          break;
+      }
+    }
+  }
+  return success;
+}
+
 // ---------- JBCAttrRaw ----------
 JBCAttrRaw::JBCAttrRaw(MapleAllocator &allocator, uint16 nameIdx, uint32 length)
     : JBCAttr(kAttrRaw, nameIdx, length),
@@ -132,6 +149,147 @@ bool JBCAttrRaw::PreProcessImpl(const JBCConstPool &constPool) {
 
 SimpleXMLElem *JBCAttrRaw::GenXmlElemImpl(MapleAllocator &allocator, const JBCConstPool &constPool, uint32 idx) const {
   return nullptr;
+}
+
+// ---------- JBCAttrLocalVariableInfo ----------
+JavaAttrLocalVariableInfoItem JBCAttrLocalVariableInfo::kInvalidInfoItem;
+
+JBCAttrLocalVariableInfo::JBCAttrLocalVariableInfo(MapleAllocator &argAllocator)
+    : allocator(argAllocator),
+      slotStartMap(allocator.Adapter()),
+      itemMap(allocator.Adapter()) {}
+
+void JBCAttrLocalVariableInfo::RegisterItem(const attr::LocalVariableTableItem &itemAttr) {
+  uint16 slotIdx = itemAttr.GetIndex();
+  uint16 startPC = itemAttr.GetStartPC();
+  uint16 length = itemAttr.GetLength();
+  JavaAttrLocalVariableInfoItem *item = GetItemByStartInternal(slotIdx, startPC);
+  if (item == nullptr) {
+    CheckItemAvaiable(slotIdx, startPC);
+    AddSlotStartMap(slotIdx, startPC);
+    JavaAttrLocalVariableInfoItem &itemRef = itemMap[std::make_pair(slotIdx, startPC)];
+    itemRef.slotIdx = slotIdx;
+    itemRef.start = startPC;
+    itemRef.length = length;
+    itemRef.nameIdx = itemAttr.GetNameStrIdx();
+    itemRef.typeNameIdx = itemAttr.GetDescStrIdx();
+  } else {
+    if (item->start == startPC && item->length == length && item->nameIdx == itemAttr.GetDescStrIdx()) {
+      CHECK_FATAL(item->typeNameIdx == 0, "Item already defined");
+      item->typeNameIdx = itemAttr.GetDescStrIdx();
+    } else {
+      CHECK_FATAL(false, "Item mismatch in RegisterItem()");
+    }
+  }
+}
+
+void JBCAttrLocalVariableInfo::RegisterTypeItem(const attr::LocalVariableTypeTableItem &itemAttr) {
+  uint16 slotIdx = itemAttr.GetIndex();
+  uint16 startPC = itemAttr.GetStartPC();
+  uint16 length = itemAttr.GetLength();
+  JavaAttrLocalVariableInfoItem *item = GetItemByStartInternal(slotIdx, startPC);
+  if (item == nullptr) {
+    CheckItemAvaiable(slotIdx, startPC);
+    AddSlotStartMap(slotIdx, startPC);
+    JavaAttrLocalVariableInfoItem &itemRef = itemMap[std::make_pair(slotIdx, startPC)];
+    itemRef.slotIdx = slotIdx;
+    itemRef.start = startPC;
+    itemRef.length = length;
+    itemRef.nameIdx = itemAttr.GetNameStrIdx();
+    itemRef.signatureNameIdx = itemAttr.GetSignatureStrIdx();
+  } else {
+    if (item->start == startPC && item->length == length && item->nameIdx == itemAttr.GetNameStrIdx()) {
+      CHECK_FATAL(item->signatureNameIdx == 0, "Item already defined");
+      item->signatureNameIdx = itemAttr.GetSignatureStrIdx();
+    } else {
+      CHECK_FATAL(false, "Item mismatch in RegisterItem()");
+    }
+  }
+}
+
+const JavaAttrLocalVariableInfoItem &JBCAttrLocalVariableInfo::GetItemByStart(uint16 slotIdx, uint16 start) const {
+  uint32 itemPCStart = GetStart(slotIdx, start);
+  if (itemPCStart != start) {
+    return kInvalidInfoItem;
+  }
+  std::map<std::pair<uint16, uint16>, JavaAttrLocalVariableInfoItem>::const_iterator it =
+      itemMap.find(std::make_pair(slotIdx, itemPCStart));
+  CHECK_FATAL(it != itemMap.end(), "Item@%d not found", start);
+  return it->second;
+}
+
+JavaAttrLocalVariableInfoItem *JBCAttrLocalVariableInfo::GetItemByStartInternal(uint16 slotIdx, uint16 start) {
+  uint32 itemPCStart = GetStart(slotIdx, start);
+  if (itemPCStart != start) {
+    return nullptr;
+  }
+  std::map<std::pair<uint16, uint16>, JavaAttrLocalVariableInfoItem>::iterator it =
+      itemMap.find(std::make_pair(slotIdx, itemPCStart));
+  CHECK_FATAL(it != itemMap.end(), "Item@%d not found", start);
+  return &(it->second);
+}
+
+uint32 JBCAttrLocalVariableInfo::GetStart(uint16 slotIdx, uint16 pc) const {
+  MapleMap<uint16, MapleSet<uint16>>::const_iterator it = slotStartMap.find(slotIdx);
+  if (it == slotStartMap.end()) {
+    return jbc::kInvalidPC;
+  }
+  uint32 startLast = jbc::kInvalidPC;
+  for (uint16 start : it->second) {
+    if (pc == start) {
+      return start;
+    } else if (pc < start) {
+      return startLast;
+    }
+    startLast = start;
+  }
+  return startLast;
+}
+
+std::list<std::string> JBCAttrLocalVariableInfo::EmitToStrings() const {
+  std::list<std::string> ans;
+  std::stringstream ss;
+  ans.emplace_back("===== Local Variable Info =====");
+  for (const std::pair<std::pair<uint16, uint16>, JavaAttrLocalVariableInfoItem> &itemPair : itemMap) {
+    const JavaAttrLocalVariableInfoItem &item = itemPair.second;
+    ss.str("");
+    ss << "slot[" << item.slotIdx << "]: ";
+    ss << "start=" << item.start << ", ";
+    ss << "lenght=" << item.length << ", ";
+    ss << "name=\'" << GlobalTables::GetStrTable().GetStringFromStrIdx(item.nameIdx) << "\', ";
+    ss << "type=\'" << GlobalTables::GetStrTable().GetStringFromStrIdx(item.typeNameIdx) << "\', ";
+    ss << "signature=\'" << GlobalTables::GetStrTable().GetStringFromStrIdx(item.signatureNameIdx) << "\'";
+    ans.push_back(ss.str());
+  }
+  ans.emplace_back("===============================");
+  return ans;
+}
+
+bool JBCAttrLocalVariableInfo::IsInvalidLocalVariableInfoItem(const JavaAttrLocalVariableInfoItem &item) {
+  return (item.nameIdx == 0 && item.typeNameIdx == 0 && item.signatureNameIdx == 0);
+}
+
+void JBCAttrLocalVariableInfo::AddSlotStartMap(uint16 slotIdx, uint16 startPC) {
+  auto it = slotStartMap.find(slotIdx);
+  if (it == slotStartMap.end()) {
+    MapleSet<uint16> startSet(allocator.Adapter());
+    CHECK_FATAL(startSet.insert(startPC).second, "insert failed");
+    CHECK_FATAL(slotStartMap.insert(std::make_pair(slotIdx, startSet)).second, "insert failed");
+  } else {
+    CHECK_FATAL(it->second.insert(startPC).second, "insert failed");
+  }
+}
+
+void JBCAttrLocalVariableInfo::CheckItemAvaiable(uint16 slotIdx, uint16 start) const {
+  uint32 itemPCStart = GetStart(slotIdx, start);
+  if (itemPCStart == jbc::kInvalidPC) {
+    return;
+  }
+  CHECK_FATAL(itemPCStart <= jbc::kMaxPC32, "Invalid PC");
+  uint16 itemPCStart16 = static_cast<uint16>(itemPCStart);
+  const JavaAttrLocalVariableInfoItem &item = GetItemByStart(slotIdx, itemPCStart16);
+  CHECK_FATAL(!JBCAttrLocalVariableInfo::IsInvalidLocalVariableInfoItem(item), "Item@%d not found", itemPCStart16);
+  CHECK_FATAL(start >= item.start + item.length, "PC range overlapped");
 }
 
 // ---------- JBCAttrConstantValue ----------
@@ -171,7 +329,8 @@ JBCAttrCode::JBCAttrCode(MapleAllocator &allocator, uint16 nameIdx, uint32 lengt
       nAttr(0),
       attrs(allocator.Adapter()),
       instructions(allocator.Adapter()),
-      attrMap(allocator) {}
+      attrMap(allocator),
+      localVarInfo(allocator) {}
 
 JBCAttrCode::~JBCAttrCode() {
   code = nullptr;
@@ -213,6 +372,8 @@ bool JBCAttrCode::PreProcessImpl(const JBCConstPool &constPool) {
   for (attr::ExceptionTableItem *item : exceptions) {
     success = success && item->PreProcess(constPool);
   }
+  success = success && attrMap.PreProcess(constPool);
+  InitLocalVarInfo();
   return success;
 }
 
@@ -221,7 +382,25 @@ SimpleXMLElem *JBCAttrCode::GenXmlElemImpl(MapleAllocator &allocator, const JBCC
 }
 
 // Remove const when implemented
-void JBCAttrCode::InitLocalVarInfo() const {
+void JBCAttrCode::InitLocalVarInfo() {
+  // LocalVariableTable
+  std::list<JBCAttr*> localVars = attrMap.GetAttrs(jbc::kAttrLocalVariableTable);
+  for (JBCAttr *attrRaw : localVars) {
+    CHECK_NULL_FATAL(attrRaw);
+    JBCAttrLocalVariableTable *attr = static_cast<JBCAttrLocalVariableTable*>(attrRaw);
+    for (attr::LocalVariableTableItem *itemAttr : attr->GetLocalVarInfos()) {
+      localVarInfo.RegisterItem(*itemAttr);
+    }
+  }
+  // LocalVariableTypeTable
+  std::list<JBCAttr*> localVarTypes = attrMap.GetAttrs(jbc::kAttrLocalVariableTypeTable);
+  for (JBCAttr *attrRaw : localVarTypes) {
+    CHECK_NULL_FATAL(attrRaw);
+    JBCAttrLocalVariableTypeTable *attr = static_cast<JBCAttrLocalVariableTypeTable*>(attrRaw);
+    for (attr::LocalVariableTypeTableItem *itemAttr : attr->GetLocalVarTypeInfos()) {
+      localVarInfo.RegisterTypeItem(*itemAttr);
+    }
+  }
 }
 
 // Remove const when implemented
@@ -585,7 +764,11 @@ bool JBCAttrLocalVariableTable::ParseFileImpl(MapleAllocator &allocator, BasicIO
 }
 
 bool JBCAttrLocalVariableTable::PreProcessImpl(const JBCConstPool &constPool) {
-  return true;
+  bool success = true;
+  for (attr::LocalVariableTableItem *info : localVarInfos) {
+    success = success && info->PreProcess(constPool);
+  }
+  return success;
 }
 
 SimpleXMLElem *JBCAttrLocalVariableTable::GenXmlElemImpl(MapleAllocator &allocator, const JBCConstPool &constPool,
@@ -612,7 +795,11 @@ bool JBCAttrLocalVariableTypeTable::ParseFileImpl(MapleAllocator &allocator, Bas
 }
 
 bool JBCAttrLocalVariableTypeTable::PreProcessImpl(const JBCConstPool &constPool) {
-  return true;
+  bool success = true;
+  for (attr::LocalVariableTypeTableItem *info : localVarTypeInfos) {
+    success = success && info->PreProcess(constPool);
+  }
+  return success;
 }
 
 SimpleXMLElem *JBCAttrLocalVariableTypeTable::GenXmlElemImpl(MapleAllocator &allocator, const JBCConstPool &constPool,

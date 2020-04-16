@@ -177,8 +177,26 @@ void HDSE::PropagateUseLive(MeExpr &meExpr) {
   }
 }
 
+bool HDSE::ExprHasSideEffect(const MeExpr &meExpr) const {
+  Opcode op = meExpr.GetOp();
+  if (kOpcodeInfo.HasSideEffect(op)) {
+    return true;
+  }
+  // may throw exception
+  if (op == OP_gcmallocjarray || op == OP_gcpermallocjarray) {
+    return true;
+  }
+  // create a instance of interface
+  if (op == OP_gcmalloc || op == OP_gcpermalloc) {
+    auto &gcMallocMeExpr = static_cast<const GcmallocMeExpr&>(meExpr);
+    MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(gcMallocMeExpr.GetTyIdx());
+    return type->GetKind() == kTypeInterface;
+  }
+  return false;
+}
+
 bool HDSE::ExprNonDeletable(const MeExpr &meExpr) const {
-  if (kOpcodeInfo.HasSideEffect(meExpr.GetOp())) {
+  if (ExprHasSideEffect(meExpr)) {
     return true;
   }
   switch (meExpr.GetMeOp()) {
@@ -193,12 +211,6 @@ bool HDSE::ExprNonDeletable(const MeExpr &meExpr) const {
     case kMeOpIvar: {
       auto &opIvar = static_cast<const IvarMeExpr&>(meExpr);
       return opIvar.IsVolatile() || ExprNonDeletable(*opIvar.GetBase());
-    }
-    case kMeOpOp: {
-      if (meExpr.GetOp() == OP_gcmallocjarray) {
-        return true;
-      }
-      break;
     }
     case kMeOpNary: {
       auto &opNary = static_cast<const NaryMeExpr&>(meExpr);

@@ -24,7 +24,7 @@ namespace maple {
 std::map<MIRSrcLang, std::tuple<bool, PrimType>> FEIRType::langConfig = FEIRType::InitLangConfig();
 
 FEIRType::FEIRType(FEIRTypeKind argKind)
-    : kind(argKind), isZero(false) {}
+    : kind(argKind), isZero(false), srcLang(kSrcLangJava) {}
 
 void FEIRType::CopyFromImpl(const FEIRType &type) {
   kind = type.kind;
@@ -62,11 +62,11 @@ std::map<MIRSrcLang, std::tuple<bool, PrimType>> FEIRType::InitLangConfig() {
   return ans;
 }
 
-MIRType *FEIRType::GenerateMIRTypeAuto(MIRSrcLang srcLang) const {
+MIRType *FEIRType::GenerateMIRTypeAuto(MIRSrcLang argSrcLang) const {
   MPLFE_PARALLEL_FORBIDDEN();
-  auto it = langConfig.find(srcLang);
+  auto it = langConfig.find(argSrcLang);
   if (it == langConfig.end()) {
-    CHECK_FATAL(kLncErr, "unsupported language");
+    CHECK_FATAL(false, "unsupported language");
     return nullptr;
   }
   return GenerateMIRType(std::get<0>(it->second), std::get<1>(it->second));

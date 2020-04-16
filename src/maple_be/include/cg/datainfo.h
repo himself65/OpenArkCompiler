@@ -14,12 +14,17 @@
  */
 #ifndef MAPLEBE_INCLUDE_CG_DATAINFO_H
 #define MAPLEBE_INCLUDE_CG_DATAINFO_H
-#include <vector>
 
 namespace maplebe {
 class DataInfo {
  public:
-  explicit DataInfo(uint32 bitNum) : info(bitNum / kWordSize + 1, 0ULL) {}
+  explicit DataInfo(uint32 bitNum, MemPool &mp)
+      : allocator(&mp),
+        info(allocator.Adapter()) {
+    for (uint64 i = 0;i < (bitNum / kWordSize + 1); ++i) {
+      info.push_back(0);
+    }
+  }
 
   ~DataInfo() = default;
 
@@ -59,7 +64,7 @@ class DataInfo {
     return info.size() * kWordSize;
   }
 
-  const std::vector<uint64> &GetInfo() const {
+  const MapleVector<uint64> &GetInfo() const {
     return info;
   }
 
@@ -140,8 +145,8 @@ class DataInfo {
     return bitNO / kWordSize;
   }
 
-  std::set<uint32> GetBitsOfInfo() const {
-    std::set<uint32> wordRes;
+  MapleSet<uint32> GetBitsOfInfo() {
+    MapleSet<uint32> wordRes(allocator.Adapter());
     wordRes.clear();
     for (size_t i = 0; i != info.size(); ++i) {
       uint32 result = 0;
@@ -178,13 +183,13 @@ class DataInfo {
 
   void ClearDataInfo() {
     info.clear();
-    info.shrink_to_fit();
   }
 
  private:
   /* long type has 8 bytes, 64 bits */
   static constexpr int32 kWordSize = 64;
-  std::vector<uint64> info;
+  MapleAllocator allocator;
+  MapleVector<uint64> info;
 };
 }  /* namespace maplebe */
 #endif  /* MAPLEBE_INCLUDE_CG_INSN_H */
