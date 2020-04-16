@@ -48,6 +48,7 @@ enum OptionIndex : uint32 {
   kDumpJBCAll,
   kDumpJBCErrorOnly,
   kDumpJBCFuncName,
+  kEmitJBCLocalVarInfo,
   // general stmt/bb/cfg debug options
   kDumpGenCFGGraph,
   // multi-thread control options
@@ -161,6 +162,10 @@ const mapleOption::Descriptor kUsage[] = {
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyRequired,
     "  --dump-general-cfg-graph=graph.dot\n"
     "                         : dump General CFG into graphviz dot file" },
+  { static_cast<uint32>(kEmitJBCLocalVarInfo), 0, "", "emit-jbc-localvar-info",
+    mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyNone,
+    "  --emit-jbc-localvar-info\n"
+    "                         : emit jbc's LocalVar Info in mpl using comments" },
   // multi-thread control
   { static_cast<uint32>(kUnknown), 0, "", "",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyUnknown,
@@ -236,6 +241,8 @@ bool MPLFEOptions::InitFactory() {
                                                 &MPLFEOptions::ProcessDumpJBCErrorOnly);
   RegisterFactoryFunction<OptionProcessFactory>(static_cast<uint32>(kDumpJBCFuncName),
                                                 &MPLFEOptions::ProcessDumpJBCFuncName);
+  RegisterFactoryFunction<OptionProcessFactory>(static_cast<uint32>(kEmitJBCLocalVarInfo),
+                                                &MPLFEOptions::ProcessEmitJBCLocalVarInfo);
 
   // general stmt/bb/cfg debug options
   RegisterFactoryFunction<OptionProcessFactory>(static_cast<uint32>(kDumpGenCFGGraph),
@@ -436,6 +443,11 @@ bool MPLFEOptions::ProcessDumpJBCFuncName(const mapleOption::Option &opt) {
       arg = "";
     }
   }
+  return true;
+}
+
+bool MPLFEOptions::ProcessEmitJBCLocalVarInfo(const mapleOption::Option &opt) {
+  FEOptions::GetInstance().SetIsEmitJBCLocalVarInfo(true);
   return true;
 }
 

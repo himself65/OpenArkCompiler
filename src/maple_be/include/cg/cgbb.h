@@ -556,6 +556,9 @@ class BB {
   void SetLastLoc(const Insn *arg) {
     lastLoc = arg;
   }
+  DataInfo *GetLiveIn() {
+    return liveIn;
+  }
   const DataInfo *GetLiveIn() const {
     return liveIn;
   }
@@ -576,6 +579,9 @@ class BB {
   }
   void LiveInClearDataInfo() {
     liveIn->ClearDataInfo();
+  }
+  DataInfo *GetLiveOut() {
+    return liveOut;
   }
   const DataInfo *GetLiveOut() const {
     return liveOut;

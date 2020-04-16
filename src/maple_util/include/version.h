@@ -16,7 +16,7 @@
 #define MAPLE_UTIL_INCLUDE_VERSION_H
 
 namespace Version {
-static constexpr const int kMajorMplVersion = 3;
+static constexpr const int kMajorMplVersion = 4;
 static constexpr const int kMinorCompilerVersion = 0;
 static constexpr const int kMinorRuntimeVersion = 0;
 }

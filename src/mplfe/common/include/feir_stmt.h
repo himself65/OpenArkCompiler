@@ -694,8 +694,8 @@ class FEIRStmtJavaMultiANewArray : public FEIRStmtAssign {
  public:
   FEIRStmtJavaMultiANewArray(std::unique_ptr<FEIRVar> argVar, std::unique_ptr<FEIRType> argType);
   ~FEIRStmtJavaMultiANewArray() = default;
-  void AddVarSize(std::unique_ptr<FEIRVar> varSize);
-  void AddVarSizeRev(std::unique_ptr<FEIRVar> varSize);
+  void AddVarSize(std::unique_ptr<FEIRVar> argVarSize);
+  void AddVarSizeRev(std::unique_ptr<FEIRVar> argVarSize);
 
  protected:
   std::list<StmtNode*> GenMIRStmtsImpl(MIRBuilder &mirBuilder) const override;

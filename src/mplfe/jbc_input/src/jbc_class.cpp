@@ -82,8 +82,14 @@ SimpleXMLElem *JBCClassMethod::GenXmlElemImpl(MapleAllocator &allocator, const J
 bool JBCClassMethod::PreProcess() {
   bool success = true;
   for (JBCAttr *attr : attrs) {
-    if (attr->GetKind() == kAttrCode) {
-      success = success && attr->PreProcess(klass.GetConstPool());
+    switch (attr->GetKind()) {
+      case kAttrCode:
+      case kAttrLocalVariableTable:
+      case kAttrLocalVariableTypeTable:
+        success = success && attr->PreProcess(klass.GetConstPool());
+        break;
+      default:
+        break;
     }
   }
   return success;

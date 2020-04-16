@@ -330,6 +330,28 @@ class LocalVariableTableItem : public JBCAttrItem {
     return constDesc;
   }
 
+  uint16 GetStartPC() const {
+    return startPC;
+  }
+
+  uint16 GetLength() const {
+    return length;
+  }
+
+  uint16 GetIndex() const {
+    return index;
+  }
+
+  GStrIdx GetNameStrIdx() const {
+    CHECK_NULL_FATAL(constName);
+    return constName->GetStrIdx();
+  }
+
+  GStrIdx GetDescStrIdx() const {
+    CHECK_NULL_FATAL(constDesc);
+    return constDesc->GetStrIdx();
+  }
+
  protected:
   bool ParseFileImpl(MapleAllocator &allocator, BasicIORead &io) override;
   bool PreProcessImpl(const JBCConstPool &constPool) override;
@@ -341,8 +363,10 @@ class LocalVariableTableItem : public JBCAttrItem {
   uint16 nameIdx;
   uint16 descIdx;
   uint16 index;
-  JBCConstUTF8 *constName;
-  JBCConstUTF8 *constDesc;
+  const JBCConstUTF8 *constName;
+  const JBCConstUTF8 *constDesc;
+  GStrIdx nameIdxMpl;
+  GStrIdx descNameIdxMpl;
 };
 
 // LocalVariableTypeTableItem in Attr LocalVariableTypeTable
@@ -359,6 +383,28 @@ class LocalVariableTypeTableItem : public JBCAttrItem {
     return constSignature;
   }
 
+  uint16 GetStartPC() const {
+    return startPC;
+  }
+
+  uint16 GetLength() const {
+    return length;
+  }
+
+  uint16 GetIndex() const {
+    return index;
+  }
+
+  GStrIdx GetNameStrIdx() const {
+    CHECK_NULL_FATAL(constName);
+    return constName->GetStrIdx();
+  }
+
+  GStrIdx GetSignatureStrIdx() const {
+    CHECK_NULL_FATAL(constSignature);
+    return constSignature->GetStrIdx();
+  }
+
  protected:
   bool ParseFileImpl(MapleAllocator &allocator, BasicIORead &io) override;
   bool PreProcessImpl(const JBCConstPool &constPool) override;
@@ -370,8 +416,10 @@ class LocalVariableTypeTableItem : public JBCAttrItem {
   uint16 nameIdx;
   uint16 signatureIdx;
   uint16 index;
-  JBCConstUTF8 *constName;
-  JBCConstUTF8 *constSignature;
+  const JBCConstUTF8 *constName;
+  const JBCConstUTF8 *constSignature;
+  GStrIdx nameIdxMpl;
+  GStrIdx signatureNameIdxMpl;
 };
 
 class ElementValueItem : public JBCAttrItem {

@@ -1240,7 +1240,7 @@ std::string JBCOpInvoke::GetMethodDescription(const JBCConstPool &constPool) con
 
 // ---------- JBCOpJsrRet ----------
 JBCOpJsr::JBCOpJsr(MapleAllocator &allocator, JBCOpcode opIn, JBCOpcodeKind kindIn, bool wideIn)
-    : JBCOp(allocator, opIn, kindIn, wideIn), target(0) {}
+    : JBCOp(allocator, opIn, kindIn, wideIn), target(0), slotIdx(0), jsrID(0) {}
 
 bool JBCOpJsr::ParseFileImpl(BasicIORead &io) {
   if (JBCOp::CheckNotWide(io) == false) {

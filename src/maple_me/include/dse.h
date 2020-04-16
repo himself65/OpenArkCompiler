@@ -103,6 +103,7 @@ class DSE {
     workList.push_front(symbol);
   }
 
+  bool ExprHasSideEffect(const BaseNode &expr) const;
   bool ExprNonDeletable(const BaseNode &expr) const;
   bool HasNonDeletableExpr(const StmtNode &stmt) const;
   bool StmtMustRequired(const StmtNode &stmt, const BB &bb) const;

@@ -195,7 +195,7 @@ UniqueFEIRStmt FEIRBuilder::CreateStmtJavaConstClass(UniqueFEIRVar dstVar, Uniqu
 }
 
 UniqueFEIRStmt FEIRBuilder::CreateStmtJavaConstString(UniqueFEIRVar dstVar, const GStrIdx &strIdx) {
-  UniqueFEIRType dstType = FETypeManager::kFEIRTypeJavaClass->Clone();
+  UniqueFEIRType dstType = FETypeManager::kFEIRTypeJavaString->Clone();
   dstVar->SetType(std::move(dstType));
   UniqueFEIRStmt stmt = std::make_unique<FEIRStmtJavaConstString>(std::move(dstVar), strIdx);
   return stmt;

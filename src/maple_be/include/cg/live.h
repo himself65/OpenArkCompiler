@@ -42,19 +42,19 @@ class LiveAnalysis : public AnalysisResult {
   void EnlargeSpaceForLiveAnalysis(BB &currBB);
 
   DataInfo *NewLiveIn(uint32 maxRegCount) {
-    return memPool->New<DataInfo>(maxRegCount);
+    return memPool->New<DataInfo>(maxRegCount, *memPool);
   }
 
   DataInfo *NewLiveOut(uint32 maxRegCount) {
-    return memPool->New<DataInfo>(maxRegCount);
+    return memPool->New<DataInfo>(maxRegCount, *memPool);
   }
 
   DataInfo *NewDef(uint32 maxRegCount) {
-    return memPool->New<DataInfo>(maxRegCount);
+    return memPool->New<DataInfo>(maxRegCount, *memPool);
   }
 
   DataInfo *NewUse(uint32 maxRegCount) {
-    return memPool->New<DataInfo>(maxRegCount);
+    return memPool->New<DataInfo>(maxRegCount, *memPool);
   }
 
   virtual void GetBBDefUse(BB &bb) = 0;

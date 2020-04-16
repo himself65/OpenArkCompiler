@@ -17,6 +17,14 @@
 namespace maple {
 namespace jbc {
 namespace attr {
+inline GStrIdx GetOrCreateGStrIdx(const std::string &str) {
+  return GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(str);
+}
+
+inline GStrIdx GetOrCreateGStrIdxWithMangler(const std::string &str) {
+  return GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(NameMangler::EncodeName(str));
+}
+
 // ---------- ExceptionTableItem ----------
 ExceptionTableItem::ExceptionTableItem() : startPC(0), endPC(0), handlerPC(0), catchTypeIdx(0), catchType(nullptr) {}
 
@@ -439,7 +447,15 @@ SimpleXMLElem *LineNumberTableItem::GenXmlElemImpl(MapleAllocator &allocator, co
 
 // ---------- LocalVariableTableItem ----------
 LocalVariableTableItem::LocalVariableTableItem()
-    : startPC(0), length(0), nameIdx(0), descIdx(0), index(0), constName(nullptr), constDesc(nullptr) {}
+    : startPC(0),
+      length(0),
+      nameIdx(0),
+      descIdx(0),
+      index(0),
+      constName(nullptr),
+      constDesc(nullptr),
+      nameIdxMpl(0),
+      descNameIdxMpl(0) {}
 
 LocalVariableTableItem::~LocalVariableTableItem() {
   constName = nullptr;
@@ -457,7 +473,14 @@ bool LocalVariableTableItem::ParseFileImpl(MapleAllocator &allocator, BasicIORea
 }
 
 bool LocalVariableTableItem::PreProcessImpl(const JBCConstPool &constPool) {
-  return false;
+  constName = static_cast<const JBCConstUTF8*>(constPool.GetConstByIdxWithTag(nameIdx, JBCConstTag::kConstUTF8));
+  constDesc = static_cast<const JBCConstUTF8*>(constPool.GetConstByIdxWithTag(descIdx, JBCConstTag::kConstUTF8));
+  if (constName == nullptr || constDesc == nullptr) {
+    return false;
+  }
+  nameIdxMpl = GetOrCreateGStrIdx(constName->GetString());
+  descNameIdxMpl = GetOrCreateGStrIdxWithMangler(constDesc->GetString());
+  return true;
 }
 
 SimpleXMLElem *LocalVariableTableItem::GenXmlElemImpl(MapleAllocator &allocator, const JBCConstPool &constPool,
@@ -485,7 +508,15 @@ bool LocalVariableTypeTableItem::ParseFileImpl(MapleAllocator &allocator, BasicI
 }
 
 bool LocalVariableTypeTableItem::PreProcessImpl(const JBCConstPool &constPool) {
-  return false;
+  constName = static_cast<const JBCConstUTF8*>(constPool.GetConstByIdxWithTag(nameIdx, JBCConstTag::kConstUTF8));
+  constSignature =
+      static_cast<const JBCConstUTF8*>(constPool.GetConstByIdxWithTag(signatureIdx, JBCConstTag::kConstUTF8));
+  if (constName == nullptr || constSignature == nullptr) {
+    return false;
+  }
+  nameIdxMpl = GetOrCreateGStrIdx(constName->GetString());
+  signatureNameIdxMpl = GetOrCreateGStrIdxWithMangler(constSignature->GetString());
+  return true;
 }
 
 SimpleXMLElem *LocalVariableTypeTableItem::GenXmlElemImpl(MapleAllocator &allocator, const JBCConstPool &constPool,

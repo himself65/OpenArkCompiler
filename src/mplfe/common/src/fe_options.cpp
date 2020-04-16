@@ -23,10 +23,6 @@ FEOptions::FEOptions()
       outputName(""),
       dumpLevel(kDumpLevelDisable),
       isDumpTime(false),
-      isDumpJBCStmt(false),
-      isDumpJBCBB(false),
-      isDumpJBCAll(false),
-      isDumpJBCErrorOnly(false),
       nthreads(0),
       dumpThreadTime(false) {}
 

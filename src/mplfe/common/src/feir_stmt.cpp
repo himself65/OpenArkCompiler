@@ -215,7 +215,7 @@ std::list<StmtNode*> FEIRStmtJavaConstString::GenMIRStmtsImpl(MIRBuilder &mirBui
     MapleVector<BaseNode*> args(mirBuilder.GetCurrentFuncCodeMpAllocator()->Adapter());
     args.push_back(mirBuilder.CreateExprAddrof(0, *literalVal));
     StmtNode *stmtCreate = mirBuilder.CreateStmtCallAssigned(
-        FEManager::GetTypeManager().GetMCCGetOrInsertLiteral()->GetPuidx(), args, symbolLocal, OP_callassigned);
+        FEManager::GetTypeManager().GetPuIdxForMCCGetOrInsertLiteral(), args, symbolLocal, OP_callassigned);
     ans.push_back(stmtCreate);
     literalValPtr = symbolLocal;
   }
@@ -237,15 +237,15 @@ FEIRStmtJavaMultiANewArray::FEIRStmtJavaMultiANewArray(std::unique_ptr<FEIRVar> 
     : FEIRStmtAssign(FEIRNodeKind::kStmtJavaMultiANewArray, std::move(argVar)),
       type(std::move(argType)) {}
 
-void FEIRStmtJavaMultiANewArray::AddVarSize(std::unique_ptr<FEIRVar> varSize) {
-  varSize->SetType(FETypeManager::kPrimFEIRTypeI32->Clone());
-  UniqueFEIRExpr expr = FEIRBuilder::CreateExprDRead(std::move(varSize));
+void FEIRStmtJavaMultiANewArray::AddVarSize(std::unique_ptr<FEIRVar> argVarSize) {
+  argVarSize->SetType(FETypeManager::kPrimFEIRTypeI32->Clone());
+  UniqueFEIRExpr expr = FEIRBuilder::CreateExprDRead(std::move(argVarSize));
   exprSizes.push_back(std::move(expr));
 }
 
-void FEIRStmtJavaMultiANewArray::AddVarSizeRev(std::unique_ptr<FEIRVar> varSize) {
-  varSize->SetType(FETypeManager::kPrimFEIRTypeI32->Clone());
-  UniqueFEIRExpr expr = FEIRBuilder::CreateExprDRead(std::move(varSize));
+void FEIRStmtJavaMultiANewArray::AddVarSizeRev(std::unique_ptr<FEIRVar> argVarSize) {
+  argVarSize->SetType(FETypeManager::kPrimFEIRTypeI32->Clone());
+  UniqueFEIRExpr expr = FEIRBuilder::CreateExprDRead(std::move(argVarSize));
   exprSizes.push_front(std::move(expr));
 }
 
@@ -264,7 +264,7 @@ std::list<StmtNode*> FEIRStmtJavaMultiANewArray::GenMIRStmtsImpl(MIRBuilder &mir
   // class annotation
   FEIRStmtJavaConstClass feStmtConstClass(GetVarClass()->Clone(), GetTypeAnnotation()->Clone());
   std::list<StmtNode*> stmtsConstClass = feStmtConstClass.GenMIRStmts(mirBuilder);
-  ans.insert(ans.end(), stmtsConstClass.begin(), stmtsConstClass.end());
+  (void)ans.insert(ans.end(), stmtsConstClass.begin(), stmtsConstClass.end());
   // invoke newInstance
   UniqueFEIRVar varRetCall = var->Clone();
   varRetCall->SetType(FETypeManager::kFEIRTypeJavaObject->Clone());
@@ -272,13 +272,13 @@ std::list<StmtNode*> FEIRStmtJavaMultiANewArray::GenMIRStmtsImpl(MIRBuilder &mir
   feStmtCall.AddExprArg(FEIRBuilder::CreateExprDRead(GetVarClass()->Clone()));
   feStmtCall.AddExprArg(FEIRBuilder::CreateExprDRead(GetVarSize()->Clone()));
   std::list<StmtNode*> stmtsCall = feStmtCall.GenMIRStmts(mirBuilder);
-  ans.insert(ans.end(), stmtsCall.begin(), stmtsCall.end());
+  (void)ans.insert(ans.end(), stmtsCall.begin(), stmtsCall.end());
   // check cast
   var->SetType(type->Clone());
   UniqueFEIRExpr expr = std::make_unique<FEIRExprDRead>(std::move(varRetCall));
   FEIRStmtJavaTypeCheck feStmtCheck(var->Clone(), std::move(expr), type->Clone(), FEIRStmtJavaTypeCheck::kCheckCast);
   std::list<StmtNode*> stmtsCheck = feStmtCheck.GenMIRStmts(mirBuilder);
-  ans.insert(ans.end(), stmtsCheck.begin(), stmtsCheck.end());
+  (void)ans.insert(ans.end(), stmtsCheck.begin(), stmtsCheck.end());
   return ans;
 }
 
@@ -289,7 +289,7 @@ const UniqueFEIRVar &FEIRStmtJavaMultiANewArray::GetVarSize() {
   MPLFE_PARALLEL_FORBIDDEN();
   GStrIdx varNameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName("tmpsize");
   UniqueFEIRType varSizeType = FETypeManager::kPrimFEIRTypeI32->Clone();
-  varSizeType->ArrayIncrDim();
+  (void)varSizeType->ArrayIncrDim();
   varSize = std::make_unique<FEIRVarName>(varNameIdx, std::move(varSizeType), true);
   return varSize;
 }

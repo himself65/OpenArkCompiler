@@ -34,7 +34,7 @@ void FEJavaStringManager::LoadProfilingData(const std::string &profileFileName) 
   std::string literalName;
   while (std::getline(inFile, literalName)) {
     if (!literalName.empty()) {
-      preloadSet.insert(literalName);
+      (void)preloadSet.insert(literalName);
     }
   }
   inFile.close();
@@ -61,7 +61,7 @@ MIRSymbol *FEJavaStringManager::GetLiteralPtrVar(const std::u16string &strU16) c
 
 MIRSymbol *FEJavaStringManager::CreateLiteralVar(MIRBuilder &mirBuilder, const std::string &str, bool isFieldValue) {
   std::u16string strU16;
-  NameMangler::UTF8ToUTF16(strU16, str);
+  (void)NameMangler::UTF8ToUTF16(strU16, str);
   return CreateLiteralVar(mirBuilder, strU16, isFieldValue);
 }
 
@@ -88,10 +88,10 @@ MIRSymbol *FEJavaStringManager::CreateLiteralVar(MIRBuilder &mirBuilder, const s
   bool isHotLiteral = false;
   if (preloadSet.find(literalGlobalName) != preloadSet.end()) {
     isHotLiteral = true;
-    literalSet.insert(literalVar);
+    (void)literalSet.insert(literalVar);
   }
   if (isFieldValue) {
-    fieldValueSet.insert(literalVar);
+    (void)fieldValueSet.insert(literalVar);
   }
   if (isFieldValue || isHotLiteral) {
     std::string literalGlobalPtrName = NameMangler::kPtrPrefixStr + literalGlobalName;
@@ -103,13 +103,13 @@ MIRSymbol *FEJavaStringManager::CreateLiteralVar(MIRBuilder &mirBuilder, const s
     literalVarPtr->SetKonst(cst);
     literalMap[literalVar] = literalVarPtr;
   }
-  GlobalTables::GetConstPool().GetConstU16StringPool().insert(std::make_pair(strU16, literalVar));
+  (void)GlobalTables::GetConstPool().GetConstU16StringPool().insert(std::make_pair(strU16, literalVar));
   return literalVar;
 }
 
 MIRSymbol *FEJavaStringManager::GetLiteralVar(const std::string &str) const {
   std::u16string strU16;
-  NameMangler::UTF8ToUTF16(strU16, str);
+  (void)NameMangler::UTF8ToUTF16(strU16, str);
   return GetLiteralVar(strU16);
 }
 

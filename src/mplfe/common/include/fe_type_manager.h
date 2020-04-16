@@ -134,8 +134,8 @@ class FETypeManager {
 
   // ---------- methods for StructElemInfo ----------
   // structIdx = 0: global field/function without owner structure
-  FEStructElemInfo *RegisterStructFieldInfo(const GStrIdx &fullNameIdx, MIRSrcLang srcLang, bool isStatic);
-  FEStructElemInfo *RegisterStructMethodInfo(const GStrIdx &fullNameIdx, MIRSrcLang srcLang, bool isStatic);
+  FEStructElemInfo *RegisterStructFieldInfo(const GStrIdx &fullNameIdx, MIRSrcLang argSrcLang, bool isStatic);
+  FEStructElemInfo *RegisterStructMethodInfo(const GStrIdx &fullNameIdx, MIRSrcLang argSrcLang, bool isStatic);
   FEStructElemInfo *GetStructElemInfo(const GStrIdx &fullNameIdx) const;
 
   // ---------- methods for MIRFunction ----------
@@ -166,8 +166,8 @@ class FETypeManager {
   void InitMCCFunctions();
   MIRFunction *GetMCCFunction(const std::string &funcName) const;
   MIRFunction *GetMCCFunction(const GStrIdx &funcNameIdx) const;
-  MIRFunction *GetMCCGetOrInsertLiteral() const {
-    return funcMCCGetOrInsertLiteral;
+  PUIdx GetPuIdxForMCCGetOrInsertLiteral() const {
+    return funcMCCGetOrInsertLiteral->GetPuidx();
   }
 
   // anti-proguard

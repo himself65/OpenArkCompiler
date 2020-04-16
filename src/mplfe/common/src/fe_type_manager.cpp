@@ -43,7 +43,8 @@ FETypeManager::FETypeManager(MIRModule &moduleIn)
       mp(memPoolCtrler.NewMemPool("mempool for FETypeManager")),
       allocator(mp),
       builder(&module),
-      srcLang(kSrcLangJava) {
+      srcLang(kSrcLangJava),
+      funcMCCGetOrInsertLiteral(nullptr) {
   static_cast<FEIRTypeDefault*>(kFEIRTypeJavaObject.get())->LoadFromJavaTypeName("Ljava/lang/Object;", false);
   static_cast<FEIRTypeDefault*>(kFEIRTypeJavaClass.get())->LoadFromJavaTypeName("Ljava/lang/Class;", false);
   static_cast<FEIRTypeDefault*>(kFEIRTypeJavaString.get())->LoadFromJavaTypeName("Ljava/lang/String;", false);
@@ -303,13 +304,13 @@ void FETypeManager::AddClassToModule(const MIRStructType &structType) {
   module.AddClass(structType.GetTypeIndex());
 }
 
-FEStructElemInfo *FETypeManager::RegisterStructFieldInfo(const GStrIdx &fullNameIdx, MIRSrcLang srcLang,
+FEStructElemInfo *FETypeManager::RegisterStructFieldInfo(const GStrIdx &fullNameIdx, MIRSrcLang argSrcLang,
                                                          bool isStatic) {
   FEStructElemInfo *ptrInfo = GetStructElemInfo(fullNameIdx);
   if (ptrInfo != nullptr) {
     return ptrInfo;
   }
-  UniqueFEStructElemInfo info = std::make_unique<FEStructFieldInfo>(fullNameIdx, srcLang, isStatic);
+  UniqueFEStructElemInfo info = std::make_unique<FEStructFieldInfo>(fullNameIdx, argSrcLang, isStatic);
   ptrInfo = info.get();
   listStructElemInfo.push_back(std::move(info));
   CHECK_FATAL(mapStructElemInfo.insert(std::make_pair(fullNameIdx, ptrInfo)).second == true,
@@ -317,13 +318,13 @@ FEStructElemInfo *FETypeManager::RegisterStructFieldInfo(const GStrIdx &fullName
   return ptrInfo;
 }
 
-FEStructElemInfo *FETypeManager::RegisterStructMethodInfo(const GStrIdx &fullNameIdx, MIRSrcLang srcLang,
+FEStructElemInfo *FETypeManager::RegisterStructMethodInfo(const GStrIdx &fullNameIdx, MIRSrcLang argSrcLang,
                                                           bool isStatic) {
   FEStructElemInfo *ptrInfo = GetStructElemInfo(fullNameIdx);
   if (ptrInfo != nullptr) {
     return ptrInfo;
   }
-  UniqueFEStructElemInfo info = std::make_unique<FEStructMethodInfo>(fullNameIdx, srcLang, isStatic);
+  UniqueFEStructElemInfo info = std::make_unique<FEStructMethodInfo>(fullNameIdx, argSrcLang, isStatic);
   ptrInfo = info.get();
   listStructElemInfo.push_back(std::move(info));
   CHECK_FATAL(mapStructElemInfo.insert(std::make_pair(fullNameIdx, ptrInfo)).second == true,

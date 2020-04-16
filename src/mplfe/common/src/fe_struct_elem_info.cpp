@@ -114,7 +114,7 @@ void FEStructFieldInfo::LoadFieldTypeJava() {
   static_cast<FEIRTypeDefault*>(fieldType.get())->LoadFromJavaTypeName(GetSignatureName(), true);
 }
 
-void FEStructFieldInfo::PrepareStaticField(MIRStructType &structType) {
+void FEStructFieldInfo::PrepareStaticField(const MIRStructType &structType) {
   std::string ownerStructName = structType.GetName();
   const std::string &fieldName = GetElemName();
   std::string fullName = ownerStructName + NameMangler::kNameSplitterStr + fieldName;
@@ -126,10 +126,10 @@ void FEStructFieldInfo::PrepareStaticField(MIRStructType &structType) {
 void FEStructFieldInfo::PrepareNonStaticField(MIRStructType &structType, MIRBuilder &mirBuilder) {
   FEIRTypeDefault feType(PTY_unknown);
   feType.LoadFromJavaTypeName(GetSignatureName(), true);
-  MIRType *fieldType = feType.GenerateMIRTypeAuto(srcLang);
+  MIRType *fieldMIRType = feType.GenerateMIRTypeAuto(srcLang);
   uint32 idx = 0;
   uint32 idx1 = 0;
-  mirBuilder.TraverseToNamedFieldWithType(structType, elemNameIdx, fieldType->GetTypeIndex(), idx1, idx);
+  mirBuilder.TraverseToNamedFieldWithType(structType, elemNameIdx, fieldMIRType->GetTypeIndex(), idx1, idx);
   fieldID = idx;
   isPrepared = true;
   isStatic = false;
@@ -204,8 +204,8 @@ bool FEStructFieldInfo::SearchStructFieldJava(const TyIdx &tyIdx, MIRBuilder &mi
 }
 
 bool FEStructFieldInfo::CompareFieldType(const FieldPair &fieldPair) const {
-  MIRType *fieldType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(fieldPair.second.first);
-  std::string typeName = fieldType->GetCompactMplTypeName();
+  MIRType *fieldMIRType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(fieldPair.second.first);
+  std::string typeName = fieldMIRType->GetCompactMplTypeName();
   if (GetSignatureName().compare(typeName) == 0) {
     return true;
   } else {

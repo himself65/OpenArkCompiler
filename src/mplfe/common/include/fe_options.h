@@ -229,6 +229,14 @@ class FEOptions {
     return isDumpJBCErrorOnly;
   }
 
+  void SetIsEmitJBCLocalVarInfo(bool flag) {
+    isEmitJBCLocalVarInfo = flag;
+  }
+
+  bool IsEmitJBCLocalVarInfo() const {
+    return isEmitJBCLocalVarInfo;
+  }
+
   // parallel
   void SetNThreads(uint32 n) {
     nthreads = n;
@@ -294,11 +302,12 @@ class FEOptions {
   ModeJavaStaticFieldName modeJavaStaticField = ModeJavaStaticFieldName::kNoType;
   bool isJBCUseImpreciseType = false;
   bool isJBCInfoUsePathName = false;
-  bool isDumpJBCStmt;
-  bool isDumpJBCBB;
-  bool isDumpJBCAll;
-  bool isDumpJBCErrorOnly;
+  bool isDumpJBCStmt = false;
+  bool isDumpJBCBB = false;
+  bool isDumpJBCAll = false;
+  bool isDumpJBCErrorOnly = false;
   std::set<std::string> dumpJBCFuncNames;
+  bool isEmitJBCLocalVarInfo = false;
 
   // general stmt/bb/cfg debug options
   bool isDumpGenCFGGraph = false;

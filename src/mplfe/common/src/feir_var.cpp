@@ -94,22 +94,16 @@ FEIRVar::FEIRVar(FEIRVarKind argKind, std::unique_ptr<FEIRType> argType)
 
 MIRSymbol *FEIRVar::GenerateGlobalMIRSymbolImpl(MIRBuilder &builder) const {
   MPLFE_PARALLEL_FORBIDDEN();
-  MIRType *mirType = type->GenerateMIRType();
-  CHECK_NULL_FATAL(mirType);
-  MIRType *mirPtrType = (type->IsScalar()) ? mirType : GlobalTables::GetTypeTable().GetOrCreatePointerType(*mirType);
-  CHECK_NULL_FATAL(mirPtrType);
-  std::string name = GetName(*mirPtrType);
-  return builder.GetOrCreateGlobalDecl(name, *mirPtrType);
+  MIRType *mirType = type->GenerateMIRTypeAuto();
+  std::string name = GetName(*mirType);
+  return builder.GetOrCreateGlobalDecl(name, *mirType);
 }
 
 MIRSymbol *FEIRVar::GenerateLocalMIRSymbolImpl(MIRBuilder &builder) const {
   MPLFE_PARALLEL_FORBIDDEN();
-  MIRType *mirType = type->GenerateMIRType();
-  CHECK_NULL_FATAL(mirType);
-  MIRType *mirPtrType = (type->IsScalar()) ? mirType : GlobalTables::GetTypeTable().GetOrCreatePointerType(*mirType);
-  CHECK_NULL_FATAL(mirPtrType);
-  std::string name = GetName(*mirPtrType);
-  return builder.GetOrCreateLocalDecl(name, *mirPtrType);
+  MIRType *mirType = type->GenerateMIRTypeAuto();
+  std::string name = GetName(*mirType);
+  return builder.GetOrCreateLocalDecl(name, *mirType);
 }
 
 MIRSymbol *FEIRVar::GenerateMIRSymbolImpl(MIRBuilder &builder) const {

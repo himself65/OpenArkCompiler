@@ -26,8 +26,7 @@ JBCFunction::JBCFunction(const JBCClassMethod2FEHelper &argMethodHelper, MIRFunc
     : FEFunction(mirFunc, argPhaseResultTotal),
       methodHelper(argMethodHelper),
       method(methodHelper.GetMethod()),
-      error(false),
-      pesudoBBCatchPred(nullptr) {
+      context(method.GetConstPool(), stack2feHelper, method.GetCode()) {
 }
 
 JBCFunction::~JBCFunction() {
@@ -57,6 +56,9 @@ void JBCFunction::ProcessImpl() {
   success = success && CheckJVMStack("check jvm stack");
   success = success && GenerateArgVarList("gen arg var list");
   success = success && ProcessFunctionArgs("process func args");
+  if (FEOptions::GetInstance().IsEmitJBCLocalVarInfo()) {
+    success = success && EmitLocalVarInfo("emit localvar info");
+  }
   success = success && EmitToFEIRStmt("emit to feir");
   success = success && ProcessFEIRFunction();
   if (!success) {
@@ -176,6 +178,23 @@ bool JBCFunction::ProcessFunctionArgs(const std::string &phaseName) {
   return phaseResult.Finish();
 }
 
+bool JBCFunction::EmitLocalVarInfo(const std::string &phaseName) {
+  phaseResult.RegisterPhaseNameAndStart(phaseName);
+  const jbc::JBCAttrCode *code = method.GetCode();
+  if (code == nullptr) {
+    return phaseResult.Finish();
+  }
+  FEIRStmt *insPos = feirStmtHead;
+  std::list<std::string> listInfo = code->GetLocalVarInfoByString();
+  for (const std::string &infoStr : listInfo) {
+    UniqueFEIRStmt stmt = std::make_unique<FEIRStmtPesudoComment>(infoStr);
+    FEIRStmt *ptrFEIRStmt = RegisterFEIRStmt(std::move(stmt));
+    insPos->InsertAfter(ptrFEIRStmt);
+    insPos = ptrFEIRStmt;
+  }
+  return phaseResult.Finish();
+}
+
 bool JBCFunction::EmitToFEIRStmt(const std::string &phaseName) {
   phaseResult.RegisterPhaseNameAndStart(phaseName);
   const FELinkListNode *bbNode = genBBHead->GetNext();
@@ -198,12 +217,7 @@ void JBCFunction::EmitToFEIRStmt(const JBCBB &bb) {
   const FELinkListNode *stmtNode = bb.GetStmtHead();
   while (stmtNode != nullptr && success) {
     const JBCStmt *stmt = static_cast<const JBCStmt*>(stmtNode);
-    if (stmt->IsBranch()) {
-      const JBCStmtInstBranch *stmtBranch = static_cast<const JBCStmtInstBranch*>(stmt);
-      feirStmts = stmtBranch->EmitToFEIRWithLabel(stack2feHelper, mapPCLabelStmt, success);
-    } else {
-      feirStmts = stmt->EmitToFEIR(stack2feHelper, method.GetConstPool(), success);
-    }
+    feirStmts = stmt->EmitToFEIR(context, success);
     AppendFEIRStmts(feirStmts);
     if (stmtNode == bb.GetStmtTail()) {
       break;
@@ -331,15 +345,8 @@ bool JBCFunction::PreBuildJsrInfo(const jbc::JBCAttrCode &code) {
     uint16 slotIdx = opSlotOpr->GetSlotIdx();
     opSlotOpr->SetAddressOpr();
     opJsr->SetSlotIdx(slotIdx);
-    auto itInfo = mapJsrSlotRetAddr.find(slotIdx);
-    int32 jsrID;
-    if (itInfo == mapJsrSlotRetAddr.end()) {
-      jsrID = 0;
-    } else {
-      jsrID = itInfo->second.size();
-    }
+    int32 jsrID = context.RegisterJsrSlotRetAddr(slotIdx, nextPC);
     opJsr->SetJsrID(jsrID);
-    mapJsrSlotRetAddr[slotIdx][jsrID] = nextPC;
   }
   return true;
 }
@@ -375,9 +382,9 @@ bool JBCFunction::BuildStmtFromInstruction(const jbc::JBCAttrCode &code) {
         break;
     }
     genStmtTail->InsertBefore(stmt);
-    mapPCStmtInst[pc] = stmt;
+    context.UpdateMapPCStmtInst(pc, stmt);
   }
-  mapPCStmtInst[code.GetCodeLength()] = genStmtTail;
+  context.UpdateMapPCStmtInst(code.GetCodeLength(), genStmtTail);
   return true;
 }
 
@@ -429,8 +436,9 @@ GeneralStmt *JBCFunction::BuildStmtFromInstructionForJsr(const jbc::JBCOp &op) {
 }
 
 GeneralStmt *JBCFunction::BuildStmtFromInstructionForRet(const jbc::JBCOp &op) {
+  const std::map<uint16, std::map<int32, uint32>> &mapJsrSlotRetAddr = context.GetMapJsrSlotRetAddr();
   const std::unique_ptr<GeneralStmt> &uniStmt =
-      RegisterGeneralStmtUniqueReturn(std::make_unique<JBCStmtInstBranchRet>(op, mapJsrSlotRetAddr));
+      RegisterGeneralStmtUniqueReturn(std::make_unique<JBCStmtInstBranchRet>(op));
   GeneralStmt *stmt = uniStmt.get();
   stmt->SetFallThru(false);
   const jbc::JBCOpRet &opRet = static_cast<const jbc::JBCOpRet&>(op);
@@ -448,6 +456,7 @@ GeneralStmt *JBCFunction::BuildStmtFromInstructionForRet(const jbc::JBCOp &op) {
 }
 
 void JBCFunction::BuildStmtForCatch(const jbc::JBCAttrCode &code) {
+  const std::map<uint32, JBCStmtPesudoCatch*> &mapPCCatchStmt = context.GetMapPCCatchStmt();
   const MapleVector<jbc::attr::ExceptionTableItem*> &exceptionInfo = code.GetExceptionInfos();
   for (const jbc::attr::ExceptionTableItem *item : exceptionInfo) {
     uint16 handlerPC = item->GetHandlerPC();
@@ -455,7 +464,7 @@ void JBCFunction::BuildStmtForCatch(const jbc::JBCAttrCode &code) {
     auto it = mapPCCatchStmt.find(handlerPC);
     if (it == mapPCCatchStmt.end()) {
       stmtCatch = static_cast<JBCStmtPesudoCatch*>(RegisterGeneralStmt(std::make_unique<JBCStmtPesudoCatch>()));
-      mapPCCatchStmt[handlerPC] = stmtCatch;
+      context.UpdateMapPCCatchStmt(handlerPC, stmtCatch);
     } else {
       stmtCatch = static_cast<JBCStmtPesudoCatch*>(it->second);
     }
@@ -468,10 +477,11 @@ void JBCFunction::BuildStmtForCatch(const jbc::JBCAttrCode &code) {
   }
 }
 
-void JBCFunction::BuildStmtForTry(const jbc::JBCAttrCode &code) {\
+void JBCFunction::BuildStmtForTry(const jbc::JBCAttrCode &code) {
   std::map<std::pair<uint32, uint32>, std::vector<uint32>> rawInfo;
   std::map<uint32, uint32> outMapStartEnd;
   std::map<uint32, std::vector<uint32>> outMapStartCatch;
+  const std::map<uint32, JBCStmtPesudoCatch*> &mapPCCatchStmt = context.GetMapPCCatchStmt();
   const MapleVector<jbc::attr::ExceptionTableItem*> &exceptionInfo = code.GetExceptionInfos();
   for (const jbc::attr::ExceptionTableItem *item : exceptionInfo) {
     uint32 start = item->GetStartPC();
@@ -487,14 +497,15 @@ void JBCFunction::BuildStmtForTry(const jbc::JBCAttrCode &code) {\
     auto it = outMapStartCatch.find(startEnd.first);
     CHECK_FATAL(it != outMapStartCatch.end(), "catch info not exist");
     for (uint32 handlerPC : it->second) {
-      CHECK_FATAL(mapPCCatchStmt.find(handlerPC) != mapPCCatchStmt.end(), "catch stmt not exist");
-      stmtTry->AddCatchStmt(mapPCCatchStmt[handlerPC]);
+      auto itHandler = mapPCCatchStmt.find(handlerPC);
+      CHECK_FATAL(itHandler != mapPCCatchStmt.end(), "catch stmt not exist");
+      stmtTry->AddCatchStmt(itHandler->second);
     }
-    mapPCTryStmt[startEnd.first] = stmtTry;
+    context.UpdateMapPCTryStmt(startEnd.first, stmtTry);
     // EndTry
     JBCStmtPesudoEndTry *stmtEndTry =
         static_cast<JBCStmtPesudoEndTry*>(RegisterGeneralStmt(std::make_unique<JBCStmtPesudoEndTry>()));
-    mapPCEndTryStmt[startEnd.second] = stmtEndTry;
+    context.UpdateMapPCEndTryStmt(startEnd.second, stmtEndTry);
   }
 }
 
@@ -590,7 +601,7 @@ void JBCFunction::BuildStmtForLOC(const jbc::JBCAttrCode &code) {
         static_cast<JBCStmtPesudoLOC*>(RegisterGeneralStmt(std::make_unique<JBCStmtPesudoLOC>()));
     stmtLOC->SetSrcFileIdx(srcFileIdx);
     stmtLOC->SetLineNumber(item->GetLineNumber());
-    mapPCStmtLOC[item->GetStartPC()] = stmtLOC;
+    context.UpdateMapPCStmtLOC(item->GetStartPC(), stmtLOC);
   }
 }
 
@@ -627,17 +638,18 @@ void JBCFunction::BuildStmtForInstComment(const jbc::JBCAttrCode &code) {
           op->Dump(constPool);
     std::unique_ptr<JBCStmt> stmt = std::make_unique<JBCStmtPesudoComment>(ss.str());
     JBCStmtPesudoComment *ptrStmt = static_cast<JBCStmtPesudoComment*>(RegisterGeneralStmt(std::move(stmt)));
-    mapPCCommentStmt[pc] = ptrStmt;
+    context.UpdateMapPCCommentStmt(pc, ptrStmt);
     ss.str("");
   }
 }
 
 GeneralStmt *JBCFunction::BuildAndUpdateLabel(uint32 dstPC, const std::unique_ptr<GeneralStmt> &srcStmt) {
+  const std::map<uint32, JBCStmtPesudoLabel*> &mapPCLabelStmt = context.GetMapPCLabelStmt();
   auto it = mapPCLabelStmt.find(dstPC);
   JBCStmtPesudoLabel *stmtLabel = nullptr;
   if (it == mapPCLabelStmt.end()) {
     stmtLabel = static_cast<JBCStmtPesudoLabel*>(RegisterGeneralStmt(std::make_unique<JBCStmtPesudoLabel>()));
-    mapPCLabelStmt[dstPC] = stmtLabel;
+    context.UpdateMapPCLabelStmt(dstPC, stmtLabel);
   } else {
     stmtLabel = it->second;
   }
@@ -647,37 +659,7 @@ GeneralStmt *JBCFunction::BuildAndUpdateLabel(uint32 dstPC, const std::unique_pt
 }
 
 void JBCFunction::ArrangeStmts() {
-  /* Type of stmt: inst, label, try, endtry, catch, comment, loc
-   *   endtry
-   *   loc
-   *   catch
-   *   label
-   *   try
-   *   comment
-   *   inst
-   */
-  for (const std::pair<uint32, GeneralStmt*> &pcInst : mapPCStmtInst) {
-    uint32 pc = pcInst.first;
-    GeneralStmt *stmtInst = pcInst.second;
-    if (mapPCEndTryStmt.find(pc) != mapPCEndTryStmt.end()) {
-      stmtInst->InsertBefore(mapPCEndTryStmt[pc]);
-    }
-    if (mapPCStmtLOC.find(pc) != mapPCStmtLOC.end()) {
-      stmtInst->InsertBefore(mapPCStmtLOC[pc]);
-    }
-    if (mapPCCatchStmt.find(pc) != mapPCCatchStmt.end()) {
-      stmtInst->InsertBefore(mapPCCatchStmt[pc]);
-    }
-    if (mapPCLabelStmt.find(pc) != mapPCLabelStmt.end()) {
-      stmtInst->InsertBefore(mapPCLabelStmt[pc]);
-    }
-    if (mapPCTryStmt.find(pc) != mapPCTryStmt.end()) {
-      stmtInst->InsertBefore(mapPCTryStmt[pc]);
-    }
-    if (mapPCCommentStmt.find(pc) != mapPCCommentStmt.end()) {
-      stmtInst->InsertBefore(mapPCCommentStmt[pc]);
-    }
-  }
+  context.ArrangeStmts();
 }
 
 void JBCFunction::InitStack2FEHelper() {
