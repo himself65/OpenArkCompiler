@@ -94,7 +94,6 @@ def run_commands(
     if get_val("dry_run"):
         with (work_dir / "test.sh").open("w") as f:
             f.write("#!/bin/bash\n")
-            f.write("cd {}\n".format(work_dir))
             for command in commands[:-1]:
                 f.write(command)
                 f.write(" && \\\n")
@@ -109,9 +108,7 @@ def run_commands(
         )
         if return_code != 0:
             result = (FAIL, (return_code, command, shorten(com_err, width=84)))
-            err = "Failed, Log file at: {}.log".format(
-                log_config[0].get("dir") / name
-            )
+            err = "Failed, Log file at: {}.log".format(log_config[0].get("dir") / name)
             logger.error(err)
             break
 
