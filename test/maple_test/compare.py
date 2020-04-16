@@ -26,9 +26,12 @@ from utils import complete_path, read_file
 from utils import split_comment, filter_line
 
 ASSERT_FLAG = "ASSERT"
+EXPECTED_FLAG = "EXPECTED"
+EXPECTED_REGEX = r"{line_num}.*\:.*"
 
 SCAN_KEYWORDS = ["auto", "not", "next", "end"]
 CMP_KEYWORDS = ["end", "not", "next", "full"]
+EXPECTED_KEYWORDS = ["scan", "scan-not"]
 
 
 class CompareError(Exception):
@@ -43,14 +46,12 @@ def main():
     assert_flags = opts.assert_flag
     if not assert_flags:
         assert_flags.append(ASSERT_FLAG)
+    expected_flags = opts.expected_flag
+    if not expected_flags:
+        expected_flags.append(EXPECTED_FLAG)
+
     content = compare_object.read()
-    lines = content.splitlines(True)
-    line_map = []
-    start = 0
-    for line in lines:
-        length = len(line)
-        line_map.append((start, start + length, line))
-        start += length
+    content_line_map = gen_line_map(content)
 
     print("compare.py input:")
     print(indent(content, "\t", lambda line: True))
@@ -59,56 +60,73 @@ def main():
     if compare_object.isatty():
         sys.stderr.write("ERROR: require compare objects, filepath or stdin \n")
         sys.exit(253)
-    comment_lines = split_comment(comment, read_file(case_path))[1]
+    compare_line_regex = gen_compare_regex(comment, assert_flags, expected_flags)
+    compare_lines = extract_compare_lines(case_path, compare_line_regex)
+
     compare_result = True
-    print("Starting Match:")
-    for assert_flag in assert_flags:
-        assert_lines = [
-            line for line in comment_lines if filter_line(line, assert_flag)
-        ]
-        if not assert_lines:
-            print(
-                "ASSERT flag: {}, No regex find, "
-                "make sure you write the assert line".format(assert_flag)
-            )
-        match_pass = True
-        start = 0
-        for assert_line in assert_lines:
+    start = 0
+    print("Starting Compare:")
+    for compare_line in compare_lines:
+        output_line_num = text_index_to_line_num(content_line_map, start)
 
-            pattern_flag, pattern = extract_pattern(assert_line, assert_flag)
-            if not is_valid_pattern(pattern):
-                match_pass = False
-                raise CompareError("Not valid pattern: {!r}".format(pattern))
+        compare_line, line_num = compare_line
+        flag, compare_pattern = split_compare_line(compare_line)
+        pattern_flag, pattern = split_pattern_line(compare_pattern)
 
-            keywords = pattern_flag.split("-")
-            match_func = gen_match_func(keywords)
-            if "next" not in keywords and "end" not in keywords:
-                start = 0
-            result, start = match_func(content, line_map, pattern, start)
-            print(
-                " assert line: '{}', result: {}".format(
-                    assert_line.split(":")[-1].strip(), result
+        info = ""
+        if flag.strip() in assert_flags:
+            info = "It's a assert, "
+        elif flag.strip() in expected_flags:
+            pattern = EXPECTED_REGEX.format(line_num=line_num) + pattern
+            if pattern_flag.strip() not in EXPECTED_KEYWORDS:
+                raise CompareError(
+                    "Unsupport expected keywords: {!r}".format(pattern_flag)
                 )
-            )
-            match_pass &= result
-        compare_result &= match_pass
-        if match_pass is False:
-            print("Match End:")
-            print(
-                "ASSERT flag: {}, Compare Failed: {}".format(
-                    " ".join(assert_flags), compare_result
-                )
-            )
-            result = False
+        else:
+            raise CompareError("Unsupport flag: {!r}".format(flag))
+        if not is_valid_pattern(pattern):
+            raise CompareError("Not valid pattern: {!r}".format(pattern))
+
+        keywords = pattern_flag.split("-")
+        match_func = gen_match_func(keywords)
+        if "next" not in keywords and "end" not in keywords:
+            start = 0
+        result, start = match_func(content, content_line_map, pattern, start)
+        info += "flag: {}, pattern: {} , result: {}, matached at output line: {}".format(
+            pattern_flag, pattern, result, output_line_num
+        )
+        print(info)
+
+        if result is False:
+            print("Match End!, Compare Failed")
+        compare_result &= result
+
     if compare_result is True:
         print("Match End !!!")
-        print(
-            "ASSERT flag: {}, Compare Passed: {}".format(
-                " ".join(assert_flags), compare_result
-            )
-        )
+        print("Compare Passed: {}".format(compare_result))
         return 0
     sys.exit(1)
+
+
+def split_compare_line(compare_line):
+    if len(compare_line.lstrip().split(":", 1)) < 2:
+        print(
+            "Please check compare line, found compare flag but no actual compare content!!!"
+        )
+        raise CompareError(
+            "Please check compare line, found compare flag but no actual compare content!!!"
+        )
+    else:
+        return compare_line.lstrip().split(":", 1)
+
+
+def split_pattern_line(compare_pattern):
+    try:
+        pattern_flag, pattern = compare_pattern.lstrip().split(" ", 1)
+    except ValueError:
+        pattern_flag = compare_pattern.lstrip()
+        pattern = ""
+    return pattern_flag, pattern
 
 
 def gen_match_func(keywords):
@@ -141,18 +159,6 @@ def gen_match_func(keywords):
     return match_func
 
 
-def extract_pattern(line, flag):
-    line_flag, pattern_line = line.lstrip().split(":", 1)
-    if line_flag.strip() != flag:
-        raise CompareError("Error: {} = {}".format(line_flag, flag))
-    try:
-        pattern_flag, raw_pattern = pattern_line.lstrip().split(" ", 1)
-    except ValueError:
-        pattern_flag = pattern_line.lstrip()
-        raw_pattern = ""
-    return pattern_flag, raw_pattern
-
-
 def is_valid_pattern(pattern):
     try:
         re.compile(pattern)
@@ -164,29 +170,6 @@ def is_valid_pattern(pattern):
     return True
 
 
-def parse_cli():
-    parser = argparse.ArgumentParser(prog="compare")
-    parser.add_argument("--comment", help="Test case comment")
-    parser.add_argument(
-        "--assert_flag",
-        help="Test case assert flag, default ASSERT",
-        action="append",
-        default=[],
-    )
-    parser.add_argument(
-        "case_path", type=complete_path, help="Source path: read compare rules"
-    )
-    parser.add_argument(
-        "--compare_object",
-        nargs="?",
-        type=argparse.FileType("r"),
-        default=sys.stdin,
-        help="compare object, default stdin",
-    )
-    opts = parser.parse_args()
-    return opts
-
-
 def regex_match(content, line_map, pattern, start=0):
     pattern = r"\s*".join([word for word in pattern.split()])
     matches = re.finditer(str(pattern), content, re.MULTILINE)
@@ -196,7 +179,7 @@ def regex_match(content, line_map, pattern, start=0):
         line_num = text_index_to_line_num(line_map, end)
         if line_num + 1 >= len(line_map):
             return True, end
-        return True, line_map[line_num + 1][0]
+        return True, line_map[line_num] + 1
     return False, start
 
 
@@ -204,7 +187,7 @@ def cmp_match(content, line_map, pattern, start=0):
     line_num = text_index_to_line_num(line_map, start)
     line = content.splitlines()[line_num]
     if line == pattern:
-        return True, line_map[line_num][1]
+        return True, line_map[line_num] + 1
     else:
         return False, start
 
@@ -237,12 +220,94 @@ def full_match(content, line_map, pattern, start=0, match_func=regex_match):
     return True, start
 
 
+def gen_line_map(text):
+    regex = ".*\n?"
+    line_map = []
+    for match in re.finditer(regex, text):
+        line_map.append(match.end())
+    return line_map
+
+
 def text_index_to_line_num(line_map, index):
-    for line_num, line in enumerate(line_map):
-        start, end, _ = line
-        if start <= index < end:
+    for line_num, end in enumerate(line_map):
+        if end >= index:
             return line_num
     return line_num + 1
+
+
+def gen_compare_regex(comment, assert_flags, expected_flag):
+    regex = ""
+    for flag in expected_flag:
+        excepted_regex = r"(?:{comment}\s*)({flag}[\t ]*\:[\t ]*.*$)".format(
+            comment=comment, flag=flag
+        )
+        if regex != "":
+            regex = "{}|{}".format(regex, excepted_regex)
+        else:
+            regex = excepted_regex
+    for flag in assert_flags:
+        assert_regex = r"(?:^[\t ]*{comment}\s*)({flag}[\t ]*\:[\t ]*.*$)".format(
+            comment=comment, flag=flag
+        )
+        if regex != "":
+            regex = "{}|{}".format(regex, assert_regex)
+        else:
+            regex = assert_regex
+    return regex
+
+
+def extract_compare_lines(file_path, regex):
+    with file_path.open() as f:
+        content = f.read()
+    print(regex)
+    print(regex)
+    print(regex)
+    matches = re.finditer(regex, content, re.MULTILINE)
+
+    compare_lines = []
+    end_regex = ".*\n?"
+    line_map = []
+    for match in re.finditer(end_regex, content):
+        line_map.append(match.end())
+    for match in matches:
+        for group_num in range(0, len(match.groups())):
+            group_num = group_num + 1
+            if match.group(group_num) is None:
+                continue
+            for line_num, end in enumerate(line_map):
+                if end > match.start(group_num):
+                    compare_lines.append((match.group(group_num), line_num + 1))
+                    break
+    return compare_lines
+
+
+def parse_cli():
+    parser = argparse.ArgumentParser(prog="compare")
+    parser.add_argument("--comment", help="Test case comment")
+    parser.add_argument(
+        "--assert_flag",
+        help="Test case assert flag, default ASSERT",
+        action="append",
+        default=[],
+    )
+    parser.add_argument(
+        "--expected_flag",
+        help="Test case expected flag for compile, default EXCEPTED",
+        action="append",
+        default=[],
+    )
+    parser.add_argument(
+        "case_path", type=complete_path, help="Source path: read compare rules"
+    )
+    parser.add_argument(
+        "--compare_object",
+        nargs="?",
+        type=argparse.FileType("r"),
+        default=sys.stdin,
+        help="compare object, default stdin",
+    )
+    opts = parser.parse_args()
+    return opts
 
 
 if __name__ == "__main__":

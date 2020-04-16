@@ -19,7 +19,7 @@ import multiprocessing
 import shlex
 import shutil
 import time
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from pathlib import Path
 
 from maple_test import configs
@@ -160,7 +160,9 @@ class TestSuiteTask:
             name = config.name
             base_dir = config.base_dir
             testlist = self._get_testlist(raw_config, base_dir, encoding)
-            self.task_set_result[name] = defaultdict(int)
+            self.task_set_result[name] = OrderedDict(
+                {"PASS": 0, "FAIL": 0, "NOT_RUN": 0, "UNRESOLVED": 0}
+            )
             for case in self._search_list(base_dir, testlist, encoding):
                 task = SingleTask(case, config, running_config)
                 self.task_set[name].append(task)
