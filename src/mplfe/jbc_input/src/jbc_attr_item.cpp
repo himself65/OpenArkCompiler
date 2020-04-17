@@ -13,6 +13,7 @@
  * See the Mulan PSL v1 for more details.
  */
 #include "jbc_attr_item.h"
+#include "fe_manager.h"
 
 namespace maple {
 namespace jbc {
@@ -455,11 +456,12 @@ LocalVariableTableItem::LocalVariableTableItem()
       constName(nullptr),
       constDesc(nullptr),
       nameIdxMpl(0),
-      descNameIdxMpl(0) {}
+      feirType(nullptr) {}
 
 LocalVariableTableItem::~LocalVariableTableItem() {
   constName = nullptr;
   constDesc = nullptr;
+  feirType = nullptr;
 }
 
 bool LocalVariableTableItem::ParseFileImpl(MapleAllocator &allocator, BasicIORead &io) {
@@ -479,7 +481,8 @@ bool LocalVariableTableItem::PreProcessImpl(const JBCConstPool &constPool) {
     return false;
   }
   nameIdxMpl = GetOrCreateGStrIdx(constName->GetString());
-  descNameIdxMpl = GetOrCreateGStrIdxWithMangler(constDesc->GetString());
+  feirType = FEManager::GetTypeManager().GetOrCreateFEIRTypeByName(NameMangler::EncodeName(constDesc->GetString()),
+                                                                   GStrIdx(0), kSrcLangJava);
   return true;
 }
 
@@ -490,7 +493,14 @@ SimpleXMLElem *LocalVariableTableItem::GenXmlElemImpl(MapleAllocator &allocator,
 
 // ---------- LocalVariableTypeTableItem ----------
 LocalVariableTypeTableItem::LocalVariableTypeTableItem()
-    : startPC(0), length(0), nameIdx(0), signatureIdx(0), index(0), constName(nullptr), constSignature(nullptr) {}
+    : startPC(0),
+      length(0),
+      nameIdx(0),
+      signatureIdx(0),
+      index(0),
+      constName(nullptr),
+      constSignature(nullptr),
+      nameIdxMpl(0) {}
 
 LocalVariableTypeTableItem::~LocalVariableTypeTableItem() {
   constName = nullptr;
@@ -515,7 +525,6 @@ bool LocalVariableTypeTableItem::PreProcessImpl(const JBCConstPool &constPool) {
     return false;
   }
   nameIdxMpl = GetOrCreateGStrIdx(constName->GetString());
-  signatureNameIdxMpl = GetOrCreateGStrIdxWithMangler(constSignature->GetString());
   return true;
 }
 

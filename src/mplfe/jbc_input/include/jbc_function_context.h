@@ -36,6 +36,8 @@ class JBCFunctionContext {
 
   int32 RegisterJsrSlotRetAddr(uint16 slotIdx, uint32 nextPC);
   void ArrangeStmts();
+  const FEIRType *GetSlotType(uint16 slotIdx, uint32 pc) const;
+  const FEIRType *GetSlotType(uint16 slotIdx) const;
 
   JBCStack2FEHelper &GetStack2FEHelper() {
     return stack2feHelper;
@@ -114,6 +116,14 @@ class JBCFunctionContext {
     return code->GetLocalVarInfo();
   }
 
+  void SetCurrPC(uint32 pc) {
+    currPC = pc;
+  }
+
+  uint32 GetCurrPC() const {
+    return currPC;
+  }
+
  private:
   const jbc::JBCConstPool &constPool;
   JBCStack2FEHelper &stack2feHelper;
@@ -126,6 +136,7 @@ class JBCFunctionContext {
   std::map<uint32, JBCStmtPesudoLOC*> mapPCStmtLOC; // key: locPC, value: stmt
   std::map<uint32, JBCStmtPesudoComment*> mapPCCommentStmt; // key: commentPC, value: stmt
   std::map<uint16, std::map<int32, uint32>> mapJsrSlotRetAddr;  // key: slotIdx, value: map<jsrID, retAddr>
+  uint32 currPC = 0;
 };  // class JBCFunctionContext
 }  // namespace maple
 #endif  // MPLFE_INCLUDE_JBC_INPUT_JBC_FUNCTION_CONTEXT_H

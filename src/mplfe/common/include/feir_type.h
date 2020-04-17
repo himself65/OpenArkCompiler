@@ -129,6 +129,10 @@ class FEIRType {
     return HashImpl();
   }
 
+  std::string GetTypeName() const {
+    return GetTypeNameImpl();
+  }
+
   static std::map<MIRSrcLang, std::tuple<bool, PrimType>> langConfig;
 
  protected:
@@ -147,6 +151,9 @@ class FEIRType {
   virtual bool IsArrayImpl() const = 0;
   virtual bool IsPreciseImpl() const = 0;
   virtual bool IsValidImpl() const = 0;
+  virtual std::string GetTypeNameImpl() const {
+    return "";
+  }
 
   FEIRTypeKind kind : 7;
   bool isZero : 1;
@@ -209,6 +216,7 @@ class FEIRTypeDefault : public FEIRType {
   void SetPrimTypeImpl(PrimType pt) override;
   MIRType *GenerateMIRTypeInternal(const GStrIdx &argTypeNameIdx, bool usePtr) const;
   MIRType *GenerateMIRTypeInternal(const GStrIdx &argTypeNameIdx, bool usePtr, PrimType ptyPtr) const;
+  std::string GetTypeNameImpl() const override;
 
   bool IsRefImpl() const override {
     return dim > 0 || !IsScalarPrimType(primType);

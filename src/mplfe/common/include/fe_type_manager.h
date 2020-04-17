@@ -162,6 +162,13 @@ class FETypeManager {
   MIRFunction *CreateFunction(const std::string &methodName, const std::string &returnTypeName,
                               const std::vector<std::string> &argTypeNames, bool isVarg, bool isStatic);
 
+  // FEIRType GetOrCreate
+  const FEIRType *GetOrCreateFEIRTypeByName(const std::string &typeName, const GStrIdx &typeNameIdx,
+                                            MIRSrcLang argSrcLang = kSrcLangJava);
+  const FEIRType *GetOrCreateFEIRTypeByName(const GStrIdx &typeNameIdx, MIRSrcLang argSrcLang = kSrcLangJava);
+  const FEIRType *GetFEIRTypeByName(const std::string &typeName) const;
+  const FEIRType *GetFEIRTypeByName(const GStrIdx &typeNameIdx) const;
+
   // MCC function
   void InitMCCFunctions();
   MIRFunction *GetMCCFunction(const std::string &funcName) const;
@@ -221,6 +228,10 @@ class FETypeManager {
   std::unordered_map<GStrIdx, MIRFunction*, GStrIdxHash> nameStaticFuncMap;
   std::unordered_map<GStrIdx, MIRFunction*, GStrIdxHash> mpltNameFuncMap;
   std::unordered_map<GStrIdx, MIRFunction*, GStrIdxHash> mpltNameStaticFuncMap;
+
+  // ---------- FEIRType list ----------
+  std::unordered_map<GStrIdx, const FEIRType*, GStrIdxHash> nameFEIRTypeMap;
+  std::list<UniqueFEIRType> nameFEIRTypeList;
 
   // ---------- MCC function list  ----------
   std::unordered_map<GStrIdx, MIRFunction*, GStrIdxHash> nameMCCFuncMap;

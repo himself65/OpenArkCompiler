@@ -35,8 +35,21 @@ namespace maple {
 uint64 MeProfGen::counterIdx = 0;
 uint64 MeProfGen::totalBB = 0;
 uint64 MeProfGen::instrumentBB = 0;
+uint64 MeProfGen::totalFunc = 0;
+uint64 MeProfGen::instrumentFunc = 0;
 bool MeProfGen::firstRun = true;
 MIRSymbol *MeProfGen::bbCounterTabSym = nullptr;
+
+void MeProfGen::DumpSummary() {
+  LogInfo::MapleLogger() << "instrument BB " << instrumentBB << " total BB " << totalBB << std::setprecision(2)
+                         << " ratio "  << (static_cast<float>(instrumentBB) / totalBB) << "\n";
+  LogInfo::MapleLogger() << "instrument func " << instrumentFunc << " total BB " << totalFunc << std::setprecision(2)
+                         << " ratio " <<  (static_cast<float>(instrumentFunc) / totalFunc) << "\n";
+}
+
+void MeProfGen::IncTotalFunc() {
+  totalFunc++;
+}
 
 void MeProfGen::Init() {
   if (!firstRun) {
@@ -99,6 +112,7 @@ void MeProfGen::InstrumentFunc() {
   func->AddProfileDesc(hash, counterStart, counterEnd);
   instrumentBB += instrumentBBs.size();
   totalBB += GetAllBBs();
+  instrumentFunc++;
   SaveProfile();
   if (dump) {
     LogInfo::MapleLogger() << "******************after profile gen  dump function******************\n";
@@ -111,8 +125,28 @@ void MeProfGen::InstrumentFunc() {
   }
 }
 
+// if function have try can't instrument
+// if function have infinite loop, can't instrument,because it may cause counter
+// overflow
+bool MeProfGen::CanInstrument() const {
+  auto eIt = func->valid_end();
+  for (auto bIt = func->valid_begin(); bIt != eIt; ++bIt) {
+    if (bIt == func->common_entry() || bIt == func->common_exit()) {
+      continue;
+    }
+    auto *bb = *bIt;
+    if (bb->GetAttributes(kBBAttrIsTry) || bb->GetAttributes(kBBAttrWontExit)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 AnalysisResult *MeDoProfGen::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr*) {
   MemPool *tempMp = NewMemPool();
+  if (!func->empty()) {
+    MeProfGen::IncTotalFunc();
+  }
   // function with try can't determine the instrument BB,because
   // there have critial-edge which can't be split
   if (func->HasException()) {
@@ -121,6 +155,9 @@ AnalysisResult *MeDoProfGen::Run(MeFunction *func, MeFuncResultMgr *m, ModuleRes
   auto *hMap = static_cast<MeIRMap*>(m->GetAnalysisResult(MeFuncPhase_IRMAP, func));
   CHECK_FATAL(hMap != nullptr, "hssamap is nullptr");
   MeProfGen profGen(*func, *tempMp, *hMap, DEBUGFUNC(func));
+  if (!profGen.CanInstrument()) {
+    return nullptr;
+  }
   profGen.InstrumentFunc();
 
   if (DEBUGFUNC(func)) {

@@ -764,7 +764,7 @@ std::unique_ptr<FEIRExpr> FEIRExprDRead::CloneImpl() const {
 }
 
 BaseNode *FEIRExprDRead::GenMIRNodeImpl(MIRBuilder &mirBuilder) const {
-  MIRType *type = varSrc->GetType()->GenerateMIRType();
+  MIRType *type = varSrc->GetType()->GenerateMIRTypeAuto();
   MIRSymbol *symbol = varSrc->GenerateMIRSymbol(mirBuilder);
   ASSERT(type != nullptr, "type is nullptr");
   AddrofNode *node = mirBuilder.CreateExprDread(*type, *symbol);

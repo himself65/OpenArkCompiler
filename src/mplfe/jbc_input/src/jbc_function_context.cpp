@@ -62,4 +62,22 @@ void JBCFunctionContext::ArrangeStmts() {
     }
   }
 }
+
+const FEIRType *JBCFunctionContext::GetSlotType(uint16 slotIdx, uint32 pc) const {
+  CHECK_NULL_FATAL(code);
+  const jbc::JBCAttrLocalVariableInfo &localVarInfo = code->GetLocalVarInfo();
+  CHECK_FATAL(pc < UINT16_MAX, "pc out of range");
+  uint16 startPC = localVarInfo.GetStart(slotIdx, static_cast<uint16>(pc));
+  const jbc::JavaAttrLocalVariableInfoItem &info = localVarInfo.GetItemByStart(slotIdx, startPC);
+  return info.feirType;
+}
+
+const FEIRType *JBCFunctionContext::GetSlotType(uint16 slotIdx) const {
+  CHECK_NULL_FATAL(code);
+  const jbc::JBCAttrLocalVariableInfo &localVarInfo = code->GetLocalVarInfo();
+  CHECK_FATAL(currPC < UINT16_MAX, "pc out of range");
+  uint16 startPC = localVarInfo.GetStart(slotIdx, static_cast<uint16>(currPC));
+  const jbc::JavaAttrLocalVariableInfoItem &info = localVarInfo.GetItemByStart(slotIdx, startPC);
+  return info.feirType;
+}
 }  // namespace maple

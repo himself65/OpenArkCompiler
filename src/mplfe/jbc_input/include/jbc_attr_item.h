@@ -347,9 +347,8 @@ class LocalVariableTableItem : public JBCAttrItem {
     return constName->GetStrIdx();
   }
 
-  GStrIdx GetDescStrIdx() const {
-    CHECK_NULL_FATAL(constDesc);
-    return constDesc->GetStrIdx();
+  const FEIRType *GetFEIRType() const {
+    return feirType;
   }
 
  protected:
@@ -366,7 +365,7 @@ class LocalVariableTableItem : public JBCAttrItem {
   const JBCConstUTF8 *constName;
   const JBCConstUTF8 *constDesc;
   GStrIdx nameIdxMpl;
-  GStrIdx descNameIdxMpl;
+  const FEIRType *feirType;
 };
 
 // LocalVariableTypeTableItem in Attr LocalVariableTypeTable
@@ -419,7 +418,6 @@ class LocalVariableTypeTableItem : public JBCAttrItem {
   const JBCConstUTF8 *constName;
   const JBCConstUTF8 *constSignature;
   GStrIdx nameIdxMpl;
-  GStrIdx signatureNameIdxMpl;
 };
 
 class ElementValueItem : public JBCAttrItem {

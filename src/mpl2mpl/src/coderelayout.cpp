@@ -181,7 +181,8 @@ void CodeReLayout::Finish() {
   }
   if (trace) {
     for (uint32 i = 0; i < static_cast<uint32>(LayoutType::kLayoutTypeCount); ++i) {
-      LogInfo::MapleLogger() << "function in category\t" << i << "\tcount=" << layoutCount[i] << "\n";
+      LogInfo::MapleLogger() << "function in category\t" << GetLayoutTypeString(i)
+                             << "\tcount=" << layoutCount[i] << "\n";
     }
   }
   std::stable_sort(GetMIRModule().GetFunctionList().begin(), GetMIRModule().GetFunctionList().end(),

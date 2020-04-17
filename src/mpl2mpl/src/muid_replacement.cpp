@@ -16,6 +16,7 @@
 #include <fstream>
 #include "vtable_analysis.h"
 #include "reflection_analysis.h"
+#include "me_profile_gen.h"
 
 namespace {
 // Version for the mpl linker
@@ -374,6 +375,9 @@ void MUIDReplacement::GenerateFuncDefTable() {
                              << ", Offset in addr order: " << (idx - 1)
                              << ", Offset in muid order: " << iter->second.second << "\n";
     }
+  }
+  if (Options::genIRProfile) {
+    MeProfGen::DumpSummary();
   }
   // Create funcDefTab, funcInfoTab and funcMuidTab sorted by address, funcMuidIdxTab sorted by muid
   for (auto keyVal : funcDefArray) {

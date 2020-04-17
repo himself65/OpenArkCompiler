@@ -172,11 +172,11 @@ void JBCAttrLocalVariableInfo::RegisterItem(const attr::LocalVariableTableItem &
     itemRef.start = startPC;
     itemRef.length = length;
     itemRef.nameIdx = itemAttr.GetNameStrIdx();
-    itemRef.typeNameIdx = itemAttr.GetDescStrIdx();
+    itemRef.feirType = itemAttr.GetFEIRType();
   } else {
-    if (item->start == startPC && item->length == length && item->nameIdx == itemAttr.GetDescStrIdx()) {
-      CHECK_FATAL(item->typeNameIdx == 0, "Item already defined");
-      item->typeNameIdx = itemAttr.GetDescStrIdx();
+    if (item->start == startPC && item->length == length && item->nameIdx == itemAttr.GetNameStrIdx()) {
+      CHECK_FATAL(item->feirType == nullptr, "Item already defined");
+      item->feirType = itemAttr.GetFEIRType();
     } else {
       CHECK_FATAL(false, "Item mismatch in RegisterItem()");
     }
@@ -214,8 +214,11 @@ const JavaAttrLocalVariableInfoItem &JBCAttrLocalVariableInfo::GetItemByStart(ui
   }
   std::map<std::pair<uint16, uint16>, JavaAttrLocalVariableInfoItem>::const_iterator it =
       itemMap.find(std::make_pair(slotIdx, itemPCStart));
-  CHECK_FATAL(it != itemMap.end(), "Item@%d not found", start);
-  return it->second;
+  if (it != itemMap.end()) {
+    return it->second;
+  } else {
+    return kInvalidInfoItem;
+  }
 }
 
 JavaAttrLocalVariableInfoItem *JBCAttrLocalVariableInfo::GetItemByStartInternal(uint16 slotIdx, uint16 start) {
@@ -229,12 +232,12 @@ JavaAttrLocalVariableInfoItem *JBCAttrLocalVariableInfo::GetItemByStartInternal(
   return &(it->second);
 }
 
-uint32 JBCAttrLocalVariableInfo::GetStart(uint16 slotIdx, uint16 pc) const {
+uint16 JBCAttrLocalVariableInfo::GetStart(uint16 slotIdx, uint16 pc) const {
   MapleMap<uint16, MapleSet<uint16>>::const_iterator it = slotStartMap.find(slotIdx);
   if (it == slotStartMap.end()) {
-    return jbc::kInvalidPC;
+    return jbc::kInvalidPC16;
   }
-  uint32 startLast = jbc::kInvalidPC;
+  uint16 startLast = jbc::kInvalidPC16;
   for (uint16 start : it->second) {
     if (pc == start) {
       return start;
@@ -257,7 +260,7 @@ std::list<std::string> JBCAttrLocalVariableInfo::EmitToStrings() const {
     ss << "start=" << item.start << ", ";
     ss << "lenght=" << item.length << ", ";
     ss << "name=\'" << GlobalTables::GetStrTable().GetStringFromStrIdx(item.nameIdx) << "\', ";
-    ss << "type=\'" << GlobalTables::GetStrTable().GetStringFromStrIdx(item.typeNameIdx) << "\', ";
+    ss << "type=\'" << item.feirType->GetTypeName() << "\', ";
     ss << "signature=\'" << GlobalTables::GetStrTable().GetStringFromStrIdx(item.signatureNameIdx) << "\'";
     ans.push_back(ss.str());
   }
@@ -266,7 +269,7 @@ std::list<std::string> JBCAttrLocalVariableInfo::EmitToStrings() const {
 }
 
 bool JBCAttrLocalVariableInfo::IsInvalidLocalVariableInfoItem(const JavaAttrLocalVariableInfoItem &item) {
-  return (item.nameIdx == 0 && item.typeNameIdx == 0 && item.signatureNameIdx == 0);
+  return (item.nameIdx == 0 && item.feirType == nullptr && item.signatureNameIdx == 0);
 }
 
 void JBCAttrLocalVariableInfo::AddSlotStartMap(uint16 slotIdx, uint16 startPC) {
@@ -282,7 +285,7 @@ void JBCAttrLocalVariableInfo::AddSlotStartMap(uint16 slotIdx, uint16 startPC) {
 
 void JBCAttrLocalVariableInfo::CheckItemAvaiable(uint16 slotIdx, uint16 start) const {
   uint32 itemPCStart = GetStart(slotIdx, start);
-  if (itemPCStart == jbc::kInvalidPC) {
+  if (itemPCStart == jbc::kInvalidPC16) {
     return;
   }
   CHECK_FATAL(itemPCStart <= jbc::kMaxPC32, "Invalid PC");
