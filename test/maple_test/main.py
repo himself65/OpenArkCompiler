@@ -38,7 +38,9 @@ def main():
 
     retry = configs.get_val("retry")
     result = None
+    failed = False
     for test in test_paths:
+        test_failed = False
         if test.exists():
             if not test_cfg:
                 test_cfg = test / "test.cfg"
@@ -51,8 +53,13 @@ def main():
                 continue
             for run_time in range(1, retry + 2):
                 logger.info("Run {} times".format(run_time))
-                task.run(configs.get_val("processes"))
+                failed_num = task.run(configs.get_val("processes"))
+                if failed_num > 0:
+                    test_failed = True
+                else:
+                    test_failed = False
                 result = task.gen_summary([])
+            failed |= test_failed
         else:
             logger.info("Test path: {} does not exist, please check".format(test))
 
@@ -76,6 +83,9 @@ def main():
     elif temp_dir.exists():
         logger.debug("remove temp_dir %s", temp_dir)
         shutil.rmtree(str(temp_dir))
+
+    if configs.get_val("fail_exit") and failed:
+        exit(1)
 
 
 if __name__ == "__main__":
