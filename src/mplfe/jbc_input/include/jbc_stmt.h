@@ -49,11 +49,13 @@ class JBCStmtKindHelper {
 class JBCStmt : public GeneralStmt {
  public:
   explicit JBCStmt(JBCStmtKind argKind)
-      : kind(argKind) {}
+      : kind(argKind),
+        pc(UINT32_MAX) {}
 
   JBCStmt(GeneralStmtKind argGenKind, JBCStmtKind argKind)
       : GeneralStmt(argGenKind),
-        kind(argKind) {}
+        kind(argKind),
+        pc(UINT32_MAX) {}
 
   virtual ~JBCStmt() = default;
   std::list<UniqueFEIRStmt> EmitToFEIR(JBCFunctionContext &context, bool &success) const {
@@ -72,10 +74,19 @@ class JBCStmt : public GeneralStmt {
     return kind == JBCStmtKind::kJBCStmtInstBranch || kind == JBCStmtKind::kJBCStmtInstBranchRet;
   }
 
+  void SetPC(uint32 argPC) {
+    pc = argPC;
+  }
+
+  uint32 GetPC() const {
+    return pc;
+  }
+
  protected:
   virtual std::list<UniqueFEIRStmt> EmitToFEIRImpl(JBCFunctionContext &context, bool &success) const = 0;
 
   JBCStmtKind kind;
+  uint32 pc;
 };
 
 class JBCStmtInst : public JBCStmt {

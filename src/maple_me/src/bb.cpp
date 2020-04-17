@@ -50,6 +50,9 @@ void BB::DumpBBAttribute(const MIRModule *mod) const {
   if (GetAttributes(kBBAttrIsExit)) {
     mod->GetOut() << " Exit ";
   }
+  if (GetAttributes(kBBAttrWontExit)) {
+    mod->GetOut() << " WontExit ";
+  }
   if (GetAttributes(kBBAttrIsTry)) {
     mod->GetOut() << " Try ";
   }

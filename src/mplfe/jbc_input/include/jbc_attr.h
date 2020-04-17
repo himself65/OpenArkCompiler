@@ -25,6 +25,7 @@
 namespace maple {
 namespace jbc {
 const static uint32 kInvalidPC = UINT32_MAX;
+const static uint16 kInvalidPC16 = UINT16_MAX;
 const static uint32 kMaxPC32 = 0x0000FFFF;
 
 enum JBCAttrKind : uint8 {
@@ -97,14 +98,20 @@ class JBCAttrRaw : public JBCAttr {
 };
 
 struct JavaAttrLocalVariableInfoItem {
-  JavaAttrLocalVariableInfoItem() : slotIdx(0), start(0), length(0), nameIdx(0), typeNameIdx(0), signatureNameIdx(0) {}
+  JavaAttrLocalVariableInfoItem()
+      : slotIdx(0),
+        start(0),
+        length(0),
+        nameIdx(0),
+        feirType(nullptr),
+        signatureNameIdx(0) {}
 
   uint16 slotIdx;
   uint16 start;
   uint16 length;
-  GStrIdx nameIdx;          // in java format
-  GStrIdx typeNameIdx;      // in java format
-  GStrIdx signatureNameIdx; // in java format
+  GStrIdx nameIdx;           // in java format
+  const FEIRType *feirType;
+  GStrIdx signatureNameIdx;  // in java format
 };
 
 class JBCAttrLocalVariableInfo {
@@ -114,7 +121,7 @@ class JBCAttrLocalVariableInfo {
   void RegisterItem(const attr::LocalVariableTableItem &itemAttr);
   void RegisterTypeItem(const attr::LocalVariableTypeTableItem &itemAttr);
   const JavaAttrLocalVariableInfoItem &GetItemByStart(uint16 slotIdx, uint16 start) const;
-  uint32 GetStart(uint16 slotIdx, uint16 pc) const;
+  uint16 GetStart(uint16 slotIdx, uint16 pc) const;
   std::list<std::string> EmitToStrings() const;
   static bool IsInvalidLocalVariableInfoItem(const JavaAttrLocalVariableInfoItem &item);
 

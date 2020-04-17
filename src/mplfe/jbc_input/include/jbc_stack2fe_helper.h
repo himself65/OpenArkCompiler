@@ -37,6 +37,7 @@ class JBCStack2FEHelper {
   UniqueFEIRStmt PushItem(UniqueFEIRExpr expr, PrimType pty, bool hasException = false);
   UniqueFEIRStmt PushItem(UniqueFEIRExpr expr, UniqueFEIRType type, bool hasException = false);
   UniqueFEIRVar PopItem(PrimType pty);
+  UniqueFEIRVar PopItem(UniqueFEIRType type);
   UniqueFEIRVar PopItem(bool isWide, PrimType &pty);
   UniqueFEIRVar PopItemAuto(PrimType &pty);
   bool Swap();

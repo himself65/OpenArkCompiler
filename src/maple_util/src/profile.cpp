@@ -479,6 +479,20 @@ std::unordered_set<std::string> &Profile::GetMeta(uint8 type) {
   }
 }
 
+void Profile::SetFuncStatus(const std::string &funcName, bool succ) {
+  if (succ) {
+    funcBBProfUseInfo[funcName] = true;
+  }
+}
+
+void Profile::DumpFuncIRProfUseInfo() const {
+  if (funcBBProfData.empty()) {
+    return;
+  }
+  LogInfo::MapleLogger() << "ir profile succ  " << funcBBProfUseInfo.size() <<  " total func "
+                         << funcBBProfData.size() << '\n';
+}
+
 void Profile::Dump() const {
   std::ofstream outfile;
   outfile.open("prof.dump");

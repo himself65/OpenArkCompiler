@@ -148,6 +148,12 @@ UniqueFEIRVar JBCStack2FEHelper::PopItem(PrimType pty) {
   }
 }
 
+UniqueFEIRVar JBCStack2FEHelper::PopItem(UniqueFEIRType type) {
+  UniqueFEIRVar var = PopItem(type->GetPrimType());
+  var->SetType(std::move(type));
+  return var;
+}
+
 UniqueFEIRVar JBCStack2FEHelper::PopItem(bool isWide, PrimType &pty) {
   size_t size = stack.size();
   pty = PTY_unknown;

@@ -20,6 +20,7 @@
 #include "global_tables.h"
 #include "fe_timer.h"
 #include "fe_config_parallel.h"
+#include "feir_type_helper.h"
 
 namespace maple {
 const UniqueFEIRType FETypeManager::kPrimFEIRTypeUnknown = std::make_unique<FEIRTypeDefault>(PTY_unknown);
@@ -422,6 +423,51 @@ MIRFunction *FETypeManager::CreateFunction(const std::string &methodName, const 
     argsTypeIdx.push_back(argType->GetTypeIndex());
   }
   return CreateFunction(nameIdx, returnType->GetTypeIndex(), argsTypeIdx, isVarg, isStatic);
+}
+
+const FEIRType *FETypeManager::GetOrCreateFEIRTypeByName(const std::string &typeName, const GStrIdx &typeNameIdx,
+                                                         MIRSrcLang argSrcLang) {
+  const FEIRType *feirType = GetFEIRTypeByName(typeName);
+  if (feirType != nullptr) {
+    return feirType;
+  }
+  MPLFE_PARALLEL_FORBIDDEN();
+  UniqueFEIRType uniType;
+  switch (argSrcLang) {
+    case kSrcLangJava:
+      uniType = FEIRTypeHelper::CreateTypeByJavaName(typeName, true, false);
+      break;
+    default:
+      CHECK_FATAL(false, "unsupported language");
+      return nullptr;
+  }
+  feirType = uniType.get();
+  nameFEIRTypeList.push_back(std::move(uniType));
+  if (typeNameIdx == 0) {
+    nameFEIRTypeMap[GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(typeName)] = feirType;
+  } else {
+    nameFEIRTypeMap[typeNameIdx] = feirType;
+  }
+  return feirType;
+}
+
+const FEIRType *FETypeManager::GetOrCreateFEIRTypeByName(const GStrIdx &typeNameIdx, MIRSrcLang argSrcLang) {
+  const std::string &typeName = GlobalTables::GetStrTable().GetStringFromStrIdx(typeNameIdx);
+  return GetOrCreateFEIRTypeByName(typeName, typeNameIdx, argSrcLang);
+}
+
+const FEIRType *FETypeManager::GetFEIRTypeByName(const std::string &typeName) const {
+  GStrIdx typeNameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(typeName);
+  return GetFEIRTypeByName(typeNameIdx);
+}
+
+const FEIRType *FETypeManager::GetFEIRTypeByName(const GStrIdx &typeNameIdx) const {
+  auto it = nameFEIRTypeMap.find(typeNameIdx);
+  if (it == nameFEIRTypeMap.end()) {
+    return nullptr;
+  } else {
+    return it->second;
+  }
 }
 
 bool FETypeManager::IsAntiProguardFieldStruct(const GStrIdx &structNameIdx) {

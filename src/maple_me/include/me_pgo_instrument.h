@@ -17,6 +17,7 @@
 
 #include "bb.h"
 #include "me_cfg_mst.h"
+#include "me_cfg.h"
 #include "itab_util.h"
 
 namespace maple {
@@ -105,6 +106,7 @@ class PGOInstrument {
       } else if (!edge->IsCritical()) {
         bbs.push_back(dest);
       } else {
+        func->GetTheCfg()->DumpToFile("profGenError", false);
         CHECK_FATAL(false, "impossible critial edge %d -> %d", src->UintID(), dest->UintID());
       }
     }

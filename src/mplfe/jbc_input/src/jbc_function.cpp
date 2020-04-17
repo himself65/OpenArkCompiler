@@ -381,6 +381,7 @@ bool JBCFunction::BuildStmtFromInstruction(const jbc::JBCAttrCode &code) {
         stmt = RegisterGeneralStmt(std::make_unique<JBCStmtInst>(*op));
         break;
     }
+    static_cast<JBCStmt*>(stmt)->SetPC(pc);
     genStmtTail->InsertBefore(stmt);
     context.UpdateMapPCStmtInst(pc, stmt);
   }

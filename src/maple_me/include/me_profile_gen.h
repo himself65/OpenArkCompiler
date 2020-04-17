@@ -28,7 +28,10 @@ class MeProfGen : public PGOInstrument<BBEdge> {
       : PGOInstrument(func, mp, dump), func(&func), hMap(&hMap) {
     Init();
   }
+  bool CanInstrument() const;
   void InstrumentFunc();
+  static void DumpSummary();
+  static void IncTotalFunc();
  private:
   void Init();
   void InstrumentBB(BB &bb);
@@ -38,6 +41,8 @@ class MeProfGen : public PGOInstrument<BBEdge> {
   static uint64 counterIdx;
   static uint64 totalBB;
   static uint64 instrumentBB;
+  static uint64 totalFunc;
+  static uint64 instrumentFunc;
   static MIRSymbol *bbCounterTabSym;
   static bool firstRun;
 };

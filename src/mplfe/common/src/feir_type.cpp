@@ -288,6 +288,25 @@ MIRType *FEIRTypeDefault::GenerateMIRTypeInternal(const GStrIdx &argTypeNameIdx,
   return usePtr ? FEManager::GetTypeManager().GetOrCreatePointerType(*type, ptyPtr) : type;
 }
 
+std::string FEIRTypeDefault::GetTypeNameImpl() const {
+  if (dim == 0) {
+    return GlobalTables::GetStrTable().GetStringFromStrIdx(typeNameIdx);
+  }
+  std::string name;
+  switch (srcLang) {
+    case kSrcLangJava: {
+      for (TypeDim i = 0; i < dim; i++) {
+        (void)name.append("A");
+      }
+      (void)name.append(GlobalTables::GetStrTable().GetStringFromStrIdx(typeNameIdx));
+      return name;
+    }
+    default:
+      CHECK_FATAL(false, "undefined language");
+      return "";
+  }
+}
+
 // ---------- FEIRTypeByName ----------
 FEIRTypeByName::FEIRTypeByName(PrimType argPrimType, const std::string &argTypeName, TypeDim argDim)
     : FEIRTypeDefault(argPrimType, GStrIdx(0), argDim),

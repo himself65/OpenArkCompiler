@@ -385,8 +385,15 @@ std::list<UniqueFEIRStmt> JBCStmtInst::EmitToFEIRForOpLoad(JBCFunctionContext &c
   jbc::JBCPrimType stackOutType = op.GetOutputTypesToStack();
   PrimType pty = JBCStack2FEHelper::JBCStackItemTypeToPrimType(stackOutType);
   uint32 regNum = stack2feHelper.GetRegNumForSlot(opLoad.GetSlotIdx());
-  UniqueFEIRVar var = FEIRBuilder::CreateVarReg(regNum, pty);
+  const FEIRType *slotType = context.GetSlotType(opLoad.GetSlotIdx(), pc);
+  UniqueFEIRVar var;
   UniqueFEIRVar varStack = stack2feHelper.PushItem(pty);
+  if (slotType != nullptr) {
+    var = FEIRBuilder::CreateVarReg(regNum, slotType->Clone());
+    varStack->SetType(slotType->Clone());
+  } else {
+    var = FEIRBuilder::CreateVarReg(regNum, pty);
+  }
   success = success && (varStack != nullptr);
   UniqueFEIRExpr expr = FEIRBuilder::CreateExprDRead(std::move(var));
   UniqueFEIRStmt stmt = FEIRBuilder::CreateStmtDAssign(std::move(varStack), std::move(expr));
@@ -409,8 +416,17 @@ std::list<UniqueFEIRStmt> JBCStmtInst::EmitToFEIRForOpStore(JBCFunctionContext &
   CHECK_FATAL(stackInTypes.size() == 1, "store op need one stack opnd");
   PrimType pty = JBCStack2FEHelper::JBCStackItemTypeToPrimType(stackInTypes[0]);
   uint32 regSlot = stack2feHelper.GetRegNumForSlot(opStore.GetSlotIdx());
-  UniqueFEIRVar varDst = FEIRBuilder::CreateVarReg(regSlot, pty);
-  UniqueFEIRVar varSrc = stack2feHelper.PopItem(pty);
+  const FEIRType *slotType = context.GetSlotType(opStore.GetSlotIdx(), pc);
+  UniqueFEIRVar varDst;
+  UniqueFEIRVar varSrc;
+  if (slotType != nullptr) {
+    varDst = FEIRBuilder::CreateVarReg(regSlot, slotType->Clone());
+    varSrc = stack2feHelper.PopItem(pty);
+    varSrc->SetType(slotType->Clone());
+  } else {
+    varDst = FEIRBuilder::CreateVarReg(regSlot, pty);
+    varSrc = stack2feHelper.PopItem(pty);
+  }
   if (varSrc == nullptr) {
     success = false;
     return ans;

@@ -70,6 +70,8 @@ class Profile {
   bool CheckDexValid(uint32 idx);
   void SetProfileMode();
   void Dump() const;
+  void DumpFuncIRProfUseInfo() const;
+  void SetFuncStatus(const std::string &funcName, bool succ);
   Profile();
   ~Profile() = default;
 
@@ -91,6 +93,7 @@ class Profile {
   std::unordered_map<std::string, Profile::FuncItem> funcProfData;
   std::unordered_set<std::string> &GetMeta(uint8 type);
   std::unordered_map<std::string, BBInfo> funcBBProfData;
+  std::unordered_map<std::string, bool> funcBBProfUseInfo;
   std::unordered_map<std::string, IRProfileDesc> funcDesc;
   std::vector<uint32> counterTab;
   bool CheckProfileHeader(const Header *header) const;
