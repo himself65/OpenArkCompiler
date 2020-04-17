@@ -259,9 +259,6 @@ def gen_compare_regex(comment, assert_flags, expected_flag):
 def extract_compare_lines(file_path, regex):
     with file_path.open() as f:
         content = f.read()
-    print(regex)
-    print(regex)
-    print(regex)
     matches = re.finditer(regex, content, re.MULTILINE)
 
     compare_lines = []

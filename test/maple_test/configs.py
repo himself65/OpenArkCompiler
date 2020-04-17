@@ -66,6 +66,11 @@ def parse_args():
         "--debug", action="store_true", help="keep test temp file"
     )
     test_framework_parser.add_argument(
+        "--fail_exit",
+        action="store_true",
+        help="Execute test framework with a non-zero exit code if any tests fail",
+    )
+    test_framework_parser.add_argument(
         "-p",
         type=str,
         dest="print_type",
@@ -188,6 +193,7 @@ def parse_args():
         "retry": args.retry,
         "output": args.output,
         "debug": args.debug,
+        "fail_exit": args.fail_exit,
         "print_type": args.print_type,
         "progress": args.progress,
         "dry_run": args.dry_run,

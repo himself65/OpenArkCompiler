@@ -155,7 +155,15 @@ class TestSuiteTask:
             if not cfg.exists():
                 logger.error("Error: cfg file: {} not found, will skip".format(cfg))
                 continue
-            raw_config = read_config(cfg)
+            try:
+                raw_config = read_config(cfg)
+            except:
+                logger.error(
+                    "The found configuration file {} has an error and will "
+                    "skip the test configuration file, please modify the "
+                    "configuration file or ignore the message. ".format(cfg)
+                )
+                continue
             config = TaskConfig(cfg, raw_config, top_config, user_config, user_env)
             name = config.name
             base_dir = config.base_dir
@@ -274,6 +282,7 @@ class TestSuiteTask:
         print_type = configs.get_val("print_type")
         for line in self.gen_summary(print_type).splitlines():
             logger.info(line)
+        return self.result["FAIL"]
 
     def gen_brief_summary(self):
         total = sum(self.result.values())
