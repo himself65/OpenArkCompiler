@@ -40,6 +40,16 @@ constexpr unsigned int kMuidLength = 8;
 constexpr unsigned int kMuidLength = 16;
 #endif // USE_64BIT_MUID
 
+constexpr unsigned int kDigestShortHashLength = 8;
+constexpr unsigned int kDigestHashLength = 16;
+union DigestHash {
+  uint8_t bytes[kDigestHashLength];
+  struct {
+    uint64_t first;
+    uint64_t second;
+  } d;
+};
+
 // muid-related files are shared between maple compiler and runtime, thus not in
 // namespace maplert
 struct MuidContext {
@@ -117,9 +127,15 @@ struct MUID {
   }
 };
 
-void MuidInit(MuidContext *status);
-void MuidDecode(MuidContext *status, const void *data, uint64_t size);
-void MuidEncode(unsigned char *result, MuidContext *status, bool use64Bit = false);
+void MuidInit(MuidContext &status);
+void MuidDecode(MuidContext &status, const unsigned char &data, uint64_t size);
 
+template <typename T>
+void FullEncode(T &result, MuidContext &status);
+void MuidEncode(unsigned char (&result)[kDigestShortHashLength], MuidContext &status);
+void MuidEncode(unsigned char (&result)[kDigestHashLength], MuidContext &status, bool use64Bit = false);
+
+void GetMUIDHash(const unsigned char &data, size_t size, MUID &muid);
+DigestHash GetDigestHash(const unsigned char &bytes, uint32_t len);
 MUID GetMUID(const std::string &symbolName, bool forSystem = true);
 #endif

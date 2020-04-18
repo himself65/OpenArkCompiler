@@ -1146,6 +1146,7 @@ bool AArch64Insn::IsSpecialIntrinsic() const {
     case MOP_compare_and_swapI:
     case MOP_compare_and_swapL:
     case MOP_string_indexof:
+    case MOP_lazy_ldr:
     case MOP_get_and_setI:
     case MOP_get_and_setL: {
       return true;

@@ -23,15 +23,6 @@ const std::string kConstString = "_C_STR_";
 const std::string kConstStringPtr = "_PTR_C_STR_";
 const std::string kLocalStringPrefix = "L_STR_";
 constexpr int kConstStringLen = 7;
-constexpr unsigned int kDigestHashLength = 16;
-
-union DigestHash {
-  uint8_t bytes[kDigestHashLength];
-  struct {
-    uint64_t first;
-    uint64_t second;
-  } d;
-};
 
 class LiteralStrName {
  public:

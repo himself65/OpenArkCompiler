@@ -796,7 +796,8 @@ void GraphColorRegAllocator::ComputeLiveRangesForEachUseOperand(Insn &insn) {
       SetupLiveRangeByOp(opnd, insn, false, numUses);
     }
   }
-  if (numUses >= AArch64Abi::kNormalUseOperandNum) {
+  if (numUses >= AArch64Abi::kNormalUseOperandNum ||
+      static_cast<AArch64Insn&>(insn).GetMachineOpcode() == MOP_lazy_ldr) {
     needExtraSpillReg = true;
   }
 }
@@ -2752,6 +2753,9 @@ bool GraphColorRegAllocator::SetRegForSpill(LiveRange &lr, Insn &insn, uint32 sp
    */
     RegType regType = lr.GetRegType();
     regno_t spillReg = PickRegForSpill(usedRegMask, regType, spillIdx, needSpillLr);
+    if (static_cast<AArch64Insn&>(insn).GetMachineOpcode() == MOP_lazy_ldr && spillReg == R17) {
+      CHECK_FATAL(false, "register IP1(R17) may be changed when lazy_ldr");
+    }
     lr.SetAssignedRegNO(spillReg);
   }
   return needSpillLr;
@@ -2787,6 +2791,9 @@ RegOperand *GraphColorRegAllocator::GetReplaceOpndForLRA(Insn &insn, const Opera
      * else there will be conflict.
      */
     spillReg = PickRegForSpill(usedRegMask, regType, spillIdx, needSpillLr);
+    if (static_cast<AArch64Insn&>(insn).GetMachineOpcode() == MOP_lazy_ldr && spillReg == R17) {
+      CHECK_FATAL(false, "register IP1(R17) may be changed when lazy_ldr");
+    }
     bool isCalleeReg = AArch64Abi::IsCalleeSavedReg(static_cast<AArch64reg>(spillReg));
     if (isCalleeReg) {
       if (regType == kRegTyInt) {
@@ -3024,7 +3031,12 @@ void GraphColorRegAllocator::FinalizeRegisters() {
       }
       for (size_t i = 0; i < fInfo->GetDefOperandsSize(); ++i) {
         const Operand *opnd = fInfo->GetDefOperandsElem(i);
-        RegOperand *phyOpnd = GetReplaceOpnd(*insn, *opnd, defSpillIdx, usedRegMask, true);
+        RegOperand *phyOpnd = nullptr;
+        if (insn->IsSpecialIntrinsic()) {
+          phyOpnd = GetReplaceOpnd(*insn, *opnd, useSpillIdx, usedRegMask, true);
+        } else {
+          phyOpnd = GetReplaceOpnd(*insn, *opnd, defSpillIdx, usedRegMask, true);
+        }
         if (phyOpnd != nullptr) {
           insn->SetOperand(fInfo->GetDefIdxElem(i), *phyOpnd);
         }

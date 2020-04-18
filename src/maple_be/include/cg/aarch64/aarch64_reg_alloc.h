@@ -29,7 +29,8 @@ class AArch64RegAllocator : public RegAllocator {
         liveReg(std::less<uint8>(), alloc.Adapter()),
         allocatedSet(std::less<Operand*>(), alloc.Adapter()),
         visitedBBs(alloc.Adapter()),
-        sortedBBs(alloc.Adapter()) {
+        sortedBBs(alloc.Adapter()),
+        rememberRegs(alloc.Adapter()) {
     for (int32 i = 0; i != kAllRegNum; i++) {
       availRegSet[i] = false;
     }
@@ -72,7 +73,7 @@ class AArch64RegAllocator : public RegAllocator {
   MapleSet<Operand*> allocatedSet;      /* already allocated */
   MapleVector<bool> visitedBBs;
   MapleVector<BB*> sortedBBs;
-  AArch64reg atomicStoreResultReg = kRinvalid;
+  MapleVector<AArch64reg> rememberRegs;
 };
 
 class DefaultO0RegAllocator : public AArch64RegAllocator {

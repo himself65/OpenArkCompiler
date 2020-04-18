@@ -288,12 +288,6 @@ void BECommon::ComputeTypeSizesAligns(MIRType &ty, uint8 align) {
 
   switch (ty.GetKind()) {
     case kTypeScalar:
-#ifdef TARGARM32
-      SetTypeSize(tyIdx, GetPrimTypeSize(ty.GetPrimType()));
-      SetTypeAlign(tyIdx, GetPrimTypeSize(ty.GetPrimType()) > k4ByteSize ? k4ByteSize
-                                                                         : GetPrimTypeSize(ty.GetPrimType()));
-      break;
-#endif
     case kTypePointer:
     case kTypeBitField:
     case kTypeFunction:
