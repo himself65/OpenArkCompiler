@@ -3598,7 +3598,6 @@ Operand *AArch64CGFunc::SelectLazyLoad(Operand &opnd0, PrimType primType) {
   ASSERT(opnd0.IsRegister(), "wrong type.");
   RegOperand &resOpnd = CreateRegisterOperandOfType(primType);
   GetCurBB()->AppendInsn(GetCG()->BuildInstruction<AArch64Insn>(MOP_lazy_ldr, resOpnd, opnd0));
-  GetCurBB()->AppendInsn(GetCG()->BuildInstruction<AArch64Insn>(MOP_lazy_tail, resOpnd, opnd0));
   return &resOpnd;
 }
 

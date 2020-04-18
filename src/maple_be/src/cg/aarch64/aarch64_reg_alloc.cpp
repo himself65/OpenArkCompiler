@@ -537,8 +537,6 @@ bool DefaultO0RegAllocator::AllocateRegisters() {
       continue;
     }
 
-    bool isIntrinsicBB = (bb->GetKind() == BB::kBBIntrinsic);
-
     FOR_BB_INSNS_REV(insn, bb) {
       if (!insn->IsMachineInstruction()) {
         continue;
@@ -561,11 +559,10 @@ bool DefaultO0RegAllocator::AllocateRegisters() {
           /* free the live range of this register */
           auto &regOpnd = static_cast<RegOperand&>(opnd);
           SaveCalleeSavedReg(regOpnd);
-          if (isIntrinsicBB && insn->IsAtomicStore()) {
+          if (insn->IsAtomicStore() || insn->IsSpecialIntrinsic()) {
             /* remember the physical machine register assigned */
-            ASSERT(atomicStoreResultReg == kRinvalid, "not a valid register");
             regno_t regNO = regOpnd.GetRegisterNumber();
-            atomicStoreResultReg = static_cast<AArch64reg>(regOpnd.IsVirtualRegister() ? regMap[regNO] : regNO);
+            rememberRegs.push_back(static_cast<AArch64reg>(regOpnd.IsVirtualRegister() ? regMap[regNO] : regNO));
           } else if (!insn->IsCondDef()) {
             ReleaseReg(regOpnd);
           }
@@ -598,12 +595,12 @@ bool DefaultO0RegAllocator::AllocateRegisters() {
           insn->SetOperand(i, *srcOpnd);
         }
       }
-    }
-
-    /* hack. a better way to handle intrinsics? */
-    if (atomicStoreResultReg != kRinvalid) {
-      ReleaseReg(atomicStoreResultReg);
-      atomicStoreResultReg = kRinvalid;
+      /* hack. a better way to handle intrinsics? */
+      for (auto rememberReg : rememberRegs) {
+        ASSERT(rememberReg == kRinvalid, "not a valid register");
+        ReleaseReg(rememberReg);
+      }
+      rememberRegs.clear();
     }
   }
   return true;

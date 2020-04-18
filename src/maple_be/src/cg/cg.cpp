@@ -146,8 +146,8 @@ void CG::SetInstrumentationFunction(const std::string &name) {
   instrumentationFunction->SetSKind(kStFunc);
 }
 
-#define DBG_TRACE_ENTER mpl_dt_enter
-#define DBG_TRACE_EXIT mpl_dt_exit
+#define DBG_TRACE_ENTER MplDtEnter
+#define DBG_TRACE_EXIT MplDtExit
 #define XSTR(s) str(s)
 #define str(s) #s
 
@@ -163,7 +163,7 @@ void CG::DefineDebugTraceFunctions() {
   dbgTraceExit->SetSKind(kStFunc);
 
   dbgFuncProfile = GlobalTables::GetGsymTable().CreateSymbol(kScopeGlobal);
-  dbgFuncProfile->SetNameStrIdx(std::string("__" XSTR(mpl_func_profile) "__"));
+  dbgFuncProfile->SetNameStrIdx(std::string("__" XSTR(MplFuncProfile) "__"));
   dbgFuncProfile->SetStorageClass(kScText);
   dbgFuncProfile->SetSKind(kStFunc);
 }
