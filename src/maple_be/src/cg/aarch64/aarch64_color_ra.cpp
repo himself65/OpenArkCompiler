@@ -2541,17 +2541,14 @@ MemOperand *GraphColorRegAllocator::GetSpillOrReuseMem(LiveRange &lr, uint32 reg
     } else {
 #endif  /* REUSE_SPILLMEM */
       regno_t baseRegNO = kRinvalid;
-      if (isDef) {
-        MapleSet<uint32> &spillRegSet = (lr.GetRegType() == kRegTyInt) ? intSpillRegSet : fpSpillRegSet;
-        regno_t basis = (lr.GetRegType() == kRegTyInt) ? R0 : V0;
-        for (auto reg : spillRegSet) {
-          if ((reg + basis) != lr.GetSpillReg()) {
-            baseRegNO = (reg + basis);
-            break;
-          }
+      MapleSet<uint32> &spillRegSet = intSpillRegSet;
+      regno_t basis = R0;
+      for (auto reg : spillRegSet) {
+        if (isDef && (reg + basis) == lr.GetSpillReg()) {
+          continue;
         }
-      } else {
-        baseRegNO = lr.GetSpillReg();
+        baseRegNO = (reg + basis);
+        break;
       }
       ASSERT(baseRegNO != kRinvalid, "invalid base register number");
       memOpnd = GetSpillMem(lr.GetRegNO(), isDef, insn, static_cast<AArch64reg>(baseRegNO), isOutOfRange);
