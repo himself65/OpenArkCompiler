@@ -18,179 +18,23 @@
 #include <string>
 #include <vector>
 #include "error_code.h"
+#include "option_descriptor.h"
+#include "driver_option_common.h"
 
 namespace mapleOption {
-enum BuildType {
-  kBuildTypeAll,
-  kBuildTypeDebug,
-  kBuildTypeRelease
-};
-
-enum ArgCheckPolicy {
-  kArgCheckPolicyUnknown,
-  kArgCheckPolicyNone,
-  kArgCheckPolicyOptional,
-  kArgCheckPolicyRequired,
-  kArgCheckPolicyNumeric,
-  kArgCheckPolicyBool
-};
-
-struct ExtraOption {
-  // Tool bin name
-  const char * const exeName;
-
-  // Key mapping with -/-- if needed.
-  const char * const optionKey;
-
-  // Can override the connector defined in Descriptor.
-  const char * const connector;
-
-  // Can override the delimiter defined in Descriptor
-  const char * const delimiter;
-};
-
-constexpr unsigned int kMaxExtraOptions = 10;
-
-struct Descriptor {
-  // Unique option index
-  const unsigned int index;
-
-  // Unique option type
-  const int type;
-
-  // Short form option key
-  const char * const shortOption;
-
-  // Long form option key
-  const char * const longOption;
-
-#ifdef OPTION_PARSER_EXTRAOPT
-  // Connector followed after key when passing args to target tool.
-  const char * const connector;
-
-  // There's default args for the option.
-  // When user set it again, if true, append to the default args,
-  // else replace it.
-  const bool isCanAppend;
-
-  // Delimiter when append.
-  // if isCanAppend is false, it's meaningless.
-  const char * const delimiter;
-#endif
-
-  // The option can be seen in which build type.
-  const BuildType enableBuildType;
-
-  // Should we have a parameter?
-  const ArgCheckPolicy checkPolicy;
-
-  // Help info
-  const char * const help;
-
-#ifdef OPTION_PARSER_EXTRAOPT
-  const char * const exeName;
-
-  // option key mapping to target tool
-  const std::vector<ExtraOption> extras;
-#endif
-
-  bool IsEnabledForCurrentBuild() const {
-    switch (enableBuildType) {
-      case BuildType::kBuildTypeAll:
-        return true;
-      case BuildType::kBuildTypeDebug:
-        return true;
-      case BuildType::kBuildTypeRelease:
-        return false;
-      default:
-        // should never reach
-        return true;
-    }
-  }
-};
-
-class Option {
- public:
-  Option(Descriptor desc, const std::string &optionKey, const std::string &args)
-      : descriptor(desc), optionKey(optionKey), args(args) {}
-
-  ~Option() = default;
-
-  unsigned int Index() const {
-    return descriptor.index;
-  }
-
-  unsigned int Type() const {
-    return descriptor.type;
-  }
-
-  const std::string &Args() const {
-    return args;
-  }
-
-  const std::string &OptionKey() const {
-    return optionKey;
-  }
-
-#ifdef OPTION_PARSER_EXTRAOPT
-  std::string ConnectSymbol(const std::string &exeName) const {
-    auto extra = FindExtra(exeName);
-    if (extra != nullptr && extra->connector != nullptr) {
-      return extra->connector;
-    }
-    return descriptor.connector == nullptr ? "" : descriptor.connector;
-  }
-
-  std::string AppendSymbol(const std::string &exeName) const {
-    auto extra = FindExtra(exeName);
-    if (extra != nullptr && extra->delimiter != nullptr) {
-      return extra->delimiter;
-    }
-    return descriptor.delimiter == nullptr ? "" : descriptor.delimiter;
-  }
-
-  bool HasExtra() const {
-    return descriptor.extras[0].exeName != nullptr;
-  }
-
-  std::vector<ExtraOption> GetExtras() const {
-    auto ret = std::vector<ExtraOption>();
-    unsigned int index = 0;
-    while (index < kMaxExtraOptions && descriptor.extras[index].exeName != nullptr) {
-      ret.push_back(descriptor.extras[index++]);
-    }
-    return ret;
-  }
-
-  const ExtraOption *FindExtra(const std::string &exeName) const {
-    unsigned int index = 0;
-    while (index < kMaxExtraOptions && descriptor.extras[index].exeName != nullptr) {
-      if (exeName == descriptor.extras[index].exeName) {
-        return &descriptor.extras[index];
-      }
-      ++index;
-    }
-    return nullptr;
-  }
-
-#endif
-
- private:
-  Descriptor descriptor;
-  const std::string optionKey;
-  const std::string args;
-};
-
 class OptionParser {
  public:
-  explicit OptionParser(const Descriptor usage[]);
+  OptionParser() = default;
 
   ~OptionParser() = default;
 
-  maple::ErrorCode Parse(int argc, char **argv);
+  void RegisteUsages(maple::MapleDriverOptionBase &base);
+  void RegisteUsages(const Descriptor usage[]);
+
+  maple::ErrorCode Parse(int argc, char **argv, const std::string exeName = "all");
 
   maple::ErrorCode HandleInputArgs(const std::vector<std::string> &inputArgs, const std::string &exeName,
-                                   std::vector<mapleOption::Option> &inputOption);
+                                   std::vector<mapleOption::Option> &inputOption, bool isAllOption = false);
 
   const std::vector<Option> &GetOptions() const {
     return options;
@@ -204,19 +48,15 @@ class OptionParser {
     return nonOptionsArgs.size();
   }
 
-#ifdef OPTION_PARSER_EXTRAOPT
   void InsertExtraUsage(const Descriptor &usage);
-#endif
 
   void CreateNoOption(const Descriptor &usage);
 
   void PrintUsage() const;
 
-#ifdef OPTION_PARSER_EXTRAOPT
   bool SetOption(const std::string &key, const std::string &value, const std::string &exeName,
                  std::vector<mapleOption::Option> &exeOption);
-  void PrintUsage(const std::string &helpTyoe) const;
-#endif
+  void PrintUsage(const std::string &helpType) const;
 
  private:
   bool HandleKeyValue(const std::string &key, const std::string &value, bool isValueEmpty,
@@ -240,9 +80,11 @@ enum MatchedIndex {
   kMatchShortOpt,
   kMatchLongOpt
 };
-enum EnabledIndex {
-  kDisable,
-  kEnable
+enum Level {
+  kLevelZero = 0,
+  kLevelOne = 1,
+  kLevelTwo = 2,
+  kLevelThree = 3
 };
 }  // namespace mapleOption
 

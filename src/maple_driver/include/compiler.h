@@ -66,23 +66,13 @@ class Compiler {
     return DefaultOption();
   }
 
-  virtual std::string AppendSpecialOption(const MplOptions&, const std::string &optionStr) const {
-    return optionStr;
-  }
-
-  virtual std::string AppendOptimization(const MplOptions &options, const std::string &optionStr) const;
-
-  bool CanAppendOptimization() const;
-
  private:
   const std::string name;
   std::string MakeOption(const MplOptions &options) const;
   void AppendDefaultOptions(std::map<std::string, MplOption> &finalOptions,
                             const std::map<std::string, MplOption> &defaultOptions) const;
-  void AppendUserOptions(std::map<std::string, MplOption> &finalOptions,
-                         const std::vector<mapleOption::Option> &userOption) const;
-  void AppendOptions(std::map<std::string, MplOption> &finalOptions, const std::string &key, const std::string &value,
-                     const std::string &connectSymbol) const;
+  void AppendOptions(std::map<std::string, MplOption> &finalOptions, const std::string &key,
+                     const std::string &value) const;
   void AppendExtraOptions(std::map<std::string, MplOption> &finalOptions,
                           const std::map<std::string, std::vector<MplOption>> &extraOptions) const;
   std::map<std::string, MplOption> MakeDefaultOptions(const MplOptions &options) const;
@@ -117,12 +107,10 @@ class MapleCombCompiler : public Compiler {
 
  private:
   std::string realRunningExe;
-  void DecideMeRealLevel(MeOption &meOption, const std::vector<mapleOption::Option> &inputOptions);
-  void DecideMpl2MplRealLevel(Options &mpl2mplOption, const std::vector<mapleOption::Option> &inputOptions) const;
   std::unordered_set<std::string> GetFinalOutputs(const MplOptions &mplOptions) const override;
   void GetTmpFilesToDelete(const MplOptions &mplOptions, std::vector<std::string> &tempFiles) const override;
-  MeOption *MakeMeOptions(const MplOptions &options, MemPool &memPool);
-  Options *MakeMpl2MplOptions(const MplOptions &options, MemPool &memPool);
+  bool MakeMeOptions(const MplOptions &options);
+  bool MakeMpl2MplOptions(const MplOptions &options);
 };
 
 class MplcgCompiler : public Compiler {
@@ -135,10 +123,7 @@ class MplcgCompiler : public Compiler {
  private:
   std::string GetInputFileName(const MplOptions &options) const override;
   DefaultOption GetDefaultOptions(const MplOptions &options) const override;
-  maplebe::CGOptions *MakeCGOptions(const MplOptions &options, MemPool &memPool);
-  void DecideMplcgRealLevel(maplebe::CGOptions &cgOption,
-                            const std::vector<mapleOption::Option> &inputOptions,
-                            const MplOptions &options);
+  bool MakeCGOptions(const MplOptions &options);
   const std::string &GetBinName() const override;
 };
 }  // namespace maple

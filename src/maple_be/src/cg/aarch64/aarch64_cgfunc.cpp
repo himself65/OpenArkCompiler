@@ -710,7 +710,7 @@ bool AArch64CGFunc::CheckIfSplitOffsetWithAdd(const AArch64MemOperand &memOpnd, 
 }
 
 AArch64MemOperand &AArch64CGFunc::SplitOffsetWithAddInstruction(const AArch64MemOperand &memOpnd, uint32 bitLen,
-                                                                AArch64reg baseRegNum, uint32 isDest, Insn *insn) {
+                                                                AArch64reg baseRegNum, bool isDest, Insn *insn) {
   ASSERT((memOpnd.GetAddrMode() == AArch64MemOperand::kAddrModeBOi), "expect kAddrModeBOi memOpnd");
   ASSERT(memOpnd.IsIntactIndexed(), "expect intactIndexed memOpnd");
   AArch64OfstOperand *ofstOpnd = memOpnd.GetOffsetImmediate();
@@ -5525,7 +5525,7 @@ void AArch64CGFunc::AppendCall(const MIRSymbol &funcSymbol) {
 }
 
 void AArch64CGFunc::SelectAddAfterInsn(Operand &resOpnd, Operand &opnd0, Operand &opnd1, PrimType primType,
-                                       uint32 isDest, Insn &insn) {
+                                       bool isDest, Insn &insn) {
   uint32 dsize = GetPrimTypeBitSize(primType);
   bool is64Bits = (dsize == k64BitSize);
   ASSERT(opnd0.GetKind() == Operand::kOpdRegister, "Spill memory operand should based on register");
@@ -5579,7 +5579,7 @@ void AArch64CGFunc::SelectAddAfterInsn(Operand &resOpnd, Operand &opnd0, Operand
 }
 
 MemOperand *AArch64CGFunc::AdjustMemOperandIfOffsetOutOfRange(
-    MemOperand *memOpnd, regno_t vrNum, uint8 isDest, Insn &insn, AArch64reg regNum, uint8 &isOutOfRange) {
+    MemOperand *memOpnd, regno_t vrNum, bool isDest, Insn &insn, AArch64reg regNum, bool &isOutOfRange) {
   if (vrNum >= vRegTable.size()) {
     CHECK_FATAL(false, "index out of range in AArch64CGFunc::AdjustMemOperandIfOffsetOutOfRange");
   }
@@ -5587,12 +5587,12 @@ MemOperand *AArch64CGFunc::AdjustMemOperandIfOffsetOutOfRange(
   auto *a64MemOpnd = static_cast<AArch64MemOperand*>(memOpnd);
   if (IsImmediateOffsetOutOfRange(*a64MemOpnd, dataSize)) {
     if (CheckIfSplitOffsetWithAdd(*a64MemOpnd, dataSize)) {
-      isOutOfRange = 1;
+      isOutOfRange = true;
     }
     memOpnd =
         &SplitOffsetWithAddInstruction(*a64MemOpnd, dataSize, regNum, isDest, &insn);
   } else {
-    isOutOfRange = 0;
+    isOutOfRange = false;
   }
   return memOpnd;
 }

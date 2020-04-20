@@ -20,13 +20,20 @@
 #include "mempool_allocator.h"
 #include "parser_opt.h"
 #include "types_def.h"
+#include "driver_option_common.h"
+#include "option_descriptor.h"
 
 namespace maple {
-class Options {
+class Options : public MapleDriverOptionBase {
  public:
-  explicit Options(MemPool &memPool) : optionAlloc(&memPool) {}
+  static Options &GetInstance();
+
+  Options();
 
   bool ParseOptions(int argc, char **argv, std::string &fileName) const;
+
+  bool SolveOptions(const std::vector<mapleOption::Option> &opts,
+                    bool isDebug) const;
   ~Options() = default;
 
   void DumpOptions() const;
@@ -93,7 +100,7 @@ class Options {
   static bool testCase;
   static bool checkArrayStore;
  private:
-  MapleAllocator optionAlloc;
+  void DecideMpl2MplRealLevel(const std::vector<mapleOption::Option> &inputOptions) const;
   std::vector<std::string> phaseSeq;
 };
 }  // namespace maple

@@ -49,6 +49,7 @@ constexpr uint32 k14ByteSize = 14;
 constexpr uint32 k15ByteSize = 15;
 constexpr uint32 k16ByteSize = 16;
 
+constexpr uint32 k4BitShift = 2; /* 4 is 1 << 2; */
 constexpr uint32 k8BitShift = 3;  /* 8 is 1 << 3; */
 constexpr uint32 k16BitShift = 4; /* 16 is 1 << 4 */
 

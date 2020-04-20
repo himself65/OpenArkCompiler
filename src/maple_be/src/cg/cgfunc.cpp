@@ -316,7 +316,7 @@ Operand *HandleIntrinOp(const BaseNode &parent, BaseNode &expr, CGFunc &cgFunc) 
 }
 
 using HandleExprFactory = FunctionFactory<Opcode, maplebe::Operand*, const BaseNode&, BaseNode&, CGFunc&>;
-bool InitHandleExprFactory() {
+void InitHandleExprFactory() {
   RegisterFactoryFunction<HandleExprFactory>(OP_dread, HandleDread);
   RegisterFactoryFunction<HandleExprFactory>(OP_regread, HandleRegread);
   RegisterFactoryFunction<HandleExprFactory>(OP_constval, HandleConstVal);
@@ -373,7 +373,6 @@ bool InitHandleExprFactory() {
   RegisterFactoryFunction<HandleExprFactory>(OP_gcmallocjarray, HandleJarrayMalloc);
   RegisterFactoryFunction<HandleExprFactory>(OP_gcpermallocjarray, HandleJarrayMalloc);
   RegisterFactoryFunction<HandleExprFactory>(OP_intrinsicop, HandleIntrinOp);
-  return true;
 }
 
 void HandleLabel(StmtNode &stmt, CGFunc &cgFunc) {
@@ -625,7 +624,7 @@ void HandleAssertNull(StmtNode &stmt, CGFunc &cgFunc) {
 }
 
 using HandleStmtFactory = FunctionFactory<Opcode, void, StmtNode&, CGFunc&>;
-bool InitHandleStmtFactory() {
+void InitHandleStmtFactory() {
   RegisterFactoryFunction<HandleStmtFactory>(OP_label, HandleLabel);
   RegisterFactoryFunction<HandleStmtFactory>(OP_goto, HandleGoto);
   RegisterFactoryFunction<HandleStmtFactory>(OP_brfalse, HandleCondbr);
@@ -649,7 +648,6 @@ bool InitHandleStmtFactory() {
   RegisterFactoryFunction<HandleStmtFactory>(OP_comment, HandleComment);
   RegisterFactoryFunction<HandleStmtFactory>(OP_catch, HandleCatchOp);
   RegisterFactoryFunction<HandleStmtFactory>(OP_assertnonnull, HandleAssertNull);
-  return true;
 }
 
 CGFunc::CGFunc(MIRModule &mod, CG &cg, MIRFunction &mirFunc, BECommon &beCommon, MemPool &memPool,
@@ -748,10 +746,8 @@ bool CGFunc::CheckSkipMembarOp(StmtNode &stmt) {
 }
 
 void CGFunc::GenerateInstruction() {
-  static auto exprHandlerLoader = InitHandleExprFactory();
-  (void)exprHandlerLoader;
-  static auto stmtHandlerLoader = InitHandleStmtFactory();
-  (void)stmtHandlerLoader;
+  InitHandleExprFactory();
+  InitHandleStmtFactory();
   StmtNode *secondStmt = HandleFirstStmt();
 
   /* First Pass: Creates the doubly-linked list of BBs (next,prev) */

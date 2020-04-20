@@ -156,9 +156,9 @@ class AArch64CGFunc : public CGFunc {
   Operand *SelectMpy(BinaryNode &node, Operand &o0, Operand &o1) override;
   void SelectMpy(Operand &resOpnd, Operand &o0, Operand &o1, PrimType primType) override;
   /* method description contains method information which is metadata for reflection. */
-  MemOperand *AdjustMemOperandIfOffsetOutOfRange(MemOperand *memOpnd, regno_t regNO, uint8 isDest, Insn &insn,
-                                                 AArch64reg regNum, uint8 &isOutOfRange);
-  void SelectAddAfterInsn(Operand &resOpnd, Operand &o0, Operand &o1, PrimType primType, uint32 isDest, Insn &insn);
+  MemOperand *AdjustMemOperandIfOffsetOutOfRange(MemOperand *memOpnd, regno_t regNO, bool isDest, Insn &insn,
+                                                 AArch64reg regNum, bool &isOutOfRange);
+  void SelectAddAfterInsn(Operand &resOpnd, Operand &o0, Operand &o1, PrimType primType, bool isDest, Insn &insn);
   bool IsImmediateOffsetOutOfRange(AArch64MemOperand &memOpnd, uint32 bitLen);
   Operand *SelectRem(BinaryNode &node, Operand &opnd0, Operand &opnd1) override;
   void SelectDiv(Operand &resOpnd, Operand &opnd0, Operand &opnd1, PrimType primType) override;
@@ -422,7 +422,7 @@ class AArch64CGFunc : public CGFunc {
 
   bool CheckIfSplitOffsetWithAdd(const AArch64MemOperand &memOpnd, uint32 bitLen);
   AArch64MemOperand &SplitOffsetWithAddInstruction(const AArch64MemOperand &memOpnd, uint32 bitLen,
-                                                   AArch64reg baseRegNum = AArch64reg::kRinvalid, uint32 isDest = 0,
+                                                   AArch64reg baseRegNum = AArch64reg::kRinvalid, bool isDest = false,
                                                    Insn *insn = nullptr);
   AArch64MemOperand &CreateReplacementMemOperand(uint32 bitLen, RegOperand &baseReg, int32 offset);
 

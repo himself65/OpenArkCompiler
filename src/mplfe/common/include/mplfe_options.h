@@ -20,15 +20,17 @@
 #include "parser_opt.h"
 #include "option_parser.h"
 #include "types_def.h"
+#include "driver_option_common.h"
 
 namespace maple {
-class MPLFEOptions {
+class MPLFEOptions : public maple::MapleDriverOptionBase {
  public:
   static MPLFEOptions &GetInstance() {
     return options;
   }
   void Init();
   static bool InitFactory();
+  bool SolveOptions(const std::vector<mapleOption::Option> &opts, bool isDebug);
   bool SolveArgs(int argc, char **argv);
   void DumpUsage() const;
   void DumpVersion() const;

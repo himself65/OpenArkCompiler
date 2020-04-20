@@ -1177,7 +1177,7 @@ class GraphColorRegAllocator : public AArch64RegAllocator {
   void LocalRaFinalAssignment(LocalRegAllocator &localRa, BBAssignInfo &bbInfo);
   void LocalRaDebug(BB &bb, LocalRegAllocator &localRa);
   void LocalRegisterAllocator(bool allocate);
-  MemOperand *GetSpillOrReuseMem(LiveRange &lr, uint32 regSize, uint8 &isOutOfRange, Insn &insn, bool isDef);
+  MemOperand *GetSpillOrReuseMem(LiveRange &lr, uint32 regSize, bool &isOutOfRange, Insn &insn, bool isDef);
   void SpillOperandForSpillPre(Insn &insn, const Operand &opnd, RegOperand &phyOpnd, uint32 spillIdx, bool needSpill);
   void SpillOperandForSpillPost(Insn &insn, const Operand &opnd, RegOperand &phyOpnd, uint32 spillIdx, bool needSpill);
   Insn *SpillOperand(Insn &insn, const Operand &opnd, bool isDef, RegOperand &phyOpnd);
@@ -1186,7 +1186,7 @@ class GraphColorRegAllocator : public AArch64RegAllocator {
   MemOperand *GetCommonReuseMem(const uint64 *conflict, const std::set<MemOperand*> &usedMemOpnd, uint32 size,
                                 RegType regType);
   MemOperand *GetReuseMem(uint32 vregNO, uint32 size, RegType regType);
-  MemOperand *GetSpillMem(uint32 vregNO, uint8 isDest, Insn &insn, AArch64reg regNO, uint8 &isOutOfRange);
+  MemOperand *GetSpillMem(uint32 vregNO, bool isDest, Insn &insn, AArch64reg regNO, bool &isOutOfRange);
   bool SetAvailableSpillReg(std::set<regno_t> &cannotUseReg, LiveRange &lr, uint64 &usedRegMask);
   void CollectCannotUseReg(std::set<regno_t> &cannotUseReg, LiveRange &lr, Insn &insn);
   regno_t PickRegForSpill(uint64 &usedRegMask, RegType regType, uint32 spillIdx, bool &needSpillLr);
