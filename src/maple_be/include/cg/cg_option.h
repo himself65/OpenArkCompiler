@@ -19,6 +19,7 @@
 #include "mempool_allocator.h"
 #include "mir_module.h"
 #include "types_def.h"
+#include "driver_option_common.h"
 
 namespace maplebe {
 using namespace maple;
@@ -28,7 +29,7 @@ struct Range {
   uint64 end;
 };
 
-class CGOptions {
+class CGOptions : public MapleDriverOptionBase {
  public:
   enum OptionEnum : uint64 {
     kUndefined = 0ULL,
@@ -108,8 +109,11 @@ class CGOptions {
   static const GenerateFlag kDefaultGflags = GenerateFlag(kGrootList | kPrimorList);
 
  public:
-  explicit CGOptions(MemPool &memPool) : optionAlloc(&memPool) {}
+  static CGOptions &GetInstance();
+  CGOptions();
   virtual ~CGOptions() = default;
+  bool SolveOptions(const std::vector<mapleOption::Option> &opts, bool isDebug);
+  void DecideMplcgRealLevel(const std::vector<mapleOption::Option> &inputOptions, bool isDebug);
 
   void DumpOptions();
   std::vector<std::string> &GetSequence() {
@@ -593,7 +597,6 @@ class CGOptions {
   }
 
  private:
-  MapleAllocator optionAlloc;
   std::vector<std::string> phaseSequence;
 
   bool insertCall = false;

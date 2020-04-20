@@ -19,20 +19,19 @@
 #include "mempool.h"
 #include "mempool_allocator.h"
 #include "types_def.h"
+#include "driver_option_common.h"
+#include "option_parser.h"
 
 namespace maple {
-class MeOption {
+class MeOption : public MapleDriverOptionBase {
  public:
-  enum Level {
-    kLevelZero = 0,
-    kLevelOne = 1,
-    kLevelTwo = 2,
-    kLevelThree = 3
-  };
+  static MeOption &GetInstance();
 
-  explicit MeOption(MemPool &memPool) : optionAlloc(&memPool) {}
+  MeOption();
 
   ~MeOption() = default;
+
+  bool SolveOptions(const std::vector<mapleOption::Option> &opts, bool isDebug);
 
   void ParseOptions(int argc, char **argv, std::string &fileName);
 
@@ -40,7 +39,7 @@ class MeOption {
   void SplitSkipPhases(const std::string &str) {
     SplitPhases(str, skipPhases);
   }
-  void GetRange(const std::string &str) const;
+  bool GetRange(const std::string &str) const;
 
   const std::unordered_set<std::string> &GetSkipPhases() const {
     return skipPhases;
@@ -95,8 +94,8 @@ class MeOption {
   static bool spillAtCatch;
   static bool optDirectCall;
  private:
+  void DecideMeRealLevel(const std::vector<mapleOption::Option> &inputOptions) const;
   std::unordered_set<std::string> skipPhases;
-  MapleAllocator optionAlloc;
 };
 
 #ifndef DEBUGFUNC

@@ -2445,8 +2445,8 @@ MemOperand *GraphColorRegAllocator::GetReuseMem(uint32 vregNO, uint32 size, RegT
 #endif  /* CONSISTENT_MEMOPNDi */
 }
 
-MemOperand *GraphColorRegAllocator::GetSpillMem(uint32 vregNO, uint8 isDest, Insn &insn, AArch64reg regNO,
-                                                uint8 &isOutOfRange) {
+MemOperand *GraphColorRegAllocator::GetSpillMem(uint32 vregNO, bool isDest, Insn &insn, AArch64reg regNO,
+                                                bool &isOutOfRange) {
   auto *a64CGFunc = static_cast<AArch64CGFunc*>(cgFunc);
   MemOperand *memOpnd = a64CGFunc->GetOrCreatSpillMem(vregNO);
   return (a64CGFunc->AdjustMemOperandIfOffsetOutOfRange(memOpnd, vregNO, isDest, insn, regNO, isOutOfRange));
@@ -2525,7 +2525,7 @@ void GraphColorRegAllocator::SpillOperandForSpillPost(Insn &insn, const Operand 
   }
 }
 
-MemOperand *GraphColorRegAllocator::GetSpillOrReuseMem(LiveRange &lr, uint32 regSize, uint8 &isOutOfRange, Insn &insn,
+MemOperand *GraphColorRegAllocator::GetSpillOrReuseMem(LiveRange &lr, uint32 regSize, bool &isOutOfRange, Insn &insn,
                                                        bool isDef) {
   (void)regSize;
   MemOperand *memOpnd = nullptr;
@@ -2577,7 +2577,7 @@ Insn *GraphColorRegAllocator::SpillOperand(Insn &insn, const Operand &opnd, bool
   }
 
   uint32 regSize = regOpnd.GetSize();
-  uint8 isOutOfRange = 0;
+  bool isOutOfRange = false;
   PrimType stype;
   RegType regType = regOpnd.GetRegisterType();
   if (regType == kRegTyInt) {

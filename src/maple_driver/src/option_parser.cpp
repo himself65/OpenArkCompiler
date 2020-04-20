@@ -17,46 +17,23 @@
 #include <iostream>
 #include <cstring>
 #include "mpl_logging.h"
+#include "driver_option_common.h"
 
 using namespace maple;
 using namespace mapleOption;
 
-OptionParser::OptionParser(const Descriptor usage[]) {
-  for (size_t i = 0; usage[i].help != nullptr; ++i) {
-    rawUsages.push_back(usage[i]);
-    if (usage[i].shortOption != nullptr) {
-      InsertOption(std::string(usage[i].shortOption), usage[i]);
-    }
-    if (usage[i].longOption != nullptr) {
-      InsertOption(std::string(usage[i].longOption), usage[i]);
-    }
-#ifdef OPTION_PARSER_EXTRAOPT
-    // Insert usage for extra options
-    InsertExtraUsage(usage[i]);
-#endif
-    // Add --no-opt for boolean option
-    if (usage[i].checkPolicy == kArgCheckPolicyBool) {
-      CreateNoOption(usage[i]);
-    }
-  }
-}
-
-#ifdef OPTION_PARSER_EXTRAOPT
 void OptionParser::InsertExtraUsage(const Descriptor &usage) {
   unsigned int index = 0;
-  while (index < kMaxExtraOptions && usage.extras[index].exeName != nullptr) {
+  while (index < kMaxExtraOptions && index < usage.extras.size()) {
     Descriptor tempUsage = { usage.index,
                              usage.type,
                              usage.shortOption,
                              usage.longOption,
-                             nullptr,
-                             false,
-                             nullptr,
                              usage.enableBuildType,
                              usage.checkPolicy,
                              usage.help,
-                             usage.extras[index].exeName,
-                             { { nullptr, nullptr, nullptr, nullptr } } };
+                             usage.extras[index].c_str(),
+                             {} };
     if (usage.shortOption != nullptr) {
       InsertOption(std::string(usage.shortOption), tempUsage);
     }
@@ -67,7 +44,6 @@ void OptionParser::InsertExtraUsage(const Descriptor &usage) {
     index++;
   }
 }
-#endif
 
 void OptionParser::CreateNoOption(const Descriptor &usage) {
   std::string longOpt = "";
@@ -87,29 +63,58 @@ void OptionParser::CreateNoOption(const Descriptor &usage) {
                            kDisable, // Change to disable
                            (usage.shortOption != nullptr) ? shortOpt.c_str() : nullptr,
                            (usage.longOption != nullptr) ? longOpt.c_str() : nullptr,
-#ifdef OPTION_PARSER_EXTRAOPT
-                           nullptr,
-                           false,
-                           nullptr,
-#endif
                            usage.enableBuildType,
                            usage.checkPolicy,
                            usage.help,
-#ifdef OPTION_PARSER_EXTRAOPT
                            usage.exeName,
-                           usage.extras
-#endif
-  };
+                           usage.extras };
   if (usage.shortOption != nullptr) {
     InsertOption(shortOpt, tempUsage);
   }
   if (usage.longOption != nullptr) {
     InsertOption(longOpt, tempUsage);
   }
-#ifdef OPTION_PARSER_EXTRAOPT
   // Insert usage for extra options
   InsertExtraUsage(tempUsage);
-#endif
+}
+
+void OptionParser::RegisteUsages(MapleDriverOptionBase &base) {
+  for (auto &usage : base.GetUsageVec()) {
+    if (usage.help == nullptr) {
+      continue;
+    }
+    rawUsages.push_back(usage);
+    if (usage.shortOption != nullptr) {
+      InsertOption(std::string(usage.shortOption), usage);
+    }
+    if (usage.longOption != nullptr) {
+      InsertOption(std::string(usage.longOption), usage);
+    }
+    // Insert usage for extra options
+    InsertExtraUsage(usage);
+    // Add --no-opt for boolean option
+    if (usage.checkPolicy == kArgCheckPolicyBool) {
+      CreateNoOption(usage);
+    }
+  }
+}
+
+void OptionParser::RegisteUsages(const Descriptor usage[]) {
+  for (size_t i = 0; usage[i].help != nullptr; ++i) {
+    rawUsages.push_back(usage[i]);
+    if (usage[i].shortOption != nullptr) {
+      InsertOption(std::string(usage[i].shortOption), usage[i]);
+    }
+    if (usage[i].longOption != nullptr) {
+      InsertOption(std::string(usage[i].longOption), usage[i]);
+    }
+    // Insert usage for extra options
+    InsertExtraUsage(usage[i]);
+    // Add --no-opt for boolean option
+    if (usage[i].checkPolicy == kArgCheckPolicyBool) {
+      CreateNoOption(usage[i]);
+    }
+  }
 }
 
 void OptionParser::PrintUsage() const {
@@ -120,7 +125,6 @@ void OptionParser::PrintUsage() const {
   }
 }
 
-#ifdef OPTION_PARSER_EXTRAOPT
 void OptionParser::PrintUsage(const std::string &helpType) const {
   for (size_t i = 0; i < rawUsages.size(); ++i) {
     if (rawUsages[i].help != nullptr && rawUsages[i].IsEnabledForCurrentBuild() && rawUsages[i].exeName == helpType) {
@@ -128,17 +132,11 @@ void OptionParser::PrintUsage(const std::string &helpType) const {
     }
   }
 }
-#endif
 
-#ifdef OPTION_PARSER_EXTRAOPT
+
 bool OptionParser::HandleKeyValue(const std::string &key, const std::string &value, bool isValueEmpty,
                                   std::vector<mapleOption::Option> &inputOption, const std::string &exeName,
                                   bool isAllOption) {
-#else
-bool OptionParser::HandleKeyValue(const std::string &key, const std::string &value, bool isValueEmpty,
-                                  std::vector<mapleOption::Option> &inputOption, const std::string&,
-                                  bool isAllOption) {
-#endif
   if (key.empty()) {
     if (!isAllOption) {
       LogInfo::MapleLogger(kLlErr) << "Cannot recognize " << value << '\n';
@@ -149,12 +147,10 @@ bool OptionParser::HandleKeyValue(const std::string &key, const std::string &val
   }
   size_t count = usages.count(key);
   auto item = usages.find(key);
-#ifdef OPTION_PARSER_EXTRAOPT
   while (count > 0 && item->second.exeName != exeName) {
     ++item;
     --count;
   }
-#endif
   if (count == 0) {
     LogInfo::MapleLogger(kLlErr) << ("Unknown Option: " + key) << '\n';
     return false;
@@ -192,7 +188,6 @@ bool OptionParser::HandleKeyValue(const std::string &key, const std::string &val
   return true;
 }
 
-#ifdef OPTION_PARSER_EXTRAOPT
 bool OptionParser::SetOption(const std::string &rawKey, const std::string &value, const std::string &exeName,
                              std::vector<mapleOption::Option> &exeOption) {
   constexpr char kOptionMark = '-';
@@ -235,7 +230,6 @@ bool OptionParser::SetOption(const std::string &rawKey, const std::string &value
   exeOption.push_back(Option(item->second, key, value));
   return true;
 }
-#endif
 
 bool OptionParser::CheckOpt(const std::string option, std::string &lastKey,
                             bool &isLastMatch, std::vector<mapleOption::Option> &inputOption,
@@ -266,7 +260,7 @@ bool OptionParser::CheckOpt(const std::string option, std::string &lastKey,
 }
 
 ErrorCode OptionParser::HandleInputArgs(const std::vector<std::string> &inputArgs, const std::string &exeName,
-                                        std::vector<mapleOption::Option> &inputOption) {
+                                        std::vector<mapleOption::Option> &inputOption, bool isAllOption) {
   bool isLastMatchOpt = false;
   std::string lastKey = "";
   bool ret = true;
@@ -289,7 +283,6 @@ ErrorCode OptionParser::HandleInputArgs(const std::vector<std::string> &inputArg
       isMatchLongOpt = true;
     }
     std::string arg = inputArgs[i].substr(index);
-    bool isAllOption = (exeName == "all") ? true : false;
     bool isOptMatched = isMatchLongOpt || isMatchShortOpt;
     if (!isLastMatchOpt && isOptMatched) {
       ret = CheckOpt(arg, lastKey, isLastMatchOpt, inputOption, exeName);
@@ -313,17 +306,13 @@ ErrorCode OptionParser::HandleInputArgs(const std::vector<std::string> &inputArg
   return kErrorNoError;
 }
 
-ErrorCode OptionParser::Parse(int argc, char **argv) {
+ErrorCode OptionParser::Parse(int argc, char **argv, const std::string exeName) {
   if (argc > 0) {
     --argc;
     ++argv;  // skip program name argv[0] if present
   }
   if (argc == 0 || *argv == nullptr) {
-#ifdef OPTION_PARSER_EXTRAOPT
-    PrintUsage("all");
-#else
-    PrintUsage();
-#endif
+    PrintUsage(exeName);
     LogInfo::MapleLogger(kLlErr) << "No input files!" << '\n';
     return kErrorInitFail;
   }
@@ -334,6 +323,6 @@ ErrorCode OptionParser::Parse(int argc, char **argv) {
     ++argv;
     --argc;
   }
-  ErrorCode ret = HandleInputArgs(inputArgs, "all", options);
+  ErrorCode ret = HandleInputArgs(inputArgs, exeName, options, true);
   return ret;
 }

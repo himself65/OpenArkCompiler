@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -51,13 +51,9 @@ enum RunMode {
 
 class MplOption {
  public:
-  MplOption(const std::string &key, const std::string &value, const std::string &connectSymbol, bool isAppend,
-            const std::string &appendSplit, bool needRootPath = false)
+  MplOption(const std::string &key, const std::string &value, bool needRootPath = false)
       : key(key),
         value(value),
-        connectSymbol(connectSymbol),
-        isAppend(isAppend),
-        appendSplit(appendSplit),
         needRootPath(needRootPath) {
     CHECK_FATAL(!key.empty(), "MplOption got an empty key.");
   }
@@ -76,18 +72,6 @@ class MplOption {
     value = val;
   }
 
-  const std::string &GetconnectSymbol() const {
-    return connectSymbol;
-  }
-
-  bool GetIsAppend() const {
-    return isAppend;
-  }
-
-  const std::string &GetAppendSplit() const {
-    return appendSplit;
-  }
-
   bool GetNeedRootPath() const {
     return needRootPath;
   }
@@ -97,11 +81,6 @@ class MplOption {
   std::string key;
   // option value
   std::string value;
-  std::string connectSymbol;
-  // true --- append user option to default option with appendSplit.
-  // false --- override default option with user option.
-  bool isAppend;
-  std::string appendSplit;
   bool needRootPath;
 };
 
@@ -118,11 +97,6 @@ class MplOptions {
   ~MplOptions() = default;
 
   int Parse(int argc, char **argv);
-  std::string OptimizationLevelStr() const;
-
-  const std::map<std::string, std::vector<mapleOption::Option>> &GetOptions() const {
-    return options;
-  }
 
   const std::map<std::string, std::vector<mapleOption::Option>> &GetExeOptions() const {
     return exeOptions;

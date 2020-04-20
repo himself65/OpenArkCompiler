@@ -410,7 +410,7 @@ void MeFunction::Prepare(unsigned long rangeNum) {
   RemoveEhEdgesInSyncRegion();
   theCFG = memPool->New<MeCFG>(*this);
   theCFG->BuildMirCFG();
-  if (MeOption::optLevel > MeOption::kLevelZero) {
+  if (MeOption::optLevel > mapleOption::kLevelZero) {
     theCFG->FixMirCFG();
   }
   theCFG->VerifyLabels();

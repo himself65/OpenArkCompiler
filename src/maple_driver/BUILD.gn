@@ -55,12 +55,12 @@ executable("maple") {
     "src/mplcg_compiler.cpp",
   ]
 
-  cflags_cc += [ "-DOPTION_PARSER_EXTRAOPT" ]
 
   include_dirs = include_directories
 
   deps = [
-    ":liboption_parser_extra",
+    ":liboption_parser",
+    ":libdriver_option",
     "${MAPLEALL_ROOT}/huawei_secure_c:libHWSecureC",
     "${MAPLEALL_ROOT}/maple_be:libcg",
     "${MAPLEALL_ROOT}/maple_be:libmplad",
@@ -79,23 +79,16 @@ executable("maple") {
   ]
 }
 
-static_library("liboption_parser_extra") {
+static_library("libdriver_option") {
   sources = [
-    "src/option_parser.cpp",
-  ]
-
-  cflags_cc += [
-    "-DOPTION_PARSER_EXTRAOPT",
-    "-DOPTION_PARSER_DEBUG",
+    "src/driver_option_common.cpp",
   ]
 
   include_dirs = [
-    "${MAPLEALL_ROOT}/maple_util/include",
     "${MAPLEALL_ROOT}/maple_driver/include",
-    "${MAPLEALL_ROOT}/maple_ir/include",
-    "${MAPLEALL_ROOT}/mempool/include",
-    "${MAPLEALL_ROOT}/huawei_secure_c/include",
   ]
+
+  output_dir = "${root_out_dir}/lib/${HOST_ARCH}"
 }
 
 static_library("liboption_parser") {

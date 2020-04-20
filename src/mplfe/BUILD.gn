@@ -89,6 +89,7 @@ executable("mplfe") {
     "${MAPLEALL_ROOT}/huawei_secure_c:libHWSecureC",
     "${MAPLEALL_ROOT}/maple_ir:libmplir",
     "${MAPLEALL_ROOT}/mpl2mpl:libmpl2mpl",
+    "${MAPLEALL_ROOT}/maple_driver:libdriver_option",
   ]
   libs = [
     "${OPENSOURCE_DEPS}/libmempool.a",

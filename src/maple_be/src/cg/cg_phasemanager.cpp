@@ -207,7 +207,7 @@ void CgFuncPhaseManager::Run(CGFunc &func) {
 }
 
 void CgFuncPhaseManager::ClearPhaseNameInfo() {
-  for (auto it = PhaseSequenceBegin(); it != PhaseSequenceEnd(); it++) {
+  for (auto it = PhaseSequenceBegin(); it != PhaseSequenceEnd(); ++it) {
     PhaseID id = GetPhaseId(it);
     FuncPhase *funcPhase = static_cast<FuncPhase*>(GetPhase(id));
     if (funcPhase == nullptr) {

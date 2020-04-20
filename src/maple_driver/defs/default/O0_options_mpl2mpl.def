@@ -12,8 +12,8 @@
  * FIT FOR A PARTICULAR PURPOSE.
  * See the Mulan PSL v1 for more details.
  */
-// option name, option value, option connect sysmbol, can append?, append spilter.
-{ "--quiet", "", "", false, "", false },
-{ "-regnativefunc", "", "", false, "", false },
-{ "--maplelinker", "", "", false, "", false },
-{ "--emitVtableImpl", "", "", false, "", false },
+// option name, option value, append maple root path?
+{ "--quiet", "", false },
+{ "-regnativefunc", "", false },
+{ "--maplelinker", "", false },
+{ "--emitVtableImpl", "", false },

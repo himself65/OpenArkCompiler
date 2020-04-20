@@ -62,14 +62,10 @@ std::string Compiler::MakeOption(const MplOptions &options) const {
   std::map<std::string, MplOption> finalOptions;
   std::map<std::string, MplOption> defaultOptions = MakeDefaultOptions(options);
   AppendDefaultOptions(finalOptions, defaultOptions);
-  auto userOption = options.GetOptions().find(GetBinName());
-  if (userOption != options.GetOptions().end()) {
-    AppendUserOptions(finalOptions, userOption->second);
-  }
   AppendExtraOptions(finalOptions, options.GetExtras());
   std::ostringstream strOption;
   for (const auto &finalOption : finalOptions) {
-    strOption << " " << finalOption.first << finalOption.second.GetconnectSymbol() << finalOption.second.GetValue();
+    strOption << " " << finalOption.first << " " << finalOption.second.GetValue();
     if (options.HasSetDebugFlag()) {
       LogInfo::MapleLogger() << Compiler::GetName() << " options: " << finalOption.first << " "
                              << finalOption.second.GetValue() << '\n';
@@ -89,17 +85,6 @@ void Compiler::AppendDefaultOptions(std::map<std::string, MplOption> &finalOptio
   }
 }
 
-void Compiler::AppendUserOptions(std::map<std::string, MplOption> &finalOptions,
-                                 const std::vector<Option> &userOptions) const {
-  const std::string &binName = GetBinName();
-  for (const auto &userOption : userOptions) {
-    auto extra = userOption.FindExtra(binName);
-    if (extra != nullptr) {
-      AppendOptions(finalOptions, extra->optionKey, userOption.Args(), userOption.ConnectSymbol(binName));
-    }
-  }
-}
-
 void Compiler::AppendExtraOptions(std::map<std::string, MplOption> &finalOptions,
                                   const std::map<std::string, std::vector<MplOption>> &extraOptions) const {
   const std::string &binName = GetBinName();
@@ -108,7 +93,7 @@ void Compiler::AppendExtraOptions(std::map<std::string, MplOption> &finalOptions
     return;
   }
   for (const auto &secondExtras : extras->second) {
-    AppendOptions(finalOptions, secondExtras.GetKey(), secondExtras.GetValue(), secondExtras.GetconnectSymbol());
+    AppendOptions(finalOptions, secondExtras.GetKey(), secondExtras.GetValue());
   }
 }
 
@@ -125,30 +110,13 @@ std::map<std::string, MplOption> Compiler::MakeDefaultOptions(const MplOptions &
 }
 
 void Compiler::AppendOptions(std::map<std::string, MplOption> &finalOptions, const std::string &key,
-                             const std::string &value, const std::string &connectSymbol) const {
+                             const std::string &value) const {
   auto finalOpt = finalOptions.find(key);
   if (finalOpt != finalOptions.end()) {
-    if (finalOpt->second.GetIsAppend()) {
-      std::string temp = finalOpt->second.GetValue() + finalOpt->second.GetAppendSplit() + value;
-      finalOpt->second.SetValue(temp);
-    } else {
-      finalOpt->second.SetValue(value);
-    }
+    finalOpt->second.SetValue(value);
   } else {
-    MplOption option(key, value, connectSymbol, false, "");
+    MplOption option(key, value);
     finalOptions.insert(make_pair(key, option));
   }
-}
-
-bool Compiler::CanAppendOptimization() const {
-  // there're some issues for passing -Ox to each component, let users determine self.
-  return false;
-}
-
-std::string Compiler::AppendOptimization(const MplOptions &options, const std::string &optionStr) const {
-  if (!CanAppendOptimization()) {
-    return optionStr;
-  }
-  return optionStr + " " + options.OptimizationLevelStr();
 }
 }  // namespace maple

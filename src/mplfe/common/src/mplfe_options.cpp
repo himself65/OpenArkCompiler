@@ -22,10 +22,10 @@
 #include "fe_file_type.h"
 
 namespace maple {
+using namespace mapleOption;
+
 enum OptionIndex : uint32 {
-  kUnknown,
-  kHelp,
-  kVersion,
+  kMplfeHelp = kCommonOptionEnd + 1,
   // input control options
   kInClass,
   kInJar,
@@ -62,129 +62,131 @@ const mapleOption::Descriptor kUsage[] = {
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyUnknown,
     "========================================\n"
     " Usage: mplfe [ options ] input1 input2 input3\n"
-    " options:" },
-  { static_cast<uint32>(kHelp), 0, "h", "help",
+    " options:", "mplfe", {} },
+  { static_cast<uint32>(kMplfeHelp), 0, "h", "help",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyNone,
-    "  -h, --help             : print usage and exit" },
+    "  -h, --help             : print usage and exit", "mplfe", {} },
   { static_cast<uint32>(kVersion), 0, "v", "version",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyNone,
-    "  -v, --version          : print version and exit" },
+    "  -v, --version          : print version and exit", "mplfe", {} },
 
   // input control options
   { static_cast<uint32>(kUnknown), 0, "", "",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyUnknown,
-    "========== Input Control Options ==========" },
+    "========== Input Control Options ==========", "mplfe", {} },
   { static_cast<uint32>(kInClass), 0, "", "in-class",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyRequired,
     "  --in-class file1.jar,file2.jar\n"
-    "                         : input class files" },
+    "                         : input class files", "mplfe", {} },
   { static_cast<uint32>(kInJar), 0, "", "in-jar",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyRequired,
     "  --in-jar file1.jar,file2.jar\n"
-    "                         : input jar files" },
+    "                         : input jar files", "mplfe", {} },
 
   // output control options
   { static_cast<uint32>(kUnknown), 0, "", "",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyUnknown,
-    "========== Output Control Options ==========" },
+    "========== Output Control Options ==========", "mplfe", {} },
   { static_cast<uint32>(kOutputPath), 0, "p", "output",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyRequired,
-    "  -p, --output            : output path" },
+    "  -p, --output            : output path", "mplfe", {} },
   { static_cast<uint32>(kOutputName), 0, "o", "output-name",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyRequired,
-    "  -o, --output-name       : output name" },
+    "  -o, --output-name       : output name", "mplfe", {} },
   { static_cast<uint32>(kGenMpltOnly), 0, "t", "",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyNone,
-    "  -t                     : generate mplt only" },
+    "  -t                     : generate mplt only", "mplfe", {} },
   { static_cast<uint32>(kGenAsciiMplt), 0, "", "asciimplt",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyNone,
-    "  --asciimplt            : generate mplt in ascii format" },
+    "  --asciimplt            : generate mplt in ascii format", "mplfe", {} },
   { static_cast<uint32>(kDumpInstComment), 0, "", "dump-inst-comment",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyNone,
-    "  --dump-inst-comment    : dump instruction comment" },
+    "  --dump-inst-comment    : dump instruction comment", "mplfe", {} },
 
   // debug info control options
   { static_cast<uint32>(kUnknown), 0, "", "",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyUnknown,
-    "========== Debug Info Control Options ==========" },
+    "========== Debug Info Control Options ==========", "mplfe", {} },
   { static_cast<uint32>(kDumpLevel), 0, "d", "dump-level",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyNumeric,
     "  -d, --dump-level xx    : debug info dump level\n"
     "                             [0] disable\n"
     "                             [1] dump simple info\n"
     "                             [2] dump detail info\n"
-    "                             [3] dump debug info" },
+    "                             [3] dump debug info", "mplfe", {} },
   { static_cast<uint32>(kDumpTime), 0, "", "dump-time",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyNone,
-    "  --dump-time            : dump time" },
+    "  --dump-time            : dump time", "mplfe", {} },
   { static_cast<uint32>(kDumpPhaseTime), 0, "", "dump-phase-time",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyNone,
-    "  --dump-phase-time      : dump total phase time" },
+    "  --dump-phase-time      : dump total phase time", "mplfe", {} },
   { static_cast<uint32>(kDumpPhaseTimeDetail), 0, "", "dump-phase-time-detail",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyNone,
     "  --dump-phase-time-detail"
-    "                         : dump phase time for each method" },
+    "                         : dump phase time for each method", "mplfe", {} },
   // java bytecode compile options
   { static_cast<uint32>(kUnknown), 0, "", "",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyUnknown,
-    "========== Java Bytecode Compile Options ==========" },
+    "========== Java Bytecode Compile Options ==========", "mplfe", {} },
   { static_cast<uint32>(kJavaStaticFieldName), 0, "", "java-staticfield-name",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyRequired,
     "  --java-staticfield-name\n"
     "                         : java static field name mode\n"
     "                             [notype]  all static fields have no types in names\n"
     "                             [alltype] all static fields have types in names\n"
-    "                             [smart]   only static fields in field-proguard class have types in names\n" },
+    "                             [smart]   only static fields in field-proguard class have types in names\n",
+    "mplfe", {} },
   { static_cast<uint32>(kJBCInfoUsePathName), 0, "", "jbc-info-use-pathname",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyNone,
     "  --jbc-info-use-pathname\n"
-    "                         : use JBC pathname in file info" },
+    "                         : use JBC pathname in file info", "mplfe", {} },
   { static_cast<uint32>(kDumpJBCStmt), 0, "", "dump-jbc-stmt",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyNone,
-    "  --dump-jbc-stmt        : dump JBC Stmt" },
+    "  --dump-jbc-stmt        : dump JBC Stmt", "mplfe", {} },
   { static_cast<uint32>(kDumpJBCBB), 0, "", "dump-jbc-bb",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyNone,
-    "  --dump-jbc-bb          : dump JBC BB" },
+    "  --dump-jbc-bb          : dump JBC BB", "mplfe", {} },
   { static_cast<uint32>(kDumpJBCAll), 0, "", "dump-jbc-all",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyNone,
-    "  --dump-jbc-all         : dump all JBC function" },
+    "  --dump-jbc-all         : dump all JBC function", "mplfe", {} },
   { static_cast<uint32>(kDumpJBCErrorOnly), 0, "", "dump-jbc-error-only",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyNone,
     "  --dump-jbc-error-only\n"
-    "                         : dump JBC functions with errors" },
+    "                         : dump JBC functions with errors", "mplfe", {} },
   { static_cast<uint32>(kDumpJBCFuncName), 0, "", "dump-jbc-funcname",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyRequired,
     "  --dump-jbc-funcname=name1,name2,...\n"
     "                         : dump JBC functions with specified names\n"
-    "                         : name format: ClassName;|MethodName|Signature" },
+    "                         : name format: ClassName;|MethodName|Signature", "mplfe", {} },
   // general stmt/bb/cfg debug options
   { static_cast<uint32>(kDumpGenCFGGraph), 0, "", "dump-general-cfg-graph",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyRequired,
     "  --dump-general-cfg-graph=graph.dot\n"
-    "                         : dump General CFG into graphviz dot file" },
+    "                         : dump General CFG into graphviz dot file", "mplfe", {} },
   { static_cast<uint32>(kEmitJBCLocalVarInfo), 0, "", "emit-jbc-localvar-info",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyNone,
     "  --emit-jbc-localvar-info\n"
-    "                         : emit jbc's LocalVar Info in mpl using comments" },
+    "                         : emit jbc's LocalVar Info in mpl using comments", "mplfe", {} },
   // multi-thread control
   { static_cast<uint32>(kUnknown), 0, "", "",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyUnknown,
-    "========== Multi-Thread Control Options ==========" },
+    "========== Multi-Thread Control Options ==========", "mplfe", {} },
   { static_cast<uint32>(kNThreads), 0, "", "np",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyRequired,
-    "  --np num               : number of threads" },
+    "  --np num               : number of threads", "mplfe", {} },
   { static_cast<uint32>(kDumpThreadTime), 0, "", "dump-thread-time",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyNone,
-    "  --dump-thread-time     : dump thread time in mpl schedular" },
+    "  --dump-thread-time     : dump thread time in mpl schedular", "mplfe", {} },
   { static_cast<uint32>(kReleaseAfterEmit), 0, "", "release-after-emit",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyNone,
-    "  --release-after-emit   : release temp memory after emit" },
-  { 0, 0, 0, 0, mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyNone, 0 }
+    "  --release-after-emit   : release temp memory after emit", "mplfe", {} },
+  { 0, 0, nullptr, nullptr, mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyNone, nullptr, "mplfe", {} }
 };
 
 MPLFEOptions MPLFEOptions::options;
 
 MPLFEOptions::MPLFEOptions() {
+  CreateUsages(kUsage);
   Init();
 }
 
@@ -195,7 +197,7 @@ void MPLFEOptions::Init() {
 }
 
 bool MPLFEOptions::InitFactory() {
-  RegisterFactoryFunction<OptionProcessFactory>(static_cast<uint32>(kHelp),
+  RegisterFactoryFunction<OptionProcessFactory>(static_cast<uint32>(kMplfeHelp),
                                                 &MPLFEOptions::ProcessHelp);
   RegisterFactoryFunction<OptionProcessFactory>(static_cast<uint32>(kVersion),
                                                 &MPLFEOptions::ProcessVersion);
@@ -258,18 +260,12 @@ bool MPLFEOptions::InitFactory() {
   return true;
 }
 
-bool MPLFEOptions::SolveArgs(int argc, char **argv) {
-  mapleOption::OptionParser optionParser(kUsage);
-  if (argc == 1) {
-    DumpUsage();
-    return false;
-  }
-  ErrorCode ret = optionParser.Parse(argc, argv);
-  if (ret != ErrorCode::kErrorNoError) {
-    DumpUsage();
-    return false;
-  }
-  for (const mapleOption::Option &opt : optionParser.GetOptions()) {
+bool MPLFEOptions::SolveOptions(const std::vector<mapleOption::Option> &opts, bool isDebug) {
+  for (const mapleOption::Option &opt : opts) {
+    if (isDebug) {
+      LogInfo::MapleLogger() << "mplfe options: " << opt.Index() << " " << opt.OptionKey() << " " <<
+                                opt.Args() << '\n';
+    }
     auto func = CreateProductFunction<OptionProcessFactory>(opt.Index());
     if (func != nullptr) {
       if (!func(this, opt)) {
@@ -277,6 +273,28 @@ bool MPLFEOptions::SolveArgs(int argc, char **argv) {
       }
     }
   }
+  return true;
+}
+
+bool MPLFEOptions::SolveArgs(int argc, char **argv) {
+  OptionParser optionParser;
+  optionParser.RegisteUsages(DriverOptionCommon::GetInstance());
+  optionParser.RegisteUsages(MPLFEOptions::GetInstance());
+  if (argc == 1) {
+    DumpUsage();
+    return false;
+  }
+  ErrorCode ret = optionParser.Parse(argc, argv, "mplfe");
+  if (ret != ErrorCode::kErrorNoError) {
+    DumpUsage();
+    return false;
+  }
+
+  bool result = SolveOptions(optionParser.GetOptions(), false);
+  if (!result) {
+    return result;
+  }
+
   if (optionParser.GetNonOptionsCount() >= 1) {
     const std::vector<std::string> &inputs = optionParser.GetNonOptions();
     ProcessInputFiles(inputs);

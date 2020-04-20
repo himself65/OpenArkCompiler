@@ -141,10 +141,6 @@ class DataInfo {
     }
   }
 
-  int32 GetInfoIndex(const uint32 bitNO) const {
-    return bitNO / kWordSize;
-  }
-
   MapleSet<uint32> GetBitsOfInfo() {
     MapleSet<uint32> wordRes(allocator.Adapter());
     wordRes.clear();

@@ -60,6 +60,792 @@ bool CGOptions::hotFix = false;
 bool CGOptions::genLongCalls = false;
 bool CGOptions::gcOnly = false;
 
+enum OptionIndex : uint64 {
+  kCGQuiet = kCommonOptionEnd + 1,
+  kPie,
+  kPic,
+  kVerbose,
+  kCGMapleLinker,
+  kCGHelp,
+  kCgen,
+  kCGNativeOpt,
+  kInsertCall,
+  kTrace,
+  kCGClassList,
+  kGenDef,
+  kGenGctib,
+  kCGBarrier,
+  kGenPrimorList,
+  kRaColor,
+  kConstFoldOpt,
+  kSuppressFinfo,
+  kEhList,
+  kObjMap,
+  kCGDumpcfg,
+  kCGDumpBefore,
+  kCGDumpAfter,
+  kCGTimePhases,
+  kCGDumpFunc,
+  kDebuggingInfo,
+  kStackGuard,
+  kDebugGenDwarf,
+  kDebugUseSrc,
+  kDebugUseMix,
+  kDebugAsmMix,
+  kProfilingInfo,
+  kProfileEnable,
+  kCGO0,
+  kCGO1,
+  kCGO2,
+  kProfileData,
+  kProepilogue,
+  kYieldPoing,
+  kLocalRc,
+  kCalleeCFI,
+  kCyclePatternList,
+  kDuplicateToDelPlt,
+  kInsertSoe,
+  kCheckArrayStore,
+  kPrintFunction,
+  kCGDumpPhases,
+  kCGSkipPhases,
+  kCGSkipFrom,
+  kCGSkipAfter,
+  kCGLazyBinding,
+  kCGHotFix,
+  kLongCalls,
+  kGcOnly,
+};
+
+const Descriptor kUsage[] = {
+  { kPie,
+    kEnable,
+    nullptr,
+    "pie",
+    kBuildTypeAll,
+    kArgCheckPolicyBool,
+    "  --pie                       \tGenerate position-independent executable\n",
+    "mplcg",
+    {} },
+  { kPic,
+    kEnable,
+    nullptr,
+    "fpic",
+    kBuildTypeAll,
+    kArgCheckPolicyBool,
+    "  --fpic                      \tGenerate position-independent shared library\n",
+    "mplcg",
+    {} },
+  { kVerbose,
+    kEnable,
+    nullptr,
+    "verbose-asm",
+    kBuildTypeAll,
+    kArgCheckPolicyBool,
+    "  --verbose-asm               \tAdd comments to asm output\n",
+    "mplcg",
+    {} },
+  { kCGMapleLinker,
+    kEnable,
+    nullptr,
+    "maplelinker",
+    kBuildTypeAll,
+    kArgCheckPolicyBool,
+    "  --maplelinker               \tGenerate the MapleLinker .s format\n",
+    "mplcg",
+    {} },
+      { kCGQuiet,
+    kEnable,
+    nullptr,
+    "quiet",
+    kBuildTypeAll,
+    kArgCheckPolicyBool,
+    "  --quiet                     \tBe quiet (don't output debug messages)\n",
+    "mplcg",
+    {} },
+  { kCGHelp,
+    0,
+    "h-mplcg",
+    "help-mplcg",
+    kBuildTypeAll,
+    kArgCheckPolicyOptional,
+    "  -h-mplcg --help-mplcg       \tPrint usage and exit.Available command names:\n"
+    "                              \tmplcg\n",
+    "all",
+    {} },
+  { kCgen,
+    kEnable,
+    nullptr,
+    "cg",
+    kBuildTypeAll,
+    kArgCheckPolicyBool,
+    "  --cg                        \tGenerate the output .s file\n",
+    "mplcg",
+    {} },
+  { kCGLazyBinding,
+    kEnable,
+    nullptr,
+    "lazy-binding",
+    kBuildTypeAll,
+    kArgCheckPolicyBool,
+    "  --lazy-binding              \tBind class symbols lazily[default off]\n",
+    "mplcg",
+    {} },
+  { kCGHotFix,
+    kEnable,
+    nullptr,
+    "hot-fix",
+    kBuildTypeAll,
+    kArgCheckPolicyBool,
+    "  --hot-fix                   \tOpen for App hot fix[default off]\n",
+    "mplcg",
+    {} },
+  { kCGNativeOpt,
+    kEnable,
+    nullptr,
+    "nativeopt",
+    kBuildTypeAll,
+    kArgCheckPolicyBool,
+    "  --nativeopt                 \tEnable native opt\n",
+    "mplcg",
+    {} },
+  { kObjMap,
+    kEnable,
+    nullptr,
+    "objmap",
+    kBuildTypeAll,
+    kArgCheckPolicyBool,
+    "  --objmap                    \tCreate object maps (GCTIBs) inside the main output (.s) file\n",
+    "mplcg",
+    {} },
+  { kYieldPoing,
+    kEnable,
+    nullptr,
+    "yieldpoint",
+    kBuildTypeAll,
+    kArgCheckPolicyBool,
+    "  --yieldpoint                \tGenerate yieldpoints [default]\n",
+    "mplcg",
+    {} },
+  { kProepilogue,
+    kEnable,
+    nullptr,
+    "proepilogue",
+    kBuildTypeAll,
+    kArgCheckPolicyBool,
+    "  --proepilogue               \tDo tail call optimization and eliminate unnecessary prologue and epilogue.\n",
+    "mplcg",
+    {} },
+  { kLocalRc,
+    kEnable,
+    nullptr,
+    "local-rc",
+    kBuildTypeAll,
+    kArgCheckPolicyBool,
+    "  --local-rc                  \tHandle Local Stack RC [default]\n",
+    "mplcg",
+    {} },
+  { kInsertCall,
+    0,
+    nullptr,
+    "insert-call",
+    kBuildTypeAll,
+    kArgCheckPolicyRequired,
+    "  --insert-call=name          \tInsert a call to the named function\n",
+    "mplcg",
+    {} },
+  { kTrace,
+    0,
+    nullptr,
+    "add-debug-trace",
+    kBuildTypeAll,
+    kArgCheckPolicyNone,
+    "  --add-debug-trace           \tInstrument the output .s file to print call traces at runtime\n",
+    "mplcg",
+    {} },
+  { kCGClassList,
+    0,
+    nullptr,
+    "class-list-file",
+    kBuildTypeAll,
+    kArgCheckPolicyRequired,
+    "  --class-list-file           \tSet the class list file for the following generation options,\n"
+    "                              \tif not given, generate for all visible classes\n"
+    "                              \t--class-list-file=class_list_file\n",
+    "mplcg",
+    {} },
+  { kGenDef,
+    kEnable,
+    nullptr,
+    "gen-c-macro-def",
+    kBuildTypeAll,
+    kArgCheckPolicyBool,
+    "  --gen-c-macro-def           \tGenerate a .def file that contains extra type metadata, including the\n"
+    "                              \tclass instance sizes and field offsets (default)\n",
+    "mplcg",
+    {} },
+  { kGenGctib,
+    kEnable,
+    nullptr,
+    "gen-gctib-file",
+    kBuildTypeAll,
+    kArgCheckPolicyBool,
+    "  --gen-gctib-file            \tGenerate a separate .s file for GCTIBs. Usually used together with\n"
+    "                              \t--no-objmap (not implemented yet)\n",
+    "mplcg",
+    {} },
+  { kStackGuard,
+    kEnable,
+    nullptr,
+    "stackguard",
+    kBuildTypeAll,
+    kArgCheckPolicyBool,
+    "  -stackguard                 \tadd stack guard\n",
+    "mplcg",
+    {} },
+  { kDebuggingInfo,
+    0,
+    "g",
+    nullptr,
+    kBuildTypeAll,
+    kArgCheckPolicyNone,
+    "  -g                          \tGenerate debug information\n",
+    "mplcg",
+    {} },
+  { kDebugGenDwarf,
+    0,
+    nullptr,
+    "gdwarf",
+    kBuildTypeAll,
+    kArgCheckPolicyNone,
+    "  --gdwarf                    \tGenerate dwarf infomation\n",
+    "mplcg",
+    {} },
+  { kDebugUseSrc,
+    0,
+    nullptr,
+    "gsrc",
+    kBuildTypeAll,
+    kArgCheckPolicyNone,
+    "  --gsrc                      \tUse original source file instead of mpl file for debugging\n",
+    "mplcg",
+    {} },
+  { kDebugUseMix,
+    0,
+    nullptr,
+    "gmixedsrc",
+    kBuildTypeAll,
+    kArgCheckPolicyNone,
+    "  --gmixedsrc                 \tUse both original source file and mpl file for debugging\n",
+    "mplcg",
+    {} },
+  { kDebugAsmMix,
+    0,
+    nullptr,
+    "gmixedasm",
+    kBuildTypeAll,
+    kArgCheckPolicyNone,
+    "  --gmixedasm                 \tComment out both original source file and mpl file for debugging\n",
+    "mplcg",
+    {} },
+  { kRaColor,
+    0,
+    nullptr,
+    "with-ra-graph-color",
+    kBuildTypeAll,
+    kArgCheckPolicyNone,
+    "  --with-ra-graph-color       \tDo coloring-based register allocation\n",
+    "mplcg",
+    {} },
+  { kConstFoldOpt,
+    0,
+    nullptr,
+    "const-fold",
+    kBuildTypeAll,
+    kArgCheckPolicyNone,
+    "  --const-fold                \tEnable constant folding\n",
+    "mplcg",
+    {} },
+  { kEhList,
+    0,
+    nullptr,
+    "eh-exclusive-list",
+    kBuildTypeAll,
+    kArgCheckPolicyRequired,
+    "  --eh-exclusive-list         \tFor generating gold files in unit testing\n"
+    "                              \t--eh-exclusive-list=list_file\n",
+    "mplcg",
+    {} },
+  { kCGO0,
+    0,
+    nullptr,
+    "O0",
+    kBuildTypeAll,
+    kArgCheckPolicyNone,
+    "  -O0                         \tNo optimization.\n",
+    "mplcg",
+    {} },
+  { kCGO1,
+    0,
+    nullptr,
+    "O1",
+    kBuildTypeAll,
+    kArgCheckPolicyOptional,
+    "  -O1                         \tDo some optimization.\n",
+    "mplcg",
+    {} },
+  { kCGO2,
+    0,
+    nullptr,
+    "O2",
+    kBuildTypeAll,
+    kArgCheckPolicyOptional,
+    "  -O2                          \tDo some optimization.\n",
+    "mplcg",
+    {} },
+  { kSuppressFinfo,
+    0,
+    nullptr,
+    "suppress-fileinfo",
+    kBuildTypeAll,
+    kArgCheckPolicyNone,
+    "  --suppress-fileinfo         \tFor generating gold files in unit testing\n",
+    "mplcg",
+    {} },
+  { kCGDumpcfg,
+    0,
+    nullptr,
+    "dump-cfg",
+    kBuildTypeAll,
+    kArgCheckPolicyNone,
+    "  --dump-cfg\n",
+    "mplcg",
+    {} },
+  { kCGDumpPhases,
+    0,
+    nullptr,
+    "dump-phases",
+    kBuildTypeAll,
+    kArgCheckPolicyRequired,
+    "  --dump-phases=PHASENAME,... \tEnable debug trace for specified phases in the comma separated list\n",
+    "mplcg",
+    {} },
+  { kCGSkipPhases,
+    0,
+    nullptr,
+    "skip-phases",
+    kBuildTypeAll,
+    kArgCheckPolicyRequired,
+    "  --skip-phases=PHASENAME,... \tSkip the phases specified in the comma separated list\n",
+    "mplcg",
+    {} },
+  { kCGSkipFrom,
+    0,
+    nullptr,
+    "skip-from",
+    kBuildTypeAll,
+    kArgCheckPolicyRequired,
+    "  --skip-from=PHASENAME       \tSkip the rest phases from PHASENAME(included)\n",
+    "mplcg",
+    {} },
+  { kCGSkipAfter,
+    0,
+    nullptr,
+    "skip-after",
+    kBuildTypeAll,
+    kArgCheckPolicyRequired,
+    "  --skip-after=PHASENAME      \tSkip the rest phases after PHASENAME(excluded)\n",
+    "mplcg",
+    {} },
+  { kCGDumpFunc,
+    0,
+    nullptr,
+    "dump-func",
+    kBuildTypeAll,
+    kArgCheckPolicyRequired,
+    "  --dump-func=FUNCNAME        \tDump/trace only for functions whose names contain FUNCNAME as substring\n"
+    "                              \t(can only specify once)\n",
+    "mplcg",
+    {} },
+  { kCGDumpBefore,
+    kEnable,
+    nullptr,
+    "dump-before",
+    kBuildTypeAll,
+    kArgCheckPolicyBool,
+    "  --dump-before               \tDo extra IR dump before the specified phase\n"
+    "  --no-dump-before            \tDon't extra IR dump before the specified phase\n",
+    "mplcg",
+    {} },
+  { kCGDumpAfter,
+    kEnable,
+    nullptr,
+    "dump-after",
+    kBuildTypeAll,
+    kArgCheckPolicyBool,
+    "  --dump-after                \tDo extra IR dump after the specified phase\n"
+    "  --no-dump-after             \tDon't extra IR dump after the specified phase\n",
+    "mplcg",
+    {} },
+  { kCGTimePhases,
+    kEnable,
+    nullptr,
+    "time-phases",
+    kBuildTypeAll,
+    kArgCheckPolicyBool,
+    "  --time-phases               \tCollect compilation time stats for each phase\n"
+    "  --no-time-phases            \tDon't Collect compilation time stats for each phase\n",
+    "mplcg",
+    {} },
+  { kCGBarrier,
+    kEnable,
+    nullptr,
+    "use-barriers-for-volatile",
+    kBuildTypeAll,
+    kArgCheckPolicyBool,
+    "  --use-barriers-for-volatile \tOptimize volatile load/str\n"
+    "  --no-use-barriers-for-volatile\n",
+    "mplcg",
+    {} },
+  { kCalleeCFI,
+    kEnable,
+    nullptr,
+    "callee-cfi",
+    kBuildTypeAll,
+    kArgCheckPolicyBool,
+    "  --callee-cfi                \tcallee cfi message will be generated\n"
+    "  --no-callee-cfi             \tcallee cfi message will not be generated\n",
+    "mplcg",
+    {} },
+  { kPrintFunction,
+    kEnable,
+    nullptr,
+    "print-func",
+    kBuildTypeAll,
+    kArgCheckPolicyBool,
+    "  --print-func\n"
+    "  --no-print-func\n",
+    "mplcg",
+    {} },
+  { kCyclePatternList,
+    0,
+    nullptr,
+    "cycle-pattern-list",
+    kBuildTypeAll,
+    kArgCheckPolicyRequired,
+    "  --cycle-pattern-list        \tFor generating cycle pattern meta\n"
+    "                              \t--cycle-pattern-list=list_file\n",
+    "mplcg",
+    {} },
+  { kDuplicateToDelPlt,
+    0,
+    nullptr,
+    "duplicate_asm_list",
+    kBuildTypeAll,
+    kArgCheckPolicyRequired,
+    "  --duplicate_asm_list        \tDuplicate asm functions to delete plt call\n"
+    "                              \t--duplicate_asm_list=list_file\n",
+    "mplcg",
+    {} },
+  { kInsertSoe,
+    0,
+    nullptr,
+    "soe-check",
+    kBuildTypeAll,
+    kArgCheckPolicyNone,
+    "  --soe-check                 \tInsert a soe check instruction[default off]\n",
+    "mplcg",
+    {} },
+  { kCheckArrayStore,
+    kEnable,
+    nullptr,
+    "check-arraystore",
+    kBuildTypeAll,
+    kArgCheckPolicyBool,
+    "  --check-arraystore          \tcheck arraystore exception[default off]\n",
+    "mplcg",
+    {} },
+  { kLongCalls,
+    kEnable,
+    nullptr,
+    "long-calls",
+    kBuildTypeAll,
+    kArgCheckPolicyBool,
+    "  --long-calls                  \tgenerate long call\n",
+    "mplcg",
+    {} },
+  { kGcOnly,
+    kEnable,
+    nullptr,
+    "gconly",
+    kBuildTypeAll,
+    kArgCheckPolicyBool,
+    "  --gconly                     \tEnable GCONLY, generate code without RC\n",
+    "mplcg",
+    {} },
+// End
+  { kUnknown,
+    0,
+    nullptr,
+    nullptr,
+    kBuildTypeAll,
+    kArgCheckPolicyNone,
+    nullptr,
+    "mplcg",
+    {} }
+};
+
+CGOptions &CGOptions::GetInstance() {
+  static CGOptions instance;
+  return instance;
+}
+
+CGOptions::CGOptions() {
+  CreateUsages(kUsage);
+}
+
+void CGOptions::DecideMplcgRealLevel(const std::vector<mapleOption::Option> &inputOptions, bool isDebug) {
+  int realLevel = -1;
+  for (const mapleOption::Option &opt : inputOptions) {
+    switch (opt.Index()) {
+      case kCGO0:
+        realLevel = CGOptions::kLevel0;
+        break;
+      case kCGO1:
+        realLevel = CGOptions::kLevel1;
+        break;
+      case kCGO2:
+        realLevel = CGOptions::kLevel2;
+        break;
+      default:
+        break;
+    }
+  }
+  if (isDebug) {
+    LogInfo::MapleLogger() << "Real Mplcg level:" << std::to_string(realLevel) << "\n";
+  }
+  if (realLevel ==  CGOptions::kLevel0) {
+    EnableO0();
+  } else if (realLevel ==  CGOptions::kLevel1) {
+    EnableO1();
+  } else if (realLevel ==  CGOptions::kLevel2) {
+    EnableO2();
+  }
+}
+
+bool CGOptions::SolveOptions(const std::vector<Option> &opts, bool isDebug) {
+  DecideMplcgRealLevel(opts, isDebug);
+  for (const mapleOption::Option &opt : opts) {
+    if (isDebug) {
+      LogInfo::MapleLogger() << "mplcg options: "  << opt.Index() << " " << opt.OptionKey() << " " <<
+                                opt.Args() << '\n';
+    }
+    switch (opt.Index()) {
+      case kCGQuiet:
+        SetQuiet((opt.Type() == kEnable));
+        break;
+      case kPie:
+        (opt.Type() == kEnable) ? SetOption(CGOptions::kGenPie)
+                                : ClearOption(CGOptions::kGenPie);
+        break;
+      case kPic: {
+        if (opt.Type() == kEnable) {
+          EnablePIC();
+          SetOption(CGOptions::kGenPic);
+        } else {
+          DisablePIC();
+          ClearOption(CGOptions::kGenPic);
+        }
+        break;
+      }
+      case kVerbose:
+        (opt.Type() == kEnable) ? SetOption(CGOptions::kVerboseAsm)
+                                : ClearOption(CGOptions::kVerboseAsm);
+        break;
+      case kCGMapleLinker:
+        (opt.Type() == kEnable) ? EnableMapleLinker() : DisableMapleLinker();
+        break;
+      case kCGBarrier:
+        (opt.Type() == kEnable) ? EnableBarriersForVolatile() : DisableBarriersForVolatile();
+        break;
+      case kCGDumpBefore:
+        (opt.Type() == kEnable) ? EnableDumpBefore() : DisableDumpBefore();
+        break;
+      case kCGDumpAfter:
+        (opt.Type() == kEnable) ? EnableDumpAfter() : DisableDumpAfter();
+        break;
+      case kCGTimePhases:
+        (opt.Type() == kEnable) ? EnableTimePhases() : DisableTimePhases();
+        break;
+      case kCGDumpFunc:
+        SetDumpFunc(opt.Args());
+        break;
+      case kDuplicateToDelPlt:
+        SetDuplicateAsmFile(opt.Args());
+        break;
+      case kInsertCall:
+        SetInstrumentationFunction(opt.Args());
+        SetInsertCall(true);
+        break;
+      case kStackGuard:
+        SetOption(kUseStackGuard);
+        break;
+      case kDebuggingInfo:
+        SetOption(kDebugFriendly);
+        SetOption(kWithLoc);
+        ClearOption(kSuppressFileInfo);
+        break;
+      case kDebugGenDwarf:
+        SetOption(kDebugFriendly);
+        SetOption(kWithLoc);
+        SetOption(kWithDwarf);
+        SetParserOption(kWithDbgInfo);
+        ClearOption(kSuppressFileInfo);
+        EnableWithDwarf();
+        break;
+      case kDebugUseSrc:
+        SetOption(kDebugFriendly);
+        SetOption(kWithLoc);
+        SetOption(kWithSrc);
+        ClearOption(kWithMpl);
+        break;
+      case kDebugUseMix:
+        SetOption(kDebugFriendly);
+        SetOption(kWithLoc);
+        SetOption(kWithSrc);
+        SetOption(kWithMpl);
+        break;
+      case kDebugAsmMix:
+        SetOption(kDebugFriendly);
+        SetOption(kWithLoc);
+        SetOption(kWithSrc);
+        SetOption(kWithMpl);
+        SetOption(kWithAsm);
+        break;
+      case kProfilingInfo:
+        SetOption(kWithProfileCode);
+        SetParserOption(kWithProfileInfo);
+        break;
+      case kRaColor:
+        SetOption(kDoColorRegAlloc);
+        ClearOption(kDoLinearScanRegAlloc);
+        break;
+      case kPrintFunction:
+        (opt.Type() == kEnable) ? EnablePrintFunction() : DisablePrintFunction();
+        break;
+      case kTrace:
+        SetOption(kAddDebugTrace);
+        break;
+      case kProfileEnable:
+        SetOption(kAddFuncProfile);
+        break;
+      case kSuppressFinfo:
+        SetOption(kSuppressFileInfo);
+        break;
+      case kConstFoldOpt:
+        SetOption(kConstFold);
+        break;
+      case kCGDumpcfg:
+        SetOption(kDumpCFG);
+        break;
+      case kCGClassList:
+        SetClassListFile(opt.Args());
+        break;
+      case kGenDef:
+        SetOrClear(GetGenerateFlags(), CGOptions::kCMacroDef, opt.Type());
+        break;
+      case kGenGctib:
+        SetOrClear(GetGenerateFlags(), CGOptions::kGctib, opt.Type());
+        break;
+      case kGenPrimorList:
+        SetOrClear(GetGenerateFlags(), CGOptions::kPrimorList, opt.Type());
+        break;
+      case kYieldPoing:
+        SetOrClear(GetGenerateFlags(), CGOptions::kGenYieldPoint, opt.Type());
+        break;
+      case kLocalRc:
+        SetOrClear(GetGenerateFlags(), CGOptions::kGenLocalRc, opt.Type());
+        break;
+      case kEhList: {
+        const std::string &ehList = opt.Args();
+        SetEHExclusiveFile(ehList);
+        EnableExclusiveEH();
+        ParseExclusiveFunc(ehList);
+        break;
+      }
+      case kCyclePatternList: {
+        const std::string &patternList = opt.Args();
+        SetCyclePatternFile(patternList);
+        EnableEmitCyclePattern();
+        ParseCyclePattern(patternList);
+        break;
+      }
+      case kCgen: {
+        bool cgFlag = (opt.Type() == kEnable);
+        SetRunCGFlag(cgFlag);
+        cgFlag ? SetOption(CGOptions::kDoCg) : ClearOption(CGOptions::kDoCg);
+        break;
+      }
+      case kObjMap:
+        SetGenerateObjectMap(opt.Type() == kEnable);
+        break;
+      case kCGLazyBinding:
+        (opt.Type() == kEnable) ? EnableLazyBinding() : DisableLazyBinding();
+        break;
+      case kCGHotFix:
+        (opt.Type() == kEnable) ? EnableHotFix() : DisableHotFix();
+        break;
+      case kInsertSoe:
+        SetOption(CGOptions::kSoeCheckInsert);
+        break;
+      case kCheckArrayStore:
+        (opt.Type() == kEnable) ? EnableCheckArrayStore() : DisableCheckArrayStore();
+        break;
+      case kCGNativeOpt:
+        DisableNativeOpt();
+        break;
+      case kCalleeCFI:
+        (opt.Type() == kEnable) ? DisableNoCalleeCFI() : EnableNoCalleeCFI();
+        break;
+      case kProepilogue:
+        (opt.Type() == kEnable) ? SetOption(CGOptions::kProEpilogueOpt)
+                                : ClearOption(CGOptions::kProEpilogueOpt);
+        break;
+      case kCGO0:
+        // Already handled above in DecideMplcgRealLevel
+        break;
+      case kCGO1:
+        // Already handled above in DecideMplcgRealLevel
+        break;
+      case kCGO2:
+        // Already handled above in DecideMplcgRealLevel
+        break;
+      case kCGDumpPhases:
+        SplitPhases(opt.Args(), GetDumpPhases());
+        break;
+      case kCGSkipPhases:
+        SplitPhases(opt.Args(), GetSkipPhases());
+        break;
+      case kCGSkipFrom:
+        SetSkipFrom(opt.Args());
+        break;
+      case kCGSkipAfter:
+        SetSkipAfter(opt.Args());
+        break;
+      case kLongCalls:
+        (opt.Type() == kEnable) ? EnableLongCalls() : DisableLongCalls();
+        break;
+      case kGcOnly:
+        (opt.Type() == kEnable) ? EnableGCOnly() : DisableGCOnly();
+        break;
+      default:
+        WARN(kLncWarn, "input invalid key for mplcg " + opt.OptionKey());
+        break;
+    }
+  }
+  return true;
+}
+
 void CGOptions::ParseExclusiveFunc(const std::string &fileName) {
   std::ifstream file(fileName);
   if (!file.is_open()) {

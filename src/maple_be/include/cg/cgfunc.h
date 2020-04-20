@@ -243,9 +243,7 @@ class CGFunc {
   virtual Operand *GetTrueOpnd() {
     return nullptr;
   }
-  virtual void ClearUnreachableGotInfos(BB &bb) {
-    return;
-  }
+  virtual void ClearUnreachableGotInfos(BB &bb) {};
   LabelIdx CreateLabel();
 
   virtual Operand &CreateFPImmZero(PrimType primType) = 0;
