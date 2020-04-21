@@ -21,8 +21,10 @@
 namespace mapleOption {
 enum BuildType {
   kBuildTypeAll,
+  kBuildTypeProduct,
   kBuildTypeDebug,
-  kBuildTypeRelease
+  kBuildTypeRelease,
+  kBuildTypeExperimental
 };
 
 enum ArgCheckPolicy {
@@ -70,7 +72,7 @@ struct Descriptor {
       case BuildType::kBuildTypeDebug:
         return true;
       case BuildType::kBuildTypeRelease:
-        return false;
+        return true;
       default:
         // should never reach
         return true;

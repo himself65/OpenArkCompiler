@@ -834,6 +834,7 @@ void CGFunc::GenerateCfiPrologEpilog() {
     firstBB->AppendInsn(ipoint);
   }
 
+#if !defined(TARGARM32)
   /*
    * always generate ".cfi_personality 155, DW.ref.__mpl_personality_v0" for Java methods.
    * we depend on this to tell whether it is a java method.
@@ -844,6 +845,8 @@ void CGFunc::GenerateCfiPrologEpilog() {
                                                                 CreateCfiStrOperand("DW.ref.__mpl_personality_v0"));
     firstBB->InsertInsnAfter(ipoint, personality);
   }
+#endif
+
   /* epilog */
   lastBB->AppendInsn(GetCG()->BuildInstruction<cfi::CfiInsn>(cfi::OP_CFI_endproc));
 }

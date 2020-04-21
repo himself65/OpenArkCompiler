@@ -71,6 +71,8 @@ class MeOption : public MapleDriverOptionBase {
   static uint32 lprePULimit;
   static uint32 pregRenameLimit;
   static uint32 delRcPULimit;
+  static uint32 profileBBHotRate;
+  static uint32 profileBBColdRate;
   static bool ignoreIPA;
   static bool epreIncludeRef;
   static bool epreLocalRefVar;

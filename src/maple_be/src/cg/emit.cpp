@@ -62,7 +62,7 @@ using namespace maple;
 using namespace cfi;
 
 void Emitter::EmitLabelRef(const std::string &name, LabelIdx labIdx) {
-  outStream << ".Label." << name << labIdx;
+  outStream << ".Label." << name << "." << labIdx;
 }
 
 void Emitter::EmitStmtLabel(const std::string &name, LabelIdx labIdx) {
@@ -72,8 +72,8 @@ void Emitter::EmitStmtLabel(const std::string &name, LabelIdx labIdx) {
 
 void Emitter::EmitLabelPair(const std::string &name, const LabelPair &pairLabel) {
   ASSERT(pairLabel.GetEndOffset() || pairLabel.GetStartOffset(), "NYI");
-  outStream << ".Label." << name << pairLabel.GetEndOffset()->GetLabelIdx() << " - "
-            << ".Label." << name << pairLabel.GetStartOffset()->GetLabelIdx() << "\n";
+  outStream << ".Label." << name << "." << pairLabel.GetEndOffset()->GetLabelIdx() << " - "
+            << ".Label." << name << "." << pairLabel.GetStartOffset()->GetLabelIdx() << "\n";
 }
 
 AsmLabel Emitter::GetTypeAsmInfoName(PrimType primType) const {
@@ -2017,8 +2017,11 @@ void Emitter::EmitGlobalVariable() {
   EmitMetaDataSymbolWithMarkFlag(fieldOffsetDatas, strIdx2Type, kFieldOffsetDataPrefixStr, sectionNameIsEmpty, false);
   /* method address rw */
   EmitMetaDataSymbolWithMarkFlag(methodAddrDatas, strIdx2Type, kMethodAddrDataPrefixStr, sectionNameIsEmpty, false);
+
+#if !defined(TARGARM32)
   /* finally emit __gxx_personality_v0 DW.ref */
   EmitDWRef("__mpl_personality_v0");
+#endif
 }
 void Emitter::EmitAddressString(const std::string &address) {
 #if TARGAARCH64
@@ -2287,7 +2290,7 @@ void ImmOperand::Dump() const {
 
 void LabelOperand::Emit(Emitter &emitter, const OpndProp *opndProp) const {
   (void)opndProp;
-  emitter.Emit(".Label.").Emit(parentFunc).Emit(labelIndex);
+  emitter.Emit(".Label.").Emit(parentFunc).Emit(".").Emit(labelIndex);
 }
 
 void LabelOperand::Dump() const {

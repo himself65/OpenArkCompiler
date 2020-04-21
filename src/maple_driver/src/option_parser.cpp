@@ -117,17 +117,12 @@ void OptionParser::RegisteUsages(const Descriptor usage[]) {
   }
 }
 
-void OptionParser::PrintUsage() const {
-  for (size_t i = 0; i < rawUsages.size(); ++i) {
-    if (rawUsages[i].help != nullptr && rawUsages[i].IsEnabledForCurrentBuild()) {
-      LogInfo::MapleLogger() << rawUsages[i].help << '\n';
-    }
-  }
-}
-
-void OptionParser::PrintUsage(const std::string &helpType) const {
+void OptionParser::PrintUsage(const std::string &helpType, const unsigned int helpLevel) const {
   for (size_t i = 0; i < rawUsages.size(); ++i) {
     if (rawUsages[i].help != nullptr && rawUsages[i].IsEnabledForCurrentBuild() && rawUsages[i].exeName == helpType) {
+      if (helpLevel != kBuildTypeAll && rawUsages[i].enableBuildType != helpLevel) {
+        continue;
+      }
       LogInfo::MapleLogger() << rawUsages[i].help << '\n';
     }
   }
