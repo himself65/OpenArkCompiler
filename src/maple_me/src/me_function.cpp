@@ -387,6 +387,7 @@ void MeFunction::CreateBasicBlocks() {
     lastBB->SetKindReturn();
   } else if (lastBB->GetKind() == kBBUnknown) {
     lastBB->SetKindReturn();
+    lastBB->SetAttributes(kBBAttrIsExit);
   }
 }
 

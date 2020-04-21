@@ -50,6 +50,8 @@ uint32 MeOption::eprePULimit = UINT32_MAX;
 uint32 MeOption::lpreLimit = UINT32_MAX;
 uint32 MeOption::lprePULimit = UINT32_MAX;
 uint32 MeOption::pregRenameLimit = UINT32_MAX;
+uint32 MeOption::profileBBHotRate = 10;
+uint32 MeOption::profileBBColdRate = 99;
 bool MeOption::noDelegateRC = false;
 bool MeOption::noCondBasedRC = false;
 bool MeOption::clinitPre = true;
@@ -94,6 +96,8 @@ enum OptionIndex {
   kLprepulLimit,
   kPregreNameLimit,
   kDelrcpuLimit,
+  kProfileBBHotRate,
+  kProfileBBColdRate,
   kEpreIncludeRef,
   kNoEpreIncludeRef,
   kEpreLocalRefVar,
@@ -127,7 +131,7 @@ const Descriptor kUsage[] = {
     0,
     nullptr,
     "O1",
-    kBuildTypeAll,
+    kBuildTypeProduct,
     kArgCheckPolicyOptional,
     "  -O1                         \tDo some optimization.\n",
     "me",
@@ -136,7 +140,7 @@ const Descriptor kUsage[] = {
     0,
     nullptr,
     "O2",
-    kBuildTypeAll,
+    kBuildTypeProduct,
     kArgCheckPolicyOptional,
     "  -O2                         \tDo some optimization.\n",
     "me",
@@ -145,7 +149,7 @@ const Descriptor kUsage[] = {
     0,
     nullptr,
     "range",
-    kBuildTypeAll,
+    kBuildTypeDebug,
     kArgCheckPolicyRequired,
     "  --range                     \tOptimize only functions in the range [NUM0, NUM1]\n"
     "                              \t--range=NUM0,NUM1\n",
@@ -155,7 +159,7 @@ const Descriptor kUsage[] = {
     0,
     nullptr,
     "dump-phases",
-    kBuildTypeAll,
+    kBuildTypeDebug,
     kArgCheckPolicyRequired,
     "  --dump-phases               \tEnable debug trace for specified phases in the comma separated list\n"
     "                              \t--dump-phases=PHASENAME,...\n",
@@ -165,7 +169,7 @@ const Descriptor kUsage[] = {
     0,
     nullptr,
     "skip-phases",
-    kBuildTypeAll,
+    kBuildTypeDebug,
     kArgCheckPolicyRequired,
     "  --skip-phases               \tSkip the phases specified in the comma separated list\n"
     "                              \t--skip-phases=PHASENAME,...\n",
@@ -175,7 +179,7 @@ const Descriptor kUsage[] = {
     0,
     nullptr,
     "dump-func",
-    kBuildTypeAll,
+    kBuildTypeDebug,
     kArgCheckPolicyRequired,
     "  --dump-func                 \tDump/trace only for functions whose names contain FUNCNAME as substring\n"
     "                              \t(can only specify once)\n"
@@ -186,7 +190,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "quiet",
-    kBuildTypeAll,
+    kBuildTypeProduct,
     kArgCheckPolicyBool,
     "  --quiet                     \tDisable brief trace messages with phase/function names\n"
     "  --no-quiet                  \tEnable brief trace messages with phase/function names\n",
@@ -269,7 +273,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "dump-before",
-    kBuildTypeAll,
+    kBuildTypeDebug,
     kArgCheckPolicyBool,
     "  --dump-before               \tDo extra IR dump before the specified phase in me\n"
     "  --no-dump-before            \tDon't extra IR dump before the specified phase in me\n",
@@ -279,7 +283,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "dump-after",
-    kBuildTypeAll,
+    kBuildTypeDebug,
     kArgCheckPolicyBool,
     "  --dump-after                \tDo extra IR dump after the specified phase in me\n"
     "  --no-dump-after             \tDo not extra IR dump after the specified phase in me\n",
@@ -289,7 +293,7 @@ const Descriptor kUsage[] = {
     0,
     nullptr,
     "eprelimit",
-    kBuildTypeAll,
+    kBuildTypeDebug,
     kArgCheckPolicyRequired,
     "  --eprelimit                 \tApply EPRE optimization only for the first NUM expressions\n"
     "                              \t--eprelimit=NUM\n",
@@ -299,7 +303,7 @@ const Descriptor kUsage[] = {
     0,
     nullptr,
     "eprepulimit",
-    kBuildTypeAll,
+    kBuildTypeDebug,
     kArgCheckPolicyRequired,
     "  --eprepulimit               \tApply EPRE optimization only for the first NUM PUs\n"
     "                              \t--eprepulimit=NUM\n",
@@ -309,7 +313,7 @@ const Descriptor kUsage[] = {
     0,
     nullptr,
     "stmtprepulimit",
-    kBuildTypeAll,
+    kBuildTypeDebug,
     kArgCheckPolicyRequired,
     "  --stmtprepulimit            \tApply STMTPRE optimization only for the first NUM PUs\n"
     "                              \t--stmtprepulimit=NUM\n",
@@ -319,7 +323,7 @@ const Descriptor kUsage[] = {
     0,
     nullptr,
     "lprelimit",
-    kBuildTypeAll,
+    kBuildTypeDebug,
     kArgCheckPolicyRequired,
     "  --lprelimit                 \tApply LPRE optimization only for the first NUM variables\n"
     "                              \t--lprelimit=NUM\n",
@@ -329,7 +333,7 @@ const Descriptor kUsage[] = {
     0,
     nullptr,
     "lprepulimit",
-    kBuildTypeAll,
+    kBuildTypeDebug,
     kArgCheckPolicyRequired,
     "  --lprepulimit               \tApply LPRE optimization only for the first NUM PUs\n"
     "                              \t--lprepulimit=NUM\n",
@@ -353,6 +357,24 @@ const Descriptor kUsage[] = {
     kArgCheckPolicyRequired,
     "  --delrcpulimit              \tApply DELEGATERC optimization only for the first NUM PUs\n"
     "                              \t--delrcpulimit=NUM\n",
+    "me",
+    {} },
+  { kProfileBBHotRate,
+    0,
+    nullptr,
+    "profile-bb-hot-rate",
+    kBuildTypeAll,
+    kArgCheckPolicyRequired,
+    "  --profile-bb-hot-rate=10   \tA count is regarded as hot if it is in the largest 10%\n",
+    "me",
+    {} },
+  { kProfileBBColdRate,
+    0,
+    nullptr,
+    "profile-bb-cold-rate",
+    kBuildTypeAll,
+    kArgCheckPolicyRequired,
+    "  --profile-bb-cold-rate=99  \tA count is regarded as cold if it is in the smallest 1%\n",
     "me",
     {} },
   { kEpreIncludeRef,
@@ -571,6 +593,12 @@ bool MeOption::SolveOptions(const std::vector<mapleOption::Option> &opts, bool i
         break;
       case kDelrcpuLimit:
         delRcPULimit = std::stoul(opt.Args(), nullptr);
+        break;
+      case kProfileBBHotRate:
+        profileBBHotRate = std::stoul(opt.Args(), nullptr);
+        break;
+      case kProfileBBColdRate:
+        profileBBColdRate = std::stoul(opt.Args(), nullptr);
         break;
       case kEpreIncludeRef:
         epreIncludeRef = (opt.Type() == kEnable);

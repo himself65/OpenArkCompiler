@@ -25,6 +25,7 @@ enum DriverOptionIndex {
   kInMplt,
   kOptimization0,
   kOptimization2,
+  kGCOnly,
   kMplcgOpt,
   kMeOpt,
   kMpl2MplOpt,
@@ -35,6 +36,7 @@ enum DriverOptionIndex {
   kGenMeMpl,
   kGenVtableImpl,
   kAllDebug,
+  kHelpLevel,
   kCommonOptionEnd,
 };
 

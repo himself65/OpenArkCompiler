@@ -119,7 +119,7 @@ const Descriptor kUsage[] = {
     0,
     nullptr,
     "dump-phase",
-    kBuildTypeAll,
+    kBuildTypeDebug,
     kArgCheckPolicyRequired,
     "  --dump-phase                \tEnable debug trace for specified phase (can only specify once)\n"
     "                              \t--dump-phase=PHASENAME\n",
@@ -129,7 +129,7 @@ const Descriptor kUsage[] = {
     0,
     nullptr,
     "skip-phase",
-    kBuildTypeAll,
+    kBuildTypeProduct,
     kArgCheckPolicyRequired,
     "  --skip-phase                \tSkip the phase when adding it to phase manager\n"
     "                              \t--skip-phase=PHASENAME\n",
@@ -159,7 +159,7 @@ const Descriptor kUsage[] = {
     0,
     nullptr,
     "dump-func",
-    kBuildTypeAll,
+    kBuildTypeDebug,
     kArgCheckPolicyRequired,
     "  --dump-func                 \tDump/trace only for functions whose names contain FUNCNAME as substring\n"
     "                              \t(can only specify once)\n"
@@ -170,7 +170,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "quiet",
-    kBuildTypeAll,
+    kBuildTypeProduct,
     kArgCheckPolicyBool,
     "  --quiet                     \tDisable brief trace messages with phase/function names\n"
     "  --no-quiet                  \tEnable brief trace messages with phase/function names\n",
@@ -180,7 +180,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "maplelinker",
-    kBuildTypeAll,
+    kBuildTypeProduct,
     kArgCheckPolicyBool,
     "  --maplelinker               \tGenerate MUID symbol tables and references\n"
     "  --no-maplelinker            \tDon't Generate MUID symbol tables and references\n",
@@ -190,7 +190,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "regnativefunc",
-    kBuildTypeAll,
+    kBuildTypeProduct,
     kArgCheckPolicyBool,
     "  --regnativefunc             \tGenerate native stub function to support JNI registration and calling\n"
     "  --no-regnativefunc          \tDisable regnativefunc\n",
@@ -320,7 +320,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "regnative-dynamic-only",
-    kBuildTypeAll,
+    kBuildTypeProduct,
     kArgCheckPolicyBool,
     "  --regnative-dynamic-only    \tOnly Generate dynamic register code, Report Fatal Msg if no implemented\n"
     "  --no-regnative-dynamic-only \tDisable regnative-dynamic-only\n",
@@ -340,7 +340,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "dump-before",
-    kBuildTypeAll,
+    kBuildTypeDebug,
     kArgCheckPolicyBool,
     "  --dump-before               \tDo extra IR dump before the specified phase\n"
     "  --no-dump-before            \tDon't extra IR dump before the specified phase\n",
@@ -350,7 +350,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "dump-after",
-    kBuildTypeAll,
+    kBuildTypeDebug,
     kArgCheckPolicyBool,
     "  --dump-after                \tDo extra IR dump after the specified phase\n"
     "  --no-dump-after             \tDon't extra IR dump after the specified phase\n",
@@ -360,7 +360,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "dump-muid",
-    kBuildTypeAll,
+    kBuildTypeDebug,
     kArgCheckPolicyBool,
     "  --dump-muid                 \tDump MUID def information into a .muid file\n"
     "  --no-dump-muid              \tDon't dump MUID def information into a .muid file\n",
@@ -392,7 +392,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "nativeopt",
-    kBuildTypeAll,
+    kBuildTypeProduct,
     kArgCheckPolicyBool,
     "  --nativeopt                 \tEnable native opt\n"
     "  --no-nativeopt              \tDisable native opt\n",
@@ -402,7 +402,7 @@ const Descriptor kUsage[] = {
     0,
     nullptr,
     "O0",
-    kBuildTypeAll,
+    kBuildTypeProduct,
     kArgCheckPolicyOptional,
     "  -O0                         \tDo some optimization.\n",
     "mpl2mpl",
@@ -411,7 +411,7 @@ const Descriptor kUsage[] = {
     0,
     nullptr,
     "O2",
-    kBuildTypeAll,
+    kBuildTypeProduct,
     kArgCheckPolicyOptional,
     "  -O2                         \tDo some optimization.\n",
     "mpl2mpl",

@@ -47,7 +47,7 @@ bool MeExpr::IsTheSameWorkcand(const MeExpr &expr) const {
       static_cast<const OpMeExpr*>(this)->GetBitsSize() != static_cast<const OpMeExpr &>(expr).GetBitsSize()) {
     return false;
   }
-  if (op == OP_resolveinterfacefunc || op == OP_resolvevirtualfunc) {
+  if (op == OP_resolveinterfacefunc || op == OP_resolvevirtualfunc || op == OP_iaddrof) {
     if (static_cast<const OpMeExpr*>(this)->GetFieldID() != static_cast<const OpMeExpr &>(expr).GetFieldID()) {
       return false;
     }
@@ -1177,7 +1177,11 @@ void CallMeStmt::Dump(const IRMap *irMap) const {
   }
   // target function name
   MIRFunction *func = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(puIdx);
-  LogInfo::MapleLogger() << NameMangler::DecodeName(func->GetName()) << '\n';
+  if (irMap->GetMIRModule().IsJavaModule()) {
+    LogInfo::MapleLogger() << NameMangler::DecodeName(func->GetName()) << '\n';
+  } else {
+    LogInfo::MapleLogger() << func->GetName() << '\n';
+  }
   DumpOpnds(irMap);
   DumpMuList(irMap, muList);
   DumpChiList(irMap, chiList);

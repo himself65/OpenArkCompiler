@@ -1345,7 +1345,7 @@ void AArch64CGFunc::SelectAddrof(Operand &result, StImmOperand &stImm) {
       }
     } else {
       auto it = immOpndsRequiringOffsetAdjustment.find(symLoc);
-      if (it != immOpndsRequiringOffsetAdjustment.end()) {
+      if ((it != immOpndsRequiringOffsetAdjustment.end()) && (symbol->GetType()->GetPrimType() != PTY_agg)) {
         offset = (*it).second;
       } else {
         offset = &CreateImmOperand(GetBaseOffset(*symLoc) + stImm.GetOffset(), k64BitSize, false);

@@ -101,11 +101,11 @@ ErrorCode MplOptions::HandleGeneralOptions() {
       case kHelp: {
         if (!opt.Args().empty()) {
           if (std::find(kMapleCompilers.begin(), kMapleCompilers.end(), opt.Args()) != kMapleCompilers.end()) {
-            optionParser->PrintUsage(opt.Args());
+            optionParser->PrintUsage(opt.Args(), helpLevel);
             return kErrorExitHelp;
           }
         }
-        optionParser->PrintUsage("all");
+        optionParser->PrintUsage("all", helpLevel);
         return kErrorExitHelp;
       }
       case kVersion: {
@@ -203,6 +203,9 @@ ErrorCode MplOptions::DecideRunType() {
         }
         break;
       }
+      case kHelpLevel:
+        helpLevel = std::stoul(opt.Args());
+        break;
       default:
         break;
     }

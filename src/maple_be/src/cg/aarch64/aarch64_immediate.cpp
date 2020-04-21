@@ -37,6 +37,9 @@ constexpr std::array<uint64, kMaxBitTableSize> bitmaskImmMultTable = {
 bool IsBitmaskImmediate(uint64 val, uint32 bitLen) {
   ASSERT(val != 0, "IsBitmaskImmediate() don's accept 0 or -1");
   ASSERT(static_cast<int64>(val) != -1, "IsBitmaskImmediate() don's accept 0 or -1");
+  if ((bitLen == k32BitSize) && (static_cast<int32>(val) == -1)) {
+    return false;
+  }
   if ((val & 0x1) != 0) {
     /*
      * we want to work with

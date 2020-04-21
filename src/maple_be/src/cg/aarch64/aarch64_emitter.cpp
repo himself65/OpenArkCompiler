@@ -87,14 +87,14 @@ void AArch64Emitter::EmitFastLSDA() {
    * .word .Label.LTest_3B_7C_3Cinit_3E_7C_28_29V3-func_start_label
    */
   emitter->Emit("\t.word 0xFFFFFFFF\n");
-  emitter->Emit("\t.word .Label." + funcName);
+  emitter->Emit("\t.word .Label." + funcName + ".");
   if (aarchCGFunc->NeedCleanup()) {
     emitter->Emit(cgFunc->GetCleanupLabel()->GetLabelIdx());
   } else {
     ASSERT(!cgFunc->GetExitBBsVec().empty(), "exitbbsvec is empty in AArch64Emitter::EmitFastLSDA");
     emitter->Emit(cgFunc->GetExitBB(0)->GetLabIdx());
   }
-  emitter->Emit("-.Label." + funcName)
+  emitter->Emit("-.Label." + funcName + ".")
       .Emit(cgFunc->GetStartLabel()->GetLabelIdx())
       .Emit("\n");
   emitter->IncreaseJavaInsnCount();
@@ -159,11 +159,8 @@ void AArch64Emitter::EmitFullLSDA() {
         emitter->EmitLabelPair(funcName, cleaupCode);
       } else if (cgFunc->GetFunction().IsJava()) {
         ASSERT(!cgFunc->GetExitBBsVec().empty(), "exitbbsvec is empty in AArch64Emitter::EmitFullLSDA");
-        emitter->Emit(".Label." + funcName)
-          .Emit(cgFunc->GetExitBB(0)->GetLabIdx())
-          .Emit(" - .Label." + funcName)
-          .Emit(cgFunc->GetStartLabel()->GetLabelIdx())
-          .Emit("\n");
+        emitter->Emit(".Label." + funcName).Emit(".").Emit(cgFunc->GetExitBB(0)->GetLabIdx());
+        emitter->Emit(" - .Label." + funcName).Emit(".").Emit(cgFunc->GetStartLabel()->GetLabelIdx()).Emit("\n");
       } else {
         emitter->Emit("0\n");
       }
@@ -199,11 +196,8 @@ void AArch64Emitter::EmitFullLSDA() {
       emitter->EmitLabelPair(funcName, cleaupCode);
     } else {
       ASSERT(!cgFunc->GetExitBBsVec().empty(), "exitbbsvec is empty in AArch64Emitter::EmitFullLSDA");
-      emitter->Emit(".Label." + funcName)
-        .Emit(cgFunc->GetExitBB(0)->GetLabIdx())
-        .Emit(" - .Label." + funcName)
-        .Emit(cgFunc->GetStartLabel()->GetLabelIdx())
-        .Emit("\n");
+      emitter->Emit(".Label." + funcName).Emit(".").Emit(cgFunc->GetExitBB(0)->GetLabIdx());
+      emitter->Emit(" - .Label." + funcName).Emit(".").Emit(cgFunc->GetStartLabel()->GetLabelIdx()).Emit("\n");
     }
     emitter->Emit("\t.uleb128 0\n");
     if (!cgFunc->GetFunction().IsJava()) {
@@ -262,9 +256,10 @@ void AArch64Emitter::EmitBBHeaderLabel(const std::string &name, LabelIdx labIdx)
     currCG->IncreaseLabelOrderCnt();
   }
   if (currCG->GenerateVerboseAsm()) {
-    emitter.Emit(".Label." + name).Emit(labIdx).Emit(":\t//label order ").Emit(label.GetLabelOrder()).Emit("\n");
+    emitter.Emit(".Label.").Emit(name).Emit(".").Emit(labIdx).Emit(":\t//label order ").Emit(label.GetLabelOrder());
+    emitter.Emit("\n");
   } else {
-    emitter.Emit(".Label." + name).Emit(labIdx).Emit(":\n");
+    emitter.Emit(".Label.").Emit(name).Emit(".").Emit(labIdx).Emit(":\n");
   }
 }
 
@@ -356,11 +351,8 @@ void AArch64Emitter::Run() {
       MIRSymbol *funcSymbol = GlobalTables::GetGsymTable().GetSymbolFromStidx(cgFunc->GetFunction().GetStIdx().Idx());
       const std::string &funcName = funcSymbol->GetName();
       /*  .word .Label.lsda_label-func_start_label */
-      emitter.Emit("\t.word .Label." + funcName)
-        .Emit(lsdaHeader->GetLSDALabel()->GetLabelIdx())
-        .Emit("-.Label." + funcName)
-        .Emit(cgFunc->GetStartLabel()->GetLabelIdx())
-        .Emit("\n");
+      emitter.Emit("\t.word .Label." + funcName).Emit(".").Emit(lsdaHeader->GetLSDALabel()->GetLabelIdx());
+      emitter.Emit("-.Label." + funcName).Emit(".").Emit(cgFunc->GetStartLabel()->GetLabelIdx()).Emit("\n");
       emitter.IncreaseJavaInsnCount();
     } else if (ehFunc->NeedFastLSDA()) {
       EmitFastLSDA();
@@ -429,7 +421,7 @@ void AArch64Emitter::Run() {
     for (size_t i = 0; i < arrayConst->GetConstVec().size(); i++) {
       MIRLblConst *lblConst = safe_cast<MIRLblConst>(arrayConst->GetConstVecItem(i));
       CHECK_FATAL(lblConst != nullptr, "null ptr check");
-      emitter.Emit("\t.quad\t.Label." + funcSt->GetName()).Emit(lblConst->GetValue());
+      emitter.Emit("\t.quad\t.Label." + funcSt->GetName()).Emit(".").Emit(lblConst->GetValue());
       emitter.Emit(" - " + st->GetName() + "\n");
       emitter.IncreaseJavaInsnCount(kQuadInsnCount);
     }

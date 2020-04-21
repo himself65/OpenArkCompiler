@@ -503,6 +503,7 @@ BlockNode *CGLowerer::LowerReturnStruct(NaryStmtNode &retNode) {
   }
   blk->AddStatement(iassign);
   retNode.GetNopnd().clear();
+  retNode.SetNumOpnds(0);
   blk->AddStatement(&retNode);
   return blk;
 }
@@ -1147,11 +1148,13 @@ StmtNode *CGLowerer::LowerCall(CallNode &callNode, StmtNode *&nextStmt, BlockNod
   AddrofNode *addrofNode = mirModule.CurFuncCodeMemPool()->New<AddrofNode>(OP_addrof);
   addrofNode->SetPrimType(LOWERED_PTR_TYPE);
   addrofNode->SetStIdx(dsgnSt->GetStIdx());
+  addrofNode->SetFieldID(0);
   newNopnd.push_back(addrofNode);
   for (auto *opnd : callNode.GetNopnd()) {
     newNopnd.push_back(opnd);
   }
   callNode.SetNOpnd(newNopnd);
+  callNode.SetNumOpnds(static_cast<uint8>(newNopnd.size()));
   CHECK_FATAL(nextStmt != nullptr, "nullptr is not expected");
   nextStmt = nextStmt->GetNext();
   return &callNode;
@@ -1171,15 +1174,14 @@ void CGLowerer::LowerEntry(MIRFunction &func) {
     retSt->SetTyIdx(pointType->GetTypeIndex());
     MapleVector<MIRSymbol*> formals(mirModule.GetMPAllocator().Adapter());
     formals.push_back(retSt);
-    MapleVector<TyIdx> &argsTy = func.GetMIRFuncType()->GetParamTypeList();
-    argsTy.clear();
-    argsTy.push_back(retSt->GetType()->GetTypeIndex());
     for (uint32 i = 0; i < func.GetFormalCount(); ++i) {
       auto formal = func.GetFormal(i);
       formals.push_back(formal);
-      argsTy.push_back(formal->GetType()->GetTypeIndex());
     }
-    func.SetFormals(formals);
+    func.ClearFormals();
+    for (MapleVector<MIRSymbol*>::iterator it = formals.begin(); it != formals.end(); ++it) {
+      func.AddArgument(*it);
+    }
     func.SetReturnTyIdx(GlobalTables::GetTypeTable().GetTypeTable().at(static_cast<int>(PTY_void))->GetTypeIndex());
   }
 }
