@@ -19,6 +19,7 @@
 #include <unordered_map>
 #include <map>
 #include <set>
+#include <limits.h>
 #include "mempool_allocator.h"
 #include "mempool.h"
 #include "mpl_logging.h"
@@ -41,9 +42,9 @@ enum RecordType : maple::uint32 {
 };
 
 struct StrInfo {
-  int idx;
+  unsigned int idx;
   RecordType sType;
-  StrInfo(int curIdx, RecordType curTy) : idx(curIdx), sType(curTy) {}
+  StrInfo(unsigned int curIdx, RecordType curTy) : idx(curIdx), sType(curTy) {}
 };
 
 class MDElement {
@@ -60,13 +61,19 @@ class MDElement {
     kEleInValidTy
   };
 
-  virtual int GetContent() const = 0;
+  unsigned int GetContent() const {
+    return DoGetContent();
+  }
+
   ElementTy GetRecDataTy() const {
     return eleType;
   }
 
  protected:
   ElementTy eleType = kEleInValidTy;
+
+ private:
+  virtual unsigned int DoGetContent() const = 0;
 };
 
 class DefaultElement : public MDElement {
@@ -74,39 +81,44 @@ class DefaultElement : public MDElement {
   DefaultElement() {
     eleType = kEleDefaultTy;
   }
+
   ~DefaultElement() override = default;
 
-  int GetContent() const override {
+ private:
+  unsigned int DoGetContent() const override {
     CHECK_FATAL(false, "Cannnot load default element's content");
-    return -1;
+    return UINT_MAX;
   }
 };
 
 class IntElement : public MDElement {
  public:
-  explicit IntElement(int curVal) : intEleVal(curVal) {
+  explicit IntElement(unsigned int curVal) : intEleVal(curVal) {
     eleType = kEleIntTy;
   }
+
   ~IntElement() override = default;
-  int GetContent() const override {
-    return intEleVal;
-  }
 
  private:
-  int intEleVal;
+  unsigned int intEleVal;
+  unsigned int DoGetContent() const override {
+    return intEleVal;
+  }
 };
 
 class StringElement : public MDElement {
  public:
-  explicit StringElement(int curIdx) : strElemntIdx(curIdx) {
+  explicit StringElement(unsigned int curIdx) : strElemntIdx(curIdx) {
     eleType = kEleStrTy;
   }
+
   ~StringElement() override = default;
-  int GetContent() const override {
+
+ private:
+  unsigned int strElemntIdx;
+  unsigned int DoGetContent() const override {
     return strElemntIdx;
   }
- private:
-  int strElemntIdx;
 };
 
 class DefTyElement : public MDElement {
@@ -114,14 +126,16 @@ class DefTyElement : public MDElement {
   DefTyElement() {
     eleType = kEleDefTyTy;
   }
+
   ~DefTyElement() override = default;
-  int GetContent() const override {
-    return elementIdx;
-  }
-  bool SetContent(StrInfo curInfo, std::set<int> &childTySet);
+
+  bool SetContent(const StrInfo curInfo, const std::set<unsigned int> &childTySet);
 
  private:
-  int elementIdx = -1;
+  unsigned int elementIdx = UINT_MAX;
+  unsigned int DoGetContent() const override {
+    return elementIdx;
+  }
 };
 
 class DefObjElement : public MDElement {
@@ -129,14 +143,16 @@ class DefObjElement : public MDElement {
   DefObjElement() {
     eleType = kEleDefObjTy;
   }
+
   ~DefObjElement() override = default;
-  int GetContent() const override {
-    return elementIdx;
-  }
-  bool SetContent(StrInfo curInfo, MDClass &parentClass);
+
+  bool SetContent(const StrInfo curInfo, const MDClass &parentClass);
 
  private:
-  int elementIdx = -1;
+  unsigned int elementIdx = UINT_MAX;
+  unsigned int DoGetContent() const override {
+    return elementIdx;
+  }
 };
 
 class VecElement : public MDElement {
@@ -144,44 +160,54 @@ class VecElement : public MDElement {
   explicit VecElement(maple::MemPool &mem) : alloc(&mem), vecData(alloc.Adapter()) {
     eleType = kEleVecTy;
   }
+
   ~VecElement() override = default;
+
   void appendElement(MDElement *curElement) {
     vecData.push_back(curElement);
   }
-  int GetContent() const override {
-    CHECK_FATAL(false, "Vector element does not have a single content");
-    return -1;
-  }
+
   const maple::MapleVector<MDElement*> GetVecData() const {
     return vecData;
   }
+
   size_t GetVecDataSize() const {
     return vecData.size();
   }
+
  private:
   maple::MapleAllocator alloc;
   maple::MapleVector<MDElement*> vecData;
+
+  unsigned int DoGetContent() const override {
+    CHECK_FATAL(false, "Vector element does not have a single content");
+    return UINT_MAX;
+  }
 };
 
 class MDObject {
  public:
-  MDObject(int curIdx, MDClass &pClass, maple::MemPool &memPool)
+  MDObject(unsigned int curIdx, MDClass &pClass, maple::MemPool &memPool)
       : objectIdx(curIdx), parentClass(&pClass), alloc(&memPool), mdElements(alloc.Adapter()) {}
+
   ~MDObject() = default;
 
-  const MDElement *GetOneMDElement(int index) const;
+  const MDElement *GetOneMDElement(size_t index) const;
+
   void AddMDElements(MDElement* curElement) {
     mdElements.push_back(curElement);
   }
-  int GetIdx() const {
+
+  unsigned int GetIdx() const {
     return objectIdx;
   }
+
   const MDClass *GetParentClass() const {
     return parentClass;
   }
 
  private:
-  int objectIdx;
+  unsigned int objectIdx;
   MDClass *parentClass;
   maple::MapleAllocator alloc;
   maple::MapleVector<MDElement*> mdElements;
@@ -189,26 +215,26 @@ class MDObject {
 
 class MDClass {
  public:
-  MDClass(int classIdx, bool isAnonymous) {
+  MDClass(unsigned int classIdx, bool isAnonymous) {
     this->classIdx = classIdx;
     this->isAnonymous = isAnonymous;
   }
   ~MDClass() = default;
 
-  const MDObject &GetOneMDObject(int index) const;
+  const MDObject &GetOneMDObject(size_t index) const;
   void AddClassMember(MDObject inputObj);
-  bool IsClassMember(int curIdx);
+  bool IsClassMember(unsigned int curIdx) const;
   bool IsValidStructEle(RecordType curTy) const;
-  int GetClassIdx() const {
+  unsigned int GetClassIdx() const {
     return classIdx;
   }
   bool IsAnonymousClass() const {
     return isAnonymous;
   }
-  const std::vector<std::pair<int, bool>> GetFormalTypes() const {
+  const std::vector<std::pair<uint, bool>> GetFormalTypes() const {
     return formalTypes;
   }
-  const std::set<int> GetchildObjNames() const {
+  const std::set<unsigned int> GetchildObjNames() const {
     return childObjNames;
   }
   size_t GetFormalTypeSize() const {
@@ -217,14 +243,14 @@ class MDClass {
   size_t GetMDObjectSize() const {
     return mdObjects.size();
   }
-  void BuildFormalTypes(int memberIdx, bool isVec);
+  void BuildFormalTypes(unsigned int memberIdx, bool isVec);
 
  private:
-  int classIdx;
+  unsigned int classIdx;
   bool isAnonymous;
   std::vector<MDObject> mdObjects;
-  std::vector<std::pair<int, bool>> formalTypes;
-  std::set<int> childObjNames;
+  std::vector<std::pair<uint, bool>> formalTypes;
+  std::set<unsigned int> childObjNames;
 };
 
 class MDClassRange {
@@ -232,34 +258,34 @@ class MDClassRange {
   explicit MDClassRange(std::string module) : moduleName(module) {
     stringTable.clear();
     stringHashTable.clear();
-    /* init common types such as int ,string , float */
-    std::set<int> initTypes;
+    /* init common types such as unsigned int ,string , float */
+    std::set<unsigned int> initTypes;
     AddDefinedType(CreateStrInTable("int", kIntType), initTypes);
     AddDefinedType(CreateStrInTable("string", kStringType), initTypes);
   }
   ~MDClassRange() = default;
 
   StrInfo GetStrInTable(const std::string &inStr);
-  RecordType GetStrTyByIdx(int curIdx);
-  const std::string &GetStrByIdx(int curIdx);
+  RecordType GetStrTyByIdx(size_t curIdx);
+  const std::string &GetStrByIdx(size_t curIdx);
   void AddMDClass(MDClass curClass);
-  MDClass GetOneMDClass(int givenIdx);
-  std::set<int> GetOneSpcType(int givenTyIdx);
+  MDClass GetOneMDClass(unsigned int givenIdx);
+  std::set<unsigned int> GetOneSpcType(unsigned int givenTyIdx);
   size_t GetStringTableSize() const {
     return stringTable.size();
   }
-  int CreateStrInTable(const std::string &inStr, RecordType curTy);
+  unsigned int CreateStrInTable(const std::string &inStr, RecordType curTy);
   void ModifyStrTyInTable(const std::string &inStr, RecordType newTy);
-  void AddDefinedType(int typesName, std::set<int> typesSet);
-  void FillMDClass(int givenIdx, const MDObject &insertObj);
+  void AddDefinedType(unsigned int typesName, std::set<unsigned int> typesSet);
+  void FillMDClass(unsigned int givenIdx, const MDObject &insertObj);
 
  private:
   std::string moduleName;
   std::unordered_map<std::string, StrInfo> stringHashTable;
   std::vector<std::string> stringTable;
-  int totalStr = 0;
-  std::unordered_map<int, std::set<int>> definedTypes;
-  std::unordered_map<int, MDClass> allClasses;
+  unsigned int totalStr = 0;
+  std::unordered_map<uint, std::set<unsigned int>> definedTypes;
+  std::unordered_map<uint, MDClass> allClasses;
 };
 } /* namespace MDGen */
 

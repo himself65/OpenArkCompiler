@@ -35,9 +35,9 @@ void MDCodeGen::EmitFileHead(std::ofstream &outputFile, const std::string &headI
   outputFile << "/* " << targetArchName << " " << headInfo << " definition : */\n";
 }
 
-MDClass MDCodeGen::GetSpecificClass (const std::string &className) {
-  int classIdx = curKeeper.GetStrInTable(className).idx;
-  CHECK_FATAL(classIdx >= 0, "Load Class Failed!");
+MDClass MDCodeGen::GetSpecificClass(const std::string &className) {
+  unsigned int classIdx = curKeeper.GetStrInTable(className).idx;
+  CHECK_FATAL(classIdx != UINT_MAX, "Load Class Failed!");
   return curKeeper.GetOneMDClass(classIdx);
 }
 
@@ -100,7 +100,7 @@ void SchedInfoGen::EmitUnitDef() {
     std::string unitPrefix = "Unit *" + emitUnitName + " = new Unit(";
     if (!isUnitNumDef) {
       outFile << "\n";
-      outFile << "const int kunitNum = 2;\n";
+      outFile << "const unsigned int kunitNum = 2;\n";
       isUnitNumDef = true;
     }
     outFile << unitPrefix;
@@ -116,7 +116,7 @@ void SchedInfoGen::EmitUnitDef() {
       CHECK_FATAL(unitTypeStr.size() != 0, "Haven't support this kind of Unit yet");
       outFile << unitTypeStr << ", " << curUnitName << ", kunitNum,\n";
       outFile << std::setiosflags(std::ios::right) << std::setw(unitPrefix.length()) << std::setfill(' ') << " ";
-      int dependUnitsIndex = 1;
+      unsigned int dependUnitsIndex = 1;
       auto *dependUnitEle = static_cast<const VecElement*>(singleUnit.GetOneMDElement(dependUnitsIndex));
       for (size_t k = 0; k < dependUnitEle->GetVecDataSize(); ++k) {
         auto *dependUnit = static_cast<DefObjElement*>(dependUnitEle->GetVecData()[k]);
@@ -159,7 +159,7 @@ void SchedInfoGen::EmitResvDef() {
     if (singleResv.GetOneMDElement(1)->GetRecDataTy() == MDElement::kEleDefaultTy) {
       outFile << "0);\n";
     } else {
-      int dependUnitsIndex = 1;
+      size_t dependUnitsIndex = 1;
       auto *dependUnitEle = static_cast<const VecElement*>(singleResv.GetOneMDElement(dependUnitsIndex));
       outFile << dependUnitEle->GetVecDataSize() << ",\n";
       for (size_t k = 0; k < dependUnitEle->GetVecDataSize(); ++k) {
@@ -190,9 +190,9 @@ void SchedInfoGen::EmitBypassDef() {
     if (singleBypass.GetOneMDElement(0)->GetRecDataTy() == MDElement::kEleDefaultTy) {
       continue;
     }
-    constexpr int fromVecIndex = 1;
-    constexpr int toVecIndex = 2;
-    constexpr int curBpTyIndex = 3;
+    constexpr size_t fromVecIndex = 1;
+    constexpr size_t toVecIndex = 2;
+    constexpr size_t curBpTyIndex = 3;
     auto *bpTyEle = singleBypass.GetOneMDElement(curBpTyIndex);
     std::string curBypassTy = (bpTyEle->GetRecDataTy() == MDElement::kEleDefaultTy) ?
         "" :  curKeeper.GetStrByIdx(bpTyEle->GetContent());
@@ -204,7 +204,7 @@ void SchedInfoGen::EmitBypassDef() {
     CHECK_FATAL(singleBypass.GetOneMDElement(toVecIndex)->GetRecDataTy() == MDElement::ElementTy::kEleVecTy,
         "Bypass illegal");
 
-    int bypassNum = static_cast<const IntElement*>(singleBypass.GetOneMDElement(0))->GetContent();
+    unsigned int bypassNum = static_cast<const IntElement*>(singleBypass.GetOneMDElement(0))->GetContent();
     auto *fromVec = static_cast<const VecElement*>(singleBypass.GetOneMDElement(fromVecIndex));
     auto *toVec = static_cast<const VecElement*>(singleBypass.GetOneMDElement(toVecIndex));
     for (auto itTo : toVec->GetVecData()) {

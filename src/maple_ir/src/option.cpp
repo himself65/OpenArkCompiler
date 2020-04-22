@@ -59,7 +59,7 @@ bool Options::nativeOpt = true;
 bool Options::O2 = false;
 bool Options::noDot = false;
 bool Options::genIRProfile = false;
-bool Options::testCase = false;
+bool Options::profileTest = false;
 bool Options::profileStaticFields = false;
 std::string Options::proFileData = "";
 std::string Options::proFileFuncData = "";
@@ -101,7 +101,7 @@ enum OptionIndex {
   kMpl2MplOptL2,
   kMpl2MplNoDot,
   kGenIRProfile,
-  kTestCase,
+  kProfileTest,
 };
 
 const Descriptor kUsage[] = {
@@ -436,14 +436,14 @@ const Descriptor kUsage[] = {
     "  --no-ir-profile-gen           \tDisable Gen IR level Profile\n",
     "mpl2mpl",
     {} },
-  { kTestCase,
+  { kProfileTest,
     kEnable,
     nullptr,
-    "testcase",
+    "profile-test",
     mapleOption::BuildType::kBuildTypeAll,
     mapleOption::ArgCheckPolicy::kArgCheckPolicyBool,
-    "  --testcase              \tTest Case\n"
-    "  --no-testcase           \tDisable Test Case\n",
+    "  --profile-test              \tprofile test\n"
+    "  --no-profile-test           \tDisable profile test\n",
     "mpl2mpl",
     {} },
   { kUnknown,
@@ -638,8 +638,8 @@ bool Options::SolveOptions(const std::vector<Option> &opts,
       case kGenIRProfile:
         genIRProfile = (opt.Type() == kEnable);
         break;
-      case kTestCase:
-        testCase = (opt.Type() == kEnable);
+      case kProfileTest:
+        profileTest = (opt.Type() == kEnable);
         break;
       default:
         WARN(kLncWarn, "input invalid key for mpl2mpl " + opt.OptionKey());

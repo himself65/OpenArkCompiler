@@ -81,7 +81,7 @@ void MeProfGen::InstrumentBB(BB &bb) {
 }
 
 void MeProfGen::SaveProfile() {
-  if (!Options::testCase) {
+  if (!Options::profileTest) {
     return;
   }
   if (func->GetName().find("main") != std::string::npos) {
@@ -118,7 +118,7 @@ void MeProfGen::InstrumentFunc() {
     LogInfo::MapleLogger() << "******************after profile gen  dump function******************\n";
     func->Dump(true);
   }
-  if (Options::testCase || dump) {
+  if (Options::profileTest || dump) {
     LogInfo::MapleLogger() << func->GetName() << " profile description info: "
                            << "func hash " << std::hex << hash << std::dec << " counter range ["
                            << counterStart << "," << counterEnd << "]\n";
@@ -152,6 +152,7 @@ AnalysisResult *MeDoProfGen::Run(MeFunction *func, MeFuncResultMgr *m, ModuleRes
   if (func->HasException()) {
     return nullptr;
   }
+
   auto *hMap = static_cast<MeIRMap*>(m->GetAnalysisResult(MeFuncPhase_IRMAP, func));
   CHECK_FATAL(hMap != nullptr, "hssamap is nullptr");
   MeProfGen profGen(*func, *tempMp, *hMap, DEBUGFUNC(func));

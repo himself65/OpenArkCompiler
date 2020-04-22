@@ -133,6 +133,7 @@ class MeProfUse : public PGOInstrument<BBUseEdge> {
     return succCalcuAllEdgeFreq;
   }
  private:
+  bool IsAllZero(Profile::BBInfo &result) const;
   void SetEdgeCount(BBUseEdge &edge, uint32 value);
   void SetEdgeCount(std::vector<BBUseEdge*> &edges, uint64 value);
   void ComputeEdgeFreq();

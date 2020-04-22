@@ -1,6 +1,6 @@
 /* cortex_a55 function units  definition : */
 
-const int kunitNum = 2;
+const unsigned int kunitNum = 2;
 Unit *instancekUnitIdSlot0 = new Unit(kUnitIdSlot0);
 if(instancekUnitIdSlot0 == nullptr) {
   maple::logInfo.MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdSlot0 failed." << std::endl;

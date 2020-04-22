@@ -694,7 +694,7 @@ void BBLayout::AddBBProf(BB &bb) {
         condGotoNode.SetOpCode((condGotoNode.GetOpCode() == OP_brtrue) ? OP_brfalse : OP_brtrue);
       }
     } else if (&bb != fallthru) {
-      CreateGotoBBAfterCondBB(bb, *fallthru);
+      CreateGotoBBAfterCondBB(*curBB, *fallthru);
     }
   }
   AddBB(bb);
@@ -718,18 +718,31 @@ void BBLayout::BuildEdges() {
 }
 
 BB *BBLayout::GetBBFromEdges() {
-  static size_t idx = 0;
-  while (idx < allEdges.size()) {
-    BBEdge *edge = allEdges[idx];
+  while (edgeIdx < allEdges.size()) {
+    BBEdge *edge = allEdges[edgeIdx];
     BB *srcBB = edge->GetSrcBB();
     BB *destBB = edge->GetDestBB();
+    if (enabledDebug) {
+      LogInfo::MapleLogger() << srcBB->GetBBId() << "->" << destBB->GetBBId() << " freq "
+                             << srcBB->GetEdgeFreq(destBB) << '\n';
+    }
+
     if (!laidOut[srcBB->GetBBId()]) {
+      if (enabledDebug) {
+        LogInfo::MapleLogger() << "choose srcBB " << srcBB->GetBBId() << '\n';
+      }
       return srcBB;
     }
     if (!laidOut[destBB->GetBBId()]) {
+      if (enabledDebug) {
+        LogInfo::MapleLogger() << "choose destBB " << destBB->GetBBId() << '\n';
+      }
       return destBB;
     }
-    idx++;
+    if (enabledDebug) {
+      LogInfo::MapleLogger() << "skip this edge " << '\n';
+    }
+    edgeIdx++;
   }
   return nullptr;
 }
@@ -747,7 +760,7 @@ BB *BBLayout::NextBBProf(BB &bb) {
     }
     return NextBBProf(*succBB);
   }
-
+  // max freq intial
   uint64 maxFreq  = 0;
   size_t idx = 0;
   bool found = false;
@@ -755,6 +768,12 @@ BB *BBLayout::NextBBProf(BB &bb) {
     BB *succBB = bb.GetSucc(i);
     if (!laidOut[succBB->GetBBId()]) {
       uint64 edgeFreqFromBB = bb.GetEdgeFreq(i);
+      // if bb isn't executed, choose the first valid bb
+      if (bb.GetFrequency() == 0) {
+        idx = i;
+        found = true;
+        break;
+      }
       if (edgeFreqFromBB > maxFreq) {
         maxFreq = edgeFreqFromBB;
         idx = i;
@@ -798,6 +817,9 @@ AnalysisResult *MeDoBBLayout::Run(MeFunction *func, MeFuncResultMgr *funcResMgr,
   auto *bbLayout = layoutMp->New<BBLayout>(*layoutMp, *func, DEBUGFUNC(func));
   // assume common_entry_bb is always bb 0
   ASSERT(func->front() == func->GetCommonEntryBB(), "assume bb[0] is the commont entry bb");
+  if (DEBUGFUNC(func)) {
+    func->GetTheCfg()->DumpToFile("beforeBBLayout", false);
+  }
   bbLayout->RunLayout();
   if (bbLayout->IsNewBBInLayout()) {
     funcResMgr->InvalidAnalysisResult(MeFuncPhase_DOMINANCE, func);

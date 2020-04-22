@@ -75,7 +75,7 @@ struct DataRefOffset {
    3. "indirect.label_name - . + 3" for indirect reference
       this format aims to support lld which does not support expression "global_symbol - ."
    DataRef is self-decoded by also encoding the format and is defined for binary compatibility.
-   If no compatibility problem is involved, DataRefOffset is preferred.
+   If no compatibility problem is involved, DataRefOffset64 is preferred.
  */
 enum DataRefFormat {
   kDataRefIsDirect   = 0, // must be 0
@@ -105,7 +105,6 @@ struct DataRef {
   template<typename T>
   inline T GetRawValue() const;
 };
-
 /* GctibRef aims to represent a reference to gctib in maple file, which is an offset by default.
    GctibRef is meant to have pointer size and aligned to at least 4 bytes.
    GctibRef allows 2 formats of value:
@@ -281,8 +280,8 @@ struct ClassMetadata {
   uint16_t numOfSuperclasses;
 #endif // USE_32BIT_REF
 
-  DataRef iTable;  // iTable of current class, used for virtual call, will insert the content into classinfo
-  DataRef vTable;  // vTable of current class, used for interface call, will insert the content into classinfo
+  DataRef iTable;  // iTable of current class, used for interface call, will insert the content into classinfo
+  DataRef vTable;  // vTable of current class, used for virtual call, will insert the content into classinfo
   GctibRef gctib;  // for rc
 
 #ifdef USE_32BIT_REF
