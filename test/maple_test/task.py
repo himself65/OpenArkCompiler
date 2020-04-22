@@ -32,6 +32,7 @@ from maple_test.utils import (
     FAIL,
     NOT_RUN,
     UNRESOLVED,
+    OS_SEP,
 )
 from maple_test.utils import (
     read_config,
@@ -52,7 +53,7 @@ class TaskConfig:
             self.suffix_comments = {}
         else:
             self.inherit_top_config(top_config)
-            name = str(path.relative_to(top_config.path.parent)).replace("/", "_")
+            name = str(path.relative_to(top_config.path.parent)).replace(OS_SEP, "_")
         self.name = name.replace(".", "_")
         self.path = complete_path(path)
         self.base_dir = self.path.parent
@@ -169,7 +170,7 @@ class TestSuiteTask:
             base_dir = config.base_dir
             testlist = self._get_testlist(raw_config, base_dir, encoding)
             self.task_set_result[name] = OrderedDict(
-                {"PASS": 0, "FAIL": 0, "NOT_RUN": 0, "UNRESOLVED": 0}
+                {PASS: 0, FAIL: 0, NOT_RUN: 0, UNRESOLVED: 0}
             )
             for case in self._search_list(base_dir, testlist, encoding):
                 task = SingleTask(case, config, running_config)
@@ -282,7 +283,7 @@ class TestSuiteTask:
         print_type = configs.get_val("print_type")
         for line in self.gen_summary(print_type).splitlines():
             logger.info(line)
-        return self.result["FAIL"]
+        return self.result[FAIL]
 
     def gen_brief_summary(self):
         total = sum(self.result.values())

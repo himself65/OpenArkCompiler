@@ -47,6 +47,7 @@ RESULT = {
 BASE_DIR = Path(__file__).parent.absolute()
 
 ENCODING = locale.getdefaultlocale()[1] if locale.getdefaultlocale()[1] else "UTF-8"
+OS_SEP = os.path.sep
 EXECUTABLE = sys.executable
 COMPARE = BASE_DIR / "compare.py"
 

@@ -171,7 +171,7 @@ def is_valid_pattern(pattern):
 
 
 def regex_match(content, line_map, pattern, start=0):
-    pattern = r"\s*".join([word for word in pattern.split()])
+    pattern = r"\s+".join([word for word in pattern.split()])
     matches = re.finditer(str(pattern), content, re.MULTILINE)
     end = 0
     for _, match in enumerate(matches, start=1):
@@ -279,7 +279,7 @@ def extract_compare_lines(file_path, regex):
 
 
 def parse_cli():
-    parser = argparse.ArgumentParser(prog="compare")
+    parser = argparse.ArgumentParser(prog="compare.py")
     parser.add_argument("--comment", help="Test case comment")
     parser.add_argument(
         "--assert_flag",
