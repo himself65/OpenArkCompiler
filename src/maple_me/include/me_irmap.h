@@ -42,7 +42,7 @@ class MeIRMap : public IRMap {
   void EmitBB(BB&, BlockNode&);
   void EmitBBStmts(BB&, BlockNode&);
 
-  MeFunction &GetFunc() {
+  MeFunction &GetFunc() const {
     return func;
   }
 

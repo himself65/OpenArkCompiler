@@ -469,6 +469,14 @@ class MeFunction : public FuncEmit {
     profValid = true;
   }
 
+  uint32 GetFrequency() const {
+    return frequency;
+  }
+
+  void SetFrequency(uint32 f) {
+    frequency = f;
+  }
+
   void PartialInit(bool isSecondPass);
 
   const MapleVector<SCCOfBBs*> &GetSccTopologicalVec() const {
@@ -517,6 +525,7 @@ class MeFunction : public FuncEmit {
   bool secondPass = false;  // second pass for the same function
   bool profValid = false;
   IRProfileDesc *profileDesc = nullptr;
+  uint32 frequency = 0;
 };
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_ME_FUNCTION_H

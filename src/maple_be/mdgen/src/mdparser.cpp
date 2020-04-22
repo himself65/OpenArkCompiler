@@ -56,19 +56,19 @@ bool MDParser::ParseDefType() {
   if (lexer.NextToken() != kMDIdentifier) {
     return EmitError("Expect a name after a specific type defined");
   }
-  int defTypeIdx = dataKeeper.CreateStrInTable(lexer.GetStrToken(), kTypeName);
-  if (defTypeIdx < 0) {
+  unsigned int defTypeIdx = dataKeeper.CreateStrInTable(lexer.GetStrToken(), kTypeName);
+  if (defTypeIdx == UINT_MAX) {
     return EmitError("InValid defType is defined");
   }
   if (lexer.NextToken() != kMDEqual) {
     return EmitError("Expect a equal when a specific type is going to be instantiated");
   }
-  std::set<int> defTypeMembers;
+  std::set<unsigned int> defTypeMembers;
   while (lexer.NextToken() != kMDSemi) {
     switch (lexer.GetCurKind()) {
       case kMDIdentifier: {
-        int defTypeMemberIdx = dataKeeper.CreateStrInTable(lexer.GetStrToken(), kTypeMemberName);
-        if (defTypeMemberIdx < 0 || !defTypeMembers.insert(defTypeMemberIdx).second) {
+        unsigned int defTypeMemberIdx = dataKeeper.CreateStrInTable(lexer.GetStrToken(), kTypeMemberName);
+        if (defTypeMemberIdx == UINT_MAX || !defTypeMembers.insert(defTypeMemberIdx).second) {
           return EmitError("InValid defType member is defined");
         }
         break;
@@ -87,8 +87,8 @@ bool MDParser::ParseMDClass() {
   if (lexer.NextToken() != kMDIdentifier) {
     return EmitError("Expect a name after a specific class defined");
   }
-  int classIdx = dataKeeper.CreateStrInTable(lexer.GetStrToken(), kClassName);
-  if (classIdx < 0) {
+  unsigned int classIdx = dataKeeper.CreateStrInTable(lexer.GetStrToken(), kClassName);
+  if (classIdx == UINT_MAX) {
     return EmitError("InValid class name. Please change a class name");
   }
   bool isAnon = true;
@@ -123,7 +123,7 @@ bool MDParser::ParseMDClassBody(MDClass &oneClass) {
   switch (lexer.GetCurKind()) {
     case kMDIdentifier: {
       StrInfo defTypeInfo = dataKeeper.GetStrInTable(lexer.GetStrToken());
-      if (defTypeInfo.idx < 0 || !oneClass.IsValidStructEle(defTypeInfo.sType)) {
+      if (defTypeInfo.idx == UINT_MAX || !oneClass.IsValidStructEle(defTypeInfo.sType)) {
         return EmitError("Expect a defined Type to be a memeber of a class");
       }
       bool isVec = false;
@@ -149,11 +149,11 @@ bool MDParser::ParseMDObject() {
     return EmitError("Expect a name after a specific object defined");
   }
   StrInfo parentInfo = dataKeeper.GetStrInTable(lexer.GetStrToken());
-  if (parentInfo.idx < 0 || (parentInfo.sType != kClassName && parentInfo.sType != kAnonClassName)) {
+  if (parentInfo.idx == UINT_MAX || (parentInfo.sType != kClassName && parentInfo.sType != kAnonClassName)) {
     return EmitError("A new object should be belong to a defined class");
   }
   MDClass parentClass = dataKeeper.GetOneMDClass(parentInfo.idx);
-  int objectIdx = -1;
+  unsigned int objectIdx = UINT_MAX;
   if (!parentClass.IsAnonymousClass()) {
     if (lexer.NextToken() != kMDColon) {
       return EmitError("Expect a colon when a object name is going to be defined");
@@ -162,7 +162,7 @@ bool MDParser::ParseMDObject() {
       return EmitError("Expect a name for a specific object");
     }
     objectIdx = dataKeeper.CreateStrInTable(lexer.GetStrToken(), kObjectName);
-    if (objectIdx < 0) {
+    if (objectIdx == UINT_MAX) {
       return EmitError("InValid ObjectName!");
     }
   }
@@ -198,7 +198,7 @@ bool MDParser::ParseMDObjBody(MDObject &curObj) {
       curObj.AddMDElements(defaultEle);
       continue;
     }
-    int typeIdx = curObj.GetParentClass()->GetFormalTypes().at(i).first;
+    unsigned int typeIdx = curObj.GetParentClass()->GetFormalTypes().at(i).first;
     bool isVec = curObj.GetParentClass()->GetFormalTypes().at(i).second;
     if (dataKeeper.GetStrTyByIdx(typeIdx) == kIntType) {
       if (!ParseIntElement(curObj, isVec)) {
@@ -209,7 +209,7 @@ bool MDParser::ParseMDObjBody(MDObject &curObj) {
         return false;
       }
     } else if (dataKeeper.GetStrTyByIdx(typeIdx) == kTypeName) {
-      std::set<int> childSet = dataKeeper.GetOneSpcType(typeIdx);
+      std::set<unsigned int> childSet = dataKeeper.GetOneSpcType(typeIdx);
       if (!ParseDefTyElement(curObj, isVec, childSet)) {
         return false;
       }
@@ -266,8 +266,8 @@ bool MDParser::ParseStrElement(MDObject &curObj, bool isVec) {
     while (lexer.NextToken() != kMDCloseSquare) {
       switch (lexer.GetCurKind()) {
         case kMDIdentifier: {
-          int elementIdx = dataKeeper.CreateStrInTable(lexer.GetStrToken(), kElementName);
-          if (elementIdx < 0) {
+          unsigned int elementIdx = dataKeeper.CreateStrInTable(lexer.GetStrToken(), kElementName);
+          if (elementIdx == UINT_MAX) {
             return EmitError("Duplicate string name has already been defined");
           }
           StringElement *singleEle = mdMemPool->New<StringElement>(elementIdx);
@@ -285,8 +285,8 @@ bool MDParser::ParseStrElement(MDObject &curObj, bool isVec) {
     if (lexer.GetCurKind() != kMDIdentifier) {
       return EmitError("Expect a string elemet as defined");
     }
-    int elementIdx = dataKeeper.CreateStrInTable(lexer.GetStrToken(), kElementName);
-    if (elementIdx < 0) {
+    unsigned int elementIdx = dataKeeper.CreateStrInTable(lexer.GetStrToken(), kElementName);
+    if (elementIdx == UINT_MAX) {
       return EmitError("Duplicate string name has already been defined");
     }
     StringElement *curEle = mdMemPool->New<StringElement>(elementIdx);
@@ -295,7 +295,7 @@ bool MDParser::ParseStrElement(MDObject &curObj, bool isVec) {
   return true;
 }
 
-bool MDParser::ParseDefTyElement(MDObject &curObj, bool isVec, std::set<int> &childSet) {
+bool MDParser::ParseDefTyElement(MDObject &curObj, bool isVec, const std::set<unsigned int> &childSet) {
   if (isVec) {
     if (lexer.GetCurKind() != kMDOpenSquare) {
       return EmitError("Expect a OpenSquare before a list element defined");
@@ -333,7 +333,7 @@ bool MDParser::ParseDefTyElement(MDObject &curObj, bool isVec, std::set<int> &ch
   return true;
 }
 
-bool MDParser::ParseDefObjElement(MDObject &curObj, bool isVec, MDClass &pClass) {
+bool MDParser::ParseDefObjElement(MDObject &curObj, bool isVec, const MDClass &pClass) {
   if (isVec) {
     if (lexer.GetCurKind() != kMDOpenSquare) {
       return EmitError("Expect a OpenSquare before a list element defined");

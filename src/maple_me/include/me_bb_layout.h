@@ -119,6 +119,7 @@ class BBLayout : public AnalysisResult {
   bool tryOutstanding = false; // true if a try laid out but not its endtry
   bool enabledDebug;
   bool profValid = false;
+  size_t edgeIdx = 0;
 };
 
 class MeDoBBLayout : public MeFuncPhase {

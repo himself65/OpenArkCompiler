@@ -97,7 +97,7 @@ class Options : public MapleDriverOptionBase {
   static std::string proFileClassData;
   static bool profileStaticFields;
   static bool genIRProfile;
-  static bool testCase;
+  static bool profileTest;
   static bool checkArrayStore;
  private:
   void DecideMpl2MplRealLevel(const std::vector<mapleOption::Option> &inputOptions) const;

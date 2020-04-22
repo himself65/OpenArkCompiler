@@ -15,6 +15,7 @@
 #include "me_ir.h"
 #include "opcode_info.h"
 #include "irmap.h"
+#include "me_irmap.h"
 #include "printing.h"
 #include "me_ssa.h"
 #include "mir_function.h"
@@ -1221,6 +1222,8 @@ void CondGotoMeStmt::Dump(const IRMap *irMap) const {
   LogInfo::MapleLogger() << "||MEIR|| " << kOpcodeInfo.GetTableItemAt(GetOp()).name << '\n';
   PrintIndentation(kDefaultPrintIndentNum);
   LogInfo::MapleLogger() << "cond: ";
+  auto mirFunc = static_cast<const MeIRMap*>(irMap)->GetFunc().GetMirFunc();
+  LogInfo::MapleLogger() << " @" << mirFunc->GetLabelName((LabelIdx)offset);
   GetOpnd()->Dump(irMap, kDefaultPrintIndentNum);
   LogInfo::MapleLogger() << '\n';
 }

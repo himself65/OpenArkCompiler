@@ -37,8 +37,8 @@ class MDParser {
   bool ParseMDObjBody(MDObject &curObj);
   bool ParseIntElement(MDObject &curObj, bool isVec);
   bool ParseStrElement(MDObject &curObj, bool isVec);
-  bool ParseDefTyElement(MDObject &curObj, bool isVec, std::set<int> &childSet);
-  bool ParseDefObjElement(MDObject &curObj, bool isVec, MDClass &pClass);
+  bool ParseDefTyElement(MDObject &curObj, bool isVec, const std::set<unsigned int> &childSet);
+  bool ParseDefObjElement(MDObject &curObj, bool isVec, const MDClass &pClass);
 
   /* error process */
   bool EmitError(const std::string &errMsg);

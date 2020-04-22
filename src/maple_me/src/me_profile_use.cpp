@@ -137,6 +137,9 @@ void MeProfUse::ComputeEdgeFreq() {
   if (dump) {
     LogInfo::MapleLogger() << "parse all edges in " << pass << " pass" << '\n';
   }
+  if (Options::profileTest) {
+    LogInfo::MapleLogger() << func->GetName() << " succ compute all edges " << '\n';
+  }
 }
 
 /*
@@ -170,6 +173,18 @@ void MeProfUse::SetEdgeCount(BBUseEdge &e, uint32 value) {
   return;
 }
 
+// return true,if all counter is zero
+bool MeProfUse::IsAllZero(Profile::BBInfo &result) const {
+  bool allZero = true;
+  for (size_t i = 0; i < result.totalCounter; ++i) {
+    if (result.counter[i] != 0) {
+      allZero = false;
+      break;
+    }
+  }
+  return allZero;
+}
+
 bool MeProfUse::BuildEdgeCount() {
   Profile::BBInfo result;
   bool ret = true;
@@ -177,6 +192,12 @@ bool MeProfUse::BuildEdgeCount() {
   if (!ret) {
     if (dump) {
       LogInfo::MapleLogger() << func->GetName() << " isn't in profile" << '\n';
+    }
+    return false;
+  }
+  if (IsAllZero(result)) {
+    if (dump) {
+      LogInfo::MapleLogger() << func->GetName() << " counter all zero" << '\n';
     }
     return false;
   }
@@ -211,22 +232,19 @@ bool MeProfUse::BuildEdgeCount() {
   InitBBEdgeInfo();
   ComputeEdgeFreq();
   succCalcuAllEdgeFreq = true;
-  if (Options::testCase) {
-    LogInfo::MapleLogger() << func->GetName() << " succ compute all edges " << '\n';
-  }
   return true;
 }
 
 void MeProfUse::SetFuncEdgeInfo() {
   auto eIt = func->valid_end();
   for (auto bIt = func->valid_begin(); bIt != eIt; ++bIt) {
+    auto *bb = *bIt;
+    auto *bbInfo = GetBBUseInfo(*bb);
+    bb->SetFrequency(bbInfo->GetCount());
     if (bIt == func->common_entry() || bIt == func->common_exit()) {
       continue;
     }
-    auto *bb = *bIt;
-    auto *bbInfo = GetBBUseInfo(*bb);
     bb->InitEdgeFreq();
-    bb->SetFrequency(bbInfo->GetCount());
     auto outEdges = bbInfo->GetOutEdges();
     for (auto *e : outEdges) {
       auto *destBB = e->GetDestBB();
@@ -239,6 +257,7 @@ void MeProfUse::SetFuncEdgeInfo() {
     }
   }
   func->SetProfValid();
+  func->SetFrequency(func->GetCommonEntryBB()->GetFrequency());
 }
 
 void MeProfUse::DumpFuncCFGEdgeFreq() const {
@@ -246,6 +265,7 @@ void MeProfUse::DumpFuncCFGEdgeFreq() const {
   if (!succCalcuAllEdgeFreq) {
     return;
   }
+  LogInfo::MapleLogger() << "func freq " << func->GetFrequency() << "\n";
   auto eIt = func->valid_end();
   for (auto bIt = func->valid_begin(); bIt != eIt; ++bIt) {
     if (bIt == func->common_entry() || bIt == func->common_exit()) {

@@ -326,6 +326,10 @@ class BB {
     return succ;
   }
 
+  MapleVector<uint64> &GetSuccFreq() {
+    return succFreq;
+  }
+
   const MapleVector<BB*> &GetSucc() const {
     return succ;
   }
@@ -381,6 +385,7 @@ class BB {
 
   uint64 GetEdgeFreq(size_t idx) const {
     CHECK_FATAL(idx < succFreq.size(), "out of range in BB::GetEdgeFreq");
+    CHECK_FATAL(succ.size() == succFreq.size(), "succfreq size doesn't match succ size");
     return succFreq[idx];
   }
 

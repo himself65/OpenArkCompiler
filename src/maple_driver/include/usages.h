@@ -117,7 +117,7 @@ enum OptionIndex : uint64 {
   kMpl2MplOptL2,
   kMpl2MplNoDot,
   kGenIRProfile,
-  kTestCase,
+  kProfileTest,
   // ----------mplcg begin---------
   kCGQuiet,
   kPie,
