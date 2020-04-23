@@ -18,15 +18,19 @@ namespace {
 using namespace maple;
 using namespace mapleOption;
 const mapleOption::Descriptor usages[] = {
-  // index, type , shortOption , longOption, connector, isCanAppend, delimiter, enableBuildType, checkPolicy, help,
-  // extra
+  // index, type , shortOption , longOption, enableBuildType, checkPolicy, help, exeName, extra bins
   { kUnknown,
     0,
     nullptr,
     nullptr,
     kBuildTypeAll,
     kArgCheckPolicyNone,
-    "USAGE: maple [options]\n\n Options:",
+    "USAGE: maple [options]\n\n"
+    "  Example 1: <Maple bin path>/maple --run=me:mpl2mpl:mplcg --option=\"[MEOPT]:[MPL2MPLOPT]:[MPLCGOPT]\"\n"
+    "                                    --mplt=MPLTPATH inputFile.mpl\n"
+    "  Example 2: <Maple bin path>/maple -O2 --mplt=mpltPath inputFile.dex\n\n"
+    "==============================\n"
+    "  Options:\n",
     "all",
     {} },
   { kHelp,
@@ -35,7 +39,10 @@ const mapleOption::Descriptor usages[] = {
     "help",
     kBuildTypeProduct,
     kArgCheckPolicyOptional,
-    "  -h --help [command]         \tPrint usage and exit.\n",
+    "  -h --help [COMPILERNAME]    \tPrint usage and exit.\n"
+    "                              \tTo print the help info of specified compiler,\n"
+    "                              \tyou can use jbc2mpl, me, mpl2mpl, mplcg... as the COMPILERNAME\n"
+    "                              \teg: --help=mpl2mpl\n",
     "all",
     {} },
   { kVersion,
@@ -84,6 +91,18 @@ const mapleOption::Descriptor usages[] = {
     "  -O2                         \tDo more optimization. (Default)\n",
     "all",
     {} },
+  { kGCOnly,
+    kEnable,
+    nullptr,
+    "gconly",
+    kBuildTypeProduct,
+    kArgCheckPolicyBool,
+    "  --gconly                     \tMake gconly is enable\n"
+    "  --no-gconly                  \tDon't make gconly is enable\n",
+    "all",
+    {
+      "mplcg"
+    } },
   { kMeOpt,
     0,
     nullptr,
@@ -144,7 +163,7 @@ const mapleOption::Descriptor usages[] = {
     0,
     "time-phases",
     nullptr,
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyNone,
     "  -time-phases                \tTiming phases and print percentages\n",
     "all",
@@ -167,6 +186,15 @@ const mapleOption::Descriptor usages[] = {
     "  --genVtableImpl             \tGenerate VtableImpl.mpl file\n",
     "all",
     {} },
+  { kVerbose,
+    kEnable,
+    nullptr,
+    "verbose",
+    kBuildTypeDebug,
+    kArgCheckPolicyBool,
+    "  -verbose                    \t: print informations\n",
+    "all",
+    { "jbc2mpl", "me", "mpl2mpl", "mplcg" } },
   { kAllDebug,
     0,
     nullptr,
@@ -182,11 +210,11 @@ const mapleOption::Descriptor usages[] = {
     "level",
     kBuildTypeProduct,
     kArgCheckPolicyNumeric,
-    "  --level                     \tPrint the help info of specified level.\n"
-    "                              \t0: All options (Default)\n"
-    "                              \t1: Product options\n"
-    "                              \t2: Debug options\n"
-    "                              \t3: Experimental options\n",
+    "  --level=NUM                 \tPrint the help info of specified level.\n"
+    "                              \tNUM=0: All options (Default)\n"
+    "                              \tNUM=1: Product options\n"
+    "                              \tNUM=2: Experimental options\n"
+    "                              \tNUM=3: Debug options\n",
     "all",
     {} },
   { kUnknown,

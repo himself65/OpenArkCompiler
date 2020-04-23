@@ -300,8 +300,12 @@ class MIRModule {
     return realCaller;
   }
 
-  MapleSet<FieldID> *GetPUIdxFieldInitializedMapItem(PUIdx key) {
-    return puIdxFieldInitializedMap[key];
+  const MapleSet<FieldID> *GetPUIdxFieldInitializedMapItem(PUIdx key) const {
+    auto it = puIdxFieldInitializedMap.find(key);
+    if (it != puIdxFieldInitializedMap.end()) {
+      return it->second;
+    }
+    return nullptr;
   }
 
   std::ostream &GetOut() const {

@@ -754,8 +754,8 @@ void MeStmtPre::ConstructUseOccurMap() {
 
 // create a new realOcc based on meStmt
 PreStmtWorkCand *MeStmtPre::CreateStmtRealOcc(MeStmt &meStmt, int seqStmt) {
-  uint32 hashIdx = PreStmtWorkCand::ComputeStmtWorkCandHashIndex(meStmt);
-  auto *wkCand = static_cast<PreStmtWorkCand*>(PreWorkCand::GetWorkcandFromIndex(hashIdx));
+  uint32 hashIdx = PreWorkCandHashTable::ComputeStmtWorkCandHashIndex(meStmt);
+  auto *wkCand = static_cast<PreStmtWorkCand*>(preWorkCandHashTable.GetWorkcandFromIndex(hashIdx));
   while (wkCand != nullptr) {
     MeStmt *currStmt = wkCand->GetTheMeStmt();
     ASSERT(currStmt != nullptr, "CreateStmtRealOcc: found workcand with theMeStmt as nullptr");
@@ -780,8 +780,8 @@ PreStmtWorkCand *MeStmtPre::CreateStmtRealOcc(MeStmt &meStmt, int seqStmt) {
   workList.push_back(wkCand);
   wkCand->AddRealOccAsLast(*newOcc, GetPUIdx());
   // add to bucket at workcandHashTable[hashIdx]
-  wkCand->SetNext(*PreWorkCand::GetWorkcandFromIndex(hashIdx));
-  PreWorkCand::SetWorkCandAt(hashIdx, *wkCand);
+  wkCand->SetNext(*preWorkCandHashTable.GetWorkcandFromIndex(hashIdx));
+  preWorkCandHashTable.SetWorkCandAt(hashIdx, *wkCand);
   return wkCand;
 }
 

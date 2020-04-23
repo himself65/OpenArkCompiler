@@ -211,7 +211,7 @@ class MplOptions {
   bool genMeMpl = false;
   bool genVtableImpl = false;
   bool verify = false;
-  unsigned int helpLevel = mapleOption::kBuildTypeAll;
+  unsigned int helpLevel = mapleOption::kBuildTypeDefault;
 };
 }  // namespace maple
 #endif  // MAPLE_DRIVER_INCLUDE_MPL_OPTIONS_H

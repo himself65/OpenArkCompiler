@@ -65,7 +65,7 @@ void OptionParser::CreateNoOption(const Descriptor &usage) {
                            (usage.longOption != nullptr) ? longOpt.c_str() : nullptr,
                            usage.enableBuildType,
                            usage.checkPolicy,
-                           usage.help,
+                           nullptr,
                            usage.exeName,
                            usage.extras };
   if (usage.shortOption != nullptr) {
@@ -120,7 +120,8 @@ void OptionParser::RegisteUsages(const Descriptor usage[]) {
 void OptionParser::PrintUsage(const std::string &helpType, const unsigned int helpLevel) const {
   for (size_t i = 0; i < rawUsages.size(); ++i) {
     if (rawUsages[i].help != nullptr && rawUsages[i].IsEnabledForCurrentBuild() && rawUsages[i].exeName == helpType) {
-      if (helpLevel != kBuildTypeAll && rawUsages[i].enableBuildType != helpLevel) {
+      if (helpLevel != kBuildTypeDefault &&
+          (rawUsages[i].enableBuildType != helpLevel && rawUsages[i].enableBuildType != kBuildTypeAll)) {
         continue;
       }
       LogInfo::MapleLogger() << rawUsages[i].help << '\n';
