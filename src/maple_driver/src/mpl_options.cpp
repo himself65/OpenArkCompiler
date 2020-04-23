@@ -24,9 +24,7 @@
 #include "version.h"
 #include "default_options.def"
 #include "driver_option_common.h"
-#ifndef EMUI_BUILD
 #include "jbc2mpl_option.h"
-#endif
 #include "me_option.h"
 #include "option.h"
 #include "cg_option.h"
@@ -44,9 +42,7 @@ const std::vector<std::string> kMapleCompilers = { "jbc2mpl",
 int MplOptions::Parse(int argc, char **argv) {
   optionParser.reset(new OptionParser());
   optionParser->RegisteUsages(DriverOptionCommon::GetInstance());
-#ifndef EMUI_BUILD
   optionParser->RegisteUsages(jbcUsage);
-#endif
   optionParser->RegisteUsages(Options::GetInstance());
   optionParser->RegisteUsages(MeOption::GetInstance());
   optionParser->RegisteUsages(CGOptions::GetInstance());

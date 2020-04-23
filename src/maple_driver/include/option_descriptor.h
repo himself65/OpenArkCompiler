@@ -20,11 +20,11 @@
 
 namespace mapleOption {
 enum BuildType {
-  kBuildTypeAll,
+  kBuildTypeDefault, // Print usages of all levels
   kBuildTypeProduct,
+  kBuildTypeExperimental,
   kBuildTypeDebug,
-  kBuildTypeRelease,
-  kBuildTypeExperimental
+  kBuildTypeAll // Will be printed in all levels
 };
 
 enum ArgCheckPolicy {
@@ -67,11 +67,15 @@ struct Descriptor {
 
   bool IsEnabledForCurrentBuild() const {
     switch (enableBuildType) {
-      case BuildType::kBuildTypeAll:
+      case BuildType::kBuildTypeDefault:
+        return true;
+      case BuildType::kBuildTypeProduct:
+        return true;
+      case BuildType::kBuildTypeExperimental:
         return true;
       case BuildType::kBuildTypeDebug:
         return true;
-      case BuildType::kBuildTypeRelease:
+      case BuildType::kBuildTypeAll:
         return true;
       default:
         // should never reach

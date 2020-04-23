@@ -119,11 +119,11 @@ enum OptionIndex {
 const Descriptor kUsage[] = {
   { kMeHelp,
     0,
-    "h-me",
-    "help-me",
-    kBuildTypeAll,
+    "h",
+    "help",
+    kBuildTypeExperimental,
     kArgCheckPolicyOptional,
-    "  -h-me --help-me             \tPrint usage and exit.Available command names:\n"
+    "  -h --help                   \tPrint usage and exit.Available command names:\n"
     "                              \tme\n",
     "me",
     {} },
@@ -200,7 +200,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "nodot",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyBool,
     "  --nodot                     \tDisable dot file generation from cfg\n"
     "  --no-nodot                  \tEnable dot file generation from cfg\n",
@@ -210,7 +210,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "setCalleeHasSideEffect",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyBool,
     "  --setCalleeHasSideEffect    \tSet all the callees have side effect\n"
     "  --no-setCalleeHasSideEffect \tNot set all the callees have side effect\n",
@@ -220,7 +220,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "noSteensgaard",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyBool,
     "  --noSteensgaard             \tDisable Steensgaard-style alias analysis\n"
     "  --no-noSteensgaard          \tEnable Steensgaard-style alias analysis\n",
@@ -230,7 +230,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "noTBAA",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyBool,
     "  --noTBAA                    \tDisable type-based alias analysis\n"
     "  --no-noTBAA                 \tEnable type-based alias analysis\n",
@@ -240,7 +240,7 @@ const Descriptor kUsage[] = {
     0,
     nullptr,
     "aliasAnalysisLevel",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyRequired,
     "  --aliasAnalysisLevel        \tSet level of alias analysis. \n"
     "                              \t0: most conservative;\n"
@@ -253,7 +253,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "stmtnum",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyBool,
     "  --stmtnum                   \tPrint MeStmt index number in IR dump\n"
     "  --no-stmtnum                \tDon't print MeStmt index number in IR dump\n",
@@ -263,7 +263,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "rclower",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyBool,
     "  --rclower                   \tEnable rc lowering\n"
     "  --no-rclower                \tDisable rc lowering\n",
@@ -343,7 +343,7 @@ const Descriptor kUsage[] = {
     0,
     nullptr,
     "pregrenamelimit",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyRequired,
     "  --pregrenamelimit           \tApply Preg Renaming optimization only up to NUM times\n"
     "                              \t--pregrenamelimit=NUM\n",
@@ -353,7 +353,7 @@ const Descriptor kUsage[] = {
     0,
     nullptr,
     "delrcpulimit",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyRequired,
     "  --delrcpulimit              \tApply DELEGATERC optimization only for the first NUM PUs\n"
     "                              \t--delrcpulimit=NUM\n",
@@ -381,7 +381,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "epreincluderef",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyBool,
     "  --epreincluderef            \tInclude ref-type expressions when performing epre optimization\n"
     "  --no-epreincluderef         \tDon't include ref-type expressions when performing epre optimization\n",
@@ -391,7 +391,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "eprelocalrefvar",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyBool,
     "  --eprelocalrefvar           \tThe EPRE phase will create new localrefvars when appropriate\n"
     "  --no-eprelocalrefvar        \tDisable the EPRE phase create new localrefvars when appropriate\n",
@@ -401,7 +401,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "eprelhsivar",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyBool,
     "  --eprelhsivar               \tThe EPRE phase will consider iassigns when optimizing ireads\n"
     "  --no-eprelhsivar            \tDisable the EPRE phase consider iassigns when optimizing ireads\n",
@@ -411,7 +411,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "lessthrowalias",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyBool,
     "  --lessthrowalias            \tHandle aliases at java throw statements more accurately\n"
     "  --no-lessthrowalias         \tDisable lessthrowalias\n",
@@ -421,7 +421,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "nodelegaterc",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyBool,
     "  --nodelegateerc             \tDo not apply RC delegation to local object reference pointers\n"
     "  --no-nodelegateerc          \tDisable nodelegateerc\n",
@@ -431,7 +431,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "nocondbasedrc",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyBool,
     "  --nocondbasedrc             \tDo not apply condition-based RC optimization to\n"
     "                              \tlocal object reference pointers\n"
@@ -442,7 +442,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "regreadatreturn",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyBool,
     "  --regreadatreturn           \tAllow register promotion to promote the operand of return statements\n"
     "  --no-regreadatreturn        \tDisable regreadatreturn\n",
@@ -518,6 +518,9 @@ bool MeOption::SolveOptions(const std::vector<mapleOption::Option> &opts, bool i
         break;
       case kMeQuiet:
         quiet = (opt.Type() == kEnable);
+        break;
+      case kVerbose:
+        quiet = (opt.Type() == kEnable) ? false : true;
         break;
       case kSetCalleeHasSideEffect:
         setCalleeHasSideEffect = (opt.Type() == kEnable);

@@ -461,8 +461,8 @@ bool RCLowering::IsInitialized(IvarMeExpr &ivar) {
     return true;
   }
   FieldID fieldID = ivar.GetFieldID();
-  MapleSet<FieldID> *fieldSet = initializedFields[base];
-  if (fieldSet != nullptr && (fieldSet->count(fieldID) > 0 || fieldSet->count(0) > 0)) {
+  std::set<FieldID> &fieldSet = initializedFields[base];
+  if (fieldSet.count(fieldID) > 0 || fieldSet.count(0) > 0) {
     return true;
   }
   MIRType *baseType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(ivar.GetTyIdx());
@@ -484,12 +484,8 @@ void RCLowering::HandleAssignMeStmtIvarLHS(MeStmt &stmt) {
   }
   if (!IsInitialized(*lhsInner)) {
     stmt.DisableNeedDecref();
-    MapleSet<FieldID> *fieldSet = initializedFields[lhsInner->GetBase()];
-    if (fieldSet == nullptr) {
-      fieldSet =
-          mirModule.GetMemPool()->New<MapleSet<FieldID>>(mirModule.GetMPAllocator().Adapter());
-    }
-    fieldSet->insert(fieldID);
+    std::set<FieldID> &fieldSet = initializedFields[lhsInner->GetBase()];
+    fieldSet.insert(fieldID);
   }
   MeExpr *rhsInner = stmt.GetRHS();
   MIRIntrinsicID intrinsicID = SelectWriteBarrier(stmt);
@@ -595,7 +591,11 @@ void RCLowering::InitializedObjectFields(MeStmt &stmt) {
   bool inInitializedMap =
       mirModule.GetPuIdxFieldInitializedMap().find(call.GetPUIdx()) != mirModule.GetPuIdxFieldInitializedMap().end();
   if (callee.IsConstructor() && isNew && hasNotInitialized && inInitializedMap) {
-    initializedFields[firstOpnd] = mirModule.GetPUIdxFieldInitializedMapItem(call.GetPUIdx());
+    initializedFields.emplace(firstOpnd, std::set<FieldID>());
+    const auto *origFieldSet = mirModule.GetPUIdxFieldInitializedMapItem(call.GetPUIdx());
+    if (origFieldSet != nullptr) {
+      initializedFields[firstOpnd].insert(origFieldSet->begin(), origFieldSet->end());
+    }
   } else {
     for (auto iter : call.GetOpnds()) {
       gcMallocObjects.erase(iter);

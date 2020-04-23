@@ -17,29 +17,27 @@
 #include "option_descriptor.h"
 
 namespace maple {
-using namespace mapleOption;
-
 enum JbcOptionIndex {
   kUseStringFactory,
   kOutMpl,
 };
 
-const Descriptor jbcUsage[] = {
-  { kUnknown, 0, "", "", kBuildTypeAll, kArgCheckPolicyUnknown,
+const mapleOption::Descriptor jbcUsage[] = {
+  { kUnknown, 0, "", "", mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyUnknown,
     "========================================\n"
     " Usage: jbc2mpl [ options ]\n"
     " options:\n",
     "jbc2mpl",
     {} },
-  { kUseStringFactory, 0, "", "use-string-factory", kBuildTypeAll, kArgCheckPolicyNone,
+  { kUseStringFactory, 0, "", "use-string-factory", mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyNone,
     "  -use-string-factory    : Replace String.<init> by StringFactory call",
     "jbc2mpl",
     {} },
-  { kOutMpl, 0, "o", "out", kBuildTypeAll, kArgCheckPolicyRequired,
+  { kOutMpl, 0, "o", "out", mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyRequired,
     "  -o, -out output.mpl    : output mpl name",
     "jbc2mpl",
     {} },
-  { kUnknown, 0, nullptr, nullptr, kBuildTypeAll, kArgCheckPolicyNone,
+  { kUnknown, 0, nullptr, nullptr, mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyNone,
     nullptr,
     "jbc2mpl",
     {} }

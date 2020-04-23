@@ -105,7 +105,7 @@ class RCLowering {
   std::map<OStIdx, VarMeExpr*> cleanUpVars{};
   std::map<OStIdx, OriginalSt*> varOStMap{};
   // used to store initialized map, help to optimize dec ref in first assignment
-  std::unordered_map<MeExpr*, MapleSet<FieldID>*> initializedFields{};
+  std::unordered_map<MeExpr*, std::set<FieldID>> initializedFields{};
   bool enabledDebug;
 };
 

@@ -66,8 +66,7 @@ std::string Options::proFileFuncData = "";
 std::string Options::proFileClassData = "";
 bool Options::checkArrayStore = false;
 enum OptionIndex {
-  kMpl2MplHelp = kCommonOptionEnd + 1,
-  kMpl2MplDumpPhase,
+  kMpl2MplDumpPhase = kCommonOptionEnd + 1,
   kMpl2MplSkipPhase,
   kMpl2MplSkipFrom,
   kMpl2MplSkipAfter,
@@ -105,16 +104,6 @@ enum OptionIndex {
 };
 
 const Descriptor kUsage[] = {
-  { kMpl2MplHelp,
-    0,
-    "h-mpl2mpl",
-    "help-mpl2mpl",
-    kBuildTypeAll,
-    kArgCheckPolicyOptional,
-    "  -h-mpl2mpl --help-mpl2mpl   \tPrint usage and exit.Available command names:\n"
-    "                              \tmpl2mpl\n",
-    "mpl2mpl",
-    {} },
   { kMpl2MplDumpPhase,
     0,
     nullptr,
@@ -139,7 +128,7 @@ const Descriptor kUsage[] = {
     0,
     nullptr,
     "skip-from",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyRequired,
     "  --skip-from                 \tSkip all remaining phases including PHASENAME\n"
     "                              \t--skip-from=PHASENAME\n",
@@ -149,7 +138,7 @@ const Descriptor kUsage[] = {
     0,
     nullptr,
     "skip-after",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyRequired,
     "  --skip-after                \tSkip all remaining phases after PHASENAME\n"
     "                              \t--skip-after=PHASENAME\n",
@@ -200,7 +189,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "inline-with-profile",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyBool,
     "  --inline-with-profile       \tEnable profile-based inlining\n"
     "  --no-inline-with-profile    \tDisable profile-based inlining\n",
@@ -210,7 +199,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "inline",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyBool,
     "  --inline                    \tEnable function inlining\n"
     "  --no-inline                 \tDisable function inlining\n",
@@ -220,7 +209,7 @@ const Descriptor kUsage[] = {
     0,
     nullptr,
     "no-inlinefunclist",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyRequired,
     "  --no-inlinefunclist=list    \tDo not inline function in this list\n",
     "mpl2mpl",
@@ -229,7 +218,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "cross-module-inline",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyBool,
     "  --cross-module-inline       \tEnable cross-module inlining\n"
     "  --no-cross-module-inline    \tDisable cross-module inlining\n",
@@ -239,7 +228,7 @@ const Descriptor kUsage[] = {
     0,
     nullptr,
     "inline-small-function-threshold",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyRequired,
     "  --inline-small-function-threshold=15            \tThreshold for inlining small function\n",
     "mpl2mpl",
@@ -248,7 +237,7 @@ const Descriptor kUsage[] = {
     0,
     nullptr,
     "inline-hot-function-threshold",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyRequired,
     "  --inline-hot-function-threshold=30              \tThreshold for inlining hot function\n",
     "mpl2mpl",
@@ -257,7 +246,7 @@ const Descriptor kUsage[] = {
     0,
     nullptr,
     "inline-module-growth",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyRequired,
     "  --inline-module-growth=100000                   \tThreshold for maxmium code size growth rate (10%)\n",
     "mpl2mpl",
@@ -266,7 +255,7 @@ const Descriptor kUsage[] = {
     0,
     nullptr,
     "inline-cold-function-threshold",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyRequired,
     "  --inline-cold-function-threshold=3              \tThreshold for inlining hot function\n",
     "mpl2mpl",
@@ -275,7 +264,7 @@ const Descriptor kUsage[] = {
     0,
     nullptr,
     "profile-hot-count",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyRequired,
     "  --profile-hot-count=1000    \tA count is regarded as hot if it exceeds this number\n",
     "mpl2mpl",
@@ -284,7 +273,7 @@ const Descriptor kUsage[] = {
     0,
     nullptr,
     "profile-cold-count",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyRequired,
     "  --profile-cold-count=10     \tA count is regarded as cold if it is below this number\n",
     "mpl2mpl",
@@ -293,7 +282,7 @@ const Descriptor kUsage[] = {
     0,
     nullptr,
     "profile-hot-rate",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyRequired,
     "  --profile-hot-rate=500000   \tA count is regarded as hot if it is in the largest 50%\n",
     "mpl2mpl",
@@ -302,7 +291,7 @@ const Descriptor kUsage[] = {
     0,
     nullptr,
     "profile-cold-rate",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyRequired,
     "  --profile-cold-rate=900000  \tA count is regarded as cold if it is in the smallest 10%\n",
     "mpl2mpl",
@@ -311,7 +300,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "nativewrapper",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyBool,
     "  --nativewrapper             \tGenerate native wrappers [default]\n",
     "mpl2mpl",
@@ -330,7 +319,7 @@ const Descriptor kUsage[] = {
     0,
     nullptr,
     "static-binding-list",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyRequired,
     "  --static-bindig-list        \tOnly Generate static binding function in file configure list\n"
     "                              \t--static-bindig-list=file\n",
@@ -370,7 +359,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "emitVtableImpl",
-    kBuildTypeAll,
+    kBuildTypeProduct,
     kArgCheckPolicyBool,
     "  --emitVtableImpl            \tgenerate VtableImpl file\n"
     "  --no-emitVtableImpl         \tDon't generate VtableImpl file\n",
@@ -381,7 +370,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "skipvirtual",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyBool,
     "  --skipvirtual\n"
     "  --no-skipvirtual\n",
@@ -420,7 +409,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "nodot",
-    kBuildTypeAll,
+    kBuildTypeExperimental,
     kArgCheckPolicyBool,
     "  --nodot                     \tDisable dot file generation from cfg\n"
     "  --no-nodot                  \tEnable dot file generation from cfg\n",
@@ -430,7 +419,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "ir-profile-gen",
-    mapleOption::BuildType::kBuildTypeAll,
+    mapleOption::BuildType::kBuildTypeExperimental,
     mapleOption::ArgCheckPolicy::kArgCheckPolicyBool,
     "  --ir-profile-gen              \tGen IR level Profile\n"
     "  --no-ir-profile-gen           \tDisable Gen IR level Profile\n",
@@ -440,7 +429,7 @@ const Descriptor kUsage[] = {
     kEnable,
     nullptr,
     "profile-test",
-    mapleOption::BuildType::kBuildTypeAll,
+    mapleOption::BuildType::kBuildTypeExperimental,
     mapleOption::ArgCheckPolicy::kArgCheckPolicyBool,
     "  --profile-test              \tprofile test\n"
     "  --no-profile-test           \tDisable profile test\n",
@@ -507,6 +496,9 @@ bool Options::SolveOptions(const std::vector<Option> &opts,
         break;
       case kMpl2MplQuiet:
         quiet = (opt.Type() == kEnable);
+        break;
+      case kVerbose:
+        quiet = (opt.Type() == kEnable) ? false : true;
         break;
       case kMpl2MplDumpPhase:
         dumpPhase = opt.Args();

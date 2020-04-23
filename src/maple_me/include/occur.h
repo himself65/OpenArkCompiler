@@ -489,20 +489,6 @@ class MePhiOcc : public MeOccur {
 // each singly linked list repersents each bucket in workCandHashTable
 class PreWorkCand {
  public:
-  static const uint32 workCandHashLength = 229;
-  static uint32 ComputeWorkCandHashIndex(const MeExpr &meExpr);
-  static std::array<PreWorkCand*, workCandHashLength> &GetWorkcandHashTable() {
-    return workCandHashTable;
-  }
-
-  static PreWorkCand *GetWorkcandFromIndex(size_t idx) {
-    return workCandHashTable[idx];
-  }
-
-  static void SetWorkCandAt(size_t idx, PreWorkCand &workCand) {
-    workCandHashTable[idx] = &workCand;
-  }
-
   PreWorkCand(MapleAllocator &alloc, int32 idx, MeExpr *meExpr, PUIdx pIdx)
       : next(nullptr),
         index(idx),
@@ -628,7 +614,6 @@ class PreWorkCand {
   }
 
  private:
-  static std::array<PreWorkCand*, workCandHashLength> workCandHashTable;
   void InsertRealOccAt(MeRealOcc &occ, MapleVector<MeRealOcc*>::iterator it, PUIdx pIdx);
   PreWorkCand *next;
   int32 index;
@@ -649,7 +634,7 @@ class PreStmtWorkCand : public PreWorkCand {
       : PreWorkCand(alloc, idx, nullptr, pIdx), theMeStmt(&meStmt), lhsIsFinal(false) {}
 
   virtual ~PreStmtWorkCand() = default;
-  static uint32 ComputeStmtWorkCandHashIndex(const MeStmt &stmt);
+
   void DumpCand(IRMap &irMap) const {
     theMeStmt->Dump(&irMap);
   }
@@ -677,6 +662,31 @@ class PreStmtWorkCand : public PreWorkCand {
  private:
   MeStmt *theMeStmt;  // the statement of this workcand
   bool lhsIsFinal;    // used only if candidate is an assignment
+};
+
+class PreWorkCandHashTable {
+ public:
+  static const uint32 workCandHashLength = 229;
+  static uint32 ComputeWorkCandHashIndex(const MeExpr &meExpr);
+  static uint32 ComputeStmtWorkCandHashIndex(const MeStmt &stmt);
+
+  PreWorkCandHashTable() = default;
+  ~PreWorkCandHashTable() = default;
+
+  std::array<PreWorkCand*, workCandHashLength> &GetWorkcandHashTable() {
+    return workCandHashTable;
+  }
+
+  PreWorkCand *GetWorkcandFromIndex(size_t idx) {
+    return workCandHashTable[idx];
+  }
+
+  void SetWorkCandAt(size_t idx, PreWorkCand &workCand) {
+    workCandHashTable[idx] = &workCand;
+  }
+
+ private:
+  std::array<PreWorkCand*, workCandHashLength> workCandHashTable;
 };
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_OCCUR_H

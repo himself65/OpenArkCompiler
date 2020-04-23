@@ -1207,7 +1207,7 @@ void Emitter::EmitIntConst(const MIRSymbol &mirSymbol, MIRAggConst &aggConst, ui
       objSize = Globals::GetInstance()->GetBECommon()->GetTypeSize(mirType->GetTypeIndex());
     }
     /* objSize should not exceed 16 bits */
-    ASSERT(objSize <= 0xffff, "Error:the objSize is too large");
+    CHECK_FATAL(objSize <= 0xffff, "Error:the objSize is too large");
     Emit("\t.short\t" + std::to_string(objSize) + comments + "\n");
   } else if (mirSymbol.IsMuidRangeTab()) {
     MIRIntConst *subIntCt = safe_cast<MIRIntConst>(elemConst);

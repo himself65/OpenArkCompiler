@@ -1326,8 +1326,8 @@ bool SSAPre::CheckIfAnyLocalOpnd(const MeExpr &meExpr) const {
 
 // create a new realOcc based on the meStmt and meExpr
 MeRealOcc *SSAPre::CreateRealOcc(MeStmt &meStmt, int seqStmt, MeExpr &meExpr, bool isRebuilt, bool isLHS) {
-  uint32 hashIdx = PreWorkCand::ComputeWorkCandHashIndex(meExpr);
-  PreWorkCand *wkCand = PreWorkCand::GetWorkcandFromIndex(hashIdx);
+  uint32 hashIdx = PreWorkCandHashTable::ComputeWorkCandHashIndex(meExpr);
+  PreWorkCand *wkCand = preWorkCandHashTable.GetWorkcandFromIndex(hashIdx);
   while (wkCand != nullptr) {
     MeExpr *currMeExpr = wkCand->GetTheMeExpr();
     ASSERT(currMeExpr != nullptr, "CreateRealOcc: found workcand with theMeExpr as nullptr");
@@ -1366,8 +1366,8 @@ MeRealOcc *SSAPre::CreateRealOcc(MeStmt &meStmt, int seqStmt, MeExpr &meExpr, bo
   workList.push_back(wkCand);
   wkCand->AddRealOccAsLast(*newOcc, GetPUIdx());
   // add to bucket at workcandHashTable[hashIdx]
-  wkCand->SetNext(*PreWorkCand::GetWorkcandFromIndex(hashIdx));
-  PreWorkCand::SetWorkCandAt(hashIdx, *wkCand);
+  wkCand->SetNext(*preWorkCandHashTable.GetWorkcandFromIndex(hashIdx));
+  preWorkCandHashTable.SetWorkCandAt(hashIdx, *wkCand);
   return newOcc;
 }
 

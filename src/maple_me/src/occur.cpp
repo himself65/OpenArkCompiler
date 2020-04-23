@@ -31,8 +31,6 @@ constexpr uint32_t kOffsetNaryMeStmtOpnd = 2;
 }
 
 namespace maple {
-std::array<PreWorkCand*, PreWorkCand::workCandHashLength> PreWorkCand::workCandHashTable;
-
 void MeOccur::DumpOccur(IRMap &irMap) {
   MIRModule *mod = &irMap.GetSSATab().GetModule();
   mod->GetOut() << "MeOccur ";
@@ -199,7 +197,7 @@ void MeInsertedOcc::Dump(const IRMap &irMap) const {
 }
 
 // compute bucket index for the work candidate in workCandHashTable
-uint32 PreWorkCand::ComputeWorkCandHashIndex(const MeExpr &meExpr) {
+uint32 PreWorkCandHashTable::ComputeWorkCandHashIndex(const MeExpr &meExpr) {
   uint32 hashIdx = 0;
   MeExprOp meOp = meExpr.GetMeOp();
   switch (meOp) {
@@ -314,7 +312,7 @@ void PreWorkCand::AddRealOccSorted(const Dominance &dom, MeRealOcc &occ, PUIdx p
 }
 
 // compute bucket index for the work candidate in workCandHashTable
-uint32 PreStmtWorkCand::ComputeStmtWorkCandHashIndex(const MeStmt &stmt) {
+uint32 PreWorkCandHashTable::ComputeStmtWorkCandHashIndex(const MeStmt &stmt) {
   uint32 hIdx = (static_cast<uint32>(stmt.GetOp())) << kOffsetMeStmtOpcode;
   switch (stmt.GetOp()) {
     case OP_assertnonnull: {

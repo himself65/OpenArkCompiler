@@ -47,7 +47,7 @@ class SSAPre {
         varPhiDfns(std::less<uint32>(), ssaPreAllocator.Adapter()),
         rename2Set(std::less<uint32>(), ssaPreAllocator.Adapter()),
         temp2LocalRefVarMap(ssaPreAllocator.Adapter()) {
-    PreWorkCand::GetWorkcandHashTable().fill(nullptr);
+    preWorkCandHashTable.GetWorkcandHashTable().fill(nullptr);
   }
 
   virtual ~SSAPre() = default;
@@ -235,6 +235,7 @@ class SSAPre {
   int32 reBuiltOccIndex = -1;  // stores the size of worklist every time when try to add new worklist, update before
   // each code motion
   uint32 strIdxCount = 0;  // ssapre will create a lot of temp variables if using var to store redundances, start from 0
+  PreWorkCandHashTable preWorkCandHashTable;
 
  private:
   virtual void DoSSAFRE() {};
