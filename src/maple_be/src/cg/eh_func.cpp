@@ -375,6 +375,16 @@ void EHFunc::LowerThrow() {
         rethrow->ConvertThrowToRuntime(*cgFunc, *newNode);
         break;
       }
+      case OP_cvt: {
+        TypeCvtNode *cvtNode = static_cast<TypeCvtNode*>(opnd0);
+        PrimType prmType = cvtNode->GetPrimType();
+        // prmType supposed to be Pointer.
+        if ((prmType == PTY_ptr) || (prmType == PTY_ref) || (prmType == PTY_a32) || (prmType == PTY_a64)) {
+          BaseNode *newNode = cvtNode->CloneTree(mirFunc.GetModule()->GetCurFuncCodeMPAllocator());
+          rethrow->ConvertThrowToRuntime(*cgFunc, *newNode);
+        }
+        break;
+      }
       default:
         ASSERT(false, "unexpected or NYI");
     }
