@@ -37,9 +37,10 @@ def main():
     cli_running_config = test_suite_config.get("cli_running_config")
 
     retry = configs.get_val("retry")
-    result = None
+    result = ""
     failed = False
     for test in test_paths:
+        test_result = None
         test_failed = False
         if test.exists():
             if not test_cfg:
@@ -58,8 +59,9 @@ def main():
                     test_failed = True
                 else:
                     test_failed = False
-                result = task.gen_summary([])
+                test_result = task.gen_summary([])
             failed |= test_failed
+            result += test_result
         else:
             logger.info("Test path: {} does not exist, please check".format(test))
 
