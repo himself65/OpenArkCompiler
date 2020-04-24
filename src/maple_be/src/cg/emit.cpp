@@ -1458,7 +1458,11 @@ void Emitter::EmitFuncLayoutInfo(const MIRSymbol &layout) {
     EmitAsmLabel(kAsmData);
     Emit(asmInfo->GetAlign());
     Emit("  3\n" + markerName + ":\n");
+#if TARGAARCH64
     Emit("\t.quad ");
+#else
+    Emit("\t.word ");
+#endif
     Emit(GlobalTables::GetFunctionTable().GetFunctionFromPuidx(funcAddr->GetValue())->GetName());
     Emit("\n");
     Emit(asmInfo->GetSize());
