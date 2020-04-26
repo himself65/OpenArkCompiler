@@ -80,7 +80,7 @@ void FEStructFieldInfo::PrepareImpl(MIRBuilder &mirBuilder, bool argIsStatic) {
   const std::string &structName = GetStructName();
   std::string rawName = structName + NameMangler::kNameSplitterStr + GetElemName();
   fieldNameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(rawName);
-  fieldID = UINT32_MAX;
+  fieldID = static_cast<FieldID>(UINT32_MAX);
   MIRStructType *structType = FEManager::GetTypeManager().GetStructTypeFromName(structName);
   if (structType == nullptr) {
     isDefined = false;
@@ -130,7 +130,7 @@ void FEStructFieldInfo::PrepareNonStaticField(MIRStructType &structType, MIRBuil
   uint32 idx = 0;
   uint32 idx1 = 0;
   mirBuilder.TraverseToNamedFieldWithType(structType, elemNameIdx, fieldMIRType->GetTypeIndex(), idx1, idx);
-  fieldID = idx;
+  fieldID = static_cast<FieldID>(idx);
   isPrepared = true;
   isStatic = false;
 }
@@ -225,6 +225,10 @@ FEStructMethodInfo::FEStructMethodInfo(const GStrIdx &argFullNameIdx, MIRSrcLang
       isJavaDynamicCall(false) {
   isMethod = true;
   LoadMethodType();
+}
+
+FEStructMethodInfo::~FEStructMethodInfo() {
+  mirFunc = nullptr;
 }
 
 void FEStructMethodInfo::InitJavaPolymorphicWhiteList() {

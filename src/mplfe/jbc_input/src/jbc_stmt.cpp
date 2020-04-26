@@ -722,7 +722,7 @@ void JBCStmtInst::PrepareInvokeParametersAndReturn(JBCStack2FEHelper &stack2feHe
                                                    FEIRStmtCallAssign &callStmt,
                                                    bool isStatic) const {
   const std::vector<UniqueFEIRType> &argTypes = info.GetArgTypes();
-  for (int i = argTypes.size() - 1; i >= 0; --i) {
+  for (size_t i = argTypes.size(); i > 0; --i) {
     const UniqueFEIRType &argType = argTypes[static_cast<uint32>(i)];
     PrimType pty = argType->GetPrimType();
     UniqueFEIRVar var = stack2feHelper.PopItem(JBCStack2FEHelper::SimplifyPrimType(pty));

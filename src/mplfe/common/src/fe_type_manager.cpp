@@ -53,6 +53,7 @@ FETypeManager::FETypeManager(MIRModule &moduleIn)
 
 FETypeManager::~FETypeManager() {
   mp = nullptr;
+  funcMCCGetOrInsertLiteral = nullptr;
 }
 
 void FETypeManager::ReleaseMemPool() {

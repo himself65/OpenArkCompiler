@@ -134,7 +134,7 @@ class FEStructFieldInfo : public FEStructElemInfo {
 class FEStructMethodInfo : public FEStructElemInfo {
  public:
   FEStructMethodInfo(const GStrIdx &argFullNameIdx, MIRSrcLang argSrcLang, bool argIsStatic);
-  ~FEStructMethodInfo() = default;
+  ~FEStructMethodInfo();
   PUIdx GetPuIdx() const;
   bool IsConstructor() const {
     return isConstructor;

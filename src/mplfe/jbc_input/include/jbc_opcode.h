@@ -533,7 +533,7 @@ class JBCOpJsr : public JBCOp {
   }
 
   void SetSlotIdx(uint32 argSlotIdx) {
-    slotIdx = argSlotIdx;
+    slotIdx = static_cast<uint16>(argSlotIdx);
   }
 
   int32 GetJsrID() const {

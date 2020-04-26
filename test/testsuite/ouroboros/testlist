@@ -1,2 +1,13 @@
 [ALL-TEST-CASE]
+    arrayboundary_test
     clinit_test
+    eh_test
+    fuzzapi_test
+    other_test
+    parent_test
+    reflection_test
+    stmtpre_test
+    string_test
+    subsumeRC_test
+    thread_test
+    unsafe_test
