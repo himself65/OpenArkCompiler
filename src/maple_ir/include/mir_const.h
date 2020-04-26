@@ -138,16 +138,19 @@ class MIRIntConst : public MIRConst {
 
   void SetValue(int64 val) {
     CHECK_FATAL(false, "Can't Use This Interface in This Object");
+    (void)val;
   }
 
   void SetFieldID(uint32 fieldIdx) override {
     CHECK_FATAL(false, "Can't Use This Interface in This Object");
+    (void)fieldIdx;
   }
 
   bool operator==(const MIRConst &rhs) const override;
 
   MIRIntConst *Clone(MemPool &memPool) const override {
     CHECK_FATAL(false, "Can't Use This Interface in This Object");
+    (void)memPool;
     return nullptr;
   }
 

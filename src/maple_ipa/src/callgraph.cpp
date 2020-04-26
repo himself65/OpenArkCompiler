@@ -1263,9 +1263,12 @@ void CallGraph::GenCallGraph() {
   }
   // Deal with function override, function in current module override functions from mplt.
   // Don't need anymore as we rebuild candidate base on the latest CHA.
-  for (auto it = GlobalTables::GetFunctionTable().GetFuncTable().begin();
-       it != GlobalTables::GetFunctionTable().GetFuncTable().end(); it++) {
-    MIRFunction *mirFunc = *it;
+  std::vector<MIRFunction*> &funcTable = GlobalTables::GetFunctionTable().GetFuncTable();
+  // don't optimize this loop to iterator or range-base loop
+  // because AddCallGraphNode(mirFunc) will change GlobalTables::GetFunctionTable().GetFuncTable()
+  // see: https://gitlab.huawei.com/Maple/ArkKit/issues/122
+  for (size_t index = 0; index < funcTable.size(); index++) {
+    MIRFunction *mirFunc = funcTable.at(index);
     if (mirFunc == nullptr || mirFunc->GetBody() == nullptr) {
       continue;
     }
