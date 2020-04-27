@@ -32,6 +32,7 @@ from maple_test.utils import (
     FAIL,
     NOT_RUN,
     UNRESOLVED,
+    DEFAULT_PRINT,
     OS_SEP,
 )
 from maple_test.utils import (
@@ -285,19 +286,28 @@ class TestSuiteTask:
             logger.info(line)
         return self.result[FAIL]
 
-    def gen_brief_summary(self):
+    def gen_brief_summary(self, print_type):
         total = sum(self.result.values())
+        result = copy.deepcopy(self.result)
+        total -= result.pop(NOT_RUN)
+        if UNRESOLVED not in print_type:
+            total -= result.pop(UNRESOLVED)
+
         total_summary = "TestSuiteTask: {}, Total: {}, ".format(
             self.name, total
         ) + "".join(
             [
                 "{}: {}, ".format(k, v)
-                for k, v in sort_dict_items(self.result, index=1, reverse=True)
+                for k, v in sort_dict_items(result, index=1, reverse=True)
             ]
         )
         task_set_summary = ""
         for tasks_name in self.task_set:
             total = sum(self.task_set_result[tasks_name].values())
+            task_result = copy.deepcopy(self.task_set_result[tasks_name])
+            total -= task_result.pop(NOT_RUN)
+            if UNRESOLVED not in print_type:
+                total -= task_result.pop(UNRESOLVED)
             task_set_summary += (
                 "\n  "
                 + tasks_name
@@ -305,9 +315,7 @@ class TestSuiteTask:
                 + "".join(
                     [
                         "{}: {}, ".format(k, v)
-                        for k, v in sort_dict_items(
-                            self.task_set_result[tasks_name], index=1, reverse=True
-                        )
+                        for k, v in sort_dict_items(task_result, index=1, reverse=True)
                     ]
                 )
             )
@@ -320,13 +328,13 @@ class TestSuiteTask:
                 self.result[status] += num
         if print_type is None:
             print_type = configs.get_val("print_type")
-        brief_summary = self.gen_brief_summary()
+        brief_summary = self.gen_brief_summary(print_type)
         summary = "-" * 120
         summary += "\nTestSuite Path: {}\n".format(self.path)
         for tasks_name in self.task_set:
             for task in sorted(self.task_set[tasks_name], key=lambda task: task.name):
                 result = task.result[0]
-                if not print_type or task.result[0] in configs.get_val("print_type"):
+                if result in print_type or (not print_type and result in DEFAULT_PRINT):
                     summary += "  {}, Case: {}, Result: {}\n".format(
                         tasks_name, task.case_path, result
                     )

@@ -78,7 +78,8 @@ def parse_args():
         default=[],
         choices=ALL[:],
         help="Print test cases with specified results, "
-        "-pPASS -pFAIL, to print all test case that failed or passed",
+        "-pPASS -pFAIL, to print all test case that failed or passed"
+        "UNRESOLVED test case results are not displayed by default.",
     )
     test_framework_parser.add_argument(
         "--progress",
@@ -156,7 +157,7 @@ def parse_args():
     running_parser.add_argument(
         "--encoding",
         action="append",
-        default=[ENCODING],
+        default=["UTF-8"],
         help="Specify the test case encoding format, default encoding is platform "
         "dependent, but any encoding supported by Python can be passed. "
         "Can specify multiple encoding formats.",

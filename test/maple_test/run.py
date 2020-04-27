@@ -24,7 +24,7 @@ import logging
 from textwrap import indent, shorten
 
 from maple_test.configs import construct_logger, get_val
-from maple_test.utils import PASS, FAIL, UNRESOLVED, NOT_RUN, ENCODING
+from maple_test.utils import PASS, FAIL, UNRESOLVED, NOT_RUN
 from maple_test.utils import add_run_path
 
 
@@ -59,8 +59,8 @@ def run_command(cmd, work_dir, timeout, logger, env=None):
         return return_code, com_out, com_err
     else:
         return_code = process_command.returncode
-        com_out = com_out.decode(ENCODING, errors="ignore")
-        com_err = com_err.decode(ENCODING, errors="ignore")
+        com_out = com_out.decode(sys.stdout.encoding, errors="replace")
+        com_err = com_err.decode(sys.stderr.encoding, errors="replace")
         return return_code, com_out, com_err
     finally:
         process_command.kill()
