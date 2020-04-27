@@ -11,3 +11,7 @@
     subsumeRC_test
     thread_test
     unsafe_test
+    memory_management
+
+[EXCLUDE-TEST-CASE]
+    memory_management/Annotation

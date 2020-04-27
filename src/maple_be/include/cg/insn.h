@@ -132,6 +132,10 @@ class Insn {
     return false;
   }
 
+  virtual bool OpndIsMayDef(uint32) const {
+    return false;
+  }
+
   virtual bool IsEffectiveCopy() const {
     return false;
   }

@@ -2007,7 +2007,7 @@ void GraphColorRegAllocator::SplitAndColor() {
 
 void GraphColorRegAllocator::HandleLocalRegAssignment(regno_t regNO, LocalRegAllocator &localRa, bool isInt) {
   /* vreg, get a reg for it if not assigned already. */
-  if (!localRa.isInRegAssigned(regNO, isInt) && !localRa.isInRegSpilled(regNO, isInt)) {
+  if (!localRa.IsInRegAssigned(regNO, isInt) && !localRa.isInRegSpilled(regNO, isInt)) {
     /* find an available phys reg */
     bool founded = false;
     LiveRange *lr = lrVec[regNO];
@@ -2039,12 +2039,16 @@ void GraphColorRegAllocator::HandleLocalRegAssignment(regno_t regNO, LocalRegAll
   }
 }
 
-void GraphColorRegAllocator::UpdateLocalRegDefUseCount(regno_t regNO, LocalRegAllocator &localRa, bool isDef) const {
+void GraphColorRegAllocator::UpdateLocalRegDefUseCount(regno_t regNO, LocalRegAllocator &localRa, bool isDef,
+                                                       bool isInt) const {
   auto usedIt = localRa.GetUseInfo().find(regNO);
   if (usedIt != localRa.GetUseInfo().end() && !isDef) {
     /* reg use, decrement count */
     ASSERT(usedIt->second > 0, "Incorrect local ra info");
     localRa.SetUseInfoElem(regNO, usedIt->second - 1);
+    if (!AArch64isa::IsPhysicalRegister(static_cast<AArch64reg>(regNO)) && localRa.IsInRegAssigned(regNO, isInt)) {
+      localRa.IncUseInfoElem(localRa.GetRegAssignmentItem(isInt, regNO));
+    }
     if (GCRA_DUMP) {
       LogInfo::MapleLogger() << "\t\treg " << regNO << " update #use to " << localRa.GetUseInfoElem(regNO) << "\n";
     }
@@ -2055,6 +2059,9 @@ void GraphColorRegAllocator::UpdateLocalRegDefUseCount(regno_t regNO, LocalRegAl
     /* reg def, decrement count */
     ASSERT(defIt->second > 0, "Incorrect local ra info");
     localRa.SetDefInfoElem(regNO, defIt->second - 1);
+    if (!AArch64isa::IsPhysicalRegister(static_cast<AArch64reg>(regNO)) && localRa.IsInRegAssigned(regNO, isInt)) {
+      localRa.IncDefInfoElem(localRa.GetRegAssignmentItem(isInt, regNO));
+    }
     if (GCRA_DUMP) {
       LogInfo::MapleLogger() << "\t\treg " << regNO << " update #def to " << localRa.GetDefInfoElem(regNO) << "\n";
     }
@@ -2066,7 +2073,7 @@ void GraphColorRegAllocator::UpdateLocalRegConflict(regno_t regNO, LocalRegAlloc
   if (lr->GetNumBBConflicts() == 0) {
     return;
   }
-  if (!localRa.isInRegAssigned(regNO, isInt)) {
+  if (!localRa.IsInRegAssigned(regNO, isInt)) {
     return;
   }
   regno_t preg = localRa.GetRegAssignmentItem(isInt, regNO);
@@ -2119,7 +2126,7 @@ void GraphColorRegAllocator::HandleLocalReg(Operand &op, LocalRegAllocator &loca
 
   if (regOpnd.IsPhysicalRegister()) {
     /* conflict with preg is record in lr->pregveto and BBAssignInfo->globalsAssigned */
-    UpdateLocalRegDefUseCount(regNO, localRa, isDef);
+    UpdateLocalRegDefUseCount(regNO, localRa, isDef, isInt);
     /* See if it is needed by global RA */
     if (localRa.GetUseInfoElem(regNO) == 0 && localRa.GetDefInfoElem(regNO) == 0) {
       if (bbInfo && !bbInfo->GetGlobalsAssigned(regNO)) {
@@ -2132,10 +2139,10 @@ void GraphColorRegAllocator::HandleLocalReg(Operand &op, LocalRegAllocator &loca
     }
   } else {
     HandleLocalRegAssignment(regNO, localRa, isInt);
-    UpdateLocalRegDefUseCount(regNO, localRa, isDef);
+    UpdateLocalRegDefUseCount(regNO, localRa, isDef, isInt);
     UpdateLocalRegConflict(regNO, localRa, isInt);
     if (localRa.GetUseInfoElem(regNO) == 0 && localRa.GetDefInfoElem(regNO) == 0 &&
-        localRa.isInRegAssigned(regNO, isInt)) {
+        localRa.IsInRegAssigned(regNO, isInt)) {
       /* last ref of vreg, release assignment */
       localRa.SetPregs(localRa.GetRegAssignmentItem(isInt, regNO), isInt);
       if (GCRA_DUMP) {

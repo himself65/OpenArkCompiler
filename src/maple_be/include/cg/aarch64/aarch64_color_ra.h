@@ -810,7 +810,7 @@ class LocalRegAllocator {
     return isInt ? 0 : V0 - R0;
   }
 
-  bool isInRegAssigned(regno_t regNO, bool isInt) const {
+  bool IsInRegAssigned(regno_t regNO, bool isInt) const {
     uint64 *regAssigned = nullptr;
     if (isInt) {
       regAssigned = intRegAssigned;
@@ -955,6 +955,12 @@ class LocalRegAllocator {
     useInfo[regNO] = info;
   }
 
+  void IncUseInfoElem(regno_t regNO) {
+    if (useInfo.find(regNO) != useInfo.end()) {
+      ++useInfo[regNO];
+    }
+  }
+
   uint16 GetUseInfoElem(regno_t regNO) {
     return useInfo[regNO];
   }
@@ -973,6 +979,12 @@ class LocalRegAllocator {
 
   uint16 GetDefInfoElem(regno_t regNO) {
     return defInfo[regNO];
+  }
+
+  void IncDefInfoElem(regno_t regNO) {
+    if (defInfo.find(regNO) != defInfo.end()) {
+      ++defInfo[regNO];
+    }
   }
 
   void ClearDefInfo() {
@@ -1165,7 +1177,7 @@ class GraphColorRegAllocator : public AArch64RegAllocator {
   bool IsLocalReg(LiveRange &lr) const;
   void HandleLocalRaDebug(regno_t regNO, const LocalRegAllocator &localRa, bool isInt) const;
   void HandleLocalRegAssignment(regno_t regNO, LocalRegAllocator &localRa, bool isInt);
-  void UpdateLocalRegDefUseCount(regno_t regNO, LocalRegAllocator &localRa, bool isDef) const;
+  void UpdateLocalRegDefUseCount(regno_t regNO, LocalRegAllocator &localRa, bool isDef, bool isInt) const;
   void UpdateLocalRegConflict(regno_t regNO, LocalRegAllocator &localRa, bool isInt);
   void HandleLocalReg(Operand &op, LocalRegAllocator &localRa, const BBAssignInfo *bbInfo, bool isDef, bool isInt);
   void LocalRaRegSetEraseReg(LocalRegAllocator &localRa, regno_t regNO);
