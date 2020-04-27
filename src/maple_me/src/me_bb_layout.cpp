@@ -795,11 +795,16 @@ void BBLayout::LayoutWithProf() {
     AddBBProf(*bb);
     bb = NextBBProf(*bb);
   }
-  // adjust the last BB if kind is fallthru
+  // adjust the last BB if kind is fallthru or condtion BB
   BB *lastBB = layoutBBs.empty() ? nullptr : layoutBBs.back();
-  if (lastBB != nullptr && lastBB->GetKind() == kBBFallthru) {
-    BB *targetBB = lastBB->GetSucc().front();
-    CreateGoto(*lastBB, func, *targetBB);
+  if (lastBB != nullptr) {
+    if (lastBB->GetKind() == kBBFallthru) {
+      BB *targetBB = lastBB->GetSucc().front();
+      CreateGoto(*lastBB, func, *targetBB);
+    } else if (lastBB->GetKind() == kBBCondGoto) {
+      BB *fallthru = lastBB->GetSucc(0);
+      CreateGotoBBAfterCondBB(*lastBB, *fallthru);
+    }
   }
 }
 
