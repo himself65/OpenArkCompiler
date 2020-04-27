@@ -24,7 +24,7 @@ namespace maple {
 class FEJavaStringManager {
  public:
   explicit FEJavaStringManager(MIRModule &argModule);
-  ~FEJavaStringManager() = default;
+  ~FEJavaStringManager();
   // profiling
   void LoadProfilingData(const std::string &profileFileName);
   MIRSymbol *GetLiteralPtrVar(const MIRSymbol *var) const;

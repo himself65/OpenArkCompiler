@@ -25,6 +25,10 @@ namespace maple {
 FEJavaStringManager::FEJavaStringManager(MIRModule &argModule)
     : module(argModule) {}
 
+FEJavaStringManager::~FEJavaStringManager() {
+  typeString = nullptr;
+}
+
 void FEJavaStringManager::LoadProfilingData(const std::string &profileFileName) {
   std::ifstream inFile(profileFileName);
   if (!inFile.is_open()) {

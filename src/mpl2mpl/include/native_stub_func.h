@@ -25,7 +25,7 @@ constexpr int kSlownativeFuncnum = 9;
 #endif
 constexpr int kJniTypeNormal = 0;
 constexpr int kJniTypeMapleCriticalNative = 1;
-constexpr int kJnitTypeCriticalNative = 2;
+constexpr int kJniTypeCriticalNative = 2;
 constexpr int kInvalidCode = 0x01;
 
 class NativeFuncProperty {

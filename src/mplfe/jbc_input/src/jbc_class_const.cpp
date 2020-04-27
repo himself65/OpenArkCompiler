@@ -201,6 +201,7 @@ JBCConstClass::JBCConstClass(MapleAllocator &alloc, JBCConstTag t, JBCConstPoolI
 
 JBCConstClass::~JBCConstClass() {
   constUTF8 = nullptr;
+  feType = nullptr;
 }
 
 bool JBCConstClass::ParseFileImpl(BasicIORead &io) {
@@ -456,6 +457,7 @@ JBCConstInvokeDynamic::JBCConstInvokeDynamic(MapleAllocator &alloc, JBCConstTag 
 
 JBCConstInvokeDynamic::~JBCConstInvokeDynamic() {
   constNameAndType = nullptr;
+  feStructElemInfo = nullptr;
 }
 
 bool JBCConstInvokeDynamic::PrepareFEStructElemInfo(const std::string &ownerClassName) {

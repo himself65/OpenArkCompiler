@@ -114,16 +114,15 @@ void NativeStubFuncGeneration::ProcessFunc(MIRFunction *func) {
     return;
   }
   SetCurrentFunction(*func);
-  if (trace) {
-    LogInfo::MapleLogger(kLlErr) << "Create stub func: " << func->GetName() << "\n";
+  // Has been processed by previous phases, such as simplify.
+  if (func->GetBody()->GetFirst()) {
+    GenerateRegTabEntry(*func);
+    GenerateRegFuncTabEntry();
+    return;
   }
   func->GetBody()->ResetBlock();
   NativeFuncProperty funcProperty;
   bool needNativeCall = (!func->GetAttr(FUNCATTR_critical_native)) && (funcProperty.jniType == kJniTypeNormal);
-  if (funcProperty.jniType == kJnitTypeCriticalNative) {
-    // Can't reach here now.
-    func->SetAttr(FUNCATTR_critical_native);
-  }
   GStrIdx classObjSymStrIdx =
       GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(CLASSINFO_PREFIX_STR + func->GetBaseClassName());
   MIRSymbol *classObjSymbol = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(classObjSymStrIdx);
@@ -313,7 +312,6 @@ void NativeStubFuncGeneration::GenerateRegTabEntry(const MIRFunction &func) {
 
 void NativeStubFuncGeneration::GenerateRegisteredNativeFuncCall(MIRFunction &func, const MIRFunction &nativeFunc,
                                                                 MapleVector<BaseNode*> &args, const MIRSymbol *ret) {
-  // Generate registration table entry.
   GenerateRegTabEntry(func);
   GenerateRegFuncTabEntry();
   CallReturnVector nrets(func.GetCodeMempoolAllocator().Adapter());
@@ -373,7 +371,7 @@ void NativeStubFuncGeneration::GenerateRegisteredNativeFuncCall(MIRFunction &fun
       // Define wrapper function call
       StmtNode *wrapperCall = CreateNativeWrapperCallNode(func, readFuncPtr, args, ret);
       func.GetBody()->AddStatement(wrapperCall);
-    } else if (!Options::regNativeDynamicOnly) {
+    } else if (!Options::regNativeDynamicOnly) { // Qemu
       func.GetBody()->AddStatement(funcptrAssign);
       func.GetBody()->AddStatement(funcPtrAndOpAssign);
       // Get find_native_func function
@@ -427,7 +425,7 @@ void NativeStubFuncGeneration::GenerateRegisteredNativeFuncCall(MIRFunction &fun
         elseBlock->AddStatement(wrapperCall);
         func.GetBody()->AddStatement(ifStmt);
       }
-    } else {
+    } else { // EMUI
       func.GetBody()->AddStatement(funcptrAssign);
       func.GetBody()->AddStatement(funcPtrAndOpAssign);
       MIRFunction *findNativeFunc = builder->GetOrCreateFunction(NameMangler::kFindNativeFunc,

@@ -199,6 +199,9 @@ class MIRFunction {
   void SetAttr(FuncAttrKind attrKind) {
     funcAttrs.SetAttr(attrKind);
   }
+  void UnSetAttr(FuncAttrKind attrKind) {
+    funcAttrs.SetAttr(attrKind, true);
+  }
 
   bool IsVarargs() const {
     return funcAttrs.GetAttr(FUNCATTR_varargs);
