@@ -171,6 +171,7 @@ void MeFunction::CreateBasicBlocks() {
           break;
         }
       // fall thru to handle as return
+      [[clang::fallthrough]];
       case OP_gosub:
       case OP_retsub:
       case OP_return: {

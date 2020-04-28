@@ -1103,7 +1103,7 @@ class GraphColorRegAllocator : public AArch64RegAllocator {
  private:
   struct SetLiveRangeCmpFunc {
     bool operator()(const LiveRange *lhs, const LiveRange *rhs) const {
-      if (lhs->GetPriority() == rhs->GetPriority()) {
+      if (fabs(lhs->GetPriority() - rhs->GetPriority()) <= 1e-6) {
         /*
          * This is to ensure the ordering is consistent as the reg#
          * differs going through VtableImpl.mpl file.

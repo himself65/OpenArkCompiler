@@ -137,6 +137,7 @@ bool SSADevirtual::DevirtualizeCall(CallMeStmt &callStmt) {
     case OP_interfacecallassigned:
     case OP_interfaceicallassigned:
       totalInterfaceCalls++;  // FALLTHROUGH
+    [[clang::fallthrough]];
     case OP_virtualcall:
     case OP_virtualicall:
     case OP_virtualcallassigned:

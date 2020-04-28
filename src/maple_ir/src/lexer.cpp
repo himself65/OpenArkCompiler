@@ -283,7 +283,7 @@ TokenKind MIRLexer::GetFloatConst(uint32 valStart, uint32 startIdx, bool negativ
     }
     theIntVal = static_cast<int>(theFloatVal);
     theDoubleVal = static_cast<double>(theDoubleVal);
-    if (theFloatVal == -0) {
+    if (negative && fabs(theFloatVal) <= 1e-6) {
       theDoubleVal = -theDoubleVal;
     }
     name = line.substr(valStart, curIdx - valStart);
@@ -297,7 +297,7 @@ TokenKind MIRLexer::GetFloatConst(uint32 valStart, uint32 startIdx, bool negativ
     }
     theIntVal = static_cast<int>(theDoubleVal);
     theFloatVal = static_cast<float>(theDoubleVal);
-    if (theDoubleVal == -0) {
+    if (negative && fabs(theDoubleVal) <= 1e-15) {
       theFloatVal = -theFloatVal;
     }
     name = line.substr(valStart, curIdx - valStart);
@@ -574,6 +574,7 @@ TokenKind MIRLexer::LexToken() {
         return TK_dotdotdot;
       }
     // fall thru for .9100 == 0.9100
+    [[clang::fallthrough]];
     case '0':
     case '1':
     case '2':

@@ -40,6 +40,7 @@ class SSAEPre : public SSAPre {
     return v != nullptr && v->IsVolatile(irMap->GetSSATab());
   }
   virtual bool IsThreadObjField(const IvarMeExpr &expr) const {
+    (void)expr;
     return false;
   }
 

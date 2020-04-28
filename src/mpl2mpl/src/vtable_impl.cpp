@@ -129,6 +129,7 @@ void VtableImpl::ProcessFunc(MIRFunction *func) {
         stmt = icallNode;
         // Fall-through
       }
+      [[clang::fallthrough]];
       case OP_icallassigned: {
         auto *icall = static_cast<IcallNode*>(stmt);
         BaseNode *firstParm = icall->GetNopndAt(0);

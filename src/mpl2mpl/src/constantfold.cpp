@@ -666,9 +666,9 @@ MIRIntConst *ConstantFold::FoldFPConstComparisonMIRConst(Opcode opcode, PrimType
   switch (opcode) {
     case OP_eq: {
       if (useDouble) {
-        constValue = (doubleConst0->GetValue() == doubleConst1->GetValue()) ? 1 : 0;
+        constValue = fabs(doubleConst0->GetValue() - doubleConst1->GetValue()) <= 1e-15 ? 1 : 0;
       } else {
-        constValue = (floatConst0->GetValue() == floatConst1->GetValue()) ? 1 : 0;
+        constValue = fabs(floatConst0->GetValue() - floatConst1->GetValue()) <= 1e-6 ? 1 : 0;
       }
       break;
     }
@@ -706,9 +706,9 @@ MIRIntConst *ConstantFold::FoldFPConstComparisonMIRConst(Opcode opcode, PrimType
     }
     case OP_ne: {
       if (useDouble) {
-        constValue = (doubleConst0->GetValue() != doubleConst1->GetValue()) ? 1 : 0;
+        constValue = fabs(doubleConst0->GetValue() - doubleConst1->GetValue()) > 1e-15 ? 1 : 0;
       } else {
-        constValue = (floatConst0->GetValue() != floatConst1->GetValue()) ? 1 : 0;
+        constValue = fabs(floatConst0->GetValue() - floatConst1->GetValue()) > 1e-6 ? 1 : 0;
       }
       break;
     }
@@ -721,7 +721,7 @@ MIRIntConst *ConstantFold::FoldFPConstComparisonMIRConst(Opcode opcode, PrimType
         if (doubleConst0->GetValue() > doubleConst1->GetValue() ||
             (opcode == OP_cmpg && (std::isnan(doubleConst0->GetValue()) || std::isnan(doubleConst1->GetValue())))) {
           constValue = 1;
-        } else if (doubleConst0->GetValue() == doubleConst1->GetValue()) {
+        } else if (fabs(doubleConst0->GetValue() - doubleConst1->GetValue()) <= 1e-15) {
           constValue = 0;
         } else if (doubleConst0->GetValue() < doubleConst1->GetValue() ||
                    (opcode == OP_cmpl && (std::isnan(doubleConst0->GetValue()) ||
@@ -732,7 +732,7 @@ MIRIntConst *ConstantFold::FoldFPConstComparisonMIRConst(Opcode opcode, PrimType
         if (floatConst0->GetValue() > floatConst1->GetValue() ||
             (opcode == OP_cmpg && (std::isnan(floatConst0->GetValue()) || std::isnan(floatConst1->GetValue())))) {
           constValue = 1;
-        } else if (floatConst0->GetValue() == floatConst1->GetValue()) {
+        } else if (fabs(floatConst0->GetValue() - floatConst1->GetValue()) > 1e-6) {
           constValue = 0;
         } else if (floatConst0->GetValue() < floatConst1->GetValue() ||
                    (opcode == OP_cmpl && (std::isnan(floatConst0->GetValue()) ||

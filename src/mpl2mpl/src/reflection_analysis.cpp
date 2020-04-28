@@ -86,7 +86,7 @@ constexpr char kObjsizeStr[] = "objsize";
 constexpr char kPaddingStr[] = "padding";
 #else
 constexpr char kInstanceOfCacheFalseStr[] = "instanceOfCacheFalse";
-#endif
+#endif // ~USE_32BIT_REF
 constexpr char kTypeNameStr[] = "typeName";
 constexpr char kClassNameStr[] = "classname";
 constexpr char kFieldNameStr[] = "fieldname";

@@ -444,7 +444,7 @@ interface TestMethod11 {
     String string09Method();
 }
 
-// DEPENDENCE: check_s.py FieldTest.java
+// DEPENDENCE: FieldTest.java
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
 // ASSERT: scan 0\n

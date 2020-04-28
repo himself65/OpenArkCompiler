@@ -1136,6 +1136,7 @@ void DoDevirtual(const Klass *klass, const KlassHierarchy *klassh) {
             }
           }
         }
+        [[clang::fallthrough]];
         case OP_call:
         case OP_callassigned: {
           CallNode *cnode = static_cast<CallNode*>(stmt);
@@ -1267,7 +1268,7 @@ void CallGraph::GenCallGraph() {
   // don't optimize this loop to iterator or range-base loop
   // because AddCallGraphNode(mirFunc) will change GlobalTables::GetFunctionTable().GetFuncTable()
   // see: https://gitlab.huawei.com/Maple/ArkKit/issues/122
-  for (size_t index = 0; index < funcTable.size(); index++) {
+  for (size_t index = 0; index < funcTable.size(); ++index) {
     MIRFunction *mirFunc = funcTable.at(index);
     if (mirFunc == nullptr || mirFunc->GetBody() == nullptr) {
       continue;

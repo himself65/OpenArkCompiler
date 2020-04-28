@@ -380,7 +380,7 @@ interface TestField12 {
     char[] chars10 = new char[] {'a', 'b', 'c'};
     String string10 = "I'm only happy when it rains";
 }
-// DEPENDENCE: MethodTest.java check_s.py
+// DEPENDENCE: MethodTest.java
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
 // ASSERT: scan 0\n

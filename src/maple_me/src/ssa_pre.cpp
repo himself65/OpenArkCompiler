@@ -1553,6 +1553,7 @@ void SSAPre::BuildWorkListStmt(MeStmt &stmt, uint32 seqStmt, bool isRebuilt, MeE
       }
     // fall thru
     }
+    [[clang::fallthrough]];
     case OP_xintrinsiccall:
     case OP_intrinsiccallwithtype:
     case OP_intrinsiccallassigned:
