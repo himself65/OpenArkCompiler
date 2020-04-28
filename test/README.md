@@ -34,6 +34,7 @@ test
 # 指定测试套路径，以‘：’划分
 dir =
     ../testsuite/irbuild_test:
+    ../testsuite/ouroboros:
 
 [running]
 #指定运行时的临时路径
@@ -48,18 +49,6 @@ level = INFO
 ## 运行说明
 
 依赖环境变量：MAPLE_ROOT
-
-### 运行单个irbuild用例
-
-```shell
-python3 main.py -pFAIL -pPASS --timeout=180 --test_cfg=testsuite/irbuild_test/test.cfg testsuite/irbuild_test/I0001-mapleall-irbuild-edge-addf32
-```
-
-### 运行文件夹内的所有用例
-
-```shell
-python3 main.py -pFAIL -pPASS --timeout=180 --test_cfg=testsuite/irbuild_test/test.cfg testsuite/irbuild_test
-```
 
 ### 运行已配置的所有测试套
 
@@ -136,6 +125,221 @@ Log arguments:
 
 当前测试框架仅支持编码格式为 `UTF-8`，测试用例和配置文件仅支持 `UTF-8` 编码格式，如果测试用例编码非 `UTF-8` 测试用例会被认定为 `UNRESOLVED`
 
+## ouroboros 测试套
+
+ouroboros测试套是基于 `Java` 测试用例的测试套
+
+### 运行测试套
+
+批量运行ouroboros：参数 `-j20` 设定并行为20
+
+`python3 test/main.py test/testsuite/ouroboros/ -j20`
+
+运行ourobors下的子文件夹：
+
+`python3 test/main.py test/testsuite/ouroboros/string_test -j20`
+
+运行ourobors下的单一测试用例：
+
+`python3 test/main.py test/testsuite/ouroboros/string_test`
+
+只输出失败用例：
+
+`python3 test/main.py test/testsuite/ouroboros/ -j20 -pFAIL`
+
+屏幕输出详细运行日至：
+
+`python3 test/main.py test/testsuite/ouroboros/string_test -j20`
+
+### 测试套配置
+
+测试套配置文件路径为 `testsuite/ourobors/test.cfg`, 含有测试套的一些设置和内部变量
+
+```ini
+[suffix]
+java = //
+
+[internal-var]
+maple = python3 ${MAPLE_ROOT}/test/testsuite/maple.py
+run = #
+build_option = --javac="-bootclasspath ${MAPLE_ROOT}/libjava-core/java-core.jar" --maple="-O0 --mplt=${MAPLE_ROOT}/libjava-core/java-core.mplt --option=\"-use-string-factory::: \"" -s maple
+run_option =
+
+[description]
+title = Maple Ouroboros Test
+```
+
+**`[suffix]`**：限定搜索测试用例文件的后缀，以及测试用例中注释符，注释符后会跟随执行语句或者校验语句，当前测试套中的用例为 `java` 文件，`\\` 作为注释符
+
+**`[internal-val]`**：内部变量，此处的内部变量会替换用例中相应的变量。例如配置文件中的 `maple = python3 ${MAPLE_ROOT}/test/testsuite/maple.py` ，将会将用例中跟随在 `\\ EXEC:## ouroboros 测试套
+
+ouroboros测试套是基于 `Java` 测试用例的测试套
+
+### 运行测试套
+
+批量运行ouroboros：参数 `-j20` 设定并行为20
+
+`python3 test/main.py test/testsuite/ouroboros/ -j20`
+
+运行ourobors下的子文件夹：
+
+`python3 test/main.py test/testsuite/ouroboros/string_test -j20`
+
+运行ourobors下的单一测试用例：
+
+`python3 test/main.py test/testsuite/ouroboros/string_test`
+
+只输出失败用例：
+
+`python3 test/main.py test/testsuite/ouroboros/ -j20 -pFAIL`
+
+屏幕输出详细运行日至：
+
+`python3 test/main.py test/testsuite/ouroboros/string_test -j20`
+
+### 测试套配置
+
+测试套配置文件路径为 `testsuite/ourobors/test.cfg`, 含有测试套的一些设置和内部变量
+
+```ini
+[suffix]
+java = //
+
+[internal-var]
+maple = python3 ${MAPLE_ROOT}/test/testsuite/maple.py
+run = #
+build_option = --javac="-bootclasspath ${MAPLE_ROOT}/libjava-core/java-core.jar" --maple="-O0 --mplt=${MAPLE_ROOT}/libjava-core/java-core.mplt --option=\"-use-string-factory::: \"" -s maple
+run_option =
+
+[description]
+title = Maple Ouroboros Test
+```
+
+**`[suffix]`**：限定搜索测试用例文件的后缀，以及测试用例中注释符，注释符后会跟随执行语句或者校验语句，当前测试套中的用例为 `java` 文件，`\\` 作为注释符
+
+**`[internal-val]`**：内部变量，此处的内部变量会替换用例中相应的变量。例如配置文件中的 `maple = python3 ${MAPLE_ROOT}/test/testsuite/maple.py` ，将会将用例中跟随在 `\\ EXEC: ` 之后的执行语句中的 `%maple` 替换为 `python3 ${MAPLE_ROOT}/test/testsuite/maple.py`。当前的用例只能编译无法运行所以在内部变量 `run` 出用 `shell` 注释符 `#` 代表，注释运行的语句。
+
+**`[description]`**：测试套的描述信息
+
+### 测试套列表
+
+默认测试列表路径为 `testsuite/ourobors/testlist`，测试列表规定了运行测试用例的范围，同时指定了排除的测试用例
+
+```list
+[ALL-TEST-CASE]
+    arrayboundary_test
+    clinit_test
+    eh_test
+    fuzzapi_test
+    other_test
+    parent_test
+    reflection_test
+    stmtpre_test
+    string_test
+    subsumeRC_test
+    thread_test
+    unsafe_test
+    memory_management
+
+[EXCLUDE-TEST-CASE]
+    memory_management/Annotation
+```
+
+由两个部分组成：`[ALL-TEST-CASE]` 与 `[EXCLUDE-TEST-CASE]`
+
+`[ALL-TEST-CASE]`: 指定了运行测试用例的范围
+
+`[EXCLUDE-TEST-CASE]`: 不运行的测试用例
+
+当前测试用例排除了测试套 `testsuite/ourobors` 下子文件夹 `memory_management/Annotation` 中所有的用例文件
+ ` 之后的执行语句中的 `%maple` 替换为 `python3 ${MAPLE_ROOT}/test/testsuite/maple.py`。当前的用例只能编译无法运行所以在内部变量 `run` 出用 `shell` 注释符 `#` 代表，注释运行的语句。
+
+**`[description]`**：测试套的描述信息
+
+### 测试套列表
+
+默认测试列表路径为 `testsuite/ourobors/testlist`，测试列表规定了运行测试用例的范围，同时指定了排除的测试用例
+
+```list
+[ALL-TEST-CASE]
+    arrayboundary_test
+    clinit_test
+    eh_test
+    fuzzapi_test
+    other_test
+    parent_test
+    reflection_test
+    stmtpre_test
+    string_test
+    subsumeRC_test
+    thread_test
+    unsafe_test
+    memory_management
+
+[EXCLUDE-TEST-CASE]
+    memory_management/Annotation
+```
+
+由两个部分组成：`[ALL-TEST-CASE]` 与 `[EXCLUDE-TEST-CASE]`
+
+`[ALL-TEST-CASE]`: 指定了运行测试用例的范围
+
+`[EXCLUDE-TEST-CASE]`: 不运行的测试用例
+
+当前测试用例排除了测试套 `testsuite/ourobors` 下子文件夹 `memory_management/Annotation` 中所有的用例文件
+
+#### 完整Main.mpl
+
+```
+ func &addf32r(
+  var %i f32, var %j f32
+  ) f32 { 
+   return (
+     add f32(dread f32 %i, dread f32 %j))}
+
+ func &addf32I (
+  var %i f32
+  ) f32 { 
+   return (
+     add f32(dread f32 %i,
+       constval f32 1.234f))}
+ # EXEC: %irbuild Main.mpl
+ # EXEC: %irbuild Main.irb.mpl
+ # EXEC: %cmp Main.irb.mpl Main.irb.irb.mpl
+```
+
+#### 1. 测试案例部分
+
+```
+ func &addf32r(
+  var %i f32, var %j f32
+  ) f32 { 
+   return (
+     add f32(dread f32 %i, dread f32 %j))}
+
+ func &addf32I (
+  var %i f32
+  ) f32 { 
+   return (
+     add f32(dread f32 %i,
+       constval f32 1.234f))}
+```
+
+#### 2. 测试案例运行部分
+
+```
+ # EXEC: %irbuild Main.mpl
+ # EXEC: %irbuild Main.irb.mpl
+ # EXEC: %cmp Main.irb.mpl Main.irb.irb.mpl
+```
+
+三条执行语句：
+
+1. EXEC语句，利用%irbuild，编译Main.mpl为Main.irb.mpl
+2. EXEC语句，利用%irbuild，编译Main.irb.mpl为Main.irb.irb.mpl
+3. EXEC语句，利用%cmp，比较Main.irb.irb.mpl与Main.irb.mpl是否一致，一致测试通过
+
+
 ## irbuild测试套配置说明
 
 irbuild测试套配置：testsuite/irbuild_test/test.cfg
@@ -175,7 +379,19 @@ cmp = /usr/bin/cmp -s
 * 所有测试用例中的EXEC语句内的"%irbuild"会被替换为"${MAPLE_ROOT}/output/bin/irbuild"
 * 所有测试用例中的EXEC语句内的"%cmp"会被替换为"/usr/bin/cmp -s"
 
-#### irbuild测试套文件结构
+### 运行单个irbuild用例
+
+```shell
+python3 main.py -pFAIL -pPASS --timeout=180 --test_cfg=testsuite/irbuild_test/test.cfg testsuite/irbuild_test/I0001-mapleall-irbuild-edge-addf32
+```
+
+### 运行文件夹内的所有用例
+
+```shell
+python3 main.py -pFAIL -pPASS --timeout=180 --test_cfg=testsuite/irbuild_test/test.cfg testsuite/irbuild_test
+```
+
+### irbuild测试套文件结构
 
 ```shell
     testsuite/irbuild 测试套路径
@@ -185,9 +401,9 @@ cmp = /usr/bin/cmp -s
     └── ...
 ```
 
-## 测试用例说明
+### `irbuild_test` 测试用例说明
 
-### 完整Main.mpl
+#### 完整Main.mpl
 
 ```
  func &addf32r(

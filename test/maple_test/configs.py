@@ -88,7 +88,7 @@ def parse_args():
         "normal: one line progress bar, update per second,"
         "no_flush_progress: print test progress per 10 seconds",
     )
-    
+
     test_suite_parser = parser.add_argument_group("Test Suite arguments")
     test_suite_parser.add_argument(
         "test_paths", nargs="*", type=complete_path, help="Test suite path",
