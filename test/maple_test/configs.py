@@ -23,13 +23,12 @@ import logging
 import sys
 from pathlib import Path
 
-from maple_test.utils import ALL, ENCODING, BASE_DIR
+from maple_test.utils import ALL, BASE_DIR, OS_SEP
 from maple_test.utils import complete_path, read_config, get_config_value, is_relative
 
 TEST_CONFIG = {}
 LOGGER = None
 LOG_CONFIG = {}
-CASE_ENCODING = []
 
 
 def parse_args():
@@ -78,7 +77,7 @@ def parse_args():
         default=[],
         choices=ALL[:],
         help="Print test cases with specified results, "
-        "-pPASS -pFAIL, to print all test case that failed or passed"
+        "-pPASS -pFAIL, to print all test case that failed or passed， "
         "UNRESOLVED test case results are not displayed by default.",
     )
     test_framework_parser.add_argument(
@@ -89,12 +88,7 @@ def parse_args():
         "normal: one line progress bar, update per second,"
         "no_flush_progress: print test progress per 10 seconds",
     )
-    test_framework_parser.add_argument(
-        "--dry_run",
-        action="store_true",
-        help="enable dry run, will generate test.sh under test case temp dir",
-    )
-
+    
     test_suite_parser = parser.add_argument_group("Test Suite arguments")
     test_suite_parser.add_argument(
         "test_paths", nargs="*", type=complete_path, help="Test suite path",
@@ -154,14 +148,6 @@ def parse_args():
     running_parser.add_argument(
         "--timeout", type=float, dest="timeout", default=600, help="test case timeout"
     )
-    running_parser.add_argument(
-        "--encoding",
-        action="append",
-        default=["UTF-8"],
-        help="Specify the test case encoding format, default encoding is platform "
-        "dependent, but any encoding supported by Python can be passed. "
-        "Can specify multiple encoding formats.",
-    )
 
     log_parser = parser.add_argument_group("Log arguments")
     log_parser.add_argument(
@@ -197,7 +183,6 @@ def parse_args():
         "fail_exit": args.fail_exit,
         "print_type": args.print_type,
         "progress": args.progress,
-        "dry_run": args.dry_run,
     }
 
     test_suite_config = {
@@ -214,7 +199,6 @@ def parse_args():
     running_config = {
         "temp_dir": args.temp_dir,
         "timeout": args.timeout,
-        "encoding": args.encoding,
     }
 
     log_config = {
@@ -291,9 +275,6 @@ def init_config():
             )
         )
         log_config["dir"] = log_dir
-
-    global CASE_ENCODING
-    CASE_ENCODING = TEST_CONFIG.get("encoding")
 
     global LOGGER
     maple_test_log_config = log_config.copy()
@@ -377,12 +358,13 @@ def construct_logger(
     handler1.setLevel(level)
     logger.addHandler(handler1)
 
-    handler2 = logging.FileHandler(filename="{}/{}.log".format(log_dir, name), mode="w")
+    log_path = "{}{}{}.log".format(log_dir, OS_SEP, name)
+    handler2 = logging.FileHandler(filename=log_path, mode="w")
     handler2.setLevel(file_level)
     handler2.setFormatter(file_fmt)
     logger.addHandler(handler2)
 
-    logger.debug("Log file at: {}/{}.log".format(log_dir, name))
+    logger.debug("Log file at: {}".format(log_path))
     return logger
 
 

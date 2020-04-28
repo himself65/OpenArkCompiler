@@ -19,6 +19,7 @@ import multiprocessing
 import shlex
 import shutil
 import time
+import platform
 from collections import defaultdict, OrderedDict
 from pathlib import Path
 
@@ -136,7 +137,6 @@ class TestSuiteTask:
         user_config_set = cli_running_config.get("user_config_set")
         user_config = cli_running_config.get("user_config")
         user_env = cli_running_config.get("user_env")
-        encoding = running_config.get("encoding")
 
         raw_top_config = read_config(self.cfg_path)
         top_config = TaskConfig(
@@ -144,9 +144,9 @@ class TestSuiteTask:
         )
         top_dir = top_config.base_dir
         if user_test_list is None:
-            top_testlist = self._get_testlist(raw_top_config, top_dir, encoding)
+            top_testlist = self._get_testlist(raw_top_config, top_dir)
         else:
-            top_testlist = read_list(top_dir / user_test_list, encoding)
+            top_testlist = read_list(top_dir / user_test_list)
 
         if user_config_set:
             run_config_set = user_config_set
@@ -169,11 +169,11 @@ class TestSuiteTask:
             config = TaskConfig(cfg, raw_config, top_config, user_config, user_env)
             name = config.name
             base_dir = config.base_dir
-            testlist = self._get_testlist(raw_config, base_dir, encoding)
+            testlist = self._get_testlist(raw_config, base_dir)
             self.task_set_result[name] = OrderedDict(
                 {PASS: 0, FAIL: 0, NOT_RUN: 0, UNRESOLVED: 0}
             )
-            for case in self._search_list(base_dir, testlist, encoding):
+            for case in self._search_list(base_dir, testlist):
                 task = SingleTask(case, config, running_config)
                 self.task_set[name].append(task)
                 self.task_set_result[name][task.result[0]] += 1
@@ -183,16 +183,16 @@ class TestSuiteTask:
             )
 
     @staticmethod
-    def _get_testlist(config, base_dir, encoding):
+    def _get_testlist(config, base_dir):
         testlist_path = get_config_value(config, "testlist", "path")
         if testlist_path is None:
             testlist_path = base_dir / "testlist"
         else:
             testlist_path = base_dir / testlist_path
-        testlist = read_list(testlist_path, encoding)
+        testlist = read_list(testlist_path)
         return testlist
 
-    def _search_list(self, base_dir, testlist, encoding):
+    def _search_list(self, base_dir, testlist):
         logger = configs.LOGGER
         suffixes = self.suffix_comments.keys()
         include, exclude = testlist
@@ -211,7 +211,7 @@ class TestSuiteTask:
             case_name = str(case_file).replace(".", "_")
             comment = self.suffix_comments[case_file.suffix[1:]]
             if case_name not in self.all_cases:
-                case = Case(case_file, self.path, comment, encoding,)
+                case = Case(case_file, self.path, comment,)
                 self.all_cases[case_name] = case
             cases.append(self.all_cases[case_name])
         return cases
@@ -271,7 +271,12 @@ class TestSuiteTask:
 
     def run(self, process_num=1):
         logger = configs.LOGGER
-        if process_num == 1:
+        if platform.system() == "Windows":
+            logger.info(
+                "You are running on windows, currently only serial execution is supported"
+            )
+            self.serial_run_task()
+        elif process_num == 1:
             logger.debug("The number of running processes is 1, which will run serial")
             self.serial_run_task()
         else:
@@ -345,7 +350,7 @@ class TestSuiteTask:
 
 class SingleTask:
     def __init__(self, case, config, running_config):
-        self.name = "{}/{}_{}".format(case.test_name, case.name, config.name)
+        self.name = "{}{}{}_{}".format(case.test_name, OS_SEP, case.name, config.name)
         self.path = Path(self.name)
         config = config.get_case_config(case)
         temp_dir = "{}_{}".format(self.path.name.replace(".", "_"), int(time.time()))
