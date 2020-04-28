@@ -288,7 +288,7 @@ bool MeProfUse::Run() {
   return true;
 }
 
-AnalysisResult *MeDoProfUse::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr*) {
+AnalysisResult *MeDoProfUse::Run(MeFunction *func, MeFuncResultMgr *, ModuleResultMgr*) {
   MemPool *tempMp = NewMemPool();
   MeProfUse profUse(*func, *tempMp, DEBUGFUNC(func));
   profUse.Run();

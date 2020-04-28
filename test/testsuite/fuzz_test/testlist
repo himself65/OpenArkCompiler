@@ -1,0 +1,5 @@
+[ALL-TEST-CASE]
+    fuzz/*/Start.java
+    langfuzz/*/Start.java
+
+[EXCLUDE-TEST-CASE]

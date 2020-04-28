@@ -54,6 +54,7 @@ void CGCFG::BuildCFG() {
           break;
         }
       /* else fall through */
+      [[clang::fallthrough]];
       case BB::kBBIf: {
         BB *fallthruBB = curBB->GetNext();
         curBB->PushBackSuccs(*fallthruBB);

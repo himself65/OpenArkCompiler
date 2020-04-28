@@ -62,10 +62,12 @@ class MplTask {
 
  protected:
   virtual int RunImpl(MplTaskParam *param) {
+    (void)param;
     return 0;
   }
 
   virtual int FinishImpl(MplTaskParam *param) {
+    (void)param;
     return 0;
   }
 

@@ -213,6 +213,7 @@ BlockNode *JavaEHLowerer::DoLowerBlock(BlockNode &block) {
         }
         // fallthrough;
       }
+      [[clang::fallthrough]];
       default: {
         for (size_t i = 0; i < stmt->NumOpnds(); ++i) {
           stmt->SetOpnd(DoLowerExpr(*(stmt->Opnd(i)), *newBlock), i);

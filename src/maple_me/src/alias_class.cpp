@@ -150,6 +150,7 @@ AliasElem *AliasClass::CreateAliasElemsExpr(BaseNode &expr) {
       }
       // fall-through
     }
+    [[clang::fallthrough]];
     default:
       for (size_t i = 0; i < expr.NumOpnds(); ++i) {
         CreateAliasElemsExpr(*expr.Opnd(i));
@@ -265,6 +266,7 @@ void AliasClass::ApplyUnionForCopies(StmtNode &stmt) {
       }
       //  fallthrough;
     }
+    [[clang::fallthrough]];
     default:
       for (size_t i = 0; i < stmt.NumOpnds(); ++i) {
         CreateAliasElemsExpr(*stmt.Opnd(i));

@@ -50,9 +50,8 @@ class MIRConst {
     return fieldID;
   }
 
-  virtual void SetFieldID(uint32 fieldIdx) {
-    CHECK_FATAL(kind != kConstInt, "must be");
-    fieldID = fieldIdx;
+  void SetFieldID(uint32 fieldIdx) {
+    DoSetFieldID(fieldIdx);
   }
 
   virtual bool IsZero() const {
@@ -91,6 +90,11 @@ class MIRConst {
  private:
   MIRType &type;
   MIRConstKind kind;
+  virtual void DoSetFieldID(uint32 fieldIdx) {
+    CHECK_FATAL(kind != kConstInt, "must be");
+    fieldID = fieldIdx;
+  }
+
  protected:
   uint32 fieldID;
 };
@@ -136,14 +140,9 @@ class MIRIntConst : public MIRConst {
     return value;
   }
 
-  void SetValue(int64 val) {
-    CHECK_FATAL(false, "Can't Use This Interface in This Object");
+  void SetValue(int64 val) const {
     (void)val;
-  }
-
-  void SetFieldID(uint32 fieldIdx) override {
     CHECK_FATAL(false, "Can't Use This Interface in This Object");
-    (void)fieldIdx;
   }
 
   bool operator==(const MIRConst &rhs) const override;
@@ -156,6 +155,10 @@ class MIRIntConst : public MIRConst {
 
  private:
   int64 value;
+  void DoSetFieldID(uint32 fieldIdx) override {
+    CHECK_FATAL(false, "Can't Use This Interface in This Object");
+    (void)fieldIdx;
+  }
 };
 
 class MIRAddrofConst : public MIRConst {
@@ -319,10 +322,10 @@ class MIRFloatConst : public MIRConst {
   }
 
   bool IsOne() const override {
-    return value.floatValue == 1;
+    return fabs(value.floatValue - 1) <= 1e-6;
   };
   bool IsAllBitsOne() const {
-    return value.floatValue == -1;
+    return fabs(value.floatValue + 1) <= 1e-6;
   };
   void Neg() override {
     value.floatValue = -value.floatValue;
@@ -379,10 +382,10 @@ class MIRDoubleConst : public MIRConst {
   }
 
   bool IsOne() const override {
-    return value.dValue == 1;
+    return fabs(value.dValue - 1) <= 1e-15;
   };
   bool IsAllBitsOne() const {
-    return value.dValue == -1;
+    return fabs(value.dValue + 1) <= 1e-15;
   };
   void Neg() override {
     value.dValue = -value.dValue;

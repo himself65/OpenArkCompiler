@@ -272,6 +272,7 @@ RegMeExpr *IRMap::CreateRegRefMeExpr(const MeExpr &meExpr) {
         break;
       }
     // fall thru
+    [[clang::fallthrough]];
     default:
       return CreateRegMeExpr(PTY_ptr);
   }
