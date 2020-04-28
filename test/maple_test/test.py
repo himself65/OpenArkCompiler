@@ -17,12 +17,12 @@
 import shlex
 
 from maple_test.utils import PASS, EXEC_FLAG, EXPECT_FLAG, DEPENDENCE_FLAG
-from maple_test.utils import read_file_with_multi_encoding
+from maple_test.utils import read_file
 from maple_test.utils import split_comment, filter_line
 
 
 class Case:
-    def __init__(self, path, test_path, comment, encoding):
+    def __init__(self, path, test_path, comment):
         if path != test_path:
             self.name = str(path).replace(".", "_")
             self.path = test_path / path
@@ -34,12 +34,19 @@ class Case:
         self.test_path = test_path
         self.relative_path = path
         self.comment = comment
-        _, comment_lines = split_comment(
-            comment, read_file_with_multi_encoding(self.path, encoding),
-        )
-        self.commands = extract_commands(comment_lines)
-        self.expect = extract_expect(comment_lines)
-        self.dependence = extract_dependence(comment_lines)
+        try:
+            _, comment_lines = split_comment(
+                comment, read_file(self.path),
+            )
+        except UnicodeDecodeError as e:
+            print(e)
+            self.commands = []
+            self.expect = []
+            self.dependence = {}
+        else:
+            self.commands = extract_commands(comment_lines)
+            self.expect = extract_expect(comment_lines)
+            self.dependence = extract_dependence(comment_lines)
 
     def __repr__(self):
         return str(self.relative_path)
@@ -92,10 +99,10 @@ def extract_commands(comment_lines):
     return commands
 
 
-def read_list(path, encoding):
+def read_list(path):
     if not path.exists():
         return {"**"}, {}
-    valid_lines, _ = split_comment("#", read_file_with_multi_encoding(path, encoding))
+    valid_lines, _ = split_comment("#", read_file(path))
     include_flag = "[ALL-TEST-CASE]"
     exclude_flag = "[EXCLUDE-TEST-CASE]"
     case_list = set()

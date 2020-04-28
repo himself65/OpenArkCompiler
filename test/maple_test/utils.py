@@ -47,13 +47,13 @@ RESULT = {
 }
 BASE_DIR = Path(__file__).parent.absolute()
 
-ENCODING = locale.getdefaultlocale()[1] if locale.getdefaultlocale()[1] else "UTF-8"
+ENCODING = locale.getpreferredencoding(False)
 OS_SEP = os.path.sep
 EXECUTABLE = sys.executable
 COMPARE = BASE_DIR / "compare.py"
 
 
-def read_file(file_path, encoding=ENCODING):
+def read_file(file_path):
     """Read files based on encoding and return all file lines
 
     :param file_path: Path
@@ -61,24 +61,11 @@ def read_file(file_path, encoding=ENCODING):
     :return:
     """
     lines = []
-    with file_path.open(encoding=encoding) as file:
+    with file_path.open(encoding="utf-8") as file:
         all_lines = file.readlines()
     for line in all_lines:
         if line.strip():
             lines.append(line.strip())
-    return lines
-
-
-def read_file_with_multi_encoding(file_path, encoding_list):
-    """Read files according to the encoding list and return all file lines"""
-    if not isinstance(encoding_list, list):
-        return []
-    lines = []
-    for encoding in encoding_list:
-        try:
-            return read_file(file_path, encoding=encoding)
-        except UnicodeDecodeError:
-            pass
     return lines
 
 
@@ -88,7 +75,7 @@ def read_config(file_path):
         return None
     config = configparser.ConfigParser()
     config.optionxform = str
-    config.read(str(file_path), encoding=ENCODING)
+    config.read(str(file_path), encoding="utf-8")
     return config
 
 

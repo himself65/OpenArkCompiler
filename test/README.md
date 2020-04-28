@@ -69,16 +69,16 @@ python3 test/main.py -j20 --timeout=120
 
 参数说明：指定参数会覆盖框架配置文件中的设置
 
-```shell
+```txt
 usage: main.py [-h] [--cfg CFG] [-j <mum>] [--retry <num>] [--output <file>]
-               [--debug]
-               [-p {PASS,FAIL,XFAIL,XPASS,NOT_RUN,UNRESOLVED,UNSUPPORTED}]
-               [--progress {silent,normal,no_flush_progress}] [--dry_run]
+               [--debug] [--fail_exit]
+               [-p {PASS,FAIL,XFAIL,XPASS,UNSUPPORTED,UNRESOLVED}]
+               [--progress {silent,normal,no_flush_progress}]
                [--test_cfg <TEST_CFG_FILE>] [--test_list <TEST_LIST_FILE>]
                [-c config set path] [-C key=value] [-E key=value]
                [--temp_dir <TEMP_DIR_PATH>] [--timeout TIMEOUT]
-               [--encoding ENCODING] [--log_dir <LOG_DIR_FILE_PATH>]
-               [--log_level LOG_LEVEL] [--verbose]
+               [--log_dir <LOG_DIR_FILE_PATH>] [--log_level LOG_LEVEL]
+               [--verbose]
                [test_paths [test_paths ...]]
 
 optional arguments:
@@ -90,16 +90,18 @@ Test FrameWork arguments:
   --retry <num>         Re-run unsuccessful test cases
   --output <file>       Store test result at <file>
   --debug               keep test temp file
-  -p {PASS,FAIL,XFAIL,XPASS,NOT_RUN,UNRESOLVED,UNSUPPORTED}
+  --fail_exit           Execute test framework with a non-zero exit code if
+                        any tests fail
+  -p {PASS,FAIL,XFAIL,XPASS,UNSUPPORTED,UNRESOLVED}
                         Print test cases with specified results, -pPASS
-                        -pFAIL, to print all test case that failed or passed
+                        -pFAIL, to print all test case that failed or passed，
+                        UNRESOLVED test case results are not displayed by
+                        default.
   --progress {silent,normal,no_flush_progress}
                         set progress type, silent: Don't show progress,
                         normal: one line progress bar, update per
                         second,no_flush_progress: print test progress per 10
                         seconds
-  --dry_run             enable dry run, will generate test.sh under test case
-                        temp dir
 
 Test Suite arguments:
   test_paths            Test suite path
@@ -120,10 +122,6 @@ Running arguments:
   --temp_dir <TEMP_DIR_PATH>
                         Location for test execute.
   --timeout TIMEOUT     test case timeout
-  --encoding ENCODING   Specify the test case encoding format, default
-                        encoding is platform dependent, but any encoding
-                        supported by Python can be passed. Can specify
-                        multiple encoding formats.
 
 Log arguments:
   --log_dir <LOG_DIR_FILE_PATH>
@@ -132,8 +130,11 @@ Log arguments:
                         set log level from: CRITICAL, ERROR, WARNING, INFO,
                         DEBUG, NOTSET
   --verbose             enable verbose output
-
 ```
+
+## 测试框架编码支持说明
+
+当前测试框架仅支持编码格式为 `UTF-8`，测试用例和配置文件仅支持 `UTF-8` 编码格式，如果测试用例编码非 `UTF-8` 测试用例会被认定为 `UNRESOLVED`
 
 ## irbuild测试套配置说明
 

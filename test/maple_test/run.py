@@ -21,10 +21,11 @@ import sys
 import time
 import timeit
 import logging
+import platform
 from textwrap import indent, shorten
 
 from maple_test.configs import construct_logger, get_val
-from maple_test.utils import PASS, FAIL, UNRESOLVED, NOT_RUN
+from maple_test.utils import PASS, FAIL, UNRESOLVED, NOT_RUN, ENCODING
 from maple_test.utils import add_run_path
 
 
@@ -32,8 +33,43 @@ class TestError(Exception):
     pass
 
 
-def run_command(cmd, work_dir, timeout, logger, env=None):
-    """Run commands using subprocess"""
+def run_command_win(cmd, work_dir, timeout, logger, env=None):
+    """Run commands using subprocess on Windows"""
+    new_env = add_run_path(str(work_dir))
+    new_env.update(env)
+    process_command = subprocess.Popen(
+        cmd,
+        shell=True,
+        cwd=str(work_dir),
+        env=new_env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    logger.debug("execute cmd ===>>>: %s", cmd)
+    return_code = com_out = com_err = None
+    try:
+        com_out, com_err = process_command.communicate(timeout=timeout)
+    except subprocess.CalledProcessError as err:
+        return_code, com_out, com_err = err.returncode, "", err
+        logger.exception(err)
+        return return_code, com_out, com_err
+    except subprocess.TimeoutExpired:
+        return_code, com_out, com_err = 3, "TimeOut", "TimeOut"
+        return return_code, com_out, com_err
+    else:
+        return_code = process_command.returncode
+        com_out = com_out.decode(ENCODING, errors="replace")
+        com_err = com_err.decode(ENCODING, errors="replace")
+        return return_code, com_out, com_err
+    finally:
+        process_command.kill()
+        logger.debug("return code: %d", return_code)
+        logger.debug("stdout : \n%s", indent(com_out, "+\t", lambda line: True))
+        logger.debug("stderr : \n%s", indent(com_err, "@\t", lambda line: True))
+
+
+def run_command_linux(cmd, work_dir, timeout, logger, env=None):
+    """Run commands using subprocess on Linux"""
     new_env = add_run_path(str(work_dir))
     new_env.update(env)
     process_command = subprocess.Popen(
@@ -59,8 +95,8 @@ def run_command(cmd, work_dir, timeout, logger, env=None):
         return return_code, com_out, com_err
     else:
         return_code = process_command.returncode
-        com_out = com_out.decode(sys.stdout.encoding, errors="replace")
-        com_err = com_err.decode(sys.stderr.encoding, errors="replace")
+        com_out = com_out.decode(ENCODING, errors="replace")
+        com_err = com_err.decode(ENCODING, errors="replace")
         return return_code, com_out, com_err
     finally:
         process_command.kill()
@@ -91,14 +127,11 @@ def run_commands(
     remain_time = timeout
     result = (PASS, None)
     logger.debug("Work directory: {}".format(work_dir))
-    if get_val("dry_run"):
-        with (work_dir / "test.sh").open("w") as f:
-            f.write("#!/bin/bash\n")
-            for command in commands[:-1]:
-                f.write(command)
-                f.write(" && \\\n")
-            f.write(commands[-1])
-        return position, (NOT_RUN, None)
+
+    if platform.system() == "Windows":
+        run_command = run_command_win
+    else:
+        run_command = run_command_linux
 
     for command in commands:
         start = timeit.default_timer()

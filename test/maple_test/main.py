@@ -76,7 +76,7 @@ def main():
             )
             shutil.move(str(output), str(output.parent / name))
         logger.info("Save test result at: {}".format(output))
-        with output.open("w") as f:
+        with output.open("w", encoding="utf-8") as f:
             f.write(result)
 
     temp_dir = running_config.get("temp_dir")
