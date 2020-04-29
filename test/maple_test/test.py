@@ -35,9 +35,7 @@ class Case:
         self.relative_path = path
         self.comment = comment
         try:
-            _, comment_lines = split_comment(
-                comment, read_file(self.path),
-            )
+            _, comment_lines = split_comment(comment, read_file(self.path),)
         except UnicodeDecodeError as e:
             print(e)
             self.commands = []

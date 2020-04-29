@@ -33,13 +33,14 @@ def main():
     logger = configs.LOGGER
 
     test_paths = test_suite_config.get("test_paths")
-    test_cfg = test_suite_config.get("test_cfg")
+    cli_test_cfg = test_suite_config.get("test_cfg")
     cli_running_config = test_suite_config.get("cli_running_config")
 
     retry = configs.get_val("retry")
     result = ""
     failed = False
     for test in test_paths:
+        test_cfg = cli_test_cfg
         test_result = None
         test_failed = False
         if test.exists():
