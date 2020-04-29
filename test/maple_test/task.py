@@ -109,7 +109,7 @@ class TestSuiteTask:
 
         self.path = complete_path(test_path)
         self.cfg_path = cfg_path
-
+        
         config = read_config(self.cfg_path)
         if config is None:
             raise TestError(
@@ -144,9 +144,9 @@ class TestSuiteTask:
         )
         top_dir = top_config.base_dir
         if user_test_list is None:
-            top_testlist = self._get_testlist(raw_top_config, top_dir)
+            top_testlist_path = self._get_testlist(raw_top_config, top_dir)
         else:
-            top_testlist = read_list(top_dir / user_test_list)
+            top_testlist_path = top_dir / user_test_list
 
         if user_config_set:
             run_config_set = user_config_set
@@ -169,11 +169,14 @@ class TestSuiteTask:
             config = TaskConfig(cfg, raw_config, top_config, user_config, user_env)
             name = config.name
             base_dir = config.base_dir
-            testlist = self._get_testlist(raw_config, base_dir)
+            if cfg == self.cfg_path:
+                testlist_path = top_testlist_path
+            else:
+                testlist_path = self._get_testlist(raw_config, base_dir)
             self.task_set_result[name] = OrderedDict(
                 {PASS: 0, FAIL: 0, NOT_RUN: 0, UNRESOLVED: 0}
             )
-            for case in self._search_list(base_dir, testlist):
+            for case in self._search_list(base_dir, testlist_path):
                 task = SingleTask(case, config, running_config)
                 self.task_set[name].append(task)
                 self.task_set_result[name][task.result[0]] += 1
@@ -189,16 +192,39 @@ class TestSuiteTask:
             testlist_path = base_dir / "testlist"
         else:
             testlist_path = base_dir / testlist_path
-        testlist = read_list(testlist_path)
-        return testlist
+        return testlist_path
 
-    def _search_list(self, base_dir, testlist):
+    def _search_list(self, base_dir, testlist_path):
         logger = configs.LOGGER
         suffixes = self.suffix_comments.keys()
-        include, exclude = testlist
+        include, exclude = read_list(testlist_path)
         case_files = set()
         cases = []
-        case_files = self._search_case(include, exclude, base_dir, suffixes)
+        all_test_case, exclude_test_case = self._search_case(
+            include, exclude, base_dir, suffixes
+        )
+        case_files = set()
+        for pattern in all_test_case:
+            _cases = all_test_case[pattern]
+            if _cases:
+                case_files.update(_cases)
+            else:
+                logger.info(
+                    "Testlist: {}, ALL-TEST-CASE: {} is contain not test case".format(
+                        testlist_path, pattern
+                    )
+                )
+        for pattern in exclude_test_case:
+            _cases = exclude_test_case[pattern]
+            if _cases:
+                case_files -= _cases
+            else:
+                logger.info(
+                    "Testlist: {}, EXCLUDE-TEST-CASE: {} is contain not test case".format(
+                        testlist_path, pattern
+                    )
+                )
+
         if self.path.is_file():
             case_files = [self.path]
         else:
@@ -219,13 +245,19 @@ class TestSuiteTask:
     @staticmethod
     def _search_case(include, exclude, base_dir, suffixes):
         case_files = set()
+        all_test_case = {}
+        exclude_test_case = {}
         for glob_pattern in include:
+            all_test_case[glob_pattern] = set()
             for include_path in base_dir.glob(glob_pattern):
                 case_files.update(ls_all(include_path, suffixes))
+                all_test_case[glob_pattern].update(ls_all(include_path, suffixes))
         for glob_pattern in exclude:
+            exclude_test_case[glob_pattern] = set()
             for exclude_path in base_dir.glob(glob_pattern):
                 case_files -= set(ls_all(exclude_path, suffixes))
-        return case_files
+                exclude_test_case[glob_pattern].update(ls_all(exclude_path, suffixes))
+        return all_test_case, exclude_test_case
 
     def serial_run_task(self):
         for tasks_name in self.task_set:

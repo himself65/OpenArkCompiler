@@ -169,10 +169,6 @@ def parse_args():
     )
 
     args = parser.parse_args()
-    if args.test_list and not args.test_cfg:
-        print("Error: When specify test list, need also specify test configure file\n")
-        parser.print_help()
-        sys.exit(0)
 
     test_framework_config = {
         "cfg": args.cfg,
@@ -218,7 +214,7 @@ def parser_maple_test_config_file(maple_test_cfg_file):
     else:
         test_paths = []
     test_suite_config = {
-        "test_paths": [BASE_DIR / path for path in test_paths if path],
+        "test_paths": [complete_path(BASE_DIR / path) for path in test_paths if path],
     }
     log_config = {
         "dir": complete_path(

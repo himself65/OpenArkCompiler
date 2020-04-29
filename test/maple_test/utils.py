@@ -71,7 +71,7 @@ def read_file(file_path):
 
 def read_config(file_path):
     """Read config file based on encoding and return test config"""
-    if not file_path.exists():
+    if not file_path.exists() or not file_path.is_file():
         return None
     config = configparser.ConfigParser()
     config.optionxform = str
