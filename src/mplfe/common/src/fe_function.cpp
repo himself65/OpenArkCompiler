@@ -430,6 +430,7 @@ bool FEFunction::UpdateFormal(const std::string &phaseName) {
     } else {
       sym = argVar->GenerateMIRSymbol(FEManager::GetMIRBuilder());
     }
+    sym->SetStorageClass(kScFormal);
     mirFunction.AddFormal(sym);
     idx++;
   }
