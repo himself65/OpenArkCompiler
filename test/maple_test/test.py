@@ -99,7 +99,7 @@ def extract_commands(comment_lines):
 
 def read_list(path):
     if not path.exists():
-        return {"**"}, {}
+        return {"*"}, {}
     valid_lines, _ = split_comment("#", read_file(path))
     include_flag = "[ALL-TEST-CASE]"
     exclude_flag = "[EXCLUDE-TEST-CASE]"
@@ -116,5 +116,5 @@ def read_list(path):
         else:
             case_list.add(line)
     if not case_list:
-        case_list = {"**"}
+        case_list = {"*"}
     return case_list, exclude_case_list

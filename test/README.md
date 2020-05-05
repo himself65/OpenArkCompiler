@@ -50,10 +50,18 @@ level = INFO
 
 依赖环境变量：MAPLE_ROOT
 
-### 运行已配置的所有测试套
+### 运行测试套
+
+#### irbuild_test
 
 ```shell
-python3 test/main.py -j20 --timeout=120
+python3 test/main.py test/testsuite/irbuild_test -j20 -pFAIL
+```
+
+#### ouroboros
+
+```shell
+python3 test/main.py test/testsuite/ouroboros -j20 -pFAIL
 ```
 
 参数说明：指定参数会覆盖框架配置文件中的设置
@@ -183,19 +191,19 @@ ouroboros测试套是基于 `Java` 测试用例的测试套
 
 运行ourobors下的子文件夹：
 
-`python3 test/main.py test/testsuite/ouroboros/string_test -j20`
+`python3 test/main.py test/testsuite/ouroboros/string_test --test_cfg=test/testsuite/ouroboros/test.cfg -j20`
 
 运行ourobors下的单一测试用例：
 
-`python3 test/main.py test/testsuite/ouroboros/string_test`
+`python3 test/main.py test/testsuite/ouroboros/string_test/RT0001-rt-string-ReflectString/ReflectString.java --test_cfg=test/testsuite/ouroboros/test.cfg`
 
 只输出失败用例：
 
-`python3 test/main.py test/testsuite/ouroboros/ -j20 -pFAIL`
+`python3 test/main.py test/testsuite/ouroboros/string_test/RT0001-rt-string-ReflectString/ReflectString.java --test_cfg=test/testsuite/ouroboros/test.cfg -pFAIL`
 
 屏幕输出详细运行日至：
 
-`python3 test/main.py test/testsuite/ouroboros/string_test -j20`
+`python3 test/main.py test/testsuite/ouroboros/string_test/RT0001-rt-string-ReflectString/ReflectString.java --test_cfg=test/testsuite/ouroboros/test.cfg --verbose`
 
 ### 测试套配置
 
