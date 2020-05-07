@@ -107,12 +107,12 @@ class TypeTable {
     return typeTable.at(index);
   }
 
-  PrimType GetPrimTypeFromTyIdx(TyIdx tyIdx) const {
+  PrimType GetPrimTypeFromTyIdx(const TyIdx &tyIdx) const {
     CHECK_FATAL(tyIdx < typeTable.size(), "array index out of range");
     return typeTable.at(tyIdx)->GetPrimType();
   }
 
-  void SetTypeWithTyIdx(TyIdx tyIdx, MIRType *type);
+  void SetTypeWithTyIdx(const TyIdx &tyIdx, MIRType &type);
 
   TyIdx GetOrCreateMIRType(MIRType *pType);
 

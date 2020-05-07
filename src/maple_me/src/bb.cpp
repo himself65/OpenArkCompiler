@@ -75,7 +75,7 @@ void BB::DumpBBAttribute(const MIRModule *mod) const {
   }
 }
 
-void BB::DumpHeader(MIRModule *mod) const {
+void BB::DumpHeader(const MIRModule *mod) const {
   mod->GetOut() << "============BB id:" << GetBBId() << " " << StrAttribute() << " [";
   DumpBBAttribute(mod);
   mod->GetOut() << "]===============\n";
@@ -96,7 +96,7 @@ void BB::DumpHeader(MIRModule *mod) const {
   }
 }
 
-void BB::Dump(MIRModule *mod) {
+void BB::Dump(const MIRModule *mod) {
   DumpHeader(mod);
   DumpPhi();
   for (auto &stmt : stmtNodeList) {
@@ -149,28 +149,32 @@ int BB::RemoveBBFromVector(MapleVector<BB*> &bbVec) const {
   return i;
 }
 
-void BB::RemoveBBFromPred(BB *bb) {
-  CHECK_NULL_FATAL(bb);
-  int index = bb->RemoveBBFromVector(pred);
-  ASSERT(index != -1, "-1 is a very large number in BB::RemoveBBFromPred");
+void BB::RemovePhiOpnd(int index) {
   for (auto &phi : phiList) {
-    ASSERT(phi.second.GetPhiOpnds().size() > index, "index out of range in BB::RemoveBBFromPred");
+    ASSERT(phi.second.GetPhiOpnds().size() > index, "index out of range in BB::RemovePhiOpnd");
     phi.second.GetPhiOpnds().erase(phi.second.GetPhiOpnds().cbegin() + index);
   }
   for (auto &phi : meVarPhiList) {
-    ASSERT(phi.second->GetOpnds().size() > index, "index out of range in BB::RemoveBBFromPred");
+    ASSERT(phi.second->GetOpnds().size() > index, "index out of range in BB::RemovePhiOpnd");
     phi.second->GetOpnds().erase(phi.second->GetOpnds().cbegin() + index);
   }
   for (auto &phi : meRegPhiList) {
-    ASSERT(phi.second->GetOpnds().size() > index, "index out of range in BB::RemoveBBFromPred");
+    ASSERT(phi.second->GetOpnds().size() > index, "index out of range in BB::RemovePhiOpnd");
     phi.second->GetOpnds().erase(phi.second->GetOpnds().cbegin() + index);
   }
 }
 
-void BB::RemoveBBFromSucc(BB *bb) {
-  CHECK_NULL_FATAL(bb);
-  int ret = bb->RemoveBBFromVector(succ);
-  if (ret != -1 && !succFreq.empty()) {
+void BB::RemoveBBFromPred(const BB &bb, bool updatePhi) {
+  int index = bb.RemoveBBFromVector(pred);
+  ASSERT(index != -1, "-1 is a very large number in BB::RemoveBBFromPred");
+  if (updatePhi) {
+    RemovePhiOpnd(index);
+  }
+}
+
+void BB::RemoveBBFromSucc(const BB &bb) {
+  int ret = bb.RemoveBBFromVector(succ);
+  if (ret != -1 && frequency != 0) {
     succFreq.erase(succFreq.cbegin() + ret);
   }
 }
@@ -230,31 +234,29 @@ void BB::RemoveLastStmt() {
 }
 
 // replace pred with newbb to keep position and add this as succ of newpred
+// and remove itself from succ of old
 void BB::ReplacePred(const BB *old, BB *newPred) {
+  ASSERT((old != nullptr && newPred != nullptr), "Nullptr check.");
+  ASSERT((old->IsInList(pred) && IsInList(old->succ)), "Nullptr check.");
   for (auto &predElement : pred) {
     if (predElement == old) {
-      predElement = newPred;
+      predElement->RemoveBBFromSucc(*this);
       newPred->succ.push_back(this);
+      predElement = newPred;
       break;
     }
   }
 }
 
 // replace succ in current position with newsucc and add this as pred of newsucc
+// and remove itself from pred of old
 void BB::ReplaceSucc(const BB *old, BB *newSucc) {
+  ASSERT((old != nullptr && newSucc != nullptr), "Nullptr check.");
+  ASSERT((old->IsInList(succ) && IsInList(old->pred)), "Nullptr check.");
   for (auto &succElement : succ) {
     if (succElement == old) {
-      succElement = newSucc;
+      succElement->RemoveBBFromPred(*this, false);
       newSucc->pred.push_back(this);
-      break;
-    }
-  }
-}
-
-// this is common_entry_bb, so newsucc's pred is left as is
-void BB::ReplaceSuccOfCommonEntryBB(const BB *old, BB *newSucc) {
-  for (auto &succElement : succ) {
-    if (succElement == old) {
       succElement = newSucc;
       break;
     }

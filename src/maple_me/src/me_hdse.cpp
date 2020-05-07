@@ -38,40 +38,23 @@ void MeDoHDSE::MakeEmptyTrysUnreachable(MeFunction &func) {
         tryBB->GetMeRegPhiList().empty() && endTry->GetAttributes(kBBAttrIsTryEnd) && endTry->IsMeStmtEmpty()) {
       // we found a try BB followed by an empty endtry BB
       BB *targetBB = endTry->GetSucc(0);
-      std::vector<BB*> toDeleteTryPreds;
-      int32 indexOfEndTryInTargetBBPreds = -1;
       for (auto *tryPred : tryBB->GetPred()) {
-        MapleVector<BB*> &allSucc = tryPred->GetSucc();
-        toDeleteTryPreds.push_back(tryPred);
-        // replace tryBB in the pred's succ list by targetbb
-        size_t j = 0;
-        for (; j < allSucc.size(); ++j) {
-          if (allSucc[j] == tryBB) {
-            break;
-          }
-        }
-        CHECK_FATAL(j != allSucc.size(),
-                    "MakeEmptyTrysUnreachable: cannot find tryBB among the succ list of one of its pred BB");
-        allSucc[j] = targetBB;
         // update targetbb's predecessors
-        size_t k = 0;
-        for (; k < targetBB->GetPred().size(); ++k) {
-          if (targetBB->GetPred(k) == endTry) {
-            indexOfEndTryInTargetBBPreds = k;
-          } else if (targetBB->GetPred(k) == tryPred) {
-            break;
+        if (!tryPred->IsPredBB(*targetBB)) {
+          ASSERT(endTry->IsPredBB(*targetBB), "MakeEmptyTrysUnreachable: processing error");
+          for (size_t k = 0; k < targetBB->GetPred().size(); ++k) {
+            if (targetBB->GetPred(k) == endTry) {
+              // push additional phi operand for each phi at targetbb
+              auto phiIter = targetBB->GetMevarPhiList().begin();
+              for (; phiIter != targetBB->GetMevarPhiList().end(); ++phiIter) {
+                MeVarPhiNode *meVarPhi = phiIter->second;
+                meVarPhi->GetOpnds().push_back(meVarPhi->GetOpnds()[k]);
+              }
+            }
           }
         }
-        if (k == targetBB->GetPred().size()) {
-          targetBB->GetPred().push_back(tryPred);
-          CHECK_FATAL(indexOfEndTryInTargetBBPreds != -1, "MakeEmptyTrysUnreachable: processing error");
-          // push additional phi operand for each phi at targetbb
-          auto phiIter = targetBB->GetMevarPhiList().begin();
-          for (; phiIter != targetBB->GetMevarPhiList().end(); ++phiIter) {
-            MeVarPhiNode *meVarPhi = phiIter->second;
-            meVarPhi->GetOpnds().push_back(meVarPhi->GetOpnds()[indexOfEndTryInTargetBBPreds]);
-          }
-        }
+        // replace tryBB in the pred's succ list by targetbb
+        tryPred->ReplaceSucc(tryBB, targetBB);
         // if needed, update branch label
         MeStmt *br = to_ptr(tryPred->GetMeStmts().rbegin());
         if (br != nullptr) {
@@ -99,10 +82,6 @@ void MeDoHDSE::MakeEmptyTrysUnreachable(MeFunction &func) {
             }
           }
         }
-      }
-      // tryBB has no phis, no need to update them
-      for (auto bb : toDeleteTryPreds) {
-        (void)bb->RemoveBBFromVector(tryBB->GetPred());
       }
     }
   }

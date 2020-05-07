@@ -52,8 +52,7 @@ void MeCFG::BuildMirCFG() {
         auto &gotoStmt = static_cast<GotoNode&>(lastStmt);
         LabelIdx lblIdx = gotoStmt.GetOffset();
         BB *meBB = func.GetLabelBBAt(lblIdx);
-        bb->GetSucc().push_back(meBB);
-        meBB->GetPred().push_back(bb);
+        bb->AddSucc(*meBB);
         break;
       }
       case kBBCondGoto: {
@@ -63,14 +62,12 @@ void MeCFG::BuildMirCFG() {
         auto rightNextBB = bIt;
         ++rightNextBB;
         CHECK_FATAL(rightNextBB != eIt, "null ptr check ");
-        (*rightNextBB)->GetPred().push_back(bb);
-        bb->GetSucc().push_back(*rightNextBB);
+        bb->AddSucc(**rightNextBB);
         // link goto
         auto &gotoStmt = static_cast<CondGotoNode&>(lastStmt);
         LabelIdx lblIdx = gotoStmt.GetOffset();
         BB *meBB = func.GetLabelBBAt(lblIdx);
-        bb->GetSucc().push_back(meBB);
-        meBB->GetPred().push_back(bb);
+        bb->AddSucc(*meBB);
         break;
       }
       case kBBSwitch: {
@@ -79,16 +76,14 @@ void MeCFG::BuildMirCFG() {
         auto &switchStmt = static_cast<SwitchNode&>(lastStmt);
         LabelIdx lblIdx = switchStmt.GetDefaultLabel();
         BB *mirBB = func.GetLabelBBAt(lblIdx);
-        bb->GetSucc().push_back(mirBB);
-        mirBB->GetPred().push_back(bb);
+        bb->AddSucc(*mirBB);
         for (size_t j = 0; j < switchStmt.GetSwitchTable().size(); ++j) {
           lblIdx = switchStmt.GetCasePair(j).second;
           BB *meBB = func.GetLabelBBAt(lblIdx);
           // Avoid duplicate succs.
           auto it = std::find(bb->GetSucc().begin(), bb->GetSucc().end(), meBB);
           if (it == bb->GetSucc().end()) {
-            bb->GetSucc().push_back(meBB);
-            meBB->GetPred().push_back(bb);
+            bb->AddSucc(*meBB);
           }
         }
         break;
@@ -100,8 +95,7 @@ void MeCFG::BuildMirCFG() {
         auto rightNextBB = bIt;
         ++rightNextBB;
         if (rightNextBB != eIt) {
-          (*rightNextBB)->GetPred().push_back(bb);
-          bb->GetSucc().push_back(*rightNextBB);
+          bb->AddSucc(**rightNextBB);
         }
         break;
       }
@@ -120,19 +114,12 @@ void MeCFG::BuildMirCFG() {
         BB *meBB = func.GetLabelBBAt(labelIdx);
         CHECK_FATAL(meBB != nullptr, "null ptr check");
         ASSERT(meBB->GetAttributes(kBBAttrIsCatch), "runtime check error");
-        size_t si = 0;
         if (meBB->GetAttributes(kBBAttrIsJSFinally) || meBB->GetAttributes(kBBAttrIsCatch)) {
           hasFinallyHandler = true;
         }
         // avoid redundant succ
-        for (; si < bb->GetSucc().size(); ++si) {
-          if (meBB == bb->GetSucc(si)) {
-            break;
-          }
-        }
-        if (si == bb->GetSucc().size()) {
-          bb->GetSucc().push_back(meBB);
-          meBB->GetPred().push_back(bb);
+        if (!meBB->IsSuccBB(*bb)) {
+          bb->AddSucc(*meBB);
         }
       }
       // if try block don't have finally catch handler, add common_exit_bb as its succ
@@ -154,11 +141,11 @@ void MeCFG::BuildMirCFG() {
   }
   // merge all blocks in entryBlocks
   for (BB *bb : entryBlocks) {
-    func.GetCommonEntryBB()->GetSucc().push_back(bb);
+    func.GetCommonEntryBB()->AddEntry(*bb);
   }
   // merge all blocks in exitBlocks
   for (BB *bb : exitBlocks) {
-    func.GetCommonExitBB()->GetPred().push_back(bb);
+    func.GetCommonExitBB()->AddExit(*bb);
   }
 }
 
@@ -383,7 +370,7 @@ void MeCFG::FixMirCFG() {
         for (size_t si = 0; si < newBB.GetSucc().size(); ++si) {
           BB *sucBB = newBB.GetSucc(si);
           if (sucBB->GetAttributes(kBBAttrIsCatch)) {
-            bb->AddSuccBB(sucBB);
+            bb->AddSucc(*sucBB);
           }
         }
         break;
@@ -405,8 +392,7 @@ void MeCFG::FixMirCFG() {
       for (size_t si = 0; si < bb->GetSucc().size(); ++si) {
         BB *sucBB = bb->GetSucc(si);
         if (sucBB->GetAttributes(kBBAttrIsCatch)) {
-          sucBB->RemoveBBFromPred(bb);
-          bb->RemoveBBFromSucc(sucBB);
+          sucBB->RemovePred(*bb);
           --si;
         }
       }
@@ -429,7 +415,6 @@ void MeCFG::FixMirCFG() {
       BB *sucBB = newBB.GetSucc(si);
       if (sucBB->GetAttributes(kBBAttrIsCatch)) {
         sucBB->ReplacePred(&newBB, bb);
-        newBB.RemoveBBFromSucc(sucBB);
         --si;
       }
     }
@@ -447,11 +432,11 @@ bool MeCFG::IsStartTryBB(maple::BB &meBB) const {
 }
 
 void MeCFG::FixTryBB(maple::BB &startBB, maple::BB &nextBB) {
-  startBB.GetPred().clear();
+  startBB.RemoveAllPred();
   for (size_t i = 0; i < nextBB.GetPred().size(); ++i) {
     nextBB.GetPred(i)->ReplaceSucc(&nextBB, &startBB);
   }
-  nextBB.GetPred().clear();
+  nextBB.RemoveAllPred();
   startBB.ReplaceSucc(startBB.GetSucc(0), &nextBB);
 }
 
@@ -501,7 +486,7 @@ void MeCFG::UnreachCodeAnalysis(bool updatePhi) {
         }
       }
       if (pi == func.GetCommonExitBB()->GetPred().size()) {
-        func.GetCommonExitBB()->GetPred().push_back(bb);
+        func.GetCommonExitBB()->AddExit(*bb);
       }
       if (!MeOption::quiet) {
         LogInfo::MapleLogger() << "#### BB " << bb->GetBBId() << " deleted because unreachable\n";
@@ -523,12 +508,10 @@ void MeCFG::UnreachCodeAnalysis(bool updatePhi) {
       }
       func.DeleteBasicBlock(*bb);
       // remove the bb from its succ's pred_ list
-      for (auto it = bb->GetSucc().begin(); it != bb->GetSucc().end(); ++it) {
-        BB *sucBB = *it;
-        if (!updatePhi) {
-          bb->RemoveBBFromVector(sucBB->GetPred());
-        } else {
-          sucBB->RemoveBBFromPred(bb);
+      while (bb->GetSucc().size() > 0) {
+        BB *sucBB = bb->GetSucc(0);
+        sucBB->RemovePred(*bb, updatePhi);
+        if (updatePhi) {
           if (sucBB->GetPred().empty()) {
             sucBB->ClearPhiList();
           } else if (sucBB->GetPred().size() == 1) {
@@ -540,7 +523,7 @@ void MeCFG::UnreachCodeAnalysis(bool updatePhi) {
       for (auto it = func.GetCommonExitBB()->GetPred().begin();
            it != func.GetCommonExitBB()->GetPred().end(); ++it) {
         if (*it == bb) {
-          func.GetCommonExitBB()->RemoveBBFromPred(bb);
+          func.GetCommonExitBB()->RemoveExit(*bb);
           break;
         }
       }
@@ -654,9 +637,8 @@ void MeCFG::WontExitAnalysis() {
       eIt = func.valid_end();
       newBB->SetKindReturn();
       newBB->SetAttributes(kBBAttrArtificial);
-      bb->GetSucc().push_back(newBB);
-      newBB->GetPred().push_back(bb);
-      func.GetCommonExitBB()->GetPred().push_back(newBB);
+      bb->AddSucc(*newBB);
+      func.GetCommonExitBB()->AddExit(*newBB);
     }
   }
 }

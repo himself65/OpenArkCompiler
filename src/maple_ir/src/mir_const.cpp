@@ -62,7 +62,7 @@ uint8 MIRIntConst::GetBitWidth() const {
 }
 
 void MIRIntConst::Trunc(uint8 width) {
-  const int32 shiftBitNum = 64u - width;
+  const int32 shiftBitNum = static_cast<int32>(64u - width);
   if (shiftBitNum < 0) {
     CHECK_FATAL(false, "shiftBitNum should not be less than zero");
   }
@@ -76,7 +76,7 @@ void MIRIntConst::Trunc(uint8 width) {
 
 int64 MIRIntConst::GetValueUnderType() const {
   uint32 bitSize = GetPrimTypeBitSize(GetNonDynType(GetType().GetPrimType()));
-  const int32 shiftBitNum = 64u - bitSize;
+  const int32 shiftBitNum = static_cast<int32>(64u - bitSize);
   if (shiftBitNum < 0) {
     CHECK_FATAL(false, "shiftBitNum should not be less than zero");
   }

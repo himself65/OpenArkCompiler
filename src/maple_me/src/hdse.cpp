@@ -47,8 +47,7 @@ void HDSE::RemoveNotRequiredStmtsInBB(BB &bb) {
         // update CFG
         while (bb.GetSucc().size() != 1) {
           BB *succ = bb.GetSucc().back();
-          succ->RemoveBBFromPred(&bb);
-          bb.GetSucc().pop_back();
+          succ->RemovePred(bb);
         }
         bb.SetKind(kBBFallthru);
       }
@@ -257,7 +256,7 @@ bool HDSE::HasNonDeletableExpr(const MeStmt &meStmt) const {
   }
 }
 
-void HDSE::MarkLastUnconditionalGotoInPredBBRequired(BB &bb) {
+void HDSE::MarkLastUnconditionalGotoInPredBBRequired(const BB &bb) {
   for (auto predIt = bb.GetPred().begin(); predIt != bb.GetPred().end(); ++predIt) {
     BB *predBB = *predIt;
     if (predBB == &bb || predBB->GetMeStmts().empty()) {

@@ -68,7 +68,7 @@ class VarValue {
 
 class InequalEdge {
  public:
-  InequalEdge(int v, EdgeType t) : edgeType(t), isVarValue(false), pairEdge(nullptr) {
+  InequalEdge(int64 v, EdgeType t) : edgeType(t), isVarValue(false), pairEdge(nullptr) {
     value.constValue = v;
   }
 
@@ -108,7 +108,7 @@ class InequalEdge {
     return edgeType;
   }
 
-  int GetConstValue() const {
+  int64 GetConstValue() const {
     return value.constValue;
   }
 
@@ -136,7 +136,7 @@ class InequalEdge {
     return edgeType == kUpper ? value.constValue <= edge.GetConstValue() : value.constValue >= edge.GetConstValue();
   }
 
-  bool GreaterEqual(int32 val) const {
+  bool GreaterEqual(int64 val) const {
     return edgeType == kUpper ? value.constValue >= val : value.constValue <= val;
   }
 
@@ -157,7 +157,7 @@ class InequalEdge {
 
  private:
   union {
-    int32 constValue;
+    int64 constValue;
     VarValue *varValue;
   } value;
   EdgeType edgeType;
@@ -174,7 +174,7 @@ class ESSABaseNode {
       return lhs->GetID() < rhs->GetID();
     }
   };
-  ESSABaseNode(int i, MeExpr *expr, ESSANodeKind k) : id(i), meExpr(expr), kind(k) {}
+  ESSABaseNode(int64 i, MeExpr *expr, ESSANodeKind k) : id(i), meExpr(expr), kind(k) {}
   virtual ~ESSABaseNode() = default;
 
   virtual const MeExpr &GetMeExpr() const {
@@ -226,12 +226,12 @@ class ESSABaseNode {
     return std::to_string(meExpr->GetExprID());
   }
 
-  int GetID() const {
+  int64 GetID() const {
     return id;
   }
 
  protected:
-  int id;
+  int64 id;
   MeExpr *meExpr;
   ESSANodeKind kind;
   std::vector<std::unique_ptr<InequalEdge>> edges;
@@ -243,16 +243,16 @@ class ESSABaseNode {
 
 class ESSAVarNode : public ESSABaseNode {
  public:
-  ESSAVarNode(int i, MeExpr &e) : ESSABaseNode(i, &e, kVarNode) {}
+  ESSAVarNode(int64 i, MeExpr &e) : ESSABaseNode(i, &e, kVarNode) {}
   ~ESSAVarNode() = default;
 };
 
 class ESSAConstNode : public ESSABaseNode {
  public:
-  ESSAConstNode(int i, int v) : ESSABaseNode(i, nullptr, kConstNode), value(v) {}
+  ESSAConstNode(int64 i, int64 v) : ESSABaseNode(i, nullptr, kConstNode), value(v) {}
   ~ESSAConstNode() = default;
 
-  int GetValue() const {
+  int64 GetValue() const {
     return value;
   }
 
@@ -261,18 +261,18 @@ class ESSAConstNode : public ESSABaseNode {
   }
 
  private:
-  int value;
+  int64 value;
 };
 
 class ESSAArrayNode : public ESSABaseNode {
  public:
-  ESSAArrayNode(int i, MeExpr &e) : ESSABaseNode(i, &e, kArrayNode) {}
+  ESSAArrayNode(int64 i, MeExpr &e) : ESSABaseNode(i, &e, kArrayNode) {}
   ~ESSAArrayNode() = default;
 };
 
 class ESSAPhiNode : public ESSABaseNode {
  public:
-  ESSAPhiNode(int i, MeExpr &e) : ESSABaseNode(i, &e, kPhiNode) {}
+  ESSAPhiNode(int64 i, MeExpr &e) : ESSABaseNode(i, &e, kPhiNode) {}
   ~ESSAPhiNode() = default;
 
   const std::vector<VarMeExpr*> &GetPhiOpnds() const {
@@ -312,17 +312,17 @@ class InequalityGraph {
   }
   ~InequalityGraph() = default;
 
-  ESSAConstNode *GetOrCreateConstNode(int value);
+  ESSAConstNode *GetOrCreateConstNode(int64 value);
   ESSAVarNode *GetOrCreateVarNode(MeExpr &meExpr);
   ESSAPhiNode *GetOrCreatePhiNode(MeVarPhiNode &phiNode);
   ESSAArrayNode *GetOrCreateArrayNode(MeExpr &meExpr);
-  InequalEdge *AddEdge(ESSABaseNode &from, ESSABaseNode &to, int value, EdgeType type);
+  InequalEdge *AddEdge(ESSABaseNode &from, ESSABaseNode &to, int64 value, EdgeType type);
   void AddPhiEdge(ESSABaseNode &from, ESSABaseNode &to, EdgeType type);
   void AddEdge(ESSABaseNode &from, ESSABaseNode &to, MeExpr &value, bool positive, EdgeType type);
   void ConnectTrivalEdge();
   void DumpDotFile(IRMap &irMap, DumpType dumpType) const;
   ESSABaseNode &GetNode(const MeExpr &meExpr);
-  ESSABaseNode &GetNode(int32 value);
+  ESSABaseNode &GetNode(int64 value);
   bool HasNode(const MeExpr &meExpr) const;
   int GetValidID() {
     ++nodeCount;
@@ -331,18 +331,18 @@ class InequalityGraph {
 
  private:
   std::string GetColor(EdgeType type) const;
-  bool HasNode(int value) const;
+  bool HasNode(int64 value) const;
   InequalEdge *HasEdge(ESSABaseNode &from, ESSABaseNode &to, InequalEdge &type) const;
   std::string GetName(ESSABaseNode &node, IRMap &irMap) const;
   std::string GetName(const MeExpr &meExpr, IRMap &irMap) const;
   void DumpDotNodes(IRMap &irMap, std::ostream &out, DumpType dumpType,
-                    const std::map<int32, std::unique_ptr<ESSABaseNode>> &nodes) const;
+                    const std::map<int64, std::unique_ptr<ESSABaseNode>> &nodes) const;
   void DumpDotEdges(IRMap &irMap, const std::pair<ESSABaseNode*, InequalEdge*> &map,
                     std::ostream &out, std::string &from) const;
 
   MeFunction *meFunction;
-  std::map<int32, std::unique_ptr<ESSABaseNode>> varNodes;
-  std::map<int32, std::unique_ptr<ESSABaseNode>> constNodes;
+  std::map<int64, std::unique_ptr<ESSABaseNode>> varNodes;
+  std::map<int64, std::unique_ptr<ESSABaseNode>> constNodes;
   int nodeCount;
 };
 

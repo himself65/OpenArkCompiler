@@ -862,7 +862,7 @@ void ReflectionAnalysis::GenFieldOffsetConst(MIRAggConst &newConst, const Klass 
     FieldID fldID = mirBuilder.GetStructFieldIDFromNameAndTypeParentFirstFoundInChild(
         *mirClassType, originFieldname, fieldP.second.first);
     // set LSB 0, and set LSB 1 in muid_replacement
-    CHECK_FATAL(fldID <= UINT32_MAX / 2, "filedId out of range");
+    CHECK_FATAL(fldID <= INT32_MAX, "filedId out of range");
     fldID = fldID * 2;
     mirBuilder.AddIntFieldConst(type, newConst, metaFieldID, fldID);
   }

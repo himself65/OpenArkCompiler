@@ -113,7 +113,6 @@ void MeDoLoopCanon::Convert(MeFunction &func, BB &bb, BB &pred, MapleMap<Key, bo
   BB *latchBB = func.NewBasicBlock();
   latchBB->SetAttributes(kBBAttrArtificial);
   // update pred bb
-  bb.RemoveBBFromPred(&pred);
   pred.ReplaceSucc(&bb, latchBB); // replace pred.succ with latchBB and set pred of latchBB
   // update pred stmt if needed
   if (pred.GetKind() == kBBGoto) {
@@ -160,7 +159,7 @@ void MeDoLoopCanon::Convert(MeFunction &func, BB &bb, BB &pred, MapleMap<Key, bo
   for (BB *succ : bb.GetSucc()) {
     ASSERT(!latchBB->GetAttributes(kBBAttrIsTry) || latchBB->GetSucc().empty(),
            "loopcanon : tryblock should insert succ before handler");
-    latchBB->AddSuccBB(succ);
+    latchBB->AddSucc(*succ);
   }
   latchBB->SetKind(bb.GetKind());
   // swap latchBB's succ if needed
@@ -218,7 +217,7 @@ AnalysisResult *MeDoLoopCanon::Run(MeFunction *func, MeFuncResultMgr *m, ModuleR
       continue;
     }
     auto *bb = *bIt;
-    MapleVector<BB*> &preds = bb->GetPred();
+    const MapleVector<BB*> &preds = bb->GetPred();
     for (BB *pred : preds) {
       ASSERT(func->GetCommonEntryBB() != nullptr, "impossible");
       ASSERT_NOT_NULL(pred);

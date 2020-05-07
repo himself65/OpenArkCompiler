@@ -325,7 +325,6 @@ void BBLayout::OptimizeBranchTarget(BB &bb) {
     }
     // update CFG
     bb.ReplaceSucc(brTargetBB, newTargetBB);
-    bb.RemoveBBFromVector(brTargetBB->GetPred());
     if (brTargetBB->GetPred().empty()) {
       laidOut[brTargetBB->GetBBId()] = true;
       RemoveUnreachable(*brTargetBB);
@@ -389,7 +388,6 @@ BB *BBLayout::GetFallThruBBSkippingEmpty(BB &bb) {
     BB *oldFallThru = fallthru;
     fallthru = fallthru->GetSucc().front();
     bb.ReplaceSucc(oldFallThru, fallthru);
-    oldFallThru->RemoveBBFromPred(&bb);
     if (oldFallThru->GetPred().empty()) {
       RemoveUnreachable(*oldFallThru);
       if (needDealWithTryBB) {
@@ -447,11 +445,11 @@ void BBLayout::FixEndTryBB(BB &bb) {
 }
 
 void BBLayout::FixTryBB(BB &startTryBB, BB &nextBB) {
-  startTryBB.GetPred().clear();
+  startTryBB.RemoveAllPred();
   for (size_t i = 0; i < nextBB.GetPred().size(); ++i) {
     nextBB.GetPred(i)->ReplaceSucc(&nextBB, &startTryBB);
   }
-  nextBB.GetPred().clear();
+  nextBB.RemoveAllPred();
   startTryBB.ReplaceSucc(startTryBB.GetSucc(0), &nextBB);
 }
 
@@ -468,12 +466,12 @@ void BBLayout::DealWithStartTryBB() {
         if (nextBB->GetAttributes(kBBAttrIsTry)) {
           FixTryBB(*curBB, *nextBB);
         } else {
-          curBB->GetSucc().clear();
+          curBB->RemoveAllSucc();
           func.NullifyBBByID(curBB->GetBBId());
         }
         break;
       } else if (j == size - 1) {
-        curBB->GetSucc().clear();
+        curBB->RemoveAllSucc();
         func.NullifyBBByID(curBB->GetBBId());
       }
     }
@@ -488,11 +486,10 @@ void BBLayout::RemoveUnreachable(BB &bb) {
   if (bb.GetAttributes(kBBAttrIsEntry)) {
     return;
   }
-  MapleVector<BB*> succBBs = bb.GetSucc();
-  for (BB *succ : succBBs) {
-    MapleVector<BB*> &preds = succ->GetPred();
-    bb.RemoveBBFromVector(preds);
-    if (preds.empty()) {
+  while (bb.GetSucc().size() > 0) {
+    BB *succ = bb.GetSucc(0);
+    succ->RemovePred(bb, false);
+    if (succ->GetPred().empty()) {
       RemoveUnreachable(*succ);
     }
   }
@@ -508,7 +505,7 @@ void BBLayout::RemoveUnreachable(BB &bb) {
   if (bb.GetAttributes(kBBAttrIsTryEnd)) {
     FixEndTryBB(bb);
   }
-  succBBs.clear();
+  bb.RemoveAllSucc();
   func.NullifyBBByID(bb.GetBBId());
 }
 
@@ -539,8 +536,18 @@ BB *BBLayout::CreateGotoBBAfterCondBB(BB &bb, BB &fallthru) {
     newFallthru->SetLast(newFallthru->GetStmtNodes().begin().d());
   }
   // replace pred and succ
+  size_t index = fallthru.GetPred().size();
+  while (index > 0) {
+    if (fallthru.GetPred(index - 1) == &bb) {
+      break;
+    }
+    index--;
+  }
   bb.ReplaceSucc(&fallthru, newFallthru);
-  fallthru.ReplacePred(&bb, newFallthru);
+  // pred has been remove for pred vector of succ
+  // means size reduced, so index reduced
+  index--;
+  fallthru.AddPred(*newFallthru, index);
   newFallthru->SetFrequency(fallthru.GetFrequency());
   if (enabledDebug) {
     LogInfo::MapleLogger() << "Created fallthru and goto original fallthru" << '\n';

@@ -86,7 +86,7 @@ void BinaryMplImport::ReadFileAt(const std::string &name, int32 offset) {
   CHECK_FATAL(seekRet == 0, "call fseek failed");
   buf.resize(size);
 
-  size_t result = fread(&buf[0], sizeof(uint8), size, f);
+  size_t result = fread(&buf[0], sizeof(uint8), static_cast<size_t>(size), f);
   fclose(f);
   CHECK_FATAL(result == static_cast<size_t>(size), "Error while reading the binary file: %s", name.c_str());
 }
@@ -716,7 +716,7 @@ MIRType &BinaryMplImport::InsertInTypeTables(MIRType &type) {
       // New definition wins
       type.SetTypeIndex(prevTyIdx);
       CHECK_FATAL(GlobalTables::GetTypeTable().GetTypeTable().empty() == false, "container check");
-      GlobalTables::GetTypeTable().SetTypeWithTyIdx(prevTyIdx, type.CopyMIRTypeNode());
+      GlobalTables::GetTypeTable().SetTypeWithTyIdx(prevTyIdx, *type.CopyMIRTypeNode());
       resultTypePtr = GlobalTables::GetTypeTable().GetTypeFromTyIdx(prevTyIdx);
       if (!IsIncomplete(*resultTypePtr)) {
         GlobalTables::GetTypeNameTable().SetGStrIdxToTyIdx(resultTypePtr->GetNameStrIdx(),

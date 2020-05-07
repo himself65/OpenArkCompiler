@@ -1354,12 +1354,13 @@ class MIRFuncType : public MIRType {
         paramTypeList(ma.Adapter()),
         paramAttrsList(ma.Adapter()) {}
 
-  explicit MIRFuncType(GStrIdx strIdx, MapleAllocator &ma)
+  explicit MIRFuncType(const GStrIdx &strIdx, MapleAllocator &ma)
       : MIRType(kTypeFunction, PTY_ptr, strIdx),
         paramTypeList(ma.Adapter()),
         paramAttrsList(ma.Adapter()) {}
 
-  MIRFuncType(TyIdx retTyIdx, const std::vector<TyIdx> &vecTy, const std::vector<TypeAttrs> &vecAt, MapleAllocator &ma)
+  MIRFuncType(const TyIdx &retTyIdx, const std::vector<TyIdx> &vecTy,
+              const std::vector<TypeAttrs> &vecAt, MapleAllocator &ma)
       : MIRType(kTypeFunction, PTY_ptr),
         retTyIdx(retTyIdx),
         paramTypeList(ma.Adapter()),

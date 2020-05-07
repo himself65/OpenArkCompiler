@@ -293,10 +293,8 @@ int BinaryMplExport::typeMarkOffset = 0;
 
 BinaryMplExport::BinaryMplExport(MIRModule &md) : mod(md) {
   Init();
-  static auto constPolicyLoader = InitOutputConstFactory();
-  (void)constPolicyLoader;
-  static auto typePolicyLoader = InitOutputTypeFactory();
-  (void)typePolicyLoader;
+  (void)InitOutputConstFactory();
+  (void)InitOutputTypeFactory();
 }
 
 uint8 BinaryMplExport::Read() {

@@ -23,8 +23,13 @@ constexpr int kSlownativeFuncnum = 5;
 #else
 constexpr int kSlownativeFuncnum = 9;
 #endif
+// May not use Env or ClassObj
 constexpr int kJniTypeNormal = 0;
+// Not equal to real critical native, but no need for pre/post/eh.
+// Need SetReliableUnwindContext, because the native code may call other java code
 constexpr int kJniTypeMapleCriticalNative = 1;
+// Equal to real critical native, func will be set critical attribute.
+// In theory it's incorrect because passing incorrect args. Ex. Linux.getuid
 constexpr int kJniTypeCriticalNative = 2;
 constexpr int kInvalidCode = 0x01;
 
@@ -38,6 +43,8 @@ class NativeFuncProperty {
   std::string nativeFile;
   std::string nativeFunc;
   int jniType = kJniTypeNormal;
+  int useEnv = 1;
+  int useClassObj = 1;
 
   friend class NativeStubFuncGeneration;
 };

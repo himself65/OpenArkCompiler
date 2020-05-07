@@ -73,7 +73,7 @@ class MIRPragmaElement {
   explicit MIRPragmaElement(MIRModule &m) : MIRPragmaElement(m.GetPragmaMPAllocator()) {}
 
   explicit MIRPragmaElement(MapleAllocator &subElemAllocator)
-      : val{ 0 }, subElemVec(subElemAllocator.Adapter()) {
+      : subElemVec(subElemAllocator.Adapter()) {
     subElemVec.clear();
   }
 
@@ -169,7 +169,7 @@ class MIRPragmaElement {
     uint64 u;
     float f;
     double d;
-  } val;
+  } val { 0 };
   MapleVector<MIRPragmaElement*> subElemVec;
 };
 

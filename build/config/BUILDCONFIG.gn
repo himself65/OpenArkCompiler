@@ -62,11 +62,13 @@ if (GN_BUILD_TYPE == "RELEASE") {
   cflags_cc += [
     "-O0",
     "-g3",
+    "-ftrapv",
     "-fstack-check",
   ]
   cflags_c += [
     "-O0",
     "-g3",
+    "-ftrapv",
     "-fstack-check",
   ]
 } else {

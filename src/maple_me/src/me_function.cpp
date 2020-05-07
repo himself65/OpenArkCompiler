@@ -538,19 +538,15 @@ BB &MeFunction::SplitBB(BB &bb, StmtNode &splitPoint, BB *newBB) {
   }
   // Special Case: commonExitBB is orig bb's succ
   auto *commonExitBB = *common_exit();
-  for (size_t i = 0; i < commonExitBB->GetPred().size(); ++i) {
-    if (commonExitBB->GetPred(i) == &bb) {
-      commonExitBB->SetPred(i, newBB);
-      break;
-    }
+  if (bb.IsPredBB(*commonExitBB)) {
+    commonExitBB->RemoveExit(bb);
+    commonExitBB->AddExit(*newBB);
   }
-  for (size_t i = 0; i < bb.GetSucc().size(); ++i) {
-    BB *succ = bb.GetSucc(i);
+  while (bb.GetSucc().size() > 0) {
+    BB *succ = bb.GetSucc(0);
     succ->ReplacePred(&bb, newBB);
   }
-  bb.GetSucc().clear();
-  bb.GetSucc().push_back(newBB);
-  newBB->GetPred().push_back(&bb);
+  bb.AddSucc(*newBB);
   // Setup flags
   newBB->CopyFlagsAfterSplit(bb);
   if (newBB->GetAttributes(kBBAttrIsTryEnd)) {
@@ -699,7 +695,7 @@ void MeFunction::SCCTopologicalSort(std::vector<SCCOfBBs*> &sccNodes) {
   for (SCCOfBBs *node : sccNodes) {
     if (!node->HasPred()) {
       sccTopologicalVec.push_back(node);
-      inQueue.insert(node);
+      (void)inQueue.insert(node);
     }
   }
 
@@ -719,7 +715,7 @@ void MeFunction::SCCTopologicalSort(std::vector<SCCOfBBs*> &sccNodes) {
         }
         if (predAllVisited) {
           sccTopologicalVec.push_back(succ);
-          inQueue.insert(succ);
+          (void)inQueue.insert(succ);
         }
       }
     }
@@ -734,7 +730,7 @@ void MeFunction::BBTopologicalSort(SCCOfBBs &scc) {
   }
   scc.Clear();
   scc.AddBBNode(scc.GetEntry());
-  inQueue.insert(scc.GetEntry());
+  (void)inQueue.insert(scc.GetEntry());
 
   for (size_t i = 0; i < scc.GetBBs().size(); ++i) {
     BB *bb = scc.GetBBs()[i];
@@ -764,7 +760,7 @@ void MeFunction::BBTopologicalSort(SCCOfBBs &scc) {
       }
       if (predAllVisited) {
         scc.AddBBNode(succ);
-        inQueue.insert(succ);
+        (void)inQueue.insert(succ);
       }
     }
   }

@@ -852,7 +852,7 @@ bool MIRParser::ParseStructType(TyIdx &styIdx) {
     if (static_cast<MIRStructType*>(prevType)->IsIncomplete() && !(structType.IsIncomplete())) {
       structType.SetNameStrIdx(prevType->GetNameStrIdx());
       structType.SetTypeIndex(styIdx);
-      GlobalTables::GetTypeTable().SetTypeWithTyIdx(styIdx, structType.CopyMIRTypeNode());
+      GlobalTables::GetTypeTable().SetTypeWithTyIdx(styIdx, *structType.CopyMIRTypeNode());
     }
   } else {
     styIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&structType);
@@ -883,7 +883,7 @@ bool MIRParser::ParseClassType(TyIdx &styidx) {
     if (static_cast<MIRClassType*>(prevType)->IsIncomplete() && !(classType.IsIncomplete())) {
       classType.SetNameStrIdx(prevType->GetNameStrIdx());
       classType.SetTypeIndex(styidx);
-      GlobalTables::GetTypeTable().SetTypeWithTyIdx(styidx, classType.CopyMIRTypeNode());
+      GlobalTables::GetTypeTable().SetTypeWithTyIdx(styidx, *classType.CopyMIRTypeNode());
     }
   } else {
     styidx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&classType);
@@ -926,7 +926,7 @@ bool MIRParser::ParseInterfaceType(TyIdx &sTyIdx) {
     if (static_cast<MIRInterfaceType*>(prevType)->IsIncomplete() && !(interfaceType.IsIncomplete())) {
       interfaceType.SetNameStrIdx(prevType->GetNameStrIdx());
       interfaceType.SetTypeIndex(sTyIdx);
-      GlobalTables::GetTypeTable().SetTypeWithTyIdx(sTyIdx, interfaceType.CopyMIRTypeNode());
+      GlobalTables::GetTypeTable().SetTypeWithTyIdx(sTyIdx, *interfaceType.CopyMIRTypeNode());
     }
   } else {
     sTyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&interfaceType);
