@@ -43,18 +43,27 @@ void MeDoSplitCEdge::BreakCriticalEdge(MeFunction &func, BB &pred, BB &succ) con
   // create newBB and set pred/succ
   BB *newBB = nullptr;
   // use replace instead of remove/add to keep position in pred/succ
+  size_t index = succ.GetPred().size();
   if (&pred == func.GetCommonEntryBB()) {
     newBB = &func.InsertNewBasicBlock(*func.GetFirstBB());
-    pred.ReplaceSuccOfCommonEntryBB(&succ, newBB);
-    newBB->GetSucc().push_back(&succ);
-    succ.GetPred().push_back(newBB);
     newBB->SetAttributes(kBBAttrIsEntry);
     succ.ClearAttributes(kBBAttrIsEntry);
+    pred.RemoveEntry(succ);
+    pred.AddEntry(*newBB);
   } else {
     newBB = func.NewBasicBlock();
+    while (index > 0) {
+      if (succ.GetPred(index - 1) == &pred) {
+        break;
+      }
+      index--;
+    }
     pred.ReplaceSucc(&succ, newBB);
-    succ.ReplacePred(&pred, newBB);
   }
+  // pred has been remove for pred vector of succ
+  // means size reduced, so index reduced
+  index--;
+  succ.AddPred(*newBB, index);
   newBB->SetKind(kBBFallthru);  // default kind
   newBB->SetAttributes(kBBAttrArtificial);
 
@@ -104,7 +113,7 @@ AnalysisResult *MeDoSplitCEdge::Run(MeFunction *func, MeFuncResultMgr *m, Module
       continue;
     }
     auto *bb = *bIt;
-    MapleVector<BB*> &preds = bb->GetPred();
+    const MapleVector<BB*> &preds = bb->GetPred();
     // skip fallthrough bb or bb is handler block
     if (preds.size() < 2 || bb->GetAttributes(kBBAttrIsCatch)) {
       continue;

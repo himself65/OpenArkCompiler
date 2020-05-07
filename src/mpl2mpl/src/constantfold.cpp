@@ -76,7 +76,7 @@ BaseNode *ConstantFold::PairToExpr(PrimType resultType, const std::pair<BaseNode
     BaseNode *r = static_cast<UnaryNode*>(pair.first)->Opnd(0);
     result = mirModule->CurFuncCodeMemPool()->New<BinaryNode>(OP_sub, resultType, val, r);
   } else {
-    if (pair.second > 0) {
+    if (pair.second > 0 || pair.second == LLONG_MIN) {
       // +-a, 5 -> a + 5
       ConstvalNode *val = mirModule->GetMIRBuilder()->CreateIntConst(pair.second, resultType);
       result = mirModule->CurFuncCodeMemPool()->New<BinaryNode>(OP_add, resultType, pair.first, val);

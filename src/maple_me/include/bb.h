@@ -117,16 +117,56 @@ class BB {
     return GetAttributes(kBBAttrIsTryEnd);
   }
 
-  void Dump(MIRModule *mod);
-  void DumpHeader(MIRModule *mod) const;
+  void Dump(const MIRModule *mod);
+  void DumpHeader(const MIRModule *mod) const;
   void DumpPhi();
   void DumpBBAttribute(const MIRModule *mod) const;
   std::string StrAttribute() const;
 
-  void AddPredBB(BB *predVal) {
-    ASSERT(predVal != nullptr, "null ptr check");
-    pred.push_back(predVal);
-    predVal->succ.push_back(this);
+  // Only use for common entry bb
+  void AddEntry(BB &bb) {
+    succ.push_back(&bb);
+  }
+
+  // Only use for common entry bb
+  void RemoveEntry(const BB &bb) {
+    bb.RemoveBBFromVector(succ);
+  }
+
+  // Only use for common exit bb
+  void AddExit(BB &bb) {
+    pred.push_back(&bb);
+  }
+
+  // Only use for common exit bb
+  void RemoveExit(const BB &bb) {
+    bb.RemoveBBFromVector(pred);
+  }
+
+  void AddPred(BB &predBB, size_t pos = UINT32_MAX) {
+    ASSERT((pos <= pred.size() || pos == UINT32_MAX), "Invalid position.");
+    ASSERT((!predBB.IsInList(pred) && !IsInList(predBB.succ)), "BB already has been Added.");
+    ASSERT((id != 0 && id != 1), "CommonEntry or CommonEntry should not be here.");
+    ASSERT((predBB.id != 0 && predBB.id != 1), "CommonEntry or CommonEntry should not be here.");
+    if (pos == UINT32_MAX) {
+      pred.push_back(&predBB);
+    } else {
+      pred.insert(pred.begin() + pos, &predBB);
+    }
+    predBB.succ.push_back(this);
+  }
+
+  void AddSucc(BB &succBB, size_t pos = UINT32_MAX) {
+    ASSERT((pos <= succ.size() || pos == UINT32_MAX), "Invalid position.");
+    ASSERT((!succBB.IsInList(succ) && !IsInList(succBB.pred)), "BB already has been Added.");
+    ASSERT((id != 0 && id != 1), "CommonEntry or CommonEntry should not be here.");
+    ASSERT((succBB.id != 0 && succBB.id != 1), "CommonEntry or CommonEntry should not be here.");
+    if (pos == UINT32_MAX) {
+      succ.push_back(&succBB);
+    } else {
+      succ.insert(succ.begin() + pos, &succBB);
+    }
+    succBB.pred.push_back(this);
   }
 
   // This is to help new bb to keep some flags from original bb after logically splitting.
@@ -183,7 +223,6 @@ class BB {
   void SetFirstMe(MeStmt *stmt);
   void SetLastMe(MeStmt *stmt);
   MeStmt *GetLastMe();
-  bool IsInList(const MapleVector<BB*> &bbList) const;
   bool IsPredBB(const BB &bb) const {
     // if this is a pred of bb return true;
     // otherwise return false;
@@ -194,33 +233,36 @@ class BB {
     return IsInList(bb.succ);
   }
   void DumpMeBB(const IRMap &irMap);
-
-  void AddSuccBB(BB *succPara) {
-    succ.push_back(succPara);
-    succPara->pred.push_back(this);
-  }
-
   void ReplacePred(const BB *old, BB *newPred);
   void ReplaceSucc(const BB *old, BB *newSucc);
-  void ReplaceSuccOfCommonEntryBB(const BB *old, BB *newSucc);
   void AddStmtNode(StmtNode *stmt);
   void PrependStmtNode(StmtNode *stmt);
   void RemoveStmtNode(StmtNode *stmt);
   void RemoveLastStmt();
   void InsertStmtBefore(StmtNode *stmt, StmtNode *newStmt);
   void ReplaceStmt(StmtNode *stmt, StmtNode *newStmt);
-  int RemoveBBFromVector(MapleVector<BB*> &bbVec) const;
-  void RemoveBBFromPred(BB *bb);
-  void RemoveBBFromSucc(BB *bb);
 
-  void RemovePred(BB *predBB) {
-    predBB->RemoveBBFromSucc(this);
-    RemoveBBFromPred(predBB);
+  void RemovePred(BB &predBB, bool updatePhi = true) {
+    ASSERT((id != 0 && id != 1), "CommonEntry or CommonEntry should not be here.");
+    ASSERT((predBB.id != 0 && predBB.id != 1), "CommonEntry or CommonEntry should not be here.");
+    RemoveBBFromPred(predBB, updatePhi);
+    predBB.RemoveBBFromSucc(*this);
   }
 
-  void RemoveSucc(BB *succBB) {
-    succBB->RemoveBBFromPred(this);
+  void RemoveSucc(BB &succBB, bool updatePhi = true) {
+    ASSERT((id != 0 && id != 1), "CommonEntry or CommonEntry should not be here.");
+    ASSERT((succBB.id != 0 && succBB.id != 1), "CommonEntry or CommonEntry should not be here.");
+    succBB.RemoveBBFromPred(*this, updatePhi);
     RemoveBBFromSucc(succBB);
+  }
+
+  void RemoveAllPred() {
+    pred.clear();
+  }
+
+  void RemoveAllSucc() {
+    succ.clear();
+    succFreq.clear();
   }
 
   void InsertPi(BB &bb, PiassignMeStmt &s) {
@@ -299,10 +341,6 @@ class BB {
     SetAttributes(kBBAttrIsExit);
   }
 
-  MapleVector<BB*> &GetPred() {
-    return pred;
-  }
-
   const MapleVector<BB*> &GetPred() const {
     return pred;
   }
@@ -320,10 +358,6 @@ class BB {
   void SetPred(size_t cnt, BB *pp) {
     CHECK_FATAL(cnt < pred.size(), "out of range in BB::SetPred");
     pred[cnt] = pp;
-  }
-
-  MapleVector<BB*> &GetSucc() {
-    return succ;
   }
 
   MapleVector<uint64> &GetSuccFreq() {
@@ -413,7 +447,14 @@ class BB {
   void ClearGroup() {
     group = this;
   }
+
  private:
+  bool IsInList(const MapleVector<BB*> &bbList) const;
+  int RemoveBBFromVector(MapleVector<BB*> &bbVec) const;
+  void RemovePhiOpnd(int index);
+  void RemoveBBFromPred(const BB &bb, bool updatePhi);
+  void RemoveBBFromSucc(const BB &bb);
+
   BBId id;
   LabelIdx bbLabel = 0;       // the BB's label
   MapleVector<BB*> pred;  // predecessor list

@@ -42,11 +42,11 @@ TypeTable::TypeTable() {
   }
 }
 
-void TypeTable::SetTypeWithTyIdx(TyIdx tyIdx, MIRType *type) {
+void TypeTable::SetTypeWithTyIdx(const TyIdx &tyIdx, MIRType &type) {
   CHECK_FATAL(tyIdx < typeTable.size(), "array index out of range");
   MIRType *oldType = typeTable.at(tyIdx);
-  typeTable.at(tyIdx) = type;
-  if (oldType != nullptr && oldType != type) {
+  typeTable.at(tyIdx) = &type;
+  if (oldType != nullptr && oldType != &type) {
     typeHashTable.erase(oldType);
     delete oldType;
   }

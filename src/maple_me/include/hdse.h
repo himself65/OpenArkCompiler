@@ -62,7 +62,7 @@ class HDSE {
   void MarkControlDependenceLive(BB &bb);
   void MarkLastBranchStmtInBBRequired(BB &bb);
   void MarkLastStmtInPDomBBRequired(const BB &bb);
-  void MarkLastUnconditionalGotoInPredBBRequired(BB &bb);
+  void MarkLastUnconditionalGotoInPredBBRequired(const BB &bb);
   void MarkVarDefByStmt(VarMeExpr &varMeExpr);
   void MarkRegDefByStmt(RegMeExpr &regMeExpr);
 

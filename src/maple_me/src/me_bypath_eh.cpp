@@ -74,8 +74,7 @@ bool MeDoBypathEH::DoBypathException(BB *tryBB, BB *catchBB, const Klass *catchC
           bb->InsertStmtBefore(gotoNode, syncExitStmt->CloneTree(func.GetMIRModule().GetCurFuncCodeMPAllocator()));
         }
         transformed = true;
-        bb->GetSucc().insert(bb->GetSucc().begin(), catchBB);
-        catchBB->GetPred().push_back(bb);
+        bb->AddSucc(*catchBB, 0);
       }
     }
     // Add fall through bb

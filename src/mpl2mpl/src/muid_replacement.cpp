@@ -528,7 +528,7 @@ void MUIDReplacement::GenerateDataDefTable() {
   }
 }
 
-void MUIDReplacement::ReplaceFieldMetaStaticAddr(MIRSymbol &mirSymbol, uint32 index) {
+void MUIDReplacement::ReplaceFieldMetaStaticAddr(const MIRSymbol &mirSymbol, uint32 index) {
   std::string symbolName = mirSymbol.GetName();
   MIRSymbol *fieldOffsetDataSt = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(
       GlobalTables::GetStrTable().GetStrIdxFromName(NameMangler::kFieldOffsetDataPrefixStr + symbolName));
@@ -856,7 +856,7 @@ void MUIDReplacement::ReplaceAddroffuncConst(MIRConst *&entry, uint32 fieldID, b
     // this is an index into the funcDefTab
     constexpr uint64 idxIntoFuncDefTabFlag = 2u;
     constNode = GlobalTables::GetIntConstTable().GetOrCreateIntConst(
-        ((offset + 1) << reservedBits) + idxIntoFuncDefTabFlag, voidType);
+        static_cast<int64>(((offset + 1) << reservedBits) + idxIntoFuncDefTabFlag), voidType);
   } else if (isVtab && func->IsAbstract()) {
     MIRType &type = *GlobalTables::GetTypeTable().GetVoidPtr();
     constNode = GlobalTables::GetIntConstTable().GetOrCreateIntConst(0, type);
@@ -865,7 +865,8 @@ void MUIDReplacement::ReplaceAddroffuncConst(MIRConst *&entry, uint32 fieldID, b
     offset = FindIndexFromUndefTable(*(func->GetFuncSymbol()), true);
     // The second least significant bit is set to 0, indicating
     // this is an index into the funcUndefTab
-    constNode = GlobalTables::GetIntConstTable().GetOrCreateIntConst((offset + 1) << reservedBits, voidType);
+    constNode = GlobalTables::GetIntConstTable().GetOrCreateIntConst(static_cast<int64>((offset + 1) << reservedBits),
+                                                                     voidType);
   }
   if (fieldID != 0xffffffff) {
     constNode = GlobalTables::GetIntConstTable().GetOrCreateIntConst(constNode->GetValue(),
@@ -893,8 +894,8 @@ void MUIDReplacement::ReplaceDataTable(const std::string &name) {
         MIRConstPtr mirConst = aggrC->GetConstVecItem(i);
         if (mirConst->GetKind() == kConstInt) {
           MIRIntConst *newIntConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(
-              static_cast<MIRIntConst*>(mirConst)->GetValue(), mirConst->GetType(), i + 1);
-          aggrC->SetConstVecItem(i, *newIntConst);
+              static_cast<MIRIntConst*>(mirConst)->GetValue(), mirConst->GetType(), static_cast<uint32>(i + 1));
+          aggrC->SetConstVecItem(static_cast<uint32>(i), *newIntConst);
         } else {
           aggrC->GetConstVecItem(i)->SetFieldID(i + 1);
         }
@@ -922,8 +923,8 @@ void MUIDReplacement::ReplaceDecoupleKeyTable(MIRAggConst* oldConst) {
           MIRConstPtr mirConst = aggrC->GetConstVecItem(i);
           if (mirConst->GetKind() == kConstInt) {
             MIRIntConst *newIntConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(
-                static_cast<MIRIntConst*>(mirConst)->GetValue(), mirConst->GetType(), i + 1);
-            aggrC->SetConstVecItem(i, *newIntConst);
+                static_cast<MIRIntConst*>(mirConst)->GetValue(), mirConst->GetType(), static_cast<uint32>(i + 1));
+            aggrC->SetConstVecItem(static_cast<uint32>(i), *newIntConst);
           } else {
             aggrC->GetConstVecItem(i)->SetFieldID(i + 1);
           }
@@ -950,10 +951,12 @@ void MUIDReplacement::ReplaceAddrofConst(MIRConst *&entry) {
   MIRIntConst *constNode = nullptr;
   if (addrSym->GetStorageClass() != kScExtern) {
     offset = FindIndexFromDefTable(*addrSym, false);
-    constNode = GlobalTables::GetIntConstTable().GetOrCreateIntConst(offset | kFromDefIndexMask, voidType);
+    constNode = GlobalTables::GetIntConstTable().GetOrCreateIntConst(static_cast<int64>(offset | kFromDefIndexMask),
+                                                                     voidType);
   } else {
     offset = FindIndexFromUndefTable(*addrSym, false);
-    constNode = GlobalTables::GetIntConstTable().GetOrCreateIntConst(offset | kFromUndefIndexMask, voidType);
+    constNode = GlobalTables::GetIntConstTable().GetOrCreateIntConst(static_cast<int64>(offset | kFromUndefIndexMask),
+                                                                     voidType);
   }
   entry = constNode;
 }

@@ -76,7 +76,8 @@ class Profile {
   ~Profile() = default;
 
  private:
-  bool valid;
+  bool valid = false;
+  bool initialized = false;
   bool profileMode = false;
   bool isCoreSo = false;
   bool isAppProfile = false;

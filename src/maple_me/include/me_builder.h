@@ -20,8 +20,7 @@ namespace maple {
 class MeBuilder {
  public:
   explicit MeBuilder(MapleAllocator &allocator) : allocator(allocator) {
-    static auto exprBuildPolicyLoader = InitMeExprBuildFactory();
-    (void)exprBuildPolicyLoader;
+    (void)InitMeExprBuildFactory();
   }
 
   virtual ~MeBuilder() = default;

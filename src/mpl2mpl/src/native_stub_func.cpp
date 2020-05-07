@@ -173,11 +173,14 @@ void NativeStubFuncGeneration::ProcessFunc(MIRFunction *func) {
   if (!func->GetAttr(FUNCATTR_critical_native)) {
     if (needNativeCall) {
       func->GetBody()->AddStatement(preFuncCall);
+      // set up env
+      allocCallArgs.push_back(Options::usePreg
+                              ? (static_cast<BaseNode*>(builder->CreateExprRegread(PTY_ptr, envPregIdx)))
+                              : (static_cast<BaseNode*>(builder->CreateExprDread(*envPtrSym))));
+    } else {
+      // set up env
+      allocCallArgs.push_back(builder->CreateIntConst(0, PTY_i32));
     }
-    // set up env
-    allocCallArgs.push_back(Options::usePreg
-        ? (static_cast<BaseNode*>(builder->CreateExprRegread(PTY_ptr, envPregIdx)))
-        : (static_cast<BaseNode*>(builder->CreateExprDread(*envPtrSym))));
     // set up class
     if (func->GetAttr(FUNCATTR_static)) {
       allocCallArgs.push_back(builder->CreateExprAddrof(0, *classObjSymbol));
@@ -200,15 +203,8 @@ void NativeStubFuncGeneration::ProcessFunc(MIRFunction *func) {
     stubFuncRet = builder->CreateSymbol(func->GetReturnTyIdx(), "retvar_stubfunc", kStVar, kScAuto, func, kScopeLocal);
   }
   MIRFunction &nativeFunc = GetOrCreateDefaultNativeFunc(*func);
-
   if (Options::regNativeFunc) {
     GenerateRegisteredNativeFuncCall(*func, nativeFunc, allocCallArgs, stubFuncRet);
-  } else if (Options::nativeWrapper) {
-    GenerateNativeWrapperFuncCall(*func, nativeFunc, allocCallArgs, stubFuncRet);
-  } else {
-    CallNode *callAssign =
-        builder->CreateStmtCallAssigned(nativeFunc.GetPuidx(), allocCallArgs, stubFuncRet, OP_callassigned);
-    func->GetBody()->AddStatement(callAssign);
   }
   if (func->GetReturnType()->GetPrimType() == PTY_ref) {
     MapleVector<BaseNode*> decodeArgs(func->GetCodeMempoolAllocator().Adapter());
@@ -247,10 +243,7 @@ void NativeStubFuncGeneration::ProcessFunc(MIRFunction *func) {
     CallNode *callGetExceptFunc = builder->CreateStmtCallAssigned(MRTCheckThrowPendingExceptionFunc->GetPuidx(),
                                                                   getExceptArgs, nullptr, OP_callassigned);
     func->GetBody()->AddStatement(callGetExceptFunc);
-  }
-  // this function is a bridge function generated for Java Genetic
-  if ((func->GetAttr(FUNCATTR_native) || func->GetAttr(FUNCATTR_fast_native)) &&
-      !func->GetAttr(FUNCATTR_critical_native) && !func->GetAttr(FUNCATTR_bridge)) {
+  } else if (!func->GetAttr(FUNCATTR_critical_native)) {
     MapleVector<BaseNode*> frameStatusArgs(func->GetCodeMempoolAllocator().Adapter());
     CallNode *callSetFrameStatusFunc = builder->CreateStmtCallAssigned(MCCSetReliableUnwindContextFunc->GetPuidx(),
                                                                        frameStatusArgs, nullptr, OP_callassigned);
@@ -280,7 +273,7 @@ void NativeStubFuncGeneration::GenerateRegFuncTabEntry() {
   constexpr uint64 locIdxMask = 0x01;
   uint64 locIdx = regFuncTabConst->GetConstVec().size();
   auto *newConst =
-    GlobalTables::GetIntConstTable().GetOrCreateIntConst(static_cast<uint64>((locIdx << locIdxShift) | locIdxMask),
+    GlobalTables::GetIntConstTable().GetOrCreateIntConst(static_cast<int64>((locIdx << locIdxShift) | locIdxMask),
                                                          *GlobalTables::GetTypeTable().GetVoidPtr());
   regFuncTabConst->PushBack(newConst);
 }
@@ -507,12 +500,6 @@ StmtNode *NativeStubFuncGeneration::CreateNativeWrapperCallNode(MIRFunction &fun
   } else {
     return builder->CreateStmtCallAssigned(wrapperFunc->GetPuidx(), wrapperArgs, ret, OP_callassigned);
   }
-}
-
-void NativeStubFuncGeneration::GenerateNativeWrapperFuncCall(MIRFunction &func, const MIRFunction &nativeFunc,
-                                                             MapleVector<BaseNode*> &args, const MIRSymbol *ret) {
-  func.GetBody()->AddStatement(
-      CreateNativeWrapperCallNode(func, builder->CreateExprAddroffunc(nativeFunc.GetPuidx()), args, ret));
 }
 
 void NativeStubFuncGeneration::GenerateRegTableEntryType() {

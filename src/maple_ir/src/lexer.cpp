@@ -22,8 +22,8 @@
 #include "utils.h"
 
 namespace maple {
-int32_t HexCharToDigit(char c) {
-  int32_t ret = utils::ToDigit<16, int32_t>(c);
+int32 HexCharToDigit(char c) {
+  int32 ret = utils::ToDigit<16, int32>(c);
   return (ret != INT32_MAX ? ret : 0);
 }
 
@@ -205,19 +205,21 @@ TokenKind MIRLexer::GetIntConst(uint32 valStart, bool negative) {
   char c = GetCharAtWithUpperCheck(curIdx);
   theIntVal = HexCharToDigit(c);
   c = GetNextCurrentCharWithUpperCheck();
-  if (theIntVal == 0) {  // octal
-    while (isdigit(c)) {
-      theIntVal = ((static_cast<uint64>(theIntVal)) << 3) + HexCharToDigit(c);
-      c = GetNextCurrentCharWithUpperCheck();
-    }
-  } else {
-    while (isdigit(c)) {
-      theIntVal = (theIntVal * 10) + HexCharToDigit(c);
-      c = GetNextCurrentCharWithUpperCheck();
-    }
+  uint8 hexValue = 10;
+  if (theIntVal == 0) {
+    // octal
+    hexValue = 8;
   }
   if (negative) {
     theIntVal = -theIntVal;
+  }
+  while (isdigit(c)) {
+    int32 val = HexCharToDigit(c);
+    if (negative) {
+      val = -val;
+    }
+    theIntVal = (theIntVal * hexValue) + val;
+    c = GetNextCurrentCharWithUpperCheck();
   }
   if (c == 'u' || c == 'U') {  // skip 'u' or 'U'
     c = GetNextCurrentCharWithUpperCheck();

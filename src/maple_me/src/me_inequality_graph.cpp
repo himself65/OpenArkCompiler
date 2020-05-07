@@ -20,7 +20,7 @@ constexpr maple::int32 kLowerBound = 0;
 }  // namespace
 
 namespace maple {
-ESSAConstNode *InequalityGraph::GetOrCreateConstNode(int value) {
+ESSAConstNode *InequalityGraph::GetOrCreateConstNode(int64 value) {
   if (HasNode(value)) {
     return static_cast<ESSAConstNode*>(constNodes[value].get());
   }
@@ -82,7 +82,7 @@ ESSAArrayNode *InequalityGraph::GetOrCreateArrayNode(MeExpr &meExpr) {
   return newArray;
 }
 
-InequalEdge *InequalityGraph::AddEdge(ESSABaseNode &from, ESSABaseNode &to, int value, EdgeType type) {
+InequalEdge *InequalityGraph::AddEdge(ESSABaseNode &from, ESSABaseNode &to, int64 value, EdgeType type) {
   InequalEdge tmpEdge = InequalEdge(value, type);
   InequalEdge *edge = HasEdge(from, to, tmpEdge);
   if (edge != nullptr) {
@@ -129,15 +129,15 @@ bool InequalityGraph::HasNode(const MeExpr &meExpr) const {
   return varNodes.find(meExpr.GetExprID()) != varNodes.end();
 }
 
-bool InequalityGraph::HasNode(int32 value) const {
+bool InequalityGraph::HasNode(int64 value) const {
   return constNodes.find(value) != constNodes.end();
 }
 
 void InequalityGraph::ConnectTrivalEdge() {
-  int32 prevValue = 0;
+  int64 prevValue = 0;
   ESSABaseNode* prevNode = nullptr;
   for (auto &pair : constNodes) {
-    int32 value = pair.first;
+    int64 value = pair.first;
     ESSABaseNode* node = pair.second.get();
     if (prevNode == nullptr) {
       prevValue = value;
@@ -159,7 +159,7 @@ ESSABaseNode &InequalityGraph::GetNode(const MeExpr &meExpr) {
   return *varNodes[meExpr.GetExprID()];
 }
 
-ESSABaseNode &InequalityGraph::GetNode(int32 value) {
+ESSABaseNode &InequalityGraph::GetNode(int64 value) {
   CHECK_FATAL(HasNode(value), "node is not created");
   return *constNodes[value];
 }
@@ -262,7 +262,7 @@ void InequalityGraph::DumpDotEdges(IRMap &irMap, const std::pair<ESSABaseNode*, 
 }
 
 void InequalityGraph::DumpDotNodes(IRMap &irMap, std::ostream &out, DumpType dumpType,
-                                   const std::map<int32, std::unique_ptr<ESSABaseNode>> &nodes) const {
+                                   const std::map<int64, std::unique_ptr<ESSABaseNode>> &nodes) const {
   for (auto iter = nodes.begin(); iter != nodes.end(); ++iter) {
     std::string from = GetName(*(iter->second), irMap);
     out << "\"" << from << "\";\n";

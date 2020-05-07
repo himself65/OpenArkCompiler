@@ -33,8 +33,8 @@ void Jbc2MplCompiler::GetTmpFilesToDelete(const MplOptions &mplOptions, std::vec
 
 std::unordered_set<std::string> Jbc2MplCompiler::GetFinalOutputs(const MplOptions &mplOptions) const {
   std::unordered_set<std::string> finalOutputs;
-  finalOutputs.insert(mplOptions.GetOutputFolder() + mplOptions.GetOutputName() + ".mpl");
-  finalOutputs.insert(mplOptions.GetOutputFolder() + mplOptions.GetOutputName() + ".mplt");
+  (void)finalOutputs.insert(mplOptions.GetOutputFolder() + mplOptions.GetOutputName() + ".mpl");
+  (void)finalOutputs.insert(mplOptions.GetOutputFolder() + mplOptions.GetOutputName() + ".mplt");
   return finalOutputs;
 }
 }  // namespace maple

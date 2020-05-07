@@ -167,8 +167,7 @@ void DSE::OnRemoveBranchStmt(BB &bb, const StmtNode &stmt) {
     for (size_t i = 0; i < bb.GetSucc().size(); ++i) {
       if (bb.GetSucc(i)->GetBBLabel() == labelIdx) {
         BB *succBB = bb.GetSucc(i);
-        bb.RemoveBBFromSucc(succBB);
-        succBB->RemoveBBFromPred(&bb);
+        bb.RemoveSucc(*succBB);
         break;
       }
     }

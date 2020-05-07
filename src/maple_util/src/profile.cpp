@@ -45,7 +45,7 @@ static const std::string preClassHot[] = {
 };
 
 
-Profile::Profile() : valid(false) {}
+Profile::Profile() {}
 
 bool Profile::CheckProfileHeader(const Header *header) const {
   return (memcmp(header->magic, kProfileMagic, sizeof(kProfileMagic)) == 0);
@@ -230,6 +230,11 @@ void Profile::InitPreHot() {
 }
 
 bool Profile::DeCompress(const std::string &path, const std::string &dexNameInner, ProfileType type) {
+  if (initialized) {
+    return valid;
+  }
+  initialized = true;
+
   this->dexName = dexNameInner;
   InitPreHot();
   bool res = true;
