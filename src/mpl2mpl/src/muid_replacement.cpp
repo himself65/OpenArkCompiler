@@ -95,6 +95,7 @@ void MUIDReplacement::DumpMUIDFile(bool isFunc) {
       outFile << keyVal.first.ToStr() << "\n";
     }
   }
+  outFile.close();
 }
 
 void MUIDReplacement::CollectFuncAndDataFromKlasses() {

@@ -55,12 +55,11 @@ executable("maple") {
     "src/mplcg_compiler.cpp",
   ]
 
-
   include_dirs = include_directories
 
   deps = [
-    ":liboption_parser",
     ":libdriver_option",
+    ":liboption_parser",
     "${MAPLEALL_ROOT}/huawei_secure_c:libHWSecureC",
     "${MAPLEALL_ROOT}/maple_be:libcg",
     "${MAPLEALL_ROOT}/maple_be:libmplad",
@@ -84,9 +83,7 @@ static_library("libdriver_option") {
     "src/driver_option_common.cpp",
   ]
 
-  include_dirs = [
-    "${MAPLEALL_ROOT}/maple_driver/include",
-  ]
+  include_dirs = [ "${MAPLEALL_ROOT}/maple_driver/include" ]
 
   output_dir = "${root_out_dir}/lib/${HOST_ARCH}"
 }

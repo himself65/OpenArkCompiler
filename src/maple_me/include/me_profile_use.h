@@ -45,7 +45,7 @@ class BBUseEdge : public BBEdge {
 
 class BBUseInfo {
  public:
-  BBUseInfo() {}
+  BBUseInfo(MemPool &tmpPool) : tmpAlloc(&tmpPool), inEdges(tmpAlloc.Adapter()), outEdges(tmpAlloc.Adapter()) {}
 
   void SetCount(uint64 value) {
     countValue = value;
@@ -73,11 +73,11 @@ class BBUseInfo {
     }
   }
 
-  const std::vector<BBUseEdge*> &GetInEdges() const {
+  const MapleVector<BBUseEdge*> &GetInEdges() const {
     return inEdges;
   }
 
-  std::vector<BBUseEdge*> &GetInEdges() {
+  MapleVector<BBUseEdge*> &GetInEdges() {
     return inEdges;
   }
 
@@ -85,11 +85,11 @@ class BBUseInfo {
     return inEdges.size();
   }
 
-  const std::vector<BBUseEdge*> &GetOutEdges() const {
+  const MapleVector<BBUseEdge*> &GetOutEdges() const {
     return outEdges;
   }
 
-  std::vector<BBUseEdge*> &GetOutEdges() {
+  MapleVector<BBUseEdge*> &GetOutEdges() {
     return outEdges;
   }
 
@@ -118,8 +118,9 @@ class BBUseInfo {
   uint64 countValue = 0;
   uint32 unknownInEdges = 0;
   uint32 unknownOutEdges = 0;
-  std::vector<BBUseEdge*> inEdges;
-  std::vector<BBUseEdge*> outEdges;
+  MapleAllocator tmpAlloc;
+  MapleVector<BBUseEdge*> inEdges;
+  MapleVector<BBUseEdge*> outEdges;
 };
 
 class MeProfUse : public PGOInstrument<BBUseEdge> {
@@ -135,11 +136,11 @@ class MeProfUse : public PGOInstrument<BBUseEdge> {
  private:
   bool IsAllZero(Profile::BBInfo &result) const;
   void SetEdgeCount(BBUseEdge &edge, uint32 value);
-  void SetEdgeCount(std::vector<BBUseEdge*> &edges, uint64 value);
+  void SetEdgeCount(MapleVector<BBUseEdge*> &edges, uint64 value);
   void ComputeEdgeFreq();
   void InitBBEdgeInfo();
   void ComputeBBFreq(BBUseInfo &bbInfo, bool &changed);
-  uint64 SumEdgesCount(const std::vector<BBUseEdge*> &edges) const;
+  uint64 SumEdgesCount(const MapleVector<BBUseEdge*> &edges) const;
   BBUseInfo *GetBBUseInfo(const BB &bb) const;
   BBUseInfo *GetOrCreateBBUseInfo(const BB &bb) ;
   MeFunction *func;

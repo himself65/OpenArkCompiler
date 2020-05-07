@@ -257,12 +257,14 @@ bool Profile::DeCompress(const std::string &path, const std::string &dexNameInne
     LogInfo::MapleLogger() << "WARN: DeCompress("
               << "), failed to read all data for " << path << ", " << strerror(errno) << '\n';;
     res = false;
+    in.close();
     return res;
   }
   if (byteCount < sizeof(Header)) {
     LogInfo::MapleLogger() << "WARN: DeCompress("
               << "), failed, read no data for " << path << ", " << strerror(errno) << '\n';;
     res = false;
+    in.close();
     return res;
   }
   Header *header = reinterpret_cast<Header*>(buf);
@@ -271,6 +273,7 @@ bool Profile::DeCompress(const std::string &path, const std::string &dexNameInne
       LogInfo::MapleLogger() << "invalid maigc number " << header->magic << '\n';;
     }
     res = false;
+    in.close();
     return res;
   }
   this->isAppProfile = (header->profileFileType == kApp) ? true : false;
@@ -353,6 +356,7 @@ bool Profile::DeCompress(const std::string &path, const std::string &dexNameInne
   }
   LogInfo::MapleLogger() << "SUCC parse " << path << '\n';;
   valid = true;
+  in.close();
   return res;
 }
 
@@ -499,38 +503,39 @@ void Profile::DumpFuncIRProfUseInfo() const {
 }
 
 void Profile::Dump() const {
-  std::ofstream outfile;
-  outfile.open("prof.dump");
-  outfile << "classMeta profile start " <<'\n';;
+  std::ofstream outFile;
+  outFile.open("prof.dump");
+  outFile << "classMeta profile start " <<'\n';;
   for (const auto &item : classMeta) {
-    outfile << item << '\n';;
+    outFile << item << '\n';;
   }
 
-  outfile << "fieldMeta profile start " <<'\n';;
+  outFile << "fieldMeta profile start " <<'\n';;
   for (const auto &item : fieldMeta) {
-    outfile << item << '\n';;
+    outFile << item << '\n';;
   }
 
-  outfile << "methodMeta profile start " <<'\n';;
+  outFile << "methodMeta profile start " <<'\n';;
   for (const auto &item : methodMeta) {
-    outfile << item << '\n';;
+    outFile << item << '\n';;
   }
 
-  outfile << "literal profile start " <<'\n';;
+  outFile << "literal profile start " <<'\n';;
   for (const auto &item : literal) {
-    outfile << item << '\n';;
+    outFile << item << '\n';;
   }
 
-  outfile << "func profile start " <<'\n';;
+  outFile << "func profile start " <<'\n';;
   for (const auto &item : funcProfData) {
-    outfile << item.first << " "
+    outFile << item.first << " "
             << static_cast<uint32>((item.second).type) << " " << (item.second).callTimes << '\n';;
   }
 
-  outfile << "reflectStr profile start " <<'\n';;
+  outFile << "reflectStr profile start " <<'\n';;
   for (const auto &item : reflectionStrData) {
-    outfile << item.first << " " << static_cast<uint32>(item.second) << '\n';;
+    outFile << item.first << " " << static_cast<uint32>(item.second) << '\n';;
   }
+  outFile.close();
 }
 
 }  // namespace maple

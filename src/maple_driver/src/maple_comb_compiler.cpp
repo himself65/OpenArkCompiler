@@ -54,6 +54,7 @@ void MapleCombCompiler::GetTmpFilesToDelete(const MplOptions &mplOptions, std::v
     } else {
       ++iter;
     }
+    infile.close();
   }
 }
 

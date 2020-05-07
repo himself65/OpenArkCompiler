@@ -420,6 +420,7 @@ void DriverRunner::EmitDuplicatedAsmFunc(const CG &cg) const {
   std::ifstream duplicateAsmFileFD(cgOptions->GetDuplicateAsmFile());
 
   if (!duplicateAsmFileFD.is_open()) {
+    duplicateAsmFileFD.close();
     ERR(kLncErr, " %s open failed!", cgOptions->GetDuplicateAsmFile().c_str());
     return;
   }
@@ -442,6 +443,7 @@ void DriverRunner::EmitDuplicatedAsmFunc(const CG &cg) const {
 
     cg.GetEmitter()->Emit(contend + "\n");
   }
+  duplicateAsmFileFD.close();
 }
 
 

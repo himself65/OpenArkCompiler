@@ -460,7 +460,7 @@ void BBLayout::DealWithStartTryBB() {
       continue;
     }
     auto curBB = func.GetBBFromID(BBId(i));
-    for (size_t j = i + 1; !startTryBBVec[j] && j < size; ++j) {
+    for (size_t j = i + 1; j < size && !startTryBBVec[j]; ++j) {
       auto nextBB = func.GetBBFromID(BBId(j));
       if (nextBB != nullptr) {
         if (nextBB->GetAttributes(kBBAttrIsTry)) {

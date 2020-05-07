@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -24,6 +24,7 @@ constexpr char kMapleRoot[] = "MAPLE_ROOT";
 
 class FileUtils {
  public:
+  static std::string GetRealPath(const std::string &filePath);
   static std::string GetFileName(const std::string &filePath, bool isWithExtension);
   static std::string GetFileExtension(const std::string &filePath);
   static std::string GetFileFolder(const std::string &filePath);

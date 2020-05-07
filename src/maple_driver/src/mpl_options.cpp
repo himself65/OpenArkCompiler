@@ -283,8 +283,10 @@ ErrorCode MplOptions::CheckFileExits() {
     if (infile.fail()) {
       LogInfo::MapleLogger(kLlErr) << "Cannot open input file " << fileName << '\n';
       ret = kErrorFileNotFound;
+      infile.close();
       return ret;
     }
+    infile.close();
   }
   return ret;
 }
