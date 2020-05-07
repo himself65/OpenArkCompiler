@@ -109,7 +109,7 @@ class TestSuiteTask:
 
         self.path = complete_path(test_path)
         self.cfg_path = cfg_path
-        
+
         config = read_config(self.cfg_path)
         if config is None:
             raise TestError(
@@ -303,12 +303,7 @@ class TestSuiteTask:
 
     def run(self, process_num=1):
         logger = configs.LOGGER
-        if platform.system() == "Windows":
-            logger.info(
-                "You are running on windows, currently only serial execution is supported"
-            )
-            self.serial_run_task()
-        elif process_num == 1:
+        if process_num == 1:
             logger.debug("The number of running processes is 1, which will run serial")
             self.serial_run_task()
         else:
