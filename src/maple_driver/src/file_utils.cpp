@@ -12,9 +12,16 @@
  * FIT FOR A PARTICULAR PURPOSE.
  * See the Mulan PSL v1 for more details.
  */
-#include "file_utils.h"
 #include <cstdio>
+#include <cstring>
+#include <climits>
+#include "file_utils.h"
 #include "string_utils.h"
+#include "mpl_logging.h"
+
+#ifdef _WIN32
+#include <shlwapi.h>
+#endif
 
 namespace {
 const char kFileSeperatorLinuxStyleChar = '/';
@@ -27,6 +34,22 @@ namespace maple {
 const char kFileSeperatorChar = kFileSeperatorLinuxStyleChar;
 
 const std::string kFileSeperatorStr = kFileSeperatorLinuxStyleStr;
+
+std::string FileUtils::GetRealPath(const std::string &filePath) {
+#ifdef _WIN32
+  char *path;
+  if (filePath.size() > PATH_MAX  || !PathCanonicalize(path, filePath.c_str())) {
+    CHECK_FATAL(false, "invalid file path");
+  }
+#else
+  char path[PATH_MAX] = {0};
+  if (filePath.size() > PATH_MAX  || realpath(filePath.c_str(), path) == nullptr) {
+    CHECK_FATAL(false, "invalid file path");
+  }
+#endif
+  std::string result(path, path + strlen(path));
+  return result;
+}
 
 std::string FileUtils::GetFileName(const std::string &filePath, bool isWithExtension) {
   std::string fullFileName = StringUtils::GetStrAfterLast(filePath, kFileSeperatorStr);

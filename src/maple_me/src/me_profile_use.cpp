@@ -24,7 +24,7 @@ BBUseInfo *MeProfUse::GetOrCreateBBUseInfo(const BB &bb) {
   if (item != bbProfileInfo.end()) {
     return item->second;
   } else {
-    BBUseInfo *useInfo = mp->New<BBUseInfo>();
+    BBUseInfo *useInfo = mp->New<BBUseInfo>(*mp);
     bbProfileInfo.insert(std::make_pair(&bb, useInfo));
     return useInfo;
   }
@@ -36,7 +36,7 @@ BBUseInfo *MeProfUse::GetBBUseInfo(const BB &bb) const {
   return item->second;
 }
 
-uint64 MeProfUse::SumEdgesCount(const std::vector<BBUseEdge*> &edges) const {
+uint64 MeProfUse::SumEdgesCount(const MapleVector<BBUseEdge*> &edges) const {
   uint64 count = 0;
   for (const auto &e : edges) {
     count += e->GetCount();
@@ -146,7 +146,7 @@ void MeProfUse::ComputeEdgeFreq() {
  * this used to set the edge count for the unknown edge
  * ensure only one unkown edge in the edges
  */
-void MeProfUse::SetEdgeCount(std::vector<BBUseEdge*> &edges, uint64 value) {
+void MeProfUse::SetEdgeCount(MapleVector<BBUseEdge*> &edges, uint64 value) {
   for (const auto &e : edges) {
     if (!e->GetStatus()) {
       e->SetCount(value);

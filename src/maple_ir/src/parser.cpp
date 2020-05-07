@@ -2642,6 +2642,7 @@ bool MIRParser::ParseMIRForImport() {
         FATAL(kLncFatal, "cannot open MPLT file: %s\n", importFileName.c_str());
       }
       bool failedParse = !ParseMPLT(mpltFile, importFileName);
+      mpltFile.close();
       if (failedParse) {  // parse the mplt file
         return false;
       }
@@ -2655,6 +2656,7 @@ bool MIRParser::ParseMIRForImport() {
         FATAL(kLncFatal, "cannot open MPLT file: %s\n", importFileName.c_str());
       }
       bool failedParse = !ParseMPLT(mpltFile, importFileName);
+      mpltFile.close();
       if (failedParse) {  // parse the mplt file
         return false;
       }

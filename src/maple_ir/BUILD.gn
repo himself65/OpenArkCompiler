@@ -60,8 +60,8 @@ static_library("libmplir") {
   libs = []
   libs += [ "${OPENSOURCE_DEPS}/libmplutil.a" ]
   deps = [
-    "${MAPLEALL_ROOT}/maple_driver:liboption_parser",
     "${MAPLEALL_ROOT}/maple_driver:libdriver_option",
+    "${MAPLEALL_ROOT}/maple_driver:liboption_parser",
   ]
 }
 
