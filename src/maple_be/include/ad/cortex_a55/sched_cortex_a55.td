@@ -83,7 +83,7 @@ Def Reservation : kLtStore2 {2, [ kUnitIdSlotSAgen, kUnitIdStAgu]};
 Def Reservation : kLtLoad3plus {6, [kUnitIdSlotDAgen, kUnitIdSlot0LdAgu, kUnitIdLdAgu]};
 Def Reservation : kLtStore3plus {2, [kUnitIdSlotDAgen, kUnitIdSlot0StAgu, kUnitIdStAgu]};
 Def Reservation : kLtBranch {0, [kUnitIdSlotSBranch]};
-Def Reservation : kLtFpalu {4, [kUnitIdSlotS]};
+Def Reservation : kLtFpalu {4, [kUnitIdSlotS, kUnitIdFpAluS]};
 Def Reservation : kLtFconst {2, [kUnitIdSlotS, kUnitIdFpAluS]};
 Def Reservation : kLtFpmul {4, [kUnitIdSlotS, kUnitIdFpMulS]};
 Def Reservation : kLtFpmac {8, [kUnitIdSlotS, kUnitIdFpMulS, nothing, nothing, nothing, kUnitIdFpAluS]};

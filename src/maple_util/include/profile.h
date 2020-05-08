@@ -75,6 +75,10 @@ class Profile {
   Profile();
   ~Profile() = default;
 
+  bool IsValid() const {
+    return valid;
+  }
+
  private:
   bool valid = false;
   bool initialized = false;

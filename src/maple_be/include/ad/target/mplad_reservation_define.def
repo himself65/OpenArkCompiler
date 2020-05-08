@@ -124,8 +124,9 @@ if(resvInstkLtBranch == nullptr) {
 }
 ASSERT(resvInstkLtBranch, "Reservation allocation for kLtBranch failed.");
 
-Reservation *resvInstkLtFpalu = new Reservation(kLtFpalu, 4, 1,
-                                GetUnitByUnitId(kUnitIdSlotS));
+Reservation *resvInstkLtFpalu = new Reservation(kLtFpalu, 4, 2,
+                                GetUnitByUnitId(kUnitIdSlotS),
+                                GetUnitByUnitId(kUnitIdFpAluS));
 if(resvInstkLtFpalu == nullptr) {
   maple::logInfo.MapleLogger(maple::kLlErr) << "Reservation allocation for kLtFpalu failed." << std::endl;
 }

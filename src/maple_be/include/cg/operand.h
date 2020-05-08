@@ -538,6 +538,7 @@ class MemOperand : public Operand {
     }
     CHECK_FATAL(baseOpnd != nullptr, "baseOpnd is null in Equals");
     CHECK_FATAL(indexOpnd != nullptr, "indexOpnd is null in Equals");
+    ASSERT(op.GetBaseRegister() != nullptr, "nullptr check");
     return (baseOpnd->Equals(*op.GetBaseRegister()) && indexOpnd->Equals(*op.GetIndexRegister()));
   }
 
