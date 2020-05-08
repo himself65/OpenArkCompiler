@@ -1742,6 +1742,11 @@ class MaydassignMeStmt : public MeStmt {
       : MeStmt(stt),
         chiList(std::less<OStIdx>(), alloc->Adapter()) {}
 
+  MaydassignMeStmt(MapleAllocator *alloc, MaydassignMeStmt &maydass)
+      : MeStmt(maydass.GetOp()), rhs(maydass.GetRHS()), mayDSSym(maydass.GetMayDassignSym()),
+        fieldID(maydass.GetFieldID()), chiList(std::less<OStIdx>(), alloc->Adapter()),
+        needDecref(maydass.NeedDecref()), needIncref(maydass.NeedIncref()) {}
+
   ~MaydassignMeStmt() = default;
 
   size_t NumMeStmtOpnds() const {
@@ -1786,6 +1791,10 @@ class MaydassignMeStmt : public MeStmt {
 
   void DisableNeedIncref() {
     needIncref = false;
+  }
+
+  OriginalSt *GetMayDassignSym() {
+    return mayDSSym;
   }
 
   const OriginalSt *GetMayDassignSym() const {
@@ -1854,6 +1863,11 @@ class IassignMeStmt : public MeStmt {
   IassignMeStmt(MapleAllocator*, TyIdx tidx, IvarMeExpr *l, MeExpr *r, const MapleMap<OStIdx, ChiMeNode*> *clist)
       : MeStmt(OP_iassign), tyIdx(tidx), lhsVar(l), rhs(r), chiList(*clist) {
     l->SetDefStmt(this);
+  }
+
+  IassignMeStmt(MapleAllocator *alloc, TyIdx tidx, IvarMeExpr &l, MeExpr &r)
+      : MeStmt(OP_iassign), tyIdx(tidx), lhsVar(&l), rhs(&r), chiList(std::less<OStIdx>(), alloc->Adapter()) {
+    l.SetDefStmt(this);
   }
 
   ~IassignMeStmt() = default;
@@ -2064,6 +2078,12 @@ class CallMeStmt : public NaryMeStmt, public MuChiMePart, public AssignedPart {
 
   CallMeStmt(MapleAllocator *alloc, Opcode op)
       : NaryMeStmt(alloc, op), MuChiMePart(alloc), AssignedPart(alloc) {}
+
+  CallMeStmt(MapleAllocator *alloc, NaryMeStmt *cstmt, PUIdx idx)
+      : NaryMeStmt(alloc, cstmt),
+        MuChiMePart(alloc),
+        AssignedPart(alloc),
+        puIdx(idx) {}
 
   CallMeStmt(MapleAllocator *alloc, const CallMeStmt *cstmt)
       : NaryMeStmt(alloc, cstmt),
@@ -2287,6 +2307,14 @@ class IntrinsiccallMeStmt : public NaryMeStmt, public MuChiMePart, public Assign
         tyIdx(intrn->tyIdx),
         retPType(intrn->retPType) {}
 
+  IntrinsiccallMeStmt(MapleAllocator *alloc, const NaryMeStmt *nary, MIRIntrinsicID id, TyIdx idx, PrimType type)
+      : NaryMeStmt(alloc, nary),
+        MuChiMePart(alloc),
+        AssignedPart(alloc),
+        intrinsic(id),
+        tyIdx(idx),
+        retPType(type) {}
+
   virtual ~IntrinsiccallMeStmt() = default;
 
   void Dump(const IRMap*) const;
@@ -2367,6 +2395,10 @@ class IntrinsiccallMeStmt : public NaryMeStmt, public MuChiMePart, public Assign
     return tyIdx;
   }
 
+  PrimType GetReturnPrimType() const {
+    return retPType;
+  }
+
  private:
   MIRIntrinsicID intrinsic;
   TyIdx tyIdx;
@@ -2432,6 +2464,7 @@ class UnaryMeStmt : public MeStmt {
 class GotoMeStmt : public MeStmt {
  public:
   explicit GotoMeStmt(const StmtNode *stt) : MeStmt(stt), offset(static_cast<const GotoNode*>(stt)->GetOffset()) {}
+  explicit GotoMeStmt(const GotoMeStmt &condGoto) : MeStmt(MeStmt(condGoto.GetOp())), offset(condGoto.GetOffset()) {}
 
   ~GotoMeStmt() = default;
 
@@ -2453,6 +2486,12 @@ class CondGotoMeStmt : public UnaryMeStmt {
  public:
   explicit CondGotoMeStmt(const StmtNode *stt)
       : UnaryMeStmt(stt), offset(static_cast<const CondGotoNode*>(stt)->GetOffset()) {}
+
+  explicit CondGotoMeStmt(const CondGotoMeStmt &condGoto)
+      : UnaryMeStmt(static_cast<const UnaryMeStmt*>(&condGoto)), offset(condGoto.GetOffset()) {}
+
+  CondGotoMeStmt(const UnaryMeStmt &unaryMeStmt, uint32 o)
+      : UnaryMeStmt(&unaryMeStmt), offset(o) {}
 
   ~CondGotoMeStmt() = default;
 

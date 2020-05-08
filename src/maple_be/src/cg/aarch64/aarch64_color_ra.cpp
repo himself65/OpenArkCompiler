@@ -3019,6 +3019,7 @@ void GraphColorRegAllocator::FinalizeRegisters() {
             static_cast<const MemOperand*>(fInfo->GetBaseOperand())->Clone(*cgFunc->GetMemoryPool()));
         insn->SetOperand(fInfo->GetMemOperandIdx(), *memOpnd);
         Operand *base = memOpnd->GetBaseRegister();
+        ASSERT(base != nullptr, "nullptr check");
         /* if base register is both defReg and useReg, defSpillIdx should also be increased. But it doesn't exist yet */
         RegOperand *phyOpnd = GetReplaceOpnd(*insn, *base, useSpillIdx, usedRegMask, false);
         if (phyOpnd != nullptr) {

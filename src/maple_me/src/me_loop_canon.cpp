@@ -179,14 +179,12 @@ void MeDoLoopCanon::Convert(MeFunction &func, BB &bb, BB &pred, MapleMap<Key, bo
   }
 }
 
-AnalysisResult *MeDoLoopCanon::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr*) {
-  auto *dom = static_cast<Dominance*>(m->GetAnalysisResult(MeFuncPhase_DOMINANCE, func));
-  ASSERT(dom != nullptr, "dom is null in MeDoLoopCanon::Run");
+void MeDoLoopCanon::ExecuteLoopCanon(MeFunction &func, MeFuncResultMgr &m, Dominance &dom) {
   // set MeCFG's has_do_while flag
-  MeCFG *cfg = func->GetTheCfg();
-  auto eIt = func->valid_end();
-  for (auto bIt = func->valid_begin(); bIt != eIt; ++bIt) {
-    if (bIt == func->common_entry() || bIt == func->common_exit()) {
+  MeCFG *cfg = func.GetTheCfg();
+  auto eIt = func.valid_end();
+  for (auto bIt = func.valid_begin(); bIt != eIt; ++bIt) {
+    if (bIt == func.common_entry() || bIt == func.common_exit()) {
       continue;
     }
     auto *bb = *bIt;
@@ -202,7 +200,7 @@ AnalysisResult *MeDoLoopCanon::Run(MeFunction *func, MeFuncResultMgr *m, ModuleR
       continue;
     }
     BB *brTargetbb = bb->GetSucc(1);
-    if (dom->Dominate(*brTargetbb, *bb)) {
+    if (dom.Dominate(*brTargetbb, *bb)) {
       cfg->SetHasDoWhile(true);
       break;
     }
@@ -211,20 +209,20 @@ AnalysisResult *MeDoLoopCanon::Run(MeFunction *func, MeFuncResultMgr *m, ModuleR
   MapleVector<std::pair<BB*, BB*>> backEdges(localAlloc.Adapter());
   MapleMap<Key, bool> swapSuccs(std::less<Key>(), localAlloc.Adapter());
   // collect backedge first: if bb dominator its pred, then the edge pred->bb is a backedge
-  eIt = func->valid_end();
-  for (auto bIt = func->valid_begin(); bIt != eIt; ++bIt) {
-    if (bIt == func->common_entry() || bIt == func->common_exit()) {
+  eIt = func.valid_end();
+  for (auto bIt = func.valid_begin(); bIt != eIt; ++bIt) {
+    if (bIt == func.common_entry() || bIt == func.common_exit()) {
       continue;
     }
     auto *bb = *bIt;
     const MapleVector<BB*> &preds = bb->GetPred();
     for (BB *pred : preds) {
-      ASSERT(func->GetCommonEntryBB() != nullptr, "impossible");
+      ASSERT(func.GetCommonEntryBB() != nullptr, "impossible");
       ASSERT_NOT_NULL(pred);
       // bb is reachable from entry && bb dominator pred
-      if (dom->Dominate(*func->GetCommonEntryBB(), *bb) && dom->Dominate(*bb, *pred) &&
+      if (dom.Dominate(*func.GetCommonEntryBB(), *bb) && dom.Dominate(*bb, *pred) &&
           !pred->GetAttributes(kBBAttrWontExit) && (NeedConvert(*bb, *pred, localAlloc, swapSuccs))) {
-        if (DEBUGFUNC(func)) {
+        if (DEBUGFUNC(&func)) {
           LogInfo::MapleLogger() << "find backedge " << bb->GetBBId() << " <-- " << pred->GetBBId() << '\n';
         }
         backEdges.push_back(std::make_pair(bb, pred));
@@ -244,23 +242,347 @@ AnalysisResult *MeDoLoopCanon::Run(MeFunction *func, MeFuncResultMgr *m, ModuleR
   //
   sort(backEdges.begin(), backEdges.end(), CompareBackedge);
   if (!backEdges.empty()) {
-    if (DEBUGFUNC(func)) {
+    if (DEBUGFUNC(&func)) {
       LogInfo::MapleLogger() << "-----------------Dump mefunction before loop convert----------\n";
-      func->Dump(true);
+      func.Dump(true);
     }
     for (auto it = backEdges.begin(); it != backEdges.end(); ++it) {
       BB *bb = it->first;
       BB *pred = it->second;
       ASSERT(bb != nullptr, "bb should not be nullptr");
       ASSERT(pred != nullptr, "pred should not be nullptr");
-      Convert(*func, *bb, *pred, swapSuccs);
-      if (DEBUGFUNC(func)) {
+      Convert(func, *bb, *pred, swapSuccs);
+      if (DEBUGFUNC(&func)) {
         LogInfo::MapleLogger() << "-----------------Dump mefunction after loop convert-----------\n";
-        func->Dump(true);
+        func.Dump(true);
       }
     }
-    m->InvalidAnalysisResult(MeFuncPhase_DOMINANCE, func);
+    m.InvalidAnalysisResult(MeFuncPhase_DOMINANCE, &func);
   }
+}
+
+// Only when backege or preheader is not try bb, update head map.
+void MeDoLoopCanon::FindHeadBBs(MeFunction &func, Dominance &dom, BB *bb) {
+  if (bb == nullptr || bb == func.GetCommonExitBB()) {
+    return;
+  }
+  bool hasTry = false;
+  for (BB *pred : bb->GetPred()) {
+    // backege or preheader is try bb
+    if (pred->GetAttributes(kBBAttrIsTry)) {
+      hasTry = true;
+    }
+  }
+  if (!hasTry) {
+    for (BB *pred : bb->GetPred()) {
+      // add backege bb
+      if (dom.Dominate(*bb, *pred)) {
+        if (heads.find(bb) != heads.end()) {
+          heads[bb].push_back(pred);
+        } else {
+          std::vector<BB*> tails;
+          tails.push_back(pred);
+          heads[bb] = tails;
+        }
+      }
+    }
+  }
+  const MapleSet<BBId> &domChildren = dom.GetDomChildren(bb->GetBBId());
+  for (auto bbit = domChildren.begin(); bbit != domChildren.end(); ++bbit) {
+    FindHeadBBs(func, dom, func.GetAllBBs().at(*bbit));
+  }
+}
+
+// merge backedges with the same headBB
+void MeDoLoopCanon::Merge(MeFunction &func) {
+  for (auto iter = heads.begin(); iter != heads.end(); ++iter) {
+    BB *head = iter->first;
+    auto *latchBB = func.NewBasicBlock();
+    latchBB->SetAttributes(kBBAttrArtificial);
+    latchBB->SetKind(kBBFallthru);
+    for (BB *tail : iter->second) {
+      tail->ReplaceSucc(head, latchBB);
+      if (tail->GetStmtNodes().empty()) {
+        continue;
+      }
+      if (tail->GetKind() == kBBCondGoto) {
+        CondGotoNode &condGotoNode = static_cast<CondGotoNode&>(tail->GetStmtNodes().back());
+        LabelIdx oldlabIdx = condGotoNode.GetOffset();
+        if (oldlabIdx == head->GetBBLabel()) {
+          LabelIdx label = func.GetOrCreateBBLabel(*latchBB);
+          condGotoNode.SetOffset(label);
+        }
+      } else if (tail->GetKind() == kBBGoto) {
+        GotoNode &gotoStmt = static_cast<GotoNode&>(tail->GetStmtNodes().back());
+        LabelIdx oldlabIdx = gotoStmt.GetOffset();
+        if (oldlabIdx == head->GetBBLabel()) {
+          LabelIdx label = func.GetOrCreateBBLabel(*latchBB);
+          gotoStmt.SetOffset(label);
+        }
+      } else if (tail->GetKind() == kBBSwitch) {
+        SwitchNode &switchNode = static_cast<SwitchNode &>(tail->GetStmtNodes().back());
+        if (switchNode.GetDefaultLabel() == head->GetBBLabel()) {
+          switchNode.SetDefaultLabel(func.GetOrCreateBBLabel(*latchBB));
+        }
+        for (size_t i = 0; i < switchNode.GetSwitchTable().size(); ++i) {
+          LabelIdx labelIdx = switchNode.GetCasePair(i).second;
+          if (labelIdx == head->GetBBLabel()) {
+            switchNode.UpdateCaseLabelAt(i, func.GetOrCreateBBLabel(*latchBB));
+          }
+        }
+      } else if (tail->GetKind() != kBBFallthru) {
+        CHECK_FATAL(false, "can not support");
+      }
+    }
+    head->AddPred(*latchBB);
+  }
+}
+
+void MeDoLoopCanon::AddPreheader(MeFunction &func) {
+  for (auto iter = heads.begin(); iter != heads.end(); ++iter) {
+    BB *head = iter->first;
+    std::vector<BB*> preds;
+    for (BB *pred : head->GetPred()) {
+      // FindHeadBBs has filtered out this possibility.
+      CHECK_FATAL(!pred->GetAttributes(kBBAttrIsTry), "can not support kBBAttrIsTry");
+      if (std::find(iter->second.begin(), iter->second.end(), pred) == iter->second.end()) {
+        preds.push_back(pred);
+      }
+    }
+    // If the num of backages is zero or one and bb kind is kBBFallthru, Preheader is already canonical.
+    if (preds.empty()) {
+      continue;
+    }
+    if (preds.size() == 1 && preds.front()->GetKind() == kBBFallthru) {
+      continue;
+    }
+    // add preheader
+    auto *preheader = func.NewBasicBlock();
+    preheader->SetAttributes(kBBAttrArtificial);
+    preheader->SetKind(kBBFallthru);
+    for (BB *pred : preds) {
+      pred->ReplaceSucc(head, preheader);
+      if (pred->GetStmtNodes().empty()) {
+        continue;
+      }
+      if (pred->GetKind() == kBBCondGoto) {
+        CondGotoNode &condGotoNode = static_cast<CondGotoNode&>(pred->GetStmtNodes().back());
+        LabelIdx oldlabIdx = condGotoNode.GetOffset();
+        if (oldlabIdx == head->GetBBLabel()) {
+          LabelIdx label = func.GetOrCreateBBLabel(*preheader);
+          condGotoNode.SetOffset(label);
+        }
+      } else if (pred->GetKind() == kBBGoto) {
+        GotoNode &gotoStmt = static_cast<GotoNode&>(pred->GetStmtNodes().back());
+        LabelIdx oldlabIdx = gotoStmt.GetOffset();
+        if (oldlabIdx == head->GetBBLabel()) {
+          LabelIdx label = func.GetOrCreateBBLabel(*preheader);
+          gotoStmt.SetOffset(label);
+        }
+      } else if (pred->GetKind() == kBBSwitch) {
+        SwitchNode &switchNode = static_cast<SwitchNode&>(pred->GetStmtNodes().back());
+        if (switchNode.GetDefaultLabel() == head->GetBBLabel()) {
+          switchNode.SetDefaultLabel(func.GetOrCreateBBLabel(*preheader));
+        }
+        for (size_t i = 0; i < switchNode.GetSwitchTable().size(); ++i) {
+          LabelIdx labelIdx = switchNode.GetCasePair(i).second;
+          if (labelIdx == head->GetBBLabel()) {
+            switchNode.UpdateCaseLabelAt(i, func.GetOrCreateBBLabel(*preheader));
+          }
+        }
+      } else if (pred->GetKind() != kBBFallthru) {
+        CHECK_FATAL(false, "can not support");
+      }
+    }
+    head->AddPred(*preheader);
+  }
+}
+
+void MeDoLoopCanon::InsertNewExitBB(MeFunction &func, LoopDesc &loop) {
+  for (auto pair : loop.inloopBB2exitBBs) {
+    BB *curBB = pair.first;
+    for (auto succBB : *pair.second) {
+      bool needNewExitBB = false;
+      for (auto pred : succBB->GetPred()) {
+        if (!loop.Has(*pred)) {
+          needNewExitBB = true;
+        }
+      }
+      if (!needNewExitBB) {
+        continue;
+      } else {
+        BB *newExitBB = func.NewBasicBlock();
+        newExitBB->SetKind(kBBFallthru);
+        size_t index = succBB->GetPred().size();
+        while (index > 0) {
+          if (succBB->GetPred(index - 1) == curBB) {
+            break;
+          }
+          --index;
+        }
+        curBB->ReplaceSucc(succBB, newExitBB);
+        --index;
+        succBB->AddPred(*newExitBB, index);
+
+        loop.ReplaceInloopBB2exitBBs(*curBB, *succBB, *newExitBB);
+        if (curBB->GetStmtNodes().empty()) {
+          continue;
+        }
+        StmtNode *lastStmt = &(curBB->GetStmtNodes().back());
+        if ((lastStmt->GetOpCode() == OP_brtrue || lastStmt->GetOpCode() == OP_brfalse) &&
+            static_cast<CondGotoNode*>(lastStmt)->GetOffset() == succBB->GetBBLabel()) {
+          LabelIdx label = func.GetOrCreateBBLabel(*newExitBB);
+          static_cast<CondGotoNode*>(lastStmt)->SetOffset(label);
+        } else if (lastStmt->GetOpCode() == OP_goto &&
+                   static_cast<GotoNode*>(lastStmt)->GetOffset() == succBB->GetBBLabel()) {
+          LabelIdx label = func.GetOrCreateBBLabel(*newExitBB);
+          static_cast<GotoNode*>(lastStmt)->SetOffset(label);
+        }
+      }
+    }
+  }
+}
+
+void MeDoLoopCanon::InsertExitBB(MeFunction &func, LoopDesc &loop) {
+  std::set<BB*> traveledBBs;
+  std::queue<BB*> inLoopBBs;
+  inLoopBBs.push(loop.head);
+  CHECK_FATAL(loop.inloopBB2exitBBs.empty(), "inloopBB2exitBBs must be empty");
+  while (!inLoopBBs.empty()) {
+    BB *curBB = inLoopBBs.front();
+    inLoopBBs.pop();
+    for (BB *succ : curBB->GetSucc()) {
+      if (traveledBBs.count(succ) != 0) {
+        continue;
+      }
+      if (loop.Has(*succ)) {
+        inLoopBBs.push(succ);
+        traveledBBs.insert(succ);
+      } else {
+        loop.InsertInloopBB2exitBBs(*curBB, *succ);
+      }
+      if (curBB->GetKind() == kBBCondGoto) {
+        if (curBB->GetSucc().size() == 1) {
+          CHECK_FATAL(false, "return bb");
+          loop.InsertInloopBB2exitBBs(*curBB, *func.GetCommonExitBB());
+        }
+      } else if (!curBB->GetStmtNodes().empty() && curBB->GetLast().GetOpCode() == OP_return) {
+        CHECK_FATAL(false, "return bb");
+        loop.InsertInloopBB2exitBBs(*curBB, *func.GetCommonExitBB());
+      }
+    }
+  }
+  InsertNewExitBB(func, loop);
+}
+
+void MeDoLoopCanon::SplitCondGotBB(MeFunction &func, LoopDesc &loop) {
+  auto exitBB = loop.inloopBB2exitBBs.begin()->first;
+  StmtNode *lastStmt = &(exitBB->GetStmtNodes().back());
+  if (lastStmt->GetOpCode() != OP_brfalse && lastStmt->GetOpCode() != OP_brtrue && lastStmt->GetOpCode() != OP_switch) {
+    CHECK_FATAL(false, "must be OP_brfalse, OP_brtrue or OP_switch");
+  }
+  bool notOnlyHasBrStmt = true;
+  for (auto &stmt : exitBB->GetStmtNodes()) {
+    if (&stmt != &exitBB->GetLast()) {
+      notOnlyHasBrStmt = false;
+      break;
+    }
+  }
+  if (notOnlyHasBrStmt) {
+    return;
+  }
+  BB *newFallthru = func.NewBasicBlock();
+  newFallthru->SetKind(kBBFallthru);
+  newFallthru->SetAttributes(kBBAttrIsInLoop);
+  func.CloneBasicBlock(*newFallthru, *exitBB);
+  newFallthru->RemoveLastStmt();
+  for (auto &stmt : exitBB->GetStmtNodes()) {
+    if (&stmt != &exitBB->GetLast()) {
+      exitBB->RemoveStmtNode(&stmt);
+    }
+  }
+  while (exitBB->GetPred().size() > 0) {
+    auto *pred = exitBB->GetPred(0);
+    pred->ReplaceSucc(exitBB, newFallthru);
+    if (pred->GetStmtNodes().empty()) {
+      continue;
+    }
+    StmtNode *lastStmt = &(pred->GetStmtNodes().back());
+    if ((lastStmt->GetOpCode() == OP_brtrue || lastStmt->GetOpCode() == OP_brfalse) &&
+        static_cast<CondGotoNode*>(lastStmt)->GetOffset() == exitBB->GetBBLabel()) {
+      LabelIdx label = func.GetOrCreateBBLabel(*newFallthru);
+      static_cast<CondGotoNode*>(lastStmt)->SetOffset(label);
+    } else if (lastStmt->GetOpCode() == OP_goto &&
+               static_cast<GotoNode*>(lastStmt)->GetOffset() == exitBB->GetBBLabel()) {
+      LabelIdx label = func.GetOrCreateBBLabel(*newFallthru);
+      static_cast<GotoNode*>(lastStmt)->SetOffset(label);
+    }
+  }
+  exitBB->RemoveAllPred();
+  newFallthru->AddSucc(*exitBB);
+}
+
+bool MeDoLoopCanon::IsDoWhileLoop(const LoopDesc &loop) const {
+  for (auto succ : loop.head->GetSucc()) {
+    if (!loop.Has(*succ)) {
+      return false;
+    }
+  }
+  auto exitBB = loop.inloopBB2exitBBs.begin()->first;
+  for (auto pred : exitBB->GetPred()) {
+    if (!loop.Has(*pred)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void MeDoLoopCanon::ExecuteLoopNormalization(MeFunction &func,  MeFuncResultMgr *m, Dominance &dom) {
+  if (DEBUGFUNC(&func)) {
+    LogInfo::MapleLogger() << "-----------------Dump mefunction before loop normalization----------\n";
+    func.Dump(true);
+    func.GetTheCfg()->DumpToFile("cfgbeforLoopNormalization");
+  }
+  heads.clear();
+  FindHeadBBs(func, dom, func.GetCommonEntryBB());
+  AddPreheader(func);
+  Merge(func);
+  m->InvalidAnalysisResult(MeFuncPhase_DOMINANCE, &func);
+  m->InvalidAnalysisResult(MeFuncPhase_MELOOP, &func);
+  IdentifyLoops *meLoop = static_cast<IdentifyLoops*>(m->GetAnalysisResult(MeFuncPhase_MELOOP, &func));
+  if (meLoop == nullptr) {
+    return;
+  }
+  for (auto loop : meLoop->GetMeLoops()) {
+    if (loop->HasTryBB()) {
+      continue;
+    }
+
+    if (!loop->IsCanonicalLoop()) {
+      CHECK_FATAL(loop->inloopBB2exitBBs.size() == 0, "must be zero");
+      InsertExitBB(func, *loop);
+      loop->SetIsCanonicalLoop(true);
+    }
+    if (loop->inloopBB2exitBBs.size() == 1 && loop->inloopBB2exitBBs.begin()->second->size() == 1 &&
+        IsDoWhileLoop(*loop)) {
+      SplitCondGotBB(func, *loop);
+    }
+  }
+  if (DEBUGFUNC(&func)) {
+    LogInfo::MapleLogger() << "-----------------Dump mefunction after loop normalization-----------\n";
+    func.Dump(true);
+    func.GetTheCfg()->DumpToFile("cfgafterLoopNormalization");
+  }
+  m->InvalidAnalysisResult(MeFuncPhase_DOMINANCE, &func);
+  m->InvalidAnalysisResult(MeFuncPhase_MELOOP, &func);
+}
+
+AnalysisResult *MeDoLoopCanon::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr*) {
+  auto *dom = static_cast<Dominance*>(m->GetAnalysisResult(MeFuncPhase_DOMINANCE, func));
+  ASSERT(dom != nullptr, "dom is null in MeDoLoopCanon::Run");
+  ExecuteLoopCanon(*func, *m, *dom);
+  dom = static_cast<Dominance*>(m->GetAnalysisResult(MeFuncPhase_DOMINANCE, func));
+  ExecuteLoopNormalization(*func, m, *dom);
   return nullptr;
 }
 }  // namespace maple

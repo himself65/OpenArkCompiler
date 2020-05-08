@@ -18,21 +18,76 @@
 #include "bb.h"
 #include "me_phase.h"
 #include "dominance.h"
+#include <algorithm>
 
 namespace maple {
 class IdentifyLoops;
 // describes a specific loop, including the loop head, tail and sets of bb.
 struct LoopDesc {
+  MapleAllocator *alloc;
   BB *head;
   BB *tail;
+  BB *preheader;
+  BB *latch;
+  MapleMap<BB*, MapleVector<BB*>*> inloopBB2exitBBs;
   MapleSet<BBId> loopBBs;
   LoopDesc *parent;  // points to its closest nesting loop
   uint32 nestDepth;  // the nesting depth
-  LoopDesc(MapleAllocator &alloc, BB *headBB, BB *tailBB)
-      : head(headBB), tail(tailBB), loopBBs(alloc.Adapter()), parent(nullptr), nestDepth(0) {}
+  bool hasTryBB = false;
+  bool isCanonicalLoop = false;
+  LoopDesc(MapleAllocator &mapleAllocator, BB *headBB, BB *tailBB)
+      : alloc(&mapleAllocator), head(headBB), tail(tailBB), preheader(nullptr), latch(nullptr),
+        inloopBB2exitBBs(alloc->Adapter()), loopBBs(alloc->Adapter()), parent(nullptr), nestDepth(0), hasTryBB(false) {}
 
   bool Has(const BB &bb) const {
     return loopBBs.find(bb.GetBBId()) != loopBBs.end();
+  }
+
+  bool IsNormalizationLoop() const {
+    if (!hasTryBB && preheader != nullptr && !inloopBB2exitBBs.empty()) {
+      return true;
+    }
+    return false;
+  }
+
+  void InsertInloopBB2exitBBs(BB &key, BB &value) {
+    if (inloopBB2exitBBs.find(&key) == inloopBB2exitBBs.end()) {
+      inloopBB2exitBBs[&key] = alloc->GetMemPool()->New<MapleVector<BB*>>(alloc->Adapter());
+      inloopBB2exitBBs[&key]->push_back(&value);
+    } else {
+      auto it = find(inloopBB2exitBBs[&key]->begin(), inloopBB2exitBBs[&key]->end(), &value);
+      if (it == inloopBB2exitBBs[&key]->end()) {
+        inloopBB2exitBBs[&key]->push_back(&value);
+      }
+    }
+  }
+
+  void ReplaceInloopBB2exitBBs(BB &key, BB &oldValue, BB &value) {
+    CHECK_FATAL(inloopBB2exitBBs.find(&key) != inloopBB2exitBBs.end(), "key must exits");
+    auto mapIt = inloopBB2exitBBs[&key];
+    auto it = find(mapIt->begin(), mapIt->end(), &oldValue);
+    CHECK_FATAL(it != inloopBB2exitBBs[&key]->end(), "old Vvalue must exits");
+    *it = &value;
+    CHECK_FATAL(find(inloopBB2exitBBs[&key]->begin(), inloopBB2exitBBs[&key]->end(), &value) !=
+                inloopBB2exitBBs[&key]->end(), "replace fail");
+    CHECK_FATAL(find(inloopBB2exitBBs[&key]->begin(), inloopBB2exitBBs[&key]->end(), &oldValue) ==
+                inloopBB2exitBBs[&key]->end(), "replace fail");
+  }
+
+  void SetHasTryBB(bool has) {
+    hasTryBB = has;
+  }
+
+  bool HasTryBB() const {
+    return hasTryBB;
+  }
+
+  void SetIsCanonicalLoop(bool is) {
+    isCanonicalLoop = is;
+  }
+
+  bool IsCanonicalLoop() const {
+    return isCanonicalLoop;
   }
 };
 
@@ -60,9 +115,12 @@ class IdentifyLoops : public AnalysisResult {
 
   LoopDesc *CreateLoopDesc(BB &hd, BB &tail);
   void SetLoopParent4BB(const BB &bb, LoopDesc &loopDesc);
+  void InsertExitBB(LoopDesc &loop);
   void ProcessBB(BB *bb);
   void MarkBB();
   void Dump() const;
+  bool ProcessPreheaderAndLatch(LoopDesc &loop);
+  void SetTryBB();
 
  private:
   MemPool *meLoopMemPool;
@@ -76,9 +134,8 @@ class IdentifyLoops : public AnalysisResult {
 class MeDoMeLoop : public MeFuncPhase {
  public:
   explicit MeDoMeLoop(MePhaseID id) : MeFuncPhase(id) {}
-
   virtual ~MeDoMeLoop() = default;
-  AnalysisResult *Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) override;
+  AnalysisResult *Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr*) override;
   std::string PhaseName() const override {
     return "identloops";
   }

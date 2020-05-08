@@ -16,6 +16,7 @@
 #define MAPLE_ME_INCLUDE_MELOOPCANON_H
 #include "me_function.h"
 #include "me_phase.h"
+#include "me_loop_analysis.h"
 
 namespace maple {
 // convert loop to do-while format
@@ -25,15 +26,25 @@ class MeDoLoopCanon : public MeFuncPhase {
 
   ~MeDoLoopCanon() = default;
 
-  AnalysisResult *Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr *mrm) override;
+  AnalysisResult *Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr*) override;
   std::string PhaseName() const override {
     return "loopcanon";
   }
 
  private:
   using Key = std::pair<BB*, BB*>;
+  std::map<BB*, std::vector<BB*>> heads;
   void Convert(MeFunction &func, BB &bb, BB &pred, MapleMap<Key, bool> &swapSuccs);
   bool NeedConvert(BB &bb, BB &pred, MapleAllocator &alloc, MapleMap<Key, bool> &swapSuccs) const;
+  void FindHeadBBs(MeFunction &func, Dominance &dom, BB *bb);
+  bool IsDoWhileLoop(const LoopDesc &loop) const;
+  void Merge(MeFunction &func);
+  void AddPreheader(MeFunction &func);
+  void InsertNewExitBB(MeFunction &func, LoopDesc &loop);
+  void InsertExitBB(MeFunction &func, LoopDesc &loop);
+  void SplitCondGotBB(MeFunction &func, LoopDesc &loop);
+  void ExecuteLoopCanon(MeFunction &func, MeFuncResultMgr &m, Dominance &dom);
+  void ExecuteLoopNormalization(MeFunction &func,  MeFuncResultMgr *m, Dominance &dom);
 };
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_MELOOPCANON_H

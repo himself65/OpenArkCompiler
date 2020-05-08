@@ -101,6 +101,7 @@ class IRMap : public AnalysisResult {
   MeExpr *CreateIntConstMeExpr(int64, PrimType);
   MeExpr *CreateConstMeExpr(PrimType, MIRConst&);
   MeExpr *CreateMeExprBinary(Opcode, PrimType, MeExpr&, MeExpr&);
+  MeExpr *CreateMeExprCompare(Opcode, PrimType, PrimType, MeExpr&, MeExpr&);
   MeExpr *CreateMeExprSelect(PrimType, MeExpr&, MeExpr&, MeExpr&);
   MeExpr *CreateMeExprTypeCvt(PrimType, PrimType, MeExpr&);
   IntrinsiccallMeStmt *CreateIntrinsicCallMeStmt(MIRIntrinsicID idx, std::vector<MeExpr*> &opnds,
@@ -238,7 +239,6 @@ class IRMap : public AnalysisResult {
   MeStmt *BuildMeStmt(StmtNode&);
   MeExpr *BuildLHSReg(const VersionSt &vst, RegassignMeStmt &defMeStmt, const RegassignNode &regassign);
   RegMeExpr *CreateRefRegMeExpr(const MIRSymbol&);
-  MeExpr *CreateMeExprCompare(Opcode, PrimType, PrimType, MeExpr&, MeExpr&);
   VarMeExpr *GetOrCreateVarFromVerSt(const VersionSt &vst);
   RegMeExpr *GetOrCreateRegFromVerSt(const VersionSt &vst);
   void BuildChiList(MeStmt&, MapleMap<OStIdx, MayDefNode>&, MapleMap<OStIdx, ChiMeNode*>&);

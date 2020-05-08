@@ -148,6 +148,10 @@ class Insn {
     return false;
   }
 
+  virtual bool IsPCLoad() const {
+    return false;
+  }
+
   virtual uint32 GetOpndNum() const {
     return 0;
   }

@@ -38,6 +38,47 @@ void IdentifyLoops::SetLoopParent4BB(const BB &bb, LoopDesc &loopDesc) {
   bbLoopParent[bb.GetBBId()] = &loopDesc;
 }
 
+void IdentifyLoops::InsertExitBB(LoopDesc &loop) {
+  std::set<BB*> traveledBBs;
+  std::queue<BB*> inLoopBBs;
+  inLoopBBs.push(loop.head);
+  CHECK_FATAL(loop.inloopBB2exitBBs.empty(), "inloopBB2exitBBs must be empty");
+  while (!inLoopBBs.empty()) {
+    BB *curBB = inLoopBBs.front();
+    inLoopBBs.pop();
+    for (BB *succ : curBB->GetSucc()) {
+      if (traveledBBs.count(succ) != 0) {
+        continue;
+      }
+      if (loop.Has(*succ)) {
+        inLoopBBs.push(succ);
+        traveledBBs.insert(succ);
+      } else {
+        loop.InsertInloopBB2exitBBs(*curBB, *succ);
+      }
+      if (curBB->GetKind() == kBBCondGoto) {
+        if (curBB->GetSucc().size() == 1) {
+          // When the size of succs is one, one of succs may be commonExitBB. Need insert to loopBB2exitBBs.
+          CHECK_FATAL(false, "return bb");
+        }
+      } else if (!curBB->GetStmtNodes().empty() && curBB->GetLast().GetOpCode() == OP_return) {
+        CHECK_FATAL(false, "return bb");
+      }
+    }
+  }
+  for (auto pair : loop.inloopBB2exitBBs) {
+    MapleVector<BB*> *succBB = pair.second;
+    for (auto it : *succBB) {
+      for (auto pred : it->GetPred()) {
+        if (!loop.Has(*pred)) {
+          loop.inloopBB2exitBBs.clear();
+          return;
+        }
+      }
+    }
+  }
+}
+
 // process each BB in preorder traversal of dominator tree
 void IdentifyLoops::ProcessBB(BB *bb) {
   if (bb == nullptr || bb == func.GetCommonExitBB()) {
@@ -98,12 +139,90 @@ void IdentifyLoops::MarkBB() {
   }
 }
 
+void IdentifyLoops::SetTryBB() {
+  for (auto loop : meLoops) {
+    for (auto pred : loop->head->GetPred()) {
+      if (pred->GetAttributes(kBBAttrIsTry)) {
+        loop->SetHasTryBB(true);
+        break;
+      }
+    }
+    if (loop->HasTryBB()) {
+      continue;
+    }
+    for (auto bbId : loop->loopBBs) {
+      BB *bb = func.GetBBFromID(bbId);
+      if (bb->GetAttributes(kBBAttrIsTry) || bb->GetAttributes(kBBAttrWontExit)) {
+        loop->SetHasTryBB(true);
+        break;
+      }
+    }
+  }
+}
+
+bool IdentifyLoops::ProcessPreheaderAndLatch(LoopDesc &loop) {
+  // If predsize of head is one, it means that one is entry bb.
+  if (loop.head->GetPred().size() == 1) {
+    CHECK_FATAL(func.GetCommonEntryBB()->GetSucc(0) == loop.head, "succ of entry bb must be head");
+    loop.preheader = func.GetCommonEntryBB();
+    CHECK_FATAL(!loop.head->GetPred(0)->GetAttributes(kBBAttrIsTry), "must not be kBBAttrIsTry");
+    loop.latch = loop.head->GetPred(0);
+    return true;
+  }
+  /* for example: GetInstance.java : 152
+   * There are two loop in identifyLoops, and one has no try no catch.
+   * In loop canon whould ont merge loops with latch bb.
+   * for () {
+   *   if () {
+   *     do somthing
+   *     continue
+   *   }
+   *   try {
+   *     do somthing
+   *   } catch (NoSuchAlgorithmException e) {
+   *     do somthing
+   *   }
+   * }
+   */
+  if (loop.head->GetPred().size() != 2) { // Head must has two preds.
+    loop.SetIsCanonicalLoop(false);
+    loop.SetHasTryBB(true);
+    return false;
+  }
+  if (!loop.Has(*loop.head->GetPred(0))) {
+    loop.preheader = loop.head->GetPred(0);
+    CHECK_FATAL(loop.preheader->GetKind() == kBBFallthru, "must be kBBFallthru");
+    CHECK_FATAL(loop.Has(*loop.head->GetPred(1)), "must be latch bb");
+    loop.latch = loop.head->GetPred(1);
+    CHECK_FATAL(!loop.latch->GetAttributes(kBBAttrIsTry), "must not be kBBAttrIsTry");
+    return true;
+  } else {
+    loop.latch = loop.head->GetPred(0);
+    CHECK_FATAL(!loop.latch->GetAttributes(kBBAttrIsTry), "must not be kBBAttrIsTry");
+    CHECK_FATAL(!loop.Has(*loop.head->GetPred(1)), "must be latch preheader bb");
+    loop.preheader = loop.head->GetPred(1);
+    CHECK_FATAL(loop.preheader->GetKind() == kBBFallthru, "must be kBBFallthru");
+    return true;
+  }
+}
+
 AnalysisResult *MeDoMeLoop::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr*) {
   auto *dom = static_cast<Dominance*>(m->GetAnalysisResult(MeFuncPhase_DOMINANCE, func));
   ASSERT(dom != nullptr, "dominance phase has problem");
   MemPool *meLoopMp = NewMemPool();
   IdentifyLoops *identLoops = meLoopMp->New<IdentifyLoops>(meLoopMp, *func, dom);
   identLoops->ProcessBB(func->GetCommonEntryBB());
+  identLoops->SetTryBB();
+  for (auto loop : identLoops->GetMeLoops()) {
+    if (loop->HasTryBB()) {
+      continue;
+    }
+    if (!identLoops->ProcessPreheaderAndLatch(*loop)) {
+      continue;
+    }
+    identLoops->InsertExitBB(*loop);
+    loop->SetIsCanonicalLoop(loop->inloopBB2exitBBs.size() == 0 ? false : true);
+  }
   if (DEBUGFUNC(func)) {
     identLoops->Dump();
   }
