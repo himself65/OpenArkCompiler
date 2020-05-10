@@ -19,6 +19,7 @@
 #include "opcode_info.h"
 #include "mir_function.h"
 #include "utils.h"
+#include "mir_builder.h"
 
 // This phase do dead store elimination. This optimization is done on SSA
 // version basis.
@@ -179,12 +180,39 @@ void DSE::RemoveNotRequiredStmtsInBB(BB &bb) {
     if (!IsStmtRequired(stmt)) {
       DumpStmt(stmt, "**** DSE1 deleting: ");
       OnRemoveBranchStmt(bb, stmt);
+      // A iread node contained in stmt or iass stmt
+      if (stmt2NotNullExpr.find(&stmt) != stmt2NotNullExpr.end()) {
+        for (BaseNode *node : stmt2NotNullExpr.at(&stmt)) {
+          if (NeedNotNullCheck(*node, bb)) {
+            MIRModule &mod = ssaTab.GetModule();
+            UnaryStmtNode *nullCheck = mod.GetMIRBuilder()->CreateStmtUnary(OP_assertnonnull, node);
+            bb.InsertStmtBefore(&stmt, nullCheck);
+            nullCheck->SetIsLive(true);
+            notNullExpr2Stmt[node].push_back(std::make_pair(nullCheck, &bb));
+          }
+        }
+      }
       bb.RemoveStmtNode(&stmt);
       continue;
     }
 
     CheckRemoveCallAssignedReturn(stmt);
   }
+}
+
+// If a ivar's base not used as not null, should insert a not null stmt
+// Only make sure throw NPE in same BB
+// If must make sure throw at first stmt, much more not null stmt will be inserted
+bool DSE::NeedNotNullCheck(BaseNode &node, const BB &bb) {
+  for (auto item : notNullExpr2Stmt[&node]) {
+    if (!IsStmtRequired(*(item.first))) {
+      continue;
+    }
+    if (postDom.Dominate(*(item.second), bb)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 void DSE::PropagateUseLive(const VersionSt &vst) {
@@ -349,10 +377,87 @@ void DSE::MarkSpecialStmtRequired() {
       continue;
     }
     for (auto itStmt = bb->GetStmtNodes().rbegin(); itStmt != bb->GetStmtNodes().rend(); ++itStmt) {
-      if (StmtMustRequired(*itStmt, *bb)) {
-        MarkStmtRequired(*itStmt, *bb);
+      StmtNode &stmt = *itStmt;
+      if (StmtMustRequired(stmt, *bb)) {
+        MarkStmtRequired(stmt, *bb);
+      }
+      CollectNotNullNode(stmt, *bb);
+    }
+  }
+}
+
+// Find all stmt contains ivar and save to stmt2NotNullExpr
+// Find all not null expr used as ivar's base、OP_array's or OP_assertnonnull's opnd
+// And save to notNullExpr2Stmt
+void DSE::CollectNotNullNode(StmtNode &stmt, BB &bb) {
+  uint8 opndNum = stmt.NumOpnds();
+  uint8 nodeType = kNodeTypeNormal;
+  for (uint8 i = 0; i < opndNum; ++i) {
+    BaseNode *opnd = stmt.Opnd(i);
+    if (i == 0 && instance_of<CallNode>(stmt)) {
+      // A non-static call's first opnd is this, should be not null
+      CallNode &call = static_cast<CallNode&>(stmt);
+      if (!GlobalTables::GetFunctionTable().GetFunctionFromPuidx(call.GetPUIdx())->IsStatic()) {
+        nodeType = kNodeTypeNotNull;
+      }
+    } else if (i == 0 && stmt.GetOpCode() == OP_iassign) {
+      // A iass stmt, mark and save
+      BaseNode &base = static_cast<IassignNode&>(stmt).GetAddrExprBase();
+      stmt2NotNullExpr[&stmt].push_back(&base);
+      MarkSingleUseLive(base);
+      notNullExpr2Stmt[&base].push_back(std::make_pair(&stmt, &bb));
+      nodeType = kNodeTypeIvar;
+    } else {
+      // A normal opnd not sure
+      Opcode opndOp = opnd->GetOpCode();
+      if (opndOp == OP_dread || opndOp == OP_regread) {
         continue;
       }
+      nodeType = kNodeTypeNormal;
+    }
+    CollectNotNullNode(stmt, ToRef(opnd), bb, nodeType);
+  }
+}
+
+void DSE::CollectNotNullNode(StmtNode &stmt, BaseNode &node, BB &bb, uint8 nodeType) {
+  Opcode op = node.GetOpCode();
+  switch (op) {
+    case OP_dread:
+    case OP_regread:
+    case OP_constval: {
+      // Ref expr used in ivar、array or assertnotnull
+      PrimType type = node.GetPrimType();
+      if (nodeType != kNodeTypeNormal && (type == PTY_ref || type == PTY_ptr)) {
+        notNullExpr2Stmt[&node].push_back(std::make_pair(&stmt, &bb));
+      }
+      break;
+    }
+    case OP_iread: {
+      BaseNode &base = static_cast<IreadNode&>(node).GetAddrExprBase();
+      if (nodeType != kNodeTypeIvar) {
+        stmt2NotNullExpr[&stmt].push_back(&base);
+        MarkSingleUseLive(base);
+      }
+      notNullExpr2Stmt[&base].push_back(std::make_pair(&stmt, &bb));
+      CollectNotNullNode(stmt, base, bb, kNodeTypeIvar);
+      break;
+    }
+    default: {
+      if (nodeType != kNodeTypeNormal) {
+        // Ref expr used in ivar、array or assertnotnull
+        PrimType type = node.GetPrimType();
+        if (type == PTY_ref || type == PTY_ptr) {
+          notNullExpr2Stmt[&node].push_back(std::make_pair(&stmt, &bb));
+        }
+      } else {
+        // Ref expr used array or assertnotnull
+        bool notNull = op == OP_array || op == OP_assertnonnull;
+        nodeType = notNull ? kNodeTypeNotNull : kNodeTypeNormal;
+      }
+      for (size_t i = 0; i < node.GetNumOpnds(); ++i) {
+        CollectNotNullNode(stmt, ToRef(node.Opnd(i)), bb, nodeType);
+      }
+      break;
     }
   }
 }

@@ -65,6 +65,11 @@ class HDSE {
   void MarkLastUnconditionalGotoInPredBBRequired(const BB &bb);
   void MarkVarDefByStmt(VarMeExpr &varMeExpr);
   void MarkRegDefByStmt(RegMeExpr &regMeExpr);
+  void CollectNotNullExpr(MeStmt &stmt);
+  // NotNullExpr means it is impossible value of the expr is nullptr after go through this stmt.
+  // exprType must be one kind of NODE_TYPE_NORMAL、NODE_TYPE_IVAR、NODE_TYPE_NOTNULL
+  void CollectNotNullExpr(MeStmt &stmt, MeExpr &meExpr, uint8 exprType = 0);
+  bool NeedNotNullCheck(MeExpr &meExpr, const BB &bb);
 
   bool IsExprNeeded(const MeExpr &meExpr) const {
     return exprLive.at(meExpr.GetExprID());
@@ -100,6 +105,15 @@ class HDSE {
   std::vector<bool> bbRequired;
   std::vector<bool> exprLive;
   std::forward_list<MeExpr*> workList;
+  std::unordered_map<MeStmt*, std::vector<MeExpr*>> stmt2NotNullExpr;
+  std::unordered_map<MeExpr*, std::vector<MeStmt*>> notNullExpr2Stmt;
+  // Initial type of all meExpr
+  static const uint8 kExprTypeNormal = 0;
+  // IreadMeExpr
+  static const uint8 kExprTypeIvar = 1;
+  // NPE will be throw if the value of this meExpr is nullptr when stmt is executed
+  // Or the meExpr is opnd of a same type meExpr
+  static const uint8 kExprTypeNotNull = 2;
 };
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_HDSE_H

@@ -51,9 +51,38 @@ void HDSE::RemoveNotRequiredStmtsInBB(BB &bb) {
         }
         bb.SetKind(kBBFallthru);
       }
+      // A ivar contained in stmt
+      if (stmt2NotNullExpr.find(&meStmt) != stmt2NotNullExpr.end()) {
+        for (MeExpr *meExpr : stmt2NotNullExpr.at(&meStmt)) {
+          if (NeedNotNullCheck(*meExpr, bb)) {
+            UnaryMeStmt *nullCheck = irMap.New<UnaryMeStmt>(OP_assertnonnull);
+            nullCheck->SetBB(&bb);
+            nullCheck->SetSrcPos(meStmt.GetSrcPosition());
+            nullCheck->SetMeStmtOpndValue(meExpr);
+            bb.InsertMeStmtBefore(&meStmt, nullCheck);
+            nullCheck->SetIsLive(true);
+            notNullExpr2Stmt[meExpr].push_back(nullCheck);
+          }
+        }
+      }
       bb.RemoveMeStmt(&meStmt);
     }
   }
+}
+
+// If a ivar's base not used as not null, should insert a not null stmt
+// Only make sure throw NPE in same BB
+// If must make sure throw at first stmt, much more not null stmt will be inserted
+bool HDSE::NeedNotNullCheck(MeExpr &meExpr, const BB &bb) {
+  for (MeStmt *stmt : notNullExpr2Stmt[&meExpr]) {
+    if (!stmt->GetIsLive()) {
+      continue;
+    }
+    if (postDom.Dominate(*(stmt->GetBB()), bb)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 void HDSE::MarkMuListRequired(MapleMap<OStIdx, VarMeExpr*> &muList) {
@@ -154,6 +183,74 @@ void HDSE::MarkRegDefByStmt(RegMeExpr &regMeExpr) {
     default:
       ASSERT(false, "MarkRegDefByStmt unexpected defBy value");
       break;
+  }
+}
+
+// Find all stmt contains ivar and save to stmt2NotNullExpr
+// Find all not null expr used as ivar's base、OP_array's or OP_assertnonnull's opnd
+// And save to notNullExpr2Stmt
+void HDSE::CollectNotNullExpr(MeStmt &stmt) {
+  size_t opndNum = stmt.NumMeStmtOpnds();
+  uint8 exprType = kExprTypeNormal;
+  for (size_t i = 0; i < opndNum; ++i) {
+    MeExpr *opnd = stmt.GetOpnd(i);
+    if (i == 0 && instance_of<CallMeStmt>(stmt)) {
+      // A non-static call's first opnd is this, should be not null
+      CallMeStmt &callStmt = static_cast<CallMeStmt&>(stmt);
+      exprType = callStmt.GetTargetFunction().IsStatic() ? kExprTypeNormal : kExprTypeNotNull;
+    } else {
+      // A normal opnd not sure
+      MeExprOp meOp = opnd->GetMeOp();
+      if (meOp == kMeOpVar || meOp == kMeOpReg) {
+        continue;
+      }
+      exprType = kExprTypeNormal;
+    }
+    CollectNotNullExpr(stmt, ToRef(opnd), exprType);
+  }
+}
+
+void HDSE::CollectNotNullExpr(MeStmt &stmt, MeExpr &meExpr, uint8 exprType) {
+  MeExprOp meOp = meExpr.GetMeOp();
+  switch (meOp) {
+    case kMeOpVar:
+    case kMeOpReg:
+    case kMeOpConst: {
+      PrimType type = meExpr.GetPrimType();
+      // Ref expr used in ivar、array or assertnotnull
+      if (exprType != kExprTypeNormal && (type == PTY_ref || type == PTY_ptr)) {
+        notNullExpr2Stmt[&meExpr].push_back(&stmt);
+      }
+      break;
+    }
+    case kMeOpIvar: {
+      MeExpr *base = static_cast<IvarMeExpr&>(meExpr).GetBase();
+      if (exprType != kExprTypeIvar) {
+        stmt2NotNullExpr[&stmt].push_back(base);
+        MarkSingleUseLive(meExpr);
+      }
+      notNullExpr2Stmt[base].push_back(&stmt);
+      CollectNotNullExpr(stmt, ToRef(base), kExprTypeIvar);
+      break;
+    }
+    default: {
+      if (exprType != kExprTypeNormal) {
+        // Ref expr used in ivar、array or assertnotnull
+        PrimType type = meExpr.GetPrimType();
+        if (type == PTY_ref || type == PTY_ptr) {
+          notNullExpr2Stmt[&meExpr].push_back(&stmt);
+        }
+      } else {
+        // Ref expr used array or assertnotnull
+        Opcode op = meExpr.GetOp();
+        bool notNull = op == OP_array || op == OP_assertnonnull;
+        exprType = notNull ? kExprTypeNotNull : kExprTypeNormal;
+      }
+      for (size_t i = 0; i < meExpr.GetNumOpnds(); ++i) {
+        CollectNotNullExpr(stmt, ToRef(meExpr.GetOpnd(i)), exprType);
+      }
+      break;
+    }
   }
 }
 
@@ -399,6 +496,7 @@ void HDSE::MarkSpecialStmtRequired() {
     auto &meStmtNodes = bb->GetMeStmts();
     for (auto itStmt = meStmtNodes.rbegin(); itStmt != meStmtNodes.rend(); ++itStmt) {
       MeStmt *pStmt = to_ptr(itStmt);
+      CollectNotNullExpr(*pStmt);
       if (pStmt->GetIsLive()) {
         continue;
       }
