@@ -108,6 +108,11 @@ class DSE {
   bool HasNonDeletableExpr(const StmtNode &stmt) const;
   bool StmtMustRequired(const StmtNode &stmt, const BB &bb) const;
   void DumpStmt(const StmtNode &stmt, const std::string &msg) const;
+  void CollectNotNullNode(StmtNode &stmt, BB &bb);
+  // NotNullNode means it is impossible value of the node is nullptr after go through this stmt.
+  // nodeType must be one kind of kNodeTypeNormal、kNodeTypeIvar、kNodeTypeNotNull
+  void CollectNotNullNode(StmtNode &stmt, BaseNode &node, BB &bb, uint8 nodeType = 0);
+  bool NeedNotNullCheck(BaseNode &node, const BB &bb);
 
   std::vector<BB*> bbVec;
   BB &commonEntryBB;
@@ -117,7 +122,16 @@ class DSE {
   std::vector<bool> bbRequired;
   std::vector<bool> exprRequired;
   std::forward_list<utils::SafePtr<const VersionSt>> workList{};
+  std::unordered_map<StmtNode*, std::vector<BaseNode*>> stmt2NotNullExpr;
+  std::unordered_map<BaseNode*, std::vector<std::pair<StmtNode*, BB*>>> notNullExpr2Stmt;
   bool cfgUpdated = false;
+  // Initial type of all nodes
+  static const uint8 kNodeTypeNormal = 0;
+  // IreadNode
+  static const uint8 kNodeTypeIvar = 1;
+  // NPE will be throw if the value of this node is nullptr when stmt is executed
+  // Or the node is opnd of a same type node
+  static const uint8 kNodeTypeNotNull = 2;
 };
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_DSE_H
