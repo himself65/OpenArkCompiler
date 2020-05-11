@@ -231,7 +231,7 @@ class CGFunc {
   virtual RegOperand &GetOrCreateVirtualRegisterOperand(regno_t vRegNO) = 0;
   virtual RegOperand &GetOrCreateFramePointerRegOperand() = 0;
   virtual RegOperand &GetOrCreateStackBaseRegOperand() = 0;
-  virtual uint32 GetBaseOffset(const SymbolAlloc &symbolAlloc) = 0;
+  virtual int32 GetBaseOffset(const SymbolAlloc &symbolAlloc) = 0;
   virtual Operand &GetZeroOpnd(uint32 size) = 0;
   virtual Operand &CreateCfiRegOperand(uint32 reg, uint32 size) = 0;
   virtual Operand &GetTargetRetOperand(PrimType primType) = 0;
@@ -785,7 +785,7 @@ class CGFunc {
 
   int64 GetPseudoRegisterSpillLocation(PregIdx idx) {
     const SymbolAlloc *symLoc = memLayout->GetSpillLocOfPseduoRegister(idx);
-    return GetBaseOffset(*symLoc);
+    return static_cast<int64>(GetBaseOffset(*symLoc));
   }
 
   virtual MemOperand *GetPseudoRegisterSpillMemoryOperand(PregIdx idx) = 0;

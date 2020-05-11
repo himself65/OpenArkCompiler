@@ -885,13 +885,14 @@ void MUIDReplacement::ReplaceDataTable(const std::string &name) {
   if (oldConst == nullptr) {
     return;
   }
+  bool isGLobalRootList = (name == NameMangler::kGcRootList) ? true : false;
   for (MIRConst *&oldTabEntry : oldConst->GetConstVec()) {
     CHECK_NULL_FATAL(oldTabEntry);
     if (oldTabEntry->GetKind() == kConstAggConst) {
       auto *aggrC = static_cast<MIRAggConst*>(oldTabEntry);
       for (size_t i = 0; i < aggrC->GetConstVec().size(); ++i) {
         CHECK_NULL_FATAL(aggrC->GetConstVecItem(i));
-        ReplaceAddrofConst(aggrC->GetConstVecItem(i));
+        ReplaceAddrofConst(aggrC->GetConstVecItem(i), isGLobalRootList);
         MIRConstPtr mirConst = aggrC->GetConstVecItem(i);
         if (mirConst->GetKind() == kConstInt) {
           MIRIntConst *newIntConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(
@@ -902,7 +903,7 @@ void MUIDReplacement::ReplaceDataTable(const std::string &name) {
         }
       }
     } else if (oldTabEntry->GetKind() == kConstAddrof) {
-      ReplaceAddrofConst(oldTabEntry);
+      ReplaceAddrofConst(oldTabEntry, isGLobalRootList);
     }
   }
 }
@@ -937,7 +938,7 @@ void MUIDReplacement::ReplaceDecoupleKeyTable(MIRAggConst* oldConst) {
   }
 }
 
-void MUIDReplacement::ReplaceAddrofConst(MIRConst *&entry) {
+void MUIDReplacement::ReplaceAddrofConst(MIRConst *&entry, bool isGlobalRootList) {
   if (entry->GetKind() != kConstAddrof) {
     return;
   }
@@ -952,10 +953,20 @@ void MUIDReplacement::ReplaceAddrofConst(MIRConst *&entry) {
   MIRIntConst *constNode = nullptr;
   if (addrSym->GetStorageClass() != kScExtern) {
     offset = FindIndexFromDefTable(*addrSym, false);
+    if (isGlobalRootList == true) {
+#ifdef USE_ARM32_MACRO
+      offset =  (offset << 2) + 1;
+#endif
+    }
     constNode = GlobalTables::GetIntConstTable().GetOrCreateIntConst(static_cast<int64>(offset | kFromDefIndexMask),
                                                                      voidType);
   } else {
     offset = FindIndexFromUndefTable(*addrSym, false);
+    if (isGlobalRootList == true) {
+#ifdef USE_ARM32_MACRO
+      offset =  (offset << 2) + 1;
+#endif
+    }
     constNode = GlobalTables::GetIntConstTable().GetOrCreateIntConst(static_cast<int64>(offset | kFromUndefIndexMask),
                                                                      voidType);
   }

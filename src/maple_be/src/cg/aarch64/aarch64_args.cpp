@@ -90,7 +90,7 @@ void AArch64MoveRegArgs::GenerateStpInsn(const ArgInfo &firstArgInfo, const ArgI
                                                                          firstArgInfo.regType);
 
   int32 limit = (secondArgInfo.stkSize > k4ByteSize) ? kStpLdpImm64UpperBound : kStpLdpImm32UpperBound;
-  int32 stOffset = static_cast<int32>(aarchCGFunc->GetBaseOffset(*firstArgInfo.symLoc));
+  int32 stOffset = aarchCGFunc->GetBaseOffset(*firstArgInfo.symLoc);
   MemOperand *memOpnd = nullptr;
   if (stOffset > limit || baseReg != nullptr) {
     if (baseReg == nullptr || lastSegment != firstArgInfo.symLoc->GetMemSegment()) {
@@ -120,7 +120,7 @@ void AArch64MoveRegArgs::GenerateStpInsn(const ArgInfo &firstArgInfo, const ArgI
 
 void AArch64MoveRegArgs::GenerateStrInsn(ArgInfo &argInfo) {
   AArch64CGFunc *aarchCGFunc = static_cast<AArch64CGFunc*>(cgFunc);
-  int32 stOffset = static_cast<int32>(aarchCGFunc->GetBaseOffset(*argInfo.symLoc));
+  int32 stOffset = aarchCGFunc->GetBaseOffset(*argInfo.symLoc);
   AArch64RegOperand *baseOpnd = static_cast<AArch64RegOperand*>(aarchCGFunc->GetBaseReg(*argInfo.symLoc));
   RegOperand &regOpnd =
       aarchCGFunc->GetOrCreatePhysicalRegisterOperand(argInfo.reg, argInfo.stkSize * kBitsPerByte, argInfo.regType);

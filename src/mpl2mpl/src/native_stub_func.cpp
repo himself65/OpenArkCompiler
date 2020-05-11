@@ -118,6 +118,9 @@ void NativeStubFuncGeneration::ProcessFunc(MIRFunction *func) {
   if (func->GetBody()->GetFirst()) {
     GenerateRegTabEntry(*func);
     GenerateRegFuncTabEntry();
+    func->UnSetAttr(FUNCATTR_native);
+    func->UnSetAttr(FUNCATTR_fast_native);
+    func->UnSetAttr(FUNCATTR_critical_native);
     return;
   }
   func->GetBody()->ResetBlock();

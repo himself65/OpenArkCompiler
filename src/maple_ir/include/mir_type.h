@@ -954,6 +954,10 @@ class MIRStructType : public MIRType {
     CHECK_FATAL(false, "can not use GetInfo");
   }
 
+  virtual const MIRInfoPair &GetInfoElemt(size_t) const {
+    CHECK_FATAL(false, "can not use GetInfoElemt");
+  }
+
   virtual const std::vector<bool> &GetInfoIsString() const {
     CHECK_FATAL(false, "can not use GetInfoIsString");
   }
@@ -1088,7 +1092,7 @@ class MIRClassType : public MIRStructType {
     return info.size();
   }
 
-  const MIRInfoPair &GetInfoElemt(size_t n) const {
+  const MIRInfoPair &GetInfoElemt(size_t n) const override {
     ASSERT(n < info.size(), "array index out of range");
     return info.at(n);
   }
@@ -1230,7 +1234,7 @@ class MIRInterfaceType : public MIRStructType {
     return info.size();
   }
 
-  const MIRInfoPair &GetInfoElemt(size_t n) const {
+  const MIRInfoPair &GetInfoElemt(size_t n) const override {
     ASSERT(n < info.size(), "array index out of range");
     return info.at(n);
   }

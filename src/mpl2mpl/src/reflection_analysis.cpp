@@ -290,7 +290,7 @@ uint32 GetFieldModifier(const FieldAttrs &fa) {
          (static_cast<unsigned char>(fa.GetAttr(FLDATTR_hiddenapiblack)) << (kModifierHiddenApiBlack - 1));
 }
 
-uint32 GetClassAccessFlags(const MIRClassType &classType) {
+uint32 GetClassAccessFlags(const MIRStructType &classType) {
   int32 accessFlag = 0;
   for (const MIRPragma *prag : classType.GetPragmaVec()) {
     if (prag->GetKind() == kPragmaClass) {
@@ -313,7 +313,7 @@ uint32 GetClassAccessFlags(const MIRClassType &classType) {
   return 0;
 }
 
-bool ReflectionAnalysis::IsStaticClass(const MIRClassType &classType) const {
+bool ReflectionAnalysis::IsStaticClass(const MIRStructType &classType) const {
   return GetClassAccessFlags(classType) & 0x00000008;  // #  Modifier_Static 0x00000008;
 }
 
@@ -337,7 +337,7 @@ static std::string GetSignatureFromFullName(const std::string &fullname) {
   FATAL(kLncFatal, "can not find \"|\" in fullname");
 }
 
-int ReflectionAnalysis::SolveAnnotation(MIRClassType &classType, MIRFunction &func) {
+int ReflectionAnalysis::SolveAnnotation(MIRStructType &classType, MIRFunction &func) {
   std::string annoArray1;
   std::map<int, int> idxNumMap;
   GenAnnotation(idxNumMap, annoArray1, classType, kPragmaFunc, func.GetName(), invalidIdx);
@@ -581,7 +581,7 @@ bool RtRetentionPolicyCheck(const MIRSymbol &clInfo) {
 uint16 ReflectionAnalysis::GetMethodInVtabIndex(const Klass &klass, const MIRFunction &func) const {
   uint16 methodInVtabIndex = 0;
   bool findMethod = false;
-  const MIRClassType *classType = klass.GetMIRClassType();
+  const MIRStructType *classType = klass.GetMIRStructType();
   const MIRSymbol *vtableSymbol = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(
       GlobalTables::GetStrTable().GetStrIdxFromName(VTAB_PREFIX_STR + klass.GetKlassName()));
   if (klass.IsClass() && vtableSymbol != nullptr) {
@@ -755,7 +755,7 @@ void ReflectionAnalysis::GenMethodMeta(const Klass &klass, MIRStructType &method
   uint32 signatureIdx = FindOrInsertReflectString(signature);
   mirBuilder.AddIntFieldConst(methodsInfoType, newConst, fieldID++, signatureIdx);
   // @annotation
-  MIRClassType *classType = klass.GetMIRClassType();
+  MIRStructType *classType = klass.GetMIRStructType();
   int annotationIdx = SolveAnnotation(*classType, func);
   mirBuilder.AddIntFieldConst(methodsInfoType, newConst, fieldID++, annotationIdx);
   // @flag
@@ -775,7 +775,7 @@ MIRSymbol *ReflectionAnalysis::GenMethodsMeta(const Klass &klass,
                                               std::vector<std::pair<MethodPair*, int>> &methodInfoVec,
                                               std::unordered_map<uint32, std::string> &baseNameMp,
                                               std::unordered_map<uint32, std::string> &fullNameMp) {
-  MIRClassType *classType = klass.GetMIRClassType();
+  MIRStructType *classType = klass.GetMIRStructType();
   size_t arraySize = classType->GetMethods().size();
   auto &methodsInfoType =
       static_cast<MIRStructType&>(*GlobalTables::GetTypeTable().GetTypeFromTyIdx(methodsInfoTyIdx));
@@ -817,7 +817,7 @@ MIRSymbol *ReflectionAnalysis::GenMethodAddrData(const MIRSymbol &funcSym) {
 }
 
 MIRSymbol *ReflectionAnalysis::GenMethodsMetaData(const Klass &klass) {
-  MIRClassType *classType = klass.GetMIRClassType();
+  MIRStructType *classType = klass.GetMIRStructType();
   if (classType == nullptr || classType->GetMethods().empty()) {
     return nullptr;
   }
@@ -857,7 +857,7 @@ void ReflectionAnalysis::GenFieldOffsetConst(MIRAggConst &newConst, const Klass 
     mirBuilder.AddAddrofFieldConst(type, newConst, metaFieldID, *gvarSt);
   } else {
     // Offset of the instance field, we fill the index of fields here and let CG to fill in.
-    MIRClassType *mirClassType = klass.GetMIRClassType();
+    MIRStructType *mirClassType = klass.GetMIRStructType();
     ASSERT(mirClassType != nullptr, "GetMIRClassType() returns null");
     FieldID fldID = mirBuilder.GetStructFieldIDFromNameAndTypeParentFirstFoundInChild(
         *mirClassType, originFieldname, fieldP.second.first);
@@ -887,7 +887,7 @@ MIRSymbol *ReflectionAnalysis::GenFieldOffsetData(const Klass &klass, std::pair<
   if (isStaticField) {
     fieldOffsetSymbolName += originFieldname;
   } else {
-    MIRClassType *mirClassType = klass.GetMIRClassType();
+    MIRStructType *mirClassType = klass.GetMIRStructType();
     FieldID fldID = mirBuilder.GetStructFieldIDFromNameAndTypeParentFirstFoundInChild(
         *mirClassType, originFieldname, fieldP.second.first);
     fieldOffsetSymbolName += klass.GetKlassName() + "_FieldID_" + std::to_string(fldID);
@@ -977,7 +977,7 @@ void ReflectionAnalysis::GenFieldMeta(const Klass &klass, MIRStructType &fieldsI
   uint32 fieldname32Idx = FindOrInsertReflectString(fieldName);
   mirBuilder.AddIntFieldConst(fieldsInfoType, *newConst, fieldID++, fieldname32Idx);
   // @annotation
-  MIRClassType *classType = klass.GetMIRClassType();
+  MIRStructType *classType = klass.GetMIRStructType();
   std::string annoArr;
   std::map<int, int> idxNumMap;
   GenAnnotation(idxNumMap, annoArr, *classType, kPragmaVar, fieldName, ty->GetTypeIndex());
@@ -1017,7 +1017,7 @@ MIRSymbol *ReflectionAnalysis::GenFieldsMeta(const Klass &klass, std::vector<std
 }
 
 MIRSymbol *ReflectionAnalysis::GenFieldsMetaData(const Klass &klass) {
-  MIRClassType *classType = klass.GetMIRClassType();
+  MIRStructType *classType = klass.GetMIRStructType();
   FieldVector fields = classType->GetFields();
   FieldVector staticFields = classType->GetStaticFields();
   ASSERT(fields.size() < fields.max_size() - staticFields.size(), "size too large");
@@ -1215,7 +1215,7 @@ std::string ReflectionAnalysis::GetAnnoValueNoArray(const MIRPragmaElement &anno
   return annoArray;
 }
 
-void ReflectionAnalysis::GenAnnotation(std::map<int, int> &idxNumMap, std::string &annoArr, MIRClassType &classType,
+void ReflectionAnalysis::GenAnnotation(std::map<int, int> &idxNumMap, std::string &annoArr, MIRStructType &classType,
                                        PragmaKind paragKind, const std::string &paragName, TyIdx fieldTypeIdx,
                                        std::map<int, int> *paramnumArray, int *paramIndex) {
   int annoNum = 0;
@@ -1306,7 +1306,7 @@ void ReflectionAnalysis::GenHotClassNameString(const Klass &klass) {
   if (klass.IsInterface()) {
     return;
   }
-  MIRClassType *classType = klass.GetMIRClassType();
+  MIRStructType *classType = klass.GetMIRStructType();
   if (!classType->IsLocal()) {
     // External class.
     return;
@@ -1326,7 +1326,7 @@ uint32 ReflectionAnalysis::FindOrInsertReflectString(const std::string &str) {
 }
 
 MIRSymbol *ReflectionAnalysis::GetClinitFuncSymbol(const Klass &klass) {
-  MIRClassType *classType = klass.GetMIRClassType();
+  MIRStructType *classType = klass.GetMIRStructType();
   if (classType == nullptr || classType->GetMethods().empty()) {
     return nullptr;
   }
@@ -1345,9 +1345,9 @@ MIRSymbol *ReflectionAnalysis::GetClinitFuncSymbol(const Klass &klass) {
 
 void ReflectionAnalysis::GenClassMetaData(Klass &klass) {
   MIRModule &module = *mirModule;
-  MIRClassType *classType = klass.GetMIRClassType();
-  ASSERT(classType != nullptr, "null ptr check!");
-  if (!classType->IsLocal()) {
+  MIRStructType *structType = klass.GetMIRStructType();
+  ASSERT(structType != nullptr, "null ptr check!");
+  if (!structType->IsLocal()) {
     // External class.
     return;
   }
@@ -1406,20 +1406,24 @@ void ReflectionAnalysis::GenClassMetaData(Klass &klass) {
   for (Klass *superClass : klass.GetSuperKlasses()) {
     superClassList.push_back(superClass);
   }
-  for (TyIdx const kTyIdx : classType->GetInterfaceImplemented()) {
-    Klass *interface = klassH->GetKlassFromTyIdx(kTyIdx);
-    if (interface == nullptr) {
-      MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(kTyIdx);
-      LogInfo::MapleLogger() << "Error: Interface " << static_cast<MIRStructType*>(type)->GetName() << " is not found"
-                             << "\n";
-      LogInfo::MapleLogger(kLlErr) << "Error: Missing interface for " << klass.GetKlassName() << "\n";
-      CHECK_FATAL(false, "Missing interface");
-    }
-    std::list<Klass*>::iterator it = std::find(superClassList.begin(), superClassList.end(), interface);
-    if (it == superClassList.end()) {
-      superClassList.push_back(interface);
+  if (structType->IsMIRClassType()) {
+    MIRClassType *classType = static_cast<MIRClassType*>(structType);
+    for (TyIdx const kTyIdx : classType->GetInterfaceImplemented()) {
+      Klass *interface = klassH->GetKlassFromTyIdx(kTyIdx);
+      if (interface == nullptr) {
+        MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(kTyIdx);
+        LogInfo::MapleLogger() << "Error: Interface " << static_cast<MIRStructType*>(type)->GetName() << " is not found"
+                               << "\n";
+        LogInfo::MapleLogger(kLlErr) << "Error: Missing interface for " << klass.GetKlassName() << "\n";
+        CHECK_FATAL(false, "Missing interface");
+      }
+      std::list<Klass*>::iterator it = std::find(superClassList.begin(), superClassList.end(), interface);
+      if (it == superClassList.end()) {
+        superClassList.push_back(interface);
+      }
     }
   }
+
   size_t superClassSize = superClassList.size();
   if (superClassSize >= 1) {
     MIRSymbol *superClassSymbolType = GenSuperClassMetaData(klass, superClassList);
@@ -1436,7 +1440,7 @@ void ReflectionAnalysis::GenClassMetaData(Klass &klass) {
   // Do annotation.
   std::string annoArray;
   std::map<int, int> idxNumMap;
-  GenAnnotation(idxNumMap, annoArray, *classType, kPragmaClass, klass.GetKlassName(), invalidIdx);
+  GenAnnotation(idxNumMap, annoArray, *structType, kPragmaClass, klass.GetKlassName(), invalidIdx);
   bool isAnonymous = IsAnonymousClass(annoArray);
   CheckPrivateInnerAndNoSubClass(klass, annoArray);
 #ifndef USE_32BIT_REF
@@ -1452,7 +1456,7 @@ void ReflectionAnalysis::GenClassMetaData(Klass &klass) {
   mirBuilder.AddIntFieldConst(classMetadataROType, *newConst, fieldID++, 0);
 #endif  // USE_32BIT_REF
   // @modifier: For class fill ClassAccessFlags.
-  uint32 modifier = GetClassAccessFlags(*classType);
+  uint32 modifier = GetClassAccessFlags(*structType);
   mirBuilder.AddIntFieldConst(classMetadataROType, *newConst, fieldID++, modifier);
   // @annotation: Set annotation field.
   uint32_t signatureIdx = GetAnnoCstrIndex(idxNumMap, annoArray, false);
@@ -1536,7 +1540,7 @@ void ReflectionAnalysis::GenClassMetaData(Klass &klass) {
   classTab.push_back(classSt);
 }
 
-int8 ReflectionAnalysis::JudgePara(MIRClassType &classType) {
+int8 ReflectionAnalysis::JudgePara(MIRStructType &classType) {
   for (MIRPragma *prag : classType.GetPragmaVec()) {
     if (prag->GetKind() == kPragmaClass) {
       if ((GlobalTables::GetTypeTable().GetTypeFromTyIdx(prag->GetTyIdx())->GetName() ==

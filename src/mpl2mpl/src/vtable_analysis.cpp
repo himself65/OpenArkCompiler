@@ -91,7 +91,7 @@ void VtableAnalysis::AddMethodToTable(MethodPtrVector &methodTable, MethodPair &
 }
 
 void VtableAnalysis::GenVtableList(const Klass &klass) {
-  if (klass.IsInterface()) {
+  if (klass.IsInterface() || klass.IsInterfaceIncomplete()) {
     MIRInterfaceType *iType = klass.GetMIRInterfaceType();
     // add in methods from parent interfaces, note interfaces can declare/define same methods
     for (const Klass *parentKlass : klass.GetSuperKlasses()) {

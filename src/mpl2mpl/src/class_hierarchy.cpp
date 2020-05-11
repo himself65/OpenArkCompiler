@@ -171,7 +171,7 @@ bool Klass::IsKlassMethod(const MIRFunction *func) const {
 }
 
 bool Klass::ImplementsKlass() const {
-  if (IsInterface()) {
+  if (IsInterface() || IsInterfaceIncomplete()) {
     return false;
   }
   MIRClassType *classType = GetMIRClassType();
@@ -209,12 +209,15 @@ void Klass::CountVirtMethTopDown(const KlassHierarchy &kh) {
   auto *superAndImplClasses = alloc->GetMemPool()->New<MapleVector<Klass*>>(alloc->Adapter());
   // Add default methods of interface. Add them first because they have lowest
   // priorities compared with methods defined in classes
-  for (TyIdx tyIdx : GetMIRClassType()->GetInterfaceImplemented()) {
-    Klass *interface = kh.GetKlassFromTyIdx(tyIdx);
-    if (interface != nullptr) {
-      superAndImplClasses->push_back(interface);
+  if (IsClass() || IsClassIncomplete()) {
+    for (TyIdx tyIdx : GetMIRClassType()->GetInterfaceImplemented()) {
+      Klass *interface = kh.GetKlassFromTyIdx(tyIdx);
+      if (interface != nullptr) {
+        superAndImplClasses->push_back(interface);
+      }
     }
   }
+
   // Then add methods from superclasses
   for (Klass *superKlass : superKlasses) {
     superAndImplClasses->push_back(superKlass);

@@ -765,6 +765,7 @@ void GraphColorRegAllocator::ComputeLiveRangesForEachDefOperand(Insn &insn, bool
   ASSERT(numUses == 0, "should only be def opnd");
   if (numDefs > 1) {
     multiDef = true;
+    needExtraSpillReg = true;
   }
 }
 
@@ -2547,18 +2548,28 @@ MemOperand *GraphColorRegAllocator::GetSpillOrReuseMem(LiveRange &lr, uint32 reg
       lr.SetSpillSize((regSize <= k32) ? k32 : k64);
     } else {
 #endif  /* REUSE_SPILLMEM */
-      regno_t baseRegNO = kRinvalid;
-      MapleSet<uint32> &spillRegSet = intSpillRegSet;
-      regno_t basis = R0;
-      for (auto reg : spillRegSet) {
-        if (isDef && (reg + basis) == lr.GetSpillReg()) {
-          continue;
-        }
-        baseRegNO = (reg + basis);
-        break;
+      regno_t baseRegNO;
+      if (!isDef) {
+        /* src will use its' spill reg as baseRegister when offset out-of-range
+         * add x16, x29, #max-offset  //out-of-range
+         * ldr x16, [x16, #offset]    //reload
+         * mov xd, x16
+         */
+        baseRegNO = lr.GetSpillReg();
+      } else {
+        /* dest will use R17 as baseRegister when offset out-of-range
+         * mov x16, xs
+         * add x17, x29, #max-offset  //out-of-range
+         * str x16, [x17, #offset]    //spill
+         */
+        baseRegNO = R17;
       }
       ASSERT(baseRegNO != kRinvalid, "invalid base register number");
       memOpnd = GetSpillMem(lr.GetRegNO(), isDef, insn, static_cast<AArch64reg>(baseRegNO), isOutOfRange);
+      /* dest's spill reg can only be R15 and R16 () */
+      if (isOutOfRange && isDef) {
+        ASSERT(lr.GetSpillReg() != R17, "can not find valid memopnd's base register");
+      }
 #ifdef REUSE_SPILLMEM
       if (isOutOfRange == 0) {
         lr.SetSpillMem(*memOpnd);

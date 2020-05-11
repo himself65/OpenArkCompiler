@@ -311,7 +311,7 @@ class AArch64CGFunc : public CGFunc {
   bool NeedCleanup() override;
   void GenerateCleanupCodeForExtEpilog(BB &bb) override;
   Operand *GetBaseReg(const AArch64SymbolAlloc &symAlloc);
-  uint32 GetBaseOffset(const SymbolAlloc &symAlloc) override;
+  int32 GetBaseOffset(const SymbolAlloc &symAlloc) override;
 
   Operand &CreateCommentOperand(const std::string &s) {
     return *memPool->New<CommentOperand>(s, *memPool);
@@ -557,8 +557,7 @@ class AArch64CGFunc : public CGFunc {
   Operand *SelectRoundOperator(RoundType roundType, const TypeCvtNode &node, Operand &opnd0);
   int64 GetOrCreatSpillRegLocation(regno_t vrNum) {
     AArch64SymbolAlloc *symLoc = static_cast<AArch64SymbolAlloc*>(GetMemlayout()->GetLocOfSpillRegister(vrNum));
-    int64 offset = GetBaseOffset(*symLoc);
-    return offset;
+    return static_cast<int64>(GetBaseOffset(*symLoc));
   }
 
   void SelectCopyMemOpnd(Operand &dest, PrimType dtype, uint32 dsize, Operand &src, PrimType stype);
