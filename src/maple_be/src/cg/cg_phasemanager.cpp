@@ -41,7 +41,7 @@ void CgFuncPhaseManager::RunFuncPhase(CGFunc &func, FuncPhase &phase) {
 
   /* 3. run: skip mplcg phase except "emit" if no cfg in CGFunc */
   AnalysisResult *analysisRes = nullptr;
-  if ((func.NumBBs() > 0) || (phase.GetPhaseID() == kCGFuncPhaesEMIT)) {
+  if ((func.NumBBs() > 0) || (phase.GetPhaseID() == kCGFuncPhaseEMIT)) {
     analysisRes = phase.Run(&func, &arFuncManager);
     phase.ReleaseMemPool(analysisRes == nullptr ? nullptr : analysisRes->GetMempool());
   }
@@ -107,7 +107,7 @@ void CgFuncPhaseManager::AddPhases(std::vector<std::string> &phases) {
 }
 
 void CgFuncPhaseManager::Emit(CGFunc &func) {
-  PhaseID id = kCGFuncPhaesEMIT;
+  PhaseID id = kCGFuncPhaseEMIT;
   FuncPhase *funcPhase = static_cast<FuncPhase*>(GetPhase(id));
   CHECK_FATAL(funcPhase != nullptr, "p is null in CgFuncPhaseManager::Run");
 
@@ -147,7 +147,7 @@ void CgFuncPhaseManager::Run(CGFunc &func) {
   MPLTimer timer;
   for (auto it = PhaseSequenceBegin(); it != PhaseSequenceEnd(); it++, ++phaseIndex) {
     PhaseID id = GetPhaseId(it);
-    if (id == kCGFuncPhaesEMIT) {
+    if (id == kCGFuncPhaseEMIT) {
       continue;
     }
     FuncPhase *funcPhase = static_cast<FuncPhase*>(GetPhase(id));

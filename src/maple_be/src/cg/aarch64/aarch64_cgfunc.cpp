@@ -5493,7 +5493,7 @@ Operand *AArch64CGFunc::GetBaseReg(const AArch64SymbolAlloc &symAlloc) {
   return fsp;
 }
 
-uint32 AArch64CGFunc::GetBaseOffset(const SymbolAlloc &sa) {
+int32 AArch64CGFunc::GetBaseOffset(const SymbolAlloc &sa) {
   const AArch64SymbolAlloc *symAlloc = static_cast<const AArch64SymbolAlloc*>(&sa);
   /* Call Frame layout of AArch64
    * Refer to V2 in aarch64_memlayout.h.
@@ -5503,7 +5503,7 @@ uint32 AArch64CGFunc::GetBaseOffset(const SymbolAlloc &sa) {
   MemSegmentKind sgKind = symAlloc->GetMemSegment()->GetMemSegmentKind();
   AArch64MemLayout *memLayout = static_cast<AArch64MemLayout*>(this->GetMemlayout());
   if (sgKind == kMsArgsStkPassed) {  /* for callees */
-    uint32 offset = symAlloc->GetOffset();
+    int32 offset = static_cast<int32>(symAlloc->GetOffset());
     return offset;
   } else if (sgKind == kMsArgsRegPassed) {
     int32 baseOffset = memLayout->GetSizeOfLocals() + symAlloc->GetOffset() + memLayout->GetSizeOfRefLocals();
@@ -5519,7 +5519,7 @@ uint32 AArch64CGFunc::GetBaseOffset(const SymbolAlloc &sa) {
                      memLayout->GetSizeOfRefLocals();
     return baseOffset + sizeofFplr;
   } else if (sgKind == kMsArgsToStkPass) {  /* this is for callers */
-    return static_cast<uint32>(symAlloc->GetOffset());
+    return static_cast<int32>(symAlloc->GetOffset());
   } else {
     CHECK_FATAL(false, "sgKind check");
   }

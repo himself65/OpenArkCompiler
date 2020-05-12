@@ -103,10 +103,12 @@ class Klass {
   }
 
   MIRClassType *GetMIRClassType() const {
+    CHECK_FATAL(IsClass() || IsClassIncomplete(), "must");
     return static_cast<MIRClassType*>(structType);
   }
 
   MIRInterfaceType *GetMIRInterfaceType() const {
+    CHECK_FATAL(IsInterface() || IsInterfaceIncomplete(), "must be");
     return static_cast<MIRInterfaceType*>(structType);
   }
 

@@ -93,7 +93,7 @@ class MUIDReplacement : public FuncOptimizeImpl {
   uint32 FindIndexFromUndefTable(const MIRSymbol &mirSymbol, bool isFunc);
   void ReplaceAddroffuncConst(MIRConst *&entry, uint32 fieldID, bool isVtab);
   void ReplaceFuncTable(const std::string &name);
-  void ReplaceAddrofConst(MIRConst *&entry);
+  void ReplaceAddrofConst(MIRConst *&entry, bool isGlobalRootList = false);
   void ReplaceDataTable(const std::string &name);
   void ReplaceDirectInvokeOrAddroffunc(MIRFunction &currentFunc, StmtNode &stmt);
   void ReplaceDassign(MIRFunction &currentFunc, const DassignNode &dassignNode);

@@ -355,7 +355,7 @@ CGNode *CallGraph::GetOrGenCGNode(PUIdx puIdx, bool isVcall, bool isIcall) {
         klassVector.push_back(subKlass);
       }
     }
-    if (!klass->GetMIRClassType()->IsAbstract()) {
+    if (klass->IsClass() && !klass->GetMIRClassType()->IsAbstract()) {
       // If klass.foo does not exist, search superclass and find the nearest one
       // klass.foo does not exist
       auto &klassMethods = klass->GetMethods();

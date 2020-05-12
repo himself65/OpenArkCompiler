@@ -290,6 +290,7 @@ void AArch64Emitter::Run() {
   emitter.Emit("\t.align 2\n");
   MIRSymbol *funcSt = GlobalTables::GetGsymTable().GetSymbolFromStidx(cgFunc->GetFunction().GetStIdx().Idx());
 
+
   if (funcSt->GetFunction()->GetAttr(FUNCATTR_weak)) {
     emitter.Emit("\t.weak\t" + funcSt->GetName() + "\n");
     emitter.Emit("\t.hidden\t" + funcSt->GetName() + "\n");
