@@ -1459,7 +1459,7 @@ class MIRFuncType : public MIRType {
     constexpr uint8 idxShift = 6;
     size_t hIdx = (static_cast<size_t>(retTyIdx) << idxShift) + (typeKind << kShiftNumOfTypeKind);
     size_t size = paramTypeList.size();
-    hIdx += (size ? (static_cast<size_t>(paramTypeList[0]) + size) : 0) << 4;
+    hIdx += (size ? (static_cast<size_t>(paramTypeList[0]) + size) : 0) << 4; // shift bit is 4
     return hIdx % kTypeHashLength;
   }
 
@@ -1557,9 +1557,10 @@ class MIRInstantVectorType : public MIRType {
   }
 
   size_t GetHashIndex() const override {
+    constexpr uint8 idxShift = 3;
     uint32 hIdx = typeKind << kShiftNumOfTypeKind;
     for (const TypePair &typePair : instantVec) {
-      hIdx += static_cast<uint32>(typePair.first + typePair.second) << 3;
+      hIdx += static_cast<uint32>(typePair.first + typePair.second) << idxShift;
     }
     return hIdx % kTypeHashLength;
   }
@@ -1600,7 +1601,7 @@ class MIRGenericInstantType : public MIRInstantVectorType {
     constexpr uint8 idxShift = 2;
     uint32 hIdx = (static_cast<uint32>(genericTyIdx) << idxShift) + (typeKind << kShiftNumOfTypeKind);
     for (const TypePair &typePair : instantVec) {
-      hIdx += static_cast<uint32>(typePair.first + typePair.second) << 3;
+      hIdx += static_cast<uint32>(typePair.first + typePair.second) << 3; // shift bit is 3
     }
     return hIdx % kTypeHashLength;
   }

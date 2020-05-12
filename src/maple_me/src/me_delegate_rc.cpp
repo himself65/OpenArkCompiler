@@ -263,7 +263,7 @@ bool DelegateRC::MayThrowException(const MeStmt &stmt) const {
 // rhsvar, so it can be assumed that tostmt does not contain any use; this check
 // make use of verStUseCounts in its determination. In addition, if it comes
 // across any stmt that can raise exception, also return false.
-bool DelegateRC::ContainAllTheUses(VarMeExpr &rhsVar, const MeStmt &fromStmt, const MeStmt &toStmt) const {
+bool DelegateRC::ContainAllTheUses(const VarMeExpr &rhsVar, const MeStmt &fromStmt, const MeStmt &toStmt) const {
   int32 remainingUses = static_cast<uint32>(verStUseCounts[rhsVar.GetVstIdx()]) - 1;
   for (MeStmt *cur = fromStmt.GetPrev(); cur != &toStmt; cur = cur->GetPrev()) {
     // do not count decref operands
@@ -285,7 +285,7 @@ bool DelegateRC::ContainAllTheUses(VarMeExpr &rhsVar, const MeStmt &fromStmt, co
 }
 
 // return the RegMeExpr node to replace the original temp; nullptr if not successful
-RegMeExpr *DelegateRC::RHSTempDelegated(MeExpr &rhs, MeStmt &useStmt) {
+RegMeExpr *DelegateRC::RHSTempDelegated(MeExpr &rhs, const MeStmt &useStmt) {
   if (rhs.GetMeOp() != kMeOpVar) {
     return nullptr;
   }

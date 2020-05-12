@@ -18,7 +18,6 @@
 #include "meta.h"
 
 namespace maple { namespace utils {
-
 template <typename Iterator, typename Container>
 struct mpl_iterator_traits {
   using iterator_category = typename std::iterator_traits<Iterator>::iterator_category;

@@ -75,13 +75,13 @@ bool MeABC::IsLegal(MeStmt &meStmt) {
   return true;
 }
 
-VarMeExpr *MeABC::CreateNewPiExpr(MeExpr &opnd) {
+VarMeExpr *MeABC::CreateNewPiExpr(const MeExpr &opnd) {
   if (opnd.GetMeOp() == kMeOpConst) {
     return nullptr;
   }
   CHECK_FATAL(opnd.GetMeOp() == kMeOpVar, "must be");
   SSATab &ssaTab = irMap->GetSSATab();
-  OriginalSt *ost = ssaTab.GetOriginalStFromID(static_cast<VarMeExpr*>(&opnd)->GetOStIdx());
+  OriginalSt *ost = ssaTab.GetOriginalStFromID(static_cast<const VarMeExpr*>(&opnd)->GetOStIdx());
   CHECK_NULL_FATAL(ost);
   CHECK_FATAL(!ost->IsVolatile(), "must be");
   VarMeExpr *var = irMap->NewInPool<VarMeExpr>(irMap->GetExprID(), ost->GetIndex(),
@@ -186,7 +186,7 @@ bool MeABC::ExistedPhiNode(BB &bb, VarMeExpr &rhs) {
   return bb.GetMevarPhiList().find(rhs.GetOStIdx()) != bb.GetMevarPhiList().end();
 }
 
-bool MeABC::ExistedPiNode(BB &bb, BB &parentBB, VarMeExpr &rhs) {
+bool MeABC::ExistedPiNode(BB &bb, BB &parentBB, const VarMeExpr &rhs) {
   MapleMap<BB*, std::vector<PiassignMeStmt*>> &piList = bb.GetPiList();
   auto it = piList.find(&parentBB);
   if (it == piList.end()) {
@@ -599,7 +599,7 @@ void MeABC::RemoveExtraNodes() {
   memPoolCtrler.DeleteMemPool(memPool);
 }
 
-bool MeABC::IsVirtualVar(VarMeExpr &var, SSATab &ssaTab) const {
+bool MeABC::IsVirtualVar(const VarMeExpr &var, const SSATab &ssaTab) const {
   const OriginalSt *ost = ssaTab.GetOriginalStFromID(var.GetOStIdx());
   return ost->GetIndirectLev() > 0;
 }
@@ -640,7 +640,7 @@ void MeABC::BuildPhiInGraph(MeVarPhiNode &phi) {
   }
 }
 
-void MeABC::BuildSoloPiInGraph(PiassignMeStmt &piMeStmt) {
+void MeABC::BuildSoloPiInGraph(const PiassignMeStmt &piMeStmt) {
   VarMeExpr *piLHS = piMeStmt.GetLHS();
   VarMeExpr *piRHS = piMeStmt.GetRHS();
   AddUseDef(*piRHS);
@@ -1297,7 +1297,7 @@ void MeABC::DeleteABC() {
   }
 }
 
-void MeABC::InitNewStartPoint(MeStmt &meStmt, NaryMeExpr &nMeExpr) {
+void MeABC::InitNewStartPoint(const MeStmt &meStmt, const NaryMeExpr &nMeExpr) {
   careMeStmts.clear();
   careMePhis.clear();
   carePoints.clear();

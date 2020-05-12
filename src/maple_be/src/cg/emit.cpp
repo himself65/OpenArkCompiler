@@ -868,7 +868,7 @@ void Emitter::EmitAddrofSymbolConst(const MIRSymbol &mirSymbol, MIRConst &elemCo
     if (symAddrSym->IsReflectionFieldsInfoCompact() ||
         symAddrSym->IsReflectionMethodsInfoCompact()) {
       /* Mark the least significant bit as 1 for compact fieldinfo */
-      Emit(" + ").Emit(kDataRefIsCompact);
+      Emit(" + ").Emit(MethodFieldRef::kMethodFieldRefIsCompact);
     }
   } else if (mirSymbol.IsReflectionClassInfo()) {
     if ((idx == static_cast<uint32>(ClassProperty::kItab)) ||

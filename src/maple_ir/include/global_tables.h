@@ -56,8 +56,8 @@ class UStrIdxHash {
 };
 
 class IntConstKey {
- friend class IntConstHash;
- friend class IntConstCmp;
+  friend class IntConstHash;
+  friend class IntConstCmp;
  public:
   IntConstKey(int64 v, uint64 id) : val(v), tyidxFieldID(id) {}
  private:
