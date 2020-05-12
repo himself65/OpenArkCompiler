@@ -396,7 +396,7 @@ class SingleTask:
             self.prepare_dir(log_dir)
             self.result = prepare_result
         else:
-            self.result = (UNRESOLVED, None)
+            self.result = (UNRESOLVED, (1, "", "No valid command statement was found."))
 
         self.commands = []
         if self.result[0] == NOT_RUN:
