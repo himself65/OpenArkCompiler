@@ -91,7 +91,7 @@ def run_command_linux(cmd, work_dir, timeout, logger, env=None):
         logger.exception(err)
         return return_code, com_out, com_err
     except subprocess.TimeoutExpired:
-        return_code, com_out, com_err = 3, "TimeOut", "TimeOut"
+        return_code, com_out, com_err = 3, "", "TimeOut"
         return return_code, com_out, com_err
     else:
         return_code = process_command.returncode
@@ -139,17 +139,17 @@ def run_commands(
         return_code, com_out, com_err = run_command(
             command, work_dir, remain_time, logger, env
         )
-        if return_code != 0:
-            result = (FAIL, (return_code, command, shorten(com_err, width=84)))
-            err = "Failed, Log file at: {}.log".format(log_config[0].get("dir") / name)
-            logger.error(err)
-            break
-
         run_time = timeit.default_timer() - start
         remain_time = remain_time - run_time
         logger.debug(
             "Run time: {:.2}, remain time: {:.2}".format(run_time, remain_time)
         )
+        if return_code != 0:
+            result = (FAIL, (return_code, command, com_err))
+            err = "Failed, Log file at: {}.log".format(log_config[0].get("dir") / name)
+            logger.error(err)
+            break
+
     if result[0] == PASS:
         logger.debug("Task executed successfully")
     handlers = logger.handlers[:]

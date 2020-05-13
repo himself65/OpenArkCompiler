@@ -21,20 +21,24 @@ maple test - Maple Tester
 """
 import shutil
 import time
+from xml.etree import ElementTree
 
 from maple_test import configs
 from maple_test.task import TestSuiteTask
-from maple_test.utils import timer
+from maple_test.utils import timer, FAIL, UNRESOLVED, OS_SEP
 from maple_test.run import TestError
 
 
 def main():
     test_suite_config, running_config, log_config = configs.init_config()
     logger = configs.LOGGER
+    log_dir = log_config.get("dir")
 
     test_paths = test_suite_config.get("test_paths")
     cli_test_cfg = test_suite_config.get("test_cfg")
     cli_running_config = test_suite_config.get("cli_running_config")
+
+    root = ElementTree.Element("testsuites")
 
     retry = configs.get_val("retry")
     result = ""
@@ -63,8 +67,46 @@ def main():
                 test_result = task.gen_summary([])
             failed |= test_failed
             result += test_result
+
+            suite = ElementTree.SubElement(
+                root,
+                "testsuite",
+                name="{} {}".format(task.name, test),
+                tests=str(sum(task.result.values())),
+                failures=str(task.result["FAIL"]),
+            )
+
+            for task_set in task.task_set:
+                for case in sorted(task.task_set[task_set], key=lambda x: x.case_path):
+                    case_node = ElementTree.SubElement(
+                        suite,
+                        "testcase",
+                        name=str(case.case_path),
+                        classname="{}.{}".format(task.cfg_path.parent.name, task_set),
+                    )
+                    if case.result[0] == UNRESOLVED:
+                        skipped = ElementTree.SubElement(case_node, "skipped")
+                        skipped.text = "No valid command statement was found."
+                    elif case.result[0] == FAIL:
+                        print(vars(case))
+                        failure = ElementTree.SubElement(case_node, "failure")
+                        failure.text = "Path: {}\n".format(case.case_path)
+                        failure.text += "Log Path: {}{}{}.log\n".format(log_dir, OS_SEP, case.name)
+                        failure.text += "Work Dir: {}\n".format(case.work_dir)
+                        failure.text += "Execute commands:\n"
+                        for cmd in case.commands:
+                            failure.text += "EXEC: " + cmd + "\n"
+                        failure.text += "-----" + "\n"
+                        failure.text += "Failed command: " + case.result[-1][1] + "\n"
+                        failure.text += "Return Code: " + str(case.result[-1][0]) + "\n"
+                        failure.text += "Stderr: \n" + case.result[-1][-1]
         else:
             logger.info("Test path: {} does not exist, please check".format(test))
+
+    xml_output = configs.get_val("xml_output")
+    if xml_output:
+        with xml_output.open("w") as f:
+            f.write(ElementTree.tostring(root).decode("utf-8"))
 
     output = configs.get_val("output")
     if output:
