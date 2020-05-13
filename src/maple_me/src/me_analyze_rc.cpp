@@ -59,7 +59,7 @@
 // information is lost after a pointer is promoted to preg. Because it is run
 // after EPRE phase, there can be regassign's and regread's of ref type but
 // they will not cause decref or incref insertion.
-
+//
 // if number of live localrefvars is more than this limit at a return, we will
 // not insert the intrinsiccall to CLEANUP_LOCALREFVARS
 namespace {
@@ -330,7 +330,7 @@ void AnalyzeRC::OptimizeRC() {
   }
 }
 
-bool AnalyzeRC::NeedDecRef(RCItem &rcItem, MeExpr &expr) const {
+bool AnalyzeRC::NeedDecRef(const RCItem &rcItem, MeExpr &expr) const {
   CHECK_FATAL((rcItem.nonLocal || rcItem.noAlias), "OptimizeRC: local pointers cannot have alias");
   // see if the decref can be optimized away
   if (rcItem.nonLocal) {

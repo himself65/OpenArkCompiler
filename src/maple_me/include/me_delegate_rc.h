@@ -47,8 +47,8 @@ class DelegateRC {
   void CollectUseCounts(const MeExpr &expr);
   void FindAndDecrUseCount(const VarMeExpr &rhsVar, const MeExpr &expr, int32 &remainingUses) const;
   bool MayThrowException(const MeStmt &stmt) const;
-  bool ContainAllTheUses(VarMeExpr &rhsVar, const MeStmt &fromStmt, const MeStmt &toStmt) const;
-  RegMeExpr *RHSTempDelegated(MeExpr &rhs, MeStmt &useStmt);
+  bool ContainAllTheUses(const VarMeExpr &rhsVar, const MeStmt &fromStmt, const MeStmt &toStmt) const;
+  RegMeExpr *RHSTempDelegated(MeExpr &rhs, const MeStmt &useStmt);
   bool FinalRefNoRC(const MeExpr &expr) const;
   void SetCantDelegate(const MapleMap<OStIdx, MeVarPhiNode*> &meVarPhiList);
   void SaveDerefedOrCopiedVst(const MeExpr *expr);

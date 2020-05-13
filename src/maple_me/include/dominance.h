@@ -193,7 +193,7 @@ class Dominance : public AnalysisResult {
   void PostOrderWalk(const BB &bb, int32 &pid, std::vector<bool> &visitedMap);
   BB *Intersect(BB &bb1, const BB &bb2) const;
   bool CommonEntryBBIsPred(const BB &bb) const;
-  void PdomPostOrderWalk(BB &bb, int32 &pid, std::vector<bool> &visitedMap);
+  void PdomPostOrderWalk(const BB &bb, int32 &pid, std::vector<bool> &visitedMap);
   BB *PdomIntersect(BB &bb1, const BB &bb2);
 
   MapleAllocator domAllocator;  // stores the analysis results

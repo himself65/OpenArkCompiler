@@ -37,7 +37,7 @@ const std::string kFileSeperatorStr = kFileSeperatorLinuxStyleStr;
 
 std::string FileUtils::GetRealPath(const std::string &filePath) {
 #ifdef _WIN32
-  char *path;
+  char *path = nullptr;
   if (filePath.size() > PATH_MAX  || !PathCanonicalize(path, filePath.c_str())) {
     CHECK_FATAL(false, "invalid file path");
   }

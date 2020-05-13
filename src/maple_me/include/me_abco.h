@@ -176,7 +176,7 @@ class DefPoint {
     }
   }
 
-  void Dump(IRMap &irMap) {
+  void Dump(const IRMap &irMap) {
     LogInfo::MapleLogger() << "New Def : " << '\n';
     if (defKind == kDefByPi) {
       value.pi->Dump(&irMap);
@@ -226,19 +226,19 @@ class MeABC {
   bool IsLegal(MeStmt &meStmt);
   void ABCCollectArrayExpr(MeStmt &meStmt, MeExpr &meExpr, bool isUpdate = false);
   void CollectCareInsns();
-  bool ExistedPiNode(BB &bb, BB &parentBB, VarMeExpr &rhs);
+  bool ExistedPiNode(BB &bb, BB &parentBB, const VarMeExpr &rhs);
   void CreatePhi(VarMeExpr &rhs, BB &dfBB);
-  VarMeExpr *CreateNewPiExpr(MeExpr &opnd);
+  VarMeExpr *CreateNewPiExpr(const MeExpr &opnd);
   void CreateNewPiStmt(VarMeExpr *lhs, MeExpr &rhs, BB &bb, MeStmt &generatedBy, bool isToken);
   void CreateNewPiStmt(VarMeExpr *lhs, MeExpr &rhs, MeStmt &generatedBy);
   MeExpr *ReplaceMeExprExpr(MeExpr &origExpr, MeExpr &oldVar, MeExpr &repExpr);
   MeExpr *NewMeExpr(MeExpr &meExpr);
   bool ReplaceMeExprStmtOpnd(uint32 opndID, MeStmt &meStmt, MeExpr &oldVar, MeExpr &newVar, bool update);
   bool ReplaceStmtWithNewVar(MeStmt &meStmt, MeExpr &oldVar, MeExpr &newVar, bool update);
-  bool IsVirtualVar(VarMeExpr &var, SSATab &ssaTab) const;
+  bool IsVirtualVar(const VarMeExpr &var, const SSATab &ssaTab) const;
   ESSABaseNode *GetOrCreateRHSNode(MeExpr &expr);
   void BuildPhiInGraph(MeVarPhiNode &phi);
-  void BuildSoloPiInGraph(PiassignMeStmt &piMeStmt);
+  void BuildSoloPiInGraph(const PiassignMeStmt &piMeStmt);
   bool BuildArrayCheckInGraph(MeStmt &meStmt);
   bool BuildBrMeStmtInGraph(MeStmt &meStmt);
   bool BuildAssignInGraph(MeStmt &meStmt);
@@ -249,7 +249,7 @@ class MeABC {
   void AddCarePhi(MeVarPhiNode &defP);
   void BuildInequalityGraph();
   void FindRedundantABC(MeStmt &meStmt, NaryMeExpr &naryMeExpr);
-  void InitNewStartPoint(MeStmt &meStmt, NaryMeExpr &nMeExpr);
+  void InitNewStartPoint(const MeStmt &meStmt, const NaryMeExpr &nMeExpr);
   void DeleteABC();
   bool CleanABCInStmt(MeStmt &meStmt, NaryMeExpr &naryMeExpr);
   MeExpr *ReplaceArrayExpr(MeExpr &rhs, MeExpr &naryMeExpr, MeStmt *ivarStmt);

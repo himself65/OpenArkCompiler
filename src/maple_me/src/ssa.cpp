@@ -131,7 +131,7 @@ void SSA::RenameUses(StmtNode &stmt) {
   }
 }
 
-void SSA::RenamePhiUseInSucc(BB &bb) {
+void SSA::RenamePhiUseInSucc(const BB &bb) {
   for (BB *succBB : bb.GetSucc()) {
     // find index of bb in succ_bb->pred[]
     size_t index = 0;

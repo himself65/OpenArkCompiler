@@ -14,6 +14,10 @@
  */
 #ifndef MAPLEBE_INCLUDE_CG_DATAINFO_H
 #define MAPLEBE_INCLUDE_CG_DATAINFO_H
+#include "maple_string.h"
+#include "common_utils.h"
+#include "mempool.h"
+#include "mempool_allocator.h"
 
 namespace maplebe {
 class DataInfo {

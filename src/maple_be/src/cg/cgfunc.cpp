@@ -1072,6 +1072,7 @@ void CGFunc::HandleFunction() {
   MarkCleanupEntryBB();
   DetermineReturnTypeofCall();
   theCFG->UnreachCodeAnalysis();
+  SplitStrLdrPair();
   if (CGOptions::IsLazyBinding() && !GetCG()->IsLibcore()) {
     ProcessLazyBinding();
   }

@@ -733,7 +733,6 @@ void MUIDReplacement::GenerateRangeTable() {
     rangeTabConst->PushBack(entryConst);
   }
   // Please refer to mrt/compiler-rt/include/mpl_linker.h for the layout
-
   std::vector<MIRSymbol*> workList = {
     funcDefTabSym,
     funcDefOrigTabSym,

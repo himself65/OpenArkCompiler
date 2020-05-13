@@ -1219,10 +1219,10 @@ void ReflectionAnalysis::GenAnnotation(std::map<int, int> &idxNumMap, std::strin
                                        PragmaKind paragKind, const std::string &paragName, TyIdx fieldTypeIdx,
                                        std::map<int, int> *paramnumArray, int *paramIndex) {
   int annoNum = 0;
-  std::string cmpString = "";
   for (MIRPragma *prag : classType.GetPragmaVec()) {
-    cmpString = (paragKind == kPragmaVar) ? NameMangler::DecodeName(GlobalTables::GetStrTable().GetStringFromStrIdx(
-        prag->GetStrIdx())) : GlobalTables::GetStrTable().GetStringFromStrIdx(prag->GetStrIdx());
+    std::string cmpString = (paragKind == kPragmaVar) ? NameMangler::DecodeName(
+        GlobalTables::GetStrTable().GetStringFromStrIdx(prag->GetStrIdx())) :
+        GlobalTables::GetStrTable().GetStringFromStrIdx(prag->GetStrIdx());
     bool validTypeFlag = false;
     if (prag->GetTyIdxEx() == fieldTypeIdx || fieldTypeIdx == invalidIdx) {
       validTypeFlag = true;

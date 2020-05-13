@@ -262,7 +262,7 @@ void MeDoLoopCanon::ExecuteLoopCanon(MeFunction &func, MeFuncResultMgr &m, Domin
 }
 
 // Only when backege or preheader is not try bb, update head map.
-void MeDoLoopCanon::FindHeadBBs(MeFunction &func, Dominance &dom, BB *bb) {
+void MeDoLoopCanon::FindHeadBBs(MeFunction &func, Dominance &dom, const BB *bb) {
   if (bb == nullptr || bb == func.GetCommonExitBB()) {
     return;
   }
@@ -277,12 +277,12 @@ void MeDoLoopCanon::FindHeadBBs(MeFunction &func, Dominance &dom, BB *bb) {
     for (BB *pred : bb->GetPred()) {
       // add backege bb
       if (dom.Dominate(*bb, *pred)) {
-        if (heads.find(bb) != heads.end()) {
-          heads[bb].push_back(pred);
+        if (heads.find(bb->GetBBId()) != heads.end()) {
+          heads[bb->GetBBId()].push_back(pred);
         } else {
           std::vector<BB*> tails;
           tails.push_back(pred);
-          heads[bb] = tails;
+          heads[bb->GetBBId()] = tails;
         }
       }
     }
@@ -296,7 +296,7 @@ void MeDoLoopCanon::FindHeadBBs(MeFunction &func, Dominance &dom, BB *bb) {
 // merge backedges with the same headBB
 void MeDoLoopCanon::Merge(MeFunction &func) {
   for (auto iter = heads.begin(); iter != heads.end(); ++iter) {
-    BB *head = iter->first;
+    BB *head = func.GetBBFromID(iter->first);
     auto *latchBB = func.NewBasicBlock();
     latchBB->SetAttributes(kBBAttrArtificial);
     latchBB->SetKind(kBBFallthru);
@@ -340,7 +340,7 @@ void MeDoLoopCanon::Merge(MeFunction &func) {
 
 void MeDoLoopCanon::AddPreheader(MeFunction &func) {
   for (auto iter = heads.begin(); iter != heads.end(); ++iter) {
-    BB *head = iter->first;
+    BB *head =  func.GetBBFromID(iter->first);
     std::vector<BB*> preds;
     for (BB *pred : head->GetPred()) {
       // FindHeadBBs has filtered out this possibility.
@@ -400,7 +400,7 @@ void MeDoLoopCanon::AddPreheader(MeFunction &func) {
 
 void MeDoLoopCanon::InsertNewExitBB(MeFunction &func, LoopDesc &loop) {
   for (auto pair : loop.inloopBB2exitBBs) {
-    BB *curBB = pair.first;
+    BB *curBB = func.GetBBFromID(pair.first);
     for (auto succBB : *pair.second) {
       bool needNewExitBB = false;
       for (auto pred : succBB->GetPred()) {
@@ -476,7 +476,7 @@ void MeDoLoopCanon::InsertExitBB(MeFunction &func, LoopDesc &loop) {
 }
 
 void MeDoLoopCanon::SplitCondGotBB(MeFunction &func, LoopDesc &loop) {
-  auto exitBB = loop.inloopBB2exitBBs.begin()->first;
+  auto exitBB = func.GetBBFromID(loop.inloopBB2exitBBs.begin()->first);
   StmtNode *lastStmt = &(exitBB->GetStmtNodes().back());
   if (lastStmt->GetOpCode() != OP_brfalse && lastStmt->GetOpCode() != OP_brtrue && lastStmt->GetOpCode() != OP_switch) {
     CHECK_FATAL(false, "must be OP_brfalse, OP_brtrue or OP_switch");
@@ -522,13 +522,13 @@ void MeDoLoopCanon::SplitCondGotBB(MeFunction &func, LoopDesc &loop) {
   newFallthru->AddSucc(*exitBB);
 }
 
-bool MeDoLoopCanon::IsDoWhileLoop(const LoopDesc &loop) const {
+bool MeDoLoopCanon::IsDoWhileLoop(MeFunction &func, const LoopDesc &loop) const {
   for (auto succ : loop.head->GetSucc()) {
     if (!loop.Has(*succ)) {
       return false;
     }
   }
-  auto exitBB = loop.inloopBB2exitBBs.begin()->first;
+  auto exitBB = func.GetBBFromID(loop.inloopBB2exitBBs.begin()->first);
   for (auto pred : exitBB->GetPred()) {
     if (!loop.Has(*pred)) {
       return false;
@@ -564,7 +564,7 @@ void MeDoLoopCanon::ExecuteLoopNormalization(MeFunction &func,  MeFuncResultMgr 
       loop->SetIsCanonicalLoop(true);
     }
     if (loop->inloopBB2exitBBs.size() == 1 && loop->inloopBB2exitBBs.begin()->second->size() == 1 &&
-        IsDoWhileLoop(*loop)) {
+        IsDoWhileLoop(func, *loop)) {
       SplitCondGotBB(func, *loop);
     }
   }

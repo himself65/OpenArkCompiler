@@ -24,7 +24,6 @@
 // to check nullptr, it will make the code more confusion and hard to maintain.
 // Based on that, the ref_vector picks up the meaning of keeping objects' reference, it won't destory any of its
 // elements or require to check null(Never to be nullptr).
-
 namespace maple { namespace utils {
 class ref_vector_tag;
 template <typename Iterator>

@@ -175,7 +175,7 @@ bool Dominance::Dominate(const BB &bb1, const BB &bb2) {
 }
 
 /* ================= for PostDominance ================= */
-void Dominance::PdomPostOrderWalk(BB &bb, int32 &pid, std::vector<bool> &visitedMap) {
+void Dominance::PdomPostOrderWalk(const BB &bb, int32 &pid, std::vector<bool> &visitedMap) {
   ASSERT(bb.GetBBId() < visitedMap.size(), "index out of range in  Dominance::PdomPostOrderWalk");
   if (bbVec[bb.GetBBId()] == nullptr) {
     return;

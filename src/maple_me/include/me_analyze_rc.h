@@ -76,7 +76,7 @@ class AnalyzeRC {
   UnaryMeStmt *CreateIncrefZeroVersion(const OriginalSt &ost);
   DassignMeStmt *CreateDassignInit(OriginalSt &ost, BB &bb);
   void TraverseStmt(BB &bb);
-  bool NeedDecRef(RCItem &rcItem, MeExpr &expr) const;
+  bool NeedDecRef(const RCItem &rcItem, MeExpr &expr) const;
   bool NeedDecRef(IvarMeExpr &ivar) const;
   bool NeedDecRef(const VarMeExpr &var) const;
 

@@ -113,6 +113,5 @@ struct lbit_field {
 
 template <size_t pos>
 constexpr uint64_t lbit_field_v = bit_field<pos>::value;
-
 }} // namespace maple::utils
 #endif  // MAPLE_UTIL_INCLUDE_UTILS_H

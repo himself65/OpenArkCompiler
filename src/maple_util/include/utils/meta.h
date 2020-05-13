@@ -17,7 +17,6 @@
 #include <type_traits>
 
 namespace maple { namespace utils {
-
 template <typename T, typename U>
 struct meta_and
     : std::conditional_t<T::value, U, T> {};
@@ -109,6 +108,5 @@ struct is_ncv_same
 template <typename T, typename U, typename = std::enable_if_t<is_pointer_v<T, U>>>
 constexpr bool is_ncv_same_v = is_ncv_same<T, U>::value;
 }
-
 }}
 #endif //MAPLE_UTIL_INCLUDE_UTILS_META_H

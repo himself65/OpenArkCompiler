@@ -59,7 +59,8 @@ struct MuidContext {
   unsigned char buffer[kGroupSize];
 };
 
-struct MUID {
+class MUID {
+ public:
   union {
 #ifdef USE_64BIT_MUID
     uint64_t raw;

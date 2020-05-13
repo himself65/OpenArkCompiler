@@ -29,7 +29,7 @@ struct LoopDesc {
   BB *tail;
   BB *preheader;
   BB *latch;
-  MapleMap<BB*, MapleVector<BB*>*> inloopBB2exitBBs;
+  MapleMap<BBId, MapleVector<BB*>*> inloopBB2exitBBs;
   MapleSet<BBId> loopBBs;
   LoopDesc *parent;  // points to its closest nesting loop
   uint32 nestDepth;  // the nesting depth
@@ -50,28 +50,30 @@ struct LoopDesc {
     return false;
   }
 
-  void InsertInloopBB2exitBBs(BB &key, BB &value) {
-    if (inloopBB2exitBBs.find(&key) == inloopBB2exitBBs.end()) {
-      inloopBB2exitBBs[&key] = alloc->GetMemPool()->New<MapleVector<BB*>>(alloc->Adapter());
-      inloopBB2exitBBs[&key]->push_back(&value);
+  void InsertInloopBB2exitBBs(const BB &bb, BB &value) {
+    BBId key = bb.GetBBId();
+    if (inloopBB2exitBBs.find(key) == inloopBB2exitBBs.end()) {
+      inloopBB2exitBBs[key] = alloc->GetMemPool()->New<MapleVector<BB*>>(alloc->Adapter());
+      inloopBB2exitBBs[key]->push_back(&value);
     } else {
-      auto it = find(inloopBB2exitBBs[&key]->begin(), inloopBB2exitBBs[&key]->end(), &value);
-      if (it == inloopBB2exitBBs[&key]->end()) {
-        inloopBB2exitBBs[&key]->push_back(&value);
+      auto it = find(inloopBB2exitBBs[key]->begin(), inloopBB2exitBBs[key]->end(), &value);
+      if (it == inloopBB2exitBBs[key]->end()) {
+        inloopBB2exitBBs[key]->push_back(&value);
       }
     }
   }
 
-  void ReplaceInloopBB2exitBBs(BB &key, BB &oldValue, BB &value) {
-    CHECK_FATAL(inloopBB2exitBBs.find(&key) != inloopBB2exitBBs.end(), "key must exits");
-    auto mapIt = inloopBB2exitBBs[&key];
+  void ReplaceInloopBB2exitBBs(const BB &bb, BB &oldValue, BB &value) {
+    BBId key = bb.GetBBId();
+    CHECK_FATAL(inloopBB2exitBBs.find(key) != inloopBB2exitBBs.end(), "key must exits");
+    auto mapIt = inloopBB2exitBBs[key];
     auto it = find(mapIt->begin(), mapIt->end(), &oldValue);
-    CHECK_FATAL(it != inloopBB2exitBBs[&key]->end(), "old Vvalue must exits");
+    CHECK_FATAL(it != inloopBB2exitBBs[key]->end(), "old Vvalue must exits");
     *it = &value;
-    CHECK_FATAL(find(inloopBB2exitBBs[&key]->begin(), inloopBB2exitBBs[&key]->end(), &value) !=
-                inloopBB2exitBBs[&key]->end(), "replace fail");
-    CHECK_FATAL(find(inloopBB2exitBBs[&key]->begin(), inloopBB2exitBBs[&key]->end(), &oldValue) ==
-                inloopBB2exitBBs[&key]->end(), "replace fail");
+    CHECK_FATAL(find(inloopBB2exitBBs[key]->begin(), inloopBB2exitBBs[key]->end(), &value) !=
+                inloopBB2exitBBs[key]->end(), "replace fail");
+    CHECK_FATAL(find(inloopBB2exitBBs[key]->begin(), inloopBB2exitBBs[key]->end(), &oldValue) ==
+                inloopBB2exitBBs[key]->end(), "replace fail");
   }
 
   void SetHasTryBB(bool has) {

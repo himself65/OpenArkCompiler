@@ -246,6 +246,7 @@ class CGFunc {
   virtual void ClearUnreachableGotInfos(BB &bb) {
     (void)bb;
   };
+  virtual void SplitStrLdrPair() {}
   LabelIdx CreateLabel();
 
   virtual Operand &CreateFPImmZero(PrimType primType) = 0;
