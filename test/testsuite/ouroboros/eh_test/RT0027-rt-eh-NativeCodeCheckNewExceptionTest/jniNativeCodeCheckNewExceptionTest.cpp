@@ -13,7 +13,7 @@
  * See the Mulan PSL v1 for more details.
  */
 #include <stdio.h>
-#include <nativehelper/jni.h>
+#include <jni.h>
 
 extern "C" {
 JNIEXPORT void JNICALL Java_NativeCodeCheckNewExceptionTest_nativeNativeCodeCheckNewExceptionTest__
