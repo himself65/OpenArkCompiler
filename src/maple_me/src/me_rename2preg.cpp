@@ -80,7 +80,7 @@ class PregCache final {
     }
 
     RegMeExpr *regExpr = creator(irMap);
-    cache.insert(std::make_pair(varExpr.GetExprID(), regExpr));
+    (void)cache.insert(std::make_pair(varExpr.GetExprID(), regExpr));
     return utils::ToRef(regExpr);
   }
 
@@ -88,7 +88,7 @@ class PregCache final {
     MIRType &ty = utils::ToRef(GlobalTables::GetTypeTable().GetTypeFromTyIdx(symbolIdx));
     RegMeExpr *regExpr = ty.GetPrimType() == PTY_ref ? irMap.CreateRegRefMeExpr(ty)
                                                      : irMap.CreateRegMeExpr(varExpr.GetPrimType());
-    cache.insert(std::make_pair(varExpr.GetExprID(), regExpr));
+    (void)cache.insert(std::make_pair(varExpr.GetExprID(), regExpr));
     return utils::ToRef(regExpr);
   }
 
@@ -153,8 +153,9 @@ class FormalRenaming final {
         // in this case, the paramter is not used by any statement, promote it
         MIRType &irTy = utils::ToRef(irFunc.GetNthParamType(i));
         MIRPregTable &irPregTbl = utils::ToRef(irFunc.GetPregTab());
-        PregIdx16 regIdx = (irTy.GetPrimType() == PTY_ref) ? irPregTbl.CreateRefPreg(irTy)
-                                                           : irPregTbl.CreatePreg(irTy.GetPrimType());
+        PregIdx16 regIdx = (irTy.GetPrimType() == PTY_ref) ?
+            static_cast<PregIdx16>(irPregTbl.CreateRefPreg(irTy)) :
+            static_cast<PregIdx16>(irPregTbl.CreatePreg(irTy.GetPrimType()));
         irFunc.SetFormal(i, irBuilder.CreatePregFormalSymbol(irTy.GetTypeIndex(), regIdx, irFunc));
       } else {
         RegMeExpr *regExpr = renamedReg[i];
@@ -346,7 +347,7 @@ class SSARename2Preg {
         return irMap.CreateRegMeExprVersion(curRegExpr);
       });
       regPhiNode.GetOpnds().push_back(&regExpr);
-      regExpr.GetPhiUseSet().insert(&regPhiNode);
+      (void)regExpr.GetPhiUseSet().insert(&regPhiNode);
     }
   }
 

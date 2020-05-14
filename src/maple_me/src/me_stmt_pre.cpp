@@ -32,7 +32,7 @@ void MeStmtPre::GetIterDomFrontier(const BB &bb, MapleSet<uint32> &dfSet, std::v
   }
   visitedMap[bb.GetBBId()] = true;
   for (BBId frontierBBId : dom->GetDomFrontier(bb.GetBBId())) {
-    dfSet.insert(dom->GetDtDfnItem(frontierBBId));
+    (void)dfSet.insert(dom->GetDtDfnItem(frontierBBId));
     BB *frontierBB = GetBB(frontierBBId);
     GetIterDomFrontier(*frontierBB, dfSet, visitedMap);
   }
@@ -84,10 +84,10 @@ void MeStmtPre::CodeMotion() {
               if (candsForSSAUpdate.find(ostIdx) == candsForSSAUpdate.end()) {
                 MapleSet<BBId> *bbSet =
                     ssaPreMemPool->New<MapleSet<BBId>>(std::less<BBId>(), ssaPreAllocator.Adapter());
-                bbSet->insert(occ->GetBB()->GetBBId());
+                (void)bbSet->insert(occ->GetBB()->GetBBId());
                 candsForSSAUpdate[ostIdx] = bbSet;
               } else {
-                candsForSSAUpdate[ostIdx]->insert(occ->GetBB()->GetBBId());
+                (void)candsForSSAUpdate[ostIdx]->insert(occ->GetBB()->GetBBId());
               }
               // create a new LHS for the dassign in insertedOcc->GetMeStmt()
               VarMeExpr *newVarVersion = irMap->CreateVarMeExprVersion(*dass->GetVarLHS());
@@ -102,10 +102,10 @@ void MeStmtPre::CodeMotion() {
                 if (candsForSSAUpdate.find(ostIdx) == candsForSSAUpdate.end()) {
                   MapleSet<BBId> *bbSet =
                       ssaPreMemPool->New<MapleSet<BBId>>(std::less<BBId>(), ssaPreAllocator.Adapter());
-                  bbSet->insert(occ->GetBB()->GetBBId());
+                  (void)bbSet->insert(occ->GetBB()->GetBBId());
                   candsForSSAUpdate[ostIdx] = bbSet;
                 } else {
-                  candsForSSAUpdate[ostIdx]->insert(occ->GetBB()->GetBBId());
+                  (void)candsForSSAUpdate[ostIdx]->insert(occ->GetBB()->GetBBId());
                 }
                 VarMeExpr *newVarVersion = irMap->CreateVarMeExprVersion(*var);
                 call->GetMustDefList()->front().UpdateLHS(*newVarVersion);
@@ -387,7 +387,7 @@ void MeStmtPre::Rename2() {
   while (!rename2Set.empty()) {
     MapleSet<uint32>::iterator it = rename2Set.begin();
     MeRealOcc *realOcc = workCand->GetRealOcc(*it);
-    rename2Set.erase(it);
+    (void)rename2Set.erase(it);
     MeOccur *defOcc = realOcc->GetDef();
     CHECK_FATAL(defOcc != nullptr, "should be def by phiocc");
     CHECK_FATAL(defOcc->GetOccType() == kOccPhiocc, "should be def by phiocc");
@@ -450,7 +450,7 @@ void MeStmtPre::Rename2() {
             workCand->GetRealOccs().push_back(occY);
             occY->SetDef(defX);
             occY->SetClassID(defX->GetClassID());
-            rename2Set.insert(occY->GetPosition());
+            (void)rename2Set.insert(occY->GetPosition());
             if (GetSSAPreDebug()) {
               mirModule->GetOut() << "--- rename2 adds to rename2Set manufactured ";
               occY->Dump(*irMap);
@@ -554,7 +554,7 @@ void MeStmtPre::CreateSortedOccs() {
     BB *bb = GetBB(bbId);
     CHECK_FATAL(bb != nullptr, "GetBB error");
     for (BB *pred : bb->GetPred()) {
-      phiOpndDfns.insert(dom->GetDtDfnItem(pred->GetBBId()));
+      (void)phiOpndDfns.insert(dom->GetDtDfnItem(pred->GetBBId()));
     }
   }
   std::unordered_map<BBId, std::forward_list<MePhiOpndOcc*>> bb2PhiOpndMap;
@@ -713,7 +713,7 @@ void MeStmtPre::ConstructUseOccurMapExpr(uint32 bbDfn, const MeExpr &meExpr) {
       return;
     }
     MapleSet<uint32> *bbDfnSet = mapIt->second;
-    bbDfnSet->insert(bbDfn);
+    (void)bbDfnSet->insert(bbDfn);
     return;
   }
   for (uint8 i = 0; i < meExpr.GetNumOpnds(); ++i) {
@@ -746,7 +746,7 @@ void MeStmtPre::ConstructUseOccurMap() {
     BB *bb = func->GetAllBBs().at(preOrderDt[i]);
     for (auto &stmt : bb->GetMeStmts()) {
       for (size_t j = 0; j < stmt.NumMeStmtOpnds(); ++j) {
-        ConstructUseOccurMapExpr(i, *stmt.GetOpnd(j));
+        ConstructUseOccurMapExpr(static_cast<uint32>(i), *stmt.GetOpnd(j));
       }
     }
   }
@@ -1054,7 +1054,7 @@ void MeStmtPre::RemoveUnnecessaryDassign(DassignMeStmt &dssMeStmt) {
   } else {
     bbSet = candsForSSAUpdate[ostIdx];
   }
-  bbSet->insert(bb->GetBBId());
+  (void)bbSet->insert(bb->GetBBId());
 }
 
 AnalysisResult *MeDoStmtPre::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr*) {

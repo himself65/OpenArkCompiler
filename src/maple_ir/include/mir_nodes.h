@@ -532,13 +532,13 @@ class BinaryOpnds {
 
   virtual void Dump(int32 indent) const;
 
-  BaseNode *GetBOpnd(int32 i) const {
-    CHECK_FATAL(i >= 0 && i < kOperandNumBinary, "Invalid operand idx in BinaryOpnds");
+  BaseNode *GetBOpnd(size_t i) const {
+    CHECK_FATAL(i < kOperandNumBinary, "Invalid operand idx in BinaryOpnds");
     return bOpnd[i];
   }
 
-  void SetBOpnd(BaseNode *node, int32 i) {
-    CHECK_FATAL(i >= 0 && i < kOperandNumBinary, "Invalid operand idx in BinaryOpnds");
+  void SetBOpnd(BaseNode *node, size_t i) {
+    CHECK_FATAL(i < kOperandNumBinary, "Invalid operand idx in BinaryOpnds");
     bOpnd[i] = node;
   }
 

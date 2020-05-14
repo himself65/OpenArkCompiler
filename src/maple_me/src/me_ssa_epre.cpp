@@ -26,7 +26,7 @@ void MeSSAEPre::GetIterDomFrontier(const BB &bb, MapleSet<uint32> &dfSet, std::v
   }
   visitedMap[bb.GetBBId()] = true;
   for (BBId frontierBBId : dom->GetDomFrontier(bb.GetBBId())) {
-    dfSet.insert(dom->GetDtDfnItem(frontierBBId));
+    (void)dfSet.insert(dom->GetDtDfnItem(frontierBBId));
     BB *frontierBB = GetBB(frontierBBId);
     GetIterDomFrontier(*frontierBB, dfSet, visitedMap);
   }

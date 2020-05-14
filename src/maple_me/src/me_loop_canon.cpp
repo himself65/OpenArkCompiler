@@ -79,7 +79,7 @@ bool MeDoLoopCanon::NeedConvert(BB &bb, BB &pred, MapleAllocator &localAlloc, Ma
     if (curr == &bb || inLoop.count(curr->GetBBId()) == 1) {
       continue;
     }
-    inLoop.insert(curr->GetBBId());
+    (void)inLoop.insert(curr->GetBBId());
     for (BB *tmpPred : curr->GetPred()) {
       ASSERT_NOT_NULL(tmpPred);
       bodyList.push_back(tmpPred);
@@ -92,7 +92,7 @@ bool MeDoLoopCanon::NeedConvert(BB &bb, BB &pred, MapleAllocator &localAlloc, Ma
   // other case
   // fallthru is in loop body, latchBB need swap succs
   if (inLoop.count(bb.GetSucc().at(0)->GetBBId()) == 1) {
-    swapSuccs.insert(make_pair(std::make_pair(&bb, &pred), true));
+    (void)swapSuccs.insert(make_pair(std::make_pair(&bb, &pred), true));
   }
   return true;
 }

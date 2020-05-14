@@ -114,6 +114,7 @@ class MIRTypeNameTable {
 
 class MIRModule {
  public:
+  bool firstInline = true;
   using CallSite = std::pair<CallInfo*, PUIdx>;
 
   explicit MIRModule(const std::string &fn = "");

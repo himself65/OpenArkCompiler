@@ -47,7 +47,7 @@ void TypeTable::SetTypeWithTyIdx(const TyIdx &tyIdx, MIRType &type) {
   MIRType *oldType = typeTable.at(tyIdx);
   typeTable.at(tyIdx) = &type;
   if (oldType != nullptr && oldType != &type) {
-    typeHashTable.erase(oldType);
+    (void)typeHashTable.erase(oldType);
     delete oldType;
   }
 }

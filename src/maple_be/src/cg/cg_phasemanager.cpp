@@ -15,7 +15,6 @@
 #include "cg_phasemanager.h"
 #include <vector>
 #include <string>
-
 #include "cg_option.h"
 #include "live.h"
 #include "loop.h"

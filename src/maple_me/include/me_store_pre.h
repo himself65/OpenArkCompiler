@@ -35,8 +35,8 @@ class MeStorePre : public MeSSUPre {
   RegMeExpr *EnsureRHSInCurTemp(BB &bb);
   void CodeMotion();
   // step 0 methods
-  void CreateRealOcc(OStIdx ostIdx, MeStmt &meStmt);
-  void CreateUseOcc(OStIdx ostIdx, BB &bb) const;
+  void CreateRealOcc(const OStIdx &ostIdx, MeStmt &meStmt);
+  void CreateUseOcc(const OStIdx &ostIdx, BB &bb) const;
   void CreateSpreUseOccsThruAliasing(const OriginalSt &muOst, BB &bb) const;
   void FindAndCreateSpreUseOccs(const MeExpr &meExpr, BB &bb) const;
   void CreateSpreUseOccsForAll(BB &bb) const;

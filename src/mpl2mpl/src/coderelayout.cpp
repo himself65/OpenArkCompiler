@@ -211,8 +211,8 @@ void CodeReLayout::Finish() {
 
 MIRSymbol *CodeReLayout::GenStrSym(const std::string &str) {
   std::string newStr = str + '\0';
-  MIRArrayType &strTabType =
-      *GlobalTables::GetTypeTable().GetOrCreateArrayType(*GlobalTables::GetTypeTable().GetUInt8(), newStr.length());
+  MIRArrayType &strTabType = *GlobalTables::GetTypeTable().GetOrCreateArrayType(
+      *GlobalTables::GetTypeTable().GetUInt8(), static_cast<uint32>(newStr.length()));
   std::string strTabName = NameMangler::kStaticFieldNamePrefixStr + str;
   MIRSymbol *staticSym = builder->CreateGlobalDecl(strTabName, strTabType);
   MIRAggConst *strTabAggConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), strTabType);
@@ -232,7 +232,7 @@ MIRSymbol *CodeReLayout::GetorCreateStaticFieldSym(const std::string &fieldName)
     return it->second;
   } else {
     MIRSymbol *sym = GenStrSym(fieldName);
-    str2SymMap.insert(std::make_pair(fieldName, sym));
+    (void)str2SymMap.insert(std::make_pair(fieldName, sym));
     return sym;
   }
 }

@@ -72,10 +72,10 @@ class HDSE {
   bool NeedNotNullCheck(MeExpr &meExpr, const BB &bb);
 
   bool IsExprNeeded(const MeExpr &meExpr) const {
-    return exprLive.at(meExpr.GetExprID());
+    return exprLive.at(static_cast<size_t>(static_cast<uint32>(meExpr.GetExprID())));
   }
   void SetExprNeeded(const MeExpr &meExpr) {
-    exprLive.at(meExpr.GetExprID()) = true;
+    exprLive.at(static_cast<size_t>(static_cast<uint32>(meExpr.GetExprID()))) = true;
   }
 
   void PropagateLive() {

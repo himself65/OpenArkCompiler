@@ -97,6 +97,10 @@ class SSATab : public AnalysisResult {
     return originalStTable;
   }
 
+  const OriginalStTable &GetOriginalStTable() const {
+    return originalStTable;
+  }
+
   size_t GetOriginalStTableSize() const {
     return originalStTable.Size();
   }

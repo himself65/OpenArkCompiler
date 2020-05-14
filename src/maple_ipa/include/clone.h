@@ -22,6 +22,7 @@
 #include "class_hierarchy.h"
 #include "me_ir.h"
 #include "module_phase.h"
+
 static constexpr char kFullNameStr[] = "INFO_fullname";
 static constexpr char kClassNameStr[] = "INFO_classname";
 static constexpr char kFuncNameStr[] = "INFO_funcname";
@@ -29,12 +30,12 @@ static constexpr char kVoidRetSuffix[] = "CLONEDignoreret";
 namespace maple {
 class ReplaceRetIgnored {
  public:
-  ReplaceRetIgnored(MemPool *memPool);
+  explicit ReplaceRetIgnored(MemPool *memPool);
   virtual ~ReplaceRetIgnored() = default;
 
-  bool ShouldReplaceWithVoidFunc(const CallMeStmt *stmt, const MIRFunction *calleeFunc) const;
-  std::string GenerateNewBaseName(const MIRFunction *originalFunc);
-  std::string GenerateNewFullName(const MIRFunction *originalFunc);
+  bool ShouldReplaceWithVoidFunc(const CallMeStmt &stmt, const MIRFunction &calleeFunc) const;
+  std::string GenerateNewBaseName(const MIRFunction &originalFunc) const;
+  std::string GenerateNewFullName(const MIRFunction &originalFunc) const;
   const MapleSet<MapleString> *GetTobeClonedFuncNames() const {
     return &toBeClonedFuncNames;
   }
@@ -51,8 +52,9 @@ class ReplaceRetIgnored {
   MemPool *memPool;
   maple::MapleAllocator allocator;
   MapleSet<MapleString> toBeClonedFuncNames;
-  bool RealShouldReplaceWithVoidFunc(Opcode op, size_t nRetSize, const MIRFunction *calleeFunc) const;
+  bool RealShouldReplaceWithVoidFunc(Opcode op, size_t nRetSize, const MIRFunction &calleeFunc) const;
 };
+
 class Clone : public AnalysisResult {
  public:
   Clone(MIRModule *mod, MemPool *memPool, MIRBuilder &builder, KlassHierarchy *kh)
@@ -61,21 +63,21 @@ class Clone : public AnalysisResult {
 
   ~Clone() = default;
 
-  static MIRSymbol *CloneLocalSymbol(const MIRSymbol *oldSym, MIRFunction *newFunc);
-  static void CloneSymbols(MIRFunction *newFunc, const MIRFunction *oldFunc);
-  static void CloneLabels(MIRFunction *newFunc, const MIRFunction *oldFunc);
-  MIRFunction *CloneFunction(MIRFunction *originalFunction, const std::string &newBaseFuncName,
-      MIRType *returnType = nullptr);
-  MIRFunction *CloneFunctionNoReturn(MIRFunction *originalFunction);
+  static MIRSymbol *CloneLocalSymbol(const MIRSymbol &oldSym, const MIRFunction &newFunc);
+  static void CloneSymbols(MIRFunction &newFunc, const MIRFunction &oldFunc);
+  static void CloneLabels(MIRFunction &newFunc, const MIRFunction &oldFunc);
+  MIRFunction *CloneFunction(MIRFunction &originalFunction, const std::string &newBaseFuncName,
+      MIRType *returnType = nullptr) const;
+  MIRFunction *CloneFunctionNoReturn(MIRFunction &originalFunction);
   void DoClone();
-  void CopyFuncInfo(const MIRFunction *originalFunction, MIRFunction *newFunc) const;
+  void CopyFuncInfo(const MIRFunction &originalFunction, MIRFunction *newFunc) const;
   void UpdateFuncInfo(MIRFunction *newFunc);
-  void CloneArgument(MIRFunction *originalFunction, ArgVector &argument) const;
+  void CloneArgument(MIRFunction &riginalFunction, ArgVector &argument) const;
   ReplaceRetIgnored *GetReplaceRetIgnored() {
     return replaceRetIgnored;
   }
 
-  void UpdateReturnVoidIfPossible(CallMeStmt *callMeStmt, const MIRFunction *targetFunc);
+  void UpdateReturnVoidIfPossible(CallMeStmt *callMeStmt, const MIRFunction &targetFunc);
 
  private:
   MIRModule *mirModule;
@@ -84,6 +86,7 @@ class Clone : public AnalysisResult {
   KlassHierarchy *kh;
   ReplaceRetIgnored *replaceRetIgnored;
 };
+
 class DoClone : public ModulePhase {
  public:
   explicit DoClone(ModulePhaseID id) : ModulePhase(id) {}
