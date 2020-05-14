@@ -112,7 +112,7 @@ void MeStmtPre::Rename1StmtFre() {
           if (isAllDom) {
             realOcc->SetClassID(topOccur->GetClassID());
             realOcc->SetDef(topOccur);
-            rename2Set.insert(realOcc->GetPosition());
+            (void)rename2Set.insert(realOcc->GetPosition());
             occStack.push(realOcc);
           } else {
             // assign new class

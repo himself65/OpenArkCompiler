@@ -759,7 +759,7 @@ class MIRFunction {
     retRefSym.insert(sym);
   }
 
-  MemPool *GetDataMemPool() {
+  MemPool *GetDataMemPool() const {
     return module->GetMemPool();
   }
 

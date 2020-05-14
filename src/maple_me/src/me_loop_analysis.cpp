@@ -97,13 +97,13 @@ void IdentifyLoops::ProcessBB(BB *bb) {
         if (curr == bb || loop->loopBBs.count(curr->GetBBId()) == 1) {
           continue;
         }
-        loop->loopBBs.insert(curr->GetBBId());
+        (void)loop->loopBBs.insert(curr->GetBBId());
         SetLoopParent4BB(*curr, *loop);
         for (BB *curPred : curr->GetPred()) {
           bodyList.push_back(curPred);
         }
       }
-      loop->loopBBs.insert(bb->GetBBId());
+      (void)loop->loopBBs.insert(bb->GetBBId());
       SetLoopParent4BB(*bb, *loop);
     }
   }

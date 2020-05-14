@@ -77,6 +77,13 @@ class CGOptions : public MapleDriverOptionBase {
     kLevel1 = 1,
     kLevel2 = 2,
   };
+
+  enum ABIType : uint8 {
+    kABIHard,
+    kABISoft,
+    kABISoftFP,
+    kABIUndef
+  };
   /*
    * The default CG option values are:
    * Don't BE_QUITE; verbose,

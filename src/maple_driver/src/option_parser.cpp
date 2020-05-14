@@ -78,7 +78,7 @@ void OptionParser::CreateNoOption(const Descriptor &usage) {
   InsertExtraUsage(tempUsage);
 }
 
-void OptionParser::RegisteUsages(MapleDriverOptionBase &base) {
+void OptionParser::RegisteUsages(const MapleDriverOptionBase &base) {
   for (auto &usage : base.GetUsageVec()) {
     if (usage.help == nullptr) {
       continue;

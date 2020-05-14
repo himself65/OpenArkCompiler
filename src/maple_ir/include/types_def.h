@@ -121,8 +121,8 @@ using U16StrIdx = utils::Index<U16StrTag, uint32>;  // user string table index (
 const TyIdx kInitTyIdx = TyIdx(0);
 const TyIdx kNoneTyIdx = TyIdx(UINT32_MAX);
 
-constexpr int kOperandNumUnary = 1;
-constexpr int kOperandNumBinary = 2;
-constexpr int kOperandNumTernary = 3;
+constexpr uint8 kOperandNumUnary = 1;
+constexpr uint8 kOperandNumBinary = 2;
+constexpr uint8 kOperandNumTernary = 3;
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_TYPES_DEF_H

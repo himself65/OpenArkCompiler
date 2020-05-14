@@ -28,7 +28,7 @@ class OptionParser {
 
   ~OptionParser() = default;
 
-  void RegisteUsages(maple::MapleDriverOptionBase &base);
+  void RegisteUsages(const maple::MapleDriverOptionBase &base);
   void RegisteUsages(const Descriptor usage[]);
 
   maple::ErrorCode Parse(int argc, char **argv, const std::string exeName = "all");

@@ -2253,11 +2253,12 @@ void Emitter::EmitHexUnsigned(uint64 num) {
 #define str(s) #s
 
 void Emitter::EmitDIHeader() {
+  Emit("\t.section ." + std::string(NameMangler::kMuidJavatextPrefixStr) + ",\"ax\"\n");
   Emit(".L" XSTR(TEXT_BEGIN) ":\n");
 }
 
 void Emitter::EmitDIFooter() {
-  Emit("\t.text\n");
+  Emit("\t.section ." + std::string(NameMangler::kMuidJavatextPrefixStr) + ",\"ax\"\n");
   Emit(".L" XSTR(TEXT_END) ":\n");
 }
 

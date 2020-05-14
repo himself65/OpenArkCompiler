@@ -117,7 +117,7 @@ void SSADevirtual::ReplaceCall(CallMeStmt &callStmt, const MIRFunction &targetFu
     ++optedInterfaceCalls;
   }
   if (clone != nullptr && OP_callassigned == callStmt.GetOp()) {
-    clone->UpdateReturnVoidIfPossible(&callStmt, &targetFunc);
+    clone->UpdateReturnVoidIfPossible(&callStmt, targetFunc);
   }
   if (SSADevirtual::debug) {
     LogInfo::MapleLogger() << "\t -> \t" << kOpcodeInfo.GetTableItemAt(callStmt.GetOp()).name << " " <<
@@ -489,7 +489,7 @@ void SSADevirtual::TraversalMeStmt(MeStmt &meStmt) {
       (void)DevirtualizeCall(*callMeStmt);
       if (clone != nullptr && OP_callassigned == callMeStmt->GetOp()) {
         MIRFunction &targetFunc = callMeStmt->GetTargetFunction();
-        clone->UpdateReturnVoidIfPossible(callMeStmt, &targetFunc);
+        clone->UpdateReturnVoidIfPossible(callMeStmt, targetFunc);
       }
       break;
     }

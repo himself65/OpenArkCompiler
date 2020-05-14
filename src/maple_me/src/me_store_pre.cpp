@@ -115,10 +115,10 @@ RegMeExpr *MeStorePre::EnsureRHSInCurTemp(BB &bb) {
       RegMeExpr *regPhiOpnd = EnsureRHSInCurTemp(*pred);
       CHECK_NULL_FATAL(regPhiOpnd);
       regPhi->GetOpnds().push_back(regPhiOpnd);
-      regPhiOpnd->GetPhiUseSet().insert(regPhi);
+      (void)regPhiOpnd->GetPhiUseSet().insert(regPhi);
     }
     // insert the regPhi
-    bb.GetMeRegPhiList().insert(std::make_pair(lhsReg->GetOstIdx(), regPhi));
+    (void)bb.GetMeRegPhiList().insert(std::make_pair(lhsReg->GetOstIdx(), regPhi));
     return lhsReg;
   }
   // continue at immediate dominator
@@ -193,7 +193,7 @@ void MeStorePre::CodeMotion() {
 
 // ================ Step 0: collect occurrences ================
 // create a new real occurrence for the store of meStmt of symbol oidx
-void MeStorePre::CreateRealOcc(OStIdx ostIdx, MeStmt &meStmt) {
+void MeStorePre::CreateRealOcc(const OStIdx &ostIdx, MeStmt &meStmt) {
   SpreWorkCand *wkCand = nullptr;
   auto mapIt = workCandMap.find(ostIdx);
   if (mapIt != workCandMap.end()) {
@@ -225,7 +225,7 @@ void MeStorePre::CreateRealOcc(OStIdx ostIdx, MeStmt &meStmt) {
 }
 
 // create a new use occurrence for symbol oidx in given bb
-void MeStorePre::CreateUseOcc(OStIdx ostIdx, BB &bb) const {
+void MeStorePre::CreateUseOcc(const OStIdx &ostIdx, BB &bb) const {
   SpreWorkCand *wkCand = nullptr;
   auto mapIt = workCandMap.find(ostIdx);
   if (mapIt == workCandMap.end()) {

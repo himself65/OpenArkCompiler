@@ -187,9 +187,9 @@ void SSAPre::UpdateInsertedPhiOccOpnd() {
           regOpnd = irMap->CreateRegMeExprVersion(static_cast<RegMeExpr&>(*curTemp));
         }
         phiReg->GetOpnds().push_back(regOpnd);
-        regOpnd->GetPhiUseSet().insert(phiReg);  // record all the uses phi node for preg renaming
+        (void)regOpnd->GetPhiUseSet().insert(phiReg);  // record all the uses phi node for preg renaming
       }
-      phiOcc->GetBB()->GetMeRegPhiList().insert(std::make_pair(phiReg->GetOpnd(0)->GetOstIdx(), phiReg));
+      (void)phiOcc->GetBB()->GetMeRegPhiList().insert(std::make_pair(phiReg->GetOpnd(0)->GetOstIdx(), phiReg));
       if (workCand->NeedLocalRefVar() && phiOcc->GetVarPhi() != nullptr) {
         MeVarPhiNode *phiVar = phiOcc->GetVarPhi();
         for (MePhiOpndOcc *phiOpnd : phiOcc->GetPhiOpnds()) {
@@ -212,7 +212,7 @@ void SSAPre::UpdateInsertedPhiOccOpnd() {
           }
           phiVar->GetOpnds().push_back(localRefVarOpnd);
         }
-        phiOcc->GetBB()->GetMevarPhiList().insert(std::make_pair(phiVar->GetOpnd(0)->GetOStIdx(), phiVar));
+        (void)phiOcc->GetBB()->GetMevarPhiList().insert(std::make_pair(phiVar->GetOpnd(0)->GetOStIdx(), phiVar));
       }
     } else {
       MeVarPhiNode *phiVar = phiOcc->GetVarPhi();
@@ -224,7 +224,7 @@ void SSAPre::UpdateInsertedPhiOccOpnd() {
         }
         phiVar->GetOpnds().push_back(varOpnd);
       }
-      phiOcc->GetBB()->GetMevarPhiList().insert(std::make_pair(phiVar->GetOpnd(0)->GetOStIdx(), phiVar));
+      (void)phiOcc->GetBB()->GetMevarPhiList().insert(std::make_pair(phiVar->GetOpnd(0)->GetOStIdx(), phiVar));
     }
   }
 }
@@ -752,7 +752,7 @@ void SSAPre::Rename1() {
           if (isAllDom) {
             realOcc->SetClassID(topOccur->GetClassID());
             realOcc->SetDef(topOccur);
-            rename2Set.insert(realOcc->GetPosition());
+            (void)rename2Set.insert(realOcc->GetPosition());
             occStack.push(realOcc);
             if (IsLoopHeadBB(topOccur->GetBB()->GetBBId())) {
               static_cast<MePhiOcc*>(topOccur)->SetSpeculativeDownSafe(true);
@@ -889,7 +889,7 @@ void SSAPre::Rename2() {
   while (!rename2Set.empty()) {
     MapleSet<uint32>::iterator it = rename2Set.begin();
     MeRealOcc *realOcc = workCand->GetRealOcc(*it);
-    rename2Set.erase(it);
+    (void)rename2Set.erase(it);
     MeOccur *defOcc = realOcc->GetDef();
     if (defOcc == nullptr || defOcc->GetOccType() != kOccPhiocc) {
       CHECK_FATAL(false, "should be def by phiOcc");
@@ -941,7 +941,7 @@ void SSAPre::Rename2() {
           workCand->GetRealOccs().push_back(occY);
           occY->SetDef(defX);
           occY->SetClassID(defX->GetClassID());
-          rename2Set.insert(occY->GetPosition());
+          (void)rename2Set.insert(occY->GetPosition());
           if (GetSSAPreDebug()) {
             mirModule->GetOut() << "--- rename2 adds to rename2Set manufactured ";
             occY->Dump(*irMap);
@@ -979,7 +979,7 @@ void SSAPre::SetVarPhis(const MeExpr &meExpr) {
     if (phiMeNode != nullptr) {
       BBId defBBId = phiMeNode->GetDefBB()->GetBBId();
       if (varPhiDfns.find(dom->GetDtDfnItem(defBBId)) == varPhiDfns.end() && ScreenPhiBB(defBBId)) {
-        varPhiDfns.insert(dom->GetDtDfnItem(defBBId));
+        (void)varPhiDfns.insert(dom->GetDtDfnItem(defBBId));
         for (auto opndIt = phiMeNode->GetOpnds().begin(); opndIt != phiMeNode->GetOpnds().end(); ++opndIt) {
           VarMeExpr *opnd = *opndIt;
           SetVarPhis(*opnd);
@@ -992,7 +992,7 @@ void SSAPre::SetVarPhis(const MeExpr &meExpr) {
       BBId defBbId = phiMeNode->GetDefBB()->GetBBId();
       CHECK(defBbId < dom->GetDtDfnSize(), "defBbId.idx out of range in SSAPre::SetVarPhis");
       if (varPhiDfns.find(dom->GetDtDfnItem(defBbId)) == varPhiDfns.end() && ScreenPhiBB(defBbId)) {
-        varPhiDfns.insert(dom->GetDtDfnItem(defBbId));
+        (void)varPhiDfns.insert(dom->GetDtDfnItem(defBbId));
         for (auto opndIt = phiMeNode->GetOpnds().begin(); opndIt != phiMeNode->GetOpnds().end();
              ++opndIt) {
           RegMeExpr *opnd = *opndIt;
@@ -1017,7 +1017,7 @@ void SSAPre::CreateSortedOccs() {
     BB *bb = GetBB(bbId);
     ASSERT(bb != nullptr, "GetBB return null in SSAPre::CreateSortedOccs");
     for (BB *pred : bb->GetPred()) {
-      phiOpndDfns.insert(dom->GetDtDfnItem(pred->GetBBId()));
+      (void)phiOpndDfns.insert(dom->GetDtDfnItem(pred->GetBBId()));
     }
   }
   // under lpre, form lhs occ for formals at function entry
@@ -1621,7 +1621,7 @@ void SSAPre::DumpWorkList() const {
 
 GStrIdx SSAPre::NewTempStrIdx() {
   std::string preStr("ssapre_tempvar");
-  preStr.append(std::to_string(strIdxCount++));
+  (void)preStr.append(std::to_string(strIdxCount++));
   return GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(preStr);
 }
 

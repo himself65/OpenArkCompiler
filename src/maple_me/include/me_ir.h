@@ -104,10 +104,10 @@ class MeExpr {
     return next;
   }
 
-  void InitBase(Opcode op, PrimType primType, uint32 numOpnds) {
-    this->op = op;
-    this->primType = primType;
-    this->numOpnds = static_cast<uint8>(numOpnds);
+  void InitBase(Opcode opcode, PrimType primaryType, size_t opndsNum) {
+    this->op = opcode;
+    this->primType = primaryType;
+    this->numOpnds = static_cast<uint8>(opndsNum);
   }
 
   virtual void Dump(const IRMap*, int32 indent = 0) const {
@@ -952,7 +952,7 @@ class IvarMeExpr : public MeExpr {
  public:
   explicit IvarMeExpr(int32 exprid)
       : MeExpr(exprid, kMeOpIvar) {
-    SetNumOpnds(kOperandNumUnary);
+    SetNumOpnds(static_cast<uint8>(kOperandNumUnary));
   }
 
   IvarMeExpr(int32 exprid, const IvarMeExpr &ivarme)
@@ -1175,7 +1175,7 @@ class MeStmt {
     return nullptr;
   }
 
-  virtual void SetOpnd(uint32, MeExpr*) {}
+  virtual void SetOpnd(size_t, MeExpr*) {}
 
   bool IsAssertBce() const {
     return op == OP_assertlt || op == OP_assertge;
@@ -1562,7 +1562,7 @@ class DassignMeStmt : public MeStmt {
     return rhs;
   }
 
-  void SetOpnd(uint32, MeExpr *val) {
+  void SetOpnd(size_t, MeExpr *val) {
     rhs = val;
   }
 
@@ -1691,7 +1691,7 @@ class RegassignMeStmt : public MeStmt {
     return rhs;
   }
 
-  void SetOpnd(uint32, MeExpr *val) {
+  void SetOpnd(size_t, MeExpr *val) {
     rhs = val;
   }
 
@@ -1757,7 +1757,7 @@ class MaydassignMeStmt : public MeStmt {
     return rhs;
   }
 
-  void SetOpnd(uint32, MeExpr *val) {
+  void SetOpnd(size_t, MeExpr *val) {
     rhs = val;
   }
 
@@ -1888,7 +1888,7 @@ class IassignMeStmt : public MeStmt {
     return idx == 0 ? lhsVar->GetBase() : rhs;
   }
 
-  void SetOpnd(uint32 idx, MeExpr *val) {
+  void SetOpnd(size_t idx, MeExpr *val) {
     if (idx == 0) {
       lhsVar->SetBase(val);
     } else {
@@ -1984,7 +1984,7 @@ class NaryMeStmt : public MeStmt {
     return opnds.at(idx);
   }
 
-  void SetOpnd(uint32 idx, MeExpr *val) {
+  void SetOpnd(size_t idx, MeExpr *val) {
     opnds[idx] = val;
   }
 
@@ -2441,7 +2441,7 @@ class UnaryMeStmt : public MeStmt {
     return opnd;
   }
 
-  void SetOpnd(uint32, MeExpr *val) {
+  void SetOpnd(size_t, MeExpr *val) {
     opnd = val;
   }
 
@@ -2654,7 +2654,7 @@ class ThrowMeStmt : public WithMuMeStmt {
     return opnd;
   }
 
-  void SetOpnd(uint32, MeExpr *val) {
+  void SetOpnd(size_t, MeExpr *val) {
     opnd = val;
   }
 
@@ -2727,7 +2727,7 @@ class AssertMeStmt : public MeStmt {
     return opnds[0];
   }
 
-  void SetOpnd(uint32 i, MeExpr *opnd) override {
+  void SetOpnd(size_t i, MeExpr *opnd) override {
     CHECK_FATAL(i < kOperandNumBinary, "AssertMeStmt has two opnds");
     opnds[i] = opnd;
   }

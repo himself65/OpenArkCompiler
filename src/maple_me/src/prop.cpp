@@ -68,7 +68,7 @@ MeExpr *Prop::SimplifyCvtMeExpr(const OpMeExpr &opMeExpr) const {
     // 1. converting type3 to type2 is safe;
     // 2. converting type1 to type2 is safe;
     // Otherwise, deleting the cvt of cvtOpnd0 may result in information loss.
-    if (IsCvtSafe(cvtOpnd0->GetOpnd(0)->GetPrimType(), cvtOpnd0->GetPrimType()) ||
+    if (IsCvtSafe(cvtOpnd0->GetOpnd(0)->GetPrimType(), cvtOpnd0->GetPrimType()) &&
         IsCvtSafe(opMeExpr.GetPrimType(), cvtOpnd0->GetPrimType())) {
       return irMap.CreateMeExprTypeCvt(opMeExpr.GetPrimType(), cvtOpnd0->GetOpndType(),
           utils::ToRef(cvtOpnd0->GetOpnd(0)));
@@ -138,7 +138,7 @@ MeExpr *Prop::SimplifyCompareMeExpr(OpMeExpr &opMeExpr) const {
     }
     if (constOpnd->IsZero()) {
       // addrof will not be zero, so this comparison can be replaced with a constant
-      auto *resConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst((opcode == OP_ne),
+      auto *resConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(static_cast<int64>(opcode == OP_ne),
           utils::ToRef(GlobalTables::GetTypeTable().GetUInt1()));
       return irMap.CreateConstMeExpr(opMeExpr.GetPrimType(), *resConst);
     }

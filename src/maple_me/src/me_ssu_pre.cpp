@@ -52,7 +52,7 @@ void MeSSUPre::Finalize() {
             BB *insertBB = &lambdaResOcc->GetBB();
             if (insertBB->GetAttributes(kBBAttrIsCatch)) {
               if (preKind == kDecrefPre) {
-                catchBlocks2Insert.insert(insertBB->GetBBId());
+                (void)catchBlocks2Insert.insert(insertBB->GetBBId());
               } // else { kStorePre: omit insertion at entry of catch blocks }
               break;
             }
@@ -368,7 +368,7 @@ void MeSSUPre::GetIterPdomFrontier(const BB &bb, MapleSet<uint32> &pdfSet, std::
   CHECK_FATAL(!visitedMap.empty(), "visitedMap in MeSSUPre::GetIterPdomFrontier is empty");
   visitedMap[bb.GetBBId()] = true;
   for (BBId frontierBBId : dom->GetPdomFrontierItem(bb.GetBBId())) {
-    pdfSet.insert(dom->GetPdtDfnItem(frontierBBId));
+    (void)pdfSet.insert(dom->GetPdtDfnItem(frontierBBId));
   }
   CHECK_NULL_FATAL(func);
   for (BBId frontierBBId : dom->GetPdomFrontierItem(bb.GetBBId())) {
@@ -398,7 +398,7 @@ void MeSSUPre::CreateSortedOccs() {
     const BBId &bbId = dom->GetPdtPreOrderItem(dfn);
     BB *bb = func->GetAllBBs().at(bbId);
     for (BB *succ : bb->GetSucc()) {
-      lambdaResDfns.insert(dom->GetPdtDfnItem(succ->GetBBId()));
+      (void)lambdaResDfns.insert(dom->GetPdtDfnItem(succ->GetBBId()));
     }
   }
   allOccs.clear();

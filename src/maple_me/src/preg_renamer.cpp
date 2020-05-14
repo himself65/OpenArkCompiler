@@ -27,7 +27,7 @@ void PregRenamer::EnqueDefUses(std::list<RegMeExpr*> &qu, RegMeExpr *node, std::
       RegMeExpr *neibNode = it;  // node's connected register node
       if (neibNode != node && curVisited.find(neibNode) == curVisited.end()) {
         qu.push_back(neibNode);
-        curVisited.insert(neibNode);
+        (void)curVisited.insert(neibNode);
       }
     }
   }
@@ -38,13 +38,13 @@ void PregRenamer::EnqueDefUses(std::list<RegMeExpr*> &qu, RegMeExpr *node, std::
     RegMeExpr *lhsReg = meRegPhi->GetLHS();
     if (lhsReg != node && curVisited.find(lhsReg) == curVisited.end()) {
       qu.push_back(lhsReg);
-      curVisited.insert(lhsReg);
+      (void)curVisited.insert(lhsReg);
     }
     for (auto opdIt : meRegPhi->GetOpnds()) {
       RegMeExpr *opndReg = opdIt;
       if (opndReg != node && curVisited.find(opndReg) == curVisited.end()) {
         qu.push_back(opndReg);
-        curVisited.insert(opndReg);
+        (void)curVisited.insert(opndReg);
       }
     }
   }
@@ -77,7 +77,7 @@ void PregRenamer::RunSelf() const {
       qu.pop_back();
       // put all its neighbors into the queue
       EnqueDefUses(qu, curNode, curVisited);
-      curVisited.insert(curNode);
+      (void)curVisited.insert(curNode);
       candidates.push_back(curNode);
       if (curNode->GetDefBy() == kDefByNo) {
         // if any use are from zero version, we stop renaming all the candidates related to it issue #1420

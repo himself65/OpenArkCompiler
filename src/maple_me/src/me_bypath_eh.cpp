@@ -25,7 +25,7 @@ bool MeDoBypathEH::DoBypathException(BB *tryBB, BB *catchBB, const Klass *catchC
   std::vector<BB*> tryBBV;
   std::set<BB*> tryBBS;
   tryBBV.push_back(tryBB);
-  tryBBS.insert(tryBB);
+  (void)tryBBS.insert(tryBB);
   uint32 idx = 0;
   bool transformed = false;
   while (idx < tryBBV.size()) {
@@ -211,7 +211,7 @@ void MeDoBypathEH::BypathException(MeFunction &func, const KlassHierarchy &kh) c
     if (visited.find(bb) != visited.end()) {
       continue;
     }
-    visited.emplace(bb);
+    (void)visited.emplace(bb);
     for (StmtNode *stmt = &bb->GetFirst(); stmt != nullptr && stmt != bb->GetLast().GetNext(); stmt = stmt->GetNext()) {
       if (stmt->GetOpCode() != OP_try) {
         continue;

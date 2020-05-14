@@ -361,9 +361,9 @@ ConstvalNode *ConstantFold::FoldIntConstBinary(Opcode opcode, PrimType resultTyp
     }
     case OP_sub: {
       if (useResult64) {
-        result64 = intValueOfConst0 - intValueOfConst1;
+        result64 = static_cast<uint64>(intValueOfConst0 - intValueOfConst1);
       } else {
-        result32 = static_cast<int32>(intValueOfConst0) - static_cast<int32>(intValueOfConst1);
+        result32 = static_cast<uint32>(static_cast<int32>(intValueOfConst0) - static_cast<int32>(intValueOfConst1));
       }
       break;
     }
@@ -371,7 +371,7 @@ ConstvalNode *ConstantFold::FoldIntConstBinary(Opcode opcode, PrimType resultTyp
       if (useResult64) {
         result64 = intValueOfConst0 * intValueOfConst1;
       } else {
-        result32 = static_cast<int32>(intValueOfConst0) * static_cast<int32>(intValueOfConst1);
+        result32 = static_cast<uint32>(static_cast<int32>(intValueOfConst0) * static_cast<int32>(intValueOfConst1));
       }
       break;
     }
@@ -384,9 +384,9 @@ ConstvalNode *ConstantFold::FoldIntConstBinary(Opcode opcode, PrimType resultTyp
         }
       } else {
         if (useResult64) {
-          result64 = intValueOfConst0 / intValueOfConst1;
+          result64 = static_cast<uint64>(intValueOfConst0 / intValueOfConst1);
         } else {
-          result32 = static_cast<int32>(intValueOfConst0) / static_cast<int32>(intValueOfConst1);
+          result32 = static_cast<uint32>(static_cast<int32>(intValueOfConst0) / static_cast<int32>(intValueOfConst1));
         }
       }
       break;
@@ -400,7 +400,7 @@ ConstvalNode *ConstantFold::FoldIntConstBinary(Opcode opcode, PrimType resultTyp
         }
       } else {
         if (useResult64) {
-          result64 = intValueOfConst0 % intValueOfConst1;
+          result64 = static_cast<uint64>(intValueOfConst0 % intValueOfConst1);
         } else {
           result32 = static_cast<int32>(intValueOfConst0) % static_cast<int32>(intValueOfConst1);
         }
@@ -435,17 +435,18 @@ ConstvalNode *ConstantFold::FoldIntConstBinary(Opcode opcode, PrimType resultTyp
       if (IsUnsignedInteger(const0.GetPrimType())) {
         if (useResult64) {
           result64 = (static_cast<uint64>(intValueOfConst0) >= static_cast<uint64>(intValueOfConst1)) ?
-                     intValueOfConst0 : intValueOfConst1;
+                     static_cast<uint64>(intValueOfConst0) : static_cast<uint64>(intValueOfConst1);
         } else {
           result32 = (static_cast<uint32>(intValueOfConst0) >= static_cast<uint32>(intValueOfConst1)) ?
-                     intValueOfConst0 : intValueOfConst1;
+                     static_cast<uint32>(intValueOfConst0) : static_cast<uint32>(intValueOfConst1);
         }
       } else {
         if (useResult64) {
-          result64 = (intValueOfConst0 >= intValueOfConst1) ? intValueOfConst0 : intValueOfConst1;
+          result64 = (intValueOfConst0 >= intValueOfConst1) ?
+              static_cast<uint64>(intValueOfConst0) : static_cast<uint64>(intValueOfConst1);
         } else {
           result32 = (static_cast<int32>(intValueOfConst0) >= static_cast<int32>(intValueOfConst1)) ?
-                     intValueOfConst0 : intValueOfConst1;
+                     static_cast<uint32>(intValueOfConst0) : static_cast<uint32>(intValueOfConst1);
         }
       }
       break;
@@ -454,17 +455,18 @@ ConstvalNode *ConstantFold::FoldIntConstBinary(Opcode opcode, PrimType resultTyp
       if (IsUnsignedInteger(const0.GetPrimType())) {
         if (useResult64) {
           result64 = (static_cast<uint64>(intValueOfConst0) <= static_cast<uint64>(intValueOfConst1)) ?
-                     intValueOfConst0 : intValueOfConst1;
+                     static_cast<uint64>(intValueOfConst0) : static_cast<uint64>(intValueOfConst1);
         } else {
           result32 = (static_cast<uint32>(intValueOfConst0) <= static_cast<uint32>(intValueOfConst1)) ?
-                     intValueOfConst0 : intValueOfConst1;
+                     static_cast<uint32>(intValueOfConst0) : static_cast<uint32>(intValueOfConst1);
         }
       } else {
         if (useResult64) {
-          result64 = (intValueOfConst0 <= intValueOfConst1) ? intValueOfConst0 : intValueOfConst1;
+          result64 = (intValueOfConst0 <= intValueOfConst1) ?
+                     static_cast<uint64>(intValueOfConst0) : static_cast<uint64>(intValueOfConst1);
         } else {
           result32 = (static_cast<int32>(intValueOfConst0) <= static_cast<int32>(intValueOfConst1)) ?
-                     intValueOfConst0 : intValueOfConst1;
+                     static_cast<uint32>(intValueOfConst0) : static_cast<uint32>(intValueOfConst1);
         }
       }
       break;
@@ -496,18 +498,18 @@ ConstvalNode *ConstantFold::FoldIntConstBinary(Opcode opcode, PrimType resultTyp
     case OP_cand:
     case OP_land: {
       if (useResult64) {
-        result64 = static_cast<uint64>(intValueOfConst0) && static_cast<uint64>(intValueOfConst1);
+        result64 = static_cast<uint64>(intValueOfConst0 && intValueOfConst1);
       } else {
-        result32 = static_cast<uint32>(intValueOfConst0) && static_cast<uint32>(intValueOfConst1);
+        result32 = static_cast<uint32>(intValueOfConst0 && intValueOfConst1);
       }
       break;
     }
     case OP_cior:
     case OP_lior: {
       if (useResult64) {
-        result64 = static_cast<uint64>(intValueOfConst0) || static_cast<uint64>(intValueOfConst1);
+        result64 = static_cast<uint64>(intValueOfConst0 || intValueOfConst1);
       } else {
-        result32 = static_cast<uint32>(intValueOfConst0) || static_cast<uint32>(intValueOfConst1);
+        result32 = static_cast<uint32>(intValueOfConst0 || intValueOfConst1);
       }
       break;
     }
@@ -1065,7 +1067,7 @@ MIRConst *ConstantFold::FoldRoundMIRConst(const MIRConst &cst, PrimType fromType
   } else if (toType == PTY_f32 && IsPrimitiveInteger(fromType)) {
     const auto &constValue = static_cast<const MIRIntConst&>(cst);
     int64 fromValue = constValue.GetValue();
-    float floatValue = round(static_cast<float>(fromValue));
+    float floatValue = static_cast<float>(round(fromValue));
     if (static_cast<int64>(floatValue) == fromValue) {
       return GlobalTables::GetFpConstTable().GetOrCreateFloatConst(floatValue);
     }

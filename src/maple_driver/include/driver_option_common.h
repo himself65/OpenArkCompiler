@@ -48,7 +48,7 @@ class MapleDriverOptionBase {
       usageVec.push_back(usage[i]);
     }
   }
-  std::vector<mapleOption::Descriptor> &GetUsageVec() {
+  const std::vector<mapleOption::Descriptor> &GetUsageVec() const {
     return usageVec;
   }
   MapleDriverOptionBase() = default;

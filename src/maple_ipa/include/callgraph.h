@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -20,7 +20,7 @@
 #include "mir_builder.h"
 namespace maple {
 class SCCNode;
-typedef enum {
+enum CallType {
   kCallTypeInvalid,
   kCallTypeCall,
   kCallTypeVirtualCall,
@@ -33,7 +33,7 @@ typedef enum {
   kCallTypeCustomCall,
   kCallTypePolymorphicCall,
   kCallTypeFakeThreadStartRun
-} CallType;
+};
 
 struct NodeComparator {
   bool operator()(const MIRFunction *lhs, const MIRFunction *rhs) const {
@@ -135,7 +135,7 @@ class CGNode {
     return mirFunc;
   }
 
-  void AddCallsite(CallInfo*, CGNode*);
+  void AddCallsite(CallInfo&, CGNode*);
   void AddCallsite(CallInfo*, MapleSet<CGNode*, Comparator<CGNode>>*);
   void RemoveCallsite(const CallInfo*, CGNode*);
 
@@ -159,7 +159,7 @@ class CGNode {
     return mirFunc ? mirFunc->GetName() : GlobalTables::GetStrTable().GetStringFromStrIdx(GStrIdx(0));
   }
 
-  void AddCandsForCallNode(const KlassHierarchy *kh);
+  void AddCandsForCallNode(const KlassHierarchy &kh);
   void AddVCallCandidate(MIRFunction *func) {
     vcallCands.push_back(func);
   }
@@ -190,7 +190,7 @@ class CGNode {
     return callerSet.size();
   }
 
-  bool IsCalleeOf(CGNode *func);
+  bool IsCalleeOf(CGNode *func) const;
   void IncrStmtCount() {
     ++stmtCount;
   }
@@ -307,7 +307,7 @@ class SCCNode {
   MapleVector<CGNode*> cgNodes;
   MapleSet<SCCNode*, Comparator<SCCNode>> callerScc;
   MapleSet<SCCNode*, Comparator<SCCNode>> calleeScc;
-  explicit SCCNode(uint32 index, MapleAllocator *alloc)
+  SCCNode(uint32 index, MapleAllocator *alloc)
       : id(index),
         cgNodes(alloc->Adapter()),
         callerScc(alloc->Adapter()),
@@ -319,9 +319,9 @@ class SCCNode {
     cgNodes.push_back(cgn);
   }
 
-  void Dump();
-  void DumpCycle();
-  void Verify();
+  void Dump() const;
+  void DumpCycle() const;
+  void Verify() const;
   void Setup();
   const MapleVector<CGNode*> &GetCGNodes() const {
     return cgNodes;
@@ -371,15 +371,15 @@ class CallGraph : public AnalysisResult {
     return nodesMap;
   }
 
-  void HandleBody(MIRFunction*, BlockNode*, CGNode*, uint32);
-  void AddCallGraphNode(MIRFunction*);
-  void DumpToFile(bool dumpall = true);
+  void HandleBody(MIRFunction&, BlockNode&, CGNode&, uint32);
+  void AddCallGraphNode(MIRFunction&);
+  void DumpToFile(bool dumpAll = true);
   void Dump() const;
   CGNode *GetCGNode(MIRFunction *func) const;
   CGNode *GetCGNode(PUIdx puIdx) const;
   SCCNode *GetSCCNode(MIRFunction *func) const;
   bool IsRootNode(MIRFunction *func) const;
-  void UpdateCallGraphNode(CGNode *node);
+  void UpdateCallGraphNode(CGNode &node);
   void RecomputeSCC();
   MIRFunction *CurFunction() const {
     return mirModule->CurFunction();
@@ -390,7 +390,7 @@ class CallGraph : public AnalysisResult {
   }
 
   /* iterator */
-  typedef MapleMap<MIRFunction*, CGNode*>::iterator iterator;
+  using iterator = MapleMap<MIRFunction*, CGNode*>::iterator;
   iterator Begin() {
     return nodesMap.begin();
   }
@@ -407,12 +407,12 @@ class CallGraph : public AnalysisResult {
     return (*it).second;
   }
 
-  void DelNode(CGNode *node);
+  void DelNode(CGNode &node);
   bool debug_flag;
   bool debug_scc;
   void BuildSCC();
-  void VerifySCC();
-  void BuildSCCDFS(CGNode *caller, unsigned int &visitIndex, std::vector<SCCNode*> &sccNodes,
+  void VerifySCC() const;
+  void BuildSCCDFS(CGNode &caller, unsigned int &visitIndex, std::vector<SCCNode*> &sccNodes,
                    std::vector<CGNode*> &cgNodes, std::vector<uint32> &visitedOrder,
                    std::vector<uint32> &lowestOrder, std::vector<bool> &inStack,
                    std::vector<uint32> &visitStack);
@@ -439,13 +439,14 @@ class CallGraph : public AnalysisResult {
   }
 
   void FindRootNodes();
-  void SCCTopologicalSort(std::vector<SCCNode*> &sccNodes);
-  void SetCompilationFunclist();
+  void SCCTopologicalSort(const std::vector<SCCNode*> &sccNodes);
+  void SetCompilationFunclist() const;
   void IncrNodesCount(CGNode *cgnode, BaseNode *bn);
 };
+
 class DoCallGraph : public ModulePhase {
  public:
-  DoCallGraph(ModulePhaseID id) : ModulePhase(id) {}
+  explicit DoCallGraph(ModulePhaseID id) : ModulePhase(id) {}
 
   AnalysisResult *Run(MIRModule *module, ModuleResultMgr *m) override;
   std::string PhaseName() const override {
@@ -454,6 +455,7 @@ class DoCallGraph : public ModulePhase {
 
   virtual ~DoCallGraph(){};
 };
+
 class IPODevirtulize {
  public:
   IPODevirtulize(MIRModule *m, MemPool *memPool, KlassHierarchy *kh)
@@ -470,9 +472,10 @@ class IPODevirtulize {
   MIRBuilder *mirBuilder;
   KlassHierarchy *klassh;
   bool debugFlag;
-  void SearchDefInMemberMethods(const Klass *klass);
-  void SearchDefInClinit(const Klass *klass);
+  void SearchDefInMemberMethods(const Klass &klass);
+  void SearchDefInClinit(const Klass &klass);
 };
+
 class DoIPODevirtulize : public ModulePhase {
  public:
   explicit DoIPODevirtulize(ModulePhaseID id) : ModulePhase(id) {}
@@ -484,6 +487,5 @@ class DoIPODevirtulize : public ModulePhase {
 
   virtual ~DoIPODevirtulize(){};
 };
-
 }  // namespace maple
 #endif  // MAPLE_IPA_INCLUDE_CALLGRAPH_H

@@ -95,7 +95,7 @@ void SSAEPre::GenerateSaveRealOcc(MeRealOcc &realOcc) {
       (realOcc.GetMeStmt()->GetOpnd(0) == realOcc.GetMeExpr())) {
     isRHSOfDassign = true;
     // setting flag so delegaterc will skip
-    static_cast<DassignMeStmt*>(realOcc.GetMeStmt())->GetVarLHS()->SetNoDelegateRC(1);
+    static_cast<DassignMeStmt*>(realOcc.GetMeStmt())->GetVarLHS()->SetNoDelegateRC(true);
   }
   if (!workCand->NeedLocalRefVar() || isRHSOfDassign || GetPlacementRCOn()) {
     if (regOrVar->GetMeOp() == kMeOpReg) {

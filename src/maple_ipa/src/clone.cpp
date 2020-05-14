@@ -28,24 +28,24 @@ ReplaceRetIgnored::ReplaceRetIgnored(MemPool *memPool)
 }
 
 bool ReplaceRetIgnored::RealShouldReplaceWithVoidFunc(Opcode op, size_t nRetSize,
-    const MIRFunction *calleeFunc) const {
-  MIRType *returnType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(calleeFunc->GetReturnTyIdx());
+    const MIRFunction &calleeFunc) const {
+  MIRType *returnType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(calleeFunc.GetReturnTyIdx());
   return nRetSize == 0 && (op == OP_virtualcallassigned || op == OP_callassigned || op == OP_superclasscallassigned) &&
-         !calleeFunc->IsNative() && (returnType->GetKind() == kTypePointer) && (returnType->GetPrimType() == PTY_ref);
+         !calleeFunc.IsNative() && (returnType->GetKind() == kTypePointer) && (returnType->GetPrimType() == PTY_ref);
 }
 
-bool ReplaceRetIgnored::ShouldReplaceWithVoidFunc(const CallMeStmt *stmt, const MIRFunction *calleeFunc) const {
-  return RealShouldReplaceWithVoidFunc(stmt->GetOp(), stmt->MustDefListSize(), calleeFunc);
+bool ReplaceRetIgnored::ShouldReplaceWithVoidFunc(const CallMeStmt &stmt, const MIRFunction &calleeFunc) const {
+  return RealShouldReplaceWithVoidFunc(stmt.GetOp(), stmt.MustDefListSize(), calleeFunc);
 }
 
-std::string ReplaceRetIgnored::GenerateNewBaseName(const MIRFunction *originalFunc) {
-  return std::string(originalFunc->GetBaseFuncName()).append(kVoidRetSuffix);
+std::string ReplaceRetIgnored::GenerateNewBaseName(const MIRFunction &originalFunc) const {
+  return std::string(originalFunc.GetBaseFuncName()).append(kVoidRetSuffix);
 }
 
-std::string ReplaceRetIgnored::GenerateNewFullName(const MIRFunction *originalFunc) {
-  const std::string &oldSignature = originalFunc->GetSignature();
+std::string ReplaceRetIgnored::GenerateNewFullName(const MIRFunction &originalFunc) const {
+  const std::string &oldSignature = originalFunc.GetSignature();
   auto retPos = oldSignature.find("_29");
-  return std::string(originalFunc->GetBaseClassName())
+  return std::string(originalFunc.GetBaseClassName())
       .append(NameMangler::kNameSplitterStr)
       .append(GenerateNewBaseName(originalFunc))
       .append(NameMangler::kNameSplitterStr)
@@ -53,102 +53,102 @@ std::string ReplaceRetIgnored::GenerateNewFullName(const MIRFunction *originalFu
       .append("V");
 }
 
-MIRSymbol *Clone::CloneLocalSymbol(const MIRSymbol *oldSym, MIRFunction *newFunc) {
-  MemPool *newMP = newFunc->GetDataMemPool();
-  MIRSymbol *newSym = newMP->New<MIRSymbol>(*oldSym);
-  if (oldSym->GetSKind() == kStConst) {
-    newSym->SetKonst(oldSym->GetKonst()->Clone(*newMP));
-  } else if (oldSym->GetSKind() == kStPreg) {
-    newSym->SetPreg(newMP->New<MIRPreg>(*oldSym->GetPreg()));
-  } else if (oldSym->GetSKind() == kStFunc) {
-    CHECK_FATAL(false, "%s has unexpected local func symbol", oldSym->GetName().c_str());
+MIRSymbol *Clone::CloneLocalSymbol(const MIRSymbol &oldSym, const MIRFunction &newFunc) {
+  MemPool *newMP = newFunc.GetDataMemPool();
+  MIRSymbol *newSym = newMP->New<MIRSymbol>(oldSym);
+  if (oldSym.GetSKind() == kStConst) {
+    newSym->SetKonst(oldSym.GetKonst()->Clone(*newMP));
+  } else if (oldSym.GetSKind() == kStPreg) {
+    newSym->SetPreg(newMP->New<MIRPreg>(*oldSym.GetPreg()));
+  } else if (oldSym.GetSKind() == kStFunc) {
+    CHECK_FATAL(false, "%s has unexpected local func symbol", oldSym.GetName().c_str());
   }
   return newSym;
 }
 
-void Clone::CloneSymbols(MIRFunction *newFunc, const MIRFunction *oldFunc) {
-  size_t symTabSize = oldFunc->GetSymbolTabSize();
-  for (size_t i = oldFunc->GetFormalCount() + 1; i < symTabSize; ++i) {
-    MIRSymbol *sym = oldFunc->GetSymbolTabItem(i);
+void Clone::CloneSymbols(MIRFunction &newFunc, const MIRFunction &oldFunc) {
+  size_t symTabSize = oldFunc.GetSymbolTabSize();
+  for (size_t i = oldFunc.GetFormalCount() + 1; i < symTabSize; ++i) {
+    MIRSymbol *sym = oldFunc.GetSymbolTabItem(i);
     if (sym == nullptr) {
       continue;
     }
-    MIRSymbol *newSym = CloneLocalSymbol(sym, newFunc);
-    if (!newFunc->GetSymTab()->AddStOutside(newSym)) {
-      CHECK_FATAL(false, "%s already existed in func %s", sym->GetName().c_str(), newFunc->GetName().c_str());
+    MIRSymbol *newSym = CloneLocalSymbol(*sym, newFunc);
+    if (!newFunc.GetSymTab()->AddStOutside(newSym)) {
+      CHECK_FATAL(false, "%s already existed in func %s", sym->GetName().c_str(), newFunc.GetName().c_str());
     }
   }
 }
 
-void Clone::CloneLabels(MIRFunction *newFunc, const MIRFunction *oldFunc) {
-  size_t labelTabSize = oldFunc->GetLabelTab()->GetLabelTableSize();
+void Clone::CloneLabels(MIRFunction &newFunc, const MIRFunction &oldFunc) {
+  size_t labelTabSize = oldFunc.GetLabelTab()->GetLabelTableSize();
   for (size_t i = 1; i < labelTabSize; ++i) {
-    const std::string &labelName = oldFunc->GetLabelTabItem(i);
+    const std::string &labelName = oldFunc.GetLabelTabItem(i);
     GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(labelName);
-    newFunc->GetLabelTab()->AddLabel(strIdx);
+    newFunc.GetLabelTab()->AddLabel(strIdx);
   }
 }
 
 // Clone a function
-MIRFunction *Clone::CloneFunction(MIRFunction *originalFunction, const std::string &newBaseFuncName,
-    MIRType *returnType) {
-  MapleAllocator cgAlloc(originalFunction->GetCodeMempool());
+MIRFunction *Clone::CloneFunction(MIRFunction &originalFunction, const std::string &newBaseFuncName,
+    MIRType *returnType) const {
+  MapleAllocator cgAlloc(originalFunction.GetCodeMempool());
   ArgVector argument(cgAlloc.Adapter());
   CloneArgument(originalFunction, argument);
   MIRType *retType = returnType;
   if (retType == nullptr) {
-    retType = originalFunction->GetReturnType();
+    retType = originalFunction.GetReturnType();
   }
-  std::string fullName = originalFunction->GetBaseClassName();
-  const std::string &signature = originalFunction->GetSignature();
+  std::string fullName = originalFunction.GetBaseClassName();
+  const std::string &signature = originalFunction.GetSignature();
   fullName = fullName.append(NameMangler::kNameSplitterStr)
                      .append(newBaseFuncName)
                      .append(NameMangler::kNameSplitterStr)
                      .append(signature);
   MIRFunction *newFunc =
-      dexBuilder.CreateFunction(fullName, *retType, argument, false, originalFunction->GetBody() != nullptr);
+      dexBuilder.CreateFunction(fullName, *retType, argument, false, originalFunction.GetBody() != nullptr);
   CHECK_FATAL(newFunc != nullptr, "create cloned function failed");
   dexBuilder.GetMirModule().AddFunction(newFunc);
-  Klass *klass = kh->GetKlassFromName(originalFunction->GetBaseClassName());
+  Klass *klass = kh->GetKlassFromName(originalFunction.GetBaseClassName());
   CHECK_FATAL(klass != nullptr, "getklass failed");
   klass->AddMethod(newFunc);
-  newFunc->SetClassTyIdx(originalFunction->GetClassTyIdx());
+  newFunc->SetClassTyIdx(originalFunction.GetClassTyIdx());
   MIRClassType *classType = klass->GetMIRClassType();
   classType->GetMethods().push_back(
       MethodPair(newFunc->GetStIdx(), TyidxFuncAttrPair(newFunc->GetFuncSymbol()->GetTyIdx(),
-          originalFunction->GetFuncAttrs())));
-  newFunc->SetFlag(originalFunction->GetFlag());
-  newFunc->SetSrcPosition(originalFunction->GetSrcPosition());
-  newFunc->SetFuncAttrs(originalFunction->GetFuncAttrs());
+          originalFunction.GetFuncAttrs())));
+  newFunc->SetFlag(originalFunction.GetFlag());
+  newFunc->SetSrcPosition(originalFunction.GetSrcPosition());
+  newFunc->SetFuncAttrs(originalFunction.GetFuncAttrs());
   newFunc->SetBaseClassFuncNames(GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(fullName));
-  if (originalFunction->GetBody()) {
+  if (originalFunction.GetBody() != nullptr) {
     CopyFuncInfo(originalFunction, newFunc);
     MIRFunction *originalCurrFunction = dexBuilder.GetCurrentFunctionNotNull();
     dexBuilder.SetCurrentFunction(*newFunc);
     newFunc->SetBody(
-        originalFunction->GetBody()->CloneTree(originalFunction->GetModule()->GetCurFuncCodeMPAllocator()));
-    CloneSymbols(newFunc, originalFunction);
-    CloneLabels(newFunc, originalFunction);
+        originalFunction.GetBody()->CloneTree(originalFunction.GetModule()->GetCurFuncCodeMPAllocator()));
+    CloneSymbols(*newFunc, originalFunction);
+    CloneLabels(*newFunc, originalFunction);
     dexBuilder.SetCurrentFunction(*originalCurrFunction);
   }
   return newFunc;
 }
 
-void Clone::CloneArgument(MIRFunction *originalFunction, ArgVector &argument) const {
-  for (size_t i = 0; i < originalFunction->GetFormalCount(); ++i) {
-    argument.push_back(ArgPair(originalFunction->GetFormal(i)->GetName(), originalFunction->GetNthParamType(i)));
+void Clone::CloneArgument(MIRFunction &originalFunction, ArgVector &argument) const {
+  for (size_t i = 0; i < originalFunction.GetFormalCount(); ++i) {
+    argument.push_back(ArgPair(originalFunction.GetFormal(i)->GetName(), originalFunction.GetNthParamType(i)));
   }
 }
 
-void Clone::CopyFuncInfo(const MIRFunction *originalFunction, MIRFunction *newFunc) const {
+void Clone::CopyFuncInfo(const MIRFunction &originalFunction, MIRFunction *newFunc) const {
   auto funcNameIdx = newFunc->GetBaseFuncNameStrIdx();
   auto fullNameIdx = newFunc->GetNameStrIdx();
   auto classNameIdx = newFunc->GetBaseClassNameStrIdx();
   auto metaFullNameIdx = dexBuilder.GetOrCreateStringIndex(kFullNameStr);
   auto metaClassNameIdx = dexBuilder.GetOrCreateStringIndex(kClassNameStr);
   auto metaFuncNameIdx = dexBuilder.GetOrCreateStringIndex(kFuncNameStr);
-  const MIRInfoVector &fnInfo = originalFunction->GetInfoVector();
-  const MapleVector<bool> &infoIsString = originalFunction->InfoIsString();
+  const MIRInfoVector &fnInfo = originalFunction.GetInfoVector();
+  const MapleVector<bool> &infoIsString = originalFunction.InfoIsString();
   size_t size = fnInfo.size();
   for (size_t i = 0; i < size; ++i) {
     if (fnInfo[i].first == metaFullNameIdx) {
@@ -180,8 +180,8 @@ void Clone::UpdateFuncInfo(MIRFunction *newFunc) {
 // @param original_function The original function to be cloned
 // @param dexBuilder A helper object
 // @return Pointer to the newly cloned function
-MIRFunction *Clone::CloneFunctionNoReturn(MIRFunction *originalFunction) {
-  const std::string oldSignature = originalFunction->GetSignature();
+MIRFunction *Clone::CloneFunctionNoReturn(MIRFunction &originalFunction) {
+  const std::string oldSignature = originalFunction.GetSignature();
   const std::string kNewMethodBaseName = replaceRetIgnored->GenerateNewBaseName(originalFunction);
   MIRFunction *originalCurrFunction = dexBuilder.GetMirModule().CurFunction();
   MIRFunction *newFunction =
@@ -190,7 +190,7 @@ MIRFunction *Clone::CloneFunctionNoReturn(MIRFunction *originalFunction) {
   // new stmt should be located in the newFunction->codemp, dexBuilder.CreateStmtReturn will use CurFunction().codemp
   // to assign space for the new stmt. So we set it correctly here.
   dexBuilder.GetMirModule().SetCurFunction(newFunction);
-  if (originalFunction->GetBody()) {
+  if (originalFunction.GetBody() != nullptr) {
     auto *body = newFunction->GetBody();
     for (auto &stmt : body->GetStmtNodes()) {
       if (stmt.GetOpCode() == OP_return) {
@@ -211,17 +211,17 @@ MIRFunction *Clone::CloneFunctionNoReturn(MIRFunction *originalFunction) {
   return newFunction;
 }
 
-void Clone::UpdateReturnVoidIfPossible(CallMeStmt *callMeStmt, const MIRFunction *targetFunc) {
-  if (callMeStmt) {
-    if (replaceRetIgnored->ShouldReplaceWithVoidFunc(callMeStmt, targetFunc)) {
-      if (replaceRetIgnored->IsInCloneList(targetFunc->GetName())) {
-        std::string funcNameReturnVoid = replaceRetIgnored->GenerateNewFullName(targetFunc);
-        GStrIdx gStrIdx = GlobalTables::GetStrTable().GetStrIdxFromName(funcNameReturnVoid);
-        MIRFunction *funcReturnVoid = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(gStrIdx)->GetFunction();
-        CHECK_FATAL(nullptr != funcReturnVoid, "target function not found at ssadevirtual");
-        callMeStmt->SetPUIdx(funcReturnVoid->GetPuidx());
-      }
-    }
+void Clone::UpdateReturnVoidIfPossible(CallMeStmt *callMeStmt, const MIRFunction &targetFunc) {
+  if (callMeStmt == nullptr) {
+    return;
+  }
+  if (replaceRetIgnored->ShouldReplaceWithVoidFunc(*callMeStmt, targetFunc) &&
+      replaceRetIgnored->IsInCloneList(targetFunc.GetName())) {
+    std::string funcNameReturnVoid = replaceRetIgnored->GenerateNewFullName(targetFunc);
+    GStrIdx gStrIdx = GlobalTables::GetStrTable().GetStrIdxFromName(funcNameReturnVoid);
+    MIRFunction *funcReturnVoid = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(gStrIdx)->GetFunction();
+    CHECK_FATAL(funcReturnVoid != nullptr, "target function not found at ssadevirtual");
+    callMeStmt->SetPUIdx(funcReturnVoid->GetPuidx());
   }
 }
 
@@ -230,11 +230,11 @@ void Clone::DoClone() {
   for (const MapleString &funcName : *(replaceRetIgnored->GetTobeClonedFuncNames())) {
     GStrIdx gStrIdx = GlobalTables::GetStrTable().GetStrIdxFromName(std::string(funcName.c_str()));
     MIRSymbol *symbol = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(gStrIdx);
-    if (nullptr != symbol) {
+    if (symbol != nullptr) {
       GStrIdx gStrIdxOfFunc = GlobalTables::GetStrTable().GetStrIdxFromName(std::string(funcName.c_str()));
       MIRFunction *oriFunc = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(gStrIdxOfFunc)->GetFunction();
       mirModule->SetCurFunction(oriFunc);
-      clonedNewFuncMap.insert(CloneFunctionNoReturn(oriFunc)->GetName());
+      clonedNewFuncMap.insert(CloneFunctionNoReturn(*oriFunc)->GetName());
     }
   }
 }
@@ -248,5 +248,4 @@ AnalysisResult *DoClone::Run(MIRModule *module, ModuleResultMgr *mrm) {
   mrm->AddResult(GetPhaseID(), *module, *clone);
   return clone;
 }
-
 }  // namespace maple

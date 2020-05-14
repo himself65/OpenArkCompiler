@@ -139,7 +139,7 @@ void MeSSALPre::GetIterDomFrontier(const BB &bb, MapleSet<uint32> &dfSet, std::v
   visitedMap[bb.GetBBId()] = true;
   CHECK_FATAL(bb.GetBBId() < dom->GetDomFrontierSize(), "index out of range in MeSSALPre::GetIterDomFrontier");
   for (BBId frontierBBId : dom->GetDomFrontier(bb.GetBBId())) {
-    dfSet.insert(dom->GetDtDfnItem(frontierBBId));
+    (void)dfSet.insert(dom->GetDtDfnItem(frontierBBId));
     BB *frontierBB = GetBB(frontierBBId);
     GetIterDomFrontier(*frontierBB, dfSet, visitedMap);
   }
@@ -184,7 +184,7 @@ void MeSSALPre::BuildEntryLHSOcc4Formals() const {
   VarMeExpr *zeroVersion = irMap->GetOrCreateZeroVersionVarMeExpr(*ost);
   MeRealOcc *occ = ssaPreMemPool->New<MeRealOcc>(nullptr, 0, zeroVersion);
   auto occIt = workCand->GetRealOccs().begin();
-  workCand->GetRealOccs().insert(occIt, occ);  // insert at beginning
+  (void)workCand->GetRealOccs().insert(occIt, occ);  // insert at beginning
   occ->SetIsLHS(true);
   occ->SetIsFormalAtEntry(true);
   occ->SetBB(*func->GetFirstBB());
@@ -199,7 +199,7 @@ void MeSSALPre::BuildWorkListLHSOcc(MeStmt &meStmt, int32 seqStmt) {
     CHECK_NULL_FATAL(lhs);
     const OriginalSt *ost = ssaTab->GetSymbolOriginalStFromID(lhs->GetOStIdx());
     if (ost->IsFormal()) {
-      assignedFormals.insert(ost->GetIndex());
+      (void)assignedFormals.insert(ost->GetIndex());
     }
     CHECK_NULL_FATAL(meStmt.GetRHS());
     if (ost->IsVolatile()) {
@@ -220,7 +220,7 @@ void MeSSALPre::BuildWorkListLHSOcc(MeStmt &meStmt, int32 seqStmt) {
     auto *theLHS = static_cast<VarMeExpr*>(mustDefList->front().GetLHS());
     const OriginalSt *ost = ssaTab->GetOriginalStFromID(theLHS->GetOStIdx());
     if (ost->IsFormal()) {
-      assignedFormals.insert(ost->GetIndex());
+      (void)assignedFormals.insert(ost->GetIndex());
     }
     if (theLHS->GetPrimType() == PTY_ref && !MeOption::rcLowering) {
       return;
@@ -249,7 +249,7 @@ void MeSSALPre::CreateMembarOccAtCatch(BB &bb) {
     auto *varMeExpr = static_cast<VarMeExpr*>(workCand->GetTheMeExpr());
     const OriginalSt *ost = ssaTab->GetOriginalStFromID(varMeExpr->GetOStIdx());
     if (ost->IsFormal()) {
-      assignedFormals.insert(ost->GetIndex());
+      (void)assignedFormals.insert(ost->GetIndex());
     }
   }
 }
@@ -343,7 +343,7 @@ void MeSSALPre::BuildWorkList() {
 void MeSSALPre::FindLoopHeadBBs(const IdentifyLoops &identLoops) {
   for (LoopDesc *mapleLoop : identLoops.GetMeLoops()) {
     if (mapleLoop->head != nullptr) {
-      loopHeadBBs.insert(mapleLoop->head->GetBBId());
+      (void)loopHeadBBs.insert(mapleLoop->head->GetBBId());
     }
   }
 }

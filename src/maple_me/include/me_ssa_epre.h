@@ -72,10 +72,10 @@ class MeSSAEPre : public SSAEPre {
   void EnterCandsForSSAUpdate(OStIdx ostIdx, const BB &bb) override {
     if (candsForSSAUpdate.find(ostIdx) == candsForSSAUpdate.end()) {
       MapleSet<BBId> *bbSet = ssaPreMemPool->New<MapleSet<BBId>>(std::less<BBId>(), ssaPreAllocator.Adapter());
-      bbSet->insert(bb.GetBBId());
+      (void)bbSet->insert(bb.GetBBId());
       candsForSSAUpdate[ostIdx] = bbSet;
     } else {
-      candsForSSAUpdate[ostIdx]->insert(bb.GetBBId());
+      (void)candsForSSAUpdate[ostIdx]->insert(bb.GetBBId());
     }
   }
 };

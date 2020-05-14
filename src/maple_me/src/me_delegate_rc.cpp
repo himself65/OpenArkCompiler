@@ -648,7 +648,7 @@ void DelegateRC::RenameDelegatedRefVarUses(MeStmt &meStmt, MeExpr &meExpr) {
     auto &varMeExpr = static_cast<VarMeExpr&>(meExpr);
     auto it = refVar2RegMap.find(&varMeExpr);
     if (it != refVar2RegMap.end()) {
-      irMap.ReplaceMeExprStmt(meStmt, varMeExpr, *it->second);
+      (void)irMap.ReplaceMeExprStmt(meStmt, varMeExpr, *it->second);
     }
   }
 }
@@ -714,7 +714,7 @@ std::set<OStIdx> DelegateRC::RenameAndGetLiveLocalRefVar() {
         CHECK_FATAL(lhs != nullptr, "null ptr check");
         const OriginalSt *ost = ssaTab.GetOriginalStFromID(lhs->GetOStIdx());
         if (ost->IsLocal() && !ost->IsFormal() && !ost->IsIgnoreRC() && lhs->GetPrimType() == PTY_ref) {
-          liveLocalrefvars.insert(lhs->GetOStIdx());
+          (void)liveLocalrefvars.insert(lhs->GetOStIdx());
         }
       } else if (kOpcodeInfo.IsCallAssigned(stmt.GetOp())) {
         MapleVector<MustDefMeNode> *mustdefList = stmt.GetMustDefList();
@@ -727,7 +727,7 @@ std::set<OStIdx> DelegateRC::RenameAndGetLiveLocalRefVar() {
           auto *varLhs = static_cast<VarMeExpr*>(theLhs);
           const OriginalSt *ost = ssaTab.GetOriginalStFromID(varLhs->GetOStIdx());
           if (ost->IsLocal() && !ost->IsFormal() && !ost->IsIgnoreRC()) {
-            liveLocalrefvars.insert(varLhs->GetOStIdx());
+            (void)liveLocalrefvars.insert(varLhs->GetOStIdx());
           }
         }
       }
