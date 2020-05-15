@@ -32,7 +32,6 @@ constexpr maple::uint64 kFromUndefIndexMask = 0x4000000000000000;
 constexpr maple::uint64 kFromDefIndexMask = 0x2000000000000000;
 #endif
 
-
 } // namespace
 
 // MUIDReplacement
@@ -55,6 +54,14 @@ MUIDReplacement::MUIDReplacement(MIRModule &mod, KlassHierarchy *kh, bool dump)
 MIRSymbol *MUIDReplacement::GetSymbolFromName(const std::string &name) {
   GStrIdx gStrIdx = GlobalTables::GetStrTable().GetStrIdxFromName(name);
   return GlobalTables::GetGsymTable().GetSymbolFromStrIdx(gStrIdx);
+}
+
+ConstvalNode* MUIDReplacement::GetConstvalNode(int64 index) {
+#ifdef USE_ARM32_MACRO
+  return builder->CreateIntConst(index, PTY_i32);
+#else
+  return builder->CreateIntConst(index, PTY_i64);
+#endif
 }
 
 void MUIDReplacement::DumpMUIDFile(bool isFunc) {
@@ -1028,7 +1035,7 @@ void MUIDReplacement::ReplaceDirectInvokeOrAddroffunc(MIRFunction &currentFunc, 
     index = FindIndexFromUndefTable(*(calleeFunc->GetFuncSymbol()), true);
     arrayType = static_cast<MIRArrayType*>(funcUndefTabSym->GetType());
   }
-  ConstvalNode *offsetExpr = builder->CreateIntConst(index, PTY_i64);
+  ConstvalNode *offsetExpr = GetConstvalNode(index);
   ArrayNode *arrayExpr = builder->CreateExprArray(*arrayType, baseExpr, offsetExpr);
   arrayExpr->SetBoundsCheck(false);
   MIRType *elemType = arrayType->GetElemType();
@@ -1094,7 +1101,7 @@ void MUIDReplacement::ReplaceDassign(MIRFunction &currentFunc, const DassignNode
     index = FindIndexFromUndefTable(*mirSymbol, false);
     arrayType = static_cast<MIRArrayType*>(dataUndefTabSym->GetType());
   }
-  ConstvalNode *offsetExpr = builder->CreateIntConst(index, PTY_i64);
+  ConstvalNode *offsetExpr = GetConstvalNode(index);
   ArrayNode *arrayExpr = builder->CreateExprArray(*arrayType, baseExpr, offsetExpr);
   arrayExpr->SetBoundsCheck(false);
   MIRType *elemType = arrayType->GetElemType();
@@ -1227,7 +1234,7 @@ BaseNode *MUIDReplacement::ReplaceDread(MIRFunction &currentFunc, const StmtNode
     index = FindIndexFromUndefTable(*mirSymbol, false);
     arrayType = static_cast<MIRArrayType*>(dataUndefTabSym->GetType());
   }
-  ConstvalNode *offsetExpr = builder->CreateIntConst(index, PTY_i64);
+  ConstvalNode *offsetExpr = GetConstvalNode(index);
   ArrayNode *arrayExpr = builder->CreateExprArray(*arrayType, baseExpr, offsetExpr);
   arrayExpr->SetBoundsCheck(false);
   MIRType *elemType = arrayType->GetElemType();

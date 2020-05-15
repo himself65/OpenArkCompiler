@@ -91,7 +91,7 @@ void VtableImpl::ProcessFunc(MIRFunction *func) {
 #undef DEF_MIR_INTRINSIC
       };
       const std::string funcName = calleefunc->GetName();
-      if (Options::O2 && intrisicsList.find(funcName) != intrisicsList.end() &&
+      if (!Options::buildApp && Options::O2 && intrisicsList.find(funcName) != intrisicsList.end() &&
           funcName != "Ljava_2Flang_2FString_3B_7CindexOf_7C_28Ljava_2Flang_2FString_3B_29I") {
         if (Intrinsify(*func, *cnode)) {
           stmt = next;

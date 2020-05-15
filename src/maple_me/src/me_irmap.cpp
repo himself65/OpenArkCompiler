@@ -62,9 +62,9 @@ void MeIRMap::EmitBBStmts(BB &bb, BlockNode &curblk) {
   auto &meStmts = bb.GetMeStmts();
   for (auto &meStmt : meStmts) {
     if (!GetNeedAnotherPass()) {
-      if (meStmt.GetOp() == OP_interfaceicall || meStmt.GetOp() == OP_virtualicall) {
+      if (meStmt.GetOp() == OP_interfaceicall) {
         meStmt.SetOp(OP_icall);
-      } else if (meStmt.GetOp() == OP_interfaceicallassigned || meStmt.GetOp() == OP_virtualicallassigned) {
+      } else if (meStmt.GetOp() == OP_interfaceicallassigned) {
         meStmt.SetOp(OP_icallassigned);
       }
     }

@@ -114,6 +114,7 @@ class MUIDReplacement : public FuncOptimizeImpl {
   void CollectFuncAndDataFromFuncList();
   void GenerateCompilerVersionNum();
   static MIRSymbol *GetSymbolFromName(const std::string &name);
+  ConstvalNode* GetConstvalNode(int64 index);
   // The following sets are for internal uses. Sorting order does not matter here.
   std::unordered_set<MIRFunction*> funcDefSet;
   std::unordered_set<MIRFunction*> funcUndefSet;

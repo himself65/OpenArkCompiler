@@ -126,6 +126,7 @@ void SSAEPre::GenerateSaveRealOcc(MeRealOcc &realOcc) {
   realOcc.SetSavedExpr(*regOrVar);
 }
 
+
 void SSAEPre::GenerateReloadRealOcc(MeRealOcc &realOcc) {
   CHECK_FATAL(!realOcc.IsLHS(), "GenerateReloadRealOcc: cannot be LHS occurrence");
   MeExpr *regOrVar = nullptr;
