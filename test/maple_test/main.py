@@ -73,7 +73,7 @@ def main():
                 "testsuite",
                 name="{} {}".format(task.name, test),
                 tests=str(sum(task.result.values())),
-                failures=str(task.result["FAIL"]),
+                failures=str(task.result[FAIL]),
             )
 
             for task_set in task.task_set:
@@ -88,10 +88,11 @@ def main():
                         skipped = ElementTree.SubElement(case_node, "skipped")
                         skipped.text = "No valid command statement was found."
                     elif case.result[0] == FAIL:
-                        print(vars(case))
                         failure = ElementTree.SubElement(case_node, "failure")
                         failure.text = "Path: {}\n".format(case.case_path)
-                        failure.text += "Log Path: {}{}{}.log\n".format(log_dir, OS_SEP, case.name)
+                        failure.text += "Log Path: {}{}{}.log\n".format(
+                            log_dir, OS_SEP, case.name
+                        )
                         failure.text += "Work Dir: {}\n".format(case.work_dir)
                         failure.text += "Execute commands:\n"
                         for cmd in case.commands:
