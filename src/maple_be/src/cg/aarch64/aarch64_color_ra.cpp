@@ -2549,7 +2549,7 @@ MemOperand *GraphColorRegAllocator::GetSpillOrReuseMem(LiveRange &lr, uint32 reg
     } else {
 #endif  /* REUSE_SPILLMEM */
       regno_t baseRegNO;
-      if (!isDef) {
+      if (!isDef && lr.GetRegNO() == kRegTyInt) {
         /* src will use its' spill reg as baseRegister when offset out-of-range
          * add x16, x29, #max-offset  //out-of-range
          * ldr x16, [x16, #offset]    //reload

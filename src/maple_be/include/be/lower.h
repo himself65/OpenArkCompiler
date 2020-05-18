@@ -21,6 +21,7 @@
 #include <cstddef>
 #include "intrinsics.h"  /* For IntrinDesc. This includes 'intrinsic_op.h' as well */
 #include "becommon.h"
+#include "cg.h"
 #include "bbt.h"
 /* MapleIR headers. */
 #include "mir_nodes.h"
@@ -156,6 +157,7 @@ class CGLowerer {
   void LowerEntry(MIRFunction &func);
 
   StmtNode *LowerCall(CallNode &call, StmtNode *&stmt, BlockNode &block);
+  void SplitCallArg(CallNode &callNode, BaseNode *newOpnd, size_t i, BlockNode &newBlk);
 
   void CleanupBranches(MIRFunction &func) const;
 

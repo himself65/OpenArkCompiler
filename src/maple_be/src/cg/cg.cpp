@@ -65,7 +65,7 @@ void CG::GenExtraTypeMetadata(const std::string &classListFileName, const std::s
   } else {
     /* Visit listed classes. */
     std::ifstream inFile(classListFileName);
-    ASSERT(inFile.is_open(), "Failed to open file: %s", classListFileName.c_str());
+    CHECK_FATAL(inFile.is_open(), "Failed to open file: %s", classListFileName.c_str());
     std::string str;
 
     /* check each class name first and expose all unknown classes */

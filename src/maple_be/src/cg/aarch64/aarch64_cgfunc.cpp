@@ -3949,6 +3949,10 @@ void AArch64CGFunc::GenerateYieldpoint(BB &bb) {
   bb.AppendInsn(yieldPoint);
 }
 
+Operand &AArch64CGFunc::ProcessReturnReg(PrimType primType) {
+  return GetTargetRetOperand(primType);
+}
+
 Operand &AArch64CGFunc::GetTargetRetOperand(PrimType primType) {
   uint32 bitSize = GetPrimTypeBitSize(primType) < k32BitSize ? k32BitSize : GetPrimTypeBitSize(primType);
   return GetOrCreatePhysicalRegisterOperand(IsPrimitiveFloat(primType) ? S0 : R0, bitSize,

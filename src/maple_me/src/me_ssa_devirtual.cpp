@@ -25,11 +25,14 @@ AnalysisResult *MeDoSSADevirtual::Run(MeFunction *func, MeFuncResultMgr *frm, Mo
   CHECK_FATAL(mrm != nullptr, "Needs module result manager for ipa");
   auto *kh = static_cast<KlassHierarchy*>(mrm->GetAnalysisResult(MoPhase_CHA, &func->GetMIRModule()));
   ASSERT(kh != nullptr, "KlassHierarchy has problem");
-  Clone *clone = nullptr;
+  MeSSADevirtual meSSADevirtual(*NewMemPool(), func->GetMIRModule(), *func, *irMap, *kh, *dom);
   if (Options::O2) {
-    clone = static_cast<Clone*>(mrm->GetAnalysisResult(MoPhase_CLONE, &func->GetMIRModule()));
+    Clone *clone = static_cast<Clone*>(mrm->GetAnalysisResult(MoPhase_CLONE, &func->GetMIRModule()));
+    if (clone != nullptr) {
+      meSSADevirtual.SetClone(*clone);
+    }
   }
-  MeSSADevirtual meSSADevirtual(*NewMemPool(), func->GetMIRModule(), *func, *irMap, *kh, *dom, *clone);
+
   if (DEBUGFUNC(func)) {
     SSADevirtual::debug = true;
   }

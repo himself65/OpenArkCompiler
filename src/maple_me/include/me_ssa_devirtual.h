@@ -21,6 +21,8 @@
 namespace maple {
 class MeSSADevirtual : public SSADevirtual {
  public:
+  MeSSADevirtual(MemPool &memPool, MIRModule &mod, MeFunction &func, IRMap &irMap, KlassHierarchy &kh, Dominance &dom)
+      : SSADevirtual(memPool, mod, irMap, kh, dom, func.GetAllBBs().size()), func(&func) {}
   MeSSADevirtual(MemPool &memPool, MIRModule &mod, MeFunction &func, IRMap &irMap, KlassHierarchy &kh, Dominance &dom,
                  Clone &clone)
       : SSADevirtual(memPool, mod, irMap, kh, dom, func.GetAllBBs().size(), clone), func(&func) {}

@@ -175,19 +175,21 @@ void Emitter::EmitFileInfo(const std::string &fileName) {
   Emit("\t.arm\n");
   Emit("\t.fpu vfpv4\n");
   Emit("\t.arch armv7-a\n");
-  Emit("\t.eabi_attribute 15, 1\n");
-  Emit("\t.eabi_attribute 16, 1\n");
-  Emit("\t.eabi_attribute 17, 2\n");
-  Emit("\t.eabi_attribute 28, 1\n");
-  Emit("\t.eabi_attribute 20, 1\n");
-  Emit("\t.eabi_attribute 21, 1\n");
-  Emit("\t.eabi_attribute 23, 3\n");
-  Emit("\t.eabi_attribute 24, 1\n");
-  Emit("\t.eabi_attribute 25, 1\n");
-  Emit("\t.eabi_attribute 26, 2\n");
+  Emit("\t.eabi_attribute Tag_ABI_PCS_RW_data, 1\n");
+  Emit("\t.eabi_attribute Tag_ABI_PCS_RO_data, 1\n");
+  Emit("\t.eabi_attribute Tag_ABI_PCS_GOT_use, 2\n");
+  if (CGOptions::GetABIType() == CGOptions::kABIHard) {
+    Emit("\t.eabi_attribute Tag_ABI_VFP_args, 1\n");
+  }
+  Emit("\t.eabi_attribute Tag_ABI_FP_denormal, 1\n");
+  Emit("\t.eabi_attribute Tag_ABI_FP_exceptions, 1\n");
+  Emit("\t.eabi_attribute Tag_ABI_FP_number_model, 3\n");
+  Emit("\t.eabi_attribute Tag_ABI_align_needed, 1\n");
+  Emit("\t.eabi_attribute Tag_ABI_align_preserved, 1\n");
+  Emit("\t.eabi_attribute Tag_ABI_enum_size, 2\n");
   Emit("\t.eabi_attribute 30, 6\n");
-  Emit("\t.eabi_attribute 34, 1\n");
-  Emit("\t.eabi_attribute 18, 4\n");
+  Emit("\t.eabi_attribute Tag_CPU_unaligned_access, 1\n");
+  Emit("\t.eabi_attribute Tag_ABI_PCS_wchar_t, 4\n");
 #endif /* TARGARM32 */
 }
 

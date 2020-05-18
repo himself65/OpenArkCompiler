@@ -31,6 +31,8 @@ constexpr int kJniTypeMapleCriticalNative = 1;
 // Equal to real critical native, func will be set critical attribute.
 // In theory it's incorrect because passing incorrect args. Ex. Linux.getuid
 constexpr int kJniTypeCriticalNative = 2;
+// Equal to critical native but need to pass env and classObj. Ex. Character.isDigitImpl
+constexpr int kJniTypeCriticalNeedArg = 3;
 constexpr int kInvalidCode = 0x01;
 
 class NativeFuncProperty {
@@ -71,7 +73,7 @@ class NativeStubFuncGeneration : public FuncOptimizeImpl {
   void GenerateRegisteredNativeFuncCall(MIRFunction &func, const MIRFunction &nativeFunc, MapleVector<BaseNode*> &args,
                                         const MIRSymbol *ret);
   StmtNode *CreateNativeWrapperCallNode(MIRFunction &func, BaseNode *funcPtr, MapleVector<BaseNode*> &args,
-                                        const MIRSymbol *ret);
+                                        const MIRSymbol *ret, bool needIndirectCall);
   void GenerateNativeWrapperFuncCall(MIRFunction &func, const MIRFunction &nativeFunc, MapleVector<BaseNode*> &args,
                                      const MIRSymbol *ret);
   void GenerateHelperFuncDecl();
