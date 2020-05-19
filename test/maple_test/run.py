@@ -133,6 +133,7 @@ def run_commands(
     else:
         run_command = run_command_linux
 
+    commands_result = []
     for command in commands:
         start = timeit.default_timer()
 
@@ -144,12 +145,19 @@ def run_commands(
         logger.debug(
             "Run time: {:.2}, remain time: {:.2}".format(run_time, remain_time)
         )
+        command_result = {}
+        command_result["cmd"] = command
+        command_result["return_code"] = return_code
+        command_result["stdout"] = com_out
+        command_result["stderr"] = com_err
+        commands_result.append(command_result)
         if return_code != 0:
-            result = (FAIL, (return_code, command, com_err))
+            result = (FAIL, commands_result)
             err = "Failed, Log file at: {}.log".format(log_config[0].get("dir") / name)
             logger.error(err)
             break
-
+        else:
+            result = (PASS, commands_result)
     if result[0] == PASS:
         logger.debug("Task executed successfully")
     handlers = logger.handlers[:]
