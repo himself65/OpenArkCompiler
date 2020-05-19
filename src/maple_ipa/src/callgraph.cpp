@@ -1036,7 +1036,7 @@ void DoDevirtual(const Klass &klass, const KlassHierarchy &klassh) {
                     targetKlass = klassh.GetKlassFromTyIdx(retType->GetTypeIndex());
                   }
                   if (targetKlass == nullptr && !isCalleeScalar) {
-                    CHECK_FATAL(targetKlass != nullptr, "null ptr check");
+                    CHECK_FATAL(false, "null ptr check");
                   }
                   Klass *curRetKlass = nullptr;
                   bool isCurrVtabScalar = false;

@@ -501,7 +501,6 @@ void ParmLocator::ProcessPtyAggWhenLocateNextParm(MIRType &mirType, PLocInfo &pL
     if (pLoc.reg0 == kRinvalid) {
       nextGeneralRegNO = AArch64Abi::kNumIntParmRegs;
     }
-    ASSERT(AArch64Abi::kNumIntParmRegs == 8, "AArch64Abi::kNumIntParmRegs should be set to 8");
   } else {
     /*
      * 0 returned from ClassifyAggregate(). This means the whole data

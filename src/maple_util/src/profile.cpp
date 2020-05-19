@@ -242,7 +242,7 @@ bool Profile::DeCompress(const std::string &path, const std::string &dexNameInne
   if (!in) {
     if (errno != ENOENT && errno != EACCES) {
       LogInfo::MapleLogger() << "WARN: DeCompress("
-                << "), failed to open " << path << ", " << strerror(errno) << '\n';;
+                << "), failed to open " << path << '\n';;
     }
     res = false;
     return res;
@@ -255,14 +255,14 @@ bool Profile::DeCompress(const std::string &path, const std::string &dexNameInne
   char *buf = reinterpret_cast<char*>(bufVector.data());
   if (!in.read(buf, byteCount)) {
     LogInfo::MapleLogger() << "WARN: DeCompress("
-              << "), failed to read all data for " << path << ", " << strerror(errno) << '\n';;
+              << "), failed to read all data for " << path << '\n';;
     res = false;
     in.close();
     return res;
   }
   if (byteCount < sizeof(Header)) {
     LogInfo::MapleLogger() << "WARN: DeCompress("
-              << "), failed, read no data for " << path << ", " << strerror(errno) << '\n';;
+              << "), failed, read no data for " << path << '\n';;
     res = false;
     in.close();
     return res;
