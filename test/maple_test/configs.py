@@ -68,6 +68,12 @@ def parse_args():
         help="Store test result as xunit xml format at <file>",
     )
     test_framework_parser.add_argument(
+        "--json_output",
+        metavar="<file>",
+        type=complete_path,
+        help="Store test result as josn format at <file>",
+    )
+    test_framework_parser.add_argument(
         "--debug", action="store_true", help="keep test temp file"
     )
     test_framework_parser.add_argument(
@@ -182,6 +188,7 @@ def parse_args():
         "retry": args.retry,
         "output": args.output,
         "xml_output": args.xml_output,
+        "json_output": args.json_output,
         "debug": args.debug,
         "fail_exit": args.fail_exit,
         "print_type": args.print_type,

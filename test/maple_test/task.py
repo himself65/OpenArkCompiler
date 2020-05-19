@@ -102,10 +102,6 @@ class TestSuiteTask:
     def __init__(self, test_path, cfg_path, running_config, cli_running_config=None):
         if cli_running_config is None:
             cli_running_config = {}
-        user_test_list = cli_running_config.get("test_list")
-        user_config_set = cli_running_config.get("user_config_set")
-        user_config = cli_running_config.get("user_config")
-        user_env = cli_running_config.get("user_env")
 
         self.path = complete_path(test_path)
         self.cfg_path = cfg_path
@@ -373,6 +369,50 @@ class TestSuiteTask:
         summary += "\n" + brief_summary
         summary += "-" * 120
         return summary
+
+    def gen_result(self):
+        from maple_test.test import Result
+
+        results = []
+        for task_name in self.task_set:
+            for task in self.task_set[task_name]:
+                result = Result(
+                    task.case_path,
+                    self.cfg_path.parent.name,
+                    task_name,
+                    task.result[0],
+                    task.commands,
+                    task.result[-1],
+                )
+                results.append(result)
+        return results
+
+    def gen_xml_result(self, root):
+        from xml.etree import ElementTree
+
+        suite = ElementTree.SubElement(
+            root,
+            "testsuite",
+            failures=str(self.result[FAIL]),
+            tests=str(sum(self.result.values())),
+            name="{} {}".format(self.name, self.path),
+        )
+        for result in sorted(self.gen_result()):
+            result.gen_xml(suite)
+        return suite
+
+    def gen_json_result(self):
+        json_result = OrderedDict()
+        json_result["name"] = "{} {}".format(self.name, self.path)
+        json_result["total"] = sum(self.result.values())
+        for status in self.result:
+            if status == NOT_RUN:
+                continue
+            json_result[status] = self.result[status]
+        json_result["tests"] = []
+        for result in sorted(self.gen_result()):
+            json_result["tests"].append(result.gen_json_result())
+        return json_result
 
 
 class SingleTask:

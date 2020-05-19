@@ -39,6 +39,7 @@ def main():
     cli_running_config = test_suite_config.get("cli_running_config")
 
     root = ElementTree.Element("testsuites")
+    json_result = []
 
     retry = configs.get_val("retry")
     result = ""
@@ -67,40 +68,8 @@ def main():
                 test_result = task.gen_summary([])
             failed |= test_failed
             result += test_result
-
-            suite = ElementTree.SubElement(
-                root,
-                "testsuite",
-                name="{} {}".format(task.name, test),
-                tests=str(sum(task.result.values())),
-                failures=str(task.result[FAIL]),
-            )
-
-            for task_set in task.task_set:
-                for case in sorted(task.task_set[task_set], key=lambda x: x.case_path):
-                    case_node = ElementTree.SubElement(
-                        suite,
-                        "testcase",
-                        name=str(case.case_path),
-                        classname="{}.{}".format(task.cfg_path.parent.name, task_set),
-                    )
-                    if case.result[0] == UNRESOLVED:
-                        skipped = ElementTree.SubElement(case_node, "skipped")
-                        skipped.text = "No valid command statement was found."
-                    elif case.result[0] == FAIL:
-                        failure = ElementTree.SubElement(case_node, "failure")
-                        failure.text = "Path: {}\n".format(case.case_path)
-                        failure.text += "Log Path: {}{}{}.log\n".format(
-                            log_dir, OS_SEP, case.name
-                        )
-                        failure.text += "Work Dir: {}\n".format(case.work_dir)
-                        failure.text += "Execute commands:\n"
-                        for cmd in case.commands:
-                            failure.text += "EXEC: " + cmd + "\n"
-                        failure.text += "-----" + "\n"
-                        failure.text += "Failed command: " + case.result[-1][1] + "\n"
-                        failure.text += "Return Code: " + str(case.result[-1][0]) + "\n"
-                        failure.text += "Stderr: \n" + case.result[-1][-1]
+            task.gen_xml_result(root)
+            json_result.append(task.gen_json_result())
         else:
             logger.info("Test path: {} does not exist, please check".format(test))
 
@@ -108,6 +77,13 @@ def main():
     if xml_output:
         with xml_output.open("w") as f:
             f.write(ElementTree.tostring(root).decode("utf-8"))
+
+    json_output = configs.get_val("json_output")
+    if json_output:
+        with json_output.open("w") as f:
+            import json
+
+            json.dump(json_result, f, indent=2)
 
     output = configs.get_val("output")
     if output:

@@ -15,10 +15,12 @@
 # See the Mulan PSL v1 for more details.
 #
 import shlex
+from functools import total_ordering
 
 from maple_test.utils import PASS, EXEC_FLAG, EXPECT_FLAG, DEPENDENCE_FLAG
 from maple_test.utils import read_file
 from maple_test.utils import split_comment, filter_line
+from maple_test.utils import FAIL, UNRESOLVED
 
 
 class Case:
@@ -118,3 +120,56 @@ def read_list(path):
     if not case_list:
         case_list = {"*"}
     return case_list, exclude_case_list
+
+
+@total_ordering
+class Result:
+    def __init__(self, case, task, cfg, status, commands, commands_result):
+        self.case = case
+        self.task = task
+        self.cfg = cfg
+        self.time = None
+        self.status = status
+        self.commands = commands
+        self.commands_result = commands_result
+
+    def gen_xml(self, root):
+        from xml.etree import ElementTree
+
+        case = ElementTree.SubElement(
+            root,
+            "testcase",
+            name=str(self.case),
+            classname="{}.{}".format(self.task, self.cfg),
+        )
+
+        if self.status == FAIL:
+            failure = ElementTree.SubElement(case, "failure")
+            failure.text = "List of commands:\n"
+            for cmd in self.commands:
+                failure.text += "EXEC: {}\n".format(cmd)
+            failure.text += "----\n"
+            failure.text += self.command_result_to_text(self.commands_result[-1])
+        elif self.status == UNRESOLVED:
+            skipped = ElementTree.SubElement(case, "skipped")
+            skipped.text = "No valid command statement was found."
+
+    def command_result_to_text(self, result):
+        text = "EXEC: {}\n".format(result.get("cmd"))
+        text += "Return code: {}\n".format(result.get("return_code"))
+        text += "Stdout: \n{}\n".format(result.get("stdout"))
+        text += "Stderr: \n{}\n".format(result.get("stderr"))
+        return text
+
+    def gen_json_result(self):
+        from collections import OrderedDict
+
+        result = OrderedDict()
+        result["name"] = "{}/{} :: {}".format(self.task, self.case, self.cfg)
+        result["result"] = self.status
+        result["commands"] = self.commands
+        result["output"] = self.commands_result
+        return result
+
+    def __lt__(self, other):
+        return self.case < other.case
