@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -17,25 +17,25 @@
 #include <algorithm>
 
 namespace maple {
-void Retype::ReplaceRetypeExpr(const BaseNode *expr) {
-  if (expr->NumOpnds() == 0) {
+void Retype::ReplaceRetypeExpr(const BaseNode &expr) const {
+  if (expr.NumOpnds() == 0) {
     return;
   }
-  for (size_t i = 0; i < expr->NumOpnds(); i++) {
-    BaseNode *opnd = expr->Opnd(i);
+  for (size_t i = 0; i < expr.NumOpnds(); ++i) {
+    BaseNode *opnd = expr.Opnd(i);
     if (opnd->GetOpCode() == OP_retype) {
       opnd->SetOpnd(opnd->Opnd(0), i);
       continue;
     }
-    ReplaceRetypeExpr(opnd);
+    ReplaceRetypeExpr(*opnd);
   }
 }
 
-void Retype::Retypestmt(MIRFunction *func) {
-  if (func->IsEmpty()) {
+void Retype::RetypeStmt(MIRFunction &func) const {
+  if (func.IsEmpty()) {
     return;
   }
-  for (auto &stmt : func->GetBody()->GetStmtNodes()) {
+  for (auto &stmt : func.GetBody()->GetStmtNodes()) {
     if (stmt.GetOpCode() == OP_comment) {
       continue;
     }
@@ -45,19 +45,18 @@ void Retype::Retypestmt(MIRFunction *func) {
         stmt.SetOpnd(opnd->Opnd(0), i);
         continue;
       } else {
-        ReplaceRetypeExpr(opnd);
+        ReplaceRetypeExpr(*opnd);
       }
     }
   }
 }
 
-void Retype::DoRetype() {
-  for (MIRFunction *func : mirmodule->GetFunctionList()) {
+void Retype::DoRetype() const {
+  for (MIRFunction *func : mirModule->GetFunctionList()) {
     if (func->IsEmpty()) {
       continue;
     }
-    Retypestmt(func);
+    RetypeStmt(*func);
   }
 }
-
 }  // namespace maple

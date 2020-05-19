@@ -307,6 +307,7 @@ class AArch64CGFunc : public CGFunc {
 
   Operand &GetOrCreateFuncNameOpnd(const MIRSymbol &symbol);
   void GenerateYieldpoint(BB &bb) override;
+  Operand &ProcessReturnReg(PrimType primType) override;
   void GenerateCleanupCode(BB &bb) override;
   bool NeedCleanup() override;
   void GenerateCleanupCodeForExtEpilog(BB &bb) override;

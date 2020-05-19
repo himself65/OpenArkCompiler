@@ -62,7 +62,7 @@ void SchedInfoGen::EmitArchDef() {
 void SchedInfoGen::EmitUnitIdDef() {
   MDClass unitClass = GetSpecificClass("Unit");
   outFile.open(GetOFileDir() + "/mplad_unit_id.def", std::ios::out);
-  ASSERT(outFile.is_open(), "Failed to open output file: %s/mplad_unit_id.def", GetOFileDir().c_str());
+  CHECK_FATAL(outFile.is_open(), "Failed to open output file: %s/mplad_unit_id.def", GetOFileDir().c_str());
   EmitFileHead(outFile, "function unit ID");
   for (auto unitIdx : unitClass.GetchildObjNames()) {
     outFile << "  " << curKeeper.GetStrByIdx(unitIdx) << ",\n";
@@ -73,7 +73,7 @@ void SchedInfoGen::EmitUnitIdDef() {
 void SchedInfoGen::EmitUnitNameDef() {
   MDClass unitClass = GetSpecificClass("Unit");
   outFile.open(GetOFileDir() + "/mplad_unit_name.def", std::ios::out);
-  ASSERT(outFile.is_open(), "Failed to open output file: %s/mplad_unit_name.def", GetOFileDir().c_str());
+  CHECK_FATAL(outFile.is_open(), "Failed to open output file: %s/mplad_unit_name.def", GetOFileDir().c_str());
   EmitFileHead(outFile, "function unit name");
   for (auto unitIdx : unitClass.GetchildObjNames()) {
     std::string unitPureName = curKeeper.GetStrByIdx(unitIdx);
@@ -89,7 +89,7 @@ void SchedInfoGen::EmitUnitNameDef() {
 void SchedInfoGen::EmitUnitDef() {
   MDClass unitClass = GetSpecificClass("Unit");
   outFile.open(GetOFileDir() + "/mplad_unit_define.def", std::ios::out);
-  ASSERT(outFile.is_open(), "Failed to open output file: %s/mplad_unit_define.def", GetOFileDir().c_str());
+  CHECK_FATAL(outFile.is_open(), "Failed to open output file: %s/mplad_unit_define.def", GetOFileDir().c_str());
   EmitFileHead(outFile, "function units ");
   bool isUnitNumDef = false;
   for (size_t i = 0; i < unitClass.GetMDObjectSize(); ++i) {
@@ -138,7 +138,7 @@ void SchedInfoGen::EmitUnitDef() {
 void SchedInfoGen::EmitLatencyDef() {
   MDClass resvClass = GetSpecificClass("Reservation");
   outFile.open(GetOFileDir() + "/mplad_latency_type.def", std::ios::out);
-  ASSERT(outFile.is_open(), "Failed to open output file: %s/mplad_latency_type.def", GetOFileDir().c_str());
+  CHECK_FATAL(outFile.is_open(), "Failed to open output file: %s/mplad_latency_type.def", GetOFileDir().c_str());
   EmitFileHead(outFile, " latency type definition ");
   for (auto resvIdx : resvClass.GetchildObjNames()) {
     outFile << "  " << curKeeper.GetStrByIdx(resvIdx) << ",\n";
@@ -149,8 +149,8 @@ void SchedInfoGen::EmitLatencyDef() {
 void SchedInfoGen::EmitResvDef() {
   MDClass resvClass = GetSpecificClass("Reservation");
   outFile.open(GetOFileDir() + "/mplad_reservation_define.def", std::ios::out);
-  ASSERT(outFile.is_open(), "Failed to open output file: %s/mplad_reservation_define.def",
-         GetOFileDir().c_str());
+  CHECK_FATAL(outFile.is_open(), "Failed to open output file: %s/mplad_reservation_define.def",
+              GetOFileDir().c_str());
   EmitFileHead(outFile, "reservations");
   for (size_t i = 0; i < resvClass.GetMDObjectSize(); ++i) {
     const MDObject &singleResv = resvClass.GetOneMDObject(i);

@@ -26,14 +26,14 @@ class SSADevirtual {
  public:
   static bool debug;
   SSADevirtual(MemPool &memPool, MIRModule &currMod, IRMap &irMap, KlassHierarchy &currKh,
-               Dominance &currDom, size_t bbVecSize, Clone &currClone)
+               Dominance &currDom, size_t bbVecSize)
       : devirtualAlloc(&memPool),
         mod(&currMod),
         irMap(&irMap),
         kh(&currKh),
         dom(&currDom),
         bbVisited(bbVecSize, false, devirtualAlloc.Adapter()),
-        clone(&currClone),
+        clone(nullptr),
         retTy(kNotSeen),
         inferredRetTyIdx(0),
         totalVirtualCalls(0),
@@ -41,11 +41,19 @@ class SSADevirtual {
         totalInterfaceCalls(0),
         optedInterfaceCalls(0),
         nullCheckCount(0) {}
+  SSADevirtual(MemPool &memPool, MIRModule &currMod, IRMap &irMap, KlassHierarchy &currKh,
+               Dominance &currDom, size_t bbVecSize, Clone &currClone)
+      : SSADevirtual(memPool, currMod, irMap, currKh, currDom, bbVecSize) {
+    clone = &currClone;
+  }
 
   virtual ~SSADevirtual() = default;
 
   void Perform(BB &entryBB);
 
+  void SetClone(Clone &currClone) {
+    clone = &currClone;
+  }
  protected:
   virtual MIRFunction *GetMIRFunction() const {
     return nullptr;

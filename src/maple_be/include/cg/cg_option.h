@@ -81,8 +81,7 @@ class CGOptions : public MapleDriverOptionBase {
   enum ABIType : uint8 {
     kABIHard,
     kABISoft,
-    kABISoftFP,
-    kABIUndef
+    kABISoftFP
   };
   /*
    * The default CG option values are:

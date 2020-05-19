@@ -221,6 +221,7 @@ class CGFunc {
   virtual Operand *SelectLazyLoad(Operand &opnd0, PrimType primType) = 0;
   virtual Operand *SelectLazyLoadStatic(MIRSymbol &st, int64 offset, PrimType primType) = 0;
   virtual void GenerateYieldpoint(BB &bb) = 0;
+  virtual Operand &ProcessReturnReg(PrimType primType) = 0;
 
   virtual Operand &GetOrCreateRflag() = 0;
   virtual const Operand *GetRflag() const = 0;

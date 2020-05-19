@@ -219,6 +219,10 @@ class CGNode {
     return callees.size();
   }
 
+  const MapleMap<CallInfo*, MapleSet<CGNode*, Comparator<CGNode>>*, Comparator<CallInfo>> &GetCallee() const {
+    return callees;
+  }
+
   MapleMap<CallInfo*, MapleSet<CGNode*, Comparator<CGNode>>*, Comparator<CallInfo>> &GetCallee() {
     return callees;
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -21,21 +21,20 @@
 namespace maple {
 class Retype {
  public:
-  MIRModule *mirmodule;
+  MIRModule *mirModule;
   MapleAllocator allocator;
-  MIRBuilder &dexbuilder;
+  MIRBuilder &dexBuilder;
   KlassHierarchy *klassh;
 
  public:
-  explicit Retype(MIRModule *mod, MemPool *memPool, MIRBuilder &builder, KlassHierarchy *k)
-      : mirmodule(mod), allocator(memPool), dexbuilder(builder), klassh(k) {}
+  Retype(MIRModule *mod, MemPool *memPool, MIRBuilder &builder, KlassHierarchy *k)
+      : mirModule(mod), allocator(memPool), dexBuilder(builder), klassh(k) {}
 
   virtual ~Retype() {}
 
-  void ReplaceRetypeExpr(const BaseNode *opnd);
-  void Retypestmt(MIRFunction *func);
-  void DoRetype();
+  void ReplaceRetypeExpr(const BaseNode &opnd) const;
+  void RetypeStmt(MIRFunction &func) const;
+  void DoRetype() const;
 };
-
 }  // namespace maple
 #endif  // MAPLE_IPA_INCLUDE_RETYPE_H

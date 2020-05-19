@@ -1060,6 +1060,28 @@ MIRType *CGLowerer::GetArrayNodeType(BaseNode &baseNode) {
   return arrayElemType;
 }
 
+void CGLowerer::SplitCallArg(CallNode &callNode, BaseNode *newOpnd, size_t i, BlockNode &newBlk) {
+  if (newOpnd->GetOpCode() != OP_regread && newOpnd->GetOpCode() != OP_constval &&
+      newOpnd->GetOpCode() != OP_dread && newOpnd->GetOpCode() != OP_addrof &&
+      newOpnd->GetOpCode() != OP_iaddrof && newOpnd->GetOpCode() != OP_constval &&
+      newOpnd->GetOpCode() != OP_conststr && newOpnd->GetOpCode() != OP_conststr16) {
+    if (CGOptions::GetInstance().GetOptimizeLevel() == CGOptions::kLevel0) {
+      MIRType *type = GlobalTables::GetTypeTable().GetPrimType(newOpnd->GetPrimType());
+      MIRSymbol *ret = CreateNewRetVar(*type, kIntrnRetValPrefix);
+      DassignNode *dassignNode = mirBuilder->CreateStmtDassign(*ret, 0, newOpnd);
+      newBlk.AddStatement(dassignNode);
+      callNode.SetOpnd(mirBuilder->CreateExprDread(*type, 0, *ret), i);
+    } else {
+      PregIdx pregIdx = mirModule.CurFunction()->GetPregTab()->CreatePreg(newOpnd->GetPrimType());
+      RegassignNode *temp = mirBuilder->CreateStmtRegassign(newOpnd->GetPrimType(), pregIdx, newOpnd);
+      newBlk.AddStatement(temp);
+      callNode.SetOpnd(mirBuilder->CreateExprRegread(newOpnd->GetPrimType(), pregIdx), i);
+    }
+  } else {
+    callNode.SetOpnd(newOpnd, i);
+  }
+}
+
 StmtNode *CGLowerer::LowerCall(CallNode &callNode, StmtNode *&nextStmt, BlockNode &newBlk) {
   /*
    * nextStmt in-out
@@ -1079,7 +1101,12 @@ StmtNode *CGLowerer::LowerCall(CallNode &callNode, StmtNode *&nextStmt, BlockNod
   }
 
   for (size_t i = 0; i < callNode.GetNopndSize(); ++i) {
-    callNode.SetOpnd(LowerExpr(callNode, *callNode.GetNopndAt(i), newBlk), i);
+    BaseNode *newOpnd = LowerExpr(callNode, *callNode.GetNopndAt(i), newBlk);
+#if TARGAARCH64
+    callNode.SetOpnd(newOpnd, i);
+#else
+    SplitCallArg(callNode, newOpnd, i, newBlk);
+#endif
   }
 
   if (isArrayStore && checkLoadStore) {
@@ -1800,8 +1827,8 @@ StmtNode *CGLowerer::LowerIntrinsicopDassign(const DassignNode &dsNode,
  */
 BaseNode *CGLowerer::LowerJavascriptIntrinsicop(IntrinsicopNode &intrinNode, const IntrinDesc &desc) {
   MIRSymbol *st = GlobalTables::GetGsymTable().CreateSymbol(kScopeGlobal);
-  const std::string name = desc.name;
   CHECK_FATAL(desc.name != nullptr, "desc's name should not be nullptr");
+  const std::string name = desc.name;
   st->SetNameStrIdx(name);
   st->SetStorageClass(kScText);
   st->SetSKind(kStFunc);

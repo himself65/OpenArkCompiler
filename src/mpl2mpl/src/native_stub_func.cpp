@@ -40,7 +40,7 @@ NativeStubFuncGeneration::NativeStubFuncGeneration(MIRModule &mod, KlassHierarch
 
 MIRFunction &NativeStubFuncGeneration::GetOrCreateDefaultNativeFunc(MIRFunction &stubFunc) {
   // If only support dynamic binding , we won't stub any weak symbols
-  if (Options::regNativeDynamicOnly && !(IsStaticBindingListMode() && IsStaticBindingMethod(stubFunc.GetName()))) {
+  if (Options::regNativeDynamicOnly && !(IsStaticBindingMethod(stubFunc.GetName()))) {
     return stubFunc;
   }
   std::string nativeName = NameMangler::NativeJavaName(stubFunc.GetName().c_str());
@@ -209,7 +209,8 @@ void NativeStubFuncGeneration::ProcessFunc(MIRFunction *func) {
   if (Options::regNativeFunc) {
     GenerateRegisteredNativeFuncCall(*func, nativeFunc, allocCallArgs, stubFuncRet);
   }
-  if (func->GetReturnType()->GetPrimType() == PTY_ref) {
+  bool needDecodeRef = (func->GetReturnType()->GetPrimType() == PTY_ref);
+  if (needDecodeRef) {
     MapleVector<BaseNode*> decodeArgs(func->GetCodeMempoolAllocator().Adapter());
     CHECK_FATAL(stubFuncRet != nullptr, "stubfunc_ret is nullptr");
     decodeArgs.push_back(builder->CreateExprDread(*stubFuncRet));
@@ -240,8 +241,9 @@ void NativeStubFuncGeneration::ProcessFunc(MIRFunction *func) {
     NaryStmtNode *syncExit = builder->CreateStmtNary(OP_syncexit, monitor);
     func->GetBody()->AddStatement(syncExit);
   }
+  bool needCheckExceptionCall = needNativeCall;
   // check pending exception just before leaving this stub frame except for critical natives
-  if (needNativeCall) {
+  if (needCheckExceptionCall) {
     MapleVector<BaseNode*> getExceptArgs(func->GetCodeMempoolAllocator().Adapter());
     CallNode *callGetExceptFunc = builder->CreateStmtCallAssigned(MRTCheckThrowPendingExceptionFunc->GetPuidx(),
                                                                   getExceptArgs, nullptr, OP_callassigned);
@@ -334,6 +336,7 @@ void NativeStubFuncGeneration::GenerateRegisteredNativeFuncCall(MIRFunction &fun
   NativeFuncProperty funcProperty;
   bool needCheckThrowPendingExceptionFunc =
       (!func.GetAttr(FUNCATTR_critical_native)) && (funcProperty.jniType == kJniTypeNormal);
+  bool needIndirectCall = func.GetAttr(FUNCATTR_critical_native) || func.GetAttr(FUNCATTR_fast_native);
   // Get current native method function ptr from reg_jni_func_tab slot
   // and define a temp register for shift operation
   auto funcPtrAndOpPreg = func.GetPregTab()->CreatePreg(PTY_ptr);
@@ -359,13 +362,13 @@ void NativeStubFuncGeneration::GenerateRegisteredNativeFuncCall(MIRFunction &fun
     // default mode, it will generate a weak function, which can link in compile time
     // dynamic only mode, it won't generate any weak function, it can't link in compile time
     // static binding list mode, it will generate a weak function only in list
-    if (IsStaticBindingListMode() && IsStaticBindingMethod(func.GetName())) {
+    if (IsStaticBindingMethod(func.GetName())) {
       // Get current func_ptr (strong/weak symbol address)
       auto *nativeFuncAddr = builder->CreateExprAddroffunc(nativeFunc.GetPuidx());
       funcptrAssign = builder->CreateStmtRegassign(PTY_ptr, funcptrPreg, nativeFuncAddr);
       func.GetBody()->AddStatement(funcptrAssign);
       // Define wrapper function call
-      StmtNode *wrapperCall = CreateNativeWrapperCallNode(func, readFuncPtr, args, ret);
+      StmtNode *wrapperCall = CreateNativeWrapperCallNode(func, readFuncPtr, args, ret, needIndirectCall);
       func.GetBody()->AddStatement(wrapperCall);
     } else if (!Options::regNativeDynamicOnly) { // Qemu
       func.GetBody()->AddStatement(funcptrAssign);
@@ -405,10 +408,10 @@ void NativeStubFuncGeneration::GenerateRegisteredNativeFuncCall(MIRFunction &fun
       ifStmt->GetThenPart()->AddStatement(subIfStmt);
       if (needCheckThrowPendingExceptionFunc) {
         func.GetBody()->AddStatement(ifStmt);
-        StmtNode *wrapperCall = CreateNativeWrapperCallNode(func, readFuncPtr, args, ret);
+        StmtNode *wrapperCall = CreateNativeWrapperCallNode(func, readFuncPtr, args, ret, needIndirectCall);
         func.GetBody()->AddStatement(wrapperCall);
       } else {
-        StmtNode *wrapperCall = CreateNativeWrapperCallNode(func, readFuncPtr, args, ret);
+        StmtNode *wrapperCall = CreateNativeWrapperCallNode(func, readFuncPtr, args, ret, needIndirectCall);
         ifStmt->GetThenPart()->AddStatement(wrapperCall);
         MapleVector<BaseNode*> opnds(builder->GetCurrentFuncCodeMpAllocator()->Adapter());
         CallNode *callGetExceptFunc = builder->CreateStmtCallAssigned(MRTCheckThrowPendingExceptionFunc->GetPuidx(),
@@ -417,7 +420,7 @@ void NativeStubFuncGeneration::GenerateRegisteredNativeFuncCall(MIRFunction &fun
         auto *elseBlock = func.GetCodeMempool()->New<BlockNode>();
         ifStmt->SetElsePart(elseBlock);
         ifStmt->SetNumOpnds(kOperandNumTernary);
-        wrapperCall = CreateNativeWrapperCallNode(func, readFuncPtr, args, ret);
+        wrapperCall = CreateNativeWrapperCallNode(func, readFuncPtr, args, ret, needIndirectCall);
         elseBlock->AddStatement(wrapperCall);
         func.GetBody()->AddStatement(ifStmt);
       }
@@ -439,7 +442,7 @@ void NativeStubFuncGeneration::GenerateRegisteredNativeFuncCall(MIRFunction &fun
         ifStmt->GetThenPart()->AddStatement(callGetExceptFunc);
       }
       func.GetBody()->AddStatement(ifStmt);
-      StmtNode *wrapperCall = CreateNativeWrapperCallNode(func, readFuncPtr, args, ret);
+      StmtNode *wrapperCall = CreateNativeWrapperCallNode(func, readFuncPtr, args, ret, needIndirectCall);
       func.GetBody()->AddStatement(wrapperCall);
     }
     return;
@@ -473,7 +476,8 @@ void NativeStubFuncGeneration::GenerateRegisteredNativeFuncCall(MIRFunction &fun
 }
 
 StmtNode *NativeStubFuncGeneration::CreateNativeWrapperCallNode(MIRFunction &func, BaseNode *funcPtr,
-                                                                MapleVector<BaseNode*> &args, const MIRSymbol *ret) {
+                                                                MapleVector<BaseNode*> &args, const MIRSymbol *ret,
+                                                                bool needIndirectCall) {
 #ifdef USE_ARM32_MACRO
   constexpr size_t numOfArgs = 4;
 #else
@@ -486,7 +490,7 @@ StmtNode *NativeStubFuncGeneration::CreateNativeWrapperCallNode(MIRFunction &fun
   // Push back all original args.
   wrapperArgs.insert(wrapperArgs.end(), args.begin(), args.end());
   // Do not need native wrapper for fast natives or critical natives.
-  if (func.GetAttr(FUNCATTR_fast_native) || func.GetAttr(FUNCATTR_critical_native)) {
+  if (needIndirectCall) {
     if (ret == nullptr) {
       return builder->CreateStmtIcall(wrapperArgs);
     } else {
@@ -586,6 +590,9 @@ void NativeStubFuncGeneration::InitStaticBindingMethodList() {
 }
 
 bool NativeStubFuncGeneration::IsStaticBindingMethod(const std::string &methodName) const {
+  if (!IsStaticBindingListMode()) {
+    return false;
+  }
   return (staticBindingMethodsSet.find(NameMangler::NativeJavaName(methodName.c_str())) !=
           staticBindingMethodsSet.end());
 }

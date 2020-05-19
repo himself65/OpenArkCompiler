@@ -79,11 +79,13 @@ MOperator PickLdStInsn(bool isLoad, uint32 bitSize, PrimType primType, AArch64is
   ASSERT(primType != PTY_ref, "should have been lowered");
   ASSERT(bitSize >= k8BitSize, "PTY_u1 should have been lowered?");
   ASSERT(__builtin_popcount(bitSize) == 1, "PTY_u1 should have been lowered?");
-  ASSERT((isLoad && ((memOrd == AArch64isa::kMoNone) || (memOrd == AArch64isa::kMoAcquire) ||
-                    (memOrd == AArch64isa::kMoAcquireRcpc) || (memOrd == AArch64isa::kMoLoacquire))) ||
-         (!isLoad && ((memOrd == AArch64isa::kMoNone) || (memOrd == AArch64isa::kMoRelease) ||
-                     (memOrd == AArch64isa::kMoLorelease))),
-         "unknown Memory Order");
+  if (isLoad) {
+    ASSERT((memOrd == AArch64isa::kMoNone) || (memOrd == AArch64isa::kMoAcquire) ||
+           (memOrd == AArch64isa::kMoAcquireRcpc) || (memOrd == AArch64isa::kMoLoacquire), "unknown Memory Order");
+  } else {
+    ASSERT((memOrd == AArch64isa::kMoNone) || (memOrd == AArch64isa::kMoRelease) ||
+           (memOrd == AArch64isa::kMoLorelease), "unknown Memory Order");
+  }
 
   /* __builtin_ffs(x) returns: 0 -> 0, 1 -> 1, 2 -> 2, 4 -> 3, 8 -> 4 */
   if (IsPrimitiveInteger(primType)) {
@@ -3947,6 +3949,10 @@ void AArch64CGFunc::GenerateYieldpoint(BB &bb) {
     yieldPoint.SetComment("yieldpoint");
   }
   bb.AppendInsn(yieldPoint);
+}
+
+Operand &AArch64CGFunc::ProcessReturnReg(PrimType primType) {
+  return GetTargetRetOperand(primType);
 }
 
 Operand &AArch64CGFunc::GetTargetRetOperand(PrimType primType) {

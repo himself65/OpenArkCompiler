@@ -172,6 +172,10 @@ class MIRPregTable {
     return pregTable;
   }
 
+  const MapleVector<MIRPreg*> &GetPregTable() const {
+    return pregTable;
+  }
+
   const MIRPreg *GetPregTableItem(const uint32 index) const {
     CHECK_FATAL(index < pregTable.size(), "array index out of range");
     return pregTable[index];

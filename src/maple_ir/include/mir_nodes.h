@@ -931,7 +931,6 @@ class IntrinsicopNode : public NaryNode {
   const IntrinDesc &GetIntrinDesc() const {
     return IntrinDesc::intrinTable[intrinsic];
   }
-
  private:
   MIRIntrinsicID intrinsic;
   TyIdx tyIdx;
@@ -1948,7 +1947,6 @@ class UnaryStmtNode : public StmtNode {
   void SetOpnd(BaseNode *node, size_t) override {
     uOpnd = node;
   }
-
  private:
   BaseNode *uOpnd = nullptr;
 };

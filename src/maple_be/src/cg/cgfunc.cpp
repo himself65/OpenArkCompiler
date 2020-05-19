@@ -37,7 +37,7 @@ Operand *HandleRegread(const BaseNode &parent, BaseNode &expr, CGFunc &cgFunc) {
   (void)parent;
   auto &regReadNode = static_cast<RegreadNode&>(expr);
   if (regReadNode.GetRegIdx() == -kSregRetval0) {
-    return &(cgFunc.GetTargetRetOperand(regReadNode.GetPrimType()));
+    return &cgFunc.ProcessReturnReg(regReadNode.GetPrimType());
   }
   return cgFunc.SelectRegread(regReadNode);
 }
@@ -590,9 +590,11 @@ void HandleMembar(StmtNode &stmt, CGFunc &cgFunc) {
   if (stmt.GetOpCode() != OP_membarrelease) {
     return;
   }
+#if TARGAARCH64
   if (CGOptions::UseBarriersForVolatile()) {
     return;
   }
+#endif
   StmtNode *secondStmt = stmt.GetRealNext();
   if (secondStmt == nullptr ||
       ((secondStmt->GetOpCode() != OP_iassign) && (secondStmt->GetOpCode() != OP_dassign))) {
@@ -739,9 +741,15 @@ bool CGFunc::CheckSkipMembarOp(StmtNode &stmt) {
   if ((opCode == OP_membarstorestore) && func.IsConstructor() && MemBarOpt(stmt)) {
     return true;;
   }
+#if TARGARM32
+  if (nextStmt->GetOpCode() == OP_membaracquire) {
+    isVolLoad = true;
+  }
+#else
   if ((!CGOptions::UseBarriersForVolatile()) && (nextStmt->GetOpCode() == OP_membaracquire)) {
     isVolLoad = true;
   }
+#endif /* TARGARM32 */
   return false;
 }
 
@@ -767,6 +775,11 @@ void CGFunc::GenerateInstruction() {
     if (tempLoad && !isVolLoad) {
       stmt = stmt->GetNext();
     }
+
+#if TARGARM32
+    isVolLoad = false;
+#endif
+
     /*
      * skip the membarstoreload if there is the pattern for volatile write( membarrelease + store + membarstoreload )
      * membarrelease + store + membarstoreload -> stlr
