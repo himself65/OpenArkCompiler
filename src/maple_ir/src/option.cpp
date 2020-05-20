@@ -38,6 +38,7 @@ bool Options::useCrossModuleInline = true;  // Enabled by default
 std::string Options::noInlineFuncList = "";
 uint32 Options::inlineSmallFunctionThreshold = 15;
 uint32 Options::inlineHotFunctionThreshold = 30;
+uint32 Options::inlineRecursiveFunctionThreshold = 15;
 uint32 Options::inlineModuleGrowth = 10;
 uint32 Options::inlineColdFunctionThreshold = 3;
 uint32 Options::profileHotCount = 1000;
@@ -89,6 +90,7 @@ enum OptionIndex {
   kMpl2MplUseCrossModuleInline,
   kInlineSmallFunctionThreshold,
   kInlineHotFunctionThreshold,
+  kInlineRecursiveFunctionThreshold,
   kInlineModuleGrowth,
   kInlineColdFunctionThreshold,
   kProfileHotCount,
@@ -240,6 +242,15 @@ const Descriptor kUsage[] = {
     kBuildTypeExperimental,
     kArgCheckPolicyRequired,
     "  --inline-hot-function-threshold=30              \tThreshold for inlining hot function\n",
+    "mpl2mpl",
+    {} },
+  { kInlineRecursiveFunctionThreshold,
+    0,
+    nullptr,
+    "inline-recursive-function-threshold",
+    kBuildTypeExperimental,
+    kArgCheckPolicyRequired,
+    "  --inline-recursive-function-threshold=15              \tThreshold for inlining recursive function\n",
     "mpl2mpl",
     {} },
   { kInlineModuleGrowth,
@@ -550,6 +561,14 @@ bool Options::SolveOptions(const std::vector<Option> &opts,
           result = false;
         } else {
           inlineHotFunctionThreshold = std::stoul(opt.Args());
+        }
+        break;
+      case kInlineRecursiveFunctionThreshold:
+        if (opt.Args().empty()) {
+          LogInfo::MapleLogger(kLlErr) << "expecting not empty for --inline-recursive-function-threshold\n";
+          result = false;
+        } else {
+          inlineRecursiveFunctionThreshold = std::stoul(opt.Args());
         }
         break;
       case kInlineModuleGrowth:

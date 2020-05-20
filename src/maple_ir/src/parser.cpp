@@ -1731,7 +1731,8 @@ bool MIRParser::ParseDeclareVar(MIRSymbol &symbol) {
     // allow empty initialization for vtable, itable, vtableOffsetTable and fieldOffsetTable
     if (symbolStrName.find(VTAB_PREFIX_STR) == 0 || symbolStrName.find(NameMangler::kVtabOffsetTabStr) == 0 ||
         symbolStrName.find(ITAB_PREFIX_STR) == 0 || symbolStrName.find(NameMangler::kFieldOffsetTabStr) == 0 ||
-        symbolStrName.find(ITAB_CONFLICT_PREFIX_STR) == 0) {
+        symbolStrName.find(ITAB_CONFLICT_PREFIX_STR) == 0 ||
+        symbolStrName.find(NameMangler::kDecoupleStaticKeyStr) == 0) {
       allowEmpty = true;
     }
     if (!ParseInitValue(mirConst, tyIdx, allowEmpty)) {
@@ -2019,7 +2020,7 @@ bool MIRParser::ParseInitValue(MIRConstPtr &theConst, TyIdx tyIdx, bool allowEmp
           }
         } else if (tokenKind == TK_lbrack) {
           if (elemType->GetKind() == kTypeStruct && arrayType.GetDim() == 1) {
-            if (!ParseInitValue(subConst, arrayType.GetElemTyIdx())) {
+            if (!ParseInitValue(subConst, arrayType.GetElemTyIdx(), allowEmpty)) {
               Error("initializaton value wrong when parsing structure array ");
               return false;
             }
@@ -2059,8 +2060,13 @@ bool MIRParser::ParseInitValue(MIRConstPtr &theConst, TyIdx tyIdx, bool allowEmp
       theConst = newConst;
       tokenKind = lexer.NextToken();
       if (tokenKind == TK_rbrack) {
-        Error("illegal empty initialization for struct at ");
-        return false;
+        if (allowEmpty) {
+          lexer.NextToken();
+          return true;
+        } else {
+          Error("illegal empty initialization for struct at ");
+          return false;
+        }
       }
       do {
         if (lexer.GetTokenKind() != TK_intconst) {
@@ -2091,7 +2097,7 @@ bool MIRParser::ParseInitValue(MIRConstPtr &theConst, TyIdx tyIdx, bool allowEmp
             return false;
           }
         } else if (tokenKind == TK_lbrack) {
-          if (!ParseInitValue(subConst, fieldTyIdx)) {
+          if (!ParseInitValue(subConst, fieldTyIdx, allowEmpty)) {
             Error("parse init value wrong when parse sub struct ");
             return false;
           }
