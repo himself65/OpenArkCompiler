@@ -20,7 +20,7 @@
 
 namespace maple {
 bool VarMeExpr::IsValidVerIdx(const SSATab &ssaTab) const {
-  const OriginalSt *ost = ssaTab.GetOriginalStFromID(ostIdx);
+  const OriginalSt *ost = ssaTab.GetOriginalStFromID(GetOStIdx());
   if (ost == nullptr || !ost->IsSymbolOst()) {
     return false;
   }

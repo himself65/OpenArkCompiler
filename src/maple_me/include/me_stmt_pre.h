@@ -44,7 +44,7 @@ class MeStmtPre : public SSAEPre {
  protected:
   MapleMap<OStIdx, MapleSet<BBId>*> candsForSSAUpdate;
   MeFunction *func;
-  MapleVector<MapleStack<VarMeExpr*>*> versionStackVec;  // top of stack gives last version during BuildWorkList()
+  MapleVector<MapleStack<ScalarMeExpr*>*> versionStackVec;  // top of stack gives last version during BuildWorkList()
   MapleMap<OStIdx, MapleSet<uint32>*> useOccurMap;  // give the set of BBs (in dfn) that contain uses of the symbol
 
  private:

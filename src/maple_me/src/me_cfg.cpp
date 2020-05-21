@@ -556,42 +556,23 @@ void MeCFG::ConvertPhiList2IdentityAssigns(BB &meBB) const {
   meBB.ClearPhiList();  // delete all the phis
 }
 
-void MeCFG::ConvertMevarPhiList2IdentityAssigns(BB &meBB) const {
-  auto varPhiIt = meBB.GetMevarPhiList().begin();
-  while (varPhiIt != meBB.GetMevarPhiList().end()) {
+void MeCFG::ConvertMePhiList2IdentityAssigns(BB &meBB) const {
+  auto PhiIt = meBB.GetMePhiList().begin();
+  while (PhiIt != meBB.GetMePhiList().end()) {
     // replace phi with identify assignment as it only has 1 opnd
-    const OriginalSt *ost = func.GetMeSSATab()->GetOriginalStFromID(varPhiIt->first);
+    const OriginalSt *ost = func.GetMeSSATab()->GetOriginalStFromID(PhiIt->first);
     if (ost->IsSymbolOst() && ost->GetIndirectLev() == 0) {
       auto *dassign = func.GetIRMap()->NewInPool<DassignMeStmt>();
-      MeVarPhiNode *varPhi = varPhiIt->second;
-      dassign->SetLHS(varPhi->GetLHS());
+      MePhiNode *varPhi = PhiIt->second;
+      dassign->SetLHS(static_cast<VarMeExpr *>(varPhi->GetLHS()));
       dassign->SetRHS(varPhi->GetOpnd(0));
       dassign->SetBB(varPhi->GetDefBB());
       dassign->SetIsLive(varPhi->GetIsLive());
       meBB.PrependMeStmt(dassign);
     }
-    ++varPhiIt;
+    ++PhiIt;
   }
-  meBB.GetMevarPhiList().clear();  // delete all the phis
-}
-
-void MeCFG::ConvertMeregphiList2IdentityAssigns(BB &meBB) const {
-  auto regPhiIt = meBB.GetMeRegPhiList().begin();
-  while (regPhiIt != meBB.GetMeRegPhiList().end()) {
-    // replace phi with identify assignment as it only has 1 opnd
-    const OriginalSt *ost = func.GetMeSSATab()->GetOriginalStFromID(regPhiIt->first);
-    if (ost->IsSymbolOst() && ost->GetIndirectLev() == 0) {
-      auto *regAss = func.GetIRMap()->New<RegassignMeStmt>();
-      MeRegPhiNode *regPhi = regPhiIt->second;
-      regAss->SetLHS(regPhi->GetLHS());
-      regAss->SetRHS(regPhi->GetOpnd(0));
-      regAss->SetBB(regPhi->GetDefBB());
-      regAss->SetIsLive(regPhi->GetIsLive());
-      meBB.PrependMeStmt(regAss);
-    }
-    ++regPhiIt;
-  }
-  meBB.GetMeRegPhiList().clear();  // delete all the phis
+  meBB.GetMePhiList().clear();  // delete all the phis
 }
 
 // used only after DSE because it looks at live field of VersionSt
@@ -600,8 +581,7 @@ void MeCFG::ConvertPhis2IdentityAssigns(BB &meBB) const {
     return;
   }
   ConvertPhiList2IdentityAssigns(meBB);
-  ConvertMevarPhiList2IdentityAssigns(meBB);
-  ConvertMeregphiList2IdentityAssigns(meBB);
+  ConvertMePhiList2IdentityAssigns(meBB);
 }
 
 // analyse the CFG to find the BBs that will not reach any function exit; these

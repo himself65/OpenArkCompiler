@@ -56,8 +56,7 @@ void MeFunction::Dump(bool DumpSimpIr) const {
   for (auto bIt = valid_begin(); bIt != eIt; ++bIt) {
     auto *bb = *bIt;
     bb->DumpHeader(&mirModule);
-    bb->DumpMeVarPhiList(irmap);
-    bb->DumpMeRegPhiList(irmap);
+    bb->DumpMePhiList(irmap);
     for (auto &meStmt : bb->GetMeStmts()) {
       meStmt.Dump(irmap);
     }

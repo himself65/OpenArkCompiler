@@ -183,7 +183,7 @@ bool MeABC::CollectABC() {
 }
 
 bool MeABC::ExistedPhiNode(BB &bb, VarMeExpr &rhs) {
-  return bb.GetMevarPhiList().find(rhs.GetOStIdx()) != bb.GetMevarPhiList().end();
+  return bb.GetMePhiList().find(rhs.GetOStIdx()) != bb.GetMePhiList().end();
 }
 
 bool MeABC::ExistedPiNode(BB &bb, BB &parentBB, const VarMeExpr &rhs) {
@@ -211,11 +211,11 @@ bool MeABC::ExistedPiNode(BB &bb, BB &parentBB, const VarMeExpr &rhs) {
 void MeABC::CreatePhi(VarMeExpr &rhs, BB &dfBB) {
   VarMeExpr *phiNewLHS = CreateNewPiExpr(rhs);
   ASSERT_NOT_NULL(phiNewLHS);
-  MeVarPhiNode *newPhi = GetMemPool()->New<MeVarPhiNode>(phiNewLHS, &GetAllocator());
+  MePhiNode *newPhi = GetMemPool()->New<MePhiNode>(phiNewLHS, &GetAllocator());
   newPhi->SetDefBB(&dfBB);
   newPhi->GetOpnds().resize(dfBB.GetPred().size(), &rhs);
   newPhi->SetPiAdded();
-  dfBB.GetMevarPhiList().insert(std::make_pair(phiNewLHS->GetOStIdx(), newPhi));
+  dfBB.GetMePhiList().insert(std::make_pair(phiNewLHS->GetOStIdx(), newPhi));
   DefPoint *newDef = GetMemPool()->New<DefPoint>(DefPoint::DefineKind::kDefByPhi);
   newDef->SetDefPhi(*newPhi);
   newDefPoints.push_back(newDef);
@@ -266,7 +266,7 @@ void MeABC::RenameStartPiBr(DefPoint &newDefPoint) {
     RenameStartPhi(newDefPoint);
     return;
   }
-  MeVarPhiNode* phi = newDefBB->GetMevarPhiList()[ostIdx];
+  MePhiNode* phi = newDefBB->GetMePhiList()[ostIdx];
   BB *genByBB = newDefPoint.GetGeneratedByBB();
   size_t index = 0;
   while (index < newDefBB->GetPred().size()) {
@@ -276,11 +276,11 @@ void MeABC::RenameStartPiBr(DefPoint &newDefPoint) {
     ++index;
   }
   CHECK_FATAL(index < newDefBB->GetPred().size(), "must be");
-  VarMeExpr *oldVar = phi->GetOpnd(index);
+  ScalarMeExpr*oldVar = phi->GetOpnd(index);
   phi->SetOpnd(index, newDefPoint.GetLHS());
   if (!phi->IsPiAdded()) {
     if (modifiedPhi.find(phi) == modifiedPhi.end()) {
-      modifiedPhi[phi] = std::vector<VarMeExpr*>(phi->GetOpnds().size(), nullptr);
+      modifiedPhi[phi] = std::vector<ScalarMeExpr*>(phi->GetOpnds().size(), nullptr);
     }
     if (modifiedPhi[phi][index] == nullptr) {
       modifiedPhi[phi][index] = oldVar;
@@ -349,15 +349,15 @@ void MeABC::ReplacePiPhiInSuccs(BB &bb, VarMeExpr &newVar) {
       ++index;
     }
     CHECK_FATAL(index < succBB->GetPred().size(), "must be");
-    MapleMap<OStIdx, MeVarPhiNode*> &phiList = succBB->GetMevarPhiList();
+    MapleMap<OStIdx, MePhiNode*> &phiList = succBB->GetMePhiList();
     auto it2 = phiList.find(newVar.GetOStIdx());
     if (it2 != phiList.end()) {
-      MeVarPhiNode *phi = it2->second;
-      VarMeExpr *oldVar = phi->GetOpnd(index);
+      MePhiNode *phi = it2->second;
+      ScalarMeExpr*oldVar = phi->GetOpnd(index);
       phi->SetOpnd(index, &newVar);
       if (!phi->IsPiAdded()) {
         if (modifiedPhi.find(phi) == modifiedPhi.end()) {
-          modifiedPhi[phi] = std::vector<VarMeExpr*>(phi->GetOpnds().size(), nullptr);
+          modifiedPhi[phi] = std::vector<ScalarMeExpr*>(phi->GetOpnds().size(), nullptr);
         }
         if (modifiedPhi[phi][index] == nullptr) {
           modifiedPhi[phi][index] = oldVar;
@@ -587,10 +587,10 @@ void MeABC::RemoveExtraNodes() {
     CHECK_FATAL(replaced, "must be");
   }
   for (auto pair : modifiedPhi) {
-    MeVarPhiNode *phi = pair.first;
+    MePhiNode *phi = pair.first;
     for (size_t i = 0; i < pair.second.size(); ++i) {
       size_t index = i;
-      VarMeExpr *oldVar = pair.second[i];
+      ScalarMeExpr*oldVar = pair.second[i];
       if (oldVar != nullptr) {
         phi->SetOpnd(index, oldVar);
       }
@@ -610,16 +610,16 @@ ESSABaseNode *MeABC::GetOrCreateRHSNode(MeExpr &expr) {
   if (rhs.GetDefBy() != kDefByPhi) {
     result = inequalityGraph->GetOrCreateVarNode(rhs);
   } else {
-    MeVarPhiNode *defPhi = &(rhs.GetDefPhi());
+    MePhiNode *defPhi = &(rhs.GetDefPhi());
     result = inequalityGraph->GetOrCreatePhiNode(*defPhi);
   }
   return result;
 }
 
-void MeABC::BuildPhiInGraph(MeVarPhiNode &phi) {
+void MeABC::BuildPhiInGraph(MePhiNode &phi) {
   if (!IsPrimitivePureScalar(phi.GetLHS()->GetPrimType())) {
     MeExpr *varExpr = phi.GetLHS();
-    std::set<MeVarPhiNode*> visitedPhi;
+    std::set<MePhiNode*> visitedPhi;
     ConstMeExpr dummyExpr(kInvalidExprID, nullptr);
     varExpr = TryToResolveVar(*varExpr, visitedPhi, dummyExpr, false);
     if (varExpr != nullptr && varExpr != &dummyExpr) {
@@ -632,10 +632,11 @@ void MeABC::BuildPhiInGraph(MeVarPhiNode &phi) {
     }
     return;
   }
-  if (IsVirtualVar(*(phi.GetLHS()), irMap->GetSSATab())) {
+  VarMeExpr *lhsExpr = static_cast<VarMeExpr *>(phi.GetLHS());
+  if (lhsExpr !=nullptr && IsVirtualVar(*lhsExpr, irMap->GetSSATab())) {
     return;
   }
-  for (VarMeExpr *phiRHS : phi.GetOpnds()) {
+  for (ScalarMeExpr *phiRHS : phi.GetOpnds()) {
     AddUseDef(*phiRHS);
   }
 }
@@ -794,7 +795,7 @@ bool MeABC::BuildBrMeStmtInGraph(MeStmt &meStmt) {
   return true;
 }
 
-MeExpr *MeABC::TryToResolveVar(MeExpr &expr, std::set<MeVarPhiNode*> &visitedPhi, MeExpr &dummyExpr, bool isConst) {
+MeExpr *MeABC::TryToResolveVar(MeExpr &expr, std::set<MePhiNode*> &visitedPhi, MeExpr &dummyExpr, bool isConst) {
   CHECK_FATAL(expr.GetMeOp() == kMeOpVar, "must be");
   auto *var = static_cast<VarMeExpr*>(&expr);
 
@@ -818,13 +819,13 @@ MeExpr *MeABC::TryToResolveVar(MeExpr &expr, std::set<MeVarPhiNode*> &visitedPhi
   }
 
   if (var->GetDefBy() == kDefByPhi) {
-    MeVarPhiNode *phi = &(var->GetDefPhi());
+    MePhiNode *phi = &(var->GetDefPhi());
     if (visitedPhi.find(phi) != visitedPhi.end()) {
       return &dummyExpr;
     }
     visitedPhi.insert(phi);
     std::set<MeExpr*> res;
-    for (VarMeExpr *phiOpnd : phi->GetOpnds()) {
+    for (ScalarMeExpr *phiOpnd : phi->GetOpnds()) {
       MeExpr *tmp = TryToResolveVar(*phiOpnd, visitedPhi, dummyExpr, isConst);
       if (tmp == nullptr) {
         return nullptr;
@@ -870,7 +871,7 @@ bool MeABC::BuildAssignInGraph(MeStmt &meStmt) {
           AddUseDef(*(opMeExpr->GetOpnd(0)));
           // Try to resolve Var is assigned from Const
           MeExpr *varExpr = opMeExpr->GetOpnd(0);
-          std::set<MeVarPhiNode*> visitedPhi;
+          std::set<MePhiNode*> visitedPhi;
           ConstMeExpr dummyExpr(kInvalidExprID, nullptr);
           varExpr = TryToResolveVar(*varExpr, visitedPhi, dummyExpr, true);
           if (varExpr != nullptr && varExpr != &dummyExpr) {
@@ -920,7 +921,7 @@ bool MeABC::BuildAssignInGraph(MeStmt &meStmt) {
           }
         } else if (opnd1->GetMeOp() == kMeOpVar && opnd2->GetMeOp() == kMeOpVar) {
           // Try to resolve Var is assigned from Const
-          std::set<MeVarPhiNode*> visitedPhi;
+          std::set<MePhiNode*> visitedPhi;
           ConstMeExpr dummyExpr(kInvalidExprID, nullptr);
           opnd2 = TryToResolveVar(*opnd2, visitedPhi, dummyExpr, true);
           if (opnd2 == nullptr || opnd2 == &dummyExpr) {
@@ -1122,8 +1123,8 @@ void MeABC::AddCareInsn(MeStmt &defS) {
     careMeStmts.insert(defStmt);
   }
 }
-void MeABC::AddCarePhi(MeVarPhiNode &defP) {
-  MeVarPhiNode *defPhi = &defP;
+void MeABC::AddCarePhi(MePhiNode &defP) {
+  MePhiNode *defPhi = &defP;
   if (careMePhis.find(defPhi) == careMePhis.end()) {
     CarePoint *carePoint = GetMemPool()->New<CarePoint>(CarePoint::CareKind::kMePhi);
     carePoint->SetMePhi(*defPhi);
@@ -1153,7 +1154,7 @@ void MeABC::AddUseDef(MeExpr &meExpr) {
       break;
     }
     case kDefByPhi: {
-      MeVarPhiNode *defPhi = &varOpnd1->GetDefPhi();
+      MePhiNode *defPhi = &varOpnd1->GetDefPhi();
       AddCarePhi(*defPhi);
       break;
     }

@@ -54,7 +54,7 @@ void IRMap::BuildPhiMeNode(BB &bb) {
     const OriginalSt *oSt = phi.first;
     VersionSt *vSt = phi.second.GetResult();
     if (oSt->IsPregOst()) {
-      auto *phiMeNode = NewInPool<MeRegPhiNode>();
+      auto *phiMeNode = NewInPool<MePhiNode>();
       RegMeExpr *meDef = GetOrCreateRegFromVerSt(*vSt);
       phiMeNode->UpdateLHS(*meDef);
       phiMeNode->SetDefBB(&bb);
@@ -62,9 +62,9 @@ void IRMap::BuildPhiMeNode(BB &bb) {
       for (VersionSt *opnd : phi.second.GetPhiOpnds()) {
         phiMeNode->GetOpnds().push_back(GetOrCreateRegFromVerSt(*opnd));
       }
-      bb.GetMeRegPhiList().insert(std::make_pair(meDef->GetOstIdx(), phiMeNode));
+      bb.GetMePhiList().insert(std::make_pair(meDef->GetOstIdx(), phiMeNode));
     } else {
-      auto *phiMeNode = NewInPool<MeVarPhiNode>();
+      auto *phiMeNode = NewInPool<MePhiNode>();
       VarMeExpr *meDef = GetOrCreateVarFromVerSt(*vSt);
       phiMeNode->UpdateLHS(*meDef);
       phiMeNode->SetDefBB(&bb);
@@ -72,7 +72,7 @@ void IRMap::BuildPhiMeNode(BB &bb) {
       for (VersionSt *opnd : phi.second.GetPhiOpnds()) {
         phiMeNode->GetOpnds().push_back(GetOrCreateVarFromVerSt(*opnd));
       }
-      bb.GetMevarPhiList().insert(std::make_pair(meDef->GetOStIdx(), phiMeNode));
+      bb.GetMePhiList().insert(std::make_pair(meDef->GetOStIdx(), phiMeNode));
     }
   }
 }
@@ -803,14 +803,8 @@ bool IRMap::ReplaceMeExprStmt(MeStmt &meStmt, const MeExpr &meExpr, MeExpr &repe
   return isReplaced;
 }
 
-MeRegPhiNode *IRMap::CreateMeRegPhi(RegMeExpr &meVar) {
-  auto *phiMeReg = NewInPool<MeRegPhiNode>();
-  phiMeReg->UpdateLHS(meVar);
-  return phiMeReg;
-}
-
-MeVarPhiNode *IRMap::CreateMeVarPhi(VarMeExpr &meVar) {
-  auto *phiMeVar = NewInPool<MeVarPhiNode>();
+MePhiNode *IRMap::CreateMePhi(ScalarMeExpr &meVar) {
+  auto *phiMeVar = NewInPool<MePhiNode>();
   phiMeVar->UpdateLHS(meVar);
   return phiMeVar;
 }

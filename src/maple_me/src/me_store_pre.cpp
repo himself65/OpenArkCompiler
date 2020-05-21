@@ -99,15 +99,15 @@ RegMeExpr *MeStorePre::EnsureRHSInCurTemp(BB &bb) {
     }
   }
   // check if there is def by phi
-  auto phiIt = bb.GetMevarPhiList().find(workCand->GetOst()->GetIndex());
-  if (phiIt != bb.GetMevarPhiList().end()) {
+  auto phiIt = bb.GetMePhiList().find(workCand->GetOst()->GetIndex());
+  if (phiIt != bb.GetMePhiList().end()) {
     if (enabledDebug) {
       LogInfo::MapleLogger() << "EnsureRHSInCurTemp: found def-by-phi at BB" << bb.GetBBId() << '\n';
     }
     RegMeExpr *lhsReg = irMap->CreateRegMeExprVersion(*curTemp);
     bbCurTempMap[&bb] = lhsReg;
     // form a new phi for the temp
-    MeRegPhiNode *regPhi = irMap->NewInPool<MeRegPhiNode>();
+    MePhiNode *regPhi = irMap->NewInPool<MePhiNode>();
     regPhi->SetLHS(lhsReg);
     regPhi->SetDefBB(&bb);
     // call recursively for each varPhi operands
@@ -118,7 +118,7 @@ RegMeExpr *MeStorePre::EnsureRHSInCurTemp(BB &bb) {
       (void)regPhiOpnd->GetPhiUseSet().insert(regPhi);
     }
     // insert the regPhi
-    (void)bb.GetMeRegPhiList().insert(std::make_pair(lhsReg->GetOstIdx(), regPhi));
+    (void)bb.GetMePhiList().insert(std::make_pair(lhsReg->GetOstIdx(), regPhi));
     return lhsReg;
   }
   // continue at immediate dominator

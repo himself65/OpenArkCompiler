@@ -251,15 +251,15 @@ class SUseOcc : public SOcc {
 
 class SPhiOcc : public SOcc {
  public:
-  SPhiOcc(BB &bb, MeVarPhiNode &p, VarMeExpr &v) : SOcc(kSOccPhi, bb), phi(&p), vMeExpr(&v) {};
+  SPhiOcc(BB &bb, MePhiNode &p, VarMeExpr &v) : SOcc(kSOccPhi, bb), phi(&p), vMeExpr(&v) {};
 
   virtual ~SPhiOcc() = default;
 
-  MeVarPhiNode *GetPhiNode() {
+  MePhiNode *GetPhiNode() {
     return phi;
   }
 
-  const MeVarPhiNode *GetPhiNode() const {
+  const MePhiNode *GetPhiNode() const {
     return phi;
   }
 
@@ -276,7 +276,7 @@ class SPhiOcc : public SOcc {
   }
 
  private:
-  MeVarPhiNode *phi;      // the phinode of this real occurrence;
+  MePhiNode *phi;      // the phinode of this real occurrence;
   VarMeExpr *vMeExpr;  // the varmeexpr of this real occurrence
 };
 

@@ -447,27 +447,27 @@ class MePhiOcc : public MeOccur {
     phiOpnds.push_back(&opnd);
   }
 
-  const MeRegPhiNode *GetRegPhi() const {
+  const MePhiNode *GetRegPhi() const {
     return regPhi;
   }
 
-  MeRegPhiNode *GetRegPhi() {
+  MePhiNode *GetRegPhi() {
     return regPhi;
   }
 
-  void SetRegPhi(MeRegPhiNode &phi) {
+  void SetRegPhi(MePhiNode &phi) {
     regPhi = &phi;
   }
 
-  const MeVarPhiNode *GetVarPhi() const {
+  const MePhiNode *GetVarPhi() const {
     return varPhi;
   }
 
-  MeVarPhiNode *GetVarPhi() {
+  MePhiNode *GetVarPhi() {
     return varPhi;
   }
 
-  void SetVarPhi(MeVarPhiNode &phi) {
+  void SetVarPhi(MePhiNode &phi) {
     varPhi = &phi;
   }
 
@@ -482,8 +482,8 @@ class MePhiOcc : public MeOccur {
   bool isExtraneous;
   bool isRemoved;  // during finalize2, marked this phiocc is removed or not
   MapleVector<MePhiOpndOcc*> phiOpnds;
-  MeRegPhiNode *regPhi;  // the reg phi being inserted, maybe can delete it later
-  MeVarPhiNode *varPhi;  // the Var phi being inserted, maybe can delete it later
+  MePhiNode *regPhi;  // the reg phi being inserted, maybe can delete it later
+  MePhiNode *varPhi;  // the Var phi being inserted, maybe can delete it later
 };
 
 // each singly linked list repersents each bucket in workCandHashTable

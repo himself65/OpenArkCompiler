@@ -373,8 +373,8 @@ MeExpr &Prop::PropVar(VarMeExpr &varMeExpr, bool atParm, bool checkPhi) const {
       return varMeExpr;
     }
   } else if (checkPhi && varMeExpr.GetDefBy() == kDefByPhi && config.propagateAtPhi) {
-    MeVarPhiNode &defPhi = varMeExpr.GetDefPhi();
-    VarMeExpr *phiOpndLast = defPhi.GetOpnds().back();
+    MePhiNode &defPhi = varMeExpr.GetDefPhi();
+    VarMeExpr* phiOpndLast = static_cast<VarMeExpr*>(defPhi.GetOpnds().back());
     MeExpr *opndLastProp = &PropVar(utils::ToRef(phiOpndLast), atParm, false);
     if (opndLastProp != &varMeExpr && opndLastProp != phiOpndLast && opndLastProp->GetMeOp() == kMeOpVar) {
       // one more call
@@ -383,9 +383,9 @@ MeExpr &Prop::PropVar(VarMeExpr &varMeExpr, bool atParm, bool checkPhi) const {
     if (opndLastProp == &varMeExpr) {
       return varMeExpr;
     }
-    MapleVector<VarMeExpr*> opndsVec = defPhi.GetOpnds();
+    MapleVector<ScalarMeExpr *> opndsVec = defPhi.GetOpnds();
     for (auto it = opndsVec.rbegin() + 1; it != opndsVec.rend(); ++it) {
-      VarMeExpr *phiOpnd = *it;
+      VarMeExpr *phiOpnd = static_cast<VarMeExpr*>(*it);
       MeExpr &opndProp = PropVar(utils::ToRef(phiOpnd), atParm, false);
       if (&opndProp != opndLastProp) {
         return varMeExpr;
@@ -604,12 +604,7 @@ void Prop::TraversalBB(BB &bb) {
   }
 
   // update var phi nodes
-  for (auto it = bb.GetMevarPhiList().begin(); it != bb.GetMevarPhiList().end(); ++it) {
-    PropUpdateDef(utils::ToRef(it->second->GetLHS()));
-  }
-
-  // update reg phi nodes
-  for (auto it = bb.GetMeRegPhiList().begin(); it != bb.GetMeRegPhiList().end(); ++it) {
+  for (auto it = bb.GetMePhiList().begin(); it != bb.GetMePhiList().end(); ++it) {
     PropUpdateDef(utils::ToRef(it->second->GetLHS()));
   }
 

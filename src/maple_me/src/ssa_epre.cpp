@@ -136,7 +136,7 @@ void SSAEPre::GenerateReloadRealOcc(MeRealOcc &realOcc) {
     regOrVar = defRealOcc->GetSavedExpr();
   } else if (defOcc->GetOccType() == kOccPhiocc) {
     auto *defPhiOcc = static_cast<MePhiOcc*>(defOcc);
-    MeRegPhiNode *regPhi = defPhiOcc->GetRegPhi();
+    MePhiNode *regPhi = defPhiOcc->GetRegPhi();
     if (regPhi != nullptr) {
       regOrVar = regPhi->GetLHS();
     } else {

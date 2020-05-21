@@ -43,7 +43,7 @@ ESSAVarNode *InequalityGraph::GetOrCreateVarNode(MeExpr &meExpr) {
   return newVar;
 }
 
-ESSAPhiNode *InequalityGraph::GetOrCreatePhiNode(MeVarPhiNode &phiNode) {
+ESSAPhiNode *InequalityGraph::GetOrCreatePhiNode(MePhiNode &phiNode) {
   MeExpr *expr = phiNode.GetLHS();
   CHECK_FATAL(expr != nullptr, "meExpr phiNode must has lhs");
   if (HasNode(*expr)) {
@@ -55,12 +55,13 @@ ESSAPhiNode *InequalityGraph::GetOrCreatePhiNode(MeVarPhiNode &phiNode) {
   newPhiNode->SetPhiOpnds(phiNode.GetOpnds());
   ESSAPhiNode *newPhi = newPhiNode.get();
   varNodes[expr->GetExprID()] = std::move(newPhiNode);
-  for (VarMeExpr *phiRHS : phiNode.GetOpnds()) {
+  for (ScalarMeExpr *phit : phiNode.GetOpnds()) {
+    VarMeExpr *phiRHS = static_cast<VarMeExpr *>(phit);
     ESSABaseNode *rhs = nullptr;
     if (phiRHS->GetDefBy() != kDefByPhi) {
       rhs = GetOrCreateVarNode(*phiRHS);
     } else {
-      MeVarPhiNode *defPhi = &(phiRHS->GetDefPhi());
+      MePhiNode *defPhi = &(phiRHS->GetDefPhi());
       rhs = GetOrCreatePhiNode(*defPhi);
     }
     AddPhiEdge(*rhs, *newPhi, EdgeType::kUpper);

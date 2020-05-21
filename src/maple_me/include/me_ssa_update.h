@@ -52,7 +52,7 @@ class MeSSAUpdate {
   MemPool &ssaUpdateMp;
   MapleAllocator ssaUpdateAlloc;
   MapleMap<OStIdx, MapleSet<BBId>*> &updateCands;
-  MapleMap<OStIdx, MapleStack<VarMeExpr*>*> renameStacks;
+  MapleMap<OStIdx, MapleStack<ScalarMeExpr*>*> renameStacks;
 };
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_ME_SSA_UPDATE_H

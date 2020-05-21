@@ -520,12 +520,10 @@ void HDSE::DseInit() {
       continue;
     }
     // mark phi nodes dead
-    for (std::pair<OStIdx, MeVarPhiNode*> varPhiPair : bb->GetMevarPhiList()) {
-      varPhiPair.second->SetIsLive(false);
+    for (std::pair<OStIdx, MePhiNode*> phiPair : bb->GetMePhiList()) {
+      phiPair.second->SetIsLive(false);
     }
-    for (std::pair<OStIdx, MeRegPhiNode*> regPhiPair : bb->GetMeRegPhiList()) {
-      regPhiPair.second->SetIsLive(false);
-    }
+
     for (auto &stmt : bb->GetMeStmts()) {
       // mark stmt dead
       stmt.SetIsLive(false);
