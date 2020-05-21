@@ -57,6 +57,13 @@ bool VtableImpl::Intrinsify(MIRFunction &func, CallNode &cnode) {
   if (!retvs.empty()) {
     StIdx stidx = retvs.begin()->first;
     StmtNode *intrnCallStmt = nullptr;
+    if (cnode.Opnd(0)->GetOpCode() == OP_iread) {
+      for (size_t i = 0; i < cnode.GetNopndSize() - 1; ++i) {
+        cnode.SetNOpndAt(i, cnode.GetNopnd().at(i + 1));
+      }
+      cnode.SetNumOpnds(cnode.GetNumOpnds() - 1);
+      cnode.GetNopnd().resize(cnode.GetNumOpnds());
+    }
     if (stidx.Idx() != 0) {
       MIRSymbol *retSt = currFunc->GetLocalOrGlobalSymbol(stidx);
       intrnCallStmt = builder->CreateStmtIntrinsicCallAssigned(intrnId, cnode.GetNopnd(), retSt);

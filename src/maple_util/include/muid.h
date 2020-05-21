@@ -63,19 +63,15 @@ class MUID {
  public:
   union {
 #ifdef USE_64BIT_MUID
-    uint64_t raw;
     uint32_t words[kNumLowAndHigh];
     uint8_t bytes[kMuidLength];
+    uint64_t raw;
 #else
     uint64_t words[kNumLowAndHigh];
     uint8_t bytes[kMuidLength];
 #endif // USE_64BIT_MUID
   } data;
 
-  MUID() {
-    data.words[0] = 0;
-    data.words[1] = 0;
-  }
   inline bool IsSystemNameSpace() const {
     return (data.bytes[kMuidLength - 1] & ~kBitMask) == kSystemNamespace;
   }
@@ -119,7 +115,7 @@ class MUID {
   }
 
   // Return 64-bit size hash for AArch64.
-  std::size_t hash() const {
+  uint64_t hash() const {
 #ifdef USE_64BIT_MUID
     return data.raw;
 #else
