@@ -267,13 +267,59 @@ class TestSuiteTask:
                     task.commands,
                     **task.running_config
                 )
+                if configs.get_val("fail_verbose"):
+                    self.output_failed((_, task.result))
                 status, _ = task.result
                 self.task_set_result[tasks_name][status] += 1
+
+    def output_failed(self, result):
+        output_template = (
+            "\n--------\n"
+            "TestCase Failed: \n"
+            "Name           : {name}\n"
+            "CMD list       : \n--------\n"
+            "{cmd_list}"
+            "--------\n"
+            "Output         : \n{cmd_output}"
+            "--------\n"
+        )
+
+        cmd_list_template = "{0: <15}:{1}\n"
+
+        cmd_template = (
+            "\n"
+            "CMD            : {cmd}\n"
+            "Return code    : {return_code}\n"
+            "Stdout         : {stdout}\n"
+            "Stderr         : {stderr}\n"
+        )
+
+        postion, result = result
+        case = self.task_set[postion[0]][postion[1]]
+        if result[0] != PASS:
+            output = {}
+            output["name"] = str(case)
+            output["cmd_list"] = ""
+            output["cmd_output"] = ""
+            for cmd_result in result[1]:
+                output["cmd_output"] += cmd_template.format(**cmd_result)
+            for cmd in case.commands[: len(result[1]) - 1]:
+                output["cmd_list"] += cmd_list_template.format(PASS, cmd)
+            output["cmd_list"] += cmd_list_template.format(
+                FAIL, case.commands[len(result[1]) - 1]
+            )
+            for cmd in case.commands[len(result[1]) :]:
+                output["cmd_list"] += cmd_list_template.format(NOT_RUN, cmd)
+            print(output_template.format(**output))
 
     def parallel_run_task(self, process_num):
         multiprocessing.freeze_support()
         pool = multiprocessing.Pool(min(multiprocessing.cpu_count(), process_num))
         result_queue = []
+        if configs.get_val("fail_verbose"):
+            callback_func = self.output_failed
+        else:
+            callback_func = None
         for tasks_name in self.task_set:
             for index, task in enumerate(self.task_set[tasks_name]):
                 if task.result[0] == PASS or task.result[0] == UNRESOLVED:
@@ -283,6 +329,7 @@ class TestSuiteTask:
                         run_commands,
                         args=((tasks_name, index), task.result, task.commands,),
                         kwds=task.running_config,
+                        callback=callback_func,
                     )
                 )
         progress(result_queue, configs.get_val("progress"))
