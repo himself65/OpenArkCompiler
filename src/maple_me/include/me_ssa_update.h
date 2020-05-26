@@ -31,9 +31,7 @@ class MeSSAUpdate {
         updateCands(cands),
         renameStacks(std::less<OStIdx>(), ssaUpdateAlloc.Adapter()) {}
 
-  ~MeSSAUpdate() {
-    memPoolCtrler.DeleteMemPool(&ssaUpdateMp);
-  }
+  ~MeSSAUpdate() = default;
 
   void Run();
 

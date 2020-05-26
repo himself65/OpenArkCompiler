@@ -27,9 +27,9 @@ LLVM download address: http://releases.llvm.org/download.html#8.0.0
 Place the downloaded files in the `openarkcompiler/tools` directory, open the `openarkcompiler/build/config.gni` file, and set the three variables `GN_C_COMPILER`, `GN_CXX_COMPILER`, and `GN_AR_COMPILER` to the path where Clang is located. For example:
 
 ```
-GN_C_COMPILER = "${MAPLE_ROOT}/tools/clang_llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/bin/clang"
-GN_CXX_COMPILER = "${MAPLE_ROOT}/tools/clang_llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/bin/clang++"
-GN_AR_COMPILER = "${MAPLE_ROOT}/tools/clang_llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/bin/llvm-ar"
+GN_C_COMPILER = "${MAPLE_ROOT}/tools/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/bin/clang"
+GN_CXX_COMPILER = "${MAPLE_ROOT}/tools/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/bin/clang++"
+GN_AR_COMPILER = "${MAPLE_ROOT}/tools/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/bin/llvm-ar"
 ```
 
 ${MAPLE_ROOT} is the root directory of the OpenArkCompiler source code.

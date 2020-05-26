@@ -37,7 +37,7 @@ AnalysisResult *MeDoEmit::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, Mod
       ASSERT(func->GetIRMap() != nullptr, "null ptr check");
       MIRFunction *mirFunction = func->GetMirFunc();
       if (mirFunction->GetCodeMempool() != nullptr) {
-        memPoolCtrler.DeleteMemPool(mirFunction->GetCodeMempool());
+        mirFunction->GetCodeMempool()->Release();
       }
       mirFunction->SetCodeMemPool(memPoolCtrler.NewMemPool("IR from IRMap::Emit()"));
       mirFunction->GetCodeMPAllocator().SetMemPool(mirFunction->GetCodeMempool());

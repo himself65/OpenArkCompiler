@@ -89,7 +89,7 @@ void BB::DumpHeader(const MIRModule *mod) const {
   }
   mod->GetOut() << '\n';
   if (bbLabel != 0) {
-    static LabelNode lblNode;
+    LabelNode lblNode;
     lblNode.SetLabelIdx(bbLabel);
     lblNode.Dump(0);
     mod->GetOut() << '\n';

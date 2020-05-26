@@ -35,7 +35,6 @@ class MeProfGen : public PGOInstrument<BBEdge> {
  private:
   void Init();
   void InstrumentBB(BB &bb);
-  void SaveProfile();
   MeFunction *func;
   MeIRMap *hMap;
   static uint64 counterIdx;

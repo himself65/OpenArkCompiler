@@ -42,7 +42,7 @@ void CgFuncPhaseManager::RunFuncPhase(CGFunc &func, FuncPhase &phase) {
   AnalysisResult *analysisRes = nullptr;
   if ((func.NumBBs() > 0) || (phase.GetPhaseID() == kCGFuncPhaseEMIT)) {
     analysisRes = phase.Run(&func, &arFuncManager);
-    phase.ReleaseMemPool(analysisRes == nullptr ? nullptr : analysisRes->GetMempool());
+    phase.ClearMemPoolsExcept(analysisRes == nullptr ? nullptr : analysisRes->GetMempool());
   }
 
   if (analysisRes != nullptr) {

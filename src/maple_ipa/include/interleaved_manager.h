@@ -56,14 +56,15 @@ class InterleavedManager {
   const PhaseManager *GetSupportPhaseManager(const std::string &phase);
 
  private:
+  void InitSupportPhaseManagers();
+  void OptimizeFuncs(MeFuncPhaseManager &fpm, MapleVector<MIRFunction*> &compList);
+
   MapleAllocator allocator;
   MIRModule &mirModule;
   MapleVector<PhaseManager*> phaseManagers;
   MapleVector<PhaseManager*> supportPhaseManagers;  // Used to check whether a phase is supported and by which manager
   std::string meInput;
   bool timePasses = false;
-
-  void InitSupportPhaseManagers();
 };
 }  // namespace maple
 #endif  // MAPLE_IPA_INCLUDE_INTERLEAVED_MANAGER_H

@@ -596,7 +596,6 @@ void MeABC::RemoveExtraNodes() {
       }
     }
   }
-  memPoolCtrler.DeleteMemPool(memPool);
 }
 
 bool MeABC::IsVirtualVar(const VarMeExpr &var, const SSATab &ssaTab) const {
@@ -1366,7 +1365,7 @@ AnalysisResult *MeDoABCOpt::Run(MeFunction *func, MeFuncResultMgr *frm, ModuleRe
   CHECK_FATAL(dom != nullptr, "dominance phase has problem");
   auto *irMap = static_cast<MeIRMap*>(frm->GetAnalysisResult(MeFuncPhase_IRMAP, func));
   CHECK_FATAL(irMap != nullptr, "irMap phase has problem");
-  MemPool *abcoMemPool = memPoolCtrler.NewMemPool(PhaseName());
+  MemPool *abcoMemPool = NewMemPool();
   MeABC meABC(*func, *dom, *irMap, *abcoMemPool);
   meABC.ExecuteABCO();
   if (DEBUGFUNC(func)) {

@@ -93,7 +93,7 @@ class MUIDReplacement : public FuncOptimizeImpl {
   uint32 FindIndexFromUndefTable(const MIRSymbol &mirSymbol, bool isFunc);
   void ReplaceAddroffuncConst(MIRConst *&entry, uint32 fieldID, bool isVtab);
   void ReplaceFuncTable(const std::string &name);
-  void ReplaceAddrofConst(MIRConst *&entry, bool isGlobalRootList = false);
+  void ReplaceAddrofConst(MIRConst *&entry);
   void ReplaceDataTable(const std::string &name);
   void ReplaceDirectInvokeOrAddroffunc(MIRFunction &currentFunc, StmtNode &stmt);
   void ReplaceDassign(MIRFunction &currentFunc, const DassignNode &dassignNode);
@@ -113,6 +113,7 @@ class MUIDReplacement : public FuncOptimizeImpl {
   void CollectFuncAndDataFromGlobalTab();
   void CollectFuncAndDataFromFuncList();
   void GenerateCompilerVersionNum();
+  int64 GetDefOrUndefOffsetWithMask(uint64, bool isDef) const;
   static MIRSymbol *GetSymbolFromName(const std::string &name);
   ConstvalNode* GetConstvalNode(int64 index);
   // The following sets are for internal uses. Sorting order does not matter here.

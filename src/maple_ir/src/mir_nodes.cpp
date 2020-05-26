@@ -24,7 +24,7 @@
 
 namespace maple {
 MIRModule *theMIRModule = nullptr;
-uint32 StmtNode::stmtIDNext = 1;  // 0 is reserved
+std::atomic<uint32> StmtNode::stmtIDNext(1);  // 0 is reserved
 uint32 StmtNode::lastPrintedLineNum = 0;
 
 const char *GetIntrinsicName(MIRIntrinsicID intrn) {

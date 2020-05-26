@@ -79,10 +79,10 @@ Before the static code analysis, we need compiled the OpenArkCompiler. After tha
 
 ```
 cp output/compile_commands.json ./
-./tools/clang_llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/share/clang/run-clang-tidy.py -clang-tidy-binary='./tools/clang_llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/bin/clang-tidy' -clang-apply-replacements-binary='./tools/clang_llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/bin/clang-apply-replacements' src/maple_driver/
+./tools/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/share/clang/run-clang-tidy.py -clang-tidy-binary='./tools/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/bin/clang-tidy' -clang-apply-replacements-binary='./tools/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/bin/clang-apply-replacements' src/maple_driver/
 ```
 Command description:
 
 - `cp output/compile_commands.json ./`: Copy the compile_commands.json in the output directory to the openarkcompiler directory, it is required by the clang-tidy, it contains the compile commands of OpenArkCompiler.
 
-- `./tools/clang_llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/share/clang/run-clang-tidy.py`: Call the run-clang-tidy.py which is the parallel clang-tidy runner. The `./tools/clang_llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/` directory is the directory of the release package of clang compiler. The `-clang-tidy-binary` set the path of clang-tidy binary. The `-clang-apply-replacements-binary` set the path of the clang-apply-replacements binary which is requried by the run-clang-tidy.py. The `src/maple_driver/` is the tested code directory.
+- `./tools/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/share/clang/run-clang-tidy.py`: Call the run-clang-tidy.py which is the parallel clang-tidy runner. The `./tools/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/` directory is the directory of the release package of clang compiler. The `-clang-tidy-binary` set the path of clang-tidy binary. The `-clang-apply-replacements-binary` set the path of the clang-apply-replacements binary which is requried by the run-clang-tidy.py. The `src/maple_driver/` is the tested code directory.

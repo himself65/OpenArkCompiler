@@ -67,6 +67,8 @@ class Prop {
   MeExpr &PropMeExpr(MeExpr &meExpr, bool &isproped, bool atParm);
   MeExpr *SimplifyMeExpr(OpMeExpr &opMeExpr) const;
   MeExpr *SimplifyCvtMeExpr(const OpMeExpr &opMeExpr) const;
+  MeExpr *SimplifyCompareConstWithAddress(OpMeExpr &opMeExpr) const;
+  MeExpr *SimplifyCompareWithZero(OpMeExpr &opMeExpr) const;
   MeExpr *SimplifyCompareMeExpr(OpMeExpr &opMeExpr) const;
   MeExpr *SimplifyCompareSelectConstMeExpr(const OpMeExpr &opMeExpr, const MeExpr &opMeOpnd0, MeExpr &opnd1,
       MeExpr &opnd01, MeExpr &opnd02) const;

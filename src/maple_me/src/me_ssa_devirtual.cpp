@@ -25,7 +25,8 @@ AnalysisResult *MeDoSSADevirtual::Run(MeFunction *func, MeFuncResultMgr *frm, Mo
   CHECK_FATAL(mrm != nullptr, "Needs module result manager for ipa");
   auto *kh = static_cast<KlassHierarchy*>(mrm->GetAnalysisResult(MoPhase_CHA, &func->GetMIRModule()));
   ASSERT(kh != nullptr, "KlassHierarchy has problem");
-  MeSSADevirtual meSSADevirtual(*NewMemPool(), func->GetMIRModule(), *func, *irMap, *kh, *dom);
+  bool skipReturnTypeOpt = false;
+  MeSSADevirtual meSSADevirtual(*NewMemPool(), func->GetMIRModule(), *func, *irMap, *kh, *dom, skipReturnTypeOpt);
   if (Options::O2) {
     Clone *clone = static_cast<Clone*>(mrm->GetAnalysisResult(MoPhase_CLONE, &func->GetMIRModule()));
     if (clone != nullptr) {

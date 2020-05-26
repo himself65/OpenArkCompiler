@@ -147,7 +147,7 @@ class AArch64CGFunc : public CGFunc {
   Operand *SelectCmpOp(CompareNode &node, Operand &o0, Operand &o1) override;
 
   void SelectAArch64Cmp(Operand &o, Operand &i, bool isIntType, uint32 dsize);
-  void SelectTargetFPCmpQuiet(Operand &o0, Operand &o1, uint32 dsize) override;
+  void SelectTargetFPCmpQuiet(Operand &o0, Operand &o1, uint32 dsize);
   void SelectAArch64CCmp(Operand &o, Operand &i, Operand &nzcv, CondOperand &cond, bool is64Bits);
   void SelectAArch64CSet(Operand &o, CondOperand &cond, bool is64Bits);
   void SelectAArch64CSINV(Operand &res, Operand &o0, Operand &o1, CondOperand &cond, bool is64Bits);

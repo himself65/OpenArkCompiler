@@ -16,6 +16,7 @@
 #define MAPLE_IR_INCLUDE_MIR_NODES_H
 #include <sstream>
 #include <utility>
+#include <atomic>
 #include "opcodes.h"
 #include "opcode_info.h"
 #include "mir_type.h"
@@ -1389,8 +1390,8 @@ class SrcPosition {
 // membarstoreload, membarstorestore
 class StmtNode : public BaseNode, public PtrListNodeBase<StmtNode> {
  public:
-  static uint32 stmtIDNext;          // for assigning stmtID, initialized to 1; 0 is reserved
-  static uint32 lastPrintedLineNum;  // used during printing ascii output
+  static std::atomic<uint32> stmtIDNext;  // for assigning stmtID, initialized to 1; 0 is reserved
+  static uint32 lastPrintedLineNum;       // used during printing ascii output
 
   explicit StmtNode(Opcode o) : BaseNode(o), PtrListNodeBase(), stmtID(stmtIDNext) {
     ++stmtIDNext;

@@ -80,19 +80,6 @@ void MeProfGen::InstrumentBB(BB &bb) {
   }
 }
 
-void MeProfGen::SaveProfile() {
-  if (!Options::profileTest) {
-    return;
-  }
-  if (func->GetName().find("main") != std::string::npos) {
-    std::vector<MeExpr*> opnds;
-    IntrinsiccallMeStmt *saveProfCall = hMap->CreateIntrinsicCallMeStmt(INTRN_MCCSaveProf, opnds);
-    for (BB *exitBB : func->GetCommonExitBB()->GetPred()) {
-      exitBB->AddMeStmtFirst(saveProfCall);
-    }
-  }
-}
-
 void MeProfGen::InstrumentFunc() {
   FindInstrumentEdges();
   std::vector<BB*> instrumentBBs;
@@ -113,7 +100,6 @@ void MeProfGen::InstrumentFunc() {
   instrumentBB += instrumentBBs.size();
   totalBB += GetAllBBs();
   instrumentFunc++;
-  SaveProfile();
   if (dump) {
     LogInfo::MapleLogger() << "******************after profile gen  dump function******************\n";
     func->Dump(true);
