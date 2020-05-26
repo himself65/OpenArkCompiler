@@ -87,10 +87,12 @@ class TypeTable {
   TypeTable(const TypeTable&) = delete;
   TypeTable &operator=(const TypeTable&) = delete;
   ~TypeTable();
-  MIRType *CreateMirType(uint32 primTypeIdx) const;
-  void PutToHashTable(MIRType *mirType);
 
   std::vector<MIRType*> &GetTypeTable() {
+    return typeTable;
+  }
+
+  const std::vector<MIRType*> &GetTypeTable() const {
     return typeTable;
   }
 
@@ -356,6 +358,9 @@ class TypeTable {
                                     MIRModule &module, bool forStruct = true);
   MIRType *GetOrCreateClassOrInterface(const std::string &name, MIRModule &module, bool forClass);
 
+  MIRType *CreateMirType(uint32 primTypeIdx) const;
+  void PutToHashTable(MIRType *mirType);
+
   std::unordered_set<MIRTypePtr, Hash, Equal> typeHashTable;
   std::vector<MIRType*> typeTable;
 };
@@ -455,6 +460,8 @@ class FPConstTable {
  private:
   FPConstTable() : floatConstTable(), doubleConstTable() {};
   void PostInit();
+  MIRFloatConst *DoGetOrCreateFloatConst(float);
+  MIRDoubleConst *DoGetOrCreateDoubleConst(double);
   std::unordered_map<float, MIRFloatConst*> floatConstTable;     // map float const value to the table;
   std::unordered_map<double, MIRDoubleConst*> doubleConstTable;  // map double const value to the table;
   MIRFloatConst *nanFloatConst = nullptr;
@@ -482,6 +489,7 @@ class IntConstTable {
 
  private:
   IntConstTable() = default;
+  MIRIntConst *DoGetOrCreateIntConst(int64 val, MIRType &type, uint32 fieldID);
   std::unordered_map<IntConstKey, MIRIntConst*, IntConstHash, IntConstCmp> intConstTable;
 };
 

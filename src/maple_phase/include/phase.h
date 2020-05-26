@@ -40,7 +40,7 @@ class AnalysisResult {
   }
 
   void EraseMemPool() {
-    memPoolCtrler.DeleteMemPool(memPool);
+    memPool->Release();
   }
 
  private:
@@ -50,6 +50,8 @@ class AnalysisResult {
 class Phase {
  public:
   Phase() = default;
+
+  explicit Phase(MemPoolCtrler &mpCtrler) : mpCtrler(&mpCtrler) {}
 
   virtual ~Phase() = default;
 
@@ -64,27 +66,37 @@ class Phase {
     ASSERT(!phaseName.empty(), "PhaseName should not be empty");
     ++memPoolCount;
     std::string memPoolName = phaseName + " MemPool " + std::to_string(memPoolCount);
-    MemPool *memPool = memPoolCtrler.NewMemPool(memPoolName);
-    memPools.push_back(memPool);
+    MemPool *memPool = mpCtrler->NewMemPool(memPoolName);
+    memPools.insert(memPool);
     return memPool;
   }
 
+  // remove the specified memPool from memPools, then release the memPool
+  void ReleaseMemPool(MemPool *memPool) {
+    memPools.erase(memPool);
+    memPool->Release();
+  }
+
   // release all mempool use in this phase except exclusion
-  void ReleaseMemPool(const MemPool *exclusion) {
+  void ClearMemPoolsExcept(const MemPool *exclusion) {
     for (MemPool *memPool : memPools) {
       if (memPool == exclusion) {
         continue;
       }
-      memPoolCtrler.DeleteMemPool(memPool);
+      mpCtrler->DeleteMemPool(memPool);
       memPool = nullptr;
     }
     memPools.clear();
-    memPools.shrink_to_fit();
+  }
+
+  void SetMpCtrler(MemPoolCtrler *ctrler) {
+    mpCtrler = ctrler;
   }
 
  private:
   unsigned int memPoolCount = 0;
-  std::vector<MemPool*> memPools;
+  std::set<MemPool*> memPools;
+  MemPoolCtrler *mpCtrler = &memPoolCtrler;
 };
 
 template <typename UnitIR, typename PhaseIDT, typename PhaseT>
@@ -116,10 +128,10 @@ class AnalysisResultManager {
     AnalysisResult *result = anaPhase->Run(ir, this);
     // allow invoke phases whose return value is nullptr using GetAnalysisResult
     if (result == nullptr) {
-      anaPhase->ReleaseMemPool(nullptr);
+      anaPhase->ClearMemPoolsExcept(nullptr);
       return nullptr;
     }
-    anaPhase->ReleaseMemPool(result->GetMempool());
+    anaPhase->ClearMemPoolsExcept(result->GetMempool());
     analysisResults[key] = result; // add r to analysisResults
     return result;
   }

@@ -26,7 +26,7 @@ enum FuncProp : uint32_t {
   kFuncPropHasCall = 1U,           // the function has call
   kFuncPropRetStruct = 1U << 1,    // the function returns struct
   kFuncPropUserFunc = 1U << 2,     // the function is a user func
-  kFuncPropInfoPrinted = 1U << 3,  // to avoid printing framesize/moduleid/funcSize info more
+  kFuncPropInfoPrinted = 1U << 3,  // to avoid printing frameSize/moduleid/funcSize info more
                                    // than once per function since they
                                    // can only be printed at the beginning of a block
   kFuncPropNeverReturn = 1U << 4,  // the function when called never returns
@@ -237,7 +237,7 @@ void MIRFunction::Dump(bool withoutBody) {
     return;
   }
 
-  // save the module's curfunction and set it to the one currently Dump()ing
+  // save the module's curFunction and set it to the one currently Dump()ing
   MIRFunction *savedFunc = module->CurFunction();
   module->SetCurFunction(this);
 
@@ -262,7 +262,7 @@ void MIRFunction::Dump(bool withoutBody) {
     LogInfo::MapleLogger() << '\n';
   }
 
-  // restore the curfunction
+  // restore the curFunction
   module->SetCurFunction(savedFunc);
 }
 

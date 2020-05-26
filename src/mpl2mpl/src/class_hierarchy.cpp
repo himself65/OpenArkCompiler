@@ -776,7 +776,7 @@ KlassHierarchy::KlassHierarchy(MIRModule *mirmodule, MemPool *memPool)
       topoWorkList(alloc.Adapter()) {}
 
 AnalysisResult *DoKlassHierarchy::Run(MIRModule *module, ModuleResultMgr *m) {
-  MemPool *memPool = memPoolCtrler.NewMemPool("classhierarchy mempool");
+  MemPool *memPool = NewMemPool();
   KlassHierarchy *kh = memPool->New<KlassHierarchy>(module, memPool);
   KlassHierarchy::traceFlag = TRACE_PHASE;
   kh->BuildHierarchy();

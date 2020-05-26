@@ -597,7 +597,7 @@ bool DefaultO0RegAllocator::AllocateRegisters() {
       }
       /* hack. a better way to handle intrinsics? */
       for (auto rememberReg : rememberRegs) {
-        ASSERT(rememberReg == kRinvalid, "not a valid register");
+        ASSERT(rememberReg != kRinvalid, "not a valid register");
         ReleaseReg(rememberReg);
       }
       rememberRegs.clear();

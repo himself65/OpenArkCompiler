@@ -25,12 +25,18 @@ constexpr char kMuidFuncPtrStr[] = "__muid_funcptr";
 constexpr char kMuidSymPtrStr[] = "__muid_symptr";
 
 #ifdef USE_ARM32_MACRO
-constexpr maple::uint32 kFromUndefIndexMask = 0x40000000;
-constexpr maple::uint32 kFromDefIndexMask = 0x20000000;
+enum LinkerRefFormat {
+  kLinkerRefAddress   = 0, // must be 0
+  kLinkerRefDef       = 1, // def
+  kLinkerRefUnDef     = 2, // undef
+  kLinkerRefOffset    = 3  // offset
+};
 #else
 constexpr maple::uint64 kFromUndefIndexMask = 0x4000000000000000;
 constexpr maple::uint64 kFromDefIndexMask = 0x2000000000000000;
 #endif
+constexpr maple::uint64 KReservedBits = 2u;
+
 
 } // namespace
 
@@ -853,7 +859,6 @@ void MUIDReplacement::ReplaceAddroffuncConst(MIRConst *&entry, uint32 fieldID, b
   MIRFunction *func = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(funcAddr->GetValue());
   uint64 offset = 0;
   MIRIntConst *constNode = nullptr;
-  constexpr uint64 reservedBits = 2u;
   if (func->GetBody() != nullptr) {
     ASSERT(func->GetFuncSymbol() != nullptr, "null ptr check!");
     offset = FindIndexFromDefTable(*(func->GetFuncSymbol()), true);
@@ -863,7 +868,7 @@ void MUIDReplacement::ReplaceAddroffuncConst(MIRConst *&entry, uint32 fieldID, b
     // this is an index into the funcDefTab
     constexpr uint64 idxIntoFuncDefTabFlag = 2u;
     constNode = GlobalTables::GetIntConstTable().GetOrCreateIntConst(
-        static_cast<int64>(((offset + 1) << reservedBits) + idxIntoFuncDefTabFlag), voidType);
+        static_cast<int64>(((offset + 1) << KReservedBits) + idxIntoFuncDefTabFlag), voidType);
   } else if (isVtab && func->IsAbstract()) {
     MIRType &type = *GlobalTables::GetTypeTable().GetVoidPtr();
     constNode = GlobalTables::GetIntConstTable().GetOrCreateIntConst(0, type);
@@ -872,7 +877,7 @@ void MUIDReplacement::ReplaceAddroffuncConst(MIRConst *&entry, uint32 fieldID, b
     offset = FindIndexFromUndefTable(*(func->GetFuncSymbol()), true);
     // The second least significant bit is set to 0, indicating
     // this is an index into the funcUndefTab
-    constNode = GlobalTables::GetIntConstTable().GetOrCreateIntConst(static_cast<int64>((offset + 1) << reservedBits),
+    constNode = GlobalTables::GetIntConstTable().GetOrCreateIntConst(static_cast<int64>((offset + 1) << KReservedBits),
                                                                      voidType);
   }
   if (fieldID != 0xffffffff) {
@@ -891,14 +896,13 @@ void MUIDReplacement::ReplaceDataTable(const std::string &name) {
   if (oldConst == nullptr) {
     return;
   }
-  bool isGLobalRootList = (name == NameMangler::kGcRootList) ? true : false;
   for (MIRConst *&oldTabEntry : oldConst->GetConstVec()) {
     CHECK_NULL_FATAL(oldTabEntry);
     if (oldTabEntry->GetKind() == kConstAggConst) {
       auto *aggrC = static_cast<MIRAggConst*>(oldTabEntry);
       for (size_t i = 0; i < aggrC->GetConstVec().size(); ++i) {
         CHECK_NULL_FATAL(aggrC->GetConstVecItem(i));
-        ReplaceAddrofConst(aggrC->GetConstVecItem(i), isGLobalRootList);
+        ReplaceAddrofConst(aggrC->GetConstVecItem(i));
         MIRConstPtr mirConst = aggrC->GetConstVecItem(i);
         if (mirConst->GetKind() == kConstInt) {
           MIRIntConst *newIntConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(
@@ -909,7 +913,7 @@ void MUIDReplacement::ReplaceDataTable(const std::string &name) {
         }
       }
     } else if (oldTabEntry->GetKind() == kConstAddrof) {
-      ReplaceAddrofConst(oldTabEntry, isGLobalRootList);
+      ReplaceAddrofConst(oldTabEntry);
     }
   }
 }
@@ -944,7 +948,7 @@ void MUIDReplacement::ReplaceDecoupleKeyTable(MIRAggConst* oldConst) {
   }
 }
 
-void MUIDReplacement::ReplaceAddrofConst(MIRConst *&entry, bool isGlobalRootList) {
+void MUIDReplacement::ReplaceAddrofConst(MIRConst *&entry) {
   if (entry->GetKind() != kConstAddrof) {
     return;
   }
@@ -959,24 +963,30 @@ void MUIDReplacement::ReplaceAddrofConst(MIRConst *&entry, bool isGlobalRootList
   MIRIntConst *constNode = nullptr;
   if (addrSym->GetStorageClass() != kScExtern) {
     offset = FindIndexFromDefTable(*addrSym, false);
-    if (isGlobalRootList == true) {
-#ifdef USE_ARM32_MACRO
-      offset =  (offset << 2) + 1;
-#endif
-    }
-    constNode = GlobalTables::GetIntConstTable().GetOrCreateIntConst(static_cast<int64>(offset | kFromDefIndexMask),
+    constNode = GlobalTables::GetIntConstTable().GetOrCreateIntConst(GetDefOrUndefOffsetWithMask(offset, true),
                                                                      voidType);
   } else {
     offset = FindIndexFromUndefTable(*addrSym, false);
-    if (isGlobalRootList == true) {
-#ifdef USE_ARM32_MACRO
-      offset =  (offset << 2) + 1;
-#endif
-    }
-    constNode = GlobalTables::GetIntConstTable().GetOrCreateIntConst(static_cast<int64>(offset | kFromUndefIndexMask),
+    constNode = GlobalTables::GetIntConstTable().GetOrCreateIntConst(GetDefOrUndefOffsetWithMask(offset, false),
                                                                      voidType);
   }
   entry = constNode;
+}
+
+int64 MUIDReplacement::GetDefOrUndefOffsetWithMask(uint64 offset, bool isDef) const {
+  if (isDef) {
+#ifdef USE_ARM32_MACRO
+    return static_cast<int64>((offset << KReservedBits) + kLinkerRefDef);
+#else
+    return static_cast<int64>(offset | kFromDefIndexMask);
+#endif
+  } else {
+#ifdef USE_ARM32_MACRO
+    return static_cast<int64>((offset << KReservedBits) + kLinkerRefUnDef);
+#else
+    return static_cast<int64>(offset | kFromUndefIndexMask);
+#endif
+  }
 }
 
 void MUIDReplacement::ReplaceDirectInvokeOrAddroffunc(MIRFunction &currentFunc, StmtNode &stmt) {

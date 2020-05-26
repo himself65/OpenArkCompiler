@@ -101,7 +101,7 @@ void MeDoLoopCanon::Convert(MeFunction &func, BB &bb, BB &pred, MapleMap<Key, bo
   // if bb->fallthru is in loopbody, latchBB need convert condgoto and make original target as its fallthru
   bool swapSuccOfLatch = (swapSuccs.find(std::make_pair(&bb, &pred)) != swapSuccs.end());
   if (DEBUGFUNC(&func)) {
-    LogInfo::MapleLogger() << "***loop convert: backedge bb->id_ " << bb.GetBBId() << " pred->id_ "
+    LogInfo::MapleLogger() << "***loop convert: backedge bb->id " << bb.GetBBId() << " pred->id "
                            << pred.GetBBId();
     if (swapSuccOfLatch) {
       LogInfo::MapleLogger() << " need swap succs\n";

@@ -1068,7 +1068,7 @@ AnalysisResult *MeDoStmtPre::Run(MeFunction *func, MeFuncResultMgr *m, ModuleRes
   }
   ssaPre.ApplySSAPRE();
   if (!ssaPre.GetCandsForSSAUpdate().empty()) {
-    MemPool *memPool = memPoolCtrler.NewMemPool("MeSSAUpdate");
+    MemPool *memPool = NewMemPool();
     CHECK_FATAL(memPool != nullptr, "must be");
     MeSSAUpdate ssaUpdate(*func, *func->GetMeSSATab(), *dom, ssaPre.GetCandsForSSAUpdate(), *memPool);
     ssaUpdate.Run();

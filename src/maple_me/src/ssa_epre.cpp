@@ -320,7 +320,7 @@ void SSAEPre::BuildWorkListExpr(MeStmt &meStmt, int32 seqStmt, MeExpr &meExpr, b
            (naryMeExpr->GetOp() == OP_intrinsicop && IntrinDesc::intrinTable[naryMeExpr->GetIntrinsic()].IsPure())) &&
           (epreIncludeRef || naryMeExpr->GetPrimType() != PTY_ref)) {
         if (meExpr.GetOp() == OP_array) {
-          MIRType *mirType = GlobalTables::GetTypeTable().GetTypeTable().at(naryMeExpr->GetTyIdx());
+          MIRType *mirType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(naryMeExpr->GetTyIdx());
           CHECK_FATAL(mirType->GetKind() == kTypePointer, "array must have pointer type");
           auto *ptrMIRType = static_cast<MIRPtrType*>(mirType);
           MIRJarrayType *arryType = safe_cast<MIRJarrayType>(ptrMIRType->GetPointedType());

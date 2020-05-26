@@ -21,6 +21,7 @@
 #include "me_option.h"
 #include "mempool.h"
 #include "phase_manager.h"
+#include "mpl_timer.h"
 
 namespace maple {
 void InterleavedManager::AddPhases(const std::vector<std::string> &phases, bool isModulePhase, bool timePhases,
@@ -55,6 +56,21 @@ void InterleavedManager::AddPhases(const std::vector<std::string> &phases, bool 
 }
 
 
+void InterleavedManager::OptimizeFuncs(MeFuncPhaseManager &fpm, MapleVector<MIRFunction*> &compList) {
+  for (size_t i = 0; i < compList.size(); ++i) {
+    MIRFunction *func = compList[i];
+    ASSERT_NOT_NULL(func);
+    // skip empty func, and skip the func out of range  if `useRange` is true
+    if (func->GetBody() == nullptr || (MeOption::useRange && (i < MeOption::range[0] || i > MeOption::range[1]))) {
+      continue;
+    }
+    mirModule.SetCurFunction(func);
+    // lower, create BB and build cfg
+    fpm.Run(func, i, meInput);
+  }
+}
+
+
 void InterleavedManager::Run() {
   for (auto *pm : phaseManagers) {
     if (pm == nullptr) {
@@ -63,6 +79,9 @@ void InterleavedManager::Run() {
     auto *fpm = dynamic_cast<MeFuncPhaseManager*>(pm);
     if (fpm == nullptr) {
       pm->Run();
+      continue;
+    }
+    if (fpm->GetPhaseSequence()->empty()) {
       continue;
     }
     MapleVector<MIRFunction*> *compList;
@@ -76,26 +95,13 @@ void InterleavedManager::Run() {
     } else {
       compList = &mirModule.GetFunctionList();
     }
-    // If rangeNum < MeOption::range[0], Move to the next function with rangeNum++
-    uint64 rangeNum = 0;
-    for (auto *func : *compList) {
-      ASSERT_NOT_NULL(func);
-      if (MeOption::useRange && (rangeNum < MeOption::range[0] || rangeNum > MeOption::range[1])) {
-        ++rangeNum;
-        continue;
-      }
-      if (func->GetBody() == nullptr) {
-        ++rangeNum;
-        continue;
-      }
-      if (fpm->GetPhaseSequence()->empty()) {
-        continue;
-      }
-      mirModule.SetCurFunction(func);
-      // lower, create BB and build cfg
-      fpm->Run(func, rangeNum, meInput);
-      ++rangeNum;
-    }
+
+    MPLTimer optTimer;
+    optTimer.Start();
+    std::string logPrefix = mirModule.IsInIPA() ? "[ipa]" : "[me]";
+    OptimizeFuncs(*fpm, *compList);
+    optTimer.Stop();
+    LogInfo::MapleLogger() << logPrefix << " Function phases cost " << optTimer.ElapsedMilliseconds() << "ms\n";
     if (fpm->GetGenMeMpl()) {
       mirModule.Emit("comb.me.mpl");
     }

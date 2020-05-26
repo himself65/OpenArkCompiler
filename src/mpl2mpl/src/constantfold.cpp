@@ -24,6 +24,7 @@ namespace {
 constexpr maple::uint64 kJsTypeNumber = 4;
 constexpr maple::uint64 kJsTypeNumberInHigh32Bit = kJsTypeNumber << 32; // set high 32 bit as JSTYPE_NUMBER
 constexpr maple::uint32 kByteSizeOfBit64 = 8; // byte number for 64 bit
+constexpr maple::uint32 kBitSizePerByte = 8;
 enum CompareRes : maple::int64 {
   kLess = -1,
   kEqual = 0,
@@ -1034,15 +1035,37 @@ ConstvalNode *ConstantFold::FoldCeil(const ConstvalNode &cst, PrimType fromType,
   return resultConst;
 }
 
+template <class T>
+T ConstantFold::CalIntValueFromFloatValue(T value, MIRType &resultType) const {
+  ASSERT(kByteSizeOfBit64 >= resultType.GetSize(), "unsurpported type");
+  size_t shiftNum = (kByteSizeOfBit64 - resultType.GetSize()) * kBitSizePerByte;
+  int64 max = 0;
+  int64 min = 0;
+  if (IsSignedInteger(resultType.GetPrimType())) {
+    max = static_cast<int64>(LONG_LONG_MAX >> shiftNum);
+    min = (LONG_LONG_MIN >> shiftNum);
+  } else {
+    max = static_cast<int64>(ULONG_LONG_MAX >> shiftNum);
+  }
+  if (value > max) {
+    return max;
+  } else if (value < min) {
+    return min;
+  }
+  return value;
+}
+
 MIRConst *ConstantFold::FoldFloorMIRConst(const MIRConst &cst, PrimType fromType, PrimType toType) const {
   MIRType &resultType = *GlobalTables::GetTypeTable().GetPrimType(toType);
   if (fromType == PTY_f32) {
     const auto &constValue = static_cast<const MIRFloatConst&>(cst);
     float floutValue = floor(constValue.GetValue());
+    floutValue = CalIntValueFromFloatValue(floutValue, resultType);
     return GlobalTables::GetIntConstTable().GetOrCreateIntConst(static_cast<int64>(floutValue), resultType);
   } else {
     const auto &constValue = static_cast<const MIRDoubleConst&>(cst);
     double doubleValue = floor(constValue.GetValue());
+    doubleValue = CalIntValueFromFloatValue(doubleValue, resultType);
     return GlobalTables::GetIntConstTable().GetOrCreateIntConst(static_cast<int64>(doubleValue), resultType);
   }
 }

@@ -87,7 +87,7 @@ AnalysisResult *MeDoSSAEPre::Run(MeFunction *func, MeFuncResultMgr *m, ModuleRes
   }
   ssaPre.ApplySSAPRE();
   if (!ssaPre.GetCandsForSSAUpdate().empty()) {
-    MemPool *tmp = memPoolCtrler.NewMemPool("MeSSAUpdate");
+    MemPool *tmp = NewMemPool();
     MeSSAUpdate ssaUpdate(*func, *func->GetMeSSATab(), *dom, ssaPre.GetCandsForSSAUpdate(), *tmp);
     ssaUpdate.Run();
   }

@@ -2034,7 +2034,7 @@ bool MIRParser::ParseExprCompare(BaseNodePtr &expr) {
 }
 
 bool MIRParser::ParseExprDepositbits(BaseNodePtr &expr) {
-  // syntax: depositbits <int-type> <boffset> <bSize> (<opnd0>, <opnd1>)
+  // syntax: depositbits <int-type> <bOffset> <bSize> (<opnd0>, <opnd1>)
   if (lexer.GetTokenKind() != TK_depositbits) {
     Error("expect depositbits but get ");
     return false;
@@ -2048,7 +2048,7 @@ bool MIRParser::ParseExprDepositbits(BaseNodePtr &expr) {
   }
   dpsbNode->SetPrimType(ptyp);
   if (lexer.NextToken() != TK_intconst) {
-    Error("expect boffset but get ");
+    Error("expect bOffset but get ");
     return false;
   }
   dpsbNode->SetBitsOffset(lexer.GetTheIntVal());
@@ -2362,7 +2362,7 @@ bool MIRParser::ParseExprJarray(BaseNodePtr &expr) {
 
 // parse extractbits, sext, zext
 bool MIRParser::ParseExprExtractbits(BaseNodePtr &expr) {
-  // extractbits <int-type> <boffset> <bSize> (<opnd0>)
+  // extractbits <int-type> <bOffset> <bSize> (<opnd0>)
   Opcode op = GetUnaryOp(lexer.GetTokenKind());
   if (op == OP_undef) {
     Error("expect unary op but get ");
@@ -2384,7 +2384,7 @@ bool MIRParser::ParseExprExtractbits(BaseNodePtr &expr) {
   extrctNode->SetPrimType(ptyp);
   if (op == OP_extractbits) {
     if (lexer.GetTokenKind() != TK_intconst) {
-      Error("expect boffset but get ");
+      Error("expect bOffset but get ");
       return false;
     }
     extrctNode->SetBitsOffset(lexer.GetTheIntVal());

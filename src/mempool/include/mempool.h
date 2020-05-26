@@ -46,18 +46,7 @@ class MemPoolCtrler {
 
   MemPool *NewMemPool(const std::string&);
   void DeleteMemPool(MemPool *memPool);
-  void FreeMem() {
-    for (MemBlock *block : freeMemBlocks) {
-      free(block);
-    }
-    for (auto it = largeFreeMemBlocks.begin(); it != largeFreeMemBlocks.end(); ++it) {
-      for (auto itr = (*it).second.begin(); itr != (*it).second.end(); ++itr) {
-        free(*itr);
-      }
-    }
-    freeMemBlocks.clear();
-    largeFreeMemBlocks.clear();
-  }
+  void FreeMem();
   bool IsEmpty() const {
     return memPools.empty();
   }
@@ -89,7 +78,7 @@ class MemPool {
   friend MemPoolCtrler;
 
  public:  // Methods
-  MemPool(MemPoolCtrler &ctl, const std::string &name) : ctrler(&ctl), name(name) {
+  MemPool(MemPoolCtrler &ctl, const std::string &name) : ctrler(ctl), name(name) {
   }
 
   ~MemPool();
@@ -97,8 +86,17 @@ class MemPool {
   void *Calloc(size_t size);
   void *Realloc(const void *ptr, size_t oldSize, size_t newSize);
   void ReleaseContainingMem();
+
+  void Release() {
+    ctrler.DeleteMemPool(this);
+  }
+
   const std::string &GetName() const {
     return name;
+  }
+
+  const MemPoolCtrler &GetCtrler() const {
+    return ctrler;
   }
 
   template <class T>
@@ -136,7 +134,7 @@ class MemPool {
   static constexpr size_t kMemBlockOverhead = (BITS_ALIGN(sizeof(MemPoolCtrler::MemBlock)));
   MemPoolCtrler::MemBlock *GetLargeMemBlock(size_t size);  // Raw allocate large memory block
   MemPoolCtrler::MemBlock *GetMemBlock();
-  MemPoolCtrler *ctrler;  // Hookup controller object
+  MemPoolCtrler &ctrler;  // Hookup controller object
   std::string name;       // Name of the memory pool
   // Save the memory block stack
   std::stack<MemPoolCtrler::MemBlock*> memBlockStack;

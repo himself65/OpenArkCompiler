@@ -211,7 +211,6 @@ class CGFunc {
   virtual Operand *SelectSelect(TernaryNode &node, Operand &opnd0, Operand &opnd1, Operand &opnd2) = 0;
   virtual Operand *SelectMalloc(UnaryNode &call, Operand &opnd0) = 0;
   virtual RegOperand &SelectCopy(Operand &src, PrimType srcType, PrimType dstType) = 0;
-  virtual void SelectTargetFPCmpQuiet(Operand &o0, Operand &o1, uint32 size) = 0;
   virtual Operand *SelectAlloca(UnaryNode &call, Operand &opnd0) = 0;
   virtual Operand *SelectGCMalloc(GCMallocNode &call) = 0;
   virtual Operand *SelectJarrayMalloc(JarrayMallocNode &call, Operand &opnd0) = 0;

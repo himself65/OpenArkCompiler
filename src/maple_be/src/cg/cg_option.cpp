@@ -37,7 +37,11 @@ std::unordered_map<std::string, std::vector<std::string>> CGOptions::cyclePatter
 std::string CGOptions::skipFrom = "";
 std::string CGOptions::skipAfter = "";
 std::string CGOptions::dumpFunc = "*";
+#ifdef TARGARM32
+std::string CGOptions::duplicateAsmFile = "";
+#else
 std::string CGOptions::duplicateAsmFile = "maple/mrt/codetricks/arch/arm64/duplicateFunc.s";
+#endif
 std::string CGOptions::globalVarProfile = "";
 #if TARGAARCH64
 bool CGOptions::useBarriersForVolatile = false;

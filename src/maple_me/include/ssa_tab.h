@@ -154,6 +154,11 @@ class SSATab : public AnalysisResult {
     return *(GetStmtsSSAPart().GetAssignedVarOf(stmt)->GetOrigSt()->GetMIRSymbol());
   }
 
+  bool IsInitVersion(size_t vstIdx, const OStIdx &ostIdx) {
+    auto *ost = GetOriginalStFromID(ostIdx);
+    ASSERT(ost != nullptr, "null pointer check");
+    return ost->GetZeroVersionIndex() == vstIdx;
+  }
  private:
   MIRModule &mirModule;
   VersionStTable versionStTable;  // this uses special versMp because it will be freed earlier
