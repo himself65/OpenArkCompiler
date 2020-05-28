@@ -3,202 +3,202 @@
 const unsigned int kunitNum = 2;
 Unit *instancekUnitIdSlot0 = new Unit(kUnitIdSlot0);
 if(instancekUnitIdSlot0 == nullptr) {
-  maple::logInfo.MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdSlot0 failed." << std::endl;
+  maple::LogInfo::MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdSlot0 failed." << std::endl;
 }
 ASSERT(instancekUnitIdSlot0, "Unit allocation for kUnitIdSlot0 failed.");
 
 Unit *instancekUnitIdSlot1 = new Unit(kUnitIdSlot1);
 if(instancekUnitIdSlot1 == nullptr) {
-  maple::logInfo.MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdSlot1 failed." << std::endl;
+  maple::LogInfo::MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdSlot1 failed." << std::endl;
 }
 ASSERT(instancekUnitIdSlot1, "Unit allocation for kUnitIdSlot1 failed.");
 
 Unit *instancekUnitIdAgen = new Unit(kUnitIdAgen);
 if(instancekUnitIdAgen == nullptr) {
-  maple::logInfo.MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdAgen failed." << std::endl;
+  maple::LogInfo::MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdAgen failed." << std::endl;
 }
 ASSERT(instancekUnitIdAgen, "Unit allocation for kUnitIdAgen failed.");
 
 Unit *instancekUnitIdHazard = new Unit(kUnitIdHazard);
 if(instancekUnitIdHazard == nullptr) {
-  maple::logInfo.MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdHazard failed." << std::endl;
+  maple::LogInfo::MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdHazard failed." << std::endl;
 }
 ASSERT(instancekUnitIdHazard, "Unit allocation for kUnitIdHazard failed.");
 
 Unit *instancekUnitIdCrypto = new Unit(kUnitIdCrypto);
 if(instancekUnitIdCrypto == nullptr) {
-  maple::logInfo.MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdCrypto failed." << std::endl;
+  maple::LogInfo::MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdCrypto failed." << std::endl;
 }
 ASSERT(instancekUnitIdCrypto, "Unit allocation for kUnitIdCrypto failed.");
 
 Unit *instancekUnitIdMul = new Unit(kUnitIdMul);
 if(instancekUnitIdMul == nullptr) {
-  maple::logInfo.MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdMul failed." << std::endl;
+  maple::LogInfo::MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdMul failed." << std::endl;
 }
 ASSERT(instancekUnitIdMul, "Unit allocation for kUnitIdMul failed.");
 
 Unit *instancekUnitIdDiv = new Unit(kUnitIdDiv);
 if(instancekUnitIdDiv == nullptr) {
-  maple::logInfo.MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdDiv failed." << std::endl;
+  maple::LogInfo::MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdDiv failed." << std::endl;
 }
 ASSERT(instancekUnitIdDiv, "Unit allocation for kUnitIdDiv failed.");
 
 Unit *instancekUnitIdBranch = new Unit(kUnitIdBranch);
 if(instancekUnitIdBranch == nullptr) {
-  maple::logInfo.MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdBranch failed." << std::endl;
+  maple::LogInfo::MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdBranch failed." << std::endl;
 }
 ASSERT(instancekUnitIdBranch, "Unit allocation for kUnitIdBranch failed.");
 
 Unit *instancekUnitIdStAgu = new Unit(kUnitIdStAgu);
 if(instancekUnitIdStAgu == nullptr) {
-  maple::logInfo.MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdStAgu failed." << std::endl;
+  maple::LogInfo::MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdStAgu failed." << std::endl;
 }
 ASSERT(instancekUnitIdStAgu, "Unit allocation for kUnitIdStAgu failed.");
 
 Unit *instancekUnitIdLdAgu = new Unit(kUnitIdLdAgu);
 if(instancekUnitIdLdAgu == nullptr) {
-  maple::logInfo.MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdLdAgu failed." << std::endl;
+  maple::LogInfo::MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdLdAgu failed." << std::endl;
 }
 ASSERT(instancekUnitIdLdAgu, "Unit allocation for kUnitIdLdAgu failed.");
 
 Unit *instancekUnitIdFpAluLo = new Unit(kUnitIdFpAluLo);
 if(instancekUnitIdFpAluLo == nullptr) {
-  maple::logInfo.MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdFpAluLo failed." << std::endl;
+  maple::LogInfo::MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdFpAluLo failed." << std::endl;
 }
 ASSERT(instancekUnitIdFpAluLo, "Unit allocation for kUnitIdFpAluLo failed.");
 
 Unit *instancekUnitIdFpAluHi = new Unit(kUnitIdFpAluHi);
 if(instancekUnitIdFpAluHi == nullptr) {
-  maple::logInfo.MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdFpAluHi failed." << std::endl;
+  maple::LogInfo::MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdFpAluHi failed." << std::endl;
 }
 ASSERT(instancekUnitIdFpAluHi, "Unit allocation for kUnitIdFpAluHi failed.");
 
 Unit *instancekUnitIdFpMulLo = new Unit(kUnitIdFpMulLo);
 if(instancekUnitIdFpMulLo == nullptr) {
-  maple::logInfo.MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdFpMulLo failed." << std::endl;
+  maple::LogInfo::MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdFpMulLo failed." << std::endl;
 }
 ASSERT(instancekUnitIdFpMulLo, "Unit allocation for kUnitIdFpMulLo failed.");
 
 Unit *instancekUnitIdFpMulHi = new Unit(kUnitIdFpMulHi);
 if(instancekUnitIdFpMulHi == nullptr) {
-  maple::logInfo.MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdFpMulHi failed." << std::endl;
+  maple::LogInfo::MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdFpMulHi failed." << std::endl;
 }
 ASSERT(instancekUnitIdFpMulHi, "Unit allocation for kUnitIdFpMulHi failed.");
 
 Unit *instancekUnitIdFpDivLo = new Unit(kUnitIdFpDivLo);
 if(instancekUnitIdFpDivLo == nullptr) {
-  maple::logInfo.MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdFpDivLo failed." << std::endl;
+  maple::LogInfo::MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdFpDivLo failed." << std::endl;
 }
 ASSERT(instancekUnitIdFpDivLo, "Unit allocation for kUnitIdFpDivLo failed.");
 
 Unit *instancekUnitIdFpDivHi = new Unit(kUnitIdFpDivHi);
 if(instancekUnitIdFpDivHi == nullptr) {
-  maple::logInfo.MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdFpDivHi failed." << std::endl;
+  maple::LogInfo::MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdFpDivHi failed." << std::endl;
 }
 ASSERT(instancekUnitIdFpDivHi, "Unit allocation for kUnitIdFpDivHi failed.");
 
 Unit *instancekUnitIdSlotS = new Unit(kUnitTypeOr, kUnitIdSlotS, kunitNum,
                                       instancekUnitIdSlot0, instancekUnitIdSlot1);
 if(instancekUnitIdSlotS == nullptr) {
-  maple::logInfo.MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdSlotS failed." << std::endl;
+  maple::LogInfo::MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdSlotS failed." << std::endl;
 }
 ASSERT(instancekUnitIdSlotS, "Unit allocation for kUnitIdSlotS failed.");
 
 Unit *instancekUnitIdFpAluS = new Unit(kUnitTypeOr, kUnitIdFpAluS, kunitNum,
                                        instancekUnitIdFpAluLo, instancekUnitIdFpAluHi);
 if(instancekUnitIdFpAluS == nullptr) {
-  maple::logInfo.MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdFpAluS failed." << std::endl;
+  maple::LogInfo::MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdFpAluS failed." << std::endl;
 }
 ASSERT(instancekUnitIdFpAluS, "Unit allocation for kUnitIdFpAluS failed.");
 
 Unit *instancekUnitIdFpMulS = new Unit(kUnitTypeOr, kUnitIdFpMulS, kunitNum,
                                        instancekUnitIdFpMulLo, instancekUnitIdFpMulHi);
 if(instancekUnitIdFpMulS == nullptr) {
-  maple::logInfo.MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdFpMulS failed." << std::endl;
+  maple::LogInfo::MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdFpMulS failed." << std::endl;
 }
 ASSERT(instancekUnitIdFpMulS, "Unit allocation for kUnitIdFpMulS failed.");
 
 Unit *instancekUnitIdFpDivS = new Unit(kUnitTypeOr, kUnitIdFpDivS, kunitNum,
                                        instancekUnitIdFpDivLo, instancekUnitIdFpDivHi);
 if(instancekUnitIdFpDivS == nullptr) {
-  maple::logInfo.MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdFpDivS failed." << std::endl;
+  maple::LogInfo::MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdFpDivS failed." << std::endl;
 }
 ASSERT(instancekUnitIdFpDivS, "Unit allocation for kUnitIdFpDivS failed.");
 
 Unit *instancekUnitIdSlotD = new Unit(kUnitTypeAnd, kUnitIdSlotD, kunitNum,
                                       instancekUnitIdSlot0, instancekUnitIdSlot1);
 if(instancekUnitIdSlotD == nullptr) {
-  maple::logInfo.MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdSlotD failed." << std::endl;
+  maple::LogInfo::MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdSlotD failed." << std::endl;
 }
 ASSERT(instancekUnitIdSlotD, "Unit allocation for kUnitIdSlotD failed.");
 
 Unit *instancekUnitIdFpAluD = new Unit(kUnitTypeAnd, kUnitIdFpAluD, kunitNum,
                                        instancekUnitIdFpAluLo, instancekUnitIdFpAluHi);
 if(instancekUnitIdFpAluD == nullptr) {
-  maple::logInfo.MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdFpAluD failed." << std::endl;
+  maple::LogInfo::MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdFpAluD failed." << std::endl;
 }
 ASSERT(instancekUnitIdFpAluD, "Unit allocation for kUnitIdFpAluD failed.");
 
 Unit *instancekUnitIdFpMulD = new Unit(kUnitTypeAnd, kUnitIdFpMulD, kunitNum,
                                        instancekUnitIdFpMulLo, instancekUnitIdFpMulHi);
 if(instancekUnitIdFpMulD == nullptr) {
-  maple::logInfo.MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdFpMulD failed." << std::endl;
+  maple::LogInfo::MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdFpMulD failed." << std::endl;
 }
 ASSERT(instancekUnitIdFpMulD, "Unit allocation for kUnitIdFpMulD failed.");
 
 Unit *instancekUnitIdFpDivD = new Unit(kUnitTypeAnd, kUnitIdFpDivD, kunitNum,
                                        instancekUnitIdFpDivLo, instancekUnitIdFpDivHi);
 if(instancekUnitIdFpDivD == nullptr) {
-  maple::logInfo.MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdFpDivD failed." << std::endl;
+  maple::LogInfo::MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdFpDivD failed." << std::endl;
 }
 ASSERT(instancekUnitIdFpDivD, "Unit allocation for kUnitIdFpDivD failed.");
 
 Unit *instancekUnitIdSlotSHazard = new Unit(kUnitTypeAnd, kUnitIdSlotSHazard, kunitNum,
                                             instancekUnitIdSlotS, instancekUnitIdHazard);
 if(instancekUnitIdSlotSHazard == nullptr) {
-  maple::logInfo.MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdSlotSHazard failed." << std::endl;
+  maple::LogInfo::MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdSlotSHazard failed." << std::endl;
 }
 ASSERT(instancekUnitIdSlotSHazard, "Unit allocation for kUnitIdSlotSHazard failed.");
 
 Unit *instancekUnitIdSlotSMul = new Unit(kUnitTypeAnd, kUnitIdSlotSMul, kunitNum,
                                          instancekUnitIdSlotS, instancekUnitIdMul);
 if(instancekUnitIdSlotSMul == nullptr) {
-  maple::logInfo.MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdSlotSMul failed." << std::endl;
+  maple::LogInfo::MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdSlotSMul failed." << std::endl;
 }
 ASSERT(instancekUnitIdSlotSMul, "Unit allocation for kUnitIdSlotSMul failed.");
 
 Unit *instancekUnitIdSlotSBranch = new Unit(kUnitTypeAnd, kUnitIdSlotSBranch, kunitNum,
                                             instancekUnitIdSlotS, instancekUnitIdBranch);
 if(instancekUnitIdSlotSBranch == nullptr) {
-  maple::logInfo.MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdSlotSBranch failed." << std::endl;
+  maple::LogInfo::MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdSlotSBranch failed." << std::endl;
 }
 ASSERT(instancekUnitIdSlotSBranch, "Unit allocation for kUnitIdSlotSBranch failed.");
 
 Unit *instancekUnitIdSlotSAgen = new Unit(kUnitTypeAnd, kUnitIdSlotSAgen, kunitNum,
                                           instancekUnitIdSlotS, instancekUnitIdAgen);
 if(instancekUnitIdSlotSAgen == nullptr) {
-  maple::logInfo.MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdSlotSAgen failed." << std::endl;
+  maple::LogInfo::MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdSlotSAgen failed." << std::endl;
 }
 ASSERT(instancekUnitIdSlotSAgen, "Unit allocation for kUnitIdSlotSAgen failed.");
 
 Unit *instancekUnitIdSlotDAgen = new Unit(kUnitTypeAnd, kUnitIdSlotDAgen, kunitNum,
                                           instancekUnitIdSlot0, instancekUnitIdSlot1, instancekUnitIdAgen);
 if(instancekUnitIdSlotDAgen == nullptr) {
-  maple::logInfo.MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdSlotDAgen failed." << std::endl;
+  maple::LogInfo::MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdSlotDAgen failed." << std::endl;
 }
 ASSERT(instancekUnitIdSlotDAgen, "Unit allocation for kUnitIdSlotDAgen failed.");
 
 Unit *instancekUnitIdSlot0LdAgu = new Unit(kUnitTypeAnd, kUnitIdSlot0LdAgu, kunitNum,
                                            instancekUnitIdSlot0, instancekUnitIdLdAgu);
 if(instancekUnitIdSlot0LdAgu == nullptr) {
-  maple::logInfo.MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdSlot0LdAgu failed." << std::endl;
+  maple::LogInfo::MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdSlot0LdAgu failed." << std::endl;
 }
 ASSERT(instancekUnitIdSlot0LdAgu, "Unit allocation for kUnitIdSlot0LdAgu failed.");
 
 Unit *instancekUnitIdSlot0StAgu = new Unit(kUnitTypeAnd, kUnitIdSlot0StAgu, kunitNum,
                                            instancekUnitIdSlot0, instancekUnitIdStAgu);
 if(instancekUnitIdSlot0StAgu == nullptr) {
-  maple::logInfo.MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdSlot0StAgu failed." << std::endl;
+  maple::LogInfo::MapleLogger(maple::kLlErr) << "Unit allocation for kUnitIdSlot0StAgu failed." << std::endl;
 }
 ASSERT(instancekUnitIdSlot0StAgu, "Unit allocation for kUnitIdSlot0StAgu failed.");
 

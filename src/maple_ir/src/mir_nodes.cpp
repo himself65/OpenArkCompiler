@@ -133,6 +133,12 @@ bool AddrofNode::CheckNode(const MIRModule &mod) const {
   }
 }
 
+bool AddrofNode::IsVolatile(const MIRModule &mod) const {
+  auto *symbol = mod.CurFunction()->GetLocalOrGlobalSymbol(stIdx);
+  ASSERT(symbol != nullptr, "null ptr check on symbol");
+  return symbol->IsVolatile();
+}
+
 void BlockNode::AddStatement(StmtNode *stmt) {
   ASSERT(stmt != nullptr, "null ptr check");
   stmtNodeList.push_back(stmt);

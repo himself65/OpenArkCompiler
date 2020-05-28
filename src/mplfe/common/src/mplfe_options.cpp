@@ -180,7 +180,7 @@ const mapleOption::Descriptor kUsage[] = {
   { static_cast<uint32>(kReleaseAfterEmit), 0, "", "release-after-emit",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyNone,
     "  --release-after-emit   : release temp memory after emit", "mplfe", {} },
-  { 0, 0, nullptr, nullptr, mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyNone, nullptr, "mplfe", {} }
+  { 0, 0, "", "", mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyNone, "", "mplfe", {} }
 };
 
 MPLFEOptions MPLFEOptions::options;
@@ -303,7 +303,7 @@ bool MPLFEOptions::SolveArgs(int argc, char **argv) {
 }
 
 void MPLFEOptions::DumpUsage() const {
-  for (unsigned int i = 0; kUsage[i].help != nullptr; i++) {
+  for (unsigned int i = 0; kUsage[i].help != ""; i++) {
     std::cout << kUsage[i].help << std::endl;
   }
 }

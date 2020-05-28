@@ -17,71 +17,69 @@
 #include "utils/meta.h"
 
 namespace maple {
-
 template <typename ToT>
-struct safe_cast_condition : std::false_type {};
+struct SafeCastCondition : std::false_type {};
 
 #define REGISTER_SAFE_CAST(type, condition)                             \
 template <>                                                             \
-struct safe_cast_condition<type> : std::true_type {                     \
+struct SafeCastCondition<type> : std::true_type {                     \
   template <typename FromT>                                             \
   static inline bool DoIt(const FromT &from) {                          \
     return (condition);                                                 \
   }                                                                     \
 }
 
-namespace __impl {
+namespace impl {
 template <typename ToT, typename FromT,
-  typename = std::enable_if_t<std::is_base_of<FromT, ToT>::value>>
-struct instance_of_impl {
+    typename = std::enable_if_t<std::is_base_of<FromT, ToT>::value>>
+struct InstanceOfImpl {
   static inline bool DoIt(const FromT &from) {
-    return (safe_cast_condition<ToT>::DoIt(from));
+    return (SafeCastCondition<ToT>::DoIt(from));
   }
 };
 
 template <typename ToT, typename FromT>
-struct instance_of_impl<ToT, FromT, typename std::enable_if_t<std::is_base_of<ToT, FromT>::value>> {
+struct InstanceOfImpl<ToT, FromT, typename std::enable_if_t<std::is_base_of<ToT, FromT>::value>> {
   static inline bool DoIt(const FromT&) {
     return true;
   }
 };
 
 template <typename ToT, typename FromT>
-struct enabled_safe_cast
-    : utils::meta_or<std::is_base_of<ToT, FromT>, safe_cast_condition<ToT>>::type {};
+struct EnabledSafeCast
+    : utils::meta_or<std::is_base_of<ToT, FromT>, SafeCastCondition<ToT>>::type {};
 }
 
 template <typename ToT, typename FromT,
-  typename = std::enable_if_t<__impl::enabled_safe_cast<ToT, FromT>::value>>
+    typename = std::enable_if_t<impl::EnabledSafeCast<ToT, FromT>::value>>
 inline bool instance_of(FromT &from) {
-  return __impl::instance_of_impl<ToT, FromT>::DoIt(from);
+  return impl::InstanceOfImpl<ToT, FromT>::DoIt(from);
 }
 
 template <typename ToT, typename FromT,
-  typename = std::enable_if_t<__impl::enabled_safe_cast<ToT, FromT>::value>>
+    typename = std::enable_if_t<impl::EnabledSafeCast<ToT, FromT>::value>>
 inline bool instance_of(FromT *from) {
   return (from != nullptr && instance_of<ToT>(*from));
 }
 
 template <typename ToT, typename FromT,
-  typename RetT = std::conditional_t<
-    std::is_const<FromT>::value || std::is_const<std::remove_pointer_t<ToT>>::value,
-    std::add_pointer_t<std::add_const_t<std::remove_cv_t<ToT>>>,
-    std::add_pointer_t<std::remove_cv_t<ToT>>>,
-  typename = std::enable_if_t<__impl::enabled_safe_cast<ToT, FromT>::value>>
+    typename RetT = std::conditional_t<
+        std::is_const<FromT>::value || std::is_const<std::remove_pointer_t<ToT>>::value,
+        std::add_pointer_t<std::add_const_t<std::remove_cv_t<ToT>>>,
+        std::add_pointer_t<std::remove_cv_t<ToT>>>,
+    typename = std::enable_if_t<impl::EnabledSafeCast<ToT, FromT>::value>>
 inline RetT safe_cast(FromT &from) {
   return (instance_of<ToT>(from) ? static_cast<RetT>(&from) : nullptr);
 }
 
 template <typename ToT, typename FromT,
-  typename RetT = std::conditional_t<
-    std::is_const<FromT>::value || std::is_const<std::remove_pointer_t<ToT>>::value,
-    std::add_pointer_t<std::add_const_t<std::remove_cv_t<ToT>>>,
-    std::add_pointer_t<std::remove_cv_t<ToT>>>,
-  typename = std::enable_if_t<__impl::enabled_safe_cast<ToT, FromT>::value>>
+    typename RetT = std::conditional_t<
+        std::is_const<FromT>::value || std::is_const<std::remove_pointer_t<ToT>>::value,
+        std::add_pointer_t<std::add_const_t<std::remove_cv_t<ToT>>>,
+        std::add_pointer_t<std::remove_cv_t<ToT>>>,
+    typename = std::enable_if_t<impl::EnabledSafeCast<ToT, FromT>::value>>
 inline RetT safe_cast(FromT *from) {
   return (instance_of<ToT>(from) ? static_cast<RetT>(from) : nullptr);
 }
-
 }
 #endif //MAPLE_UTIL_INCLUDE_SAFE_CAST_H

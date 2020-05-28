@@ -132,10 +132,10 @@ bool RegMeExpr::IsSameVariableValue(const VarMeExpr &expr) const {
 // this = v1
 // this->ResolveVarMeValue() returns v3;
 // if no resolved VarMeExpr, return this
-VarMeExpr &VarMeExpr::ResolveVarMeValue() {
+VarMeExpr &VarMeExpr::ResolveVarMeValue(SSATab &ssaTab) {
   VarMeExpr *cmpop0 = this;
   while (true) {
-    if (cmpop0->defBy != kDefByStmt) {
+    if (cmpop0->defBy != kDefByStmt || cmpop0->IsVolatile(ssaTab)) {
       break;
     }
 
@@ -1367,8 +1367,8 @@ bool VarMeExpr::IsVolatile(const SSATab &ssatab) const {
   return structType->IsFieldVolatile(fieldID);
 }
 
-bool VarMeExpr::PointsToStringLiteral() {
-  VarMeExpr &var = ResolveVarMeValue();
+bool VarMeExpr::PointsToStringLiteral(SSATab &ssaTab) {
+  VarMeExpr &var = ResolveVarMeValue(ssaTab);
   if (var.GetDefBy() == kDefByMustDef) {
     MeStmt *baseStmt = var.GetDefMustDef().GetBase();
     if (baseStmt->GetOp() == OP_callassigned) {
@@ -1418,7 +1418,7 @@ bool MeExpr::HasIvar() const {
 
 // check if MeExpr can be a pointer to something that requires incref for its
 // assigned target
-bool MeExpr::PointsToSomethingThatNeedsIncRef() {
+bool MeExpr::PointsToSomethingThatNeedsIncRef(SSATab &ssaTab) {
   if (op == OP_retype) {
     return true;
   }
@@ -1427,7 +1427,7 @@ bool MeExpr::PointsToSomethingThatNeedsIncRef() {
   }
   if (meOp == kMeOpVar) {
     auto *var = static_cast<VarMeExpr*>(this);
-    if (var->PointsToStringLiteral()) {
+    if (var->PointsToStringLiteral(ssaTab)) {
       return false;
     }
     return true;

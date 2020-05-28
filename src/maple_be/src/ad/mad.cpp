@@ -202,7 +202,7 @@ void MAD::ReleaseAllUnits() {
   }
 }
 
-void MAD::SaveStates(std::vector<uint32> &occupyTable, int size) {
+void MAD::SaveStates(std::vector<uint32> &occupyTable, int size) const {
   int i = 0;
   for (auto unit : allUnits) {
     CHECK_FATAL(i < size, "unit number error");

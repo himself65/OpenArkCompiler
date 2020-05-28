@@ -45,9 +45,9 @@ class PhaseManager {
     registeredPhases[id] = &p;
   }
 
-  Phase *GetPhaseFromName(const std::string &pname) {
+  Phase *GetPhaseFromName(const std::string &phaseName) {
     for (auto it = RegPhaseBegin(); it != RegPhaseEnd(); ++it) {
-      if (GetPhaseName(it) == pname) {
+      if (GetPhaseName(it) == phaseName) {
         return GetPhase(GetPhaseId(it));
       }
     }
@@ -107,16 +107,16 @@ class PhaseManager {
   }
 
   // iterator for phaseSeq
-  using phaseSeq_iterator = MapleVector<PhaseID>::iterator;
-  phaseSeq_iterator PhaseSequenceBegin() {
+  using PhaseSeqIterator = MapleVector<PhaseID>::iterator;
+  PhaseSeqIterator PhaseSequenceBegin() {
     return phaseSequences.begin();
   }
 
-  phaseSeq_iterator PhaseSequenceEnd() {
+  PhaseSeqIterator PhaseSequenceEnd() {
     return phaseSequences.end();
   }
 
-  PhaseID GetPhaseId(phaseSeq_iterator it) const {
+  PhaseID GetPhaseId(PhaseSeqIterator it) const {
     return (*it);
   }
 
@@ -138,10 +138,9 @@ class PhaseManager {
       ASSERT(total != 0, "calculation check");
       ASSERT(registeredPhases[phaseSequences[i]] != nullptr, "Phase null ptr check");
       std::ios::fmtflags f(LogInfo::MapleLogger().flags());
-      LogInfo::MapleLogger() << std::left << std::setw(25) << registeredPhases[phaseSequences[i]]->PhaseName()
-                             << std::setw(10) << std::right << std::fixed << std::setprecision(2)
-                             << (100.0 * phaseTimers[i] / total) << "%" << std::setw(10) << std::setprecision(0)
-                             << (phaseTimers[i] / 1000.0) << "ms" << '\n';
+      LogInfo::MapleLogger() << std::left << std::setw(25) << registeredPhases[phaseSequences[i]]->PhaseName() <<
+          std::setw(10) << std::right << std::fixed << std::setprecision(2) << (100.0 * phaseTimers[i] / total) <<
+          "%" << std::setw(10) << std::setprecision(0) << (phaseTimers[i] / 1000.0) << "ms" << '\n';
       LogInfo::MapleLogger().flags(f);
     }
     return total;

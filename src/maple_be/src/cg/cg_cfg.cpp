@@ -472,6 +472,7 @@ void CGCFG::UnreachCodeAnalysis() {
 
     /* Clear insns in GOT Map. */
     cgFunc->ClearUnreachableGotInfos(*unreachBB);
+    cgFunc->ClearUnreachableConstInfos(*unreachBB);
   }
 }
 

@@ -214,8 +214,6 @@ class CGFunc {
   virtual Operand *SelectAlloca(UnaryNode &call, Operand &opnd0) = 0;
   virtual Operand *SelectGCMalloc(GCMallocNode &call) = 0;
   virtual Operand *SelectJarrayMalloc(JarrayMallocNode &call, Operand &opnd0) = 0;
-  virtual void SelectSelect(Operand &resOpnd, Operand &condOpnd, Operand &trueOpnd, Operand &falseOpnd,
-                            PrimType dstType, PrimType primType) = 0;
   virtual void SelectRangeGoto(RangeGotoNode &rangeGotoNode, Operand &opnd0) = 0;
   virtual Operand *SelectLazyLoad(Operand &opnd0, PrimType primType) = 0;
   virtual Operand *SelectLazyLoadStatic(MIRSymbol &st, int64 offset, PrimType primType) = 0;
@@ -244,6 +242,9 @@ class CGFunc {
     return nullptr;
   }
   virtual void ClearUnreachableGotInfos(BB &bb) {
+    (void)bb;
+  };
+  virtual void ClearUnreachableConstInfos(BB &bb) {
     (void)bb;
   };
   virtual void SplitStrLdrPair() {}

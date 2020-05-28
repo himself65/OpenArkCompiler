@@ -1098,7 +1098,7 @@ void AArch64CGFunc::SelectIassign(IassignNode &stmt) {
       }
     }
     if (pointedType->GetPrimType() == PTY_agg) {
-      maple::logInfo.MapleLogger(kLlErr) << "Error: cannot find field in " <<
+      maple::LogInfo::MapleLogger(kLlErr) << "Error: cannot find field in " <<
           GlobalTables::GetStrTable().GetStringFromStrIdx(pointedType->GetNameStrIdx()) << '\n';
       exit(-1);
     }
@@ -1333,7 +1333,7 @@ void AArch64CGFunc::SelectAddrof(Operand &result, StImmOperand &stImm) {
   const MIRSymbol *symbol = stImm.GetSymbol();
   if ((symbol->GetStorageClass() == kScAuto) || (symbol->GetStorageClass() == kScFormal)) {
     if (!GetCG()->IsQuiet()) {
-      maple::logInfo.MapleLogger(kLlErr) <<
+      maple::LogInfo::MapleLogger(kLlErr) <<
           "Warning: we expect AddrOf with StImmOperand is not used for local variables";
     }
     AArch64SymbolAlloc *symLoc =
@@ -1469,7 +1469,7 @@ Operand *AArch64CGFunc::SelectIread(const BaseNode &parent, IreadNode &expr) {
       }
     }
     if (pointedType->GetPrimType() == PTY_agg) {
-      maple::logInfo.MapleLogger(kLlErr) << "Error: cannot find field in " <<
+      maple::LogInfo::MapleLogger(kLlErr) << "Error: cannot find field in " <<
           GlobalTables::GetStrTable().GetStringFromStrIdx(pointedType->GetNameStrIdx()) << '\n';
       CHECK_FATAL(false, "cannot find field");
       return nullptr;
@@ -1497,7 +1497,7 @@ Operand *AArch64CGFunc::SelectIread(const BaseNode &parent, IreadNode &expr) {
   if ((pointedType->GetKind() == kTypeStructIncomplete) || (pointedType->GetKind() == kTypeClassIncomplete) ||
       (pointedType->GetKind() == kTypeInterfaceIncomplete)) {
     bitSize = GetPrimTypeBitSize(expr.GetPrimType());
-    maple::logInfo.MapleLogger(kLlErr) << "Warning: objsize is zero! \n";
+    maple::LogInfo::MapleLogger(kLlErr) << "Warning: objsize is zero! \n";
   } else {
     if (pointedType->IsStructType()) {
       MIRStructType *structType = static_cast<MIRStructType*>(pointedType);
@@ -4604,7 +4604,7 @@ Operand *AArch64CGFunc::SelectClearStackCallParam(const AddrofNode &expr, int64 
   Operand &result = CreateVirtualRegisterOperand(vRegNO);
   CHECK_FATAL(expr.GetFieldID() == 0, "the fieldID of parameter in clear stack reference call must be 0");
   if (!GetCG()->IsQuiet()) {
-    maple::logInfo.MapleLogger(kLlErr) <<
+    maple::LogInfo::MapleLogger(kLlErr) <<
         "Warning: we expect AddrOf with StImmOperand is not used for local variables";
   }
   auto *symLoc = static_cast<AArch64SymbolAlloc*>(GetMemlayout()->GetSymAllocInfo(symbol->GetStIndex()));
@@ -5959,7 +5959,7 @@ void AArch64CGFunc::SelectMPLProfCounterInc(IntrinsiccallNode &intrnNode) {
   MIRIntConst *mirIntConst = safe_cast<MIRIntConst>(mirConst);
   uint32 idx = GetPrimTypeSize(PTY_u32) * mirIntConst->GetValue();
   if (!GetCG()->IsQuiet()) {
-    maple::logInfo.MapleLogger(kLlErr) << "Id index " << idx << std::endl;
+    maple::LogInfo::MapleLogger(kLlErr) << "Id index " << idx << std::endl;
   }
   StImmOperand &stOpnd = CreateStImmOperand(*bbProfileTab, idx, 0);
   Insn &newInsn = GetCG()->BuildInstruction<AArch64Insn>(MOP_counter, vReg1, stOpnd);

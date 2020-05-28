@@ -187,7 +187,7 @@ class AArch64CGFunc : public CGFunc {
   Operand *SelectGCMalloc(GCMallocNode &call) override;
   Operand *SelectJarrayMalloc(JarrayMallocNode &call, Operand &opnd0) override;
   void SelectSelect(Operand &resOpnd, Operand &condOpnd, Operand &trueOpnd, Operand &falseOpnd, PrimType dtype,
-                    PrimType ctype) override;
+                    PrimType ctype);
   void SelectAArch64Select(Operand &dest, Operand &opnd0, Operand &opnd1, CondOperand &cond, bool isIntType,
                            uint32 is64bits);
   void SelectRangeGoto(RangeGotoNode &rangeGotoNode, Operand &opnd0) override;

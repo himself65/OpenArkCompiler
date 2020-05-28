@@ -32,13 +32,13 @@ void OptionParser::InsertExtraUsage(const Descriptor &usage) {
                              usage.enableBuildType,
                              usage.checkPolicy,
                              usage.help,
-                             usage.extras[index].c_str(),
+                             usage.extras[index],
                              {} };
-    if (usage.shortOption != nullptr) {
-      InsertOption(std::string(usage.shortOption), tempUsage);
+    if (usage.shortOption != "") {
+      InsertOption(usage.shortOption, tempUsage);
     }
-    if (usage.longOption != nullptr) {
-      InsertOption(std::string(usage.longOption), tempUsage);
+    if (usage.longOption != "") {
+      InsertOption(usage.longOption, tempUsage);
     }
     rawUsages.push_back(tempUsage);
     index++;
@@ -49,29 +49,29 @@ void OptionParser::CreateNoOption(const Descriptor &usage) {
   std::string longOpt = "";
   std::string shortOpt = "";
   std::string newHelpInfo = "";
-  if (usage.shortOption != nullptr) {
+  if (usage.shortOption != "") {
     std::ostringstream optionString;
     optionString << "no-" << usage.shortOption; // Generate short option: no-opt
     shortOpt = optionString.str();
   }
-  if (usage.longOption != nullptr) {
+  if (usage.longOption != "") {
     std::ostringstream optionString;
     optionString << "no-" << usage.longOption; // Generate long option: no-opt
     longOpt = optionString.str();
   }
   Descriptor tempUsage = { usage.index,
                            kDisable, // Change to disable
-                           (usage.shortOption != nullptr) ? shortOpt.c_str() : nullptr,
-                           (usage.longOption != nullptr) ? longOpt.c_str() : nullptr,
+                           (usage.shortOption != "") ? shortOpt : "",
+                           (usage.longOption != "") ? longOpt : "",
                            usage.enableBuildType,
                            usage.checkPolicy,
-                           nullptr,
+                           "",
                            usage.exeName,
                            usage.extras };
-  if (usage.shortOption != nullptr) {
+  if (usage.shortOption != "") {
     InsertOption(shortOpt, tempUsage);
   }
-  if (usage.longOption != nullptr) {
+  if (usage.longOption != "") {
     InsertOption(longOpt, tempUsage);
   }
   // Insert usage for extra options
@@ -80,15 +80,15 @@ void OptionParser::CreateNoOption(const Descriptor &usage) {
 
 void OptionParser::RegisteUsages(const MapleDriverOptionBase &base) {
   for (auto &usage : base.GetUsageVec()) {
-    if (usage.help == nullptr) {
+    if (usage.help == "") {
       continue;
     }
     rawUsages.push_back(usage);
-    if (usage.shortOption != nullptr) {
-      InsertOption(std::string(usage.shortOption), usage);
+    if (usage.shortOption != "") {
+      InsertOption(usage.shortOption, usage);
     }
-    if (usage.longOption != nullptr) {
-      InsertOption(std::string(usage.longOption), usage);
+    if (usage.longOption != "") {
+      InsertOption(usage.longOption, usage);
     }
     // Insert usage for extra options
     InsertExtraUsage(usage);
@@ -100,13 +100,13 @@ void OptionParser::RegisteUsages(const MapleDriverOptionBase &base) {
 }
 
 void OptionParser::RegisteUsages(const Descriptor usage[]) {
-  for (size_t i = 0; usage[i].help != nullptr; ++i) {
+  for (size_t i = 0; usage[i].help != ""; ++i) {
     rawUsages.push_back(usage[i]);
-    if (usage[i].shortOption != nullptr) {
-      InsertOption(std::string(usage[i].shortOption), usage[i]);
+    if (usage[i].shortOption != "") {
+      InsertOption(usage[i].shortOption, usage[i]);
     }
-    if (usage[i].longOption != nullptr) {
-      InsertOption(std::string(usage[i].longOption), usage[i]);
+    if (usage[i].longOption != "") {
+      InsertOption(usage[i].longOption, usage[i]);
     }
     // Insert usage for extra options
     InsertExtraUsage(usage[i]);
@@ -119,7 +119,7 @@ void OptionParser::RegisteUsages(const Descriptor usage[]) {
 
 void OptionParser::PrintUsage(const std::string &helpType, const unsigned int helpLevel) const {
   for (size_t i = 0; i < rawUsages.size(); ++i) {
-    if (rawUsages[i].help != nullptr && rawUsages[i].IsEnabledForCurrentBuild() && rawUsages[i].exeName == helpType) {
+    if (rawUsages[i].help != "" && rawUsages[i].IsEnabledForCurrentBuild() && rawUsages[i].exeName == helpType) {
       if (helpLevel != kBuildTypeDefault &&
           (rawUsages[i].enableBuildType != helpLevel && rawUsages[i].enableBuildType != kBuildTypeAll)) {
         continue;
