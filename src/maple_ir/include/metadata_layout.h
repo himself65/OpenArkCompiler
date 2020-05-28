@@ -159,21 +159,26 @@ struct MByteRef {
 
 #if defined(__arm__) || defined(USE_ARM32_MACRO)
   // assume address range 0 ~ 256MB is unused in arm runtime
-  // OffsetMin ~ OffsetMax is the value range of encoded offset
-  static constexpr intptr_t FarthestOffset = 128 * 1024 * 1024;
+  // EncodedOffsetMin ~ EncodedOffsetMax is the value range of encoded offset
+  static constexpr intptr_t OffsetBound = 128 * 1024 * 1024;
+  static constexpr intptr_t OffsetMin = -OffsetBound;
+  static constexpr intptr_t OffsetMax = OffsetBound;
+
   static constexpr intptr_t PositiveOffsetBias = 128 * 1024 * 1024;
-  static constexpr intptr_t OffsetMin = PositiveOffsetBias + 0;
-  static constexpr intptr_t OffsetMax = PositiveOffsetBias + FarthestOffset;
+  static constexpr intptr_t EncodedOffsetMin = PositiveOffsetBias + OffsetMin;
+  static constexpr intptr_t EncodedOffsetMax = PositiveOffsetBias + OffsetMax;
 #else
   enum {
     kBiasBitPosition = sizeof(refVal) * 8 - 4, // the most significant 4 bits
   };
 
-  static constexpr uintptr_t FarthestOffset = 256 * 1024 * 1024; // according to kDsoLoadedAddessEnd = 0xF0000000
+  static constexpr uintptr_t OffsetBound = 256 * 1024 * 1024; // according to kDsoLoadedAddessEnd = 0xF0000000
+  static constexpr uintptr_t PositiveOffsetMin = 0;
+  static constexpr uintptr_t PositiveOffsetMax = OffsetBound;
 
   static constexpr uintptr_t PositiveOffsetBias = static_cast<uintptr_t>(6) << kBiasBitPosition;
-  static constexpr uintptr_t PositiveOffsetMin = 0 + PositiveOffsetBias;
-  static constexpr uintptr_t PositiveOffsetMax = FarthestOffset + PositiveOffsetBias;
+  static constexpr uintptr_t EncodedPosOffsetMin = PositiveOffsetMin + PositiveOffsetBias;
+  static constexpr uintptr_t EncodedPosOffsetMax = PositiveOffsetMax + PositiveOffsetBias;
 #endif
 
   template<typename T>
@@ -185,16 +190,18 @@ struct MByteRef {
 
 struct MByteRef32 {
   uint32_t refVal;
-  static constexpr uint32_t FarthestOffset = 256 * 1024 * 1024; // according to kDsoLoadedAddessEnd = 0xF0000000
+  static constexpr uint32_t OffsetBound = 256 * 1024 * 1024; // according to kDsoLoadedAddessEnd = 0xF0000000
+  static constexpr uint32_t PositiveOffsetMin = 0;
+  static constexpr uint32_t PositiveOffsetMax = OffsetBound;
 
   static constexpr uint32_t PositiveOffsetBias = 0x60000000; // the most significant 4 bits 0110
-  static constexpr uint32_t PositiveOffsetMin = 0 + PositiveOffsetBias;
-  static constexpr uint32_t PositiveOffsetMax = FarthestOffset + PositiveOffsetBias;
+  static constexpr uint32_t EncodedPosOffsetMin = PositiveOffsetMin + PositiveOffsetBias;
+  static constexpr uint32_t EncodedPosOffsetMax = PositiveOffsetMax + PositiveOffsetBias;
 
   static constexpr uint32_t DirectRefMin = 0xC0000000; // according to kDsoLoadedAddessStart = 0xC0000000
   static constexpr uint32_t DirectRefMax = 0xF0000000; // according to kDsoLoadedAddessEnd = 0xF0000000
 
-  static constexpr int32_t NegativeOffsetMin = -FarthestOffset;
+  static constexpr int32_t NegativeOffsetMin = -OffsetBound;
   static constexpr int32_t NegativeOffsetMax = 0;
 
   template<typename T>
@@ -246,10 +253,18 @@ struct ClassMetadataRO {
 };
 
 static constexpr size_t PageSize = 4096;
+static constexpr size_t kCacheLine = 64;
 
 // according to kSpaceAnchor and kFireBreak defined in bpallocator.cpp
-// the address of this readable page is set as kClassInitialized for java class
-static constexpr uintptr_t kClassInitializedState = 0xC0000000 - (1u << 20) * 2;
+// the address of this readable page is set as kProtectedMemoryStart for java class
+static constexpr uintptr_t kClInitStateAddrBase = 0xc0000000 - (1u << 20) * 2;
+
+// In Kirin 980, 2 mmap memory address with odd number of page distances may have unreasonable L1&L2 cache conflict.
+// kClassInitializedState is used as the init state for class that has no <clinit> method, it's will be loaded in many
+// place for Decouple build App. if we set the value to kClInitStateAddrBase(0xbfe00000), it may conflict with the
+// yieldpoind test address globalPollingPage which is defined in yieldpoint.cpp.
+// Hence we add 1 cache line (64 byte) offset here to avoid such conflict
+static constexpr uintptr_t kClassInitializedState = kClInitStateAddrBase + kCacheLine;
 
 extern "C" uint8_t classInitProtectRegion[];
 

@@ -164,7 +164,7 @@ class MeExpr {
   MeExpr *ResolveMeExprValue();
   bool CouldThrowException() const;
   bool IsAllOpndsIdentical(const MeExpr &meExpr) const;
-  bool PointsToSomethingThatNeedsIncRef();
+  bool PointsToSomethingThatNeedsIncRef(SSATab &ssaTab);
   virtual uint32 GetHashIndex() const {
     return 0;
   }
@@ -225,8 +225,8 @@ class VarMeExpr final : public MeExpr {
   bool IsZeroVersion(const SSATab&) const;
   BB *GetDefByBBMeStmt(const Dominance&, MeStmtPtr&) const;
   bool IsSameVariableValue(const VarMeExpr&) const override;
-  VarMeExpr &ResolveVarMeValue();
-  bool PointsToStringLiteral();
+  VarMeExpr &ResolveVarMeValue(SSATab &ssaTab);
+  bool PointsToStringLiteral(SSATab &ssaTab);
 
   const OStIdx &GetOStIdx() const {
     return ostIdx;

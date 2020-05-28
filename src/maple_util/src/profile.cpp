@@ -29,10 +29,10 @@
 #include "types_def.h"
 
 namespace maple {
-const uint8 Profile::kStringEnd = 0x00;
+constexpr uint8 Profile::stringEnd = 0x00;
 uint32 Profile::hotFuncCountThreshold = 0;
 bool Profile::debug = false;
-const uint32 kPrecision = 1000000;
+constexpr uint32 kPrecision = 1000000;
 // preHot data
 static const std::string preClassHot[] = {
     "Ljava/lang/Class;",
@@ -47,8 +47,8 @@ static const std::string preClassHot[] = {
 
 Profile::Profile() {}
 
-bool Profile::CheckProfileHeader(const Header *header) const {
-  return (memcmp(header->magic, kProfileMagic, sizeof(kProfileMagic)) == 0);
+bool Profile::CheckProfileHeader(const Header &header) const {
+  return (memcmp(header.magic, kProfileMagic, sizeof(kProfileMagic)) == 0);
 }
 
 std::string Profile::GetProfileNameByType(uint8 type) const {
@@ -74,10 +74,9 @@ std::string Profile::GetProfileNameByType(uint8 type) const {
     default:
       CHECK_FATAL(false, "type not found");
   }
-  return "";
 }
 
-bool Profile::CheckDexValid(uint32 idx) {
+bool Profile::CheckDexValid(uint32 idx) const {
   if (isAppProfile) {
     return true; // for app dont't check dexName
   }
@@ -86,9 +85,9 @@ bool Profile::CheckDexValid(uint32 idx) {
 
 void Profile::ParseLiteral(const char *data, const char *end) {
   if(data > end) {
-    LogInfo::MapleLogger() << "parse Literal error" << '\n';;
+    LogInfo::MapleLogger() << "parse Literal error" << '\n';
   }
-  std::string str(data,end-data);
+  const std::string str(data,end-data);
   std::stringstream ss;
   ss.str(str);
   std::string item;
@@ -100,11 +99,11 @@ void Profile::ParseLiteral(const char *data, const char *end) {
   }
 }
 
-std::string Profile::GetFunctionName(uint32 classIdx, uint32 methodIdx, uint32 sigIdx) {
-  std::string className = NameMangler::EncodeName(strMap.at(classIdx));
-  std::string methodName = NameMangler::EncodeName(strMap.at(methodIdx));
-  std::string sigName = NameMangler::EncodeName(strMap.at(sigIdx));
-  std::string funcName = className + "_7C" + methodName + "_7C" + sigName;
+std::string Profile::GetFunctionName(uint32 classIdx, uint32 methodIdx, uint32 sigIdx) const {
+  const std::string className = NameMangler::EncodeName(strMap.at(classIdx));
+  const std::string methodName = NameMangler::EncodeName(strMap.at(methodIdx));
+  const std::string sigName = NameMangler::EncodeName(strMap.at(sigIdx));
+  const std::string funcName = className + "_7C" + methodName + "_7C" + sigName;
   return funcName;
 }
 
@@ -112,14 +111,14 @@ void Profile::ParseFunc(const char *data, int fileNum) {
   const MapleFileProf *funcProf = nullptr;
   const FunctionItem *funcItem = nullptr;
   uint32 offset = 0;
-  for (int32 mapleFileIdx = 0; mapleFileIdx < fileNum; mapleFileIdx++) {
+  for (int32 mapleFileIdx = 0; mapleFileIdx < fileNum; ++mapleFileIdx) {
     funcProf = reinterpret_cast<const MapleFileProf*>(data + offset);
-    if (CheckDexValid(funcProf->idx))  {
+    if (CheckDexValid(funcProf->idx)) {
       if (debug) {
         LogInfo::MapleLogger() << "FuncProfile" << ":" << strMap.at(funcProf->idx) << ":" << funcProf->num << "\n";
       }
       funcItem = reinterpret_cast<const FunctionItem*>(data + offset + sizeof(MapleFileProf));
-      for (uint32 item = 0; item < funcProf->num; item++, ++funcItem) {
+      for (uint32 item = 0; item < funcProf->num; ++item, ++funcItem) {
         if (funcItem->type >= kLayoutTypeCount) {
           if (debug) {
             LogInfo::MapleLogger() << "ParseFunc Error usupport type " << funcItem->type << "\n";
@@ -140,9 +139,9 @@ void Profile::ParseIRFuncDesc(const char *data, int fileNum) {
   const MapleFileProf *funcProf = nullptr;
   const FunctionIRProfItem *funcItem = nullptr;
   uint32 offset = 0;
-  for (int32 mapleFileIdx = 0; mapleFileIdx < fileNum; mapleFileIdx++) {
+  for (int32 mapleFileIdx = 0; mapleFileIdx < fileNum; ++mapleFileIdx) {
     funcProf = reinterpret_cast<const MapleFileProf*>(data + offset);
-    if (CheckDexValid(funcProf->idx))  {
+    if (CheckDexValid(funcProf->idx)) {
       if (debug) {
         LogInfo::MapleLogger() << "IRFuncProfile" << ":" << strMap.at(funcProf->idx) << ":" << funcProf->num << "\n";
       }
@@ -150,7 +149,7 @@ void Profile::ParseIRFuncDesc(const char *data, int fileNum) {
       for (uint32 item = 0; item < funcProf->num; ++item, ++funcItem) {
         if ((funcItem->counterStart <= counterTab.size()) && (funcItem->counterEnd <= counterTab.size())) {
           auto begin = counterTab.begin() + funcItem->counterStart;
-          auto end = counterTab.begin() + funcItem->counterEnd +  1;
+          auto end = counterTab.begin() + funcItem->counterEnd + 1;
           std::vector<uint32> tempCounter(begin, end);
           BBInfo bbInfo(funcItem->hash, tempCounter.size(), std::move(tempCounter));
           std::string funcName = GetFunctionName(funcItem->classIdx, funcItem->methodIdx, funcItem->sigIdx);
@@ -166,8 +165,8 @@ void Profile::ParseIRFuncDesc(const char *data, int fileNum) {
 void Profile::ParseCounterTab(const char *data, int fileNum) {
   const MapleFileProf *counterProf = nullptr;
   uint32 offset = 0;
-  for (int32 mapleFileIdx = 0; mapleFileIdx < fileNum; mapleFileIdx++) {
-    counterProf = reinterpret_cast<const MapleFileProf*>(data  + offset);
+  for (int32 mapleFileIdx = 0; mapleFileIdx < fileNum; ++mapleFileIdx) {
+    counterProf = reinterpret_cast<const MapleFileProf*>(data + offset);
     if (CheckDexValid(counterProf->idx)) {
       if (debug) {
         LogInfo::MapleLogger() << "module name " << strMap.at(counterProf->idx) << std::endl;
@@ -181,11 +180,11 @@ void Profile::ParseCounterTab(const char *data, int fileNum) {
   }
 }
 
-void Profile::ParseMeta(const char *data, int fileNum, std::unordered_set<std::string> &metaData) {
+void Profile::ParseMeta(const char *data, int fileNum, std::unordered_set<std::string> &metaData) const {
   const MapleFileProf *metaProf = nullptr;
   uint32 offset = 0;
-  for (int32 mapleFileIdx = 0; mapleFileIdx < fileNum; mapleFileIdx++) {
-    metaProf = reinterpret_cast<const MapleFileProf*>(data  + offset);
+  for (int32 mapleFileIdx = 0; mapleFileIdx < fileNum; ++mapleFileIdx) {
+    metaProf = reinterpret_cast<const MapleFileProf*>(data + offset);
     if (CheckDexValid(metaProf->idx)) {
       if (debug) {
         LogInfo::MapleLogger() << "module name " << strMap.at(metaProf->idx) << '\n';
@@ -202,8 +201,8 @@ void Profile::ParseMeta(const char *data, int fileNum, std::unordered_set<std::s
 void Profile::ParseReflectionStr(const char *data, int fileNum) {
   const MapleFileProf *metaProf = nullptr;
   uint32 offset = 0;
-  for (int32 mapleFileIdx = 0; mapleFileIdx < fileNum; mapleFileIdx++) {
-    metaProf = reinterpret_cast<const MapleFileProf*>(data  + offset);
+  for (int32 mapleFileIdx = 0; mapleFileIdx < fileNum; ++mapleFileIdx) {
+    metaProf = reinterpret_cast<const MapleFileProf*>(data + offset);
     if (CheckDexValid(metaProf->idx)) {
       if (debug) {
         LogInfo::MapleLogger() << "module name " << strMap.at(metaProf->idx) << '\n';
@@ -220,8 +219,8 @@ void Profile::ParseReflectionStr(const char *data, int fileNum) {
 }
 
 void Profile::InitPreHot() {
-  const char *kcoreDexName = "core-all";
-  if (dexName.find(kcoreDexName) != std::string::npos) {
+  const char *coreDexName = "core-all";
+  if (dexName.find(coreDexName) != std::string::npos) {
     for (auto &item : preClassHot) {
       classMeta.insert(item);
     }
@@ -241,8 +240,7 @@ bool Profile::DeCompress(const std::string &path, const std::string &dexNameInne
   std::ifstream in(path, std::ios::binary);
   if (!in) {
     if (errno != ENOENT && errno != EACCES) {
-      LogInfo::MapleLogger() << "WARN: DeCompress("
-                << "), failed to open " << path << '\n';;
+      LogInfo::MapleLogger() << "WARN: DeCompress(" << "), failed to open " << path << '\n';;
     }
     res = false;
     return res;
@@ -254,21 +252,19 @@ bool Profile::DeCompress(const std::string &path, const std::string &dexNameInne
   bufVector.resize(byteCount);
   char *buf = reinterpret_cast<char*>(bufVector.data());
   if (!in.read(buf, byteCount)) {
-    LogInfo::MapleLogger() << "WARN: DeCompress("
-              << "), failed to read all data for " << path << '\n';;
+    LogInfo::MapleLogger() << "WARN: DeCompress(" << "), failed to read all data for " << path << '\n';
     res = false;
     in.close();
     return res;
   }
   if (byteCount < sizeof(Header)) {
-    LogInfo::MapleLogger() << "WARN: DeCompress("
-              << "), failed, read no data for " << path << '\n';;
+    LogInfo::MapleLogger() << "WARN: DeCompress(" << "), failed, read no data for " << path << '\n';
     res = false;
     in.close();
     return res;
   }
   Header *header = reinterpret_cast<Header*>(buf);
-  if (!CheckProfileHeader(header)) {
+  if (!CheckProfileHeader(*header)) {
     if (debug) {
       LogInfo::MapleLogger() << "invalid maigc number " << header->magic << '\n';;
     }
@@ -279,9 +275,8 @@ bool Profile::DeCompress(const std::string &path, const std::string &dexNameInne
   this->isAppProfile = (header->profileFileType == kApp) ? true : false;
   size_t stringTabSize = byteCount - header->stringTabOff;
   if (debug) {
-    LogInfo::MapleLogger() << "Header summary "
-              << "profile num " << static_cast<uint32>(header->profileNum) << "string table size" << stringTabSize
-              << '\n';;
+    LogInfo::MapleLogger() << "Header summary " << "profile num " << static_cast<uint32>(header->profileNum) <<
+        "string table size" << stringTabSize << '\n';
   }
   const char *strBuf = buf + header->stringTabOff;
   const char *cursor = strBuf;
@@ -294,21 +289,21 @@ bool Profile::DeCompress(const std::string &path, const std::string &dexNameInne
   }
   ASSERT(strMap.size() == header->stringCount, "string count doesn't match");
   if (debug) {
-    LogInfo::MapleLogger() << "str size " << strMap.size() << '\n';;
+    LogInfo::MapleLogger() << "str size " << strMap.size() << '\n';
     for (const auto &item : strMap) {
-      LogInfo::MapleLogger() << item << '\n';;
+      LogInfo::MapleLogger() << item << '\n';
     }
-    LogInfo::MapleLogger() << "str size print end  " << '\n';;
+    LogInfo::MapleLogger() << "str size print end  " << '\n';
   }
   size_t idx = 0;
-  for (idx = 0; idx < header->profileNum; idx++) {
+  for (idx = 0; idx < header->profileNum; ++idx) {
     ProfileDataInfo *profileDataInfo = &(header->data[idx]);
     if (debug) {
-      LogInfo::MapleLogger() << "profile file num for type  " << GetProfileNameByType(profileDataInfo->profileType) << " "
-                << static_cast<uint32>(profileDataInfo->mapleFileNum) << '\n';;
+      LogInfo::MapleLogger() << "profile file num for type  " << GetProfileNameByType(profileDataInfo->profileType) <<
+          " " << static_cast<uint32>(profileDataInfo->mapleFileNum) << '\n';;
       }
     if (debug) {
-      LogInfo::MapleLogger() << GetProfileNameByType(profileDataInfo->profileType) << " Start" << '\n';;
+      LogInfo::MapleLogger() << GetProfileNameByType(profileDataInfo->profileType) << " Start" << '\n';
     }
     char *proFileData = buf + profileDataInfo->profileDataOff;
     if (type != kAll && type != profileDataInfo->profileType) {
@@ -343,18 +338,18 @@ bool Profile::DeCompress(const std::string &path, const std::string &dexNameInne
         uint32_t appPackageNameIdx = *reinterpret_cast<uint32_t*>(proFileData);
         this->appPackageName = strMap.at(appPackageNameIdx);
         if (!appPackageName.empty() && this->appPackageName != appPackageName) {
-          LogInfo::MapleLogger() << "app profile doesnt match expect " << this->appPackageName
-                                 << " but got " << appPackageName << '\n';;
+          LogInfo::MapleLogger() << "app profile doesnt match expect " << this->appPackageName <<
+              " but got " << appPackageName << '\n';
           return false;
         }
         break;
       }
       default:
-        LogInfo::MapleLogger() << "unsupported tag " << profileDataInfo->profileType << '\n';;
+        LogInfo::MapleLogger() << "unsupported tag " << profileDataInfo->profileType << '\n';
         break;
     }
   }
-  LogInfo::MapleLogger() << "SUCC parse " << path << '\n';;
+  LogInfo::MapleLogger() << "SUCC parse " << path << '\n';
   valid = true;
   in.close();
   return res;
@@ -498,44 +493,42 @@ void Profile::DumpFuncIRProfUseInfo() const {
   if (funcBBProfData.empty()) {
     return;
   }
-  LogInfo::MapleLogger() << "ir profile succ  " << funcBBProfUseInfo.size() <<  " total func "
-                         << funcBBProfData.size() << '\n';
+  LogInfo::MapleLogger() << "ir profile succ  " << funcBBProfUseInfo.size() << " total func " <<
+      funcBBProfData.size() << '\n';
 }
 
 void Profile::Dump() const {
   std::ofstream outFile;
   outFile.open("prof.dump");
-  outFile << "classMeta profile start " <<'\n';;
+  outFile << "classMeta profile start " <<'\n';
   for (const auto &item : classMeta) {
-    outFile << item << '\n';;
+    outFile << item << '\n';
   }
 
-  outFile << "fieldMeta profile start " <<'\n';;
+  outFile << "fieldMeta profile start " <<'\n';
   for (const auto &item : fieldMeta) {
-    outFile << item << '\n';;
+    outFile << item << '\n';
   }
 
-  outFile << "methodMeta profile start " <<'\n';;
+  outFile << "methodMeta profile start " <<'\n';
   for (const auto &item : methodMeta) {
-    outFile << item << '\n';;
+    outFile << item << '\n';
   }
 
-  outFile << "literal profile start " <<'\n';;
+  outFile << "literal profile start " <<'\n';
   for (const auto &item : literal) {
-    outFile << item << '\n';;
+    outFile << item << '\n';
   }
 
-  outFile << "func profile start " <<'\n';;
+  outFile << "func profile start " <<'\n';
   for (const auto &item : funcProfData) {
-    outFile << item.first << " "
-            << static_cast<uint32>((item.second).type) << " " << (item.second).callTimes << '\n';;
+    outFile << item.first << " " << static_cast<uint32>((item.second).type) << " " << (item.second).callTimes << '\n';
   }
 
-  outFile << "reflectStr profile start " <<'\n';;
+  outFile << "reflectStr profile start " <<'\n';
   for (const auto &item : reflectionStrData) {
-    outFile << item.first << " " << static_cast<uint32>(item.second) << '\n';;
+    outFile << item.first << " " << static_cast<uint32>(item.second) << '\n';
   }
   outFile.close();
 }
-
 }  // namespace maple

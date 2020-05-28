@@ -17,6 +17,7 @@ config("mapleallcompilecfg") {
   cflags_cc += [
     "-std=c++14",
     "-Werror",
+    "-DTARGAARCH64",
   ]
 
   if (GN_BUILD_TYPE == "DEBUG") {

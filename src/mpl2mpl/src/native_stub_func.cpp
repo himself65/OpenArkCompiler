@@ -18,6 +18,7 @@
 #include "namemangler.h"
 #include "vtable_analysis.h"
 #include "reflection_analysis.h"
+#include "metadata_layout.h"
 
 // NativeStubFunc
 // This phase is the processing of the java native function. It
@@ -275,7 +276,15 @@ void NativeStubFuncGeneration::GenerateRegFuncTabEntry() {
 #else
   constexpr int locIdxShift = 4;
 #endif
+
+#ifdef TARGARM32
+  // LSB can not be used to mark unresolved entries in java native method table for arm, since this bit
+  // is used to switch arm mode and thumb mode (when LSB of pc is set to 1)
+  constexpr uint64 locIdxMask = 0;
+#else
   constexpr uint64 locIdxMask = 0x01;
+#endif
+
   uint64 locIdx = regFuncTabConst->GetConstVec().size();
   auto *newConst =
     GlobalTables::GetIntConstTable().GetOrCreateIntConst(static_cast<int64>((locIdx << locIdxShift) | locIdxMask),
@@ -337,19 +346,28 @@ void NativeStubFuncGeneration::GenerateRegisteredNativeFuncCall(MIRFunction &fun
   bool needCheckThrowPendingExceptionFunc =
       (!func.GetAttr(FUNCATTR_critical_native)) && (funcProperty.jniType == kJniTypeNormal);
   bool needIndirectCall = func.GetAttr(FUNCATTR_critical_native) || func.GetAttr(FUNCATTR_fast_native);
+
   // Get current native method function ptr from reg_jni_func_tab slot
-  // and define a temp register for shift operation
-  auto funcPtrAndOpPreg = func.GetPregTab()->CreatePreg(PTY_ptr);
   BaseNode *regReadExpr = builder->CreateExprRegread(PTY_ptr, funcptrPreg);
+#ifdef TARGARM32
+  BaseNode *checkRegExpr =
+      builder->CreateExprCompare(OP_lt, *GlobalTables::GetTypeTable().GetUInt1(),
+                                 *GlobalTables::GetTypeTable().GetPtr(),
+                                 regReadExpr, builder->CreateIntConst(MByteRef::PositiveOffsetBias, PTY_ptr));
+#elif defined(TARGAARCH64)
+  // define a temp register for bitwise-and operation
   constexpr int intConstLength = 1;
   BaseNode *andExpr = builder->CreateExprBinary(OP_band, *GlobalTables::GetTypeTable().GetPtr(), regReadExpr,
                                                 builder->CreateIntConst(intConstLength, PTY_u32));
+  auto funcPtrAndOpPreg = func.GetPregTab()->CreatePreg(PTY_ptr);
   RegassignNode *funcPtrAndOpAssign = builder->CreateStmtRegassign(PTY_ptr, funcPtrAndOpPreg, andExpr);
   auto readFuncPtrAndReg = builder->CreateExprRegread(PTY_ptr, funcPtrAndOpPreg);
   BaseNode *checkRegExpr =
       builder->CreateExprCompare(OP_eq, *GlobalTables::GetTypeTable().GetUInt1(),
                                  *GlobalTables::GetTypeTable().GetPtr(),
                                  readFuncPtrAndReg, builder->CreateIntConst(kInvalidCode, PTY_ptr));
+#endif
+
   auto *ifStmt = static_cast<IfStmtNode*>(builder->CreateStmtIf(checkRegExpr));
   // get find_native_func function
   MIRType *voidPointerType = GlobalTables::GetTypeTable().GetVoidPtr();
@@ -372,7 +390,9 @@ void NativeStubFuncGeneration::GenerateRegisteredNativeFuncCall(MIRFunction &fun
       func.GetBody()->AddStatement(wrapperCall);
     } else if (!Options::regNativeDynamicOnly) { // Qemu
       func.GetBody()->AddStatement(funcptrAssign);
+#ifdef TARGAARCH64
       func.GetBody()->AddStatement(funcPtrAndOpAssign);
+#endif
       // Get find_native_func function
       MIRFunction *findNativeFunc = builder->GetOrCreateFunction(NameMangler::kFindNativeFuncNoeh,
                                                                  voidPointerType->GetTypeIndex());
@@ -426,7 +446,9 @@ void NativeStubFuncGeneration::GenerateRegisteredNativeFuncCall(MIRFunction &fun
       }
     } else { // EMUI
       func.GetBody()->AddStatement(funcptrAssign);
+#ifdef TARGAARCH64
       func.GetBody()->AddStatement(funcPtrAndOpAssign);
+#endif
       MIRFunction *findNativeFunc = builder->GetOrCreateFunction(NameMangler::kFindNativeFunc,
                                                                  voidPointerType->GetTypeIndex());
       findNativeFunc->SetAttr(FUNCATTR_nosideeffect);

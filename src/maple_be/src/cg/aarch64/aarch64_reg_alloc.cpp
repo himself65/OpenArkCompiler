@@ -624,7 +624,7 @@ AnalysisResult *CgDoRegAlloc::Run(CGFunc *cgFunc, CgFuncResultMgr *cgFuncResultM
     if (cgFunc->GetCG()->GetCGOptions().DoColoringBasedRegisterAllocation()) {
       regAllocator = phaseMp->New<GraphColorRegAllocator>(*cgFunc, *phaseMp);
     } else {
-      maple::logInfo.MapleLogger(kLlErr) << "Warning: We only support Linear Scan and GraphColor register allocation\n";
+      maple::LogInfo::MapleLogger(kLlErr) << "Warning: We only support Linear Scan and GraphColor register allocation\n";
     }
   }
 

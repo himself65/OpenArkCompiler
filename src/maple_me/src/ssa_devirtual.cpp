@@ -155,9 +155,6 @@ bool SSADevirtual::DevirtualizeCall(CallMeStmt &callStmt) {
       TyIdx receiverInferredTyIdx = GetInferredTyIdx(*thisParm);
       MIRFunction &mirFunc = callStmt.GetTargetFunction();
       if (thisParm->GetPrimType() == PTY_ref && receiverInferredTyIdx != 0u) {
-        if (skipReturnTypeOpt) {
-          break;
-        }
         Klass *inferredKlass = kh->GetKlassFromTyIdx(receiverInferredTyIdx);
         if (inferredKlass == nullptr) {
           break;
@@ -188,9 +185,6 @@ bool SSADevirtual::DevirtualizeCall(CallMeStmt &callStmt) {
         ReplaceCall(callStmt, *uniqFunc);
         return true;
       } else {
-        if (skipReturnTypeOpt) {
-          break;
-        }
         if (thisParm->GetMeOp() == kMeOpVar) {
           auto *varMeExpr = static_cast<VarMeExpr*>(thisParm);
           const MapleVector<TyIdx> inferredTypeCandidates = varMeExpr->GetInferredTypeCandidates();
@@ -634,7 +628,7 @@ void SSADevirtual::Perform(BB &entryBB) {
   if (mirFunc == nullptr) {
     return;  // maybe wpo
   }
-  if (retTy == kSeen) {
+  if (!skipReturnTypeOpt && retTy == kSeen) {
     mirFunc->SetInferredReturnTyIdx(this->inferredRetTyIdx);
   }
   // Simple rule: if method's declared returning type is a final class, then

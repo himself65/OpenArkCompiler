@@ -37,8 +37,8 @@ const mapleOption::Descriptor jbcUsage[] = {
     "  -o, -out output.mpl    : output mpl name",
     "jbc2mpl",
     {} },
-  { kUnknown, 0, nullptr, nullptr, mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyNone,
-    nullptr,
+  { kUnknown, 0, "", "", mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyNone,
+    "",
     "jbc2mpl",
     {} }
 };

@@ -173,7 +173,7 @@ class MAD {
   Reservation *FindReservation(const Insn &insn) const;
   void AdvanceCycle();
   void ReleaseAllUnits();
-  void SaveStates(std::vector<maple::uint32> &occupyTable, int size);
+  void SaveStates(std::vector<maple::uint32> &occupyTable, int size) const;
   void RestoreStates(std::vector<maple::uint32> &occupyTable, int size);
 
   int GetMaxParallelism() const {

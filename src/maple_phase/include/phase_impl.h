@@ -22,7 +22,7 @@
 namespace maple {
 class FuncOptimizeImpl : public MplTaskParam {
  public:
-  explicit FuncOptimizeImpl(MIRModule &mod, KlassHierarchy *kh = nullptr, bool trace = false);
+  FuncOptimizeImpl(MIRModule &mod, KlassHierarchy *kh = nullptr, bool trace = false);
   virtual ~FuncOptimizeImpl();
   // Each phase needs to implement its own Clone
   virtual FuncOptimizeImpl *Clone() = 0;
@@ -40,7 +40,7 @@ class FuncOptimizeImpl : public MplTaskParam {
  protected:
   void SetCurrentFunction(MIRFunction &func) {
     currFunc = &func;
-    ASSERT(builder, "builder is null in FuncOptimizeImpl::SetCurrentFunction");
+    ASSERT(builder != nullptr, "builder is null in FuncOptimizeImpl::SetCurrentFunction");
     module->SetCurFunction(&func);
   }
 

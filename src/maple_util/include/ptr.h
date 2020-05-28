@@ -17,7 +17,6 @@
 #include <functional>
 
 namespace maple { namespace utils {
-
 template<typename T>
 using PtrCheckerType = void (*)(const T*);
 
@@ -27,97 +26,97 @@ inline constexpr void CheckNothing(const T*) {}
 template<typename T, PtrCheckerType<T> Check = CheckNothing<T>>
 class Ptr {
  public:
-  using pointer = T*;
+  using Pointer = T*;
   using element_type = T;
 
   constexpr Ptr() noexcept
-      : ptr_(nullptr) {
+      : pointer(nullptr) {
     Check(nullptr);
   }
 
   constexpr explicit Ptr(std::nullptr_t) noexcept
-      : ptr_(nullptr) {
+      : pointer(nullptr) {
     Check(nullptr);
   }
 
-  explicit Ptr(pointer ptr)
-      : ptr_(ptr) {
+  explicit Ptr(Pointer ptr)
+      : pointer(ptr) {
     Check(ptr);
   }
 
-  Ptr(pointer ref, PtrCheckerType<T> checker)
-      : ptr_(ref) {
-    checker(ptr_);
+  Ptr(Pointer ref, PtrCheckerType<T> checker)
+      : pointer(ref) {
+    checker(pointer);
   }
 
   explicit Ptr(T &ref)
-      : ptr_(&ref) {
-    Check(ptr_);
+      : pointer(&ref) {
+    Check(pointer);
   }
 
   Ptr(T &ref, PtrCheckerType<T> checker)
-      : ptr_(&ref) {
-    checker(ptr_);
+      : pointer(&ref) {
+    checker(pointer);
   }
 
-  Ptr(T &&ref) = delete;
+  explicit Ptr(T &&ref) = delete;
 
   template<typename U, typename = std::enable_if_t<std::is_convertible<U, T>::value>>
   explicit Ptr(U *ptr)
-      : ptr_(ptr) {
-    Check(ptr_);
+      : pointer(ptr) {
+    Check(pointer);
   }
 
   template<typename U, typename = std::enable_if_t<std::is_convertible<U, T>::value>>
   explicit Ptr(U &ref)
-      : ptr_(&ref) {
-    Check(ptr_);
+      : pointer(&ref) {
+    Check(pointer);
   }
 
   template<typename U, typename = std::enable_if_t<std::is_convertible<U, T>::value>>
   Ptr(U &ref, PtrCheckerType<T> checker)
-      : ptr_(&ref) {
-    checker(ptr_);
+      : pointer(&ref) {
+    checker(pointer);
   }
 
   template<typename U, typename = std::enable_if_t<std::is_convertible<U, T>::value>>
-  Ptr(U &&ref) = delete;
+  explicit Ptr(U &&ref) = delete;
 
-  Ptr(const Ptr &other)
-      : ptr_(other.get()) {}
+  explicit Ptr(const Ptr &other)
+      : pointer(other.get()) {}
 
-  Ptr(Ptr &&other) noexcept
-      : ptr_(other.get()) {}
+  explicit Ptr(Ptr &&other) noexcept
+      : pointer(other.get()) {}
 
   template<typename U, PtrCheckerType<U> CheckU, typename = std::enable_if_t<std::is_convertible<U, T>::value>>
   explicit Ptr(const Ptr<U, CheckU> &other)
-      : ptr_(other.get()) {
-    Check(ptr_);
+      : pointer(other.get()) {
+    Check(pointer);
   }
 
   template<typename U, PtrCheckerType<U> CheckU, typename = std::enable_if_t<std::is_convertible<U, T>::value>>
   Ptr(const Ptr<U, CheckU> &other, PtrCheckerType<T> checker)
-      : ptr_(other.get()) {
-    checker(ptr_);
+      : pointer(other.get()) {
+    checker(pointer);
   }
 
   template<typename U, PtrCheckerType<U> CheckU, typename = std::enable_if_t<std::is_convertible<U, T>::value>>
   explicit Ptr(Ptr<U, CheckU> &&other)
-      : ptr_(other.get()) {
-    Check(ptr_);
+      : pointer(other.get()) {
+    Check(pointer);
   }
 
   template<typename U, PtrCheckerType<U> CheckU, typename = std::enable_if_t<std::is_convertible<U, T>::value>>
   Ptr(Ptr<U, CheckU> &&other, PtrCheckerType<T> checker)
-      : ptr_(other.get()) {
-    checker(ptr_);
+      : pointer(other.get()) {
+    checker(pointer);
   }
 
   ~Ptr() = default;
 
-  Ptr &operator=(pointer ptr) noexcept {
+  Ptr &operator=(Pointer ptr) noexcept {
     Check(ptr);
-    ptr_ = ptr;
+    pointer = ptr;
     return *this;
   }
 
@@ -129,14 +128,14 @@ class Ptr {
 
   Ptr &operator=(const Ptr &ptr) noexcept {
     if (this != &ptr) {
-      ptr_ = ptr.ptr_;
+      pointer = ptr.pointer;
     }
     return *this;
   }
 
   Ptr &operator=(Ptr &&ptr) noexcept {
     if (this != &ptr) {
-      ptr_ = std::move(ptr.ptr_);
+      pointer = std::move(ptr.pointer);
     }
     return *this;
   }
@@ -145,7 +144,7 @@ class Ptr {
   Ptr &operator=(const Ptr<U, CheckU> &ptr) noexcept {
     if (this->get() != ptr.get()) {
       Check(ptr.get());
-      ptr_ = ptr.get();
+      pointer = ptr.get();
     }
     return *this;
   }
@@ -154,24 +153,24 @@ class Ptr {
   Ptr &operator=(Ptr<U, CheckU> &&ptr) noexcept {
     if (this->get() != ptr.get()) {
       Check(ptr.get());
-      ptr_ = std::move(ptr.get());
+      pointer = std::move(ptr.get());
     }
     return *this;
   }
 
-  pointer release() noexcept = delete;
+  Pointer release() noexcept = delete;
 
-  void reset(pointer ptr = pointer()) noexcept {
+  void reset(Pointer ptr = Pointer()) noexcept {
     Check(ptr);
-    ptr_ = ptr;
+    pointer = ptr;
   }
 
   void swap(Ptr &other) noexcept {
-    std::swap(ptr_, other.ptr_);
+    std::swap(pointer, other.pointer);
   }
 
   T *get() const noexcept {
-    return ptr_;
+    return pointer;
   }
 
   explicit operator bool() const noexcept {
@@ -201,7 +200,7 @@ class Ptr {
   Ptr &operator-=(std::ptrdiff_t) = delete;
 
  private:
-  T *ptr_;
+  T *pointer;
 };
 
 template<typename T, PtrCheckerType<T> CheckT, typename U, PtrCheckerType<U> CheckU>
@@ -256,12 +255,12 @@ inline bool operator!=(std::nullptr_t, const Ptr<T, CheckT> &rhs) {
 
 template<typename T, PtrCheckerType<T> CheckT>
 inline bool operator<(const Ptr<T, CheckT> &lhs, std::nullptr_t) {
-  return std::less<typename Ptr<T, CheckT>::pointer>()(lhs.get(), nullptr);
+  return std::less<typename Ptr<T, CheckT>::Pointer>()(lhs.get(), nullptr);
 }
 
 template<typename T, PtrCheckerType<T> CheckT>
 inline bool operator<(std::nullptr_t, const Ptr<T, CheckT> &rhs) {
-  return std::less<typename Ptr<T, CheckT>::pointer>()(nullptr, rhs.get());
+  return std::less<typename Ptr<T, CheckT>::Pointer>()(nullptr, rhs.get());
 }
 
 template<typename T, PtrCheckerType<T> CheckT>
@@ -293,7 +292,6 @@ template<typename T, PtrCheckerType<T> CheckT>
 inline bool operator>=(std::nullptr_t, const Ptr<T, CheckT> &rhs) {
   return !(nullptr < rhs);
 }
-
 }}
 
 #endif //DIY_CPLUSPLUS_SAFE_PTR_H

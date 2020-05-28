@@ -61,13 +61,11 @@ class MplTask {
   }
 
  protected:
-  virtual int RunImpl(MplTaskParam *param) {
-    (void)param;
+  virtual int RunImpl(MplTaskParam*) {
     return 0;
   }
 
-  virtual int FinishImpl(MplTaskParam *param) {
-    (void)param;
+  virtual int FinishImpl(MplTaskParam*) {
     return 0;
   }
 
@@ -86,7 +84,7 @@ class MplScheduler {
   virtual ~MplScheduler() {}
 
   virtual void AddTask(MplTask *task);
-  virtual int RunTask(uint32 nthreads, bool seq = false);
+  virtual int RunTask(uint32 threadsNum, bool seq = false);
   virtual MplSchedulerParam *EncodeThreadMainEnvironment(uint32) {
     return nullptr;
   }
@@ -126,10 +124,14 @@ class MplScheduler {
   bool isSchedulerSeq;
   bool dumpTime;
 
-  enum THREAD_STATUS { kThreadStop, kThreadRun, kThreadPause };
+  enum ThreadStatus {
+    kThreadStop,
+    kThreadRun,
+    kThreadPause
+  };
 
-  THREAD_STATUS statusFinish;
-  virtual int FinishTask(MplTask *task);
+  ThreadStatus statusFinish;
+  virtual int FinishTask(const MplTask &task);
   virtual MplTask *GetTaskToRun();
   virtual uint32 GetTaskIdsFinishSize();
   virtual MplTask *GetTaskFinishFirst();
@@ -156,7 +158,5 @@ class MplScheduler {
     return nullptr;
   }
 };
-
 }  // namespace maple
-
 #endif  // MAPLE_UTIL_INCLUDE_MPLSCHEDULER_H

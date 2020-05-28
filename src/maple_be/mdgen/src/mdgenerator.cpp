@@ -25,7 +25,7 @@ std::string MDCodeGen::targetArchName = "";
 void MDCodeGen::EmitCheckPtr(std::ofstream &outputFile, const std::string &emitName, const std::string &name,
                              const std::string &ptrType) {
   outputFile << "if(" << emitName << " == nullptr) {\n" <<
-                "  maple::logInfo.MapleLogger(maple::kLlErr) << \"" << ptrType << " allocation for " << name <<
+                "  maple::LogInfo::MapleLogger(maple::kLlErr) << \"" << ptrType << " allocation for " << name <<
                 " failed.\" << std::endl;\n" << "}\n" <<
                 "ASSERT(" << emitName << ", \"" << ptrType << " allocation for " << name <<
                 " failed.\");\n" << "\n";

@@ -96,7 +96,7 @@ void CG::GenExtraTypeMetadata(const std::string &classListFileName, const std::s
   }
 
   if (cgOption.GenGctib()) {
-    maple::logInfo.MapleLogger(kLlErr) << "--gen-gctib-file option not implemented";
+    maple::LogInfo::MapleLogger(kLlErr) << "--gen-gctib-file option not implemented";
   }
 }
 

@@ -53,7 +53,10 @@ union DigestHash {
 // muid-related files are shared between maple compiler and runtime, thus not in
 // namespace maplert
 struct MuidContext {
-  unsigned int a, b, c, d;
+  unsigned int a;
+  unsigned int b;
+  unsigned int c;
+  unsigned int d;
   unsigned int count[kNumLowAndHigh];
   unsigned int block[kBlockLength];
   unsigned char buffer[kGroupSize];
