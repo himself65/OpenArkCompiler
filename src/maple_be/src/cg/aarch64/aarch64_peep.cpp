@@ -2180,7 +2180,7 @@ void ComplexMemOperandLabelAArch64::Run(BB &bb, Insn &insn) {
  * mov R2, vreg3           -> fieldValueDefInsn
  */
 bool WriteFieldCallAArch64::WriteFieldCallOptPatternMatch(const Insn &writeFieldCallInsn, WriteRefFieldParam &param,
-                                                      std::vector<Insn*> &paramDefInsns) {
+                                                          std::vector<Insn*> &paramDefInsns) {
   Insn *fieldValueDefInsn = writeFieldCallInsn.GetPreviousMachineInsn();
   if (fieldValueDefInsn == nullptr || fieldValueDefInsn->GetMachineOpcode() != MOP_xmovrr) {
     return false;

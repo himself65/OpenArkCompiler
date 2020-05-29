@@ -129,7 +129,7 @@ MeExpr *Prop::SimplifyCompareSelectConstMeExpr(const OpMeExpr &opMeExpr, const M
   return irMap.HashMeExpr(newopMeExpr);
 }
 
-MeExpr *Prop::SimplifyCompareConstWithAddress(OpMeExpr &opMeExpr) const {
+MeExpr *Prop::SimplifyCompareConstWithAddress(const OpMeExpr &opMeExpr) const {
   MeExpr *opnd0 = opMeExpr.GetOpnd(0);
   MeExpr *opnd1 = opMeExpr.GetOpnd(1);
   Opcode opcode = opMeExpr.GetOp();
@@ -152,7 +152,7 @@ MeExpr *Prop::SimplifyCompareConstWithAddress(OpMeExpr &opMeExpr) const {
   return nullptr;
 }
 
-MeExpr *Prop::SimplifyCompareWithZero(OpMeExpr &opMeExpr) const {
+MeExpr *Prop::SimplifyCompareWithZero(const OpMeExpr &opMeExpr) const {
   Opcode opcode = opMeExpr.GetOp();
   MeExpr *opnd0 = opMeExpr.GetOpnd(0);
   MeExpr *opnd1 = opMeExpr.GetOpnd(1);

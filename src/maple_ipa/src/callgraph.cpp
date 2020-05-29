@@ -230,21 +230,20 @@ void CallGraph::DelNode(CGNode &node) {
   }
 }
 
-CallGraph::CallGraph(MIRModule *m, MemPool *memPool, KlassHierarchy *kh, const char *fn)
-    : AnalysisResult(memPool),
-      mirModule(m),
-      cgalloc(memPool),
-      mirBuilder(cgalloc.GetMemPool()->New<MIRBuilder>(m)),
-      entry_node(nullptr),
-      rootNodes(cgalloc.Adapter()),
+CallGraph::CallGraph(MIRModule &m, MemPool &memPool, KlassHierarchy &kh, const std::string &fn)
+    : AnalysisResult(&memPool),
+      mirModule(&m),
+      cgAlloc(&memPool),
+      mirBuilder(cgAlloc.GetMemPool()->New<MIRBuilder>(&m)),
+      entryNode(nullptr),
+      rootNodes(cgAlloc.Adapter()),
       fileName(fn),
-      klassh(kh),
-      nodesMap(cgalloc.Adapter()),
-      sccTopologicalVec(cgalloc.Adapter()),
+      klassh(&kh),
+      nodesMap(cgAlloc.Adapter()),
+      sccTopologicalVec(cgAlloc.Adapter()),
       numOfNodes(0),
       numOfSccs(0) {
-  CHECK_FATAL(fn != nullptr, "");
-  callExternal = cgalloc.GetMemPool()->New<CGNode>(static_cast<MIRFunction*>(nullptr), &cgalloc, numOfNodes++);
+  callExternal = cgAlloc.GetMemPool()->New<CGNode>(static_cast<MIRFunction*>(nullptr), &cgAlloc, numOfNodes++);
   debug_flag = false;
   debug_scc = false;
 }
@@ -310,8 +309,8 @@ CGNode *CallGraph::GetCGNode(PUIdx puIdx) const {
 }
 
 SCCNode *CallGraph::GetSCCNode(MIRFunction *func) const {
-  CGNode *cgnode = GetCGNode(func);
-  return cgnode != nullptr ? cgnode->GetSCCNode() : nullptr;
+  CGNode *cgNode = GetCGNode(func);
+  return cgNode != nullptr ? cgNode->GetSCCNode() : nullptr;
 }
 
 bool CallGraph::IsRootNode(MIRFunction *func) const {
@@ -326,7 +325,7 @@ CGNode *CallGraph::GetOrGenCGNode(PUIdx puIdx, bool isVcall, bool isIcall) {
   CGNode *node = GetCGNode(puIdx);
   if (node == nullptr) {
     MIRFunction *mirFunc = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(puIdx);
-    node = cgalloc.GetMemPool()->New<CGNode>(mirFunc, &cgalloc, numOfNodes++);
+    node = cgAlloc.GetMemPool()->New<CGNode>(mirFunc, &cgAlloc, numOfNodes++);
     nodesMap.insert(std::make_pair(mirFunc, node));
   }
   if (isVcall && !node->IsVcallCandidatesValid()) {
@@ -590,7 +589,7 @@ void CallGraph::AddCallGraphNode(MIRFunction &func) {
   /* set root if current function is static main */
   if (func.GetName() == mirModule->GetEntryFuncName()) {
     mirModule->SetEntryFunction(&func);
-    entry_node = node;
+    entryNode = node;
   }
 }
 
@@ -618,16 +617,16 @@ static void ResetInferredType(std::vector<MIRSymbol*> &inferredSymbols, MIRSymbo
   }
 }
 
-static void SetInferredType(std::vector<MIRSymbol*> &inferredSymbols, MIRSymbol *s, TyIdx idx) {
-  s->SetInferredTyIdx(idx);
+static void SetInferredType(std::vector<MIRSymbol*> &inferredSymbols, MIRSymbol &s, TyIdx idx) {
+  s.SetInferredTyIdx(idx);
   unsigned int i = 0;
   for (; i < inferredSymbols.size(); i++) {
-    if (inferredSymbols[i] == s) {
+    if (inferredSymbols[i] == &s) {
       break;
     }
   }
   if (i == inferredSymbols.size()) {
-    inferredSymbols.push_back(s);
+    inferredSymbols.push_back(&s);
   }
 }
 
@@ -688,7 +687,7 @@ void IPODevirtulize::SearchDefInClinit(const Klass &klass) {
         } else if (dassignNode->GetRHS()->GetOpCode() == OP_gcmalloc) {
           GCMallocNode *gcmallocNode = static_cast<GCMallocNode*>(dassignNode->GetRHS());
           TyIdx inferredTypeIdx = gcmallocNode->GetTyIdx();
-          SetInferredType(gcmallocSymbols, leftSymbol, inferredTypeIdx);
+          SetInferredType(gcmallocSymbols, *leftSymbol, inferredTypeIdx);
         } else {
           ResetInferredType(gcmallocSymbols, leftSymbol);
         }
@@ -775,14 +774,14 @@ void IPODevirtulize::SearchDefInMemberMethods(const Klass &klass) {
           MIRSymbol *leftSymbol = func->GetLocalOrGlobalSymbol(dassignNode->GetStIdx());
           if (dassignNode->GetRHS()->GetOpCode() == OP_gcmalloc) {
             GCMallocNode *gcmallocNode = static_cast<GCMallocNode*>(dassignNode->GetRHS());
-            SetInferredType(gcmallocSymbols, leftSymbol, gcmallocNode->GetTyIdx());
+            SetInferredType(gcmallocSymbols, *leftSymbol, gcmallocNode->GetTyIdx());
           } else if (dassignNode->GetRHS()->GetOpCode() == OP_retype) {
             RetypeNode *retyStmt = static_cast<RetypeNode*>(dassignNode->GetRHS());
             BaseNode *fromNode = retyStmt->Opnd(0);
             if (fromNode->GetOpCode() == OP_dread) {
               DreadNode *dreadNode = static_cast<DreadNode*>(fromNode);
               MIRSymbol *fromSymbol = func->GetLocalOrGlobalSymbol(dreadNode->GetStIdx());
-              SetInferredType(gcmallocSymbols, leftSymbol, fromSymbol->GetInferredTyIdx());
+              SetInferredType(gcmallocSymbols, *leftSymbol, fromSymbol->GetInferredTyIdx());
             } else {
               ResetInferredType(gcmallocSymbols, leftSymbol);
             }
@@ -888,7 +887,7 @@ void DoDevirtual(const Klass &klass, const KlassHierarchy &klassh) {
           if (dassignNode->GetRHS()->GetOpCode() == OP_dread) {
             DreadNode *dreadNode = static_cast<DreadNode*>(dassignNode->GetRHS());
             if (func->GetLocalOrGlobalSymbol(dreadNode->GetStIdx())->GetInferredTyIdx() != kInitTyIdx) {
-              SetInferredType(inferredSymbols, leftSymbol,
+              SetInferredType(inferredSymbols, *leftSymbol,
                               func->GetLocalOrGlobalSymbol(dreadNode->GetStIdx())->GetInferredTyIdx());
             }
           } else if (dassignNode->GetRHS()->GetOpCode() == OP_iread) {
@@ -901,7 +900,7 @@ void DoDevirtual(const Klass &klass, const KlassHierarchy &klassh) {
               FieldID tmpID = fieldID;
               TyIdx tmpTyIdx = classType->GetElemInferredTyIdx(tmpID);
               if (tmpTyIdx != kInitTyIdx && tmpTyIdx != kNoneTyIdx) {
-                SetInferredType(inferredSymbols, leftSymbol, classType->GetElemInferredTyIdx(fieldID));
+                SetInferredType(inferredSymbols, *leftSymbol, classType->GetElemInferredTyIdx(fieldID));
               }
             }
           } else {
@@ -1548,7 +1547,7 @@ void CallGraph::BuildSCCDFS(CGNode &caller, uint32 &visitIndex, std::vector<SCCN
     }
   }
   if (visitedOrder.at(id) == lowestOrder.at(id)) {
-    SCCNode *sccNode = cgalloc.GetMemPool()->New<SCCNode>(numOfSccs++, &cgalloc);
+    SCCNode *sccNode = cgAlloc.GetMemPool()->New<SCCNode>(numOfSccs++, &cgAlloc);
     uint32 stackTopId;
     do {
       stackTopId = visitStack.back();
@@ -1675,7 +1674,7 @@ AnalysisResult *DoCallGraph::Run(MIRModule *module, ModuleResultMgr *m) {
   MemPool *memPool = memPoolCtrler.NewMemPool("callgraph mempool");
   KlassHierarchy *klassh = static_cast<KlassHierarchy*>(m->GetAnalysisResult(MoPhase_CHA, module));
   CHECK_FATAL(klassh != nullptr, "CHA can't be null");
-  CallGraph *cg = memPool->New<CallGraph>(module, memPool, klassh, module->GetFileName().c_str());
+  CallGraph *cg = memPool->New<CallGraph>(*module, *memPool, *klassh, module->GetFileName());
   cg->debug_flag = TRACE_PHASE;
   cg->BuildCallGraph();
   m->AddResult(GetPhaseID(), *module, *cg);

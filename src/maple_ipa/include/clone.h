@@ -70,8 +70,8 @@ class Clone : public AnalysisResult {
       MIRType *returnType = nullptr) const;
   MIRFunction *CloneFunctionNoReturn(MIRFunction &originalFunction);
   void DoClone();
-  void CopyFuncInfo(const MIRFunction &originalFunction, MIRFunction *newFunc) const;
-  void UpdateFuncInfo(MIRFunction *newFunc);
+  void CopyFuncInfo(const MIRFunction &originalFunction, MIRFunction &newFunc) const;
+  void UpdateFuncInfo(MIRFunction &newFunc);
   void CloneArgument(MIRFunction &riginalFunction, ArgVector &argument) const;
   ReplaceRetIgnored *GetReplaceRetIgnored() {
     return replaceRetIgnored;
