@@ -32,6 +32,11 @@ enum UnitType : maple::uint8 {
   KUnitTypeNone
 };
 
+enum RealUnitKind : maple::uint32 {
+  kUnitKindUndef,
+#include "target/mplad_unit_kind.def"
+  kUnitKindLast = 13
+};
 
 enum SlotType : maple::uint8 {
   kSlotNone,
@@ -67,7 +72,6 @@ class Unit {
   std::string GetName() const;
   bool IsFree(maple::uint32 cycle) const;
   void Occupy(const Insn &insn, maple::uint32 cycle);
-  unsigned int GetUnitTypeNum() const;
   void Release();
   void AdvanceCycle();
   void Dump(int indent = 0) const;
@@ -220,25 +224,25 @@ class MAD {
 class AluShiftBypass : public Bypass {
  public:
   AluShiftBypass(LatencyType d, LatencyType u, int l) : Bypass(d, u, l) {}
-  ~AluShiftBypass() = default;
+  ~AluShiftBypass() override = default;
 
-  bool CanBypass(const Insn &defInsn, const Insn &useInsn) const;
+  bool CanBypass(const Insn &defInsn, const Insn &useInsn) const override;
 };
 
 class AccumulatorBypass : public Bypass {
  public:
   AccumulatorBypass(LatencyType d, LatencyType u, int l) : Bypass(d, u, l) {}
-  ~AccumulatorBypass() = default;
+  ~AccumulatorBypass() override = default;
 
-  bool CanBypass(const Insn &defInsn, const Insn &useInsn) const;
+  bool CanBypass(const Insn &defInsn, const Insn &useInsn) const override;
 };
 
 class StoreBypass : public Bypass {
  public:
   StoreBypass(LatencyType d, LatencyType u, int l) : Bypass(d, u, l) {}
-  ~StoreBypass() = default;
+  ~StoreBypass() override = default;
 
-  bool CanBypass(const Insn &defInsn, const Insn &useInsn) const;
+  bool CanBypass(const Insn &defInsn, const Insn &useInsn) const override;
 };
 }  /* namespace maplebe */
 

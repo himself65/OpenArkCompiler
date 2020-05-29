@@ -95,9 +95,9 @@ MIRFunction &NativeStubFuncGeneration::GetOrCreateDefaultNativeFunc(MIRFunction 
 //   syncenter (dread ref %_this or classinfo) // if native func is synchronized
 //   if (not critical_native)
 //     callassigned MCC_PreNativeCall() {Env}
-//     call native_func(Env, [classinfo], oringinal_args){retv};
+//     call native_func(Env, [classinfo], oringinal_args){retv}
 //   else
-//     call native_func(oringinal_args){};
+//     call native_func(oringinal_args){}
 //   if (type of retv is ref)
 //     callassigned &MCC_DecodeReference(dread ref %retv) {dassign ref %retv}
 //   if (not critical_native)

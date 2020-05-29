@@ -450,6 +450,117 @@ class CGOptions : public MapleDriverOptionBase {
     timePhases = false;
   }
 
+  static void EnableEBO() {
+    doEBO = true;
+  }
+
+  static void DisableEBO() {
+    doEBO = false;
+  }
+
+  static bool DoEBO() {
+    return doEBO;
+  }
+
+  static void EnableCFGO() {
+    doCFGO = true;
+  }
+
+  static void DisableCFGO() {
+    doCFGO = false;
+  }
+
+  static bool DoCFGO() {
+    return doCFGO;
+  }
+
+  static void EnableICO() {
+    doICO = true;
+  }
+
+  static void DisableICO() {
+    doICO = false;
+  }
+
+  static bool DoICO() {
+    return doICO;
+  }
+
+  static void EnableStoreLoadOpt() {
+    doStoreLoadOpt = true;
+  }
+
+  static void DisableStoreLoadOpt() {
+    doStoreLoadOpt = false;
+  }
+
+  static bool DoStoreLoadOpt() {
+    return doStoreLoadOpt;
+  }
+
+  static void EnableGlobalOpt() {
+    doGlobalOpt = true;
+  }
+
+  static void DisableGlobalOpt() {
+    doGlobalOpt = false;
+  }
+
+  static bool DoGlobalOpt() {
+    return doGlobalOpt;
+  }
+
+  static void EnablePrePeephole() {
+    doPrePeephole = true;
+  }
+
+  static void DisablePrePeephole() {
+    doPrePeephole = false;
+  }
+
+  static bool DoPrePeephole() {
+    return doPrePeephole;
+  }
+
+  static void EnablePeephole() {
+    doPeephole = true;
+  }
+
+  static void DisablePeephole() {
+    doPeephole = false;
+  }
+
+  static bool DoPeephole() {
+    return doPeephole;
+  }
+
+  static void EnableSchedule() {
+    doSchedule = true;
+  }
+
+  static void DisableSchedule() {
+    doSchedule = false;
+  }
+
+  static bool DoSchedule() {
+    return doSchedule;
+  }
+  static bool DoWriteRefFieldOpt() {
+    return doWriteRefFieldOpt;
+  }
+
+  static void EnableDumpOptimizeCommonLog() {
+    dumpOptimizeCommonLog = true;
+  }
+
+  static void DisableDumpOptimizeCommonLog() {
+    dumpOptimizeCommonLog = false;
+  }
+
+  static bool IsDumpOptimizeCommonLog() {
+    return dumpOptimizeCommonLog;
+  }
+
   static void EnableCheckArrayStore() {
     checkArrayStore = true;
   }
@@ -480,6 +591,18 @@ class CGOptions : public MapleDriverOptionBase {
 
   static bool IsPIC() {
     return doPIC;
+  }
+
+  static void EnableNoDupBB() {
+    noDupBB = true;
+  }
+
+  static void DisableNoDupBB() {
+    noDupBB = false;
+  }
+
+  static bool IsNoDupBB() {
+    return noDupBB;
   }
 
   static void EnableNoCalleeCFI() {
@@ -578,6 +701,43 @@ class CGOptions : public MapleDriverOptionBase {
     return hotFix;
   }
 
+  static void EnableDebugSched() {
+    debugSched = true;
+  }
+
+  static void DisableDebugSched() {
+    debugSched = false;
+  }
+
+  static bool IsDebugSched() {
+    return debugSched;
+  }
+
+  static void EnableDruteForceSched() {
+    bruteForceSched = true;
+  }
+
+  static void DisableDruteForceSched() {
+    bruteForceSched = false;
+  }
+
+  static bool IsDruteForceSched() {
+    return bruteForceSched;
+  }
+
+  static void EnableSimulateSched() {
+    simulateSched = true;
+  }
+
+  static void DisableSimulateSched() {
+    simulateSched = false;
+  }
+
+  static bool IsSimulateSched() {
+    return simulateSched;
+  }
+
+
   static void EnableLongCalls() {
     genLongCalls = true;
   }
@@ -633,21 +793,36 @@ class CGOptions : public MapleDriverOptionBase {
   static bool dumpBefore;
   static bool dumpAfter;
   static bool timePhases;
+  static bool doEBO;
+  static bool doCFGO;
+  static bool doICO;
+  static bool doStoreLoadOpt;
+  static bool doGlobalOpt;
+  static bool doPrePeephole;
+  static bool doPeephole;
+  static bool doSchedule;
+  static bool doWriteRefFieldOpt;
+  static bool dumpOptimizeCommonLog;
   static bool checkArrayStore;
-
   static bool exclusiveEH;
   static bool doPIC;
+  static bool noDupBB;
   static bool noCalleeCFI;
   static bool emitCyclePattern;
   static bool insertYieldPoint;
   static bool mapleLinker;
   static bool printFunction;
-
   static std::string globalVarProfile;
   static bool nativeOpt;
   static bool withDwarf;
   static bool lazyBinding;
   static bool hotFix;
+  /* if true dump scheduling information */
+  static bool debugSched;
+  /* if true do BruteForceSchedule */
+  static bool bruteForceSched;
+  /* if true do SimulateSched */
+  static bool simulateSched;
   /* if true generate adrp/ldr/blr */
   static bool genLongCalls;
   static bool gcOnly;
