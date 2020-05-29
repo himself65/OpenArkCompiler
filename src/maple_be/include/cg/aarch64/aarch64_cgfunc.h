@@ -21,6 +21,8 @@
 #include "aarch64_operand.h"
 #include "aarch64_insn.h"
 #include "aarch64_memlayout.h"
+#include "aarch64_optimize_common.h"
+
 namespace maplebe {
 class AArch64CGFunc : public CGFunc {
  public:
@@ -457,6 +459,9 @@ class AArch64CGFunc : public CGFunc {
                                               CreateCfiImmOperand(val, size));
   }
 
+  InsnVisitor *NewInsnModifier() override {
+    return memPool->New<AArch64InsnVisitor>(*this);
+  }
 
  private:
   enum RelationOperator : uint8 {

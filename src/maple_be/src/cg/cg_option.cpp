@@ -37,21 +37,31 @@ std::unordered_map<std::string, std::vector<std::string>> CGOptions::cyclePatter
 std::string CGOptions::skipFrom = "";
 std::string CGOptions::skipAfter = "";
 std::string CGOptions::dumpFunc = "*";
+std::string CGOptions::globalVarProfile = "";
 #ifdef TARGARM32
 std::string CGOptions::duplicateAsmFile = "";
 #else
 std::string CGOptions::duplicateAsmFile = "maple/mrt/codetricks/arch/arm64/duplicateFunc.s";
 #endif
-std::string CGOptions::globalVarProfile = "";
 #if TARGAARCH64
 bool CGOptions::useBarriersForVolatile = false;
 #else
 bool CGOptions::useBarriersForVolatile = true;
 #endif
-bool CGOptions::quiet = true;
 bool CGOptions::exclusiveEH = false;
+bool CGOptions::doEBO = false;
+bool CGOptions::doCFGO = false;
+bool CGOptions::doICO = false;
+bool CGOptions::doStoreLoadOpt = false;
+bool CGOptions::doGlobalOpt = false;
+bool CGOptions::doPrePeephole = false;
+bool CGOptions::doPeephole = false;
+bool CGOptions::doSchedule = false;
+bool CGOptions::doWriteRefFieldOpt = false;
+bool CGOptions::dumpOptimizeCommonLog = false;
 bool CGOptions::checkArrayStore = false;
 bool CGOptions::doPIC = false;
+bool CGOptions::noDupBB = false;
 bool CGOptions::noCalleeCFI = true;
 bool CGOptions::emitCyclePattern = false;
 bool CGOptions::insertYieldPoint = false;
@@ -61,8 +71,13 @@ bool CGOptions::nativeOpt = false;
 bool CGOptions::withDwarf = false;
 bool CGOptions::lazyBinding = false;
 bool CGOptions::hotFix = false;
+bool CGOptions::debugSched = false;
+bool CGOptions::bruteForceSched = false;
+bool CGOptions::simulateSched = false;
 bool CGOptions::genLongCalls = false;
 bool CGOptions::gcOnly = false;
+bool CGOptions::quiet = true;
+
 
 enum OptionIndex : uint64 {
   kCGQuiet = kCommonOptionEnd + 1,
@@ -71,6 +86,14 @@ enum OptionIndex : uint64 {
   kCGVerbose,
   kCGMapleLinker,
   kCgen,
+  kEbo,
+  kCfgo,
+  kIco,
+  kSlo,
+  kGo,
+  kPrepeep,
+  kPeep,
+  kSchedule,
   kCGNativeOpt,
   kInsertCall,
   kTrace,
@@ -115,6 +138,9 @@ enum OptionIndex : uint64 {
   kCGSkipAfter,
   kCGLazyBinding,
   kCGHotFix,
+  kDebugSched,
+  kBruteForceSched,
+  kSimulateSched,
   kLongCalls,
 };
 
@@ -196,6 +222,86 @@ const Descriptor kUsage[] = {
     kArgCheckPolicyBool,
     "  --hot-fix                   \tOpen for App hot fix[default off]\n"
     "  --no-hot-fix\n",
+    "mplcg",
+    {} },
+  { kEbo,
+    kEnable,
+    "",
+    "ebo",
+    kBuildTypeExperimental,
+    kArgCheckPolicyBool,
+    "  --ebo                       \tPerform Extend block optimization\n"
+    "  --no-ebo\n",
+    "mplcg",
+    {} },
+  { kCfgo,
+    kEnable,
+    "",
+    "cfgo",
+    kBuildTypeExperimental,
+    kArgCheckPolicyBool,
+    "  --cfgo                      \tPerform control flow optimization\n"
+    "  --no-cfgo\n",
+    "mplcg",
+    {} },
+  { kIco,
+    kEnable,
+    "",
+    "ico",
+    kBuildTypeExperimental,
+    kArgCheckPolicyBool,
+    "  --ico                       \tPerform if-conversion optimization\n"
+    "  --no-ico\n",
+    "mplcg",
+    {} },
+  { kSlo,
+    kEnable,
+    "",
+    "storeloadopt",
+    kBuildTypeExperimental,
+    kArgCheckPolicyBool,
+    "  --storeloadopt              \tPerform global store-load optimization\n"
+    "  --no-storeloadopt\n",
+    "mplcg",
+    {} },
+  { kGo,
+    kEnable,
+    "",
+    "globalopt",
+    kBuildTypeExperimental,
+    kArgCheckPolicyBool,
+    "  --globalopt                 \tPerform global optimization\n"
+    "  --no-globalopt\n",
+    "mplcg",
+    {} },
+  { kPrepeep,
+    kEnable,
+    "",
+    "prepeep",
+    kBuildTypeExperimental,
+    kArgCheckPolicyBool,
+    "  --prepeep                   \tPerform peephole optimization before RA\n"
+    "  --no-prepeep\n",
+    "mplcg",
+    {} },
+  { kPeep,
+    kEnable,
+    "",
+    "peep",
+    kBuildTypeExperimental,
+    kArgCheckPolicyBool,
+    "  --peep                      \tPerform peephole optimization after RA\n"
+    "  --no-peep\n",
+    "mplcg",
+    {} },
+  { kSchedule,
+    kEnable,
+    "",
+    "schedule",
+    kBuildTypeExperimental,
+    kArgCheckPolicyBool,
+    "  --schedule                  \tPerform scheduling\n"
+    "  --no-schedule\n",
     "mplcg",
     {} },
   { kCGNativeOpt,
@@ -572,6 +678,36 @@ const Descriptor kUsage[] = {
     "  --no-check-arraystore\n",
     "mplcg",
     {} },
+  { kDebugSched,
+    kEnable,
+    "",
+    "debug-schedule",
+    kBuildTypeExperimental,
+    kArgCheckPolicyBool,
+    "  --debug-schedule            \tdump scheduling information\n"
+    "  --no-debug-schedule\n",
+    "mplcg",
+    {} },
+  { kBruteForceSched,
+    kEnable,
+    "",
+    "bruteforce-schedule",
+    kBuildTypeExperimental,
+    kArgCheckPolicyBool,
+    "  --bruteforce-schedule       \tdo brute force schedule\n"
+    "  --no-bruteforce-schedule\n",
+    "mplcg",
+    {} },
+  { kSimulateSched,
+    kEnable,
+    "",
+    "simulate-schedule",
+    kBuildTypeExperimental,
+    kArgCheckPolicyBool,
+    "  --simulate-schedule         \tdo simulate schedule\n"
+    "  --no-simulate-schedule\n",
+    "mplcg",
+    {} },
   { kLongCalls,
     kEnable,
     "",
@@ -803,6 +939,32 @@ bool CGOptions::SolveOptions(const std::vector<Option> &opts, bool isDebug) {
       case kCheckArrayStore:
         (opt.Type() == kEnable) ? EnableCheckArrayStore() : DisableCheckArrayStore();
         break;
+
+      case kEbo:
+        (opt.Type() == kEnable) ? EnableEBO() : DisableEBO();
+        break;
+
+      case kCfgo:
+        (opt.Type() == kEnable) ? EnableCFGO() : DisableCFGO();
+        break;
+      case kIco:
+        (opt.Type() == kEnable) ? EnableICO() : DisableICO();
+        break;
+      case kSlo:
+        (opt.Type() == kEnable) ? EnableStoreLoadOpt() : DisableStoreLoadOpt();
+        break;
+      case kGo:
+        (opt.Type() == kEnable) ? EnableGlobalOpt() : DisableGlobalOpt();
+        break;
+      case kPrepeep:
+        (opt.Type() == kEnable) ? EnablePrePeephole() : DisablePrePeephole();
+        break;
+      case kPeep:
+        (opt.Type() == kEnable) ? EnablePeephole() : DisablePeephole();
+        break;
+      case kSchedule:
+        (opt.Type() == kEnable) ? EnableSchedule() : DisableSchedule();
+        break;
       case kCGNativeOpt:
         DisableNativeOpt();
         break;
@@ -833,6 +995,15 @@ bool CGOptions::SolveOptions(const std::vector<Option> &opts, bool isDebug) {
         break;
       case kCGSkipAfter:
         SetSkipAfter(opt.Args());
+        break;
+      case kDebugSched:
+        (opt.Type() == kEnable) ? EnableDebugSched() : DisableDebugSched();
+        break;
+      case kBruteForceSched:
+        (opt.Type() == kEnable) ? EnableDruteForceSched() : DisableDruteForceSched();
+        break;
+      case kSimulateSched:
+        (opt.Type() == kEnable) ? EnableSimulateSched() : DisableSimulateSched();
         break;
       case kLongCalls:
         (opt.Type() == kEnable) ? EnableLongCalls() : DisableLongCalls();
@@ -906,6 +1077,15 @@ void CGOptions::EnableO1() {
 
 void CGOptions::EnableO2() {
   optimizeLevel = kLevel2;
+  doEBO = true;
+  doCFGO = true;
+  doICO = true;
+  doPrePeephole = true;
+  doPeephole = true;
+  doStoreLoadOpt = true;
+  doGlobalOpt = true;
+  doSchedule = true;
+  doWriteRefFieldOpt = true;
   ClearOption(kProEpilogueOpt);
   ClearOption(kUseStackGuard);
 }

@@ -22,6 +22,7 @@
 #include "cgbb.h"
 #include "reg_alloc.h"
 #include "cfi.h"
+#include "reaching.h"
 #include "cg_cfg.h"
 /* MapleIR headers. */
 #include "mir_parser.h"
@@ -109,6 +110,17 @@ class CGFunc {
     return false;
   }
 
+  void SetRD(ReachingDefinition *paramRd) {
+    reachingDef = paramRd;
+  }
+
+  bool GetRDStatus() const {
+    return (reachingDef != nullptr);
+  }
+
+  ReachingDefinition *GetRD() {
+    return reachingDef;
+  }
 
   EHFunc *BuildEHFunc();
   virtual void GenSaveMethodInfoCode(BB &bb) = 0;
@@ -732,6 +744,7 @@ class CGFunc {
     volReleaseInsn = insn;
   }
 
+  virtual InsnVisitor *NewInsnModifier() = 0;
 
  protected:
   uint32 firstMapleIrVRegNO = 200;        /* positioned after physical regs */
@@ -755,6 +768,8 @@ class CGFunc {
   bool isVolStore = false;
   uint32 frequency = 0;
   DebugInfo *debugInfo = nullptr;  /* debugging info */
+  ReachingDefinition *reachingDef = nullptr;
+
   int32 dbgCallFrameOffset = 0;
   CG *cg;
   MIRModule &mirModule;
