@@ -15,3 +15,4 @@
 
 [EXCLUDE-TEST-CASE]
     memory_management/Annotation
+    reflection_test/issue-0000-rt-Reflection-ReflectionforName2
