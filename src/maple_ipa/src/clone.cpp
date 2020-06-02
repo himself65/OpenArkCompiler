@@ -122,7 +122,7 @@ MIRFunction *Clone::CloneFunction(MIRFunction &originalFunction, const std::stri
   newFunc->SetFuncAttrs(originalFunction.GetFuncAttrs());
   newFunc->SetBaseClassFuncNames(GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(fullName));
   if (originalFunction.GetBody() != nullptr) {
-    CopyFuncInfo(originalFunction, newFunc);
+    CopyFuncInfo(originalFunction, *newFunc);
     MIRFunction *originalCurrFunction = dexBuilder.GetCurrentFunctionNotNull();
     dexBuilder.SetCurrentFunction(*newFunc);
     newFunc->SetBody(
@@ -140,10 +140,10 @@ void Clone::CloneArgument(MIRFunction &originalFunction, ArgVector &argument) co
   }
 }
 
-void Clone::CopyFuncInfo(const MIRFunction &originalFunction, MIRFunction *newFunc) const {
-  auto funcNameIdx = newFunc->GetBaseFuncNameStrIdx();
-  auto fullNameIdx = newFunc->GetNameStrIdx();
-  auto classNameIdx = newFunc->GetBaseClassNameStrIdx();
+void Clone::CopyFuncInfo(const MIRFunction &originalFunction, MIRFunction &newFunc) const {
+  auto funcNameIdx = newFunc.GetBaseFuncNameStrIdx();
+  auto fullNameIdx = newFunc.GetNameStrIdx();
+  auto classNameIdx = newFunc.GetBaseClassNameStrIdx();
   auto metaFullNameIdx = dexBuilder.GetOrCreateStringIndex(kFullNameStr);
   auto metaClassNameIdx = dexBuilder.GetOrCreateStringIndex(kClassNameStr);
   auto metaFuncNameIdx = dexBuilder.GetOrCreateStringIndex(kFuncNameStr);
@@ -152,25 +152,25 @@ void Clone::CopyFuncInfo(const MIRFunction &originalFunction, MIRFunction *newFu
   size_t size = fnInfo.size();
   for (size_t i = 0; i < size; ++i) {
     if (fnInfo[i].first == metaFullNameIdx) {
-      newFunc->PushbackMIRInfo(std::pair<GStrIdx, uint32>(fnInfo[i].first, fullNameIdx));
+      newFunc.PushbackMIRInfo(std::pair<GStrIdx, uint32>(fnInfo[i].first, fullNameIdx));
     } else if (fnInfo[i].first == metaFuncNameIdx) {
-      newFunc->PushbackMIRInfo(std::pair<GStrIdx, uint32>(fnInfo[i].first, funcNameIdx));
+      newFunc.PushbackMIRInfo(std::pair<GStrIdx, uint32>(fnInfo[i].first, funcNameIdx));
     } else if (fnInfo[i].first == metaClassNameIdx) {
-      newFunc->PushbackMIRInfo(std::pair<GStrIdx, uint32>(fnInfo[i].first, classNameIdx));
+      newFunc.PushbackMIRInfo(std::pair<GStrIdx, uint32>(fnInfo[i].first, classNameIdx));
     } else {
-      newFunc->PushbackMIRInfo(std::pair<GStrIdx, uint32>(fnInfo[i].first, fnInfo[i].second));
+      newFunc.PushbackMIRInfo(std::pair<GStrIdx, uint32>(fnInfo[i].first, fnInfo[i].second));
     }
-    newFunc->PushbackIsString(infoIsString[i]);
+    newFunc.PushbackIsString(infoIsString[i]);
   }
 }
 
-void Clone::UpdateFuncInfo(MIRFunction *newFunc) {
-  auto fullNameIdx = newFunc->GetNameStrIdx();
+void Clone::UpdateFuncInfo(MIRFunction &newFunc) {
+  auto fullNameIdx = newFunc.GetNameStrIdx();
   auto metaFullNameIdx = dexBuilder.GetOrCreateStringIndex(kFullNameStr);
-  size_t size = newFunc->GetInfoVector().size();
+  size_t size = newFunc.GetInfoVector().size();
   for (size_t i = 0; i < size; ++i) {
-    if (newFunc->GetInfoVector()[i].first == metaFullNameIdx) {
-      newFunc->SetMIRInfoNum(i, fullNameIdx);
+    if (newFunc.GetInfoVector()[i].first == metaFullNameIdx) {
+      newFunc.SetMIRInfoNum(i, fullNameIdx);
       break;
     }
   }
@@ -206,7 +206,7 @@ MIRFunction *Clone::CloneFunctionNoReturn(MIRFunction &originalFunction) {
   GlobalTables::GetGsymTable().RemoveFromStringSymbolMap(*funcSt);
   funcSt->SetNameStrIdx(fullNameStrIdx);
   GlobalTables::GetGsymTable().AddToStringSymbolMap(*funcSt);
-  UpdateFuncInfo(newFunction);
+  UpdateFuncInfo(*newFunction);
   dexBuilder.GetMirModule().SetCurFunction(originalCurrFunction);
   return newFunction;
 }

@@ -87,7 +87,7 @@ void Profile::ParseLiteral(const char *data, const char *end) {
   if(data > end) {
     LogInfo::MapleLogger() << "parse Literal error" << '\n';
   }
-  const std::string str(data,end-data);
+  const std::string str(data, end - data);
   std::stringstream ss;
   ss.str(str);
   std::string item;

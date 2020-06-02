@@ -1036,7 +1036,7 @@ ConstvalNode *ConstantFold::FoldCeil(const ConstvalNode &cst, PrimType fromType,
 }
 
 template <class T>
-T ConstantFold::CalIntValueFromFloatValue(T value, MIRType &resultType) const {
+T ConstantFold::CalIntValueFromFloatValue(T value, const MIRType &resultType) const {
   ASSERT(kByteSizeOfBit64 >= resultType.GetSize(), "unsurpported type");
   size_t shiftNum = (kByteSizeOfBit64 - resultType.GetSize()) * kBitSizePerByte;
   int64 max = 0;
