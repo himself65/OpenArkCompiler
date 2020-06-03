@@ -271,7 +271,9 @@ void SSADevirtual::PropVarInferredType(VarMeExpr &varMeExpr) const {
         }
       }
     }
-    if (varMeExpr.GetInferredTyIdx() != 0u) {
+    // Parallel me will skip the setting for symbol's inferredTyIdx because it is independent of the function
+    // optimization order
+    if (!skipReturnTypeOpt && varMeExpr.GetInferredTyIdx() != 0u) {
       OriginalSt *ost = irMap->GetSSATab().GetOriginalStFromID(defStmt.GetVarLHS()->GetOStIdx());
       MIRSymbol *mirSym = ost->GetMIRSymbol();
       if (mirSym->IsStatic() && mirSym->IsFinal()) {
@@ -630,16 +632,6 @@ void SSADevirtual::Perform(BB &entryBB) {
   }
   if (!skipReturnTypeOpt && retTy == kSeen) {
     mirFunc->SetInferredReturnTyIdx(this->inferredRetTyIdx);
-  }
-  // Simple rule: if method's declared returning type is a final class, then
-  // the actual returning type is same with the declared returning type.
-  MIRType *declReturnType = mirFunc->GetReturnType();
-  if (declReturnType->GetPrimType() == PTY_ref && declReturnType->GetKind() == kTypePointer) {
-    MIRType *pointedType = static_cast<MIRPtrType*>(declReturnType)->GetPointedType();
-    MIRClassType *declReturnClass = safe_cast<MIRClassType>(pointedType);
-    if (declReturnClass != nullptr && declReturnClass->IsFinal()) {
-      mirFunc->SetInferredReturnTyIdx(declReturnClass->GetTypeIndex());
-    }
   }
   if (SSADevirtual::debug) {
     LogInfo::MapleLogger() << "[SSA-DEVIRT]" << " {virtualcalls: total " << (totalVirtualCalls - totalInterfaceCalls) <<

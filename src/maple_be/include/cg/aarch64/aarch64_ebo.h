@@ -41,8 +41,9 @@ class AArch64Ebo : public Ebo {
   bool IsGlobalNeeded(Insn &insn) const override;
   bool OperandEqSpecial(const Operand &op1, const Operand &op2) const override;
   bool DoConstProp(Insn &insn, uint32 i, Operand &opnd) override;
-  bool DoConstantFold(Insn &insn, const MapleVector<Operand*> &opnds) override;
-  bool ConstantOperand(Insn &insn, const MapleVector<Operand*> &opnds, const MapleVector<OpndInfo*> &opndInfo) override;
+  bool Csel2Cset(Insn &insn, const MapleVector<Operand*> &opnds) override;
+  bool SimplifyConstOperand(Insn &insn, const MapleVector<Operand*> &opnds,
+                            const MapleVector<OpndInfo*> &opndInfo) override;
   void BuildCallerSaveRegisters() override;
   void DefineCallerSaveRegisters(InsnInfo &insnInfo) override;
   void DefineReturnUseRegister(Insn &insn) override;

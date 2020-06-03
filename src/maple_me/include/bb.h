@@ -383,10 +383,10 @@ class BB {
     succ[cnt] = ss;
   }
 
-  const MapleMap<const OriginalSt*, PhiNode> &GetPhiList() const {
+  const MapleMap<OStIdx, PhiNode> &GetPhiList() const {
     return phiList;
   }
-  MapleMap<const OriginalSt*, PhiNode> &GetPhiList() {
+  MapleMap<OStIdx, PhiNode> &GetPhiList() {
     return phiList;
   }
   void ClearPhiList() {
@@ -461,7 +461,7 @@ class BB {
   MapleVector<BB*> succ;  // successor list
   // record the edge freq from curBB to succ BB
   MapleVector<uint64> succFreq;
-  MapleMap<const OriginalSt*, PhiNode> phiList;
+  MapleMap<OStIdx, PhiNode> phiList;
   MapleMap<OStIdx, MeVarPhiNode*> meVarPhiList;
   MapleMap<OStIdx, MeRegPhiNode*> meRegPhiList;
   MapleMap<BB*, std::vector<PiassignMeStmt*>> meVarPiList;

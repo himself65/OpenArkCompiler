@@ -32,6 +32,53 @@
 // newbb is always appended at the end of bb_vec_ and pred/succ will be updated.
 // The bblayout phase will determine the final layout order of the bbs.
 namespace maple {
+void MeDoSplitCEdge::UpdateNewBBInTry(BB &newBB, BB &pred) const {
+  newBB.SetAttributes(kBBAttrIsTry);
+  for (auto *candCatch : pred.GetSucc()) {
+    if (candCatch != nullptr && candCatch->GetAttributes(kBBAttrIsCatch)) {
+      newBB.AddSucc(*candCatch);
+    }
+  }
+}
+
+void MeDoSplitCEdge::UpdateGotoLabel(BB &newBB, MeFunction &func, BB &pred, BB &succ) const {
+  auto &gotoStmt = static_cast<CondGotoNode&>(pred.GetStmtNodes().back());
+  BB *gotoBB = pred.GetSucc().at(1);
+  LabelIdx oldLabelIdx = gotoStmt.GetOffset();
+  if (oldLabelIdx != gotoBB->GetBBLabel()) {
+    // original gotoBB is replaced by newBB
+    LabelIdx label = func.GetOrCreateBBLabel(*gotoBB);
+    gotoStmt.SetOffset(label);
+  }
+  if (DEBUGFUNC(&func)) {
+    LogInfo::MapleLogger() << "******after break: dump updated condgoto_BB *****\n";
+    pred.Dump(&func.GetMIRModule());
+    newBB.Dump(&func.GetMIRModule());
+    succ.Dump(&func.GetMIRModule());
+  }
+}
+
+void MeDoSplitCEdge::UpdateCaseLabel(BB &newBB, MeFunction &func, BB &pred, BB &succ) const {
+  auto &switchStmt = static_cast<SwitchNode&>(pred.GetStmtNodes().back());
+  LabelIdx oldLabelIdx = succ.GetBBLabel();
+  LabelIdx label = func.GetOrCreateBBLabel(newBB);
+  if (switchStmt.GetDefaultLabel() == oldLabelIdx) {
+    switchStmt.SetDefaultLabel(label);
+  }
+  for (size_t i = 0; i < switchStmt.GetSwitchTable().size(); ++i) {
+    LabelIdx labelIdx = switchStmt.GetCasePair(i).second;
+    if (labelIdx == oldLabelIdx) {
+      switchStmt.UpdateCaseLabelAt(i, label);
+    }
+  }
+  if (DEBUGFUNC(&func)) {
+    LogInfo::MapleLogger() << "******after break: dump updated switchBB *****\n";
+    pred.Dump(&func.GetMIRModule());
+    newBB.Dump(&func.GetMIRModule());
+    succ.Dump(&func.GetMIRModule());
+  }
+}
+
 void MeDoSplitCEdge::BreakCriticalEdge(MeFunction &func, BB &pred, BB &succ) const {
   if (DEBUGFUNC(&func)) {
     LogInfo::MapleLogger() << "******before break : critical edge : BB" << pred.GetBBId() << " -> BB" <<
@@ -67,41 +114,14 @@ void MeDoSplitCEdge::BreakCriticalEdge(MeFunction &func, BB &pred, BB &succ) con
   newBB->SetKind(kBBFallthru);  // default kind
   newBB->SetAttributes(kBBAttrArtificial);
 
+  if (pred.GetAttributes(kBBAttrIsTry)) {
+    UpdateNewBBInTry(*newBB, pred);
+  }
   // update statement offset if succ is goto target
   if (pred.GetKind() == kBBCondGoto) {
-    auto &gotoStmt = static_cast<CondGotoNode&>(pred.GetStmtNodes().back());
-    BB *gotoBB = pred.GetSucc().at(1);
-    LabelIdx oldLabelIdx = gotoStmt.GetOffset();
-    if (oldLabelIdx != gotoBB->GetBBLabel()) {
-      // original gotoBB is replaced by newBB
-      LabelIdx label = func.GetOrCreateBBLabel(*gotoBB);
-      gotoStmt.SetOffset(label);
-    }
-    if (DEBUGFUNC(&func)) {
-      LogInfo::MapleLogger() << "******after break: dump updated condgoto_BB *****\n";
-      pred.Dump(&func.GetMIRModule());
-      newBB->Dump(&func.GetMIRModule());
-      succ.Dump(&func.GetMIRModule());
-    }
+    UpdateGotoLabel(*newBB, func, pred, succ);
   } else if (pred.GetKind() == kBBSwitch) {
-    auto &switchStmt = static_cast<SwitchNode&>(pred.GetStmtNodes().back());
-    LabelIdx oldLabelIdx = succ.GetBBLabel();
-    LabelIdx label = func.GetOrCreateBBLabel(*newBB);
-    if (switchStmt.GetDefaultLabel() == oldLabelIdx) {
-      switchStmt.SetDefaultLabel(label);
-    }
-    for (size_t i = 0; i < switchStmt.GetSwitchTable().size(); ++i) {
-      LabelIdx labelIdx = switchStmt.GetCasePair(i).second;
-      if (labelIdx == oldLabelIdx) {
-        switchStmt.UpdateCaseLabelAt(i, label);
-      }
-    }
-    if (DEBUGFUNC(&func)) {
-      LogInfo::MapleLogger() << "******after break: dump updated switchBB *****\n";
-      pred.Dump(&func.GetMIRModule());
-      newBB->Dump(&func.GetMIRModule());
-      succ.Dump(&func.GetMIRModule());
-    }
+    UpdateCaseLabel(*newBB, func, pred, succ);
   }
 }
 

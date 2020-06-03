@@ -88,7 +88,7 @@ MIRSymbol *MIRSymbolBuilder::GetSymbol(TyIdx tyIdx, GStrIdx strIdx, MIRSymKind m
 MIRSymbol *MIRSymbolBuilder::CreateSymbol(TyIdx tyIdx, GStrIdx strIdx, MIRSymKind mClass, MIRStorageClass sClass,
                                           MIRFunction *func, uint8 scpID) const {
   MIRSymbol *st =
-      func != nullptr ? func->GetSymTab()->CreateSymbol(scpID) : GlobalTables::GetGsymTable().CreateSymbol(scpID);
+      (func != nullptr) ? func->GetSymTab()->CreateSymbol(scpID) : GlobalTables::GetGsymTable().CreateSymbol(scpID);
   CHECK_FATAL(st != nullptr, "Failed to create MIRSymbol");
   st->SetStorageClass(sClass);
   st->SetSKind(mClass);

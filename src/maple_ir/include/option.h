@@ -32,8 +32,7 @@ class Options : public MapleDriverOptionBase {
 
   bool ParseOptions(int argc, char **argv, std::string &fileName) const;
 
-  bool SolveOptions(const std::vector<mapleOption::Option> &opts,
-                    bool isDebug) const;
+  bool SolveOptions(const std::vector<mapleOption::Option> &opts, bool isDebug) const;
   ~Options() = default;
 
   void DumpOptions() const;

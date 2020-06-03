@@ -353,7 +353,7 @@ void NativeStubFuncGeneration::GenerateRegisteredNativeFuncCall(MIRFunction &fun
   BaseNode *checkRegExpr =
       builder->CreateExprCompare(OP_lt, *GlobalTables::GetTypeTable().GetUInt1(),
                                  *GlobalTables::GetTypeTable().GetPtr(),
-                                 regReadExpr, builder->CreateIntConst(MByteRef::PositiveOffsetBias, PTY_ptr));
+                                 regReadExpr, builder->CreateIntConst(MByteRef::kPositiveOffsetBias, PTY_ptr));
 #elif defined(TARGAARCH64)
   // define a temp register for bitwise-and operation
   constexpr int intConstLength = 1;

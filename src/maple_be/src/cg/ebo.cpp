@@ -482,7 +482,6 @@ OpndInfo *Ebo::BuildOperandInfo(BB &bb, Insn &insn, Operand &opnd, uint32 opndIn
 bool Ebo::ForwardPropagateOpnd(Insn &insn, Operand *&opnd, uint32 opndIndex,
                                OpndInfo *&opndInfo, MapleVector<OpndInfo*> &origInfos) {
   CHECK_FATAL(opnd != nullptr, "nullptr check");
-  bool replaceInsnExist = false;
   Operand *opndReplace = opndInfo->replacementOpnd;
   /* Don't propagate physical registers before register allocation. */
   if (beforeRegAlloc && (opndReplace != nullptr) && (IsPhysicalReg(*opndReplace) || IsPhysicalReg(*opnd))) {
@@ -509,6 +508,24 @@ bool Ebo::ForwardPropagateOpnd(Insn &insn, Operand *&opnd, uint32 opndIndex,
         origInfos.at(opndIndex) = opndInfo;
       }
     }
+    /* move reg, wzr, store vreg, mem ==> store wzr, mem */
+#if TARGAARCH64
+    if (opnd->IsZeroRegister() && opndIndex == 0 &&
+        (insn.GetMachineOpcode() == MOP_wstr || insn.GetMachineOpcode() == MOP_xstr)) {
+      if (EBO_DUMP) {
+        LogInfo::MapleLogger() << "===replace operand " << opndIndex << " of insn: \n";
+        insn.Dump();
+        LogInfo::MapleLogger() << "the new insn is:\n";
+      }
+      insn.SetOperand(opndIndex, *opnd);
+      DecRef(*origInfos.at(opndIndex));
+      /* Update the actual expression info. */
+      origInfos.at(opndIndex) = opndInfo;
+      if (EBO_DUMP) {
+        insn.Dump();
+      }
+    }
+#endif
     /* forward prop for registers. */
     if (!opnd->IsConstant() &&
         (!beforeRegAlloc || (HasAssignedReg(*oldOpnd) == HasAssignedReg(*opndReplace)) || opnd->IsConstReg() ||
@@ -527,8 +544,7 @@ bool Ebo::ForwardPropagateOpnd(Insn &insn, Operand *&opnd, uint32 opndIndex,
           insn.Dump();
           LogInfo::MapleLogger() << "===Remove the new insn because Copies to and from the same register. \n";
         }
-        replaceInsnExist = true;
-        return replaceInsnExist;
+        return true;
       }
 
       if (EBO_DUMP) {
@@ -552,7 +568,7 @@ bool Ebo::ForwardPropagateOpnd(Insn &insn, Operand *&opnd, uint32 opndIndex,
     }
   }
 
-  return replaceInsnExist;
+  return false;
 }
 
 /*
@@ -581,16 +597,19 @@ void Ebo::SimplifyInsn(Insn &insn, bool &insnReplaced, bool opndsConstant,
     uint32 opndNum = insn.GetOpndNum();
     if (opndsConstant && (opndNum > 1)) {
       if (insn.GetResultNum() >= 1) {
-        insnReplaced = DoConstantFold(insn, opnds);
+        insnReplaced = Csel2Cset(insn, opnds);
       }
-    } else if (opndNum >= 1) {
+    }
+    if (insnReplaced) {
+      return;
+    }
+    if (opndNum >= 1) {
       /* special case */
       if (insn.GetResultNum() > 0 && ResIsNotDefAndUse(insn)) {
-        /* Here mainly to do is optimizatinn of "add" with two source operands when only one operand is constant */
         if ((opndNum == 2) && (insn.GetResultNum() == 1) &&
             (((opnds[kInsnSecondOpnd] != nullptr) && opnds[kInsnSecondOpnd]->IsConstant()) ||
              ((opnds[kInsnThirdOpnd] != nullptr) && opnds[kInsnThirdOpnd]->IsConstant()))) {
-          insnReplaced = ConstantOperand(insn, opnds, opndInfos);
+          insnReplaced = SimplifyConstOperand(insn, opnds, opndInfos);
         }
       }
       if (!insnReplaced) {

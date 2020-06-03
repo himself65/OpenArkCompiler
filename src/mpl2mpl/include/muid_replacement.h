@@ -93,13 +93,14 @@ class MUIDReplacement : public FuncOptimizeImpl {
   uint32 FindIndexFromUndefTable(const MIRSymbol &mirSymbol, bool isFunc);
   void ReplaceAddroffuncConst(MIRConst *&entry, uint32 fieldID, bool isVtab);
   void ReplaceFuncTable(const std::string &name);
-  void ReplaceAddrofConst(MIRConst *&entry);
+  void ReplaceAddrofConst(MIRConst *&entry, bool muidIndex32Mod = false);
   void ReplaceDataTable(const std::string &name);
   void ReplaceDirectInvokeOrAddroffunc(MIRFunction &currentFunc, StmtNode &stmt);
   void ReplaceDassign(MIRFunction &currentFunc, const DassignNode &dassignNode);
   void ReplaceDreadStmt(MIRFunction *currentFunc, StmtNode *stmt);
   void ClearVtabItab(const std::string &name);
   void ReplaceDecoupleKeyTable(MIRAggConst *oldConst);
+  void ReplaceFieldTypeTable(const std::string &name);
   BaseNode *ReplaceDreadExpr(MIRFunction *currentFunc, StmtNode *stmt, BaseNode *expr);
   BaseNode *ReplaceDread(MIRFunction &currentFunc, const StmtNode *stmt, BaseNode *opnd);
   void CollectDread(MIRFunction &currentFunc, StmtNode &stmt, BaseNode &opnd);
@@ -113,7 +114,8 @@ class MUIDReplacement : public FuncOptimizeImpl {
   void CollectFuncAndDataFromGlobalTab();
   void CollectFuncAndDataFromFuncList();
   void GenerateCompilerVersionNum();
-  int64 GetDefOrUndefOffsetWithMask(uint64, bool isDef) const;
+  int64 GetDefOrUndefOffsetWithMask(uint64, bool isDef, bool muidIndex32Mod = false) const;
+  void CollectSuperClassArraySymbolData();
   static MIRSymbol *GetSymbolFromName(const std::string &name);
   ConstvalNode* GetConstvalNode(int64 index);
   // The following sets are for internal uses. Sorting order does not matter here.
@@ -121,6 +123,7 @@ class MUIDReplacement : public FuncOptimizeImpl {
   std::unordered_set<MIRFunction*> funcUndefSet;
   std::unordered_set<MIRSymbol*> dataDefSet;
   std::unordered_set<MIRSymbol*> dataUndefSet;
+  std::unordered_set<MIRSymbol*> superClassArraySymbolSet;
   void AddDefFunc(MIRFunction *func) {
     funcDefSet.insert(func);
   }

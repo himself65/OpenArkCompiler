@@ -84,7 +84,7 @@ bool Profile::CheckDexValid(uint32 idx) const {
 }
 
 void Profile::ParseLiteral(const char *data, const char *end) {
-  if(data > end) {
+  if (data > end) {
     LogInfo::MapleLogger() << "parse Literal error" << '\n';
   }
   const std::string str(data, end - data);
@@ -309,7 +309,7 @@ bool Profile::DeCompress(const std::string &path, const std::string &dexNameInne
     if (type != kAll && type != profileDataInfo->profileType) {
       continue; // only parse the indicated type
     }
-    switch(profileDataInfo->profileType) {
+    switch (profileDataInfo->profileType) {
       case kFunction:
         ParseFunc(proFileData, profileDataInfo->mapleFileNum);
         break;
@@ -326,7 +326,7 @@ bool Profile::DeCompress(const std::string &path, const std::string &dexNameInne
         ParseReflectionStr(proFileData, profileDataInfo->mapleFileNum);
         break;
       case kLiteral:
-        ParseLiteral(proFileData,strBuf);
+        ParseLiteral(proFileData, strBuf);
         break;
       case kBBInfo:
         ParseIRFuncDesc(proFileData, profileDataInfo->mapleFileNum);

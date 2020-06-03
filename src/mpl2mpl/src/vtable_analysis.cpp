@@ -55,6 +55,11 @@ bool VtableAnalysis::IsVtableCandidate(const MIRFunction &func) {
   return func.GetAttr(FUNCATTR_virtual) && !func.GetAttr(FUNCATTR_private) && !func.GetAttr(FUNCATTR_static);
 }
 
+// Return true if currMethod is more specific than baseMethod
+bool VtableAnalysis::CheckInterfaceSpecification(const Klass &baseKlass, const Klass &currKlass) const {
+  return !(klassHierarchy->IsSuperKlassForInterface(&currKlass, &baseKlass));
+}
+
 // Return true if virtual functions can be set override relationship cross package
 bool VtableAnalysis::CheckOverrideForCrossPackage(const MIRFunction &baseMethod,
     const MIRFunction &currMethod) const {
@@ -64,10 +69,14 @@ bool VtableAnalysis::CheckOverrideForCrossPackage(const MIRFunction &baseMethod,
   const std::string &currClassName = currMethod.GetBaseClassName();
   size_t currPos = currClassName.rfind(NameMangler::kPackageNameSplitterStr);
   std::string currPackageName = (currPos != std::string::npos) ? currClassName.substr(0, currPos) : "";
-  // For the corss package inheritance, only if the base func is declared
+  // 1. For the cross package inheritance, only if the base func is declared
   // as either 'public' or 'protected', we shall set override relationship.
-  return (currPackageName == basePackageName) || baseMethod.GetAttr(FUNCATTR_public) ||
-          baseMethod.GetAttr(FUNCATTR_protected);
+  // 2. For interface methods, override relationship would be set only if
+  // currMethod is more specific.
+  Klass *baseKlass = klassHierarchy->GetKlassFromFunc(&baseMethod);
+  Klass *currKlass = klassHierarchy->GetKlassFromFunc(&currMethod);
+  return ((currPackageName == basePackageName) || baseMethod.GetAttr(FUNCATTR_public) ||
+          baseMethod.GetAttr(FUNCATTR_protected)) && (CheckInterfaceSpecification(*baseKlass, *currKlass));
 }
 
 // If the method is not in method_table yet, add it in, otherwise update it.
@@ -93,7 +102,6 @@ void VtableAnalysis::AddMethodToTable(MethodPtrVector &methodTable, MethodPair &
 void VtableAnalysis::GenVtableList(const Klass &klass) {
   if (klass.IsInterface() || klass.IsInterfaceIncomplete()) {
     MIRInterfaceType *iType = klass.GetMIRInterfaceType();
-    // add in methods from parent interfaces, note interfaces can declare/define same methods
     for (const Klass *parentKlass : klass.GetSuperKlasses()) {
       MIRInterfaceType *parentInterfaceType = parentKlass->GetMIRInterfaceType();
       for (MethodPair *methodPair : parentInterfaceType->GetVTableMethods()) {

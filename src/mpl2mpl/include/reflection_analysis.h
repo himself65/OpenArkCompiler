@@ -88,7 +88,8 @@ enum class FieldProperty : uint32 {
   kTypeName,
   kName,
   kAnnotation,
-  kDeclarclass
+  kDeclarclass,
+  kPClassType
 };
 
 enum class FieldPropertyCompact : uint32 {
@@ -177,7 +178,7 @@ class ReflectionAnalysis : public AnalysisResult {
   std::string GetAnnoValueNoArray(const MIRPragmaElement &annoElem);
   std::string GetArrayValue(const MapleVector<MIRPragmaElement*> &subElemVector);
   std::string GetAnnotationValue(const MapleVector<MIRPragmaElement*> &subElemVector, GStrIdx typeStrIdx);
-  MIRSymbol *GenSuperClassMetaData(const Klass &klass, std::list<Klass*> superClassList);
+  MIRSymbol *GenSuperClassMetaData(std::list<Klass*> superClassList);
   MIRSymbol *GenFieldOffsetData(const Klass &klass, std::pair<FieldPair, int> &fieldInfo);
   MIRSymbol *GenFieldsMetaData(const Klass &klass);
   MIRSymbol *GenMethodsMetaData(const Klass &klass);
@@ -234,6 +235,8 @@ class ReflectionAnalysis : public AnalysisResult {
   uint32 GetTypeNameIdxFromType(const MIRType &type, const Klass &klass, const std::string &fieldName);
   bool IsMemberClass(const std::string &annotationString);
   int8_t GetAnnoFlag(const std::string &annotationString);
+  void GenFieldTypeClassInfo(const MIRType &type, const Klass &klass, std::string &classInfo,
+                             const std::string fieldName, bool &isClass);
 
   MIRModule *mirModule;
   MapleAllocator allocator;
@@ -265,6 +268,7 @@ class ReflectionAnalysis : public AnalysisResult {
   static constexpr char annoDelimiter = '!';
   static constexpr char annoArrayStartDelimiter = '{';
   static constexpr char annoArrayEndDelimiter = '}';
+  std::map<std::list<Klass*>, std::string> superClasesIdxMap;
 };
 
 class DoReflectionAnalysis : public ModulePhase {

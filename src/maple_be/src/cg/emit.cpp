@@ -26,6 +26,7 @@ using namespace NameMangler;
 namespace {
 using namespace maple;
 constexpr uint32 kSizeOfHugesoRoutine = 3;
+constexpr uint32 kFromDefIndexMask32Mod = 0x40000000;
 
 int32 GetPrimitiveTypeSize(const std::string &name) {
   if (name.length() != 1) {
@@ -696,11 +697,17 @@ void Emitter::EmitAddrofSymbolConst(const MIRSymbol &mirSymbol, MIRConst &elemCo
   }
 
   if ((idx == static_cast<uint32>(FieldProperty::kDeclarclass)) && mirSymbol.IsReflectionFieldsInfo()) {
+#if USE_32BIT_REF
+    Emit("\t.long\t");
+#else
+
 #if TARGAARCH64
     Emit("\t.quad\t");
 #else
     Emit("\t.word\t");
 #endif
+
+#endif  /* USE_32BIT_REF */
     Emit(symAddrName + " - .\n");
     return;
   }
@@ -1066,7 +1073,7 @@ void Emitter::EmitIntConst(const MIRSymbol &mirSymbol, MIRAggConst &aggConst, ui
       } else if (idx == static_cast<uint32>(ClassRO::kClassName)) {
         /* output in hex format to show it is a flag of bits. */
         std::stringstream ss;
-        ss << std::hex << "0x" << MByteRef::PositiveOffsetBias;
+        ss << std::hex << "0x" << MByteRef::kPositiveOffsetBias;
         Emit(" - . + " + ss.str());
       }
     }
@@ -1076,7 +1083,7 @@ void Emitter::EmitIntConst(const MIRSymbol &mirSymbol, MIRAggConst &aggConst, ui
     if (StringUtils::StartsWith(stName, ITAB_CONFLICT_PREFIX_STR)) {
       /* output in hex format to show it is a flag of bits. */
       std::stringstream ss;
-      ss << std::hex << "0x" << MByteRef32::PositiveOffsetBias;
+      ss << std::hex << "0x" << MByteRef32::kPositiveOffsetBias;
       Emit(" - . + " + ss.str());
     }
     if ((idx == 1 || idx == methodTypeIdx) && StringUtils::StartsWith(stName, kVtabOffsetTabStr)) {
@@ -1105,11 +1112,33 @@ void Emitter::EmitIntConst(const MIRSymbol &mirSymbol, MIRAggConst &aggConst, ui
     } else {
       Emit("0\n");
     }
+  } else if (idx == static_cast<uint32>(FieldProperty::kPClassType) && mirSymbol.IsReflectionFieldsInfo()) {
+#ifdef USE_32BIT_REF
+    Emit("\t.long\t");
+    const int width = 4;
+#else
+    Emit("\t.quad\t");
+    const int width = 8;
+#endif  /* USE_32BIT_REF */
+    uint32 muidDataTabAddr = static_cast<uint32>((safe_cast<MIRIntConst>(elemConst))->GetValue());
+    if (muidDataTabAddr != 0) {
+      bool isDefTabIndex = (muidDataTabAddr & kFromDefIndexMask32Mod) == kFromDefIndexMask32Mod;
+      std::string muidDataTabPrefix = isDefTabIndex ? kMuidDataDefTabPrefixStr : kMuidDataUndefTabPrefixStr;
+      std::string muidDataTabName = muidDataTabPrefix + cg->GetMIRModule()->GetFileNameAsPostfix();
+      Emit(muidDataTabName + "+");
+      uint32 muidDataTabIndex = muidDataTabAddr & 0x3FFFFFFF; // high 2 bit is the mask of muid tab
+      Emit(std::to_string(muidDataTabIndex * width));
+      Emit("-.\n");
+    } else {
+      Emit(muidDataTabAddr);
+      Emit("\n");
+    }
+    return;
   } else if (mirSymbol.IsRegJNIFuncTab()) {
     std::string strTabName = kRegJNITabPrefixStr + cg->GetMIRModule()->GetFileNameAsPostfix();
     EmitScalarConstant(*elemConst, false);
 #ifdef TARGARM32
-    Emit("+" + strTabName).Emit("+").Emit(MByteRef::PositiveOffsetBias).Emit("-.\n");
+    Emit("+" + strTabName).Emit("+").Emit(MByteRef::kPositiveOffsetBias).Emit("-.\n");
 #else
     Emit("+" + strTabName + "\n");
 #endif
@@ -1270,7 +1299,7 @@ void Emitter::EmitConstantTable(const MIRSymbol &mirSymbol, MIRConst &mirConst,
       } else if (elemConst->GetKind() == kConstAddrof) {  /* addrof symbol const */
         EmitAddrofSymbolConst(mirSymbol, *elemConst, i);
       } else {                                            /* intconst */
-        EmitIntConst(mirSymbol, aggConst, itabConflictIndex,  strIdx2Type, i);
+        EmitIntConst(mirSymbol, aggConst, itabConflictIndex, strIdx2Type, i);
       }
     } else if (elemConst->GetType().GetKind() == kTypeArray || elemConst->GetType().GetKind() == kTypeStruct) {
       if (StringUtils::StartsWith(mirSymbol.GetName(), NameMangler::kOffsetTabStr) && (i == 0 || i == 1)) {
@@ -1678,6 +1707,7 @@ void Emitter::EmitGlobalVariable() {
   std::vector<MIRSymbol*> methodAddrDatas;
   std::vector<MIRSymbol*> staticDecoupleKeyVec;
   std::vector<MIRSymbol*> staticDecoupleValueVec;
+  std::vector<MIRSymbol*> superClassStVec;
 
   for (size_t i = 0; i < size; ++i) {
     MIRSymbol *mirSymbol = GlobalTables::GetGsymTable().GetSymbolFromStidx(i);
@@ -1745,6 +1775,9 @@ void Emitter::EmitGlobalVariable() {
       continue;
     } else if (mirSymbol->IsReflectionMethodAddrData()) {
       methodAddrDatas.push_back(mirSymbol);
+      continue;
+    } else if (mirSymbol->IsReflectionSuperclassInfo()) {
+      superClassStVec.push_back(mirSymbol);
       continue;
     }
 
@@ -1895,7 +1928,6 @@ void Emitter::EmitGlobalVariable() {
   EmitMuidTable(constStrVec, strIdx2Type, kMuidConststrPrefixStr);
 
   /* emit classinfo, field, method */
-  std::vector<MIRSymbol*> superClassStVec;
   std::vector<MIRSymbol*> fieldInfoStVec;
   std::vector<MIRSymbol*> fieldInfoStCompactVec;
   std::vector<MIRSymbol*> methodInfoStVec;
@@ -1926,9 +1958,6 @@ void Emitter::EmitGlobalVariable() {
         GlobalTables::GetStrTable().GetStrIdxFromName(kMethodsInfoPrefixStr + className));
       MIRSymbol *methodStCompact = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(
         GlobalTables::GetStrTable().GetStrIdxFromName(kMethodsInfoCompactPrefixStr + className));
-      /* Get superclass */
-      MIRSymbol *superClassSt = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(
-        GlobalTables::GetStrTable().GetStrIdxFromName(SUPERCLASSINFO_PREFIX_STR + className));
 
       if (fieldSt != nullptr) {
         fieldInfoStVec.push_back(fieldSt);
@@ -1941,9 +1970,6 @@ void Emitter::EmitGlobalVariable() {
       }
       if (methodStCompact != nullptr) {
         methodInfoStCompactVec.push_back(methodStCompact);
-      }
-      if (superClassSt != nullptr) {
-        superClassStVec.push_back(superClassSt);
       }
     }
   }
@@ -1959,15 +1985,11 @@ void Emitter::EmitGlobalVariable() {
   std::vector<MIRSymbol*> coldMethodsInfoCStVec;
   std::vector<MIRSymbol*> hotFieldsInfoCStVec;
   std::vector<MIRSymbol*> coldFieldsInfoCStVec;
-  std::vector<MIRSymbol*> hotSuperClassStVec;
-  std::vector<MIRSymbol*> coldSuperClassStVec;
   GetHotAndColdMetaSymbolInfo(vtabVec, hotVtabStVec, coldVtabStVec, VTAB_PREFIX_STR,
                               ((CGOptions::IsLazyBinding() || CGOptions::IsHotFix()) && !cg->IsLibcore()));
   GetHotAndColdMetaSymbolInfo(itabVec, hotItabStVec, coldItabStVec, ITAB_PREFIX_STR,
                               ((CGOptions::IsLazyBinding() || CGOptions::IsHotFix()) && !cg->IsLibcore()));
   GetHotAndColdMetaSymbolInfo(itabConflictVec, hotItabCStVec, coldItabCStVec, ITAB_CONFLICT_PREFIX_STR,
-                              ((CGOptions::IsLazyBinding() || CGOptions::IsHotFix()) && !cg->IsLibcore()));
-  GetHotAndColdMetaSymbolInfo(superClassStVec, hotSuperClassStVec, coldSuperClassStVec, SUPERCLASSINFO_PREFIX_STR,
                               ((CGOptions::IsLazyBinding() || CGOptions::IsHotFix()) && !cg->IsLibcore()));
   GetHotAndColdMetaSymbolInfo(fieldInfoStVec, hotFieldsInfoCStVec, coldFieldsInfoCStVec, kFieldsInfoPrefixStr);
   GetHotAndColdMetaSymbolInfo(methodInfoStVec, hotMethodsInfoCStVec, coldMethodsInfoCStVec, kMethodsInfoPrefixStr);
@@ -2019,9 +2041,7 @@ void Emitter::EmitGlobalVariable() {
   EmitMuidTable(staticDecoupleValueVec, strIdx2Type, kDecoupleStaticValueStr);
 
   /* super class */
-  EmitMuidTable(hotSuperClassStVec, strIdx2Type, kMuidSuperclassPrefixStr);
-  EmitMetaDataSymbolWithMarkFlag(coldSuperClassStVec, strIdx2Type, SUPERCLASSINFO_PREFIX_STR, sectionNameIsEmpty,
-                                 false);
+  EmitMuidTable(superClassStVec, strIdx2Type, kMuidSuperclassPrefixStr);
 
   /* field offset rw */
   EmitMetaDataSymbolWithMarkFlag(fieldOffsetDatas, strIdx2Type, kFieldOffsetDataPrefixStr, sectionNameIsEmpty, false);

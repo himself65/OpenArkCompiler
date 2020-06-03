@@ -962,6 +962,10 @@ class MIRStructType : public MIRType {
     CHECK_FATAL(false, "can not use GetInfoIsString");
   }
 
+  virtual bool GetInfoIsStringElemt(size_t) const {
+    CHECK_FATAL(false, "can not use GetInfoIsStringElemt");
+  }
+
   virtual const std::vector<MIRPragma*> &GetPragmaVec() const {
     CHECK_FATAL(false, "can not use GetPragmaVec");
   }
@@ -1100,13 +1104,16 @@ class MIRClassType : public MIRStructType {
   const std::vector<bool> &GetInfoIsString() const override {
     return infoIsString;
   }
+
   void PushbackIsString(bool isString) override {
     infoIsString.push_back(isString);
   }
+
   size_t GetInfoIsStringSize() const {
     return infoIsString.size();
   }
-  bool GetInfoIsStringElemt(size_t n) const {
+
+  bool GetInfoIsStringElemt(size_t n) const override {
     ASSERT(n < infoIsString.size(), "array index out of range");
     return infoIsString.at(n);
   }
@@ -1248,7 +1255,7 @@ class MIRInterfaceType : public MIRStructType {
   size_t GetInfoIsStringSize() const {
     return infoIsString.size();
   }
-  bool GetInfoIsStringElemt(size_t n) const {
+  bool GetInfoIsStringElemt(size_t n) const override {
     ASSERT(n < infoIsString.size(), "array index out of range");
     return infoIsString.at(n);
   }

@@ -88,7 +88,7 @@ OriginalSt *AliasAnalysisTable::FindOrCreateExtraLevSymOrRegOriginalSt(OriginalS
       const auto *ptType = static_cast<const MIRPtrType*>(mirType);
       TyIdxFieldAttrPair fieldPair = ptType->GetPointedTyIdxFldAttrPairWithFieldID(fld);
       nextLevOst->SetTyIdx(fieldPair.first);
-      nextLevOst->SetIsFinal(fieldPair.second.GetAttr(FLDATTR_final) && !mirModule.CurFunction()->IsConstructor());
+      nextLevOst->SetIsFinal(fieldPair.second.GetAttr(FLDATTR_final));
       nextLevOst->SetIsPrivate(fieldPair.second.GetAttr(FLDATTR_private));
     } else {
       nextLevOst->SetTyIdx(TyIdx(PTY_void));

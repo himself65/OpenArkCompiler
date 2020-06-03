@@ -146,7 +146,7 @@ class MeExpr {
     ASSERT(false, "Should not reach here");
   }
 
-  virtual MeExpr *GetIdenticalExpr(MeExpr&) const {
+  virtual MeExpr *GetIdenticalExpr(MeExpr&, bool) const {
     ASSERT(false, "Should not reach here");
     return nullptr;
   }
@@ -634,7 +634,7 @@ class ConstMeExpr : public MeExpr {
     return constVal;
   }
 
-  MeExpr *GetIdenticalExpr(MeExpr &expr) const override;
+  MeExpr *GetIdenticalExpr(MeExpr &expr, bool) const override;
 
   uint32 GetHashIndex() const override {
     CHECK_FATAL(constVal != nullptr, "constVal is null");
@@ -674,7 +674,7 @@ class ConststrMeExpr : public MeExpr {
 
   void Dump(const IRMap*, int32 indent = 0) const override;
   BaseNode &EmitExpr(SSATab&) override;
-  MeExpr *GetIdenticalExpr(MeExpr &expr) const override;
+  MeExpr *GetIdenticalExpr(MeExpr &expr, bool) const override;
 
   UStrIdx GetStrIdx() const {
     return strIdx;
@@ -696,7 +696,7 @@ class Conststr16MeExpr : public MeExpr {
 
   void Dump(const IRMap*, int32 indent = 0) const override;
   BaseNode &EmitExpr(SSATab&) override;
-  MeExpr *GetIdenticalExpr(MeExpr &expr) const override;
+  MeExpr *GetIdenticalExpr(MeExpr &expr, bool) const override;
 
   U16StrIdx GetStrIdx() {
     return strIdx;
@@ -718,7 +718,7 @@ class SizeoftypeMeExpr : public MeExpr {
 
   void Dump(const IRMap*, int32 indent = 0) const override;
   BaseNode &EmitExpr(SSATab&) override;
-  MeExpr *GetIdenticalExpr(MeExpr &expr) const override;
+  MeExpr *GetIdenticalExpr(MeExpr &expr, bool) const override;
 
   TyIdx GetTyIdx() const {
     return tyIdx;
@@ -741,7 +741,7 @@ class FieldsDistMeExpr : public MeExpr {
   ~FieldsDistMeExpr() = default;
   void Dump(const IRMap*, int32 indent = 0) const override;
   BaseNode &EmitExpr(SSATab&) override;
-  MeExpr *GetIdenticalExpr(MeExpr &expr) const override;
+  MeExpr *GetIdenticalExpr(MeExpr &expr, bool) const override;
 
   TyIdx GetTyIdx() const {
     return tyIdx;
@@ -777,7 +777,7 @@ class AddrofMeExpr : public MeExpr {
   void Dump(const IRMap*, int32 indent = 0) const override;
   bool IsUseSameSymbol(const MeExpr&) const override;
   BaseNode &EmitExpr(SSATab&) override;
-  MeExpr *GetIdenticalExpr(MeExpr &expr) const override;
+  MeExpr *GetIdenticalExpr(MeExpr &expr, bool) const override;
 
   OStIdx GetOstIdx() const {
     return ostIdx;
@@ -809,7 +809,7 @@ class AddroffuncMeExpr : public MeExpr {
 
   void Dump(const IRMap*, int32 indent = 0) const override;
   BaseNode &EmitExpr(SSATab&) override;
-  MeExpr *GetIdenticalExpr(MeExpr &expr) const override;
+  MeExpr *GetIdenticalExpr(MeExpr &expr, bool) const override;
 
   PUIdx GetPuIdx() const {
     return puIdx;
@@ -871,7 +871,7 @@ class OpMeExpr : public MeExpr {
   bool IsCompareIdentical(const OpMeExpr &meExpr) const;
   void Dump(const IRMap*, int32 indent = 0) const override;
   bool IsUseSameSymbol(const MeExpr&) const override;
-  MeExpr *GetIdenticalExpr(MeExpr &expr) const override;
+  MeExpr *GetIdenticalExpr(MeExpr &expr, bool) const override;
   BaseNode &EmitExpr(SSATab&) override;
   MeExpr *GetOpnd(size_t i) const override {
     CHECK_FATAL(i < kOperandNumTernary, "OpMeExpr cannot have more than 3 operands");
@@ -977,8 +977,8 @@ class IvarMeExpr : public MeExpr {
   bool IsFinal();
   bool IsRCWeak() const;
   bool IsUseSameSymbol(const MeExpr&) const override;
-  bool IsIdentical(IvarMeExpr &expr) const;
-  MeExpr *GetIdenticalExpr(MeExpr &expr) const override;
+  bool IsIdentical(IvarMeExpr &expr, bool inConstructor) const;
+  MeExpr *GetIdenticalExpr(MeExpr &expr, bool inConstructor) const override;
   MeExpr *GetOpnd(size_t) const override {
     return base;
   }
@@ -1084,7 +1084,7 @@ class NaryMeExpr : public MeExpr {
   bool IsIdentical(NaryMeExpr&) const;
   bool IsUseSameSymbol(const MeExpr&) const override;
   BaseNode &EmitExpr(SSATab&) override;
-  MeExpr *GetIdenticalExpr(MeExpr &expr) const override;
+  MeExpr *GetIdenticalExpr(MeExpr &expr, bool) const override;
   MeExpr *GetOpnd(size_t idx) const override {
     ASSERT(idx < opnds.size(), "NaryMeExpr operand out of bounds");
     return opnds[idx];

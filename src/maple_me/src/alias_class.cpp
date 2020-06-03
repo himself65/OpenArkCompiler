@@ -649,6 +649,30 @@ void AliasClass::CollectMayUseFromNADS(std::set<OriginalSt*> &mayUseOsts) {
   }
 }
 
+// collect the mayUses caused by defined final field.
+void AliasClass::CollectMayUseFromDefinedFinalField(std::set<OriginalSt*> &mayUseOsts) {
+  for (AliasElem *aliasElem : id2Elem) {
+    ASSERT(aliasElem != nullptr, "null ptr check");
+    auto &ost = aliasElem->GetOriginalSt();
+    if (!ost.IsFinal()) {
+      continue;
+    }
+
+    auto *prevLevelOst = aliasAnalysisTable->GetPrevLevelNode(ost);
+    if (prevLevelOst == nullptr) {
+      continue;
+    }
+
+    TyIdx tyIdx = prevLevelOst->GetTyIdx();
+    auto *ptrType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
+    ASSERT(ptrType->IsMIRPtrType(), "Type of pointer must be MIRPtrType!");
+    tyIdx = static_cast<MIRPtrType*>(ptrType)->GetPointedTyIdx();
+    if (tyIdx == mirModule.CurFunction()->GetClassTyIdx()) {
+      mayUseOsts.insert(&ost);
+    }
+  }
+}
+
 // insert the ost of mayUseOsts into mayUseNodes
 void AliasClass::InsertMayUseNode(std::set<OriginalSt*> &mayUseOsts, MapleMap<OStIdx, MayUseNode> &mayUseNodes) {
   for (OriginalSt *ost : mayUseOsts) {
@@ -660,13 +684,18 @@ void AliasClass::InsertMayUseNode(std::set<OriginalSt*> &mayUseOsts, MapleMap<OS
 // insert mayUse for Return-statement.
 // two kinds of mayUse's are insert into the mayUseNodes:
 // 1. mayUses caused by not_all_def_seen_ae;
-// 2. mayUses caused by globalsAffectedByCalls.
+// 2. mayUses caused by globalsAffectedByCalls;
+// 3. collect mayUses caused by defined final field for constructor.
 void AliasClass::InsertMayUseReturn(const StmtNode &stmt) {
   std::set<OriginalSt*> mayUseOsts;
   // 1. collect mayUses caused by not_all_def_seen_ae.
   CollectMayUseFromNADS(mayUseOsts);
   // 2. collect mayUses caused by globals_affected_by_call.
   CollectMayUseFromGlobalsAffectedByCalls(mayUseOsts);
+  // 3. collect mayUses caused by defined final field for constructor
+  if (mirModule.CurFunction()->IsConstructor()) {
+    CollectMayUseFromDefinedFinalField(mayUseOsts);
+  }
   MapleMap<OStIdx, MayUseNode> &mayUseNodes = ssaTab.GetStmtsSSAPart().GetMayUseNodesOf(stmt);
   InsertMayUseNode(mayUseOsts, mayUseNodes);
 }
@@ -903,7 +932,25 @@ void AliasClass::CollectMayUseForCallOpnd(const StmtNode &stmt, std::set<Origina
       AliasElem *indAe = FindAliasElem(*nextLevelOst);
 
       if (indAe->GetOriginalSt().IsFinal()) {
-        continue;
+        // only final fields pointed to by the first opnd(this) are considered.
+        if (i != 0) {
+          continue;
+        }
+
+        auto *callerFunc = mirModule.CurFunction();
+        if (!callerFunc->IsConstructor()) {
+          continue;
+        }
+
+        PUIdx puIdx = static_cast<const CallNode&>(stmt).GetPUIdx();
+        auto *calleeFunc = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(puIdx);
+        if (!calleeFunc->IsConstructor()) {
+          continue;
+        }
+
+        if (callerFunc->GetBaseClassNameStrIdx() != calleeFunc->GetBaseClassNameStrIdx()) {
+          continue;
+        }
       }
 
       if (indAe->GetClassSet() == nullptr) {

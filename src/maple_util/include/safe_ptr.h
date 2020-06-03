@@ -17,7 +17,8 @@
 #include <mpl_logging.h>
 #include "ptr.h"
 
-namespace maple { namespace utils {
+namespace maple {
+namespace utils {
 template<typename T>
 inline void AssertNotNull(const T *ptr) {
   CHECK_FATAL(ptr != nullptr, "nullptr was assigned to SafePtr.");

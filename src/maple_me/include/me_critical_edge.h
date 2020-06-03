@@ -32,6 +32,9 @@ class MeDoSplitCEdge : public MeFuncPhase {
   }
 
  private:
+  void UpdateNewBBInTry(BB &newBB, BB &pred) const;
+  void UpdateGotoLabel(BB &newBB, MeFunction &func, BB &pred, BB &succ) const;
+  void UpdateCaseLabel(BB &newBB, MeFunction &func, BB &pred, BB &succ) const;
   void BreakCriticalEdge(MeFunction &func, BB &pred, BB &succ) const;
 };
 }  // namespace maple
