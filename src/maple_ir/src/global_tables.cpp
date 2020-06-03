@@ -27,7 +27,7 @@ MIRType *TypeTable::CreateMirType(uint32 primTypeIdx) const {
   return mirType;
 }
 
-TypeTable::TypeTable() {
+TypeTable::TypeTable() : ptrTypeMap(), refTypeMap() {
   // enter the primitve types in type_table_
   typeTable.push_back(static_cast<MIRType*>(nullptr));
   ASSERT(typeTable.size() == static_cast<size_t>(PTY_void), "use PTY_void as the first index to type table");
@@ -63,16 +63,43 @@ void TypeTable::PutToHashTable(MIRType *mirType) {
   typeHashTable.insert(mirType);
 }
 
-TyIdx TypeTable::GetOrCreateMIRType(MIRType *pType) {
-  {
-    const auto it = typeHashTable.find(pType);
-    if (it != typeHashTable.end()) {
-      return (*it)->GetTypeIndex();
+MIRType *TypeTable::CreateAndUpdateMirTypeNode(MIRType *ptype) {
+  MIRType *ntype = ptype->CopyMIRTypeNode();
+  ntype->SetTypeIndex(TyIdx(typeTable.size()));
+  typeTable.push_back(ntype);
+
+  if (ptype->GetKind() == kTypePointer) {
+    MIRPtrType *pty = static_cast<MIRPtrType*>(ptype);
+    if (pty->GetPrimType() == PTY_ptr) {
+      ptrTypeMap[pty->GetPointedTyIdx()] = ntype->GetTypeIndex();
+    } else {
+      refTypeMap[pty->GetPointedTyIdx()] = ntype->GetTypeIndex();
     }
+  } else {
+    typeHashTable.insert(ntype);
   }
-  MIRType *newTy = CreateType(*pType);
-  PutToHashTable(newTy);
-  return newTy->GetTypeIndex();
+  return ntype;
+}
+
+MIRType* TypeTable::GetOrCreateMIRTypeNode(MIRType *ptype) {
+  if (ptype->GetKind() == kTypePointer) {
+    MIRPtrType *type = static_cast<MIRPtrType *>(ptype);
+    auto *pMap = (type->GetPrimType() == PTY_ptr ? &ptrTypeMap : &refTypeMap);
+    auto *otherPMap = (type->GetPrimType() == PTY_ref ? &ptrTypeMap : &refTypeMap);
+    auto it = pMap->find(type->GetPointedTyIdx());
+    if (it != pMap->end()) {
+      return GetTypeFromTyIdx(it->second);
+    }
+    CHECK_FATAL(!((PrimType)(type->GetPointedTyIdx().GetIdx()) >= kPtyDerived && type->GetPrimType() == PTY_ref &&
+        otherPMap->find(type->GetPointedTyIdx()) != otherPMap->end()), "GetOrCreateMIRType: ref pointed-to type %d has previous ptr occurrence", type->GetPointedTyIdx().GetIdx());
+    return CreateAndUpdateMirTypeNode(ptype);
+  }
+
+  auto it = typeHashTable.find(ptype);
+  if (it != typeHashTable.end()) {
+    return *it;
+  }
+  return CreateAndUpdateMirTypeNode(ptype);
 }
 
 MIRType *TypeTable::voidPtrType = nullptr;
