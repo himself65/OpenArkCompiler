@@ -164,7 +164,7 @@ class MeExpr {
   MeExpr *ResolveMeExprValue();
   bool CouldThrowException() const;
   bool IsAllOpndsIdentical(const MeExpr &meExpr) const;
-  bool PointsToSomethingThatNeedsIncRef();
+  bool PointsToSomethingThatNeedsIncRef(SSATab &ssaTab);
   virtual uint32 GetHashIndex() const {
     return 0;
   }
@@ -300,6 +300,7 @@ class ScalarMeExpr : public MeExpr {
     def.defMustDef = &defMustDef;
   }
 
+  BB *GetDefByBBMeStmt(const Dominance&, MeStmtPtr&) const;
  private:
   OStIdx ostIdx;   // the index in MEOptimizer's OriginalStTable;
   uint32 vstIdx;    // the index in MEOptimizer's VersionStTable, 0 if not in VersionStTable
@@ -333,8 +334,8 @@ class VarMeExpr final : public ScalarMeExpr {
   bool IsPureLocal(const SSATab&, const MIRFunction&) const;
   bool IsZeroVersion(const SSATab&) const;
   bool IsSameVariableValue(const VarMeExpr&) const override;
-  VarMeExpr &ResolveVarMeValue();
-  bool PointsToStringLiteral();
+  VarMeExpr &ResolveVarMeValue(SSATab &ssaTab);
+  bool PointsToStringLiteral(SSATab &ssaTab);
 
   FieldID GetFieldID() const {
     return fieldID;

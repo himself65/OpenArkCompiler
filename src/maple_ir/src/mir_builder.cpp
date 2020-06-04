@@ -176,7 +176,7 @@ FieldID MIRBuilder::GetStructFieldIDFromNameAndTypeParentFirst(MIRType &type, co
 
 FieldID MIRBuilder::GetStructFieldIDFromNameAndTypeParentFirstFoundInChild(MIRType &type, const std::string &name,
                                                                            TyIdx idx) {
-  // do not match but traverse to update fieldid, traverse parent first, found in child
+  // do not match but traverse to update fieldID, traverse parent first, found in child
   return GetStructFieldIDFromNameAndType(type, name, idx, kFoundInChild | kParentFirst | kUpdateFieldID);
 }
 

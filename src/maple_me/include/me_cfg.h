@@ -55,7 +55,7 @@ class MeCFG {
   void DumpToFileInStrs(std::ofstream &cfgFile) const;
   void ConvertPhiList2IdentityAssigns(BB &meBB) const;
   void ConvertMePhiList2IdentityAssigns(BB &meBB) const;
-   bool IsStartTryBB(BB &meBB) const;
+  bool IsStartTryBB(BB &meBB) const;
   void FixTryBB(BB &startBB, BB &nextBB);
   MeFunction &func;
   bool hasDoWhile = false;

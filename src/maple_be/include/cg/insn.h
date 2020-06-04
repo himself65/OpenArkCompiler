@@ -33,6 +33,8 @@ using MOperator = uint32;
 class BB;
 class CG;
 class Emitter;
+class DepNode;
+
 
 class Insn {
  public:
@@ -549,6 +551,18 @@ class Insn {
     return clearStackOffset[0] != -1 || clearStackOffset[1] != -1;
   }
 
+  void SetDepNode(DepNode &depNode) {
+    this->depNode = &depNode;
+  }
+
+  DepNode *GetDepNode() {
+    return depNode;
+  }
+
+  const DepNode *GetDepNode() const {
+    return depNode;
+  }
+
   void InitWithOriginalInsn(const Insn &originalInsn, MemPool &memPool) {
     prev = originalInsn.prev;
     next = originalInsn.next;
@@ -585,6 +599,7 @@ class Insn {
   uint32 retSize = 0;  /* Byte size of the return value if insn is a call. */
   /* record the stack cleared by MCC_ClearLocalStackRef or MCC_DecRefResetPair */
   int64 clearStackOffset[kMaxStackOffsetSize] = { -1, -1 };
+  DepNode *depNode = nullptr; /* For dependence analysis, pointing to a dependence node. */
   MapleString comment;
   bool isFrameDef = false;
 };

@@ -149,11 +149,7 @@ bool MeCondBased::PointerWasDereferencedBefore(const VarMeExpr &var, const Unary
   // Search backward along the path in the dominator tree from BBy to BBx.
   // If it sees an iread or iassign whose base is var, then the assertnonnull can be deleted.
   MeStmt *defMeStmt = nullptr;
-  BB *bbx = nullptr;
-  if (var.IsDefByNo())
-    bbx = &dominance->GetCommonEntryBB();
-  else
-    bbx = var.DefByBB();
+  BB *bbx = var.GetDefByBBMeStmt(*dominance, defMeStmt);
   
   if (bbx == nullptr) {
     return false;

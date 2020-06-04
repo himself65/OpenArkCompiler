@@ -48,11 +48,11 @@ class Profile {
     BBInfo() = default;
     BBInfo(uint64 hash, uint32 num, std::vector<uint32> &&counter)
         : funcHash(hash), totalCounter(num), counter(counter) {}
-    BBInfo(uint64 hash, uint32 num, std::initializer_list<uint32> iList) : funcHash(hash), totalCounter(num),
-        counter(iList) {}
+    BBInfo(uint64 hash, uint32 num, std::initializer_list<uint32> iList)
+        : funcHash(hash), totalCounter(num), counter(iList) {}
   };
 
-  static const uint8 kStringEnd;
+  static const uint8 stringEnd;
   void InitTestData();
   bool CheckFuncHot(const std::string &className) const;
   bool CheckMethodHot(const std::string &className) const;
@@ -67,7 +67,7 @@ class Profile {
   bool GetFunctionBBProf(const std::string &funcName, BBInfo &result);
   size_t GetLiteralProfileSize() const;
   bool CheckProfValid() const;
-  bool CheckDexValid(uint32 idx);
+  bool CheckDexValid(uint32 idx) const;
   void SetProfileMode();
   void Dump() const;
   void DumpFuncIRProfUseInfo() const;
@@ -101,10 +101,10 @@ class Profile {
   std::unordered_map<std::string, bool> funcBBProfUseInfo;
   std::unordered_map<std::string, IRProfileDesc> funcDesc;
   std::vector<uint32> counterTab;
-  bool CheckProfileHeader(const Header *header) const;
+  bool CheckProfileHeader(const Header &header) const;
   std::string GetProfileNameByType(uint8 type) const;
-  std::string GetFunctionName(uint32 classIdx, uint32 methodIdx, uint32 sigIdx);
-  void ParseMeta(const char *data, int fileNum, std::unordered_set<std::string> &metaData);
+  std::string GetFunctionName(uint32 classIdx, uint32 methodIdx, uint32 sigIdx) const;
+  void ParseMeta(const char *data, int fileNum, std::unordered_set<std::string> &metaData) const;
   void ParseReflectionStr(const char *data, int fileNum);
   void ParseFunc(const char *data, int fileNum);
   void ParseLiteral(const char *data, const char *end);

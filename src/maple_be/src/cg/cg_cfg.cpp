@@ -125,6 +125,22 @@ void CGCFG::BuildCFG() {
     }
   }
 }
+
+InsnVisitor *CGCFG::insnVisitor;
+
+void CGCFG::InitInsnVisitor(CGFunc &func) {
+  insnVisitor = func.NewInsnModifier();
+}
+
+Insn *CGCFG::CloneInsn(Insn &originalInsn) {
+  cgFunc->IncTotalNumberOfInstructions();
+  return insnVisitor->CloneInsn(originalInsn);
+}
+
+RegOperand *CGCFG::CreateVregFromReg(const RegOperand &pReg) {
+  return insnVisitor->CreateVregFromReg(pReg);
+}
+
 /*
  * return true if:
  * mergee has only one predecessor which is merger, or mergee has
@@ -338,6 +354,98 @@ void CGCFG::FlushUnReachableStatusAndRemoveRelations(BB &bb, const CGFunc &func)
     it->ClearEhSuccs();
   }
 }
+
+void CGCFG::RemoveBB(BB &curBB, bool isGotoIf) {
+  BB *sucBB = CGCFG::GetTargetSuc(curBB, false, isGotoIf);
+  if (sucBB != nullptr) {
+    sucBB->RemovePreds(curBB);
+  }
+  BB *fallthruSuc = nullptr;
+  if (isGotoIf) {
+    for (BB *succ : curBB.GetSuccs()) {
+      if (succ == sucBB) {
+        continue;
+      }
+      fallthruSuc = succ;
+      break;
+    }
+
+    ASSERT(fallthruSuc == curBB.GetNext(), "fallthru succ should be its next bb.");
+    if (fallthruSuc != nullptr) {
+      fallthruSuc->RemovePreds(curBB);
+    }
+  }
+
+  for (BB *preBB : curBB.GetPreds()) {
+    /*
+     * If curBB is the target of its predecessor, change
+     * the jump target.
+     */
+    if (&curBB == GetTargetSuc(*preBB, true, isGotoIf)) {
+      LabelIdx targetLabel;
+      if (curBB.GetNext()->GetLabIdx() == 0) {
+        targetLabel = insnVisitor->GetCGFunc()->CreateLabel();
+        curBB.GetNext()->SetLabIdx(targetLabel);
+      } else {
+        targetLabel = curBB.GetNext()->GetLabIdx();
+      }
+      insnVisitor->ModifyJumpTarget(targetLabel, *preBB);
+    }
+    if (fallthruSuc != nullptr && !fallthruSuc->IsPredecessor(*preBB)) {
+      preBB->PushBackSuccs(*fallthruSuc);
+      fallthruSuc->PushBackPreds(*preBB);
+    }
+    if (sucBB != nullptr && !sucBB->IsPredecessor(*preBB)) {
+      preBB->PushBackSuccs(*sucBB);
+      sucBB->PushBackPreds(*preBB);
+    }
+    preBB->RemoveSuccs(curBB);
+  }
+  for (BB *ehSucc : curBB.GetEhSuccs()) {
+    ehSucc->RemoveEhPreds(curBB);
+  }
+  for (BB *ehPred : curBB.GetEhPreds()) {
+    ehPred->RemoveEhSuccs(curBB);
+  }
+  curBB.GetNext()->RemovePreds(curBB);
+  curBB.GetPrev()->SetNext(curBB.GetNext());
+  curBB.GetNext()->SetPrev(curBB.GetPrev());
+}
+
+void CGCFG::RetargetJump(BB &srcBB, BB &targetBB) {
+  insnVisitor->ModifyJumpTarget(srcBB, targetBB);
+}
+
+BB *CGCFG::GetTargetSuc(BB &curBB, bool branchOnly, bool isGotoIf) {
+  switch (curBB.GetKind()) {
+    case BB::kBBGoto:
+    case BB::kBBIntrinsic:
+    case BB::kBBIf: {
+      const Insn* origLastInsn = curBB.GetLastInsn();
+      if (isGotoIf && (curBB.GetPrev() != nullptr) &&
+          (curBB.GetKind() == BB::kBBGoto || curBB.GetKind() == BB::kBBIf) &&
+          (curBB.GetPrev()->GetKind() == BB::kBBGoto || curBB.GetPrev()->GetKind() == BB::kBBIf)) {
+        origLastInsn = curBB.GetPrev()->GetLastInsn();
+      }
+      LabelIdx label = insnVisitor->GetJumpLabel(*origLastInsn);
+      for (BB *bb : curBB.GetSuccs()) {
+        if (bb->GetLabIdx() == label) {
+          return bb;
+        }
+      }
+      break;
+    }
+    case BB::kBBFallthru: {
+      return (branchOnly ? nullptr : curBB.GetNext());
+    }
+    case BB::kBBThrow:
+      return nullptr;
+    default:
+      return nullptr;
+  }
+  return nullptr;
+}
+
 bool CGCFG::InLSDA(LabelIdx label, const EHFunc &ehFunc) {
   if (!label || ehFunc.GetLSDACallSiteTable() == nullptr) {
     return false;
@@ -366,6 +474,11 @@ bool CGCFG::InSwitchTable(LabelIdx label, const CGFunc &func) {
   }
   return false;
 }
+
+bool CGCFG::IsCompareAndBranchInsn(const Insn &insn) const {
+  return insnVisitor->IsCompareAndBranchInsn(insn);
+}
+
 Insn *CGCFG::FindLastCondBrInsn(BB &bb) const {
   if (bb.GetKind() != BB::kBBIf) {
     return nullptr;
@@ -472,6 +585,7 @@ void CGCFG::UnreachCodeAnalysis() {
 
     /* Clear insns in GOT Map. */
     cgFunc->ClearUnreachableGotInfos(*unreachBB);
+    cgFunc->ClearUnreachableConstInfos(*unreachBB);
   }
 }
 

@@ -106,7 +106,7 @@ AnalysisResult *MeDoIRMap::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, Mo
   irMap->GetTempAlloc().SetMemPool(nullptr);
   // delete input IR code for current function
   MIRFunction *mirFunc = func->GetMirFunc();
-  memPoolCtrler.DeleteMemPool(mirFunc->GetCodeMempool());
+  mirFunc->GetCodeMempool()->Release();
   mirFunc->SetCodeMemPool(nullptr);
   // delete versionst_table
 #if MIR_FEATURE_FULL
@@ -123,7 +123,7 @@ AnalysisResult *MeDoIRMap::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, Mo
     bb->SetLast(nullptr);
   }
 #endif
-  memPoolCtrler.DeleteMemPool(func->GetMeSSATab()->GetVersionStTable().GetVSTAlloc().GetMemPool());
+  func->GetMeSSATab()->GetVersionStTable().GetVSTAlloc().GetMemPool()->Release();
   return irMap;
 }
 }  // namespace maple

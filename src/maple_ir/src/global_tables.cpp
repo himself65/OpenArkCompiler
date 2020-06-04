@@ -27,7 +27,7 @@ MIRType *TypeTable::CreateMirType(uint32 primTypeIdx) const {
   return mirType;
 }
 
-TypeTable::TypeTable() {
+TypeTable::TypeTable() : ptrTypeMap(), refTypeMap() {
   // enter the primitve types in type_table_
   typeTable.push_back(static_cast<MIRType*>(nullptr));
   ASSERT(typeTable.size() == static_cast<size_t>(PTY_void), "use PTY_void as the first index to type table");
@@ -63,15 +63,43 @@ void TypeTable::PutToHashTable(MIRType *mirType) {
   typeHashTable.insert(mirType);
 }
 
-TyIdx TypeTable::GetOrCreateMIRType(MIRType *pType) {
-  const auto it = typeHashTable.find(pType);
-  if (it != typeHashTable.end()) {
-    return (*it)->GetTypeIndex();
+MIRType *TypeTable::CreateAndUpdateMirTypeNode(MIRType *ptype) {
+  MIRType *ntype = ptype->CopyMIRTypeNode();
+  ntype->SetTypeIndex(TyIdx(typeTable.size()));
+  typeTable.push_back(ntype);
+
+  if (ptype->GetKind() == kTypePointer) {
+    MIRPtrType *pty = static_cast<MIRPtrType*>(ptype);
+    if (pty->GetPrimType() == PTY_ptr) {
+      ptrTypeMap[pty->GetPointedTyIdx()] = ntype->GetTypeIndex();
+    } else {
+      refTypeMap[pty->GetPointedTyIdx()] = ntype->GetTypeIndex();
+    }
+  } else {
+    typeHashTable.insert(ntype);
+  }
+  return ntype;
+}
+
+MIRType* TypeTable::GetOrCreateMIRTypeNode(MIRType *ptype) {
+  if (ptype->GetKind() == kTypePointer) {
+    MIRPtrType *type = static_cast<MIRPtrType *>(ptype);
+    auto *pMap = (type->GetPrimType() == PTY_ptr ? &ptrTypeMap : &refTypeMap);
+    auto *otherPMap = (type->GetPrimType() == PTY_ref ? &ptrTypeMap : &refTypeMap);
+    auto it = pMap->find(type->GetPointedTyIdx());
+    if (it != pMap->end()) {
+      return GetTypeFromTyIdx(it->second);
+    }
+    CHECK_FATAL(!((PrimType)(type->GetPointedTyIdx().GetIdx()) >= kPtyDerived && type->GetPrimType() == PTY_ref &&
+        otherPMap->find(type->GetPointedTyIdx()) != otherPMap->end()), "GetOrCreateMIRType: ref pointed-to type %d has previous ptr occurrence", type->GetPointedTyIdx().GetIdx());
+    return CreateAndUpdateMirTypeNode(ptype);
   }
 
-  MIRType *newTy = CreateType(*pType);
-  PutToHashTable(newTy);
-  return newTy->GetTypeIndex();
+  auto it = typeHashTable.find(ptype);
+  if (it != typeHashTable.end()) {
+    return *it;
+  }
+  return CreateAndUpdateMirTypeNode(ptype);
 }
 
 MIRType *TypeTable::voidPtrType = nullptr;
@@ -205,6 +233,10 @@ void FPConstTable::PostInit() {
 }
 
 MIRIntConst *IntConstTable::GetOrCreateIntConst(int64 val, MIRType &type, uint32 fieldID) {
+  return DoGetOrCreateIntConst(val, type, fieldID);
+}
+
+MIRIntConst *IntConstTable::DoGetOrCreateIntConst(int64 val, MIRType &type, uint32 fieldID) {
   uint64 idid = static_cast<uint64>(type.GetTypeIndex()) + (static_cast<uint64>(fieldID) << 32); // shift bit is 32
   IntConstKey key(val, idid);
   if (intConstTable.find(key) != intConstTable.end()) {
@@ -230,35 +262,43 @@ MIRFloatConst *FPConstTable::GetOrCreateFloatConst(float floatVal) {
   if (floatVal == 0.0 && std::signbit(floatVal)) {
     return minusZeroFloatConst;
   }
-  const auto it = floatConstTable.find(floatVal);
-  if (it == floatConstTable.cend()) {
-    // create a new one
-    auto *floatConst = new MIRFloatConst(floatVal, *GlobalTables::GetTypeTable().GetTypeFromTyIdx(TyIdx{ PTY_f32 }));
-    floatConstTable[floatVal] = floatConst;
-    return floatConst;
-  }
-  return it->second;
+  return DoGetOrCreateFloatConst(floatVal);
 }
 
-MIRDoubleConst *FPConstTable::GetOrCreateDoubleConst(double floatVal) {
-  if (std::isnan(floatVal)) {
+MIRFloatConst *FPConstTable::DoGetOrCreateFloatConst(float floatVal) {
+  const auto it = floatConstTable.find(floatVal);
+  if (it != floatConstTable.cend()) {
+    return it->second;
+  }
+  // create a new one
+  auto *floatConst = new MIRFloatConst(floatVal, *GlobalTables::GetTypeTable().GetTypeFromTyIdx(TyIdx{ PTY_f32 }));
+  floatConstTable[floatVal] = floatConst;
+  return floatConst;
+}
+
+MIRDoubleConst *FPConstTable::GetOrCreateDoubleConst(double doubleVal) {
+  if (std::isnan(doubleVal)) {
     return nanDoubleConst;
   }
-  if (std::isinf(floatVal)) {
-    return (floatVal < 0) ? minusInfDoubleConst : infDoubleConst;
+  if (std::isinf(doubleVal)) {
+    return (doubleVal < 0) ? minusInfDoubleConst : infDoubleConst;
   }
-  if (floatVal == 0.0 && std::signbit(floatVal)) {
+  if (doubleVal == 0.0 && std::signbit(doubleVal)) {
     return minusZeroDoubleConst;
   }
-  const auto it = doubleConstTable.find(floatVal);
-  if (it == doubleConstTable.cend()) {
-    // create a new one
-    auto *doubleConst = new MIRDoubleConst(floatVal,
-                                           *GlobalTables::GetTypeTable().GetTypeFromTyIdx((TyIdx)PTY_f64));
-    doubleConstTable[floatVal] = doubleConst;
-    return doubleConst;
+  return DoGetOrCreateDoubleConst(doubleVal);
+}
+
+MIRDoubleConst *FPConstTable::DoGetOrCreateDoubleConst(double doubleVal) {
+  const auto it = doubleConstTable.find(doubleVal);
+  if (it != doubleConstTable.cend()) {
+    return it->second;
   }
-  return it->second;
+  // create a new one
+  auto *doubleConst = new MIRDoubleConst(doubleVal,
+                                         *GlobalTables::GetTypeTable().GetTypeFromTyIdx((TyIdx)PTY_f64));
+  doubleConstTable[doubleVal] = doubleConst;
+  return doubleConst;
 }
 
 FPConstTable::~FPConstTable() {

@@ -45,6 +45,7 @@ class ConstantFold : public FuncOptimizeImpl {
   void ProcessFunc(MIRFunction *func);
   virtual ~ConstantFold() = default;
 
+  template <class T> T CalIntValueFromFloatValue(T value, const MIRType &resultType) const;
   MIRConst *FoldFloorMIRConst(const MIRConst&, PrimType, PrimType) const;
   MIRConst *FoldRoundMIRConst(const MIRConst&, PrimType, PrimType) const;
   MIRConst *FoldTypeCvtMIRConst(const MIRConst&, PrimType, PrimType) const;

@@ -37,17 +37,31 @@ std::unordered_map<std::string, std::vector<std::string>> CGOptions::cyclePatter
 std::string CGOptions::skipFrom = "";
 std::string CGOptions::skipAfter = "";
 std::string CGOptions::dumpFunc = "*";
-std::string CGOptions::duplicateAsmFile = "maple/mrt/codetricks/arch/arm64/duplicateFunc.s";
 std::string CGOptions::globalVarProfile = "";
+#ifdef TARGARM32
+std::string CGOptions::duplicateAsmFile = "";
+#else
+std::string CGOptions::duplicateAsmFile = "maple/mrt/codetricks/arch/arm64/duplicateFunc.s";
+#endif
 #if TARGAARCH64
 bool CGOptions::useBarriersForVolatile = false;
 #else
 bool CGOptions::useBarriersForVolatile = true;
 #endif
-bool CGOptions::quiet = true;
 bool CGOptions::exclusiveEH = false;
+bool CGOptions::doEBO = false;
+bool CGOptions::doCFGO = false;
+bool CGOptions::doICO = false;
+bool CGOptions::doStoreLoadOpt = false;
+bool CGOptions::doGlobalOpt = false;
+bool CGOptions::doPrePeephole = false;
+bool CGOptions::doPeephole = false;
+bool CGOptions::doSchedule = false;
+bool CGOptions::doWriteRefFieldOpt = false;
+bool CGOptions::dumpOptimizeCommonLog = false;
 bool CGOptions::checkArrayStore = false;
 bool CGOptions::doPIC = false;
+bool CGOptions::noDupBB = false;
 bool CGOptions::noCalleeCFI = true;
 bool CGOptions::emitCyclePattern = false;
 bool CGOptions::insertYieldPoint = false;
@@ -57,8 +71,13 @@ bool CGOptions::nativeOpt = false;
 bool CGOptions::withDwarf = false;
 bool CGOptions::lazyBinding = false;
 bool CGOptions::hotFix = false;
+bool CGOptions::debugSched = false;
+bool CGOptions::bruteForceSched = false;
+bool CGOptions::simulateSched = false;
 bool CGOptions::genLongCalls = false;
 bool CGOptions::gcOnly = false;
+bool CGOptions::quiet = true;
+
 
 enum OptionIndex : uint64 {
   kCGQuiet = kCommonOptionEnd + 1,
@@ -67,6 +86,14 @@ enum OptionIndex : uint64 {
   kCGVerbose,
   kCGMapleLinker,
   kCgen,
+  kEbo,
+  kCfgo,
+  kIco,
+  kSlo,
+  kGo,
+  kPrepeep,
+  kPeep,
+  kSchedule,
   kCGNativeOpt,
   kInsertCall,
   kTrace,
@@ -111,13 +138,16 @@ enum OptionIndex : uint64 {
   kCGSkipAfter,
   kCGLazyBinding,
   kCGHotFix,
+  kDebugSched,
+  kBruteForceSched,
+  kSimulateSched,
   kLongCalls,
 };
 
 const Descriptor kUsage[] = {
   { kPie,
     kEnable,
-    nullptr,
+    "",
     "pie",
     kBuildTypeProduct,
     kArgCheckPolicyBool,
@@ -127,7 +157,7 @@ const Descriptor kUsage[] = {
     {} },
   { kPic,
     kEnable,
-    nullptr,
+    "",
     "fpic",
     kBuildTypeProduct,
     kArgCheckPolicyBool,
@@ -137,7 +167,7 @@ const Descriptor kUsage[] = {
     {} },
   { kCGVerbose,
     kEnable,
-    nullptr,
+    "",
     "verbose-asm",
     kBuildTypeProduct,
     kArgCheckPolicyBool,
@@ -147,7 +177,7 @@ const Descriptor kUsage[] = {
     {} },
   { kCGMapleLinker,
     kEnable,
-    nullptr,
+    "",
     "maplelinker",
     kBuildTypeProduct,
     kArgCheckPolicyBool,
@@ -157,7 +187,7 @@ const Descriptor kUsage[] = {
     {} },
   { kCGQuiet,
     kEnable,
-    nullptr,
+    "",
     "quiet",
     kBuildTypeExperimental,
     kArgCheckPolicyBool,
@@ -167,7 +197,7 @@ const Descriptor kUsage[] = {
     {} },
   { kCgen,
     kEnable,
-    nullptr,
+    "",
     "cg",
     kBuildTypeExperimental,
     kArgCheckPolicyBool,
@@ -177,7 +207,7 @@ const Descriptor kUsage[] = {
     {} },
   { kCGLazyBinding,
     kEnable,
-    nullptr,
+    "",
     "lazy-binding",
     kBuildTypeProduct,
     kArgCheckPolicyBool,
@@ -186,7 +216,7 @@ const Descriptor kUsage[] = {
     {} },
   { kCGHotFix,
     kEnable,
-    nullptr,
+    "",
     "hot-fix",
     kBuildTypeExperimental,
     kArgCheckPolicyBool,
@@ -194,9 +224,89 @@ const Descriptor kUsage[] = {
     "  --no-hot-fix\n",
     "mplcg",
     {} },
+  { kEbo,
+    kEnable,
+    "",
+    "ebo",
+    kBuildTypeExperimental,
+    kArgCheckPolicyBool,
+    "  --ebo                       \tPerform Extend block optimization\n"
+    "  --no-ebo\n",
+    "mplcg",
+    {} },
+  { kCfgo,
+    kEnable,
+    "",
+    "cfgo",
+    kBuildTypeExperimental,
+    kArgCheckPolicyBool,
+    "  --cfgo                      \tPerform control flow optimization\n"
+    "  --no-cfgo\n",
+    "mplcg",
+    {} },
+  { kIco,
+    kEnable,
+    "",
+    "ico",
+    kBuildTypeExperimental,
+    kArgCheckPolicyBool,
+    "  --ico                       \tPerform if-conversion optimization\n"
+    "  --no-ico\n",
+    "mplcg",
+    {} },
+  { kSlo,
+    kEnable,
+    "",
+    "storeloadopt",
+    kBuildTypeExperimental,
+    kArgCheckPolicyBool,
+    "  --storeloadopt              \tPerform global store-load optimization\n"
+    "  --no-storeloadopt\n",
+    "mplcg",
+    {} },
+  { kGo,
+    kEnable,
+    "",
+    "globalopt",
+    kBuildTypeExperimental,
+    kArgCheckPolicyBool,
+    "  --globalopt                 \tPerform global optimization\n"
+    "  --no-globalopt\n",
+    "mplcg",
+    {} },
+  { kPrepeep,
+    kEnable,
+    "",
+    "prepeep",
+    kBuildTypeExperimental,
+    kArgCheckPolicyBool,
+    "  --prepeep                   \tPerform peephole optimization before RA\n"
+    "  --no-prepeep\n",
+    "mplcg",
+    {} },
+  { kPeep,
+    kEnable,
+    "",
+    "peep",
+    kBuildTypeExperimental,
+    kArgCheckPolicyBool,
+    "  --peep                      \tPerform peephole optimization after RA\n"
+    "  --no-peep\n",
+    "mplcg",
+    {} },
+  { kSchedule,
+    kEnable,
+    "",
+    "schedule",
+    kBuildTypeExperimental,
+    kArgCheckPolicyBool,
+    "  --schedule                  \tPerform scheduling\n"
+    "  --no-schedule\n",
+    "mplcg",
+    {} },
   { kCGNativeOpt,
     kEnable,
-    nullptr,
+    "",
     "nativeopt",
     kBuildTypeProduct,
     kArgCheckPolicyBool,
@@ -206,7 +316,7 @@ const Descriptor kUsage[] = {
     {} },
   { kObjMap,
     kEnable,
-    nullptr,
+    "",
     "objmap",
     kBuildTypeExperimental,
     kArgCheckPolicyBool,
@@ -216,7 +326,7 @@ const Descriptor kUsage[] = {
     {} },
   { kYieldPoing,
     kEnable,
-    nullptr,
+    "",
     "yieldpoint",
     kBuildTypeExperimental,
     kArgCheckPolicyBool,
@@ -226,7 +336,7 @@ const Descriptor kUsage[] = {
     {} },
   { kProepilogue,
     kEnable,
-    nullptr,
+    "",
     "proepilogue",
     kBuildTypeExperimental,
     kArgCheckPolicyBool,
@@ -236,7 +346,7 @@ const Descriptor kUsage[] = {
     {} },
   { kLocalRc,
     kEnable,
-    nullptr,
+    "",
     "local-rc",
     kBuildTypeExperimental,
     kArgCheckPolicyBool,
@@ -246,7 +356,7 @@ const Descriptor kUsage[] = {
     {} },
   { kInsertCall,
     0,
-    nullptr,
+    "",
     "insert-call",
     kBuildTypeExperimental,
     kArgCheckPolicyRequired,
@@ -255,7 +365,7 @@ const Descriptor kUsage[] = {
     {} },
   { kTrace,
     0,
-    nullptr,
+    "",
     "add-debug-trace",
     kBuildTypeProduct,
     kArgCheckPolicyNone,
@@ -264,7 +374,7 @@ const Descriptor kUsage[] = {
     {} },
   { kCGClassList,
     0,
-    nullptr,
+    "",
     "class-list-file",
     kBuildTypeExperimental,
     kArgCheckPolicyRequired,
@@ -275,7 +385,7 @@ const Descriptor kUsage[] = {
     {} },
   { kGenDef,
     kEnable,
-    nullptr,
+    "",
     "gen-c-macro-def",
     kBuildTypeProduct,
     kArgCheckPolicyBool,
@@ -286,7 +396,7 @@ const Descriptor kUsage[] = {
     {} },
   { kGenGctib,
     kEnable,
-    nullptr,
+    "",
     "gen-gctib-file",
     kBuildTypeExperimental,
     kArgCheckPolicyBool,
@@ -297,7 +407,7 @@ const Descriptor kUsage[] = {
     {} },
   { kStackGuard,
     kEnable,
-    nullptr,
+    "",
     "stackguard",
     kBuildTypeExperimental,
     kArgCheckPolicyBool,
@@ -308,7 +418,7 @@ const Descriptor kUsage[] = {
   { kDebuggingInfo,
     0,
     "g",
-    nullptr,
+    "",
     kBuildTypeExperimental,
     kArgCheckPolicyNone,
     "  -g                          \tGenerate debug information\n",
@@ -316,7 +426,7 @@ const Descriptor kUsage[] = {
     {} },
   { kDebugGenDwarf,
     0,
-    nullptr,
+    "",
     "gdwarf",
     kBuildTypeProduct,
     kArgCheckPolicyNone,
@@ -325,7 +435,7 @@ const Descriptor kUsage[] = {
     {} },
   { kDebugUseSrc,
     0,
-    nullptr,
+    "",
     "gsrc",
     kBuildTypeProduct,
     kArgCheckPolicyNone,
@@ -334,7 +444,7 @@ const Descriptor kUsage[] = {
     {} },
   { kDebugUseMix,
     0,
-    nullptr,
+    "",
     "gmixedsrc",
     kBuildTypeProduct,
     kArgCheckPolicyNone,
@@ -343,7 +453,7 @@ const Descriptor kUsage[] = {
     {} },
   { kDebugAsmMix,
     0,
-    nullptr,
+    "",
     "gmixedasm",
     kBuildTypeExperimental,
     kArgCheckPolicyNone,
@@ -352,7 +462,7 @@ const Descriptor kUsage[] = {
     {} },
   { kRaColor,
     0,
-    nullptr,
+    "",
     "with-ra-graph-color",
     kBuildTypeExperimental,
     kArgCheckPolicyNone,
@@ -361,7 +471,7 @@ const Descriptor kUsage[] = {
     {} },
   { kConstFoldOpt,
     0,
-    nullptr,
+    "",
     "const-fold",
     kBuildTypeExperimental,
     kArgCheckPolicyNone,
@@ -370,7 +480,7 @@ const Descriptor kUsage[] = {
     {} },
   { kEhList,
     0,
-    nullptr,
+    "",
     "eh-exclusive-list",
     kBuildTypeExperimental,
     kArgCheckPolicyRequired,
@@ -380,7 +490,7 @@ const Descriptor kUsage[] = {
     {} },
   { kCGO0,
     0,
-    nullptr,
+    "",
     "O0",
     kBuildTypeExperimental,
     kArgCheckPolicyNone,
@@ -389,7 +499,7 @@ const Descriptor kUsage[] = {
     {} },
   { kCGO1,
     0,
-    nullptr,
+    "",
     "O1",
     kBuildTypeExperimental,
     kArgCheckPolicyOptional,
@@ -398,7 +508,7 @@ const Descriptor kUsage[] = {
     {} },
   { kCGO2,
     0,
-    nullptr,
+    "",
     "O2",
     kBuildTypeProduct,
     kArgCheckPolicyOptional,
@@ -407,7 +517,7 @@ const Descriptor kUsage[] = {
     {} },
   { kSuppressFinfo,
     0,
-    nullptr,
+    "",
     "suppress-fileinfo",
     kBuildTypeExperimental,
     kArgCheckPolicyNone,
@@ -416,7 +526,7 @@ const Descriptor kUsage[] = {
     {} },
   { kCGDumpcfg,
     0,
-    nullptr,
+    "",
     "dump-cfg",
     kBuildTypeExperimental,
     kArgCheckPolicyNone,
@@ -425,7 +535,7 @@ const Descriptor kUsage[] = {
     {} },
   { kCGDumpPhases,
     0,
-    nullptr,
+    "",
     "dump-phases",
     kBuildTypeExperimental,
     kArgCheckPolicyRequired,
@@ -434,7 +544,7 @@ const Descriptor kUsage[] = {
     {} },
   { kCGSkipPhases,
     0,
-    nullptr,
+    "",
     "skip-phases",
     kBuildTypeExperimental,
     kArgCheckPolicyRequired,
@@ -443,7 +553,7 @@ const Descriptor kUsage[] = {
     {} },
   { kCGSkipFrom,
     0,
-    nullptr,
+    "",
     "skip-from",
     kBuildTypeExperimental,
     kArgCheckPolicyRequired,
@@ -452,7 +562,7 @@ const Descriptor kUsage[] = {
     {} },
   { kCGSkipAfter,
     0,
-    nullptr,
+    "",
     "skip-after",
     kBuildTypeExperimental,
     kArgCheckPolicyRequired,
@@ -461,7 +571,7 @@ const Descriptor kUsage[] = {
     {} },
   { kCGDumpFunc,
     0,
-    nullptr,
+    "",
     "dump-func",
     kBuildTypeExperimental,
     kArgCheckPolicyRequired,
@@ -471,7 +581,7 @@ const Descriptor kUsage[] = {
     {} },
   { kCGDumpBefore,
     kEnable,
-    nullptr,
+    "",
     "dump-before",
     kBuildTypeExperimental,
     kArgCheckPolicyBool,
@@ -481,7 +591,7 @@ const Descriptor kUsage[] = {
     {} },
   { kCGDumpAfter,
     kEnable,
-    nullptr,
+    "",
     "dump-after",
     kBuildTypeExperimental,
     kArgCheckPolicyBool,
@@ -491,7 +601,7 @@ const Descriptor kUsage[] = {
     {} },
   { kCGTimePhases,
     kEnable,
-    nullptr,
+    "",
     "time-phases",
     kBuildTypeExperimental,
     kArgCheckPolicyBool,
@@ -501,7 +611,7 @@ const Descriptor kUsage[] = {
     {} },
   { kCGBarrier,
     kEnable,
-    nullptr,
+    "",
     "use-barriers-for-volatile",
     kBuildTypeExperimental,
     kArgCheckPolicyBool,
@@ -511,7 +621,7 @@ const Descriptor kUsage[] = {
     {} },
   { kCalleeCFI,
     kEnable,
-    nullptr,
+    "",
     "callee-cfi",
     kBuildTypeExperimental,
     kArgCheckPolicyBool,
@@ -521,7 +631,7 @@ const Descriptor kUsage[] = {
     {} },
   { kPrintFunction,
     kEnable,
-    nullptr,
+    "",
     "print-func",
     kBuildTypeExperimental,
     kArgCheckPolicyBool,
@@ -531,7 +641,7 @@ const Descriptor kUsage[] = {
     {} },
   { kCyclePatternList,
     0,
-    nullptr,
+    "",
     "cycle-pattern-list",
     kBuildTypeExperimental,
     kArgCheckPolicyRequired,
@@ -541,7 +651,7 @@ const Descriptor kUsage[] = {
     {} },
   { kDuplicateToDelPlt,
     0,
-    nullptr,
+    "",
     "duplicate_asm_list",
     kBuildTypeProduct,
     kArgCheckPolicyRequired,
@@ -551,7 +661,7 @@ const Descriptor kUsage[] = {
     {} },
   { kInsertSoe,
     0,
-    nullptr,
+    "",
     "soe-check",
     kBuildTypeExperimental,
     kArgCheckPolicyNone,
@@ -560,7 +670,7 @@ const Descriptor kUsage[] = {
     {} },
   { kCheckArrayStore,
     kEnable,
-    nullptr,
+    "",
     "check-arraystore",
     kBuildTypeExperimental,
     kArgCheckPolicyBool,
@@ -568,9 +678,39 @@ const Descriptor kUsage[] = {
     "  --no-check-arraystore\n",
     "mplcg",
     {} },
+  { kDebugSched,
+    kEnable,
+    "",
+    "debug-schedule",
+    kBuildTypeExperimental,
+    kArgCheckPolicyBool,
+    "  --debug-schedule            \tdump scheduling information\n"
+    "  --no-debug-schedule\n",
+    "mplcg",
+    {} },
+  { kBruteForceSched,
+    kEnable,
+    "",
+    "bruteforce-schedule",
+    kBuildTypeExperimental,
+    kArgCheckPolicyBool,
+    "  --bruteforce-schedule       \tdo brute force schedule\n"
+    "  --no-bruteforce-schedule\n",
+    "mplcg",
+    {} },
+  { kSimulateSched,
+    kEnable,
+    "",
+    "simulate-schedule",
+    kBuildTypeExperimental,
+    kArgCheckPolicyBool,
+    "  --simulate-schedule         \tdo simulate schedule\n"
+    "  --no-simulate-schedule\n",
+    "mplcg",
+    {} },
   { kLongCalls,
     kEnable,
-    nullptr,
+    "",
     "long-calls",
     kBuildTypeExperimental,
     kArgCheckPolicyBool,
@@ -581,11 +721,11 @@ const Descriptor kUsage[] = {
 // End
   { kUnknown,
     0,
-    nullptr,
-    nullptr,
+    "",
+    "",
     kBuildTypeAll,
     kArgCheckPolicyNone,
-    nullptr,
+    "",
     "mplcg",
     {} }
 };
@@ -799,6 +939,32 @@ bool CGOptions::SolveOptions(const std::vector<Option> &opts, bool isDebug) {
       case kCheckArrayStore:
         (opt.Type() == kEnable) ? EnableCheckArrayStore() : DisableCheckArrayStore();
         break;
+
+      case kEbo:
+        (opt.Type() == kEnable) ? EnableEBO() : DisableEBO();
+        break;
+
+      case kCfgo:
+        (opt.Type() == kEnable) ? EnableCFGO() : DisableCFGO();
+        break;
+      case kIco:
+        (opt.Type() == kEnable) ? EnableICO() : DisableICO();
+        break;
+      case kSlo:
+        (opt.Type() == kEnable) ? EnableStoreLoadOpt() : DisableStoreLoadOpt();
+        break;
+      case kGo:
+        (opt.Type() == kEnable) ? EnableGlobalOpt() : DisableGlobalOpt();
+        break;
+      case kPrepeep:
+        (opt.Type() == kEnable) ? EnablePrePeephole() : DisablePrePeephole();
+        break;
+      case kPeep:
+        (opt.Type() == kEnable) ? EnablePeephole() : DisablePeephole();
+        break;
+      case kSchedule:
+        (opt.Type() == kEnable) ? EnableSchedule() : DisableSchedule();
+        break;
       case kCGNativeOpt:
         DisableNativeOpt();
         break;
@@ -829,6 +995,15 @@ bool CGOptions::SolveOptions(const std::vector<Option> &opts, bool isDebug) {
         break;
       case kCGSkipAfter:
         SetSkipAfter(opt.Args());
+        break;
+      case kDebugSched:
+        (opt.Type() == kEnable) ? EnableDebugSched() : DisableDebugSched();
+        break;
+      case kBruteForceSched:
+        (opt.Type() == kEnable) ? EnableDruteForceSched() : DisableDruteForceSched();
+        break;
+      case kSimulateSched:
+        (opt.Type() == kEnable) ? EnableSimulateSched() : DisableSimulateSched();
         break;
       case kLongCalls:
         (opt.Type() == kEnable) ? EnableLongCalls() : DisableLongCalls();
@@ -902,6 +1077,15 @@ void CGOptions::EnableO1() {
 
 void CGOptions::EnableO2() {
   optimizeLevel = kLevel2;
+  doEBO = true;
+  doCFGO = true;
+  doICO = true;
+  doPrePeephole = true;
+  doPeephole = true;
+  doStoreLoadOpt = true;
+  doGlobalOpt = true;
+  doSchedule = true;
+  doWriteRefFieldOpt = true;
   ClearOption(kProEpilogueOpt);
   ClearOption(kUseStackGuard);
 }

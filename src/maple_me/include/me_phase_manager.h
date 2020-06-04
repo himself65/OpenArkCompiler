@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -54,9 +54,12 @@ class MeFuncPhaseManager : public PhaseManager {
     modResMgr = mrm;
   }
 
-  void Run(MIRFunction *mirFunc, uint64 rangeNum, const std::string &meInput);
+  void Run(MIRFunction *mirFunc, uint64 rangeNum, const std::string &meInput,
+           MemPoolCtrler &localMpCtrler = memPoolCtrler);
   void IPACleanUp(MeFunction *mirfunc);
   void Run() override {}
+
+  MeFuncPhaseManager &Clone(MemPool &mp, MemPoolCtrler &ctrler) const;
 
   MeFuncResultMgr *GetAnalysisResultManager() {
     return &arFuncManager;

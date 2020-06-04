@@ -1108,7 +1108,11 @@ void Emitter::EmitIntConst(const MIRSymbol &mirSymbol, MIRAggConst &aggConst, ui
   } else if (mirSymbol.IsRegJNIFuncTab()) {
     std::string strTabName = kRegJNITabPrefixStr + cg->GetMIRModule()->GetFileNameAsPostfix();
     EmitScalarConstant(*elemConst, false);
+#ifdef TARGARM32
+    Emit("+" + strTabName).Emit("+").Emit(MByteRef::PositiveOffsetBias).Emit("-.\n");
+#else
     Emit("+" + strTabName + "\n");
+#endif
   } else if (mirSymbol.IsReflectionMethodAddrData()) {
     int64 defTabIndex = intConst->GetValue();
 #ifdef USE_32BIT_REF
@@ -1444,7 +1448,7 @@ void Emitter::EmitFuncLayoutInfo(const MIRSymbol &layout) {
   MIRAggConst *aggConst = safe_cast<MIRAggConst>(mirConst);
   ASSERT(aggConst != nullptr, "null ptr check");
   if (aggConst->GetConstVec().size() != static_cast<uint32>(LayoutType::kLayoutTypeCount)) {
-    maple::logInfo.MapleLogger(kLlErr) << "something wrong happen in funclayoutsym\t"
+    maple::LogInfo::MapleLogger(kLlErr) << "something wrong happen in funclayoutsym\t"
          << "constVec size\t" << aggConst->GetConstVec().size() << "\n";
     return;
   }
@@ -1557,7 +1561,7 @@ void Emitter::MarkVtabOrItabEndFlag(const std::vector<MIRSymbol*> &mirSymbolVec)
     MIRConst *elemConst = aggConst->GetConstVecItem(size - 1);
     ASSERT(elemConst != nullptr, "null ptr check");
     if (elemConst->GetKind() == kConstAddrofFunc) {
-      maple::logInfo.MapleLogger(kLlErr) << "ERROR: the last vtab/itab content should not be funcAddr\n";
+      maple::LogInfo::MapleLogger(kLlErr) << "ERROR: the last vtab/itab content should not be funcAddr\n";
     } else {
       if (elemConst->GetKind() != kConstInt) {
         CHECK_FATAL(elemConst->GetKind() == kConstAddrof, "must be");
@@ -1595,7 +1599,7 @@ void Emitter::EmitGlobalVars(std::vector<std::pair<MIRSymbol*, bool>> &globalVar
   if (!CGOptions::IsGlobalVarProFileEmpty()) {
     inFile.open(CGOptions::GetGlobalVarProFile());
     if (inFile.fail()) {
-      maple::logInfo.MapleLogger(kLlErr) << "Cannot open globalVar profile file " << CGOptions::GetGlobalVarProFile()
+      maple::LogInfo::MapleLogger(kLlErr) << "Cannot open globalVar profile file " << CGOptions::GetGlobalVarProFile()
                                          << "\n";
     }
   }

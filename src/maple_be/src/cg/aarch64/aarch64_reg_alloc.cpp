@@ -597,7 +597,7 @@ bool DefaultO0RegAllocator::AllocateRegisters() {
       }
       /* hack. a better way to handle intrinsics? */
       for (auto rememberReg : rememberRegs) {
-        ASSERT(rememberReg == kRinvalid, "not a valid register");
+        ASSERT(rememberReg != kRinvalid, "not a valid register");
         ReleaseReg(rememberReg);
       }
       rememberRegs.clear();
@@ -624,7 +624,7 @@ AnalysisResult *CgDoRegAlloc::Run(CGFunc *cgFunc, CgFuncResultMgr *cgFuncResultM
     if (cgFunc->GetCG()->GetCGOptions().DoColoringBasedRegisterAllocation()) {
       regAllocator = phaseMp->New<GraphColorRegAllocator>(*cgFunc, *phaseMp);
     } else {
-      maple::logInfo.MapleLogger(kLlErr) << "Warning: We only support Linear Scan and GraphColor register allocation\n";
+      maple::LogInfo::MapleLogger(kLlErr) << "Warning: We only support Linear Scan and GraphColor register allocation\n";
     }
   }
 

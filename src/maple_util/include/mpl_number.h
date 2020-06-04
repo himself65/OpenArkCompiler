@@ -18,18 +18,18 @@
 #include <string>
 #include "utils/meta.h"
 
-namespace maple { namespace utils {
-
+namespace maple {
+namespace utils {
 template <typename T, typename = void>
 class Number {
  public:
   static_assert(std::is_integral<T>::value, "Type for Number should be an integral.");
 
-  using element_type = T;
+  using ElementType = T;
 
   Number() = default;
 
-  explicit Number(element_type data) : val(data) {}
+  explicit Number(ElementType data) : val(data) {}
 
   template <typename U, typename = std::enable_if_t<std::is_integral<U>::value>>
   explicit Number(U data) : val(static_cast<T>(data)) {}
@@ -42,7 +42,7 @@ class Number {
 
   // As the implicit T cast is enabled, disable it to avoid implicit cast for `Number<T, Tag1> num = Number<T, Tag2>()`
   // which should be two types and should not be able to neither convert to each other nor compare with each other.
-  Number &operator=(element_type data) = delete;
+  Number &operator=(ElementType data) = delete;
 
   Number &operator=(const Number &num) noexcept {
     if (this != &num) {
@@ -58,7 +58,7 @@ class Number {
     return *this;
   }
 
-  void reset(element_type data = 0) noexcept {
+  void reset(ElementType data = 0) noexcept {
     val = data;
   }
 
@@ -66,7 +66,7 @@ class Number {
     std::swap(val, other.val);
   }
 
-  element_type get() const noexcept {
+  ElementType get() const noexcept {
     return val;
   }
 
@@ -134,7 +134,7 @@ class Number {
   }
 
  private:
-  element_type val = 0;
+  ElementType val = 0;
 };
 
 template <typename T, typename Tag>

@@ -18,7 +18,6 @@
 #include "ptr.h"
 
 namespace maple { namespace utils {
-
 template<typename T>
 inline void AssertNotNull(const T *ptr) {
   CHECK_FATAL(ptr != nullptr, "nullptr was assigned to SafePtr.");
@@ -28,8 +27,8 @@ template<typename T>
 class SafePtr {
   using Base = Ptr<T, AssertNotNull<T>>;
  public:
-  using pointer = typename Base::pointer;
-  using element_type = typename Base::element_type;
+  using pointer = typename Base::Pointer;
+  using ElementType = typename Base::element_type;
 
   constexpr SafePtr() noexcept = delete;
 
@@ -204,7 +203,6 @@ template <typename T>
 inline T &ToRef(SafePtr<T> ptr) {
   return *ptr;
 }
-
 }}
 
 namespace std
@@ -216,5 +214,4 @@ struct hash<maple::utils::SafePtr<T>> {
   }
 };
 } // namespace std
-
 #endif //DIY_CPLUSPLUS_SAFE_PTR_H

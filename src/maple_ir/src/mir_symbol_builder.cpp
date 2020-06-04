@@ -19,7 +19,7 @@
 namespace maple {
 MIRSymbol *MIRSymbolBuilder::GetLocalDecl(MIRSymbolTable &symbolTable, GStrIdx strIdx) const {
   if (strIdx != 0u) {
-    StIdx stIdx = symbolTable.GetStIdxFromStrIdx(strIdx);
+    const StIdx stIdx = symbolTable.GetStIdxFromStrIdx(strIdx);
     if (stIdx.FullIdx() != 0) {
       return symbolTable.GetSymbolFromStIdx(stIdx.Idx());
     }
@@ -40,7 +40,7 @@ MIRSymbol *MIRSymbolBuilder::CreateLocalDecl(MIRSymbolTable &symbolTable, GStrId
 
 MIRSymbol *MIRSymbolBuilder::GetGlobalDecl(GStrIdx strIdx) const {
   if (strIdx != 0u) {
-    StIdx stIdx = GlobalTables::GetGsymTable().GetStIdxFromStrIdx(strIdx);
+    const StIdx stIdx = GlobalTables::GetGsymTable().GetStIdxFromStrIdx(strIdx);
     if (stIdx.FullIdx() != 0) {
       return GlobalTables::GetGsymTable().GetSymbolFromStidx(stIdx.Idx());
     }
@@ -94,7 +94,7 @@ MIRSymbol *MIRSymbolBuilder::CreateSymbol(TyIdx tyIdx, GStrIdx strIdx, MIRSymKin
   st->SetSKind(mClass);
   st->SetNameStrIdx(strIdx);
   st->SetTyIdx(tyIdx);
-  if (func) {
+  if (func != nullptr) {
     (void)func->GetSymTab()->AddToStringSymbolMap(*st);
   } else {
     (void)GlobalTables::GetGsymTable().AddToStringSymbolMap(*st);
@@ -108,8 +108,8 @@ MIRSymbol *MIRSymbolBuilder::CreatePregFormalSymbol(TyIdx tyIdx, PregIdx pRegIdx
   st->SetStorageClass(kScFormal);
   st->SetSKind(kStPreg);
   st->SetTyIdx(tyIdx);
-  MIRPregTable *pRegTab = func.GetPregTab();
-  st->SetPreg(pRegTab->PregFromPregIdx(pRegIdx));
+  MIRPregTable *pregTab = func.GetPregTab();
+  st->SetPreg(pregTab->PregFromPregIdx(pRegIdx));
   return st;
 }
 } // maple

@@ -132,10 +132,11 @@ bool RegMeExpr::IsSameVariableValue(const VarMeExpr &expr) const {
 // this = v1
 // this->ResolveVarMeValue() returns v3;
 // if no resolved VarMeExpr, return this
-VarMeExpr &VarMeExpr::ResolveVarMeValue() {
+VarMeExpr &VarMeExpr::ResolveVarMeValue(SSATab &ssaTab) {
   VarMeExpr *cmpop0 = this;
   while (true) {
-    if (cmpop0->GetDefBy() != kDefByStmt) {
+
+    if (cmpop0->GetDefBy() != kDefByStmt || cmpop0->IsVolatile(ssaTab)) {
       break;
     }
 
@@ -443,8 +444,12 @@ MeExpr *IvarMeExpr::GetIdenticalExpr(MeExpr &expr) const {
 }
 
 bool ScalarMeExpr::IsUseSameSymbol(const MeExpr &expr) const {
-  auto &varMeExpr = static_cast<const ScalarMeExpr&>(expr);
-  return ostIdx == varMeExpr.ostIdx;
+  if (expr.GetMeOp() == kMeOpVar || expr.GetMeOp() == kMeOpReg ) {
+    auto &scalarMeExpr = static_cast<const ScalarMeExpr&>(expr);
+    return ostIdx == scalarMeExpr.ostIdx;
+  } else {
+    return false;
+  }
 }
 
 BB *ScalarMeExpr::DefByBB() const{
@@ -452,7 +457,34 @@ BB *ScalarMeExpr::DefByBB() const{
     case kDefByNo:
       return nullptr;
     case kDefByStmt:
+      ASSERT(def.defStmt, "ScalarMeExpr::DefByBB: defStmt cannot be nullptr");
+      return def.defStmt->GetBB();
+    case kDefByPhi:
+      ASSERT(def.defPhi, "ScalarMeExpr::DefByBB: defPhi cannot be nullptr");
+      return def.defPhi->GetDefBB();
+    case kDefByChi: {
+      ASSERT(def.defChi, "ScalarMeExpr::DefByBB: defChi cannot be nullptr");
+      ASSERT(def.defChi->GetBase(), "ScalarMeExpr::DefByBB: defChi->base cannot be nullptr");
+      return def.defChi->GetBase()->GetBB();
+    }
+    case kDefByMustDef: {
+      ASSERT(def.defMustDef, "ScalarMeExpr::DefByBB: defMustDef cannot be nullptr");
+      ASSERT(def.defMustDef->GetBase(), "ScalarMeExpr::DefByBB: defMustDef->base cannot be nullptr");
+      return def.defMustDef->GetBase()->GetBB();
+    }
+    default:
+      ASSERT(false, "scalar define unknown");
+      return nullptr;
+  }
+}
+
+BB *ScalarMeExpr::GetDefByBBMeStmt(const Dominance &dominance, MeStmtPtr &defMeStmt) const {
+  switch (defBy) {
+    case kDefByNo:
+      return nullptr;
+    case kDefByStmt:
       ASSERT(def.defStmt, "VarMeExpr::DefByBB: defStmt cannot be nullptr");
+      defMeStmt = def.defStmt;	  
       return def.defStmt->GetBB();
     case kDefByPhi:
       ASSERT(def.defPhi, "VarMeExpr::DefByBB: defPhi cannot be nullptr");
@@ -460,11 +492,13 @@ BB *ScalarMeExpr::DefByBB() const{
     case kDefByChi: {
       ASSERT(def.defChi, "VarMeExpr::DefByBB: defChi cannot be nullptr");
       ASSERT(def.defChi->GetBase(), "VarMeExpr::DefByBB: defChi->base cannot be nullptr");
+      defMeStmt = def.defChi->GetBase();	  
       return def.defChi->GetBase()->GetBB();
     }
     case kDefByMustDef: {
       ASSERT(def.defMustDef, "VarMeExpr::DefByBB: defMustDef cannot be nullptr");
       ASSERT(def.defMustDef->GetBase(), "VarMeExpr::DefByBB: defMustDef->base cannot be nullptr");
+      defMeStmt = def.defMustDef->GetBase();	  
       return def.defMustDef->GetBase()->GetBB();
     }
     default:
@@ -706,28 +740,6 @@ void MePhiNode::Dump(const IRMap *irMap) const {
   }
   LogInfo::MapleLogger() << '\n';
 }
-
-#if 0
-void MeRegPhiNode::Dump(const IRMap *irMap) const {
-  CHECK_FATAL(lhs != nullptr, "lhs is null");
-  LogInfo::MapleLogger() << "REGVAR: " << lhs->GetRegIdx();
-  LogInfo::MapleLogger() << "(%"
-                         << irMap->GetMIRModule().CurFunction()
-                                                 ->GetPregTab()
-                                                 ->PregFromPregIdx(static_cast<PregIdx>(lhs->GetRegIdx()))
-                                                 ->GetPregNo()
-                         << ")";
-  LogInfo::MapleLogger() << " mx" << lhs->GetExprID();
-  LogInfo::MapleLogger() << " = MEPHI{";
-  for (size_t i = 0; i < opnds.size(); ++i) {
-    LogInfo::MapleLogger() << "mx" << opnds[i]->GetExprID();
-    if (i != opnds.size() - 1) {
-      LogInfo::MapleLogger() << ",";
-    }
-  }
-  LogInfo::MapleLogger() << "}" << '\n';
-}
-#endif
 
 void VarMeExpr::Dump(const IRMap *irMap, int32) const {
   CHECK_NULL_FATAL(irMap);
@@ -1313,33 +1325,7 @@ void AssertMeStmt::Dump(const IRMap *irMap) const {
   opnds[1]->Dump(irMap, kDefaultPrintIndentNum);
   LogInfo::MapleLogger() << '\n';
 }
-#if 0
-BB *VarMeExpr::DefByBB() {
-  switch (defBy) {
-    case kDefByNo:
-      return nullptr;
-    case kDefByStmt:
-      ASSERT(def.defStmt, "VarMeExpr::DefByBB: defStmt cannot be nullptr");
-      return def.defStmt->GetBB();
-    case kDefByPhi:
-      ASSERT(def.defPhi, "VarMeExpr::DefByBB: defPhi cannot be nullptr");
-      return def.defPhi->GetDefBB();
-    case kDefByChi: {
-      ASSERT(def.defChi, "VarMeExpr::DefByBB: defChi cannot be nullptr");
-      ASSERT(def.defChi->GetBase(), "VarMeExpr::DefByBB: defChi->base cannot be nullptr");
-      return def.defChi->GetBase()->GetBB();
-    }
-    case kDefByMustDef: {
-      ASSERT(def.defMustDef, "VarMeExpr::DefByBB: defMustDef cannot be nullptr");
-      ASSERT(def.defMustDef->GetBase(), "VarMeExpr::DefByBB: defMustDef->base cannot be nullptr");
-      return def.defMustDef->GetBase()->GetBB();
-    }
-    default:
-      ASSERT(false, "var define unknown");
-      return nullptr;
-  }
-}
-#endif
+
 bool VarMeExpr::IsVolatile(const SSATab &ssatab) const {
   const OriginalSt *ost = ssatab.GetOriginalStFromID(GetOStIdx());
   if (!ost->IsSymbolOst()) {
@@ -1357,8 +1343,8 @@ bool VarMeExpr::IsVolatile(const SSATab &ssatab) const {
   return structType->IsFieldVolatile(fieldID);
 }
 
-bool VarMeExpr::PointsToStringLiteral() {
-  VarMeExpr &var = ResolveVarMeValue();
+bool VarMeExpr::PointsToStringLiteral(SSATab &ssaTab) {
+  VarMeExpr &var = ResolveVarMeValue(ssaTab);
   if (var.GetDefBy() == kDefByMustDef) {
     MeStmt *baseStmt = var.GetDefMustDef().GetBase();
     if (baseStmt->GetOp() == OP_callassigned) {
@@ -1408,7 +1394,7 @@ bool MeExpr::HasIvar() const {
 
 // check if MeExpr can be a pointer to something that requires incref for its
 // assigned target
-bool MeExpr::PointsToSomethingThatNeedsIncRef() {
+bool MeExpr::PointsToSomethingThatNeedsIncRef(SSATab &ssaTab) {
   if (op == OP_retype) {
     return true;
   }
@@ -1417,7 +1403,7 @@ bool MeExpr::PointsToSomethingThatNeedsIncRef() {
   }
   if (meOp == kMeOpVar) {
     auto *var = static_cast<VarMeExpr*>(this);
-    if (var->PointsToStringLiteral()) {
+    if (var->PointsToStringLiteral(ssaTab)) {
       return false;
     }
     return true;

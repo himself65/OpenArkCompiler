@@ -22,6 +22,7 @@
 #include "cgbb.h"
 #include "reg_alloc.h"
 #include "cfi.h"
+#include "reaching.h"
 #include "cg_cfg.h"
 /* MapleIR headers. */
 #include "mir_parser.h"
@@ -109,6 +110,17 @@ class CGFunc {
     return false;
   }
 
+  void SetRD(ReachingDefinition *paramRd) {
+    reachingDef = paramRd;
+  }
+
+  bool GetRDStatus() const {
+    return (reachingDef != nullptr);
+  }
+
+  ReachingDefinition *GetRD() {
+    return reachingDef;
+  }
 
   EHFunc *BuildEHFunc();
   virtual void GenSaveMethodInfoCode(BB &bb) = 0;
@@ -211,12 +223,9 @@ class CGFunc {
   virtual Operand *SelectSelect(TernaryNode &node, Operand &opnd0, Operand &opnd1, Operand &opnd2) = 0;
   virtual Operand *SelectMalloc(UnaryNode &call, Operand &opnd0) = 0;
   virtual RegOperand &SelectCopy(Operand &src, PrimType srcType, PrimType dstType) = 0;
-  virtual void SelectTargetFPCmpQuiet(Operand &o0, Operand &o1, uint32 size) = 0;
   virtual Operand *SelectAlloca(UnaryNode &call, Operand &opnd0) = 0;
   virtual Operand *SelectGCMalloc(GCMallocNode &call) = 0;
   virtual Operand *SelectJarrayMalloc(JarrayMallocNode &call, Operand &opnd0) = 0;
-  virtual void SelectSelect(Operand &resOpnd, Operand &condOpnd, Operand &trueOpnd, Operand &falseOpnd,
-                            PrimType dstType, PrimType primType) = 0;
   virtual void SelectRangeGoto(RangeGotoNode &rangeGotoNode, Operand &opnd0) = 0;
   virtual Operand *SelectLazyLoad(Operand &opnd0, PrimType primType) = 0;
   virtual Operand *SelectLazyLoadStatic(MIRSymbol &st, int64 offset, PrimType primType) = 0;
@@ -245,6 +254,9 @@ class CGFunc {
     return nullptr;
   }
   virtual void ClearUnreachableGotInfos(BB &bb) {
+    (void)bb;
+  };
+  virtual void ClearUnreachableConstInfos(BB &bb) {
     (void)bb;
   };
   virtual void SplitStrLdrPair() {}
@@ -732,6 +744,7 @@ class CGFunc {
     volReleaseInsn = insn;
   }
 
+  virtual InsnVisitor *NewInsnModifier() = 0;
 
  protected:
   uint32 firstMapleIrVRegNO = 200;        /* positioned after physical regs */
@@ -755,6 +768,8 @@ class CGFunc {
   bool isVolStore = false;
   uint32 frequency = 0;
   DebugInfo *debugInfo = nullptr;  /* debugging info */
+  ReachingDefinition *reachingDef = nullptr;
+
   int32 dbgCallFrameOffset = 0;
   CG *cg;
   MIRModule &mirModule;

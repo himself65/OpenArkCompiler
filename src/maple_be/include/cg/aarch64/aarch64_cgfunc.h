@@ -21,6 +21,8 @@
 #include "aarch64_operand.h"
 #include "aarch64_insn.h"
 #include "aarch64_memlayout.h"
+#include "aarch64_optimize_common.h"
+
 namespace maplebe {
 class AArch64CGFunc : public CGFunc {
  public:
@@ -147,7 +149,7 @@ class AArch64CGFunc : public CGFunc {
   Operand *SelectCmpOp(CompareNode &node, Operand &o0, Operand &o1) override;
 
   void SelectAArch64Cmp(Operand &o, Operand &i, bool isIntType, uint32 dsize);
-  void SelectTargetFPCmpQuiet(Operand &o0, Operand &o1, uint32 dsize) override;
+  void SelectTargetFPCmpQuiet(Operand &o0, Operand &o1, uint32 dsize);
   void SelectAArch64CCmp(Operand &o, Operand &i, Operand &nzcv, CondOperand &cond, bool is64Bits);
   void SelectAArch64CSet(Operand &o, CondOperand &cond, bool is64Bits);
   void SelectAArch64CSINV(Operand &res, Operand &o0, Operand &o1, CondOperand &cond, bool is64Bits);
@@ -187,7 +189,7 @@ class AArch64CGFunc : public CGFunc {
   Operand *SelectGCMalloc(GCMallocNode &call) override;
   Operand *SelectJarrayMalloc(JarrayMallocNode &call, Operand &opnd0) override;
   void SelectSelect(Operand &resOpnd, Operand &condOpnd, Operand &trueOpnd, Operand &falseOpnd, PrimType dtype,
-                    PrimType ctype) override;
+                    PrimType ctype);
   void SelectAArch64Select(Operand &dest, Operand &opnd0, Operand &opnd1, CondOperand &cond, bool isIntType,
                            uint32 is64bits);
   void SelectRangeGoto(RangeGotoNode &rangeGotoNode, Operand &opnd0) override;
@@ -457,6 +459,9 @@ class AArch64CGFunc : public CGFunc {
                                               CreateCfiImmOperand(val, size));
   }
 
+  InsnVisitor *NewInsnModifier() override {
+    return memPool->New<AArch64InsnVisitor>(*this);
+  }
 
  private:
   enum RelationOperator : uint8 {

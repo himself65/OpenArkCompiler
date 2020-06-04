@@ -135,7 +135,7 @@ bool AnalyzeRC::NeedIncref(const MeStmt &stmt) const {
   }
   MeExpr *rhs = stmt.GetRHS();
   CHECK_NULL_FATAL(rhs);
-  return rhs->PointsToSomethingThatNeedsIncRef();
+  return rhs->PointsToSomethingThatNeedsIncRef(ssaTab);
 }
 
 // identify assignments to ref pointers and insert decref before it and incref

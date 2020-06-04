@@ -15,6 +15,7 @@
 #include "mad.h"
 #include <string>
 #include "aarch64_operand.h"
+#include "schedule.h"
 #include "insn.h"
 
 namespace maplebe {
@@ -175,6 +176,15 @@ Reservation *MAD::FindReservation(const Insn &insn) const {
   return nullptr;
 }
 
+/* Get latency that is def insn to use insn */
+int MAD::GetLatency(const Insn &def, const Insn &use) const {
+  int latency = BypassLatency(def, use);
+  if (latency < 0) {
+    latency = DefaultLatency(def);
+  }
+  return latency;
+}
+
 /* Get bypass latency that is  def insn to use insn */
 int MAD::BypassLatency(const Insn &def, const Insn &use) const {
   int latency = -1;
@@ -190,6 +200,12 @@ int MAD::BypassLatency(const Insn &def, const Insn &use) const {
   return latency;
 }
 
+/* Get insn's default latency */
+int MAD::DefaultLatency(const Insn &insn) const {
+  Reservation *res = insn.GetDepNode()->GetReservation();
+  return res != nullptr ? res->GetLatency() : 0;
+}
+
 void MAD::AdvanceCycle() {
   for (auto unit : allUnits) {
     unit->AdvanceCycle();
@@ -202,7 +218,7 @@ void MAD::ReleaseAllUnits() {
   }
 }
 
-void MAD::SaveStates(std::vector<uint32> &occupyTable, int size) {
+void MAD::SaveStates(std::vector<uint32> &occupyTable, int size) const {
   int i = 0;
   for (auto unit : allUnits) {
     CHECK_FATAL(i < size, "unit number error");

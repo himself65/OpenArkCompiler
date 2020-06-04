@@ -546,7 +546,7 @@ class MIRModule {
 
   MIRFunction *entryFunc = nullptr;
   uint32 floatNum = 0;
-  MIRFunction *curFunction = nullptr;
+  MIRFunction *curFunction;
   MapleVector<MIRFunction*> optimizedFuncs;
   // Add the field for decouple optimization
   std::unordered_set<std::string> superCallSet;

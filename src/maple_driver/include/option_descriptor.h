@@ -46,10 +46,10 @@ struct Descriptor {
   const int type;
 
   // Short form option key
-  const char * const shortOption;
+  const std::string shortOption;
 
   // Long form option key
-  const char * const longOption;
+  const std::string longOption;
 
   // The option can be seen in which build type.
   const BuildType enableBuildType;
@@ -58,9 +58,9 @@ struct Descriptor {
   const ArgCheckPolicy checkPolicy;
 
   // Help info
-  const char * const help;
+  const std::string help;
 
-  const char * const exeName;
+  const std::string exeName;
 
   // option key mapping to target tool
   const std::vector<std::string> extras;

@@ -16,6 +16,7 @@
 #define MAPLE_IR_INCLUDE_MIR_NODES_H
 #include <sstream>
 #include <utility>
+#include <atomic>
 #include "opcodes.h"
 #include "opcode_info.h"
 #include "mir_type.h"
@@ -459,6 +460,16 @@ class IreadNode : public UnaryNode {
     return *base;
   }
 
+  bool IsVolatile() const {
+    MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
+    ASSERT(type != nullptr, "null ptr check");
+    if (fieldID == 0) {
+      return (type->HasVolatileField());
+    }
+    ASSERT(type->IsStructType(), "Agg type check");
+    auto *structType = static_cast<MIRStructType*>(type);
+    return structType->IsFieldVolatile(fieldID);
+  }
  protected:
   TyIdx tyIdx = TyIdx(0);
   FieldID fieldID = 0;
@@ -1218,6 +1229,7 @@ class AddrofNode : public BaseNode {
     fieldID = fieldIDVal;
   }
 
+  bool IsVolatile(const MIRModule &mod) const;
  private:
   StIdx stIdx;
   FieldID fieldID = 0;
@@ -1389,8 +1401,8 @@ class SrcPosition {
 // membarstoreload, membarstorestore
 class StmtNode : public BaseNode, public PtrListNodeBase<StmtNode> {
  public:
-  static uint32 stmtIDNext;          // for assigning stmtID, initialized to 1; 0 is reserved
-  static uint32 lastPrintedLineNum;  // used during printing ascii output
+  static std::atomic<uint32> stmtIDNext;  // for assigning stmtID, initialized to 1; 0 is reserved
+  static uint32 lastPrintedLineNum;       // used during printing ascii output
 
   explicit StmtNode(Opcode o) : BaseNode(o), PtrListNodeBase(), stmtID(stmtIDNext) {
     ++stmtIDNext;

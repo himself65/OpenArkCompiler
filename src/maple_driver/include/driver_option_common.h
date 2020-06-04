@@ -44,7 +44,7 @@ enum DriverOptionIndex {
 class MapleDriverOptionBase {
  public:
   void CreateUsages(const mapleOption::Descriptor usage[]) {
-    for (size_t i = 0; usage[i].help != nullptr; ++i) {
+    for (size_t i = 0; usage[i].help != ""; ++i) {
       usageVec.push_back(usage[i]);
     }
   }

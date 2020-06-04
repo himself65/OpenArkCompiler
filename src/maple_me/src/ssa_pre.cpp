@@ -1171,7 +1171,8 @@ bool SSAPre::DefVarDominateOcc(const MeExpr *meExpr, const MeOccur &meOcc) const
     auto *varMeExpr = static_cast<const VarMeExpr*>(meExpr);
     switch (varMeExpr->GetDefBy()) {
       case kDefByNo:
-        return true;  // it's an original variable which dominates everything
+        // zero version vst dominate everything
+        return ssaTab->IsInitVersion(varMeExpr->GetVstIdx(), varMeExpr->GetOStIdx());
       case kDefByStmt: {
         MeStmt *meStmt = varMeExpr->GetDefStmt();
         CHECK_FATAL(meStmt != nullptr, "should have a def meStmt");
@@ -1335,7 +1336,7 @@ MeRealOcc *SSAPre::CreateRealOcc(MeStmt &meStmt, int seqStmt, MeExpr &meExpr, bo
     auto *ptrMIRType = static_cast<MIRPtrType*>(mirType);
     FieldID fieldId = ivarMeExpr->GetFieldID();
     TyIdxFieldAttrPair fldPair = ptrMIRType->GetPointedTyIdxFldAttrPairWithFieldID(fieldId);
-    MIRType *ty = GlobalTables::GetTypeTable().GetTypeTable().at(fldPair.first);
+    MIRType *ty = GlobalTables::GetTypeTable().GetTypeFromTyIdx(fldPair.first);
     bool isFinal = fldPair.second.GetAttr(FLDATTR_final);
     wkCand->SetNeedLocalRefVar(ty->GetPrimType() == PTY_ref && !isFinal);
   }

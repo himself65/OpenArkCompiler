@@ -245,7 +245,7 @@ def do_prepare(components, info, maple_root):
     maple_out_path = maple_root + "/output"
     maple_out_lib_path = maple_out_path + "/ops"
     maple_out_bin_path = maple_out_path + "/bin/"
-    gnu_bin_path = maple_root + "/tools/clang_llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/bin/"
+    gnu_bin_path = maple_root + "/tools/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04/bin/"
     javac_options = "-g -d . "
     jar_options = "-cvf "
     as_options = "-g3 -O2 -x assembler-with-cpp -march=armv8-a -target aarch64-linux-gnu -c "

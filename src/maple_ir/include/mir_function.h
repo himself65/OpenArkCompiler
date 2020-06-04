@@ -846,7 +846,7 @@ class MIRFunction {
   // the word at location (%%FP - N*4)) has
   // typetag; if yes, the typetag is the word
   // at (%%FP - N*4 + 4); the bitvector's size
-  // is given by BlockSize2BitvectorSize(framesize)
+  // is given by BlockSize2BitvectorSize(frameSize)
   uint8 *formalWordsRefCounted = nullptr;  // bit vector where the Nth bit tells whether
   // the Nth word in the formal parameters area
   // addressed upward from %%FP (that means
@@ -860,7 +860,7 @@ class MIRFunction {
   // the word at location (%%FP - N*4)) points to
   // a dynamic memory block that needs reference
   // count; the bitvector's size is given by
-  // BlockSize2BitvectorSize(framesize)
+  // BlockSize2BitvectorSize(frameSize)
   // uint16 numlabels; // removed. label table size
   // StmtNode **lbl2stmt; // lbl2stmt table, removed;
   // to hold unmangled class and function names

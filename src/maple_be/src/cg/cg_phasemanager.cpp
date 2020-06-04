@@ -16,6 +16,15 @@
 #include <vector>
 #include <string>
 #include "cg_option.h"
+#include "ebo.h"
+#include "cfgo.h"
+#include "ico.h"
+#include "reaching.h"
+#include "schedule.h"
+#include "global.h"
+#include "strldr.h"
+#include "peep.h"
+#include "aarch64_fixshortbranch.h"
 #include "live.h"
 #include "loop.h"
 #include "mpl_timer.h"
@@ -42,7 +51,7 @@ void CgFuncPhaseManager::RunFuncPhase(CGFunc &func, FuncPhase &phase) {
   AnalysisResult *analysisRes = nullptr;
   if ((func.NumBBs() > 0) || (phase.GetPhaseID() == kCGFuncPhaseEMIT)) {
     analysisRes = phase.Run(&func, &arFuncManager);
-    phase.ReleaseMemPool(analysisRes == nullptr ? nullptr : analysisRes->GetMempool());
+    phase.ClearMemPoolsExcept(analysisRes == nullptr ? nullptr : analysisRes->GetMempool());
   }
 
   if (analysisRes != nullptr) {
@@ -63,7 +72,6 @@ void CgFuncPhaseManager::RegisterFuncPhases() {
     RegisterPhase(id, *(new (GetMemAllocator()->GetMemPool()->Malloc(sizeof(cgPhase(id)))) cgPhase(id))); \
     arFuncManager.AddAnalysisPhase(id, (static_cast<FuncPhase*>(GetPhase(id))));                          \
   } while (0);
-
 #include "cg_phases.def"
 #undef FUNCTPHASE
 #undef FUNCAPHASE
@@ -86,9 +94,56 @@ void CgFuncPhaseManager::AddPhases(std::vector<std::string> &phases) {
       ADDPHASE("handlefunction");
       ADDPHASE("moveargs");
 
+      if (CGOptions::DoEBO()) {
+        ADDPHASE("ebo");
+      }
+      if (CGOptions::DoPrePeephole()) {
+        ADDPHASE("prepeephole");
+      }
+      if (CGOptions::DoICO()) {
+        ADDPHASE("ico");
+      }
+      if (CGOptions::DoCFGO()) {
+        ADDPHASE("cfgo");
+      }
+
+      if (JAVALANG && CGOptions::DoStoreLoadOpt()) {
+        ADDPHASE("storeloadopt");
+      }
+
+      if (CGOptions::DoGlobalOpt()) {
+        ADDPHASE("globalopt");
+      }
+
+      if ((JAVALANG && CGOptions::DoStoreLoadOpt()) || CGOptions::DoGlobalOpt()) {
+        ADDPHASE("clearrdinfo");
+      }
+
+      if (CGOptions::DoPrePeephole()) {
+        ADDPHASE("prepeephole1");
+      }
+
+      if (CGOptions::DoEBO()) {
+        ADDPHASE("ebo1");
+      }
+
       ADDPHASE("regalloc");
       ADDPHASE("generateproepilog");
       ADDPHASE("offsetadjustforfplr");
+
+      if (CGOptions::DoPeephole()) {
+        ADDPHASE("peephole0");
+      }
+
+      if (CGOptions::DoEBO()) {
+        ADDPHASE("postebo");
+      }
+      if (CGOptions::DoCFGO()) {
+        ADDPHASE("postcfgo");
+      }
+      if (CGOptions::DoPeephole()) {
+        ADDPHASE("peephole");
+      }
 
       if (!CLANG) {
         ADDPHASE("gencfi");
@@ -96,6 +151,12 @@ void CgFuncPhaseManager::AddPhases(std::vector<std::string> &phases) {
       if (JAVALANG && CGOptions::IsInsertYieldPoint()) {
         ADDPHASE("yieldpoint");
       }
+
+      if (CGOptions::DoSchedule()) {
+        ADDPHASE("scheduling");
+      }
+      ADDPHASE("fixshortbranch");
+
       ADDPHASE("emit");
     }
   }

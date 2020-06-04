@@ -85,7 +85,7 @@ void RCLowering::MarkAllRefOpnds() {
       if (rhs == nullptr) {
         continue;
       }
-      if (rhs->PointsToSomethingThatNeedsIncRef()) {
+      if (rhs->PointsToSomethingThatNeedsIncRef(ssaTab)) {
         stmt.EnableNeedIncref();
       } else {
         stmt.DisableNeedIncref();

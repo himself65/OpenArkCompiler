@@ -131,7 +131,7 @@ class DefPoint {
     if (defKind == kDefByPi) {
       return value.pi->GetRHS();
     } else {
-      return static_cast<VarMeExpr *>(value.phi->GetOpnd(0));
+      return static_cast<VarMeExpr*>(value.phi->GetOpnd(0));
     }
   }
 
@@ -139,7 +139,7 @@ class DefPoint {
     if (defKind == kDefByPi) {
       return value.pi->GetLHS();
     } else {
-      return  static_cast<VarMeExpr *>(value.phi->GetLHS());
+      return  static_cast<VarMeExpr*>(value.phi->GetLHS());
     }
   }
 

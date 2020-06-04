@@ -281,7 +281,7 @@ class ESSAPhiNode : public ESSABaseNode {
 
   void SetPhiOpnds(MapleVector<ScalarMeExpr*> &nodes) {
     for (auto iter = nodes.begin(); iter != nodes.end(); ++iter) {
-      phiOpnds.push_back(static_cast<VarMeExpr *>(*iter));
+      phiOpnds.push_back(static_cast<VarMeExpr*>(*iter));
     }
   }
   const std::multimap<ESSABaseNode*, InequalEdge*, ESSABaseNodeComparator> &GetInPhiEdgeMap() const {

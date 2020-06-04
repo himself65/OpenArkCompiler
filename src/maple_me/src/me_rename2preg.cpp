@@ -343,11 +343,11 @@ class SSARename2Preg {
   }
 
   // update regphinode operands
-  void UpdateRegPhi(const RegMeExpr &curRegExpr, const MapleVector<ScalarMeExpr *> &phiNodeOpnds,
+  void UpdateRegPhi(const RegMeExpr &curRegExpr, const MapleVector<ScalarMeExpr*> &phiNodeOpnds,
                     MePhiNode &regPhiNode) const {
     PregCache &pregCache = cacheProxy.Preg();
     for (ScalarMeExpr *phiOpnd : phiNodeOpnds) {
-      const VarMeExpr&varExpr = utils::ToRef(static_cast<VarMeExpr *>(phiOpnd));
+      const VarMeExpr&varExpr = utils::ToRef(static_cast<VarMeExpr*>(phiOpnd));
       RegMeExpr &regExpr = pregCache.CloneRegExprIfNotExist(varExpr, [&curRegExpr](MeIRMap &irMap) {
         return irMap.CreateRegMeExprVersion(curRegExpr);
       });

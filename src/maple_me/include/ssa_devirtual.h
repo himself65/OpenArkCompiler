@@ -26,7 +26,7 @@ class SSADevirtual {
  public:
   static bool debug;
   SSADevirtual(MemPool &memPool, MIRModule &currMod, IRMap &irMap, KlassHierarchy &currKh,
-               Dominance &currDom, size_t bbVecSize)
+               Dominance &currDom, size_t bbVecSize, bool skipReturnTypeOpt)
       : devirtualAlloc(&memPool),
         mod(&currMod),
         irMap(&irMap),
@@ -40,10 +40,11 @@ class SSADevirtual {
         optedVirtualCalls(0),
         totalInterfaceCalls(0),
         optedInterfaceCalls(0),
-        nullCheckCount(0) {}
+        nullCheckCount(0),
+        skipReturnTypeOpt(skipReturnTypeOpt) {}
   SSADevirtual(MemPool &memPool, MIRModule &currMod, IRMap &irMap, KlassHierarchy &currKh,
-               Dominance &currDom, size_t bbVecSize, Clone &currClone)
-      : SSADevirtual(memPool, currMod, irMap, currKh, currDom, bbVecSize) {
+               Dominance &currDom, size_t bbVecSize, Clone &currClone, bool skipReturnTypeOpt)
+      : SSADevirtual(memPool, currMod, irMap, currKh, currDom, bbVecSize, skipReturnTypeOpt) {
     clone = &currClone;
   }
 
@@ -93,6 +94,7 @@ class SSADevirtual {
   unsigned int totalInterfaceCalls;
   unsigned int optedInterfaceCalls;
   unsigned int nullCheckCount;
+  const bool skipReturnTypeOpt = false; // whether skip return type optimization, true if running me phases in parallel
 };
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_SSADEVIRTUAL_H

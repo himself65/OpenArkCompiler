@@ -353,7 +353,7 @@ void MeABC::ReplacePiPhiInSuccs(BB &bb, VarMeExpr &newVar) {
     auto it2 = phiList.find(newVar.GetOStIdx());
     if (it2 != phiList.end()) {
       MePhiNode *phi = it2->second;
-      ScalarMeExpr*oldVar = phi->GetOpnd(index);
+      ScalarMeExpr *oldVar = phi->GetOpnd(index);
       phi->SetOpnd(index, &newVar);
       if (!phi->IsPiAdded()) {
         if (modifiedPhi.find(phi) == modifiedPhi.end()) {
@@ -596,7 +596,6 @@ void MeABC::RemoveExtraNodes() {
       }
     }
   }
-  memPoolCtrler.DeleteMemPool(memPool);
 }
 
 bool MeABC::IsVirtualVar(const VarMeExpr &var, const SSATab &ssaTab) const {
@@ -632,8 +631,8 @@ void MeABC::BuildPhiInGraph(MePhiNode &phi) {
     }
     return;
   }
-  VarMeExpr *lhsExpr = static_cast<VarMeExpr *>(phi.GetLHS());
-  if (lhsExpr !=nullptr && IsVirtualVar(*lhsExpr, irMap->GetSSATab())) {
+  VarMeExpr *lhsExpr = static_cast<VarMeExpr*>(phi.GetLHS());
+  if (lhsExpr != nullptr && IsVirtualVar(*lhsExpr, irMap->GetSSATab())) {
     return;
   }
   for (ScalarMeExpr *phiRHS : phi.GetOpnds()) {
@@ -1367,7 +1366,7 @@ AnalysisResult *MeDoABCOpt::Run(MeFunction *func, MeFuncResultMgr *frm, ModuleRe
   CHECK_FATAL(dom != nullptr, "dominance phase has problem");
   auto *irMap = static_cast<MeIRMap*>(frm->GetAnalysisResult(MeFuncPhase_IRMAP, func));
   CHECK_FATAL(irMap != nullptr, "irMap phase has problem");
-  MemPool *abcoMemPool = memPoolCtrler.NewMemPool(PhaseName());
+  MemPool *abcoMemPool = NewMemPool();
   MeABC meABC(*func, *dom, *irMap, *abcoMemPool);
   meABC.ExecuteABCO();
   if (DEBUGFUNC(func)) {

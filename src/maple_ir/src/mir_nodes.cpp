@@ -24,7 +24,7 @@
 
 namespace maple {
 MIRModule *theMIRModule = nullptr;
-uint32 StmtNode::stmtIDNext = 1;  // 0 is reserved
+std::atomic<uint32> StmtNode::stmtIDNext(1);  // 0 is reserved
 uint32 StmtNode::lastPrintedLineNum = 0;
 
 const char *GetIntrinsicName(MIRIntrinsicID intrn) {
@@ -131,6 +131,12 @@ bool AddrofNode::CheckNode(const MIRModule &mod) const {
     default:
       return false;
   }
+}
+
+bool AddrofNode::IsVolatile(const MIRModule &mod) const {
+  auto *symbol = mod.CurFunction()->GetLocalOrGlobalSymbol(stIdx);
+  ASSERT(symbol != nullptr, "null ptr check on symbol");
+  return symbol->IsVolatile();
 }
 
 void BlockNode::AddStatement(StmtNode *stmt) {

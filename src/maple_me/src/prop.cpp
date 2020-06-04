@@ -22,13 +22,26 @@ using namespace maple;
 
 const int kPropTreeLevel = 15;  // tree height threshold to increase to
 
-bool IsCvtSafe(PrimType typeA, PrimType typeB) {
-  if (GetPrimTypeSize(typeA) > GetPrimTypeSize(typeB)) {
-    return false;
+// (typeA -> typeB -> typeC) => (typeA -> typeC)
+bool IgnoreInnerTypeCvt(PrimType typeA, PrimType typeB, PrimType typeC) {
+  if (IsPrimitiveInteger(typeA)) {
+    if (IsPrimitiveInteger(typeB)) {
+      if (IsPrimitiveInteger(typeC)) {
+        return GetPrimTypeSize(typeB) >= GetPrimTypeSize(typeA) || GetPrimTypeSize(typeB) >= GetPrimTypeSize(typeC);
+      } else if (IsPrimitiveFloat(typeC)) {
+        return GetPrimTypeSize(typeB) >= GetPrimTypeSize(typeA);
+      }
+    } else if (IsPrimitiveFloat(typeB)) {
+      if (IsPrimitiveFloat(typeC)) {
+        return GetPrimTypeSize(typeB) >= GetPrimTypeSize(typeC);
+      }
+    }
+  } else if (IsPrimitiveFloat(typeA)) {
+    if (IsPrimitiveFloat(typeB) && IsPrimitiveFloat(typeC)) {
+      return GetPrimTypeSize(typeB) >= GetPrimTypeSize(typeA) || GetPrimTypeSize(typeB) >= GetPrimTypeSize(typeC);
+    }
   }
-
-  return (IsPrimitiveInteger(typeA) && IsPrimitiveInteger(typeB)) ||
-         (IsPrimitiveFloat(typeA) && IsPrimitiveFloat(typeB));
+  return false;
 }
 } // namespace
 
@@ -64,17 +77,14 @@ MeExpr *Prop::SimplifyCvtMeExpr(const OpMeExpr &opMeExpr) const {
   // convert a convert expr
   if (opnd0->GetOp() == OP_cvt) {
     auto *cvtOpnd0 = static_cast<OpMeExpr*>(opnd0);
-    // "cvt type1 type2 (cvt type2 type3 (expr ))" can be simplified to "cvt type1 type3 expr" when:
-    // 1. converting type3 to type2 is safe;
-    // 2. converting type1 to type2 is safe;
-    // Otherwise, deleting the cvt of cvtOpnd0 may result in information loss.
-    if (IsCvtSafe(cvtOpnd0->GetOpnd(0)->GetPrimType(), cvtOpnd0->GetPrimType()) &&
-        IsCvtSafe(opMeExpr.GetPrimType(), cvtOpnd0->GetPrimType())) {
-      return irMap.CreateMeExprTypeCvt(opMeExpr.GetPrimType(), cvtOpnd0->GetOpndType(),
-          utils::ToRef(cvtOpnd0->GetOpnd(0)));
+    // simplify "cvt type1 type2 (cvt type2 type3 (expr ))" to "cvt type1 type3 expr"
+    auto typeA = cvtOpnd0->GetOpnd(0)->GetPrimType();
+    auto typeB = cvtOpnd0->GetPrimType();
+    auto typeC = opMeExpr.GetPrimType();
+    if (IgnoreInnerTypeCvt(typeA, typeB, typeC)) {
+      return irMap.CreateMeExprTypeCvt(typeC, typeA, utils::ToRef(cvtOpnd0->GetOpnd(0)));
     }
   }
-
   return nullptr;
 }
 
@@ -119,32 +129,56 @@ MeExpr *Prop::SimplifyCompareSelectConstMeExpr(const OpMeExpr &opMeExpr, const M
   return irMap.HashMeExpr(newopMeExpr);
 }
 
-MeExpr *Prop::SimplifyCompareMeExpr(OpMeExpr &opMeExpr) const {
+MeExpr *Prop::SimplifyCompareConstWithAddress(const OpMeExpr &opMeExpr) const {
   MeExpr *opnd0 = opMeExpr.GetOpnd(0);
   MeExpr *opnd1 = opMeExpr.GetOpnd(1);
-
-
   Opcode opcode = opMeExpr.GetOp();
   bool isNeOrEq = (opcode == OP_ne || opcode == OP_eq);
-
-  // compare constant with addrof
-  if (isNeOrEq && ((opnd0->GetMeOp() == kMeOpAddrof && opnd1->GetMeOp() == kMeOpConst) ||
-                   (opnd0->GetMeOp() == kMeOpConst && opnd1->GetMeOp() == kMeOpAddrof))) {
+  if (isNeOrEq) {
     MIRConst *constOpnd = nullptr;
-    if (opnd0->GetMeOp() == kMeOpAddrof) {
-      constOpnd = static_cast<ConstMeExpr*>(opnd1)->GetConstVal();
-    } else {
-      constOpnd = static_cast<ConstMeExpr*>(opnd0)->GetConstVal();
+    if (opnd0->GetMeOp() == kMeOpAddrof && opnd1->GetMeOp() == kMeOpConst) {
+      constOpnd = static_cast<ConstMeExpr *>(opnd1)->GetConstVal();
+    } else if (opnd0->GetMeOp() == kMeOpConst && opnd1->GetMeOp() == kMeOpAddrof) {
+      constOpnd = static_cast<ConstMeExpr *>(opnd0)->GetConstVal();
     }
-    if (constOpnd->IsZero()) {
+
+    if (constOpnd != nullptr && constOpnd->IsZero()) {
       // addrof will not be zero, so this comparison can be replaced with a constant
-      auto *resConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(static_cast<int64>(opcode == OP_ne),
-          utils::ToRef(GlobalTables::GetTypeTable().GetUInt1()));
+      auto *resConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(
+          static_cast<int64>(opcode == OP_ne), utils::ToRef(GlobalTables::GetTypeTable().GetUInt1()));
       return irMap.CreateConstMeExpr(opMeExpr.GetPrimType(), *resConst);
     }
-    return nullptr;
+  }
+  return nullptr;
+}
+
+MeExpr *Prop::SimplifyCompareWithZero(const OpMeExpr &opMeExpr) const {
+  Opcode opcode = opMeExpr.GetOp();
+  MeExpr *opnd0 = opMeExpr.GetOpnd(0);
+  MeExpr *opnd1 = opMeExpr.GetOpnd(1);
+  if (opnd0->GetOp() == OP_cmp && opnd1->GetMeOp() == kMeOpConst) {
+    auto *constVal = static_cast<ConstMeExpr*>(opnd1)->GetConstVal();
+    if (constVal->GetKind() == kConstInt && constVal->IsZero()) {
+      auto *subOpnd0 = opnd0->GetOpnd(0);
+      auto *subOpnd1 = opnd0->GetOpnd(1);
+      return irMap.CreateMeExprCompare(opcode, PTY_u1, subOpnd0->GetPrimType(), *subOpnd0, *subOpnd1);
+    }
+  }
+  return nullptr;
+}
+
+MeExpr *Prop::SimplifyCompareMeExpr(OpMeExpr &opMeExpr) const {
+
+  // compare constant with addrof
+  auto *newOpExpr = SimplifyCompareConstWithAddress(opMeExpr);
+  if (newOpExpr != nullptr) {
+    return newOpExpr;
   }
 
+  MeExpr *opnd0 = opMeExpr.GetOpnd(0);
+  MeExpr *opnd1 = opMeExpr.GetOpnd(1);
+  Opcode opcode = opMeExpr.GetOp();
+  bool isNeOrEq = (opcode == OP_ne || opcode == OP_eq);
   // compare select (a ? b : c) with constant 0 or 1
   if (isNeOrEq && opnd0->GetOp() == OP_select &&
       (opnd1->GetMeOp() == kMeOpConst && IsPrimitivePureScalar(opnd1->GetPrimType()))) {
@@ -159,6 +193,11 @@ MeExpr *Prop::SimplifyCompareMeExpr(OpMeExpr &opMeExpr) const {
     return SimplifyCompareSelectConstMeExpr(opMeExpr, *opMeOpnd0, *opnd1, *opnd01, *opnd02);
   }
 
+  // compare compareRes with zero
+  newOpExpr = SimplifyCompareWithZero(opMeExpr);
+  if (newOpExpr != nullptr) {
+    return newOpExpr;
+  }
   return nullptr;
 }
 

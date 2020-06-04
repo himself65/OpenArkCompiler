@@ -330,7 +330,7 @@ void SSADevirtual::PropIvarInferredType(IvarMeExpr &ivar) const {
 
 void SSADevirtual::VisitVarPhiNode(MePhiNode &varPhi) const {
   MapleVector<ScalarMeExpr*> opnds = varPhi.GetOpnds();
-  VarMeExpr *lhs = static_cast<VarMeExpr *>(varPhi.GetLHS());
+  VarMeExpr *lhs = static_cast<VarMeExpr*>(varPhi.GetLHS());
 
   // RegPhiNode cases NYI
   if (lhs == nullptr)
@@ -338,7 +338,7 @@ void SSADevirtual::VisitVarPhiNode(MePhiNode &varPhi) const {
   
   const MapleVector<TyIdx> &inferredTypeCandidates = lhs->GetInferredTypeCandidates();
   for (size_t i = 0; i < opnds.size(); ++i) {
-    VarMeExpr *opnd = static_cast<VarMeExpr *>(opnds[i]);
+    VarMeExpr *opnd = static_cast<VarMeExpr*>(opnds[i]);
     PropVarInferredType(*opnd);
     if (opnd->GetInferredTyIdx() != 0u) {
       size_t j = 0;
@@ -633,7 +633,7 @@ void SSADevirtual::Perform(BB &entryBB) {
   if (mirFunc == nullptr) {
     return;  // maybe wpo
   }
-  if (retTy == kSeen) {
+  if (!skipReturnTypeOpt && retTy == kSeen) {
     mirFunc->SetInferredReturnTyIdx(this->inferredRetTyIdx);
   }
   // Simple rule: if method's declared returning type is a final class, then
