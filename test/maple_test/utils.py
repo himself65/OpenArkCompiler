@@ -20,6 +20,9 @@ import locale
 import os
 import sys
 import timeit
+import re
+import platform
+import shlex
 from functools import wraps
 from pathlib import Path
 
@@ -198,3 +201,23 @@ def merge_result(multi_results):
         if result in UNSUCCESSFUL:
             return result
     return PASS
+
+
+def escape(special_chars, original_string):
+    special_re = re.compile(
+        "(" + "|".join(re.escape(char) for char in list(special_chars)) + ")"
+    )
+    special_map = {char: "\\%s" % char for char in special_chars}
+
+    def escape_special_char(m):
+        char = m.group(1)
+        return special_map[char]
+
+    return special_re.sub(escape_special_char, original_string)
+
+
+def quote(original_string):
+    if platform.system() == "Windows":
+        return '"' + escape('\\"', original_string) + '"'
+    else:
+        return shlex.quote(original_string)

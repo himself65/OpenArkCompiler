@@ -43,6 +43,7 @@ from maple_test.utils import (
     ls_all,
     complete_path,
     is_relative,
+    quote,
 )
 
 
@@ -544,7 +545,7 @@ class SingleTask:
         for command in case.commands:
             command = self._form_line(command, config)
             compare_cmd = " {} {} --comment={} ".format(
-                EXECUTABLE, COMPARE, shlex.quote(case.comment)
+                EXECUTABLE, COMPARE, quote(case.comment)
             )
             self.commands.append(format_compare_command(command, compare_cmd))
 
