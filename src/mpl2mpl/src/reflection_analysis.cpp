@@ -88,6 +88,7 @@ constexpr char kPaddingStr[] = "padding";
 constexpr char kInstanceOfCacheFalseStr[] = "instanceOfCacheFalse";
 #endif // ~USE_32BIT_REF
 constexpr char kTypeNameStr[] = "typeName";
+constexpr char kPClassTypeStr[] = "pClassType";
 constexpr char kClassNameStr[] = "classname";
 constexpr char kFieldNameStr[] = "fieldname";
 constexpr char kAccessFlags[] = "accessFlags";
@@ -144,6 +145,36 @@ std::string ReflectionAnalysis::strTabStartHot = std::string(1, '\0');
 std::string ReflectionAnalysis::strTabBothHot = std::string(1, '\0');
 std::string ReflectionAnalysis::strTabRunHot = std::string(1, '\0');
 bool ReflectionAnalysis::strTabInited = false;
+
+void ReflectionAnalysis::GenFieldTypeClassInfo(const MIRType &type, const Klass &klass, std::string &classInfo,
+                         const std::string fieldName, bool &isClass) {
+  switch (type.GetKind()) {
+    case kTypeScalar: {
+      isClass = false;
+      break;
+    }
+    case kTypePointer: {
+      auto *ptype = static_cast<const MIRPtrType&>(type).GetPointedType();
+      CHECK_NULL_FATAL(ptype);
+      if (ptype->GetKind() == kTypeArray || ptype->GetKind() == kTypeJArray ||
+          ptype->GetKind() == kTypeClassIncomplete || ptype->GetKind() == kTypeInterfaceIncomplete) {
+        isClass = false;
+      } else if (ptype->GetKind() == kTypeByName || ptype->GetKind() == kTypeClass ||
+                 ptype->GetKind() == kTypeInterface || ptype->GetKind() == kTypeConstString) {
+        MIRStructType *classTypeSecond = static_cast<MIRStructType*>(ptype);
+        classInfo = CLASSINFO_PREFIX_STR + classTypeSecond->GetName();
+        isClass = true;
+      } else {
+        CHECK_FATAL(false, "In class %s: field %s 's type is UNKNOWN", klass.GetKlassName().c_str(),
+                    fieldName.c_str());
+      }
+      break;
+    }
+    default: {
+      CHECK_FATAL(false, "In class %s: field %s 's type is UNKNOWN", klass.GetKlassName().c_str(), fieldName.c_str());
+    }
+  }
+}
 
 bool ReflectionAnalysis::IsMemberClass(const std::string &annotationString) {
   uint32_t idx = ReflectionAnalysis::FindOrInsertReflectString(kEnclosingClassStr);
@@ -450,7 +481,7 @@ void ReflectionAnalysis::ConvertMethodSig(std::string &signature) {
   size_t signatureSize = signature.size();
   for (size_t i = 1; i < signatureSize; ++i) {
     if (signature[i] == 'L') {
-      while (signature[++i] != ';') {} // eg. Ljava/io/InputStream; so we do not check the boundary.
+      while (++i < signatureSize && signature[i] != ';') {}
     } else if (signature[i] == 'A') {
       signature[i] = '[';
     }
@@ -504,7 +535,14 @@ uint16 GetFieldHash(const std::vector<std::pair<FieldPair, uint16>> &fieldV, con
 
 MIRSymbol *ReflectionAnalysis::GetOrCreateSymbol(const std::string &name, TyIdx tyIdx, bool needInit = false) {
   const GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(name);
-  MIRSymbol *st = GetSymbol(strIdx, tyIdx);
+  MIRSymbol *st;
+  std::string symbolOfJavaLangString(NameMangler::kJavaLangStringStr);
+  if (name == CLASSINFO_PREFIX_STR + symbolOfJavaLangString) {
+    // Previous String Symbol have been generated in dex2mpl, so this Symbol won't create again here
+    st = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(strIdx);
+  } else {
+    st = GetSymbol(strIdx, tyIdx);
+  }
   if (st != nullptr && !needInit) {
     // Previous symbol is a forward declaration, create a new symbol for definiton.
     return st;
@@ -898,24 +936,34 @@ MIRSymbol *ReflectionAnalysis::GenFieldOffsetData(const Klass &klass, std::pair<
   return fieldsOffsetSt;
 }
 
-MIRSymbol *ReflectionAnalysis::GenSuperClassMetaData(const Klass &klass, std::list<Klass*> superClassList) {
+MIRSymbol *ReflectionAnalysis::GenSuperClassMetaData(std::list<Klass*> superClassList) {
   MIRModule &module = *mirModule;
   size_t size = superClassList.size();
   auto &superclassMetadataType =
       static_cast<MIRStructType&>(*GlobalTables::GetTypeTable().GetTypeFromTyIdx(superclassMetadataTyIdx));
   MIRArrayType &arrayType = *GlobalTables::GetTypeTable().GetOrCreateArrayType(superclassMetadataType, size);
-  MIRAggConst *aggconst = module.GetMemPool()->New<MIRAggConst>(module, arrayType);
-  for (auto it = superClassList.begin(); it != superClassList.end(); ++it) {
-    MIRSymbol *dklassSt = GetOrCreateSymbol(CLASSINFO_PREFIX_STR + (*it)->GetKlassName(), classMetadataTyIdx);
-    MIRAggConst *newConst = module.GetMemPool()->New<MIRAggConst>(module, superclassMetadataType);
-    mirBuilder.AddAddrofFieldConst(superclassMetadataType, *newConst, 1, *dklassSt);
-    aggconst->PushBack(newConst);
+  MIRSymbol *superclassArraySt = nullptr;
+
+  auto itFindSuper = superClasesIdxMap.find(superClassList);
+  if (itFindSuper == superClasesIdxMap.end()) {
+    std::string superClassArrayInfo = SUPERCLASSINFO_PREFIX_STR + std::to_string(superClasesIdxMap.size());
+    superClasesIdxMap[superClassList] = superClassArrayInfo;
+
+    MIRAggConst *aggconst = module.GetMemPool()->New<MIRAggConst>(module, arrayType);
+    for (auto it = superClassList.begin(); it != superClassList.end(); ++it) {
+      MIRSymbol *dklassSt = GetOrCreateSymbol(CLASSINFO_PREFIX_STR + (*it)->GetKlassName(), classMetadataTyIdx);
+      MIRAggConst *newConst = module.GetMemPool()->New<MIRAggConst>(module, superclassMetadataType);
+      mirBuilder.AddAddrofFieldConst(superclassMetadataType, *newConst, 1, *dklassSt);
+      aggconst->PushBack(newConst);
+    }
+    superclassArraySt = GetOrCreateSymbol(superClassArrayInfo, arrayType.GetTypeIndex(), true);
+    // Direct access to superclassinfo is only possible within a .so.
+    superclassArraySt->SetStorageClass(kScFstatic);
+    superclassArraySt->SetKonst(aggconst);
+  } else {
+    std::string superClassArrayInfo = superClasesIdxMap[superClassList];
+    superclassArraySt = GetOrCreateSymbol(superClassArrayInfo, arrayType.GetTypeIndex());
   }
-  MIRSymbol *superclassArraySt =
-      GetOrCreateSymbol(SUPERCLASSINFO_PREFIX_STR + klass.GetKlassName(), arrayType.GetTypeIndex(), true);
-  // Direct access to superclassinfo is only possible within a .so.
-  superclassArraySt->SetStorageClass(kScFstatic);
-  superclassArraySt->SetKonst(aggconst);
   return superclassArraySt;
 }
 
@@ -965,7 +1013,7 @@ void ReflectionAnalysis::GenFieldMeta(const Klass &klass, MIRStructType &fieldsI
   mirBuilder.AddIntFieldConst(fieldsInfoType, *newConst, fieldID++, flag);
   // @index
   mirBuilder.AddIntFieldConst(fieldsInfoType, *newConst, fieldID++, idx);
-  // @type
+  // @typeName
   TyIdx fieldTyIdx = fieldP.second.first;
   std::string fieldName = GlobalTables::GetStrTable().GetStringFromStrIdx(fieldP.first);
   MIRType *ty = GlobalTables::GetTypeTable().GetTypeFromTyIdx(fieldTyIdx);
@@ -985,7 +1033,17 @@ void ReflectionAnalysis::GenFieldMeta(const Klass &klass, MIRStructType &fieldsI
   mirBuilder.AddIntFieldConst(fieldsInfoType, *newConst, fieldID++, annotationIdx);
   // @declaring class
   MIRSymbol *dklassSt = GetOrCreateSymbol(CLASSINFO_PREFIX_STR + klass.GetKlassName(), classMetadataTyIdx);
-  mirBuilder.AddAddrofFieldConst(fieldsInfoType, *newConst, fieldID, *dklassSt);
+  mirBuilder.AddAddrofFieldConst(fieldsInfoType, *newConst, fieldID++, *dklassSt);
+  // @class type
+  std::string classInfo;
+  bool isClass = false;
+  GenFieldTypeClassInfo(*ty, klass, classInfo, fieldName, isClass);
+  if (isClass) {
+    MIRSymbol *typeSym = GetOrCreateSymbol(classInfo, classMetadataTyIdx);
+    mirBuilder.AddAddrofFieldConst(fieldsInfoType, *newConst, fieldID, *typeSym);
+  } else {
+    mirBuilder.AddIntFieldConst(fieldsInfoType, *newConst, fieldID, 0);
+  }
   aggConst.GetConstVec().push_back(newConst);
 }
 
@@ -1426,7 +1484,7 @@ void ReflectionAnalysis::GenClassMetaData(Klass &klass) {
 
   size_t superClassSize = superClassList.size();
   if (superClassSize >= 1) {
-    MIRSymbol *superClassSymbolType = GenSuperClassMetaData(klass, superClassList);
+    MIRSymbol *superClassSymbolType = GenSuperClassMetaData(superClassList);
     mirBuilder.AddAddrofFieldConst(classMetadataROType, *newConst, fieldID++, *superClassSymbolType);
   } else {
     mirBuilder.AddIntFieldConst(classMetadataROType, *newConst, fieldID++, 0);
@@ -1688,7 +1746,13 @@ void ReflectionAnalysis::GenMetadataType(MIRModule &mirModule) {
 #endif  // USE_32BIT_REF
   GlobalTables::GetTypeTable().AddFieldToStructType(fieldInfoType, kFieldNameStr, *typeU32);
   GlobalTables::GetTypeTable().AddFieldToStructType(fieldInfoType, kAnnotationStr, *typeU32);
-  GlobalTables::GetTypeTable().AddFieldToStructType(fieldInfoType, kDeclaringclassStr, *GetRefFieldType());
+#ifndef USE_32BIT_REF
+  GlobalTables::GetTypeTable().AddFieldToStructType(fieldInfoType, kDeclaringclassStr, *typeU64);
+  GlobalTables::GetTypeTable().AddFieldToStructType(fieldInfoType, kPClassTypeStr, *typeU64);
+#else
+  GlobalTables::GetTypeTable().AddFieldToStructType(fieldInfoType, kDeclaringclassStr, *typeU32);
+  GlobalTables::GetTypeTable().AddFieldToStructType(fieldInfoType, kPClassTypeStr, *typeU32);
+#endif  // USE_32BIT_REF
   fieldsInfoTyIdx = GenMetaStructType(mirModule, fieldInfoType, kFieldInfoTypeName);
   // FieldInfoType Compact.
   MIRStructType fieldInfoCompactType(kTypeStruct);

@@ -486,8 +486,7 @@ void Options::DecideMpl2MplRealLevel(const std::vector<mapleOption::Option> &inp
   }
 }
 
-bool Options::SolveOptions(const std::vector<Option> &opts,
-                           bool isDebug) const {
+bool Options::SolveOptions(const std::vector<Option> &opts, bool isDebug) const {
   DecideMpl2MplRealLevel(opts);
   bool result = true;
   for (const mapleOption::Option &opt : opts) {
@@ -666,8 +665,7 @@ bool Options::ParseOptions(int argc, char **argv, std::string &fileName) const {
   optionParser.RegisteUsages(Options::GetInstance());
   int ret = optionParser.Parse(argc, argv, "mpl2mpl");
   CHECK_FATAL(ret == kErrorNoError, "option parser error");
-  bool result = SolveOptions(optionParser.GetOptions(),
-                             false);
+  bool result = SolveOptions(optionParser.GetOptions(), false);
   if (!result) {
     return result;
   }

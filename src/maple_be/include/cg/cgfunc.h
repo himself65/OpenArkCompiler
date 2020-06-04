@@ -234,6 +234,7 @@ class CGFunc {
 
   virtual Operand &GetOrCreateRflag() = 0;
   virtual const Operand *GetRflag() const = 0;
+  virtual const Operand *GetFloatRflag() const = 0;
   virtual const LabelOperand *GetLabelOperand(LabelIdx labIdx) const = 0;
   virtual LabelOperand &GetOrCreateLabelOperand(LabelIdx labIdx) = 0;
   virtual LabelOperand &GetOrCreateLabelOperand(BB &bb) = 0;

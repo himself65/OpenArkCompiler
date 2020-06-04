@@ -36,6 +36,8 @@ constexpr maple::uint64 kFromUndefIndexMask = 0x4000000000000000;
 constexpr maple::uint64 kFromDefIndexMask = 0x2000000000000000;
 #endif
 constexpr maple::uint64 KReservedBits = 2u;
+constexpr maple::uint32 kFromUndefIndexMask32Mod = 0x80000000;
+constexpr maple::uint32 kFromDefIndexMask32Mod = 0x40000000;
 
 
 } // namespace
@@ -164,6 +166,16 @@ void MUIDReplacement::CollectFuncAndDataFromGlobalTab() {
     } else if (mirSymbol->GetStorageClass() == kScExtern &&
                (mirSymbol->IsReflectionClassInfo() || mirSymbol->IsStatic())) {
       AddUndefData(mirSymbol);
+    }
+  }
+}
+
+void MUIDReplacement::CollectSuperClassArraySymbolData() {
+  // Iterate global symbols
+  for (size_t i = 0; i < GlobalTables::GetGsymTable().GetSymbolTableSize(); ++i) {
+    MIRSymbol *mirSymbol = GlobalTables::GetGsymTable().GetSymbolFromStidx(i);
+    if ((mirSymbol != nullptr) && mirSymbol->IsReflectionSuperclassInfo()) {
+      (void)superClassArraySymbolSet.insert(mirSymbol);
     }
   }
 }
@@ -887,6 +899,41 @@ void MUIDReplacement::ReplaceAddroffuncConst(MIRConst *&entry, uint32 fieldID, b
   entry = constNode;
 }
 
+void MUIDReplacement::ReplaceFieldTypeTable(const std::string &name) {
+  MIRSymbol *tabSym = GetSymbolFromName(name);
+  if (tabSym == nullptr) {
+    return;
+  }
+  auto *oldConst = safe_cast<MIRAggConst>(tabSym->GetKonst());
+  if (oldConst == nullptr) {
+    return;
+  }
+  for (MIRConst *&oldTabEntry : oldConst->GetConstVec()) {
+    CHECK_NULL_FATAL(oldTabEntry);
+    if (oldTabEntry->GetKind() == kConstAggConst) {
+      uint32 index = static_cast<uint32>(FieldProperty::kPClassType);
+      auto *aggrC = static_cast<MIRAggConst*>(oldTabEntry);
+      CHECK_NULL_FATAL(aggrC->GetConstVecItem(index));
+      if(aggrC->GetConstVecItem(index)->GetKind() == kConstInt) {
+        continue;
+      } else {
+        ReplaceAddrofConst(aggrC->GetConstVecItem(index), true);
+        MIRConstPtr mirConst = aggrC->GetConstVecItem(index);
+        CHECK_NULL_FATAL(mirConst);
+        if (mirConst->GetKind() == kConstInt) {
+          MIRIntConst *newIntConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(
+              static_cast<MIRIntConst*>(mirConst)->GetValue(), mirConst->GetType(), index + 1);
+          aggrC->SetConstVecItem(index, *newIntConst);
+        } else {
+          aggrC->GetConstVecItem(index)->SetFieldID(index + 1);
+        }
+      }
+    } else if (oldTabEntry->GetKind() == kConstAddrof) {
+      ReplaceAddrofConst(oldTabEntry, true);
+    }
+  }
+}
+
 void MUIDReplacement::ReplaceDataTable(const std::string &name) {
   MIRSymbol *tabSym = GetSymbolFromName(name);
   if (tabSym == nullptr) {
@@ -948,7 +995,7 @@ void MUIDReplacement::ReplaceDecoupleKeyTable(MIRAggConst* oldConst) {
   }
 }
 
-void MUIDReplacement::ReplaceAddrofConst(MIRConst *&entry) {
+void MUIDReplacement::ReplaceAddrofConst(MIRConst *&entry, bool muidIndex32Mod) {
   if (entry->GetKind() != kConstAddrof) {
     return;
   }
@@ -963,29 +1010,37 @@ void MUIDReplacement::ReplaceAddrofConst(MIRConst *&entry) {
   MIRIntConst *constNode = nullptr;
   if (addrSym->GetStorageClass() != kScExtern) {
     offset = FindIndexFromDefTable(*addrSym, false);
-    constNode = GlobalTables::GetIntConstTable().GetOrCreateIntConst(GetDefOrUndefOffsetWithMask(offset, true),
-                                                                     voidType);
+    constNode = GlobalTables::GetIntConstTable().GetOrCreateIntConst(GetDefOrUndefOffsetWithMask(offset, true,
+                                                                     muidIndex32Mod), voidType);
   } else {
     offset = FindIndexFromUndefTable(*addrSym, false);
-    constNode = GlobalTables::GetIntConstTable().GetOrCreateIntConst(GetDefOrUndefOffsetWithMask(offset, false),
-                                                                     voidType);
+    constNode = GlobalTables::GetIntConstTable().GetOrCreateIntConst(GetDefOrUndefOffsetWithMask(offset, false,
+                                                                     muidIndex32Mod), voidType);
   }
   entry = constNode;
 }
 
-int64 MUIDReplacement::GetDefOrUndefOffsetWithMask(uint64 offset, bool isDef) const {
+int64 MUIDReplacement::GetDefOrUndefOffsetWithMask(uint64 offset, bool isDef, bool muidIndex32Mod) const {
   if (isDef) {
+    if (muidIndex32Mod) {
+      return static_cast<int64>(static_cast<uint32>(offset) | kFromDefIndexMask32Mod);
+    } else {
 #ifdef USE_ARM32_MACRO
-    return static_cast<int64>((offset << KReservedBits) + kLinkerRefDef);
+      return static_cast<int64>((offset << KReservedBits) + kLinkerRefDef);
 #else
-    return static_cast<int64>(offset | kFromDefIndexMask);
+      return static_cast<int64>(offset | kFromDefIndexMask);
 #endif
+    }
   } else {
+    if (muidIndex32Mod) {
+      return static_cast<int64>(static_cast<uint32>(offset) | kFromUndefIndexMask32Mod);
+    } else {
 #ifdef USE_ARM32_MACRO
-    return static_cast<int64>((offset << KReservedBits) + kLinkerRefUnDef);
+      return static_cast<int64>((offset << KReservedBits) + kLinkerRefUnDef);
 #else
-    return static_cast<int64>(offset | kFromUndefIndexMask);
+      return static_cast<int64>(offset | kFromUndefIndexMask);
 #endif
+    }
   }
 }
 
@@ -1350,6 +1405,7 @@ void MUIDReplacement::GenerateTables() {
   CollectFuncAndDataFromKlasses();
   CollectFuncAndDataFromGlobalTab();
   CollectFuncAndDataFromFuncList();
+  CollectSuperClassArraySymbolData();
   GenerateFuncDefTable();
   GenerateDataDefTable();
   GenerateUnifiedUndefTable();
@@ -1358,9 +1414,14 @@ void MUIDReplacement::GenerateTables() {
   // phase that updates the reflection string table, thus the table
   // is emitted here.
   ReflectionAnalysis::GenStrTab(GetMIRModule());
+
+  // Replace super class array
+  for (auto superArraySymbol : superClassArraySymbolSet) {
+    ReplaceDataTable(superArraySymbol->GetName());
+  }
   // Replace undef entries in vtab/itab/reflectionMetaData
   for (Klass *klass : klassHierarchy->GetTopoSortedKlasses()) {
-    ReplaceDataTable(SUPERCLASSINFO_PREFIX_STR + klass->GetKlassName());
+    ReplaceFieldTypeTable(NameMangler::kFieldsInfoPrefixStr + klass->GetKlassName());
     ReplaceFuncTable(VTAB_PREFIX_STR + klass->GetKlassName());
     ReplaceFuncTable(ITAB_PREFIX_STR + klass->GetKlassName());
     ReplaceFuncTable(ITAB_CONFLICT_PREFIX_STR + klass->GetKlassName());

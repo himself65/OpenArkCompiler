@@ -310,7 +310,7 @@ CGNode *CallGraph::GetCGNode(PUIdx puIdx) const {
 
 SCCNode *CallGraph::GetSCCNode(MIRFunction *func) const {
   CGNode *cgNode = GetCGNode(func);
-  return cgNode != nullptr ? cgNode->GetSCCNode() : nullptr;
+  return (cgNode != nullptr) ? cgNode->GetSCCNode() : nullptr;
 }
 
 bool CallGraph::IsRootNode(MIRFunction *func) const {
@@ -688,6 +688,14 @@ void IPODevirtulize::SearchDefInClinit(const Klass &klass) {
           GCMallocNode *gcmallocNode = static_cast<GCMallocNode*>(dassignNode->GetRHS());
           TyIdx inferredTypeIdx = gcmallocNode->GetTyIdx();
           SetInferredType(gcmallocSymbols, *leftSymbol, inferredTypeIdx);
+        } else if (dassignNode->GetRHS()->GetOpCode() == OP_retype) {
+          if (dassignNode->GetRHS()->Opnd(0)->GetOpCode() == OP_dread) {
+            DreadNode *dreadNode = static_cast<DreadNode*>(dassignNode->GetRHS()->Opnd(0));
+            MIRSymbol *rightSymbol = func->GetLocalOrGlobalSymbol(dreadNode->GetStIdx());
+            if (rightSymbol->GetInferredTyIdx() != kInitTyIdx && rightSymbol->GetInferredTyIdx() != kNoneTyIdx) {
+              SetInferredType(gcmallocSymbols, *leftSymbol, rightSymbol->GetInferredTyIdx());
+            }
+          }
         } else {
           ResetInferredType(gcmallocSymbols, leftSymbol);
         }
@@ -697,7 +705,8 @@ void IPODevirtulize::SearchDefInClinit(const Klass &klass) {
       case OP_callassigned: {
         CallNode *callNode = static_cast<CallNode*>(stmt);
         MIRFunction *calleeFunc = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(callNode->GetPUIdx());
-        if (calleeFunc->GetName().find(NameMangler::kClinitSubStr, 0) != std::string::npos) {
+        if (calleeFunc->GetName().find(NameMangler::kClinitSubStr, 0) != std::string::npos ||
+            calleeFunc->GetName().find("MCC_", 0) == 0) {
           // ignore all side effect of initizlizor
           continue;
         }
@@ -880,6 +889,8 @@ void DoDevirtual(const Klass &klass, const KlassHierarchy &klassh) {
         case OP_assertnonnull:
         case OP_brtrue:
         case OP_brfalse:
+        case OP_try:
+        case OP_endtry:
           break;
         case OP_dassign: {
           DassignNode *dassignNode = static_cast<DassignNode*>(stmt);
@@ -1667,7 +1678,7 @@ MIRFunction *CGNode::HasOneCandidate() const {
       }
     }
   }
-  return count == 1 ? cand : nullptr;
+  return (count == 1) ? cand : nullptr;
 }
 
 AnalysisResult *DoCallGraph::Run(MIRModule *module, ModuleResultMgr *m) {

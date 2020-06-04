@@ -24,7 +24,6 @@
 #include "option.h"
 
 namespace maple {
-
 struct IRProfileDesc {
   uint32 counterStart = 0;
   uint32 counterEnd = 0;
@@ -32,7 +31,6 @@ struct IRProfileDesc {
   IRProfileDesc() = default;
   IRProfileDesc(uint64 hash, uint32 start, uint32 end) : counterStart(start), counterEnd(end), funcHash(hash) {}
 };
-
 
 class Profile {
  public:

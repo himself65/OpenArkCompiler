@@ -18,7 +18,8 @@
 #include <limits>
 #include "mpl_logging.h"
 
-namespace maple { namespace utils {
+namespace maple {
+namespace utils {
 // Operations on char
 constexpr bool IsDigit(char c) {
   return (c >= '0' && c <= '9');

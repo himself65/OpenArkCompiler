@@ -47,7 +47,7 @@ union DigestHash {
   struct {
     uint64_t first;
     uint64_t second;
-  } d;
+  } data;
 };
 
 // muid-related files are shared between maple compiler and runtime, thus not in

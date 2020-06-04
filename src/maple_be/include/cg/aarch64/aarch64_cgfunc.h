@@ -231,6 +231,9 @@ class AArch64CGFunc : public CGFunc {
     return GetOrCreateFpZeroOperand(GetPrimTypeBitSize(ptyp));
   }
 
+  const Operand *GetFloatRflag() const override {
+    return nullptr;
+  }
   /* create an integer immediate operand */
   AArch64ImmOperand &CreateImmOperand(int64 val, uint32 size, bool isSigned, VaryType varyType = kNotVary,
                                       bool isFmov = false) {

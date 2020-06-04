@@ -188,9 +188,9 @@ class Ebo {
   virtual bool IsFmov(const Insn &insn) const = 0;
   virtual bool SpecialSequence(Insn &insn, const MapleVector<OpndInfo*> &origInfos) = 0;
   virtual bool DoConstProp(Insn &insn, uint32 i, Operand &opnd) = 0;
-  virtual bool DoConstantFold(Insn &insn, const MapleVector<Operand*> &opnds) = 0;
-  virtual bool ConstantOperand(Insn &insn, const MapleVector<Operand*> &opnds,
-                               const MapleVector<OpndInfo*> &opndInfo) = 0;
+  virtual bool Csel2Cset(Insn &insn, const MapleVector<Operand*> &opnds) = 0;
+  virtual bool SimplifyConstOperand(Insn &insn, const MapleVector<Operand*> &opnds,
+                                    const MapleVector<OpndInfo*> &opndInfo) = 0;
   virtual int32 GetOffsetVal(const MemOperand &mem) const = 0;
   virtual bool OperandEqSpecial(const Operand &op1, const Operand &op2) const = 0;
   virtual void BuildCallerSaveRegisters() = 0;

@@ -706,7 +706,7 @@
  * stlxr  w2, w3, [xt]
  * cbnz   w2, label
  */
-{MOP_get_and_setI, {mopdReg32ID,mopdReg64ID,mopdReg32ID,mopdReg64IS,mopdReg64IDS,mopdReg32IS,mopdLabel},HASLOOP|CANTHROW,kLtBranch,"intrinsic_get_set_int","0,1,2,3,4",4},
+{MOP_get_and_setI, {mopdReg32ID,mopdReg64ID,mopdReg32ID,mopdReg64IS,mopdReg64IS,mopdReg32IS,mopdLabel},HASLOOP|CANTHROW,kLtBranch,"intrinsic_get_set_int","0,1,2,3,4",4},
 /*
  * intrinsic Unsafe.getAndSetLong
  * intrinsic_get_set_long x0, x1, x2, x3, label
@@ -716,7 +716,7 @@
  * stlxr  w2, x3, [xt]
  * cbnz   w2, label
  */
-{MOP_get_and_setL, {mopdReg64ID,mopdReg64ID,mopdReg32ID,mopdReg64IS,mopdReg64IDS,mopdReg64IS,mopdLabel},HASLOOP|CANTHROW,kLtBranch,"intrinsic_get_set_long","0,1,2,3,4",4},
+{MOP_get_and_setL, {mopdReg64ID,mopdReg64ID,mopdReg32ID,mopdReg64IS,mopdReg64IS,mopdReg64IS,mopdLabel},HASLOOP|CANTHROW,kLtBranch,"intrinsic_get_set_long","0,1,2,3,4",4},
 
 /*
  * intrinsic Unsafe.compareAndSwapInt

@@ -159,26 +159,26 @@ struct MByteRef {
 
 #if defined(__arm__) || defined(USE_ARM32_MACRO)
   // assume address range 0 ~ 256MB is unused in arm runtime
-  // EncodedOffsetMin ~ EncodedOffsetMax is the value range of encoded offset
-  static constexpr intptr_t OffsetBound = 128 * 1024 * 1024;
-  static constexpr intptr_t OffsetMin = -OffsetBound;
-  static constexpr intptr_t OffsetMax = OffsetBound;
+  // kEncodedOffsetMin ~ kEncodedOffsetMax is the value range of encoded offset
+  static constexpr intptr_t kOffsetBound = 128 * 1024 * 1024;
+  static constexpr intptr_t kOffsetMin = -kOffsetBound;
+  static constexpr intptr_t kOffsetMax = kOffsetBound;
 
-  static constexpr intptr_t PositiveOffsetBias = 128 * 1024 * 1024;
-  static constexpr intptr_t EncodedOffsetMin = PositiveOffsetBias + OffsetMin;
-  static constexpr intptr_t EncodedOffsetMax = PositiveOffsetBias + OffsetMax;
+  static constexpr intptr_t kPositiveOffsetBias = 128 * 1024 * 1024;
+  static constexpr intptr_t kEncodedOffsetMin = kPositiveOffsetBias + kOffsetMin;
+  static constexpr intptr_t kEncodedOffsetMax = kPositiveOffsetBias + kOffsetMax;
 #else
   enum {
     kBiasBitPosition = sizeof(refVal) * 8 - 4, // the most significant 4 bits
   };
 
-  static constexpr uintptr_t OffsetBound = 256 * 1024 * 1024; // according to kDsoLoadedAddessEnd = 0xF0000000
-  static constexpr uintptr_t PositiveOffsetMin = 0;
-  static constexpr uintptr_t PositiveOffsetMax = OffsetBound;
+  static constexpr uintptr_t kOffsetBound = 256 * 1024 * 1024; // according to kDsoLoadedAddessEnd = 0xF0000000
+  static constexpr uintptr_t kPositiveOffsetMin = 0;
+  static constexpr uintptr_t kPositiveOffsetMax = kOffsetBound;
 
-  static constexpr uintptr_t PositiveOffsetBias = static_cast<uintptr_t>(6) << kBiasBitPosition;
-  static constexpr uintptr_t EncodedPosOffsetMin = PositiveOffsetMin + PositiveOffsetBias;
-  static constexpr uintptr_t EncodedPosOffsetMax = PositiveOffsetMax + PositiveOffsetBias;
+  static constexpr uintptr_t kPositiveOffsetBias = static_cast<uintptr_t>(6) << kBiasBitPosition;
+  static constexpr uintptr_t kEncodedPosOffsetMin = kPositiveOffsetMin + kPositiveOffsetBias;
+  static constexpr uintptr_t kEncodedPosOffsetMax = kPositiveOffsetMax + kPositiveOffsetBias;
 #endif
 
   template<typename T>
@@ -190,19 +190,19 @@ struct MByteRef {
 
 struct MByteRef32 {
   uint32_t refVal;
-  static constexpr uint32_t OffsetBound = 256 * 1024 * 1024; // according to kDsoLoadedAddessEnd = 0xF0000000
-  static constexpr uint32_t PositiveOffsetMin = 0;
-  static constexpr uint32_t PositiveOffsetMax = OffsetBound;
+  static constexpr uint32_t kOffsetBound = 256 * 1024 * 1024; // according to kDsoLoadedAddessEnd = 0xF0000000
+  static constexpr uint32_t kPositiveOffsetMin = 0;
+  static constexpr uint32_t kPositiveOffsetMax = kOffsetBound;
 
-  static constexpr uint32_t PositiveOffsetBias = 0x60000000; // the most significant 4 bits 0110
-  static constexpr uint32_t EncodedPosOffsetMin = PositiveOffsetMin + PositiveOffsetBias;
-  static constexpr uint32_t EncodedPosOffsetMax = PositiveOffsetMax + PositiveOffsetBias;
+  static constexpr uint32_t kPositiveOffsetBias = 0x60000000; // the most significant 4 bits 0110
+  static constexpr uint32_t kEncodedPosOffsetMin = kPositiveOffsetMin + kPositiveOffsetBias;
+  static constexpr uint32_t kEncodedPosOffsetMax = kPositiveOffsetMax + kPositiveOffsetBias;
 
-  static constexpr uint32_t DirectRefMin = 0xC0000000; // according to kDsoLoadedAddessStart = 0xC0000000
-  static constexpr uint32_t DirectRefMax = 0xF0000000; // according to kDsoLoadedAddessEnd = 0xF0000000
+  static constexpr uint32_t kDirectRefMin = 0xC0000000; // according to kDsoLoadedAddessStart = 0xC0000000
+  static constexpr uint32_t kDirectRefMax = 0xF0000000; // according to kDsoLoadedAddessEnd = 0xF0000000
 
-  static constexpr int32_t NegativeOffsetMin = -OffsetBound;
-  static constexpr int32_t NegativeOffsetMax = 0;
+  static constexpr int32_t kNegativeOffsetMin = -(256 * 1024 * 1024); // -kOffsetBound
+  static constexpr int32_t kNegativeOffsetMax = 0;
 
   template<typename T>
   inline T GetRef() const;
@@ -213,7 +213,7 @@ struct MByteRef32 {
   inline bool IsNegativeOffset() const;
 };
 
-// MethodMeta defined in MethodMeta.h
+// MethodMeta defined in methodmeta.h
 // FieldMeta  defined in FieldMeta.h
 // MethodDesc contains MethodMetadata and stack map
 struct MethodDesc {
@@ -252,7 +252,7 @@ struct ClassMetadataRO {
   DataRefOffset32 clinitAddr;
 };
 
-static constexpr size_t PageSize = 4096;
+static constexpr size_t kPageSize = 4096;
 static constexpr size_t kCacheLine = 64;
 
 // according to kSpaceAnchor and kFireBreak defined in bpallocator.cpp
@@ -280,7 +280,7 @@ enum ClassInitState {
 };
 
 enum SEGVAddr {
-  kSEGVAddrRangeStart            = PageSize + 0,
+  kSEGVAddrRangeStart            = kPageSize + 0,
 
   // Note any readable address is treated as Initialized.
   kSEGVAddrForClassInitStateMin  = kSEGVAddrRangeStart + kClassInitStateMin,

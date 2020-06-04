@@ -16,7 +16,8 @@
 #define MAPLE_UTIL_INCLUDE_META_H
 #include <type_traits>
 
-namespace maple { namespace utils {
+namespace maple {
+namespace utils {
 template <typename T, typename U>
 struct meta_and
     : std::conditional_t<T::value, U, T> {};

@@ -2441,8 +2441,8 @@ StmtNode *CGLowerer::LowerIntrinsiccall(IntrinsiccallNode &intrincall, BlockNode
   }
   /* default lowers intrinsic call to real function call. */
   MIRSymbol *st = GlobalTables::GetGsymTable().CreateSymbol(kScopeGlobal);
-  const std::string name = intrinDesc->name;
   CHECK_FATAL(intrinDesc->name != nullptr, "intrinsic's name should not be nullptr");
+  const std::string name = intrinDesc->name;
   st->SetNameStrIdx(name);
   st->SetStorageClass(kScText);
   st->SetSKind(kStFunc);

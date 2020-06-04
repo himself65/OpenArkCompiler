@@ -101,10 +101,8 @@ MIRFunction *Clone::CloneFunction(MIRFunction &originalFunction, const std::stri
   }
   std::string fullName = originalFunction.GetBaseClassName();
   const std::string &signature = originalFunction.GetSignature();
-  fullName = fullName.append(NameMangler::kNameSplitterStr)
-                     .append(newBaseFuncName)
-                     .append(NameMangler::kNameSplitterStr)
-                     .append(signature);
+  fullName = fullName.append(
+      NameMangler::kNameSplitterStr).append(newBaseFuncName).append(NameMangler::kNameSplitterStr).append(signature);
   MIRFunction *newFunc =
       dexBuilder.CreateFunction(fullName, *retType, argument, false, originalFunction.GetBody() != nullptr);
   CHECK_FATAL(newFunc != nullptr, "create cloned function failed");
