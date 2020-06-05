@@ -140,12 +140,12 @@ void AArch64Ebo::BuildCallerSaveRegisters() {
   }
   for (uint32 i = V1; i <= V7; i++) {
     RegOperand &phyOpnd =
-        a64CGFunc->GetOrCreatePhysicalRegisterOperand(static_cast<AArch64reg>(i), k64BitSize, kRegTyInt);
+        a64CGFunc->GetOrCreatePhysicalRegisterOperand(static_cast<AArch64reg>(i), k64BitSize, kRegTyFloat);
     callerSaveRegTable.push_back(&phyOpnd);
   }
   for (uint32 i = V16; i <= V31; i++) {
     RegOperand &phyOpnd =
-        a64CGFunc->GetOrCreatePhysicalRegisterOperand(static_cast<AArch64reg>(i), k64BitSize, kRegTyInt);
+        a64CGFunc->GetOrCreatePhysicalRegisterOperand(static_cast<AArch64reg>(i), k64BitSize, kRegTyFloat);
     callerSaveRegTable.push_back(&phyOpnd);
   }
   CHECK_FATAL(callerSaveRegTable.size() < kMaxCallerSaveReg,
@@ -253,10 +253,11 @@ int32 AArch64Ebo::GetOffsetVal(const MemOperand &mem) const {
 }
 
 /*
- * move vreg, 0
- * store vreg, mem
+ * move vreg1, #1
+ * move vreg2, vreg1
  * ===>
- * store wzr, mem
+ * move vreg1, #1
+ * move vreg2, #1
  * return true if do simplify successfully.
  */
 bool AArch64Ebo::DoConstProp(Insn &insn, uint32 idx, Operand &opnd) {
@@ -337,8 +338,8 @@ bool AArch64Ebo::DoConstProp(Insn &insn, uint32 idx, Operand &opnd) {
   return false;
 }
 
-/* Constant folding */
-bool AArch64Ebo::DoConstantFold(Insn &insn, const MapleVector<Operand*> &opnds) {
+/* optimize csel to cset */
+bool AArch64Ebo::Csel2Cset(Insn &insn, const MapleVector<Operand*> &opnds) {
   MOperator opCode = insn.GetMachineOpcode();
 
   if (insn.GetOpndNum() == 0) {
@@ -405,9 +406,9 @@ bool AArch64Ebo::DoConstantFold(Insn &insn, const MapleVector<Operand*> &opnds) 
   return false;
 }
 
-/* Look at an exression that has a constant second operand and attempt to simplify the computations. */
-bool AArch64Ebo::ConstantOperand(Insn &insn, const MapleVector<Operand*> &opnds,
-                                 const MapleVector<OpndInfo*> &opndInfo) {
+/* Look at an expression that has a constant operand and attempt to simplify the computations. */
+bool AArch64Ebo::SimplifyConstOperand(Insn &insn, const MapleVector<Operand*> &opnds,
+                                      const MapleVector<OpndInfo*> &opndInfo) {
   BB *bb = insn.GetBB();
   bool result = false;
   if (insn.GetOpndNum() < 1) {
@@ -420,29 +421,78 @@ bool AArch64Ebo::ConstantOperand(Insn &insn, const MapleVector<Operand*> &opnds,
   CHECK_FATAL(res != nullptr, "null ptr check");
   const AArch64MD *md = &AArch64CG::kMd[static_cast<AArch64Insn*>(&insn)->GetMachineOpcode()];
   uint32 opndSize = md->GetOperandSize();
-  bool first = op0->IsConstant() && !op1->IsConstant();
-  ASSERT((op1->IsConstant() && !op0->IsConstant()) || (op0->IsConstant() && !op1->IsConstant()),
-         "op0 or op1 must be constant op");
+  bool op0IsConstant = op0->IsConstant() && !op1->IsConstant();
+  bool op1IsConstant = !op0->IsConstant() && op1->IsConstant();
+  bool bothConstant = op0->IsConstant() && op1->IsConstant();
   AArch64ImmOperand *immOpnd = nullptr;
   Operand *op = nullptr;
   int32 idx0 = kInsnSecondOpnd;
-  if (first) {
+  if (op0IsConstant) {
     immOpnd = static_cast<AArch64ImmOperand*>(op0);
     op = op1;
     if (op->IsMemoryAccessOperand()) {
       op = &(insn.GetOperand(kInsnThirdOpnd));
     }
     idx0 = kInsnThirdOpnd;
-  } else {
+  } else if (op1IsConstant) {
     immOpnd = static_cast<AArch64ImmOperand*>(op1);
     op = op0;
     if (op->IsMemoryAccessOperand()) {
       op = &(insn.GetOperand(kInsnSecondOpnd));
     }
+  } else if (bothConstant) {
+    /* special orr insn :
+     * orr resOp, imm1, 0
+     * =======>
+     * mov resOp, #0 */
+    if ((insn.GetMachineOpcode() == MOP_wiorrri12) || (insn.GetMachineOpcode() == MOP_xiorrri13) ||
+        (insn.GetMachineOpcode() == MOP_xiorri13r) || (insn.GetMachineOpcode() == MOP_wiorri12r)) {
+      immOpnd = static_cast<AArch64ImmOperand*>(op1);
+      op = op0;
+      if (op->IsMemoryAccessOperand()) {
+        op = &(insn.GetOperand(kInsnSecondOpnd));
+      }
+    } else {
+      return false;
+    }
+  } else if (bothConstant) {
+    /* i) special orr insn, one of imm is 0:
+     * orr resOp, imm1, #0  |  orr resOp, #0, imm1
+     * =======>
+     * mov resOp, imm1
+     *
+     * ii) special orr insn, both of imm is 0:
+     * orr resOp, #0, #0
+     * =======>
+     * mov resOp, #0 */
+    if ((insn.GetMachineOpcode() == MOP_wiorrri12) || (insn.GetMachineOpcode() == MOP_xiorrri13) ||
+        (insn.GetMachineOpcode() == MOP_xiorri13r) || (insn.GetMachineOpcode() == MOP_wiorri12r)) {
+      AArch64ImmOperand *immOpnd0 = static_cast<AArch64ImmOperand*>(op0);
+      AArch64ImmOperand *immOpnd1 = static_cast<AArch64ImmOperand*>(op1);
+      if (immOpnd0->IsZero() && immOpnd1->IsZero()) {
+        immOpnd = immOpnd0;
+        op = op0;
+      } else if (immOpnd0->IsZero()) {
+        immOpnd = immOpnd0;
+        op = op1;
+      } else if (immOpnd1->IsZero()) {
+        immOpnd = immOpnd1;
+        op = op0;
+      } else {
+        return false;
+      }
+      if (op->IsMemoryAccessOperand()) {
+        op = &(insn.GetOperand(kInsnSecondOpnd));
+      }
+    } else {
+      return false;
+    }
   }
+  CHECK_FATAL(immOpnd != nullptr, "constant operand required!");
+  CHECK_FATAL(op != nullptr, "constant operand required!");
   /* For orr insn and one of the opnd is zero */
   if (((insn.GetMachineOpcode() == MOP_wiorrri12) || (insn.GetMachineOpcode() == MOP_xiorrri13) ||
-      (insn.GetMachineOpcode() == MOP_xiorri13r) || (insn.GetMachineOpcode() == MOP_wiorri12r)) &&
+       (insn.GetMachineOpcode() == MOP_xiorri13r) || (insn.GetMachineOpcode() == MOP_wiorri12r)) &&
        immOpnd->IsZero()) {
     MOperator mOp = opndSize == k64BitSize ? MOP_xmovrr : MOP_wmovrr;
     Insn &newInsn = cgFunc->GetCG()->BuildInstruction<AArch64Insn>(mOp, *res, *op);
@@ -451,7 +501,7 @@ bool AArch64Ebo::ConstantOperand(Insn &insn, const MapleVector<Operand*> &opnds,
   }
   /* For the imm is 0. Then replace the insn by a move insn. */
   if (((MOP_xaddrrr <= insn.GetMachineOpcode()) && (insn.GetMachineOpcode() <= MOP_sadd) && immOpnd->IsZero()) ||
-      (!first && (MOP_xsubrrr <= insn.GetMachineOpcode()) && (insn.GetMachineOpcode() <= MOP_ssub) &&
+      (op1IsConstant && (MOP_xsubrrr <= insn.GetMachineOpcode()) && (insn.GetMachineOpcode() <= MOP_ssub) &&
        immOpnd->IsZero())) {
     Insn &newInsn = cgFunc->GetCG()->BuildInstruction<AArch64Insn>(opndSize == k64BitSize ? MOP_xmovrr : MOP_wmovrr,
                                                                    *res, *op);

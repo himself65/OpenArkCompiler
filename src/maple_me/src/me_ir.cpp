@@ -398,10 +398,22 @@ bool IvarMeExpr::IsRCWeak() const {
 
 // If self is the first use of the same ivar coming from an iassign
 // (argument expr), then update its mu: expr->mu = this->mu.
-bool IvarMeExpr::IsIdentical(IvarMeExpr &expr) const {
+bool IvarMeExpr::IsIdentical(IvarMeExpr &expr, bool inConstructor) const {
   CHECK_FATAL(expr.base != nullptr, "null ptr check");
   if (base->GetExprID() != expr.base->GetExprID() || fieldID != expr.fieldID || tyIdx != expr.tyIdx) {
     return false;
+  }
+
+  if (!inConstructor) {
+    auto *ptrType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
+    ASSERT(ptrType->IsMIRPtrType(), "Type of ivar must be poniter");
+    auto *pointedType = static_cast<MIRPtrType*>(ptrType)->GetPointedType();
+    if (pointedType->IsStructType()) {
+      auto attr = static_cast<MIRStructType*>(pointedType)->GetFieldAttrs(fieldID);
+      if (attr.GetAttr(FLDATTR_final)) {
+        return true;
+      }
+    }
   }
 
   // check the two mu being identical
@@ -431,11 +443,11 @@ bool IvarMeExpr::IsIdentical(IvarMeExpr &expr) const {
   return true;
 }
 
-MeExpr *IvarMeExpr::GetIdenticalExpr(MeExpr &expr) const {
+MeExpr *IvarMeExpr::GetIdenticalExpr(MeExpr &expr, bool inConstructor) const {
   auto *ivarExpr = static_cast<IvarMeExpr*>(&expr);
 
   while (ivarExpr != nullptr) {
-    if (ivarExpr->GetMeOp() == kMeOpIvar && IsIdentical(*ivarExpr)) {
+    if (ivarExpr->GetMeOp() == kMeOpIvar && IsIdentical(*ivarExpr, inConstructor)) {
       return ivarExpr;
     }
     ivarExpr = static_cast<IvarMeExpr*>(ivarExpr->GetNext());
@@ -551,7 +563,8 @@ bool OpMeExpr::IsUseSameSymbol(const MeExpr &expr) const {
   return true;
 }
 
-MeExpr *OpMeExpr::GetIdenticalExpr(MeExpr &expr) const {
+MeExpr *OpMeExpr::GetIdenticalExpr(MeExpr &expr, bool isConstructor) const {
+  (void)isConstructor;
   if (!kOpcodeInfo.NotPure(GetOp())) {
     auto *opExpr = static_cast<OpMeExpr*>(&expr);
 
@@ -597,7 +610,8 @@ int64 ConstMeExpr::GetIntValue() const {
   return safe_cast<MIRIntConst>(constVal)->GetValue();
 }
 
-MeExpr *ConstMeExpr::GetIdenticalExpr(MeExpr &expr) const {
+MeExpr *ConstMeExpr::GetIdenticalExpr(MeExpr &expr, bool isConstructor) const {
+  (void)isConstructor;
   auto *constExpr = static_cast<ConstMeExpr*>(&expr);
 
   while (constExpr != nullptr) {
@@ -611,7 +625,8 @@ MeExpr *ConstMeExpr::GetIdenticalExpr(MeExpr &expr) const {
   return nullptr;
 }
 
-MeExpr *ConststrMeExpr::GetIdenticalExpr(MeExpr &expr) const {
+MeExpr *ConststrMeExpr::GetIdenticalExpr(MeExpr &expr, bool isConstructor) const {
+  (void)isConstructor;
   auto *constStrExpr = static_cast<ConststrMeExpr*>(&expr);
 
   while (constStrExpr != nullptr) {
@@ -624,7 +639,8 @@ MeExpr *ConststrMeExpr::GetIdenticalExpr(MeExpr &expr) const {
   return nullptr;
 }
 
-MeExpr *Conststr16MeExpr::GetIdenticalExpr(MeExpr &expr) const {
+MeExpr *Conststr16MeExpr::GetIdenticalExpr(MeExpr &expr, bool isConstructor) const {
+  (void)isConstructor;
   auto *constStr16Expr = static_cast<Conststr16MeExpr*>(&expr);
 
   while (constStr16Expr != nullptr) {
@@ -637,7 +653,8 @@ MeExpr *Conststr16MeExpr::GetIdenticalExpr(MeExpr &expr) const {
   return nullptr;
 }
 
-MeExpr *SizeoftypeMeExpr::GetIdenticalExpr(MeExpr &expr) const {
+MeExpr *SizeoftypeMeExpr::GetIdenticalExpr(MeExpr &expr, bool isConstructor) const {
+  (void)isConstructor;
   auto *sizeoftypeExpr = static_cast<SizeoftypeMeExpr*>(&expr);
 
   while (sizeoftypeExpr != nullptr) {
@@ -650,7 +667,8 @@ MeExpr *SizeoftypeMeExpr::GetIdenticalExpr(MeExpr &expr) const {
   return nullptr;
 }
 
-MeExpr *FieldsDistMeExpr::GetIdenticalExpr(MeExpr &expr) const {
+MeExpr *FieldsDistMeExpr::GetIdenticalExpr(MeExpr &expr, bool isConstructor) const {
+  (void)isConstructor;
   auto *fieldsDistExpr = static_cast<FieldsDistMeExpr*>(&expr);
 
   while (fieldsDistExpr != nullptr) {
@@ -664,7 +682,8 @@ MeExpr *FieldsDistMeExpr::GetIdenticalExpr(MeExpr &expr) const {
   return nullptr;
 }
 
-MeExpr *AddrofMeExpr::GetIdenticalExpr(MeExpr &expr) const {
+MeExpr *AddrofMeExpr::GetIdenticalExpr(MeExpr &expr, bool isConstructor) const {
+  (void)isConstructor;
   auto *addrofExpr = static_cast<AddrofMeExpr*>(&expr);
 
   while (addrofExpr != nullptr) {
@@ -678,7 +697,8 @@ MeExpr *AddrofMeExpr::GetIdenticalExpr(MeExpr &expr) const {
   return nullptr;
 }
 
-MeExpr *NaryMeExpr::GetIdenticalExpr(MeExpr &expr) const {
+MeExpr *NaryMeExpr::GetIdenticalExpr(MeExpr &expr, bool isConstructor) const {
+  (void)isConstructor;
   auto *naryExpr = static_cast<NaryMeExpr*>(&expr);
 
   while (naryExpr != nullptr) {
@@ -693,7 +713,8 @@ MeExpr *NaryMeExpr::GetIdenticalExpr(MeExpr &expr) const {
   return nullptr;
 }
 
-MeExpr *AddroffuncMeExpr::GetIdenticalExpr(MeExpr &expr) const {
+MeExpr *AddroffuncMeExpr::GetIdenticalExpr(MeExpr &expr, bool isConstructor) const {
+  (void)isConstructor;
   auto *addroffuncExpr = static_cast<AddroffuncMeExpr*>(&expr);
 
   while (addroffuncExpr != nullptr) {

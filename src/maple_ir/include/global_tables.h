@@ -116,9 +116,9 @@ class TypeTable {
 
   void SetTypeWithTyIdx(const TyIdx &tyIdx, MIRType &type);
 
-  MIRType *CreateAndUpdateMirTypeNode(MIRType *pType);
-  MIRType *GetOrCreateMIRTypeNode(MIRType *ptype);
-  TyIdx GetOrCreateMIRType(MIRType *pType) { return GetOrCreateMIRTypeNode(pType)->GetTypeIndex(); }
+  TyIdx GetOrCreateMIRType(MIRType *pType) {
+    return GetOrCreateMIRTypeNode(*pType)->GetTypeIndex();
+  }
 
   size_t GetTypeTableSize() const {
     return typeTable.size();
@@ -356,6 +356,8 @@ class TypeTable {
     return newType;
   }
 
+  MIRType *CreateAndUpdateMirTypeNode(MIRType &pType);
+  MIRType *GetOrCreateMIRTypeNode(MIRType &ptype);
   MIRType *GetOrCreateStructOrUnion(const std::string &name, const FieldVector &fields, const FieldVector &printFields,
                                     MIRModule &module, bool forStruct = true);
   MIRType *GetOrCreateClassOrInterface(const std::string &name, MIRModule &module, bool forClass);

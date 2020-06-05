@@ -23,7 +23,7 @@
 #include "fe_options.h"
 #include "mpl_logging.h"
 
-#define TIMEIT(message, stmt)                                                                                      \
+#define TIMEIT(message, stmt) do {                                                                                 \
   if (FEOptions::GetInstance().IsDumpTime()) {                                                                     \
     struct timeval start, end;                                                                                     \
     (void)gettimeofday(&start, NULL);                                                                              \
@@ -33,9 +33,10 @@
     INFO(kLncInfo, "[TIME] %s: %.3f sec", message, t);                                                             \
   } else {                                                                                                         \
     stmt;                                                                                                          \
-  }
+  }                                                                                                                \
+} while (0)                                                                                                        \
 
-#define PHASE_TIMER(message, stmt)                                                    \
+#define PHASE_TIMER(message, stmt) do {                                               \
   if (FEOptions::GetInstance().IsDumpPhaseTime()) {                                   \
     struct timespec start = {0, 0};                                                   \
     struct timespec end = {0, 0};                                                     \
@@ -47,12 +48,14 @@
     INFO(kLncInfo, "[PhaseTime]   %s: %lld ns", message, t);                          \
   } else {                                                                            \
     stmt;                                                                             \
-  }
+  }                                                                                   \
+} while (0)                                                                           \
 
-#define FE_INFO_LEVEL(level, fmt, ...)                    \
+#define FE_INFO_LEVEL(level, fmt, ...) do {               \
   if (FEOptions::GetInstance().GetDumpLevel() >= level) { \
     INFO(kLncInfo, fmt, ##__VA_ARGS__);                   \
-  }
+  }                                                       \
+} while (0)                                               \
 
 #define BIT_XOR(v1, v2) (((v1) && (!(v2))) || ((!(v1)) && (v2)))
 #endif  // ~MPLFE_INCLUDE_FE_MACROS_H

@@ -370,6 +370,9 @@ bool AnalyzeRC::NeedDecRef(IvarMeExpr &ivar) const {
   }
   // check the ivar's mu is zero version
   OriginalSt *ost = GetOriginalSt(ivar);
+  if (ivar.GetMu() == nullptr) {
+    return false;
+  }
   return ivar.GetMu()->GetVstIdx() != ost->GetZeroVersionIndex() && ivar.GetMu()->GetDefBy() != kDefByNo;
 }
 

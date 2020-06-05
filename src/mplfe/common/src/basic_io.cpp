@@ -266,7 +266,7 @@ void BasicIORead::ReadBufferUInt8(uint8 *dst, uint32 length, bool &success) {
   pos += length;
   success = true;
   errno_t err = memcpy_s(dst, length, p, length);
-  CHECK_FATAL(err == 0, "memcpy_s failed");
+  CHECK_FATAL(err == EOK, "memcpy_s failed");
 }
 
 void BasicIORead::ReadBufferInt8(int8 *dst, uint32 length) {
@@ -274,7 +274,7 @@ void BasicIORead::ReadBufferInt8(int8 *dst, uint32 length) {
   const uint8 *p = GetSafeBuffer(length);
   pos += length;
   errno_t err = memcpy_s(dst, length, p, length);
-  CHECK_FATAL(err == 0, "memcpy_s failed");
+  CHECK_FATAL(err == EOK, "memcpy_s failed");
 }
 
 void BasicIORead::ReadBufferInt8(int8 *dst, uint32 length, bool &success) {
@@ -287,14 +287,14 @@ void BasicIORead::ReadBufferInt8(int8 *dst, uint32 length, bool &success) {
   pos += length;
   success = true;
   errno_t err = memcpy_s(dst, length, p, length);
-  CHECK_FATAL(err == 0, "memcpy_s failed");
+  CHECK_FATAL(err == EOK, "memcpy_s failed");
 }
 
 void BasicIORead::ReadBufferChar(char *dst, uint32 length) {
   const uint8 *p = GetSafeBuffer(length);
   pos += length;
   errno_t err = memcpy_s(dst, length, p, length);
-  CHECK_FATAL(err == 0, "memcpy_s failed");
+  CHECK_FATAL(err == EOK, "memcpy_s failed");
 }
 
 void BasicIORead::ReadBufferChar(char *dst, uint32 length, bool &success) {
@@ -306,7 +306,7 @@ void BasicIORead::ReadBufferChar(char *dst, uint32 length, bool &success) {
   pos += length;
   success = true;
   errno_t err = memcpy_s(dst, length, p, length);
-  CHECK_FATAL(err == 0, "memcpy_s failed");
+  CHECK_FATAL(err == EOK, "memcpy_s failed");
 }
 
 std::string BasicIORead::ReadString(uint32 length) {

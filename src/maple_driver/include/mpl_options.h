@@ -170,10 +170,6 @@ class MplOptions {
     return genVtableImpl;
   }
 
-  bool HasSetVerify() const {
-    return verify;
-  }
-
  private:
   bool Init(const std::string &inputFile);
   ErrorCode HandleGeneralOptions();
@@ -210,7 +206,6 @@ class MplOptions {
   bool timePhases = false;
   bool genMeMpl = false;
   bool genVtableImpl = false;
-  bool verify = false;
   unsigned int helpLevel = mapleOption::kBuildTypeDefault;
 };
 }  // namespace maple

@@ -389,7 +389,7 @@ void BinaryMplImport::ImportInfoOfStructType(MIRStructType &type) {
   bool isEmpty = type.GetInfo().empty();
   for (int64 i = 0; i < size; ++i) {
     GStrIdx idx = ImportStr();
-    int64 x = (type.GetInfoIsString()[i]) ? static_cast<int64>(ImportStr()) : ReadNum();
+    int64 x = (type.GetInfoIsStringElemt(i)) ? static_cast<int64>(ImportStr()) : ReadNum();
     CHECK_FATAL(x >= 0, "ReadNum nagative, x: %d", x);
     CHECK_FATAL(x <= std::numeric_limits<uint32_t>::max(), "ReadNum too large, x: %d", x);
     if (isEmpty) {

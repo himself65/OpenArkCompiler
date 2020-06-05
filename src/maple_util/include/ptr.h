@@ -16,7 +16,8 @@
 #define MAPLE_UTIL_PTR_H
 #include <functional>
 
-namespace maple { namespace utils {
+namespace maple {
+namespace utils {
 template<typename T>
 using PtrCheckerType = void (*)(const T*);
 
@@ -127,7 +128,7 @@ class Ptr {
   }
 
   Ptr &operator=(const Ptr &ptr) noexcept {
-    if (this != &ptr) {
+    if (&ptr != this) {
       pointer = ptr.pointer;
     }
     return *this;
@@ -265,7 +266,7 @@ inline bool operator<(std::nullptr_t, const Ptr<T, CheckT> &rhs) {
 
 template<typename T, PtrCheckerType<T> CheckT>
 inline bool operator<=(const Ptr<T, CheckT> &lhs, std::nullptr_t) {
-  return !(nullptr < lhs);
+  return !(lhs > nullptr);
 }
 
 template<typename T, PtrCheckerType<T> CheckT>
@@ -280,7 +281,7 @@ inline bool operator>(const Ptr<T, CheckT> &lhs, std::nullptr_t) {
 
 template<typename T, PtrCheckerType<T> CheckT>
 inline bool operator>(std::nullptr_t, const Ptr<T, CheckT> &rhs) {
-  return !(nullptr <= rhs);
+  return !(rhs >= nullptr);
 }
 
 template<typename T, PtrCheckerType<T> CheckT>
@@ -290,7 +291,7 @@ inline bool operator>=(const Ptr<T, CheckT> &lhs, std::nullptr_t) {
 
 template<typename T, PtrCheckerType<T> CheckT>
 inline bool operator>=(std::nullptr_t, const Ptr<T, CheckT> &rhs) {
-  return !(nullptr < rhs);
+  return !(rhs > nullptr);
 }
 }}
 

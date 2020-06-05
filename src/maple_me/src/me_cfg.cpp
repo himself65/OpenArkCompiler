@@ -535,7 +535,7 @@ void MeCFG::ConvertPhiList2IdentityAssigns(BB &meBB) const {
   auto phiIt = meBB.GetPhiList().begin();
   while (phiIt != meBB.GetPhiList().end()) {
     // replace phi with identify assignment as it only has 1 opnd
-    const OriginalSt *ost = (*phiIt).first;
+    const OriginalSt *ost = func.GetMeSSATab()->GetOriginalStFromID(phiIt->first);
     if (ost->IsSymbolOst() && ost->GetIndirectLev() == 0) {
       const MIRSymbol *st = ost->GetMIRSymbol();
       MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(st->GetTyIdx());

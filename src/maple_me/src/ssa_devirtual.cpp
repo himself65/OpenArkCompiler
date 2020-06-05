@@ -271,7 +271,9 @@ void SSADevirtual::PropVarInferredType(VarMeExpr &varMeExpr) const {
         }
       }
     }
-    if (varMeExpr.GetInferredTyIdx() != 0u) {
+    // Parallel me will skip the setting for symbol's inferredTyIdx because it is independent of the function
+    // optimization order
+    if (!skipReturnTypeOpt && varMeExpr.GetInferredTyIdx() != 0u) {
       OriginalSt *ost = irMap->GetSSATab().GetOriginalStFromID(defStmt.GetVarLHS()->GetOStIdx());
       MIRSymbol *mirSym = ost->GetMIRSymbol();
       if (mirSym->IsStatic() && mirSym->IsFinal()) {
@@ -330,12 +332,12 @@ void SSADevirtual::PropIvarInferredType(IvarMeExpr &ivar) const {
 
 void SSADevirtual::VisitVarPhiNode(MePhiNode &varPhi) const {
   MapleVector<ScalarMeExpr*> opnds = varPhi.GetOpnds();
-  VarMeExpr *lhs = static_cast<VarMeExpr*>(varPhi.GetLHS());
-
+  auto *phiLhs = varPhi.GetLHS();
   // RegPhiNode cases NYI
-  if (lhs == nullptr)
+  if (phiLhs == nullptr || phiLhs->GetMeOp() != kMeOpVar)
     return; 
-  
+
+  auto *lhs = static_cast<VarMeExpr*>(phiLhs);
   const MapleVector<TyIdx> &inferredTypeCandidates = lhs->GetInferredTypeCandidates();
   for (size_t i = 0; i < opnds.size(); ++i) {
     VarMeExpr *opnd = static_cast<VarMeExpr*>(opnds[i]);
@@ -635,16 +637,6 @@ void SSADevirtual::Perform(BB &entryBB) {
   }
   if (!skipReturnTypeOpt && retTy == kSeen) {
     mirFunc->SetInferredReturnTyIdx(this->inferredRetTyIdx);
-  }
-  // Simple rule: if method's declared returning type is a final class, then
-  // the actual returning type is same with the declared returning type.
-  MIRType *declReturnType = mirFunc->GetReturnType();
-  if (declReturnType->GetPrimType() == PTY_ref && declReturnType->GetKind() == kTypePointer) {
-    MIRType *pointedType = static_cast<MIRPtrType*>(declReturnType)->GetPointedType();
-    MIRClassType *declReturnClass = safe_cast<MIRClassType>(pointedType);
-    if (declReturnClass != nullptr && declReturnClass->IsFinal()) {
-      mirFunc->SetInferredReturnTyIdx(declReturnClass->GetTypeIndex());
-    }
   }
   if (SSADevirtual::debug) {
     LogInfo::MapleLogger() << "[SSA-DEVIRT]" << " {virtualcalls: total " << (totalVirtualCalls - totalInterfaceCalls) <<

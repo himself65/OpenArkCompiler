@@ -51,7 +51,7 @@ void IRMap::BuildBB(BB &bb, std::vector<bool> &bbIRMapProcessed) {
 
 void IRMap::BuildPhiMeNode(BB &bb) {
   for (auto &phi : bb.GetPhiList()) {
-    const OriginalSt *oSt = phi.first;
+    const OriginalSt *oSt = ssaTab.GetOriginalStFromID(phi.first);
     VersionSt *vSt = phi.second.GetResult();
     auto *phiMeNode = NewInPool<MePhiNode>();
     phiMeNode->SetDefBB(&bb);
@@ -670,7 +670,7 @@ MeExpr *IRMap::HashMeExpr(MeExpr &meExpr) {
   MeExpr *hashedExpr = hashTable[hashIdx];
 
   if (hashedExpr != nullptr && meExpr.GetMeOp() != kMeOpGcmalloc) {
-    resultExpr = meExpr.GetIdenticalExpr(*hashedExpr);
+    resultExpr = meExpr.GetIdenticalExpr(*hashedExpr, mirModule.CurFunction()->IsConstructor());
   }
 
   if (resultExpr == nullptr) {

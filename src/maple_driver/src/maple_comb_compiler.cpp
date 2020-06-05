@@ -119,8 +119,7 @@ bool MapleCombCompiler::MakeMpl2MplOptions(const MplOptions &options) {
     LogInfo::MapleLogger() << "no mpl2mpl input options\n";
     return false;
   }
-  bool result = mpl2mplOption.SolveOptions(it->second,
-                                           options.HasSetDebugFlag());
+  bool result = mpl2mplOption.SolveOptions(it->second, options.HasSetDebugFlag());
   if (result == false) {
     LogInfo::MapleLogger() << "Meet error mpl2mpl options\n";
     return false;

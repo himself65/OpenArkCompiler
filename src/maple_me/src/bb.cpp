@@ -111,7 +111,7 @@ void BB::DumpPhi() {
 }
 
 const PhiNode *BB::PhiofVerStInserted(const VersionSt &versionSt) const {
-  auto phiIt = phiList.find(versionSt.GetOrigSt());
+  auto phiIt = phiList.find(versionSt.GetOrigSt()->GetIndex());
   return (phiIt != phiList.end()) ? &(phiIt->second) : nullptr;
 }
 
@@ -120,7 +120,7 @@ void BB::InsertPhi(MapleAllocator *alloc, VersionSt *versionSt) {
   for (auto prevIt = pred.begin(); prevIt != pred.end(); ++prevIt) {
     phiNode.GetPhiOpnds().push_back(versionSt);
   }
-  phiList.insert(std::make_pair(versionSt->GetOrigSt(), phiNode));
+  phiList.insert(std::make_pair(versionSt->GetOrigSt()->GetIndex(), phiNode));
 }
 
 bool BB::IsInList(const MapleVector<BB*> &bbList) const {

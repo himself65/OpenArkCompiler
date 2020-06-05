@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -21,10 +21,9 @@
 namespace maple {
 class AliasAnalysisTable {
  public:
-  AliasAnalysisTable(SSATab &ssaTable, MapleAllocator allocator, MIRModule &module, KlassHierarchy &kh)
+  AliasAnalysisTable(SSATab &ssaTable, MapleAllocator allocator, KlassHierarchy &kh)
       : ssaTab(ssaTable),
         alloc(allocator),
-        mirModule(module),
         prevLevelNode(alloc.Adapter()),
         nextLevelNodes(alloc.Adapter()),
         memPool(ssaTab.GetMempool()),
@@ -42,7 +41,6 @@ class AliasAnalysisTable {
   OriginalSt *FindExtraLevOriginalSt(const MapleVector<OriginalSt*> &nextLevelOsts, FieldID fld);
   SSATab &ssaTab;
   MapleAllocator alloc;
-  MIRModule &mirModule;
   MapleMap<OStIdx, OriginalSt*> prevLevelNode;                 // index is the OStIdx
   MapleMap<OStIdx, MapleVector<OriginalSt*>*> nextLevelNodes;  // index is the OStIdx
   MemPool *memPool;

@@ -38,6 +38,7 @@ class VtableAnalysis : public FuncOptimizeImpl {
   }
 
  private:
+  bool CheckInterfaceSpecification(const Klass &baseKlass, const Klass &currKlass) const;
   bool CheckOverrideForCrossPackage(const MIRFunction &baseMethod, const MIRFunction &currMethod) const;
   void AddMethodToTable(MethodPtrVector &methodTable, MethodPair &methodPair);
   void GenVtableList(const Klass &klass);

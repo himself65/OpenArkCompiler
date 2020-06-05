@@ -278,7 +278,6 @@ inline OS &operator<<(OS &os, const Number<T, Tag> &num) {
 
 template <typename Type, typename T = size_t>
 using Index = Number<T, Type>;
-
 }}
 
 namespace std {

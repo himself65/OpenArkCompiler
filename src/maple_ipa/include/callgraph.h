@@ -95,9 +95,6 @@ class CallInfo {
   uint32 id;
 };
 
-class CGNode;
-using Callsite = std::pair<CallInfo*, MapleSet<CGNode*, Comparator<CGNode>>*>;
-using CalleeIt = MapleMap<CallInfo*, MapleSet<CGNode*, Comparator<CGNode>>*, Comparator<CallInfo>>::iterator;
 // Node in callgraph
 class CGNode {
  public:
@@ -152,11 +149,11 @@ class CGNode {
   }
 
   int32 GetPuIdx() const {
-    return mirFunc ? mirFunc->GetPuidx() : -1;
+    return (mirFunc != nullptr) ? mirFunc->GetPuidx() : -1;
   }
 
   const std::string &GetMIRFuncName() const {
-    return mirFunc ? mirFunc->GetName() : GlobalTables::GetStrTable().GetStringFromStrIdx(GStrIdx(0));
+    return (mirFunc != nullptr) ? mirFunc->GetName() : GlobalTables::GetStrTable().GetStringFromStrIdx(GStrIdx(0));
   }
 
   void AddCandsForCallNode(const KlassHierarchy &kh);
@@ -305,6 +302,9 @@ class CGNode {
   MapleVector<MIRFunction*> vcallCands;
 };
 
+using Callsite = std::pair<CallInfo*, MapleSet<CGNode*, Comparator<CGNode>>*>;
+using CalleeIt = MapleMap<CallInfo*, MapleSet<CGNode*, Comparator<CGNode>>*, Comparator<CallInfo>>::iterator;
+
 class SCCNode {
  public:
   uint32 id;
@@ -345,6 +345,7 @@ class SCCNode {
     return id;
   }
 };
+
 class CallGraph : public AnalysisResult {
  public:
   CallGraph(MIRModule &m, MemPool &memPool, KlassHierarchy &kh, const std::string &fn);

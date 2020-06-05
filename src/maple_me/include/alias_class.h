@@ -107,7 +107,7 @@ class AliasClass : public AnalysisResult {
 
   AliasAnalysisTable *GetAliasAnalysisTable() {
     if (aliasAnalysisTable == nullptr) {
-      aliasAnalysisTable = acMemPool.New<AliasAnalysisTable>(ssaTab, acAlloc, mirModule, *klassHierarchy);
+      aliasAnalysisTable = acMemPool.New<AliasAnalysisTable>(ssaTab, acAlloc, *klassHierarchy);
     }
     return aliasAnalysisTable;
   }
@@ -183,6 +183,7 @@ class AliasClass : public AnalysisResult {
   void InsertMayUseExpr(BaseNode &expr);
   void CollectMayUseFromGlobalsAffectedByCalls(std::set<OriginalSt*> &mayUseOsts);
   void CollectMayUseFromNADS(std::set<OriginalSt*> &mayUseOsts);
+  void CollectMayUseFromDefinedFinalField(std::set<OriginalSt*> &mayUseOsts);
   void InsertMayUseNode(std::set<OriginalSt*> &mayUseOsts, MapleMap<OStIdx, MayUseNode> &mayUseNodes);
   void InsertMayUseReturn(const StmtNode &stmt);
   void CollectPtsToOfReturnOpnd(const OriginalSt &ost, std::set<OriginalSt*> &mayUseOsts);
