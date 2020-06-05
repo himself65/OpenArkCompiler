@@ -23,7 +23,7 @@ from textwrap import indent
 from functools import partial
 
 from utils import complete_path, read_file
-from utils import split_comment, filter_line
+from utils import split_comment, filter_line, escape
 
 ASSERT_FLAG = "ASSERT"
 EXPECTED_FLAG = "EXPECTED"
@@ -239,7 +239,7 @@ def gen_compare_regex(comment, assert_flags, expected_flag):
     regex = ""
     for flag in expected_flag:
         excepted_regex = r"(?:{comment}\s*)({flag}[\t ]*\:[\t ]*.*$)".format(
-            comment=comment, flag=flag
+            comment=escape("\\$()*+.[]?^{}|", comment), flag=flag
         )
         if regex != "":
             regex = "{}|{}".format(regex, excepted_regex)
@@ -247,7 +247,7 @@ def gen_compare_regex(comment, assert_flags, expected_flag):
             regex = excepted_regex
     for flag in assert_flags:
         assert_regex = r"(?:^[\t ]*{comment}\s*)({flag}[\t ]*\:[\t ]*.*$)".format(
-            comment=comment, flag=flag
+            comment=escape("\\$()*+.[]?^{}|", comment), flag=flag
         )
         if regex != "":
             regex = "{}|{}".format(regex, assert_regex)
