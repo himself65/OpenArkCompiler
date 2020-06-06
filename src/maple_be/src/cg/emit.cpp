@@ -495,6 +495,13 @@ void Emitter::EmitScalarConstant(MIRConst &mirConst, bool newLine, bool flag32) 
       EmitAddressString(symAddrSym->GetName());
       break;
     }
+    case kConstAddrofFunc: {
+      MIRAddroffuncConst &funcAddr = static_cast<MIRAddroffuncConst&>(mirConst);
+      MIRFunction *func = GlobalTables::GetFunctionTable().GetFuncTable().at(funcAddr.GetValue());
+      MIRSymbol *symAddrSym = GlobalTables::GetGsymTable().GetSymbolFromStidx(func->GetStIdx().Idx());
+      Emit("\t.quad\t" + symAddrSym->GetName());
+      break;
+    }
     default:
       ASSERT(false, "NYI");
       break;
@@ -1561,6 +1568,9 @@ void Emitter::EmitMetaDataSymbolWithMarkFlag(const std::vector<MIRSymbol*> &mirS
                                              const std::map<GStrIdx, MIRType*> &strIdx2Type,
                                              const std::string &prefixStr, const std::string &sectionName,
                                              bool isHotFlag) {
+  if (cg->GetMIRModule()->IsCModule()) {
+    return;
+  }
   if (mirSymbolVec.empty()) {
     return;
   }
@@ -2050,7 +2060,9 @@ void Emitter::EmitGlobalVariable() {
 
 #if !defined(TARGARM32)
   /* finally emit __gxx_personality_v0 DW.ref */
-  EmitDWRef("__mpl_personality_v0");
+  if (!cg->GetMIRModule()->IsCModule())  {
+    EmitDWRef("__mpl_personality_v0");
+  }
 #endif
 }
 void Emitter::EmitAddressString(const std::string &address) {

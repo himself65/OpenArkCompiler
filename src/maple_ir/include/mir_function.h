@@ -724,6 +724,12 @@ class MIRFunction {
     formals.clear();
   }
 
+  void ClearArguments() {
+    formals.clear();
+    funcType->GetParamTypeList().clear();
+    funcType->GetParamAttrsList().clear();
+  }
+
   size_t GetSymbolTabSize() const {
     ASSERT(symTab != nullptr, "symTab is nullptr");
     return symTab->GetSymbolTableSize();

@@ -94,7 +94,7 @@ void MIRAddrofConst::Dump() const {
   MIRSymbol *sym = GlobalTables::GetGsymTable().GetSymbolFromStidx(stIdx.Idx());
   LogInfo::MapleLogger() << " $" << sym->GetName();
   if (fldID > 0) {
-    LogInfo::MapleLogger() << fldID;
+    LogInfo::MapleLogger() << " " << fldID;
   }
 }
 

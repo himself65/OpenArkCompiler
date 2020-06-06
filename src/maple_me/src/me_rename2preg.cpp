@@ -330,7 +330,7 @@ class SSARename2Preg {
     if (lhs == nullptr) {
       return;
     }
-		
+
     VarMeExpr &varExpr =(utils::ToRef(lhs));
     RegMeExpr *pRegExpr = RenameVar(aliasClass, varExpr);
     if (pRegExpr == nullptr) {
@@ -347,7 +347,7 @@ class SSARename2Preg {
                     MePhiNode &regPhiNode) const {
     PregCache &pregCache = cacheProxy.Preg();
     for (ScalarMeExpr *phiOpnd : phiNodeOpnds) {
-      const VarMeExpr&varExpr = utils::ToRef(static_cast<VarMeExpr*>(phiOpnd));
+      const VarMeExpr &varExpr = utils::ToRef(static_cast<VarMeExpr*>(phiOpnd));
       RegMeExpr &regExpr = pregCache.CloneRegExprIfNotExist(varExpr, [&curRegExpr](MeIRMap &irMap) {
         return irMap.CreateRegMeExprVersion(curRegExpr);
       });

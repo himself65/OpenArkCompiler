@@ -278,6 +278,11 @@ void AArch64Emitter::Run() {
   CG *currCG = cgFunc->GetCG();
   /* emit header of this function */
   Emitter &emitter = *currCG->GetEmitter();
+  // insert for  __cxx_global_var_init
+  if (cgFunc->GetName() == "__cxx_global_var_init") {
+    emitter.Emit("\t.section\t.init_array,\"aw\"\n");
+    emitter.Emit("\t.quad\t").Emit(cgFunc->GetName()).Emit("\n");
+  }
   emitter.Emit("\n");
   EmitMethodDesc(emitter);
   /* emit java code to the java section. */

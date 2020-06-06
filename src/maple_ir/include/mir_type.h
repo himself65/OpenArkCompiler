@@ -643,7 +643,7 @@ class MIRArrayType : public MIRType {
  private:
   TyIdx eTyIdx{ 0 };
   uint16 dim = 0;
-  std::array<uint32, kMaxArrayDim> sizeArray{ 0 };
+  std::array<uint32, kMaxArrayDim> sizeArray{ {0} };
 };
 
 // flexible array type, must be last field of a top-level struct

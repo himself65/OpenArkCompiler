@@ -219,8 +219,9 @@ void AliasClass::ApplyUnionForCopies(StmtNode &stmt) {
       AliasElem *rhsAliasElem = CreateAliasElemsExpr(*iassignNode.Opnd(1));
       AliasElem *lhsAliasElem = FindOrCreateExtraLevAliasElem(*iassignNode.Opnd(0), iassignNode.GetTyIdx(),
           iassignNode.GetFieldID());
-      ASSERT(lhsAliasElem != nullptr, "aliaselem of lhs should not be null");
-      ApplyUnionForDassignCopy(*lhsAliasElem, rhsAliasElem, *iassignNode.Opnd(1));
+      if (lhsAliasElem != nullptr) {
+        ApplyUnionForDassignCopy(*lhsAliasElem, rhsAliasElem, *iassignNode.Opnd(1));
+      }
       return;
     }
     case OP_throw: {

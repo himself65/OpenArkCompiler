@@ -635,7 +635,7 @@ void MeABC::BuildPhiInGraph(MePhiNode &phi) {
   if (lhsExpr != nullptr && IsVirtualVar(*lhsExpr, irMap->GetSSATab())) {
     return;
   }
-  for (ScalarMeExpr *phiRHS : phi.GetOpnds()) {
+  for (auto *phiRHS : phi.GetOpnds()) {
     AddUseDef(*phiRHS);
   }
 }
@@ -824,7 +824,7 @@ MeExpr *MeABC::TryToResolveVar(MeExpr &expr, std::set<MePhiNode*> &visitedPhi, M
     }
     visitedPhi.insert(phi);
     std::set<MeExpr*> res;
-    for (ScalarMeExpr *phiOpnd : phi->GetOpnds()) {
+    for (auto *phiOpnd : phi->GetOpnds()) {
       MeExpr *tmp = TryToResolveVar(*phiOpnd, visitedPhi, dummyExpr, isConst);
       if (tmp == nullptr) {
         return nullptr;
@@ -835,7 +835,7 @@ MeExpr *MeABC::TryToResolveVar(MeExpr &expr, std::set<MePhiNode*> &visitedPhi, M
     }
     if (res.size() == 1) {
       return *(res.begin());
-    } else if (res.size() == 0) {
+    } else if (res.empty()) {
       return &dummyExpr;
     }
   }

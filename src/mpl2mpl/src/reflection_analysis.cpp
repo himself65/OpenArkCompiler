@@ -58,6 +58,7 @@ constexpr int kModifierRCUnowned = 24;        // 0x00800000
 constexpr int kModifierRCWeak = 25;           // 0x01000000
 constexpr int kModifierHiddenApiGrey = 26;    // 0x02000000
 constexpr int kModifierHiddenApiBlack = 27;   // 0x04000000
+constexpr int kModifierAFOriginPublic = 28;   // 0x08000000
 
 // +1 is needed here because our field id starts with 0 pointing to the struct itself
 constexpr uint32 kObjKlassFieldID = static_cast<uint32>(ClassProperty::kShadow) + 1;
@@ -322,6 +323,14 @@ uint32 GetFieldModifier(const FieldAttrs &fa) {
 }
 
 uint32 GetClassAccessFlags(const MIRStructType &classType) {
+  uint32 originAF = 0;
+  size_t size = classType.GetInfo().size();
+  for (size_t i = 0; i < size; ++i) {
+    if (GlobalTables::GetStrTable().GetStringFromStrIdx(classType.GetInfoElemt(i).first) == kINFOAccessFlags) {
+      originAF = classType.GetInfoElemt(i).second;
+    }
+  }
+
   int32 accessFlag = 0;
   for (const MIRPragma *prag : classType.GetPragmaVec()) {
     if (prag->GetKind() == kPragmaClass) {
@@ -330,18 +339,13 @@ uint32 GetClassAccessFlags(const MIRStructType &classType) {
         const std::string &name = GlobalTables::GetStrTable().GetStringFromStrIdx(elem->GetNameStrIdx());
         if (name == kAccessFlags) {
           accessFlag = elem->GetI32Val();
+          accessFlag |= (originAF & kModPublic) << (kModifierAFOriginPublic - 1);
           return static_cast<uint32>(accessFlag);
         }
       }
     }
   }
-  size_t size = classType.GetInfo().size();
-  for (size_t i = 0; i < size; ++i) {
-    if (GlobalTables::GetStrTable().GetStringFromStrIdx(classType.GetInfoElemt(i).first) == kINFOAccessFlags) {
-      return classType.GetInfoElemt(i).second;
-    }
-  }
-  return 0;
+  return originAF;
 }
 
 bool ReflectionAnalysis::IsStaticClass(const MIRStructType &classType) const {

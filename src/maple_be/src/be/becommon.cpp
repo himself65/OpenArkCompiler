@@ -106,12 +106,17 @@ static void AddPaddingSlot(std::list<uint32> paddingSlots[], uint32 offset, uint
   }
 }
 
-void BECommon::ComputeStructTypeSizesAligns(MIRType &ty, const TyIdx &tyIdx, uint8 align) {
+void BECommon::ComputeStructTypeSizesAligns(MIRType &ty, const TyIdx &tyIdx) {
   auto &structType = static_cast<MIRStructType&>(ty);
   const FieldVector &fields = structType.GetFields();
   uint64 allocedSize = 0;
   uint64 allocedSizeInBits = 0;
   SetStructFieldCount(structType.GetTypeIndex(), fields.size());
+  if (fields.size() == 0 && mirModule.IsCModule()) {
+    SetTypeAlign(tyIdx.GetIdx(), 1);
+    SetTypeSize(tyIdx.GetIdx(), 1);
+    return;
+  }
   for (size_t j = 0; j < fields.size(); ++j) {
     TyIdx fieldTyIdx = fields[j].second.first;
     MIRType *fieldType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(fieldTyIdx);
@@ -149,7 +154,7 @@ void BECommon::ComputeStructTypeSizesAligns(MIRType &ty, const TyIdx &tyIdx, uin
     }
     SetTypeAlign(tyIdx, std::max(GetTypeAlign(tyIdx), fieldAlign));
   }
-  SetTypeSize(tyIdx, RoundUp(allocedSize, align));
+  SetTypeSize(tyIdx, RoundUp(allocedSize, GetTypeAlign(tyIdx.GetIdx())));
 }
 
 void BECommon::ComputeClassTypeSizesAligns(MIRType &ty, const TyIdx &tyIdx, uint8 align) {
@@ -197,6 +202,11 @@ void BECommon::ComputeClassTypeSizesAligns(MIRType &ty, const TyIdx &tyIdx, uint
   std::list<uint32> paddingSlots[3];
   /* process fields */
   AppendStructFieldCount(tyIdx, fields.size());
+  if (fields.size() == 0 && mirModule.IsCModule()) {
+    SetTypeAlign(tyIdx.GetIdx(), 1);
+    SetTypeSize(tyIdx.GetIdx(), 1);
+    return;
+  }
   for (uint32 j = 0; j < fields.size(); ++j) {
     TyIdx fieldTyIdx = fields[j].second.first;
     MIRType *fieldType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(fieldTyIdx);
@@ -305,7 +315,7 @@ void BECommon::ComputeTypeSizesAligns(MIRType &ty, uint8 align) {
     }
     case kTypeUnion:
     case kTypeStruct: {
-      ComputeStructTypeSizesAligns(ty, tyIdx, align);
+      ComputeStructTypeSizesAligns(ty, tyIdx);
       break;
     }
     case kTypeInterface: {  /* interface shouldn't have instance fields */

@@ -263,20 +263,36 @@ BaseNode *CGLowerer::LowerArrayDim(ArrayNode &array, int32 dim) {
   /* process left dimension index, resNode express the last dim, so dim need sub 2 */
   CHECK_FATAL(dim > (std::numeric_limits<int>::min)() + 1, "out of range");
   int leftDim = dim - 2;
+  MIRType *aType = array.GetArrayType(GlobalTables::GetTypeTable());
+  MIRArrayType *arrayType = static_cast<MIRArrayType*>(aType);
   for (int i = leftDim; i >= 0; --i) {
-    BaseNode *mpyNode = nullptr;
+    BaseNode *mpyNode = mirModule.CurFuncCodeMemPool()->New<BinaryNode>(OP_mul);
     BaseNode *item = NodeConvert(array.GetPrimType(), *array.GetDim(mirModule, GlobalTables::GetTypeTable(), dim - 1));
-    for (int j = leftDim; j > i; --j) {
-      BaseNode *mpyNodes = mirModule.CurFuncCodeMemPool()->New<BinaryNode>(OP_mul);
-      mpyNodes->SetPrimType(array.GetPrimType());
-      mpyNodes->SetOpnd(item, 0);
-      mpyNodes->SetOpnd(NodeConvert(array.GetPrimType(), *array.GetDim(mirModule, GlobalTables::GetTypeTable(), j)), 1);
-      item = mpyNodes;
+    if (mirModule.IsCModule()) {
+      item = NodeConvert(array.GetPrimType(), *array.GetIndex(i));
+      int64 offsetSize = 1;
+      for (int j = i + 1; j < dim; j++) {
+        offsetSize *= arrayType->GetSizeArrayItem(j);
+      }
+      MIRIntConst *offsetCst = mirModule.CurFuncCodeMemPool()->New<MIRIntConst>(
+          offsetSize, *GlobalTables::GetTypeTable().GetTypeFromTyIdx(array.GetPrimType()));
+      BaseNode *eleOffset = mirModule.CurFuncCodeMemPool()->New<ConstvalNode>(offsetCst);
+      eleOffset->SetPrimType(array.GetPrimType());
+      mpyNode->SetPrimType(array.GetPrimType());
+      mpyNode->SetOpnd(eleOffset, 0);
+      mpyNode->SetOpnd(item, 1);
+    } else {
+      for (int j = leftDim; j > i; --j) {
+        BaseNode *mpyNodes = mirModule.CurFuncCodeMemPool()->New<BinaryNode>(OP_mul);
+        mpyNodes->SetPrimType(array.GetPrimType());
+        mpyNodes->SetOpnd(item, 0);
+        mpyNodes->SetOpnd(NodeConvert(array.GetPrimType(), *array.GetDim(mirModule, GlobalTables::GetTypeTable(), j)), 1);
+        item = mpyNodes;
+      }
+      mpyNode->SetPrimType(array.GetPrimType());
+      mpyNode->SetOpnd(NodeConvert(array.GetPrimType(), *array.GetIndex(i)), 0);
+      mpyNode->SetOpnd(item, 1);
     }
-    mpyNode = mirModule.CurFuncCodeMemPool()->New<BinaryNode>(OP_mul);
-    mpyNode->SetPrimType(array.GetPrimType());
-    mpyNode->SetOpnd(NodeConvert(array.GetPrimType(), *array.GetIndex(i)), 0);
-    mpyNode->SetOpnd(item, 1);
 
     BaseNode *newResNode = mirModule.CurFuncCodeMemPool()->New<BinaryNode>(OP_add);
     newResNode->SetPrimType(array.GetPrimType());
@@ -317,7 +333,7 @@ BaseNode *CGLowerer::LowerArray(ArrayNode &array, const BaseNode &parent) {
   int32 dim = arrayType->GetDim();
   BaseNode *resNode = LowerArrayDim(array, dim);
   BaseNode *rMul = nullptr;
-  size_t eSize = GlobalTables::GetTypeTable().GetTypeFromTyIdx(arrayType->GetElemTyIdx())->GetSize();
+  size_t eSize = beCommon.GetTypeSize(arrayType->GetElemTyIdx().GetIdx());
   Opcode opAdd = OP_add;
   MIRType &arrayTypes = *GlobalTables::GetTypeTable().GetTypeFromTyIdx(TyIdx(array.GetPrimType()));
   if (resNode->GetOpCode() == OP_constval) {
@@ -1205,7 +1221,7 @@ void CGLowerer::LowerEntry(MIRFunction &func) {
       auto formal = func.GetFormal(i);
       formals.push_back(formal);
     }
-    func.ClearFormals();
+    func.ClearArguments();
     for (MapleVector<MIRSymbol*>::iterator it = formals.begin(); it != formals.end(); ++it) {
       func.AddArgument(*it);
     }

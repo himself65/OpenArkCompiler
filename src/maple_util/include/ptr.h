@@ -135,7 +135,7 @@ class Ptr {
   }
 
   Ptr &operator=(Ptr &&ptr) noexcept {
-    if (this != &ptr) {
+    if (&ptr != this) {
       pointer = std::move(ptr.pointer);
     }
     return *this;

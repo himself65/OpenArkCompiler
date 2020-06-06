@@ -1310,7 +1310,8 @@ std::pair<BaseNode*, int64> ConstantFold::FoldIread(IreadNode *node) {
     if (msyType->GetKind() == kTypeStruct || msyType->GetKind() == kTypeClass) {
       FieldID newFieldId = fieldID + addrofNode->GetFieldID();
       MIRStructType *stty = static_cast<MIRStructType*>(msyType);
-      MIRType *fieldTy = stty->GetFieldType(newFieldId);
+      // 0 for type itself
+      MIRType *fieldTy = newFieldId == 0 ? stty : stty->GetFieldType(newFieldId);
       result =
           mirModule->CurFuncCodeMemPool()->New<AddrofNode>(OP_dread, fieldTy->GetPrimType(),
                                                            addrofNode->GetStIdx(), newFieldId);

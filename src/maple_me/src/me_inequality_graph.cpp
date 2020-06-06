@@ -55,8 +55,7 @@ ESSAPhiNode *InequalityGraph::GetOrCreatePhiNode(MePhiNode &phiNode) {
   newPhiNode->SetPhiOpnds(phiNode.GetOpnds());
   ESSAPhiNode *newPhi = newPhiNode.get();
   varNodes[expr->GetExprID()] = std::move(newPhiNode);
-  for (ScalarMeExpr *phit : phiNode.GetOpnds()) {
-    VarMeExpr *phiRHS = static_cast<VarMeExpr*>(phit);
+  for (auto *phiRHS : phiNode.GetOpnds()) {
     ESSABaseNode *rhs = nullptr;
     if (phiRHS->GetDefBy() != kDefByPhi) {
       rhs = GetOrCreateVarNode(*phiRHS);

@@ -30,15 +30,15 @@ class PhaseManager {
 
   virtual ~PhaseManager() = default;
 
-  void AddPhase(const std::string &pname) {
+  void AddPhase(const std::string &paseName) {
     for (auto it = RegPhaseBegin(); it != RegPhaseEnd(); ++it) {
-      if (GetPhaseName(it) == pname) {
+      if (GetPhaseName(it) == paseName) {
         phaseSequences.push_back(GetPhaseId(it));
         phaseTimers.push_back(0);
         return;
       }
     }
-    CHECK_FATAL(false, "%s is not a valid phase name", pname.c_str());
+    CHECK_FATAL(false, "%s is not a valid phase name", paseName.c_str());
   }
 
   void RegisterPhase(PhaseID id, Phase &p) {
@@ -116,7 +116,7 @@ class PhaseManager {
     return phaseSequences.end();
   }
 
-  PhaseID GetPhaseId(PhaseSeqIterator it) const {
+  PhaseID GetPhaseId(const PhaseSeqIterator &it) const {
     return (*it);
   }
 
@@ -138,9 +138,10 @@ class PhaseManager {
       ASSERT(total != 0, "calculation check");
       ASSERT(registeredPhases[phaseSequences[i]] != nullptr, "Phase null ptr check");
       std::ios::fmtflags f(LogInfo::MapleLogger().flags());
-      LogInfo::MapleLogger() << std::left << std::setw(25) << registeredPhases[phaseSequences[i]]->PhaseName() <<
-          std::setw(10) << std::right << std::fixed << std::setprecision(2) << (100.0 * phaseTimers[i] / total) <<
-          "%" << std::setw(10) << std::setprecision(0) << (phaseTimers[i] / 1000.0) << "ms" << '\n';
+      LogInfo::MapleLogger() << std::left << std::setw(25) <<
+          registeredPhases[phaseSequences[i]]->PhaseName() << std::setw(10) << std::right << std::fixed <<
+          std::setprecision(2) << (100.0 * phaseTimers[i] / total) << "%" << std::setw(10) <<
+          std::setprecision(0) << (phaseTimers[i] / 1000.0) << "ms" << '\n';
       LogInfo::MapleLogger().flags(f);
     }
     return total;

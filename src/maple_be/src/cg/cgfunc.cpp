@@ -852,7 +852,7 @@ void CGFunc::GenerateCfiPrologEpilog() {
    * always generate ".cfi_personality 155, DW.ref.__mpl_personality_v0" for Java methods.
    * we depend on this to tell whether it is a java method.
    */
-  if (func.IsJava()) {
+  if (mirModule.IsJavaModule() && func.IsJava()) {
     Insn &personality = GetCG()->BuildInstruction<cfi::CfiInsn>(cfi::OP_CFI_personality_symbol,
                                                                 CreateCfiImmOperand(EHFunc::kTypeEncoding, k8BitSize),
                                                                 CreateCfiStrOperand("DW.ref.__mpl_personality_v0"));
@@ -943,15 +943,17 @@ void CGFunc::MarkCleanupEntryBB() {
 #if DEBUG  /* Please don't remove me. */
   /* Check if all of the cleanup bb is at bottom of the function. */
   bool isCleanupArea = true;
-  FOR_ALL_BB_REV(bb, this) {
-    if (isCleanupArea) {
-      ASSERT(bb->IsCleanup(), "CG internal error, cleanup BBs should be at the bottom of the function.");
-    } else {
-      ASSERT(!bb->IsCleanup(), "CG internal error, cleanup BBs should be at the bottom of the function.");
-    }
+  if (!mirModule.IsCModule()) {
+    FOR_ALL_BB_REV(bb, this) {
+      if (isCleanupArea) {
+        ASSERT(bb->IsCleanup(), "CG internal error, cleanup BBs should be at the bottom of the function.");
+      } else {
+        ASSERT(!bb->IsCleanup(), "CG internal error, cleanup BBs should be at the bottom of the function.");
+      }
 
-    if (bb == cleanupEntry) {
-      isCleanupArea = false;
+      if (bb == cleanupEntry) {
+        isCleanupArea = false;
+      }
     }
   }
 #endif  /* DEBUG */
@@ -1051,8 +1053,8 @@ void CGFunc::ProcessExitBBVec() {
     }
     Insn *insn = bb->GetFirstInsn();
     while (insn != nullptr) {
-      retBBPart->AppendInsn(*insn);
       bb->RemoveInsn(*insn);
+      retBBPart->AppendInsn(*insn);
       insn = bb->GetFirstInsn();
     }
     bb->PrependBB(*retBBPart);
@@ -1066,13 +1068,15 @@ void CGFunc::HandleFunction() {
   /* select instruction */
   GenerateInstruction();
   /* merge multi return */
-  MergeReturn();
+  if (!func.GetModule()->IsCModule()) {
+    MergeReturn();
+  }
   ASSERT(exitBBVec.size() <= 1, "there are more than one BB_return in func");
   ProcessExitBBVec();
 
   if (func.IsJava()) {
     GenerateCleanupCodeForExtEpilog(*cleanupBB);
-  } else {
+  } else if (!func.GetModule()->IsCModule()) {
     GenerateCleanupCode(*cleanupBB);
   }
   GenSaveMethodInfoCode(*firstBB);
