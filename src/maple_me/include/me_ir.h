@@ -198,26 +198,27 @@ class IassignMeStmt;  // circular dependency exists, no other choice
 class ScalarMeExpr : public MeExpr {
  public:
   ScalarMeExpr(int32 exprid, OStIdx oidx, uint32 vidx, MeExprOp meop)
-    : MeExpr(exprid, meop),
-      ostIdx(oidx),
-      vstIdx(vidx),
-      defBy(kDefByNo) {
+      : MeExpr(exprid, meop),
+        ostIdx(oidx),
+        vstIdx(vidx),
+        defBy(kDefByNo) {
     def.defStmt = nullptr;
   }
 
   ~ScalarMeExpr() = default;
 
-  bool IsIdentical(MeExpr &meexpr) {
+  bool IsIdentical(MeExpr&) {
     CHECK_FATAL(false, "ScalarMeExpr::IsIdentical() should not be called");
     return true;
   }
+
   bool IsUseSameSymbol(const MeExpr&) const override;
-  
-  void SetDefByStmt(MeStmt &defStmt) override {  
+
+  void SetDefByStmt(MeStmt &defStmt) override {
     defBy = kDefByStmt;
     def.defStmt = &defStmt;
   }
-  
+
   MePhiNode *GetMePhiDef() const {
     return IsDefByPhi() ? def.defPhi : nullptr;
   }
@@ -225,11 +226,11 @@ class ScalarMeExpr : public MeExpr {
   bool IsDefByNo() const {
     return defBy == kDefByNo;
   }
-  
+
   bool IsDefByPhi() const {
     return defBy == kDefByPhi;
   }
-  
+
   BB *DefByBB() const;
 
   const OStIdx &GetOStIdx() const {
@@ -310,11 +311,8 @@ class ScalarMeExpr : public MeExpr {
     MePhiNode *defPhi;
     ChiMeNode *defChi;          // definition node by Chi
     MustDefMeNode *defMustDef;  // definition by callassigned
-  } def;  
+  } def;
 };
-
-
-
 
 // represant dread
 class VarMeExpr final : public ScalarMeExpr {
@@ -381,6 +379,7 @@ class VarMeExpr final : public ScalarMeExpr {
     noDelegateRC = noDelegateRCVal;
   }
 
+
  private:
   bool noDelegateRC = false;  // true if this cannot be optimized by delegaterc
   FieldID fieldID = 0;
@@ -413,11 +412,10 @@ class MePhiNode {
     expr.SetDefPhi(*this);
   }
 
-  bool IsPureLocal(const SSATab &ssaTab, const MIRFunction &mirFunc);
   void Dump(const IRMap *irMap) const;
 
   ScalarMeExpr *GetOpnd(size_t idx) const {
-    ASSERT(idx < opnds.size(), "out of range in MePhiNode::GetOpnd");
+    ASSERT(idx < opnds.size(), "out of range in MeVarPhiNode::GetOpnd");
     return opnds.at(idx);
   }
 
@@ -477,7 +475,7 @@ class MePhiNode {
 class RegMeExpr : public ScalarMeExpr {
  public:
   RegMeExpr(MapleAllocator *alloc, int32 exprid, PregIdx preg, PUIdx pidx, OStIdx oidx, uint32 vidx)
-       : ScalarMeExpr(exprid, oidx, vidx, kMeOpReg), 
+      : ScalarMeExpr(exprid, oidx, vidx, kMeOpReg),
         regIdx(preg),
         puIdx(pidx),
         phiUseSet(std::less<MePhiNode*>(), alloc->Adapter()) {}
@@ -515,71 +513,6 @@ class RegMeExpr : public ScalarMeExpr {
   PUIdx puIdx;
   MapleSet<MePhiNode*> phiUseSet;  // the use set of this reg node, used by preg renamer
 };
-
-#if 0
-class MeRegPhiNode {
- public:
-  explicit MeRegPhiNode(MapleAllocator *alloc)
-      : opnds(kOperandNumBinary, nullptr, alloc->Adapter()) {
-    opnds.pop_back();
-    opnds.pop_back();
-  }
-
-  ~MeRegPhiNode() = default;
-
-  void UpdateLHS(RegMeExpr &reg) {
-    lhs = &reg;
-    reg.SetDefBy(kDefByPhi);
-    reg.SetDefPhi(*this);
-  }
-
-  void Dump(const IRMap *irMap) const;
-
-  RegMeExpr *GetLHS() {
-    return lhs;
-  }
-
-  void SetLHS(RegMeExpr *lhsVal) {
-    lhs = lhsVal;
-  }
-
-  MapleVector<RegMeExpr*> &GetOpnds() {
-    return opnds;
-  }
-
-  RegMeExpr *GetOpnd(size_t idx) const {
-    CHECK_FATAL(idx < opnds.size(), "out of range in MeRegPhiNode::GetOpnd");
-    return opnds[idx];
-  }
-
-  void SetOpnd(size_t idx, RegMeExpr *opnd) {
-    CHECK_FATAL(idx < opnds.size(), "out of range in MeRegPhiNode::SetOpnd");
-    opnds[idx] = opnd;
-  }
-
-  void SetIsLive(bool isLiveVal) {
-    isLive = isLiveVal;
-  }
-
-  bool GetIsLive() const {
-    return isLive;
-  }
-
-  void SetDefBB(BB *defBBVal) {
-    defBB = defBBVal;
-  }
-
-  BB *GetDefBB() const {
-    return defBB;
-  }
-
- private:
-  RegMeExpr *lhs = nullptr;
-  MapleVector<RegMeExpr*> opnds;
-  bool isLive = true;
-  BB *defBB = nullptr;  // the bb that defines this phi
-};
-#endif
 
 class ConstMeExpr : public MeExpr {
  public:

@@ -73,8 +73,8 @@ const char *CallInfo::GetCallTypeName() const {
 
 const char *CallInfo::GetCalleeName() const {
   if ((ctype >= kCallTypeCall) && (ctype <= kCallTypeInterfaceCall)) {
-    MIRFunction *mirf = mirFunc;
-    return mirf->GetName().c_str();
+    MIRFunction &mirf = *mirFunc;
+    return mirf.GetName().c_str();
   } else if (ctype == kCallTypeIcall) {
     return "IcallUnknown";
   } else if ((ctype >= kCallTypeIntrinsicCall) && (ctype <= kCallTypeIntrinsicCallWithType)) {
@@ -139,7 +139,7 @@ void CGNode::Dump(std::ofstream &fout) const {
       fout << "\"" << mirFunc->GetName() << "\" -> ";
       if (func != nullptr) {
         if (node->GetSCCNode() != nullptr && node->GetSCCNode()->GetCGNodes().size() > 1) {
-          fout << "\"" << func->GetName() << "\"[label=" << node->GetSCCNode()->id << " color=red];\n";
+          fout << "\"" << func->GetName() << "\"[label=" << node->GetSCCNode()->GetID() << " color=red];\n";
         } else {
           fout << "\"" << func->GetName() << "\"[label=" << 0 << " color=blue];\n";
         }
@@ -242,11 +242,7 @@ CallGraph::CallGraph(MIRModule &m, MemPool &memPool, KlassHierarchy &kh, const s
       nodesMap(cgAlloc.Adapter()),
       sccTopologicalVec(cgAlloc.Adapter()),
       numOfNodes(0),
-      numOfSccs(0) {
-  callExternal = cgAlloc.GetMemPool()->New<CGNode>(static_cast<MIRFunction*>(nullptr), &cgAlloc, numOfNodes++);
-  debug_flag = false;
-  debug_scc = false;
-}
+      numOfSccs(0) {}
 
 CallType CallGraph::GetCallType(Opcode op) const {
   CallType t = kCallTypeInvalid;
@@ -325,7 +321,7 @@ CGNode *CallGraph::GetOrGenCGNode(PUIdx puIdx, bool isVcall, bool isIcall) {
   CGNode *node = GetCGNode(puIdx);
   if (node == nullptr) {
     MIRFunction *mirFunc = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(puIdx);
-    node = cgAlloc.GetMemPool()->New<CGNode>(mirFunc, &cgAlloc, numOfNodes++);
+    node = cgAlloc.GetMemPool()->New<CGNode>(mirFunc, cgAlloc, numOfNodes++);
     nodesMap.insert(std::make_pair(mirFunc, node));
   }
   if (isVcall && !node->IsVcallCandidatesValid()) {
@@ -1339,7 +1335,7 @@ void CallGraph::DumpToFile(bool dumpAll) {
 void CallGraph::BuildCallGraph() {
   GenCallGraph();
   // Dump callgraph to dot file
-  if (debug_flag) {
+  if (debugFlag) {
     DumpToFile(true);
   }
   if (mirModule->firstInline) {
@@ -1374,8 +1370,8 @@ void CallGraph::SetCompilationFunclist() const {
   const MapleVector<SCCNode*> &sccTopVec = GetSCCTopVec();
   for (int i = sccTopVec.size() - 1; i >= 0; i--) {
     SCCNode *sccNode = sccTopVec[i];
-    std::sort(sccNode->cgNodes.begin(), sccNode->cgNodes.end(), CGNodeCompare);
-    for (auto const kIt : sccNode->cgNodes) {
+    std::sort(sccNode->GetCGNodes().begin(), sccNode->GetCGNodes().end(), CGNodeCompare);
+    for (auto const kIt : sccNode->GetCGNodes()) {
       CGNode *node = kIt;
       MIRFunction *func = node->GetMIRFunction();
       if ((func != nullptr && func->GetBody() && !IsInIPA()) || (func != nullptr && !func->IsNative())) {
@@ -1558,7 +1554,7 @@ void CallGraph::BuildSCCDFS(CGNode &caller, uint32 &visitIndex, std::vector<SCCN
     }
   }
   if (visitedOrder.at(id) == lowestOrder.at(id)) {
-    SCCNode *sccNode = cgAlloc.GetMemPool()->New<SCCNode>(numOfSccs++, &cgAlloc);
+    SCCNode *sccNode = cgAlloc.GetMemPool()->New<SCCNode>(numOfSccs++, cgAlloc);
     uint32 stackTopId;
     do {
       stackTopId = visitStack.back();
@@ -1606,7 +1602,7 @@ void CallGraph::BuildSCC() {
   for (SCCNode *const &scc : sccNodes) {
     scc->Verify();
     scc->Setup();  // fix caller and callee info.
-    if (debug_scc && scc->HasRecursion()) {
+    if (debugScc && scc->HasRecursion()) {
       scc->Dump();
     }
   }
@@ -1624,12 +1620,12 @@ void CallGraph::SCCTopologicalSort(const std::vector<SCCNode*> &sccNodes) {
   // Top-down iterates all nodes
   for (unsigned i = 0; i < sccTopologicalVec.size(); i++) {
     SCCNode *sccNode = sccTopologicalVec[i];
-    for (SCCNode *callee : sccNode->calleeScc) {
+    for (SCCNode *callee : sccNode->GetCalleeScc()) {
       if (inQueue.find(callee) == inQueue.end()) {
         // callee has not been visited
         bool callerAllVisited = true;
         // Check whether all callers of the current callee have been visited
-        for (SCCNode *caller : callee->callerScc) {
+        for (SCCNode *caller : callee->GetCallerScc()) {
           if (inQueue.find(caller) == inQueue.end()) {
             callerAllVisited = false;
             break;
@@ -1686,14 +1682,15 @@ AnalysisResult *DoCallGraph::Run(MIRModule *module, ModuleResultMgr *m) {
   KlassHierarchy *klassh = static_cast<KlassHierarchy*>(m->GetAnalysisResult(MoPhase_CHA, module));
   CHECK_FATAL(klassh != nullptr, "CHA can't be null");
   CallGraph *cg = memPool->New<CallGraph>(*module, *memPool, *klassh, module->GetFileName());
-  cg->debug_flag = TRACE_PHASE;
+  cg->InitCallExternal();
+  cg->SetDebugFlag(TRACE_PHASE);
   cg->BuildCallGraph();
   m->AddResult(GetPhaseID(), *module, *cg);
   if (!module->IsInIPA() && module->firstInline) {
     // do retype
     MemPool *localMp = memPoolCtrler.NewMemPool(PhaseName());
     maple::MIRBuilder dexMirbuilder(module);
-    Retype retype(module, localMp, dexMirbuilder, klassh);
+    Retype retype(module, localMp);
     retype.DoRetype();
     memPoolCtrler.DeleteMemPool(localMp);
   }

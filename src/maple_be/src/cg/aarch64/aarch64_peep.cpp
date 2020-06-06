@@ -996,10 +996,10 @@ void ReplaceDivToMultiAArch64::Run(BB &bb, Insn &insn) {
         cg->BuildInstruction<AArch64Insn>(MOP_xsmullrrr, tempOpnd, sdivOpnd1, tempOpnd);
     bb.InsertInsnBefore(*prePrevInsn, newSmullInsn);
 
-    /* lsr     x16, x16, #32 */
+    /* asr     x16, x16, #32 */
     ImmOperand &dstLsrImmHigh = aarch64CGFunc->CreateImmOperand(k32BitSize, k32BitSize, false);
     Insn &dstLsrInsnHigh =
-        cg->BuildInstruction<AArch64Insn>(MOP_xlsrrri6, tempOpnd, tempOpnd, dstLsrImmHigh);
+        cg->BuildInstruction<AArch64Insn>(MOP_xasrrri6, tempOpnd, tempOpnd, dstLsrImmHigh);
     bb.InsertInsnBefore(*prePrevInsn, dstLsrInsnHigh);
 
     /* add     x16, x16, w0, SXTW */
@@ -1008,10 +1008,10 @@ void ReplaceDivToMultiAArch64::Run(BB &bb, Insn &insn) {
         cg->BuildInstruction<AArch64Insn>(MOP_xxwaddrrre, tempOpnd, tempOpnd, sdivOpnd1, sxtw);
     bb.InsertInsnBefore(*prePrevInsn, addInsn);
 
-    /* lsr     x16, x16, #17 */
+    /* asr     x16, x16, #17 */
     ImmOperand &dstLsrImmChange = aarch64CGFunc->CreateImmOperand(17, k32BitSize, false);
     Insn &dstLsrInsnChange =
-        cg->BuildInstruction<AArch64Insn>(MOP_xlsrrri6, tempOpnd, tempOpnd, dstLsrImmChange);
+        cg->BuildInstruction<AArch64Insn>(MOP_xasrrri6, tempOpnd, tempOpnd, dstLsrImmChange);
     bb.InsertInsnBefore(*prePrevInsn, dstLsrInsnChange);
 
     /* add     x2, x16, x0, LSR #31 */
@@ -2075,6 +2075,21 @@ void ComplexMemOperandPreAddAArch64::Run(BB &bb, Insn &insn) {
   }
 }
 
+bool ComplexMemOperandLSLAArch64::CheckShiftValid(AArch64MemOperand &memOpnd, BitShiftOperand &lsl) {
+  /* check if shift amount is valid */
+  uint32 lslAmount = lsl.GetShiftAmount();
+  if ((memOpnd.GetSize() == k32BitSize && (lsl.GetShiftAmount() != 0 && lslAmount != 2)) ||
+      (memOpnd.GetSize() == k64BitSize && (lsl.GetShiftAmount() != 0 && lslAmount != 3))) {
+    return false;
+  }
+
+  if (memOpnd.GetSize() != (k8BitSize << lslAmount)) {
+    return false;
+  }
+
+  return true;
+}
+
 void ComplexMemOperandLSLAArch64::Run(BB &bb, Insn &insn) {
   AArch64CGFunc *aarch64CGFunc = static_cast<AArch64CGFunc*>(&cgFunc);
   Insn *nextInsn = insn.GetNextMachineInsn();
@@ -2125,12 +2140,9 @@ void ComplexMemOperandLSLAArch64::Run(BB &bb, Insn &insn) {
       return;
     }
     auto &lsl = static_cast<BitShiftOperand&>(insn.GetOperand(kInsnFourthOpnd));
-    /* check if shift amount is valid */
-    if ((memOpnd->GetSize() == k32BitSize && (lsl.GetShiftAmount() != 0 && lsl.GetShiftAmount() != 2)) ||
-        (memOpnd->GetSize() == k64BitSize && (lsl.GetShiftAmount() != 0 && lsl.GetShiftAmount() != 3))) {
+    if (!CheckShiftValid(*memOpnd, lsl)) {
       return;
     }
-
     auto &newBaseOpnd = static_cast<RegOperand&>(insn.GetOperand(kInsnSecondOpnd));
     auto &newIndexOpnd = static_cast<RegOperand&>(insn.GetOperand(kInsnThirdOpnd));
     AArch64MemOperand &newMemOpnd =

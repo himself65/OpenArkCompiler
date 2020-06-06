@@ -154,7 +154,7 @@ class SSATab : public AnalysisResult {
     return *(GetStmtsSSAPart().GetAssignedVarOf(stmt)->GetOrigSt()->GetMIRSymbol());
   }
 
-  bool IsInitVersion(size_t vstIdx, const OStIdx &ostIdx) {
+  bool IsInitVersion(size_t vstIdx, const OStIdx &ostIdx) const {
     auto *ost = GetOriginalStFromID(ostIdx);
     ASSERT(ost != nullptr, "null pointer check");
     return ost->GetZeroVersionIndex() == vstIdx;

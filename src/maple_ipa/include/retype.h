@@ -21,20 +21,17 @@
 namespace maple {
 class Retype {
  public:
-  MIRModule *mirModule;
-  MapleAllocator allocator;
-  MIRBuilder &dexBuilder;
-  KlassHierarchy *klassh;
-
- public:
-  Retype(MIRModule *mod, MemPool *memPool, MIRBuilder &builder, KlassHierarchy *k)
-      : mirModule(mod), allocator(memPool), dexBuilder(builder), klassh(k) {}
+  Retype(MIRModule *mod, MemPool *memPool) : mirModule(mod), allocator(memPool) {}
 
   virtual ~Retype() {}
 
   void ReplaceRetypeExpr(const BaseNode &opnd) const;
   void RetypeStmt(MIRFunction &func) const;
   void DoRetype() const;
+
+ private:
+  MIRModule *mirModule;
+  MapleAllocator allocator;
 };
 }  // namespace maple
 #endif  // MAPLE_IPA_INCLUDE_RETYPE_H

@@ -46,8 +46,7 @@ struct InstanceOfImpl<ToT, FromT, typename std::enable_if_t<std::is_base_of<ToT,
 };
 
 template <typename ToT, typename FromT>
-struct EnabledSafeCast
-    : utils::meta_or<std::is_base_of<ToT, FromT>, SafeCastCondition<ToT>>::type {};
+struct EnabledSafeCast : utils::meta_or<std::is_base_of<ToT, FromT>, SafeCastCondition<ToT>>::type {};
 }
 
 template <typename ToT, typename FromT,

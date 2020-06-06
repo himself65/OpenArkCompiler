@@ -1140,21 +1140,21 @@ void AArch64CGFunc::SelectAggIassign(IassignNode &stmt, Operand &AddrOpnd) {
     lhsType = structType->GetFieldType(stmt.GetFieldID());
     lhsOffset = GetBecommon().GetFieldOffset(*structType, stmt.GetFieldID()).first;
   } else if (lhsType->GetKind() == kTypeArray) {
+#if DEBUG
     MIRArrayType *arrayLhsType = static_cast<MIRArrayType*>(lhsType);
     /* access an array element */
-    lhsType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(arrayLhsType->GetElemTyIdx());
-#if DEBUG
+    MIRType *lhsType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(arrayLhsType->GetElemTyIdx());
     MIRTypeKind typeKind = lhsType->GetKind();
     ASSERT(((typeKind == kTypeScalar) || (typeKind == kTypeStruct) || (typeKind == kTypeClass) ||
             (typeKind == kTypePointer)),
            "unexpected array element type in iassign");
 #endif
   } else if (lhsType->GetKind() == kTypeFArray) {
+#if DEBUG
     MIRFarrayType *farrayLhsType = static_cast<MIRFarrayType*>(lhsType);
     /* access an array element */
-    lhsType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(farrayLhsType->GetElemTyIdx());
-#if DEBUG
-    MIRTypeKind typeKind = lhsType->GetKind();
+    MIRType *lhsElemType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(farrayLhsType->GetElemTyIdx());
+    MIRTypeKind typeKind = lhsElemType->GetKind();
     ASSERT(((typeKind == kTypeScalar) || (typeKind == kTypeStruct) || (typeKind == kTypeClass) ||
             (typeKind == kTypePointer)),
            "unexpected array element type in iassign");

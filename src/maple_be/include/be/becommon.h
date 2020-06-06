@@ -195,7 +195,7 @@ class BECommon {
  private:
   bool TyIsInSizeAlignTable(const MIRType&) const;
   void AddAndComputeSizeAlign(MIRType&);
-  void ComputeStructTypeSizesAligns(MIRType &ty, const TyIdx &tyIdx, uint8 align = 0);
+  void ComputeStructTypeSizesAligns(MIRType &ty, const TyIdx &tyIdx);
   void ComputeClassTypeSizesAligns(MIRType &ty, const TyIdx &tyIdx, uint8 align = 0);
   void ComputeArrayTypeSizesAligns(MIRType &ty, const TyIdx &tyIdx);
   void ComputeFArrayOrJArrayTypeSizesAligns(MIRType &ty, const TyIdx &tyIdx);

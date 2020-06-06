@@ -1952,7 +1952,8 @@ class UnaryStmtNode : public StmtNode {
     this->SetOpnd(rhs, 0);
   }
 
-  BaseNode *Opnd(size_t) const override {
+  BaseNode *Opnd(size_t i = 0) const override {
+    (void)i;
     return uOpnd;
   }
 
@@ -2347,6 +2348,16 @@ class WhileStmtNode : public UnaryStmtNode {
 
   BlockNode *GetBody() const {
     return body;
+  }
+
+  BaseNode *Opnd(size_t i = 0) const override {
+    if (i == 0) {
+      return UnaryStmtNode::Opnd();
+    } else if (i == 1) {
+      return body;
+    }
+    ASSERT(false, "WhileStmtNode has wrong numOpnds field: %u", NumOpnds());
+    return nullptr;
   }
 
  private:

@@ -271,23 +271,23 @@ extern "C" uint8_t classInitProtectRegion[];
 // Note there is no state to indicate a class is already initialized.
 // Any state beyond listed below is treated as initialized.
 enum ClassInitState {
-  kClassInitStateMin   = 0,
-  kClassUninitialized  = 1,
-  kClassInitializing   = 2,
-  kClassInitFailed     = 3,
-  kClassInitialized    = 4,
-  kClassInitStateMax   = 4,
+  kClassInitStateMin = 0,
+  kClassUninitialized = 1,
+  kClassInitializing = 2,
+  kClassInitFailed = 3,
+  kClassInitialized = 4,
+  kClassInitStateMax = 4,
 };
 
 enum SEGVAddr {
-  kSEGVAddrRangeStart            = kPageSize + 0,
+  kSEGVAddrRangeStart = kPageSize + 0,
 
   // Note any readable address is treated as Initialized.
-  kSEGVAddrForClassInitStateMin  = kSEGVAddrRangeStart + kClassInitStateMin,
+  kSEGVAddrForClassInitStateMin = kSEGVAddrRangeStart + kClassInitStateMin,
   kSEGVAddrForClassUninitialized = kSEGVAddrForClassInitStateMin + kClassUninitialized,
-  kSEGVAddrForClassInitializing  = kSEGVAddrForClassInitStateMin + kClassInitializing,
-  kSEGVAddrForClassInitFailed    = kSEGVAddrForClassInitStateMin + kClassInitFailed,
-  kSEGVAddrFoClassInitStateMax   = kSEGVAddrForClassInitStateMin + kClassInitStateMax,
+  kSEGVAddrForClassInitializing = kSEGVAddrForClassInitStateMin + kClassInitializing,
+  kSEGVAddrForClassInitFailed = kSEGVAddrForClassInitStateMin + kClassInitFailed,
+  kSEGVAddrFoClassInitStateMax  = kSEGVAddrForClassInitStateMin + kClassInitStateMax,
 
   kSEGVAddrRangeEnd,
 };

@@ -90,7 +90,7 @@ void DelegateRC::SetCantDelegate(const MapleMap<OStIdx, MePhiNode*> &meVarPhiLis
     if (!mePhi->GetIsLive()) {
       continue;
     }
-    for (ScalarMeExpr *phiOpnd : mePhi->GetOpnds()) {
+    for (auto *phiOpnd : mePhi->GetOpnds()) {
       verStCantDelegate[phiOpnd->GetVstIdx()] = true;
     }
   }
@@ -148,7 +148,7 @@ void DelegateRC::CollectDerefedOrCopied(const MeExpr &expr) {
         }
       } else if (baseVar->GetDefBy() == kDefByPhi) {
         MePhiNode &defPhi = baseVar->GetDefPhi();
-        for (ScalarMeExpr *phiOpnd : defPhi.GetOpnds()) {
+        for (auto *phiOpnd : defPhi.GetOpnds()) {
           if (phiOpnd->GetDefBy() == kDefByStmt) {
             MeStmt *defStmt = phiOpnd->GetDefStmt();
             if (defStmt->GetOp() == OP_dassign && defStmt->GetRHS() != nullptr &&

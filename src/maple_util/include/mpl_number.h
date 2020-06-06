@@ -45,14 +45,14 @@ class Number {
   Number &operator=(ElementType data) = delete;
 
   Number &operator=(const Number &num) noexcept {
-    if (this != &num) {
+    if (&num != this) {
       val = num.val;
     }
     return *this;
   }
 
   Number &operator=(Number &&num) noexcept {
-    if (this != &num) {
+    if (&num != this) {
       val = std::move(num.val);
     }
     return *this;

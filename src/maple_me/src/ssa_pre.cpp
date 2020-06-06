@@ -148,7 +148,7 @@ void SSAPre::GenerateSavePhiOcc(MePhiOcc &phiOcc) {
   CHECK_NULL_FATAL(regOrVar);
   MePhiNode *phiNode = irMap->CreateMePhi(static_cast<ScalarMeExpr&>(*regOrVar));
   phiNode->SetDefBB(phiOcc.GetBB());
- 
+
   if (instance_of<RegMeExpr>(regOrVar)) {
     // create a reg phi
     phiOcc.SetRegPhi(*phiNode);
@@ -968,7 +968,7 @@ void SSAPre::SetVarPhis(const MeExpr &meExpr) {
   MePhiNode *phiMeNode = static_cast<const ScalarMeExpr*>(&meExpr)->GetMePhiDef();
   if (phiMeNode != nullptr) {
     BBId defBBId = phiMeNode->GetDefBB()->GetBBId();
-    CHECK(defBBId < dom->GetDtDfnSize(), "defBBId.idx out of range in SSAPre::SetVarPhis");	
+    CHECK(defBBId < dom->GetDtDfnSize(), "defBBId.idx out of range in SSAPre::SetVarPhis");
     if (varPhiDfns.find(dom->GetDtDfnItem(defBBId)) == varPhiDfns.end() && ScreenPhiBB(defBBId)) {
       (void)varPhiDfns.insert(dom->GetDtDfnItem(defBBId));
       for (auto opndIt = phiMeNode->GetOpnds().begin(); opndIt != phiMeNode->GetOpnds().end(); ++opndIt) {

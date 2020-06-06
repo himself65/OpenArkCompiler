@@ -561,23 +561,22 @@ void MeCFG::ConvertMePhiList2IdentityAssigns(BB &meBB) const {
   while (phiIt != meBB.GetMePhiList().end()) {
     // replace phi with identify assignment as it only has 1 opnd
     const OriginalSt *ost = func.GetMeSSATab()->GetOriginalStFromID(phiIt->first);
-    if (ost->GetIndirectLev() == 0) {
-      MePhiNode *Phi = phiIt->second;
-      if (ost->IsSymbolOst()) {
-        auto *dassign = func.GetIRMap()->NewInPool<DassignMeStmt>();
-        dassign->SetLHS(static_cast<VarMeExpr *>(Phi->GetLHS()));
-        dassign->SetRHS(Phi->GetOpnd(0));
-        dassign->SetBB(Phi->GetDefBB());
-        dassign->SetIsLive(Phi->GetIsLive());
-        meBB.PrependMeStmt(dassign);
-      } else {
-        auto *regAss = func.GetIRMap()->New<RegassignMeStmt>();
-        regAss->SetLHS(static_cast<RegMeExpr *>(Phi->GetLHS()));
-        regAss->SetRHS(Phi->GetOpnd(0));
-        regAss->SetBB(Phi->GetDefBB());
-        regAss->SetIsLive(Phi->GetIsLive());
-        meBB.PrependMeStmt(regAss);
-      }
+    if (ost->IsSymbolOst() && ost->GetIndirectLev() == 0) {
+      auto *dassign = func.GetIRMap()->NewInPool<DassignMeStmt>();
+      MePhiNode *varPhi = phiIt->second;
+      dassign->SetLHS(static_cast<VarMeExpr*>(varPhi->GetLHS()));
+      dassign->SetRHS(varPhi->GetOpnd(0));
+      dassign->SetBB(varPhi->GetDefBB());
+      dassign->SetIsLive(varPhi->GetIsLive());
+      meBB.PrependMeStmt(dassign);
+    } else if (ost->IsPregOst()) {
+      auto *regAss = func.GetIRMap()->New<RegassignMeStmt>();
+      MePhiNode *regPhi = phiIt->second;
+      regAss->SetLHS(static_cast<RegMeExpr*>(regPhi->GetLHS()));
+      regAss->SetRHS(regPhi->GetOpnd(0));
+      regAss->SetBB(regPhi->GetDefBB());
+      regAss->SetIsLive(regPhi->GetIsLive());
+      meBB.PrependMeStmt(regAss);
     }
     ++phiIt;
   }

@@ -178,9 +178,9 @@ class InlineReadBarriersAArch64 : public PeepPattern {
  *    mov     w16, #0x588f
  *    movk    w16, #0x4f8b, LSL #16
  *    smull   x16, w0, w16
- *    lsr     x16, x16, #32
+ *    asr     x16, x16, #32
  *    add     x16, x16, w0, SXTW
- *    lsr     x16, x16, #17
+ *    asr     x16, x16, #17
  *    add     x2, x16, x0, LSR #31
  */
 class ReplaceDivToMultiAArch64 : public PeepPattern {
@@ -466,6 +466,7 @@ class ComplexMemOperandLSLAArch64 : public PeepPattern {
  public:
   explicit ComplexMemOperandLSLAArch64(CGFunc &cgFunc) : PeepPattern(cgFunc) {}
   ~ComplexMemOperandLSLAArch64() override = default;
+  bool CheckShiftValid(AArch64MemOperand &memOpnd, BitShiftOperand &lsl);
   void Run(BB &bb, Insn &insn) override;
 };
 

@@ -51,8 +51,8 @@ struct Comparator {
 // Information description of each callsite
 class CallInfo {
  public:
-  CallInfo(CallType type, MIRFunction *call, StmtNode *s, uint32 ld, uint32 stmtId, bool local = false)
-      : areAllArgsLocal(local), ctype(type), mirFunc(call), callStmt(s), loopDepth(ld), id(stmtId) {}
+  CallInfo(CallType type, MIRFunction &call, StmtNode *s, uint32 ld, uint32 stmtId, bool local = false)
+      : areAllArgsLocal(local), ctype(type), mirFunc(&call), callStmt(s), loopDepth(ld), id(stmtId) {}
 
   virtual ~CallInfo() {}
 
@@ -106,8 +106,8 @@ class CGNode {
     --numReferences;
   }
 
-  CGNode(MIRFunction *func, MapleAllocator *allocater, uint32 index)
-      : alloc(allocater),
+  CGNode(MIRFunction *func, MapleAllocator &allocater, uint32 index)
+      : alloc(&allocater),
         id(index),
         sccNode(nullptr),
         mirFunc(func),
@@ -307,15 +307,11 @@ using CalleeIt = MapleMap<CallInfo*, MapleSet<CGNode*, Comparator<CGNode>>*, Com
 
 class SCCNode {
  public:
-  uint32 id;
-  MapleVector<CGNode*> cgNodes;
-  MapleSet<SCCNode*, Comparator<SCCNode>> callerScc;
-  MapleSet<SCCNode*, Comparator<SCCNode>> calleeScc;
-  SCCNode(uint32 index, MapleAllocator *alloc)
+  SCCNode(uint32 index, MapleAllocator &alloc)
       : id(index),
-        cgNodes(alloc->Adapter()),
-        callerScc(alloc->Adapter()),
-        calleeScc(alloc->Adapter()) {}
+        cgNodes(alloc.Adapter()),
+        callerScc(alloc.Adapter()),
+        calleeScc(alloc.Adapter()) {}
 
   virtual ~SCCNode() {}
 
@@ -331,8 +327,16 @@ class SCCNode {
     return cgNodes;
   }
 
-  const MapleSet<SCCNode*, Comparator<SCCNode>> &GetCalles() const {
+  MapleVector<CGNode*> &GetCGNodes() {
+    return cgNodes;
+  }
+
+  const MapleSet<SCCNode*, Comparator<SCCNode>> &GetCalleeScc() const {
     return calleeScc;
+  }
+
+  const MapleSet<SCCNode*, Comparator<SCCNode>> &GetCallerScc() const {
+    return callerScc;
   }
 
   bool HasRecursion() const;
@@ -344,12 +348,22 @@ class SCCNode {
   uint32 GetID() const {
     return id;
   }
+
+ private:
+  uint32 id;
+  MapleVector<CGNode*> cgNodes;
+  MapleSet<SCCNode*, Comparator<SCCNode>> callerScc;
+  MapleSet<SCCNode*, Comparator<SCCNode>> calleeScc;
 };
 
 class CallGraph : public AnalysisResult {
  public:
   CallGraph(MIRModule &m, MemPool &memPool, KlassHierarchy &kh, const std::string &fn);
   ~CallGraph() {}
+
+  void InitCallExternal() {
+    callExternal = cgAlloc.GetMemPool()->New<CGNode>(static_cast<MIRFunction*>(nullptr), cgAlloc, numOfNodes++);
+  }
 
   CGNode *CallExternal() const {
     return callExternal;
@@ -413,8 +427,6 @@ class CallGraph : public AnalysisResult {
   }
 
   void DelNode(CGNode &node);
-  bool debug_flag;
-  bool debug_scc;
   void BuildSCC();
   void VerifySCC() const;
   void BuildSCCDFS(CGNode &caller, unsigned int &visitIndex, std::vector<SCCNode*> &sccNodes,
@@ -422,7 +434,13 @@ class CallGraph : public AnalysisResult {
                    std::vector<uint32> &lowestOrder, std::vector<bool> &inStack,
                    std::vector<uint32> &visitStack);
 
+  void SetDebugFlag(bool flag) {
+    debugFlag = flag;
+  }
+
  private:
+  bool debugFlag = false;
+  bool debugScc = false;
   MIRModule *mirModule;
   MapleAllocator cgAlloc;
   MIRBuilder *mirBuilder;
@@ -432,7 +450,7 @@ class CallGraph : public AnalysisResult {
   KlassHierarchy *klassh;
   MapleMap<MIRFunction*, CGNode*, NodeComparator> nodesMap;
   MapleVector<SCCNode*> sccTopologicalVec;
-  CGNode *callExternal; /* Auxiliary node used in icall/intrinsic call */
+  CGNode *callExternal = nullptr; /* Auxiliary node used in icall/intrinsic call */
   uint32 numOfNodes;
   uint32 numOfSccs;
   std::unordered_set<uint64> callsiteHash;
@@ -440,7 +458,7 @@ class CallGraph : public AnalysisResult {
   CGNode *GetOrGenCGNode(PUIdx puIdx, bool isVcall = false, bool isIcall = false);
   CallType GetCallType(Opcode op) const;
   CallInfo *GenCallInfo(CallType type, MIRFunction *call, StmtNode *s, uint32 loopDepth, uint32 callsiteID) {
-    return cgAlloc.GetMemPool()->New<CallInfo>(type, call, s, loopDepth, callsiteID);
+    return cgAlloc.GetMemPool()->New<CallInfo>(type, *call, s, loopDepth, callsiteID);
   }
 
   void FindRootNodes();

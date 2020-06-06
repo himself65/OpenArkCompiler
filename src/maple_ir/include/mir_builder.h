@@ -297,7 +297,7 @@ class MIRBuilder {
 
   MIRModule *mirModule;
   MapleSet<TyIdx> incompleteTypeRefedSet;
-  // <classname strIdx, fieldname strIdx, typename strIdx, attr list strIdx>
+  // <className strIdx, fieldname strIdx, typename strIdx, attr list strIdx>
   std::vector<std::tuple<uint32, uint32, uint32, uint32>> extraFieldsTuples;
   unsigned int lineNum = 0;
 };

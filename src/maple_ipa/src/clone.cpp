@@ -45,12 +45,10 @@ std::string ReplaceRetIgnored::GenerateNewBaseName(const MIRFunction &originalFu
 std::string ReplaceRetIgnored::GenerateNewFullName(const MIRFunction &originalFunc) const {
   const std::string &oldSignature = originalFunc.GetSignature();
   auto retPos = oldSignature.find("_29");
-  return std::string(originalFunc.GetBaseClassName())
-      .append(NameMangler::kNameSplitterStr)
-      .append(GenerateNewBaseName(originalFunc))
-      .append(NameMangler::kNameSplitterStr)
-      .append(oldSignature.substr(0, retPos + 3))
-      .append("V");
+  constexpr auto retPosIndex = 3;
+  return std::string(originalFunc.GetBaseClassName()).append(NameMangler::kNameSplitterStr).
+      append(GenerateNewBaseName(originalFunc)).append(NameMangler::kNameSplitterStr).
+      append(oldSignature.substr(0, retPos + retPosIndex)).append("V");
 }
 
 MIRSymbol *Clone::CloneLocalSymbol(const MIRSymbol &oldSym, const MIRFunction &newFunc) {

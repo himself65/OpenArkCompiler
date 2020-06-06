@@ -847,12 +847,16 @@ bool MIRParser::ParseStructType(TyIdx &styIdx) {
   }
   if (styIdx != 0u) {
     MIRType *prevType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(styIdx);
-    ASSERT(prevType->GetKind() == kTypeStruct || prevType->GetKind() == kTypeStructIncomplete,
-           "type kind should be consistent.");
-    if (static_cast<MIRStructType*>(prevType)->IsIncomplete() && !(structType.IsIncomplete())) {
-      structType.SetNameStrIdx(prevType->GetNameStrIdx());
-      structType.SetTypeIndex(styIdx);
-      GlobalTables::GetTypeTable().SetTypeWithTyIdx(styIdx, *structType.CopyMIRTypeNode());
+    if (prevType->GetKind() != kTypeByName) {
+      ASSERT(prevType->GetKind() == kTypeStruct || prevType->GetKind() == kTypeStructIncomplete,
+             "type kind should be consistent.");
+      if (static_cast<MIRStructType*>(prevType)->IsIncomplete() && !(structType.IsIncomplete())) {
+        structType.SetNameStrIdx(prevType->GetNameStrIdx());
+        structType.SetTypeIndex(styIdx);
+        GlobalTables::GetTypeTable().SetTypeWithTyIdx(styIdx, *structType.CopyMIRTypeNode());
+      }
+    } else {
+      styIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&structType);
     }
   } else {
     styIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&structType);
@@ -876,8 +880,11 @@ bool MIRParser::ParseClassType(TyIdx &styidx) {
   if (!ParseFields(classType)) {
     return false;
   }
+  MIRType *prevType = nullptr;
   if (styidx != 0u) {
-    MIRType *prevType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(styidx);
+    prevType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(styidx);
+  }
+  if (prevType != nullptr && prevType->GetKind() != kTypeByName) {
     ASSERT(prevType->GetKind() == kTypeClass || prevType->GetKind() == kTypeClassIncomplete,
            "type kind should be consistent.");
     if (static_cast<MIRClassType*>(prevType)->IsIncomplete() && !(classType.IsIncomplete())) {
@@ -1512,7 +1519,12 @@ bool MIRParser::ParseTypedef() {
     return false;
   }
   if (prevTyIdx != 0u) {
-  return true;
+    MIRType *prevType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(prevTyIdx);
+    MIRType *newType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
+    MIRStructType *newStructType = dynamic_cast<MIRStructType*>(newType);
+    if (prevType->GetKind() != kTypeByName || newStructType == nullptr){
+      return true;
+    }
   }
   // for class/interface types, prev_tyidx could also be set during processing
   // so we check again right before SetGStrIdxToTyIdx

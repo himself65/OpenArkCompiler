@@ -24,6 +24,7 @@
 namespace maple {
 class MeStmt;  // circular dependency exists, no other choice
 class MePhiNode;  // circular dependency exists, no other choice
+class MeRegPhiNode;  // circular dependency exists, no other choice
 class PiassignMeStmt;  // circular dependency exists, no other choice
 class IRMap;  // circular dependency exists, no other choice
 enum BBKind {

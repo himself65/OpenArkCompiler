@@ -53,9 +53,10 @@ void IRMap::BuildPhiMeNode(BB &bb) {
   for (auto &phi : bb.GetPhiList()) {
     const OriginalSt *oSt = ssaTab.GetOriginalStFromID(phi.first);
     VersionSt *vSt = phi.second.GetResult();
+
     auto *phiMeNode = NewInPool<MePhiNode>();
     phiMeNode->SetDefBB(&bb);
-
+    bb.GetMePhiList().insert(std::make_pair(oSt->GetIndex(), phiMeNode));
     if (oSt->IsPregOst()) {
       RegMeExpr *meDef = GetOrCreateRegFromVerSt(*vSt);
       phiMeNode->UpdateLHS(*meDef);
@@ -63,7 +64,6 @@ void IRMap::BuildPhiMeNode(BB &bb) {
       for (VersionSt *opnd : phi.second.GetPhiOpnds()) {
         phiMeNode->GetOpnds().push_back(GetOrCreateRegFromVerSt(*opnd));
       }
-      bb.GetMePhiList().insert(std::make_pair(meDef->GetOStIdx(), phiMeNode));
     } else {
       VarMeExpr *meDef = GetOrCreateVarFromVerSt(*vSt);
       phiMeNode->UpdateLHS(*meDef);
@@ -71,7 +71,6 @@ void IRMap::BuildPhiMeNode(BB &bb) {
       for (VersionSt *opnd : phi.second.GetPhiOpnds()) {
         phiMeNode->GetOpnds().push_back(GetOrCreateVarFromVerSt(*opnd));
       }
-      bb.GetMePhiList().insert(std::make_pair(meDef->GetOStIdx(), phiMeNode));
     }
   }
 }
@@ -802,9 +801,9 @@ bool IRMap::ReplaceMeExprStmt(MeStmt &meStmt, const MeExpr &meExpr, MeExpr &repe
   return isReplaced;
 }
 
-MePhiNode *IRMap::CreateMePhi(ScalarMeExpr &meScalar) {
+MePhiNode *IRMap::CreateMePhi(ScalarMeExpr &meExpr) {
   auto *phiMeVar = NewInPool<MePhiNode>();
-  phiMeVar->UpdateLHS(meScalar);
+  phiMeVar->UpdateLHS(meExpr);
   return phiMeVar;
 }
 

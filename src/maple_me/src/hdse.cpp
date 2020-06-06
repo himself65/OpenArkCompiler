@@ -520,7 +520,7 @@ void HDSE::DseInit() {
       continue;
     }
     // mark phi nodes dead
-    for (std::pair<OStIdx, MePhiNode*> phiPair : bb->GetMePhiList()) {
+    for (const auto &phiPair : bb->GetMePhiList()) {
       phiPair.second->SetIsLive(false);
     }
 

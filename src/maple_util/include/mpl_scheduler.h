@@ -83,6 +83,7 @@ class MplScheduler {
   explicit MplScheduler(const std::string &name);
   virtual ~MplScheduler() {}
 
+  void Init();
   virtual void AddTask(MplTask *task);
   virtual int RunTask(uint32 threadsNum, bool seq = false);
   virtual MplSchedulerParam *EncodeThreadMainEnvironment(uint32) {

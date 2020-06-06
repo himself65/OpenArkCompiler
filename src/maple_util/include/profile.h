@@ -46,7 +46,7 @@ class Profile {
     BBInfo() = default;
     BBInfo(uint64 hash, uint32 num, std::vector<uint32> &&counter)
         : funcHash(hash), totalCounter(num), counter(counter) {}
-    BBInfo(uint64 hash, uint32 num, std::initializer_list<uint32> iList)
+    BBInfo(uint64 hash, uint32 num, const std::initializer_list<uint32> &iList)
         : funcHash(hash), totalCounter(num), counter(iList) {}
   };
 

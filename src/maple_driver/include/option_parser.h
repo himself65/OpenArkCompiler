@@ -25,7 +25,6 @@ namespace mapleOption {
 class OptionParser {
  public:
   OptionParser() = default;
-
   ~OptionParser() = default;
 
   void RegisteUsages(const maple::MapleDriverOptionBase &base);

@@ -88,9 +88,7 @@ void CgFuncPhaseManager::AddPhases(std::vector<std::string> &phases) {
       /* default phase sequence */
       ADDPHASE("layoutstackframe");
       ADDPHASE("createstartendlabel");
-      if (!CLANG) {
-        ADDPHASE("buildehfunc");
-      }
+      ADDPHASE("buildehfunc");
       ADDPHASE("handlefunction");
       ADDPHASE("moveargs");
 
@@ -103,7 +101,7 @@ void CgFuncPhaseManager::AddPhases(std::vector<std::string> &phases) {
       if (CGOptions::DoICO()) {
         ADDPHASE("ico");
       }
-      if (CGOptions::DoCFGO()) {
+      if (!CLANG && CGOptions::DoCFGO()) {
         ADDPHASE("cfgo");
       }
 
@@ -145,9 +143,7 @@ void CgFuncPhaseManager::AddPhases(std::vector<std::string> &phases) {
         ADDPHASE("peephole");
       }
 
-      if (!CLANG) {
-        ADDPHASE("gencfi");
-      }
+      ADDPHASE("gencfi");
       if (JAVALANG && CGOptions::IsInsertYieldPoint()) {
         ADDPHASE("yieldpoint");
       }
