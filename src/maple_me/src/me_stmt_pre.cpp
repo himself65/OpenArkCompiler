@@ -766,7 +766,7 @@ PreStmtWorkCand *MeStmtPre::CreateStmtRealOcc(MeStmt &meStmt, int seqStmt) {
   }
   MeExpr *meExpr = nullptr;
   if ((meStmt.GetOp() == OP_dassign || meStmt.GetOp() == OP_callassigned) && meStmt.GetVarLHS() != nullptr) {
-    MapleStack<VarMeExpr*> *pStack = versionStackVec.at(meStmt.GetVarLHS()->GetOStIdx());
+    MapleStack<ScalarMeExpr*> *pStack = versionStackVec.at(meStmt.GetVarLHS()->GetOStIdx());
     meExpr = pStack->top();
   }
   MeRealOcc *newOcc = ssaPreMemPool->New<MeRealOcc>(&meStmt, seqStmt, meExpr);
@@ -791,7 +791,7 @@ void MeStmtPre::VersionStackChiListUpdate(const MapleMap<OStIdx, ChiMeNode*> &ch
     if (!ost->IsSymbolOst() || ost->GetIndirectLev() != 0) {
       continue;
     }
-    MapleStack<VarMeExpr*> *pStack = versionStackVec.at(it->second->GetLHS()->GetOStIdx());
+    MapleStack<ScalarMeExpr*> *pStack = versionStackVec.at(it->second->GetLHS()->GetOStIdx());
     pStack->push(it->second->GetLHS());
   }
 }
@@ -823,14 +823,14 @@ void MeStmtPre::BuildWorkListBB(BB *bb) {
     curStackSizeVec[i] = versionStackVec[i]->size();
   }
   // traverse var phi nodes to update versionStack
-  MapleMap<OStIdx, MeVarPhiNode*> &meVarPhiList = bb->GetMevarPhiList();
-  for (auto it = meVarPhiList.begin(); it != meVarPhiList.end(); ++it) {
-    MeVarPhiNode *phiMeNode = it->second;
+  MapleMap<OStIdx, MePhiNode*> &mePhiList = bb->GetMePhiList();
+  for (auto it = mePhiList.begin(); it != mePhiList.end(); ++it) {
+    MePhiNode *phiMeNode = it->second;
     const OriginalSt *ost = ssaTab->GetOriginalStFromID(phiMeNode->GetLHS()->GetOStIdx());
     if (!ost->IsSymbolOst() || ost->GetIndirectLev() != 0) {
       continue;
     }
-    MapleStack<VarMeExpr*> *pStack = versionStackVec.at(phiMeNode->GetLHS()->GetOStIdx());
+    MapleStack<ScalarMeExpr*> *pStack = versionStackVec.at(phiMeNode->GetLHS()->GetOStIdx());
     pStack->push(phiMeNode->GetLHS());
   }
   // traverse statements
@@ -931,7 +931,7 @@ void MeStmtPre::BuildWorkListBB(BB *bb) {
             (dassMeStmt.GetRHS()->GetOp() == OP_regread &&
              static_cast<RegMeExpr*>(dassMeStmt.GetRHS())->GetRegIdx() == -kSregThrownval)) {
           // update version stacks
-          MapleStack<VarMeExpr*> *pStack = versionStackVec.at(dassMeStmt.GetVarLHS()->GetOStIdx());
+          MapleStack<ScalarMeExpr*> *pStack = versionStackVec.at(dassMeStmt.GetVarLHS()->GetOStIdx());
           pStack->push(dassMeStmt.GetVarLHS());
           VersionStackChiListUpdate(*dassMeStmt.GetChiList());
           break;
@@ -949,7 +949,7 @@ void MeStmtPre::BuildWorkListBB(BB *bb) {
           RemoveUnnecessaryDassign(dassMeStmt);
         }
         // update version stacks
-        MapleStack<VarMeExpr*> *pStack = versionStackVec.at(dassMeStmt.GetVarLHS()->GetOStIdx());
+        MapleStack<ScalarMeExpr*> *pStack = versionStackVec.at(dassMeStmt.GetVarLHS()->GetOStIdx());
         pStack->push(dassMeStmt.GetVarLHS());
         VersionStackChiListUpdate(*dassMeStmt.GetChiList());
         break;
@@ -1000,7 +1000,7 @@ void MeStmtPre::BuildWorkListBB(BB *bb) {
         MeExpr *meLHS = mustDefList->front().GetLHS();
         if (meLHS->GetMeOp() == kMeOpVar) {
           auto *lhsVar = static_cast<VarMeExpr*>(meLHS);
-          MapleStack<VarMeExpr*> *pStack = versionStackVec.at(lhsVar->GetOStIdx());
+          MapleStack<ScalarMeExpr*> *pStack = versionStackVec.at(lhsVar->GetOStIdx());
           pStack->push(lhsVar);
         }
       }
@@ -1017,7 +1017,7 @@ void MeStmtPre::BuildWorkListBB(BB *bb) {
   }
   // pop the stacks back to their levels on entry
   for (size_t i = 1; i < versionStackVec.size(); ++i) {
-    MapleStack<VarMeExpr*> *pStack = versionStackVec[i];
+    MapleStack<ScalarMeExpr*> *pStack = versionStackVec[i];
     if (pStack == nullptr) {
       continue;
     }
@@ -1036,7 +1036,7 @@ void MeStmtPre::BuildWorkList() {
     if (!ost->IsSymbolOst() || ost->GetIndirectLev() != 0) {
       continue;
     }
-    MapleStack<VarMeExpr*> *varStack = ssaPreMemPool->New<MapleStack<VarMeExpr*>>(ssaPreAllocator.Adapter());
+    MapleStack<ScalarMeExpr*> *varStack = ssaPreMemPool->New<MapleStack<ScalarMeExpr*>>(ssaPreAllocator.Adapter());
     varStack->push(static_cast<VarMeExpr*>(irMap->GetOrCreateZeroVersionVarMeExpr(*ost)));
     versionStackVec[ost->GetIndex()] = varStack;
   }

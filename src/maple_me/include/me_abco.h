@@ -55,12 +55,12 @@ class CarePoint {
     return value.meStmt;
   }
 
-  MeVarPhiNode *GetMePhi() {
+  MePhiNode *GetMePhi() {
     CHECK_FATAL(careKind == kMePhi, "must be");
     return value.phiNode;
   }
 
-  const MeVarPhiNode *GetMePhi() const {
+  const MePhiNode *GetMePhi() const {
     CHECK_FATAL(careKind == kMePhi, "must be");
     return value.phiNode;
   }
@@ -70,7 +70,7 @@ class CarePoint {
     value.meStmt = &meStmt;
   }
 
-  void SetMePhi(MeVarPhiNode &phi) {
+  void SetMePhi(MePhiNode &phi) {
     CHECK_FATAL(careKind == kMePhi, "must be");
     value.phiNode = &phi;
   }
@@ -79,7 +79,7 @@ class CarePoint {
   CareKind careKind;
   union CareStmt {
     MeStmt *meStmt;
-    MeVarPhiNode *phiNode;
+    MePhiNode *phiNode;
   };
   CareStmt value;
 };
@@ -109,7 +109,7 @@ class DefPoint {
     return value.pi;
   }
 
-  void SetDefPhi(MeVarPhiNode &s) {
+  void SetDefPhi(MePhiNode &s) {
     CHECK_FATAL(defKind == kDefByPhi, "must be");
     value.phi = &s;
   }
@@ -131,7 +131,7 @@ class DefPoint {
     if (defKind == kDefByPi) {
       return value.pi->GetRHS();
     } else {
-      return value.phi->GetOpnd(0);
+      return static_cast<VarMeExpr*>(value.phi->GetOpnd(0));
     }
   }
 
@@ -139,7 +139,7 @@ class DefPoint {
     if (defKind == kDefByPi) {
       return value.pi->GetLHS();
     } else {
-      return value.phi->GetLHS();
+      return  static_cast<VarMeExpr*>(value.phi->GetLHS());
     }
   }
 
@@ -172,7 +172,7 @@ class DefPoint {
         GetBB()->RemoveMeStmt(value.pi);
       }
     } else {
-      GetBB()->GetMevarPhiList().erase(GetOStIdx());
+      GetBB()->GetMePhiList().erase(GetOStIdx());
     }
   }
 
@@ -190,7 +190,7 @@ class DefPoint {
   DefineKind defKind;
   union DefStmt {
     PiassignMeStmt *pi;
-    MeVarPhiNode *phi;
+    MePhiNode *phi;
   };
   DefStmt value;
 };
@@ -237,16 +237,16 @@ class MeABC {
   bool ReplaceStmtWithNewVar(MeStmt &meStmt, MeExpr &oldVar, MeExpr &newVar, bool update);
   bool IsVirtualVar(const VarMeExpr &var, const SSATab &ssaTab) const;
   ESSABaseNode *GetOrCreateRHSNode(MeExpr &expr);
-  void BuildPhiInGraph(MeVarPhiNode &phi);
+  void BuildPhiInGraph(MePhiNode &phi);
   void BuildSoloPiInGraph(const PiassignMeStmt &piMeStmt);
   bool BuildArrayCheckInGraph(MeStmt &meStmt);
   bool BuildBrMeStmtInGraph(MeStmt &meStmt);
   bool BuildAssignInGraph(MeStmt &meStmt);
-  MeExpr *TryToResolveVar(MeExpr &expr, std::set<MeVarPhiNode*> &visitedPhi, MeExpr &dummyExpr, bool isConst);
+  MeExpr *TryToResolveVar(MeExpr &expr, std::set<MePhiNode*> &visitedPhi, MeExpr &dummyExpr, bool isConst);
   bool BuildStmtInGraph(MeStmt &meStmt);
   void AddUseDef(MeExpr &meExpr);
   void AddCareInsn(MeStmt &defS);
-  void AddCarePhi(MeVarPhiNode &defP);
+  void AddCarePhi(MePhiNode &defP);
   void BuildInequalityGraph();
   void FindRedundantABC(MeStmt &meStmt, NaryMeExpr &naryMeExpr);
   void InitNewStartPoint(const MeStmt &meStmt, const NaryMeExpr &nMeExpr);
@@ -281,13 +281,13 @@ class MeABC {
   std::map<MeStmt*, NaryMeExpr*> arrayChecks;
   std::map<MeStmt*, NaryMeExpr*> arrayNewChecks;
   std::set<MeStmt*> careMeStmts;
-  std::set<MeVarPhiNode*> careMePhis;
+  std::set<MePhiNode*> careMePhis;
   std::map<BB*, std::vector<MeStmt*>> containsBB;
   std::vector<DefPoint*> newDefPoints;
   std::vector<CarePoint*> carePoints;
   std::map<DefPoint*, VarMeExpr*> newDef2Old;
   std::map<std::pair<MeStmt*, size_t>, MeExpr*, StmtComparator> modifiedStmt;
-  std::map<MeVarPhiNode*, std::vector<VarMeExpr*>> modifiedPhi;
+  std::map<MePhiNode*, std::vector<ScalarMeExpr*>> modifiedPhi;
   std::set<BB*> visitedBBs;
   std::set<MeStmt*> targetMeStmt;
 };

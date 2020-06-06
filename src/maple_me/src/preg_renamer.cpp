@@ -22,9 +22,9 @@ void PregRenamer::EnqueDefUses(std::list<RegMeExpr*> &qu, RegMeExpr *node, std::
   CHECK_NULL_FATAL(node);
   // get its define
   if (node->GetDefBy() == kDefByPhi) {
-    MeRegPhiNode &defPhi = node->GetDefPhi();
+    MePhiNode &defPhi = node->GetDefPhi();
     for (auto it : defPhi.GetOpnds()) {
-      RegMeExpr *neibNode = it;  // node's connected register node
+      RegMeExpr *neibNode = static_cast<RegMeExpr*>(it);  // node's connected register node
       if (neibNode != node && curVisited.find(neibNode) == curVisited.end()) {
         qu.push_back(neibNode);
         (void)curVisited.insert(neibNode);
@@ -32,16 +32,16 @@ void PregRenamer::EnqueDefUses(std::list<RegMeExpr*> &qu, RegMeExpr *node, std::
     }
   }
   // get the phi which uses node as an operand
-  MapleSet<MeRegPhiNode*> &phiUseSet = node->GetPhiUseSet();
+  MapleSet<MePhiNode*> &phiUseSet = node->GetPhiUseSet();
   for (auto setIt : phiUseSet) {
-    MeRegPhiNode *meRegPhi = setIt;
-    RegMeExpr *lhsReg = meRegPhi->GetLHS();
+    MePhiNode *meRegPhi = setIt;
+    RegMeExpr *lhsReg = static_cast<RegMeExpr*>(meRegPhi->GetLHS());
     if (lhsReg != node && curVisited.find(lhsReg) == curVisited.end()) {
       qu.push_back(lhsReg);
       (void)curVisited.insert(lhsReg);
     }
     for (auto opdIt : meRegPhi->GetOpnds()) {
-      RegMeExpr *opndReg = opdIt;
+      RegMeExpr *opndReg = static_cast<RegMeExpr*>(opdIt);
       if (opndReg != node && curVisited.find(opndReg) == curVisited.end()) {
         qu.push_back(opndReg);
         (void)curVisited.insert(opndReg);

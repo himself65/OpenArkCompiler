@@ -135,11 +135,12 @@ bool RegMeExpr::IsSameVariableValue(const VarMeExpr &expr) const {
 VarMeExpr &VarMeExpr::ResolveVarMeValue(SSATab &ssaTab) {
   VarMeExpr *cmpop0 = this;
   while (true) {
-    if (cmpop0->defBy != kDefByStmt || cmpop0->IsVolatile(ssaTab)) {
+
+    if (cmpop0->GetDefBy() != kDefByStmt || cmpop0->IsVolatile(ssaTab)) {
       break;
     }
 
-    auto *defStmt = static_cast<DassignMeStmt*>(cmpop0->def.defStmt);
+    auto *defStmt = static_cast<DassignMeStmt*>(cmpop0->GetDefStmt());
     MeExpr *expr = defStmt->GetRHS();
     if (expr->GetMeOp() != kMeOpVar) {
       break;
@@ -199,9 +200,9 @@ RegMeExpr *RegMeExpr::FindDefByStmt(std::set<RegMeExpr*> &visited) {
     return this;
   }
   if (GetDefBy() == kDefByPhi) {
-    MeRegPhiNode &phiReg = GetDefPhi();
-    for (RegMeExpr *phiOpnd : phiReg.GetOpnds()) {
-      RegMeExpr *res = phiOpnd->FindDefByStmt(visited);
+    MePhiNode &phiReg = GetDefPhi();
+    for (ScalarMeExpr *phiOpnd : phiReg.GetOpnds()) {
+      RegMeExpr *res = static_cast<RegMeExpr*>(phiOpnd)->FindDefByStmt(visited);
       if (res != nullptr) {
         return res;
       }
@@ -454,71 +455,79 @@ MeExpr *IvarMeExpr::GetIdenticalExpr(MeExpr &expr, bool inConstructor) const {
   return nullptr;
 }
 
-BB *VarMeExpr::GetDefByBBMeStmt(const Dominance &dominance, MeStmtPtr &defMeStmt) const {
+bool ScalarMeExpr::IsUseSameSymbol(const MeExpr &expr) const {
+  if (expr.GetMeOp() == kMeOpVar || expr.GetMeOp() == kMeOpReg ) {
+    auto &scalarMeExpr = static_cast<const ScalarMeExpr&>(expr);
+    return ostIdx == scalarMeExpr.ostIdx;
+  } else {
+    return false;
+  }
+}
+
+BB *ScalarMeExpr::DefByBB() const{
   switch (defBy) {
     case kDefByNo:
-      return &dominance.GetCommonEntryBB();
+      return nullptr;
     case kDefByStmt:
-      defMeStmt = def.defStmt;
-      return defMeStmt->GetBB();
-    case kDefByMustDef:
-      defMeStmt = def.defMustDef->GetBase();
-      return defMeStmt->GetBB();
-    case kDefByChi:
-      defMeStmt = def.defChi->GetBase();
-      return defMeStmt->GetBB();
+      ASSERT(def.defStmt, "ScalarMeExpr::DefByBB: defStmt cannot be nullptr");
+      return def.defStmt->GetBB();
     case kDefByPhi:
+      ASSERT(def.defPhi, "ScalarMeExpr::DefByBB: defPhi cannot be nullptr");
       return def.defPhi->GetDefBB();
+    case kDefByChi: {
+      ASSERT(def.defChi, "ScalarMeExpr::DefByBB: defChi cannot be nullptr");
+      ASSERT(def.defChi->GetBase(), "ScalarMeExpr::DefByBB: defChi->base cannot be nullptr");
+      return def.defChi->GetBase()->GetBB();
+    }
+    case kDefByMustDef: {
+      ASSERT(def.defMustDef, "ScalarMeExpr::DefByBB: defMustDef cannot be nullptr");
+      ASSERT(def.defMustDef->GetBase(), "ScalarMeExpr::DefByBB: defMustDef->base cannot be nullptr");
+      return def.defMustDef->GetBase()->GetBB();
+    }
     default:
+      ASSERT(false, "scalar define unknown");
       return nullptr;
   }
 }
 
-bool VarMeExpr::IsUseSameSymbol(const MeExpr &expr) const {
-  if (expr.GetMeOp() != kMeOpVar) {
-    return false;
-  }
-  auto &varMeExpr = static_cast<const VarMeExpr&>(expr);
-  return ostIdx == varMeExpr.ostIdx;
-}
-
-bool VarMeExpr::IsPureLocal(const SSATab &tab, const MIRFunction &irFunc) const {
-  const MIRSymbol *st = tab.GetMIRSymbolFromID(ostIdx);
-  return st->IsLocal() && !irFunc.IsAFormal(st);
-}
-
-bool VarMeExpr::IsZeroVersion(const SSATab &ssatab) const {
-  ASSERT(vstIdx != 0, "VarMeExpr::IsZeroVersion: cannot determine because vstIdx is 0");
-  const OriginalSt *ost = ssatab.GetOriginalStFromID(ostIdx);
-  return ost->GetZeroVersionIndex() == vstIdx;
-}
-
-bool RegMeExpr::IsUseSameSymbol(const MeExpr &expr) const {
-  if (expr.GetMeOp() != kMeOpReg) {
-    return false;
-  }
-  auto &regMeExpr = static_cast<const RegMeExpr&>(expr);
-  return ostIdx == regMeExpr.ostIdx;
-}
-
-BB *RegMeExpr::DefByBB() {
+BB *ScalarMeExpr::GetDefByBBMeStmt(const Dominance &dominance, MeStmtPtr &defMeStmt) const {
   switch (defBy) {
     case kDefByNo:
       return nullptr;
     case kDefByStmt:
       ASSERT(def.defStmt, "VarMeExpr::DefByBB: defStmt cannot be nullptr");
+      defMeStmt = def.defStmt;	  
       return def.defStmt->GetBB();
     case kDefByPhi:
       ASSERT(def.defPhi, "VarMeExpr::DefByBB: defPhi cannot be nullptr");
       return def.defPhi->GetDefBB();
-    case kDefByMustDef:
+    case kDefByChi: {
+      ASSERT(def.defChi, "VarMeExpr::DefByBB: defChi cannot be nullptr");
+      ASSERT(def.defChi->GetBase(), "VarMeExpr::DefByBB: defChi->base cannot be nullptr");
+      defMeStmt = def.defChi->GetBase();	  
+      return def.defChi->GetBase()->GetBB();
+    }
+    case kDefByMustDef: {
       ASSERT(def.defMustDef, "VarMeExpr::DefByBB: defMustDef cannot be nullptr");
       ASSERT(def.defMustDef->GetBase(), "VarMeExpr::DefByBB: defMustDef->base cannot be nullptr");
+      defMeStmt = def.defMustDef->GetBase();	  
       return def.defMustDef->GetBase()->GetBB();
+    }
     default:
-      ASSERT(false, "reg define unknown");
+      ASSERT(false, "var define unknown");
       return nullptr;
   }
+}
+
+bool VarMeExpr::IsPureLocal(const SSATab &tab, const MIRFunction &irFunc) const {
+  const MIRSymbol *st = tab.GetMIRSymbolFromID(GetOStIdx());
+  return st->IsLocal() && !irFunc.IsAFormal(st);
+}
+
+bool VarMeExpr::IsZeroVersion(const SSATab &ssatab) const {
+  ASSERT(GetVstIdx() != 0, "VarMeExpr::IsZeroVersion: cannot determine because vstIdx is 0");
+  const OriginalSt *ost = ssatab.GetOriginalStFromID(GetOStIdx());
+  return ost->GetZeroVersionIndex() == GetVstIdx();
 }
 
 bool AddrofMeExpr::IsUseSameSymbol(const MeExpr &expr) const {
@@ -718,13 +727,26 @@ MeExpr *AddroffuncMeExpr::GetIdenticalExpr(MeExpr &expr, bool isConstructor) con
   return nullptr;
 }
 
-void MeVarPhiNode::Dump(const IRMap *irMap) const {
-  if (isPiAdded) {
-    LogInfo::MapleLogger() << "PI_ADD VAR:";
+void MePhiNode::Dump(const IRMap *irMap) const {
+  const OriginalSt *ost =  irMap->GetSSATab().GetOriginalStFromID(lhs->GetOStIdx());
+  bool isSym = ost->IsSymbolOst();
+  CHECK_FATAL(lhs != nullptr, "lsh is null");  
+  if (isSym) {	
+    if (isPiAdded) {
+      LogInfo::MapleLogger() << "PI_ADD VAR:";
+    }
+    LogInfo::MapleLogger() << "VAR:";
+    irMap->GetSSATab().GetOriginalStFromID(lhs->GetOStIdx())->Dump();
+  } else {
+    PregIdx16 regId = static_cast<RegMeExpr*>(lhs)->GetRegIdx();  
+    LogInfo::MapleLogger() << "REGVAR: " << regId;
+    LogInfo::MapleLogger() << "(%"
+                           << irMap->GetMIRModule().CurFunction()
+                                                   ->GetPregTab()
+                                                   ->PregFromPregIdx(static_cast<PregIdx>(regId))
+                                                   ->GetPregNo()
+                           << ")";
   }
-  LogInfo::MapleLogger() << "VAR:";
-  CHECK_FATAL(lhs != nullptr, "lsh is null");
-  irMap->GetSSATab().GetOriginalStFromID(lhs->GetOStIdx())->Dump();
   LogInfo::MapleLogger() << " mx" << lhs->GetExprID();
   LogInfo::MapleLogger() << " = MEPHI{";
   for (size_t i = 0; i < opnds.size(); ++i) {
@@ -740,30 +762,10 @@ void MeVarPhiNode::Dump(const IRMap *irMap) const {
   LogInfo::MapleLogger() << '\n';
 }
 
-void MeRegPhiNode::Dump(const IRMap *irMap) const {
-  CHECK_FATAL(lhs != nullptr, "lhs is null");
-  LogInfo::MapleLogger() << "REGVAR: " << lhs->GetRegIdx();
-  LogInfo::MapleLogger() << "(%"
-                         << irMap->GetMIRModule().CurFunction()
-                                                 ->GetPregTab()
-                                                 ->PregFromPregIdx(static_cast<PregIdx>(lhs->GetRegIdx()))
-                                                 ->GetPregNo()
-                         << ")";
-  LogInfo::MapleLogger() << " mx" << lhs->GetExprID();
-  LogInfo::MapleLogger() << " = MEPHI{";
-  for (size_t i = 0; i < opnds.size(); ++i) {
-    LogInfo::MapleLogger() << "mx" << opnds[i]->GetExprID();
-    if (i != opnds.size() - 1) {
-      LogInfo::MapleLogger() << ",";
-    }
-  }
-  LogInfo::MapleLogger() << "}" << '\n';
-}
-
 void VarMeExpr::Dump(const IRMap *irMap, int32) const {
   CHECK_NULL_FATAL(irMap);
   LogInfo::MapleLogger() << "VAR ";
-  irMap->GetSSATab().GetOriginalStFromID(ostIdx)->Dump();
+  irMap->GetSSATab().GetOriginalStFromID(GetOStIdx())->Dump();
   LogInfo::MapleLogger() << " (field)" << fieldID;
   LogInfo::MapleLogger() << " mx" << GetExprID();
   if (IsZeroVersion(irMap->GetSSATab())) {
@@ -1345,34 +1347,8 @@ void AssertMeStmt::Dump(const IRMap *irMap) const {
   LogInfo::MapleLogger() << '\n';
 }
 
-BB *VarMeExpr::DefByBB() {
-  switch (defBy) {
-    case kDefByNo:
-      return nullptr;
-    case kDefByStmt:
-      ASSERT(def.defStmt, "VarMeExpr::DefByBB: defStmt cannot be nullptr");
-      return def.defStmt->GetBB();
-    case kDefByPhi:
-      ASSERT(def.defPhi, "VarMeExpr::DefByBB: defPhi cannot be nullptr");
-      return def.defPhi->GetDefBB();
-    case kDefByChi: {
-      ASSERT(def.defChi, "VarMeExpr::DefByBB: defChi cannot be nullptr");
-      ASSERT(def.defChi->GetBase(), "VarMeExpr::DefByBB: defChi->base cannot be nullptr");
-      return def.defChi->GetBase()->GetBB();
-    }
-    case kDefByMustDef: {
-      ASSERT(def.defMustDef, "VarMeExpr::DefByBB: defMustDef cannot be nullptr");
-      ASSERT(def.defMustDef->GetBase(), "VarMeExpr::DefByBB: defMustDef->base cannot be nullptr");
-      return def.defMustDef->GetBase()->GetBB();
-    }
-    default:
-      ASSERT(false, "var define unknown");
-      return nullptr;
-  }
-}
-
 bool VarMeExpr::IsVolatile(const SSATab &ssatab) const {
-  const OriginalSt *ost = ssatab.GetOriginalStFromID(ostIdx);
+  const OriginalSt *ost = ssatab.GetOriginalStFromID(GetOStIdx());
   if (!ost->IsSymbolOst()) {
     return false;
   }
@@ -1467,10 +1443,10 @@ MapleMap<OStIdx, ChiMeNode*> *GenericGetChiListFromVarMeExprInner(VarMeExpr &exp
   }
   visited.insert(&expr);
   if (expr.GetDefBy() == kDefByPhi) {
-    MeVarPhiNode &phiMe = expr.GetDefPhi();
-    MapleVector<VarMeExpr*> &phiOpnds = phiMe.GetOpnds();
+    MePhiNode &phiMe = expr.GetDefPhi();
+    MapleVector<ScalarMeExpr*> &phiOpnds = phiMe.GetOpnds();
     for (auto it = phiOpnds.begin(); it != phiOpnds.end(); ++it) {
-      VarMeExpr *meExpr = *it;
+      VarMeExpr *meExpr = static_cast<VarMeExpr*>(*it);
       MapleMap<OStIdx, ChiMeNode*> *chiList = GenericGetChiListFromVarMeExprInner(*meExpr, visited);
       if (chiList != nullptr) {
         return chiList;

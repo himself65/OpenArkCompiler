@@ -34,8 +34,8 @@ void MeDoHDSE::MakeEmptyTrysUnreachable(MeFunction &func) {
     BB *endTry = *endTryIt;
     auto &meStmts = tryBB->GetMeStmts();
     if (tryBB->GetAttributes(kBBAttrIsTry) && !meStmts.empty() &&
-        meStmts.front().GetOp() == OP_try && tryBB->GetMevarPhiList().empty() &&
-        tryBB->GetMeRegPhiList().empty() && endTry->GetAttributes(kBBAttrIsTryEnd) && endTry->IsMeStmtEmpty()) {
+        meStmts.front().GetOp() == OP_try && tryBB->GetMePhiList().empty() &&
+        endTry->GetAttributes(kBBAttrIsTryEnd) && endTry->IsMeStmtEmpty()) {
       // we found a try BB followed by an empty endtry BB
       BB *targetBB = endTry->GetSucc(0);
       for (auto *tryPred : tryBB->GetPred()) {
@@ -45,9 +45,9 @@ void MeDoHDSE::MakeEmptyTrysUnreachable(MeFunction &func) {
           for (size_t k = 0; k < targetBB->GetPred().size(); ++k) {
             if (targetBB->GetPred(k) == endTry) {
               // push additional phi operand for each phi at targetbb
-              auto phiIter = targetBB->GetMevarPhiList().begin();
-              for (; phiIter != targetBB->GetMevarPhiList().end(); ++phiIter) {
-                MeVarPhiNode *meVarPhi = phiIter->second;
+              auto phiIter = targetBB->GetMePhiList().begin();
+              for (; phiIter != targetBB->GetMePhiList().end(); ++phiIter) {
+                MePhiNode *meVarPhi = phiIter->second;
                 meVarPhi->GetOpnds().push_back(meVarPhi->GetOpnds()[k]);
               }
             }

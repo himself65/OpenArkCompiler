@@ -194,41 +194,49 @@ class ChiMeNode;      // circular dependency exists, no other choice
 class MustDefMeNode;  // circular dependency exists, no other choice
 class IassignMeStmt;  // circular dependency exists, no other choice
 
-// represant dread
-class VarMeExpr final : public MeExpr {
+// base class for VarMeExpr and RegMeExpr
+class ScalarMeExpr : public MeExpr {
  public:
-  VarMeExpr(MapleAllocator *alloc, int32 exprid, OStIdx oidx, size_t vidx)
-      : MeExpr(exprid, kMeOpVar),
-        ostIdx(oidx),
-        vstIdx(vidx),
-        inferredTypeCandidates(alloc->Adapter()) {}
+  ScalarMeExpr(int32 exprid, OStIdx oidx, uint32 vidx, MeExprOp meop)
+    : MeExpr(exprid, meop),
+      ostIdx(oidx),
+      vstIdx(vidx),
+      defBy(kDefByNo) {
+    def.defStmt = nullptr;
+  }
 
-  ~VarMeExpr() = default;
+  ~ScalarMeExpr() = default;
 
-  void Dump(const IRMap*, int32 indent = 0) const override;
+  bool IsIdentical(MeExpr &meexpr) {
+    CHECK_FATAL(false, "ScalarMeExpr::IsIdentical() should not be called");
+    return true;
+  }
   bool IsUseSameSymbol(const MeExpr&) const override;
-  BaseNode &EmitExpr(SSATab&) override;
-  bool IsValidVerIdx(const SSATab &ssaTab) const;
-  void SetDefByStmt(MeStmt &defStmt) override {
+  
+  void SetDefByStmt(MeStmt &defStmt) override {  
     defBy = kDefByStmt;
     def.defStmt = &defStmt;
   }
-
-  MeVarPhiNode *GetMeVarPhiDef() const {
+  
+  MePhiNode *GetMePhiDef() const {
     return IsDefByPhi() ? def.defPhi : nullptr;
   }
 
-  BB *DefByBB();
-  bool IsVolatile(const SSATab&) const override;
-  // indicate if the variable is local variable but not a function formal variable
-  bool IsPureLocal(const SSATab&, const MIRFunction&) const;
-  bool IsZeroVersion(const SSATab&) const;
-  BB *GetDefByBBMeStmt(const Dominance&, MeStmtPtr&) const;
-  bool IsSameVariableValue(const VarMeExpr&) const override;
-  VarMeExpr &ResolveVarMeValue(SSATab &ssaTab);
-  bool PointsToStringLiteral(SSATab &ssaTab);
+  bool IsDefByNo() const {
+    return defBy == kDefByNo;
+  }
+  
+  bool IsDefByPhi() const {
+    return defBy == kDefByPhi;
+  }
+  
+  BB *DefByBB() const;
 
   const OStIdx &GetOStIdx() const {
+    return ostIdx;
+  }
+
+  OStIdx GetOstIdx() const {
     return ostIdx;
   }
 
@@ -239,6 +247,95 @@ class VarMeExpr final : public MeExpr {
   void SetVstIdx(size_t vstIdxVal) {
     vstIdx = vstIdxVal;
   }
+
+  MeDefBy GetDefBy() const {
+    return defBy;
+  }
+
+  void SetDefBy(MeDefBy defByVal) {
+    defBy = defByVal;
+  }
+
+  MeStmt *GetDefStmt() const {
+    return def.defStmt;
+  }
+
+  void SetDefStmt(MeStmt *defStmt) {
+    def.defStmt = defStmt;
+  }
+
+  MePhiNode &GetDefPhi() {
+    return *def.defPhi;
+  }
+
+  const MePhiNode &GetDefPhi() const {
+    return *def.defPhi;
+  }
+
+  void SetDefPhi(MePhiNode &defPhi) {
+    def.defPhi = &defPhi;
+  }
+
+  ChiMeNode &GetDefChi() {
+    return *def.defChi;
+  }
+
+  const ChiMeNode &GetDefChi() const {
+    return *def.defChi;
+  }
+
+  void SetDefChi(ChiMeNode &defChi) {
+    def.defChi = &defChi;
+  }
+
+  MustDefMeNode &GetDefMustDef() {
+    return *def.defMustDef;
+  }
+
+  const MustDefMeNode &GetDefMustDef() const {
+    return *def.defMustDef;
+  }
+
+  void SetDefMustDef(MustDefMeNode &defMustDef) {
+    def.defMustDef = &defMustDef;
+  }
+
+  BB *GetDefByBBMeStmt(const Dominance&, MeStmtPtr&) const;
+ private:
+  OStIdx ostIdx;   // the index in MEOptimizer's OriginalStTable;
+  uint32 vstIdx;    // the index in MEOptimizer's VersionStTable, 0 if not in VersionStTable
+  MeDefBy defBy : 3;
+  union {
+    MeStmt *defStmt;  // definition stmt of this var
+    MePhiNode *defPhi;
+    ChiMeNode *defChi;          // definition node by Chi
+    MustDefMeNode *defMustDef;  // definition by callassigned
+  } def;  
+};
+
+
+
+
+// represant dread
+class VarMeExpr final : public ScalarMeExpr {
+ public:
+  VarMeExpr(MapleAllocator *alloc, int32 exprid, OStIdx oidx, size_t vidx)
+      : ScalarMeExpr(exprid, oidx, vidx, kMeOpVar),
+        inferredTypeCandidates(alloc->Adapter()) {}
+
+  ~VarMeExpr() = default;
+
+  void Dump(const IRMap*, int32 indent = 0) const override;
+  BaseNode &EmitExpr(SSATab&) override;
+  bool IsValidVerIdx(const SSATab &ssaTab) const;
+
+  bool IsVolatile(const SSATab&) const override;
+  // indicate if the variable is local variable but not a function formal variable
+  bool IsPureLocal(const SSATab&, const MIRFunction&) const;
+  bool IsZeroVersion(const SSATab&) const;
+  bool IsSameVariableValue(const VarMeExpr&) const override;
+  VarMeExpr &ResolveVarMeValue(SSATab &ssaTab);
+  bool PointsToStringLiteral(SSATab &ssaTab);
 
   FieldID GetFieldID() const {
     return fieldID;
@@ -268,14 +365,6 @@ class VarMeExpr final : public MeExpr {
     inferredTypeCandidates.clear();
   }
 
-  MeDefBy GetDefBy() const {
-    return defBy;
-  }
-
-  void SetDefBy(MeDefBy defByVal) {
-    defBy = defByVal;
-  }
-
   bool GetMaybeNull() const {
     return maybeNull;
   }
@@ -292,109 +381,52 @@ class VarMeExpr final : public MeExpr {
     noDelegateRC = noDelegateRCVal;
   }
 
-  MeStmt *GetDefStmt() const {
-    return def.defStmt;
-  }
-
-  void SetDefStmt(MeStmt *defStmt) {
-    def.defStmt = defStmt;
-  }
-
-  MeVarPhiNode &GetDefPhi() {
-    return *def.defPhi;
-  }
-
-  const MeVarPhiNode &GetDefPhi() const {
-    return *def.defPhi;
-  }
-
-  void SetDefPhi(MeVarPhiNode &defPhi) {
-    def.defPhi = &defPhi;
-  }
-
-  ChiMeNode &GetDefChi() {
-    return *def.defChi;
-  }
-
-  const ChiMeNode &GetDefChi() const {
-    return *def.defChi;
-  }
-
-  void SetDefChi(ChiMeNode &defChi) {
-    def.defChi = &defChi;
-  }
-
-  MustDefMeNode &GetDefMustDef() {
-    return *def.defMustDef;
-  }
-
-  const MustDefMeNode &GetDefMustDef() const {
-    return *def.defMustDef;
-  }
-
-  void SetDefMustDef(MustDefMeNode &defMustDef) {
-    def.defMustDef = &defMustDef;
-  }
-
  private:
-  bool IsDefByPhi() const {
-    return defBy == kDefByPhi;
-  }
   bool noDelegateRC = false;  // true if this cannot be optimized by delegaterc
-  union {
-    MeStmt *defStmt = nullptr;            // definition stmt of this var
-    MeVarPhiNode *defPhi;
-    ChiMeNode *defChi;          // definition node by Chi
-    MustDefMeNode *defMustDef;  // definition by callassigned
-  } def;
-
-  OStIdx ostIdx;  // the index in MEOptimizer's OriginalStTable;
-  size_t vstIdx;  // the index in MEOptimizer's VersionStTable, 0 if not in VersionStTable
   FieldID fieldID = 0;
   TyIdx inferredTyIdx{ 0 }; /* Non zero if it has a known type (allocation type is seen). */
   MapleVector<TyIdx> inferredTypeCandidates;
-  MeDefBy defBy = kDefByNo;
   bool maybeNull = true;  // false if definitely not null
 };
 
-class MeVarPhiNode {
+class MePhiNode {
  public:
-  explicit MeVarPhiNode(MapleAllocator *alloc)
+  explicit MePhiNode(MapleAllocator *alloc)
       : opnds(kOperandNumBinary, nullptr, alloc->Adapter()) {
     opnds.pop_back();
     opnds.pop_back();
   }
 
-  MeVarPhiNode(VarMeExpr *var, MapleAllocator *alloc)
-      : lhs(var), opnds(kOperandNumBinary, nullptr, alloc->Adapter()) {
-    var->SetDefPhi(*this);
-    var->SetDefBy(kDefByPhi);
+  MePhiNode(ScalarMeExpr *expr, MapleAllocator *alloc)
+      : lhs(expr), opnds(kOperandNumBinary, nullptr, alloc->Adapter()) {
+    expr->SetDefPhi(*this);
+    expr->SetDefBy(kDefByPhi);
     opnds.pop_back();
     opnds.pop_back();
   }
 
-  ~MeVarPhiNode() = default;
+  ~MePhiNode() = default;
 
-  void UpdateLHS(VarMeExpr &var) {
-    lhs = &var;
-    var.SetDefBy(kDefByPhi);
-    var.SetDefPhi(*this);
+  void UpdateLHS(ScalarMeExpr &expr) {
+    lhs = &expr;
+    expr.SetDefBy(kDefByPhi);
+    expr.SetDefPhi(*this);
   }
 
   bool IsPureLocal(const SSATab &ssaTab, const MIRFunction &mirFunc);
   void Dump(const IRMap *irMap) const;
 
-  VarMeExpr *GetOpnd(size_t idx) const {
-    ASSERT(idx < opnds.size(), "out of range in MeVarPhiNode::GetOpnd");
+  ScalarMeExpr *GetOpnd(size_t idx) const {
+    ASSERT(idx < opnds.size(), "out of range in MePhiNode::GetOpnd");
     return opnds.at(idx);
   }
 
-  void SetOpnd(size_t idx, VarMeExpr *opnd) {
-    CHECK_FATAL(idx < opnds.size(), "out of range in MeVarPhiNode::SetOpnd");
+  void SetOpnd(size_t idx, ScalarMeExpr *opnd) {
+    CHECK_FATAL(idx < opnds.size(), "out of range in MePhiNode::SetOpnd");
     opnds[idx] = opnd;
   }
 
-  MapleVector<VarMeExpr*> &GetOpnds() {
+  MapleVector<ScalarMeExpr*> &GetOpnds() {
     return opnds;
   }
 
@@ -418,11 +450,11 @@ class MeVarPhiNode {
     return defBB;
   }
 
-  VarMeExpr *GetLHS() {
+  ScalarMeExpr *GetLHS() {
     return lhs;
   }
 
-  void SetLHS(VarMeExpr *value) {
+  void SetLHS(ScalarMeExpr *value) {
     lhs = value;
   }
 
@@ -435,44 +467,26 @@ class MeVarPhiNode {
   }
 
  private:
-  VarMeExpr *lhs = nullptr;
-  MapleVector<VarMeExpr*> opnds;
+  ScalarMeExpr *lhs = nullptr;
+  MapleVector<ScalarMeExpr*> opnds;
   bool isLive = true;
   BB *defBB = nullptr;  // the bb that defines this phi
   bool isPiAdded = false;
 };
 
-class RegMeExpr : public MeExpr {
+class RegMeExpr : public ScalarMeExpr {
  public:
   RegMeExpr(MapleAllocator *alloc, int32 exprid, PregIdx preg, PUIdx pidx, OStIdx oidx, uint32 vidx)
-      : MeExpr(exprid, kMeOpReg),
+       : ScalarMeExpr(exprid, oidx, vidx, kMeOpReg), 
         regIdx(preg),
         puIdx(pidx),
-        ostIdx(oidx),
-        vstIdx(vidx),
-        phiUseSet(std::less<MeRegPhiNode*>(), alloc->Adapter()) {}
+        phiUseSet(std::less<MePhiNode*>(), alloc->Adapter()) {}
 
   ~RegMeExpr() = default;
 
   void Dump(const IRMap*, int32 indent = 0) const override;
   BaseNode &EmitExpr(SSATab&) override;
-  void SetDefByStmt(MeStmt &defStmt) override {
-    defBy = kDefByStmt;
-    def.defStmt = &defStmt;
-  }
-
-  bool IsDefByPhi() const {
-    return defBy == kDefByPhi;
-  }
-
-  MeRegPhiNode *GetMeRegPhiDef() const {
-    return IsDefByPhi() ? def.defPhi : nullptr;
-  }
-
   bool IsSameVariableValue(const VarMeExpr&) const override;
-
-  bool IsUseSameSymbol(const MeExpr&) const override;
-  BB *DefByBB();
   RegMeExpr *FindDefByStmt(std::set<RegMeExpr*> &visited);
 
   PregIdx16 GetRegIdx() const {
@@ -483,56 +497,12 @@ class RegMeExpr : public MeExpr {
     regIdx = regIdxVal;
   }
 
-  MeDefBy GetDefBy() const {
-    return defBy;
-  }
-
-  void SetDefBy(MeDefBy defByVal) {
-    defBy = defByVal;
-  }
-
   PUIdx GetPuIdx() const {
     return puIdx;
   }
 
-  OStIdx GetOstIdx() const {
-    return ostIdx;
-  }
-
-  MapleSet<MeRegPhiNode*> &GetPhiUseSet() {
+  MapleSet<MePhiNode*> &GetPhiUseSet() {
     return phiUseSet;
-  }
-
-  MeStmt *GetDefStmt() const {
-    return def.defStmt;
-  }
-
-  MeRegPhiNode &GetDefPhi() {
-    return *def.defPhi;
-  }
-
-  const MeRegPhiNode &GetDefPhi() const {
-    return *def.defPhi;
-  }
-
-  MustDefMeNode &GetDefMustDef() {
-    return *def.defMustDef;
-  }
-
-  const MustDefMeNode &GetDefMustDef() const {
-    return *def.defMustDef;
-  }
-
-  void SetDefStmt(MeStmt *defStmtVal) {
-    def.defStmt = defStmtVal;
-  }
-
-  void SetDefPhi(MeRegPhiNode &defPhiVal) {
-    def.defPhi = &defPhiVal;
-  }
-
-  void SetDefMustDef(MustDefMeNode &defMustDefVal) {
-    def.defMustDef = &defMustDefVal;
   }
 
   bool IsNormalReg() const {
@@ -540,20 +510,13 @@ class RegMeExpr : public MeExpr {
   }
 
  private:
-  union {
-    MeStmt *defStmt = nullptr;
-    MeRegPhiNode *defPhi;
-    MustDefMeNode *defMustDef;  // definition by callassigned
-  } def;
   PregIdx16 regIdx;
-  MeDefBy defBy = kDefByNo;
   bool recursivePtr = false;  // if pointer to recursive data structures;
   PUIdx puIdx;
-  OStIdx ostIdx;                      // the index in MEOptimizer's OriginalStTable;
-  uint32 vstIdx;                      // the index in MEOptimizer's VersionStTable, 0 if not in VersionStTable
-  MapleSet<MeRegPhiNode*> phiUseSet;  // the use set of this reg node, used by preg renamer
+  MapleSet<MePhiNode*> phiUseSet;  // the use set of this reg node, used by preg renamer
 };
 
+#if 0
 class MeRegPhiNode {
  public:
   explicit MeRegPhiNode(MapleAllocator *alloc)
@@ -616,6 +579,7 @@ class MeRegPhiNode {
   bool isLive = true;
   BB *defBB = nullptr;  // the bb that defines this phi
 };
+#endif
 
 class ConstMeExpr : public MeExpr {
  public:

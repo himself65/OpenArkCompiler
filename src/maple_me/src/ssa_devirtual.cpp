@@ -330,12 +330,17 @@ void SSADevirtual::PropIvarInferredType(IvarMeExpr &ivar) const {
   }
 }
 
-void SSADevirtual::VisitVarPhiNode(MeVarPhiNode &varPhi) const {
-  MapleVector<VarMeExpr*> opnds = varPhi.GetOpnds();
-  auto *lhs = varPhi.GetLHS();
+void SSADevirtual::VisitVarPhiNode(MePhiNode &varPhi) const {
+  MapleVector<ScalarMeExpr*> opnds = varPhi.GetOpnds();
+  auto *phiLhs = varPhi.GetLHS();
+  // RegPhiNode cases NYI
+  if (phiLhs == nullptr || phiLhs->GetMeOp() != kMeOpVar)
+    return; 
+
+  auto *lhs = static_cast<VarMeExpr*>(phiLhs);
   const MapleVector<TyIdx> &inferredTypeCandidates = lhs->GetInferredTypeCandidates();
   for (size_t i = 0; i < opnds.size(); ++i) {
-    VarMeExpr *opnd = opnds[i];
+    VarMeExpr *opnd = static_cast<VarMeExpr*>(opnds[i]);
     PropVarInferredType(*opnd);
     if (opnd->GetInferredTyIdx() != 0u) {
       size_t j = 0;
@@ -600,9 +605,9 @@ void SSADevirtual::TraversalBB(BB *bb) {
   }
   bbVisited[bb->GetBBId()] = true;
   // traversal var phi nodes
-  MapleMap<OStIdx, MeVarPhiNode*> &meVarPhiList = bb->GetMevarPhiList();
-  for (auto it = meVarPhiList.begin(); it != meVarPhiList.end(); ++it) {
-    MeVarPhiNode *phiMeNode = it->second;
+  MapleMap<OStIdx, MePhiNode*> &mePhiList = bb->GetMePhiList();
+  for (auto it = mePhiList.begin(); it != mePhiList.end(); ++it) {
+    MePhiNode *phiMeNode = it->second;
     VisitVarPhiNode(*phiMeNode);
   }
   // traversal reg phi nodes (NYI)

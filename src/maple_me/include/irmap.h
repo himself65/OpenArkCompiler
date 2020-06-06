@@ -92,8 +92,7 @@ class IRMap : public AnalysisResult {
   IassignMeStmt *CreateIassignMeStmt(TyIdx, IvarMeExpr&, MeExpr&, const MapleMap<OStIdx, ChiMeNode*>&);
   RegassignMeStmt *CreateRegassignMeStmt(MeExpr&, MeExpr&, BB&);
   void InsertMeStmtBefore(BB&, MeStmt&, MeStmt&);
-  MeRegPhiNode *CreateMeRegPhi(RegMeExpr&);
-  MeVarPhiNode *CreateMeVarPhi(VarMeExpr&);
+  MePhiNode *CreateMePhi(ScalarMeExpr&);
 
   virtual void Dump() = 0;
   virtual void SetCurFunction(const BB&) {}

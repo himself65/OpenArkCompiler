@@ -92,7 +92,7 @@ MeExpr *MeOccur::GetSavedExpr() {
       return static_cast<MeRealOcc*>(this)->GetSavedExpr();
     case kOccPhiocc: {
       auto *phiOcc = static_cast<MePhiOcc*>(this);
-      MeRegPhiNode *regPhi = phiOcc->GetRegPhi();
+      MePhiNode *regPhi = phiOcc->GetRegPhi();
       if (regPhi != nullptr) {
         return regPhi->GetLHS();
       } else {

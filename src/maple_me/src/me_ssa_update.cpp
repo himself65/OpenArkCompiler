@@ -48,29 +48,29 @@ void MeSSAUpdate::InsertPhis() {
       // insert a phi node
       BB *bb = func.GetBBFromID(bbId);
       ASSERT_NOT_NULL(bb);
-      auto phiListIt = bb->GetMevarPhiList().find(it->first);
-      if (phiListIt != bb->GetMevarPhiList().end()) {
+      auto phiListIt = bb->GetMePhiList().find(it->first);
+      if (phiListIt != bb->GetMePhiList().end()) {
         phiListIt->second->SetIsLive(true);
         continue;
       }
-      auto *phiMeNode = irMap.NewInPool<MeVarPhiNode>();
+      auto *phiMeNode = irMap.NewInPool<MePhiNode>();
       phiMeNode->SetDefBB(bb);
       phiMeNode->GetOpnds().resize(bb->GetPred().size());
-      bb->GetMevarPhiList().insert(std::make_pair(it->first, phiMeNode));
+      bb->GetMePhiList().insert(std::make_pair(it->first, phiMeNode));
     }
     // initialize its rename stack
-    renameStacks[it->first] = ssaUpdateMp.New<MapleStack<VarMeExpr*>>(ssaUpdateAlloc.Adapter());
+    renameStacks[it->first] = ssaUpdateMp.New<MapleStack<ScalarMeExpr*>>(ssaUpdateAlloc.Adapter());
   }
 }
 
 void MeSSAUpdate::RenamePhi(const BB &bb) {
   for (auto it1 = renameStacks.begin(); it1 != renameStacks.end(); ++it1) {
-    auto it2 = bb.GetMevarPhiList().find(it1->first);
-    if (it2 == bb.GetMevarPhiList().end()) {
+    auto it2 = bb.GetMePhiList().find(it1->first);
+    if (it2 == bb.GetMePhiList().end()) {
       continue;
     }
     // if there is existing phi result node
-    MeVarPhiNode *phi = it2->second;
+    MePhiNode *phi = it2->second;
     phi->SetIsLive(true);  // always make it live, for correctness
     if (phi->GetLHS() == nullptr) {
       // create a new VarMeExpr defined by this phi
@@ -93,8 +93,8 @@ MeExpr *MeSSAUpdate::RenameExpr(MeExpr &meExpr, bool &changed) {
       if (it == renameStacks.end()) {
         return &meExpr;
       }
-      MapleStack<VarMeExpr*> *renameStack = it->second;
-      VarMeExpr *curVar = renameStack->top();
+      MapleStack<ScalarMeExpr*> *renameStack = it->second;
+      ScalarMeExpr *curVar = renameStack->top();
       if (&varExpr == curVar) {
         return &meExpr;
       }
@@ -227,13 +227,13 @@ void MeSSAUpdate::RenamePhiOpndsInSucc(const BB &bb) {
     }
     CHECK_FATAL(index < succ->GetPred().size(), "RenamePhiOpndsinSucc: cannot find corresponding pred");
     for (auto it1 = renameStacks.begin(); it1 != renameStacks.end(); ++it1) {
-      auto it2 = succ->GetMevarPhiList().find(it1->first);
-      if (it2 == succ->GetMevarPhiList().end()) {
+      auto it2 = succ->GetMePhiList().find(it1->first);
+      if (it2 == succ->GetMePhiList().end()) {
         continue;
       }
-      MeVarPhiNode *phi = it2->second;
-      MapleStack<VarMeExpr*> *renameStack = it1->second;
-      VarMeExpr *curVar = renameStack->top();
+      MePhiNode *phi = it2->second;
+      MapleStack<ScalarMeExpr*> *renameStack = it1->second;
+      ScalarMeExpr *curVar = renameStack->top();
       if (phi->GetOpnd(index) != curVar) {
         phi->SetOpnd(index, curVar);
       }
@@ -270,7 +270,7 @@ void MeSSAUpdate::Run() {
   for (auto it = renameStacks.begin(); it != renameStacks.end(); ++it) {
     const OriginalSt *ost = ssaTab.GetSymbolOriginalStFromID(it->first);
     VarMeExpr *zeroVersVar = irMap.GetOrCreateZeroVersionVarMeExpr(*ost);
-    MapleStack<VarMeExpr*> *renameStack = it->second;
+    MapleStack<ScalarMeExpr*> *renameStack = it->second;
     renameStack->push(zeroVersVar);
   }
   // recurse down dominator tree in pre-order traversal

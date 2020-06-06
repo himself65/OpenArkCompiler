@@ -154,11 +154,7 @@ void BB::RemovePhiOpnd(int index) {
     ASSERT(phi.second.GetPhiOpnds().size() > index, "index out of range in BB::RemovePhiOpnd");
     phi.second.GetPhiOpnds().erase(phi.second.GetPhiOpnds().cbegin() + index);
   }
-  for (auto &phi : meVarPhiList) {
-    ASSERT(phi.second->GetOpnds().size() > index, "index out of range in BB::RemovePhiOpnd");
-    phi.second->GetOpnds().erase(phi.second->GetOpnds().cbegin() + index);
-  }
-  for (auto &phi : meRegPhiList) {
+  for (auto &phi : mePhiList) {
     ASSERT(phi.second->GetOpnds().size() > index, "index out of range in BB::RemovePhiOpnd");
     phi.second->GetOpnds().erase(phi.second->GetOpnds().cbegin() + index);
   }
@@ -368,21 +364,15 @@ void BB::DumpMeVarPiList(const IRMap *irMap) {
   std::cout << "<<<<<<<<<<<<<<  PI Node End >>>>>>>>>>>>>>>>>>>>\n";
 }
 
-void BB::DumpMeVarPhiList(const IRMap *irMap) {
+void BB::DumpMePhiList(const IRMap *irMap) {
   int count = 0;
-  for (const auto &phi : meVarPhiList) {
+  for (const auto &phi : mePhiList) {
     phi.second->Dump(irMap);
     int dumpVsyNum = DumpOptions::GetDumpVsyNum();
     if (dumpVsyNum > 0 && ++count >= dumpVsyNum) {
       break;
     }
-    ASSERT(count >= 0, "meVarPhiList too large");
-  }
-}
-
-void BB::DumpMeRegPhiList(const IRMap *irMap) {
-  for (const auto &phi : meRegPhiList) {
-    phi.second->Dump(irMap);
+    ASSERT(count >= 0, "mePhiList too large");
   }
 }
 

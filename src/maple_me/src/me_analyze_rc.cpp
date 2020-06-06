@@ -249,8 +249,8 @@ void AnalyzeRC::RenameRefPtrs(BB *bb) {
     // record stack size
     savedStacksize[rcItem] = rcItem->versionStack.size();
     // if there is a phi, push stack
-    auto phiIt = bb->GetMevarPhiList().find(mapItem.second->ost.GetIndex());
-    if (phiIt != bb->GetMevarPhiList().end()) {
+    auto phiIt = bb->GetMePhiList().find(mapItem.second->ost.GetIndex());
+    if (phiIt != bb->GetMePhiList().end()) {
       rcItem->versionStack.push((*phiIt).second->GetLHS());
     }
   }

@@ -150,6 +150,7 @@ bool MeCondBased::PointerWasDereferencedBefore(const VarMeExpr &var, const Unary
   // If it sees an iread or iassign whose base is var, then the assertnonnull can be deleted.
   MeStmt *defMeStmt = nullptr;
   BB *bbx = var.GetDefByBBMeStmt(*dominance, defMeStmt);
+  
   if (bbx == nullptr) {
     return false;
   }

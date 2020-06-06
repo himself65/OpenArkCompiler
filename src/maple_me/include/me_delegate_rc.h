@@ -50,7 +50,7 @@ class DelegateRC {
   bool ContainAllTheUses(const VarMeExpr &rhsVar, const MeStmt &fromStmt, const MeStmt &toStmt) const;
   RegMeExpr *RHSTempDelegated(MeExpr &rhs, const MeStmt &useStmt);
   bool FinalRefNoRC(const MeExpr &expr) const;
-  void SetCantDelegate(const MapleMap<OStIdx, MeVarPhiNode*> &meVarPhiList);
+  void SetCantDelegate(const MapleMap<OStIdx, MePhiNode*> &meVarPhiList);
   void SaveDerefedOrCopiedVst(const MeExpr *expr);
   void CollectDerefedOrCopied(const MeStmt &stmt);
   void CollectDerefedOrCopied(const MeExpr &expr);

@@ -146,16 +146,16 @@ void SSAPre::GenerateSavePhiOcc(MePhiOcc &phiOcc) {
          "GenerateSavePhiOcc: inconsistent puIdx");
   MeExpr *regOrVar = CreateNewCurTemp(*workCand->GetTheMeExpr());
   CHECK_NULL_FATAL(regOrVar);
+  MePhiNode *phiNode = irMap->CreateMePhi(static_cast<ScalarMeExpr&>(*regOrVar));
+  phiNode->SetDefBB(phiOcc.GetBB());
+ 
   if (instance_of<RegMeExpr>(regOrVar)) {
     // create a reg phi
-    MeRegPhiNode *phiReg = irMap->CreateMeRegPhi(static_cast<RegMeExpr&>(*regOrVar));
-    phiReg->SetDefBB(phiOcc.GetBB());
-    phiOcc.SetRegPhi(*phiReg);
+    phiOcc.SetRegPhi(*phiNode);
   } else {
-    MeVarPhiNode *phiVar = irMap->CreateMeVarPhi(static_cast<VarMeExpr&>(*regOrVar));
-    CHECK_NULL_FATAL(phiVar);
-    phiVar->SetDefBB(phiOcc.GetBB());
-    phiOcc.SetVarPhi(*phiVar);
+    CHECK_NULL_FATAL(phiNode);
+    phiNode->SetDefBB(phiOcc.GetBB());
+    phiOcc.SetVarPhi(*phiNode);
   }
   // update the phi opnds later
   ASSERT_NOT_NULL(workCand);
@@ -163,7 +163,7 @@ void SSAPre::GenerateSavePhiOcc(MePhiOcc &phiOcc) {
     VarMeExpr *localRefVar = CreateNewCurLocalRefVar();
     temp2LocalRefVarMap[static_cast<RegMeExpr*>(regOrVar)] = localRefVar;
     // create a var phi
-    MeVarPhiNode *phiVar = irMap->CreateMeVarPhi(*localRefVar);
+    MePhiNode *phiVar = irMap->CreateMePhi(*localRefVar);
     phiVar->SetDefBB(phiOcc.GetBB());
     phiOcc.SetVarPhi(*phiVar);
     // update the phi opnds later
@@ -178,7 +178,7 @@ void SSAPre::UpdateInsertedPhiOccOpnd() {
       continue;
     }
     if (phiOcc->GetRegPhi()) {
-      MeRegPhiNode *phiReg = phiOcc->GetRegPhi();
+      MePhiNode *phiReg = phiOcc->GetRegPhi();
       for (MePhiOpndOcc *phiOpnd : phiOcc->GetPhiOpnds()) {
         auto *regOpnd = static_cast<RegMeExpr*>(phiOpnd->GetDef()->GetSavedExpr());
         if (regOpnd == nullptr) {
@@ -189,9 +189,9 @@ void SSAPre::UpdateInsertedPhiOccOpnd() {
         phiReg->GetOpnds().push_back(regOpnd);
         (void)regOpnd->GetPhiUseSet().insert(phiReg);  // record all the uses phi node for preg renaming
       }
-      (void)phiOcc->GetBB()->GetMeRegPhiList().insert(std::make_pair(phiReg->GetOpnd(0)->GetOstIdx(), phiReg));
+      (void)phiOcc->GetBB()->GetMePhiList().insert(std::make_pair(phiReg->GetOpnd(0)->GetOstIdx(), phiReg));
       if (workCand->NeedLocalRefVar() && phiOcc->GetVarPhi() != nullptr) {
-        MeVarPhiNode *phiVar = phiOcc->GetVarPhi();
+        MePhiNode *phiVar = phiOcc->GetVarPhi();
         for (MePhiOpndOcc *phiOpnd : phiOcc->GetPhiOpnds()) {
           auto *regOpnd = static_cast<RegMeExpr*>(phiOpnd->GetDef()->GetSavedExpr());
           VarMeExpr *localRefVarOpnd = nullptr;
@@ -212,10 +212,10 @@ void SSAPre::UpdateInsertedPhiOccOpnd() {
           }
           phiVar->GetOpnds().push_back(localRefVarOpnd);
         }
-        (void)phiOcc->GetBB()->GetMevarPhiList().insert(std::make_pair(phiVar->GetOpnd(0)->GetOStIdx(), phiVar));
+        (void)phiOcc->GetBB()->GetMePhiList().insert(std::make_pair(phiVar->GetOpnd(0)->GetOStIdx(), phiVar));
       }
     } else {
-      MeVarPhiNode *phiVar = phiOcc->GetVarPhi();
+      MePhiNode *phiVar = phiOcc->GetVarPhi();
       for (MePhiOpndOcc *phiOpnd : phiOcc->GetPhiOpnds()) {
         auto *varOpnd = static_cast<VarMeExpr*>(phiOpnd->GetDef()->GetSavedExpr());
         if (varOpnd == nullptr) {
@@ -224,7 +224,7 @@ void SSAPre::UpdateInsertedPhiOccOpnd() {
         }
         phiVar->GetOpnds().push_back(varOpnd);
       }
-      (void)phiOcc->GetBB()->GetMevarPhiList().insert(std::make_pair(phiVar->GetOpnd(0)->GetOStIdx(), phiVar));
+      (void)phiOcc->GetBB()->GetMePhiList().insert(std::make_pair(phiVar->GetOpnd(0)->GetOStIdx(), phiVar));
     }
   }
 }
@@ -860,24 +860,15 @@ MeExpr *SSAPre::GetReplaceMeExpr(const MeExpr &opnd, const BB &ePhiBB, size_t j)
     return nullptr;
   }
   MeExpr *retExpr = nullptr;
-  if (opnd.GetMeOp() == kMeOpVar) {
-    MeVarPhiNode *defPhi = static_cast<const VarMeExpr*>(&opnd)->GetMeVarPhiDef();
-    if (defPhi != nullptr) {
-      if (ePhiBB.GetBBId() == defPhi->GetDefBB()->GetBBId()) {
-        ASSERT(defPhi->GetOpnds()[j]->GetMeOp() == opnd.GetMeOp(), "invalid defPhi");
-        retExpr = defPhi->GetOpnds()[j];
-      }
-    }
-  } else {
-    MeRegPhiNode *defPhi = static_cast<const RegMeExpr*>(&opnd)->GetMeRegPhiDef();
-    if (defPhi != nullptr) {
-      if (ePhiBB.GetBBId() == defPhi->GetDefBB()->GetBBId()) {
-        ASSERT(j < defPhi->GetOpnds().size(), "index out of range in SSAPre::GetReplaceMeExpr");
-        ASSERT(defPhi->GetOpnds()[j]->GetMeOp() == opnd.GetMeOp(), "invalid defPhi");
-        retExpr = defPhi->GetOpnds()[j];
-      }
+  MePhiNode *defPhi = static_cast<const ScalarMeExpr*>(&opnd)->GetMePhiDef();
+  if (defPhi != nullptr) {
+    if (ePhiBB.GetBBId() == defPhi->GetDefBB()->GetBBId()) {
+      ASSERT(j < defPhi->GetOpnds().size(), "index out of range in SSAPre::GetReplaceMeExpr");
+      ASSERT(defPhi->GetOpnds()[j]->GetMeOp() == opnd.GetMeOp(), "invalid defPhi");
+      retExpr = defPhi->GetOpnds()[j];
     }
   }
+
   if (retExpr != nullptr && retExpr->GetPrimType() == kPtyInvalid) {
     ASSERT_NOT_NULL(workCand);
     retExpr->SetPtyp(workCand->GetPrimType());
@@ -974,30 +965,15 @@ void SSAPre::SetVarPhis(const MeExpr &meExpr) {
   if (meOp != kMeOpVar && meOp != kMeOpReg) {
     return;
   }
-  if (meOp == kMeOpVar) {
-    MeVarPhiNode *phiMeNode = static_cast<const VarMeExpr*>(&meExpr)->GetMeVarPhiDef();
-    if (phiMeNode != nullptr) {
-      BBId defBBId = phiMeNode->GetDefBB()->GetBBId();
-      if (varPhiDfns.find(dom->GetDtDfnItem(defBBId)) == varPhiDfns.end() && ScreenPhiBB(defBBId)) {
-        (void)varPhiDfns.insert(dom->GetDtDfnItem(defBBId));
-        for (auto opndIt = phiMeNode->GetOpnds().begin(); opndIt != phiMeNode->GetOpnds().end(); ++opndIt) {
-          VarMeExpr *opnd = *opndIt;
-          SetVarPhis(*opnd);
-        }
-      }
-    }
-  } else {
-    MeRegPhiNode *phiMeNode = static_cast<const RegMeExpr*>(&meExpr)->GetMeRegPhiDef();
-    if (phiMeNode != nullptr) {
-      BBId defBbId = phiMeNode->GetDefBB()->GetBBId();
-      CHECK(defBbId < dom->GetDtDfnSize(), "defBbId.idx out of range in SSAPre::SetVarPhis");
-      if (varPhiDfns.find(dom->GetDtDfnItem(defBbId)) == varPhiDfns.end() && ScreenPhiBB(defBbId)) {
-        (void)varPhiDfns.insert(dom->GetDtDfnItem(defBbId));
-        for (auto opndIt = phiMeNode->GetOpnds().begin(); opndIt != phiMeNode->GetOpnds().end();
-             ++opndIt) {
-          RegMeExpr *opnd = *opndIt;
-          SetVarPhis(*opnd);
-        }
+  MePhiNode *phiMeNode = static_cast<const ScalarMeExpr*>(&meExpr)->GetMePhiDef();
+  if (phiMeNode != nullptr) {
+    BBId defBBId = phiMeNode->GetDefBB()->GetBBId();
+    CHECK(defBBId < dom->GetDtDfnSize(), "defBBId.idx out of range in SSAPre::SetVarPhis");	
+    if (varPhiDfns.find(dom->GetDtDfnItem(defBBId)) == varPhiDfns.end() && ScreenPhiBB(defBBId)) {
+      (void)varPhiDfns.insert(dom->GetDtDfnItem(defBBId));
+      for (auto opndIt = phiMeNode->GetOpnds().begin(); opndIt != phiMeNode->GetOpnds().end(); ++opndIt) {
+        ScalarMeExpr *opnd = *opndIt;
+        SetVarPhis(*opnd);
       }
     }
   }
@@ -1207,7 +1183,7 @@ bool SSAPre::DefVarDominateOcc(const MeExpr *meExpr, const MeOccur &meOcc) const
         return dom->Dominate(*defBB, *occBB);
       }
       case kDefByPhi: {
-        const MeVarPhiNode &phiMeNode = varMeExpr->GetDefPhi();
+        const MePhiNode &phiMeNode = varMeExpr->GetDefPhi();
         const BB *defBB = phiMeNode.GetDefBB();
         if (defBB->GetBBId() == occBB->GetBBId()) {
           return true;
@@ -1255,8 +1231,8 @@ bool SSAPre::DefVarDominateOcc(const MeExpr *meExpr, const MeOccur &meOcc) const
         return dom->Dominate(*defBB, *occBB);
       }
       case kDefByPhi: {
-        const MeRegPhiNode &phiMeNode = regMeExpr->GetDefPhi();
-        BB *defBB = phiMeNode.GetDefBB();
+        const MePhiNode &phiMeNode = regMeExpr->GetDefPhi();
+        const BB *defBB = phiMeNode.GetDefBB();
         if (defBB->GetBBId() == occBB->GetBBId()) {
           return true;
         }

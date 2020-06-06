@@ -23,8 +23,7 @@
 
 namespace maple {
 class MeStmt;  // circular dependency exists, no other choice
-class MeVarPhiNode;  // circular dependency exists, no other choice
-class MeRegPhiNode;  // circular dependency exists, no other choice
+class MePhiNode;  // circular dependency exists, no other choice
 class PiassignMeStmt;  // circular dependency exists, no other choice
 class IRMap;  // circular dependency exists, no other choice
 enum BBKind {
@@ -68,8 +67,7 @@ class BB {
         succ(kBBVectorInitialSize, nullptr, alloc->Adapter()),
         succFreq(alloc->Adapter()),
         phiList(versAlloc->Adapter()),
-        meVarPhiList(alloc->Adapter()),
-        meRegPhiList(alloc->Adapter()),
+        mePhiList(alloc->Adapter()),
         meVarPiList(alloc->Adapter()),
         group(this) {
     pred.pop_back();
@@ -84,8 +82,7 @@ class BB {
         succ(kBBVectorInitialSize, nullptr, alloc->Adapter()),
         succFreq(alloc->Adapter()),
         phiList(versAlloc->Adapter()),
-        meVarPhiList(alloc->Adapter()),
-        meRegPhiList(alloc->Adapter()),
+        mePhiList(alloc->Adapter()),
         meVarPiList(alloc->Adapter()),
         stmtNodeList(firstStmt, lastStmt),
         group(this) {
@@ -293,8 +290,7 @@ class BB {
   void InsertMeStmtAfter(const MeStmt *meStmt, MeStmt *inStmt);
   void InsertMeStmtLastBr(MeStmt *inStmt);
   void ReplaceMeStmt(const MeStmt *stmt, MeStmt *newStmt);
-  void DumpMeVarPhiList(const IRMap *irMap);
-  void DumpMeRegPhiList(const IRMap *irMap);
+  void DumpMePhiList(const IRMap *irMap);
   void DumpMeVarPiList(const IRMap *irMap);
   StmtNodes &GetStmtNodes() {
     return stmtNodeList;
@@ -393,20 +389,12 @@ class BB {
     phiList.clear();
   }
 
-  MapleMap<OStIdx, MeVarPhiNode*> &GetMevarPhiList() {
-    return meVarPhiList;
+  MapleMap<OStIdx, MePhiNode*> &GetMePhiList() {
+    return mePhiList;
   }
 
-  const MapleMap<OStIdx, MeVarPhiNode*> &GetMevarPhiList() const {
-    return meVarPhiList;
-  }
-
-  MapleMap<OStIdx, MeRegPhiNode*> &GetMeRegPhiList() {
-    return meRegPhiList;
-  }
-
-  const MapleMap<OStIdx, MeRegPhiNode*> &GetMeRegPhiList() const {
-    return meRegPhiList;
+  const MapleMap<OStIdx, MePhiNode*> &GetMePhiList() const {
+    return mePhiList;
   }
 
   uint64 GetEdgeFreq(const BB *bb) const {
@@ -462,8 +450,7 @@ class BB {
   // record the edge freq from curBB to succ BB
   MapleVector<uint64> succFreq;
   MapleMap<OStIdx, PhiNode> phiList;
-  MapleMap<OStIdx, MeVarPhiNode*> meVarPhiList;
-  MapleMap<OStIdx, MeRegPhiNode*> meRegPhiList;
+  MapleMap<OStIdx, MePhiNode*> mePhiList;
   MapleMap<BB*, std::vector<PiassignMeStmt*>> meVarPiList;
   uint32 frequency = 0;
   BBKind kind = kBBUnknown;

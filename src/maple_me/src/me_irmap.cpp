@@ -40,8 +40,7 @@ void MeIRMap::Dump() {
     bb->DumpHeader(&GetMIRModule());
     LogInfo::MapleLogger() << "frequency : " << bb->GetFrequency() << "\n";
     bb->DumpMeVarPiList(this);
-    bb->DumpMeVarPhiList(this);
-    bb->DumpMeRegPhiList(this);
+    bb->DumpMePhiList(this);
     int i = 0;
     for (auto &meStmt : bb->GetMeStmts()) {
       if (GetDumpStmtNum()) {

@@ -205,8 +205,8 @@ class SSARename2Preg {
         if (enabledDebug) {
           LogInfo::MapleLogger() << " working on phi part of BB" << bb.GetBBId() << '\n';
         }
-        for (auto &varPhi : bb.GetMevarPhiList()) {
-          Rename2PregPhi(aliasClass, utils::ToRef(varPhi.second), irMap);
+        for (auto &phiList : bb.GetMePhiList()) {
+          Rename2PregPhi(aliasClass, utils::ToRef(phiList.second), irMap);
         }
 
         if (enabledDebug) {
@@ -325,24 +325,29 @@ class SSARename2Preg {
     }
   }
 
-  void Rename2PregPhi(const AliasClass &aliasClass, MeVarPhiNode &varPhiNode, MeIRMap &irMap) {
-    VarMeExpr &varExpr = utils::ToRef(varPhiNode.GetLHS());
+  void Rename2PregPhi(const AliasClass &aliasClass, MePhiNode &varPhiNode, MeIRMap &irMap) {
+    VarMeExpr *lhs = static_cast<VarMeExpr*>(varPhiNode.GetLHS());
+    if (lhs == nullptr) {
+      return;
+    }
+		
+    VarMeExpr &varExpr =(utils::ToRef(lhs));
     RegMeExpr *pRegExpr = RenameVar(aliasClass, varExpr);
     if (pRegExpr == nullptr) {
       return;
     }
     RegMeExpr &regExpr = *pRegExpr;
-    MeRegPhiNode &regPhiNode = utils::ToRef(irMap.CreateMeRegPhi(regExpr));
+    MePhiNode &regPhiNode = utils::ToRef(irMap.CreateMePhi(regExpr));
     regPhiNode.SetDefBB(varPhiNode.GetDefBB());
     UpdateRegPhi(regExpr, varPhiNode.GetOpnds(), regPhiNode);
   }
 
   // update regphinode operands
-  void UpdateRegPhi(const RegMeExpr &curRegExpr, const MapleVector<VarMeExpr*> &phiNodeOpnds,
-                    MeRegPhiNode &regPhiNode) const {
+  void UpdateRegPhi(const RegMeExpr &curRegExpr, const MapleVector<ScalarMeExpr*> &phiNodeOpnds,
+                    MePhiNode &regPhiNode) const {
     PregCache &pregCache = cacheProxy.Preg();
-    for (VarMeExpr *phiOpnd : phiNodeOpnds) {
-      const VarMeExpr &varExpr = utils::ToRef(phiOpnd);
+    for (ScalarMeExpr *phiOpnd : phiNodeOpnds) {
+      const VarMeExpr&varExpr = utils::ToRef(static_cast<VarMeExpr*>(phiOpnd));
       RegMeExpr &regExpr = pregCache.CloneRegExprIfNotExist(varExpr, [&curRegExpr](MeIRMap &irMap) {
         return irMap.CreateRegMeExprVersion(curRegExpr);
       });

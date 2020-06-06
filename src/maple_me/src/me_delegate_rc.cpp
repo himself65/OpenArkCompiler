@@ -80,17 +80,17 @@ static bool IsVarDecRefStmt(const MeStmt &stmt) {
          CheckOp(stmt, OP_decrefreset);
 }
 
-void DelegateRC::SetCantDelegate(const MapleMap<OStIdx, MeVarPhiNode*> &meVarPhiList) {
+void DelegateRC::SetCantDelegate(const MapleMap<OStIdx, MePhiNode*> &meVarPhiList) {
   for (auto it = meVarPhiList.begin(); it != meVarPhiList.end(); ++it) {
     const OriginalSt *ost = ssaTab.GetOriginalStFromID(it->first);
     if (!ost->IsSymbolOst() || ost->GetIndirectLev() != 0) {
       continue;
     }
-    MeVarPhiNode *mePhi = it->second;
+    MePhiNode *mePhi = it->second;
     if (!mePhi->GetIsLive()) {
       continue;
     }
-    for (VarMeExpr *phiOpnd : mePhi->GetOpnds()) {
+    for (ScalarMeExpr *phiOpnd : mePhi->GetOpnds()) {
       verStCantDelegate[phiOpnd->GetVstIdx()] = true;
     }
   }
@@ -147,8 +147,8 @@ void DelegateRC::CollectDerefedOrCopied(const MeExpr &expr) {
           SaveDerefedOrCopiedVst(defStmt->GetRHS()->GetOpnd(0));
         }
       } else if (baseVar->GetDefBy() == kDefByPhi) {
-        MeVarPhiNode &defPhi = baseVar->GetDefPhi();
-        for (VarMeExpr *phiOpnd : defPhi.GetOpnds()) {
+        MePhiNode &defPhi = baseVar->GetDefPhi();
+        for (ScalarMeExpr *phiOpnd : defPhi.GetOpnds()) {
           if (phiOpnd->GetDefBy() == kDefByStmt) {
             MeStmt *defStmt = phiOpnd->GetDefStmt();
             if (defStmt->GetOp() == OP_dassign && defStmt->GetRHS() != nullptr &&
@@ -657,7 +657,7 @@ void DelegateRC::SetCantDelegateAndCountUses() {
   auto eIt = func.valid_end();
   for (auto bIt = func.valid_begin(); bIt != eIt; ++bIt) {
     auto &bb = **bIt;
-    SetCantDelegate(bb.GetMevarPhiList());
+    SetCantDelegate(bb.GetMePhiList());
     for (auto &stmt : bb.GetMeStmts()) {
       // do not count decref operands
       if (IsVarDecRefStmt(stmt)) {

@@ -63,7 +63,7 @@ class SSADevirtual {
   virtual BB *GetBB(BBId id) const = 0;
   void TraversalBB(BB*);
   void TraversalMeStmt(MeStmt &Stmt);
-  void VisitVarPhiNode(MeVarPhiNode&) const;
+  void VisitVarPhiNode(MePhiNode&) const;
   void VisitMeExpr(MeExpr*) const;
   void PropVarInferredType(VarMeExpr&) const;
   void PropIvarInferredType(IvarMeExpr&) const;

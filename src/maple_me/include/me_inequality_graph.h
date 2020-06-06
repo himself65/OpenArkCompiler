@@ -279,9 +279,9 @@ class ESSAPhiNode : public ESSABaseNode {
     return phiOpnds;
   }
 
-  void SetPhiOpnds(MapleVector<VarMeExpr*> &nodes) {
+  void SetPhiOpnds(MapleVector<ScalarMeExpr*> &nodes) {
     for (auto iter = nodes.begin(); iter != nodes.end(); ++iter) {
-      phiOpnds.push_back(*iter);
+      phiOpnds.push_back(static_cast<VarMeExpr*>(*iter));
     }
   }
   const std::multimap<ESSABaseNode*, InequalEdge*, ESSABaseNodeComparator> &GetInPhiEdgeMap() const {
@@ -314,7 +314,7 @@ class InequalityGraph {
 
   ESSAConstNode *GetOrCreateConstNode(int64 value);
   ESSAVarNode *GetOrCreateVarNode(MeExpr &meExpr);
-  ESSAPhiNode *GetOrCreatePhiNode(MeVarPhiNode &phiNode);
+  ESSAPhiNode *GetOrCreatePhiNode(MePhiNode &phiNode);
   ESSAArrayNode *GetOrCreateArrayNode(MeExpr &meExpr);
   InequalEdge *AddEdge(ESSABaseNode &from, ESSABaseNode &to, int64 value, EdgeType type);
   void AddPhiEdge(ESSABaseNode &from, ESSABaseNode &to, EdgeType type);

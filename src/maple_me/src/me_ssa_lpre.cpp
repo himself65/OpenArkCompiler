@@ -105,7 +105,7 @@ void MeSSALPre::GenerateReloadRealOcc(MeRealOcc &realOcc) {
     regOrVar = defRealOcc->GetSavedExpr();
   } else if (defOcc->GetOccType() == kOccPhiocc) {
     auto *defPhiOcc = static_cast<MePhiOcc*>(defOcc);
-    MeRegPhiNode *regPhi = defPhiOcc->GetRegPhi();
+    MePhiNode *regPhi = defPhiOcc->GetRegPhi();
     regOrVar = regPhi->GetLHS();
   } else if (defOcc->GetOccType() == kOccInserted) {
     auto *defInsertedOcc = static_cast<MeInsertedOcc*>(defOcc);
