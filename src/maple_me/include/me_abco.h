@@ -206,7 +206,7 @@ class MeABC {
         allocator(&pool),
         inequalityGraph(nullptr),
         prove(nullptr),
-        forbidenPi(nullptr) {}
+        currentCheck(nullptr) {}
   ~MeABC() = default;
   void ExecuteABCO();
 
@@ -239,6 +239,7 @@ class MeABC {
   ESSABaseNode *GetOrCreateRHSNode(MeExpr &expr);
   void BuildPhiInGraph(MePhiNode &phi);
   void BuildSoloPiInGraph(const PiassignMeStmt &piMeStmt);
+  bool PiExcuteBeforeCurrentCheck(const PiassignMeStmt &piMeStmt);
   bool BuildArrayCheckInGraph(MeStmt &meStmt);
   bool BuildBrMeStmtInGraph(MeStmt &meStmt);
   bool BuildAssignInGraph(MeStmt &meStmt);
@@ -249,7 +250,7 @@ class MeABC {
   void AddCarePhi(MePhiNode &defP);
   void BuildInequalityGraph();
   void FindRedundantABC(MeStmt &meStmt, NaryMeExpr &naryMeExpr);
-  void InitNewStartPoint(const MeStmt &meStmt, const NaryMeExpr &nMeExpr);
+  void InitNewStartPoint(MeStmt &meStmt, const NaryMeExpr &nMeExpr);
   void DeleteABC();
   bool CleanABCInStmt(MeStmt &meStmt, NaryMeExpr &naryMeExpr);
   MeExpr *ReplaceArrayExpr(MeExpr &rhs, MeExpr &naryMeExpr, MeStmt *ivarStmt);
@@ -277,7 +278,7 @@ class MeABC {
   MapleAllocator allocator;
   std::unique_ptr<InequalityGraph> inequalityGraph;
   std::unique_ptr<ABCD> prove;
-  MeStmt *forbidenPi;
+  MeStmt *currentCheck;
   std::map<MeStmt*, NaryMeExpr*> arrayChecks;
   std::map<MeStmt*, NaryMeExpr*> arrayNewChecks;
   std::set<MeStmt*> careMeStmts;
