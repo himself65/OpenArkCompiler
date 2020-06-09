@@ -650,11 +650,29 @@ void MeABC::BuildSoloPiInGraph(const PiassignMeStmt &piMeStmt) {
   (void)inequalityGraph->AddEdge(*piLHSNode, *piRHSNode, 0, EdgeType::kLower);
 }
 
+bool MeABC::PiExcuteBeforeCurrentCheck(const PiassignMeStmt &piMeStmt) {
+  BB *currentCheckBB = currentCheck->GetBB();
+  BB *piBB = piMeStmt.GetBB();
+  if (currentCheckBB != piBB) {
+    return dom->Dominate(*piBB, *currentCheckBB);
+  }
+  MeStmt *lastMeStmt = piBB->GetLastMe();
+  CHECK_FATAL(lastMeStmt->GetNextMeStmt() == nullptr, "must be");
+  MeStmt *tmpMeStmt = piMeStmt.GetNextMeStmt();
+  while (tmpMeStmt != nullptr) {
+    if (tmpMeStmt == currentCheck) {
+      return true;
+    }
+    tmpMeStmt = tmpMeStmt->GetNextMeStmt();
+  }
+  return false;
+}
+
 bool MeABC::BuildArrayCheckInGraph(MeStmt &meStmt) {
   CHECK_FATAL(meStmt.GetOp() == OP_piassign, "must be");
   auto *piMeStmt = static_cast<PiassignMeStmt*>(&meStmt);
   BuildSoloPiInGraph(*piMeStmt);
-  if (piMeStmt == forbidenPi) {
+  if (!PiExcuteBeforeCurrentCheck(*piMeStmt)) {
     return true;
   }
   MeStmt *generatedByMeStmt = piMeStmt->GetGeneratedBy();
@@ -1297,7 +1315,7 @@ void MeABC::DeleteABC() {
   }
 }
 
-void MeABC::InitNewStartPoint(const MeStmt &meStmt, const NaryMeExpr &nMeExpr) {
+void MeABC::InitNewStartPoint(MeStmt &meStmt, const NaryMeExpr &nMeExpr) {
   careMeStmts.clear();
   careMePhis.clear();
   carePoints.clear();
@@ -1324,9 +1342,7 @@ void MeABC::InitNewStartPoint(const MeStmt &meStmt, const NaryMeExpr &nMeExpr) {
       AddUseDef(*pi->GetLHS());
     }
   }
-  forbidenPi = meStmt.GetNextMeStmt();
-  CHECK_FATAL(forbidenPi != nullptr, "forbidenPi is nullptr");
-  CHECK_FATAL(forbidenPi->GetOp() == OP_piassign, "must be");
+  currentCheck = &meStmt;
 }
 
 void MeABC::ExecuteABCO() {
