@@ -199,7 +199,7 @@ def parse_args():
         "fail_exit": args.fail_exit,
         "print_type": args.print_type,
         "progress": args.progress,
-        "fail_verbose": args.fail_verbose
+        "fail_verbose": args.fail_verbose,
     }
 
     test_suite_config = {

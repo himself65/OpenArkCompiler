@@ -148,7 +148,7 @@ class TestSuiteTask:
         if user_config_set:
             run_config_set = user_config_set
         else:
-            run_config_set = list(top_dir.glob("**/*.cfg"))
+            run_config_set = [self.cfg_path]
 
         for cfg in run_config_set:
             if not cfg.exists():
@@ -297,11 +297,13 @@ class TestSuiteTask:
 
         postion, result = result
         case = self.task_set[postion[0]][postion[1]]
-        if result[0] != PASS:
-            output = {}
-            output["name"] = str(case)
-            output["cmd_list"] = ""
-            output["cmd_output"] = ""
+        output = {}
+        output["name"] = str(case)
+        output["cmd_list"] = ""
+        output["cmd_output"] = ""
+        if result[0] == PASS:
+            return
+        if result[0] != PASS and not isinstance(result[1], str):
             for cmd_result in result[1]:
                 output["cmd_output"] += cmd_template.format(**cmd_result)
             for cmd in case.commands[: len(result[1]) - 1]:
@@ -311,7 +313,10 @@ class TestSuiteTask:
             )
             for cmd in case.commands[len(result[1]) :]:
                 output["cmd_list"] += cmd_list_template.format(NOT_RUN, cmd)
-            print(output_template.format(**output))
+        else:
+            output["cmd_list"] = "Test case preparation failed, " + result[1] + "\n"
+            output["cmd_output"] = output["cmd_list"]
+        print(output_template.format(**output))
 
     def parallel_run_task(self, process_num):
         multiprocessing.freeze_support()
