@@ -26,8 +26,9 @@
 namespace maplebe {
 class AArch64CGFunc : public CGFunc {
  public:
-  AArch64CGFunc(MIRModule &mod, CG &c, MIRFunction &f, BECommon &b, MemPool &memPool, MapleAllocator &mallocator)
-      : CGFunc(mod, c, f, b, memPool, mallocator),
+  AArch64CGFunc(MIRModule &mod, CG &c, MIRFunction &f, BECommon &b,
+      MemPool &memPool, MapleAllocator &mallocator, uint32 funcId)
+      : CGFunc(mod, c, f, b, memPool, mallocator, funcId),
         calleeSavedRegs(mallocator.Adapter()),
         formalRegList(mallocator.Adapter()),
         phyRegOperandTable(std::less<AArch64RegOperand>(), mallocator.Adapter()),

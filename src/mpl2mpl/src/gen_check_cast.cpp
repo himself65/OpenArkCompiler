@@ -45,7 +45,7 @@ void CheckCastGenerator::InitTypes() {
   const MIRType *javaLangObjectType = WKTypes::Util::GetJavaLangObjectType();
   CHECK_FATAL(javaLangObjectType != nullptr, "The pointerObjType in InitTypes is null!");
   pointerObjType = GlobalTables::GetTypeTable().GetOrCreatePointerType(*javaLangObjectType);
-  classinfoType = GlobalTables::GetTypeTable().GetOrCreateClassType(NameMangler::kClassMetadataTypeName,
+  classinfoType = GlobalTables::GetTypeTable().GetOrCreateClassType(namemangler::kClassMetadataTypeName,
                                                                     GetMIRModule());
   pointerClassMetaType = GlobalTables::GetTypeTable().GetOrCreatePointerType(*classinfoType);
 }
@@ -107,7 +107,7 @@ void CheckCastGenerator::GenCheckCast(StmtNode &stmt) {
 
   {
     if ((checkKlass != nullptr) && (checkKlass->GetKlassName() != "")) {
-      if (checkKlass->GetKlassName() == NameMangler::kJavaLangObjectStr) {
+      if (checkKlass->GetKlassName() == namemangler::kJavaLangObjectStr) {
         const size_t callNodeNopndSize1 = callNode->GetNopndSize();
         CHECK_FATAL(callNodeNopndSize1 > 0, "container check");
         if (callNode->GetNopndAt(0)->GetPrimType() != PTY_ref && callNode->GetNopndAt(0)->GetPrimType() != PTY_ptr) {
@@ -276,7 +276,7 @@ void CheckCastGenerator::GenAllCheckCast() {
 
 BaseNode *CheckCastGenerator::GetObjectShadow(BaseNode *opnd) {
   FieldID fieldID = builder->GetStructFieldIDFromFieldNameParentFirst(WKTypes::Util::GetJavaLangObjectType(),
-                                                                      NameMangler::kShadowClassName);
+                                                                      namemangler::kShadowClassName);
   BaseNode *ireadExpr =
       builder->CreateExprIread(*GlobalTables::GetTypeTable().GetPtr(), *pointerObjType, fieldID, opnd);
   return ireadExpr;

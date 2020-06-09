@@ -1199,7 +1199,7 @@ void CallMeStmt::Dump(const IRMap *irMap) const {
   // target function name
   MIRFunction *func = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(puIdx);
   if (irMap->GetMIRModule().IsJavaModule()) {
-    LogInfo::MapleLogger() << NameMangler::DecodeName(func->GetName()) << '\n';
+    LogInfo::MapleLogger() << namemangler::DecodeName(func->GetName()) << '\n';
   } else {
     LogInfo::MapleLogger() << func->GetName() << '\n';
   }

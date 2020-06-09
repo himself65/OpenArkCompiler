@@ -424,7 +424,7 @@ void MIRFunction::SetBaseClassFuncNames(GStrIdx strIdx) {
   uint32 width = 1;  // delimiter width
   size_t pos = name.find(delimiter);
   if (pos == std::string::npos) {
-    delimiter = NameMangler::kNameSplitterStr;
+    delimiter = namemangler::kNameSplitterStr;
     width = 3;  // delimiter width
     pos = name.find(delimiter);
     // make sure it is not __7C, but ___7C ok
@@ -437,9 +437,9 @@ void MIRFunction::SetBaseClassFuncNames(GStrIdx strIdx) {
     baseClassStrIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(className);
     std::string funcNameWithType = name.substr(pos + width, name.length() - pos - width);
     baseFuncWithTypeStrIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(funcNameWithType);
-    size_t index = name.find(NameMangler::kRigthBracketStr);
+    size_t index = name.find(namemangler::kRigthBracketStr);
     ASSERT(index != std::string::npos, "Invalid name, cannot find '_29' in name");
-    size_t posEnd = index + (std::string(NameMangler::kRigthBracketStr)).length();
+    size_t posEnd = index + (std::string(namemangler::kRigthBracketStr)).length();
     funcNameWithType = name.substr(pos + width, posEnd - pos - width);
     size_t newPos = name.find(delimiter, pos + width);
     while (newPos != std::string::npos && (name[newPos - 1] == '_' && name[newPos - 2] != '_')) {

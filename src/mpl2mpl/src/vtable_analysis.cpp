@@ -64,10 +64,10 @@ bool VtableAnalysis::CheckInterfaceSpecification(const Klass &baseKlass, const K
 bool VtableAnalysis::CheckOverrideForCrossPackage(const MIRFunction &baseMethod,
     const MIRFunction &currMethod) const {
   const std::string &baseClassName = baseMethod.GetBaseClassName();
-  size_t basePos = baseClassName.rfind(NameMangler::kPackageNameSplitterStr);
+  size_t basePos = baseClassName.rfind(namemangler::kPackageNameSplitterStr);
   std::string basePackageName = (basePos != std::string::npos) ? baseClassName.substr(0, basePos) : "";
   const std::string &currClassName = currMethod.GetBaseClassName();
-  size_t currPos = currClassName.rfind(NameMangler::kPackageNameSplitterStr);
+  size_t currPos = currClassName.rfind(namemangler::kPackageNameSplitterStr);
   std::string currPackageName = (currPos != std::string::npos) ? currClassName.substr(0, currPos) : "";
   // 1. For the cross package inheritance, only if the base func is declared
   // as either 'public' or 'protected', we shall set override relationship.
@@ -199,8 +199,8 @@ void VtableAnalysis::GenVtableDefinition(const Klass &klass) {
 }
 
 std::string VtableAnalysis::DecodeBaseNameWithType(const MIRFunction &func) {
-  const std::string &baseName = NameMangler::DecodeName(func.GetBaseFuncName());
-  std::string signatureName = NameMangler::DecodeName(func.GetSignature());
+  const std::string &baseName = namemangler::DecodeName(func.GetBaseFuncName());
+  std::string signatureName = namemangler::DecodeName(func.GetSignature());
   ReflectionAnalysis::ConvertMethodSig(signatureName);
   std::string baseNameWithType = baseName + "|" + signatureName;
   return baseNameWithType;
@@ -344,7 +344,7 @@ void VtableAnalysis::GenTableSymbol(const std::string &prefix, const std::string
   size_t arraySize = newConst.GetConstVec().size();
   MIRArrayType *arrayType = GlobalTables::GetTypeTable().GetOrCreateArrayType(*voidPtrType, arraySize);
   MIRSymbol *vtabSt = builder->CreateGlobalDecl(prefix + klassName, *arrayType);
-  if (klassName == NameMangler::GetInternalNameLiteral(NameMangler::kJavaLangObjectStr)) {
+  if (klassName == namemangler::GetInternalNameLiteral(namemangler::kJavaLangObjectStr)) {
     vtabSt->SetStorageClass(kScGlobal);
   } else {
     vtabSt->SetStorageClass(kScFstatic);

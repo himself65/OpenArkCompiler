@@ -268,7 +268,7 @@ BaseNode *ReflectionAnalysis::GenClassInfoAddr(BaseNode *obj, MIRBuilder &builde
   return classinfoAddress;
 }
 
-const char *ReflectionAnalysis::klassPtrName = NameMangler::kShadowClassName;
+const char *ReflectionAnalysis::klassPtrName = namemangler::kShadowClassName;
 TyIdx ReflectionAnalysis::classMetadataTyIdx = TyIdx(0);
 TyIdx ReflectionAnalysis::classMetadataRoTyIdx = TyIdx(0);
 TyIdx ReflectionAnalysis::methodsInfoTyIdx = TyIdx(0);
@@ -357,7 +357,7 @@ bool ReflectionAnalysis::IsPrivateClass(const MIRClassType &classType) const {
 }
 
 static inline GStrIdx GetOrCreateGStrIdxFromName(const std::string &name) {
-  return GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(NameMangler::GetInternalNameLiteral(name));
+  return GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(namemangler::GetInternalNameLiteral(name));
 }
 
 static bool IsFinalize(const std::string &funcName, const std::string &signature) {
@@ -426,14 +426,14 @@ uint32 ReflectionAnalysis::GetTypeNameIdxFromType(const MIRType &type, const Kla
         CHECK_NULL_FATAL(ptype);
         const std::string &javaName = static_cast<MIRJarrayType*>(ptype)->GetJavaName();
         std::string klassJavaDescriptor;
-        NameMangler::DecodeMapleNameToJavaDescriptor(javaName, klassJavaDescriptor);
+        namemangler::DecodeMapleNameToJavaDescriptor(javaName, klassJavaDescriptor);
         typeNameIdx = FindOrInsertReflectString(klassJavaDescriptor);
       } else if (ptype->GetKind() == kTypeByName || ptype->GetKind() == kTypeClass ||
                  ptype->GetKind() == kTypeInterface || ptype->GetKind() == kTypeClassIncomplete ||
                  ptype->GetKind() == kTypeInterfaceIncomplete || ptype->GetKind() == kTypeConstString) {
         std::string javaName = ptype->GetName();
         std::string klassJavaDescriptor;
-        NameMangler::DecodeMapleNameToJavaDescriptor(javaName, klassJavaDescriptor);
+        namemangler::DecodeMapleNameToJavaDescriptor(javaName, klassJavaDescriptor);
         typeNameIdx = FindOrInsertReflectString(klassJavaDescriptor);
       } else {
         CHECK_FATAL(false, "In class %s: field %s 's type is UNKNOWN", klass.GetKlassName().c_str(),
@@ -501,10 +501,10 @@ void ReflectionAnalysis::GenAllMethodHash(std::vector<std::pair<MethodPair*, int
     MIRSymbol *funcSym = GlobalTables::GetGsymTable().GetSymbolFromStidx(methodInfo.first->first.Idx());
     MIRFunction *func = funcSym->GetFunction();
     std::string baseName = func->GetBaseFuncName();
-    baseName = NameMangler::DecodeName(baseName);
+    baseName = namemangler::DecodeName(baseName);
     baseNameMap[func->GetBaseFuncNameStrIdx()] = baseName;
     std::string fullName = func->GetBaseFuncNameWithType();
-    fullName = NameMangler::DecodeName(fullName);
+    fullName = namemangler::DecodeName(fullName);
     fullNameMap[func->GetBaseFuncNameWithTypeStrIdx()] = fullName;
     CHECK_FATAL(fullName.find("|") != std::string::npos, "can not find |");
     std::string signature = fullName.substr(fullName.find("|") + 1);
@@ -540,7 +540,7 @@ uint16 GetFieldHash(const std::vector<std::pair<FieldPair, uint16>> &fieldV, con
 MIRSymbol *ReflectionAnalysis::GetOrCreateSymbol(const std::string &name, TyIdx tyIdx, bool needInit = false) {
   const GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(name);
   MIRSymbol *st;
-  std::string symbolOfJavaLangString(NameMangler::kJavaLangStringStr);
+  std::string symbolOfJavaLangString(namemangler::kJavaLangStringStr);
   if (name == CLASSINFO_PREFIX_STR + symbolOfJavaLangString) {
     // Previous String Symbol have been generated in dex2mpl, so this Symbol won't create again here
     st = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(strIdx);
@@ -831,7 +831,7 @@ MIRSymbol *ReflectionAnalysis::GenMethodsMeta(const Klass &klass,
     GenMethodMeta(klass, methodsInfoType, *funcSym, *aggConst, idx++, baseNameMp, fullNameMp);
   }
   MIRSymbol *methodsArraySt =
-      GetOrCreateSymbol(NameMangler::kMethodsInfoPrefixStr + klass.GetKlassName(), arrayType.GetTypeIndex(), true);
+      GetOrCreateSymbol(namemangler::kMethodsInfoPrefixStr + klass.GetKlassName(), arrayType.GetTypeIndex(), true);
   methodsArraySt->SetStorageClass(kScFstatic);
   methodsArraySt->SetKonst(aggConst);
   return methodsArraySt;
@@ -850,7 +850,7 @@ MIRSymbol *ReflectionAnalysis::GenMethodAddrData(const MIRSymbol &funcSym) {
   if (!func->IsAbstract()) {
     mirBuilder.AddAddroffuncFieldConst(methodAddrType, *newconst, 1, funcSym);
     aggconst->GetConstVec().push_back(newconst);
-    methodAddrSt = GetOrCreateSymbol(NameMangler::kMethodAddrDataPrefixStr + func->GetName(),
+    methodAddrSt = GetOrCreateSymbol(namemangler::kMethodAddrDataPrefixStr + func->GetName(),
                                      methodAddrArrayType.GetTypeIndex(), true);
     methodAddrSt->SetStorageClass(kScFstatic);
     methodAddrSt->SetKonst(aggconst);
@@ -924,7 +924,7 @@ MIRSymbol *ReflectionAnalysis::GenFieldOffsetData(const Klass &klass, std::pair<
 
   FieldPair fieldP = fieldInfo.first;
   std::string originFieldname = GlobalTables::GetStrTable().GetStringFromStrIdx(fieldP.first);
-  std::string fieldOffsetSymbolName = NameMangler::kFieldOffsetDataPrefixStr;
+  std::string fieldOffsetSymbolName = namemangler::kFieldOffsetDataPrefixStr;
   bool isStaticField = (fieldInfo.second == -1);
   if (isStaticField) {
     fieldOffsetSymbolName += originFieldname;
@@ -976,7 +976,7 @@ static void ConvertFieldName(std::string &fieldname, bool staticfield) {
   if (staticfield) {
     // Remove class name prefix.
     std::string decodeFieldName;
-    NameMangler::DecodeMapleNameToJavaDescriptor(fieldname, decodeFieldName);
+    namemangler::DecodeMapleNameToJavaDescriptor(fieldname, decodeFieldName);
     std::stringstream ss(decodeFieldName);
     std::string item;
     std::vector<std::string> res;
@@ -986,7 +986,7 @@ static void ConvertFieldName(std::string &fieldname, bool staticfield) {
     CHECK_FATAL(res.size() > 1, "fieldname not found");
     fieldname = res[StaticFieldName::kFieldName];
   } else {
-    fieldname = NameMangler::DecodeName(fieldname);
+    fieldname = namemangler::DecodeName(fieldname);
   }
 }
 
@@ -1072,7 +1072,7 @@ MIRSymbol *ReflectionAnalysis::GenFieldsMeta(const Klass &klass, std::vector<std
     GenFieldMeta(klass, fieldsInfoType, fieldInfo, *aggConst, idx++, fieldHashVec);
   }
   MIRSymbol *fieldsArraySt =
-      GetOrCreateSymbol(NameMangler::kFieldsInfoPrefixStr + klass.GetKlassName(), arraytype->GetTypeIndex(), true);
+      GetOrCreateSymbol(namemangler::kFieldsInfoPrefixStr + klass.GetKlassName(), arraytype->GetTypeIndex(), true);
   fieldsArraySt->SetStorageClass(kScFstatic);
   fieldsArraySt->SetKonst(aggConst);
   return fieldsArraySt;
@@ -1130,7 +1130,7 @@ void ReflectionAnalysis::ConvertMapleClassName(const std::string &mplClassName, 
   // Convert classname end with _3B, 3 is strlen("_3B")
   unsigned int len = strlen(kClassSuffix);
   if (mplClassName.size() > len && mplClassName.rfind(kClassSuffix, mplClassName.size() - len) != std::string::npos) {
-    NameMangler::DecodeMapleNameToJavaDescriptor(mplClassName, javaDsp);
+    namemangler::DecodeMapleNameToJavaDescriptor(mplClassName, javaDsp);
   } else {
     javaDsp = mplClassName;
   }
@@ -1282,7 +1282,7 @@ void ReflectionAnalysis::GenAnnotation(std::map<int, int> &idxNumMap, std::strin
                                        std::map<int, int> *paramnumArray, int *paramIndex) {
   int annoNum = 0;
   for (MIRPragma *prag : classType.GetPragmaVec()) {
-    std::string cmpString = (paragKind == kPragmaVar) ? NameMangler::DecodeName(
+    std::string cmpString = (paragKind == kPragmaVar) ? namemangler::DecodeName(
         GlobalTables::GetStrTable().GetStringFromStrIdx(prag->GetStrIdx())) :
         GlobalTables::GetStrTable().GetStringFromStrIdx(prag->GetStrIdx());
     bool validTypeFlag = false;
@@ -1318,7 +1318,7 @@ void ReflectionAnalysis::GenAnnotation(std::map<int, int> &idxNumMap, std::strin
       for (MIRPragmaElement *elem : elemVector) {
         idxNumMap[annoNum - 1]++;
         std::string convertTmp =
-            NameMangler::DecodeName(GlobalTables::GetStrTable().GetStringFromStrIdx(elem->GetNameStrIdx()));
+            namemangler::DecodeName(GlobalTables::GetStrTable().GetStringFromStrIdx(elem->GetNameStrIdx()));
         idx = ReflectionAnalysis::FindOrInsertReflectString(convertTmp);
         annoArr += (annoDelimiterPrefix + std::to_string(idx) + annoDelimiter +
             std::to_string(elem->GetType()) + annoDelimiter);
@@ -1378,7 +1378,7 @@ void ReflectionAnalysis::GenHotClassNameString(const Klass &klass) {
   }
   std::string klassName = klass.GetKlassName();
   std::string klassJavaDescriptor;
-  NameMangler::DecodeMapleNameToJavaDescriptor(klassName, klassJavaDescriptor);
+  namemangler::DecodeMapleNameToJavaDescriptor(klassName, klassJavaDescriptor);
   (void)ReflectionAnalysis::FindOrInsertRepeatString(klassJavaDescriptor, true);  // Always used.
 }
 
@@ -1418,7 +1418,7 @@ void ReflectionAnalysis::GenClassMetaData(Klass &klass) {
   std::string klassName = klass.GetKlassName();
   reflectionMuidStr += klassName;
   std::string klassJavaDescriptor;
-  NameMangler::DecodeMapleNameToJavaDescriptor(klassName, klassJavaDescriptor);
+  namemangler::DecodeMapleNameToJavaDescriptor(klassName, klassJavaDescriptor);
   uint32 hashIndex = GetHashIndex(klassJavaDescriptor);
   if (kRADebug) {
     LogInfo::MapleLogger(kLlErr) << "========= Gen Class: " << klassJavaDescriptor
@@ -1434,9 +1434,9 @@ void ReflectionAnalysis::GenClassMetaData(Klass &klass) {
   // @iFields: All instance fields.
   uint32 numOfFields = 0;
   bool hasAdded = false;
-  if (klass.GetKlassName() == NameMangler::GetInternalNameLiteral(NameMangler::kJavaLangObjectStr)) {
+  if (klass.GetKlassName() == namemangler::GetInternalNameLiteral(namemangler::kJavaLangObjectStr)) {
     const GStrIdx stridx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(
-        NameMangler::kFieldsInfoPrefixStr + NameMangler::GetInternalNameLiteral(NameMangler::kJavaLangObjectStr));
+        namemangler::kFieldsInfoPrefixStr + namemangler::GetInternalNameLiteral(namemangler::kJavaLangObjectStr));
     MIRSymbol *fieldsSt = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(stridx);
     if (fieldsSt != nullptr) {
       mirBuilder.AddAddrofFieldConst(classMetadataROType, *newConst, fieldID++, *fieldsSt);
@@ -1576,7 +1576,7 @@ void ReflectionAnalysis::GenClassMetaData(Klass &klass) {
   // @gctib
   MIRSymbol *gctibSt = GetOrCreateSymbol(GCTIB_PREFIX_STR + klass.GetKlassName(),
                                          GlobalTables::GetTypeTable().GetVoidPtr()->GetTypeIndex(), false);
-  if (klass.GetKlassName() != NameMangler::GetInternalNameLiteral(NameMangler::kJavaLangObjectStr)) {
+  if (klass.GetKlassName() != namemangler::GetInternalNameLiteral(namemangler::kJavaLangObjectStr)) {
     // Direct access to gctib is only possible within a .so, for most classes.
     gctibSt->SetStorageClass(kScFstatic);
   }
@@ -1687,7 +1687,7 @@ void ReflectionAnalysis::GenMetadataType(MIRModule &mirModule) {
   GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataType, kClassinforoStr, *typeVoidPtr);
 #endif  // USE_32BIT_REF
   GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataType, kClinitbridgeStr, *typeVoidPtr);
-  classMetadataTyIdx = GenMetaStructType(mirModule, classMetadataType, NameMangler::kClassMetadataTypeName);
+  classMetadataTyIdx = GenMetaStructType(mirModule, classMetadataType, namemangler::kClassMetadataTypeName);
   MIRStructType classMetadataROType(kTypeStruct);
   GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataROType, kClassNameStr, *typeVoidPtr);
   GlobalTables::GetTypeTable().AddFieldToStructType(classMetadataROType, kIfieldsStr, *typeVoidPtr);
@@ -1787,7 +1787,7 @@ void ReflectionAnalysis::GenClassHashMetaData() {
   if (classTab.empty()) {
     return;
   }
-  std::string bucketName = NameMangler::kMuidClassMetadataBucketPrefixStr + module.GetFileNameAsPostfix();
+  std::string bucketName = namemangler::kMuidClassMetadataBucketPrefixStr + module.GetFileNameAsPostfix();
   size_t bucketArraySize = classTab.size();
   MIRArrayType &bucketArraytype = *GlobalTables::GetTypeTable().GetOrCreateArrayType(*type, bucketArraySize);
   MIRSymbol *bucketSt = GetOrCreateSymbol(bucketName, bucketArraytype.GetTypeIndex(), true);
@@ -1830,14 +1830,14 @@ static void ReflectionAnalysisGenStrTab(MIRModule &mirModule, const std::string 
 
 void ReflectionAnalysis::GenStrTab(MIRModule &mirModule) {
   // Hot string tab.
-  std::string hotStrtabName = NameMangler::kReflectionStartHotStrtabPrefixStr + mirModule.GetFileNameAsPostfix();
+  std::string hotStrtabName = namemangler::kReflectionStartHotStrtabPrefixStr + mirModule.GetFileNameAsPostfix();
   ReflectionAnalysisGenStrTab(mirModule, strTabStartHot, hotStrtabName);
-  hotStrtabName = NameMangler::kReflectionBothHotStrTabPrefixStr + mirModule.GetFileNameAsPostfix();
+  hotStrtabName = namemangler::kReflectionBothHotStrTabPrefixStr + mirModule.GetFileNameAsPostfix();
   ReflectionAnalysisGenStrTab(mirModule, strTabBothHot, hotStrtabName);
-  hotStrtabName = NameMangler::kReflectionRunHotStrtabPrefixStr + mirModule.GetFileNameAsPostfix();
+  hotStrtabName = namemangler::kReflectionRunHotStrtabPrefixStr + mirModule.GetFileNameAsPostfix();
   ReflectionAnalysisGenStrTab(mirModule, strTabRunHot, hotStrtabName);
   // Cold string tab.
-  std::string strTabName = NameMangler::kReflectionStrtabPrefixStr + mirModule.GetFileNameAsPostfix();
+  std::string strTabName = namemangler::kReflectionStrtabPrefixStr + mirModule.GetFileNameAsPostfix();
   ReflectionAnalysisGenStrTab(mirModule, strTab, strTabName);
 }
 
@@ -1846,9 +1846,9 @@ void ReflectionAnalysis::MarkWeakMethods() {
     return;
   }
 
-  GStrIdx classNames[] = { GetOrCreateGStrIdxFromName(NameMangler::kJavaLangClassStr),
-                           GetOrCreateGStrIdxFromName(NameMangler::kJavaLangObjectStr),
-                           GetOrCreateGStrIdxFromName(NameMangler::kReflectionClassMethodStr),
+  GStrIdx classNames[] = { GetOrCreateGStrIdxFromName(namemangler::kJavaLangClassStr),
+                           GetOrCreateGStrIdxFromName(namemangler::kJavaLangObjectStr),
+                           GetOrCreateGStrIdxFromName(namemangler::kReflectionClassMethodStr),
                            GetOrCreateGStrIdxFromName(kReflectionReferencePrefixStr) };
   for (GStrIdx nameIdx : classNames) {
     Klass *klass = klassH->GetKlassFromStrIdx(nameIdx);

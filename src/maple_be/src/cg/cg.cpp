@@ -256,4 +256,26 @@ std::vector<int64> CG::GetReferenceOffsets64(const BECommon &beCommon, MIRStruct
 
   return result;
 }
+
+
+const std::string CG::ExtractFuncName(const std::string &str) {
+  /* 3: length of "_7C" */
+  size_t offset = 3;
+  size_t pos1 = str.find("_7C");
+  if (pos1 == std::string::npos) {
+    return str;
+  }
+  size_t pos2 = str.find("_7C", pos1 + offset);
+  if (pos2 == std::string::npos) {
+    return str;
+  }
+  std::string funcName = str.substr(pos1 + offset, pos2 - pos1 - offset);
+  if (funcName == "_3Cinit_3E") {
+    return "init";
+  }
+  if (funcName == "_3Cclinit_3E") {
+    return "clinit";
+  }
+  return funcName;
+}
 }  /* namespace maplebe */

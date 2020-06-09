@@ -518,7 +518,7 @@ const std::string &MIRJarrayType::GetJavaName() {
 MIRStructType *MIRJarrayType::GetParentType() {
   if (parentTyIdx == 0u) {
     GStrIdx jloStrIdx = GlobalTables::GetStrTable().GetStrIdxFromName(
-        NameMangler::GetInternalNameLiteral(NameMangler::kJavaLangObjectStr));
+        namemangler::GetInternalNameLiteral(namemangler::kJavaLangObjectStr));
     parentTyIdx = GlobalTables::GetTypeNameTable().GetTyIdxFromGStrIdx(jloStrIdx);
     ASSERT((parentTyIdx != 0u), "cannot find type for java.lang.Object");
   }
@@ -637,7 +637,7 @@ FieldID MIRClassType::GetFirstLocalFieldID() const {
 }
 
 const MIRClassType *MIRClassType::GetExceptionRootType() const {
-  GStrIdx ehTypeNameIdx = GlobalTables::GetStrTable().GetStrIdxFromName(NameMangler::kJavaLangObjectStr);
+  GStrIdx ehTypeNameIdx = GlobalTables::GetStrTable().GetStrIdxFromName(namemangler::kJavaLangObjectStr);
   const MIRClassType *subClassType = this;
   while (subClassType != nullptr && subClassType->nameStrIdx != ehTypeNameIdx) {
     subClassType =
@@ -857,7 +857,7 @@ static void DumpConstructorsAsCxx(MethodVector methods, int indent) {
     LogInfo::MapleLogger() << " */" << '\n';
     PrintIndentation(indent);
     LogInfo::MapleLogger() << "/* ";
-    LogInfo::MapleLogger() << NameMangler::DecodeName(
+    LogInfo::MapleLogger() << namemangler::DecodeName(
         GlobalTables::GetGsymTable().GetSymbolFromStidx(m.first.Idx())->GetName());
     LogInfo::MapleLogger() << " */" << '\n';
     PrintIndentation(indent);

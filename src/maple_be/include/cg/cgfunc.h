@@ -81,7 +81,7 @@ class CGFunc {
   };
 
   CGFunc(MIRModule &mod, CG &cg, MIRFunction &mirFunc, BECommon &beCommon, MemPool &memPool,
-         MapleAllocator &mallocator);
+         MapleAllocator &mallocator, uint32 funcId);
   virtual ~CGFunc();
 
   const std::string &GetName() const {
@@ -745,6 +745,10 @@ class CGFunc {
     volReleaseInsn = insn;
   }
 
+  const MapleString &GetShortFuncName() const {
+    return shortFuncName;
+  }
+
   virtual InsnVisitor *NewInsnModifier() = 0;
 
  protected:
@@ -843,6 +847,7 @@ class CGFunc {
   CGCFG *theCFG = nullptr;
   uint32 nextSpillLocation = 0;
   static constexpr int kRegIncrStepLen = 80; /* reg number increate step length */
+  const MapleString shortFuncName;
 };  /* class CGFunc */
 
 CGFUNCPHASE(CgDoLayoutSF, "layoutstackframe")

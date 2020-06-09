@@ -19,7 +19,7 @@
 
 // This is a general name mangler which is shared between maple compiler and runtime.
 // maple-compiler-specific data structure may NOT be used here.
-namespace NameMangler {
+namespace namemangler {
 #define TO_STR(s)  TO_STR2(s)
 #define TO_STR2(s) #s
 
@@ -194,6 +194,6 @@ int64_t  GetSleb128Decode(uint64_t val);
 size_t GetUleb128Size(uint64_t val);
 size_t GetSleb128Size(int32_t val);
 bool NeedConvertUTF16(const std::string &str8);
-} // namespace NameMangler
+} // namespace namemangler
 
 #endif

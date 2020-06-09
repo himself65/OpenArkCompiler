@@ -307,11 +307,11 @@ BaseNode *CGLowerer::LowerArrayForLazyBiding(BaseNode &baseNode, BaseNode &offse
   if (parent.GetOpCode() == OP_iread && (baseNode.GetOpCode() == maple::OP_addrof)) {
     const MIRSymbol *st =
         mirModule.CurFunction()->GetLocalOrGlobalSymbol(static_cast<AddrofNode&>(baseNode).GetStIdx());
-    if (StringUtils::StartsWith(st->GetName(), NameMangler::kDecoupleStaticValueStr) ||
-        ((StringUtils::StartsWith(st->GetName(), NameMangler::kMuidFuncUndefTabPrefixStr) ||
-          StringUtils::StartsWith(st->GetName(), NameMangler::kMuidFuncDefTabPrefixStr) ||
-          StringUtils::StartsWith(st->GetName(), NameMangler::kMuidDataDefTabPrefixStr) ||
-          StringUtils::StartsWith(st->GetName(), NameMangler::kMuidDataUndefTabPrefixStr)) &&
+    if (StringUtils::StartsWith(st->GetName(), namemangler::kDecoupleStaticValueStr) ||
+        ((StringUtils::StartsWith(st->GetName(), namemangler::kMuidFuncUndefTabPrefixStr) ||
+          StringUtils::StartsWith(st->GetName(), namemangler::kMuidFuncDefTabPrefixStr) ||
+          StringUtils::StartsWith(st->GetName(), namemangler::kMuidDataDefTabPrefixStr) ||
+          StringUtils::StartsWith(st->GetName(), namemangler::kMuidDataUndefTabPrefixStr)) &&
          CGOptions::IsLazyBinding())) {
       /* for decouple static or lazybinding def/undef tables, replace it with intrinsic */
       MapleVector<BaseNode*> args(mirBuilder->GetCurrentFuncCodeMpAllocator()->Adapter());
@@ -2178,7 +2178,7 @@ BaseNode *CGLowerer::GetClassInfoExprFromRuntime(const std::string &classInfo) {
   BaseNode *arg1 = nullptr;
   /* classname */
   std::string klassJavaDescriptor;
-  NameMangler::DecodeMapleNameToJavaDescriptor(classInfo, klassJavaDescriptor);
+  namemangler::DecodeMapleNameToJavaDescriptor(classInfo, klassJavaDescriptor);
   UStrIdx classNameStrIdx = GlobalTables::GetUStrTable().GetOrCreateStrIdxFromName(klassJavaDescriptor);
   arg1 = mirModule.GetMemPool()->New<ConststrNode>(classNameStrIdx);
   arg1->SetPrimType(PTY_ptr);
@@ -2649,7 +2649,7 @@ void CGLowerer::LowerJarrayMalloc(const StmtNode &stmt, const JarrayMallocNode &
     args.push_back(mirBuilder->CreateIntConst(elemSize, PTY_u32));  /* elem_size */
     args.push_back(node.Opnd(0));                                   /* n_elems */
     std::string klassJavaDescriptor;
-    NameMangler::DecodeMapleNameToJavaDescriptor(klassName, klassJavaDescriptor);
+    namemangler::DecodeMapleNameToJavaDescriptor(klassName, klassJavaDescriptor);
     UStrIdx classNameStrIdx = GlobalTables::GetUStrTable().GetOrCreateStrIdxFromName(klassJavaDescriptor);
     ConststrNode *classNameExpr = mirModule.GetMemPool()->New<ConststrNode>(classNameStrIdx);
     classNameExpr->SetPrimType(PTY_ptr);

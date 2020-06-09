@@ -100,9 +100,9 @@ void Profile::ParseLiteral(const char *data, const char *end) {
 }
 
 std::string Profile::GetFunctionName(uint32 classIdx, uint32 methodIdx, uint32 sigIdx) const {
-  const std::string className = NameMangler::EncodeName(strMap.at(classIdx));
-  const std::string methodName = NameMangler::EncodeName(strMap.at(methodIdx));
-  const std::string sigName = NameMangler::EncodeName(strMap.at(sigIdx));
+  const std::string className = namemangler::EncodeName(strMap.at(classIdx));
+  const std::string methodName = namemangler::EncodeName(strMap.at(methodIdx));
+  const std::string sigName = namemangler::EncodeName(strMap.at(sigIdx));
   const std::string funcName = className + "_7C" + methodName + "_7C" + sigName;
   return funcName;
 }

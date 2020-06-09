@@ -498,7 +498,7 @@ uint32 MIRModule::GetFileinfo(GStrIdx strIdx) const {
 }
 
 std::string MIRModule::GetFileNameAsPostfix() const {
-  std::string fileNameStr = NameMangler::kFileNameSplitterStr;
+  std::string fileNameStr = namemangler::kFileNameSplitterStr;
   if (!fileInfo.empty()) {
     // option 1: file name in INFO
     uint32 fileNameIdx = GetFileinfo(GlobalTables::GetStrTable().GetOrCreateStrIdxFromName("INFO_filename"));

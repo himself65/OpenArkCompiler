@@ -50,16 +50,16 @@ void FEStructElemInfo::Init() {
 
 void FEStructElemInfo::InitJava() {
   std::string fullNameMpl = GlobalTables::GetStrTable().GetStringFromStrIdx(fullNameIdx);
-  std::string fullNameJava = NameMangler::DecodeName(fullNameMpl);
+  std::string fullNameJava = namemangler::DecodeName(fullNameMpl);
   std::vector<std::string> names = FEUtils::Split(fullNameJava, '|');
   // 3 parts: ClassName|ElemName|Signature
   CHECK_FATAL(names.size() == 3, "invalid elem name %s", fullNameJava.c_str());
   // names[0]: structName
-  structNameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(NameMangler::EncodeName(names[0]));
+  structNameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(namemangler::EncodeName(names[0]));
   // names[1]: elemName
-  elemNameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(NameMangler::EncodeName(names[1]));
+  elemNameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(namemangler::EncodeName(names[1]));
   // names[2]: signature
-  signatureNameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(NameMangler::EncodeName(names[2]));
+  signatureNameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(namemangler::EncodeName(names[2]));
 }
 
 // ---------- FEStructFieldInfo ----------
@@ -78,7 +78,7 @@ void FEStructFieldInfo::PrepareImpl(MIRBuilder &mirBuilder, bool argIsStatic) {
   }
   // Prepare
   const std::string &structName = GetStructName();
-  std::string rawName = structName + NameMangler::kNameSplitterStr + GetElemName();
+  std::string rawName = structName + namemangler::kNameSplitterStr + GetElemName();
   fieldNameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(rawName);
   fieldID = static_cast<FieldID>(UINT32_MAX);
   MIRStructType *structType = FEManager::GetTypeManager().GetStructTypeFromName(structName);
@@ -91,7 +91,7 @@ void FEStructFieldInfo::PrepareImpl(MIRBuilder &mirBuilder, bool argIsStatic) {
   if (isDefined) {
     return;
   }
-  rawName = rawName + NameMangler::kNameSplitterStr + GetSignatureName();
+  rawName = rawName + namemangler::kNameSplitterStr + GetSignatureName();
   WARN(kLncErr, "use undefined %s field %s", argIsStatic ? "static" : "", rawName.c_str());
   isPrepared = true;
   isStatic = argIsStatic;
@@ -117,7 +117,7 @@ void FEStructFieldInfo::LoadFieldTypeJava() {
 void FEStructFieldInfo::PrepareStaticField(const MIRStructType &structType) {
   std::string ownerStructName = structType.GetName();
   const std::string &fieldName = GetElemName();
-  std::string fullName = ownerStructName + NameMangler::kNameSplitterStr + fieldName;
+  std::string fullName = ownerStructName + namemangler::kNameSplitterStr + fieldName;
   fieldNameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(fullName);
   isPrepared = true;
   isStatic = true;
@@ -143,7 +143,7 @@ bool FEStructFieldInfo::SearchStructFieldJava(MIRStructType &structType, MIRBuil
   GStrIdx nameIdx = elemNameIdx;
   if (argIsStatic) {
     // suppose anti-proguard is off
-    std::string fullName = structType.GetCompactMplTypeName() + NameMangler::kNameSplitterStr + GetElemName();
+    std::string fullName = structType.GetCompactMplTypeName() + namemangler::kNameSplitterStr + GetElemName();
     nameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(fullName);
   }
   const FieldVector &fields = argIsStatic ? structType.GetStaticFields() : structType.GetFields();
@@ -236,7 +236,7 @@ void FEStructMethodInfo::InitJavaPolymorphicWhiteList() {
   std::map<GStrIdx, std::set<GStrIdx>> &ans = javaPolymorphicWhiteList;
   StringTable<std::string, GStrIdx> &strTable = GlobalTables::GetStrTable();
   GStrIdx idxMethodHandle =
-      strTable.GetOrCreateStrIdxFromName(NameMangler::EncodeName("Ljava/lang/invoke/MethodHandle;"));
+      strTable.GetOrCreateStrIdxFromName(namemangler::EncodeName("Ljava/lang/invoke/MethodHandle;"));
   bool success = true;
   success = success && ans[idxMethodHandle].insert(strTable.GetOrCreateStrIdxFromName("invoke")).second;
   success = success && ans[idxMethodHandle].insert(strTable.GetOrCreateStrIdxFromName("invokeBasic")).second;
@@ -302,7 +302,7 @@ void FEStructMethodInfo::LoadMethodType() {
 
 void FEStructMethodInfo::LoadMethodTypeJava() {
   std::string signatureJava =
-      NameMangler::DecodeName(GlobalTables::GetStrTable().GetStringFromStrIdx(fullNameIdx));
+      namemangler::DecodeName(GlobalTables::GetStrTable().GetStringFromStrIdx(fullNameIdx));
   std::vector<std::string> typeNames = jbc::JBCUtil::SolveMethodSignature(signatureJava);
   CHECK_FATAL(typeNames.size() > 0, "invalid method signature: %s", signatureJava.c_str());
   // constructor check
@@ -347,8 +347,8 @@ bool FEStructMethodInfo::SearchStructMethodJava(MIRStructType &structType, MIRBu
   if (structType.IsIncomplete()) {
     return false;
   }
-  std::string fullName = structType.GetCompactMplTypeName() + NameMangler::kNameSplitterStr + GetElemName() +
-                         NameMangler::kNameSplitterStr + GetSignatureName();
+  std::string fullName = structType.GetCompactMplTypeName() + namemangler::kNameSplitterStr + GetElemName() +
+                         namemangler::kNameSplitterStr + GetSignatureName();
   GStrIdx nameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(fullName);
   // PolymorphicCall Check
   if (CheckJavaPolymorphicCall()) {

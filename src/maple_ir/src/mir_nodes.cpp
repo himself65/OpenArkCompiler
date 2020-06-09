@@ -493,7 +493,7 @@ void Conststr16Node::Dump(int32) const {
   const std::u16string kStr16 = GlobalTables::GetU16StrTable().GetStringFromStrIdx(U16StrIdx(strIdx));
   // UTF-16 string are dumped as UTF-8 string in mpl to keep the printable chars in ascii form
   std::string str;
-  NameMangler::UTF16ToUTF8(str, kStr16);
+  namemangler::UTF16ToUTF8(str, kStr16);
   PrintString(str);
 }
 

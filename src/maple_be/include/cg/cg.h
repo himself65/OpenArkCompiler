@@ -104,7 +104,7 @@ class CG {
         labelOrderCnt(0),
         cgOption(cgOptions),
         instrumentationFunction(nullptr) {
-    const std::string &internalNameLiteral = NameMangler::GetInternalNameLiteral(NameMangler::kJavaLangObjectStr);
+    const std::string &internalNameLiteral = namemangler::GetInternalNameLiteral(namemangler::kJavaLangObjectStr);
     GStrIdx strIdxFromName = GlobalTables::GetStrTable().GetStrIdxFromName(internalNameLiteral);
     isLibcore = (GlobalTables::GetGsymTable().GetSymbolFromStrIdx(strIdxFromName) != nullptr);
     DefineDebugTraceFunctions();
@@ -113,6 +113,7 @@ class CG {
   virtual ~CG();
   void GenExtraTypeMetadata(const std::string &classListFileName, const std::string &outputBaseName);
   void GenPrimordialObjectList(const std::string &outputBaseName);
+  const std::string ExtractFuncName(const std::string &str);
 
   template <typename I>
   Insn &BuildInstruction(MOperator opCode) {
@@ -189,7 +190,7 @@ class CG {
     return *insn;
   }
 
-  virtual CGFunc *CreateCGFunc(MIRModule &mod, MIRFunction&, BECommon&, MemPool&, MapleAllocator&) = 0;
+  virtual CGFunc *CreateCGFunc(MIRModule &mod, MIRFunction&, BECommon&, MemPool&, MapleAllocator&, uint32) = 0;
 
   bool IsExclusiveEH() const {
     return CGOptions::IsExclusiveEH();

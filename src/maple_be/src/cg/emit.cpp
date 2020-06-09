@@ -21,7 +21,7 @@
 #include "muid_replacement.h"
 #include "metadata_layout.h"
 #include "string_utils.h"
-using namespace NameMangler;
+using namespace namemangler;
 
 namespace {
 using namespace maple;
@@ -63,7 +63,7 @@ using namespace maple;
 using namespace cfi;
 
 void Emitter::EmitLabelRef(const std::string &name, LabelIdx labIdx) {
-  outStream << ".Label." << name << "." << labIdx;
+  outStream << ".L." << name << "." << labIdx;
 }
 
 void Emitter::EmitStmtLabel(const std::string &name, LabelIdx labIdx) {
@@ -73,8 +73,8 @@ void Emitter::EmitStmtLabel(const std::string &name, LabelIdx labIdx) {
 
 void Emitter::EmitLabelPair(const std::string &name, const LabelPair &pairLabel) {
   ASSERT(pairLabel.GetEndOffset() || pairLabel.GetStartOffset(), "NYI");
-  outStream << ".Label." << name << "." << pairLabel.GetEndOffset()->GetLabelIdx() << " - "
-            << ".Label." << name << "." << pairLabel.GetStartOffset()->GetLabelIdx() << "\n";
+  outStream << ".L." << name << "." << pairLabel.GetEndOffset()->GetLabelIdx() << " - "
+            << ".L." << name << "." << pairLabel.GetStartOffset()->GetLabelIdx() << "\n";
 }
 
 AsmLabel Emitter::GetTypeAsmInfoName(PrimType primType) const {
@@ -928,7 +928,7 @@ MIRAddroffuncConst *Emitter::GetAddroffuncConst(const MIRSymbol &mirSymbol, MIRA
       innerFuncAddr = safe_cast<MIRAddroffuncConst>(funcAddrConst);
     } else if (funcAddrConst->GetKind() == kConstInt) {
       /* def table index, replaced by def table for lazybinding. */
-      std::string funcDefTabName = NameMangler::kMuidFuncDefTabPrefixStr + cg->GetMIRModule()->GetFileNameAsPostfix();
+      std::string funcDefTabName = namemangler::kMuidFuncDefTabPrefixStr + cg->GetMIRModule()->GetFileNameAsPostfix();
       MIRSymbol *funDefTabSy = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(
           GlobalTables::GetStrTable().GetStrIdxFromName(funcDefTabName));
       MIRAggConst &funDefTabAggConst = static_cast<MIRAggConst&>(*funDefTabSy->GetKonst());
@@ -1309,7 +1309,7 @@ void Emitter::EmitConstantTable(const MIRSymbol &mirSymbol, MIRConst &mirConst,
         EmitIntConst(mirSymbol, aggConst, itabConflictIndex, strIdx2Type, i);
       }
     } else if (elemConst->GetType().GetKind() == kTypeArray || elemConst->GetType().GetKind() == kTypeStruct) {
-      if (StringUtils::StartsWith(mirSymbol.GetName(), NameMangler::kOffsetTabStr) && (i == 0 || i == 1)) {
+      if (StringUtils::StartsWith(mirSymbol.GetName(), namemangler::kOffsetTabStr) && (i == 0 || i == 1)) {
         // EmitOffsetValueTable
 #ifdef USE_32BIT_REF
         Emit("\t.long\t");
@@ -1317,9 +1317,9 @@ void Emitter::EmitConstantTable(const MIRSymbol &mirSymbol, MIRConst &mirConst,
         Emit("\t.quad\t");
 #endif
         if (i == 0) {
-          Emit(NameMangler::kVtabOffsetTabStr + cg->GetMIRModule()->GetFileNameAsPostfix() + " - .\n");
+          Emit(namemangler::kVtabOffsetTabStr + cg->GetMIRModule()->GetFileNameAsPostfix() + " - .\n");
         } else {
-          Emit(NameMangler::kFieldOffsetTabStr + cg->GetMIRModule()->GetFileNameAsPostfix() + " - .\n");
+          Emit(namemangler::kFieldOffsetTabStr + cg->GetMIRModule()->GetFileNameAsPostfix() + " - .\n");
         }
       } else {
         EmitConstantTable(mirSymbol, *elemConst, strIdx2Type);
@@ -1555,7 +1555,7 @@ void Emitter::GetHotAndColdMetaSymbolInfo(const std::vector<MIRSymbol*> &mirSymb
     CHECK_FATAL(prefixStr.length() < mirSymbol->GetName().length(), "string length check");
     std::string name = mirSymbol->GetName().substr(prefixStr.length());
     std::string klassJavaDescriptor;
-    NameMangler::DecodeMapleNameToJavaDescriptor(name, klassJavaDescriptor);
+    namemangler::DecodeMapleNameToJavaDescriptor(name, klassJavaDescriptor);
     if (isHot && !forceCold) {
       hotFieldInfoSymbolVec.push_back(mirSymbol);
     } else {
@@ -1745,10 +1745,10 @@ void Emitter::EmitGlobalVariable() {
     } else if (mirSymbol->GetName().find(kLocalClassInfoStr) == 0) {
       localClassInfoVec.push_back(mirSymbol);
       continue;
-    } else if (StringUtils::StartsWith(mirSymbol->GetName(), NameMangler::kDecoupleStaticKeyStr)) {
+    } else if (StringUtils::StartsWith(mirSymbol->GetName(), namemangler::kDecoupleStaticKeyStr)) {
       staticDecoupleKeyVec.push_back(mirSymbol);
       continue;
-    } else if (StringUtils::StartsWith(mirSymbol->GetName(), NameMangler::kDecoupleStaticValueStr)) {
+    } else if (StringUtils::StartsWith(mirSymbol->GetName(), namemangler::kDecoupleStaticValueStr)) {
       staticDecoupleValueVec.push_back(mirSymbol);
       continue;
     } else if (mirSymbol->IsLiteral()) {
@@ -2291,12 +2291,12 @@ void Emitter::EmitHexUnsigned(uint64 num) {
 #define str(s) #s
 
 void Emitter::EmitDIHeader() {
-  Emit("\t.section ." + std::string(NameMangler::kMuidJavatextPrefixStr) + ",\"ax\"\n");
+  Emit("\t.section ." + std::string(namemangler::kMuidJavatextPrefixStr) + ",\"ax\"\n");
   Emit(".L" XSTR(TEXT_BEGIN) ":\n");
 }
 
 void Emitter::EmitDIFooter() {
-  Emit("\t.section ." + std::string(NameMangler::kMuidJavatextPrefixStr) + ",\"ax\"\n");
+  Emit("\t.section ." + std::string(namemangler::kMuidJavatextPrefixStr) + ",\"ax\"\n");
   Emit(".L" XSTR(TEXT_END) ":\n");
 }
 
@@ -2313,7 +2313,7 @@ void Emitter::EmitHugeSoRoutines(bool lastRoutine) {
     return;
   }
   for (auto &target : hugeSoTargets) {
-    Emit("\t.section ." + std::string(NameMangler::kMuidJavatextPrefixStr) + ",\"ax\"\n");
+    Emit("\t.section ." + std::string(namemangler::kMuidJavatextPrefixStr) + ",\"ax\"\n");
     Emit("\t.align 2\n");
     std::string routineName = target + HugeSoPostFix();
     Emit("\t.type\t" + routineName + ", %function\n");
@@ -2333,7 +2333,7 @@ void ImmOperand::Dump() const {
 
 void LabelOperand::Emit(Emitter &emitter, const OpndProp *opndProp) const {
   (void)opndProp;
-  emitter.Emit(".Label.").Emit(parentFunc).Emit(".").Emit(labelIndex);
+  emitter.Emit(".L.").Emit(parentFunc).Emit(".").Emit(labelIndex);
 }
 
 void LabelOperand::Dump() const {

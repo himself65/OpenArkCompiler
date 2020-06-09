@@ -25,7 +25,7 @@
 #include "string_utils.h"
 
 namespace maple {
-using namespace NameMangler;
+using namespace namemangler;
 
 bool MIRSymbol::IsTypeVolatile(int fieldID) const {
   const MIRType *ty = GlobalTables::GetTypeTable().GetTypeFromTyIdx(GetTyIdx());
@@ -273,7 +273,7 @@ bool MIRSymbol::IgnoreRC() const {
   GStrIdx strIdx = GlobalTables::GetTypeTable().GetTypeFromTyIdx(pType->GetPointedTyIdx())->GetNameStrIdx();
   if (reflectClassNameIdx == 0u) {
     reflectClassNameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(
-        NameMangler::GetInternalNameLiteral("Ljava_2Flang_2FClass_3B"));
+        namemangler::GetInternalNameLiteral("Ljava_2Flang_2FClass_3B"));
   }
   return strIdx == reflectClassNameIdx;
 }

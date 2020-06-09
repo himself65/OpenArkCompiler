@@ -46,8 +46,8 @@ std::string ReplaceRetIgnored::GenerateNewFullName(const MIRFunction &originalFu
   const std::string &oldSignature = originalFunc.GetSignature();
   auto retPos = oldSignature.find("_29");
   constexpr auto retPosIndex = 3;
-  return std::string(originalFunc.GetBaseClassName()).append(NameMangler::kNameSplitterStr).
-      append(GenerateNewBaseName(originalFunc)).append(NameMangler::kNameSplitterStr).
+  return std::string(originalFunc.GetBaseClassName()).append(namemangler::kNameSplitterStr).
+      append(GenerateNewBaseName(originalFunc)).append(namemangler::kNameSplitterStr).
       append(oldSignature.substr(0, retPos + retPosIndex)).append("V");
 }
 
@@ -100,7 +100,7 @@ MIRFunction *Clone::CloneFunction(MIRFunction &originalFunction, const std::stri
   std::string fullName = originalFunction.GetBaseClassName();
   const std::string &signature = originalFunction.GetSignature();
   fullName = fullName.append(
-      NameMangler::kNameSplitterStr).append(newBaseFuncName).append(NameMangler::kNameSplitterStr).append(signature);
+      namemangler::kNameSplitterStr).append(newBaseFuncName).append(namemangler::kNameSplitterStr).append(signature);
   MIRFunction *newFunc =
       dexBuilder.CreateFunction(fullName, *retType, argument, false, originalFunction.GetBody() != nullptr);
   CHECK_FATAL(newFunc != nullptr, "create cloned function failed");

@@ -650,7 +650,7 @@ void AArch64Insn::EmitClinit(const CG &cg, Emitter &emitter) const {
     emitter.Emit("\tadrp\t");
     opnd0->Emit(emitter, prop0);
     emitter.Emit(",");
-    emitter.Emit(NameMangler::kPtrPrefixStr + stImmOpnd->GetName());
+    emitter.Emit(namemangler::kPtrPrefixStr + stImmOpnd->GetName());
     emitter.Emit("\n");
 
     /* ldr     x3, [x3, #:lo12:_PTR__cinf_Ljava_2Futil_2Fconcurrent_2Fatomic_2FAtomicInteger_3B] */
@@ -659,7 +659,7 @@ void AArch64Insn::EmitClinit(const CG &cg, Emitter &emitter) const {
     emitter.Emit(", [");
     opnd0->Emit(emitter, prop0);
     emitter.Emit(", #:lo12:");
-    emitter.Emit(NameMangler::kPtrPrefixStr + stImmOpnd->GetName());
+    emitter.Emit(namemangler::kPtrPrefixStr + stImmOpnd->GetName());
     emitter.Emit("]\n");
   }
   /* emit "ldr  x0,[x0,#48]" */

@@ -320,7 +320,7 @@ FEStructMethodInfo &FEIRStmtJavaMultiANewArray::GetMethodInfoNewInstance() {
   }
   std::string methodNameJava = "Ljava/lang/reflect/Array;|newInstance|(Ljava/lang/Class;[I)Ljava/lang/Object;";
   GStrIdx methodNameIdx =
-      GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(NameMangler::EncodeName(methodNameJava));
+      GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(namemangler::EncodeName(methodNameJava));
   methodInfoNewInstance = static_cast<FEStructMethodInfo*>(
       FEManager::GetTypeManager().RegisterStructMethodInfo(methodNameIdx, kSrcLangJava, true));
   return *methodInfoNewInstance;

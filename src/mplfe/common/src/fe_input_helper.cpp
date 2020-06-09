@@ -104,7 +104,7 @@ void FEInputStructHelper::ProcessDeclSuperClassForJava() {
   ASSERT(superNames.size() <= 1, "there must be zero or one super class for java class: %s",
          GetStructNameOrin().c_str());
   if (superNames.size() == 1) {
-    std::string superNameMpl = NameMangler::EncodeName(superNames[0]);
+    std::string superNameMpl = namemangler::EncodeName(superNames[0]);
     bool isCreate = false;
     MIRStructType *superType = FEManager::GetTypeManager().GetOrCreateClassOrInterfaceType(superNameMpl, false,
                                                                                            FETypeFlag::kSrcExtern,
@@ -137,7 +137,7 @@ void FEInputStructHelper::ProcessDeclImplements() {
   std::vector<std::string> interfaceNames = GetInterfaceNames();
   std::vector<MIRStructType*> interfaceTypes;
   for (const std::string &name : interfaceNames) {
-    std::string interfaceNameMpl = NameMangler::EncodeName(name);
+    std::string interfaceNameMpl = namemangler::EncodeName(name);
     bool isCreate = false;
     MIRStructType *interfaceType = FEManager::GetTypeManager().GetOrCreateClassOrInterfaceType(interfaceNameMpl, true,
                                                                                                FETypeFlag::kSrcExtern,
@@ -210,7 +210,7 @@ void FEInputStructHelper::ProcessDeclDefInfoSuperNameForJava() {
     return;
   }
   std::string superName = superNames.size() == 0 ? "unknown" : superNames[0];
-  std::string superNameMpl = NameMangler::EncodeName(superName);
+  std::string superNameMpl = namemangler::EncodeName(superName);
   GStrIdx superNameMplIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(superNameMpl.c_str());
   SET_CLASS_INFO_PAIR(mirStructType, "INFO_superclassname", superNameMplIdx.GetIdx(), true);
 }
@@ -223,7 +223,7 @@ void FEInputStructHelper::ProcessDeclDefInfoImplementNameForJava() {
   std::vector<std::string> implementNames = GetInterfaceNames();
   for (const std::string &name : implementNames) {
     if (!name.empty()) {
-      std::string nameMpl = NameMangler::EncodeName(name);
+      std::string nameMpl = namemangler::EncodeName(name);
       GStrIdx nameMplIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(nameMpl.c_str());
       SET_CLASS_INFO_PAIR(mirStructType, "INFO_implements", nameMplIdx.GetIdx(), true);
     }

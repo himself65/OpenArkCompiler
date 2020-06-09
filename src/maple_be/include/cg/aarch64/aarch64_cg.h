@@ -119,8 +119,8 @@ class AArch64CG : public CG {
   ~AArch64CG() override = default;
 
   CGFunc *CreateCGFunc(MIRModule &mod, MIRFunction &mirFunc, BECommon &bec, MemPool &memPool,
-                       MapleAllocator &mallocator) override {
-    return memPool.New<AArch64CGFunc>(mod, *this, mirFunc, bec, memPool, mallocator);
+                       MapleAllocator &mallocator, uint32 funcId) override {
+    return memPool.New<AArch64CGFunc>(mod, *this, mirFunc, bec, memPool, mallocator, funcId);
   }
 
   const std::unordered_map<std::string, std::vector<std::string>> &GetCyclePatternMap() const {

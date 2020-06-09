@@ -466,8 +466,8 @@ bool AliasClass::AliasAccordingToType(TyIdx tyIdxA, TyIdx tyIdxB) {
       CHECK_NULL_FATAL(klassA);
       Klass *klassB = klassHierarchy->GetKlassFromTyIdx(mirTypeB->GetTypeIndex());
       CHECK_NULL_FATAL(klassB);
-      return (klassA == klassB || klassA->GetKlassName() == NameMangler::kJavaLangObjectStr ||
-              klassB->GetKlassName() == NameMangler::kJavaLangObjectStr ||
+      return (klassA == klassB || klassA->GetKlassName() == namemangler::kJavaLangObjectStr ||
+              klassB->GetKlassName() == namemangler::kJavaLangObjectStr ||
               klassHierarchy->IsSuperKlass(klassA, klassB) || klassHierarchy->IsSuperKlass(klassB, klassA));
     }
     case kTypePointer: {

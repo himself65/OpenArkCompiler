@@ -181,7 +181,7 @@ void AArch64CG::FindOrCreateRepresentiveSym(std::vector<uint64> &bitmapWords, ui
     std::string ptnString = "\t.type " + ptn->GetName() + ", %object\n" + "\t.data\n" + "\t.align 3\n";
 
     MIRSymbol *gcTIBSymbol = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(
-        GlobalTables::GetStrTable().GetStrIdxFromName(NameMangler::GetInternalNameLiteral(gcTIBName)));
+        GlobalTables::GetStrTable().GetStrIdxFromName(namemangler::GetInternalNameLiteral(gcTIBName)));
     if (gcTIBSymbol != nullptr && gcTIBSymbol->GetStorageClass() == kScFstatic) {
       ptnString += "\t.local ";
     } else {

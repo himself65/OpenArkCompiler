@@ -84,7 +84,7 @@ class AArch64Insn : public Insn {
       Operand *opnd1 = opnds[1];
       CHECK_FATAL(opnd1 != nullptr, "opnd1 is null!");
       auto *stImmOpnd = static_cast<StImmOperand*>(opnd1);
-      return StringUtils::StartsWith(stImmOpnd->GetName(), NameMangler::kDecoupleStaticValueStr);
+      return StringUtils::StartsWith(stImmOpnd->GetName(), namemangler::kDecoupleStaticValueStr);
     }
     return false;
   }

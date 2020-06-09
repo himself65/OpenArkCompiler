@@ -65,7 +65,7 @@ MIRSymbol *FEJavaStringManager::GetLiteralPtrVar(const std::u16string &strU16) c
 
 MIRSymbol *FEJavaStringManager::CreateLiteralVar(MIRBuilder &mirBuilder, const std::string &str, bool isFieldValue) {
   std::u16string strU16;
-  (void)NameMangler::UTF8ToUTF16(strU16, str);
+  (void)namemangler::UTF8ToUTF16(strU16, str);
   return CreateLiteralVar(mirBuilder, strU16, isFieldValue);
 }
 
@@ -98,7 +98,7 @@ MIRSymbol *FEJavaStringManager::CreateLiteralVar(MIRBuilder &mirBuilder, const s
     (void)fieldValueSet.insert(literalVar);
   }
   if (isFieldValue || isHotLiteral) {
-    std::string literalGlobalPtrName = NameMangler::kPtrPrefixStr + literalGlobalName;
+    std::string literalGlobalPtrName = namemangler::kPtrPrefixStr + literalGlobalName;
     MIRSymbol *literalVarPtr = mirBuilder.GetOrCreateGlobalDecl(literalGlobalPtrName.c_str(), *typeString);
     literalVarPtr->SetStorageClass(literalVar->GetStorageClass());
     AddrofNode *expr = mirBuilder.CreateExprAddrof(0, *literalVar, module.GetMemPool());
@@ -113,7 +113,7 @@ MIRSymbol *FEJavaStringManager::CreateLiteralVar(MIRBuilder &mirBuilder, const s
 
 MIRSymbol *FEJavaStringManager::GetLiteralVar(const std::string &str) const {
   std::u16string strU16;
-  (void)NameMangler::UTF8ToUTF16(strU16, str);
+  (void)namemangler::UTF8ToUTF16(strU16, str);
   return GetLiteralVar(strU16);
 }
 

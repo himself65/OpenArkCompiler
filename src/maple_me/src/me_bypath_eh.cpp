@@ -269,7 +269,7 @@ void MeDoBypathEH::BypathException(MeFunction &func, const KlassHierarchy &kh) c
         auto *pType = static_cast<MIRPtrType*>(type);
         Klass *catchClass = nullptr;
         if (pType->GetPointedTyIdx() == PTY_void) {
-          catchClass = kh.GetKlassFromName(NameMangler::kJavaLangExceptionStr);
+          catchClass = kh.GetKlassFromName(namemangler::kJavaLangExceptionStr);
         } else {
           catchClass = kh.GetKlassFromTyIdx(pType->GetPointedTyIdx());
         }

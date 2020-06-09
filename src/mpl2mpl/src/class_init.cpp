@@ -69,13 +69,13 @@ void ClassInit::ProcessFunc(MIRFunction *func) {
     selfClassName = GlobalTables::GetStrTable().GetStringFromStrIdx(selfClassType->GetNameStrIdx());
   } else {
     const std::string &funcName = func->GetName();
-    size_t pos = funcName.find(NameMangler::kNameSplitterStr);
+    size_t pos = funcName.find(namemangler::kNameSplitterStr);
     constexpr size_t prePos = 2;
     constexpr size_t ligalPos = 2;
     while (pos != std::string::npos &&
            (pos >= ligalPos && funcName[pos - 1] == '_' && funcName[pos - prePos] != '_')) {
       constexpr size_t nextPos = 3;
-      pos = funcName.find(NameMangler::kNameSplitterStr, pos + nextPos);
+      pos = funcName.find(namemangler::kNameSplitterStr, pos + nextPos);
     }
     selfClassName = funcName.substr(0, pos);
   }
@@ -161,7 +161,7 @@ void ClassInit::ProcessFunc(MIRFunction *func) {
 MIRSymbol *ClassInit::GetClassInfo(const std::string &classname) {
   const std::string &classInfoName = CLASSINFO_PREFIX_STR + classname;
   MIRType *classInfoType =
-      GlobalTables::GetTypeTable().GetOrCreateClassType(NameMangler::kClassMetadataTypeName, GetMIRModule());
+      GlobalTables::GetTypeTable().GetOrCreateClassType(namemangler::kClassMetadataTypeName, GetMIRModule());
   MIRSymbol *classInfo = builder->GetOrCreateGlobalDecl(classInfoName, *classInfoType);
   Klass *klass = klassHierarchy->GetKlassFromName(classname);
   if (klass == nullptr || !klass->GetMIRStructType()->IsLocal()) {

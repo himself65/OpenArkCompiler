@@ -1413,7 +1413,7 @@ Operand *AArch64CGFunc::SelectAddrof(AddrofNode &expr) {
      * adrp    x1, _PTR__cinf_Ljava_2Flang_2FSystem_3B
      * ldr     x1, [x1, #:lo12:_PTR__cinf_Ljava_2Flang_2FSystem_3B]
      */
-    std::string ptrName = NameMangler::kPtrPrefixStr + symbol->GetName();
+    std::string ptrName = namemangler::kPtrPrefixStr + symbol->GetName();
     MIRType *ptrType = GlobalTables::GetTypeTable().GetPtr();
     symbol = GetMirModule().GetMIRBuilder()->GetOrCreateGlobalDecl(ptrName, *ptrType);
     symbol->SetStorageClass(kScFstatic);
@@ -4885,7 +4885,7 @@ void AArch64CGFunc::IntrinsifyStringIndexOf(AArch64ListOperand &srcOpnds, const 
   auto iter = opnds.begin();
   RegOperand *srcString = *iter;
   RegOperand *patternString = *(++iter);
-  GStrIdx gStrIdx = GlobalTables::GetStrTable().GetStrIdxFromName(NameMangler::kJavaLangStringStr);
+  GStrIdx gStrIdx = GlobalTables::GetStrTable().GetStrIdxFromName(namemangler::kJavaLangStringStr);
   MIRType *type =
       GlobalTables::GetTypeTable().GetTypeFromTyIdx(GlobalTables::GetTypeNameTable().GetTyIdxFromGStrIdx(gStrIdx));
   auto stringType = static_cast<MIRStructType*>(type);
@@ -5149,8 +5149,7 @@ LabelOperand &AArch64CGFunc::GetOrCreateLabelOperand(LabelIdx labIdx) {
   if (it != hashLabelOpndTable.end()) {
     return *(it->second);
   }
-  MIRSymbol *funcSt = GlobalTables::GetGsymTable().GetSymbolFromStidx(GetFunction().GetStIdx().Idx());
-  const char *funcName = MapleString(funcSt->GetName(), memPool).c_str();
+  const char *funcName = GetShortFuncName().c_str();
   LabelOperand *res = memPool->New<LabelOperand>(funcName, labIdx);
   hashLabelOpndTable[labIdx] = res;
   return *res;
@@ -5948,7 +5947,7 @@ void AArch64CGFunc::SelectMPLProfCounterInc(IntrinsiccallNode &intrnNode) {
   vReg1.SetRegNotBBLocal();
   static MIRSymbol *bbProfileTab = nullptr;
   if (!bbProfileTab) {
-    std::string bbProfileName = NameMangler::kBBProfileTabPrefixStr + GetMirModule().GetFileNameAsPostfix();
+    std::string bbProfileName = namemangler::kBBProfileTabPrefixStr + GetMirModule().GetFileNameAsPostfix();
     bbProfileTab = GetMirModule().GetMIRBuilder()->GetGlobalDecl(bbProfileName);
     CHECK_FATAL(bbProfileTab != nullptr, "expect bb profile tab");
   }
@@ -5979,7 +5978,7 @@ void AArch64CGFunc::SelectMPLClinitCheck(IntrinsiccallNode &intrnNode) {
     ASSERT(symbol->GetName().find(CLASSINFO_PREFIX_STR) == 0, "must be a symbol with __classinfo__");
 
     if (!symbol->IsMuidDataUndefTab()) {
-      std::string ptrName = NameMangler::kPtrPrefixStr + symbol->GetName();
+      std::string ptrName = namemangler::kPtrPrefixStr + symbol->GetName();
       MIRType *ptrType = GlobalTables::GetTypeTable().GetPtr();
       symbol = GetMirModule().GetMIRBuilder()->GetOrCreateGlobalDecl(ptrName, *ptrType);
       bClinitSeperate = true;
