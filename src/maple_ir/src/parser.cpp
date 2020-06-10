@@ -2203,7 +2203,7 @@ bool MIRParser::ParseAlias(StmtNodePtr&) {
   }
   GStrIdx signStrIdx(0);
   if (lexer.GetTokenKind() == TK_string) {
-    // ignore the signature string
+    signStrIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(lexer.GetName());
     lexer.NextToken();
   }
   MIRAliasVars aliasVar;

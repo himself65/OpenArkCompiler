@@ -1889,12 +1889,6 @@ void ReflectionAnalysis::Run() {
   reflectionMuidStr.clear();
   reflectionMuidStr.shrink_to_fit();
   GenClassHashMetaData();
-  for (Klass *klass : klasses) {
-    MIRStructType *mirStruct = klass->GetMIRStructType();
-    mirStruct->GetPragmaVec().clear();
-    mirStruct->GetPragmaVec().shrink_to_fit();
-  }
-  memPoolCtrler.DeleteMemPool(mirModule->GetPragmaMemPool());
 }
 
 AnalysisResult *DoReflectionAnalysis::Run(MIRModule *module, ModuleResultMgr *moduleResultMgr) {

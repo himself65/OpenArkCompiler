@@ -25,13 +25,15 @@ class Retype {
 
   virtual ~Retype() {}
 
-  void ReplaceRetypeExpr(const BaseNode &opnd) const;
-  void RetypeStmt(MIRFunction &func) const;
-  void DoRetype() const;
+  void ReplaceRetypeExpr(const BaseNode &opnd);
+  void RetypeStmt(MIRFunction &func);
+  void DoRetype();
 
  private:
   MIRModule *mirModule;
   MapleAllocator allocator;
+  std::map<GStrIdx, MIRAliasVars> reg2varGenericInfo;
+  void TransmitGenericInfo(MIRFunction &func, StmtNode &stmt);
 };
 }  // namespace maple
 #endif  // MAPLE_IPA_INCLUDE_RETYPE_H

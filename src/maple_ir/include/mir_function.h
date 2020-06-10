@@ -786,6 +786,41 @@ class MIRFunction {
     return codeMemPoolAllocator;
   }
 
+  void AddFuncGenericDeclare(GenericDeclare *g) {
+    genericDeclare.push_back(g);
+  }
+
+  void AddFuncGenericArg(AnnotationType *a) {
+    genericArg.push_back(a);
+  }
+
+  void AddFuncGenericRet(AnnotationType *r) {
+    genericRet = r;
+  }
+
+  void AddFuncLocalGenericVar(GStrIdx str, AnnotationType *at) {
+    genericLocalVar[str] = at;
+  }
+
+  MapleVector<GenericDeclare*> &GetFuncGenericDeclare() {
+    return genericDeclare;
+  }
+
+  MapleVector<AnnotationType*> &GetFuncGenericArg() {
+    return genericArg;
+  }
+
+  AnnotationType *GetFuncGenericRet() {
+    return genericRet;
+  }
+
+  AnnotationType *GetFuncLocalGenericVar(GStrIdx str) {
+    if (genericLocalVar.find(str) == genericLocalVar.end()) {
+      return nullptr;
+    }
+    return genericLocalVar[str];
+  }
+
 
   void AddProfileDesc(uint64 hash, uint32 start, uint32 end) {
     profileDesc = module->GetMemPool()->New<IRProfileDesc>(hash, start, end);
@@ -813,6 +848,11 @@ class MIRFunction {
   MapleSet<MIRSymbol*> retRefSym{module->GetMPAllocator().Adapter()};
   MapleVector<TyIdx> argumentsTyIdx{module->GetMPAllocator().Adapter()};  // arguments types of this function
   MapleVector<TypeAttrs> argumentsAttrs{module->GetMPAllocator().Adapter()};
+
+  MapleVector<GenericDeclare*> genericDeclare{module->GetMPAllocator().Adapter()};
+  MapleVector<AnnotationType*> genericArg{module->GetMPAllocator().Adapter()};
+  MapleMap<GStrIdx, AnnotationType*> genericLocalVar{module->GetMPAllocator().Adapter()};
+  AnnotationType *genericRet = nullptr;
 
   MIRSymbolTable *symTab = nullptr;
   MIRTypeNameTable *typeNameTab = nullptr;
