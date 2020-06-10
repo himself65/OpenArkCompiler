@@ -214,7 +214,7 @@ struct MByteRef32 {
 };
 
 // MethodMeta defined in methodmeta.h
-// FieldMeta  defined in FieldMeta.h
+// FieldMeta  defined in fieldmeta.h
 // MethodDesc contains MethodMetadata and stack map
 struct MethodDesc {
   // relative offset for method metadata relative to current PC.

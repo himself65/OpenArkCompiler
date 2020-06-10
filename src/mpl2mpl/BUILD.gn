@@ -38,6 +38,7 @@ src_libmpl2mpl = [
   "src/constantfold.cpp",
   "src/analyzector.cpp",
   "src/coderelayout.cpp",
+  "src/annotation_analysis.cpp",
 ]
 
 configs = [ "${MAPLEALL_ROOT}:mapleallcompilecfg" ]

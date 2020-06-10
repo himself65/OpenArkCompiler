@@ -137,6 +137,12 @@ class MIRModule {
   const MapleAllocator &GetMPAllocator() const {
     return memPoolAllocator;
   }
+
+  void ChangePragmaMemPool(MemPool *newPragma) {
+    pragmaMemPool = newPragma;
+    pragmaMemPoolAllocator.SetMemPool(newPragma);
+  }
+
   MapleAllocator &GetMPAllocator() {
     return memPoolAllocator;
   }

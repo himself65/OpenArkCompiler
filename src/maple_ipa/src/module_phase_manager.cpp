@@ -24,6 +24,7 @@
 #include "native_stub_func.h"
 #include "vtable_analysis.h"
 #include "reflection_analysis.h"
+#include "annotation_analysis.h"
 #include "vtable_impl.h"
 #include "java_intrn_lowering.h"
 #include "java_eh_lower.h"

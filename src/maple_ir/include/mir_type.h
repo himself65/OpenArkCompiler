@@ -694,7 +694,9 @@ using MethodPair = std::pair<StIdx, TyidxFuncAttrPair>;
 using MethodVector = std::vector<MethodPair>;
 using MethodPtrVector = std::vector<MethodPair*>;
 using MIREncodedArray = std::vector<EncodedValue>;
-
+class GenericDeclare;
+class AnnotationType;
+class GenericType;
 // used by kTypeStruct, kTypeStructIncomplete, kTypeUnion
 class MIRStructType : public MIRType {
  public:
@@ -974,6 +976,36 @@ class MIRStructType : public MIRType {
     CHECK_FATAL(false, "can not use GetPragmaVec");
   }
 
+  std::vector<GenericDeclare*>& GetGenericDeclare() {
+    return genericDeclare;
+  }
+
+  void AddClassGenericDeclare(GenericDeclare *gd) {
+    genericDeclare.push_back(gd);
+  }
+
+  void AddFieldGenericDeclare(GStrIdx g, AnnotationType *a) {
+    if (fieldGenericDeclare.find(g) != fieldGenericDeclare.end()) {
+      CHECK_FATAL(fieldGenericDeclare[g] == a, "MUST BE");
+    }
+    fieldGenericDeclare[g] = a;
+  }
+
+  AnnotationType *GetFieldGenericDeclare(GStrIdx g) {
+    if (fieldGenericDeclare.find(g) == fieldGenericDeclare.end()) {
+      return nullptr;
+    }
+    return fieldGenericDeclare[g];
+  }
+
+  void AddInheritaceGeneric(GenericType *a) {
+    inheritanceGeneric.push_back(a);
+  }
+
+  std::vector<GenericType*> &GetInheritanceGeneric() {
+    return inheritanceGeneric;
+  }
+
   virtual const MIREncodedArray &GetStaticValue() const {
     CHECK_FATAL(false, "can not use GetStaticValue");
   }
@@ -1013,6 +1045,9 @@ class MIRStructType : public MIRType {
   mutable bool hasVolatileField = false;     // for caching computed value
   mutable bool hasVolatileFieldSet = false;  // if true, just read hasVolatileField;
                                              // otherwise compute to initialize hasVolatileField
+  std::vector<GenericDeclare*> genericDeclare;
+  std::map<GStrIdx, AnnotationType*> fieldGenericDeclare;
+  std::vector<GenericType*> inheritanceGeneric;
  private:
   FieldPair TraverseToField(FieldID fieldID) const ;
   FieldPair TraverseToField(GStrIdx fieldStrIdx) const ;
