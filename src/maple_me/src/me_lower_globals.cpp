@@ -134,7 +134,7 @@ void MeLowerGlobals::Run() {
           continue;
         }
         if (GlobalTables::GetGsymTable().GetSymbolFromStrIdx(GlobalTables::GetStrTable().GetStrIdxFromName(
-          NameMangler::GetInternalNameLiteral(NameMangler::kJavaLangObjectStr))) != nullptr) {
+          namemangler::GetInternalNameLiteral(namemangler::kJavaLangObjectStr))) != nullptr) {
           continue;
         }
         auto &callStmt = static_cast<CallMeStmt&>(stmt);

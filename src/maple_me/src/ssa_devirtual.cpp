@@ -89,7 +89,7 @@ void SSADevirtual::ReplaceCall(CallMeStmt &callStmt, const MIRFunction &targetFu
   if (SSADevirtual::debug) {
     MIRFunction &mirFunc = callStmt.GetTargetFunction();
     LogInfo::MapleLogger() << "[SSA-DEVIRT] " << kOpcodeInfo.GetTableItemAt(callStmt.GetOp()).name << " " <<
-        NameMangler::DecodeName(mirFunc.GetName());
+        namemangler::DecodeName(mirFunc.GetName());
   }
   if (callStmt.GetOp() == OP_virtualicall || callStmt.GetOp() == OP_virtualicallassigned ||
       callStmt.GetOp() == OP_interfaceicall || callStmt.GetOp() == OP_interfaceicallassigned) {
@@ -121,7 +121,7 @@ void SSADevirtual::ReplaceCall(CallMeStmt &callStmt, const MIRFunction &targetFu
   }
   if (SSADevirtual::debug) {
     LogInfo::MapleLogger() << "\t -> \t" << kOpcodeInfo.GetTableItemAt(callStmt.GetOp()).name << " " <<
-        NameMangler::DecodeName(targetFunc.GetName());
+        namemangler::DecodeName(targetFunc.GetName());
     if (NeedNullCheck(*receiver)) {
       LogInfo::MapleLogger() << " with null-check ";
     }

@@ -1924,7 +1924,7 @@ bool MIRParser::ParseExprConststr16(BaseNodePtr &expr) {
   // so we need to do a UTF8ToUTF16 conversion
   std::string str = lexer.GetName();
   std::u16string str16;
-  NameMangler::UTF8ToUTF16(str16, str);
+  namemangler::UTF8ToUTF16(str16, str);
   str16Const->SetStrIdx(GlobalTables::GetU16StrTable().GetOrCreateStrIdxFromName(str16));
   expr = str16Const;
   lexer.NextToken();

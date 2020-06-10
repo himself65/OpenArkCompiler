@@ -35,7 +35,7 @@ UniqueFEIRType FEIRTypeHelper::CreateTypeByJavaName(const std::string typeName, 
     newType = CreateTypeByJavaNamePrim(baseName[0], dim8);
     CHECK_FATAL(newType != nullptr, "unsupported java type name %s: ", typeName.c_str());
   } else if (baseName[0] == 'L') {
-    baseName = inMpl ? baseName : NameMangler::EncodeName(baseName);
+    baseName = inMpl ? baseName : namemangler::EncodeName(baseName);
     GStrIdx typeNameIdx = GlobalTables::GetStrTable().GetStrIdxFromName(baseName);
     if (typeNameIdx == 0) {
       newType = std::make_unique<FEIRTypeByName>(PTY_ref, baseName, dim8);

@@ -55,7 +55,7 @@ MUID MUIDReplacement::mplMuid;
 
 MUIDReplacement::MUIDReplacement(MIRModule &mod, KlassHierarchy *kh, bool dump)
     : FuncOptimizeImpl(mod, kh, dump) {
-  isLibcore = (GetSymbolFromName(NameMangler::GetInternalNameLiteral(NameMangler::kJavaLangObjectStr)) != nullptr);
+  isLibcore = (GetSymbolFromName(namemangler::GetInternalNameLiteral(namemangler::kJavaLangObjectStr)) != nullptr);
   GenerateTables();
 }
 
@@ -245,7 +245,7 @@ void MUIDReplacement::CollectImplicitUndefClassInfo(StmtNode &stmt) {
         if (type->GetKind() == kTypeClass || type->GetKind() == kTypeInterface) {
           classTyVec.push_back(static_cast<MIRStructType*>(type));
         } else if (type == GlobalTables::GetTypeTable().GetVoid()) {
-          Klass *objectKlass = klassHierarchy->GetKlassFromLiteral(NameMangler::kJavaLangObjectStr);
+          Klass *objectKlass = klassHierarchy->GetKlassFromLiteral(namemangler::kJavaLangObjectStr);
           if (objectKlass != nullptr) {
             classTyVec.push_back(objectKlass->GetMIRStructType());
           }
@@ -431,32 +431,32 @@ void MUIDReplacement::GenerateFuncDefTable() {
     mplMuidStr += muid.ToStr();
   }
   if (!funcDefTabConst->GetConstVec().empty()) {
-    std::string funcDefTabName = NameMangler::kMuidFuncDefTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
+    std::string funcDefTabName = namemangler::kMuidFuncDefTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
     funcDefTabSym = builder->CreateGlobalDecl(funcDefTabName, arrayType);
     funcDefTabSym->SetKonst(funcDefTabConst);
     funcDefTabSym->SetStorageClass(kScFstatic);
   }
   if (!funcInfTabConst->GetConstVec().empty()) {
-    std::string funcInfTabName = NameMangler::kMuidFuncInfTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
+    std::string funcInfTabName = namemangler::kMuidFuncInfTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
     funcInfTabSym = builder->CreateGlobalDecl(funcInfTabName, funcInfArrayType);
     funcInfTabSym->SetKonst(funcInfTabConst);
     funcInfTabSym->SetStorageClass(kScFstatic);
   }
   if (!funcDefMuidTabConst->GetConstVec().empty()) {
-    std::string funcDefMuidTabName = NameMangler::kMuidFuncDefMuidTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
+    std::string funcDefMuidTabName = namemangler::kMuidFuncDefMuidTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
     funcDefMuidTabSym = builder->CreateGlobalDecl(funcDefMuidTabName, muidArrayType);
     funcDefMuidTabSym->SetKonst(funcDefMuidTabConst);
     funcDefMuidTabSym->SetStorageClass(kScFstatic);
   }
   if (!muidIdxTabConst->GetConstVec().empty()) {
-    std::string muidIdxTabName = NameMangler::kMuidFuncMuidIdxTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
+    std::string muidIdxTabName = namemangler::kMuidFuncMuidIdxTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
     funcMuidIdxTabSym = builder->CreateGlobalDecl(muidIdxTabName, muidIdxArrayType);
     funcMuidIdxTabSym->SetKonst(muidIdxTabConst);
     funcMuidIdxTabSym->SetStorageClass(kScFstatic);
   }
 
   if (!funcProfInfTabConst->GetConstVec().empty()) {
-    std::string profInfTabName = NameMangler::kFuncIRProfInfTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
+    std::string profInfTabName = namemangler::kFuncIRProfInfTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
     funcProfInfTabSym = builder->CreateGlobalDecl(profInfTabName, funcProfInfArrayType);
     funcProfInfTabSym->SetKonst(funcProfInfTabConst);
     funcProfInfTabSym->SetStorageClass(kScFstatic);
@@ -469,7 +469,7 @@ void MUIDReplacement::GenerateFuncDefTable() {
 void MUIDReplacement::ReplaceMethodMetaFuncAddr(MIRSymbol &funcSymbol, int64 index) {
   std::string symbolName = funcSymbol.GetName();
   MIRSymbol *methodAddrDataSt = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(
-      GlobalTables::GetStrTable().GetStrIdxFromName(NameMangler::kMethodAddrDataPrefixStr + symbolName));
+      GlobalTables::GetStrTable().GetStrIdxFromName(namemangler::kMethodAddrDataPrefixStr + symbolName));
   CHECK_FATAL(methodAddrDataSt != nullptr, "methodAddrDataSt symbol is null.");
   MIRConst *mirConst = methodAddrDataSt->GetKonst();
   MIRAggConst *aggConst = safe_cast<MIRAggConst>(mirConst);
@@ -541,13 +541,13 @@ void MUIDReplacement::GenerateDataDefTable() {
     DumpMUIDFile(false);
   }
   if (!dataDefTabConst->GetConstVec().empty()) {
-    std::string dataDefTabName = NameMangler::kMuidDataDefTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
+    std::string dataDefTabName = namemangler::kMuidDataDefTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
     dataDefTabSym = builder->CreateGlobalDecl(dataDefTabName, arrayType);
     dataDefTabSym->SetKonst(dataDefTabConst);
     dataDefTabSym->SetStorageClass(kScFstatic);
   }
   if (!dataDefMuidTabConst->GetConstVec().empty()) {
-    std::string dataDefMuidTabName = NameMangler::kMuidDataDefMuidTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
+    std::string dataDefMuidTabName = namemangler::kMuidDataDefMuidTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
     dataDefMuidTabSym = builder->CreateGlobalDecl(dataDefMuidTabName, muidArrayType);
     dataDefMuidTabSym->SetKonst(dataDefMuidTabConst);
     dataDefMuidTabSym->SetStorageClass(kScFstatic);
@@ -557,7 +557,7 @@ void MUIDReplacement::GenerateDataDefTable() {
 void MUIDReplacement::ReplaceFieldMetaStaticAddr(const MIRSymbol &mirSymbol, uint32 index) {
   std::string symbolName = mirSymbol.GetName();
   MIRSymbol *fieldOffsetDataSt = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(
-      GlobalTables::GetStrTable().GetStrIdxFromName(NameMangler::kFieldOffsetDataPrefixStr + symbolName));
+      GlobalTables::GetStrTable().GetStrIdxFromName(namemangler::kFieldOffsetDataPrefixStr + symbolName));
   if (fieldOffsetDataSt == nullptr) {
     if (trace) {
       LogInfo::MapleLogger() << "fieldOffsetDataSt is nullptr, symbolName=" << symbolName << "\n";
@@ -647,14 +647,14 @@ void MUIDReplacement::GenerateUnifiedUndefTable() {
     funcUndefMuidTabConst->PushBack(muidEntryConst);
   }
   if (!funcUndefTabConst->GetConstVec().empty()) {
-    std::string funcUndefTabName = NameMangler::kMuidFuncUndefTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
+    std::string funcUndefTabName = namemangler::kMuidFuncUndefTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
     funcUndefTabSym = builder->CreateGlobalDecl(funcUndefTabName, funcArrayType);
     funcUndefTabSym->SetKonst(funcUndefTabConst);
     funcUndefTabSym->SetStorageClass(kScFstatic);
   }
   if (!funcUndefMuidTabConst->GetConstVec().empty()) {
     std::string funcUndefMuidTabName =
-      NameMangler::kMuidFuncUndefMuidTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
+      namemangler::kMuidFuncUndefMuidTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
     funcUndefMuidTabSym = builder->CreateGlobalDecl(funcUndefMuidTabName, funcMuidArrayType);
     funcUndefMuidTabSym->SetKonst(funcUndefMuidTabConst);
     funcUndefMuidTabSym->SetStorageClass(kScFstatic);
@@ -688,14 +688,14 @@ void MUIDReplacement::GenerateUnifiedUndefTable() {
     }
   }
   if (!dataUndefTabConst->GetConstVec().empty()) {
-    std::string dataUndefTabName = NameMangler::kMuidDataUndefTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
+    std::string dataUndefTabName = namemangler::kMuidDataUndefTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
     dataUndefTabSym = builder->CreateGlobalDecl(dataUndefTabName, dataArrayType);
     dataUndefTabSym->SetKonst(dataUndefTabConst);
     dataUndefTabSym->SetStorageClass(kScFstatic);
   }
   if (!dataUndefMuidTabConst->GetConstVec().empty()) {
     std::string dataUndefMuidTabName =
-      NameMangler::kMuidDataUndefMuidTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
+      namemangler::kMuidDataUndefMuidTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
     dataUndefMuidTabSym = builder->CreateGlobalDecl(dataUndefMuidTabName, dataMuidArrayType);
     dataUndefMuidTabSym->SetKonst(dataUndefMuidTabConst);
     dataUndefMuidTabSym->SetStorageClass(kScFstatic);
@@ -745,7 +745,7 @@ void MUIDReplacement::GenerateRangeTable() {
     MIRAggConst *entryConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), rangeTabEntryType);
     uint32 fieldID = 1;
     if (i == RangeIdx::kGlobalRootlist) {
-      MIRSymbol *st = GetSymbolFromName(NameMangler::kGcRootList);
+      MIRSymbol *st = GetSymbolFromName(namemangler::kGcRootList);
       if (st == nullptr) {
         builder->AddIntFieldConst(rangeTabEntryType, *entryConst, fieldID++, 0);
         builder->AddIntFieldConst(rangeTabEntryType, *entryConst, fieldID++, 0);
@@ -781,7 +781,7 @@ void MUIDReplacement::GenerateRangeTable() {
     builder->AddIntFieldConst(rangeTabEntryType, *entryConst, fieldID++, i);
     rangeTabConst->PushBack(entryConst);
   }
-  std::string bbProfileName = NameMangler::kBBProfileTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
+  std::string bbProfileName = namemangler::kBBProfileTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
   MIRSymbol *funcProfCounterTabSym = GetSymbolFromName(bbProfileName);
   std::vector<MIRSymbol*> irProfWorkList = {
     funcProfInfTabSym,
@@ -790,7 +790,7 @@ void MUIDReplacement::GenerateRangeTable() {
   InitRangeTabUseSym(irProfWorkList, rangeTabEntryType, *rangeTabConst);
   if (!rangeTabConst->GetConstVec().empty()) {
     rangeArrayType.SetSizeArrayItem(0, rangeTabConst->GetConstVec().size());
-    std::string rangeTabName = NameMangler::kMuidRangeTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
+    std::string rangeTabName = namemangler::kMuidRangeTabPrefixStr + GetMIRModule().GetFileNameAsPostfix();
     rangeTabSym = builder->CreateGlobalDecl(rangeTabName, rangeArrayType);
     rangeTabSym->SetKonst(rangeTabConst);
     rangeTabSym->SetStorageClass(kScFstatic);
@@ -1078,7 +1078,7 @@ void MUIDReplacement::ReplaceDirectInvokeOrAddroffunc(MIRFunction &currentFunc, 
   if (calleeFunc->GetBody() != nullptr) {
     // Local function is accessed through funcDefTab
     // Add a comment to store the original function name
-    std::string commentLabel = NameMangler::kMarkMuidFuncDefStr + calleeFunc->GetName();
+    std::string commentLabel = namemangler::kMarkMuidFuncDefStr + calleeFunc->GetName();
     currentFunc.GetBody()->InsertBefore(&stmt, builder->CreateStmtComment(commentLabel));
 
     std::string moduleName = GetMIRModule().GetFileNameAsPostfix();
@@ -1091,7 +1091,7 @@ void MUIDReplacement::ReplaceDirectInvokeOrAddroffunc(MIRFunction &currentFunc, 
   } else {
     // External function is accessed through funcUndefTab
     // Add a comment to store the original function name
-    std::string commentLabel = NameMangler::kMarkMuidFuncUndefStr + calleeFunc->GetName();
+    std::string commentLabel = namemangler::kMarkMuidFuncUndefStr + calleeFunc->GetName();
     currentFunc.GetBody()->InsertBefore(&stmt, builder->CreateStmtComment(commentLabel));
 
     ASSERT(funcUndefTabSym != nullptr, "null ptr check!");
@@ -1375,7 +1375,7 @@ void MUIDReplacement::GenerateGlobalRootList() {
     MIRConst *constNode = GetMIRModule().GetMemPool()->New<MIRAddrofConst>(symbol->GetStIdx(), 0, ptrType);
     newConst->PushBack(constNode);
   }
-  std::string gcRootsName = NameMangler::kGcRootList;
+  std::string gcRootsName = namemangler::kGcRootList;
   if (!newConst->GetConstVec().empty()) {
     MIRSymbol *gcRootsSt = builder->CreateSymbol(newConst->GetType().GetTypeIndex(), gcRootsName, kStVar,
                                                  kScAuto, nullptr, kScopeGlobal);
@@ -1394,7 +1394,7 @@ void MUIDReplacement::GenerateCompilerVersionNum() {
   MIRConst *secondConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(Version::kMinorCompilerVersion, type);
   newConst->PushBack(firstConst);
   newConst->PushBack(secondConst);
-  std::string symName = NameMangler::kCompilerVersionNum + GetMIRModule().GetFileNameAsPostfix();
+  std::string symName = namemangler::kCompilerVersionNum + GetMIRModule().GetFileNameAsPostfix();
   MIRSymbol *versionNum = builder->CreateGlobalDecl(symName, arrayType);
   versionNum->SetKonst(newConst);
 }
@@ -1421,12 +1421,12 @@ void MUIDReplacement::GenerateTables() {
   }
   // Replace undef entries in vtab/itab/reflectionMetaData
   for (Klass *klass : klassHierarchy->GetTopoSortedKlasses()) {
-    ReplaceFieldTypeTable(NameMangler::kFieldsInfoPrefixStr + klass->GetKlassName());
+    ReplaceFieldTypeTable(namemangler::kFieldsInfoPrefixStr + klass->GetKlassName());
     ReplaceFuncTable(VTAB_PREFIX_STR + klass->GetKlassName());
     ReplaceFuncTable(ITAB_PREFIX_STR + klass->GetKlassName());
     ReplaceFuncTable(ITAB_CONFLICT_PREFIX_STR + klass->GetKlassName());
   }
-  ReplaceDataTable(NameMangler::kGcRootList);
+  ReplaceDataTable(namemangler::kGcRootList);
   GenerateCompilerVersionNum();
 }
 }  // namespace maple

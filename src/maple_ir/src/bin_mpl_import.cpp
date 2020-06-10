@@ -144,7 +144,7 @@ MIRConst *BinaryMplImport::ImportConst(MIRFunction *func) {
         ostr << Read();
       }
       std::u16string str16;
-      NameMangler::UTF8ToUTF16(str16, ostr.str());
+      namemangler::UTF8ToUTF16(str16, ostr.str());
       cs->SetStrIdx(GlobalTables::GetU16StrTable().GetOrCreateStrIdxFromName(str16));
       return memPool->New<MIRStr16Const>(cs->GetStrIdx(), *type);
     }
@@ -746,7 +746,7 @@ MIRType &BinaryMplImport::InsertInTypeTables(MIRType &type) {
 
 void BinaryMplImport::SetupEHRootType() {
   // setup eh root type with most recent Ljava_2Flang_2FObject_3B
-  GStrIdx gStrIdx = GlobalTables::GetStrTable().GetStrIdxFromName(NameMangler::kJavaLangObjectStr);
+  GStrIdx gStrIdx = GlobalTables::GetStrTable().GetStrIdxFromName(namemangler::kJavaLangObjectStr);
   if (gStrIdx == 0u) {
     return;
   }

@@ -326,7 +326,7 @@ Klass *KlassHierarchy::GetKlassFromName(const std::string &name) const {
 }
 
 Klass *KlassHierarchy::GetKlassFromLiteral(const std::string &name) const {
-  return GetKlassFromStrIdx(GlobalTables::GetStrTable().GetStrIdxFromName(NameMangler::GetInternalNameLiteral(name)));
+  return GetKlassFromStrIdx(GlobalTables::GetStrTable().GetStrIdxFromName(namemangler::GetInternalNameLiteral(name)));
 }
 
 
@@ -488,7 +488,7 @@ void KlassHierarchy::AddKlasses() {
     GStrIdx strIdx = type->GetNameStrIdx();
     Klass *klass = GetKlassFromStrIdx(strIdx);
     if (klass != nullptr) {
-      if (klass->GetKlassName().compare(NameMangler::kThrowClassStr) == 0) {
+      if (klass->GetKlassName().compare(namemangler::kThrowClassStr) == 0) {
         klass->SetExceptionKlass();
       }
       continue;
@@ -553,15 +553,15 @@ void KlassHierarchy::AddKlassRelationAndMethods() {
       MIRSymbol *funcSym = GlobalTables::GetGsymTable().GetSymbolFromStidx(methodPair.first.Idx());
       MIRFunction *method = funcSym->GetFunction();
       klass->AddMethod(method);
-      if (method->GetName().compare(klass->GetKlassName() + NameMangler::kClinitSuffix) == 0) {
+      if (method->GetName().compare(klass->GetKlassName() + namemangler::kClinitSuffix) == 0) {
         klass->SetClinit(method);
       }
     }
   }
   // Propagate isExceptionKlass flag
-  if (GetKlassFromLiteral(NameMangler::kThrowClassStr) != nullptr) {
-    ExceptionFlagProp(*GetKlassFromLiteral(NameMangler::kThrowClassStr));
-    CHECK_FATAL(GetKlassFromLiteral(NameMangler::kThrowClassStr)->IsExceptionKlass(), "must be exception class");
+  if (GetKlassFromLiteral(namemangler::kThrowClassStr) != nullptr) {
+    ExceptionFlagProp(*GetKlassFromLiteral(namemangler::kThrowClassStr));
+    CHECK_FATAL(GetKlassFromLiteral(namemangler::kThrowClassStr)->IsExceptionKlass(), "must be exception class");
   }
   if (GetKlassFromLiteral(kJavaLangNoMethodStr) != nullptr) {
     CHECK_FATAL(GetKlassFromLiteral(kJavaLangNoMethodStr)->IsExceptionKlass(), "must be exception class");
@@ -569,7 +569,7 @@ void KlassHierarchy::AddKlassRelationAndMethods() {
 }
 
 void KlassHierarchy::TagThrowableKlasses() {
-  Klass *throwable = GetKlassFromName(NameMangler::kThrowClassStr);
+  Klass *throwable = GetKlassFromName(namemangler::kThrowClassStr);
   if (throwable == nullptr) {
     return;
   }
@@ -707,7 +707,7 @@ void KlassHierarchy::MarkClassFlags() {
   AddClassFlag("Ljava_2Flang_2Fref_2FPhantomReference_3B", kClassPhantomreference);
   AddClassFlag("Ljava_2Flang_2Fref_2FFinalizerReference_3B", kClassFinalizereference);
   AddClassFlag("Ljava_2Flang_2Fref_2FFinalizerReference_24Sentinel_3B", kClassFinalizerreferenceSentinel);
-  Klass *klassObject = GetKlassFromLiteral(NameMangler::kJavaLangObjectStr);
+  Klass *klassObject = GetKlassFromLiteral(namemangler::kJavaLangObjectStr);
   GStrIdx finalize = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName("finalize_7C_28_29V");
   for (Klass *klass : topoWorkList) {
     if (klass == klassObject) {
@@ -810,12 +810,12 @@ MIRType *WKTypes::javaLangRefMember;
 MIRType *WKTypes::javaLangRefField;
 MIRType *WKTypes::javaLangRefConstructor;
 inline static MIRType *GetMIRTypeFromName(const std::string &name) {
-  GStrIdx gStrIdx = GlobalTables::GetStrTable().GetStrIdxFromName(NameMangler::GetInternalNameLiteral(name));
+  GStrIdx gStrIdx = GlobalTables::GetStrTable().GetStrIdxFromName(namemangler::GetInternalNameLiteral(name));
   return GlobalTables::GetTypeTable().GetTypeFromTyIdx(GlobalTables::GetTypeNameTable().GetTyIdxFromGStrIdx(gStrIdx));
 }
 
 void WKTypes::Init() {
-  javaLangObject = GetMIRTypeFromName(NameMangler::kJavaLangObjectStr);
+  javaLangObject = GetMIRTypeFromName(namemangler::kJavaLangObjectStr);
   javaLangString = GetMIRTypeFromName("Ljava_2Flang_2FString_3B");
   javaLangObjectSerializable = GetMIRTypeFromName("Ljava_2Fio_2FSerializable_3B");
   javaLangComparable = GetMIRTypeFromName("Ljava_2Flang_2FComparable_3B");

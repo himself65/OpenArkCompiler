@@ -614,6 +614,7 @@ class LabelOperand : public Operand {
   LabelIdx GetLabelIndex() const {
     return labelIndex;
   }
+
   const std::string GetParentFunc() const {
     return parentFunc;
   }

@@ -52,49 +52,11 @@ void AArch64YieldPointInsertion::InsertYieldPoint() {
    * for BBs after firstbb.
    */
   for (BB *bb = aarchCGFunc->GetFirstBB()->GetNext(); bb != nullptr; bb = bb->GetNext()) {
-    if (Globals::GetInstance()->GetOptimLevel() > 0) {
-      /* insert a yieldpoint before the last jump instruction of a goto BB. */
-      if (bb->IsBackEdgeDest()) {
-        aarchCGFunc->GetDummyBB()->ClearInsns();
-        aarchCGFunc->GenerateYieldpoint(*aarchCGFunc->GetDummyBB());
-        bb->InsertAtBeginning(*aarchCGFunc->GetDummyBB());
-        continue;
-      }
-    } else {
-      /* when -O0, there is no backedge info available. */
-      if ((bb->GetKind() == BB::kBBGoto) && (bb->GetLastInsn() != nullptr) && bb->GetLastInsn()->IsBranch()) {
-        aarchCGFunc->GetDummyBB()->ClearInsns();
-        aarchCGFunc->GenerateYieldpoint(*aarchCGFunc->GetDummyBB());
-        bb->InsertAtBeginning(*aarchCGFunc->GetDummyBB());
-        continue;
-      }
-      /*
-       * insert yieldpoint for empty loop (CondGoto backward),
-       * aka. last instruction jump to the top of the BB.
-       */
-      if (bb->GetLastInsn() != nullptr && bb->GetLastInsn()->IsBranch()) {
-        /* the jump instruction. */
-        Insn *jump = bb->GetLastInsn();
-        /* skip if no jump target. */
-        if (jump->GetOpndNum() == 0) {
-          continue;
-        }
-        /* get the jump target operand. */
-        Operand *op = jump->GetOpnd(jump->GetOpndNum() - 1);
-        /* last operand not found or not a label operand. */
-        if (op == nullptr || !op->IsLabel() || !op->IsLabelOpnd()) {
-          continue;
-        }
-        /* the label operand of the jump instruction. */
-        LabelOperand *label = static_cast<LabelOperand*>(op);
-        if (label->GetLabelIndex() != bb->GetLabIdx()) {
-          continue;
-        }
-        /* insert yieldpoint before jump instruction. */
-        aarchCGFunc->GetDummyBB()->ClearInsns();
-        aarchCGFunc->GenerateYieldpoint(*aarchCGFunc->GetDummyBB());
-        bb->InsertAtBeginning(*aarchCGFunc->GetDummyBB());
-      }
+    /* insert a yieldpoint at beginning if BB is BackEdgeDest. */
+    if (bb->IsBackEdgeDest()) {
+      aarchCGFunc->GetDummyBB()->ClearInsns();
+      aarchCGFunc->GenerateYieldpoint(*aarchCGFunc->GetDummyBB());
+      bb->InsertAtBeginning(*aarchCGFunc->GetDummyBB());
     }
   }
 }

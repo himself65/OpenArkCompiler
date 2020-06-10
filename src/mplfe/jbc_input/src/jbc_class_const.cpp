@@ -218,7 +218,7 @@ bool JBCConstClass::PreProcessImpl(const JBCConstPool &constPool) {
   const std::string &classNameInternal = constUTF8->GetString();
   nameOrin = JBCUtil::ClassInternalNameToFullName(classNameInternal);
   strIdxOrin = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(MapleStringToStd(nameOrin));
-  nameMpl = NameMangler::EncodeName(nameOrin.c_str());
+  nameMpl = namemangler::EncodeName(nameOrin.c_str());
   strIdxMpl = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(MapleStringToStd(nameMpl));
   static_cast<FEIRTypeDefault*>(feType)->LoadFromJavaTypeName(MapleStringToStd(nameMpl), true);
   return true;
@@ -301,7 +301,7 @@ bool JBCConstRef::PrepareFEStructElemInfo() {
   const std::string &className = constClass->GetClassNameOrin();
   const std::string &elemName = constNameAndType->GetName();
   const std::string &descName = constNameAndType->GetDesc();
-  std::string fullName = NameMangler::EncodeName(className + "|" + elemName + "|" + descName);
+  std::string fullName = namemangler::EncodeName(className + "|" + elemName + "|" + descName);
   GStrIdx fullNameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(fullName);
   if (tag == kConstFieldRef) {
     feStructElemInfo = FEManager::GetTypeManager().RegisterStructFieldInfo(fullNameIdx, kSrcLangJava, false);
@@ -465,7 +465,7 @@ bool JBCConstInvokeDynamic::PrepareFEStructElemInfo(const std::string &ownerClas
   const std::string &className = ownerClassName + "$DynamicCall$";
   const std::string &elemName = constNameAndType->GetName();
   const std::string &descName = constNameAndType->GetDesc();
-  std::string fullName = NameMangler::EncodeName(className + "|" + elemName + "|" + descName);
+  std::string fullName = namemangler::EncodeName(className + "|" + elemName + "|" + descName);
   GStrIdx fullNameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(fullName);
   feStructElemInfo = FEManager::GetTypeManager().RegisterStructMethodInfo(fullNameIdx, kSrcLangJava, false);
   static_cast<FEStructMethodInfo*>(feStructElemInfo)->SetJavaDyamicCall();

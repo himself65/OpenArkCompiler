@@ -213,7 +213,7 @@ MIRSymbol *CodeReLayout::GenStrSym(const std::string &str) {
   std::string newStr = str + '\0';
   MIRArrayType &strTabType = *GlobalTables::GetTypeTable().GetOrCreateArrayType(
       *GlobalTables::GetTypeTable().GetUInt8(), static_cast<uint32>(newStr.length()));
-  std::string strTabName = NameMangler::kStaticFieldNamePrefixStr + str;
+  std::string strTabName = namemangler::kStaticFieldNamePrefixStr + str;
   MIRSymbol *staticSym = builder->CreateGlobalDecl(strTabName, strTabType);
   MIRAggConst *strTabAggConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), strTabType);
   staticSym->SetStorageClass(kScFstatic);
@@ -275,7 +275,7 @@ void CodeReLayout::GenLayoutSym() {
     funcLayoutConst->PushBack(fieldConst);
     funcIdx += layoutCount[i];
   }
-  std::string funcLayoutSymName = NameMangler::kFunctionLayoutStr + GetMIRModule().GetFileNameAsPostfix();
+  std::string funcLayoutSymName = namemangler::kFunctionLayoutStr + GetMIRModule().GetFileNameAsPostfix();
   MIRSymbol *funcLayoutSym = builder->CreateGlobalDecl(funcLayoutSymName, arrayType);
   funcLayoutSym->SetKonst(funcLayoutConst);
   funcLayoutSym->SetStorageClass(kScFstatic);

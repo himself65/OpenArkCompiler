@@ -158,14 +158,14 @@ bool JBCClassField2FEHelper::ProcessDeclWithContainerImpl(MapleAllocator &alloca
   name += fieldName;
   name += withType ? ("|" + typeName) : "";
   std::string fullName = klassName + "|" + fieldName + "|" + typeName;
-  GStrIdx idx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(NameMangler::EncodeName(name));
-  GStrIdx fullNameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(NameMangler::EncodeName(fullName));
+  GStrIdx idx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(namemangler::EncodeName(name));
+  GStrIdx fullNameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(namemangler::EncodeName(fullName));
   FEStructElemInfo *elemInfo = FEManager::GetTypeManager().RegisterStructFieldInfo(fullNameIdx, kSrcLangJava,
                                                                                    field.IsStatic());
   elemInfo->SetDefined();
   elemInfo->SetFromDex();
   FieldAttrs attrs = AccessFlag2Attribute(field.GetAccessFlag());
-  std::string typeNameMpl = NameMangler::EncodeName(typeName);
+  std::string typeNameMpl = namemangler::EncodeName(typeName);
   MIRType *fieldType = FEManager::GetTypeManager().GetOrCreateTypeFromName(typeNameMpl, FETypeFlag::kSrcUnknown, true);
   ASSERT(fieldType != nullptr, "nullptr check for fieldType");
   mirFieldPair.first = idx;
@@ -261,7 +261,7 @@ std::string JBCClassMethod2FEHelper::GetMethodNameImpl(bool inMpl) const {
   std::string methodName = method.GetName(constPool);
   std::string descName = method.GetDescription(constPool);
   std::string fullName = klassName + "|" + methodName + "|" + descName;
-  return inMpl ? NameMangler::EncodeName(fullName) : fullName;
+  return inMpl ? namemangler::EncodeName(fullName) : fullName;
 }
 
 FuncAttrs JBCClassMethod2FEHelper::GetAttrsImpl() const {

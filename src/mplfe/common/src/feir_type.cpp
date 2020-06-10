@@ -205,7 +205,7 @@ void FEIRTypeDefault::LoadFromJavaTypeName(const std::string &typeName, bool inM
     }
   } else if (baseName[0] == 'L') {
     primType = PTY_ref;
-    baseName = inMpl ? baseName : NameMangler::EncodeName(baseName);
+    baseName = inMpl ? baseName : namemangler::EncodeName(baseName);
     typeNameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(baseName);
   }
 }

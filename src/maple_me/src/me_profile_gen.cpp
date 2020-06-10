@@ -57,7 +57,7 @@ void MeProfGen::Init() {
   }
   MIRArrayType &muidIdxArrayType =
       *GlobalTables::GetTypeTable().GetOrCreateArrayType(*GlobalTables::GetTypeTable().GetUInt32(), 0);
-  std::string bbProfileName = NameMangler::kBBProfileTabPrefixStr + func->GetMIRModule().GetFileNameAsPostfix();
+  std::string bbProfileName = namemangler::kBBProfileTabPrefixStr + func->GetMIRModule().GetFileNameAsPostfix();
   bbCounterTabSym = func->GetMIRModule().GetMIRBuilder()->CreateGlobalDecl(bbProfileName.c_str(), muidIdxArrayType);
   MIRAggConst *bbProfileTab = func->GetMIRModule().GetMemPool()->New<MIRAggConst>(
       func->GetMIRModule(), *GlobalTables::GetTypeTable().GetUInt32());

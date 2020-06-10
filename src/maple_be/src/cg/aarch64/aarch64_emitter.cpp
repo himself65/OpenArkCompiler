@@ -81,20 +81,20 @@ void AArch64Emitter::EmitFastLSDA() {
   CG *currCG = cgFunc->GetCG();
 
   Emitter *emitter = currCG->GetEmitter();
-  const std::string &funcName = cgFunc->GetFunction().GetName();
+  const std::string &funcName = std::string(cgFunc->GetShortFuncName().c_str());
   /*
    * .word 0xFFFFFFFF
    * .word .Label.LTest_3B_7C_3Cinit_3E_7C_28_29V3-func_start_label
    */
   emitter->Emit("\t.word 0xFFFFFFFF\n");
-  emitter->Emit("\t.word .Label." + funcName + ".");
+  emitter->Emit("\t.word .L." + funcName + ".");
   if (aarchCGFunc->NeedCleanup()) {
     emitter->Emit(cgFunc->GetCleanupLabel()->GetLabelIdx());
   } else {
     ASSERT(!cgFunc->GetExitBBsVec().empty(), "exitbbsvec is empty in AArch64Emitter::EmitFastLSDA");
     emitter->Emit(cgFunc->GetExitBB(0)->GetLabIdx());
   }
-  emitter->Emit("-.Label." + funcName + ".")
+  emitter->Emit("-.L." + funcName + ".")
       .Emit(cgFunc->GetStartLabel()->GetLabelIdx())
       .Emit("\n");
   emitter->IncreaseJavaInsnCount();
@@ -112,7 +112,7 @@ void AArch64Emitter::EmitFullLSDA() {
   emitter->Emit("\t.align 2\n");
   /* emit LSDA header */
   LSDAHeader *lsdaHeader = ehFunc->GetLSDAHeader();
-  const std::string &funcName = cgFunc->GetFunction().GetName();
+  const std::string &funcName = std::string(cgFunc->GetShortFuncName().c_str());
   emitter->EmitStmtLabel(funcName, lsdaHeader->GetLSDALabel()->GetLabelIdx());
   emitter->Emit("\t.byte ").Emit(lsdaHeader->GetLPStartEncoding()).Emit("\n");
   emitter->Emit("\t.byte ").Emit(lsdaHeader->GetTTypeEncoding()).Emit("\n");
@@ -159,8 +159,8 @@ void AArch64Emitter::EmitFullLSDA() {
         emitter->EmitLabelPair(funcName, cleaupCode);
       } else if (cgFunc->GetFunction().IsJava()) {
         ASSERT(!cgFunc->GetExitBBsVec().empty(), "exitbbsvec is empty in AArch64Emitter::EmitFullLSDA");
-        emitter->Emit(".Label." + funcName).Emit(".").Emit(cgFunc->GetExitBB(0)->GetLabIdx());
-        emitter->Emit(" - .Label." + funcName).Emit(".").Emit(cgFunc->GetStartLabel()->GetLabelIdx()).Emit("\n");
+        emitter->Emit(".L." + funcName).Emit(".").Emit(cgFunc->GetExitBB(0)->GetLabIdx());
+        emitter->Emit(" - .L." + funcName).Emit(".").Emit(cgFunc->GetStartLabel()->GetLabelIdx()).Emit("\n");
       } else {
         emitter->Emit("0\n");
       }
@@ -196,8 +196,8 @@ void AArch64Emitter::EmitFullLSDA() {
       emitter->EmitLabelPair(funcName, cleaupCode);
     } else {
       ASSERT(!cgFunc->GetExitBBsVec().empty(), "exitbbsvec is empty in AArch64Emitter::EmitFullLSDA");
-      emitter->Emit(".Label." + funcName).Emit(".").Emit(cgFunc->GetExitBB(0)->GetLabIdx());
-      emitter->Emit(" - .Label." + funcName).Emit(".").Emit(cgFunc->GetStartLabel()->GetLabelIdx()).Emit("\n");
+      emitter->Emit(".L." + funcName).Emit(".").Emit(cgFunc->GetExitBB(0)->GetLabIdx());
+      emitter->Emit(" - .L." + funcName).Emit(".").Emit(cgFunc->GetStartLabel()->GetLabelIdx()).Emit("\n");
     }
     emitter->Emit("\t.uleb128 0\n");
     if (!cgFunc->GetFunction().IsJava()) {
@@ -256,10 +256,10 @@ void AArch64Emitter::EmitBBHeaderLabel(const std::string &name, LabelIdx labIdx)
     currCG->IncreaseLabelOrderCnt();
   }
   if (currCG->GenerateVerboseAsm()) {
-    emitter.Emit(".Label.").Emit(name).Emit(".").Emit(labIdx).Emit(":\t//label order ").Emit(label.GetLabelOrder());
+    emitter.Emit(".L.").Emit(name).Emit(".").Emit(labIdx).Emit(":\t//label order ").Emit(label.GetLabelOrder());
     emitter.Emit("\n");
   } else {
-    emitter.Emit(".Label.").Emit(name).Emit(".").Emit(labIdx).Emit(":\n");
+    emitter.Emit(".L.").Emit(name).Emit(".").Emit(labIdx).Emit(":\n");
   }
 }
 
@@ -287,13 +287,14 @@ void AArch64Emitter::Run() {
   EmitMethodDesc(emitter);
   /* emit java code to the java section. */
   if (cgFunc->GetFunction().IsJava()) {
-    std::string sectionName = NameMangler::kMuidJavatextPrefixStr;
+    std::string sectionName = namemangler::kMuidJavatextPrefixStr;
     emitter.Emit("\t.section  ." + sectionName + ",\"ax\"\n");
   } else {
     emitter.Emit("\t.text\n");
   }
   emitter.Emit("\t.align 2\n");
   MIRSymbol *funcSt = GlobalTables::GetGsymTable().GetSymbolFromStidx(cgFunc->GetFunction().GetStIdx().Idx());
+  const std::string &funcName = std::string(cgFunc->GetShortFuncName().c_str());
 
 
   if (funcSt->GetFunction()->GetAttr(FUNCATTR_weak)) {
@@ -333,7 +334,7 @@ void AArch64Emitter::Run() {
     }
     /* emit bb headers */
     if (bb->GetLabIdx() != 0) {
-      EmitBBHeaderLabel(funcSt->GetName(), bb->GetLabIdx());
+      EmitBBHeaderLabel(funcName, bb->GetLabIdx());
     }
 
     FOR_BB_INSNS(insn, bb) {
@@ -354,11 +355,9 @@ void AArch64Emitter::Run() {
       emitter.IncreaseJavaInsnCount();
     } else if (ehFunc->NeedFullLSDA()) {
       LSDAHeader *lsdaHeader = ehFunc->GetLSDAHeader();
-      MIRSymbol *funcSymbol = GlobalTables::GetGsymTable().GetSymbolFromStidx(cgFunc->GetFunction().GetStIdx().Idx());
-      const std::string &funcName = funcSymbol->GetName();
       /*  .word .Label.lsda_label-func_start_label */
-      emitter.Emit("\t.word .Label." + funcName).Emit(".").Emit(lsdaHeader->GetLSDALabel()->GetLabelIdx());
-      emitter.Emit("-.Label." + funcName).Emit(".").Emit(cgFunc->GetStartLabel()->GetLabelIdx()).Emit("\n");
+      emitter.Emit("\t.word .L." + funcName).Emit(".").Emit(lsdaHeader->GetLSDALabel()->GetLabelIdx());
+      emitter.Emit("-.L." + funcName).Emit(".").Emit(cgFunc->GetStartLabel()->GetLabelIdx()).Emit("\n");
       emitter.IncreaseJavaInsnCount();
     } else if (ehFunc->NeedFastLSDA()) {
       EmitFastLSDA();
@@ -427,7 +426,7 @@ void AArch64Emitter::Run() {
     for (size_t i = 0; i < arrayConst->GetConstVec().size(); i++) {
       MIRLblConst *lblConst = safe_cast<MIRLblConst>(arrayConst->GetConstVecItem(i));
       CHECK_FATAL(lblConst != nullptr, "null ptr check");
-      emitter.Emit("\t.quad\t.Label." + funcSt->GetName()).Emit(".").Emit(lblConst->GetValue());
+      emitter.Emit("\t.quad\t.L." + funcName).Emit(".").Emit(lblConst->GetValue());
       emitter.Emit(" - " + st->GetName() + "\n");
       emitter.IncreaseJavaInsnCount(kQuadInsnCount);
     }

@@ -653,7 +653,7 @@ void InitHandleStmtFactory() {
 }
 
 CGFunc::CGFunc(MIRModule &mod, CG &cg, MIRFunction &mirFunc, BECommon &beCommon, MemPool &memPool,
-               MapleAllocator &allocator)
+               MapleAllocator &allocator, uint32 funcId)
     : vRegTable(allocator.Adapter()),
       vRegOperandTable(std::less<regno_t>(), allocator.Adapter()),
       pRegSpillMemOperands(std::less<PregIdx>(), allocator.Adapter()),
@@ -670,7 +670,8 @@ CGFunc::CGFunc(MIRModule &mod, CG &cg, MIRFunction &mirFunc, BECommon &beCommon,
       beCommon(beCommon),
       funcScopeAllocator(&allocator),
       emitStVec(allocator.Adapter()),
-      loops(allocator.Adapter()) {
+      loops(allocator.Adapter()),
+      shortFuncName(cg.ExtractFuncName(mirFunc.GetName()) + "." + std::to_string(funcId), &memPool) {
   mirModule.SetCurFunction(&func);
   dummyBB = CreateNewBB();
   vRegCount = firstMapleIrVRegNO + func.GetPregTab()->Size();

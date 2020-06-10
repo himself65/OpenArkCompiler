@@ -328,7 +328,7 @@ CGNode *CallGraph::GetOrGenCGNode(PUIdx puIdx, bool isVcall, bool isIcall) {
     MIRFunction *mirFunc = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(puIdx);
     Klass *klass = nullptr;
     if (StringUtils::StartsWith(mirFunc->GetBaseClassName(), JARRAY_PREFIX_STR)) { // Array
-      klass = klassh->GetKlassFromName(NameMangler::kJavaLangObjectStr);
+      klass = klassh->GetKlassFromName(namemangler::kJavaLangObjectStr);
     } else {
       klass = klassh->GetKlassFromStrIdx(mirFunc->GetBaseClassNameStrIdx());
     }
@@ -371,7 +371,7 @@ CGNode *CallGraph::GetOrGenCGNode(PUIdx puIdx, bool isVcall, bool isIcall) {
   if (isIcall && !node->IsIcallCandidatesValid()) {
     Klass *CallerKlass = nullptr;
     if (StringUtils::StartsWith(CurFunction()->GetBaseClassName(), JARRAY_PREFIX_STR)) { // Array
-      CallerKlass = klassh->GetKlassFromName(NameMangler::kJavaLangObjectStr);
+      CallerKlass = klassh->GetKlassFromName(namemangler::kJavaLangObjectStr);
     } else {
       CallerKlass = klassh->GetKlassFromStrIdx(CurFunction()->GetBaseClassNameStrIdx());
     }
@@ -382,7 +382,7 @@ CGNode *CallGraph::GetOrGenCGNode(PUIdx puIdx, bool isVcall, bool isIcall) {
     MIRFunction *mirFunc = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(puIdx);
     Klass *klass = nullptr;
     if (StringUtils::StartsWith(mirFunc->GetBaseClassName(), JARRAY_PREFIX_STR)) {  // Array
-      klass = klassh->GetKlassFromName(NameMangler::kJavaLangObjectStr);
+      klass = klassh->GetKlassFromName(namemangler::kJavaLangObjectStr);
     } else {
       klass = klassh->GetKlassFromStrIdx(mirFunc->GetBaseClassNameStrIdx());
     }
@@ -466,7 +466,7 @@ void CallGraph::HandleBody(MIRFunction &func, BlockNode &body, CGNode &node, uin
                     calleePUIdx = method->GetPuidx();
                   } else {
                     std::string funcName = klass->GetKlassName();
-                    funcName.append((NameMangler::kNameSplitterStr));
+                    funcName.append((namemangler::kNameSplitterStr));
                     funcName.append(calleefuncT->GetBaseFuncNameWithType());
                     MIRFunction *methodT = mirBuilder->GetOrCreateFunction(funcName, (TyIdx) (PTY_void));
                     methodT->SetBaseClassNameStrIdx(klass->GetKlassNameStrIdx());
@@ -637,9 +637,9 @@ void IPODevirtulize::SearchDefInClinit(const Klass &klass) {
     }
   }
   std::string typeName = klass.GetKlassName();
-  typeName.append(NameMangler::kClinitSuffix);
+  typeName.append(namemangler::kClinitSuffix);
   GStrIdx clinitFuncGstridx =
-      GlobalTables::GetStrTable().GetStrIdxFromName(NameMangler::GetInternalNameLiteral(typeName));
+      GlobalTables::GetStrTable().GetStrIdxFromName(namemangler::GetInternalNameLiteral(typeName));
   if (clinitFuncGstridx == 0u) {
     return;
   }
@@ -701,7 +701,7 @@ void IPODevirtulize::SearchDefInClinit(const Klass &klass) {
       case OP_callassigned: {
         CallNode *callNode = static_cast<CallNode*>(stmt);
         MIRFunction *calleeFunc = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(callNode->GetPUIdx());
-        if (calleeFunc->GetName().find(NameMangler::kClinitSubStr, 0) != std::string::npos ||
+        if (calleeFunc->GetName().find(namemangler::kClinitSubStr, 0) != std::string::npos ||
             calleeFunc->GetName().find("MCC_", 0) == 0) {
           // ignore all side effect of initizlizor
           continue;
@@ -751,7 +751,7 @@ void IPODevirtulize::SearchDefInMemberMethods(const Klass &klass) {
   }
   std::vector<MIRFunction*> initMethods;
   std::string typeName = klass.GetKlassName();
-  typeName.append(NameMangler::kCinitStr);
+  typeName.append(namemangler::kCinitStr);
   for (MIRFunction *const &method : klass.GetMethods()) {
     if (!strncmp(method->GetName().c_str(), typeName.c_str(), typeName.length())) {
       initMethods.push_back(method);
@@ -799,7 +799,7 @@ void IPODevirtulize::SearchDefInMemberMethods(const Klass &klass) {
         case OP_callassigned: {
           CallNode *callNode = static_cast<CallNode*>(stmt);
           MIRFunction *calleeFunc = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(callNode->GetPUIdx());
-          if (calleeFunc->GetName().find(NameMangler::kClinitSubStr, 0) != std::string::npos) {
+          if (calleeFunc->GetName().find(namemangler::kClinitSubStr, 0) != std::string::npos) {
             // ignore all side effect of initizlizor
             continue;
           }

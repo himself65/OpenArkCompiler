@@ -343,6 +343,7 @@ void DriverRunner::RunCGFunctions(CG &cg, CgFuncPhaseManager &cgfpm) const {
 
 
   unsigned long rangeNum = 0;
+  uint32 countFuncId = 0;
   for (auto it = theModule->GetFunctionList().begin(); it != theModule->GetFunctionList().end(); ++it) {
     MIRFunction *mirFunc = *it;
     if (mirFunc->GetBody() == nullptr) {
@@ -377,7 +378,8 @@ void DriverRunner::RunCGFunctions(CG &cg, CgFuncPhaseManager &cgfpm) const {
     MapleAllocator funcScopeAllocator(funcMp);
 
     // Create CGFunc
-    CGFunc *cgFunc = cg.CreateCGFunc(*theModule, *mirFunc, *beCommon, *funcMp, funcScopeAllocator);
+    mirFunc->SetPuidxOrigin(++countFuncId);
+    CGFunc *cgFunc = cg.CreateCGFunc(*theModule, *mirFunc, *beCommon, *funcMp, funcScopeAllocator, countFuncId);
     CHECK_FATAL(cgFunc != nullptr, "nullptr check");
     CG::SetCurCGFunc(*cgFunc);
 

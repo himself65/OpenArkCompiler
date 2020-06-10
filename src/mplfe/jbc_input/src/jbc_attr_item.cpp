@@ -23,7 +23,7 @@ inline GStrIdx GetOrCreateGStrIdx(const std::string &str) {
 }
 
 inline GStrIdx GetOrCreateGStrIdxWithMangler(const std::string &str) {
-  return GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(NameMangler::EncodeName(str));
+  return GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(namemangler::EncodeName(str));
 }
 
 // ---------- ExceptionTableItem ----------
@@ -481,7 +481,7 @@ bool LocalVariableTableItem::PreProcessImpl(const JBCConstPool &constPool) {
     return false;
   }
   nameIdxMpl = GetOrCreateGStrIdx(constName->GetString());
-  feirType = FEManager::GetTypeManager().GetOrCreateFEIRTypeByName(NameMangler::EncodeName(constDesc->GetString()),
+  feirType = FEManager::GetTypeManager().GetOrCreateFEIRTypeByName(namemangler::EncodeName(constDesc->GetString()),
                                                                    GStrIdx(0), kSrcLangJava);
   return true;
 }

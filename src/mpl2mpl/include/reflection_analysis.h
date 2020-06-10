@@ -112,7 +112,7 @@ class ReflectionAnalysis : public AnalysisResult {
         classTab(allocator.Adapter()),
         isLibcore(false),
         isLazyBindingOrDecouple(false) {
-    Klass *objectKlass = kh->GetKlassFromLiteral(NameMangler::kJavaLangObjectStr);
+    Klass *objectKlass = kh->GetKlassFromLiteral(namemangler::kJavaLangObjectStr);
     if (objectKlass != nullptr && objectKlass->GetMIRStructType()->IsLocal()) {
       isLibcore = true;
     }

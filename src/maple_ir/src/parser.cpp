@@ -1559,7 +1559,7 @@ bool MIRParser::ParseTypedef() {
     if (mod.GetThrowableTyIdx() == 0u &&
         (ehType->GetKind() == kTypeClass || ehType->GetKind() == kTypeClassIncomplete)) {
       GStrIdx ehTypeNameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(
-          NameMangler::GetInternalNameLiteral(NameMangler::kJavaLangObjectStr));
+          namemangler::GetInternalNameLiteral(namemangler::kJavaLangObjectStr));
       if (ehTypeNameIdx == ehType->GetNameStrIdx()) {
         mod.SetThrowableTyIdx(tyIdx);
       }
@@ -1717,7 +1717,7 @@ bool MIRParser::ParseDeclareVar(MIRSymbol &symbol) {
   if (symbol.GetStorageClass() == kScExtern && symbol.IsStatic()) {
     const std::string &staticFieldName = symbol.GetName();
     constexpr int kPosOffset = 3;
-    size_t pos = staticFieldName.find(NameMangler::kClassNameSplitterStr) + kPosOffset;
+    size_t pos = staticFieldName.find(namemangler::kClassNameSplitterStr) + kPosOffset;
     if (pos != 0 && pos != std::string::npos) {
       std::string className = staticFieldName.substr(0, pos);
       MIRSymbol *classSt =
@@ -1741,10 +1741,10 @@ bool MIRParser::ParseDeclareVar(MIRSymbol &symbol) {
     lexer.NextToken();
     bool allowEmpty = false;
     // allow empty initialization for vtable, itable, vtableOffsetTable and fieldOffsetTable
-    if (symbolStrName.find(VTAB_PREFIX_STR) == 0 || symbolStrName.find(NameMangler::kVtabOffsetTabStr) == 0 ||
-        symbolStrName.find(ITAB_PREFIX_STR) == 0 || symbolStrName.find(NameMangler::kFieldOffsetTabStr) == 0 ||
+    if (symbolStrName.find(VTAB_PREFIX_STR) == 0 || symbolStrName.find(namemangler::kVtabOffsetTabStr) == 0 ||
+        symbolStrName.find(ITAB_PREFIX_STR) == 0 || symbolStrName.find(namemangler::kFieldOffsetTabStr) == 0 ||
         symbolStrName.find(ITAB_CONFLICT_PREFIX_STR) == 0 ||
-        symbolStrName.find(NameMangler::kDecoupleStaticKeyStr) == 0) {
+        symbolStrName.find(namemangler::kDecoupleStaticKeyStr) == 0) {
       allowEmpty = true;
     }
     if (!ParseInitValue(mirConst, tyIdx, allowEmpty)) {
