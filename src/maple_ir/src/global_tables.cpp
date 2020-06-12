@@ -68,7 +68,7 @@ MIRType *TypeTable::CreateAndUpdateMirTypeNode(MIRType &pType) {
   nType->SetTypeIndex(TyIdx(typeTable.size()));
   typeTable.push_back(nType);
 
-  if (pType.IsMIRPtrType()) {
+  if (pType.IsMIRPtrType() && static_cast<MIRPtrType&>(pType).GetTypeAttrs() == TypeAttrs()) {
     MIRPtrType &pty = static_cast<MIRPtrType&>(pType);
     if (pty.GetPrimType() == PTY_ptr) {
       ptrTypeMap[pty.GetPointedTyIdx()] = nType->GetTypeIndex();
@@ -78,25 +78,28 @@ MIRType *TypeTable::CreateAndUpdateMirTypeNode(MIRType &pType) {
   } else {
     typeHashTable.insert(nType);
   }
+
   return nType;
 }
 
 MIRType* TypeTable::GetOrCreateMIRTypeNode(MIRType &pType) {
   if (pType.IsMIRPtrType()) {
     auto &type = static_cast<MIRPtrType&>(pType);
-    auto *pMap = (type.GetPrimType() == PTY_ptr ? &ptrTypeMap : &refTypeMap);
-    auto *otherPMap = (type.GetPrimType() == PTY_ref ? &ptrTypeMap : &refTypeMap);
-    {
-      const auto it = pMap->find(type.GetPointedTyIdx());
-      if (it != pMap->end()) {
-        return GetTypeFromTyIdx(it->second);
+    if (type.GetTypeAttrs() == TypeAttrs()) {
+      auto *pMap = (type.GetPrimType() == PTY_ptr ? &ptrTypeMap : &refTypeMap);
+      auto *otherPMap = (type.GetPrimType() == PTY_ref ? &ptrTypeMap : &refTypeMap);
+      {
+        const auto it = pMap->find(type.GetPointedTyIdx());
+        if (it != pMap->end()) {
+          return GetTypeFromTyIdx(it->second);
+        }
       }
+      CHECK_FATAL(!(type.GetPointedTyIdx().GetIdx() >= kPtyDerived && type.GetPrimType() == PTY_ref &&
+                    otherPMap->find(type.GetPointedTyIdx()) != otherPMap->end()),
+                  "GetOrCreateMIRType: ref pointed-to type %d has previous ptr occurrence",
+                  type.GetPointedTyIdx().GetIdx());
+      return CreateAndUpdateMirTypeNode(pType);
     }
-    CHECK_FATAL(!(type.GetPointedTyIdx().GetIdx() >= kPtyDerived && type.GetPrimType() == PTY_ref &&
-                  otherPMap->find(type.GetPointedTyIdx()) != otherPMap->end()),
-                "GetOrCreateMIRType: ref pointed-to type %d has previous ptr occurrence",
-                type.GetPointedTyIdx().GetIdx());
-    return CreateAndUpdateMirTypeNode(pType);
   }
   {
     const auto it = typeHashTable.find(&pType);

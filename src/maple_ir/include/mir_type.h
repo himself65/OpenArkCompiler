@@ -149,12 +149,12 @@ class TypeAttrs {
   TypeAttrs &operator=(const TypeAttrs &t) = default;
   ~TypeAttrs() = default;
 
-  void SetAlignValue(uint8 flag) {
-    attrFlag = flag;
+  void SetAlignValue(uint8 align) {
+    attrAlign = align;
   }
 
   uint8 GetAlignValue() const {
-    return attrFlag;
+    return attrAlign;
   }
 
   void SetAttrFlag(uint64 flag) {
@@ -537,6 +537,15 @@ class MIRPtrType : public MIRType {
   void SetPointedTyIdx(TyIdx idx) {
     pointedTyIdx = idx;
   }
+  TypeAttrs &GetTypeAttrs() {
+    return typeAttrs;
+  }
+  const TypeAttrs &GetTypeAttrs() const {
+    return typeAttrs;
+  }
+  void SetTypeAttrs(TypeAttrs attrs) {
+    typeAttrs = attrs;
+  }
 
   bool EqualTo(const MIRType &type) const override;
 
@@ -548,7 +557,9 @@ class MIRPtrType : public MIRType {
   TyIdx GetPointedTyIdxWithFieldID(FieldID fieldID) const;
   size_t GetHashIndex() const override {
     constexpr uint8 idxShift = 4;
-    return ((static_cast<size_t>(pointedTyIdx) << idxShift) + (typeKind << kShiftNumOfTypeKind)) % kTypeHashLength;
+    size_t hIdx = (static_cast<size_t>(pointedTyIdx) << idxShift) + (typeKind << kShiftNumOfTypeKind);
+    hIdx += (typeAttrs.GetAttrFlag() << 3) + typeAttrs.GetAlignValue();
+    return hIdx % kTypeHashLength;
   }
 
   bool PointsToConstString() const override;
@@ -558,6 +569,7 @@ class MIRPtrType : public MIRType {
   std::string GetCompactMplTypeName() const override;
  private:
   TyIdx pointedTyIdx;
+  TypeAttrs typeAttrs;
 };
 
 class MIRArrayType : public MIRType {
