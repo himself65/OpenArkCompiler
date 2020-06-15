@@ -1395,8 +1395,9 @@ FieldPair MIRInterfaceType::TraverseToFieldRef(FieldID&) const {
 }
 
 bool MIRPtrType::IsPointedTypeVolatile(int fieldID) const {
-  if (typeAttrs.GetAttr(ATTR_volatile))
+  if (typeAttrs.GetAttr(ATTR_volatile)) {
     return true;
+  }
 
   MIRType *pointedTy = GlobalTables::GetTypeTable().GetTypeFromTyIdx(GetPointedTyIdx());
   return pointedTy->IsVolatile(fieldID);

@@ -557,8 +557,9 @@ class MIRPtrType : public MIRType {
   TyIdx GetPointedTyIdxWithFieldID(FieldID fieldID) const;
   size_t GetHashIndex() const override {
     constexpr uint8 idxShift = 4;
+    constexpr uint8 flagShift = 3;
     size_t hIdx = (static_cast<size_t>(pointedTyIdx) << idxShift) + (typeKind << kShiftNumOfTypeKind);
-    hIdx += (typeAttrs.GetAttrFlag() << 3) + typeAttrs.GetAlignValue();
+    hIdx += (typeAttrs.GetAttrFlag() << flagShift) + typeAttrs.GetAlignValue();
     return hIdx % kTypeHashLength;
   }
 
