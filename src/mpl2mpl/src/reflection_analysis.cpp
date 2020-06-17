@@ -539,7 +539,7 @@ uint16 GetFieldHash(const std::vector<std::pair<FieldPair, uint16>> &fieldV, con
 
 MIRSymbol *ReflectionAnalysis::GetOrCreateSymbol(const std::string &name, TyIdx tyIdx, bool needInit = false) {
   const GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(name);
-  MIRSymbol *st;
+  MIRSymbol *st = nullptr;
   std::string symbolOfJavaLangString(namemangler::kJavaLangStringStr);
   if (name == CLASSINFO_PREFIX_STR + symbolOfJavaLangString) {
     // Previous String Symbol have been generated in dex2mpl, so this Symbol won't create again here

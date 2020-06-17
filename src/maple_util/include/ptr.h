@@ -19,7 +19,7 @@
 namespace maple {
 namespace utils {
 template<typename T>
-using PtrCheckerType = void (*)(const T*);
+using PtrCheckerType = void(*)(const T*);
 
 template<typename T>
 inline constexpr void CheckNothing(const T*) {}
