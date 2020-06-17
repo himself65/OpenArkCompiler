@@ -441,21 +441,6 @@ bool AArch64Ebo::SimplifyConstOperand(Insn &insn, const MapleVector<Operand*> &o
       op = &(insn.GetOperand(kInsnSecondOpnd));
     }
   } else if (bothConstant) {
-    /* special orr insn :
-     * orr resOp, imm1, 0
-     * =======>
-     * mov resOp, #0 */
-    if ((insn.GetMachineOpcode() == MOP_wiorrri12) || (insn.GetMachineOpcode() == MOP_xiorrri13) ||
-        (insn.GetMachineOpcode() == MOP_xiorri13r) || (insn.GetMachineOpcode() == MOP_wiorri12r)) {
-      immOpnd = static_cast<AArch64ImmOperand*>(op1);
-      op = op0;
-      if (op->IsMemoryAccessOperand()) {
-        op = &(insn.GetOperand(kInsnSecondOpnd));
-      }
-    } else {
-      return false;
-    }
-  } else if (bothConstant) {
     /* i) special orr insn, one of imm is 0:
      * orr resOp, imm1, #0  |  orr resOp, #0, imm1
      * =======>
@@ -469,21 +454,16 @@ bool AArch64Ebo::SimplifyConstOperand(Insn &insn, const MapleVector<Operand*> &o
         (insn.GetMachineOpcode() == MOP_xiorri13r) || (insn.GetMachineOpcode() == MOP_wiorri12r)) {
       AArch64ImmOperand *immOpnd0 = static_cast<AArch64ImmOperand*>(op0);
       AArch64ImmOperand *immOpnd1 = static_cast<AArch64ImmOperand*>(op1);
-      if (immOpnd0->IsZero() && immOpnd1->IsZero()) {
-        immOpnd = immOpnd0;
-        op = op0;
-      } else if (immOpnd0->IsZero()) {
-        immOpnd = immOpnd0;
+      immOpnd = immOpnd1;
+      op = op0;
+      if (immOpnd0->IsZero()) {
         op = op1;
-      } else if (immOpnd1->IsZero()) {
-        immOpnd = immOpnd1;
-        op = op0;
-      } else {
-        return false;
+        immOpnd = immOpnd0;
       }
-      if (op->IsMemoryAccessOperand()) {
-        op = &(insn.GetOperand(kInsnSecondOpnd));
-      }
+      MOperator mOp = opndSize == k64BitSize ? MOP_xmovri64 : MOP_xmovri32;
+      Insn &newInsn = cgFunc->GetCG()->BuildInstruction<AArch64Insn>(mOp, *res, *op);
+      bb->ReplaceInsn(insn, newInsn);
+      return true;
     } else {
       return false;
     }

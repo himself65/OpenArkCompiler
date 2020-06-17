@@ -45,6 +45,7 @@ class CGOptions : public MapleDriverOptionBase {
     kGenYieldPoint = 1ULL << 9,
     kGenLocalRc = 1ULL << 10,
     kProEpilogueOpt = 1ULL << 11,
+    kVerboseCG = 1ULL << 12,
     kDebugFriendly = 1ULL << 20,
     kWithLoc = 1ULL << 21,
     kWithDwarf = 1ULL << 22,
@@ -191,6 +192,10 @@ class CGOptions : public MapleDriverOptionBase {
 
   bool GenerateVerboseAsm() const {
     return (options & kVerboseAsm) != 0;
+  }
+
+  bool GenerateVerboseCG() const {
+    return (options & kVerboseCG) != 0;
   }
 
   bool GenerateDebugFriendlyCode() const {

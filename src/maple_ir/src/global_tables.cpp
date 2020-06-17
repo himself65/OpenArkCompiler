@@ -68,17 +68,18 @@ MIRType *TypeTable::CreateAndUpdateMirTypeNode(MIRType &pType) {
   nType->SetTypeIndex(TyIdx(typeTable.size()));
   typeTable.push_back(nType);
 
-  if (pType.IsMIRPtrType() && static_cast<MIRPtrType&>(pType).GetTypeAttrs() == TypeAttrs()) {
-    MIRPtrType &pty = static_cast<MIRPtrType&>(pType);
-    if (pty.GetPrimType() == PTY_ptr) {
-      ptrTypeMap[pty.GetPointedTyIdx()] = nType->GetTypeIndex();
-    } else {
-      refTypeMap[pty.GetPointedTyIdx()] = nType->GetTypeIndex();
+  if (pType.IsMIRPtrType()) {
+    auto &pty = static_cast<MIRPtrType&>(pType);
+    if (pty.GetTypeAttrs() == TypeAttrs()) {
+      if (pty.GetPrimType() == PTY_ptr) {
+        ptrTypeMap[pty.GetPointedTyIdx()] = nType->GetTypeIndex();
+      } else {
+        refTypeMap[pty.GetPointedTyIdx()] = nType->GetTypeIndex();
+      }
     }
   } else {
     typeHashTable.insert(nType);
   }
-
   return nType;
 }
 

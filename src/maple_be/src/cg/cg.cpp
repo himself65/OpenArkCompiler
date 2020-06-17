@@ -270,6 +270,10 @@ const std::string CG::ExtractFuncName(const std::string &str) {
     return str;
   }
   std::string funcName = str.substr(pos1 + offset, pos2 - pos1 - offset);
+  /* avoid funcName like __LINE__ and __FILE__ which will be resolved by assembler */
+  if (funcName.find("__") != std::string::npos) {
+    return str;
+  }
   if (funcName == "_3Cinit_3E") {
     return "init";
   }

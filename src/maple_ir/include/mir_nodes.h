@@ -2703,6 +2703,18 @@ class NaryStmtNode : public StmtNode, public NaryOpnds {
     }
     SetNumOpnds(GetNopndSize());
   }
+
+  void InsertOpnd(BaseNode *node, size_t idx) {
+    if (node == nullptr || idx > GetNopndSize()) {
+      return;
+    }
+    auto begin = GetNopnd().begin();
+    for (size_t i = 0; i < idx; ++i) {
+      ++begin;
+    }
+    GetNopnd().insert(begin, node);
+    SetNumOpnds(GetNopndSize());
+  }
 };
 
 class ReturnValuePart {

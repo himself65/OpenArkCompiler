@@ -34,7 +34,7 @@ class CGLowerer {
   enum Option : uint64 {
     kUndefined = 0,
     kGenEh = 1ULL << 0,
-    kVerboseAsm = 1ULL << 1,
+    kVerboseCG = 1ULL << 1,
   };
 
   using BuiltinFunctionID = uint32;
@@ -49,15 +49,15 @@ class CGLowerer {
     SetCurrentFunc(func);
   }
 
-  CGLowerer(MIRModule &mod, BECommon &common, bool genEh, bool verboseAsm)
+  CGLowerer(MIRModule &mod, BECommon &common, bool genEh, bool verboseCG)
       : mirModule(mod),
         beCommon(common) {
     OptionFlag option = 0;
     if (genEh) {
       option |= kGenEh;
     }
-    if (verboseAsm) {
-      option |= kVerboseAsm;
+    if (verboseCG) {
+      option |= kVerboseCG;
     }
     SetOptions(option);
     mirBuilder = mod.GetMIRBuilder();
@@ -226,7 +226,7 @@ class CGLowerer {
   }
 
   bool ShouldAddAdditionalComment() const {
-    return (options & kVerboseAsm) != 0;
+    return (options & kVerboseCG) != 0;
   }
 
   bool GenerateExceptionHandlingCode() const {

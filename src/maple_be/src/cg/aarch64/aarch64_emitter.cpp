@@ -255,7 +255,7 @@ void AArch64Emitter::EmitBBHeaderLabel(const std::string &name, LabelIdx labIdx)
     label.SetLabelOrder(currCG->GetLabelOrderCnt());
     currCG->IncreaseLabelOrderCnt();
   }
-  if (currCG->GenerateVerboseAsm()) {
+  if (currCG->GenerateVerboseCG()) {
     emitter.Emit(".L.").Emit(name).Emit(".").Emit(labIdx).Emit(":\t//label order ").Emit(label.GetLabelOrder());
     emitter.Emit("\n");
   } else {
@@ -329,7 +329,7 @@ void AArch64Emitter::Run() {
   }
   /* emit instructions */
   FOR_ALL_BB(bb, aarchCGFunc) {
-    if (currCG->GenerateVerboseAsm()) {
+    if (currCG->GenerateVerboseCG()) {
       emitter.Emit("#    freq:").Emit(bb->GetFrequency()).Emit("\n");
     }
     /* emit bb headers */

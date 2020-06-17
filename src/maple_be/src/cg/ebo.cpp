@@ -1075,7 +1075,9 @@ can_be_removed:
     insnInfo->bb = nullptr;
     for (uint32 i = 0; i < resNum; i++) {
       opndInfo = insnInfo->result[i];
-      ASSERT(opndInfo != nullptr, "null ptr check");
+      if (opndInfo == nullptr) {
+        continue;
+      }
       if (opndInfo->redefined && (opndInfo->same != nullptr)) {
         OpndInfo *next = opndInfo->same;
         next->redefined = true;

@@ -163,6 +163,15 @@ class BECommon {
     typeSizeTable.push_back(value);
   }
 
+  void AddTypeSizeAndAlign(TyIdx tyIdx, uint64 value) {
+    if (typeSizeTable.size() == tyIdx) {
+      typeSizeTable.push_back(value);
+      tableAlignTable.push_back(value);
+    } else {
+      CHECK_FATAL(typeSizeTable.size() > tyIdx, "there are some types haven't set type size and align, %d");
+    }
+  }
+
   uint8 GetTypeAlign(uint32 idx) const {
     return tableAlignTable.at(idx);
   }

@@ -825,8 +825,9 @@ void MeCFG::DumpToFile(const std::string &prefix, bool dumpInStrs, bool dumpEdge
     if (bIt == func.common_exit()) {
       // specical case for common_exit_bb
       for (auto it = bb->GetPred().begin(); it != bb->GetPred().end(); ++it) {
-        cfgFile << "BB" << (*it)->GetBBId() << " -> "
-                << "BB" << bb->GetBBId() << "[style=dotted];\n";
+        dumpEdgeFreq ? cfgFile << "BB" << (*it)->GetBBId() << "_freq_" << (*it)->GetFrequency() << " -> " <<
+            "BB" << bb->GetBBId() << "_freq_" << bb->GetFrequency() << "[style=dotted];\n" :
+            cfgFile << "BB" << (*it)->GetBBId()<< " -> " << "BB" << bb->GetBBId() << "[style=dotted];\n";
       }
       continue;
     }
@@ -835,8 +836,9 @@ void MeCFG::DumpToFile(const std::string &prefix, bool dumpInStrs, bool dumpEdge
     }
 
     for (auto it = bb->GetSucc().begin(); it != bb->GetSucc().end(); ++it) {
-      cfgFile << "BB" << bb->GetBBId() << " -> "
-              << "BB" << (*it)->GetBBId();
+      dumpEdgeFreq ? cfgFile << "BB" << bb->GetBBId() << "_freq_" << bb->GetFrequency() << " -> " <<
+          "BB" << (*it)->GetBBId() << "_freq_" << (*it)->GetFrequency() :
+          cfgFile << "BB" << bb->GetBBId() << " -> " << "BB" << (*it)->GetBBId();
       if (bb == func.GetCommonEntryBB()) {
         cfgFile << "[style=dotted]";
         continue;

@@ -357,6 +357,10 @@ class BB {
     pred[cnt] = pp;
   }
 
+  void PushBackSuccFreq(uint64 freq) {
+    return succFreq.push_back(freq);
+  }
+
   MapleVector<uint64> &GetSuccFreq() {
     return succFreq;
   }

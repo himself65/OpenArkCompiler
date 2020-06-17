@@ -111,7 +111,7 @@ void AArch64MoveRegArgs::GenerateStpInsn(const ArgInfo &firstArgInfo, const ArgI
                                                                    *baseOpnd, nullptr, &offsetOpnd, firstArgInfo.sym);
   }
   Insn &pushInsn = aarchCGFunc->GetCG()->BuildInstruction<AArch64Insn>(mOp, regOpnd, regOpnd2, *memOpnd);
-  if (aarchCGFunc->GetCG()->GenerateVerboseAsm()) {
+  if (aarchCGFunc->GetCG()->GenerateVerboseCG()) {
     std::string argName = firstArgInfo.sym->GetName() + " " + secondArgInfo.sym->GetName();
     pushInsn.SetComment(std::string("store param: ").append(argName));
   }
@@ -147,7 +147,7 @@ void AArch64MoveRegArgs::GenerateStrInsn(ArgInfo &argInfo) {
 
   MOperator mOp = aarchCGFunc->PickStInsn(argInfo.symSize * kBitsPerByte, argInfo.mirTy->GetPrimType());
   Insn &insn = aarchCGFunc->GetCG()->BuildInstruction<AArch64Insn>(mOp, regOpnd, *memOpnd);
-  if (aarchCGFunc->GetCG()->GenerateVerboseAsm()) {
+  if (aarchCGFunc->GetCG()->GenerateVerboseCG()) {
     insn.SetComment(std::string("store param: ").append(argInfo.sym->GetName()));
   }
   aarchCGFunc->GetCurBB()->AppendInsn(insn);
@@ -222,7 +222,7 @@ void AArch64MoveRegArgs::LoadStackArgsToVReg(MIRSymbol &mirSym) {
   Insn &insn = aarchCGFunc->GetCG()->BuildInstruction<AArch64Insn>(
       aarchCGFunc->PickLdInsn(GetPrimTypeBitSize(stype), stype), dstRegOpnd, memOpnd);
 
-  if (aarchCGFunc->GetCG()->GenerateVerboseAsm()) {
+  if (aarchCGFunc->GetCG()->GenerateVerboseCG()) {
     std::string key = "param: %%";
     key += std::to_string(mirSym.GetPreg()->GetPregNo());
     ASSERT(mirSym.GetStorageClass() == kScFormal, "vreg parameters should be kScFormal type.");
@@ -247,7 +247,7 @@ void AArch64MoveRegArgs::MoveArgsToVReg(const PLocInfo &ploc, MIRSymbol &mirSym)
   MOperator mOp = aarchCGFunc->PickMovInsn(srcBitSize, regType);
 
   Insn &insn = aarchCGFunc->GetCG()->BuildInstruction<AArch64Insn>(mOp, dstRegOpnd, srcRegOpnd);
-  if (aarchCGFunc->GetCG()->GenerateVerboseAsm()) {
+  if (aarchCGFunc->GetCG()->GenerateVerboseCG()) {
     std::string key = "param: %%";
     key += std::to_string(mirSym.GetPreg()->GetPregNo());
     insn.SetComment(key);

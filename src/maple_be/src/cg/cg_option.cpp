@@ -84,6 +84,7 @@ enum OptionIndex : uint64 {
   kPie,
   kPic,
   kCGVerbose,
+  kCGVerboseCG,
   kCGMapleLinker,
   kCgen,
   kEbo,
@@ -173,6 +174,16 @@ const Descriptor kUsage[] = {
     kArgCheckPolicyBool,
     "  --verbose-asm               \tAdd comments to asm output\n"
     "  --no-verbose-asm\n",
+    "mplcg",
+    {} },
+  { kCGVerboseCG,
+    kEnable,
+    "",
+    "verbose-cg",
+    kBuildTypeProduct,
+    kArgCheckPolicyBool,
+    "  --verbose-cg               \tAdd comments to cg output\n"
+    "  --no-verbose-cg\n",
     "mplcg",
     {} },
   { kCGMapleLinker,
@@ -799,6 +810,10 @@ bool CGOptions::SolveOptions(const std::vector<Option> &opts, bool isDebug) {
       case kCGVerbose:
         (opt.Type() == kEnable) ? SetOption(CGOptions::kVerboseAsm)
                                 : ClearOption(CGOptions::kVerboseAsm);
+        break;
+      case kCGVerboseCG:
+        (opt.Type() == kEnable) ? SetOption(CGOptions::kVerboseCG)
+                                : ClearOption(CGOptions::kVerboseCG);
         break;
       case kCGMapleLinker:
         (opt.Type() == kEnable) ? EnableMapleLinker() : DisableMapleLinker();

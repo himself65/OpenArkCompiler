@@ -212,6 +212,10 @@ class CG {
     return cgOption.GenerateVerboseAsm();
   }
 
+  bool GenerateVerboseCG() const {
+    return cgOption.GenerateVerboseCG();
+  }
+
   bool DoPrologueEpilogue() const {
     return cgOption.DoPrologueEpilogue();
   }

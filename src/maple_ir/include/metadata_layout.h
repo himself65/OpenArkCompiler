@@ -221,7 +221,7 @@ struct MethodDesc {
   // method metadata is in compact format if this offset is odd.
   uint32_t metadataOffset;
 
-  uint16_t localRefOffset;
+  int16_t localRefOffset;
   uint16_t localRefNumber;
 
   // stack map for a methed might be placed here

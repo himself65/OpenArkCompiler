@@ -256,6 +256,7 @@ bool MeBuilder::InitMeExprBuildFactory() {
   RegisterFactoryFunction<MeExprBuildFactory>(OP_ceil, &MeBuilder::BuildOpMeExprForTypeCvt);
   RegisterFactoryFunction<MeExprBuildFactory>(OP_cvt, &MeBuilder::BuildOpMeExprForTypeCvt);
   RegisterFactoryFunction<MeExprBuildFactory>(OP_floor, &MeBuilder::BuildOpMeExprForTypeCvt);
+  RegisterFactoryFunction<MeExprBuildFactory>(OP_round, &MeBuilder::BuildOpMeExprForTypeCvt);
   RegisterFactoryFunction<MeExprBuildFactory>(OP_trunc, &MeBuilder::BuildOpMeExprForTypeCvt);
   RegisterFactoryFunction<MeExprBuildFactory>(OP_retype, &MeBuilder::BuildOpMeExprForRetype);
   RegisterFactoryFunction<MeExprBuildFactory>(OP_abs, &MeBuilder::BuildOpMeExpr);

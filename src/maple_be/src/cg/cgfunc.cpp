@@ -609,7 +609,7 @@ void HandleMembar(StmtNode &stmt, CGFunc &cgFunc) {
 }
 
 void HandleComment(StmtNode &stmt, CGFunc &cgFunc) {
-  if (cgFunc.GetCG()->GenerateVerboseAsm()) {
+  if (cgFunc.GetCG()->GenerateVerboseAsm() || cgFunc.GetCG()->GenerateVerboseCG()) {
     cgFunc.SelectComment(static_cast<CommentNode&>(stmt));
   }
 }
@@ -670,6 +670,10 @@ CGFunc::CGFunc(MIRModule &mod, CG &cg, MIRFunction &mirFunc, BECommon &beCommon,
       beCommon(beCommon),
       funcScopeAllocator(&allocator),
       emitStVec(allocator.Adapter()),
+#if TARGARM32
+      sortedBBs(allocator.Adapter()),
+      lrVec(allocator.Adapter()),
+#endif  /* TARGARM32 */
       loops(allocator.Adapter()),
       shortFuncName(cg.ExtractFuncName(mirFunc.GetName()) + "." + std::to_string(funcId), &memPool) {
   mirModule.SetCurFunction(&func);

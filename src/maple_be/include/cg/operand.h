@@ -674,6 +674,10 @@ class ListOperand : public Operand {
 
   ~ListOperand() override = default;
 
+  void PopOpnd() {
+    opndList.pop_back();
+  }
+
   void PushOpnd(RegOperand &opnd) {
     opndList.push_back(&opnd);
   }

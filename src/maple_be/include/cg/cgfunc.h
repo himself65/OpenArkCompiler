@@ -71,6 +71,9 @@ class SpillMemOperandSet {
   MapleSet<MemOperand*, MemOpndCmp> reuseSpillLocMem;
 };
 
+#if TARGARM32
+class LiveRange;
+#endif  /* TARGARM32 */
 constexpr uint32 kVRegisterNumber = 80;
 class CGFunc {
  public:
@@ -649,6 +652,32 @@ class CGFunc {
     loops.push_back(&loop);
   }
 
+#if TARGARM32
+  MapleVector<BB*> &GetSortedBBs() {
+    return sortedBBs;
+  }
+
+  const MapleVector<BB*> &GetSortedBBs() const {
+    return sortedBBs;
+  }
+
+  void SetSortedBBs(MapleVector<BB*> &bbVec) {
+    sortedBBs = bbVec;
+  }
+
+  MapleVector<LiveRange*> &GetLrVec() {
+    return lrVec;
+  }
+
+  const MapleVector<LiveRange*> &GetLrVec() const {
+    return lrVec;
+  }
+
+  void SetLrVec(MapleVector<LiveRange*> &newLrVec) {
+    lrVec = newLrVec;
+  }
+#endif  /* TARGARM32 */
+
   CGCFG *GetTheCFG() {
     return theCFG;
   }
@@ -843,6 +872,10 @@ class CGFunc {
   MemLayout *memLayout = nullptr;
   MapleAllocator *funcScopeAllocator;
   MapleVector<MIRSymbol*> emitStVec;  /* symbol that needs to be emit as a local symbol. i.e, switch table */
+#if TARGARM32
+  MapleVector<BB*> sortedBBs;
+  MapleVector<LiveRange*> lrVec;
+#endif  /* TARGARM32 */
   MapleVector<CGFuncLoops*> loops;
   CGCFG *theCFG = nullptr;
   uint32 nextSpillLocation = 0;
