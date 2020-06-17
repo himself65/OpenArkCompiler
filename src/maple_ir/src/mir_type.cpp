@@ -596,6 +596,7 @@ void MIRPtrType::Dump(int indent, bool dontUseName) const {
   } else {
     LogInfo::MapleLogger() << "<* ";
     pointedType->Dump(indent + 1);
+    typeAttrs.DumpAttributes();
     LogInfo::MapleLogger() << ">";
   }
 }
@@ -1096,7 +1097,7 @@ bool MIRPtrType::EqualTo(const MIRType &type) const {
     return false;
   }
   const auto &pType = static_cast<const MIRPtrType&>(type);
-  return pointedTyIdx == pType.GetPointedTyIdx();
+  return pointedTyIdx == pType.GetPointedTyIdx() && typeAttrs == pType.GetTypeAttrs();
 }
 
 bool MIRArrayType::EqualTo(const MIRType &type) const {
@@ -1394,6 +1395,10 @@ FieldPair MIRInterfaceType::TraverseToFieldRef(FieldID&) const {
 }
 
 bool MIRPtrType::IsPointedTypeVolatile(int fieldID) const {
+  if (typeAttrs.GetAttr(ATTR_volatile)) {
+    return true;
+  }
+
   MIRType *pointedTy = GlobalTables::GetTypeTable().GetTypeFromTyIdx(GetPointedTyIdx());
   return pointedTy->IsVolatile(fieldID);
 }

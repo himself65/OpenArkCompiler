@@ -1217,6 +1217,11 @@ bool MIRParser::ParsePointType(TyIdx &tyIdx) {
     pty = PTY_ptr;
   }
   MIRPtrType pointType(pointTypeIdx, pty);  // use reference type here
+  if (!ParseTypeAttrs(pointType.GetTypeAttrs())) {
+    Error("bad type attribute in pointer type specification");
+    return false;
+  }
+
   tyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&pointType);
   return true;
 }
