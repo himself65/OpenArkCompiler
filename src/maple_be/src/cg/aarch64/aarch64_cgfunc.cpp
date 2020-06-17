@@ -201,7 +201,7 @@ void AArch64CGFunc::SelectLoadAcquire(Operand &dest, PrimType dtype, Operand &sr
   }
 
   std::string key;
-  if (isDirect && GetCG()->GenerateVerboseAsm()) {
+  if (isDirect && GetCG()->GenerateVerboseCG()) {
     const MIRSymbol *sym = static_cast<AArch64MemOperand*>(&src)->GetSymbol();
     if (sym != nullptr) {
       MIRStorageClass sc = sym->GetStorageClass();
@@ -219,7 +219,7 @@ void AArch64CGFunc::SelectLoadAcquire(Operand &dest, PrimType dtype, Operand &sr
   /* Check if the right load-acquire instruction is available. */
   if (mOp != MOP_undef) {
     Insn &insn = GetCG()->BuildInstruction<AArch64Insn>(mOp, dest, *newSrc);
-    if (isDirect && GetCG()->GenerateVerboseAsm()) {
+    if (isDirect && GetCG()->GenerateVerboseCG()) {
       insn.SetComment(key);
     }
     GetCurBB()->AppendInsn(insn);
@@ -230,7 +230,7 @@ void AArch64CGFunc::SelectLoadAcquire(Operand &dest, PrimType dtype, Operand &sr
       PrimType itype = (stype == PTY_f32) ? PTY_i32 : PTY_i64;
       RegOperand &regOpnd = CreateRegisterOperandOfType(itype);
       Insn &insn = GetCG()->BuildInstruction<AArch64Insn>(PickLdInsn(ssize, itype, memOrd), regOpnd, *newSrc);
-      if (isDirect && GetCG()->GenerateVerboseAsm()) {
+      if (isDirect && GetCG()->GenerateVerboseCG()) {
         insn.SetComment(key);
       }
       GetCurBB()->AppendInsn(insn);
@@ -241,7 +241,7 @@ void AArch64CGFunc::SelectLoadAcquire(Operand &dest, PrimType dtype, Operand &sr
       ASSERT((ssize == k8BitSize) || (ssize == k16BitSize), "Just checking");
       PrimType utype = (ssize == k8BitSize) ? PTY_u8 : PTY_u16;
       Insn &insn = GetCG()->BuildInstruction<AArch64Insn>(PickLdInsn(ssize, utype, memOrd), dest, *newSrc);
-      if (isDirect && GetCG()->GenerateVerboseAsm()) {
+      if (isDirect && GetCG()->GenerateVerboseCG()) {
         insn.SetComment(key);
       }
       GetCurBB()->AppendInsn(insn);
@@ -272,7 +272,7 @@ void AArch64CGFunc::SelectStoreRelease(Operand &dest, PrimType dtype, Operand &s
   }
 
   std::string key;
-  if (isDirect && GetCG()->GenerateVerboseAsm()) {
+  if (isDirect && GetCG()->GenerateVerboseCG()) {
     const MIRSymbol *sym = static_cast<AArch64MemOperand*>(&dest)->GetSymbol();
     if (sym != nullptr) {
       MIRStorageClass sc = sym->GetStorageClass();
@@ -290,7 +290,7 @@ void AArch64CGFunc::SelectStoreRelease(Operand &dest, PrimType dtype, Operand &s
   /* Check if the right store-release instruction is available. */
   if (mOp != MOP_undef) {
     Insn &insn = GetCG()->BuildInstruction<AArch64Insn>(mOp, src, *newDest);
-    if (isDirect && GetCG()->GenerateVerboseAsm()) {
+    if (isDirect && GetCG()->GenerateVerboseCG()) {
       insn.SetComment(key);
     }
     GetCurBB()->AppendInsn(insn);
@@ -303,7 +303,7 @@ void AArch64CGFunc::SelectStoreRelease(Operand &dest, PrimType dtype, Operand &s
     mOp = (stype == PTY_f32) ? MOP_xvmovrs : MOP_xvmovrd;
     GetCurBB()->AppendInsn(GetCG()->BuildInstruction<AArch64Insn>(mOp, regOpnd, src));
     Insn &insn = GetCG()->BuildInstruction<AArch64Insn>(PickStInsn(dsize, itype, memOrd), regOpnd, *newDest);
-    if (isDirect && GetCG()->GenerateVerboseAsm()) {
+    if (isDirect && GetCG()->GenerateVerboseCG()) {
       insn.SetComment(key);
     }
     GetCurBB()->AppendInsn(insn);
@@ -435,7 +435,7 @@ void AArch64CGFunc::SelectCopyMemOpnd(Operand &dest, PrimType dtype, uint32 dsiz
     insn = &GetCG()->BuildInstruction<AArch64Insn>(PickLdInsn(ssize, stype), dest, src);
   }
 
-  if (GetCG()->GenerateVerboseAsm()) {
+  if (GetCG()->GenerateVerboseCG()) {
     const MIRSymbol *symSecond = static_cast<AArch64MemOperand*>(&src)->GetSymbol();
     if (symSecond != nullptr) {
       std::string key;
@@ -864,7 +864,7 @@ void AArch64CGFunc::SelectDassign(StIdx stIdx, FieldID fieldId, PrimType rhsPTyp
     mOp = PickStInsn(GetPrimTypeBitSize(ptyp), ptyp);
     Insn &insn = GetCG()->BuildInstruction<AArch64Insn>(mOp, stOpnd, *memOpnd);
 
-    if (GetCG()->GenerateVerboseAsm()) {
+    if (GetCG()->GenerateVerboseCG()) {
       const MIRSymbol *symSecond = static_cast<AArch64MemOperand*>(memOpnd)->GetSymbol();
       if (symSecond != nullptr) {
         std::string key;
@@ -893,7 +893,7 @@ void AArch64CGFunc::SelectAssertNull(UnaryStmtNode &stmt) {
   auto &mem = CreateMemOpnd(baseReg, 0, k32BitSize);
   Insn &loadRef = GetCG()->BuildInstruction<AArch64Insn>(MOP_wldr, zwr, mem);
   loadRef.SetDoNotRemove(true);
-  if (GetCG()->GenerateVerboseAsm()) {
+  if (GetCG()->GenerateVerboseCG()) {
     loadRef.SetComment("null pointer check");
   }
   GetCurBB()->AppendInsn(loadRef);
@@ -1362,7 +1362,7 @@ void AArch64CGFunc::SelectAddrof(Operand &result, StImmOperand &stImm) {
     }
 
     SelectAdd(result, *GetBaseReg(*symLoc), *offset, PTY_u64);
-    if (GetCG()->GenerateVerboseAsm()) {
+    if (GetCG()->GenerateVerboseCG()) {
       /* Add a comment */
       Insn *insn = GetCurBB()->GetLastInsn();
       std::string comm = "local/formal var: ";
@@ -2827,18 +2827,15 @@ void AArch64CGFunc::SelectMinOrMax(bool isMin, Operand &resOpnd, Operand &opnd0,
   bool is64Bits = (dsize == k64BitSize);
   if (IsPrimitiveInteger(primType)) {
     RegOperand &regOpnd0 = LoadIntoRegister(opnd0, primType);
-    Operand *newOpnd1 = &opnd1;
-    if ((opnd1.GetKind() != Operand::kOpdImmediate) && (opnd1.GetKind() != Operand::kOpdOffset)) {
-      newOpnd1 = &LoadIntoRegister(opnd1, primType);
-    }
-    SelectAArch64Cmp(regOpnd0, *newOpnd1, true, dsize);
+    Operand &regOpnd1 = LoadIntoRegister(opnd1, primType);
+    SelectAArch64Cmp(regOpnd0, regOpnd1, true, dsize);
     Operand &newResOpnd = LoadIntoRegister(resOpnd, primType);
     if (isMin) {
       CondOperand &cc = IsSignedInteger(primType) ? GetCondOperand(CC_LT) : GetCondOperand(CC_LO);
-      SelectAArch64Select(newResOpnd, regOpnd0, *newOpnd1, cc, true, dsize);
+      SelectAArch64Select(newResOpnd, regOpnd0, regOpnd1, cc, true, dsize);
     } else {
       CondOperand &cc = IsSignedInteger(primType) ? GetCondOperand(CC_GT) : GetCondOperand(CC_HI);
-      SelectAArch64Select(newResOpnd, regOpnd0, *newOpnd1, cc, true, dsize);
+      SelectAArch64Select(newResOpnd, regOpnd0, regOpnd1, cc, true, dsize);
     }
   } else if (IsPrimitiveFloat(primType)) {
     RegOperand &regOpnd0 = LoadIntoRegister(opnd0, primType);
@@ -3945,7 +3942,7 @@ void AArch64CGFunc::GenerateYieldpoint(BB &bb) {
   auto &wzr = AArch64RegOperand::Get32bitZeroRegister();
   auto &pollingPage = CreateMemOpnd(RYP, 0, k32BitSize);
   auto &yieldPoint = GetCG()->BuildInstruction<AArch64Insn>(MOP_wldr, wzr, pollingPage);
-  if (GetCG()->GenerateVerboseAsm()) {
+  if (GetCG()->GenerateVerboseCG()) {
     yieldPoint.SetComment("yieldpoint");
   }
   bb.AppendInsn(yieldPoint);
@@ -4624,7 +4621,7 @@ Operand *AArch64CGFunc::SelectClearStackCallParam(const AddrofNode &expr, int64 
   }
   offsetValue = offset->GetValue();
   SelectAdd(result, *GetBaseReg(*symLoc), *offset, PTY_u64);
-  if (GetCG()->GenerateVerboseAsm()) {
+  if (GetCG()->GenerateVerboseCG()) {
     /* Add a comment */
     Insn *insn = GetCurBB()->GetLastInsn();
     std::string comm = "local/formal var: ";
@@ -4936,7 +4933,7 @@ void AArch64CGFunc::SelectCall(CallNode &callNode) {
   MIRSymbol *fsym = GetFunction().GetLocalOrGlobalSymbol(fn->GetStIdx(), false);
   MIRType *retType = fn->GetReturnType();
 
-  if (GetCG()->GenerateVerboseAsm()) {
+  if (GetCG()->GenerateVerboseCG()) {
     const std::string &comment = fsym->GetName();
     GetCurBB()->AppendInsn(CreateCommentInsn(comment));
   }
@@ -5430,7 +5427,7 @@ void AArch64CGFunc::SelectLibCall(const std::string &funcName, std::vector<Opera
   MIRType *retType = GlobalTables::GetTypeTable().GetTypeTable().at(static_cast<int32>(primType));
   st->SetTyIdx(GetBecommon().BeGetOrCreateFunctionType(retType->GetTypeIndex(), vec, vecAt)->GetTypeIndex());
 
-  if (GetCG()->GenerateVerboseAsm()) {
+  if (GetCG()->GenerateVerboseCG()) {
     const std::string &comment = "lib call : " + funcName;
     GetCurBB()->AppendInsn(CreateCommentInsn(comment));
   }
@@ -6023,7 +6020,7 @@ void AArch64CGFunc::SelectMPLClinitCheck(IntrinsiccallNode &intrnNode) {
 void AArch64CGFunc::SelectIntrinCall(IntrinsiccallNode &intrinsiccallNode) {
   MIRIntrinsicID intrinsic = intrinsiccallNode.GetIntrinsic();
 
-  if (GetCG()->GenerateVerboseAsm()) {
+  if (GetCG()->GenerateVerboseCG()) {
     std::string comment = GetIntrinsicName(intrinsic);
     GetCurBB()->AppendInsn(CreateCommentInsn(comment));
   }

@@ -1221,7 +1221,6 @@ bool MIRParser::ParsePointType(TyIdx &tyIdx) {
     Error("bad type attribute in pointer type specification");
     return false;
   }
-
   tyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&pointType);
   return true;
 }
@@ -1478,7 +1477,9 @@ bool MIRParser::ParseTypedef() {
     prevTyIdx = mod.GetTypeNameTab()->GetTyIdxFromGStrIdx(strIdx);
     if (prevTyIdx != 0u) {
       MIRType *prevType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(prevTyIdx);
-      CHECK_FATAL(prevType->IsStructType(), "type error");
+      if (!mod.IsCModule()) {
+        CHECK_FATAL(prevType->IsStructType(), "type error");
+      }
       prevStructType = static_cast<MIRStructType*>(prevType);
       if ((prevType->GetKind() != kTypeByName) && (prevStructType && !prevStructType->IsIncomplete())) {
         // allow duplicated type def if kKeepFirst is set which is the default
@@ -1831,8 +1832,8 @@ bool MIRParser::ParsePrototype(MIRFunction &func, MIRSymbol &funcSymbol, TyIdx &
   MIRType *retType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
   func.SetReturnStruct(*retType);
   MIRType *funcType =
-      GlobalTables::GetTypeTable().GetOrCreateFunctionType(mod, tyIdx, vecType, vecAttrs, varArgs, true);
-  funcTyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(funcType);
+      GlobalTables::GetTypeTable().GetOrCreateFunctionType(mod, tyIdx, vecType, vecAttrs, varArgs, false);
+  funcTyIdx = funcType->GetTypeIndex();
   funcSymbol.SetTyIdx(funcTyIdx);
   func.SetMIRFuncType(static_cast<MIRFuncType*>(funcType));
   return true;
@@ -1891,8 +1892,6 @@ bool MIRParser::ParseFunction(uint32 fileIdx) {
     // Skip attribute checking
     func = funcSymbol->GetFunction();
     func->ClearFormals();
-    func->ClearArgumentsTyIdx();
-    func->ClearArgumentsAttrs();
     func->Init();
     // update with current attr
     if (funcAttrs.GetAttrFlag()) {

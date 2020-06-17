@@ -110,8 +110,8 @@ void CGLowerer::RegisterExternalLibraryFunctions() {
     if (retTy->GetPrimType() == PTY_dynany) {
       retTy = GlobalTables::GetTypeTable().GetPtr();
     }
-    func->SetReturnTyIdx(retTy->GetTypeIndex());
 
+    std::vector<MIRSymbol*> formals;
     for (uint32 j = 0; extFnDescrs[i].argTypes[j] != kPtyInvalid; ++j) {
       PrimType primTy = extFnDescrs[i].argTypes[j];
       MIRType *argTy = GlobalTables::GetTypeTable().GetPrimType(primTy);
@@ -132,8 +132,12 @@ void CGLowerer::RegisterExternalLibraryFunctions() {
       argSt->SetStorageClass(kScFormal);
       argSt->SetSKind(kStVar);
       func->GetSymTab()->AddToStringSymbolMap(*argSt);
-      func->AddArgument(argSt);
+      formals.push_back(argSt);
     }
+    func->UpdateFuncTypeAndFormalsAndReturnType(formals, retTy->GetTypeIndex(), false);
+    auto *funcType = func->GetMIRFuncType();
+    ASSERT(funcType != nullptr, "null ptr check");
+    beCommon.AddTypeSizeAndAlign(funcType->GetTypeIndex(), GetPrimTypeSize(funcType->GetPrimType()));
     extFuncs.push_back(std::pair<ExtFuncT, PUIdx>(id, func->GetPuidx()));
   }
 }
@@ -829,7 +833,7 @@ BlockNode *CGLowerer::GenBlockNode(StmtNode &newCall, const CallReturnVector &p2
       }
     }
     blk->ResetBlock();
-    /* if VerboseAsm, insert a comment */
+    /* if VerboseCG, insert a comment */
     if (ShouldAddAdditionalComment()) {
       CommentNode *cmnt = mirModule.CurFuncCodeMemPool()->New<CommentNode>(mirModule);
       cmnt->SetComment(kOpcodeInfo.GetName(opcode));
@@ -868,9 +872,19 @@ BlockNode *CGLowerer::LowerCallAssignedStmt(StmtNode &stmt) {
     }
     case OP_intrinsiccallassigned:
     case OP_xintrinsiccallassigned: {
-      auto &origCall = static_cast<IntrinsiccallNode&>(stmt);
-      newCall = GenIntrinsiccallNode(stmt, funcCalled, handledAtLowerLevel, origCall);
-      p2nRets = &origCall.GetReturnVec();
+      IntrinsiccallNode &intrincall = static_cast<IntrinsiccallNode&>(stmt);
+      if (intrincall.GetIntrinsic() == INTRN_JAVA_POLYMORPHIC_CALL) {
+        BaseNode *contextClassArg = GetBaseNodeFromCurFunc(*mirModule.CurFunction(), false);
+        constexpr int kContextIdx = 4; /* stable index in MCC_DexPolymorphicCall, never out of range */
+        intrincall.InsertOpnd(contextClassArg, kContextIdx);
+
+        BaseNode *firstArg = intrincall.GetNopndAt(0);
+        BaseNode *baseVal = mirBuilder->CreateExprBinary(OP_add, *GlobalTables::GetTypeTable().GetPtr(), firstArg,
+                                                         mirBuilder->CreateIntConst(1, PTY_ref));
+        intrincall.SetNOpndAt(0, baseVal);
+      }
+      newCall = GenIntrinsiccallNode(stmt, funcCalled, handledAtLowerLevel, intrincall);
+      p2nRets = &intrincall.GetReturnVec();
       break;
     }
     case OP_intrinsiccallwithtypeassigned: {
@@ -1215,17 +1229,17 @@ void CGLowerer::LowerEntry(MIRFunction &func) {
     MIRType *pointType = beCommon.BeGetOrCreatePointerType(*func.GetReturnType());
 
     retSt->SetTyIdx(pointType->GetTypeIndex());
-    MapleVector<MIRSymbol*> formals(mirModule.GetMPAllocator().Adapter());
+    std::vector<MIRSymbol*> formals;
     formals.push_back(retSt);
     for (uint32 i = 0; i < func.GetFormalCount(); ++i) {
       auto formal = func.GetFormal(i);
       formals.push_back(formal);
     }
-    func.ClearArguments();
-    for (MapleVector<MIRSymbol*>::iterator it = formals.begin(); it != formals.end(); ++it) {
-      func.AddArgument(*it);
-    }
-    func.SetReturnTyIdx(GlobalTables::GetTypeTable().GetTypeTable().at(static_cast<int>(PTY_void))->GetTypeIndex());
+
+    func.UpdateFuncTypeAndFormalsAndReturnType(formals, TyIdx(PTY_void), true);
+    auto *funcType = func.GetMIRFuncType();
+    ASSERT(funcType != nullptr, "null ptr check");
+    beCommon.AddTypeSizeAndAlign(funcType->GetTypeIndex(), GetPrimTypeSize(funcType->GetPrimType()));
   }
 }
 
@@ -1420,7 +1434,8 @@ MIRFunction *CGLowerer::RegisterFunctionVoidStarToVoid(BuiltinFunctionID id, con
   argSt->SetStorageClass(kScFormal);
   argSt->SetSKind(kStVar);
   func->GetSymTab()->AddToStringSymbolMap(*argSt);
-  func->AddArgument(argSt);
+  std::vector<MIRSymbol*> formals;
+  formals.push_back(argSt);
   if ((name == "MCC_SyncEnterFast0") || (name == "MCC_SyncEnterFast1") ||
       (name == "MCC_SyncEnterFast2") || (name == "MCC_SyncEnterFast3") ||
       (name == "MCC_SyncExitFast")) {
@@ -1430,8 +1445,13 @@ MIRFunction *CGLowerer::RegisterFunctionVoidStarToVoid(BuiltinFunctionID id, con
     argStMatch->SetStorageClass(kScFormal);
     argStMatch->SetSKind(kStVar);
     func->GetSymTab()->AddToStringSymbolMap(*argStMatch);
-    func->AddArgument(argStMatch);
+    formals.push_back(argStMatch);
   }
+  func->UpdateFuncTypeAndFormalsAndReturnType(formals, GlobalTables::GetTypeTable().GetVoid()->GetTypeIndex(),
+                                              false);
+  auto *funcType = func->GetMIRFuncType();
+  ASSERT(funcType != nullptr, "null ptr check");
+  beCommon.AddTypeSizeAndAlign(funcType->GetTypeIndex(), GetPrimTypeSize(funcType->GetPrimType()));
 
   builtinFuncIDs.push_back(std::pair<BuiltinFunctionID, PUIdx>(id, func->GetPuidx()));
   return func;
@@ -1446,7 +1466,6 @@ void CGLowerer::RegisterBuiltIns() {
                                                         GlobalTables::GetTypeTable().GetVoid()->GetTypeIndex());
     MIRSymbol *funcSym = func->GetFuncSymbol();
     funcSym->SetStorageClass(kScExtern);
-
     /* return type */
     MIRType *retTy = desc.GetReturnType();
     CHECK_FATAL(retTy != nullptr, "retTy should not be nullptr");
@@ -1454,8 +1473,8 @@ void CGLowerer::RegisterBuiltIns() {
     if (retTy->GetPrimType() == PTY_dynany) {
       retTy = GlobalTables::GetTypeTable().GetPtr();
     }
-    func->SetReturnTyIdx(retTy->GetTypeIndex());
 
+    std::vector<MIRSymbol*> formals;
     const std::string params[IntrinDesc::kMaxArgsNum] = { "p0", "p1", "p2", "p3", "p4", "p5" };
     for (uint32 j = 0; j < IntrinDesc::kMaxArgsNum; ++j) {
       MIRType *argTy = desc.GetArgType(j);
@@ -1472,8 +1491,12 @@ void CGLowerer::RegisterBuiltIns() {
       argSt->SetStorageClass(kScFormal);
       argSt->SetSKind(kStVar);
       func->GetSymTab()->AddToStringSymbolMap(*argSt);
-      func->AddArgument(argSt);
+      formals.push_back(argSt);
     }
+    func->UpdateFuncTypeAndFormalsAndReturnType(formals, retTy->GetTypeIndex(), false);
+    auto *funcType = func->GetMIRFuncType();
+    ASSERT(funcType != nullptr, "null ptr check");
+    beCommon.AddTypeSizeAndAlign(funcType->GetTypeIndex(), GetPrimTypeSize(funcType->GetPrimType()));
 
     builtinFuncIDs.push_back(std::pair<BuiltinFunctionID, PUIdx>(id, func->GetPuidx()));
   }

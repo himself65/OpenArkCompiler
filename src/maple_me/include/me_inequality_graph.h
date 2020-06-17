@@ -353,6 +353,7 @@ class ABCD {
   ~ABCD() = default;
 
   bool DemandProve(const MeExpr &arrayNode, const MeExpr &idx);
+  bool DemandProve(ESSABaseNode &firstNode, ESSABaseNode &secondNode, EdgeType edgeType);
 
  private:
   using MeetFunction = ProveResult (*)(ProveResult, ProveResult);
@@ -376,7 +377,6 @@ class ABCD {
     return kReduced;
   }
 
-  bool DemandProve(ESSABaseNode &firstNode, ESSABaseNode &secondNode, EdgeType edgeType);
   ProveResult Prove(ESSABaseNode &a, ESSABaseNode &b, InequalEdge &e);
   ProveResult UpdateCacheResult(ESSABaseNode &a, ESSABaseNode &b, InequalEdge &e, MeetFunction meet);
   void PrintTracing() const;

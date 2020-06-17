@@ -325,7 +325,7 @@ Insn &AArch64GenProEpilog::CreateAndAppendInstructionForAllocateCallFrame(int64 
 void AArch64GenProEpilog::AppendInstructionAllocateCallFrame(AArch64reg reg0, AArch64reg reg1, RegType rty) {
   auto &aarchCGFunc = static_cast<AArch64CGFunc&>(cgFunc);
   CG *currCG = cgFunc.GetCG();
-  if (currCG->GenerateVerboseAsm()) {
+  if (currCG->GenerateVerboseCG()) {
     cgFunc.GetCurBB()->AppendInsn(aarchCGFunc.CreateCommentInsn("allocate activation frame"));
   }
 
@@ -413,7 +413,7 @@ void AArch64GenProEpilog::AppendInstructionAllocateCallFrame(AArch64reg reg0, AA
 void AArch64GenProEpilog::AppendInstructionAllocateCallFrameDebug(AArch64reg reg0, AArch64reg reg1, RegType rty) {
   auto &aarchCGFunc = static_cast<AArch64CGFunc&>(cgFunc);
   CG *currCG = cgFunc.GetCG();
-  if (currCG->GenerateVerboseAsm()) {
+  if (currCG->GenerateVerboseCG()) {
     cgFunc.GetCurBB()->AppendInsn(aarchCGFunc.CreateCommentInsn("allocate activation frame for debugging"));
   }
 
@@ -502,7 +502,7 @@ void AArch64GenProEpilog::GeneratePushRegs() {
   AArch64reg intRegFirstHalf = kRinvalid;
   AArch64reg fpRegFirstHalf = kRinvalid;
 
-  if (currCG->GenerateVerboseAsm()) {
+  if (currCG->GenerateVerboseCG()) {
     cgFunc.GetCurBB()->AppendInsn(aarchCGFunc.CreateCommentInsn("save callee-saved registers"));
   }
 
@@ -517,7 +517,7 @@ void AArch64GenProEpilog::GeneratePushRegs() {
     AppendInstructionAllocateCallFrameDebug(RFP, RLR, kRegTyInt);
   }
 
-  if (currCG->GenerateVerboseAsm()) {
+  if (currCG->GenerateVerboseCG()) {
     cgFunc.GetCurBB()->AppendInsn(aarchCGFunc.CreateCommentInsn("copy SP to FP"));
   }
   Operand &spOpnd = aarchCGFunc.GetOrCreatePhysicalRegisterOperand(RSP, k64BitSize, kRegTyInt);
@@ -596,7 +596,7 @@ void AArch64GenProEpilog::AppendInstructionStackCheck(AArch64reg reg, RegType rt
   auto &wzr = AArch64RegOperand::Get32bitZeroRegister();
   auto &refX16 = aarchCGFunc.CreateMemOpnd(reg, 0, k64BitSize);
   auto &soeInstr = currCG->BuildInstruction<AArch64Insn>(MOP_wldr, wzr, refX16);
-  if (currCG->GenerateVerboseAsm()) {
+  if (currCG->GenerateVerboseCG()) {
     soeInstr.SetComment("soerror");
   }
   soeInstr.SetDoNotRemove(true);
@@ -627,7 +627,7 @@ void AArch64GenProEpilog::GenerateProlog(BB &bb) {
   } else {
     int32 stackFrameSize = static_cast<AArch64MemLayout*>(cgFunc.GetMemlayout())->RealStackFrameSize();
     if (stackFrameSize > 0) {
-      if (currCG->GenerateVerboseAsm()) {
+      if (currCG->GenerateVerboseCG()) {
         cgFunc.GetCurBB()->AppendInsn(aarchCGFunc.CreateCommentInsn("allocate activation frame"));
       }
       Operand &immOpnd = aarchCGFunc.CreateImmOperand(stackFrameSize, k32BitSize, true);
@@ -636,7 +636,7 @@ void AArch64GenProEpilog::GenerateProlog(BB &bb) {
       int32 offset = stackFrameSize;
       (void)InsertCFIDefCfaOffset(offset, *(cgFunc.GetCurBB()->GetLastInsn()));
     }
-    if (currCG->GenerateVerboseAsm()) {
+    if (currCG->GenerateVerboseCG()) {
       cgFunc.GetCurBB()->AppendInsn(aarchCGFunc.CreateCommentInsn("copy SP to FP"));
     }
     int64 argsToStkPassSize = cgFunc.GetMemlayout()->SizeOfArgsToStackPass();
@@ -859,7 +859,7 @@ void AArch64GenProEpilog::GeneratePopRegs() {
   AArch64reg intRegFirstHalf = kRinvalid;
   AArch64reg fpRegFirstHalf = kRinvalid;
 
-  if (currCG->GenerateVerboseAsm()) {
+  if (currCG->GenerateVerboseCG()) {
     cgFunc.GetCurBB()->AppendInsn(aarchCGFunc.CreateCommentInsn("restore callee-saved registers"));
   }
 
@@ -980,7 +980,7 @@ void AArch64GenProEpilog::GenerateEpilog(BB &bb) {
   } else {
     int32 stackFrameSize = static_cast<AArch64MemLayout*>(cgFunc.GetMemlayout())->RealStackFrameSize();
     if (stackFrameSize > 0) {
-      if (currCG->GenerateVerboseAsm()) {
+      if (currCG->GenerateVerboseCG()) {
         cgFunc.GetCurBB()->AppendInsn(aarchCGFunc.CreateCommentInsn("pop up activation frame"));
       }
 

@@ -254,7 +254,9 @@ class MeABC {
   void DeleteABC();
   bool CleanABCInStmt(MeStmt &meStmt, NaryMeExpr &naryMeExpr);
   MeExpr *ReplaceArrayExpr(MeExpr &rhs, MeExpr &naryMeExpr, MeStmt *ivarStmt);
-
+  bool HasRelativeWithLength(MeExpr &meExpr);
+  bool ProveGreaterZ(MeExpr &weight);
+  void ReSolveEdge();
   Dominance *GetDominace() {
     return dom;
   }
@@ -291,6 +293,8 @@ class MeABC {
   std::map<MePhiNode*, std::vector<ScalarMeExpr*>> modifiedPhi;
   std::set<BB*> visitedBBs;
   std::set<MeStmt*> targetMeStmt;
+  // map<std::pair<a, b>, c>; a = b + c  b is relative with length, c is var weight
+  std::map<std::pair<MeExpr*, MeExpr*>, MeExpr*> unresolveEdge;
 };
 
 class MeDoABCOpt : public MeFuncPhase {

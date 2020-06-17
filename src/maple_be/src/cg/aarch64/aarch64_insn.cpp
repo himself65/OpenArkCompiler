@@ -871,7 +871,7 @@ void AArch64Insn::Emit(const CG &cg, Emitter &emitter) const {
   emitter.SetCurrentMOP(mOp);
   const AArch64MD *md = &AArch64CG::kMd[mOp];
 
-  if (!cg.GenerateVerboseAsm() && mOp == MOP_comment) {
+  if (!cg.GenerateVerboseAsm() && !cg.GenerateVerboseCG() && mOp == MOP_comment) {
     return;
   }
 
@@ -1023,10 +1023,10 @@ void AArch64Insn::Emit(const CG &cg, Emitter &emitter) const {
       emitter.IncreaseJavaInsnCount(kLazyBindingRoutineInsnCount);
     }
   }
-  if (cg.GenerateVerboseAsm()) {
-    MapleString comment = GetComment();
-    if (comment.c_str() != nullptr && strlen(comment.c_str()) > 0) {
-      emitter.Emit("\t\t// ").Emit(comment.c_str());
+  if (cg.GenerateVerboseCG() || (cg.GenerateVerboseAsm() && mOp == MOP_comment)) {
+    const char *comment = GetComment().c_str();
+    if (comment != nullptr && strlen(comment) > 0) {
+      emitter.Emit("\t\t// ").Emit(comment);
     }
   }
 

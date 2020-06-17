@@ -856,9 +856,6 @@ void RCLowering::HandleArguments() {
       incCall = CreateRCIntrinsic(INTRN_MCCIncRef, *firstMeStmt, opnds);
       firstBB->InsertMeStmtBefore(firstMeStmt, incCall);
     }
-    TypeAttrs typeAttr = mirFunc->GetNthParamAttr(i);
-    typeAttr.SetAttr(ATTR_localrefvar);
-    mirFunc->SetNthParamAttr(i, typeAttr);
     sym->SetLocalRefVar();
 
     for (auto *stmt : rets) {

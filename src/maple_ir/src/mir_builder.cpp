@@ -655,8 +655,12 @@ JarrayMallocNode *MIRBuilder::CreateExprJarrayMalloc(Opcode opcode, const MIRTyp
   return GetCurrentFuncCodeMp()->New<JarrayMallocNode>(opcode, pType.GetPrimType(), type.GetTypeIndex(), opnd);
 }
 
+TypeCvtNode *MIRBuilder::CreateExprTypeCvt(Opcode o, PrimType  toPrimType, PrimType fromPrimType, BaseNode &opnd) {
+  return GetCurrentFuncCodeMp()->New<TypeCvtNode>(o, toPrimType, fromPrimType, &opnd);
+}
+
 TypeCvtNode *MIRBuilder::CreateExprTypeCvt(Opcode o, const MIRType &type, const MIRType &fromType, BaseNode *opnd) {
-  return GetCurrentFuncCodeMp()->New<TypeCvtNode>(o, type.GetPrimType(), fromType.GetPrimType(), opnd);
+  return CreateExprTypeCvt(o, type.GetPrimType(), fromType.GetPrimType(), *opnd);
 }
 
 ExtractbitsNode *MIRBuilder::CreateExprExtractbits(Opcode o, const MIRType &type, uint32 bOffset, uint32 bSize,

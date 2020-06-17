@@ -524,7 +524,6 @@ TyIdx BinaryMplImport::ImportType(bool forPointedType) {
       size_t idx = typTab.size();
       typTab.push_back(nullptr);
       ++ptrLev;
-      type.SetTypeAttrs(ImportTypeAttrs());
       type.SetPointedTyIdx(ImportType(true));
       --ptrLev;
       MIRType *origType = &InsertInTypeTables(type);
