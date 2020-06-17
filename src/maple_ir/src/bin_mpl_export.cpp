@@ -135,6 +135,7 @@ void OutputTypePointer(const MIRType &ty, BinaryMplExport &mplExport) {
   const auto &type = static_cast<const MIRPtrType&>(ty);
   mplExport.WriteNum(kBinKindTypePointer);
   mplExport.OutputTypeBase(type);
+  mplExport.OutputTypeAttrs(type.GetTypeAttrs());
   mplExport.OutputType(type.GetPointedTyIdx());
 }
 
