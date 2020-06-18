@@ -650,7 +650,7 @@ void MeABC::BuildSoloPiInGraph(const PiassignMeStmt &piMeStmt) {
   (void)inequalityGraph->AddEdge(*piLHSNode, *piRHSNode, 0, EdgeType::kLower);
 }
 
-bool MeABC::PiExcuteBeforeCurrentCheck(const PiassignMeStmt &piMeStmt) {
+bool MeABC::PiExecuteBeforeCurrentCheck(const PiassignMeStmt &piMeStmt) {
   BB *currentCheckBB = currentCheck->GetBB();
   BB *piBB = piMeStmt.GetBB();
   if (currentCheckBB != piBB) {
@@ -672,7 +672,7 @@ bool MeABC::BuildArrayCheckInGraph(MeStmt &meStmt) {
   CHECK_FATAL(meStmt.GetOp() == OP_piassign, "must be");
   auto *piMeStmt = static_cast<PiassignMeStmt*>(&meStmt);
   BuildSoloPiInGraph(*piMeStmt);
-  if (!PiExcuteBeforeCurrentCheck(*piMeStmt)) {
+  if (!PiExecuteBeforeCurrentCheck(*piMeStmt)) {
     return true;
   }
   MeStmt *generatedByMeStmt = piMeStmt->GetGeneratedBy();

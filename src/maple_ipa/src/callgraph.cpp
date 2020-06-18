@@ -96,7 +96,7 @@ void CGNode::DumpDetail() const {
     LogInfo::MapleLogger() << std::endl;
   }
   if (HasSetVCallCandidates()) {
-    for (uint32 i = 0; i < vcallCands.size(); i++) {
+    for (uint32 i = 0; i < vcallCands.size(); ++i) {
       LogInfo::MapleLogger() << "   virtual call candidates: " << vcallCands[i]->GetName() << "\n";
     }
   }
@@ -327,6 +327,7 @@ CGNode *CallGraph::GetOrGenCGNode(PUIdx puIdx, bool isVcall, bool isIcall) {
   if (isVcall && !node->IsVcallCandidatesValid()) {
     MIRFunction *mirFunc = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(puIdx);
     Klass *klass = nullptr;
+    CHECK_NULL_FATAL(mirFunc);
     if (StringUtils::StartsWith(mirFunc->GetBaseClassName(), JARRAY_PREFIX_STR)) { // Array
       klass = klassh->GetKlassFromName(namemangler::kJavaLangObjectStr);
     } else {
@@ -422,8 +423,8 @@ void CallGraph::HandleBody(MIRFunction &func, BlockNode &body, CGNode &node, uin
     if (op == OP_comment) {
       continue;
     } else if (op == OP_doloop) {
-      DoloopNode *n = static_cast<DoloopNode*>(stmt);
-      HandleBody(func, *n->GetDoBody(), node, loopDepth + 1);
+      DoloopNode *doloopNode = static_cast<DoloopNode*>(stmt);
+      HandleBody(func, *doloopNode->GetDoBody(), node, loopDepth + 1);
     } else if (op == OP_dowhile || op == OP_while) {
       WhileStmtNode *n = static_cast<WhileStmtNode*>(stmt);
       HandleBody(func, *n->GetBody(), node, loopDepth + 1);
@@ -439,8 +440,8 @@ void CallGraph::HandleBody(MIRFunction &func, BlockNode &body, CGNode &node, uin
       switch (ct) {
         case kCallTypeVirtualCall: {
           PUIdx calleePUIdx = (static_cast<CallNode*>(stmt))->GetPUIdx();
-          MIRFunction *calleefunc = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(calleePUIdx);
-          CallInfo *callInfo = GenCallInfo(kCallTypeVirtualCall, calleefunc, stmt, loopDepth, stmt->GetStmtID());
+          MIRFunction *calleeFunc = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(calleePUIdx);
+          CallInfo *callInfo = GenCallInfo(kCallTypeVirtualCall, calleeFunc, stmt, loopDepth, stmt->GetStmtID());
           // Retype makes object type more inaccurate.
           StmtNode *stmtPrev = static_cast<StmtNode*>(stmt)->GetPrev();
           if (stmtPrev != nullptr && stmtPrev->GetOpCode() == OP_dassign) {
@@ -457,8 +458,8 @@ void CallGraph::HandleBody(MIRFunction &func, BlockNode &body, CGNode &node, uin
                 CHECK_FATAL(type->IsMIRPtrType(), "Must be ptr type.");
                 MIRPtrType *ptrType = static_cast<MIRPtrType*>(type);
                 MIRType *targetType = ptrType->GetPointedType();
-                MIRFunction *calleefuncT = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(calleePUIdx);
-                GStrIdx calleeFuncStrIdx = calleefuncT->GetBaseFuncNameWithTypeStrIdx();
+                MIRFunction *calleeFuncT = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(calleePUIdx);
+                GStrIdx calleeFuncStrIdx = calleeFuncT->GetBaseFuncNameWithTypeStrIdx();
                 Klass *klass = klassh->GetKlassFromTyIdx(targetType->GetTypeIndex());
                 if (klass != nullptr) {
                   const MIRFunction *method = klass->GetMethod(calleeFuncStrIdx);
@@ -467,7 +468,7 @@ void CallGraph::HandleBody(MIRFunction &func, BlockNode &body, CGNode &node, uin
                   } else {
                     std::string funcName = klass->GetKlassName();
                     funcName.append((namemangler::kNameSplitterStr));
-                    funcName.append(calleefuncT->GetBaseFuncNameWithType());
+                    funcName.append(calleeFuncT->GetBaseFuncNameWithType());
                     MIRFunction *methodT = mirBuilder->GetOrCreateFunction(funcName, (TyIdx) (PTY_void));
                     methodT->SetBaseClassNameStrIdx(klass->GetKlassNameStrIdx());
                     methodT->SetBaseFuncNameWithTypeStrIdx(calleeFuncStrIdx);
@@ -477,7 +478,7 @@ void CallGraph::HandleBody(MIRFunction &func, BlockNode &body, CGNode &node, uin
               }
             }
           }
-          // Add a call node whether or not the calleefunc has its body
+          // Add a call node whether or not the calleeFunc has its body
           CGNode *calleeNode = GetOrGenCGNode(calleePUIdx, true);
           CHECK_FATAL(calleeNode != nullptr, "calleenode is null");
           CHECK_FATAL(calleeNode->IsVcallCandidatesValid(), "vcall candidate must be valid");
@@ -523,7 +524,6 @@ void CallGraph::HandleBody(MIRFunction &func, BlockNode &body, CGNode &node, uin
           if (klass == nullptr) {  // Fix CI
             continue;
           }
-          ASSERT(klass != nullptr, "Klass not found");
           MapleVector<MIRFunction*> *cands = klass->GetCandidates(calleeFunc->GetBaseFuncNameWithTypeStrIdx());
           // continue to search its implinterfaces
           if (cands == nullptr) {
@@ -590,7 +590,7 @@ void CallGraph::AddCallGraphNode(MIRFunction &func) {
 }
 
 static void ResetInferredType(std::vector<MIRSymbol*> &inferredSymbols) {
-  for (unsigned int i = 0; i < inferredSymbols.size(); i++) {
+  for (unsigned int i = 0; i < inferredSymbols.size(); ++i) {
     inferredSymbols[i]->SetInferredTyIdx(TyIdx());
   }
   inferredSymbols.clear();
@@ -604,7 +604,7 @@ static void ResetInferredType(std::vector<MIRSymbol*> &inferredSymbols, MIRSymbo
     return;
   }
   unsigned int i = 0;
-  for (; i < inferredSymbols.size(); i++) {
+  for (; i < inferredSymbols.size(); ++i) {
     if (inferredSymbols[i] == s) {
       s->SetInferredTyIdx(TyIdx());
       inferredSymbols.erase(inferredSymbols.begin() + i);
@@ -616,7 +616,7 @@ static void ResetInferredType(std::vector<MIRSymbol*> &inferredSymbols, MIRSymbo
 static void SetInferredType(std::vector<MIRSymbol*> &inferredSymbols, MIRSymbol &s, TyIdx idx) {
   s.SetInferredTyIdx(idx);
   unsigned int i = 0;
-  for (; i < inferredSymbols.size(); i++) {
+  for (; i < inferredSymbols.size(); ++i) {
     if (inferredSymbols[i] == &s) {
       break;
     }
@@ -629,7 +629,7 @@ static void SetInferredType(std::vector<MIRSymbol*> &inferredSymbols, MIRSymbol 
 void IPODevirtulize::SearchDefInClinit(const Klass &klass) {
   MIRClassType *classType = static_cast<MIRClassType*>(klass.GetMIRStructType());
   std::vector<MIRSymbol*> staticFinalPrivateSymbols;
-  for (uint32 i = 0; i < classType->GetStaticFields().size(); i++) {
+  for (uint32 i = 0; i < classType->GetStaticFields().size(); ++i) {
     FieldAttrs attribute = classType->GetStaticFields()[i].second.second;
     if (attribute.GetAttr(FLDATTR_final)) {
       staticFinalPrivateSymbols.push_back(
@@ -659,7 +659,7 @@ void IPODevirtulize::SearchDefInClinit(const Klass &klass) {
         DassignNode *dassignNode = static_cast<DassignNode*>(stmt);
         MIRSymbol *leftSymbol = func->GetLocalOrGlobalSymbol(dassignNode->GetStIdx());
         unsigned i = 0;
-        for (; i < staticFinalPrivateSymbols.size(); i++) {
+        for (; i < staticFinalPrivateSymbols.size(); ++i) {
           if (staticFinalPrivateSymbols[i] == leftSymbol) {
             break;
           }
@@ -706,12 +706,12 @@ void IPODevirtulize::SearchDefInClinit(const Klass &klass) {
           // ignore all side effect of initizlizor
           continue;
         }
-        for (unsigned int i = 0; i < callNode->GetReturnVec().size(); i++) {
+        for (unsigned int i = 0; i < callNode->GetReturnVec().size(); ++i) {
           StIdx stIdx = callNode->GetReturnVec()[i].first;
           MIRSymbol *tmpSymbol = func->GetLocalOrGlobalSymbol(stIdx);
           ResetInferredType(gcmallocSymbols, tmpSymbol);
         }
-        for (size_t i = 0; i < callNode->GetNopndSize(); i++) {
+        for (size_t i = 0; i < callNode->GetNopndSize(); ++i) {
           BaseNode *node = callNode->GetNopndAt(i);
           CHECK_NULL_FATAL(node);
           if (node->GetOpCode() != OP_dread) {
@@ -741,7 +741,7 @@ void IPODevirtulize::SearchDefInMemberMethods(const Klass &klass) {
   SearchDefInClinit(klass);
   MIRClassType *classType = static_cast<MIRClassType*>(klass.GetMIRStructType());
   std::vector<FieldID> finalPrivateFieldID;
-  for (uint32 i = 0; i < classType->GetFieldsSize(); i++) {
+  for (uint32 i = 0; i < classType->GetFieldsSize(); ++i) {
     FieldAttrs attribute = classType->GetFields()[i].second.second;
     if (attribute.GetAttr(FLDATTR_final)) {
       FieldID id = mirBuilder->GetStructFieldIDFromFieldNameParentFirst(
@@ -762,7 +762,7 @@ void IPODevirtulize::SearchDefInMemberMethods(const Klass &klass) {
   }
   ASSERT(!initMethods.empty(), "Must have initializor");
   StmtNode *stmtNext = nullptr;
-  for (unsigned int i = 0; i < initMethods.size(); i++) {
+  for (unsigned int i = 0; i < initMethods.size(); ++i) {
     MIRFunction *func = initMethods[i];
     if (func->GetBody() == nullptr) {
       continue;
@@ -803,12 +803,12 @@ void IPODevirtulize::SearchDefInMemberMethods(const Klass &klass) {
             // ignore all side effect of initizlizor
             continue;
           }
-          for (size_t j = 0; j < callNode->GetReturnVec().size(); j++) {
+          for (size_t j = 0; j < callNode->GetReturnVec().size(); ++j) {
             StIdx stIdx = callNode->GetReturnVec()[j].first;
             MIRSymbol *tmpSymbol = func->GetLocalOrGlobalSymbol(stIdx);
             ResetInferredType(gcmallocSymbols, tmpSymbol);
           }
-          for (size_t j = 0; j < callNode->GetNopndSize(); j++) {
+          for (size_t j = 0; j < callNode->GetNopndSize(); ++j) {
             BaseNode *node = callNode->GetNopndAt(j);
             if (node->GetOpCode() != OP_dread) {
               continue;
@@ -835,7 +835,7 @@ void IPODevirtulize::SearchDefInMemberMethods(const Klass &klass) {
             // set field of current class
             FieldID fieldID = iassignNode->GetFieldID();
             unsigned j = 0;
-            for (; j < finalPrivateFieldID.size(); j++) {
+            for (; j < finalPrivateFieldID.size(); ++j) {
               if (finalPrivateFieldID[j] == fieldID) {
                 break;
               }
@@ -932,7 +932,7 @@ void DoDevirtual(const Klass &klass, const KlassHierarchy &klassh) {
                 std::vector<Klass*> klassVector;
                 klassVector.push_back(currKlass);
                 bool hasDevirtualed = false;
-                for (unsigned int index = 0; index < klassVector.size(); index++) {
+                for (unsigned int index = 0; index < klassVector.size(); ++index) {
                   Klass *tmpKlass = klassVector[index];
                   for (MIRFunction *const &method : tmpKlass->GetMethods()) {
                     if (calleeFunc->GetBaseFuncNameWithTypeStrIdx() == method->GetBaseFuncNameWithTypeStrIdx()) {
@@ -964,7 +964,7 @@ void DoDevirtual(const Klass &klass, const KlassHierarchy &klassh) {
                   }
                 }
                 if (hasDevirtualed) {
-                  for (size_t i = 0; i < calleeNode->GetNopndSize(); i++) {
+                  for (size_t i = 0; i < calleeNode->GetNopndSize(); ++i) {
                     BaseNode *node = calleeNode->GetNopndAt(i);
                     CHECK_NULL_FATAL(node);
                     if (node->GetOpCode() != OP_dread) {
@@ -976,7 +976,7 @@ void DoDevirtual(const Klass &klass, const KlassHierarchy &klassh) {
                   }
                   if (op == OP_interfacecallassigned || op == OP_virtualcallassigned) {
                     CallNode *callNode = static_cast<CallNode*>(stmt);
-                    for (unsigned int i = 0; i < callNode->GetReturnVec().size(); i++) {
+                    for (unsigned int i = 0; i < callNode->GetReturnVec().size(); ++i) {
                       StIdx stIdx = callNode->GetReturnVec()[i].first;
                       MIRSymbol *tmpSymbol = func->GetLocalOrGlobalSymbol(stIdx);
                       ResetInferredType(inferredSymbols, tmpSymbol);
@@ -1121,7 +1121,7 @@ void DoDevirtual(const Klass &klass, const KlassHierarchy &klassh) {
                   LogInfo::MapleLogger() << "    To  :" <<
                       GlobalTables::GetFunctionTable().GetFunctionFromPuidx(calleeNode->GetPUIdx())->GetName() << '\n';
                 }
-                for (size_t i = 0; i < calleeNode->GetNopndSize(); i++) {
+                for (size_t i = 0; i < calleeNode->GetNopndSize(); ++i) {
                   BaseNode *node = calleeNode->GetNopndAt(i);
                   if (node->GetOpCode() != OP_dread) {
                     continue;
@@ -1132,7 +1132,7 @@ void DoDevirtual(const Klass &klass, const KlassHierarchy &klassh) {
                 }
                 if (op == OP_interfacecallassigned || op == OP_virtualcallassigned) {
                   CallNode *callNode = static_cast<CallNode*>(stmt);
-                  for (unsigned int i = 0; i < callNode->GetReturnVec().size(); i++) {
+                  for (unsigned int i = 0; i < callNode->GetReturnVec().size(); ++i) {
                     StIdx stidx = callNode->GetReturnVec()[i].first;
                     MIRSymbol *tmpSymbol = func->GetLocalOrGlobalSymbol(stidx);
                     ResetInferredType(inferredSymbols, tmpSymbol);
@@ -1147,12 +1147,12 @@ void DoDevirtual(const Klass &klass, const KlassHierarchy &klassh) {
         case OP_call:
         case OP_callassigned: {
           CallNode *callNode = static_cast<CallNode*>(stmt);
-          for (size_t i = 0; i < callNode->GetReturnVec().size(); i++) {
+          for (size_t i = 0; i < callNode->GetReturnVec().size(); ++i) {
             StIdx stIdx = callNode->GetReturnVec()[i].first;
             MIRSymbol *tmpSymbol = func->GetLocalOrGlobalSymbol(stIdx);
             ResetInferredType(inferredSymbols, tmpSymbol);
           }
-          for (size_t i = 0; i < callNode->GetNopndSize(); i++) {
+          for (size_t i = 0; i < callNode->GetNopndSize(); ++i) {
             BaseNode *node = callNode->GetNopndAt(i);
             if (node->GetOpCode() != OP_dread) {
               continue;
@@ -1179,11 +1179,11 @@ void IPODevirtulize::DevirtualFinal() {
     if (klass->IsClass()) {
       MIRClassType *classType = static_cast<MIRClassType*>(klass->GetMIRStructType());
       // Initialize inferred type of member fileds as kInitTyidx
-      for (unsigned int i = 0; i < classType->GetFieldsSize(); i++) {  // Don't include parent's field
+      for (unsigned int i = 0; i < classType->GetFieldsSize(); ++i) {  // Don't include parent's field
         classType->SetElemInferredTyIdx(i, kInitTyIdx);
       }
       SearchDefInMemberMethods(*klass);
-      for (unsigned int i = 0; i < classType->GetFieldInferredTyIdx().size(); i++) {
+      for (unsigned int i = 0; i < classType->GetFieldInferredTyIdx().size(); ++i) {
         if (classType->GetElemInferredTyIdx(i) != kInitTyIdx && classType->GetElemInferredTyIdx(i) != kNoneTyIdx &&
             debugFlag) {
           FieldID tmpID = i;
@@ -1192,7 +1192,7 @@ void IPODevirtulize::DevirtualFinal() {
               GlobalTables::GetStrTable().GetStringFromStrIdx(pair.first) << '\n';
         }
       }
-      for (uint32 i = 0; i < classType->GetStaticFields().size(); i++) {
+      for (uint32 i = 0; i < classType->GetStaticFields().size(); ++i) {
         FieldAttrs attribute = classType->GetStaticFields()[i].second.second;
         if (GlobalTables::GetGsymTable().GetSymbolFromStrIdx(classType->GetStaticFields()[i].first) == nullptr) {
           continue;
@@ -1368,7 +1368,7 @@ void CallGraph::SetCompilationFunclist() const {
   mirModule->GetCompilationList().clear();
   mirModule->GetFunctionList().clear();
   const MapleVector<SCCNode*> &sccTopVec = GetSCCTopVec();
-  for (int i = sccTopVec.size() - 1; i >= 0; i--) {
+  for (int i = sccTopVec.size() - 1; i >= 0; --i) {
     SCCNode *sccNode = sccTopVec[i];
     std::sort(sccNode->GetCGNodes().begin(), sccNode->GetCGNodes().end(), CGNodeCompare);
     for (auto const kIt : sccNode->GetCGNodes()) {
@@ -1451,7 +1451,7 @@ void SCCNode::DumpCycle() const {
         CGNode *calleeNode = cgIt;
         if (calleeNode->GetSCCNode() == this) {
           unsigned int j = 0;
-          for (; j < invalidNodes.size(); j++) {
+          for (; j < invalidNodes.size(); ++j) {
             if (invalidNodes[j] == calleeNode) {
               break;
             }
@@ -1460,7 +1460,7 @@ void SCCNode::DumpCycle() const {
           if (j < invalidNodes.size()) {
             continue;
           }
-          for (j = 0; j < searched.size(); j++) {
+          for (j = 0; j < searched.size(); ++j) {
             if (searched[j] == calleeNode) {
               break;
             }
@@ -1483,7 +1483,7 @@ void SCCNode::DumpCycle() const {
       currNode = searched[searched.size() - 1];
     }
   }
-  for (auto it = searched.begin(); it != searched.end(); it++) {
+  for (auto it = searched.begin(); it != searched.end(); ++it) {
     LogInfo::MapleLogger() << (*it)->GetMIRFunction()->GetName() << '\n';
   }
 }
@@ -1513,7 +1513,7 @@ void SCCNode::Setup() {
         calleeScc.insert(calleeNode->GetSCCNode());
       }
     }
-    for (auto itCaller = node->CallerBegin(); itCaller != node->CallerEnd(); itCaller++) {
+    for (auto itCaller = node->CallerBegin(); itCaller != node->CallerEnd(); ++itCaller) {
       CGNode *callerNode = *itCaller;
       if (callerNode->GetSCCNode() == this) {
         continue;
@@ -1531,7 +1531,7 @@ void CallGraph::BuildSCCDFS(CGNode &caller, uint32 &visitIndex, std::vector<SCCN
   cgNodes.at(id) = &caller;
   visitedOrder.at(id) = visitIndex;
   lowestOrder.at(id) = visitIndex;
-  visitIndex++;
+  ++visitIndex;
   visitStack.push_back(id);
   inStack.at(id) = true;
   for (auto &callSite : caller.GetCallee()) {
@@ -1618,7 +1618,7 @@ void CallGraph::SCCTopologicalSort(const std::vector<SCCNode*> &sccNodes) {
     }
   }
   // Top-down iterates all nodes
-  for (unsigned i = 0; i < sccTopologicalVec.size(); i++) {
+  for (unsigned i = 0; i < sccTopologicalVec.size(); ++i) {
     SCCNode *sccNode = sccTopologicalVec[i];
     for (SCCNode *callee : sccNode->GetCalleeScc()) {
       if (inQueue.find(callee) == inQueue.end()) {

@@ -13,7 +13,6 @@
  * See the Mulan PSL v1 for more details.
  */
 #include "retype.h"
-#include <iostream>
 #include <algorithm>
 
 namespace maple {

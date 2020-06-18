@@ -239,7 +239,7 @@ class MeABC {
   ESSABaseNode *GetOrCreateRHSNode(MeExpr &expr);
   void BuildPhiInGraph(MePhiNode &phi);
   void BuildSoloPiInGraph(const PiassignMeStmt &piMeStmt);
-  bool PiExcuteBeforeCurrentCheck(const PiassignMeStmt &piMeStmt);
+  bool PiExecuteBeforeCurrentCheck(const PiassignMeStmt &piMeStmt);
   bool BuildArrayCheckInGraph(MeStmt &meStmt);
   bool BuildBrMeStmtInGraph(MeStmt &meStmt);
   bool BuildAssignInGraph(MeStmt &meStmt);

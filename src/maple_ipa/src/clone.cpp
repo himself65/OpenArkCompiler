@@ -15,7 +15,7 @@
 #include "clone.h"
 #include <iostream>
 #include <algorithm>
-#include <mir_symbol.h>
+#include "mir_symbol.h"
 
 // For some funcs, when we can ignore their return-values, we clone a new func of
 // them without return-values. We configure a list to save these funcs and clone

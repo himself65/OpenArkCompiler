@@ -41,7 +41,7 @@ void OptionParser::InsertExtraUsage(const Descriptor &usage) {
       InsertOption(usage.longOption, tempUsage);
     }
     rawUsages.push_back(tempUsage);
-    index++;
+    ++index;
   }
 }
 

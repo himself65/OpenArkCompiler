@@ -148,8 +148,8 @@ class AnalysisResultManager {
     std::pair<PhaseIDT, UnitIR*> key = std::make_pair(id, ir);
     auto it = analysisResults.find(key);
     if (it != analysisResults.end()) {
-      AnalysisResult *r = analysisResults[key];
-      r->EraseMemPool();
+      AnalysisResult *result = analysisResults[key];
+      result->EraseMemPool();
       analysisResults.erase(it);
     }
   }
@@ -164,9 +164,9 @@ class AnalysisResultManager {
 
   void InvalidAllResults() {
     for (auto it = analysisResults.begin(); it != analysisResults.end(); ++it) {
-      AnalysisResult *r = it->second;
-      ASSERT(r != nullptr, "r is null in AnalysisResultManager::InvalidAllResults");
-      r->EraseMemPool();
+      AnalysisResult *result = it->second;
+      ASSERT(result != nullptr, "result is null in AnalysisResultManager::InvalidAllResults");
+      result->EraseMemPool();
     }
     analysisResults.clear();
   }

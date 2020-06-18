@@ -163,7 +163,7 @@ class LogInfo {
     fclose(outStream);
   }
 
-  static std::ostream &MapleLogger(LogLevel l = kLlLog);
+  static std::ostream &MapleLogger(LogLevel level = kLlLog);
   static std::ios::fmtflags flags();
   void EmitLogForUser(enum LogNumberCode num, enum LogLevel ll, const char *fmt, ...) const;
   void EmitLogForUser(enum LogNumberCode num, enum LogLevel ll, const std::string &message) const;
