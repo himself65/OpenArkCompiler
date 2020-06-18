@@ -26,7 +26,8 @@ using namespace maple;
 BECommon::BECommon(MIRModule &mod)
     : mirModule(mod),
       typeSizeTable(GlobalTables::GetTypeTable().GetTypeTable().size(), 0, mirModule.GetMPAllocator().Adapter()),
-      tableAlignTable(GlobalTables::GetTypeTable().GetTypeTable().size(), 0, mirModule.GetMPAllocator().Adapter()),
+      tableAlignTable(GlobalTables::GetTypeTable().GetTypeTable().size(), mirModule.IsCModule(),
+          mirModule.GetMPAllocator().Adapter()),
       structFieldCountTable(GlobalTables::GetTypeTable().GetTypeTable().size(),
                             0, mirModule.GetMPAllocator().Adapter()),
       jClassLayoutTable(mirModule.GetMPAllocator().Adapter()) {
@@ -586,7 +587,7 @@ bool BECommon::TyIsInSizeAlignTable(const MIRType &ty) const {
 
 void BECommon::AddAndComputeSizeAlign(MIRType &ty) {
   CHECK_FATAL(ty.GetTypeIndex() == typeSizeTable.size(), "make sure the ty idx is exactly the table size");
-  tableAlignTable.push_back(0);
+  tableAlignTable.push_back(mirModule.IsCModule());
   typeSizeTable.push_back(0);
   ComputeTypeSizesAligns(ty);
 }
