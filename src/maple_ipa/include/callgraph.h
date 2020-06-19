@@ -170,7 +170,7 @@ class CGNode {
     return vcallCands;
   }
 
-  /* add caller to CGNode */
+  // add caller to CGNode
   void AddCaller(CGNode *caller) {
     callerSet.insert(caller);
   }
@@ -408,7 +408,7 @@ class CallGraph : public AnalysisResult {
     return mirModule->IsInIPA();
   }
 
-  /* iterator */
+  // iterator
   using iterator = MapleMap<MIRFunction*, CGNode*>::iterator;
   iterator Begin() {
     return nodesMap.begin();
@@ -446,11 +446,11 @@ class CallGraph : public AnalysisResult {
   MIRBuilder *mirBuilder;
   CGNode *entryNode;  // For main function, nullptr if there is multiple entries
   MapleVector<CGNode*> rootNodes;
-  std::string fileName; /* used for output dot file */
+  std::string fileName; // used for output dot file
   KlassHierarchy *klassh;
   MapleMap<MIRFunction*, CGNode*, NodeComparator> nodesMap;
   MapleVector<SCCNode*> sccTopologicalVec;
-  CGNode *callExternal = nullptr; /* Auxiliary node used in icall/intrinsic call */
+  CGNode *callExternal = nullptr; // Auxiliary node used in icall/intrinsic call
   uint32 numOfNodes;
   uint32 numOfSccs;
   std::unordered_set<uint64> callsiteHash;

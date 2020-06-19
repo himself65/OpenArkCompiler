@@ -582,7 +582,7 @@ void CallGraph::AddCallGraphNode(MIRFunction &func) {
   CHECK_FATAL(node != nullptr, "node is null in CallGraph::GenCallGraph");
   BlockNode *body = func.GetBody();
   HandleBody(func, *body, *node, 0);
-  /* set root if current function is static main */
+  // set root if current function is static main
   if (func.GetName() == mirModule->GetEntryFuncName()) {
     mirModule->SetEntryFunction(&func);
     entryNode = node;
@@ -1428,13 +1428,14 @@ bool SCCNode::HasSelfRecursion() const {
 }
 
 void SCCNode::Dump() const {
-  printf("SCC %d contains\n", id);
+  LogInfo::MapleLogger() << "SCC " << id << " contains\n";
   for (auto const kIt : cgNodes) {
     CGNode *node = kIt;
     if (node->GetMIRFunction()) {
-      printf("  function(%d): %s\n", node->GetMIRFunction()->GetPuidx(), node->GetMIRFunction()->GetName().c_str());
+      LogInfo::MapleLogger() << "  function(" << node->GetMIRFunction()->GetPuidx() << "): " <<
+          node->GetMIRFunction()->GetName() << "\n";
     } else {
-      printf("  function: external\n");
+      LogInfo::MapleLogger() << "  function: external\n";
     }
   }
 }
@@ -1641,7 +1642,7 @@ void CallGraph::SCCTopologicalSort(const std::vector<SCCNode*> &sccNodes) {
 }
 
 void CGNode::AddCandsForCallNode(const KlassHierarchy &kh) {
-  /* already set vcall candidates information */
+  // already set vcall candidates information
   if (HasSetVCallCandidates()) {
     return;
   }
@@ -1662,7 +1663,7 @@ MIRFunction *CGNode::HasOneCandidate() const {
     ++count;
     cand = mirFunc;
   }
-  /* scan candidates */
+  // scan candidates
   for (uint32 i = 0; i < vcallCands.size(); ++i) {
     if (vcallCands[i] == nullptr) {
       CHECK_FATAL(false, "must not be nullptr");

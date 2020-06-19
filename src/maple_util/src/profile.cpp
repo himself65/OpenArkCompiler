@@ -500,6 +500,7 @@ void Profile::DumpFuncIRProfUseInfo() const {
 void Profile::Dump() const {
   std::ofstream outFile;
   outFile.open("prof.dump");
+  CHECK_FATAL(!outFile.is_open(), "open file failed");
   outFile << "classMeta profile start " <<'\n';
   for (const auto &item : classMeta) {
     outFile << item << '\n';
