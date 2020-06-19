@@ -147,6 +147,9 @@ bool MIRBuilder::TraverseToNamedFieldWithTypeAndMatchStyle(MIRStructType &struct
     unsigned int style = matchStyle & kMatchAnyField;
     if (fieldType->IsStructType()) {
       auto *subStructType = static_cast<MIRStructType*>(fieldType);
+      if (subStructType->GetKind() == kTypeUnion) {
+        continue;
+      }
       if (TraverseToNamedFieldWithTypeAndMatchStyle(*subStructType, nameIdx, typeIdx, fieldID, style)) {
         return true;
       }
