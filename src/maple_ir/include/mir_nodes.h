@@ -460,16 +460,8 @@ class IreadNode : public UnaryNode {
     return *base;
   }
 
-  bool IsVolatile() const {
-    MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
-    ASSERT(type != nullptr, "null ptr check");
-    if (fieldID == 0) {
-      return (type->HasVolatileField());
-    }
-    ASSERT(type->IsStructType(), "Agg type check");
-    auto *structType = static_cast<MIRStructType*>(type);
-    return structType->IsFieldVolatile(fieldID);
-  }
+  bool IsVolatile() const;
+
  protected:
   TyIdx tyIdx = TyIdx(0);
   FieldID fieldID = 0;
@@ -1554,6 +1546,8 @@ class IassignNode : public StmtNode {
     rhs = node;
   }
 
+  bool AssigningVolatile() const;
+
  private:
   TyIdx tyIdx;
   FieldID fieldID;
@@ -2025,6 +2019,8 @@ class DassignNode : public UnaryStmtNode {
   void SetFieldID(FieldID f) {
     fieldID = f;
   }
+
+  bool AssigningVolatile(const MIRModule &mod) const;
 
  private:
   StIdx stIdx;
