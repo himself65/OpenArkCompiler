@@ -672,7 +672,7 @@ bool DuplicateBBPattern::Optimize(BB &curBB) {
 
 #if TARGARM32
   FOR_BB_INSNS(insn, (&curBB)) {
-    if (insn->IsPCLoad()) {
+    if (insn->IsPCLoad() || insn->IsClinit()) {
       return false;
     }
   }
