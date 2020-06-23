@@ -334,6 +334,7 @@ void DriverRunner::RunCGFunctions(CG &cg, CgFuncPhaseManager &cgfpm) const {
   mirLowerer.Init();
   CGLowerer theLowerer(*theModule, *beCommon, cg.GenerateExceptionHandlingCode(), cg.GenerateVerboseCG());
   theLowerer.RegisterBuiltIns();
+  theLowerer.InitArrayClassCacheTableIndex();
   theLowerer.RegisterExternalLibraryFunctions();
   theLowerer.SetCheckLoadStore(CGOptions::IsCheckArrayStore());
 

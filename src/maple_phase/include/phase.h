@@ -99,7 +99,7 @@ class Phase {
   MemPoolCtrler *mpCtrler = &memPoolCtrler;
 };
 
-template <typename UnitIR, typename PhaseIDT, typename PhaseT>
+template<typename UnitIR, typename PhaseIDT, typename PhaseT>
 class AnalysisResultManager {
  public:
   explicit AnalysisResultManager(MapleAllocator *alloc)

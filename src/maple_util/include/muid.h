@@ -66,11 +66,11 @@ class MUID {
  public:
   union {
 #ifdef USE_64BIT_MUID
-    uint32_t words[kNumLowAndHigh];
+    uint32_t words[kNumLowAndHigh] = { 0 };
     uint8_t bytes[kMuidLength];
     uint64_t raw;
 #else
-    uint64_t words[kNumLowAndHigh];
+    uint64_t words[kNumLowAndHigh] = { 0 };
     uint8_t bytes[kMuidLength];
 #endif // USE_64BIT_MUID
   } data;

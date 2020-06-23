@@ -527,9 +527,15 @@ class MIRFunction {
   const MIRInfoVector &GetInfoVector() const {
     return info;
   }
+
+  const MIRInfoPair &GetInfoPair(size_t i) const {
+    return info.at(i);
+  }
+
   void PushbackMIRInfo(const MIRInfoPair &pair) {
     info.push_back(pair);
   }
+
   void SetMIRInfoNum(size_t idx, uint32 num) {
     info[idx].second = num;
   }

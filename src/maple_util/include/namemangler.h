@@ -156,6 +156,8 @@ static constexpr const char kCallFastNativeExt[] = "MCC_CallFastNativeExt";
 static constexpr const char kCallSlowNativeExt[] = "MCC_CallSlowNativeExt";
 static constexpr const char kSetReliableUnwindContextFunc[] = "MCC_SetReliableUnwindContext";
 
+static constexpr const char kArrayClassCacheTable[] = "__arrayClassCacheTable";
+static constexpr const char kArrayClassCacheNameTable[] = "__muid_ro_arrayClassCacheNameTable";
 static constexpr const char kFunctionLayoutStr[] = "__func_layout__";
 
 static constexpr const char kFunctionProfileTabPrefixStr[] = "__muid_profile_func_tab";

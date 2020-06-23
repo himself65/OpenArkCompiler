@@ -347,6 +347,8 @@ class MIRSymbol {
   bool IsMuidDataUndefMuidTab() const;
   bool IsMuidFuncMuidIdxMuidTab() const;
   bool IsMuidRangeTab() const;
+  bool IsArrayClassCache() const;
+  bool IsArrayClassCacheName() const;
   bool IsGctibSym() const;
   bool IsPrimordialObject() const;
   bool IgnoreRC() const;

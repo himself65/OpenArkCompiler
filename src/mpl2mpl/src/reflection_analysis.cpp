@@ -148,7 +148,7 @@ std::string ReflectionAnalysis::strTabRunHot = std::string(1, '\0');
 bool ReflectionAnalysis::strTabInited = false;
 
 void ReflectionAnalysis::GenFieldTypeClassInfo(const MIRType &type, const Klass &klass, std::string &classInfo,
-                         const std::string fieldName, bool &isClass) {
+                                               const std::string fieldName, bool &isClass) {
   switch (type.GetKind()) {
     case kTypeScalar: {
       isClass = false;

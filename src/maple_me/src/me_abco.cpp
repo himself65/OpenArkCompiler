@@ -1332,7 +1332,7 @@ void MeABC::CollectCareInsns() {
   CHECK_FATAL(arrayNewChecks.size() == arrayChecks.size(), "must be");
 }
 
-bool MeABC::ProveGreaterZ(MeExpr &weight) {
+bool MeABC::ProveGreaterZ(const MeExpr &weight) {
   ESSABaseNode &zNode = inequalityGraph->GetNode(0);
   ESSABaseNode *idxNode = &(inequalityGraph->GetNode(weight));
   bool lowerResult = prove->DemandProve(zNode, *idxNode, kLower);

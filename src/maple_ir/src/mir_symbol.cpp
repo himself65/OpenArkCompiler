@@ -158,6 +158,14 @@ bool MIRSymbol::IsMuidRangeTab() const {
   return StringUtils::StartsWith(GetName(), kMuidRangeTabPrefixStr);
 }
 
+bool MIRSymbol::IsArrayClassCache() const {
+  return StringUtils::StartsWith(GetName(), kArrayClassCacheTable);
+}
+
+bool MIRSymbol::IsArrayClassCacheName() const {
+  return StringUtils::StartsWith(GetName(), kArrayClassCacheNameTable);
+}
+
 bool MIRSymbol::IsClassInitBridge() const {
   return StringUtils::StartsWith(GetName(), CLASS_INIT_BRIDGE_PREFIX_STR);
 }

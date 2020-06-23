@@ -196,6 +196,7 @@ class AArch64CGFunc : public CGFunc {
   void SelectRangeGoto(RangeGotoNode &rangeGotoNode, Operand &opnd0) override;
   Operand *SelectLazyLoad(Operand &opnd0, PrimType primType) override;
   Operand *SelectLazyLoadStatic(MIRSymbol &st, int64 offset, PrimType primType) override;
+  Operand *SelectLoadArrayClassCache(MIRSymbol &st, int64 offset, PrimType primType) override;
   RegOperand &SelectCopy(Operand &src, PrimType stype, PrimType dtype) override;
   void SelectCopy(Operand &dest, PrimType dtype, Operand &src, PrimType stype);
   void SelectCopyImm(Operand &dest, ImmOperand &src, PrimType dtype);
@@ -466,6 +467,8 @@ class AArch64CGFunc : public CGFunc {
   InsnVisitor *NewInsnModifier() override {
     return memPool->New<AArch64InsnVisitor>(*this);
   }
+
+  RegType GetRegisterType(regno_t reg) const override;
 
  private:
   enum RelationOperator : uint8 {

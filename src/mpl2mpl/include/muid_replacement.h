@@ -52,7 +52,9 @@ enum RangeIdx {
   kDecoupleStaticValue = 19,
   kBssStart = 20,
   kLinkerSoHash = 21,
-  kNewMaxNum = 22 // New num
+  kArrayClassCache = 22,
+  kArrayClassCacheName = 23,
+  kNewMaxNum = 24 // New num
 };
 
 class MUIDReplacement : public FuncOptimizeImpl {
@@ -118,6 +120,11 @@ class MUIDReplacement : public FuncOptimizeImpl {
   void CollectSuperClassArraySymbolData();
   static MIRSymbol *GetSymbolFromName(const std::string &name);
   ConstvalNode* GetConstvalNode(int64 index);
+  void InsertArrayClassSet(const MIRType &type);
+  MIRType *GetIntrinsicConstArrayClass(StmtNode &stmt);
+  void CollectArrayClass();
+  void GenArrayClassCache();
+  std::unordered_set<std::string> arrayClassSet;
   // The following sets are for internal uses. Sorting order does not matter here.
   std::unordered_set<MIRFunction*> funcDefSet;
   std::unordered_set<MIRFunction*> funcUndefSet;

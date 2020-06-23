@@ -30,23 +30,24 @@ struct RegList {
 class RegPressure {
  public:
   explicit RegPressure(MapleAllocator &alloc)
-      : uses(alloc.Adapter()), defs(alloc.Adapter()),
-        regUses(alloc.Adapter()) {}
+      : regUses(alloc.Adapter()), regDefs(alloc.Adapter()),
+        pressure(alloc.Adapter()), deadDefNum(alloc.Adapter()) {}
 
   virtual ~RegPressure() = default;
 
   void DumpRegPressure() const;
 
-  void AddUseReg(regno_t regNO) {
-    uses.insert(regNO);
-  }
-
-  void AddDefReg(regno_t regNO) {
-    defs.insert(regNO);
-  }
-
   void SetRegUses(regno_t regNO, RegList *regList) {
-    regUses.insert(std::pair<regno_t, RegList*>(regNO, regList));
+    regUses.insert(std::make_pair(regNO, regList));
+  }
+
+  void SetRegDefs(regno_t regNO, RegList *regList) {
+    auto it = regDefs.find(regNO);
+    if (it == regDefs.end()) {
+      regDefs.insert(std::make_pair(regNO, regList));
+    } else {
+      it->second = regList;
+    }
   }
 
   static void SetMaxRegClassNum(int32 maxClassNum) {
@@ -88,13 +89,8 @@ class RegPressure {
   void SetIncPressure(bool value) {
     incPressure = value;
   }
-
-  const int32 *GetPressure() const {
+  const MapleVector<int32> &GetPressure() const {
     return pressure;
-  }
-
-  void SetPressure(int32 *pressure) {
-    this->pressure = pressure;
   }
 
   void IncPressureByIndex(int32 index) {
@@ -106,30 +102,36 @@ class RegPressure {
   }
 
   void InitPressure() {
-    FOR_ALL_REGCLASS(i) {
-      pressure[i] = 0;
-      incPressure = false;
-    }
+    pressure.resize(maxRegClassNum, 0);
+    deadDefNum.resize(maxRegClassNum, 0);
+    incPressure = false;
   }
 
-  const MapleSet<regno_t> &GetUses() const {
-    return uses;
+  const MapleVector<int32> &GetDeadDefNum() const {
+    return deadDefNum;
   }
 
-  const MapleSet<regno_t> &GetDefs() const {
-    return defs;
+  void IncDeadDefByIndex(int32 index) {
+    ++deadDefNum[index];
   }
 
-  const MapleMap<regno_t, RegList*> &GetRegUses() const {
+  const MapleUnorderedMap<regno_t, RegList*> &GetRegUses() const {
     return regUses;
   }
 
+  const MapleUnorderedMap<regno_t, RegList*> &GetRegDefs() const {
+    return regDefs;
+  }
+
  private:
-  MapleSet<regno_t> uses;
-  MapleSet<regno_t> defs;
   /* save reglist of every uses'register */
-  MapleMap<regno_t, RegList*> regUses;
-  int32 *pressure = nullptr;
+  MapleUnorderedMap<regno_t, RegList*> regUses;
+  /* save reglist of every defs'register */
+  MapleUnorderedMap<regno_t, RegList*> regDefs;
+  /* the number of the node needs registers */
+  MapleVector<int32> pressure;
+  /* the count of dead define registers */
+  MapleVector<int32> deadDefNum;
   /* max number of reg's class */
   static int32 maxRegClassNum;
   int32 priority = 0;

@@ -193,6 +193,7 @@ class CGLowerer {
 
   /* if it defines a built-in to use for the given intrinsic, return the name. otherwise, return nullptr */
   PUIdx GetBuiltinToUse(BuiltinFunctionID id) const;
+  void InitArrayClassCacheTableIndex();
 
   MIRModule &mirModule;
   BECommon &beCommon;
@@ -256,6 +257,7 @@ class CGLowerer {
   BlockNode *GenBlockNode(StmtNode &newCall, const CallReturnVector &p2nRets, const Opcode &opcode,
                           const PUIdx &funcCalled, bool handledAtLowerLevel);
   BaseNode *GetClassInfoExprFromRuntime(const std::string &classInfo);
+  BaseNode *GetClassInfoExprFromArrayClassCache(const std::string &classInfo);
   BaseNode *GetClassInfoExpr(const std::string &classInfo);
   BaseNode *GetBaseNodeFromCurFunc(MIRFunction &curFunc, bool isJarray);
 
@@ -267,6 +269,7 @@ class CGLowerer {
   MIRBuilder *mirBuilder = nullptr;
   uint32 labelIdx = 0;
   static std::unordered_map<IntrinDesc*, PUIdx> intrinFuncIDs;
+  static std::unordered_map<std::string, size_t> arrayClassCacheIndex;
 };
 }  /* namespace maplebe */
 

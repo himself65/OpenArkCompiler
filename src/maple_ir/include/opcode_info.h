@@ -50,7 +50,7 @@ constexpr unsigned long OPCODEMAYTHROWEXCEPTION = 1ULL << kOpcodePropMayThrowExc
 struct OpcodeDesc {
   uint8 instrucSize;  // size of instruction in bytes
   uint16 flag;        // stores the opcode property flags
-  const char *name;
+  std::string name;
 };
 
 class OpcodeTable {
@@ -123,7 +123,7 @@ class OpcodeTable {
     return MayThrowException(o);
   }
 
-  const char *GetName(Opcode o) const {
+  const std::string &GetName(Opcode o) const {
     ASSERT(o < OP_last, "invalid opcode");
     return table[o].name;
   }

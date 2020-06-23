@@ -67,7 +67,7 @@ void Retype::RetypeStmt(MIRFunction &func) {
     if (stmt.GetOpCode() == OP_comment) {
       continue;
     }
-    for (size_t i = 0; i < stmt.NumOpnds(); i++) {
+    for (size_t i = 0; i < stmt.NumOpnds(); ++i) {
       BaseNode *opnd = stmt.Opnd(i);
       if (opnd->GetOpCode() == OP_retype) {
         stmt.SetOpnd(opnd->Opnd(0), i);

@@ -2134,6 +2134,10 @@ class RangeGotoNode : public UnaryStmtNode {
     return rangegotoTable;
   }
 
+  const SmallCasePair &GetRangeGotoTableItem(size_t i) const {
+    return rangegotoTable.at(i);
+  }
+
   void SetRangeGotoTable(SmallCaseVector rt) {
     rangegotoTable = rt;
   }

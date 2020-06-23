@@ -58,7 +58,7 @@ class ReplaceRetIgnored {
 class Clone : public AnalysisResult {
  public:
   Clone(MIRModule *mod, MemPool *memPool, MIRBuilder &builder, KlassHierarchy *kh)
-      : AnalysisResult(memPool), mirModule(mod), allocator(memPool), dexBuilder(builder), kh(kh),
+      : AnalysisResult(memPool), mirModule(mod), allocator(memPool), mirBuilder(builder), kh(kh),
         replaceRetIgnored(memPool->New<ReplaceRetIgnored>(memPool)) {}
 
   ~Clone() = default;
@@ -72,8 +72,8 @@ class Clone : public AnalysisResult {
   void DoClone();
   void CopyFuncInfo(const MIRFunction &originalFunction, MIRFunction &newFunc) const;
   void UpdateFuncInfo(MIRFunction &newFunc);
-  void CloneArgument(MIRFunction &riginalFunction, ArgVector &argument) const;
-  ReplaceRetIgnored *GetReplaceRetIgnored() {
+  void CloneArgument(MIRFunction &originalFunction, ArgVector &argument) const;
+  ReplaceRetIgnored *GetReplaceRetIgnored() const {
     return replaceRetIgnored;
   }
 
@@ -82,7 +82,7 @@ class Clone : public AnalysisResult {
  private:
   MIRModule *mirModule;
   MapleAllocator allocator;
-  MIRBuilder &dexBuilder;
+  MIRBuilder &mirBuilder;
   KlassHierarchy *kh;
   ReplaceRetIgnored *replaceRetIgnored;
 };
@@ -93,7 +93,7 @@ class DoClone : public ModulePhase {
 
   virtual ~DoClone() = default;
 
-  AnalysisResult *Run(MIRModule *module, ModuleResultMgr *m) override;
+  AnalysisResult *Run(MIRModule *module, ModuleResultMgr *mgr) override;
   std::string PhaseName() const override {
     return "clone";
   }

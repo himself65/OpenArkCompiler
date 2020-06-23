@@ -21,7 +21,7 @@
 namespace maplebe {
 using namespace maple;
 namespace {
-constexpr maple::uint32 kMaxDependenceNum = 100;
+constexpr maple::uint32 kMaxDependenceNum = 200;
 };
 
 

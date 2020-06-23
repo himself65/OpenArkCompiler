@@ -207,7 +207,7 @@ class ScalarMeExpr : public MeExpr {
 
   ~ScalarMeExpr() = default;
 
-  bool IsIdentical(MeExpr&) {
+  bool IsIdentical(MeExpr&) const {
     CHECK_FATAL(false, "ScalarMeExpr::IsIdentical() should not be called");
     return true;
   }

@@ -39,7 +39,7 @@ const char *GetIntrinsicName(MIRIntrinsicID intrn) {
 }
 
 const char *BaseNode::GetOpName() const {
-  return kOpcodeInfo.GetTableItemAt(GetOpCode()).name;
+  return kOpcodeInfo.GetTableItemAt(GetOpCode()).name.c_str();
 }
 
 bool BaseNode::MayThrowException() {

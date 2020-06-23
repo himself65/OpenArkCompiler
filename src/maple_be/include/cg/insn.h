@@ -209,6 +209,10 @@ class Insn {
     return false;
   }
 
+  virtual bool IsArrayClassCache() const {
+    return false;
+  }
+
   virtual bool IsReturn() const {
     return false;
   }

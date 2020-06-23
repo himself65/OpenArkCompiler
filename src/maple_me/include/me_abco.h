@@ -255,7 +255,7 @@ class MeABC {
   bool CleanABCInStmt(MeStmt &meStmt, NaryMeExpr &naryMeExpr);
   MeExpr *ReplaceArrayExpr(MeExpr &rhs, MeExpr &naryMeExpr, MeStmt *ivarStmt);
   bool HasRelativeWithLength(MeExpr &meExpr);
-  bool ProveGreaterZ(MeExpr &weight);
+  bool ProveGreaterZ(const MeExpr &weight);
   void ReSolveEdge();
   Dominance *GetDominace() {
     return dom;

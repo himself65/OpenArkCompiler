@@ -3612,6 +3612,13 @@ Operand *AArch64CGFunc::SelectLazyLoadStatic(MIRSymbol &st, int64 offset, PrimTy
   return &resOpnd;
 }
 
+Operand *AArch64CGFunc::SelectLoadArrayClassCache(MIRSymbol &st, int64 offset, PrimType primType) {
+  StImmOperand &srcOpnd = CreateStImmOperand(st, offset, 0);
+  RegOperand &resOpnd = CreateRegisterOperandOfType(primType);
+  GetCurBB()->AppendInsn(GetCG()->BuildInstruction<AArch64Insn>(MOP_arrayclass_cache_ldr, resOpnd, srcOpnd));
+  return &resOpnd;
+}
+
 Operand *AArch64CGFunc::SelectAlloca(UnaryNode &node, Operand &opnd0) {
   ASSERT((node.GetPrimType() == PTY_a64), "wrong type");
   PrimType stype = node.Opnd(0)->GetPrimType();
@@ -6216,5 +6223,15 @@ RegOperand *AArch64CGFunc::SelectStoreExcl(PrimType valPty, AArch64MemOperand &l
   GetCurBB()->AppendInsn(GetCG()->BuildInstruction<AArch64Insn>(mOp, result, newVal, loc));
 
   return &result;
+}
+
+RegType AArch64CGFunc::GetRegisterType(regno_t reg) const {
+  if (AArch64isa::IsPhysicalRegister(reg)) {
+    return AArch64isa::GetRegType(static_cast<AArch64reg>(reg));
+  } else if (reg == kRFLAG) {
+    return kRegTyCc;
+  } else {
+    return CGFunc::GetRegisterType(reg);
+  }
 }
 }  /* namespace maplebe */

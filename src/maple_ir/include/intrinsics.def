@@ -39,6 +39,8 @@ DEF_MIR_INTRINSIC(MPL_READ_OVTABLE_ENTRY_FIELD_LAZY,\
                   "__mpl_const_offset_field_lazy", INTRNISPURE, kArgTyA32, kArgTyDynany, kArgTyDynany, kArgTyDynany, kArgTyUndef, kArgTyUndef, kArgTyUndef)
 DEF_MIR_INTRINSIC(MPL_BOUNDARY_CHECK,\
                   "", INTRNISJAVA | INTRNNOSIDEEFFECT, kArgTyVoid, kArgTyU1, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef, kArgTyUndef)
+DEF_MIR_INTRINSIC(MPL_READ_ARRAYCLASS_CACHE_ENTRY,\
+                  "__mpl_const_arrayclass_cache", kIntrnUndef, kArgTyPtr, kArgTyU32, kArgTyDynany, kArgTyDynany, kArgTyUndef, kArgTyUndef, kArgTyUndef)
 
 // start of RC Intrinsics with one parameters
 DEF_MIR_INTRINSIC(MCCIncRef,\
