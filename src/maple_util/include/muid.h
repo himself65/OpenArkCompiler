@@ -116,21 +116,12 @@ class MUID {
 #endif // USE_64BIT_MUID
     return sbuf.str();
   }
-
-  // Return 64-bit size hash for AArch64.
-  uint64_t hash() const {
-#ifdef USE_64BIT_MUID
-    return data.raw;
-#else
-    return data.words[0]; // Just return one word.
-#endif // USE_64BIT_MUID
-  }
 };
 
 void MuidInit(MuidContext &status);
 void MuidDecode(MuidContext &status, const unsigned char &data, uint64_t size);
 
-template <typename T>
+template<typename T>
 void FullEncode(T &result, MuidContext &status);
 void MuidEncode(unsigned char (&result)[kDigestShortHashLength], MuidContext &status);
 void MuidEncode(unsigned char (&result)[kDigestHashLength], MuidContext &status, bool use64Bit = false);
