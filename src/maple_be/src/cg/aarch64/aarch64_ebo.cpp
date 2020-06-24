@@ -677,6 +677,9 @@ bool AArch64Ebo::SpecialSequence(Insn &insn, const MapleVector<OpndInfo*> &origI
 
       if ((baseInfo != nullptr) && (baseInfo->insn != nullptr)) {
         Insn *insn1 = baseInfo->insn;
+        if (insn1->GetBB() != insn.GetBB()) {
+          return false;
+        }
         InsnInfo *insnInfo1 = baseInfo->insnInfo;
         CHECK_NULL_FATAL(insnInfo1);
         MOperator opc1 = insn1->GetMachineOpcode();
@@ -736,6 +739,10 @@ bool AArch64Ebo::SpecialSequence(Insn &insn, const MapleVector<OpndInfo*> &origI
           const int multiOfEight = 8;
           if ((!is64bits && (immVal < kStrLdrImm32UpperBound) && (immVal % multiOfFour == 0)) ||
               (is64bits && (immVal < kStrLdrImm64UpperBound) && (immVal % multiOfEight == 0))) {
+            /* Reserved physicalReg beforeRA */
+            if (beforeRegAlloc && op1->IsPhysicalRegister()) {
+              return false;
+            }
             MemOperand &mo = aarchFunc->CreateMemOpnd(*op1, immVal, size);
             Insn &ldrInsn = cgFunc->GetCG()->BuildInstruction<AArch64Insn>(opCode, res, mo);
             insn.GetBB()->ReplaceInsn(insn, ldrInsn);

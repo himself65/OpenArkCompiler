@@ -2075,18 +2075,18 @@ void ComplexMemOperandPreAddAArch64::Run(BB &bb, Insn &insn) {
   }
 }
 
-bool ComplexMemOperandLSLAArch64::CheckShiftValid(AArch64MemOperand &memOpnd, BitShiftOperand &lsl) {
+bool ComplexMemOperandLSLAArch64::CheckShiftValid(const AArch64MemOperand &memOpnd, BitShiftOperand &lsl) const {
   /* check if shift amount is valid */
   uint32 lslAmount = lsl.GetShiftAmount();
-  if ((memOpnd.GetSize() == k32BitSize && (lsl.GetShiftAmount() != 0 && lslAmount != 2)) ||
-      (memOpnd.GetSize() == k64BitSize && (lsl.GetShiftAmount() != 0 && lslAmount != 3))) {
+  constexpr uint8 twoShiftBits = 2;
+  constexpr uint8 threeShiftBits = 3;
+  if ((memOpnd.GetSize() == k32BitSize && (lsl.GetShiftAmount() != 0 && lslAmount != twoShiftBits)) ||
+      (memOpnd.GetSize() == k64BitSize && (lsl.GetShiftAmount() != 0 && lslAmount != threeShiftBits))) {
     return false;
   }
-
   if (memOpnd.GetSize() != (k8BitSize << lslAmount)) {
     return false;
   }
-
   return true;
 }
 

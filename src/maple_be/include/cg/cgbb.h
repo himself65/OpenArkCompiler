@@ -460,7 +460,7 @@ class BB {
   void ClearLiveInRegNO() {
     liveInRegNO.clear();
   }
-  const MapleSet<regno_t> &GetLiveOutRegNO() {
+  const MapleSet<regno_t> &GetLiveOutRegNO() const {
     return liveOutRegNO;
   }
   void InsertLiveOutRegNO(regno_t arg) {

@@ -220,6 +220,7 @@ class ReflectionAnalysis : public AnalysisResult {
                       std::map<int, int> *paramNumArray = nullptr, int *paramIndex = nullptr);
   void AppendValueByType(std::string &annoArr, const MIRPragmaElement &elem);
   bool IsAnonymousClass(const std::string &annotationString);
+  bool IsLocalClass(const std::string annotationString);
   bool IsPrivateClass(const MIRClassType &classType) const;
   bool IsStaticClass(const MIRStructType &classType) const;
   int8 JudgePara(MIRStructType &ctype);

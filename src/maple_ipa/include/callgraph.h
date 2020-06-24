@@ -51,8 +51,8 @@ struct Comparator {
 // Information description of each callsite
 class CallInfo {
  public:
-  CallInfo(CallType type, MIRFunction &call, StmtNode *s, uint32 ld, uint32 stmtId, bool local = false)
-      : areAllArgsLocal(local), ctype(type), mirFunc(&call), callStmt(s), loopDepth(ld), id(stmtId) {}
+  CallInfo(CallType type, MIRFunction &call, StmtNode *node, uint32 ld, uint32 stmtId, bool local = false)
+      : areAllArgsLocal(local), cType(type), mirFunc(&call), callStmt(node), loopDepth(ld), id(stmtId) {}
 
   virtual ~CallInfo() {}
 
@@ -60,16 +60,16 @@ class CallInfo {
     return id;
   }
 
-  const char *GetCalleeName() const;
+  const std::string GetCalleeName() const;
   CallType GetCallType() const {
-    return ctype;
+    return cType;
   }
 
   uint32 GetLoopDepth() const {
     return loopDepth;
   }
 
-  const char *GetCallTypeName() const;
+  const std::string GetCallTypeName() const;
   StmtNode *GetCallStmt() const {
     return callStmt;
   }
@@ -88,7 +88,7 @@ class CallInfo {
 
  private:
   bool areAllArgsLocal;
-  CallType ctype;       // Call type
+  CallType cType;       // Call type
   MIRFunction *mirFunc; // Used to get signature
   StmtNode *callStmt;   // Call statement
   uint32 loopDepth;
@@ -315,8 +315,8 @@ class SCCNode {
 
   virtual ~SCCNode() {}
 
-  void AddCGNode(CGNode *cgn) {
-    cgNodes.push_back(cgn);
+  void AddCGNode(CGNode *node) {
+    cgNodes.push_back(node);
   }
 
   void Dump() const;
@@ -471,7 +471,7 @@ class DoCallGraph : public ModulePhase {
  public:
   explicit DoCallGraph(ModulePhaseID id) : ModulePhase(id) {}
 
-  AnalysisResult *Run(MIRModule *module, ModuleResultMgr *m) override;
+  AnalysisResult *Run(MIRModule *module, ModuleResultMgr *mgr) override;
   std::string PhaseName() const override {
     return "callgraph";
   }
@@ -482,7 +482,7 @@ class DoCallGraph : public ModulePhase {
 class IPODevirtulize {
  public:
   IPODevirtulize(MIRModule *m, MemPool *memPool, KlassHierarchy *kh)
-      : cgalloc(memPool), mirBuilder(cgalloc.GetMemPool()->New<MIRBuilder>(m)), klassh(kh), debugFlag(false) {}
+      : cgAlloc(memPool), mirBuilder(cgAlloc.GetMemPool()->New<MIRBuilder>(m)), klassh(kh), debugFlag(false) {}
 
   virtual ~IPODevirtulize() = default;
   void DevirtualFinal();
@@ -491,19 +491,19 @@ class IPODevirtulize {
   }
 
  private:
-  MapleAllocator cgalloc;
+  void SearchDefInMemberMethods(const Klass &klass);
+  void SearchDefInClinit(const Klass &klass);
+  MapleAllocator cgAlloc;
   MIRBuilder *mirBuilder;
   KlassHierarchy *klassh;
   bool debugFlag;
-  void SearchDefInMemberMethods(const Klass &klass);
-  void SearchDefInClinit(const Klass &klass);
 };
 
 class DoIPODevirtulize : public ModulePhase {
  public:
   explicit DoIPODevirtulize(ModulePhaseID id) : ModulePhase(id) {}
 
-  AnalysisResult *Run(MIRModule *module, ModuleResultMgr *m) override;
+  AnalysisResult *Run(MIRModule *module, ModuleResultMgr *mgr) override;
   std::string PhaseName() const override {
     return "ipodevirtulize";
   }

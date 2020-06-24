@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -32,7 +32,8 @@ enum BinMirFileType {
 inline uint8 MakeVersionNum(uint8 major, uint8 minor) {
   uint8 mj = major & 0x0Fu;
   uint8 mn = minor & 0x0Fu;
-  return (mj << 4) | mn;
+  constexpr uint8 shiftNum = 4;
+  return (mj << shiftNum) | mn;
 }
 
 // file header for binary format kMmpl, 8B in total

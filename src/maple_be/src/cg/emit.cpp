@@ -990,6 +990,8 @@ void Emitter::InitRangeIdx2PerfixStr() {
   rangeIdx2PrefixStr[RangeIdx::kDecoupleStaticValue] = kDecoupleStaticValueStr;
   rangeIdx2PrefixStr[RangeIdx::kBssStart] = kBssSectionStr;
   rangeIdx2PrefixStr[RangeIdx::kLinkerSoHash] = kLinkerHashSoStr;
+  rangeIdx2PrefixStr[RangeIdx::kArrayClassCache] = kArrayClassCacheTable;
+  rangeIdx2PrefixStr[RangeIdx::kArrayClassCacheName] = kArrayClassCacheNameTable;
 }
 
 void Emitter::EmitIntConst(const MIRSymbol &mirSymbol, MIRAggConst &aggConst, uint32 itabConflictIndex,
@@ -1035,8 +1037,9 @@ void Emitter::EmitIntConst(const MIRSymbol &mirSymbol, MIRAggConst &aggConst, ui
   /* process conflict table index larger than itabConflictIndex * 2 + 2 element */
   bool isConflictPerfix = (idx >= (static_cast<uint64>(itabConflictIndex) * 2 + 2)) && (idx % 2 == 0) &&
                           StringUtils::StartsWith(stName, ITAB_CONFLICT_PREFIX_STR);
+  bool isArrayClassCacheName = mirSymbol.IsArrayClassCacheName();
   if (isClassInfo || isMethodsInfo || isFieldsInfo || mirSymbol.IsRegJNITab() || isInOffsetTab ||
-      isStaticStr || isConflictPerfix) {
+      isStaticStr || isConflictPerfix || isArrayClassCacheName) {
     /* compare with all 1s */
     uint32 index = static_cast<uint32>((safe_cast<MIRIntConst>(elemConst))->GetValue()) & 0xFFFFFFFF;
     bool isHotReflectStr = (index & 0x00000003) != 0;     /* use the last two bits of index in this expression */
@@ -1068,7 +1071,8 @@ void Emitter::EmitIntConst(const MIRSymbol &mirSymbol, MIRAggConst &aggConst, ui
     EmitScalarConstant(*elemConst, false);
 #endif  /* USE_32BIT_REF */
     Emit("+" + strTabName);
-    if (mirSymbol.IsRegJNITab() || mirSymbol.IsReflectionMethodsInfo() || mirSymbol.IsReflectionFieldsInfo()) {
+    if (mirSymbol.IsRegJNITab() || mirSymbol.IsReflectionMethodsInfo() || mirSymbol.IsReflectionFieldsInfo() ||
+        mirSymbol.IsArrayClassCacheName()) {
       Emit("-.");
     }
     if (StringUtils::StartsWith(stName, kDecoupleStaticKeyStr)) {
@@ -1718,6 +1722,8 @@ void Emitter::EmitGlobalVariable() {
   std::vector<MIRSymbol*> staticDecoupleKeyVec;
   std::vector<MIRSymbol*> staticDecoupleValueVec;
   std::vector<MIRSymbol*> superClassStVec;
+  std::vector<MIRSymbol*> arrayClassCacheVec;
+  std::vector<MIRSymbol*> arrayClassCacheNameVec;
 
   for (size_t i = 0; i < size; ++i) {
     MIRSymbol *mirSymbol = GlobalTables::GetGsymTable().GetSymbolFromStidx(i);
@@ -1741,6 +1747,12 @@ void Emitter::EmitGlobalVariable() {
       continue;
     } else if (mirSymbol->GetName().find(kOffsetTabStr) == 0) {
       valueOffsetVec.push_back(mirSymbol);
+      continue;
+    } else if (mirSymbol->IsArrayClassCache()) {
+      arrayClassCacheVec.push_back(mirSymbol);
+      continue;
+    } else if (mirSymbol->IsArrayClassCacheName()) {
+      arrayClassCacheNameVec.push_back(mirSymbol);
       continue;
     } else if (mirSymbol->GetName().find(kLocalClassInfoStr) == 0) {
       localClassInfoVec.push_back(mirSymbol);
@@ -2057,6 +2069,11 @@ void Emitter::EmitGlobalVariable() {
   EmitMetaDataSymbolWithMarkFlag(fieldOffsetDatas, strIdx2Type, kFieldOffsetDataPrefixStr, sectionNameIsEmpty, false);
   /* method address rw */
   EmitMetaDataSymbolWithMarkFlag(methodAddrDatas, strIdx2Type, kMethodAddrDataPrefixStr, sectionNameIsEmpty, false);
+
+  /* array class cache table */
+  EmitMuidTable(arrayClassCacheVec, strIdx2Type, kArrayClassCacheTable);
+  /* array class cache name table */
+  EmitMuidTable(arrayClassCacheNameVec, strIdx2Type, kArrayClassCacheNameTable);
 
 #if !defined(TARGARM32)
   /* finally emit __gxx_personality_v0 DW.ref */

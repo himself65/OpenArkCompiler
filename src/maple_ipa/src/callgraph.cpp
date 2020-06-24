@@ -41,8 +41,8 @@
 //    is always compiled before caller. This benefits those optimizations
 //    need interprocedure information like escape analysis.
 namespace maple {
-const char *CallInfo::GetCallTypeName() const {
-  switch (ctype) {
+const std::string CallInfo::GetCallTypeName() const {
+  switch (cType) {
     case kCallTypeCall:
       return "c";
     case kCallTypeVirtualCall:
@@ -67,25 +67,25 @@ const char *CallInfo::GetCallTypeName() const {
       return "polymorphiccall";
     default:
       CHECK_FATAL(false, "unsupport CALL type");
-      return nullptr;
+      return "";
   }
 }
 
-const char *CallInfo::GetCalleeName() const {
-  if ((ctype >= kCallTypeCall) && (ctype <= kCallTypeInterfaceCall)) {
+const std::string CallInfo::GetCalleeName() const {
+  if ((cType >= kCallTypeCall) && (cType <= kCallTypeInterfaceCall)) {
     MIRFunction &mirf = *mirFunc;
-    return mirf.GetName().c_str();
-  } else if (ctype == kCallTypeIcall) {
+    return mirf.GetName();
+  } else if (cType == kCallTypeIcall) {
     return "IcallUnknown";
-  } else if ((ctype >= kCallTypeIntrinsicCall) && (ctype <= kCallTypeIntrinsicCallWithType)) {
+  } else if ((cType >= kCallTypeIntrinsicCall) && (cType <= kCallTypeIntrinsicCallWithType)) {
     return "IntrinsicCall";
-  } else if (ctype == kCallTypeCustomCall) {
+  } else if (cType == kCallTypeCustomCall) {
     return "CustomCall";
-  } else if (ctype == kCallTypePolymorphicCall) {
+  } else if (cType == kCallTypePolymorphicCall) {
     return "PolymorphicCall";
   }
   CHECK_FATAL(false, "should not be here");
-  return nullptr;
+  return "";
 }
 
 void CGNode::DumpDetail() const {
@@ -113,10 +113,10 @@ void CGNode::DumpDetail() const {
     }
   }
   // dump caller
-  for (auto const &callernode : callerSet) {
-    CHECK_NULL_FATAL(callernode);
-    CHECK_NULL_FATAL(callernode->mirFunc);
-    LogInfo::MapleLogger() << "\tcaller : " << callernode->mirFunc->GetName() << std::endl;
+  for (auto const &callerNode : callerSet) {
+    CHECK_NULL_FATAL(callerNode);
+    CHECK_NULL_FATAL(callerNode->mirFunc);
+    LogInfo::MapleLogger() << "\tcaller : " << callerNode->mirFunc->GetName() << std::endl;
   }
 }
 
@@ -202,7 +202,7 @@ void CallGraph::DelNode(CGNode &node) {
     auto *mirStructType = static_cast<MIRStructType*>(classType);
     uint32 j = 0;
     for (; j < mirStructType->GetMethods().size(); ++j) {
-      if (mirStructType->GetMethods()[j].first == func->GetStIdx()) {
+      if (mirStructType->GetMethodsElement(j).first == func->GetStIdx()) {
         mirStructType->GetMethods().erase(mirStructType->GetMethods().begin() + j);
         break;
       }
@@ -219,7 +219,7 @@ void CallGraph::DelNode(CGNode &node) {
       if (j < mirModule->GetFunctionList().size()) {
         mirModule->GetFunctionList().erase(mirModule->GetFunctionList().begin() + j);
       }
-      GlobalTables::GetFunctionTable().GetFuncTable()[i] = nullptr;
+      GlobalTables::GetFunctionTable().SetFunctionItem(i, nullptr);
       break;
     }
   }
@@ -245,52 +245,52 @@ CallGraph::CallGraph(MIRModule &m, MemPool &memPool, KlassHierarchy &kh, const s
       numOfSccs(0) {}
 
 CallType CallGraph::GetCallType(Opcode op) const {
-  CallType t = kCallTypeInvalid;
+  CallType typeTemp = kCallTypeInvalid;
   switch (op) {
     case OP_call:
     case OP_callassigned:
-      t = kCallTypeCall;
+      typeTemp = kCallTypeCall;
       break;
     case OP_virtualcall:
     case OP_virtualcallassigned:
-      t = kCallTypeVirtualCall;
+      typeTemp = kCallTypeVirtualCall;
       break;
     case OP_superclasscall:
     case OP_superclasscallassigned:
-      t = kCallTypeSuperCall;
+      typeTemp = kCallTypeSuperCall;
       break;
     case OP_interfacecall:
     case OP_interfacecallassigned:
-      t = kCallTypeInterfaceCall;
+      typeTemp = kCallTypeInterfaceCall;
       break;
     case OP_icall:
     case OP_icallassigned:
-      t = kCallTypeIcall;
+      typeTemp = kCallTypeIcall;
       break;
     case OP_intrinsiccall:
     case OP_intrinsiccallassigned:
-      t = kCallTypeIntrinsicCall;
+      typeTemp = kCallTypeIntrinsicCall;
       break;
     case OP_xintrinsiccall:
     case OP_xintrinsiccallassigned:
-      t = kCallTypeXinitrinsicCall;
+      typeTemp = kCallTypeXinitrinsicCall;
       break;
     case OP_intrinsiccallwithtype:
     case OP_intrinsiccallwithtypeassigned:
-      t = kCallTypeIntrinsicCallWithType;
+      typeTemp = kCallTypeIntrinsicCallWithType;
       break;
     case OP_customcall:
     case OP_customcallassigned:
-      t = kCallTypeCustomCall;
+      typeTemp = kCallTypeCustomCall;
       break;
     case OP_polymorphiccall:
     case OP_polymorphiccallassigned:
-      t = kCallTypePolymorphicCall;
+      typeTemp = kCallTypePolymorphicCall;
       break;
     default:
       break;
   }
-  return t;
+  return typeTemp;
 }
 
 CGNode *CallGraph::GetCGNode(MIRFunction *func) const {
@@ -431,7 +431,7 @@ void CallGraph::HandleBody(MIRFunction &func, BlockNode &body, CGNode &node, uin
     } else if (op == OP_if) {
       IfStmtNode *n = static_cast<IfStmtNode*>(stmt);
       HandleBody(func, *n->GetThenPart(), node, loopDepth);
-      if (n->GetElsePart()) {
+      if (n->GetElsePart() != nullptr) {
         HandleBody(func, *n->GetElsePart(), node, loopDepth);
       }
     } else {
@@ -527,8 +527,8 @@ void CallGraph::HandleBody(MIRFunction &func, BlockNode &body, CGNode &node, uin
           MapleVector<MIRFunction*> *cands = klass->GetCandidates(calleeFunc->GetBaseFuncNameWithTypeStrIdx());
           // continue to search its implinterfaces
           if (cands == nullptr) {
-            for (Klass *implinterface : klass->GetImplInterfaces()) {
-              cands = implinterface->GetCandidates(calleeFunc->GetBaseFuncNameWithTypeStrIdx());
+            for (Klass *implInterface : klass->GetImplInterfaces()) {
+              cands = implInterface->GetCandidates(calleeFunc->GetBaseFuncNameWithTypeStrIdx());
               if (cands != nullptr && !cands->empty()) {
                 break;
               }
@@ -556,7 +556,7 @@ void CallGraph::HandleBody(MIRFunction &func, BlockNode &body, CGNode &node, uin
           break;
         }
         default: {
-          CHECK_FATAL(false, "TODO::unsupport call type");
+          CHECK_FATAL(false, "NYI::unsupport call type");
         }
       }
     }
@@ -630,20 +630,20 @@ void IPODevirtulize::SearchDefInClinit(const Klass &klass) {
   MIRClassType *classType = static_cast<MIRClassType*>(klass.GetMIRStructType());
   std::vector<MIRSymbol*> staticFinalPrivateSymbols;
   for (uint32 i = 0; i < classType->GetStaticFields().size(); ++i) {
-    FieldAttrs attribute = classType->GetStaticFields()[i].second.second;
+    FieldAttrs attribute = classType->GetStaticFieldsPair(i).second.second;
     if (attribute.GetAttr(FLDATTR_final)) {
       staticFinalPrivateSymbols.push_back(
-          GlobalTables::GetGsymTable().GetSymbolFromStrIdx(classType->GetStaticFields()[i].first));
+          GlobalTables::GetGsymTable().GetSymbolFromStrIdx(classType->GetStaticFieldsGStrIdx(i)));
     }
   }
   std::string typeName = klass.GetKlassName();
   typeName.append(namemangler::kClinitSuffix);
-  GStrIdx clinitFuncGstridx =
+  GStrIdx clinitFuncGstrIdx =
       GlobalTables::GetStrTable().GetStrIdxFromName(namemangler::GetInternalNameLiteral(typeName));
-  if (clinitFuncGstridx == 0u) {
+  if (clinitFuncGstrIdx == 0u) {
     return;
   }
-  MIRFunction *func = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(clinitFuncGstridx)->GetFunction();
+  MIRFunction *func = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(clinitFuncGstrIdx)->GetFunction();
   if (func->GetBody() == nullptr) {
     return;
   }
@@ -707,7 +707,7 @@ void IPODevirtulize::SearchDefInClinit(const Klass &klass) {
           continue;
         }
         for (unsigned int i = 0; i < callNode->GetReturnVec().size(); ++i) {
-          StIdx stIdx = callNode->GetReturnVec()[i].first;
+          StIdx stIdx = callNode->GetReturnPair(i).first;
           MIRSymbol *tmpSymbol = func->GetLocalOrGlobalSymbol(stIdx);
           ResetInferredType(gcmallocSymbols, tmpSymbol);
         }
@@ -742,10 +742,10 @@ void IPODevirtulize::SearchDefInMemberMethods(const Klass &klass) {
   MIRClassType *classType = static_cast<MIRClassType*>(klass.GetMIRStructType());
   std::vector<FieldID> finalPrivateFieldID;
   for (uint32 i = 0; i < classType->GetFieldsSize(); ++i) {
-    FieldAttrs attribute = classType->GetFields()[i].second.second;
+    FieldAttrs attribute = classType->GetFieldsElemt(i).second.second;
     if (attribute.GetAttr(FLDATTR_final)) {
       FieldID id = mirBuilder->GetStructFieldIDFromFieldNameParentFirst(
-          classType, GlobalTables::GetStrTable().GetStringFromStrIdx(classType->GetFields()[i].first));
+          classType, GlobalTables::GetStrTable().GetStringFromStrIdx(classType->GetFieldsElemt(i).first));
       finalPrivateFieldID.push_back(id);
     }
   }
@@ -804,7 +804,7 @@ void IPODevirtulize::SearchDefInMemberMethods(const Klass &klass) {
             continue;
           }
           for (size_t j = 0; j < callNode->GetReturnVec().size(); ++j) {
-            StIdx stIdx = callNode->GetReturnVec()[j].first;
+            StIdx stIdx = callNode->GetReturnPair(j).first;
             MIRSymbol *tmpSymbol = func->GetLocalOrGlobalSymbol(stIdx);
             ResetInferredType(gcmallocSymbols, tmpSymbol);
           }
@@ -820,8 +820,8 @@ void IPODevirtulize::SearchDefInMemberMethods(const Klass &klass) {
           break;
         }
         case OP_intrinsiccallwithtype: {
-          IntrinsiccallNode *callnode = static_cast<IntrinsiccallNode*>(stmt);
-          if (callnode->GetIntrinsic() != INTRN_JAVA_CLINIT_CHECK) {
+          IntrinsiccallNode *callNode = static_cast<IntrinsiccallNode*>(stmt);
+          if (callNode->GetIntrinsic() != INTRN_JAVA_CLINIT_CHECK) {
             ResetInferredType(gcmallocSymbols);
           }
           break;
@@ -977,7 +977,7 @@ void DoDevirtual(const Klass &klass, const KlassHierarchy &klassh) {
                   if (op == OP_interfacecallassigned || op == OP_virtualcallassigned) {
                     CallNode *callNode = static_cast<CallNode*>(stmt);
                     for (unsigned int i = 0; i < callNode->GetReturnVec().size(); ++i) {
-                      StIdx stIdx = callNode->GetReturnVec()[i].first;
+                      StIdx stIdx = callNode->GetReturnPair(i).first;
                       MIRSymbol *tmpSymbol = func->GetLocalOrGlobalSymbol(stIdx);
                       ResetInferredType(inferredSymbols, tmpSymbol);
                     }
@@ -1105,7 +1105,7 @@ void DoDevirtual(const Klass &klass, const KlassHierarchy &klassh) {
                   break;
                 } else if (tmpMethod == nullptr) {
                   LogInfo::MapleLogger() << "Error: func " << calleeFunc->GetName() << " is not found!" << std::endl;
-                  ASSERT(tmpMethod, "Must not be null");
+                  ASSERT(tmpMethod != nullptr, "Must not be null");
                 }
                 calleeNode->SetPUIdx(tmpMethod->GetPuidx());
                 if (op == OP_virtualcall || op == OP_interfacecall) {
@@ -1133,8 +1133,8 @@ void DoDevirtual(const Klass &klass, const KlassHierarchy &klassh) {
                 if (op == OP_interfacecallassigned || op == OP_virtualcallassigned) {
                   CallNode *callNode = static_cast<CallNode*>(stmt);
                   for (unsigned int i = 0; i < callNode->GetReturnVec().size(); ++i) {
-                    StIdx stidx = callNode->GetReturnVec()[i].first;
-                    MIRSymbol *tmpSymbol = func->GetLocalOrGlobalSymbol(stidx);
+                    StIdx stIdx = callNode->GetReturnPair(i).first;
+                    MIRSymbol *tmpSymbol = func->GetLocalOrGlobalSymbol(stIdx);
                     ResetInferredType(inferredSymbols, tmpSymbol);
                   }
                 }
@@ -1148,7 +1148,7 @@ void DoDevirtual(const Klass &klass, const KlassHierarchy &klassh) {
         case OP_callassigned: {
           CallNode *callNode = static_cast<CallNode*>(stmt);
           for (size_t i = 0; i < callNode->GetReturnVec().size(); ++i) {
-            StIdx stIdx = callNode->GetReturnVec()[i].first;
+            StIdx stIdx = callNode->GetReturnPair(i).first;
             MIRSymbol *tmpSymbol = func->GetLocalOrGlobalSymbol(stIdx);
             ResetInferredType(inferredSymbols, tmpSymbol);
           }
@@ -1193,17 +1193,17 @@ void IPODevirtulize::DevirtualFinal() {
         }
       }
       for (uint32 i = 0; i < classType->GetStaticFields().size(); ++i) {
-        FieldAttrs attribute = classType->GetStaticFields()[i].second.second;
-        if (GlobalTables::GetGsymTable().GetSymbolFromStrIdx(classType->GetStaticFields()[i].first) == nullptr) {
+        FieldAttrs attribute = classType->GetStaticFieldsPair(i).second.second;
+        if (GlobalTables::GetGsymTable().GetSymbolFromStrIdx(classType->GetStaticFieldsGStrIdx(i)) == nullptr) {
           continue;
         }
         TyIdx tyIdx = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(
-            classType->GetStaticFields()[i].first)->GetInferredTyIdx();
+            classType->GetStaticFieldsPair(i).first)->GetInferredTyIdx();
         if (tyIdx != kInitTyIdx && tyIdx != kNoneTyIdx) {
           CHECK_FATAL(attribute.GetAttr(FLDATTR_final), "Must be final private");
           if (debugFlag) {
             LogInfo::MapleLogger() << "Final Private Static Variable:" +
-                GlobalTables::GetStrTable().GetStringFromStrIdx(classType->GetStaticFields()[i].first) << '\n';
+                GlobalTables::GetStrTable().GetStringFromStrIdx(classType->GetStaticFieldsPair(i).first) << '\n';
           }
         }
       }
@@ -1231,16 +1231,16 @@ void CallGraph::GenCallGraph() {
       } else if (info->GetCallType() == kCallTypeCall) {
         node->AddCallsite(**itInner, calleeNode);
       } else if (info->GetCallType() == kCallTypeSuperCall) {
-        const MIRFunction *calleefunc = info->GetFunc();
-        Klass *klass = klassh->GetKlassFromFunc(calleefunc);
+        const MIRFunction *calleeFunc = info->GetFunc();
+        Klass *klass = klassh->GetKlassFromFunc(calleeFunc);
         if (klass == nullptr) {  // Fix CI
           continue;
         }
-        MapleVector<MIRFunction*> *cands = klass->GetCandidates(calleefunc->GetBaseFuncNameWithTypeStrIdx());
+        MapleVector<MIRFunction*> *cands = klass->GetCandidates(calleeFunc->GetBaseFuncNameWithTypeStrIdx());
         // continue to search its implinterfaces
         if (cands == nullptr) {
-          for (Klass *implinterface : klass->GetImplInterfaces()) {
-            cands = implinterface->GetCandidates(calleefunc->GetBaseFuncNameWithTypeStrIdx());
+          for (Klass *implInterface : klass->GetImplInterfaces()) {
+            cands = implInterface->GetCandidates(calleeFunc->GetBaseFuncNameWithTypeStrIdx());
             if (cands != nullptr && !cands->empty()) {
               break;
             }
@@ -1307,29 +1307,29 @@ void CallGraph::DumpToFile(bool dumpAll) {
   if (Options::noDot) {
     return;
   }
-  std::ofstream cgfile;
-  char *outName = nullptr;
+  std::ofstream cgFile;
+  std::string outName;
   MapleString outfile(fileName, GetMempool());
   if (dumpAll) {
     outName = (outfile.append("-callgraph.dot")).c_str();
   } else {
     outName = (outfile.append("-callgraphlight.dot")).c_str();
   }
-  cgfile.open(outName, std::ios::trunc);
-  cgfile << "digraph graphname {\n";
+  cgFile.open(outName, std::ios::trunc);
+  cgFile << "digraph graphname {\n";
   for (auto const &it : nodesMap) {
     CGNode *node = it.second;
     // dump user defined function
     if (dumpAll) {
-      node->Dump(cgfile);
+      node->Dump(cgFile);
     } else {
       if ((node->GetMIRFunction() != nullptr) && (!node->GetMIRFunction()->IsEmpty())) {
-        node->Dump(cgfile);
+        node->Dump(cgFile);
       }
     }
   }
-  cgfile << "}\n";
-  cgfile.close();
+  cgFile << "}\n";
+  cgFile.close();
 }
 
 void CallGraph::BuildCallGraph() {
@@ -1380,8 +1380,8 @@ void CallGraph::SetCompilationFunclist() const {
       }
     }
   }
-  if ((mirModule->GetCompilationList().size() != mirModule->GetFunctionList().size() &&
-       mirModule->GetCompilationList().size() != mirModule->GetFunctionList().size() - mirModule->GetOptFuncsSize())) {
+  if (mirModule->GetCompilationList().size() != mirModule->GetFunctionList().size() &&
+      mirModule->GetCompilationList().size() != mirModule->GetFunctionList().size() - mirModule->GetOptFuncsSize()) {
     CHECK_FATAL(false, "should be equal");
   }
 }
@@ -1491,11 +1491,11 @@ void SCCNode::DumpCycle() const {
 
 void SCCNode::Verify() const {
   if (cgNodes.size() <= 0) {
-    CHECK_FATAL(false, "");
+    CHECK_FATAL(false, "the size of cgNodes less than zero");
   }
   for (CGNode *const &node : cgNodes) {
     if (node->GetSCCNode() != this) {
-      CHECK_FATAL(false, "");
+      CHECK_FATAL(false, "must equal this");
     }
   }
 }
@@ -1548,7 +1548,7 @@ void CallGraph::BuildSCCDFS(CGNode &caller, uint32 &visitIndex, std::vector<SCCN
         if (lowestOrder.at(calleeId) < lowestOrder.at(id)) {
           lowestOrder.at(id) = lowestOrder.at(calleeId);
         }
-      } else if (inStack.at(calleeId) && visitedOrder.at(calleeId) < lowestOrder.at(id)) {
+      } else if (inStack.at(calleeId) && (visitedOrder.at(calleeId) < lowestOrder.at(id))) {
         // back edge
         lowestOrder.at(id) = visitedOrder.at(calleeId);
       }
@@ -1573,7 +1573,7 @@ void CallGraph::VerifySCC() const {
   for (auto const &it : nodesMap) {
     CGNode *node = it.second;
     if (node->GetSCCNode() == nullptr) {
-      CHECK_FATAL(false, "");
+      CHECK_FATAL(false, "nullptr check in CallGraph::VerifySCC()");
     }
   }
 }
@@ -1649,9 +1649,9 @@ void CGNode::AddCandsForCallNode(const KlassHierarchy &kh) {
   CHECK_NULL_FATAL(mirFunc);
   Klass *klass = kh.GetKlassFromFunc(mirFunc);
   if (klass != nullptr) {
-    MapleVector<MIRFunction*> *v = klass->GetCandidates(mirFunc->GetBaseFuncNameWithTypeStrIdx());
-    if (v != nullptr) {
-      vcallCands = *v;  // Vector copy
+    MapleVector<MIRFunction*> *vec = klass->GetCandidates(mirFunc->GetBaseFuncNameWithTypeStrIdx());
+    if (vec != nullptr) {
+      vcallCands = *vec;  // Vector copy
     }
   }
 }
@@ -1678,15 +1678,15 @@ MIRFunction *CGNode::HasOneCandidate() const {
   return (count == 1) ? cand : nullptr;
 }
 
-AnalysisResult *DoCallGraph::Run(MIRModule *module, ModuleResultMgr *m) {
+AnalysisResult *DoCallGraph::Run(MIRModule *module, ModuleResultMgr *mgr) {
   MemPool *memPool = memPoolCtrler.NewMemPool("callgraph mempool");
-  KlassHierarchy *klassh = static_cast<KlassHierarchy*>(m->GetAnalysisResult(MoPhase_CHA, module));
+  KlassHierarchy *klassh = static_cast<KlassHierarchy*>(mgr->GetAnalysisResult(MoPhase_CHA, module));
   CHECK_FATAL(klassh != nullptr, "CHA can't be null");
   CallGraph *cg = memPool->New<CallGraph>(*module, *memPool, *klassh, module->GetFileName());
   cg->InitCallExternal();
   cg->SetDebugFlag(TRACE_PHASE);
   cg->BuildCallGraph();
-  m->AddResult(GetPhaseID(), *module, *cg);
+  mgr->AddResult(GetPhaseID(), *module, *cg);
   if (!module->IsInIPA() && module->firstInline) {
     // do retype
     MemPool *localMp = memPoolCtrler.NewMemPool(PhaseName());
@@ -1698,9 +1698,9 @@ AnalysisResult *DoCallGraph::Run(MIRModule *module, ModuleResultMgr *m) {
   return cg;
 }
 
-AnalysisResult *DoIPODevirtulize::Run(MIRModule *module, ModuleResultMgr *m) {
+AnalysisResult *DoIPODevirtulize::Run(MIRModule *module, ModuleResultMgr *mgr) {
   MemPool *memPool = memPoolCtrler.NewMemPool("ipodevirulize mempool");
-  KlassHierarchy *klassh = static_cast<KlassHierarchy*>(m->GetAnalysisResult(MoPhase_CHA, module));
+  KlassHierarchy *klassh = static_cast<KlassHierarchy*>(mgr->GetAnalysisResult(MoPhase_CHA, module));
   CHECK_NULL_FATAL(klassh);
   IPODevirtulize *dev = memPool->New<IPODevirtulize>(module, memPool, klassh);
   // Devirtualize vcall of final variable

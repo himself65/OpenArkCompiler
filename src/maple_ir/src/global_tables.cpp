@@ -113,18 +113,25 @@ MIRType* TypeTable::GetOrCreateMIRTypeNode(MIRType &pType) {
 
 MIRType *TypeTable::voidPtrType = nullptr;
 // get or create a type that pointing to pointedTyIdx
-MIRType *TypeTable::GetOrCreatePointerType(TyIdx pointedTyIdx, PrimType primType) {
+  MIRType *TypeTable::GetOrCreatePointerType(TyIdx pointedTyIdx, PrimType primType,
+                                             const std::vector<TypeAttrs> attrs) {
   MIRPtrType type(pointedTyIdx, primType);
+  if (!attrs.empty()) {
+    for (auto &attr : attrs) {
+      type.SetTypeAttrs(attr);
+    }
+  }
   TyIdx tyIdx = GetOrCreateMIRType(&type);
   ASSERT(tyIdx < typeTable.size(), "index out of range in TypeTable::GetOrCreatePointerType");
   return typeTable.at(tyIdx);
 }
 
-MIRType *TypeTable::GetOrCreatePointerType(const MIRType &pointTo, PrimType primType) {
+MIRType *TypeTable::GetOrCreatePointerType(const MIRType &pointTo, PrimType primType,
+                                           const std::vector<TypeAttrs> attrs) {
   if (pointTo.GetPrimType() == PTY_constStr) {
     primType = PTY_ptr;
   }
-  return GetOrCreatePointerType(pointTo.GetTypeIndex(), primType);
+  return GetOrCreatePointerType(pointTo.GetTypeIndex(), primType, attrs);
 }
 
 const MIRType *TypeTable::GetPointedTypeIfApplicable(MIRType &type) const {

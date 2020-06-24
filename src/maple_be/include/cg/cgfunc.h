@@ -232,6 +232,7 @@ class CGFunc {
   virtual void SelectRangeGoto(RangeGotoNode &rangeGotoNode, Operand &opnd0) = 0;
   virtual Operand *SelectLazyLoad(Operand &opnd0, PrimType primType) = 0;
   virtual Operand *SelectLazyLoadStatic(MIRSymbol &st, int64 offset, PrimType primType) = 0;
+  virtual Operand *SelectLoadArrayClassCache(MIRSymbol &st, int64 offset, PrimType primType) = 0;
   virtual void GenerateYieldpoint(BB &bb) = 0;
   virtual Operand &ProcessReturnReg(PrimType primType) = 0;
 
@@ -332,7 +333,7 @@ class CGFunc {
   }
 
   /* return Register Type */
-  RegType GetRegisterType(regno_t rNum) const {
+  virtual RegType GetRegisterType(regno_t rNum) const {
     CHECK(rNum < vRegTable.size(), "index out of range in GetVRegSize");
     return vRegTable[rNum].GetType();
   }

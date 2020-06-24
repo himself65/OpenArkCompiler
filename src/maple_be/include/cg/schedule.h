@@ -33,8 +33,7 @@ class RegPressureSchedule {
 
   void InitBBInfo(BB &b, MemPool &memPool, const MapleVector<DepNode*> &nodes);
   void BuildPhyRegInfo(const std::vector<int32> &regNumVec);
-  void InitReadyList(const MapleVector<DepNode*> &nodes);
-  void InitPressure();
+  void Init(const MapleVector<DepNode*> &nodes);
   void UpdateBBPressure(const DepNode &node);
   void CalculatePressure(DepNode &node, regno_t reg, bool def);
   void SortReadyList();
@@ -51,11 +50,17 @@ class RegPressureSchedule {
   void DoScheduling(MapleVector<DepNode*> &nodes);
 
  private:
+  void DumpBBPressureInfo() const;
+  void DumpBBLiveInfo() const;
+  void DumpReadyList() const;
+  void DumpSelectInfo(const DepNode &node) const;
+  RegType GetRegisterType(regno_t reg) const;
+
   CGFunc &cgFunc;
   BB *bb = nullptr;
   int32 *maxPressure = nullptr;
   int32 *curPressure = nullptr;
-  MapleSet<regno_t> liveReg;
+  MapleUnorderedSet<regno_t> liveReg;
   /* save node that has been scheduled. */
   MapleVector<DepNode*> scheduledNode;
   MapleVector<DepNode*> readyList;

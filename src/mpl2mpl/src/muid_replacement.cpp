@@ -113,6 +113,96 @@ void MUIDReplacement::DumpMUIDFile(bool isFunc) {
   outFile.close();
 }
 
+void MUIDReplacement::InsertArrayClassSet(const MIRType &type) {
+  auto jArrayType = static_cast<const MIRJarrayType&>(type);
+  std::string klassJavaDescriptor;
+  namemangler::DecodeMapleNameToJavaDescriptor(jArrayType.GetJavaName(), klassJavaDescriptor);
+  arrayClassSet.insert(klassJavaDescriptor);
+}
+
+MIRType *MUIDReplacement::GetIntrinsicConstArrayClass(StmtNode &stmt) {
+  Opcode op = stmt.GetOpCode();
+  if (op == OP_dassign || op == OP_regassign) {
+    auto &unode = static_cast<UnaryStmtNode&>(stmt);
+    BaseNode &rhsOpnd = *(unode.GetRHS());
+    Opcode rhsOp = rhsOpnd.GetOpCode();
+    if (rhsOp == OP_intrinsicopwithtype) {
+      auto &intrinNode = static_cast<IntrinsicopNode&>(rhsOpnd);
+      MIRIntrinsicID intrinsicID = intrinNode.GetIntrinsic();
+      if (intrinsicID == INTRN_JAVA_CONST_CLASS || intrinsicID == INTRN_JAVA_INSTANCE_OF) {
+        TyIdx tyIdx = intrinNode.GetTyIdx();
+        MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
+        MIRPtrType *ptrType = static_cast<MIRPtrType*>(type);
+        MIRType *jArrayTy = ptrType->GetPointedType();
+        if (jArrayTy->GetKind() == kTypeArray || jArrayTy->GetKind() == kTypeJArray) {
+          return jArrayTy;
+        }
+      }
+    } else if ((rhsOp == OP_gcmallocjarray) || (rhsOp == OP_gcpermallocjarray)) {
+      JarrayMallocNode &jarrayMallocNode = static_cast<JarrayMallocNode&>(rhsOpnd);
+      TyIdx tyIdx = jarrayMallocNode.GetTyIdx();
+      MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
+      if (type->GetKind() == kTypeArray || type->GetKind() == kTypeJArray) {
+        return type;
+      }
+    }
+  }
+  return nullptr;
+}
+
+void MUIDReplacement::CollectArrayClass() {
+  for (MIRFunction *mirFunc : GetMIRModule().GetFunctionList()) {
+    if (mirFunc->GetBody() == nullptr) {
+      continue;
+    }
+    StmtNode *stmt = mirFunc->GetBody()->GetFirst();
+    StmtNode *nextStmt = nullptr;
+    while (stmt) {
+      nextStmt = stmt->GetNext();
+      MIRType *jArrayTy = GetIntrinsicConstArrayClass(*stmt);
+      if (jArrayTy != nullptr) {
+        InsertArrayClassSet(*jArrayTy);
+      }
+      stmt = nextStmt;
+    }
+  }
+}
+
+void MUIDReplacement::GenArrayClassCache() {
+  if (arrayClassSet.size() == 0) {
+    return;
+  }
+#ifdef USE_32BIT_REF
+  MIRType *mType = GlobalTables::GetTypeTable().GetUInt32();
+#else
+  MIRType *mType = GlobalTables::GetTypeTable().GetUInt64();
+#endif
+  auto arrayType = GlobalTables::GetTypeTable().GetOrCreateArrayType(*mType, static_cast<uint32>(arrayClassSet.size()));
+  auto *arrayClassNameConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), *arrayType);
+  auto *arrayClassConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), *arrayType);
+  ASSERT_NOT_NULL(arrayClassNameConst);
+  ASSERT_NOT_NULL(arrayClassConst);
+  // magic number, must consistent with kMplArrayClassCacheMagicNumber(0x1a3) in runtime, defined in mrt_common.h.
+  constexpr int32 arrayClassCacheMagicNumber = 0x1a3;
+  for (auto arrayClassName : arrayClassSet) {
+    uint32 typeNameIdx = ReflectionAnalysis::FindOrInsertRepeatString(arrayClassName);
+    MIRIntConst *nameConstValue = GlobalTables::GetIntConstTable().GetOrCreateIntConst(typeNameIdx, *mType);
+    arrayClassNameConst->PushBack(nameConstValue);
+    MIRIntConst *constValue =
+       GlobalTables::GetIntConstTable().GetOrCreateIntConst(arrayClassCacheMagicNumber, *mType);
+    arrayClassConst->PushBack(constValue);
+  }
+  MIRSymbol *arrayClassNameSt = GetMIRModule().GetMIRBuilder()->CreateGlobalDecl(
+      namemangler::kArrayClassCacheNameTable + GetMIRModule().GetFileNameAsPostfix(), *arrayType);
+  arrayClassNameSt->SetStorageClass(kScFstatic);
+  arrayClassNameSt->SetKonst(arrayClassNameConst);
+
+  MIRSymbol *arrayClassCacheSt = GetMIRModule().GetMIRBuilder()->CreateGlobalDecl(
+      namemangler::kArrayClassCacheTable + GetMIRModule().GetFileNameAsPostfix(), *arrayType);
+  arrayClassCacheSt->SetStorageClass(kScFstatic);
+  arrayClassCacheSt->SetKonst(arrayClassConst);
+}
+
 void MUIDReplacement::CollectFuncAndDataFromKlasses() {
   // Iterate klasses
   for (Klass *klass : klassHierarchy->GetTopoSortedKlasses()) {
@@ -914,7 +1004,7 @@ void MUIDReplacement::ReplaceFieldTypeTable(const std::string &name) {
       uint32 index = static_cast<uint32>(FieldProperty::kPClassType);
       auto *aggrC = static_cast<MIRAggConst*>(oldTabEntry);
       CHECK_NULL_FATAL(aggrC->GetConstVecItem(index));
-      if(aggrC->GetConstVecItem(index)->GetKind() == kConstInt) {
+      if (aggrC->GetConstVecItem(index)->GetKind() == kConstInt) {
         continue;
       } else {
         ReplaceAddrofConst(aggrC->GetConstVecItem(index), true);
@@ -1190,7 +1280,13 @@ void MUIDReplacement::ReplaceDassign(MIRFunction &currentFunc, const DassignNode
     destExpr = builder->CreateExprDread(*symPtrSym);
   }
   // Replace dassignNode with iassignNode
-  MIRType *destPtrType = GlobalTables::GetTypeTable().GetOrCreatePointerType(*mirSymbol->GetType());
+  std::vector<TypeAttrs> attrs;
+  if (mirSymbol->IsVolatile()) {
+    TypeAttrs tempAttrs;
+    tempAttrs.SetAttr(ATTR_volatile);
+    attrs.push_back(tempAttrs);
+  }
+  MIRType *destPtrType = GlobalTables::GetTypeTable().GetOrCreatePointerType(*mirSymbol->GetType(), PTY_ptr, attrs);
   StmtNode *iassignNode = builder->CreateStmtIassign(*destPtrType, 0, destExpr, dassignNode.Opnd(0));
   currentFunc.GetBody()->ReplaceStmt1WithStmt2(&dassignNode, iassignNode);
 }
@@ -1406,6 +1502,9 @@ void MUIDReplacement::GenerateTables() {
   CollectFuncAndDataFromGlobalTab();
   CollectFuncAndDataFromFuncList();
   CollectSuperClassArraySymbolData();
+  CollectArrayClass();
+  GenArrayClassCache();
+
   GenerateFuncDefTable();
   GenerateDataDefTable();
   GenerateUnifiedUndefTable();

@@ -28,7 +28,7 @@ template<typename T, PtrCheckerType<T> Check = CheckNothing<T>>
 class Ptr {
  public:
   using Pointer = T*;
-  using element_type = T;
+  using ElementType = T;
 
   constexpr Ptr() noexcept
       : pointer(nullptr) {
@@ -293,6 +293,7 @@ template<typename T, PtrCheckerType<T> CheckT>
 inline bool operator>=(std::nullptr_t, const Ptr<T, CheckT> &rhs) {
   return !(rhs > nullptr);
 }
-}}
+}
+}
 
 #endif //DIY_CPLUSPLUS_SAFE_PTR_H

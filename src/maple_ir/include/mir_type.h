@@ -761,6 +761,14 @@ class MIRStructType : public MIRType {
     return staticFields;
   }
 
+  const FieldPair &GetStaticFieldsPair(size_t i) const {
+    return staticFields.at(i);
+  }
+
+  GStrIdx GetStaticFieldsGStrIdx(size_t i) const {
+    return staticFields.at(i).first;
+  }
+
   FieldVector &GetParentFields() {
     return parentFields;
   }

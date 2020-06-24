@@ -378,7 +378,7 @@ class SSARename2Preg {
       return;
     }
 
-    VarMeExpr &varExpr =(utils::ToRef(lhs));
+    VarMeExpr &varExpr = (utils::ToRef(lhs));
     RegMeExpr *pRegExpr = RenameVar(aliasClass, varExpr);
     if (pRegExpr == nullptr) {
       return;

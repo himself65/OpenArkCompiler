@@ -21,6 +21,8 @@
 #include "cg.h"
 #include "optimize_common.h"
 
+#undef PRESCHED_DEBUG
+
 namespace maplebe {
 /* ---- RegPressureSchedule function ---- */
 void RegPressureSchedule::InitBBInfo(BB &b, MemPool &memPool, const MapleVector<DepNode*> &nodes) {
@@ -37,6 +39,11 @@ void RegPressureSchedule::InitBBInfo(BB &b, MemPool &memPool, const MapleVector<
   }
 }
 
+/* return register type according to register number */
+RegType RegPressureSchedule::GetRegisterType(regno_t reg) const {
+  return cgFunc.GetRegisterType(reg);
+}
+
 /* Get amount of every physical register */
 void RegPressureSchedule::BuildPhyRegInfo(const std::vector<int32> &regNumVec) {
   FOR_ALL_REGCLASS(i) {
@@ -44,34 +51,42 @@ void RegPressureSchedule::BuildPhyRegInfo(const std::vector<int32> &regNumVec) {
   }
 }
 
-void RegPressureSchedule::InitReadyList(const MapleVector<DepNode*> &nodes) {
-  for (auto node : nodes) {
-    /* If a node is not been scheduled and there is no pred node of the node, add the node reaylist. */
-    if ((node->GetState() == kNormal) && node->GetPreds().empty()) {
-      readyList.push_back(node);
-      node->SetState(kReady);
-    }
-  }
-}
-
-/* initialize register pressure information according to bb's live-in data. */
-void RegPressureSchedule::InitPressure() {
+/* initialize register pressure information according to bb's live-in data.
+ * initialize node's valid preds size.
+ */
+void RegPressureSchedule::Init(const MapleVector<DepNode*> &nodes) {
   FOR_ALL_REGCLASS(i) {
     curPressure[i] = 0;
-  }
-  /* add all bb's live-in register to liveReg. */
-  for (auto reg : bb->GetLiveInRegNO()) {
-    RegType regType = cgFunc.GetRegisterType(reg);
-    if (liveReg.find(reg) == liveReg.end()) {
-      liveReg.insert(reg);
-      /* increase the pressure of the register type. */
-      ++curPressure[regType];
-    }
+    maxPressure[i] = 0;
   }
 
-  FOR_ALL_REGCLASS(i) {
-    maxPressure[i] = curPressure[i];
+  for (auto *node : nodes) {
+    /* initialize */
+    node->InitPressure();
+
+    /* calculate the node uses'register pressure */
+    for (auto &useReg : node->GetRegUses()) {
+      CalculatePressure(*node, useReg.first, false);
+    }
+
+    /* calculate the node defs'register pressure */
+    for (auto &defReg : node->GetRegDefs()) {
+      CalculatePressure(*node, defReg.first, true);
+
+      regno_t reg = defReg.first;
+      RegType regType = GetRegisterType(reg);
+      /* if no use list, a register is only defined, not be used */
+      if (defReg.second == nullptr) {
+        node->IncDeadDefByIndex(regType);
+      }
+    }
+
+    node->SetValidPredsSize(node->GetPreds().size());
   }
+
+  DepNode *firstNode = nodes.front();
+  readyList.push_back(firstNode);
+  firstNode->SetState(kReady);
 }
 
 void RegPressureSchedule::SortReadyList() {
@@ -92,30 +107,20 @@ bool RegPressureSchedule::DepNodePriorityCmp(const DepNode *node1, const DepNode
     return depthS1 > depthS2;
   }
 
-  return node1->GetNear() > node2->GetNear();
+  int32 near1 = node1->GetNear();
+  int32 near2 = node2->GetNear();
+  if (near1 != near2) {
+    return node1->GetNear() > node2->GetNear();
+  }
+
+  return node1->GetSuccs().size() < node2->GetSuccs().size();
 }
 
-/* calculate a node register pressure base on current scheduling */
+/* set a node's incPressure is true, when a class register inscrease */
 void RegPressureSchedule::ReCalculateDepNodePressure(DepNode &node) {
-  /* initialize */
-  node.InitPressure();
-  /* calculate the node uses'register pressure */
-  for (auto reg : node.GetUses()) {
-    CalculatePressure(node, reg, false);
-  }
-  /* calculate the node defs'register pressure */
-  for (auto reg : node.GetDefs()) {
-    CalculatePressure(node, reg, true);
-  }
-
   /* if there is a type of register pressure increases, set incPressure as true. */
-  const int32 *pressure = node.GetPressure();
-  FOR_ALL_REGCLASS(i) {
-    if (pressure[i] > 0) {
-      node.SetIncPressure(true);
-      break;
-    }
-  }
+  auto &pressures = node.GetPressure();
+  node.SetIncPressure(pressures[kRegisterInt] > 0);
 }
 
 /* calculate the maxDepth of every node in nodes. */
@@ -136,7 +141,7 @@ void RegPressureSchedule::CalculateMaxDepth(const MapleVector<DepNode*> &nodes) 
 void RegPressureSchedule::CalculateNear(const DepNode &node) {
   for (auto succ : node.GetSuccs()) {
     DepNode &to = succ->GetTo();
-    if (to.GetNear() < node.GetNear() + 1) {
+    if (succ->GetDepType() == kDependenceTypeTrue && to.GetNear() < node.GetNear() + 1) {
       to.SetNear(node.GetNear() + 1);
     }
   }
@@ -148,9 +153,6 @@ bool RegPressureSchedule::IsLastUse(const DepNode &node, regno_t regNO) const {
   ASSERT(it->second != nullptr, "valid iterator check");
   ASSERT(it != node.GetRegUses().end(), "not find reg!");
   RegList *regList = it->second;
-  if (bb->GetLiveOutRegNO().find(regNO) != bb->GetLiveOutRegNO().end()) {
-    return false;
-  }
 
   /*
    * except the node, if there are insn that has no scheduled in regNO'sregList,
@@ -169,18 +171,14 @@ bool RegPressureSchedule::IsLastUse(const DepNode &node, regno_t regNO) const {
 }
 
 void RegPressureSchedule::CalculatePressure(DepNode &node, regno_t reg, bool def) {
-  RegType regType = cgFunc.GetRegisterType(reg);
+  RegType regType = GetRegisterType(reg);
   /* if def a register, register pressure increase. */
   if (def) {
-    if (liveReg.find(reg) == liveReg.end()) {
-      node.IncPressureByIndex(regType);
-    }
+    node.IncPressureByIndex(regType);
   } else {
     /* if it is the last time using the reg, register pressure decrease. */
     if (IsLastUse(node, reg)) {
-      if (liveReg.find(reg) != liveReg.end()) {
-        node.DecPressureByIndex(regType);
-      }
+      node.DecPressureByIndex(regType);
     }
   }
 }
@@ -190,6 +188,12 @@ void RegPressureSchedule::UpdateLiveReg(const DepNode &node, regno_t reg, bool d
   if (def) {
     if (liveReg.find(reg) == liveReg.end()) {
       liveReg.insert(reg);
+    }
+    /* if no use list, a register is only defined, not be used */
+    auto it = node.GetRegDefs().find(reg);
+    ASSERT(it != node.GetRegDefs().end(), "not find reg!");
+    if (it->second == nullptr) {
+      liveReg.erase(reg);
     }
   } else {
     if (IsLastUse(node, reg)) {
@@ -202,38 +206,76 @@ void RegPressureSchedule::UpdateLiveReg(const DepNode &node, regno_t reg, bool d
 
 /* update register pressure information. */
 void RegPressureSchedule::UpdateBBPressure(const DepNode &node) {
-  const MapleSet<regno_t> &uses = node.GetUses();
-  const MapleSet<regno_t> &defs = node.GetDefs();
+  for (auto &useReg : node.GetRegUses()) {
+    auto reg = useReg.first;
 
-  for (auto reg : uses) {
+#ifdef PRESCHED_DEBUG
     UpdateLiveReg(node, reg, false);
+    if (liveReg.find(reg) == liveReg.end()) {
+      continue;
+    }
+#endif
+
+    /* find all insn that use the reg, if a insn use the reg lastly, insn'pressure - 1 */
+    auto it = node.GetRegUses().find(reg);
+    ASSERT(it->second != nullptr, "valid iterator check");
+    ASSERT(it != node.GetRegUses().end(), "not find reg!");
+    RegList *regList = it->second;
+
+    while (regList != nullptr) {
+      CHECK_NULL_FATAL(regList->insn);
+      DepNode *useNode = regList->insn->GetDepNode();
+      if (useNode->GetState() == kScheduled) {
+        regList = regList->next;
+        continue;
+      }
+
+      if (IsLastUse(*useNode, reg)) {
+        RegType regType = GetRegisterType(reg);
+        useNode->DecPressureByIndex(regType);
+      }
+      break;
+    }
   }
-  for (auto reg : defs) {
-    UpdateLiveReg(node, reg, true);
+
+#ifdef PRESCHED_DEBUG
+  for (auto &defReg : node.GetRegDefs()) {
+    UpdateLiveReg(node, defReg.first, true);
   }
-  const int32 *pressure = node.GetPressure();
-  ASSERT(pressure != nullptr, "get pressure in node failed in RegPressureSchedule::UpdateBBPressure");
+#endif
+
+  const auto &pressures = node.GetPressure();
+  const auto &deadDefNum = node.GetDeadDefNum();
+#ifdef PRESCHED_DEBUG
+  LogInfo::MapleLogger() << "node's pressure: ";
+  for (auto pressure : pressures) {
+    LogInfo::MapleLogger() << pressure[i] << " ";
+  }
+  LogInfo::MapleLogger() << "\n";
+#endif
+
   FOR_ALL_REGCLASS(i) {
-    curPressure[i] += pressure[i];
+    curPressure[i] += pressures[i];
     if (curPressure[i] > maxPressure[i]) {
       maxPressure[i] = curPressure[i];
     }
+    curPressure[i] -= deadDefNum[i];
   }
 }
 
 /* update node priority and try to update the priority of all node's ancestor. */
 void RegPressureSchedule::UpdatePriority(DepNode &node) {
-  std::queue<DepNode*> workQueue;
-  workQueue.push(&node);
+  std::vector<DepNode*> workQueue;
+  workQueue.push_back(&node);
   node.SetPriority(maxPriority++);
   do {
     DepNode *nowNode = workQueue.front();
-    workQueue.pop();
+    workQueue.erase(workQueue.begin());
     for (auto pred : nowNode->GetPreds()) {
       DepNode &from = pred->GetFrom();
-      if (from.GetState() != kScheduled) {
+      if (from.GetState() != kScheduled && from.GetPriority() != maxPriority) {
         from.SetPriority(maxPriority);
-        workQueue.push(&from);
+        workQueue.push_back(&from);
       }
     }
   } while (!workQueue.empty());
@@ -241,13 +283,7 @@ void RegPressureSchedule::UpdatePriority(DepNode &node) {
 
 /* return true if all node's pred has been scheduled. */
 bool RegPressureSchedule::CanSchedule(const DepNode &node) const {
-  for (auto pred : node.GetPreds()) {
-    DepNode &from = pred->GetFrom();
-    if (from.GetState() != kScheduled) {
-      return false;
-    }
-  }
-  return true;
+  return node.GetValidPredsSize() == 0;
 }
 
 /*
@@ -258,6 +294,8 @@ bool RegPressureSchedule::CanSchedule(const DepNode &node) const {
 void RegPressureSchedule::UpdateReadyList(const DepNode &node) {
   for (auto *succ : node.GetSuccs()) {
     DepNode &succNode = succ->GetTo();
+    succNode.DescreaseValidPredsSize();
+
     if (((succ->GetDepType() == kDependenceTypeTrue) || CanSchedule(succNode)) && (succNode.GetState() == kNormal)) {
       readyList.push_back(&succNode);
       succNode.SetState(kReady);
@@ -283,20 +321,85 @@ DepNode *RegPressureSchedule::ChooseNode() {
   return node;
 }
 
+void RegPressureSchedule::DumpBBLiveInfo() const {
+  LogInfo::MapleLogger() << "Live In: ";
+  for (auto reg : bb->GetLiveInRegNO()) {
+    LogInfo::MapleLogger() << "R" <<reg << " ";
+  }
+  LogInfo::MapleLogger() << "\n";
+
+  LogInfo::MapleLogger() << "Live Out: ";
+  for (auto reg : bb->GetLiveOutRegNO()) {
+    LogInfo::MapleLogger() << "R" << reg << " ";
+  }
+  LogInfo::MapleLogger() << "\n";
+}
+
+void RegPressureSchedule::DumpReadyList() const {
+  LogInfo::MapleLogger() << "readyList: " << "\n";
+  for (DepNode *it : readyList) {
+    if (CanSchedule(*it)) {
+      LogInfo::MapleLogger() << it->GetInsn()->GetId() << "CS ";
+    } else {
+      LogInfo::MapleLogger() << it->GetInsn()->GetId() << "NO ";
+    }
+  }
+  LogInfo::MapleLogger() << "\n";
+}
+
+void RegPressureSchedule::DumpSelectInfo(const DepNode &node) const {
+  LogInfo::MapleLogger() << "select a node: " << "\n";
+  node.DumpSchedInfo();
+  node.DumpRegPressure();
+  node.GetInsn()->Dump();
+
+  LogInfo::MapleLogger() << "liveReg: ";
+  for (auto reg : liveReg) {
+    LogInfo::MapleLogger() << "R" << reg << " ";
+  }
+  LogInfo::MapleLogger() << "\n";
+
+  LogInfo::MapleLogger() << "\n";
+}
+
+void RegPressureSchedule::DumpBBPressureInfo() const {
+  LogInfo::MapleLogger() << "curPressure: ";
+  FOR_ALL_REGCLASS(i) {
+    LogInfo::MapleLogger() << curPressure[i] << " ";
+  }
+  LogInfo::MapleLogger() << "\n";
+
+  LogInfo::MapleLogger() << "maxPressure: ";
+  FOR_ALL_REGCLASS(i) {
+    LogInfo::MapleLogger() << maxPressure[i] << " ";
+  }
+  LogInfo::MapleLogger() << "\n";
+}
+
+
 void RegPressureSchedule::DoScheduling(MapleVector<DepNode*> &nodes) {
+#ifdef PRESCHED_DEBUG
+  LogInfo::MapleLogger() << "--------------- bb " << bb->GetId() <<" begin scheduling -------------" << "\n";
+  DumpBBLiveInfo();
+#endif
+
   /* initialize register pressure information and readylist. */
-  InitPressure();
-  InitReadyList(nodes);
+  Init(nodes);
   CalculateMaxDepth(nodes);
-  SortReadyList();
   while (!readyList.empty()) {
     /* calculate register pressure */
-    for (auto *it : readyList) {
+    for (DepNode *it : readyList) {
       ReCalculateDepNodePressure(*it);
     }
 
     /* choose a node can be scheduled currently. */
     DepNode *node = ChooseNode();
+#ifdef PRESCHED_DEBUG
+    DumpBBPressureInfo();
+    DumpReadyList();
+    LogInfo::MapleLogger() << "first tmp select node: " << node->GetInsn()->GetId() << "\n";
+#endif
+
     while (!CanSchedule(*node)) {
       UpdatePriority(*node);
       SortReadyList();
@@ -317,8 +420,14 @@ void RegPressureSchedule::DoScheduling(MapleVector<DepNode*> &nodes) {
     }
     UpdateReadyList(*node);
     SortReadyList();
+#ifdef PRESCHED_DEBUG
+    DumpSelectInfo(*node);
+#endif
   }
 
+#ifdef PRESCHED_DEBUG
+  LogInfo::MapleLogger() << "---------------------------------- end --------------------------------" << "\n";
+#endif
   /* update nodes according to scheduledNode. */
   nodes.clear();
   for (auto node : scheduledNode) {

@@ -626,7 +626,6 @@ DepNode *AArch64DepAnalysis::BuildSeparatorNode() {
   if (beforeRA) {
     RegPressure *regPressure = memPool.New<RegPressure>(alloc);
     separatorNode->SetRegPressure(*regPressure);
-    separatorNode->SetPressure(*memPool.NewArray<int>(RegPressure::GetMaxRegClassNum()));
   }
   return separatorNode;
 }
@@ -825,7 +824,7 @@ void AArch64DepAnalysis::BuildSpecialInsnDependency(Insn &insn, DepNode &depNode
       AddDependence(*lastCallInsn->GetDepNode(), *insn.GetDepNode(), kDependenceTypeControl);
     }
     lastCallInsn = &insn;
-  } else if (insn.IsClinit() || insn.IsLazyLoad()) {
+  } else if (insn.IsClinit() || insn.IsLazyLoad() || insn.IsArrayClassCache()) {
     BuildDepsDirtyHeap(insn);
     BuildDepsDefReg(insn, kRFLAG);
     if (!insn.IsAdrpLdr()) {
@@ -874,7 +873,6 @@ DepNode *AArch64DepAnalysis::GenerateDepNode(Insn &insn, MapleVector<DepNode*> &
   if (beforeRA) {
     RegPressure *regPressure = memPool.New<RegPressure>(alloc);
     depNode->SetRegPressure(*regPressure);
-    depNode->SetPressure(*memPool.NewArray<int32>(RegPressure::GetMaxRegClassNum()));
   }
   depNode->SetIndex(nodeSum);
   nodes.push_back(depNode);
@@ -909,18 +907,19 @@ void AArch64DepAnalysis::UpdateRegUseAndDef(Insn &insn, DepNode &depNode) {
   for (auto regNO : useRegnos) {
     AppendRegUseList(insn, regNO);
     if (beforeRA) {
-      depNode.AddUseReg(regNO);
       depNode.SetRegUses(regNO, *regUses[regNO]);
     }
   }
-  for (const auto &regNO : defRegnos) {
+
+  for (const auto regNO : defRegnos) {
     regDefs[regNO] = &insn;
     regUses[regNO] = nullptr;
     if (beforeRA) {
-      depNode.AddDefReg(regNO);
+      depNode.SetRegDefs(regNO, nullptr);
     }
   }
 }
+
 
 /* Update stack and heap dependency */
 void AArch64DepAnalysis::UpdateStackAndHeapDependency(DepNode &depNode, Insn &insn, const Insn &locInsn) {

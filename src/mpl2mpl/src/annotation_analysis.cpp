@@ -18,7 +18,7 @@ namespace maple {
 char AnnotationAnalysis::annoDeclare = ':';
 char AnnotationAnalysis::annoSemiColon = ';';
 int AnnotationType::atime = 0;
-MIRStructType *GetClassTypeFromName(std::string &className) {
+MIRStructType *GetClassTypeFromName(const std::string &className) {
   GStrIdx strIdx = GlobalTables::GetStrTable().GetStrIdxFromName(className);
   if (strIdx == 0) {
     strIdx = GlobalTables::GetStrTable().GetStrIdxFromName("Ljava_2Flang_2FObject_3B");
@@ -369,7 +369,7 @@ GenericDeclare *AnnotationAnalysis::ReadInGenericDeclare(AnnotationParser &aPars
   return gDeclare;
 }
 
-std::string AnnotationAnalysis::ReadInAllSubString(MIRPragma &classPragma) {
+std::string AnnotationAnalysis::ReadInAllSubString(const MIRPragma &classPragma) {
   GStrIdx gStrIdx;
   std::string signature;
   CHECK_FATAL(classPragma.GetElementVector().size() == 1, "must be");
@@ -454,7 +454,7 @@ void AnnotationAnalysis::AnalysisAnnotationForFunc(MIRPragma &funcPragma, MIRStr
   AnalysisAnnotationForFuncLocalVar(*func, aParser, structType);
 }
 
-void AnnotationAnalysis::AnalysisAnnotationForVar(MIRPragma &varPragma, MIRStructType &structType) {
+void AnnotationAnalysis::AnalysisAnnotationForVar(const MIRPragma &varPragma, MIRStructType &structType) {
   std::string signature = ReadInAllSubString(varPragma);
   AnnotationParser aParser(signature);
   ATokenKind tk = aParser.GetNextToken();

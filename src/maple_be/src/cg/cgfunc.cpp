@@ -309,6 +309,14 @@ Operand *HandleIntrinOp(const BaseNode &parent, BaseNode &expr, CGFunc &cgFunc) 
       auto mirIntConst = static_cast<MIRIntConst*>(constNode->GetConstVal());
       return cgFunc.SelectLazyLoadStatic(*st, mirIntConst->GetValue(), intrinsicopNode.GetPrimType());
     }
+    case INTRN_MPL_READ_ARRAYCLASS_CACHE_ENTRY: {
+      auto addrOfNode = static_cast<AddrofNode*>(intrinsicopNode.Opnd(0));
+      MIRSymbol *st = cgFunc.GetMirModule().CurFunction()->GetLocalOrGlobalSymbol(addrOfNode->GetStIdx());
+      auto constNode = static_cast<ConstvalNode*>(intrinsicopNode.Opnd(1));
+      CHECK_FATAL(constNode != nullptr, "null ptr check");
+      auto mirIntConst = static_cast<MIRIntConst*>(constNode->GetConstVal());
+      return cgFunc.SelectLoadArrayClassCache(*st, mirIntConst->GetValue(), intrinsicopNode.GetPrimType());
+    }
     default:
       ASSERT(false, "Should not reach here.");
       return nullptr;

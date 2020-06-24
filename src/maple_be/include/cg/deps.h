@@ -277,27 +277,31 @@ class DepNode {
   void InitPressure() {
     regPressure->InitPressure();
   }
-  const int32 *GetPressure() const {
+  const MapleVector<int32> &GetPressure() const {
     return regPressure->GetPressure();
   }
-  void SetPressure(int32 &pressure) {
-    regPressure->SetPressure(&pressure);
-  }
+
   void IncPressureByIndex(int32 idx) {
     regPressure->IncPressureByIndex(idx);
   }
   void DecPressureByIndex(int32 idx) {
     regPressure->DecPressureByIndex(idx);
   }
-  void AddUseReg(regno_t reg) {
-    regPressure->AddUseReg(reg);
+
+  const MapleVector<int32> &GetDeadDefNum() const {
+    return regPressure->GetDeadDefNum();
   }
-  void AddDefReg(regno_t reg) {
-    regPressure->AddDefReg(reg);
+  void IncDeadDefByIndex(int32 idx) {
+    regPressure->IncDeadDefByIndex(idx);
   }
+
   void SetRegUses(regno_t regNO, RegList &regList) {
     regPressure->SetRegUses(regNO, &regList);
   }
+  void SetRegDefs(regno_t regNO, RegList *regList) {
+    regPressure->SetRegDefs(regNO, regList);
+  }
+
   int32 GetIncPressure() const {
     return regPressure->GetIncPressure();
   }
@@ -322,14 +326,11 @@ class DepNode {
   void SetPriority(int32 value) {
     regPressure->SetPriority(value);
   }
-  const MapleSet<regno_t> &GetUses() const {
-    return regPressure->GetUses();
-  }
-  const MapleSet<regno_t> &GetDefs() const {
-    return regPressure->GetDefs();
-  }
-  const MapleMap<regno_t, RegList*> &GetRegUses() const {
+  const MapleUnorderedMap<regno_t, RegList*> &GetRegUses() const {
     return regPressure->GetRegUses();
+  }
+  const MapleUnorderedMap<regno_t, RegList*> &GetRegDefs() const {
+    return regPressure->GetRegDefs();
   }
 
   const Insn *GetLocInsn() const {

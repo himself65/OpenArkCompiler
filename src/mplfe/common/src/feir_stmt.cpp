@@ -861,7 +861,7 @@ std::unique_ptr<FEIRExpr> FEIRExprTypeCvt::CloneImpl() const {
 
 BaseNode *FEIRExprTypeCvt::GenMIRNodeImpl(MIRBuilder &mirBuilder) const {
   auto ptrFunc = funcPtrMapForParseExpr.find(op);
-  ASSERT(ptrFunc != funcPtrMapForParseExpr.end(), "unsupported op: %s", kOpcodeInfo.GetName(op));
+  ASSERT(ptrFunc != funcPtrMapForParseExpr.end(), "unsupported op: %s", kOpcodeInfo.GetName(op).c_str());
   return (this->*(ptrFunc->second))(mirBuilder);
 }
 
@@ -938,7 +938,7 @@ std::unique_ptr<FEIRExpr> FEIRExprExtractBits::CloneImpl() const {
 
 BaseNode *FEIRExprExtractBits::GenMIRNodeImpl(MIRBuilder &mirBuilder) const {
   auto ptrFunc = funcPtrMapForParseExpr.find(op);
-  ASSERT(ptrFunc != funcPtrMapForParseExpr.end(), "unsupported op: %s", kOpcodeInfo.GetName(op));
+  ASSERT(ptrFunc != funcPtrMapForParseExpr.end(), "unsupported op: %s", kOpcodeInfo.GetName(op).c_str());
   return (this->*(ptrFunc->second))(mirBuilder);
 }
 
@@ -1017,7 +1017,7 @@ std::unique_ptr<FEIRExpr> FEIRExprBinary::CloneImpl() const {
 
 BaseNode *FEIRExprBinary::GenMIRNodeImpl(MIRBuilder &mirBuilder) const {
   auto ptrFunc = funcPtrMapForGenMIRNode.find(op);
-  ASSERT(ptrFunc != funcPtrMapForGenMIRNode.end(), "unsupported op: %s", kOpcodeInfo.GetName(op));
+  ASSERT(ptrFunc != funcPtrMapForGenMIRNode.end(), "unsupported op: %s", kOpcodeInfo.GetName(op).c_str());
   return (this->*(ptrFunc->second))(mirBuilder);
 }
 

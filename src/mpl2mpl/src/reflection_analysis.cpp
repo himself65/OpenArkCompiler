@@ -59,6 +59,8 @@ constexpr int kModifierRCWeak = 25;           // 0x01000000
 constexpr int kModifierHiddenApiGrey = 26;    // 0x02000000
 constexpr int kModifierHiddenApiBlack = 27;   // 0x04000000
 constexpr int kModifierAFOriginPublic = 28;   // 0x08000000
+constexpr int kModifierLocalClass = 29;       // 0x10000000
+constexpr int kModifierLocalClassVaild = 30;  // 0x20000000 for compatibility
 
 // +1 is needed here because our field id starts with 0 pointing to the struct itself
 constexpr uint32 kObjKlassFieldID = static_cast<uint32>(ClassProperty::kShadow) + 1;
@@ -129,6 +131,7 @@ constexpr int kAnonymousClassIndex = 5;
 constexpr char kAnonymousClassSuffix[] = "30";
 constexpr char kInnerClassStr[] = "Lark/annotation/InnerClass;";
 constexpr char kEnclosingClassStr[] = "Lark/annotation/EnclosingClass;";
+constexpr char kEnclosingMethod[] = "Lark/annotation/EnclosingMethod;";
 constexpr char kArkAnnotationEnclosingClassStr[] = "Lark_2Fannotation_2FEnclosingClass_3B";
 } // namespace
 
@@ -148,7 +151,7 @@ std::string ReflectionAnalysis::strTabRunHot = std::string(1, '\0');
 bool ReflectionAnalysis::strTabInited = false;
 
 void ReflectionAnalysis::GenFieldTypeClassInfo(const MIRType &type, const Klass &klass, std::string &classInfo,
-                         const std::string fieldName, bool &isClass) {
+                                               const std::string fieldName, bool &isClass) {
   switch (type.GetKind()) {
     case kTypeScalar: {
       isClass = false;
@@ -1504,6 +1507,7 @@ void ReflectionAnalysis::GenClassMetaData(Klass &klass) {
   std::map<int, int> idxNumMap;
   GenAnnotation(idxNumMap, annoArray, *structType, kPragmaClass, klass.GetKlassName(), invalidIdx);
   bool isAnonymous = IsAnonymousClass(annoArray);
+  bool isLocalClass = IsLocalClass(annoArray);
   CheckPrivateInnerAndNoSubClass(klass, annoArray);
 #ifndef USE_32BIT_REF
   // @flag
@@ -1519,6 +1523,9 @@ void ReflectionAnalysis::GenClassMetaData(Klass &klass) {
 #endif  // USE_32BIT_REF
   // @modifier: For class fill ClassAccessFlags.
   uint32 modifier = GetClassAccessFlags(*structType);
+  modifier |= (isLocalClass << (kModifierLocalClass - 1));
+  modifier |= (1 << (kModifierLocalClassVaild - 1));
+
   mirBuilder.AddIntFieldConst(classMetadataROType, *newConst, fieldID++, modifier);
   // @annotation: Set annotation field.
   uint32_t signatureIdx = GetAnnoCstrIndex(idxNumMap, annoArray, false);
@@ -1630,6 +1637,16 @@ bool ReflectionAnalysis::IsAnonymousClass(const std::string &annotationString) {
     if (annotationString.substr(pos + 1, annotationLength) == kAnonymousClassSuffix) {
       return true;
     }
+  }
+  return false;
+}
+
+bool ReflectionAnalysis::IsLocalClass(const std::string annotationString) {
+  uint32_t idx = ReflectionAnalysis::FindOrInsertReflectString(kEnclosingMethod);
+  std::string target = annoDelimiterPrefix + std::to_string(idx) + annoDelimiter;
+  size_t pos = annotationString.find(target, 0);
+  if (pos != std::string::npos) {
+    return true;
   }
   return false;
 }

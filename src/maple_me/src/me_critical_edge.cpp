@@ -32,7 +32,7 @@
 // newbb is always appended at the end of bb_vec_ and pred/succ will be updated.
 // The bblayout phase will determine the final layout order of the bbs.
 namespace maple {
-void MeDoSplitCEdge::UpdateNewBBInTry(BB &newBB, BB &pred) const {
+void MeDoSplitCEdge::UpdateNewBBInTry(BB &newBB, const BB &pred) const {
   newBB.SetAttributes(kBBAttrIsTry);
   for (auto *candCatch : pred.GetSucc()) {
     if (candCatch != nullptr && candCatch->GetAttributes(kBBAttrIsCatch)) {

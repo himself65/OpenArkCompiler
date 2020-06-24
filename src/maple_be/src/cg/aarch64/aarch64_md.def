@@ -669,6 +669,14 @@
 {MOP_adrp_ldr, {mopdReg64ID, mopdLiteral},ISATOMIC|CANTHROW,kLtAdrpLdr,"intrinsic_adrpldr","0,1",2},
 
 /*
+ * will be emit to three instrunctions in a row:
+ * adrp  xd, :got:__arrayClassCacheTable$$xxx+offset
+ * ldr xd, [xd,#:got_lo12:__arrayClassCacheTable$$xx+offset]
+ * ldr xzr, [xd]
+ */
+{MOP_arrayclass_cache_ldr, {mopdReg64ID,mopdLiteral},ISATOMIC|CANTHROW,kLtAdrpLdr,"intrinsic_loadarrayclass","0,1",3},
+
+/*
  * ldr x17, [xs,#112]
  * ldr wzr, [x17]
  */

@@ -28,13 +28,13 @@ void RegPressure::DumpRegPressure() const {
   PRINT_STR_VAL("near: ", near);
   LogInfo::MapleLogger() << "\n";
   LogInfo::MapleLogger() << std::left << std::setw(width) << "usereg: ";
-  for (const auto &useRegNO : uses) {
-    LogInfo::MapleLogger() << "R" << useRegNO << " ";
+  for (const auto &useReg : regUses) {
+    LogInfo::MapleLogger() << "R" << useReg.first << " ";
   }
   LogInfo::MapleLogger() << "\n";
   LogInfo::MapleLogger() << std::left << std::setw(width) << "defreg: ";
-  for (const auto &defRegNO : defs) {
-    LogInfo::MapleLogger() << "R" << defRegNO << " ";
+  for (const auto &defReg : regDefs) {
+    LogInfo::MapleLogger() << "R" << defReg.first << " ";
   }
   LogInfo::MapleLogger() << "\n";
 }

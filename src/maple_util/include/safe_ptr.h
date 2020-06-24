@@ -14,7 +14,7 @@
  */
 #ifndef MAPLE_UTIL_SAFE_PTR_H
 #define MAPLE_UTIL_SAFE_PTR_H
-#include <mpl_logging.h>
+#include "mpl_logging.h"
 #include "ptr.h"
 
 namespace maple {
@@ -29,7 +29,7 @@ class SafePtr {
   using Base = Ptr<T, AssertNotNull<T>>;
  public:
   using pointer = typename Base::Pointer;
-  using ElementType = typename Base::element_type;
+  using ElementType = typename Base::ElementType;
 
   constexpr SafePtr() noexcept = delete;
 

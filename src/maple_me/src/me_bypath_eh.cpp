@@ -58,6 +58,14 @@ bool MeDoBypathEH::DoBypathException(BB *tryBB, BB *catchBB, const Klass *catchC
           pTypeIdx = (static_cast<MIRPtrType*>(pType))->GetPointedType()->GetTypeIndex();
           throwClass = kh.GetKlassFromTyIdx(pTypeIdx);
           rhExpr = iread;
+        } else if (node->Opnd(0)->GetOpCode() == OP_constval) {
+          /*
+           * when cfg changed, this phase will re-run,
+           * some throw would like:
+           * throw (constval ref 0)
+           * see: https://gitlab.huawei.com/Maple/ArkKit/issues/283
+           */
+          continue;
         } else {
           CHECK_FATAL(false, "Can't be here!");
         }
@@ -65,6 +73,8 @@ bool MeDoBypathEH::DoBypathException(BB *tryBB, BB *catchBB, const Klass *catchC
           continue;
         }
         MIRBuilder *mirBuilder = func.GetMIRModule().GetMIRBuilder();
+        UnaryStmtNode *nullCheck = mirBuilder->CreateStmtUnary(OP_assertnonnull, rhExpr);
+        bb->InsertStmtBefore(stmt, nullCheck);
         DassignNode *copyStmt = mirBuilder->CreateStmtDassign(stIdx, 0, rhExpr);
         bb->InsertStmtBefore(stmt, copyStmt);
         CHECK_NULL_FATAL(catchBB);
