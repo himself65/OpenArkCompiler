@@ -35,7 +35,7 @@ class AnalysisResult {
 
   virtual ~AnalysisResult() = default;
 
-  MemPool *GetMempool() {
+  MemPool *GetMempool() const {
     return memPool;
   }
 

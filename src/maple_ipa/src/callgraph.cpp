@@ -242,7 +242,10 @@ CallGraph::CallGraph(MIRModule &m, MemPool &memPool, KlassHierarchy &kh, const s
       nodesMap(cgAlloc.Adapter()),
       sccTopologicalVec(cgAlloc.Adapter()),
       numOfNodes(0),
-      numOfSccs(0) {}
+      numOfSccs(0),
+      lowestOrder(cgAlloc.Adapter()),
+      inStack(cgAlloc.Adapter()),
+      visitStack(cgAlloc.Adapter()) {}
 
 CallType CallGraph::GetCallType(Opcode op) const {
   CallType typeTemp = kCallTypeInvalid;
@@ -1525,9 +1528,7 @@ void SCCNode::Setup() {
 }
 
 void CallGraph::BuildSCCDFS(CGNode &caller, uint32 &visitIndex, std::vector<SCCNode*> &sccNodes,
-                            std::vector<CGNode*> &cgNodes, std::vector<uint32> &visitedOrder,
-                            std::vector<uint32> &lowestOrder, std::vector<bool> &inStack,
-                            std::vector<uint32> &visitStack) {
+                            std::vector<CGNode*> &cgNodes, std::vector<uint32> &visitedOrder) {
   uint32 id = caller.GetID();
   cgNodes.at(id) = &caller;
   visitedOrder.at(id) = visitIndex;
@@ -1544,7 +1545,7 @@ void CallGraph::BuildSCCDFS(CGNode &caller, uint32 &visitIndex, std::vector<SCCN
       uint32 calleeId = calleeNode->GetID();
       if (!visitedOrder.at(calleeId)) {
         // callee has not been processed yet
-        BuildSCCDFS(*calleeNode, visitIndex, sccNodes, cgNodes, visitedOrder, lowestOrder, inStack, visitStack);
+        BuildSCCDFS(*calleeNode, visitIndex, sccNodes, cgNodes, visitedOrder);
         if (lowestOrder.at(calleeId) < lowestOrder.at(id)) {
           lowestOrder.at(id) = lowestOrder.at(calleeId);
         }
@@ -1583,21 +1584,20 @@ void CallGraph::BuildSCC() {
   // frenqutenly in the future.
   std::vector<CGNode*> cgNodes(numOfNodes, nullptr);
   std::vector<uint32> visitedOrder(numOfNodes, 0);
-  std::vector<uint32> lowestOrder(numOfNodes, 0);
-  std::vector<bool> inStack(numOfNodes, false);
+  lowestOrder.resize(numOfNodes, 0);
+  inStack.resize(numOfNodes, false);
   std::vector<SCCNode*> sccNodes;
   uint32 visitIndex = 1;
-  std::vector<uint32> visitStack;
   // Starting from roots is a good strategy for DSF
   for (CGNode *const &root : rootNodes) {
-    BuildSCCDFS(*root, visitIndex, sccNodes, cgNodes, visitedOrder, lowestOrder, inStack, visitStack);
+    BuildSCCDFS(*root, visitIndex, sccNodes, cgNodes, visitedOrder);
   }
   // However, not all SCC can be reached from roots.
   // E.g. foo()->foo(), foo is not considered as a root.
   for (auto const &it : nodesMap) {
     CGNode *node = it.second;
     if (node->GetSCCNode() == nullptr) {
-      BuildSCCDFS(*node, visitIndex, sccNodes, cgNodes, visitedOrder, lowestOrder, inStack, visitStack);
+      BuildSCCDFS(*node, visitIndex, sccNodes, cgNodes, visitedOrder);
     }
   }
   for (SCCNode *const &scc : sccNodes) {
@@ -1608,6 +1608,9 @@ void CallGraph::BuildSCC() {
     }
   }
   SCCTopologicalSort(sccNodes);
+  lowestOrder.clear();
+  inStack.clear();
+  visitStack.clear();
 }
 
 void CallGraph::SCCTopologicalSort(const std::vector<SCCNode*> &sccNodes) {

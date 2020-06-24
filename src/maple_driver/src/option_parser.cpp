@@ -130,7 +130,7 @@ void OptionParser::PrintUsage(const std::string &helpType, const unsigned int he
 }
 
 
-bool OptionParser::HandleKeyValue(const std::string &key, const std::string &value, bool isValueEmpty,
+bool OptionParser::HandleKeyValue(const std::string &key, const std::string &value,
                                   std::vector<mapleOption::Option> &inputOption, const std::string &exeName,
                                   bool isAllOption) {
   if (key.empty()) {
@@ -237,7 +237,8 @@ bool OptionParser::CheckOpt(const std::string option, std::string &lastKey,
     isLastMatch = false;
     std::string key = option.substr(0, pos);
     std::string value = option.substr(pos + 1);
-    return HandleKeyValue(key, value, value.empty(), inputOption, exeName);
+    isValueEmpty = value.empty();
+    return HandleKeyValue(key, value, inputOption, exeName);
   } else {
     auto item = usages.find(option);
     if (item != usages.end()) {
@@ -245,7 +246,8 @@ bool OptionParser::CheckOpt(const std::string option, std::string &lastKey,
         lastKey = option;
         isLastMatch = true;
       } else {
-        return HandleKeyValue(option, "", false, inputOption, exeName);
+        isValueEmpty = false;
+        return HandleKeyValue(option, "", inputOption, exeName);
       }
     } else {
       LogInfo::MapleLogger(kLlErr) << ("Unknown Option: " + option) << '\n';
@@ -284,12 +286,14 @@ ErrorCode OptionParser::HandleInputArgs(const std::vector<std::string> &inputArg
       ret = CheckOpt(arg, lastKey, isLastMatchOpt, inputOption, exeName);
     } else if (isLastMatchOpt && !isOptMatched) {
       isLastMatchOpt = false;
-      ret = HandleKeyValue(lastKey, arg, false, inputOption, exeName, isAllOption);
+      isValueEmpty = false;
+      ret = HandleKeyValue(lastKey, arg, inputOption, exeName, isAllOption);
     } else if (isLastMatchOpt && isOptMatched) {
       LogInfo::MapleLogger(kLlErr) << ("Unknown Option: " + arg) << '\n';
       return kErrorInvalidParameter;
     } else {
-      ret = HandleKeyValue("", arg, false, inputOption, exeName, isAllOption);
+      isValueEmpty = false;
+      ret = HandleKeyValue("", arg, inputOption, exeName, isAllOption);
     }
     if (i == inputArgs.size() - 1 && isLastMatchOpt) {
       LogInfo::MapleLogger(kLlErr) << ("Option " + lastKey + " requires an argument.") << '\n';

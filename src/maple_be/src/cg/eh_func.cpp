@@ -297,6 +297,9 @@ void EHFunc::CreateTypeInfoSt() {
   }
 
   const auto *classType = static_cast<const MIRClassType*>(mirFunc.GetClassType());
+  if (cgFunc->GetMirModule().IsCModule() && classType == nullptr) {
+    return;
+  }
   ASSERT(classType != nullptr, "");
   if (classType->GetMethods().empty() && (classType->GetFieldsSize() == 0)) {
     return;
