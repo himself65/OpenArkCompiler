@@ -436,7 +436,11 @@ MIRSymbol *MIRBuilder::GetSymbol(TyIdx tyIdx, const std::string &name, MIRSymKin
 // when sametype is true, it means match everything the of the symbol
 MIRSymbol *MIRBuilder::GetSymbol(TyIdx tyIdx, GStrIdx strIdx, MIRSymKind mClass, MIRStorageClass sClass,
                                  uint8 scpID, bool sameType = false) const {
-  return MIRSymbolBuilder::Instance().GetSymbol(tyIdx, strIdx, mClass, sClass, scpID, sameType);
+  if (scpID != kScopeGlobal) {
+    ERR(kLncErr, "not yet implemented");
+    return nullptr;
+  }
+  return MIRSymbolBuilder::Instance().GetSymbol(tyIdx, strIdx, mClass, sClass, sameType);
 }
 
 MIRSymbol *MIRBuilder::GetOrCreateSymbol(TyIdx tyIdx, const std::string &name, MIRSymKind mClass,

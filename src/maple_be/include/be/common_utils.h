@@ -86,12 +86,12 @@ constexpr int32 kEARetTempNameSize = 10;
  * Aarch64 data processing instructions have 12 bits of space for values in their instuction word
  * This is arranged as a four-bit rotate value and an eight-bit immediate value:
  */
-constexpr uint32 kMaxAarch64ImmVal12Bits = 12;
-
-constexpr uint32 kMaxAarch64ImmVal13Bits = 13;
+constexpr uint32 kMaxImmVal8Bits = 8;
+constexpr uint32 kMaxImmVal12Bits = 12;
+constexpr uint32 kMaxImmVal13Bits = 13;
 
 /* aarch64 assembly takes up to 24-bits */
-constexpr uint32 kMaxAarch64ImmVal24Bits = 24;
+constexpr uint32 kMaxImmVal24Bits = 24;
 
 constexpr double kMicroSecPerMilliSec = 1000.0;
 

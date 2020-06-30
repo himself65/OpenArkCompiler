@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -44,7 +44,7 @@ class MIRSymbolBuilder {
   MIRSymbol *CreateLocalDecl(MIRSymbolTable &symbolTable, GStrIdx strIdx, const MIRType &type) const;
   MIRSymbol *GetGlobalDecl(GStrIdx strIdx) const;
   MIRSymbol *CreateGlobalDecl(GStrIdx strIdx, const MIRType &type, MIRStorageClass sc) const;
-  MIRSymbol *GetSymbol(TyIdx tyIdx, GStrIdx strIdx, MIRSymKind mClass, MIRStorageClass sClass, uint8 scpID,
+  MIRSymbol *GetSymbol(TyIdx tyIdx, GStrIdx strIdx, MIRSymKind mClass, MIRStorageClass sClass,
                        bool sameType = false) const;
   MIRSymbol *CreateSymbol(TyIdx tyIdx, GStrIdx strIdx, MIRSymKind mClass, MIRStorageClass sClass,
                           MIRFunction *func, uint8 scpID) const;

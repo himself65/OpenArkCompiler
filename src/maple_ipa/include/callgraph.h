@@ -430,15 +430,25 @@ class CallGraph : public AnalysisResult {
   void BuildSCC();
   void VerifySCC() const;
   void BuildSCCDFS(CGNode &caller, unsigned int &visitIndex, std::vector<SCCNode*> &sccNodes,
-                   std::vector<CGNode*> &cgNodes, std::vector<uint32> &visitedOrder,
-                   std::vector<uint32> &lowestOrder, std::vector<bool> &inStack,
-                   std::vector<uint32> &visitStack);
+                   std::vector<CGNode*> &cgNodes, std::vector<uint32> &visitedOrder);
 
   void SetDebugFlag(bool flag) {
     debugFlag = flag;
   }
 
  private:
+  void GenCallGraph();
+  CGNode *GetOrGenCGNode(PUIdx puIdx, bool isVcall = false, bool isIcall = false);
+  CallType GetCallType(Opcode op) const;
+  void FindRootNodes();
+  void SCCTopologicalSort(const std::vector<SCCNode*> &sccNodes);
+  void SetCompilationFunclist() const;
+  void IncrNodesCount(CGNode *cgNode, BaseNode *bn);
+
+  CallInfo *GenCallInfo(CallType type, MIRFunction *call, StmtNode *s, uint32 loopDepth, uint32 callsiteID) {
+    return cgAlloc.GetMemPool()->New<CallInfo>(type, *call, s, loopDepth, callsiteID);
+  }
+
   bool debugFlag = false;
   bool debugScc = false;
   MIRModule *mirModule;
@@ -454,17 +464,9 @@ class CallGraph : public AnalysisResult {
   uint32 numOfNodes;
   uint32 numOfSccs;
   std::unordered_set<uint64> callsiteHash;
-  void GenCallGraph();
-  CGNode *GetOrGenCGNode(PUIdx puIdx, bool isVcall = false, bool isIcall = false);
-  CallType GetCallType(Opcode op) const;
-  CallInfo *GenCallInfo(CallType type, MIRFunction *call, StmtNode *s, uint32 loopDepth, uint32 callsiteID) {
-    return cgAlloc.GetMemPool()->New<CallInfo>(type, *call, s, loopDepth, callsiteID);
-  }
-
-  void FindRootNodes();
-  void SCCTopologicalSort(const std::vector<SCCNode*> &sccNodes);
-  void SetCompilationFunclist() const;
-  void IncrNodesCount(CGNode *cgNode, BaseNode *bn);
+  MapleVector<uint32> lowestOrder;
+  MapleVector<bool> inStack;
+  MapleVector<uint32> visitStack;
 };
 
 class DoCallGraph : public ModulePhase {
