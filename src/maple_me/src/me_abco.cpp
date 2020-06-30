@@ -902,7 +902,10 @@ bool MeABC::BuildAssignInGraph(MeStmt &meStmt) {
           rhsNode = inequalityGraph->GetOrCreateConstNode(
               static_cast<ConstMeExpr*>(opMeExpr->GetOpnd(0))->GetIntValue());
         }
-        (void)inequalityGraph->AddEdge(*arrLength, *rhsNode, 0, EdgeType::kNone);
+        InequalEdge *pairEdge1 = inequalityGraph->AddEdge(*arrLength, *rhsNode, 0, EdgeType::kNone);
+        InequalEdge *pairEdge2 = inequalityGraph->AddEdge(*rhsNode, *arrLength, 0, EdgeType::kNone);
+        pairEdge1->SetPairEdge(*pairEdge2);
+        pairEdge2->SetPairEdge(*pairEdge1);
         return true;
       }
       case OP_sub: {
@@ -1167,6 +1170,9 @@ bool MeABC::BuildAssignInGraph(MeStmt &meStmt) {
     InequalEdge *pairEdge2 = inequalityGraph->AddEdge(*arrayNode, *ivarNode, 0, EdgeType::kUpper);
     pairEdge1->SetPairEdge(*pairEdge2);
     pairEdge2->SetPairEdge(*pairEdge1);
+    if (rhs->GetMeOp() == kMeOpVar) {
+      AddUseDef(*rhs);
+    }
     return true;
   } else {
     CHECK_FATAL(rhs->GetMeOp() == kMeOpVar || rhs->GetMeOp() == kMeOpConst, "must be");
@@ -1373,6 +1379,23 @@ void MeABC::BuildInequalityGraph() {
   ReSolveEdge();
 }
 
+// opnds <= opnd1.length
+bool MeABC::IsLessOrEuqal(const MeExpr &opnd1, const MeExpr &opnd2) {
+  CHECK_FATAL(opnd1.GetMeOp() == kMeOpVar, "must be");
+  CHECK_FATAL(opnd1.GetPrimType() == PTY_ref, "must be");
+  if (!inequalityGraph->HasNode(opnd1)) {
+    return false;
+  }
+  if (opnd2.GetMeOp() == kMeOpVar && !inequalityGraph->HasNode(opnd2)) {
+    return false;
+  }
+  if (prove->IsLessOrEqual(opnd1, opnd2)) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 void MeABC::FindRedundantABC(MeStmt &meStmt, NaryMeExpr &naryMeExpr) {
   MeExpr *opnd1 = naryMeExpr.GetOpnd(0);
   MeExpr *opnd2 = naryMeExpr.GetOpnd(1);
@@ -1481,25 +1504,24 @@ void MeABC::DeleteABC() {
   }
 }
 
-void MeABC::InitNewStartPoint(MeStmt &meStmt, const NaryMeExpr &nMeExpr) {
+void MeABC::InitNewStartPoint(MeStmt &meStmt, MeExpr &opnd1, MeExpr &opnd2, bool clearGraph) {
   careMeStmts.clear();
   careMePhis.clear();
   carePoints.clear();
   unresolveEdge.clear();
-  inequalityGraph = std::make_unique<InequalityGraph>(*meFunc);
+  if (clearGraph) {
+    inequalityGraph = std::make_unique<InequalityGraph>(*meFunc);
+  }
   CHECK_FATAL(inequalityGraph != nullptr, "inequalityGraph is nullptr");
   prove = std::make_unique<ABCD>(*inequalityGraph);
   CHECK_FATAL(prove != nullptr, "prove is nullptr");
-  CHECK_FATAL(nMeExpr.GetNumOpnds() == kNumOpnds, "msut be");
-  MeExpr *opnd1 = nMeExpr.GetOpnd(0);
-  MeExpr *opnd2 = nMeExpr.GetOpnd(1);
-  CHECK_FATAL(opnd1->GetMeOp() == kMeOpVar, "must be");
-  AddUseDef(*opnd1);
-  if (opnd2->GetMeOp() == kMeOpVar) {
-    AddUseDef(*opnd2);
+  CHECK_FATAL(opnd1.GetMeOp() == kMeOpVar, "must be");
+  AddUseDef(opnd1);
+  if (opnd2.GetMeOp() == kMeOpVar) {
+    AddUseDef(opnd2);
   } else {
-    CHECK_FATAL(opnd2->GetMeOp() == kMeOpConst, "must be");
-    (void)inequalityGraph->GetOrCreateConstNode(static_cast<ConstMeExpr*>(opnd2)->GetIntValue());
+    CHECK_FATAL(opnd2.GetMeOp() == kMeOpConst, "must be");
+    (void)inequalityGraph->GetOrCreateConstNode(static_cast<ConstMeExpr*>(&opnd2)->GetIntValue());
   }
   BB *curBB = meStmt.GetBB();
   if (curBB->GetPiList().size()) {
@@ -1510,6 +1532,86 @@ void MeABC::InitNewStartPoint(MeStmt &meStmt, const NaryMeExpr &nMeExpr) {
     }
   }
   currentCheck = &meStmt;
+}
+
+void MeABC::ProcessCallParameters(CallMeStmt &callNode) {
+  MIRFunction *callFunc = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(callNode.GetPUIdx());
+  if (callFunc->GetBaseClassName().compare("Ljava_2Flang_2FSystem_3B") == 0 &&
+      callFunc->GetBaseFuncName().compare("arraycopy") == 0) {
+    MeExpr *opnd1 = callNode.GetOpnd(1); // The 1th parameter.
+    MeExpr *opnd3 = callNode.GetOpnd(3); // The 3th parameter.
+    CHECK_FATAL(opnd1->GetOp() == OP_dread, "must be");
+    CHECK_FATAL(opnd3->GetOp() == OP_dread, "must be");
+    ConstMeExpr *constOpnd1 = nullptr;
+    ConstMeExpr *constOpnd3 = nullptr;
+    VarMeExpr *varOpnd1 = static_cast<VarMeExpr*>(opnd1);
+    if (varOpnd1->GetDefBy() == kDefByStmt) {
+      MeStmt *defOpnd1Stmt = varOpnd1->GetDefStmt();
+      if (defOpnd1Stmt->GetOp() == OP_dassign && defOpnd1Stmt->GetOpnd(0)->GetOp() == OP_constval) {
+        constOpnd1 = static_cast<ConstMeExpr*>(defOpnd1Stmt->GetOpnd(0));
+      }
+    }
+    VarMeExpr *varOpnd3 = static_cast<VarMeExpr*>(opnd3);
+    if (varOpnd3->GetDefBy() == kDefByStmt) {
+      MeStmt *defOpnd3Stmt = varOpnd3->GetDefStmt();
+      if (defOpnd3Stmt->GetOp() == OP_dassign && defOpnd3Stmt->GetOpnd(0)->GetOp() == OP_constval) {
+        constOpnd3 = static_cast<ConstMeExpr*>(defOpnd3Stmt->GetOpnd(0));
+      }
+    }
+    if (constOpnd1 != nullptr && constOpnd3 != nullptr && constOpnd1->IsZero() && constOpnd3->IsZero()) {
+      MeExpr *opnd0 = callNode.GetOpnd(0); // The 0th parameter.
+      MeExpr *opnd2 = callNode.GetOpnd(2); // The 2th parameter.
+      MeExpr *opnd4 = callNode.GetOpnd(4); // The 4th parameter.
+      InitNewStartPoint(callNode, *opnd0, *opnd4);
+      BuildInequalityGraph();
+      bool opnd0Proved = IsLessOrEuqal(*opnd0, *opnd4);
+      InitNewStartPoint(callNode, *opnd2, *opnd4, false);
+      BuildInequalityGraph();
+      bool opnd2Proved = IsLessOrEuqal(*opnd2, *opnd4);
+      bool boundaryCheck = false;
+      if (opnd0Proved && opnd2Proved) {
+        boundaryCheck = true;
+      }
+      CHECK_FATAL(opnd0->GetOp() == OP_dread, "must be");
+      CHECK_FATAL(opnd2->GetOp() == OP_dread, "must be");
+      VarMeExpr *array0 = static_cast<VarMeExpr*>(opnd0);
+      VarMeExpr *array2 = static_cast<VarMeExpr*>(opnd2);
+      bool nullCheck = false;
+      if (!array0->GetMaybeNull() && !array2->GetMaybeNull()) {
+        nullCheck = true;
+      }
+      bool typeCheck = false;
+      bool isScalar = false;
+      if (array0->GetInferredTyIdx() != 0 && array2->GetInferredTyIdx() != 0) {
+        MIRType *type0 = GlobalTables::GetTypeTable().GetTypeFromTyIdx(array0->GetInferredTyIdx());
+        MIRType *type2 = GlobalTables::GetTypeTable().GetTypeFromTyIdx(array2->GetInferredTyIdx());
+        if (type0 && type2 && type0->IsMIRJarrayType() && type2->IsMIRJarrayType()) {
+          MIRArrayType *arrayType0 = static_cast<MIRArrayType*>(type0);
+          MIRArrayType *arrayType2 = static_cast<MIRArrayType*>(type2);
+          if (arrayType0->GetElemTyIdx() == arrayType2->GetElemTyIdx()) {
+            typeCheck = true;
+            if (arrayType0->GetElemType()->IsScalarType()) {
+              isScalar = true;
+            }
+          }
+        }
+      }
+      if (boundaryCheck && nullCheck && typeCheck) {
+        if (isScalar) {
+          MIRFunction *arrayCopyFunc = meFunc->GetMIRModule().GetMIRBuilder()->GetOrCreateFunction(
+              "Native_java_lang_System_arraycopyCharUnchecked___3CI_3CII", (TyIdx) (PTY_void));
+          callNode.SetPUIdx(arrayCopyFunc->GetPuidx());
+          return;
+        } // ref can be handled, but need to extend ABI.
+      }
+    }
+    if (callFunc->GetBaseFuncNameWithType().compare(
+        "arraycopy_7C_28Ljava_2Flang_2FObject_3BILjava_2Flang_2FObject_3BII_29V") == 0) {
+      MIRFunction *arrayCopyFunc = meFunc->GetMIRModule().GetMIRBuilder()->GetOrCreateFunction(
+          "Native_java_lang_System_arraycopy__Ljava_lang_Object_2ILjava_lang_Object_2II", (TyIdx)(PTY_void));
+      callNode.SetPUIdx(arrayCopyFunc->GetPuidx());
+    }
+  }
 }
 
 void MeABC::ExecuteABCO() {
@@ -1524,7 +1626,8 @@ void MeABC::ExecuteABCO() {
     Rename();
     CollectCareInsns();
     for (auto pair : arrayNewChecks) {
-      InitNewStartPoint(*(pair.first), *(static_cast<NaryMeExpr*>(pair.second)));
+      InitNewStartPoint(*(pair.first), *((static_cast<NaryMeExpr *>(pair.second))->GetOpnd(0)),
+                        *((static_cast<NaryMeExpr *>(pair.second))->GetOpnd(1)));
       BuildInequalityGraph();
       if (MeABC::isDebug) {
         meFunc->GetTheCfg()->DumpToFile(meFunc->GetName());

@@ -155,6 +155,8 @@ class AArch64Insn : public Insn {
 
   uint32 GetLatencyType() const override;
 
+  bool CheckRefField(int32 opndIndex) const;
+
  private:
   void CheckOpnd(Operand &opnd, OpndProp &mopd) const;
   void EmitClinit(const CG&, Emitter&) const;

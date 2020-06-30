@@ -19,6 +19,8 @@
 #include "me_ir.h"
 #include "me_inequality_graph.h"
 #include "me_cfg.h"
+#include "mir_module.h"
+#include "mir_builder.h"
 
 namespace maple {
 struct StmtComparator {
@@ -249,8 +251,10 @@ class MeABC {
   void AddCareInsn(MeStmt &defS);
   void AddCarePhi(MePhiNode &defP);
   void BuildInequalityGraph();
+  bool IsLessOrEuqal(const MeExpr &opnd1, const MeExpr &opnd2);
+  void ProcessCallParameters(CallMeStmt &callNode);
   void FindRedundantABC(MeStmt &meStmt, NaryMeExpr &naryMeExpr);
-  void InitNewStartPoint(MeStmt &meStmt, const NaryMeExpr &nMeExpr);
+  void InitNewStartPoint(MeStmt &meStmt, MeExpr &opnd1, MeExpr &opnd2, bool clearGraph = true);
   void DeleteABC();
   bool CleanABCInStmt(MeStmt &meStmt, NaryMeExpr &naryMeExpr);
   MeExpr *ReplaceArrayExpr(MeExpr &rhs, MeExpr &naryMeExpr, MeStmt *ivarStmt);

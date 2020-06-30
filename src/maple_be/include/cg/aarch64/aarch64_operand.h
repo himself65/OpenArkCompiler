@@ -149,14 +149,6 @@ class AArch64ImmOperand : public ImmOperand {
     return memPool.Clone<AArch64ImmOperand>(*this);
   }
 
-  bool IsInBitSize(uint8 size, uint8 nLowerZeroBits) const override {
-    /* mask1 is a 64bits number that is all 1 shifts left size bits */
-    const uint64 mask1 = 0xffffffffffffffffUL << size;
-    /* mask2 is a 64 bits number that nlowerZeroBits are all 1, higher bits aro all 0 */
-    uint64 mask2 = (static_cast<uint64>(1) << static_cast<uint64>(nLowerZeroBits)) - 1UL;
-    return (mask2 & value) == 0UL && (mask1 & ((static_cast<uint64>(value)) >> nLowerZeroBits)) == 0UL;
-  }
-
   bool IsBitmaskImmediate() const {
     ASSERT(!IsZero(), " 0 is reserved for bitmask immediate");
     ASSERT(!IsAllOnes(), " -1 is reserved for bitmask immediate");
@@ -246,14 +238,6 @@ class AArch64OfstOperand : public OfstOperand {
 
   Operand *Clone(MemPool &memPool) const override {
     return memPool.Clone<AArch64OfstOperand>(*this);
-  }
-
-  bool IsInBitSize(uint8 size, uint8 nLowerZeroBits) const override {
-    /* mask1 is a 64bits number that is all 1 shifts left size bits */
-    const uint64 mask1 = 0xffffffffffffffffUL << size;
-    /* mask2 is a 64 bits number that nlowerZeroBits are all 1, higher bits aro all 0 */
-    uint64 mask2 = (static_cast<uint64>(1) << static_cast<uint64>(nLowerZeroBits)) - 1UL;
-    return (mask2 & value) == 0UL && (mask1 & ((static_cast<uint64>(value)) >> nLowerZeroBits)) == 0UL;
   }
 
   bool IsSymOffset() const {

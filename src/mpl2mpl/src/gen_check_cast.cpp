@@ -22,6 +22,7 @@ namespace {
 constexpr char kMCCReflectThrowCastException[] = "MCC_Reflect_ThrowCastException";
 constexpr char kMCCReflectCheckCastingNoArray[] = "MCC_Reflect_Check_Casting_NoArray";
 constexpr char kMCCReflectCheckCastingArray[] = "MCC_Reflect_Check_Casting_Array";
+constexpr char kCastTargetClass[] = "castTargetClass";
 } // namespace
 
 // This phase does two things:
@@ -124,6 +125,20 @@ void CheckCastGenerator::GenCheckCast(StmtNode &stmt) {
       } else {
         MIRSymbol *classSt = GetOrCreateClassInfoSymbol(checkKlass->GetKlassName());
         BaseNode *valueExpr = builder->CreateExprAddrof(0, *classSt);
+
+        BaseNode *castClassReadNode = nullptr;
+        StmtNode *castClassAssign = nullptr;
+        BaseNode *opnd0 = callNode->GetNopndAt(0);
+        if ((opnd0 != nullptr) && (opnd0->GetOpCode() == OP_regread)) {
+          PregIdx castClassSymPregIdx = currFunc->GetPregTab()->CreatePreg(PTY_ref);
+          castClassAssign = builder->CreateStmtRegassign(PTY_ref, castClassSymPregIdx, valueExpr);
+          castClassReadNode = builder->CreateExprRegread(PTY_ref, castClassSymPregIdx);
+        } else {
+          MIRSymbol *castClassSym =
+              builder->GetOrCreateLocalDecl(kCastTargetClass, *GlobalTables::GetTypeTable().GetRef());
+          castClassAssign = builder->CreateStmtDassign(*castClassSym, 0, valueExpr);
+          castClassReadNode = builder->CreateExprDread(*castClassSym);
+        }
         BaseNode *nullPtrConst = builder->CreateIntConst(0, PTY_ptr);
         const size_t callNodeNopndSize2 = callNode->GetNopndSize();
         CHECK_FATAL(callNodeNopndSize2 > 0, "container check");
@@ -137,14 +152,15 @@ void CheckCastGenerator::GenCheckCast(StmtNode &stmt) {
         BaseNode *opnd = callNode->GetNopndAt(0);
         BaseNode *ireadExpr = GetObjectShadow(opnd);
         BaseNode *innerCond = builder->CreateExprCompare(OP_ne, *GlobalTables::GetTypeTable().GetUInt1(),
-                                                         *GlobalTables::GetTypeTable().GetPtrType(), valueExpr,
+                                                         *GlobalTables::GetTypeTable().GetPtrType(), castClassReadNode,
                                                          ireadExpr);
         auto *innerIfStmt = static_cast<IfStmtNode*>(builder->CreateStmtIf(innerCond));
         MapleVector<BaseNode*> args(builder->GetCurrentFuncCodeMpAllocator()->Adapter());
-        args.push_back(valueExpr);
+        args.push_back(castClassReadNode);
         args.push_back(opnd);
         StmtNode *dassignStmt = builder->CreateStmtCall(checkCastingNoArray->GetPuidx(), args);
         innerIfStmt->GetThenPart()->AddStatement(dassignStmt);
+        ifStmt->GetThenPart()->AddStatement(castClassAssign);
         ifStmt->GetThenPart()->AddStatement(innerIfStmt);
         currFunc->GetBody()->InsertBefore(&stmt, ifStmt);
       }
@@ -175,16 +191,12 @@ void CheckCastGenerator::GenCheckCast(StmtNode &stmt) {
           elemClassSt = GetOrCreateClassInfoSymbol(elementName);
         }
         BaseNode *valueExpr = builder->CreateExprAddrof(0, *elemClassSt);
-        UStrIdx strIdx = GlobalTables::GetUStrTable().GetOrCreateStrIdxFromName(jarrayType->GetJavaName());
-        auto *signatureNode = currFunc->GetCodeMempool()->New<ConststrNode>(strIdx);
-        signatureNode->SetPrimType(PTY_ptr);
         MapleVector<BaseNode*> opnds(currFunc->GetCodeMempoolAllocator().Adapter());
         opnds.push_back(valueExpr);
         const size_t callNodeNopndSize3 = callNode->GetNopndSize();
         CHECK_FATAL(callNodeNopndSize3 > 0, "container check");
         opnds.push_back(callNode->GetNopndAt(0));
         opnds.push_back(builder->CreateIntConst(dim, PTY_ptr));
-        opnds.push_back(signatureNode);
         StmtNode *dassignStmt = builder->CreateStmtCall(checkCastingArray->GetPuidx(), opnds);
         currFunc->GetBody()->InsertBefore(&stmt, dassignStmt);
       } else {

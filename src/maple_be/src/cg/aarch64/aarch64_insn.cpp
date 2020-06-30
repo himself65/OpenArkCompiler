@@ -1019,15 +1019,7 @@ void AArch64Insn::Emit(const CG &cg, Emitter &emitter) const {
     }
   }
 
-  bool isRefField = false;
-  /* set opnd0 ref-field flag, so we can emit the right register */
-  if (IsAccessRefField() && AccessMem()) {
-    Operand *opnd0 = opnds[seq[0]];
-    if (opnd0->IsRegister()) {
-      static_cast<AArch64RegOperand*>(opnd0)->SetRefField(true);
-      isRefField = true;
-    }
-  }
+  bool isRefField = (opndSize == 0) ? false : CheckRefField(seq[0]);
   if (mOp != MOP_comment) {
     emitter.IncreaseJavaInsnCount();
   }
@@ -1088,6 +1080,18 @@ void AArch64Insn::Emit(const CG &cg, Emitter &emitter) const {
   }
 
   emitter.Emit("\n");
+}
+
+/* set opnd0 ref-field flag, so we can emit the right register */
+bool AArch64Insn::CheckRefField(int32 opndIndex) const {
+  if (IsAccessRefField() && AccessMem()) {
+    Operand *opnd0 = opnds[opndIndex];
+    if (opnd0->IsRegister()) {
+      static_cast<AArch64RegOperand*>(opnd0)->SetRefField(true);
+      return true;
+    }
+  }
+  return false;
 }
 
 Operand *AArch64Insn::GetResult(uint32 id) const {
