@@ -59,9 +59,9 @@ void SwitchLowerer::FindClusters(MapleVector<Cluster> &clusters) {
   while (i < length - kClusterSwitchCutoff) {
     for (int32 j = length - 1; j > i; --j) {
       float tmp1 = static_cast<float>(j - i);
-      float tmp2 = static_cast<float>(stmt->GetCasePair(j).first - stmt->GetCasePair(i).first);
+      float tmp2 = static_cast<float>(stmt->GetCasePair(j).first) - static_cast<float>(stmt->GetCasePair(i).first);
       if (((j - i) >= kClusterSwitchCutoff) &&
-          ((stmt->GetSwitchTable()[j].first - stmt->GetCasePair(i).first) < kMaxRangeGotoTableSize) &&
+          (tmp2 < kMaxRangeGotoTableSize) &&
           ((tmp1 / tmp2) >= kClusterSwitchDensity)) {
         clusters.push_back(Cluster(i, j));
         i = j;

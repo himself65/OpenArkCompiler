@@ -67,7 +67,16 @@ void MeCFG::BuildMirCFG() {
         auto &gotoStmt = static_cast<CondGotoNode&>(lastStmt);
         LabelIdx lblIdx = gotoStmt.GetOffset();
         BB *meBB = func.GetLabelBBAt(lblIdx);
-        bb->AddSucc(*meBB);
+        if (*rightNextBB == meBB) {
+          constexpr char tmpBool[] = "tmpBool";
+          auto *mirBuilder = func.GetMIRModule().GetMIRBuilder();
+          MIRSymbol *st = mirBuilder->GetOrCreateLocalDecl(tmpBool, *GlobalTables::GetTypeTable().GetUInt1());
+          auto *dassign = mirBuilder->CreateStmtDassign(st->GetStIdx(), 0, lastStmt.Opnd(0));
+          bb->ReplaceStmt(&lastStmt, dassign);
+          bb->SetKind(kBBFallthru);
+        } else {
+          bb->AddSucc(*meBB);
+        }
         break;
       }
       case kBBSwitch: {

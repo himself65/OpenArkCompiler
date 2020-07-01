@@ -32,8 +32,8 @@ constexpr int32_t kDecoupleAndLazy = 3;
 
 enum RangeIdx {
   // 0,1 entry is reserved for a stamp
-  kVtab = 2,
-  kItab = 3,
+  kVtabAndItab = 2,
+  kItabConflict = 3,
   kVtabOffset = 4,
   kFieldOffset = 5,
   kValueOffset = 6,
