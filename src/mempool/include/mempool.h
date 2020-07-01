@@ -27,9 +27,6 @@ namespace maple {
 #ifdef _WIN32
 #define FALSE 0
 #define TRUE 1
-#else
-constexpr bool FALSE = false;
-constexpr bool TRUE = true;
 #endif
 
 // Class declaration

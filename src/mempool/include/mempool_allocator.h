@@ -40,7 +40,7 @@ class MapleAllocator {
     return (memPool != nullptr) ? memPool->Malloc(bytes) : nullptr;
   }
 
-  MemPool *GetMemPool() {
+  MemPool *GetMemPool() const {
     return memPool;
   }
 

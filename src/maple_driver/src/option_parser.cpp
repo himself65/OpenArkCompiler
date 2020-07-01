@@ -281,7 +281,7 @@ ErrorCode OptionParser::HandleInputArgs(const std::vector<std::string> &inputArg
       isMatchLongOpt = true;
     }
     std::string arg = inputArgs[i].substr(index);
-    bool isOptMatched = isMatchLongOpt || isMatchShortOpt;
+    bool isOptMatched = (isMatchLongOpt || isMatchShortOpt);
     if (!isLastMatchOpt && isOptMatched) {
       ret = CheckOpt(arg, lastKey, isLastMatchOpt, inputOption, exeName);
     } else if (isLastMatchOpt && !isOptMatched) {

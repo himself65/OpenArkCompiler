@@ -29,7 +29,7 @@ src_libmplipa = [
   "src/module_phase_manager.cpp",
   "src/clone.cpp",
   "src/retype.cpp",
-  "src/callgraph.cpp",
+  "src/call_graph.cpp",
 ]
 
 configs = [ "${MAPLEALL_ROOT}:mapleallcompilecfg" ]

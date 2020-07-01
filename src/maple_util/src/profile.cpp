@@ -107,10 +107,10 @@ std::string Profile::GetFunctionName(uint32 classIdx, uint32 methodIdx, uint32 s
   return funcName;
 }
 
-void Profile::ParseFunc(const char *data, int fileNum) {
+void Profile::ParseFunc(const char *data, int32 fileNum) {
   const MapleFileProf *funcProf = nullptr;
   const FunctionItem *funcItem = nullptr;
-  uint32 offset = 0;
+  size_t offset = 0;
   for (int32 mapleFileIdx = 0; mapleFileIdx < fileNum; ++mapleFileIdx) {
     funcProf = reinterpret_cast<const MapleFileProf*>(data + offset);
     if (CheckDexValid(funcProf->idx)) {
@@ -135,10 +135,10 @@ void Profile::ParseFunc(const char *data, int fileNum) {
   }
 }
 
-void Profile::ParseIRFuncDesc(const char *data, int fileNum) {
+void Profile::ParseIRFuncDesc(const char *data, int32 fileNum) {
   const MapleFileProf *funcProf = nullptr;
   const FunctionIRProfItem *funcItem = nullptr;
-  uint32 offset = 0;
+  size_t offset = 0;
   for (int32 mapleFileIdx = 0; mapleFileIdx < fileNum; ++mapleFileIdx) {
     funcProf = reinterpret_cast<const MapleFileProf*>(data + offset);
     if (CheckDexValid(funcProf->idx)) {
@@ -162,9 +162,9 @@ void Profile::ParseIRFuncDesc(const char *data, int fileNum) {
   }
 }
 
-void Profile::ParseCounterTab(const char *data, int fileNum) {
+void Profile::ParseCounterTab(const char *data, int32 fileNum) {
   const MapleFileProf *counterProf = nullptr;
-  uint32 offset = 0;
+  size_t offset = 0;
   for (int32 mapleFileIdx = 0; mapleFileIdx < fileNum; ++mapleFileIdx) {
     counterProf = reinterpret_cast<const MapleFileProf*>(data + offset);
     if (CheckDexValid(counterProf->idx)) {
@@ -180,9 +180,9 @@ void Profile::ParseCounterTab(const char *data, int fileNum) {
   }
 }
 
-void Profile::ParseMeta(const char *data, int fileNum, std::unordered_set<std::string> &metaData) const {
+void Profile::ParseMeta(const char *data, int32 fileNum, std::unordered_set<std::string> &metaData) const {
   const MapleFileProf *metaProf = nullptr;
-  uint32 offset = 0;
+  size_t offset = 0;
   for (int32 mapleFileIdx = 0; mapleFileIdx < fileNum; ++mapleFileIdx) {
     metaProf = reinterpret_cast<const MapleFileProf*>(data + offset);
     if (CheckDexValid(metaProf->idx)) {
@@ -198,9 +198,9 @@ void Profile::ParseMeta(const char *data, int fileNum, std::unordered_set<std::s
   }
 }
 
-void Profile::ParseReflectionStr(const char *data, int fileNum) {
+void Profile::ParseReflectionStr(const char *data, int32 fileNum) {
   const MapleFileProf *metaProf = nullptr;
-  uint32 offset = 0;
+  size_t offset = 0;
   for (int32 mapleFileIdx = 0; mapleFileIdx < fileNum; ++mapleFileIdx) {
     metaProf = reinterpret_cast<const MapleFileProf*>(data + offset);
     if (CheckDexValid(metaProf->idx)) {
@@ -219,7 +219,7 @@ void Profile::ParseReflectionStr(const char *data, int fileNum) {
 }
 
 void Profile::InitPreHot() {
-  const char *coreDexName = "core-all";
+  std::string coreDexName = "core-all";
   if (dexName.find(coreDexName) != std::string::npos) {
     for (auto &item : preClassHot) {
       classMeta.insert(item);
@@ -238,7 +238,7 @@ bool Profile::DeCompress(const std::string &path, const std::string &dexNameInne
   InitPreHot();
   bool res = true;
   std::ifstream in(path, std::ios::binary);
-  if (!in) {
+  if (!in.is_open()) {
     if (errno != ENOENT && errno != EACCES) {
       LogInfo::MapleLogger() << "WARN: DeCompress(" << "), failed to open " << path << '\n';;
     }
@@ -295,12 +295,12 @@ bool Profile::DeCompress(const std::string &path, const std::string &dexNameInne
     }
     LogInfo::MapleLogger() << "str size print end  " << '\n';
   }
-  size_t idx = 0;
+  uint8_t idx = 0;
   for (idx = 0; idx < header->profileNum; ++idx) {
     ProfileDataInfo *profileDataInfo = &(header->data[idx]);
     if (debug) {
       LogInfo::MapleLogger() << "profile file num for type  " << GetProfileNameByType(profileDataInfo->profileType) <<
-          " " << static_cast<uint32>(profileDataInfo->mapleFileNum) << '\n';;
+          " " << static_cast<uint32>(profileDataInfo->mapleFileNum) << '\n';
       }
     if (debug) {
       LogInfo::MapleLogger() << GetProfileNameByType(profileDataInfo->profileType) << " Start" << '\n';
@@ -478,7 +478,7 @@ std::unordered_set<std::string> &Profile::GetMeta(uint8 type) {
     case kMethodMeta:
       return methodMeta;
     default:
-      CHECK_FATAL(0, "type not found");
+      CHECK_FATAL(false, "type not found");
       return classMeta;
   }
 }
@@ -501,32 +501,32 @@ void Profile::Dump() const {
   std::ofstream outFile;
   outFile.open("prof.dump");
   CHECK_FATAL(!outFile.is_open(), "open file failed");
-  outFile << "classMeta profile start " <<'\n';
+  outFile << "classMeta profile start " << '\n';
   for (const auto &item : classMeta) {
     outFile << item << '\n';
   }
 
-  outFile << "fieldMeta profile start " <<'\n';
+  outFile << "fieldMeta profile start " << '\n';
   for (const auto &item : fieldMeta) {
     outFile << item << '\n';
   }
 
-  outFile << "methodMeta profile start " <<'\n';
+  outFile << "methodMeta profile start " << '\n';
   for (const auto &item : methodMeta) {
     outFile << item << '\n';
   }
 
-  outFile << "literal profile start " <<'\n';
+  outFile << "literal profile start " << '\n';
   for (const auto &item : literal) {
     outFile << item << '\n';
   }
 
-  outFile << "func profile start " <<'\n';
+  outFile << "func profile start " << '\n';
   for (const auto &item : funcProfData) {
     outFile << item.first << " " << static_cast<uint32>((item.second).type) << " " << (item.second).callTimes << '\n';
   }
 
-  outFile << "reflectStr profile start " <<'\n';
+  outFile << "reflectStr profile start " << '\n';
   for (const auto &item : reflectionStrData) {
     outFile << item.first << " " << static_cast<uint32>(item.second) << '\n';
   }
