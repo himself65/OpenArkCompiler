@@ -123,7 +123,7 @@ class CGNode {
         mustNotBeInlined(false),
         vcallCands(alloc->Adapter()) {}
 
-  ~CGNode() {}
+  ~CGNode() = default;
 
   void Dump(std::ofstream &fout) const;
   void DumpDetail() const;
@@ -429,7 +429,7 @@ class CallGraph : public AnalysisResult {
   void DelNode(CGNode &node);
   void BuildSCC();
   void VerifySCC() const;
-  void BuildSCCDFS(CGNode &caller, unsigned int &visitIndex, std::vector<SCCNode*> &sccNodes,
+  void BuildSCCDFS(CGNode &caller, uint32 &visitIndex, std::vector<SCCNode*> &sccNodes,
                    std::vector<CGNode*> &cgNodes, std::vector<uint32> &visitedOrder);
 
   void SetDebugFlag(bool flag) {
@@ -478,7 +478,7 @@ class DoCallGraph : public ModulePhase {
     return "callgraph";
   }
 
-  virtual ~DoCallGraph() {};
+  ~DoCallGraph() = default;
 };
 
 class IPODevirtulize {
@@ -510,7 +510,7 @@ class DoIPODevirtulize : public ModulePhase {
     return "ipodevirtulize";
   }
 
-  virtual ~DoIPODevirtulize() {};
+  ~DoIPODevirtulize() = default;
 };
 }  // namespace maple
 #endif  // MAPLE_IPA_INCLUDE_CALLGRAPH_H

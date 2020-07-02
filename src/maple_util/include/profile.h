@@ -99,6 +99,8 @@ class Profile {
   std::unordered_map<std::string, bool> funcBBProfUseInfo;
   std::unordered_map<std::string, IRProfileDesc> funcDesc;
   std::vector<uint32> counterTab;
+  static const std::string preClassHot[];
+  static const std::string preMethodHot[];
   bool CheckProfileHeader(const Header &header) const;
   std::string GetProfileNameByType(uint8 type) const;
   std::string GetFunctionName(uint32 classIdx, uint32 methodIdx, uint32 sigIdx) const;

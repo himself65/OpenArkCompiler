@@ -94,7 +94,7 @@ class Phase {
   }
 
  private:
-  unsigned int memPoolCount = 0;
+  uint32 memPoolCount = 0;
   std::set<MemPool*> memPools;
   MemPoolCtrler *mpCtrler = &memPoolCtrler;
 };

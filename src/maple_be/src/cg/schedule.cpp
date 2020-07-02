@@ -61,32 +61,32 @@ void RegPressureSchedule::Init(const MapleVector<DepNode*> &nodes) {
   }
 
   for (auto *node : nodes) {
-    /* initialize */
-    node->InitPressure();
-
     /* calculate the node uses'register pressure */
-    for (auto &useReg : node->GetRegUses()) {
-      CalculatePressure(*node, useReg.first, false);
+    for (auto &useReg : node->GetUseRegnos()) {
+      CalculatePressure(*node, useReg, false);
     }
 
     /* calculate the node defs'register pressure */
-    for (auto &defReg : node->GetRegDefs()) {
-      CalculatePressure(*node, defReg.first, true);
-
-      regno_t reg = defReg.first;
-      RegType regType = GetRegisterType(reg);
+    size_t i = 0;
+    for (auto &defReg : node->GetDefRegnos()) {
+      CalculatePressure(*node, defReg, true);
+      RegType regType = GetRegisterType(defReg);
       /* if no use list, a register is only defined, not be used */
-      if (defReg.second == nullptr) {
+      if (node->GetRegDefs(i) == nullptr) {
         node->IncDeadDefByIndex(regType);
       }
+      ++i;
     }
 
     node->SetValidPredsSize(node->GetPreds().size());
   }
 
   DepNode *firstNode = nodes.front();
-  readyList.push_back(firstNode);
+  readyList.emplace_back(firstNode);
   firstNode->SetState(kReady);
+  scheduledNode.reserve(nodes.size());
+  constexpr size_t readyListSize = 10;
+  readyList.reserve(readyListSize);
 }
 
 void RegPressureSchedule::SortReadyList() {
@@ -97,23 +97,47 @@ void RegPressureSchedule::SortReadyList() {
 bool RegPressureSchedule::DepNodePriorityCmp(const DepNode *node1, const DepNode *node2) {
   CHECK_NULL_FATAL(node1);
   CHECK_NULL_FATAL(node2);
-  if (node1->GetPriority() != node2->GetPriority()) {
-    return node1->GetPriority() > node2->GetPriority();
+  int32 priority1 = node1->GetPriority();
+  int32 priority2 = node2->GetPriority();
+  if (priority1 != priority2) {
+    return priority1 > priority2;
   }
 
-  int32 depthS1 = node1->GetMaxDepth() + node1->GetNear();
-  int32 depthS2 = node2->GetMaxDepth() + node2->GetNear();
+  int32 numCall1 = node1->GetNumCall();
+  int32 numCall2 = node2->GetNumCall();
+  if (node1->GetIncPressure() == true && node2->GetIncPressure() == true) {
+    if (numCall1 != numCall2) {
+      return numCall1 > numCall2;
+    }
+  }
+
+  int32 near1 = node1->GetNear();
+  int32 near2 = node1->GetNear();
+  int32 depthS1 = node1->GetMaxDepth() + near1;
+  int32 depthS2 = node2->GetMaxDepth() + near2;
   if (depthS1 != depthS2) {
     return depthS1 > depthS2;
   }
 
-  int32 near1 = node1->GetNear();
-  int32 near2 = node2->GetNear();
   if (near1 != near2) {
-    return node1->GetNear() > node2->GetNear();
+    return near1 > near2;
   }
 
-  return node1->GetSuccs().size() < node2->GetSuccs().size();
+  if (numCall1 != numCall2) {
+    return numCall1 > numCall2;
+  }
+
+  size_t succsSize1 = node1->GetSuccs().size();
+  size_t succsSize2 = node1->GetSuccs().size();
+  if (succsSize1 != succsSize2) {
+    return succsSize1 < succsSize2;
+  }
+
+  if (node1->GetHasPreg() != node2->GetHasPreg()) {
+    return node1->GetHasPreg();
+  }
+
+  return node1->GetInsn()->GetId() < node2->GetInsn()->GetId();
 }
 
 /* set a node's incPressure is true, when a class register inscrease */
@@ -127,11 +151,21 @@ void RegPressureSchedule::ReCalculateDepNodePressure(DepNode &node) {
 void RegPressureSchedule::CalculateMaxDepth(const MapleVector<DepNode*> &nodes) {
   /* from the last node to first node. */
   for (auto it = nodes.rbegin(); it != nodes.rend(); ++it) {
+    /* init call count */
+    if ((*it)->GetInsn()->IsCall()) {
+      (*it)->SetNumCall(1);
+    }
     /* traversing each successor of it. */
     for (auto succ : (*it)->GetSuccs()) {
       DepNode &to = succ->GetTo();
       if ((*it)->GetMaxDepth() < (to.GetMaxDepth() + 1)) {
         (*it)->SetMaxDepth(to.GetMaxDepth() + 1);
+      }
+
+      if (to.GetInsn()->IsCall() && ((*it)->GetNumCall() < to.GetNumCall() + 1)) {
+        (*it)->SetNumCall(to.GetNumCall() + 1);
+      } else if ((*it)->GetNumCall() < to.GetNumCall()) {
+        (*it)->SetNumCall(to.GetNumCall());
       }
     }
   }
@@ -149,10 +183,14 @@ void RegPressureSchedule::CalculateNear(const DepNode &node) {
 
 /* return true if it is last time using the regNO. */
 bool RegPressureSchedule::IsLastUse(const DepNode &node, regno_t regNO) const {
-  auto it = node.GetRegUses().find(regNO);
-  ASSERT(it->second != nullptr, "valid iterator check");
-  ASSERT(it != node.GetRegUses().end(), "not find reg!");
-  RegList *regList = it->second;
+  size_t i = 0;
+  for (auto reg : node.GetUseRegnos()) {
+    if (reg == regNO) {
+      break;
+    }
+    ++i;
+  }
+  RegList *regList = node.GetRegUses(i);
 
   /*
    * except the node, if there are insn that has no scheduled in regNO'sregList,
@@ -190,9 +228,14 @@ void RegPressureSchedule::UpdateLiveReg(const DepNode &node, regno_t reg, bool d
       liveReg.insert(reg);
     }
     /* if no use list, a register is only defined, not be used */
-    auto it = node.GetRegDefs().find(reg);
-    ASSERT(it != node.GetRegDefs().end(), "not find reg!");
-    if (it->second == nullptr) {
+    size_t i = 0;
+    for (auto defReg : node.GetDefRegnos()) {
+      if (defReg == reg) {
+        break;
+      }
+      ++i;
+    }
+    if (node.GetRegDefs(i) == nullptr) {
       liveReg.erase(reg);
     }
   } else {
@@ -206,21 +249,18 @@ void RegPressureSchedule::UpdateLiveReg(const DepNode &node, regno_t reg, bool d
 
 /* update register pressure information. */
 void RegPressureSchedule::UpdateBBPressure(const DepNode &node) {
-  for (auto &useReg : node.GetRegUses()) {
-    auto reg = useReg.first;
-
+  size_t idx = 0;
+  for (auto &reg : node.GetUseRegnos()) {
 #ifdef PRESCHED_DEBUG
     UpdateLiveReg(node, reg, false);
     if (liveReg.find(reg) == liveReg.end()) {
+      ++idx;
       continue;
     }
 #endif
 
     /* find all insn that use the reg, if a insn use the reg lastly, insn'pressure - 1 */
-    auto it = node.GetRegUses().find(reg);
-    ASSERT(it->second != nullptr, "valid iterator check");
-    ASSERT(it != node.GetRegUses().end(), "not find reg!");
-    RegList *regList = it->second;
+    RegList *regList = node.GetRegUses(idx);
 
     while (regList != nullptr) {
       CHECK_NULL_FATAL(regList->insn);
@@ -236,11 +276,12 @@ void RegPressureSchedule::UpdateBBPressure(const DepNode &node) {
       }
       break;
     }
+    ++idx;
   }
 
 #ifdef PRESCHED_DEBUG
-  for (auto &defReg : node.GetRegDefs()) {
-    UpdateLiveReg(node, defReg.first, true);
+  for (auto &defReg : node.GetDefRegnos()) {
+    UpdateLiveReg(node, defReg, true);
   }
 #endif
 
@@ -249,7 +290,7 @@ void RegPressureSchedule::UpdateBBPressure(const DepNode &node) {
 #ifdef PRESCHED_DEBUG
   LogInfo::MapleLogger() << "node's pressure: ";
   for (auto pressure : pressures) {
-    LogInfo::MapleLogger() << pressure[i] << " ";
+    LogInfo::MapleLogger() << pressure << " ";
   }
   LogInfo::MapleLogger() << "\n";
 #endif
@@ -266,16 +307,16 @@ void RegPressureSchedule::UpdateBBPressure(const DepNode &node) {
 /* update node priority and try to update the priority of all node's ancestor. */
 void RegPressureSchedule::UpdatePriority(DepNode &node) {
   std::vector<DepNode*> workQueue;
-  workQueue.push_back(&node);
+  workQueue.emplace_back(&node);
   node.SetPriority(maxPriority++);
   do {
     DepNode *nowNode = workQueue.front();
     workQueue.erase(workQueue.begin());
     for (auto pred : nowNode->GetPreds()) {
       DepNode &from = pred->GetFrom();
-      if (from.GetState() != kScheduled && from.GetPriority() != maxPriority) {
+      if (from.GetState() != kScheduled && from.GetPriority() < maxPriority) {
         from.SetPriority(maxPriority);
-        workQueue.push_back(&from);
+        workQueue.emplace_back(&from);
       }
     }
   } while (!workQueue.empty());
@@ -287,17 +328,26 @@ bool RegPressureSchedule::CanSchedule(const DepNode &node) const {
 }
 
 /*
+ * delete node from readylist and
  * add the successor of node to readyList when
  *  1. successor has no been scheduled;
  *  2. successor's has been scheduled or the dependence between node and successor is true-dependence.
  */
 void RegPressureSchedule::UpdateReadyList(const DepNode &node) {
+  /* delete node from readylist */
+  for (auto it = readyList.begin(); it != readyList.end(); ++it) {
+    if (*it == &node) {
+      readyList.erase(it);
+      break;
+    }
+  }
+
   for (auto *succ : node.GetSuccs()) {
     DepNode &succNode = succ->GetTo();
     succNode.DescreaseValidPredsSize();
 
     if (((succ->GetDepType() == kDependenceTypeTrue) || CanSchedule(succNode)) && (succNode.GetState() == kNormal)) {
-      readyList.push_back(&succNode);
+      readyList.emplace_back(&succNode);
       succNode.SetState(kReady);
     }
   }
@@ -307,7 +357,7 @@ void RegPressureSchedule::UpdateReadyList(const DepNode &node) {
 DepNode *RegPressureSchedule::ChooseNode() {
   DepNode *node = nullptr;
   for (auto *it : readyList) {
-    if (!it->GetIncPressure()) {
+    if (!it->GetIncPressure() && !it->GetHasNativeCallRegister()) {
       if (CanSchedule(*it)) {
         return it;
       } else if (node == nullptr) {
@@ -391,6 +441,9 @@ void RegPressureSchedule::DoScheduling(MapleVector<DepNode*> &nodes) {
     for (DepNode *it : readyList) {
       ReCalculateDepNodePressure(*it);
     }
+    if (readyList.size() > 1) {
+      SortReadyList();
+    }
 
     /* choose a node can be scheduled currently. */
     DepNode *node = ChooseNode();
@@ -404,22 +457,18 @@ void RegPressureSchedule::DoScheduling(MapleVector<DepNode*> &nodes) {
       UpdatePriority(*node);
       SortReadyList();
       node = readyList.front();
+#ifdef PRESCHED_DEBUG
+      LogInfo::MapleLogger() << "update ready list: " << "\n";
+      DumpReadyList();
+#endif
     }
 
-    scheduledNode.push_back(node);
+    scheduledNode.emplace_back(node);
     /* mark node has scheduled */
     node->SetState(kScheduled);
     UpdateBBPressure(*node);
     CalculateNear(*node);
-    /* delete node from readylist */
-    for (auto it = readyList.begin(); it != readyList.end(); ++it) {
-      if (*it == node) {
-        readyList.erase(it);
-        break;
-      }
-    }
     UpdateReadyList(*node);
-    SortReadyList();
 #ifdef PRESCHED_DEBUG
     DumpSelectInfo(*node);
 #endif
@@ -431,7 +480,7 @@ void RegPressureSchedule::DoScheduling(MapleVector<DepNode*> &nodes) {
   /* update nodes according to scheduledNode. */
   nodes.clear();
   for (auto node : scheduledNode) {
-    nodes.push_back(node);
+    nodes.emplace_back(node);
   }
 }
 

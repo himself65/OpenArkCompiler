@@ -53,7 +53,7 @@ class OptionParser {
 
   bool SetOption(const std::string &key, const std::string &value, const std::string &exeName,
                  std::vector<mapleOption::Option> &exeOption);
-  void PrintUsage(const std::string &helpType, const unsigned int helpLevel = kBuildTypeDefault) const;
+  void PrintUsage(const std::string &helpType, const uint32_t helpLevel = kBuildTypeDefault) const;
 
  private:
   bool HandleKeyValue(const std::string &key, const std::string &value,

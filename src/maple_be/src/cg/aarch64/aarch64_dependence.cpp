@@ -21,8 +21,7 @@
 namespace maplebe {
 /* constructor */
 AArch64DepAnalysis::AArch64DepAnalysis(CGFunc &func, MemPool &mp, MAD &mad, bool beforeRA)
-    : DepAnalysis(func, mp, mad, beforeRA), useRegnos(alloc.Adapter()),
-      defRegnos(alloc.Adapter()), stackUses(alloc.Adapter()),
+    : DepAnalysis(func, mp, mad, beforeRA), stackUses(alloc.Adapter()),
       stackDefs(alloc.Adapter()), heapUses(alloc.Adapter()),
       heapDefs(alloc.Adapter()), mayThrows(alloc.Adapter()),
       ambiInsns(alloc.Adapter()), ehInRegs(alloc.Adapter()) {
@@ -77,6 +76,14 @@ void AArch64DepAnalysis::AppendRegUseList(Insn &insn, regno_t regNO) {
   regList->next = nullptr;
   if (regUses[regNO] == nullptr) {
     regUses[regNO] = regList;
+    if (beforeRA) {
+      Insn *defInsn = regDefs[regNO];
+      if (defInsn == nullptr) {
+        return;
+      }
+      DepNode *defNode = defInsn->GetDepNode();
+      defNode->SetRegDefs(regNO, regList);
+    }
     return;
   }
   RegList *lastRegList = regUses[regNO];
@@ -144,7 +151,8 @@ void AArch64DepAnalysis::RemoveSelfDeps(Insn &insn) {
 
 /* Build dependences of source register operand. */
 void AArch64DepAnalysis::BuildDepsUseReg(Insn &insn, regno_t regNO) {
-  useRegnos.push_back(regNO);
+  DepNode *node = insn.GetDepNode();
+  node->AddUseReg(regNO);
   if (regDefs[regNO] != nullptr) {
     /* Build true dependences. */
     AddDependence(*regDefs[regNO]->GetDepNode(), *insn.GetDepNode(), kDependenceTypeTrue);
@@ -153,17 +161,18 @@ void AArch64DepAnalysis::BuildDepsUseReg(Insn &insn, regno_t regNO) {
 
 /* Build dependences of destination register operand. */
 void AArch64DepAnalysis::BuildDepsDefReg(Insn &insn, regno_t regNO) {
-  defRegnos.push_back(regNO);
+  DepNode *node = insn.GetDepNode();
+  node->AddDefReg(regNO);
   /* Build anti dependences. */
   RegList *regList = regUses[regNO];
   while (regList != nullptr) {
     CHECK_NULL_FATAL(regList->insn);
-    AddDependence(*regList->insn->GetDepNode(), *insn.GetDepNode(), kDependenceTypeAnti);
+    AddDependence(*regList->insn->GetDepNode(), *node, kDependenceTypeAnti);
     regList = regList->next;
   }
   /* Build output depnedence. */
   if (regDefs[regNO] != nullptr) {
-    AddDependence(*regDefs[regNO]->GetDepNode(), *insn.GetDepNode(), kDependenceTypeOutput);
+    AddDependence(*regDefs[regNO]->GetDepNode(), *node, kDependenceTypeOutput);
   }
 }
 
@@ -510,9 +519,10 @@ void AArch64DepAnalysis::BuildDepsMemBar(Insn &insn) {
 
 /* A pseudo separator node depends all the other nodes. */
 void AArch64DepAnalysis::BuildDepsSeparator(DepNode &newSepNode, MapleVector<DepNode*> &nodes) {
-  uint32 nextSepIndex = (separatorIndex + kMaxDependenceNum) < nodes.size()
-                        ? (separatorIndex + kMaxDependenceNum)
-                        : nodes.size() - 1;
+  uint32 nextSepIndex = (separatorIndex + kMaxDependenceNum) < nodes.size() ? (separatorIndex + kMaxDependenceNum)
+                                                                            : nodes.size() - 1;
+  newSepNode.ReservePreds(nextSepIndex - separatorIndex);
+  newSepNode.ReserveSuccs(nextSepIndex - separatorIndex);
   for (uint32 i = separatorIndex; i < nextSepIndex; ++i) {
     AddDependence(*nodes[i], newSepNode, kDependenceTypeSeparator);
   }
@@ -623,23 +633,37 @@ DepNode *AArch64DepAnalysis::BuildSeparatorNode() {
   Insn &pseudoSepInsn = cgFunc.GetCG()->BuildInstruction<AArch64Insn>(MOP_pseudo_dependence_seperator);
   DepNode *separatorNode = memPool.New<DepNode>(pseudoSepInsn, alloc);
   separatorNode->SetType(kNodeTypeSeparator);
+  pseudoSepInsn.SetDepNode(*separatorNode);
   if (beforeRA) {
     RegPressure *regPressure = memPool.New<RegPressure>(alloc);
     separatorNode->SetRegPressure(*regPressure);
+    separatorNode->InitPressure();
   }
   return separatorNode;
 }
 
 /* Init depAnalysis data struction */
 void AArch64DepAnalysis::Init(BB &bb, MapleVector<DepNode*> &nodes) {
+  curBB = &bb;
   ClearAllDepData();
   lastComments.clear();
   /* Analysis live-in registers in catch BB. */
   AnalysisAmbiInsns(bb);
   /* Clear all dependence nodes and push the first separator node. */
   nodes.clear();
-  nodes.push_back(BuildSeparatorNode());
+  DepNode *pseudoSepNode = BuildSeparatorNode();
+  nodes.push_back(pseudoSepNode);
   separatorIndex = 0;
+
+  if (beforeRA) {
+    /* assump first pseudo_dependence_seperator insn of current bb define live-in's registers */
+    Insn *pseudoSepInsn = pseudoSepNode->GetInsn();
+    for (auto &regNO : bb.GetLiveInRegNO()) {
+      regDefs[regNO] = pseudoSepInsn;
+      pseudoSepNode->AddDefReg(regNO);
+      pseudoSepNode->SetRegDefs(pseudoSepNode->GetDefRegnos().size(), nullptr);
+    }
+  }
 }
 
 /* When a separator build, it is the same as a new basic block. */
@@ -852,6 +876,17 @@ void AArch64DepAnalysis::SeperateDependenceGraph(MapleVector<DepNode*> &nodes, u
     separatorNode->SetIndex(nodeSum);
     nodes.push_back(separatorNode);
     BuildDepsSeparator(*separatorNode, nodes);
+
+    if (beforeRA) {
+      /* for all live-out register of current bb */
+      for (auto &regNO : curBB->GetLiveOutRegNO()) {
+        if (regDefs[regNO] != nullptr) {
+          AppendRegUseList(*(separatorNode->GetInsn()), regNO);
+          separatorNode->AddUseReg(regNO);
+          separatorNode->SetRegUses(*regUses[regNO]);
+        }
+      }
+    }
     ClearAllDepData();
     separatorIndex = nodeSum++;
   }
@@ -873,10 +908,15 @@ DepNode *AArch64DepAnalysis::GenerateDepNode(Insn &insn, MapleVector<DepNode*> &
   if (beforeRA) {
     RegPressure *regPressure = memPool.New<RegPressure>(alloc);
     depNode->SetRegPressure(*regPressure);
+    depNode->InitPressure();
   }
   depNode->SetIndex(nodeSum);
   nodes.push_back(depNode);
   insn.SetDepNode(*depNode);
+
+  constexpr size_t vectorSize = 5;
+  depNode->ReservePreds(vectorSize);
+  depNode->ReserveSuccs(vectorSize);
 
   if (!comments.empty()) {
     depNode->SetComments(comments);
@@ -885,6 +925,7 @@ DepNode *AArch64DepAnalysis::GenerateDepNode(Insn &insn, MapleVector<DepNode*> &
 }
 
 void AArch64DepAnalysis::BuildAmbiInsnDependency(Insn &insn) {
+  const auto &defRegnos = insn.GetDepNode()->GetDefRegnos();
   for (const auto &regNO : defRegnos) {
     if (IfInAmbiRegs(regNO)) {
       BuildDepsAmbiInsn(insn);
@@ -903,23 +944,42 @@ void AArch64DepAnalysis::BuildMayThrowInsnDependency(Insn &insn) {
   }
 }
 
-void AArch64DepAnalysis::UpdateRegUseAndDef(Insn &insn, DepNode &depNode) {
+void AArch64DepAnalysis::UpdateRegUseAndDef(Insn &insn, DepNode &depNode, MapleVector<DepNode*> &nodes) {
+  const auto &useRegnos = depNode.GetUseRegnos();
+  if (beforeRA) {
+    depNode.InitRegUsesSize(useRegnos.size());
+  }
   for (auto regNO : useRegnos) {
     AppendRegUseList(insn, regNO);
     if (beforeRA) {
-      depNode.SetRegUses(regNO, *regUses[regNO]);
+      depNode.SetRegUses(*regUses[regNO]);
+      if (regDefs[regNO] == nullptr) {
+        regDefs[regNO] = nodes[separatorIndex]->GetInsn();
+        nodes[separatorIndex]->AddDefReg(regNO);
+        nodes[separatorIndex]->SetRegDefs(nodes[separatorIndex]->GetDefRegnos().size(), regUses[regNO]);
+      }
     }
   }
 
+  const auto &defRegnos = depNode.GetDefRegnos();
+  size_t i = 0;
+  if (beforeRA) {
+    depNode.InitRegDefsSize(defRegnos.size());
+  }
   for (const auto regNO : defRegnos) {
     regDefs[regNO] = &insn;
     regUses[regNO] = nullptr;
     if (beforeRA) {
-      depNode.SetRegDefs(regNO, nullptr);
+      depNode.SetRegDefs(i, nullptr);
+      if (regNO >= R0 && regNO <= R3) {
+        depNode.SetHasPreg(true);
+      } else if (regNO == R8) {
+        depNode.SetHasNativeCallRegister(true);
+      }
     }
+    ++i;
   }
 }
-
 
 /* Update stack and heap dependency */
 void AArch64DepAnalysis::UpdateStackAndHeapDependency(DepNode &depNode, Insn &insn, const Insn &locInsn) {
@@ -930,6 +990,26 @@ void AArch64DepAnalysis::UpdateStackAndHeapDependency(DepNode &depNode, Insn &in
   mayThrows.push_back(&insn);
   AddDependence4InsnInVectorByType(stackDefs, insn, kDependenceTypeThrow);
   AddDependence4InsnInVectorByType(heapDefs, insn, kDependenceTypeThrow);
+}
+
+/* Add a separatorNode to the end of a nodes
+ *  * before RA:  add all live-out registers to this separatorNode'Uses
+ *   */
+void AArch64DepAnalysis::AddEndSeparatorNode(MapleVector<DepNode*> &nodes) {
+  DepNode *separatorNode = BuildSeparatorNode();
+  nodes.emplace_back(separatorNode);
+  BuildDepsSeparator(*separatorNode, nodes);
+
+  if (beforeRA) {
+    /* for all live-out register of current bb */
+    for (auto &regNO : curBB->GetLiveOutRegNO()) {
+      if (regDefs[regNO] != nullptr) {
+        AppendRegUseList(*(separatorNode->GetInsn()), regNO);
+        separatorNode->AddUseReg(regNO);
+        separatorNode->SetRegUses(*regUses[regNO]);
+      }
+    }
+  }
 }
 
 /*
@@ -970,8 +1050,6 @@ void AArch64DepAnalysis::Run(BB &bb, MapleVector<DepNode*> &nodes) {
     comments.clear();
     /* Build Dependency for maythrow insn; */
     BuildMayThrowInsnDependency(*insn);
-    useRegnos.clear();
-    defRegnos.clear();
     /* Build Dependency for each Operand of insn */
     BuildOpndDependency(*insn);
     /* Build Dependency for special insn */
@@ -986,12 +1064,11 @@ void AArch64DepAnalysis::Run(BB &bb, MapleVector<DepNode*> &nodes) {
     /* Seperator exists. */
     AddDependence(*nodes[separatorIndex], *insn->GetDepNode(), kDependenceTypeSeparator);
     /* Update register use and register def */
-    UpdateRegUseAndDef(*insn, *depNode);
+    UpdateRegUseAndDef(*insn, *depNode, nodes);
   }
 
-  DepNode *separatorNode = BuildSeparatorNode();
-  nodes.push_back(separatorNode);
-  BuildDepsSeparator(*separatorNode, nodes);
+  AddEndSeparatorNode(nodes);
+
   if (!comments.empty()) {
     lastComments = comments;
   }

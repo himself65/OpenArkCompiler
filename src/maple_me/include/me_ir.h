@@ -1087,7 +1087,7 @@ class MeStmt {
   }
 
   bool IsAssign() const {
-    return op == OP_dassign || op == OP_maydassign || op == OP_iassign || op == OP_regassign;
+    return op == OP_dassign || op == OP_maydassign || op == OP_iassign || op == OP_regassign || op == OP_piassign;
   }
 
   virtual MIRType *GetReturnType() const {

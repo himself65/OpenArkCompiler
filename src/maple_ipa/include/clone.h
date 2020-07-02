@@ -31,7 +31,7 @@ namespace maple {
 class ReplaceRetIgnored {
  public:
   explicit ReplaceRetIgnored(MemPool *memPool);
-  virtual ~ReplaceRetIgnored() = default;
+  ~ReplaceRetIgnored() = default;
 
   bool ShouldReplaceWithVoidFunc(const CallMeStmt &stmt, const MIRFunction &calleeFunc) const;
   std::string GenerateNewBaseName(const MIRFunction &originalFunc) const;
@@ -91,7 +91,7 @@ class DoClone : public ModulePhase {
  public:
   explicit DoClone(ModulePhaseID id) : ModulePhase(id) {}
 
-  virtual ~DoClone() = default;
+  ~DoClone() = default;
 
   AnalysisResult *Run(MIRModule *module, ModuleResultMgr *mgr) override;
   std::string PhaseName() const override {

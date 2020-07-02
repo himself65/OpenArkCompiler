@@ -83,7 +83,7 @@ void Clone::CloneLabels(MIRFunction &newFunc, const MIRFunction &oldFunc) {
   for (size_t i = 1; i < labelTabSize; ++i) {
     const std::string &labelName = oldFunc.GetLabelTabItem(i);
     GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(labelName);
-    newFunc.GetLabelTab()->AddLabel(strIdx);
+    (void)newFunc.GetLabelTab()->AddLabel(strIdx);
   }
 }
 

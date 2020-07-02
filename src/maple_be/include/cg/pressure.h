@@ -37,16 +37,15 @@ class RegPressure {
 
   void DumpRegPressure() const;
 
-  void SetRegUses(regno_t regNO, RegList *regList) {
-    regUses.insert(std::make_pair(regNO, regList));
+  void SetRegUses(RegList *regList) {
+    regUses.emplace_back(regList);
   }
 
-  void SetRegDefs(regno_t regNO, RegList *regList) {
-    auto it = regDefs.find(regNO);
-    if (it == regDefs.end()) {
-      regDefs.insert(std::make_pair(regNO, regList));
+  void SetRegDefs(size_t idx, RegList *regList) {
+    if (idx < regDefs.size()) {
+      regDefs[idx] = regList;
     } else {
-      it->second = regList;
+      regDefs.emplace_back(regList);
     }
   }
 
@@ -115,19 +114,52 @@ class RegPressure {
     ++deadDefNum[index];
   }
 
-  const MapleUnorderedMap<regno_t, RegList*> &GetRegUses() const {
-    return regUses;
+  RegList *GetRegUses(size_t idx) const {
+    return regUses[idx];
   }
 
-  const MapleUnorderedMap<regno_t, RegList*> &GetRegDefs() const {
-    return regDefs;
+  void InitRegUsesSize(size_t size) {
+    regUses.reserve(size);
+  }
+
+  RegList *GetRegDefs(size_t idx) const {
+    return regDefs[idx];
+  }
+
+  void InitRegDefsSize(size_t size) {
+    regDefs.reserve(size);
+  }
+
+  void SetHasPreg(bool value) {
+    hasPreg = value;
+  }
+
+  bool GetHasPreg() const {
+    return hasPreg;
+  }
+
+  void SetNumCall(int32 value) {
+    callNum = value;
+  }
+
+  int32 GetNumCall() const {
+    return callNum;
+  }
+
+  void SetHasNativeCallRegister(bool value) {
+    hasNativeCallRegister = value;
+  }
+
+  bool GetHasNativeCallRegister() const {
+    return hasNativeCallRegister;
   }
 
  private:
   /* save reglist of every uses'register */
-  MapleUnorderedMap<regno_t, RegList*> regUses;
+  MapleVector<RegList*> regUses;
   /* save reglist of every defs'register */
-  MapleUnorderedMap<regno_t, RegList*> regDefs;
+  MapleVector<RegList*> regDefs;
+
   /* the number of the node needs registers */
   MapleVector<int32> pressure;
   /* the count of dead define registers */
@@ -137,8 +169,14 @@ class RegPressure {
   int32 priority = 0;
   int32 maxDepth = 0;
   int32 near = 0;
+  /* the number of successor call */
+  int32 callNum = 0;
   /* if a type register increase then set incPressure as true. */
   bool incPressure = false;
+  /* if define physical register, set hasPreg as true */
+  bool hasPreg = false;
+  /* it is call native special register */
+  bool hasNativeCallRegister = false;
 };
 } /* namespace maplebe */
 

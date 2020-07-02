@@ -34,7 +34,7 @@ uint32 Profile::hotFuncCountThreshold = 0;
 bool Profile::debug = false;
 constexpr uint32 kPrecision = 1000000;
 // preHot data
-static const std::string preClassHot[] = {
+const std::string Profile::preClassHot[] = {
     "Ljava/lang/Class;",
     "Ljava/lang/Object;",
     "Ljava/lang/reflect/Field;",

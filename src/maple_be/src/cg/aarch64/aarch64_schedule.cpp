@@ -252,7 +252,7 @@ void AArch64Schedule::RegPressureScheduling(BB &bb, MapleVector<DepNode*> &nodes
   RegPressureSchedule *regSchedule = memPool.New<RegPressureSchedule>(cgFunc, alloc);
   /*
    * Get physical register amount currently
-   * undef, Int Reg, Floag Reg, Flag Reg
+   * undef, Int Reg, Float Reg, Flag Reg
    */
   const std::vector<int32> kRegNumVec = { 0, V0, kMaxRegNum - V0 + 1, 1 };
   regSchedule->InitBBInfo(bb, memPool, nodes);
@@ -1168,21 +1168,23 @@ void AArch64Schedule::ListScheduling(bool beforeRA) {
   InitIDAndLoc();
 
   mad = Globals::GetInstance()->GetMAD();
+  if (beforeRA) {
+    RegPressure::SetMaxRegClassNum(kRegisterLast);
+  }
   depAnalysis = memPool.New<AArch64DepAnalysis>(cgFunc, memPool, *mad, beforeRA);
 
   FOR_ALL_BB(bb, &cgFunc) {
     depAnalysis->Run(*bb, nodes);
 
-    ClinitPairOpt();
-    MemoryAccessPairOpt();
     if (LIST_SCHED_DUMP_REF) {
       GenerateDot(*bb, nodes);
       DumpDepGraph(nodes);
     }
     if (beforeRA) {
-      RegPressure::SetMaxRegClassNum(kRegisterLast);
       RegPressureScheduling(*bb, nodes);
     } else {
+      ClinitPairOpt();
+      MemoryAccessPairOpt();
       if (CGOptions::IsDruteForceSched()) {
         BruteForceScheduling(*bb);
       } else if (CGOptions::IsSimulateSched()) {

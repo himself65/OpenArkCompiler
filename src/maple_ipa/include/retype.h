@@ -23,7 +23,7 @@ class Retype {
  public:
   Retype(MIRModule *mod, MemPool *memPool) : mirModule(mod), allocator(memPool) {}
 
-  virtual ~Retype() {}
+  ~Retype() = default;
 
   void ReplaceRetypeExpr(const BaseNode &opnd);
   void RetypeStmt(MIRFunction &func);
