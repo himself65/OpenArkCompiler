@@ -971,8 +971,8 @@ int64 Emitter::GetFieldOffsetValue(const std::string &className, const MIRIntCon
 }
 
 void Emitter::InitRangeIdx2PerfixStr() {
-  rangeIdx2PrefixStr[RangeIdx::kVtab] = kMuidVtabPrefixStr;
-  rangeIdx2PrefixStr[RangeIdx::kItab] = kMuidItabPrefixStr;
+  rangeIdx2PrefixStr[RangeIdx::kVtabAndItab] = kMuidVtabAndItabPrefixStr;
+  rangeIdx2PrefixStr[RangeIdx::kItabConflict] = kMuidItabConflictPrefixStr;
   rangeIdx2PrefixStr[RangeIdx::kVtabOffset] = kMuidVtabOffsetPrefixStr;
   rangeIdx2PrefixStr[RangeIdx::kFieldOffset] = kMuidFieldOffsetPrefixStr;
   rangeIdx2PrefixStr[RangeIdx::kValueOffset] = kMuidValueOffsetPrefixStr;
@@ -2033,8 +2033,9 @@ void Emitter::EmitGlobalVariable() {
 
   /* itabConflict */
   MarkVtabOrItabEndFlag(coldItabCStVec);
-  EmitMuidTable(hotItabCStVec, strIdx2Type, kMuidItabPrefixStr);
-  EmitMetaDataSymbolWithMarkFlag(coldItabCStVec, strIdx2Type, ITAB_PREFIX_STR, sectionNameIsEmpty, false);
+  EmitMuidTable(hotItabCStVec, strIdx2Type, kMuidItabConflictPrefixStr);
+  EmitMetaDataSymbolWithMarkFlag(coldItabCStVec, strIdx2Type, ITAB_CONFLICT_PREFIX_STR, kMuidColdItabConflictPrefixStr,
+                                 false);
 
   /*
    * vtab
@@ -2047,8 +2048,9 @@ void Emitter::EmitGlobalVariable() {
     coldVtabStVec.push_back(sym);
   }
   MarkVtabOrItabEndFlag(coldVtabStVec);
-  EmitMuidTable(hotVtabStVec, strIdx2Type, kMuidVtabPrefixStr);
-  EmitMetaDataSymbolWithMarkFlag(coldVtabStVec, strIdx2Type, VTAB_PREFIX_STR, sectionNameIsEmpty, false);
+  EmitMuidTable(hotVtabStVec, strIdx2Type, kMuidVtabAndItabPrefixStr);
+  EmitMetaDataSymbolWithMarkFlag(coldVtabStVec, strIdx2Type, VTAB_AND_ITAB_PREFIX_STR, kMuidColdVtabAndItabPrefixStr,
+                                 false);
 
   /* vtab_offset */
   EmitMuidTable(vtabOffsetVec, strIdx2Type, kMuidVtabOffsetPrefixStr);

@@ -12,7 +12,7 @@
  * FIT FOR A PARTICULAR PURPOSE.
  * See the Mulan PSL v1 for more details.
  */
-#include "callgraph.h"
+#include "call_graph.h"
 #include <iostream>
 #include <fstream>
 #include <queue>
@@ -1135,7 +1135,7 @@ void DoDevirtual(const Klass &klass, const KlassHierarchy &klassh) {
                 }
                 if (op == OP_interfacecallassigned || op == OP_virtualcallassigned) {
                   CallNode *callNode = static_cast<CallNode*>(stmt);
-                  for (unsigned int i = 0; i < callNode->GetReturnVec().size(); ++i) {
+                  for (size_t i = 0; i < callNode->GetReturnVec().size(); ++i) {
                     StIdx stIdx = callNode->GetReturnPair(i).first;
                     MIRSymbol *tmpSymbol = func->GetLocalOrGlobalSymbol(stIdx);
                     ResetInferredType(inferredSymbols, tmpSymbol);
@@ -1182,7 +1182,7 @@ void IPODevirtulize::DevirtualFinal() {
     if (klass->IsClass()) {
       MIRClassType *classType = static_cast<MIRClassType*>(klass->GetMIRStructType());
       // Initialize inferred type of member fileds as kInitTyidx
-      for (unsigned int i = 0; i < classType->GetFieldsSize(); ++i) {  // Don't include parent's field
+      for (size_t i = 0; i < classType->GetFieldsSize(); ++i) {  // Don't include parent's field
         classType->SetElemInferredTyIdx(i, kInitTyIdx);
       }
       SearchDefInMemberMethods(*klass);

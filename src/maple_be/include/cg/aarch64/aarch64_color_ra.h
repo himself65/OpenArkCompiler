@@ -1147,7 +1147,7 @@ class GraphColorRegAllocator : public AArch64RegAllocator {
   void CalculatePriority(LiveRange &lr) const;
   bool CreateLiveRangeHandleLocal(regno_t regNO, BB &bb, bool isDef);
   LiveRange *CreateLiveRangeAllocateAndUpdate(regno_t regNO, const BB &bb, bool isDef, uint32 currId);
-  bool CreateLiveRange(regno_t regNO, BB &bb, bool isDef, uint32 currPoint, bool update_cnt);
+  bool CreateLiveRange(regno_t regNO, BB &bb, bool isDef, uint32 currPoint, bool updateCount);
   bool SetupLiveRangeByOpHandlePhysicalReg(RegOperand &op, Insn &insn, regno_t regNO, bool isDef);
   void SetupLiveRangeByOp(Operand &op, Insn &insn, bool isDef, uint32 &numUses);
   void SetupLiveRangeByRegNO(regno_t liveOut, BB &bb, uint32 currPoint);
@@ -1217,6 +1217,7 @@ class GraphColorRegAllocator : public AArch64RegAllocator {
   regno_t FindColorForLr(const LiveRange &lr) const;
   bool ShouldUseCallee(LiveRange &lr, const MapleSet<regno_t> &calleeUsed,
                        const MapleVector<LiveRange*> &delayed) const;
+  void AddCalleeUsed(regno_t regNO, RegType regType);
   bool AssignColorToLr(LiveRange &lr, bool isDelayed = false);
   void PruneLrForSplit(LiveRange &lr, BB &bb, bool remove, std::set<CGFuncLoops*, CGFuncLoopCmp> &candidateInLoop,
                        std::set<CGFuncLoops*, CGFuncLoopCmp> &defInLoop);

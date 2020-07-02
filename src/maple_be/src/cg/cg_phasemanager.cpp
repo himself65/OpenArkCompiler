@@ -297,7 +297,7 @@ int64 CgFuncPhaseManager::DumpCGTimers() {
                               (kPercent * phaseTimers[i] / total) << "%" << std::setw(10) << std::setprecision(0) <<
                               (phaseTimers[i] / kMicroSecPerMilliSec) << "ms" << "\n";
   }
-  LogInfo::flags();
+  LogInfo::Flags();
   return total;
 }
 }  /* namespace maplebe */

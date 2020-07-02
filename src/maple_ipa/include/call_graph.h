@@ -12,8 +12,8 @@
  * FIT FOR A PARTICULAR PURPOSE.
  * See the Mulan PSL v1 for more details.
  */
-#ifndef MAPLE_IPA_INCLUDE_CALLGRAPH_H
-#define MAPLE_IPA_INCLUDE_CALLGRAPH_H
+#ifndef MAPLE_IPA_INCLUDE_CALL_GRAPH_H
+#define MAPLE_IPA_INCLUDE_CALL_GRAPH_H
 #include "module_phase.h"
 #include "mir_nodes.h"
 #include "class_hierarchy.h"
@@ -54,7 +54,7 @@ class CallInfo {
   CallInfo(CallType type, MIRFunction &call, StmtNode *node, uint32 ld, uint32 stmtId, bool local = false)
       : areAllArgsLocal(local), cType(type), mirFunc(&call), callStmt(node), loopDepth(ld), id(stmtId) {}
 
-  virtual ~CallInfo() {}
+  ~CallInfo() = default;
 
   uint32 GetID() const {
     return id;
@@ -313,7 +313,7 @@ class SCCNode {
         callerScc(alloc.Adapter()),
         calleeScc(alloc.Adapter()) {}
 
-  virtual ~SCCNode() {}
+  ~SCCNode() = default;
 
   void AddCGNode(CGNode *node) {
     cgNodes.push_back(node);
@@ -478,7 +478,7 @@ class DoCallGraph : public ModulePhase {
     return "callgraph";
   }
 
-  virtual ~DoCallGraph(){};
+  virtual ~DoCallGraph() {};
 };
 
 class IPODevirtulize {
@@ -486,7 +486,7 @@ class IPODevirtulize {
   IPODevirtulize(MIRModule *m, MemPool *memPool, KlassHierarchy *kh)
       : cgAlloc(memPool), mirBuilder(cgAlloc.GetMemPool()->New<MIRBuilder>(m)), klassh(kh), debugFlag(false) {}
 
-  virtual ~IPODevirtulize() = default;
+  ~IPODevirtulize() = default;
   void DevirtualFinal();
   KlassHierarchy *GetKlassh() const {
     return klassh;
@@ -510,7 +510,7 @@ class DoIPODevirtulize : public ModulePhase {
     return "ipodevirtulize";
   }
 
-  virtual ~DoIPODevirtulize(){};
+  virtual ~DoIPODevirtulize() {};
 };
 }  // namespace maple
 #endif  // MAPLE_IPA_INCLUDE_CALLGRAPH_H

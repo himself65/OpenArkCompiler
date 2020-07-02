@@ -1,5 +1,5 @@
 /*
- * Copyright (c) [2019] Huawei Technologies Co.,Ltd.All rights reserved.
+ * Copyright (c) [2019-2020] Huawei Technologies Co.,Ltd.All rights reserved.
  *
  * OpenArkCompiler is licensed under the Mulan PSL v1.
  * You can use this software according to the terms and conditions of the Mulan PSL v1.
@@ -69,7 +69,7 @@ class MapleString {
     if (str == nullptr) {
       return *this;
     }
-    unsigned int size = strlen(str);
+    unsigned int size = static_cast<unsigned int>(strlen(str));
     CHECK_FATAL(size <= UINT_MAX - 1, "str too large");
 
     // if data is null, old_size = 0, else +1
@@ -146,7 +146,7 @@ class MapleString {
     if (str == nullptr) {
       return *this;
     }
-    unsigned int size = strlen(str);
+    unsigned int size = static_cast<unsigned int>(strlen(str));
     unsigned int oldSize = (data == nullptr) ? 0 : (dataLength + 1);
     CHECK_FATAL(size <= UINT_MAX - oldSize, "str too large");
 

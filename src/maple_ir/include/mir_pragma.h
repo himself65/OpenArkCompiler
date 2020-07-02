@@ -70,11 +70,14 @@ enum PragmaValueType {
 
 class MIRPragmaElement {
  public:
-  explicit MIRPragmaElement(MIRModule &m) : MIRPragmaElement(m.GetPragmaMPAllocator()) {}
+  explicit MIRPragmaElement(MIRModule &m) : MIRPragmaElement(m.GetPragmaMPAllocator()) {
+    val.d = 0;
+  }
 
   explicit MIRPragmaElement(MapleAllocator &subElemAllocator)
       : subElemVec(subElemAllocator.Adapter()) {
     subElemVec.clear();
+    val.d = 0;
   }
 
   ~MIRPragmaElement() = default;
@@ -169,7 +172,7 @@ class MIRPragmaElement {
     uint64 u;
     float f;
     double d;
-  } val { 0 };
+  } val;
   MapleVector<MIRPragmaElement*> subElemVec;
 };
 

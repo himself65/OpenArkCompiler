@@ -59,18 +59,20 @@ class FuncOptimizeImpl : public MplTaskParam {
 
 class FuncOptimizeIterator {
  public:
-  FuncOptimizeIterator(const std::string &phaseName, FuncOptimizeImpl *phaseImpl);
+  FuncOptimizeIterator(const std::string &phaseName, std::unique_ptr<FuncOptimizeImpl> phaseImpl);
   virtual ~FuncOptimizeIterator();
   virtual void Run();
 
  protected:
-  FuncOptimizeImpl *phaseImpl;
+  std::unique_ptr<FuncOptimizeImpl> phaseImpl;
 };
 
-#define OPT_TEMPLATE(OPT_NAME)                                                                 \
-  auto *kh = static_cast<KlassHierarchy*>(mrm->GetAnalysisResult(MoPhase_CHA, mod));           \
-  ASSERT_NOT_NULL(kh);                                                                         \
-  FuncOptimizeIterator opt(PhaseName(), new OPT_NAME(*mod, kh, TRACE_PHASE));                  \
+#define OPT_TEMPLATE(OPT_NAME)                                                                       \
+  auto *kh = static_cast<KlassHierarchy*>(mrm->GetAnalysisResult(MoPhase_CHA, mod));                 \
+  ASSERT_NOT_NULL(kh);                                                                               \
+  std::unique_ptr<FuncOptimizeImpl> funcOptImpl = std::make_unique<OPT_NAME>(*mod, kh, TRACE_PHASE); \
+  ASSERT_NOT_NULL(funcOptImpl);                                                                      \
+  FuncOptimizeIterator opt(PhaseName(), std::move(funcOptImpl));                                          \
   opt.Run();
 }  // namespace maple
 #endif  // MAPLE_PHASE_INCLUDE_PHASE_IMPL_H

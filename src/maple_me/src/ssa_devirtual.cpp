@@ -258,6 +258,15 @@ void SSADevirtual::PropVarInferredType(VarMeExpr &varMeExpr) const {
         type->Dump(0, false);
         LogInfo::MapleLogger() << '\n';
       }
+    } else if (rhs->GetOp() == OP_gcmallocjarray) {
+      varMeExpr.SetInferredTyIdx(static_cast<OpMeExpr*>(rhs)->GetTyIdx());
+      varMeExpr.SetMaybeNull(false);
+      if (SSADevirtual::debug) {
+        MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(varMeExpr.GetInferredTyIdx());
+        LogInfo::MapleLogger() << "[SSA-DEVIRT] [TYPE-INFERRING] mx" << varMeExpr.GetExprID() << " ";
+        type->Dump(0, false);
+        LogInfo::MapleLogger() << '\n';
+      }
     } else {
       TyIdx tyIdx = GetInferredTyIdx(*rhs);
       varMeExpr.SetMaybeNull(MaybeNull(*rhs));

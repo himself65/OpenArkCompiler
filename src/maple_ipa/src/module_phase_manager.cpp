@@ -19,7 +19,7 @@
 #include "bin_mpl_export.h"
 #include "mpl_timer.h"
 #include "clone.h"
-#include "callgraph.h"
+#include "call_graph.h"
 #if MIR_JAVA
 #include "native_stub_func.h"
 #include "vtable_analysis.h"

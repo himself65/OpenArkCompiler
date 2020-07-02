@@ -26,6 +26,7 @@ namespace namemangler {
 
 #define VTAB_PREFIX               __vtb_
 #define ITAB_PREFIX               __itb_
+#define VTAB_AND_ITAB_PREFIX      __vtb_and_itb_
 #define ITAB_CONFLICT_PREFIX      __itbC_
 #define CLASSINFO_PREFIX          __cinf_
 #define CLASSINFO_RO_PREFIX       __classinforo__
@@ -38,6 +39,7 @@ namespace namemangler {
 
 #define VTAB_PREFIX_STR               TO_STR(VTAB_PREFIX)
 #define ITAB_PREFIX_STR               TO_STR(ITAB_PREFIX)
+#define VTAB_AND_ITAB_PREFIX_STR      TO_STR(VTAB_AND_ITAB_PREFIX)
 #define ITAB_CONFLICT_PREFIX_STR      TO_STR(ITAB_CONFLICT_PREFIX)
 #define CLASSINFO_PREFIX_STR          TO_STR(CLASSINFO_PREFIX)
 #define CLASSINFO_RO_PREFIX_STR       TO_STR(CLASSINFO_RO_PREFIX)
@@ -63,8 +65,10 @@ static constexpr const char kMuidFuncDefMuidTabPrefixStr[] = "__muid_ro_func_def
 static constexpr const char kMuidDataDefMuidTabPrefixStr[] = "__muid_ro_data_def_muid_tab";
 static constexpr const char kMuidFuncUndefMuidTabPrefixStr[] = "__muid_ro_func_undef_muid_tab";
 static constexpr const char kMuidDataUndefMuidTabPrefixStr[] = "__muid_ro_data_undef_muid_tab";
-static constexpr const char kMuidVtabPrefixStr[] = "__muid_vtab";
-static constexpr const char kMuidItabPrefixStr[] = "__muid_itab";
+static constexpr const char kMuidVtabAndItabPrefixStr[] = "__muid_vtab_and_itab";
+static constexpr const char kMuidItabConflictPrefixStr[] = "__muid_itab_conflict";
+static constexpr const char kMuidColdVtabAndItabPrefixStr[] = "__muid_cold_vtab_and_itab";
+static constexpr const char kMuidColdItabConflictPrefixStr[] = "__muid_cold_itab_conflict";
 static constexpr const char kMuidVtabOffsetPrefixStr[] = "__muid_vtab_offset_tab";
 static constexpr const char kMuidFieldOffsetPrefixStr[] = "__muid_field_offset_tab";
 static constexpr const char kMuidVtabOffsetKeyPrefixStr[] = "__muid_vtable_offset_key_tab";

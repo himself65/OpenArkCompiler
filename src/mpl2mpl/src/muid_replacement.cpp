@@ -830,7 +830,7 @@ void MUIDReplacement::GenerateRangeTable() {
     builder->AddIntFieldConst(rangeTabEntryType, *entryConst, fieldID++, mplMd5.data.words[1]);
     rangeTabConst->PushBack(entryConst);
   }
-  for (uint32 i = RangeIdx::kVtab; i < RangeIdx::kOldMaxNum; ++i) {
+  for (uint32 i = RangeIdx::kVtabAndItab; i < RangeIdx::kOldMaxNum; ++i) {
     // Use an integer to mark which entry is for which table
     MIRAggConst *entryConst = GetMIRModule().GetMemPool()->New<MIRAggConst>(GetMIRModule(), rangeTabEntryType);
     uint32 fieldID = 1;

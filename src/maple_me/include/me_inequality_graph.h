@@ -351,7 +351,7 @@ class ABCD {
   static constexpr int kDFSLimit = 100000;
   explicit ABCD(InequalityGraph &graph) : inequalityGraph(&graph), recursiveCount(0) {}
   ~ABCD() = default;
-
+  bool IsLessOrEqual(const MeExpr &arrayNode, const MeExpr &idx);
   bool DemandProve(const MeExpr &arrayNode, const MeExpr &idx);
   bool DemandProve(ESSABaseNode &firstNode, ESSABaseNode &secondNode, EdgeType edgeType);
 

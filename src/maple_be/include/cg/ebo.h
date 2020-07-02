@@ -50,9 +50,6 @@ struct OpndInfo {
   InsnInfo *insnInfo = nullptr;
   bool redefinedInBB = false;  /* A following definition exisit in bb. */
   bool redefined = false;  /* A following definition exisit. */
-#if TARGARM32
-  bool mayReDef = false;
-#endif
   OpndInfo *same = nullptr;  /* Other definitions of the same operand. */
   OpndInfo *prev = nullptr;
   OpndInfo *next = nullptr;
@@ -144,10 +141,7 @@ class Ebo {
   bool IsPhysicalReg(const Operand &opnd) const;
   bool HasAssignedReg(const Operand &opnd) const;
   bool IsOfSameClass(const Operand &op0, const Operand &op1) const;
-  bool OpndAvailableInBB(const BB &bb, OpndInfo *info);
-  bool ForwardPropCheck(const Operand *opndReplace, OpndInfo &opndInfo, const Operand &opnd, Insn &insn);
-  bool RegForwardCheck(Insn &insn, const Operand &opnd, const Operand *opndReplace, Operand &oldOpnd,
-                       const OpndInfo *tmpInfo);
+  bool OpndAvailableInBB(const BB &bb, OpndInfo &info);
   bool IsNotVisited(const BB &bb) {
     return !visitedBBs.at(bb.GetId());
   };

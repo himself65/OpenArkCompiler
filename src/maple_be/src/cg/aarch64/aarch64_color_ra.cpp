@@ -325,24 +325,30 @@ void GraphColorRegAllocator::InitFreeRegPool() {
     if (!AArch64Abi::IsAvailableReg(static_cast<AArch64reg>(regNO))) {
       continue;
     }
-    if (AArch64isa::IsGPRegister(static_cast<AArch64reg>(regNO))) {
-      /*
-       * Because of the try-catch scenario in JAVALANG,
-       * we should use specialized spill register to prevent register changes when exceptions occur.
-       */
-      if (JAVALANG) {
+
+    /*
+     * Because of the try-catch scenario in JAVALANG,
+     * we should use specialized spill register to prevent register changes when exceptions occur.
+     */
+    if (JAVALANG && AArch64Abi::IsSpillRegInRA(static_cast<AArch64reg>(regNO), needExtraSpillReg)) {
+      if (AArch64isa::IsGPRegister(static_cast<AArch64reg>(regNO))) {
         /* Preset int spill registers */
-        if (AArch64Abi::IsSpillRegInRA(static_cast<AArch64reg>(regNO), needExtraSpillReg)) {
-          intSpillRegSet.insert(regNO - R0);
-          continue;
-        }
+        intSpillRegSet.insert(regNO - R0);
+      } else {
+        /* Preset float spill registers */
+        fpSpillRegSet.insert(regNO - V0);
       }
+      continue;
+    }
+
 #ifdef RESERVED_REGS
-      /* 16,17 are used besides ra. */
-      if (IsReservedReg(static_cast<AArch64reg>(regNO))) {
-        continue;
-      }
+    /* r16,r17 are used besides ra. */
+    if (IsReservedReg(static_cast<AArch64reg>(regNO))) {
+      continue;
+    }
 #endif  /* RESERVED_REGS */
+
+    if (AArch64isa::IsGPRegister(static_cast<AArch64reg>(regNO))) {
       /* when yieldpoint is enabled, x19 is reserved. */
       if (IsYieldPointReg(static_cast<AArch64reg>(regNO))) {
         continue;
@@ -354,13 +360,6 @@ void GraphColorRegAllocator::InitFreeRegPool() {
       }
       ++intNum;
     } else {
-      if (JAVALANG) {
-        /* Preset float spill registers */
-        if (AArch64Abi::IsSpillRegInRA(static_cast<AArch64reg>(regNO), needExtraSpillReg)) {
-          fpSpillRegSet.insert(regNO - V0);
-          continue;
-        }
-      }
       if (AArch64Abi::IsCalleeSavedReg(static_cast<AArch64reg>(regNO))) {
         fpCalleeRegSet.insert(regNO - V0);
       } else {
@@ -1222,6 +1221,18 @@ bool GraphColorRegAllocator::ShouldUseCallee(LiveRange &lr, const MapleSet<regno
   return false;
 }
 
+void GraphColorRegAllocator::AddCalleeUsed(regno_t regNO, RegType regType) {
+  ASSERT(AArch64isa::IsPhysicalRegister(regNO), "regNO should be physical register");
+  bool isCalleeReg = AArch64Abi::IsCalleeSavedReg(static_cast<AArch64reg>(regNO));
+  if (isCalleeReg) {
+    if (regType == kRegTyInt) {
+      intCalleeUsed.insert(regNO);
+    } else {
+      fpCalleeUsed.insert(regNO);
+    }
+  }
+}
+
 regno_t GraphColorRegAllocator::FindColorForLr(const LiveRange &lr) const {
   regno_t base;
   RegType regType = lr.GetRegType();
@@ -1299,14 +1310,7 @@ bool GraphColorRegAllocator::AssignColorToLr(LiveRange &lr, bool isDelayed) {
   }
 #endif  /* OPTIMIZE_FOR_PROLOG */
 
-  bool isCalleeReg = AArch64Abi::IsCalleeSavedReg(static_cast<AArch64reg>(lr.GetAssignedRegNO()));
-  if (isCalleeReg) {
-    if (lr.GetRegType() == kRegTyInt) {
-      intCalleeUsed.insert((lr.GetAssignedRegNO()));
-    } else {
-      fpCalleeUsed.insert((lr.GetAssignedRegNO()));
-    }
-  }
+  AddCalleeUsed(lr.GetAssignedRegNO(), lr.GetRegType());
 
   UpdateForbiddenForNeighbors(lr);
   ForEachBBArrElem(lr.GetBBMember(),
@@ -1911,6 +1915,8 @@ void GraphColorRegAllocator::SplitLr(LiveRange &lr) {
   SplitLrUpdateInterference(lr);
   newLr->SetAssignedRegNO(FindColorForLr(*newLr));
 
+  AddCalleeUsed(newLr->GetAssignedRegNO(), newLr->GetRegType());
+
   /* For the new LR, update assignment for local RA */
   ForEachBBArrElem(newLr->GetBBMember(),
                    [&newLr, this](uint32 bbID) { SetBBInfoGlobalAssigned(bbID, newLr->GetAssignedRegNO()); });
@@ -2087,8 +2093,9 @@ void GraphColorRegAllocator::HandleLocalRaDebug(regno_t regNO, const LocalRegAll
   LogInfo::MapleLogger() << "\tregUsed:";
   uint64 regUsed = localRa.GetPregUsed(isInt);
   regno_t base = isInt ? R0 : V0;
+  regno_t end = isInt ? (RFP - R0) : (V31 - V0);
 
-  for (uint32 i = 0; i < RZR; ++i) {
+  for (uint32 i = 0; i <= end; ++i) {
     if ((regUsed & (1ULL << i)) != 0) {
       LogInfo::MapleLogger() << " " << (i + base);
     }
@@ -2096,7 +2103,7 @@ void GraphColorRegAllocator::HandleLocalRaDebug(regno_t regNO, const LocalRegAll
   LogInfo::MapleLogger() << "\n";
   LogInfo::MapleLogger() << "\tregs:";
   uint64 regs = localRa.GetPregs(isInt);
-  for (uint32 regnoInLoop = 0; regnoInLoop < RZR; ++regnoInLoop) {
+  for (uint32 regnoInLoop = 0; regnoInLoop <= end; ++regnoInLoop) {
     if ((regs & (1ULL << regnoInLoop)) != 0) {
       LogInfo::MapleLogger() << " " << (regnoInLoop + base);
     }
@@ -2265,9 +2272,7 @@ void GraphColorRegAllocator::LocalRaFinalAssignment(LocalRegAllocator &localRa, 
     }
     /* Might need to get rid of this copy. */
     bbInfo.SetRegMapElem(intRegAssignmentMapPair.first, regNO);
-    if (AArch64Abi::IsCalleeSavedReg(static_cast<AArch64reg>(regNO))) {
-      intCalleeUsed.insert(regNO);
-    }
+    AddCalleeUsed(regNO, kRegTyInt);
   }
   for (const auto &fpRegAssignmentMapPair : localRa.GetFpRegAssignmentMap()) {
     regno_t regNO = fpRegAssignmentMapPair.second;
@@ -2276,9 +2281,7 @@ void GraphColorRegAllocator::LocalRaFinalAssignment(LocalRegAllocator &localRa, 
     }
     /* Might need to get rid of this copy. */
     bbInfo.SetRegMapElem(fpRegAssignmentMapPair.first, regNO);
-    if (AArch64Abi::IsCalleeSavedReg(static_cast<AArch64reg>(regNO))) {
-      fpCalleeUsed.insert(regNO);
-    }
+    AddCalleeUsed(regNO, kRegTyFloat);
   }
 }
 
@@ -2711,6 +2714,7 @@ regno_t GraphColorRegAllocator::PickRegForSpill(uint64 &usedRegMask, RegType reg
     base = V0;
     pregInterval = V0 - R30;
   }
+
   if (JAVALANG) {
     /* Use predetermined spill register */
     MapleSet<uint32> &spillRegSet = isIntReg ? intSpillRegSet : fpSpillRegSet;
@@ -2721,20 +2725,21 @@ regno_t GraphColorRegAllocator::PickRegForSpill(uint64 &usedRegMask, RegType reg
     }
     spillReg = *regNumIt + base;
     return spillReg;
-  } else {
-    /* Temporary find a unused reg to spill */
-    uint32 maxPhysRegNum = isIntReg ? MaxIntPhysRegNum() : MaxFloatPhysRegNum();
-    for (spillReg = (maxPhysRegNum + base); spillReg > base; --spillReg) {
-      if (spillReg >= k64BitSize) {
-        spillReg = k64BitSize - 1;
-      }
-      if ((usedRegMask & (1ULL << (spillReg - pregInterval))) == 0) {
-        usedRegMask |= (1ULL << (spillReg - pregInterval));
-        needSpillLr = true;
-        return spillReg;
-      }
+  }
+
+  /* Temporary find a unused reg to spill */
+  uint32 maxPhysRegNum = isIntReg ? MaxIntPhysRegNum() : MaxFloatPhysRegNum();
+  for (spillReg = (maxPhysRegNum + base); spillReg > base; --spillReg) {
+    if (spillReg >= k64BitSize) {
+      spillReg = k64BitSize - 1;
+    }
+    if ((usedRegMask & (1ULL << (spillReg - pregInterval))) == 0) {
+      usedRegMask |= (1ULL << (spillReg - pregInterval));
+      needSpillLr = true;
+      return spillReg;
     }
   }
+
   ASSERT(false, "can not find spillReg");
   return 0;
 }
@@ -2809,14 +2814,7 @@ RegOperand *GraphColorRegAllocator::GetReplaceOpndForLRA(Insn &insn, const Opera
     if (static_cast<AArch64Insn&>(insn).GetMachineOpcode() == MOP_lazy_ldr && spillReg == R17) {
       CHECK_FATAL(false, "register IP1(R17) may be changed when lazy_ldr");
     }
-    bool isCalleeReg = AArch64Abi::IsCalleeSavedReg(static_cast<AArch64reg>(spillReg));
-    if (isCalleeReg) {
-      if (regType == kRegTyInt) {
-        intCalleeUsed.insert((spillReg));
-      } else {
-        fpCalleeUsed.insert((spillReg));
-      }
-    }
+    AddCalleeUsed(spillReg, regType);
     if (GCRA_DUMP) {
       LogInfo::MapleLogger() << "\tassigning lra spill reg " << spillReg << "\n";
     }
@@ -2856,14 +2854,7 @@ bool GraphColorRegAllocator::GetSpillReg(Insn &insn, LiveRange &lr, uint32 &spil
   } else {
     lr.SetAssignedRegNO(0);
     needSpillLr = SetRegForSpill(lr, insn, spillIdx, usedRegMask, isDef);
-    bool isCalleeReg = AArch64Abi::IsCalleeSavedReg(static_cast<AArch64reg>(lr.GetAssignedRegNO()));
-    if (isCalleeReg) {
-      if (lr.GetRegType() == kRegTyInt) {
-        intCalleeUsed.insert(lr.GetAssignedRegNO());
-      } else {
-        fpCalleeUsed.insert(lr.GetAssignedRegNO());
-      }
-    }
+    AddCalleeUsed(lr.GetAssignedRegNO(), lr.GetRegType());
   }
   return needSpillLr;
 }

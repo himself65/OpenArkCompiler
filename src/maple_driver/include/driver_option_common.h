@@ -60,9 +60,11 @@ class MapleDriverOptionBase {
 
 class DriverOptionCommon : public MapleDriverOptionBase {
  public:
-  static DriverOptionCommon &GetInstance();
-  DriverOptionCommon();
   ~DriverOptionCommon() = default;
+  static DriverOptionCommon &GetInstance();
+
+ private:
+  DriverOptionCommon();
 };
 }  // namespace maple
 #endif //DRIVER_OPTIONS_COMMON_H

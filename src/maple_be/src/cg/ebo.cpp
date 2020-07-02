@@ -119,15 +119,12 @@ bool Ebo::IsOfSameClass(const Operand &op0, const Operand &op1) const {
 }
 
 /* return true if opnd of bb is available. */
-bool Ebo::OpndAvailableInBB(const BB &bb, OpndInfo *info) {
-  if (info == nullptr) {
-    return false;
-  }
-  if (info->opnd == nullptr) {
+bool Ebo::OpndAvailableInBB(const BB &bb, OpndInfo &info) {
+  if (info.opnd == nullptr) {
     return false;
   }
 
-  Operand *op = info->opnd;
+  Operand *op = info.opnd;
   if (op->IsConstant()) {
     return true;
   }
@@ -136,67 +133,19 @@ bool Ebo::OpndAvailableInBB(const BB &bb, OpndInfo *info) {
   if (op->IsRegShift() || op->IsRegister()) {
     hashVal = -1;
   } else {
-    hashVal = info->hashVal;
+    hashVal = info.hashVal;
   }
-  if (GetOpndInfo(*op, hashVal) != info) {
+  if (GetOpndInfo(*op, hashVal) != &info) {
     return false;
   }
   /* global operands aren't supported at low levels of optimization. */
-  if ((Globals::GetInstance()->GetOptimLevel() < CGOptions::kLevel2) && (&bb != info->bb)) {
+  if ((Globals::GetInstance()->GetOptimLevel() < CGOptions::kLevel2) && (&bb != info.bb)) {
     return false;
   }
   if (beforeRegAlloc && IsPhysicalReg(*op)) {
     return false;
   }
   return true;
-}
-
-bool Ebo::ForwardPropCheck(const Operand *opndReplace, OpndInfo &opndInfo, const Operand &opnd, Insn &insn) {
-  if (opndReplace == nullptr) {
-    return false;
-  }
-  if ((opndInfo.replacementInfo != nullptr) && opndInfo.replacementInfo->redefined) {
-    return false;
-  }
-#if TARGARM32
-  /* for arm32, disable forwardProp in strd insn. */
-  if (insn.GetMachineOpcode() == MOP_strd) {
-    return false;
-  }
-  if (opndInfo.mayReDef) {
-    return false;
-  }
-#endif
-  if (!(opndReplace->IsConstant() ||
-        ((OpndAvailableInBB(*insn.GetBB(), opndInfo.replacementInfo) || RegistersIdentical(opnd, *opndReplace)) &&
-         (HasAssignedReg(opnd) == HasAssignedReg(*opndReplace))))) {
-    return false;
-  }
-  /* if beforeRA, replace op should not be PhysicalRe */
-  return !beforeRegAlloc || !IsPhysicalReg(*opndReplace);
-}
-
-bool Ebo::RegForwardCheck(Insn &insn, const Operand &opnd, const Operand *opndReplace, Operand &oldOpnd,
-                          const OpndInfo *tmpInfo) {
-  if (opnd.IsConstant()) {
-    return false;
-  }
-  if (!(!beforeRegAlloc || (HasAssignedReg(oldOpnd) == HasAssignedReg(*opndReplace)) || opnd.IsConstReg() ||
-        !insn.IsMove())) {
-    return false;
-  }
-  if (!((insn.GetResultNum() == 0) ||
-        (((insn.GetResult(0) != nullptr) && !RegistersIdentical(opnd, *(insn.GetResult(0)))) || !beforeRegAlloc))) {
-    return false;
-  }
-  if (!(beforeRegAlloc || !IsFrameReg(oldOpnd))) {
-    return false;
-  }
-  if (insn.IsDestRegAlsoSrcReg()) {
-    return false;
-  }
-  return ((IsOfSameClass(oldOpnd, *opndReplace) && (oldOpnd.GetSize() <= opndReplace->GetSize())) ||
-          ((tmpInfo != nullptr) && IsMovToSIMDVmov(insn, *tmpInfo->insn)));
 }
 
 /* For Memory Operand, its info was stored in a hash table, this function is to compute its hash value. */
@@ -540,73 +489,85 @@ bool Ebo::ForwardPropagateOpnd(Insn &insn, Operand *&opnd, uint32 opndIndex,
   }
 
   /* forward propagation of constants */
-  CHECK_FATAL(opndIndex < origInfos.size(), "SetOpndInfo hashval outof range!");
-  if (!ForwardPropCheck(opndReplace, *opndInfo, *opnd, insn)) {
-    return false;
-  }
-  Operand *oldOpnd = opnd;
-  opnd = opndInfo->replacementOpnd;
-  opndInfo = opndInfo->replacementInfo;
+  ASSERT(opndIndex < origInfos.size(), "SetOpndInfo hashval outof range!");
+  if ((opndReplace != nullptr) && !((opndInfo->replacementInfo != nullptr) && opndInfo->replacementInfo->redefined) &&
+      (opndReplace->IsConstant() ||
+       ((((opndInfo->replacementInfo != nullptr) && OpndAvailableInBB(*insn.GetBB(), *opndInfo->replacementInfo)) ||
+         RegistersIdentical(*opnd, *opndReplace)) &&
+        (HasAssignedReg(*opnd) == HasAssignedReg(*opndReplace)))) &&
+      (!beforeRegAlloc || (!IsPhysicalReg(*opndReplace)))) {
+    Operand *oldOpnd = opnd;
+    opnd = opndInfo->replacementOpnd;
+    opndInfo = opndInfo->replacementInfo;
 
-  /* constant prop. */
-  if (opnd->IsIntImmediate() && oldOpnd->IsRegister()) {
-    if (DoConstProp(insn, opndIndex, *opnd)) {
+    /* constant prop. */
+    if (opnd->IsIntImmediate() && oldOpnd->IsRegister()) {
+      if (DoConstProp(insn, opndIndex, *opnd)) {
+        DecRef(*origInfos.at(opndIndex));
+        /* Update the actual expression info. */
+        origInfos.at(opndIndex) = opndInfo;
+      }
+    }
+    /* move reg, wzr, store vreg, mem ==> store wzr, mem */
+#if TARGAARCH64
+    if (opnd->IsZeroRegister() && opndIndex == 0 &&
+        (insn.GetMachineOpcode() == MOP_wstr || insn.GetMachineOpcode() == MOP_xstr)) {
+      if (EBO_DUMP) {
+        LogInfo::MapleLogger() << "===replace operand " << opndIndex << " of insn: \n";
+        insn.Dump();
+        LogInfo::MapleLogger() << "the new insn is:\n";
+      }
+      insn.SetOperand(opndIndex, *opnd);
       DecRef(*origInfos.at(opndIndex));
       /* Update the actual expression info. */
       origInfos.at(opndIndex) = opndInfo;
+      if (EBO_DUMP) {
+        insn.Dump();
+      }
     }
-  }
-  /* move reg, wzr, store vreg, mem ==> store wzr, mem */
-#if TARGAARCH64
-  if (opnd->IsZeroRegister() && opndIndex == 0 &&
-      (insn.GetMachineOpcode() == MOP_wstr || insn.GetMachineOpcode() == MOP_xstr)) {
-    if (EBO_DUMP) {
-      LogInfo::MapleLogger() << "===replace operand " << opndIndex << " of insn: \n";
-      insn.Dump();
-      LogInfo::MapleLogger() << "the new insn is:\n";
-    }
-    insn.SetOperand(opndIndex, *opnd);
-    DecRef(*origInfos.at(opndIndex));
-    /* Update the actual expression info. */
-    origInfos.at(opndIndex) = opndInfo;
-    if (EBO_DUMP) {
-      insn.Dump();
-    }
-  }
 #endif
-  /* forward prop for registers. */
-  if (!RegForwardCheck(insn, *opnd, opndReplace, *oldOpnd, origInfos.at(opndIndex))) {
-    return false;
-  }
-  /* Copies to and from the same register are not needed. */
-  if (!beforeRegAlloc && insn.IsEffectiveCopy() && (insn.CopyOperands() == opndIndex) &&
-      RegistersIdentical(*opnd, *(insn.GetResult(0)))) {
-    if (EBO_DUMP) {
-      LogInfo::MapleLogger() << "===replace operand " << opndIndex << " of insn: \n";
-      insn.Dump();
-      LogInfo::MapleLogger() << "===Remove the new insn because Copies to and from the same register. \n";
+    /* forward prop for registers. */
+    if (!opnd->IsConstant() &&
+        (!beforeRegAlloc || (HasAssignedReg(*oldOpnd) == HasAssignedReg(*opndReplace)) || opnd->IsConstReg() ||
+         !insn.IsMove()) &&
+        (opndInfo != nullptr) &&
+        ((insn.GetResultNum() == 0) ||
+         (((insn.GetResult(0) != nullptr) && !RegistersIdentical(*opnd, *(insn.GetResult(0)))) || !beforeRegAlloc)) &&
+        (beforeRegAlloc || !IsFrameReg(*oldOpnd)) && !insn.IsDestRegAlsoSrcReg() &&
+        ((IsOfSameClass(*oldOpnd, *opndReplace) && (oldOpnd->GetSize() <= opndReplace->GetSize())) ||
+         IsMovToSIMDVmov(insn, *origInfos.at(opndIndex)->insn))) {
+      /* Copies to and from the same register are not needed. */
+      if (!beforeRegAlloc && insn.IsEffectiveCopy() && (insn.CopyOperands() == opndIndex) &&
+          RegistersIdentical(*opnd, *(insn.GetResult(0)))) {
+        if (EBO_DUMP) {
+          LogInfo::MapleLogger() << "===replace operand " << opndIndex << " of insn: \n";
+          insn.Dump();
+          LogInfo::MapleLogger() << "===Remove the new insn because Copies to and from the same register. \n";
+        }
+        return true;
+      }
+
+      if (EBO_DUMP) {
+        LogInfo::MapleLogger() << "===replace operand " << opndIndex << " of insn: \n";
+        insn.Dump();
+        LogInfo::MapleLogger() << "the new insn is:\n";
+      }
+      DecRef(*origInfos.at(opndIndex));
+      insn.SetOperand(opndIndex, *opnd);
+
+      if (EBO_DUMP) {
+        insn.Dump();
+      }
+      IncRef(*opndInfo);
+      /* Update the actual expression info. */
+      origInfos.at(opndIndex) = opndInfo;
+      /* extend the live range of the replacement operand. */
+      if ((opndInfo->bb != insn.GetBB()) && opnd->IsRegister()) {
+        MarkOpndLiveIntoBB(*opnd, *insn.GetBB(), *opndInfo->bb);
+      }
     }
-    return true;
   }
 
-  if (EBO_DUMP) {
-    LogInfo::MapleLogger() << "===replace operand " << opndIndex << " of insn: \n";
-    insn.Dump();
-    LogInfo::MapleLogger() << "the new insn is:\n";
-  }
-  DecRef(*origInfos.at(opndIndex));
-  insn.SetOperand(opndIndex, *opnd);
-
-  if (EBO_DUMP) {
-    insn.Dump();
-  }
-  IncRef(*opndInfo);
-  /* Update the actual expression info. */
-  origInfos.at(opndIndex) = opndInfo;
-  /* extend the live range of the replacement operand. */
-  if ((opndInfo->bb != insn.GetBB()) && opnd->IsRegister()) {
-    MarkOpndLiveIntoBB(*opnd, *insn.GetBB(), *opndInfo->bb);
-  }
   return false;
 }
 
@@ -1309,7 +1270,7 @@ AnalysisResult *CgDoEbo::Run(CGFunc *cgFunc, CgFuncResultMgr *cgFuncResultMgr) {
   ebo = eboMp->New<AArch64Ebo>(*cgFunc, *eboMp, live, true, PhaseName());
 #endif
 #if TARGARM32
-  ebo = eboMp->New<Arm32Ebo>(*cgFunc, *eboMp, live, true, PhaseName());
+  ebo = eboMp->New<Arm32Ebo>(*cgFunc, *eboMp, live, false, PhaseName());
 #endif
   ebo->Run();
   /* the live range info may changed, so invalid the info. */
@@ -1335,7 +1296,7 @@ AnalysisResult *CgDoEbo1::Run(CGFunc *cgFunc, CgFuncResultMgr *cgFuncResultMgr) 
   ebo = eboMp->New<AArch64Ebo>(*cgFunc, *eboMp, live, true, PhaseName());
 #endif
 #if TARGARM32
-  ebo = eboMp->New<Arm32Ebo>(*cgFunc, *eboMp, live, true, PhaseName());
+  ebo = eboMp->New<Arm32Ebo>(*cgFunc, *eboMp, live, false, PhaseName());
 #endif
   ebo->Run();
   /* the live range info may changed, so invalid the info. */
