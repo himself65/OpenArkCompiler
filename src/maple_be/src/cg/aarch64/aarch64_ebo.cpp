@@ -737,7 +737,7 @@ bool AArch64Ebo::SpecialSequence(Insn &insn, const MapleVector<OpndInfo*> &origI
           /* multiple of 4 and 8 */
           const int multiOfFour = 4;
           const int multiOfEight = 8;
-          is64bits = is64bits && (!static_cast<AArch64Insn&>(insn).CheckRefField(kInsnFirstOpnd));
+          is64bits = is64bits && (!static_cast<AArch64Insn&>(insn).CheckRefField(kInsnFirstOpnd, false));
           if ((!is64bits && (immVal < kStrLdrImm32UpperBound) && (immVal % multiOfFour == 0)) ||
               (is64bits && (immVal < kStrLdrImm64UpperBound) && (immVal % multiOfEight == 0))) {
             /* Reserved physicalReg beforeRA */

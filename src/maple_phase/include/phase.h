@@ -155,9 +155,8 @@ class AnalysisResultManager {
   }
 
   void InvalidIRbaseAnalysisResult(UnitIR &ir) {
-    PhaseIDT id;
     for (auto it = analysisPhases.begin(); it != analysisPhases.end(); ++it) {
-      id = it->first;
+      PhaseIDT id = it->first;
       InvalidAnalysisResult(id, &ir);
     }
   }

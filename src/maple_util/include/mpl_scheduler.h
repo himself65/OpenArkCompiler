@@ -28,10 +28,6 @@
 #include "types_def.h"
 
 namespace maple {
-#define MP_SYNC        \
-  (stmt) GlobalLock(); \
-  stmt GlobalUnlock();
-
 class MplTaskParam {
  public:
   MplTaskParam() = default;
@@ -151,11 +147,11 @@ class MplScheduler {
 
   virtual void CallbackThreadFinishEnd() {}
 
-  virtual MplTaskParam *CallbackGetTaskRunParam() {
+  virtual MplTaskParam *CallbackGetTaskRunParam() const {
     return nullptr;
   }
 
-  virtual MplTaskParam *CallbackGetTaskFinishParam() {
+  virtual MplTaskParam *CallbackGetTaskFinishParam() const {
     return nullptr;
   }
 };

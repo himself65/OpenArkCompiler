@@ -44,6 +44,7 @@ src_libmplme = [
   "src/me_function.cpp",
   "src/me_loop_analysis.cpp",
   "src/me_irmap.cpp",
+  "src/me_analyzector.cpp",
   "src/me_loop_canon.cpp",
   "src/me_option.cpp",
   "src/me_phase_manager.cpp",

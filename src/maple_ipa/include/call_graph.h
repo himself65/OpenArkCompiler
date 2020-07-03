@@ -359,7 +359,7 @@ class SCCNode {
 class CallGraph : public AnalysisResult {
  public:
   CallGraph(MIRModule &m, MemPool &memPool, KlassHierarchy &kh, const std::string &fn);
-  ~CallGraph() {}
+  ~CallGraph() = default;
 
   void InitCallExternal() {
     callExternal = cgAlloc.GetMemPool()->New<CGNode>(static_cast<MIRFunction*>(nullptr), cgAlloc, numOfNodes++);
@@ -392,7 +392,7 @@ class CallGraph : public AnalysisResult {
 
   void HandleBody(MIRFunction&, BlockNode&, CGNode&, uint32);
   void AddCallGraphNode(MIRFunction&);
-  void DumpToFile(bool dumpAll = true);
+  void DumpToFile(bool dumpAll = true) const;
   void Dump() const;
   CGNode *GetCGNode(MIRFunction *func) const;
   CGNode *GetCGNode(PUIdx puIdx) const;

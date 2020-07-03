@@ -86,7 +86,7 @@ struct Descriptor {
 
 class Option {
  public:
-  Option(Descriptor desc, const std::string &optionKey, const std::string &args)
+  Option(const Descriptor &desc, const std::string &optionKey, const std::string &args)
       : descriptor(desc), optionKey(optionKey), args(args) {}
 
   ~Option() = default;

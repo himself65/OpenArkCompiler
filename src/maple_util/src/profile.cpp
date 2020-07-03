@@ -479,7 +479,6 @@ std::unordered_set<std::string> &Profile::GetMeta(uint8 type) {
       return methodMeta;
     default:
       CHECK_FATAL(false, "type not found");
-      return classMeta;
   }
 }
 

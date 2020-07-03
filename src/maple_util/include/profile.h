@@ -30,6 +30,7 @@ struct IRProfileDesc {
   uint64 funcHash = 0;
   IRProfileDesc() = default;
   IRProfileDesc(uint64 hash, uint32 start, uint32 end) : counterStart(start), counterEnd(end), funcHash(hash) {}
+  ~IRProfileDesc() = default;
 };
 
 class Profile {
@@ -48,6 +49,7 @@ class Profile {
         : funcHash(hash), totalCounter(num), counter(counter) {}
     BBInfo(uint64 hash, uint32 num, const std::initializer_list<uint32> &iList)
         : funcHash(hash), totalCounter(num), counter(iList) {}
+    ~BBInfo() = default;
   };
 
   static const uint8 stringEnd;
