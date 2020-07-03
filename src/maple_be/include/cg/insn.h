@@ -52,30 +52,30 @@ class Insn {
     Check();
 #endif
   }
-  Insn(MemPool &memPool, MOperator opc, Operand &opnd0) : Insn(memPool, opc) { opnds.push_back(&opnd0); }
+  Insn(MemPool &memPool, MOperator opc, Operand &opnd0) : Insn(memPool, opc) { opnds.emplace_back(&opnd0); }
   Insn(MemPool &memPool, MOperator opc, Operand &opnd0, Operand &opnd1) : Insn(memPool, opc) {
-    opnds.push_back(&opnd0);
-    opnds.push_back(&opnd1);
+    opnds.emplace_back(&opnd0);
+    opnds.emplace_back(&opnd1);
   }
   Insn(MemPool &memPool, MOperator opc, Operand &opnd0, Operand &opnd1, Operand &opnd2) : Insn(memPool, opc) {
-    opnds.push_back(&opnd0);
-    opnds.push_back(&opnd1);
-    opnds.push_back(&opnd2);
+    opnds.emplace_back(&opnd0);
+    opnds.emplace_back(&opnd1);
+    opnds.emplace_back(&opnd2);
   }
   Insn(MemPool &memPool, MOperator opc, Operand &opnd0, Operand &opnd1, Operand &opnd2, Operand &opnd3)
       : Insn(memPool, opc) {
-    opnds.push_back(&opnd0);
-    opnds.push_back(&opnd1);
-    opnds.push_back(&opnd2);
-    opnds.push_back(&opnd3);
+    opnds.emplace_back(&opnd0);
+    opnds.emplace_back(&opnd1);
+    opnds.emplace_back(&opnd2);
+    opnds.emplace_back(&opnd3);
   }
   Insn(MemPool &memPool, MOperator opc, Operand &opnd0, Operand &opnd1, Operand &opnd2, Operand &opnd3, Operand &opnd4)
       : Insn(memPool, opc) {
-    opnds.push_back(&opnd0);
-    opnds.push_back(&opnd1);
-    opnds.push_back(&opnd2);
-    opnds.push_back(&opnd3);
-    opnds.push_back(&opnd4);
+    opnds.emplace_back(&opnd0);
+    opnds.emplace_back(&opnd1);
+    opnds.emplace_back(&opnd2);
+    opnds.emplace_back(&opnd3);
+    opnds.emplace_back(&opnd4);
   }
   virtual ~Insn() = default;
 
@@ -88,7 +88,7 @@ class Insn {
   }
 
   void AddOperand(Operand &opnd) {
-    opnds.push_back(&opnd);
+    opnds.emplace_back(&opnd);
   }
   void PopBackOperand() {
     opnds.pop_back();
@@ -575,7 +575,7 @@ class Insn {
     mOp = originalInsn.mOp;
     uint32 opndNum = originalInsn.GetOperandSize();
     for (uint32 i = 0; i < opndNum; i++) {
-      opnds.push_back(originalInsn.opnds[i]->Clone(memPool));
+      opnds.emplace_back(originalInsn.opnds[i]->Clone(memPool));
     }
   }
 

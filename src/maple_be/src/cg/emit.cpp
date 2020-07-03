@@ -1561,9 +1561,9 @@ void Emitter::GetHotAndColdMetaSymbolInfo(const std::vector<MIRSymbol*> &mirSymb
     std::string klassJavaDescriptor;
     namemangler::DecodeMapleNameToJavaDescriptor(name, klassJavaDescriptor);
     if (isHot && !forceCold) {
-      hotFieldInfoSymbolVec.push_back(mirSymbol);
+      hotFieldInfoSymbolVec.emplace_back(mirSymbol);
     } else {
-      coldFieldInfoSymbolVec.push_back(mirSymbol);
+      coldFieldInfoSymbolVec.emplace_back(mirSymbol);
     }
   }
 }
@@ -1731,45 +1731,45 @@ void Emitter::EmitGlobalVariable() {
       continue;
     }
     if (mirSymbol->GetName().find(VTAB_PREFIX_STR) == 0) {
-      vtabVec.push_back(mirSymbol);
+      vtabVec.emplace_back(mirSymbol);
       continue;
     } else if (mirSymbol->GetName().find(ITAB_PREFIX_STR) == 0) {
-      itabVec.push_back(mirSymbol);
+      itabVec.emplace_back(mirSymbol);
       continue;
     } else if (mirSymbol->GetName().find(ITAB_CONFLICT_PREFIX_STR) == 0) {
-      itabConflictVec.push_back(mirSymbol);
+      itabConflictVec.emplace_back(mirSymbol);
       continue;
     } else if (mirSymbol->GetName().find(kVtabOffsetTabStr) == 0) {
-      vtabOffsetVec.push_back(mirSymbol);
+      vtabOffsetVec.emplace_back(mirSymbol);
       continue;
     } else if (mirSymbol->GetName().find(kFieldOffsetTabStr) == 0) {
-      fieldOffsetVec.push_back(mirSymbol);
+      fieldOffsetVec.emplace_back(mirSymbol);
       continue;
     } else if (mirSymbol->GetName().find(kOffsetTabStr) == 0) {
-      valueOffsetVec.push_back(mirSymbol);
+      valueOffsetVec.emplace_back(mirSymbol);
       continue;
     } else if (mirSymbol->IsArrayClassCache()) {
-      arrayClassCacheVec.push_back(mirSymbol);
+      arrayClassCacheVec.emplace_back(mirSymbol);
       continue;
     } else if (mirSymbol->IsArrayClassCacheName()) {
-      arrayClassCacheNameVec.push_back(mirSymbol);
+      arrayClassCacheNameVec.emplace_back(mirSymbol);
       continue;
     } else if (mirSymbol->GetName().find(kLocalClassInfoStr) == 0) {
-      localClassInfoVec.push_back(mirSymbol);
+      localClassInfoVec.emplace_back(mirSymbol);
       continue;
     } else if (StringUtils::StartsWith(mirSymbol->GetName(), namemangler::kDecoupleStaticKeyStr)) {
-      staticDecoupleKeyVec.push_back(mirSymbol);
+      staticDecoupleKeyVec.emplace_back(mirSymbol);
       continue;
     } else if (StringUtils::StartsWith(mirSymbol->GetName(), namemangler::kDecoupleStaticValueStr)) {
-      staticDecoupleValueVec.push_back(mirSymbol);
+      staticDecoupleValueVec.emplace_back(mirSymbol);
       continue;
     } else if (mirSymbol->IsLiteral()) {
-      literalVec.push_back(std::make_pair(mirSymbol, false));
+      literalVec.emplace_back(std::make_pair(mirSymbol, false));
       continue;
     } else if (mirSymbol->IsConstString() || mirSymbol->IsLiteralPtr()) {
       MIRConst *mirConst = mirSymbol->GetKonst();
       if (mirConst != nullptr && mirConst->GetKind() == kConstAddrof) {
-        constStrVec.push_back(mirSymbol);
+        constStrVec.emplace_back(mirSymbol);
         continue;
       }
     } else if (mirSymbol->IsReflectionClassInfoPtr()) {
@@ -1783,7 +1783,7 @@ void Emitter::EmitGlobalVariable() {
       EmitFuncLayoutInfo(*mirSymbol);
       continue;
     } else if (mirSymbol->GetName().find(kStaticFieldNamePrefixStr) == 0) {
-      staticFieldsVec.push_back(mirSymbol);
+      staticFieldsVec.emplace_back(mirSymbol);
       continue;
     } else if (mirSymbol->GetName().find(kGcRootList) == 0) {
       EmitGlobalRootList(*mirSymbol);
@@ -1793,19 +1793,19 @@ void Emitter::EmitGlobalVariable() {
       EmitMuidTable(muidVec, strIdx2Type, kFunctionProfileTabPrefixStr);
       continue;
     } else if (mirSymbol->IsReflectionFieldOffsetData()) {
-      fieldOffsetDatas.push_back(mirSymbol);
+      fieldOffsetDatas.emplace_back(mirSymbol);
       continue;
     } else if (mirSymbol->IsReflectionMethodAddrData()) {
-      methodAddrDatas.push_back(mirSymbol);
+      methodAddrDatas.emplace_back(mirSymbol);
       continue;
     } else if (mirSymbol->IsReflectionSuperclassInfo()) {
-      superClassStVec.push_back(mirSymbol);
+      superClassStVec.emplace_back(mirSymbol);
       continue;
     }
 
     if (mirSymbol->IsReflectionInfo()) {
       if (mirSymbol->IsReflectionClassInfo()) {
-        classInfoVec.push_back(mirSymbol);
+        classInfoVec.emplace_back(mirSymbol);
       }
       continue;
     }
@@ -1815,11 +1815,11 @@ void Emitter::EmitGlobalVariable() {
       continue;
     }
     if (mirSymbol->GetStorageClass() == kScTypeInfo) {
-      typeStVec.push_back(mirSymbol);
+      typeStVec.emplace_back(mirSymbol);
       continue;
     }
     if (mirSymbol->GetStorageClass() == kScTypeInfoName) {
-      typeNameStVec.push_back(mirSymbol);
+      typeNameStVec.emplace_back(mirSymbol);
       continue;
     }
     if (mirSymbol->GetStorageClass() == kScTypeCxxAbi) {
@@ -1845,7 +1845,7 @@ void Emitter::EmitGlobalVariable() {
         EmitAsmLabel(*mirSymbol, kAsmType);
         EmitAsmLabel(*mirSymbol, kAsmComm);
       } else {
-        globalVarVec.push_back(std::make_pair(mirSymbol, false));
+        globalVarVec.emplace_back(std::make_pair(mirSymbol, false));
       }
       continue;
     }
@@ -1982,16 +1982,16 @@ void Emitter::EmitGlobalVariable() {
         GlobalTables::GetStrTable().GetStrIdxFromName(kMethodsInfoCompactPrefixStr + className));
 
       if (fieldSt != nullptr) {
-        fieldInfoStVec.push_back(fieldSt);
+        fieldInfoStVec.emplace_back(fieldSt);
       }
       if (fieldStCompact != nullptr) {
-        fieldInfoStCompactVec.push_back(fieldStCompact);
+        fieldInfoStCompactVec.emplace_back(fieldStCompact);
       }
       if (methodSt != nullptr) {
-        methodInfoStVec.push_back(methodSt);
+        methodInfoStVec.emplace_back(methodSt);
       }
       if (methodStCompact != nullptr) {
-        methodInfoStCompactVec.push_back(methodStCompact);
+        methodInfoStCompactVec.emplace_back(methodStCompact);
       }
     }
   }
@@ -2042,10 +2042,10 @@ void Emitter::EmitGlobalVariable() {
    * And itab to vtab section
    */
   for (auto sym : hotItabStVec) {
-    hotVtabStVec.push_back(sym);
+    hotVtabStVec.emplace_back(sym);
   }
   for (auto sym : coldItabStVec) {
-    coldVtabStVec.push_back(sym);
+    coldVtabStVec.emplace_back(sym);
   }
   MarkVtabOrItabEndFlag(coldVtabStVec);
   EmitMuidTable(hotVtabStVec, strIdx2Type, kMuidVtabAndItabPrefixStr);
@@ -2095,8 +2095,8 @@ void Emitter::EmitGlobalRootList(const MIRSymbol &gcrootsSt) {
   Emit("\t.section .maple.gcrootsmap").Emit(",\"aw\",%progbits\n");
   std::vector<std::string> nameVec;
   std::string name = gcrootsSt.GetName();
-  nameVec.push_back(name);
-  nameVec.push_back(name + "Size");
+  nameVec.emplace_back(name);
+  nameVec.emplace_back(name + "Size");
   bool gcrootsFlag = true;
   uint64 vecSize = 0;
   for (const auto &gcrootsName : nameVec) {

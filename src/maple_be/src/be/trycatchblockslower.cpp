@@ -16,7 +16,7 @@
 namespace maplebe {
 BBT *TryCatchBlocksLower::CreateNewBB(StmtNode *first, StmtNode *last) {
   BBT *newBB = memPool.New<BBT>(first, last, &memPool);
-  bbList.push_back(newBB);
+  bbList.emplace_back(newBB);
   return newBB;
 }
 
@@ -165,17 +165,17 @@ void TryCatchBlocksLower::RecoverBasicBlock() {
         break;
       case OP_label: {
         LabelNode *labelStmt = static_cast<LabelNode*>(stmt);
-        labeledBBs.push_back(curBB);
+        labeledBBs.emplace_back(curBB);
         curBB->SetLabelIdx((LabelIdx)labelStmt->GetLabelIdx());
       } break;
       case OP_brtrue:
       case OP_brfalse:
-        condbrBBs.push_back(curBB);
+        condbrBBs.emplace_back(curBB);
         lastBB = curBB;
         curBB = nullptr;
         break;
       case OP_switch:
-        switchBBs.push_back(curBB);
+        switchBBs.emplace_back(curBB);
         lastBB = curBB;
         curBB = nullptr;
         break;
@@ -199,7 +199,7 @@ void TryCatchBlocksLower::RecoverBasicBlock() {
           openTry = curBB;
           prevBBOfTry[openTry] = lastBB;
         } else {
-          tryBBs.push_back(BBTPair(openTry, curBB));
+          tryBBs.emplace_back(BBTPair(openTry, curBB));
           openTry = nullptr;
           curBB->SetType(BBT::kBBEndTry, *stmt);
           lastBB = curBB;
@@ -219,7 +219,7 @@ void TryCatchBlocksLower::RecoverBasicBlock() {
           CHECK_FATAL(tb != curBB, "tb should not equal curBB");
         }
 #endif
-        catchBBs.push_back(curBB);
+        catchBBs.emplace_back(curBB);
         curBB->SetType(BBT::kBBCatch, *stmt);
         break;
       }
@@ -272,7 +272,7 @@ bool TryCatchBlocksLower::CheckAndProcessCatchNodeInCurrTryBlock(BBT &origLowerB
       std::vector<BBT*> currBBThread;
       BBT *lowerBB = &origLowerBB;
       /* append it to the list of blocks placed after the end try block */
-      currBBThread.push_back(lowerBB);
+      currBBThread.emplace_back(lowerBB);
       while (lowerBB->GetFallthruBranch() != nullptr) {
         lowerBB = lowerBB->GetFallthruBranch();
         CHECK_FATAL(!lowerBB->IsTry(), "ebb must not be tryBB");
@@ -286,12 +286,12 @@ bool TryCatchBlocksLower::CheckAndProcessCatchNodeInCurrTryBlock(BBT &origLowerB
             break;
           }
         }
-        currBBThread.push_back(lowerBB);
+        currBBThread.emplace_back(lowerBB);
       }
 
       if (!lowerBB->IsEndTry()) {
         for (auto &e : currBBThread) {
-          bbsToRelocate.push_back(e);
+          bbsToRelocate.emplace_back(e);
         }
       } else {
         /*
@@ -364,7 +364,7 @@ BBT *TryCatchBlocksLower::CollectCatchAndFallthruUntilNextCatchBB(BBT *&lowerBB,
       nextBBThreadHead = lowerBB;
       break;
     }
-    currBBThread.push_back(lowerBB);
+    currBBThread.emplace_back(lowerBB);
   }
 
   if (nextBBThreadHead == nullptr && lowerBB->GetFallthruBranch() == nullptr && lowerBB != endTryBB &&
@@ -381,7 +381,7 @@ BBT *TryCatchBlocksLower::CollectCatchAndFallthruUntilNextCatchBB(BBT *&lowerBB,
         nextBBThreadHead = lowerBB;
         break;
       }
-      currBBThread.push_back(lowerBB);
+      currBBThread.emplace_back(lowerBB);
     } while (nextEnclosedIdx < enclosedBBs.size());
   }
 
@@ -448,7 +448,7 @@ void TryCatchBlocksLower::WrapCatchWithTryEndTryBlock(std::vector<BBT*> &currBBT
         nextBBThreadHead = ebbSecond;
         break;
       }
-      currBBThread.push_back(ebbSecond);
+      currBBThread.emplace_back(ebbSecond);
     }
     /* normal bb. */
     StmtNode *stmt = threadHead->GetFirstStmt();
@@ -526,7 +526,7 @@ void TryCatchBlocksLower::ProcessEnclosedBBBetweenTryEndTry() {
     if (!lowerBB->IsLabeled()) {
       continue;
     }
-    labeledBBsInTry.push_back(lowerBB);
+    labeledBBsInTry.emplace_back(lowerBB);
 
     /*
      * It seems the way a finally is associated with its try is to put the catch block inside
@@ -547,7 +547,7 @@ void TryCatchBlocksLower::ProcessEnclosedBBBetweenTryEndTry() {
         }
         nextBBThreadHead = nullptr;
         currBBThread.clear();
-        currBBThread.push_back(lowerBB);
+        currBBThread.emplace_back(lowerBB);
         nextBBThreadHead = CollectCatchAndFallthruUntilNextCatchBB(lowerBB, nextEnclosedIdx, currBBThread);
         WrapCatchWithTryEndTryBlock(currBBThread, nextBBThreadHead, nextEnclosedIdx, hasMoveEndTry);
         if (isFirstTime) {
@@ -797,7 +797,7 @@ void TryCatchBlocksLower::TraverseBBList() {
   for (auto &bb : bbList) {
     if (bb->IsCatch() && tryEndTryBlock.GetStartTryBB() == nullptr) {
       /* Add to the list of catch blocks seen so far. */
-      catchesSeenSoFar.push_back(bb);
+      catchesSeenSoFar.emplace_back(bb);
     }
     bodyEndWithEndTry = false;
 

@@ -152,7 +152,7 @@ class LSDACallSiteTable {
   }
 
   void PushBack(LSDACallSite &lsdaCallSite) {
-    callSiteTable.push_back(&lsdaCallSite);
+    callSiteTable.emplace_back(&lsdaCallSite);
   }
 
   const LabelPair &GetCSTable() const {
@@ -234,7 +234,7 @@ class LSDAActionTable {
   }
 
   void PushBack(LSDAAction &lsdaAction) {
-    actionTable.push_back(&lsdaAction);
+    actionTable.emplace_back(&lsdaAction);
   }
 
   size_t Size() const {

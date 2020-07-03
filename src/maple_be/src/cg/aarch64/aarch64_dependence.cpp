@@ -326,7 +326,7 @@ void AArch64DepAnalysis::CombineDependence(DepNode &firstNode, DepNode &secondNo
  */
 void AArch64DepAnalysis::BuildDepsAmbiInsn(Insn &insn) {
   AddDependence4InsnInVectorByType(mayThrows, insn, kDependenceTypeThrow);
-  ambiInsns.push_back(&insn);
+  ambiInsns.emplace_back(&insn);
 }
 
 /* Build dependences of may throw instructions. */
@@ -391,11 +391,11 @@ void AArch64DepAnalysis::BuildDepsAccessStImmMem(Insn &insn, bool isDest) {
     AddDependence4InsnInVectorByType(heapUses, insn, kDependenceTypeAnti);
     /* Build output depnedence. */
     AddDependence4InsnInVectorByType(heapDefs, insn, kDependenceTypeOutput);
-    heapDefs.push_back(&insn);
+    heapDefs.emplace_back(&insn);
   } else {
     /* Heap memory */
     AddDependence4InsnInVectorByType(heapDefs, insn, kDependenceTypeTrue);
-    heapUses.push_back(&insn);
+    heapUses.emplace_back(&insn);
   }
   if (memBarInsn != nullptr) {
     AddDependence(*memBarInsn->GetDepNode(), *insn.GetDepNode(), kDependenceTypeMembar);
@@ -415,11 +415,11 @@ void AArch64DepAnalysis::BuildDepsUseMem(Insn &insn, MemOperand &memOpnd) {
         continue;
       }
     }
-    stackUses.push_back(&insn);
+    stackUses.emplace_back(&insn);
   } else {
     /* Heap memory */
     AddDependence4InsnInVectorByType(heapDefs, insn, kDependenceTypeTrue);
-    heapUses.push_back(&insn);
+    heapUses.emplace_back(&insn);
   }
   if (memBarInsn != nullptr) {
     AddDependence(*memBarInsn->GetDepNode(), *insn.GetDepNode(), kDependenceTypeMembar);
@@ -491,7 +491,7 @@ void AArch64DepAnalysis::BuildDepsDefMem(Insn &insn, MemOperand &memOpnd) {
         AddDependence(*lastCallInsn->GetDepNode(), *insn.GetDepNode(), kDependenceTypeControl);
       }
     }
-    stackDefs.push_back(&insn);
+    stackDefs.emplace_back(&insn);
   } else {
     /* Heap memory
      * Build anti dependences.
@@ -499,7 +499,7 @@ void AArch64DepAnalysis::BuildDepsDefMem(Insn &insn, MemOperand &memOpnd) {
     AddDependence4InsnInVectorByType(heapUses, insn, kDependenceTypeAnti);
     /* Build output depnedence. */
     AddDependence4InsnInVectorByType(heapDefs, insn, kDependenceTypeOutput);
-    heapDefs.push_back(&insn);
+    heapDefs.emplace_back(&insn);
   }
   if (memBarInsn != nullptr) {
     AddDependence(*memBarInsn->GetDepNode(), *insn.GetDepNode(), kDependenceTypeMembar);
@@ -607,7 +607,7 @@ void AArch64DepAnalysis::BuildDepsDirtyStack(Insn &insn) {
   AddDependence4InsnInVectorByType(stackUses, insn, kDependenceTypeAnti);
   /* Build output depnedence. */
   AddDependence4InsnInVectorByType(stackDefs, insn, kDependenceTypeOutput);
-  stackDefs.push_back(&insn);
+  stackDefs.emplace_back(&insn);
 }
 
 /* Some call insns may use all stack memory, such as "bl MCC_CleanupLocalStackRef_NaiveRCFast". */
@@ -625,7 +625,7 @@ void AArch64DepAnalysis::BuildDepsDirtyHeap(Insn &insn) {
   if (memBarInsn != nullptr) {
     AddDependence(*memBarInsn->GetDepNode(), *insn.GetDepNode(), kDependenceTypeMembar);
   }
-  heapDefs.push_back(&insn);
+  heapDefs.emplace_back(&insn);
 }
 
 /* Build a pseudo node to seperate dependence graph. */
@@ -652,7 +652,7 @@ void AArch64DepAnalysis::Init(BB &bb, MapleVector<DepNode*> &nodes) {
   /* Clear all dependence nodes and push the first separator node. */
   nodes.clear();
   DepNode *pseudoSepNode = BuildSeparatorNode();
-  nodes.push_back(pseudoSepNode);
+  nodes.emplace_back(pseudoSepNode);
   separatorIndex = 0;
 
   if (beforeRA) {
@@ -874,7 +874,7 @@ void AArch64DepAnalysis::SeperateDependenceGraph(MapleVector<DepNode*> &nodes, u
     /* Add a pseudo node to seperate dependence graph. */
     DepNode *separatorNode = BuildSeparatorNode();
     separatorNode->SetIndex(nodeSum);
-    nodes.push_back(separatorNode);
+    nodes.emplace_back(separatorNode);
     BuildDepsSeparator(*separatorNode, nodes);
 
     if (beforeRA) {
@@ -911,7 +911,7 @@ DepNode *AArch64DepAnalysis::GenerateDepNode(Insn &insn, MapleVector<DepNode*> &
     depNode->InitPressure();
   }
   depNode->SetIndex(nodeSum);
-  nodes.push_back(depNode);
+  nodes.emplace_back(depNode);
   insn.SetDepNode(*depNode);
 
   constexpr size_t vectorSize = 5;
@@ -987,7 +987,7 @@ void AArch64DepAnalysis::UpdateStackAndHeapDependency(DepNode &depNode, Insn &in
     return;
   }
   depNode.SetLocInsn(locInsn);
-  mayThrows.push_back(&insn);
+  mayThrows.emplace_back(&insn);
   AddDependence4InsnInVectorByType(stackDefs, insn, kDependenceTypeThrow);
   AddDependence4InsnInVectorByType(heapDefs, insn, kDependenceTypeThrow);
 }
@@ -1033,7 +1033,7 @@ void AArch64DepAnalysis::Run(BB &bb, MapleVector<DepNode*> &nodes) {
         if (!insn->IsComment()) {
           locInsn = insn;
         } else {
-          comments.push_back(insn);
+          comments.emplace_back(insn);
         }
       } else if (insn->IsCfiInsn()) {
         if (!nodes.empty()) {

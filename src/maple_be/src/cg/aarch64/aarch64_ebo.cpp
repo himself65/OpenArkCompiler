@@ -131,22 +131,22 @@ void AArch64Ebo::BuildCallerSaveRegisters() {
   callerSaveRegTable.clear();
   RegOperand &phyOpndR0 = a64CGFunc->GetOrCreatePhysicalRegisterOperand(R0, k64BitSize, kRegTyInt);
   RegOperand &phyOpndV0 = a64CGFunc->GetOrCreatePhysicalRegisterOperand(V0, k64BitSize, kRegTyFloat);
-  callerSaveRegTable.push_back(&phyOpndR0);
-  callerSaveRegTable.push_back(&phyOpndV0);
+  callerSaveRegTable.emplace_back(&phyOpndR0);
+  callerSaveRegTable.emplace_back(&phyOpndV0);
   for (uint32 i = R1; i <= R18; i++) {
     RegOperand &phyOpnd =
         a64CGFunc->GetOrCreatePhysicalRegisterOperand(static_cast<AArch64reg>(i), k64BitSize, kRegTyInt);
-    callerSaveRegTable.push_back(&phyOpnd);
+    callerSaveRegTable.emplace_back(&phyOpnd);
   }
   for (uint32 i = V1; i <= V7; i++) {
     RegOperand &phyOpnd =
         a64CGFunc->GetOrCreatePhysicalRegisterOperand(static_cast<AArch64reg>(i), k64BitSize, kRegTyFloat);
-    callerSaveRegTable.push_back(&phyOpnd);
+    callerSaveRegTable.emplace_back(&phyOpnd);
   }
   for (uint32 i = V16; i <= V31; i++) {
     RegOperand &phyOpnd =
         a64CGFunc->GetOrCreatePhysicalRegisterOperand(static_cast<AArch64reg>(i), k64BitSize, kRegTyFloat);
-    callerSaveRegTable.push_back(&phyOpnd);
+    callerSaveRegTable.emplace_back(&phyOpnd);
   }
   CHECK_FATAL(callerSaveRegTable.size() < kMaxCallerSaveReg,
       "number of elements in callerSaveRegTable must less then 45!");

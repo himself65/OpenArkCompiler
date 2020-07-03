@@ -36,7 +36,7 @@ Unit::Unit(enum UnitType theUnitType, enum UnitId theUnitId, int numOfUnits, ...
   va_start(ap, numOfUnits);
 
   for (int i = 0; i < numOfUnits; ++i) {
-    compositeUnits.push_back(static_cast<Unit*>(va_arg(ap, Unit*)));
+    compositeUnits.emplace_back(static_cast<Unit*>(va_arg(ap, Unit*)));
   }
   va_end(ap);
 

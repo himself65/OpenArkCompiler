@@ -56,7 +56,7 @@ void AArch64Schedule::Init() {
     }
   }
 
-  readyList.push_back(node);
+  readyList.emplace_back(node);
   node->SetState(kReady);
 
   /* Init validPredsSize and validSuccsSize. */
@@ -155,9 +155,9 @@ void AArch64Schedule::MemoryAccessPairOpt() {
         succNode.SetState(kReady);
         ASSERT(succNode.GetInsn() != nullptr, "insn can't be nullptr!");
         if (CanCombine(*succNode.GetInsn())) {
-          memList.push_back(&succNode);
+          memList.emplace_back(&succNode);
         } else {
-          readyList.push_back(&succNode);
+          readyList.emplace_back(&succNode);
         }
       }
     }
@@ -316,7 +316,7 @@ uint32 AArch64Schedule::ComputeEstart(uint32 cycle) {
       maxEstart = (maxEstart < succNode.GetEStart() ? succNode.GetEStart() : maxEstart);
       succNode.IncreaseVisit();
       if ((succNode.GetVisit() >= succNode.GetValidPredsSize()) && (succNode.GetType() != kNodeTypeSeparator)) {
-        readyNodes.push_back(&succNode);
+        readyNodes.emplace_back(&succNode);
       }
       ASSERT(succNode.GetVisit() <= succNode.GetValidPredsSize(), "CG internal error.");
     }
@@ -340,7 +340,7 @@ void AArch64Schedule::ComputeLstart(uint32 maxEstart) {
     node->SetVisit(0);
   }
 
-  readyNodes.push_back(nodes[maxIndex]);
+  readyNodes.emplace_back(nodes[maxIndex]);
   while (!readyNodes.empty()) {
     DepNode *node = readyNodes.front();
     readyNodes.erase(readyNodes.begin());
@@ -355,7 +355,7 @@ void AArch64Schedule::ComputeLstart(uint32 maxEstart) {
       }
       predNode.IncreaseVisit();
       if ((predNode.GetVisit() >= predNode.GetValidSuccsSize()) && (predNode.GetType() != kNodeTypeSeparator)) {
-        readyNodes.push_back(&predNode);
+        readyNodes.emplace_back(&predNode);
       }
 
       ASSERT(predNode.GetVisit() <= predNode.GetValidSuccsSize(), "CG internal error.");
@@ -504,7 +504,7 @@ void AArch64Schedule::RandomTest() {
     DepNode *currNode = readyList.back();
     currNode->SetState(kScheduled);
     readyList.pop_back();
-    nodes.push_back(currNode);
+    nodes.emplace_back(currNode);
 
     for (auto succLink : currNode->GetSuccs()) {
       DepNode &succNode = succLink->GetTo();
@@ -519,7 +519,7 @@ void AArch64Schedule::RandomTest() {
 
       if (ready) {
         ASSERT(succNode.GetState() == kNormal, "succNode must be kNormal");
-        readyList.push_back(&succNode);
+        readyList.emplace_back(&succNode);
         succNode.SetState(kReady);
       }
     }
@@ -857,7 +857,7 @@ void AArch64Schedule::IterateBruteForce(DepNode &targetNode, MapleVector<DepNode
   /* Schedule targetNode first. */
   targetNode.SetState(kScheduled);
   targetNode.SetSchedCycle(currCycle);
-  scheduledNodes.push_back(&targetNode);
+  scheduledNodes.emplace_back(&targetNode);
 
   MapleVector<DepNode*> tempList = readyList;
   EraseNodeFromNodeList(targetNode, tempList);
@@ -905,7 +905,7 @@ void AArch64Schedule::IterateBruteForce(DepNode &targetNode, MapleVector<DepNode
       /* Check EStart. */
       for (auto node : tempList) {
         if (node->GetEStart() <= currCycle) {
-          tempAvailableList.push_back(node);
+          tempAvailableList.emplace_back(node);
         }
       }
 
@@ -918,7 +918,7 @@ void AArch64Schedule::IterateBruteForce(DepNode &targetNode, MapleVector<DepNode
       /* Check if schedulable */
       for (auto node : tempAvailableList) {
         if (node->CanBeScheduled()) {
-          availableReadyList.push_back(node);
+          availableReadyList.emplace_back(node);
         }
       }
 
@@ -975,7 +975,7 @@ uint32 AArch64Schedule::DoBruteForceSchedule() {
   DepNode *targetNode = readyList.front();
   targetNode->SetState(kScheduled);
   targetNode->SetSchedCycle(currCycle);
-  scheduledNodes.push_back(targetNode);
+  scheduledNodes.emplace_back(targetNode);
   readyList.clear();
 
   /* Update readyList. */
@@ -1002,7 +1002,7 @@ void AArch64Schedule::UpdateReadyList(DepNode &targetNode, MapleVector<DepNode*>
     DepNode &succNode = succLink->GetTo();
     succNode.DescreaseValidPredsSize();
     if (succNode.GetValidPredsSize() == 0) {
-      readyList.push_back(&succNode);
+      readyList.emplace_back(&succNode);
       succNode.SetState(kReady);
 
       /* Set eStart. */

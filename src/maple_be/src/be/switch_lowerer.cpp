@@ -63,7 +63,7 @@ void SwitchLowerer::FindClusters(MapleVector<Cluster> &clusters) {
       if (((j - i) >= kClusterSwitchCutoff) &&
           (tmp2 < kMaxRangeGotoTableSize) &&
           ((tmp1 / tmp2) >= kClusterSwitchDensity)) {
-        clusters.push_back(Cluster(i, j));
+        clusters.emplace_back(Cluster(i, j));
         i = j;
         break;
       }
@@ -75,21 +75,21 @@ void SwitchLowerer::FindClusters(MapleVector<Cluster> &clusters) {
 void SwitchLowerer::InitSwitchItems(MapleVector<Cluster> &clusters) {
   if (clusters.empty()) {
     for (int32 i = 0; i < static_cast<int>(stmt->GetSwitchTable().size()); ++i) {
-      switchItems.push_back(SwitchItem(i, 0));
+      switchItems.emplace_back(SwitchItem(i, 0));
     }
   } else {
     int32 j = 0;
     Cluster front = clusters[j];
     for (int32 i = 0; i < static_cast<int>(stmt->GetSwitchTable().size()); ++i) {
       if (i == front.first) {
-        switchItems.push_back(SwitchItem(i, front.second));
+        switchItems.emplace_back(SwitchItem(i, front.second));
         i = front.second;
         ++j;
         if (static_cast<int>(clusters.size()) > j) {
           front = clusters[j];
         }
       } else {
-        switchItems.push_back(SwitchItem(i, 0));
+        switchItems.emplace_back(SwitchItem(i, 0));
       }
     }
   }

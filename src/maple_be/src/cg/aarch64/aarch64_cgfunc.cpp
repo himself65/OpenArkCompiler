@@ -3545,7 +3545,7 @@ void AArch64CGFunc::SelectRangeGoto(RangeGotoNode &rangeGotoNode, Operand &srcOp
    * in the table. Refer to AArch64Emit::Emit() in aarch64emit.cpp
    */
   std::vector<uint32> sizeArray;
-  sizeArray.push_back(switchTable.size());
+  sizeArray.emplace_back(switchTable.size());
   MIRArrayType *arrayType = memPool->New<MIRArrayType>(etype->GetTypeIndex(), sizeArray);
   MIRAggConst *arrayConst = memPool->New<MIRAggConst>(mirModule, *arrayType);
   for (const auto &itPair : switchTable) {
@@ -3652,12 +3652,12 @@ Operand *AArch64CGFunc::SelectMalloc(UnaryNode &node, Operand &opnd0) {
 
   std::vector<Operand*> opndVec;
   RegOperand &resOpnd = CreateRegisterOperandOfType(retType);
-  opndVec.push_back(&resOpnd);
-  opndVec.push_back(&opnd0);
+  opndVec.emplace_back(&resOpnd);
+  opndVec.emplace_back(&opnd0);
   /* Use calloc to make sure allocated memory is zero-initialized */
   const std::string &funcName = "calloc";
   Operand &opnd1 = CreateImmOperand(1, PTY_u32, false);
-  opndVec.push_back(&opnd1);
+  opndVec.emplace_back(&opnd1);
   SelectLibCall(funcName, opndVec, PTY_u32, retType);
   return &resOpnd;
 }
@@ -4010,7 +4010,7 @@ void AArch64CGFunc::MergeReturn() {
       onlyExitBB->SetKind(BB::kBBFallthru);
 
       GetExitBBsVec().pop_back();
-      GetExitBBsVec().push_back(retBB);
+      GetExitBBsVec().emplace_back(retBB);
       return;
     }
   }
@@ -4028,7 +4028,7 @@ void AArch64CGFunc::MergeReturn() {
   GetCleanupBB()->PrependBB(*retBB);
 
   GetExitBBsVec().clear();
-  GetExitBBsVec().push_back(retBB);
+  GetExitBBsVec().emplace_back(retBB);
 }
 
 void AArch64CGFunc::HandleRetCleanup(NaryStmtNode &retNode) {
@@ -4156,7 +4156,7 @@ bool AArch64CGFunc::GenRetCleanup(const IntrinsiccallNode *cleanupNode, bool for
     AArch64SymbolAlloc *symLoc =
           static_cast<AArch64SymbolAlloc*>(memLayout->GetSymAllocInfo(refSymbol->GetStIndex()));
     int32 tempOffset = GetBaseOffset(*symLoc);
-    offsets.push_back(tempOffset);
+    offsets.emplace_back(tempOffset);
 #ifdef CC_DEBUG_INFO
     LogInfo::MapleLogger() << "refsym " << refSymbol->GetName() << " offset " << tempOffset << '\n';
 #endif
@@ -4170,7 +4170,7 @@ bool AArch64CGFunc::GenRetCleanup(const IntrinsiccallNode *cleanupNode, bool for
     AArch64SymbolAlloc *symLoc = static_cast<AArch64SymbolAlloc*>(memLayout->GetSymAllocInfo(skipSym->GetStIndex()));
     CHECK_FATAL(GetBaseOffset(*symLoc) < std::numeric_limits<int32>::max(), "out of range");
     skipOffset = GetBaseOffset(*symLoc);
-    offsets.push_back(skipOffset);
+    offsets.emplace_back(skipOffset);
 
 #ifdef CC_DEBUG_INFO
     LogInfo::MapleLogger() << "skip " << skipSym->GetName() << " offset " << skipOffset << '\n';
@@ -4655,7 +4655,7 @@ void AArch64CGFunc::SelectClearStackCallParmList(const StmtNode &naryNode, AArch
     auto *expr = static_cast<AddrofNode*>(argExpr);
     int64 offsetValue = 0;
     Operand *opnd = SelectClearStackCallParam(*expr, offsetValue);
-    stackPostion.push_back(offsetValue);
+    stackPostion.emplace_back(offsetValue);
     auto *expRegOpnd = static_cast<RegOperand*>(opnd);
     parmLocator.LocateNextParm(*ty, ploc);
     CHECK_FATAL(ploc.reg0 != 0, "the parameter of ClearStackCall must be passed by register");
@@ -4689,14 +4689,14 @@ void AArch64CGFunc::IntrinsifyGetAndAddInt(AArch64ListOperand &srcOpnds, PrimTyp
   RegOperand &tempOpnd2 = CreateRegisterOperandOfType(PTY_i32);
   MOperator mOp = (pty == PTY_i64) ? MOP_get_and_addL : MOP_get_and_addI;
   std::vector<Operand*> intrnOpnds;
-  intrnOpnds.push_back(&retVal);
-  intrnOpnds.push_back(&tempOpnd0);
-  intrnOpnds.push_back(&tempOpnd1);
-  intrnOpnds.push_back(&tempOpnd2);
-  intrnOpnds.push_back(objOpnd);
-  intrnOpnds.push_back(offOpnd);
-  intrnOpnds.push_back(deltaOpnd);
-  intrnOpnds.push_back(&targetOpnd);
+  intrnOpnds.emplace_back(&retVal);
+  intrnOpnds.emplace_back(&tempOpnd0);
+  intrnOpnds.emplace_back(&tempOpnd1);
+  intrnOpnds.emplace_back(&tempOpnd2);
+  intrnOpnds.emplace_back(objOpnd);
+  intrnOpnds.emplace_back(offOpnd);
+  intrnOpnds.emplace_back(deltaOpnd);
+  intrnOpnds.emplace_back(&targetOpnd);
   GetCurBB()->AppendInsn(GetCG()->BuildInstruction<AArch64Insn>(mOp, intrnOpnds));
 }
 
@@ -4720,13 +4720,13 @@ void AArch64CGFunc::IntrinsifyGetAndSetInt(AArch64ListOperand &srcOpnds, PrimTyp
 
   MOperator mOp = (pty == PTY_i64) ? MOP_get_and_setL : MOP_get_and_setI;
   std::vector<Operand*> intrnOpnds;
-  intrnOpnds.push_back(&retVal);
-  intrnOpnds.push_back(&tempOpnd0);
-  intrnOpnds.push_back(&tempOpnd1);
-  intrnOpnds.push_back(objOpnd);
-  intrnOpnds.push_back(offOpnd);
-  intrnOpnds.push_back(newValueOpnd);
-  intrnOpnds.push_back(&targetOpnd);
+  intrnOpnds.emplace_back(&retVal);
+  intrnOpnds.emplace_back(&tempOpnd0);
+  intrnOpnds.emplace_back(&tempOpnd1);
+  intrnOpnds.emplace_back(objOpnd);
+  intrnOpnds.emplace_back(offOpnd);
+  intrnOpnds.emplace_back(newValueOpnd);
+  intrnOpnds.emplace_back(&targetOpnd);
   GetCurBB()->AppendInsn(GetCG()->BuildInstruction<AArch64Insn>(mOp, intrnOpnds));
 }
 
@@ -4752,15 +4752,15 @@ void AArch64CGFunc::IntrinsifyCompareAndSwapInt(AArch64ListOperand &srcOpnds, Pr
   LabelOperand &label2Opnd = GetOrCreateLabelOperand(labIdx2);
   MOperator mOp = (pty == PTY_i32) ? MOP_compare_and_swapI : MOP_compare_and_swapL;
   std::vector<Operand*> intrnOpnds;
-  intrnOpnds.push_back(&retVal);
-  intrnOpnds.push_back(&tempOpnd0);
-  intrnOpnds.push_back(&tempOpnd1);
-  intrnOpnds.push_back(objOpnd);
-  intrnOpnds.push_back(offOpnd);
-  intrnOpnds.push_back(expectedValueOpnd);
-  intrnOpnds.push_back(newValueOpnd);
-  intrnOpnds.push_back(&label1Opnd);
-  intrnOpnds.push_back(&label2Opnd);
+  intrnOpnds.emplace_back(&retVal);
+  intrnOpnds.emplace_back(&tempOpnd0);
+  intrnOpnds.emplace_back(&tempOpnd1);
+  intrnOpnds.emplace_back(objOpnd);
+  intrnOpnds.emplace_back(offOpnd);
+  intrnOpnds.emplace_back(expectedValueOpnd);
+  intrnOpnds.emplace_back(newValueOpnd);
+  intrnOpnds.emplace_back(&label1Opnd);
+  intrnOpnds.emplace_back(&label2Opnd);
   GetCurBB()->AppendInsn(GetCG()->BuildInstruction<AArch64Insn>(mOp, intrnOpnds));
 }
 
@@ -4832,22 +4832,22 @@ void AArch64CGFunc::GenerateIntrnInsnForStrIndexOf(BB &bb, RegOperand &srcString
                                                        immStringBaseOffset));
   auto &retVal = static_cast<RegOperand&>(GetTargetRetOperand(PTY_i32));
   std::vector<Operand*> intrnOpnds;
-  intrnOpnds.push_back(&retVal);
-  intrnOpnds.push_back(&srcStringBaseOpnd);
-  intrnOpnds.push_back(&srcLengthOpnd);
-  intrnOpnds.push_back(&patternStringBaseOpnd);
-  intrnOpnds.push_back(&patternLengthOpnd);
+  intrnOpnds.emplace_back(&retVal);
+  intrnOpnds.emplace_back(&srcStringBaseOpnd);
+  intrnOpnds.emplace_back(&srcLengthOpnd);
+  intrnOpnds.emplace_back(&patternStringBaseOpnd);
+  intrnOpnds.emplace_back(&patternLengthOpnd);
   const uint32 tmpRegOperandNum = 6;
   for (uint32 i = 0; i < tmpRegOperandNum - 1; ++i) {
     RegOperand &tmpOpnd = CreateRegisterOperandOfType(PTY_i64);
-    intrnOpnds.push_back(&tmpOpnd);
+    intrnOpnds.emplace_back(&tmpOpnd);
   }
-  intrnOpnds.push_back(&CreateRegisterOperandOfType(PTY_i32));
+  intrnOpnds.emplace_back(&CreateRegisterOperandOfType(PTY_i32));
   const uint32 labelNum = 7;
   for (uint32 i = 0; i < labelNum; ++i) {
     LabelIdx labIdx = CreateLabel();
     LabelOperand &labelOpnd = GetOrCreateLabelOperand(labIdx);
-    intrnOpnds.push_back(&labelOpnd);
+    intrnOpnds.emplace_back(&labelOpnd);
   }
   bb.AppendInsn(GetCG()->BuildInstruction<AArch64Insn>(MOP_string_indexof, intrnOpnds));
   bb.AppendInsn(GetCG()->BuildInstruction<AArch64Insn>(MOP_xuncond, GetOrCreateLabelOperand(jumpLabIdx)));
@@ -5086,7 +5086,7 @@ void AArch64CGFunc::SelectReturn(Operand *opnd0) {
   } else if (opnd0 != nullptr) {  /* pass in memory */
     CHECK_FATAL(false, "SelectReturn: return in memory NYI");
   }
-  GetExitBBsVec().push_back(GetCurBB());
+  GetExitBBsVec().emplace_back(GetCurBB());
 }
 
 RegOperand &AArch64CGFunc::GetOrCreateSpecialRegisterOperand(PregIdx sregIdx, PrimType primType) {
@@ -5141,7 +5141,7 @@ AArch64RegOperand &AArch64CGFunc::GetOrCreatePhysicalRegisterOperand(AArch64reg 
 }
 
 const LabelOperand *AArch64CGFunc::GetLabelOperand(LabelIdx labIdx) const {
-  const MapleMap<LabelIdx, LabelOperand*>::const_iterator it = hashLabelOpndTable.find(labIdx);
+  const MapleUnorderedMap<LabelIdx, LabelOperand*>::const_iterator it = hashLabelOpndTable.find(labIdx);
   if (it != hashLabelOpndTable.end()) {
     return it->second;
   }
@@ -5149,7 +5149,7 @@ const LabelOperand *AArch64CGFunc::GetLabelOperand(LabelIdx labIdx) const {
 }
 
 LabelOperand &AArch64CGFunc::GetOrCreateLabelOperand(LabelIdx labIdx) {
-  MapleMap<LabelIdx, LabelOperand*>::iterator it = hashLabelOpndTable.find(labIdx);
+  MapleUnorderedMap<LabelIdx, LabelOperand*>::iterator it = hashLabelOpndTable.find(labIdx);
   if (it != hashLabelOpndTable.end()) {
     return *(it->second);
   }
@@ -5427,8 +5427,8 @@ void AArch64CGFunc::SelectLibCall(const std::string &funcName, std::vector<Opera
   std::vector<TyIdx> vec;
   std::vector<TypeAttrs> vecAt;
   for (size_t i = 1; i < opndVec.size(); ++i) {
-    vec.push_back(GlobalTables::GetTypeTable().GetTypeTable()[static_cast<int32>(primType)]->GetTypeIndex());
-    vecAt.push_back(TypeAttrs());
+    vec.emplace_back(GlobalTables::GetTypeTable().GetTypeTable()[static_cast<int32>(primType)]->GetTypeIndex());
+    vecAt.emplace_back(TypeAttrs());
   }
 
   MIRType *retType = GlobalTables::GetTypeTable().GetTypeTable().at(static_cast<int32>(primType));
@@ -5634,7 +5634,7 @@ void AArch64CGFunc::FreeSpillRegMem(regno_t vrNum) {
   }
 
   uint32 size = memOpnd->GetSize();
-  MapleMap<uint32, SpillMemOperandSet*>::iterator iter;
+  MapleUnorderedMap<uint32, SpillMemOperandSet*>::iterator iter;
   if ((iter = reuseSpillLocMem.find(size)) != reuseSpillLocMem.end()) {
     iter->second->Add(*memOpnd);
   } else {
@@ -5673,7 +5673,6 @@ MemOperand *AArch64CGFunc::GetOrCreatSpillMem(regno_t vrNum) {
     MemOperand *memOpnd = memPool->New<AArch64MemOperand>(AArch64MemOperand::kAddrModeBOi, dataSize, baseOpnd,
                                                           nullptr, offsetOpnd, nullptr);
     spillRegMemOperands.insert(std::pair<regno_t, MemOperand*>(vrNum, memOpnd));
-    spillRegMemOperandsAdj.insert(memOpnd);
     return memOpnd;
   } else {
     return p->second;
@@ -6057,7 +6056,7 @@ void AArch64CGFunc::SelectIntrinCall(IntrinsiccallNode &intrinsiccallNode) {
   for (size_t i = 0; i < intrinsiccallNode.NumOpnds(); i++) {
     BaseNode *argExpr = intrinsiccallNode.Opnd(i);
     Operand *opnd = HandleExpr(intrinsiccallNode, *argExpr);
-    operands.push_back(opnd);
+    operands.emplace_back(opnd);
     if (!opnd->IsRegister()) {
       opnd = &LoadIntoRegister(*opnd, argExpr->GetPrimType());
     }

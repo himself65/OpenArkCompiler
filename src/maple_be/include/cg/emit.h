@@ -105,7 +105,7 @@ class Emitter {
  public:
   Emitter(CG &cg, const std::string &asmFileName)
       : cg(&cg),
-        rangeIdx2PrefixStr(std::less<int>(), cg.GetMIRModule()->GetMPAllocator().Adapter()),
+        rangeIdx2PrefixStr(cg.GetMIRModule()->GetMPAllocator().Adapter()),
         hugeSoTargets(cg.GetMIRModule()->GetMPAllocator().Adapter()) {
     outStream.open(asmFileName, std::ios::trunc);
     MIRModule &mirModule = *cg.GetMIRModule();
@@ -259,7 +259,7 @@ class Emitter {
 
   CG *cg;
   MOperator currentMop = UINT_MAX;
-  MapleMap<int, std::string> rangeIdx2PrefixStr;
+  MapleUnorderedMap<int, std::string> rangeIdx2PrefixStr;
   const AsmInfo *asmInfo;
   std::ofstream outStream;
   MemPool *memPool;

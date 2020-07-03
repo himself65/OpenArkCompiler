@@ -41,7 +41,7 @@ void AArch64MoveRegArgs::CollectRegisterArgs(std::map<uint32, AArch64reg> &argsL
       continue;
     }
     argsList[i] = ploc.reg0;
-    indexList.push_back(i);
+    indexList.emplace_back(i);
   }
 }
 

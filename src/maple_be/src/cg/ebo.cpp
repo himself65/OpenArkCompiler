@@ -361,8 +361,8 @@ void Ebo::HashInsn(Insn &insn, const MapleVector<OpndInfo*> &origInfo, const Map
   uint32 opndNum = insn.GetOperandSize();
   for (uint32 i = 0; i < opndNum; ++i) {
     /* Copy all the opndInfo entries for the operands. */
-    insnInfo->origOpnd.push_back(origInfo.at(i));
-    insnInfo->optimalOpnd.push_back(opndInfos.at(i));
+    insnInfo->origOpnd.emplace_back(origInfo.at(i));
+    insnInfo->optimalOpnd.emplace_back(opndInfos.at(i));
     /* Keep the result info. */
     if (insn.OpndIsDef(i)) {
       OpndInfo *opndInfo = nullptr;
@@ -373,7 +373,7 @@ void Ebo::HashInsn(Insn &insn, const MapleVector<OpndInfo*> &origInfo, const Map
         opndInfo = OperandInfoDef(*insn.GetBB(), insn, op);
         opndInfo->insnInfo = insnInfo;
       }
-      insnInfo->result.push_back(opndInfo);
+      insnInfo->result.emplace_back(opndInfo);
     }
   }
   SetInsnInfo(hashVal, *insnInfo);
@@ -699,15 +699,15 @@ void Ebo::BuildAllInfo(BB &bb) {
     /* start : Process all the operands. */
     for (uint32 i = 0; i < opndNum; ++i) {
       if (!insn->OpndIsUse(i)) {
-        opnds.push_back(nullptr);
-        opndInfos.push_back(nullptr);
-        origInfos.push_back(nullptr);
+        opnds.emplace_back(nullptr);
+        opndInfos.emplace_back(nullptr);
+        origInfos.emplace_back(nullptr);
         continue;
       }
       Operand *opnd = &(insn->GetOperand(i));
-      opnds.push_back(opnd);
-      opndInfos.push_back(nullptr);
-      origInfos.push_back(nullptr);
+      opnds.emplace_back(opnd);
+      opndInfos.emplace_back(nullptr);
+      origInfos.emplace_back(nullptr);
       if (opnd->IsConstant()) {
         continue;
       }

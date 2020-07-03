@@ -162,7 +162,7 @@ void AArch64MemLayout::LayoutLocalVariales(std::vector<MIRSymbol*> &tempVar, std
     if (sym->IsRefType()) {
       if (mirFunction->GetRetRefSym().find(sym) != mirFunction->GetRetRefSym().end()) {
         /* try to put ret_ref at the end of segRefLocals */
-        returnDelays.push_back(sym);
+        returnDelays.emplace_back(sym);
         continue;
       }
       symLoc->SetMemSegment(segRefLocals);
@@ -172,7 +172,7 @@ void AArch64MemLayout::LayoutLocalVariales(std::vector<MIRSymbol*> &tempVar, std
     } else {
       if (sym->GetName() == "__EARetTemp__" ||
           sym->GetName().substr(0, kEARetTempNameSize) == "__EATemp__") {
-        tempVar.push_back(sym);
+        tempVar.emplace_back(sym);
         continue;
       }
       symLoc->SetMemSegment(segLocals);

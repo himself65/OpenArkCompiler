@@ -565,7 +565,7 @@ class CGFunc {
   }
 
   void PushBackExitBBsVec(BB &bb) {
-    exitBBVec.push_back(&bb);
+    exitBBVec.emplace_back(&bb);
   }
 
   void ClearExitBBsVec() {
@@ -638,7 +638,7 @@ class CGFunc {
   }
 
   void AddEmitSt(MIRSymbol &symbol) {
-    emitStVec.push_back(&symbol);
+    emitStVec.emplace_back(&symbol);
   }
 
   MapleVector<CGFuncLoops*> &GetLoops() {
@@ -650,7 +650,7 @@ class CGFunc {
   }
 
   void PushBackLoops(CGFuncLoops &loop) {
-    loops.push_back(&loop);
+    loops.emplace_back(&loop);
   }
 
 #if TARGARM32
@@ -787,11 +787,10 @@ class CGFunc {
   uint32 vRegCount;                       /* for assigning a number for each CG virtual register */
   uint32 maxRegCount;                     /* for the current virtual register number limit */
   MapleVector<VirtualRegNode> vRegTable;  /* table of CG's virtual registers indexed by v_reg no */
-  MapleMap<regno_t, RegOperand*> vRegOperandTable;
-  MapleMap<PregIdx, MemOperand*> pRegSpillMemOperands;
-  MapleMap<regno_t, MemOperand*> spillRegMemOperands;
-  MapleSet<MemOperand*> spillRegMemOperandsAdj;
-  MapleMap<uint32, SpillMemOperandSet*> reuseSpillLocMem;
+  MapleUnorderedMap<regno_t, RegOperand*> vRegOperandTable;
+  MapleUnorderedMap<PregIdx, MemOperand*> pRegSpillMemOperands;
+  MapleUnorderedMap<regno_t, MemOperand*> spillRegMemOperands;
+  MapleUnorderedMap<uint32, SpillMemOperandSet*> reuseSpillLocMem;
   LabelIdx firstCGGenLabelIdx;
   MapleMap<LabelIdx, uint64> labelMap;
 #if DEBUG
@@ -868,7 +867,7 @@ class CGFunc {
   BB *dummyBB;   /* use this bb for add some instructions to bb that is no curBB. */
   Insn *volReleaseInsn = nullptr;  /* use to record the release insn for volatile strore */
   MapleVector<BB*> exitBBVec;
-  MapleMap<LabelIdx, BB*> lab2BBMap;
+  MapleUnorderedMap<LabelIdx, BB*> lab2BBMap;
   BECommon &beCommon;
   MemLayout *memLayout = nullptr;
   MapleAllocator *funcScopeAllocator;

@@ -113,7 +113,7 @@ class Ebo {
         eboMp(&memPool),
         eboAllocator(&memPool),
         visitedBBs(eboAllocator.Adapter()),
-        vRegInfo(std::less<uint32>(), eboAllocator.Adapter()),
+        vRegInfo(eboAllocator.Adapter()),
         exprInfoTable(eboAllocator.Adapter()),
         insnInfoTable(eboAllocator.Adapter()) {}
 
@@ -225,7 +225,7 @@ class Ebo {
   OpndInfo *lastOpndInfo = nullptr;
   InsnInfo *firstInsnInfo = nullptr;
   InsnInfo *lastInsnInfo = nullptr;
-  MapleMap<uint32, OpndInfo*> vRegInfo;
+  MapleUnorderedMap<uint32, OpndInfo*> vRegInfo;
   MapleVector<OpndInfo*> exprInfoTable;
   MapleVector<InsnInfo*> insnInfoTable;
 };
