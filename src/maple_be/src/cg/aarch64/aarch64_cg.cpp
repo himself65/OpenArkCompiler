@@ -127,9 +127,9 @@ namespace wordsMap {
           CHECK_FATAL((curOffset > prevOffset) || (prevOffset == 0), "not ascending offset");
           uint32 wordIndex = curOffset >> kMapWordIndexShift;
           if (wordIndex > curBitmapIndex) {
-            bitmapWords.push_back(curBitmap);
+            bitmapWords.emplace_back(curBitmap);
             for (uint32 i = curBitmapIndex + 1; i < wordIndex; i++) {
-              bitmapWords.push_back(0);
+              bitmapWords.emplace_back(0);
             }
             curBitmap = 0;
             curBitmapIndex = wordIndex;
@@ -150,7 +150,7 @@ namespace wordsMap {
         }
       }
       if (curBitmap != 0) {
-        bitmapWords.push_back(curBitmap);
+        bitmapWords.emplace_back(curBitmap);
       }
     } else if (stType.GetKind() != kTypeInterface) {
       /* interface doesn't have reference fields */

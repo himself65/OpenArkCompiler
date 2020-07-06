@@ -127,7 +127,7 @@ class MemLayout {
         segArgsToStkPass(kMsArgsToStkPass),
         symAllocTable(mallocator.Adapter()),
         spillLocTable(mallocator.Adapter()),
-        spillRegLocMap(std::less<regno_t>(), mallocator.Adapter()),
+        spillRegLocMap(mallocator.Adapter()),
         localRefLocMap(std::less<StIdx>(), mallocator.Adapter()),
         memAllocator(&mallocator) {
     symAllocTable.resize(mirFunc.GetSymTab()->GetSymbolTableSize());
@@ -246,7 +246,7 @@ class MemLayout {
   MemSegment segArgsToStkPass;
   MapleVector<SymbolAlloc*> symAllocTable;  /* index is stindex from StIdx */
   MapleVector<SymbolAlloc*> spillLocTable;  /* index is preg idx */
-  MapleMap<regno_t, SymbolAlloc*> spillRegLocMap;
+  MapleUnorderedMap<regno_t, SymbolAlloc*> spillRegLocMap;
   MapleMap<StIdx, SymbolAlloc*> localRefLocMap;  /* localrefvar formals. real address passed in stack. */
   MapleAllocator *memAllocator;
   CGFunc *cgFunc = nullptr;

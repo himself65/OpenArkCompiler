@@ -27,7 +27,7 @@
 #define ICO_DUMP CG_DEBUG_FUNC(cgFunc)
 namespace maplebe {
 void AArch64IfConversionOptimizer::InitOptimizePatterns() {
-  singlePassPatterns.push_back(memPool->New<AArch64ICOPattern>(*cgFunc));
+  singlePassPatterns.emplace_back(memPool->New<AArch64ICOPattern>(*cgFunc));
 }
 
 Insn *AArch64ICOPattern::BuildCmpInsn(const Insn &condBr) {
@@ -121,26 +121,26 @@ void AArch64ICOPattern::GenerateInsnForImm(const Insn &branchInsn, Operand &ifDe
   if (inverse || (imm2.IsZero() && imm1.IsOne())) {
     Insn *csetInsn = BuildCondSet(branchInsn, destReg, inverse);
     ASSERT(csetInsn != nullptr, "build a insn failed");
-    generateInsn.push_back(csetInsn);
+    generateInsn.emplace_back(csetInsn);
   } else if (imm1.GetValue() == imm2.GetValue()) {
     MOperator mOp = (destReg.GetSize() == k64BitSize ? MOP_xmovri64 : MOP_xmovri32);
     Insn &tempInsn =
         cgFunc->GetTheCFG()->GetInsnModifier()->GetCGFunc()->GetCG()->BuildInstruction<AArch64Insn>(mOp, destReg,
                                                                                                     imm1);
-    generateInsn.push_back(&tempInsn);
+    generateInsn.emplace_back(&tempInsn);
   } else {
     MOperator mOp = (destReg.GetSize() == k64BitSize ? MOP_xmovri64 : MOP_xmovri32);
     RegOperand *tempTarIf = cgFunc->GetTheCFG()->CreateVregFromReg(destReg);
     Insn &tempInsnIf =
         cgFunc->GetTheCFG()->GetInsnModifier()->GetCGFunc()->GetCG()->BuildInstruction<AArch64Insn>(mOp, *tempTarIf,
                                                                                                     imm1);
-    generateInsn.push_back(&tempInsnIf);
+    generateInsn.emplace_back(&tempInsnIf);
 
     RegOperand *tempTarElse = cgFunc->GetTheCFG()->CreateVregFromReg(destReg);
     Insn &tempInsnElse =
         cgFunc->GetTheCFG()->GetInsnModifier()->GetCGFunc()->GetCG()->BuildInstruction<AArch64Insn>(mOp, *tempTarElse,
                                                                                                     imm2);
-    generateInsn.push_back(&tempInsnElse);
+    generateInsn.emplace_back(&tempInsnElse);
 
     uint32 dSize = destReg.GetSize();
     bool isIntTy = destReg.IsOfIntClass();
@@ -149,7 +149,7 @@ void AArch64ICOPattern::GenerateInsnForImm(const Insn &branchInsn, Operand &ifDe
                                                                           MOP_scselrrrc : MOP_hcselrrrc));
     Insn *cselInsn = BuildCondSel(branchInsn, mOpCode, destReg, *tempTarIf, *tempTarElse);
     CHECK_FATAL(cselInsn != nullptr, "build a csel insn failed");
-    generateInsn.push_back(cselInsn);
+    generateInsn.emplace_back(cselInsn);
   }
 }
 
@@ -163,7 +163,7 @@ RegOperand *AArch64ICOPattern::GenerateRegAndTempInsn(Operand &dest, const RegOp
     Insn &tempInsn =
       cgFunc->GetTheCFG()->GetInsnModifier()->GetCGFunc()->GetCG()->BuildInstruction<AArch64Insn>(mOp, *reg,
                                                                                                   tempSrcElse);
-    generateInsn.push_back(&tempInsn);
+    generateInsn.emplace_back(&tempInsn);
     return reg;
   } else {
     return (static_cast<RegOperand*>(&dest));
@@ -189,7 +189,7 @@ void AArch64ICOPattern::GenerateInsnForReg(const Insn &branchInsn, Operand &ifDe
     Insn &tempInsnIf =
         cgFunc->GetTheCFG()->GetInsnModifier()->GetCGFunc()->GetCG()->BuildInstruction<AArch64Insn>(mOp, destReg,
                                                                                                     *tReg);
-    generateInsn.push_back(&tempInsnIf);
+    generateInsn.emplace_back(&tempInsnIf);
   } else {
     uint32 dSize = destReg.GetSize();
     bool isIntTy = destReg.IsOfIntClass();
@@ -198,7 +198,7 @@ void AArch64ICOPattern::GenerateInsnForReg(const Insn &branchInsn, Operand &ifDe
                                                                           MOP_scselrrrc : MOP_hcselrrrc));
     Insn *cselInsn = BuildCondSel(branchInsn, mOpCode, destReg, *tReg, *eReg);
     CHECK_FATAL(cselInsn != nullptr, "build a csel insn failed");
-    generateInsn.push_back(cselInsn);
+    generateInsn.emplace_back(cselInsn);
   }
 }
 
@@ -353,7 +353,7 @@ bool AArch64ICOPattern::CheckCondMoveBB(BB *bb, std::map<Operand*, Operand*> &de
     }
 
     (void)destSrcMap.insert(std::make_pair(dest, src));
-    destRegs.push_back(dest);
+    destRegs.emplace_back(dest);
   }
   return true;
 }

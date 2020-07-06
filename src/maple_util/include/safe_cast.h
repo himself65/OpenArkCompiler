@@ -18,11 +18,11 @@
 
 namespace maple {
 template<typename ToT>
-struct SafeCastCondition : std::false_type {};
+struct SafeCastCondition : public std::false_type {};
 
 #define REGISTER_SAFE_CAST(type, condition)                             \
 template<>                                                             \
-struct SafeCastCondition<type> : std::true_type {                     \
+struct SafeCastCondition<type> : public std::true_type {               \
   template<typename FromT>                                             \
   static inline bool DoIt(const FromT &from) {                          \
     return (condition);                                                 \
@@ -46,7 +46,7 @@ struct InstanceOfImpl<ToT, FromT, typename std::enable_if_t<std::is_base_of<ToT,
 };
 
 template<typename ToT, typename FromT>
-struct EnabledSafeCast : utils::meta_or<std::is_base_of<ToT, FromT>, SafeCastCondition<ToT>>::type {};
+struct EnabledSafeCast : public utils::meta_or<std::is_base_of<ToT, FromT>, SafeCastCondition<ToT>>::type {};
 }
 
 template<typename ToT, typename FromT,

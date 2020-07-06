@@ -36,7 +36,6 @@ src_libmpl2mpl = [
   "src/vtable_impl.cpp",
   "src/class_hierarchy.cpp",
   "src/constantfold.cpp",
-  "src/analyzector.cpp",
   "src/coderelayout.cpp",
   "src/annotation_analysis.cpp",
 ]

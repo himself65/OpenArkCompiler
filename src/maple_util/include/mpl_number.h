@@ -284,7 +284,7 @@ using Index = Number<T, Type>;
 namespace std {
   template<typename T, typename Type>
   inline string to_string(maple::utils::Number<T, Type> val) {
-    return std::to_string (val.get());
+    return std::to_string(val.get());
   }
 }
 #endif //MAPLE_UTIL_INCLUDE_MPL_NUMBER_H

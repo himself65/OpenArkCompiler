@@ -52,7 +52,7 @@ class EHTry {
   }
 
   void PushBackCatchVec(CatchNode &catchNode) {
-    catchVec.push_back(&catchNode);
+    catchVec.emplace_back(&catchNode);
   }
 
   CatchNode *GetCatchNodeAt(size_t pos) const {
@@ -143,7 +143,7 @@ class EHFunc {
   }
 
   void AddTry(EHTry &ehTry) {
-    tryVec.push_back(&ehTry);
+    tryVec.emplace_back(&ehTry);
   }
 
   size_t GetEHTyTableSize() const {
@@ -172,7 +172,7 @@ class EHFunc {
   }
 
   void AddRethrow(EHThrow &rethrow) {
-    rethrowVec.push_back(&rethrow);
+    rethrowVec.emplace_back(&rethrow);
   }
 
  private:

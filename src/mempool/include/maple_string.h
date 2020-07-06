@@ -28,12 +28,12 @@ class MapleString {
   MapleString(const MapleString &str);
   MapleString(const char *str, MemPool *memPool);
   MapleString(const char *str, size_t size, MemPool *memPool);  // copyin
-  MapleString(unsigned int size, MemPool *memPool);
+  MapleString(size_t size, MemPool *memPool);
   MapleString(const MapleString &str, MemPool *memPool);
   MapleString(const std::string &str, MemPool *memPool);
   ~MapleString() = default;
 
-  unsigned int length() const {
+  size_t length() const {
     return dataLength;
   }
 
@@ -69,11 +69,11 @@ class MapleString {
     if (str == nullptr) {
       return *this;
     }
-    unsigned int size = static_cast<unsigned int>(strlen(str));
+    size_t size = strlen(str);
     CHECK_FATAL(size <= UINT_MAX - 1, "str too large");
 
     // if data is null, old_size = 0, else +1
-    unsigned int oldSize = (data == nullptr) ? 0 : (dataLength + 1);
+    size_t oldSize = ((data == nullptr) ? 0 : (dataLength + 1));
     if (oldSize < (1 + size)) {
       data = static_cast<char*>(memPool->Realloc(data, oldSize * sizeof(char), (1 + size) * sizeof(char)));
     }
@@ -91,10 +91,10 @@ class MapleString {
   }
 
   MapleString &operator=(const std::string &str) {
-    unsigned int size = str.length();
+    size_t size = str.length();
     CHECK_FATAL(size <= UINT_MAX - 1, "str too large");
 
-    unsigned int oldSize = (data == nullptr) ? 0 : (dataLength + 1);
+    size_t oldSize = (data == nullptr) ? 0 : (dataLength + 1);
     if (oldSize < (1 + size)) {
       data = static_cast<char*>(memPool->Realloc(data, oldSize * sizeof(char), (1 + size) * sizeof(char)));
     }
@@ -114,10 +114,10 @@ class MapleString {
     if (&str == this) {
       return *this;
     }
-    unsigned int size = str.dataLength;
+    size_t size = str.dataLength;
     CHECK_FATAL(size <= UINT_MAX - 1, "str too large");
 
-    unsigned int oldSize = (data == nullptr) ? 0 : (dataLength + 1);
+    size_t oldSize = (data == nullptr) ? 0 : (dataLength + 1);
     data = static_cast<char*>(memPool->Realloc(data, oldSize * sizeof(char), (1 + size) * sizeof(char)));
     CHECK_FATAL(data != nullptr, "null ptr check");
     if (size == 0) {
@@ -132,7 +132,7 @@ class MapleString {
   }
 
   MapleString &operator+=(const char c) {
-    unsigned int oldSize = (data == nullptr) ? 0 : (dataLength + 1);
+    size_t oldSize = ((data == nullptr) ? 0 : (dataLength + 1));
     CHECK_FATAL(oldSize <= UINT_MAX - 1, "str too large");
 
     data = static_cast<char*>(memPool->Realloc(data, oldSize * sizeof(char), (dataLength + 1 + 1) * sizeof(char)));
@@ -146,8 +146,8 @@ class MapleString {
     if (str == nullptr) {
       return *this;
     }
-    unsigned int size = static_cast<unsigned int>(strlen(str));
-    unsigned int oldSize = (data == nullptr) ? 0 : (dataLength + 1);
+    size_t size = strlen(str);
+    size_t oldSize = ((data == nullptr) ? 0 : (dataLength + 1));
     CHECK_FATAL(size <= UINT_MAX - oldSize, "str too large");
 
     data = static_cast<char*>(memPool->Realloc(data, oldSize * sizeof(char), (dataLength + size + 1) * sizeof(char)));
@@ -160,7 +160,7 @@ class MapleString {
   }
 
   MapleString &operator+=(const MapleString &str) {
-    unsigned int oldSize = (data == nullptr) ? 0 : (dataLength + 1);
+    size_t oldSize = ((data == nullptr) ? 0 : (dataLength + 1));
     CHECK_FATAL(str.dataLength <= UINT_MAX - oldSize, "str too large");
 
     data = static_cast<char*>(
@@ -173,8 +173,8 @@ class MapleString {
   }
 
   MapleString &operator+=(const std::string &str) {
-    unsigned int size = str.length();
-    unsigned int oldSize = (data == nullptr) ? 0 : (dataLength + 1);
+    size_t size = str.length();
+    size_t oldSize = ((data == nullptr) ? 0 : (dataLength + 1));
     CHECK_FATAL(size <= UINT_MAX - oldSize, "str too large");
 
     data = static_cast<char*>(memPool->Realloc(data, oldSize * sizeof(char), (dataLength + size + 1) * sizeof(char)));
@@ -197,27 +197,27 @@ class MapleString {
 
   MapleString &push_back(const char c);
   MapleString &append(const MapleString &str);
-  MapleString &append(const MapleString &str, unsigned int subPos, unsigned int subLen);
+  MapleString &append(const MapleString &str, size_t subPos, size_t subLen);
   MapleString &append(const char *s);
-  MapleString &append(const char *s, unsigned int n);
-  MapleString &append(unsigned int n, char c);
+  MapleString &append(const char *s, size_t n);
+  MapleString &append(size_t n, char c);
   MapleString &append(const std::string &str);
-  size_t find(const MapleString &str, unsigned int pos = 0) const;
-  size_t find(const char *s, unsigned int pos = 0) const;
-  size_t find(const char *s, unsigned int pos, unsigned int n) const;
-  size_t find(char c, unsigned int pos = 0) const;
-  size_t find_last_of(const char*, unsigned int pos = 0) const;
-  MapleString substr(unsigned int pos, unsigned int len) const;
-  MapleString &insert(unsigned int pos, const MapleString &str);
-  MapleString &insert(unsigned int pos, const MapleString &str, unsigned int subPos, unsigned int subLen);
-  MapleString &insert(unsigned int pos, const char *s);
-  MapleString &insert(unsigned int pos, const char *s, unsigned int n);
-  MapleString &insert(unsigned int pos, unsigned int n, char c);
+  size_t find(const MapleString &str, size_t pos = 0) const;
+  size_t find(const char *s, size_t pos = 0) const;
+  size_t find(const char *s, size_t pos, size_t n) const;
+  size_t find(char c, size_t pos = 0) const;
+  size_t find_last_of(const char*, size_t pos = 0) const;
+  MapleString substr(size_t pos, size_t len) const;
+  MapleString &insert(size_t pos, const MapleString &str);
+  MapleString &insert(size_t pos, const MapleString &str, size_t subPos, size_t subLen);
+  MapleString &insert(size_t pos, const char *s);
+  MapleString &insert(size_t pos, const char *s, size_t n);
+  MapleString &insert(size_t pos, size_t n, char c);
   MapleString &assign(const MapleString &str);
-  MapleString &assign(const MapleString &str, unsigned int subPos, unsigned int subLen);
+  MapleString &assign(const MapleString &str, size_t subPos, size_t subLen);
   MapleString &assign(const char *s);
-  MapleString &assign(const char *s, unsigned int n);
-  MapleString &assign(unsigned int n, char c);
+  MapleString &assign(const char *s, size_t n);
+  MapleString &assign(size_t n, char c);
 
  private:
   inline static size_t StrLen(const char *s) {
@@ -236,7 +236,7 @@ class MapleString {
 
   char *data = nullptr;
   MemPool *memPool = nullptr;
-  unsigned int dataLength = 0;
+  size_t dataLength = 0;
 };
 
 template <typename OS>

@@ -431,7 +431,7 @@ void BBLayout::ResolveUnconditionalFallThru(BB &bb, BB &nextBB) {
 }
 
 void BBLayout::FixEndTryBB(BB &bb) {
-  BBId prevID = bb.GetBBId() - 1;
+  BBId prevID = bb.GetBBId() - 1UL;
   for (BBId id = prevID; id != 0; --id) {
     auto prevBB = func.GetBBFromID(id);
     if (prevBB != nullptr) {

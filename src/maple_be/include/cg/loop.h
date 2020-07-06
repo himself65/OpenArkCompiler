@@ -167,13 +167,13 @@ class CGFuncLoops {
   }
 
   void AddLoopMembers(BB &bb) {
-    loopMembers.push_back(&bb);
+    loopMembers.emplace_back(&bb);
   }
   void AddBackedge(BB &bb) {
-    backedge.push_back(&bb);
+    backedge.emplace_back(&bb);
   }
   void AddInnerLoops(CGFuncLoops &loop) {
-    innerLoops.push_back(&loop);
+    innerLoops.emplace_back(&loop);
   }
   void SetHeader(BB &bb) {
     header = &bb;

@@ -663,18 +663,17 @@ void InitHandleStmtFactory() {
 CGFunc::CGFunc(MIRModule &mod, CG &cg, MIRFunction &mirFunc, BECommon &beCommon, MemPool &memPool,
                MapleAllocator &allocator, uint32 funcId)
     : vRegTable(allocator.Adapter()),
-      vRegOperandTable(std::less<regno_t>(), allocator.Adapter()),
-      pRegSpillMemOperands(std::less<PregIdx>(), allocator.Adapter()),
-      spillRegMemOperands(std::less<regno_t>(), allocator.Adapter()),
-      spillRegMemOperandsAdj(allocator.Adapter()),
-      reuseSpillLocMem(std::less<uint32>(), allocator.Adapter()),
+      vRegOperandTable(allocator.Adapter()),
+      pRegSpillMemOperands(allocator.Adapter()),
+      spillRegMemOperands(allocator.Adapter()),
+      reuseSpillLocMem(allocator.Adapter()),
       labelMap(std::less<LabelIdx>(), allocator.Adapter()),
       cg(&cg),
       mirModule(mod),
       memPool(&memPool),
       func(mirFunc),
       exitBBVec(allocator.Adapter()),
-      lab2BBMap(std::less<LabelIdx>(), allocator.Adapter()),
+      lab2BBMap(allocator.Adapter()),
       beCommon(beCommon),
       funcScopeAllocator(&allocator),
       emitStVec(allocator.Adapter()),
@@ -1051,7 +1050,7 @@ void CGFunc::ProcessExitBBVec() {
     LabelIdx newLabelIdx = CreateLabel();
     BB *retBB = CreateNewBB(newLabelIdx, cleanupBB->IsUnreachable(), BB::kBBReturn, cleanupBB->GetFrequency());
     cleanupBB->PrependBB(*retBB);
-    exitBBVec.push_back(retBB);
+    exitBBVec.emplace_back(retBB);
     return;
   }
   /* split an empty exitBB */

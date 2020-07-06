@@ -117,7 +117,7 @@ void OptionParser::RegisteUsages(const Descriptor usage[]) {
   }
 }
 
-void OptionParser::PrintUsage(const std::string &helpType, const unsigned int helpLevel) const {
+void OptionParser::PrintUsage(const std::string &helpType, const uint32_t helpLevel) const {
   for (size_t i = 0; i < rawUsages.size(); ++i) {
     if (rawUsages[i].help != "" && rawUsages[i].IsEnabledForCurrentBuild() && rawUsages[i].exeName == helpType) {
       if (helpLevel != kBuildTypeDefault &&

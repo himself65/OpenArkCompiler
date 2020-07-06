@@ -50,8 +50,8 @@ class MemPoolCtrler {
 
  private:  // Methods
   struct MemBlock {
-    unsigned int available;  // Available memory size
-    unsigned int origSize;   // original size
+    size_t available;  // Available memory size
+    size_t origSize;   // original size
     void *ptr;               // Current pointer to the first available position
   };
 
@@ -67,7 +67,7 @@ class MemPoolCtrler {
 
   // Free small/large size memory block list
   std::list<MemBlock*> freeMemBlocks;
-  std::map<unsigned int, std::set<MemBlock*, MemBlockCmp>> largeFreeMemBlocks;
+  std::map<size_t, std::set<MemBlock*, MemBlockCmp>> largeFreeMemBlocks;
   std::set<MemPool*> memPools;  // set of mempools managed by it
 };
 
@@ -115,7 +115,7 @@ class MemPool {
 
   // New Array template
   template <class T>
-  T *NewArray(unsigned int num) {
+  T *NewArray(size_t num) {
     void *p = Malloc(sizeof(T) * num);
     CHECK_FATAL(p != nullptr, "ERROR: NewArray error");
     p = new (p) T[num];

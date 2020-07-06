@@ -190,7 +190,7 @@ class MAD {
   }
 
   static void AddUnit(Unit &u) {
-    allUnits.push_back(&u);
+    allUnits.emplace_back(&u);
   }
 
   static maple::uint32 GetAllUnitsSize() {
@@ -198,7 +198,7 @@ class MAD {
   }
 
   static void AddReservation(Reservation &rev) {
-    allReservations.push_back(&rev);
+    allReservations.emplace_back(&rev);
   }
 
   static void AddBypass(Bypass &bp) {

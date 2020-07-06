@@ -542,7 +542,7 @@ class BB {
     return rangeGotoLabelVec;
   }
   void PushBackRangeGotoLabel(LabelIdx labelIdx) {
-    rangeGotoLabelVec.push_back(labelIdx);
+    rangeGotoLabelVec.emplace_back(labelIdx);
   }
   const Insn *GetFirstLoc() const {
     return firstLoc;

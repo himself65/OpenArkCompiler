@@ -30,6 +30,7 @@ struct IRProfileDesc {
   uint64 funcHash = 0;
   IRProfileDesc() = default;
   IRProfileDesc(uint64 hash, uint32 start, uint32 end) : counterStart(start), counterEnd(end), funcHash(hash) {}
+  ~IRProfileDesc() = default;
 };
 
 class Profile {
@@ -48,6 +49,7 @@ class Profile {
         : funcHash(hash), totalCounter(num), counter(counter) {}
     BBInfo(uint64 hash, uint32 num, const std::initializer_list<uint32> &iList)
         : funcHash(hash), totalCounter(num), counter(iList) {}
+    ~BBInfo() = default;
   };
 
   static const uint8 stringEnd;
@@ -99,6 +101,8 @@ class Profile {
   std::unordered_map<std::string, bool> funcBBProfUseInfo;
   std::unordered_map<std::string, IRProfileDesc> funcDesc;
   std::vector<uint32> counterTab;
+  static const std::string preClassHot[];
+  static const std::string preMethodHot[];
   bool CheckProfileHeader(const Header &header) const;
   std::string GetProfileNameByType(uint8 type) const;
   std::string GetFunctionName(uint32 classIdx, uint32 methodIdx, uint32 sigIdx) const;

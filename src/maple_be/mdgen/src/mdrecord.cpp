@@ -44,7 +44,7 @@ const MDObject &MDClass::GetOneMDObject(size_t index) const {
 }
 
 void MDClass::AddClassMember(MDObject inputObj) {
-  mdObjects.push_back(inputObj);
+  mdObjects.emplace_back(inputObj);
   childObjNames.insert(inputObj.GetIdx());
 }
 
@@ -53,7 +53,7 @@ bool MDClass::IsClassMember(unsigned int curIdx) const {
 }
 
 void MDClass::BuildFormalTypes(unsigned int memberIdx, bool isVec) {
-  formalTypes.push_back(std::make_pair(memberIdx, isVec));
+  formalTypes.emplace_back(std::make_pair(memberIdx, isVec));
 }
 
 bool MDClass::IsValidStructEle(RecordType curTy) const {
@@ -66,7 +66,7 @@ unsigned int MDClassRange::CreateStrInTable(const std::string &inStr, RecordType
   auto ret = stringHashTable.insert(std::make_pair(inStr, curInfo));
   if (ret.second) {
     unsigned int temp = totalStr;
-    stringTable.push_back(inStr);
+    stringTable.emplace_back(inStr);
     ++totalStr;
     return temp;
   }

@@ -94,7 +94,7 @@ class Phase {
   }
 
  private:
-  unsigned int memPoolCount = 0;
+  uint32 memPoolCount = 0;
   std::set<MemPool*> memPools;
   MemPoolCtrler *mpCtrler = &memPoolCtrler;
 };
@@ -155,9 +155,8 @@ class AnalysisResultManager {
   }
 
   void InvalidIRbaseAnalysisResult(UnitIR &ir) {
-    PhaseIDT id;
     for (auto it = analysisPhases.begin(); it != analysisPhases.end(); ++it) {
-      id = it->first;
+      PhaseIDT id = it->first;
       InvalidAnalysisResult(id, &ir);
     }
   }

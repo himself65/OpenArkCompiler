@@ -22,20 +22,11 @@ int32 RegPressure::maxRegClassNum = 0;
 
 /* print regpressure information */
 void RegPressure::DumpRegPressure() const {
-  constexpr int32 width = 12;
   PRINT_STR_VAL("Priority: ", priority);
   PRINT_STR_VAL("maxDepth: ", maxDepth);
   PRINT_STR_VAL("near: ", near);
-  LogInfo::MapleLogger() << "\n";
-  LogInfo::MapleLogger() << std::left << std::setw(width) << "usereg: ";
-  for (const auto &useReg : regUses) {
-    LogInfo::MapleLogger() << "R" << useReg.first << " ";
-  }
-  LogInfo::MapleLogger() << "\n";
-  LogInfo::MapleLogger() << std::left << std::setw(width) << "defreg: ";
-  for (const auto &defReg : regDefs) {
-    LogInfo::MapleLogger() << "R" << defReg.first << " ";
-  }
+  PRINT_STR_VAL("callNum: ", callNum);
+
   LogInfo::MapleLogger() << "\n";
 }
 } /* namespace maplebe */

@@ -123,7 +123,7 @@ class CGNode {
         mustNotBeInlined(false),
         vcallCands(alloc->Adapter()) {}
 
-  ~CGNode() {}
+  ~CGNode() = default;
 
   void Dump(std::ofstream &fout) const;
   void DumpDetail() const;
@@ -359,7 +359,7 @@ class SCCNode {
 class CallGraph : public AnalysisResult {
  public:
   CallGraph(MIRModule &m, MemPool &memPool, KlassHierarchy &kh, const std::string &fn);
-  ~CallGraph() {}
+  ~CallGraph() = default;
 
   void InitCallExternal() {
     callExternal = cgAlloc.GetMemPool()->New<CGNode>(static_cast<MIRFunction*>(nullptr), cgAlloc, numOfNodes++);
@@ -392,7 +392,7 @@ class CallGraph : public AnalysisResult {
 
   void HandleBody(MIRFunction&, BlockNode&, CGNode&, uint32);
   void AddCallGraphNode(MIRFunction&);
-  void DumpToFile(bool dumpAll = true);
+  void DumpToFile(bool dumpAll = true) const;
   void Dump() const;
   CGNode *GetCGNode(MIRFunction *func) const;
   CGNode *GetCGNode(PUIdx puIdx) const;
@@ -429,7 +429,7 @@ class CallGraph : public AnalysisResult {
   void DelNode(CGNode &node);
   void BuildSCC();
   void VerifySCC() const;
-  void BuildSCCDFS(CGNode &caller, unsigned int &visitIndex, std::vector<SCCNode*> &sccNodes,
+  void BuildSCCDFS(CGNode &caller, uint32 &visitIndex, std::vector<SCCNode*> &sccNodes,
                    std::vector<CGNode*> &cgNodes, std::vector<uint32> &visitedOrder);
 
   void SetDebugFlag(bool flag) {
@@ -478,7 +478,7 @@ class DoCallGraph : public ModulePhase {
     return "callgraph";
   }
 
-  virtual ~DoCallGraph() {};
+  ~DoCallGraph() = default;
 };
 
 class IPODevirtulize {
@@ -510,7 +510,7 @@ class DoIPODevirtulize : public ModulePhase {
     return "ipodevirtulize";
   }
 
-  virtual ~DoIPODevirtulize() {};
+  ~DoIPODevirtulize() = default;
 };
 }  // namespace maple
 #endif  // MAPLE_IPA_INCLUDE_CALLGRAPH_H

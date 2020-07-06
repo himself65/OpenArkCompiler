@@ -25,6 +25,7 @@
 #include "me_profile_gen.h"
 #include "me_profile_use.h"
 #include "me_loop_canon.h"
+#include "me_analyzector.h"
 #include "me_abco.h"
 #include "me_dse.h"
 #include "me_hdse.h"

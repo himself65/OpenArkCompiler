@@ -69,7 +69,7 @@ class ScheduleProcessInfo {
   }
 
   void PushElemIntoAvailableReadyList(DepNode *node) {
-    availableReadyList.push_back(node);
+    availableReadyList.emplace_back(node);
   }
 
   size_t SizeOfAvailableReadyList() const {
@@ -96,7 +96,7 @@ class ScheduleProcessInfo {
     node->SetState(kScheduled);
     node->SetSchedCycle(currCycle);
     node->OccupyUnits();
-    scheduledNodes.push_back(node);
+    scheduledNodes.emplace_back(node);
   }
 
   bool IsFirstSeparator() const {

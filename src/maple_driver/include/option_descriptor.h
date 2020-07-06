@@ -36,11 +36,11 @@ enum ArgCheckPolicy {
   kArgCheckPolicyBool
 };
 
-constexpr unsigned int kMaxExtraOptions = 10;
+constexpr size_t kMaxExtraOptions = 10;
 
 struct Descriptor {
   // Unique option index
-  const unsigned int index;
+  const size_t index;
 
   // Unique option type
   const int type;
@@ -80,22 +80,22 @@ struct Descriptor {
       default:
         // should never reach
         return true;
-      }
     }
+  }
 };
 
 class Option {
  public:
-  Option(Descriptor desc, const std::string &optionKey, const std::string &args)
+  Option(const Descriptor &desc, const std::string &optionKey, const std::string &args)
       : descriptor(desc), optionKey(optionKey), args(args) {}
 
   ~Option() = default;
 
-  unsigned int Index() const {
+  size_t Index() const {
     return descriptor.index;
   }
 
-  unsigned int Type() const {
+  int Type() const {
     return descriptor.type;
   }
 
@@ -113,7 +113,7 @@ class Option {
 
   std::vector<std::string> GetExtras() const {
     auto ret = std::vector<std::string>();
-    unsigned int index = 0;
+    size_t index = 0;
     while (index < kMaxExtraOptions && index < descriptor.extras.size()) {
       ret.push_back(descriptor.extras[index++]);
     }

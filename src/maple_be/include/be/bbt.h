@@ -82,7 +82,7 @@ class BBT {
   }
 
   void AddSuccs(BBT *bb) {
-    succs.push_back(bb);
+    succs.emplace_back(bb);
   }
 
   void SetCondJumpBranch(BBT *bb) {

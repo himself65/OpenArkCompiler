@@ -59,7 +59,7 @@ void EHFunc::CollectEHInformation(std::vector<std::pair<LabelIdx, CatchNode*>> &
         CatchNode *catchNode = static_cast<CatchNode*>(stmt);
         ASSERT(stmt->GetPrev()->GetOpCode() == OP_label, "catch's previous node is not a label");
         LabelNode *labelStmt = static_cast<LabelNode*>(stmt->GetPrev());
-        catchVec.push_back(std::pair<LabelIdx, CatchNode*>(labelStmt->GetLabelIdx(), catchNode));
+        catchVec.emplace_back(std::pair<LabelIdx, CatchNode*>(labelStmt->GetLabelIdx(), catchNode));
         /* rename the type of <*void> to <*Throwable> */
         for (uint32 i = 0; i < catchNode->Size(); i++) {
           MIRType *ehType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(catchNode->GetExceptionTyIdxVecElement(i));
@@ -119,7 +119,7 @@ void EHThrow::ConvertThrowToRuntime(CGFunc &cgFunc, BaseNode &arg) {
   MIRFunction *calleeFunc = mirModule->GetMIRBuilder()->GetOrCreateFunction("MCC_ThrowException", (TyIdx)(PTY_void));
   calleeFunc->SetNoReturn();
   MapleVector<BaseNode*> args(mirModule->GetMIRBuilder()->GetCurrentFuncCodeMpAllocator()->Adapter());
-  args.push_back(&arg);
+  args.emplace_back(&arg);
   CallNode *callAssign = mirModule->GetMIRBuilder()->CreateStmtCall(calleeFunc->GetPuidx(), args);
   mirFunc.GetBody()->ReplaceStmt1WithStmt2(rethrow, callAssign);
 }
@@ -131,7 +131,7 @@ void EHThrow::ConvertThrowToRethrow(CGFunc &cgFunc) {
   MIRFunction *unFunc = mirBuilder->GetOrCreateFunction("MCC_RethrowException", (TyIdx)PTY_void);
   unFunc->SetNoReturn();
   MapleVector<BaseNode*> args(mirBuilder->GetCurrentFuncCodeMpAllocator()->Adapter());
-  args.push_back(rethrow->Opnd(0));
+  args.emplace_back(rethrow->Opnd(0));
   CallNode *callNode = mirBuilder->CreateStmtCall(unFunc->GetPuidx(), args);
   mirFunc.GetBody()->ReplaceStmt1WithStmt2(rethrow, callNode);
 }
@@ -420,7 +420,7 @@ void EHFunc::BuildEHTypeTable(const std::vector<std::pair<LabelIdx, CatchNode*>>
   if (!catchVec.empty()) {
     /* the first one assume to be <*void> */
     TyIdx voidTyIdx(PTY_void);
-    ehTyTable.push_back(voidTyIdx);
+    ehTyTable.emplace_back(voidTyIdx);
     ty2IndexTable[voidTyIdx] = 0;
     /* create void pointer and update becommon's size table */
     cgFunc->GetBecommon().UpdateTypeTable(*GlobalTables::GetTypeTable().GetVoidPtr());
@@ -441,7 +441,7 @@ void EHFunc::BuildEHTypeTable(const std::vector<std::pair<LabelIdx, CatchNode*>>
       }
 
       ty2IndexTable[ehTyIdx] = ehTyTable.size();
-      ehTyTable.push_back(ehTyIdx);
+      ehTyTable.emplace_back(ehTyIdx);
       MIRClassType *catchType = static_cast<MIRClassType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(ehTyIdx));
       MIRClassType *rootType = catchType->GetExceptionRootType();
       if (rootType == nullptr) {
@@ -595,7 +595,7 @@ void EHFunc::InsertCxaAfterEachCatch(const std::vector<std ::pair<LabelIdx, Catc
     retRegRead0->SetRegIdx(-kSregRetval0);
     retRegRead0->SetPrimType(LOWERED_PTR_TYPE);
     MapleVector<BaseNode*> args(mirModule.GetMIRBuilder()->GetCurrentFuncCodeMpAllocator()->Adapter());
-    args.push_back(retRegRead0);
+    args.emplace_back(retRegRead0);
     CallNode *callAssign = mirModule.GetMIRBuilder()->CreateStmtCall(calleeFunc->GetPuidx(), args);
     funcBody->InsertAfter(jCatchNode, callAssign);
   }
