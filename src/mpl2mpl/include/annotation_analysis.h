@@ -240,12 +240,12 @@ class AnnotationParser {
   std::string curStrToken;
 };
 
-class AnnotationAnalysis : AnalysisResult {
+class AnnotationAnalysis : public AnalysisResult {
  public:
   static char annoDeclare;
   static char annoSemiColon;
   AnnotationAnalysis(MIRModule *mod, MemPool *tmpMp, MemPool *pragmaMp, KlassHierarchy *kh)
-      : AnalysisResult(tmpMp),
+      : AnalysisResult(pragmaMp),
         mirModule(mod),
         tmpAllocator(tmpMp),
         pragmaMemPool(pragmaMp),
@@ -260,7 +260,6 @@ class AnnotationAnalysis : AnalysisResult {
   void Run();
  private:
   void AnalysisAnnotation();
-  void AnnotationCleanUp();
   void AnalysisAnnotationForClass(MIRPragma &classPragma);
   void AnalysisAnnotationForVar(const MIRPragma &varPragma, MIRStructType &structType);
   void AnalysisAnnotationForFunc(MIRPragma &funcPragma, MIRStructType &structType);
@@ -276,8 +275,8 @@ class AnnotationAnalysis : AnalysisResult {
   MemPool *pragmaMemPool;
   MapleAllocator pragmaAllocator;
   KlassHierarchy *klassH;
-  std::set<MIRStructType*> analysised;
-  std::set<MIRFunction*> analysisedFunc;
+  MapleSet<MIRStructType*> analysised{tmpAllocator.Adapter()};
+  MapleSet<MIRFunction*> analysisedFunc{tmpAllocator.Adapter()};
   AnnotationType *genericMatch;
   GenericType *dummyObj;
 };
