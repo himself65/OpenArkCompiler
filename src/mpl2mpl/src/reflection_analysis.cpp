@@ -33,6 +33,7 @@ using namespace maple;
 // If needed, we can make field type in two bits.
 constexpr uint64 kMethodNotVirtual = 0x00000001;
 constexpr uint64 kMethodFinalize = 0x00000002;
+constexpr uint64 kMethodSignature = 0x00000008;
 constexpr uint64 kMethodAbstract = 0x00000010;
 constexpr uint64 kFieldOffsetIspOffset = 0x00000001;
 
@@ -127,6 +128,11 @@ constexpr char kMethodInfoCompactTypeName[] = "__method_info_compact__";
 constexpr char kSuperclassOrComponentclassStr[] = "superclass_or_componentclass";
 constexpr char kReflectionReferencePrefixStr[] = "Ljava_2Flang_2Fref_2FReference_3B";
 constexpr char kJavaLangAnnotationRetentionStr[] = "Ljava_2Flang_2Fannotation_2FRetention_3B";
+constexpr char kMethodSignatureOffsetName[] = "signatureOffset";
+constexpr char kMethodSignatureParameterName[] = "signatureParameter";
+constexpr char kParameterTypeItemName[] = "parameterTypeItem";
+constexpr char kParameterTypesName[] = "parameterTypes";
+constexpr char kMethodSignatureTypeName[] = "__methodSignatureType__";
 constexpr int kAnonymousClassIndex = 5;
 constexpr char kAnonymousClassSuffix[] = "30";
 constexpr char kInnerClassStr[] = "Lark/annotation/InnerClass;";
@@ -281,6 +287,7 @@ TyIdx ReflectionAnalysis::fieldsInfoCompactTyIdx = TyIdx(0);
 TyIdx ReflectionAnalysis::superclassMetadataTyIdx = TyIdx(0);
 TyIdx ReflectionAnalysis::fieldOffsetDataTyIdx = TyIdx(0);
 TyIdx ReflectionAnalysis::methodAddrDataTyIdx = TyIdx(0);
+TyIdx ReflectionAnalysis::methodSignatureTyIdx = TyIdx(0);
 TyIdx ReflectionAnalysis::invalidIdx = TyIdx(-1);
 
 uint32 ReflectionAnalysis::GetMethodModifier(const Klass &klass, const MIRFunction &func) const {
@@ -756,6 +763,11 @@ uint32 ReflectionAnalysis::GetMethodFlag(const MIRFunction &func) const {
   }
   uint16 hash = func.GetHashCode();
   flag |= (hash << kNoHashBits);  // hash 10 bit
+
+  bool isProfHotMethod = (*mirModule).GetProfile().CheckMethodSigHot(func.GetBaseFuncNameWithType());
+  if (isProfHotMethod) {
+    flag |= kMethodSignature; // check profile
+  }
   return flag;
 }
 
@@ -795,16 +807,24 @@ void ReflectionAnalysis::GenMethodMeta(const Klass &klass, MIRStructType &method
   std::string fullname = fullNameMp[func.GetBaseFuncNameWithTypeStrIdx()];
   std::string signature = GetSignatureFromFullName(fullname);
   ConvertMethodSig(signature);
-  std::vector<std::string> typeNames;
-  GetSignatureTypeNames(signature, typeNames);
-  uint32 signatureIdx = FindOrInsertReflectString(signature);
-  mirBuilder.AddIntFieldConst(methodsInfoType, newConst, fieldID++, signatureIdx);
+
+  uint32 flag = GetMethodFlag(func);
+  // if enable MethodSignature, will generate MethodSignatureSymbol with signature and parameter types cache,
+  // otherwise we generate signatureoffset directly.
+  bool isEnableMethodSignature = (flag & kMethodSignature) == kMethodSignature;
+  if (isEnableMethodSignature) {
+    MIRSymbol *methodSignatureSymbol = GetMethodSignatureSymbol(signature);
+    mirBuilder.AddAddrofFieldConst(methodsInfoType, newConst, fieldID++, *methodSignatureSymbol);
+  } else {
+    uint32 signatureIdx = FindOrInsertReflectString(signature);
+    mirBuilder.AddIntFieldConst(methodsInfoType, newConst, fieldID++, signatureIdx);
+  }
+
   // @annotation
   MIRStructType *classType = klass.GetMIRStructType();
   int annotationIdx = SolveAnnotation(*classType, func);
   mirBuilder.AddIntFieldConst(methodsInfoType, newConst, fieldID++, annotationIdx);
   // @flag
-  uint32 flag = GetMethodFlag(func);
   mirBuilder.AddIntFieldConst(methodsInfoType, newConst, fieldID++, flag);
   // @argsize: Number of arguments.
   size_t argsSize = func.GetParamSize();
@@ -859,6 +879,58 @@ MIRSymbol *ReflectionAnalysis::GenMethodAddrData(const MIRSymbol &funcSym) {
     methodAddrSt->SetKonst(aggconst);
   }
   return methodAddrSt;
+}
+
+MIRSymbol *ReflectionAnalysis::GetParameterTypesSymbol(uint32 size, uint32 index) {
+  MIRModule &module = *mirModule;
+  MIRStructType parameterTypesType(kTypeStruct);
+#ifndef USE_32BIT_REF
+  MIRType *type = GlobalTables::GetTypeTable().GetUInt64();
+#else
+  MIRType *type = GlobalTables::GetTypeTable().GetUInt32();
+#endif
+  for (uint32 i = 0; i < size; i++) {
+    GlobalTables::GetTypeTable().AddFieldToStructType(parameterTypesType, kParameterTypeItemName, *type);
+  }
+
+  TyIdx parameterTypesTyIdx = GenMetaStructType(module, parameterTypesType, kParameterTypesName);
+  MIRStructType &parameterTypes =
+      static_cast<MIRStructType&>(*GlobalTables::GetTypeTable().GetTypeFromTyIdx(parameterTypesTyIdx));
+  MIRSymbol *parameterTypesSt =
+      GetOrCreateSymbol(namemangler::kParameterTypesPrefixStr + std::to_string(index),
+      parameterTypes.GetTypeIndex(), true);
+  parameterTypesSt->SetStorageClass(kScFstatic);
+  return parameterTypesSt;
+}
+
+MIRSymbol *ReflectionAnalysis::GetMethodSignatureSymbol(std::string signature) {
+  if (mapMethodSignature.find(signature) != mapMethodSignature.end()) {
+    return mapMethodSignature[signature];
+  }
+
+  std::vector<std::string> typeNames;
+  GetSignatureTypeNames(signature, typeNames);
+  MIRModule &module = *mirModule;
+  MIRStructType &methodSignatureType =
+      static_cast<MIRStructType&>(*GlobalTables::GetTypeTable().GetTypeFromTyIdx(methodSignatureTyIdx));
+  MIRArrayType &methodSignatureArrayType = *GlobalTables::GetTypeTable().GetOrCreateArrayType(methodSignatureType, 1);
+  MIRAggConst *aggConst = module.GetMemPool()->New<MIRAggConst>(module, methodSignatureArrayType);
+  MIRAggConst *newConst = module.GetMemPool()->New<MIRAggConst>(module, methodSignatureType);
+
+  uint32 fieldID = 1;
+  uint32 signatureIdx = FindOrInsertReflectString(signature);
+  mirBuilder.AddIntFieldConst(methodSignatureType, *newConst, fieldID++, signatureIdx);
+  MIRSymbol *parameterTypesSymbol = GetParameterTypesSymbol(typeNames.size(), mapMethodSignature.size());
+  mirBuilder.AddAddrofFieldConst(methodSignatureType, *newConst, fieldID++, *parameterTypesSymbol);
+  aggConst->PushBack(newConst);
+
+  MIRSymbol *methodSignatureSt =
+      GetOrCreateSymbol(namemangler::kMethodSignaturePrefixStr + std::to_string(mapMethodSignature.size()),
+      methodSignatureType.GetTypeIndex(), true);
+  methodSignatureSt->SetStorageClass(kScFstatic);
+  methodSignatureSt->SetKonst(aggConst);
+  mapMethodSignature[signature] = methodSignatureSt;
+  return methodSignatureSt;
 }
 
 MIRSymbol *ReflectionAnalysis::GenMethodsMetaData(const Klass &klass) {
@@ -1792,6 +1864,12 @@ void ReflectionAnalysis::GenMetadataType(MIRModule &mirModule) {
   MIRStructType methodAddrDataType(kTypeStruct);
   GlobalTables::GetTypeTable().AddFieldToStructType(methodAddrDataType, kMethodAddrDataStr, *typeVoidPtr);
   methodAddrDataTyIdx = GenMetaStructType(mirModule, methodAddrDataType, kMethodAddrDataTypeName);
+
+  // MethodSignature
+  MIRStructType methodSignatureType(kTypeStruct);
+  GlobalTables::GetTypeTable().AddFieldToStructType(methodSignatureType, kMethodSignatureOffsetName, *typeI32);
+  GlobalTables::GetTypeTable().AddFieldToStructType(methodSignatureType, kMethodSignatureParameterName, *typeVoidPtr);
+  methodSignatureTyIdx = GenMetaStructType(mirModule, methodSignatureType, kMethodSignatureTypeName);
 }
 
 void ReflectionAnalysis::GenClassHashMetaData() {

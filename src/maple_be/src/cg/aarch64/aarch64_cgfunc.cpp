@@ -1786,8 +1786,8 @@ void AArch64CGFunc::SelectCondGoto(LabelOperand &targetOpnd, Opcode jmpOp, Opcod
        * either cmp or cmp with shift 12 encoding
        */
       ImmOperand *immOpnd = static_cast<ImmOperand*>(opnd1);
-      if (immOpnd->IsInBitSize(kMaxAarch64ImmVal12Bits) ||
-          immOpnd->IsInBitSize(kMaxAarch64ImmVal12Bits, kMaxAarch64ImmVal12Bits)) {
+      if (immOpnd->IsInBitSize(kMaxImmVal12Bits, 0) ||
+          immOpnd->IsInBitSize(kMaxImmVal12Bits, kMaxImmVal12Bits)) {
         mOp = is64Bits ? MOP_xcmpri : MOP_wcmpri;
       } else {
         opnd1 = &SelectCopy(*opnd1, primType, primType);
@@ -1958,7 +1958,7 @@ void AArch64CGFunc::SelectAdd(Operand &resOpnd, Operand &opnd0, Operand &opnd1, 
       SelectSub(resOpnd, opnd0, *immOpnd, primType);
       return;
     }
-    if (immOpnd->IsInBitSize(kMaxAarch64ImmVal24Bits)) {
+    if (immOpnd->IsInBitSize(kMaxImmVal24Bits, 0)) {
       /*
        * ADD Wd|WSP, Wn|WSP, #imm{, shift} ; 32-bit general registers
        * ADD Xd|SP,  Xn|SP,  #imm{, shift} ; 64-bit general registers
@@ -1967,15 +1967,15 @@ void AArch64CGFunc::SelectAdd(Operand &resOpnd, Operand &opnd0, Operand &opnd1, 
        */
       MOperator mOpCode = MOP_undef;
       Operand *newOpnd0 = &opnd0;
-      if (!(immOpnd->IsInBitSize(kMaxAarch64ImmVal12Bits) ||
-            immOpnd->IsInBitSize(kMaxAarch64ImmVal12Bits, kMaxAarch64ImmVal12Bits))) {
+      if (!(immOpnd->IsInBitSize(kMaxImmVal12Bits, 0) ||
+            immOpnd->IsInBitSize(kMaxImmVal12Bits, kMaxImmVal12Bits))) {
         /* process higher 12 bits */
-        ImmOperand &immOpnd2 = CreateImmOperand(static_cast<uint64>(immOpnd->GetValue()) >> kMaxAarch64ImmVal12Bits,
+        ImmOperand &immOpnd2 = CreateImmOperand(static_cast<uint64>(immOpnd->GetValue()) >> kMaxImmVal12Bits,
                                                 immOpnd->GetSize(), immOpnd->IsSignedValue());
         mOpCode = is64Bits ? MOP_xaddrri24 : MOP_waddrri24;
         Insn &newInsn = GetCG()->BuildInstruction<AArch64Insn>(mOpCode, resOpnd, opnd0, immOpnd2, addSubLslOperand);
         GetCurBB()->AppendInsn(newInsn);
-        immOpnd->ModuloByPow2(kMaxAarch64ImmVal12Bits);
+        immOpnd->ModuloByPow2(kMaxImmVal12Bits);
         newOpnd0 = &resOpnd;
       }
       /* process lower 12  bits */
@@ -2060,7 +2060,7 @@ void AArch64CGFunc::SelectSub(Operand &resOpnd, Operand &opnd0, Operand &opnd1, 
     return;
   }
 
-  if (immOpnd->IsInBitSize(kMaxAarch64ImmVal24Bits)) {
+  if (immOpnd->IsInBitSize(kMaxImmVal24Bits, 0)) {
     /*
      * SUB Wd|WSP, Wn|WSP, #imm{, shift} ; 32-bit general registers
      * SUB Xd|SP,  Xn|SP,  #imm{, shift} ; 64-bit general registers
@@ -2068,15 +2068,15 @@ void AArch64CGFunc::SelectSub(Operand &resOpnd, Operand &opnd0, Operand &opnd1, 
      * aarch64 assembly takes up to 24-bits, if the lower 12 bits is all 0
      */
     MOperator mOpCode = MOP_undef;
-    if (!(immOpnd->IsInBitSize(kMaxAarch64ImmVal12Bits) ||
-          immOpnd->IsInBitSize(kMaxAarch64ImmVal12Bits, kMaxAarch64ImmVal12Bits))) {
+    if (!(immOpnd->IsInBitSize(kMaxImmVal12Bits, 0) ||
+          immOpnd->IsInBitSize(kMaxImmVal12Bits, kMaxImmVal12Bits))) {
       /* process higher 12 bits */
-      ImmOperand &immOpnd2 = CreateImmOperand(static_cast<uint64>(immOpnd->GetValue()) >> kMaxAarch64ImmVal12Bits,
+      ImmOperand &immOpnd2 = CreateImmOperand(static_cast<uint64>(immOpnd->GetValue()) >> kMaxImmVal12Bits,
                                               immOpnd->GetSize(), immOpnd->IsSignedValue());
       mOpCode = is64Bits ? MOP_xsubrri24 : MOP_wsubrri24;
       Insn &newInsn = GetCG()->BuildInstruction<AArch64Insn>(mOpCode, resOpnd, *opnd0Bak, immOpnd2, addSubLslOperand);
       GetCurBB()->AppendInsn(newInsn);
-      immOpnd->ModuloByPow2(kMaxAarch64ImmVal12Bits);
+      immOpnd->ModuloByPow2(kMaxImmVal12Bits);
       opnd0Bak = &resOpnd;
     }
     /* process lower 12 bits */
@@ -2598,7 +2598,7 @@ void AArch64CGFunc::SelectAArch64Cmp(Operand &o0, Operand &o1, bool isIntType, u
        * imm : 0 ~ 4095, shift: none, LSL #0, or LSL #12
        * aarch64 assembly takes up to 24-bits, if the lower 12 bits is all 0
        */
-      if (immOpnd->IsInBitSize(12) || immOpnd->IsInBitSize(12, 12)) {
+      if (immOpnd->IsInBitSize(kMaxImmVal12Bits, 0) || immOpnd->IsInBitSize(kMaxImmVal12Bits, kMaxImmVal12Bits)) {
         mOpCode = (dsize == k64BitSize) ? MOP_xcmpri : MOP_wcmpri;
       } else {
         /* load into register */
@@ -3006,7 +3006,7 @@ Operand *AArch64CGFunc::SelectExtractbits(ExtractbitsNode &node, Operand &srcOpn
   uint8 bitOffset = node.GetBitsOffset();
   uint8 bitSize = node.GetBitsSize();
   bool is64Bits = (GetPrimTypeBitSize(dtype) == k64BitSize);
-  uint32 immWidth = is64Bits ? kMaxAarch64ImmVal13Bits : kMaxAarch64ImmVal12Bits;
+  uint32 immWidth = is64Bits ? kMaxImmVal13Bits : kMaxImmVal12Bits;
   Operand &opnd0 = LoadIntoRegister(srcOpnd, dtype);
   if ((bitOffset == 0) && !isSigned && (bitSize < immWidth)) {
     SelectBand(resOpnd, opnd0, CreateImmOperand((static_cast<uint64>(1) << bitSize) - 1, immWidth, false), dtype);
@@ -5303,7 +5303,7 @@ AArch64MemOperand &AArch64CGFunc::GetOrCreateMemOpnd(AArch64MemOperand::AArch64A
 /* offset: base offset from FP or SP */
 MemOperand &AArch64CGFunc::CreateMemOpnd(RegOperand &baseOpnd, int32 offset, uint32 size) {
   AArch64OfstOperand &offsetOpnd = CreateOfstOpnd(offset, k32BitSize);
-  if (!ImmOperand::IsInBitSizeRot(kMaxAarch64ImmVal12Bits, offset)) {
+  if (!ImmOperand::IsInBitSizeRot(kMaxImmVal12Bits, offset)) {
     Operand *resImmOpnd = &SelectCopy(CreateImmOperand(offset, k32BitSize, true), PTY_i32, PTY_i32);
     return *memPool->New<AArch64MemOperand>(AArch64MemOperand::kAddrModeBOi, size, baseOpnd,
                                             static_cast<AArch64RegOperand*>(resImmOpnd), nullptr, nullptr);
@@ -5317,7 +5317,7 @@ MemOperand &AArch64CGFunc::CreateMemOpnd(RegOperand &baseOpnd, int32 offset, uin
 /* offset: base offset + #:lo12:Label+immediate */
 MemOperand &AArch64CGFunc::CreateMemOpnd(RegOperand &baseOpnd, int32 offset, uint32 size, const MIRSymbol &sym) {
   AArch64OfstOperand &offsetOpnd = CreateOfstOpnd(offset, k32BitSize);
-  ASSERT(ImmOperand::IsInBitSizeRot(kMaxAarch64ImmVal12Bits, offset), "");
+  ASSERT(ImmOperand::IsInBitSizeRot(kMaxImmVal12Bits, offset), "");
   return *memPool->New<AArch64MemOperand>(AArch64MemOperand::kAddrModeBOi, size, baseOpnd, nullptr, &offsetOpnd, &sym);
 }
 
@@ -5553,13 +5553,13 @@ void AArch64CGFunc::SelectAddAfterInsn(Operand &resOpnd, Operand &opnd0, Operand
 
   MOperator mOpCode = MOP_undef;
   /* lower 24 bits has 1, higher bits are all 0 */
-  if (immOpnd->IsInBitSize(kMaxAarch64ImmVal24Bits)) {
+  if (immOpnd->IsInBitSize(kMaxImmVal24Bits, 0)) {
     /* lower 12 bits and higher 12 bits both has 1 */
     Operand *newOpnd0 = &opnd0;
-    if (!(immOpnd->IsInBitSize(kMaxAarch64ImmVal12Bits) ||
-          immOpnd->IsInBitSize(kMaxAarch64ImmVal12Bits, kMaxAarch64ImmVal12Bits))) {
+    if (!(immOpnd->IsInBitSize(kMaxImmVal12Bits, 0) ||
+          immOpnd->IsInBitSize(kMaxImmVal12Bits, kMaxImmVal12Bits))) {
       /* process higher 12 bits */
-      ImmOperand &immOpnd2 = CreateImmOperand(static_cast<uint64>(immOpnd->GetValue()) >> kMaxAarch64ImmVal12Bits,
+      ImmOperand &immOpnd2 = CreateImmOperand(static_cast<uint64>(immOpnd->GetValue()) >> kMaxImmVal12Bits,
                                               immOpnd->GetSize(), immOpnd->IsSignedValue());
       mOpCode = is64Bits ? MOP_xaddrri24 : MOP_waddrri24;
       Insn &newInsn = GetCG()->BuildInstruction<AArch64Insn>(mOpCode, resOpnd, opnd0, immOpnd2, addSubLslOperand);
@@ -5569,7 +5569,7 @@ void AArch64CGFunc::SelectAddAfterInsn(Operand &resOpnd, Operand &opnd0, Operand
         insn.GetBB()->InsertInsnBefore(insn, newInsn);
       }
       /* get lower 12 bits value */
-      immOpnd->ModuloByPow2(kMaxAarch64ImmVal12Bits);
+      immOpnd->ModuloByPow2(kMaxImmVal12Bits);
       newOpnd0 = &resOpnd;
     }
     /* process lower 12 bits value */

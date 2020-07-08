@@ -101,6 +101,11 @@ enum class FieldPropertyCompact : uint32 {
   kAnnotation
 };
 
+enum class MethodSignatureProperty : uint32 {
+  kSignatureOffset,
+  kParameterTypes
+};
+
 class ReflectionAnalysis : public AnalysisResult {
  public:
   ReflectionAnalysis(MIRModule *mod, MemPool *memPool, KlassHierarchy *kh, MIRBuilder &builder)
@@ -180,6 +185,8 @@ class ReflectionAnalysis : public AnalysisResult {
   std::string GetAnnotationValue(const MapleVector<MIRPragmaElement*> &subElemVector, GStrIdx typeStrIdx);
   MIRSymbol *GenSuperClassMetaData(std::list<Klass*> superClassList);
   MIRSymbol *GenFieldOffsetData(const Klass &klass, std::pair<FieldPair, int> &fieldInfo);
+  MIRSymbol *GetMethodSignatureSymbol(std::string signature);
+  MIRSymbol *GetParameterTypesSymbol(uint32 size, uint32 index);
   MIRSymbol *GenFieldsMetaData(const Klass &klass);
   MIRSymbol *GenMethodsMetaData(const Klass &klass);
   MIRSymbol *GenFieldsMeta(const Klass &klass, std::vector<std::pair<FieldPair, int>> &fieldsVector,
@@ -244,6 +251,7 @@ class ReflectionAnalysis : public AnalysisResult {
   KlassHierarchy *klassH;
   MIRBuilder &mirBuilder;
   MapleVector<MIRSymbol*> classTab;
+  std::map<std::string, MIRSymbol*>mapMethodSignature;
   bool isLibcore;
   bool isLazyBindingOrDecouple;
   std::string reflectionMuidStr;
@@ -257,6 +265,7 @@ class ReflectionAnalysis : public AnalysisResult {
   static TyIdx superclassMetadataTyIdx;
   static TyIdx fieldOffsetDataTyIdx;
   static TyIdx methodAddrDataTyIdx;
+  static TyIdx methodSignatureTyIdx;
   static std::string strTab;
   static std::unordered_map<std::string, uint32> str2IdxMap;
   static std::string strTabStartHot;

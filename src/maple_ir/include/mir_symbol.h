@@ -318,6 +318,7 @@ class MIRSymbol {
   bool IsReflectionSuperclassInfo() const;
   bool IsReflectionFieldOffsetData() const;
   bool IsReflectionMethodAddrData() const;
+  bool IsReflectionMethodSignature() const;
   bool IsReflectionClassInfo() const;
   bool IsReflectionArrayClassInfo() const;
   bool IsReflectionClassInfoPtr() const;

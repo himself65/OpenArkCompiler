@@ -450,7 +450,8 @@ void BBLayout::FixTryBB(BB &startTryBB, BB &nextBB) {
     nextBB.GetPred(i)->ReplaceSucc(&nextBB, &startTryBB);
   }
   nextBB.RemoveAllPred();
-  startTryBB.ReplaceSucc(startTryBB.GetSucc(0), &nextBB);
+  ASSERT(startTryBB.GetSucc().empty(), "succ of try should have been removed");
+  startTryBB.AddSucc(nextBB);
 }
 
 void BBLayout::DealWithStartTryBB() {
@@ -486,7 +487,8 @@ void BBLayout::RemoveUnreachable(BB &bb) {
   if (bb.GetAttributes(kBBAttrIsEntry)) {
     return;
   }
-  while (bb.GetSucc().size() > 0) {
+
+  while (!bb.GetSucc().empty()) {
     BB *succ = bb.GetSucc(0);
     succ->RemovePred(bb, false);
     if (succ->GetPred().empty()) {
