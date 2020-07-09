@@ -255,11 +255,15 @@ class BB {
   }
 
   void RemoveAllPred() {
-    pred.clear();
+    while (!pred.empty()) {
+      RemovePred(*pred.back());
+    }
   }
 
   void RemoveAllSucc() {
-    succ.clear();
+    while (!succ.empty()) {
+      RemoveSucc(*succ.back());
+    }
     succFreq.clear();
   }
 

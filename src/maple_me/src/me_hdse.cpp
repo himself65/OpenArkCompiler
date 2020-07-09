@@ -38,7 +38,8 @@ void MeDoHDSE::MakeEmptyTrysUnreachable(MeFunction &func) {
         endTry->GetAttributes(kBBAttrIsTryEnd) && endTry->IsMeStmtEmpty()) {
       // we found a try BB followed by an empty endtry BB
       BB *targetBB = endTry->GetSucc(0);
-      for (auto *tryPred : tryBB->GetPred()) {
+      while (!tryBB->GetPred().empty()) {
+        auto *tryPred = tryBB->GetPred(0);
         // update targetbb's predecessors
         if (!tryPred->IsPredBB(*targetBB)) {
           ASSERT(endTry->IsPredBB(*targetBB), "MakeEmptyTrysUnreachable: processing error");

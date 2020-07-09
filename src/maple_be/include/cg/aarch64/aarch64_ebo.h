@@ -57,6 +57,7 @@ class AArch64Ebo : public Ebo {
   bool IsClinitCheck(const Insn &insn) const override;
   bool IsLastAndBranch(BB &bb, Insn &insn) const override;
   bool ResIsNotDefAndUse(Insn &insn) const override;
+  bool LiveOutOfBB(const Operand &opnd, const BB &bb) const override;
 
  private:
   /* The number of elements in callerSaveRegTable must less then 45. */

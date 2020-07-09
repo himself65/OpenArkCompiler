@@ -107,6 +107,13 @@ std::string Profile::GetFunctionName(uint32 classIdx, uint32 methodIdx, uint32 s
   return funcName;
 }
 
+std::string Profile::GetMethodSigStr(uint32 methodIdx, uint32 sigIdx) const {
+  const std::string methodName = namemangler::EncodeName(strMap.at(methodIdx));
+  const std::string sigName = namemangler::EncodeName(strMap.at(sigIdx));
+  const std::string methodSigStr = methodName + "_7C" + sigName;
+  return methodSigStr;
+}
+
 void Profile::ParseFunc(const char *data, int32 fileNum) {
   const MapleFileProf *funcProf = nullptr;
   const FunctionItem *funcItem = nullptr;
@@ -132,6 +139,28 @@ void Profile::ParseFunc(const char *data, int32 fileNum) {
     }
     // new maple file's profile
     offset += sizeof(MapleFileProf) + funcProf->size;
+  }
+}
+
+void Profile::ParseMethodSignature(const char *data, int fileNum, std::unordered_set<std::string> &metaData) const {
+  const MapleFileProf *methodSigProf = nullptr;
+  const MethodSignatureItem *methodSigItem = nullptr;
+  uint32_t offset = 0;
+  for (int32 mapleFileIdx = 0; mapleFileIdx < fileNum; ++mapleFileIdx) {
+    methodSigProf = reinterpret_cast<const MapleFileProf*>(data + offset);
+    if (CheckDexValid(methodSigProf->idx)) {
+      if (debug) {
+        LogInfo::MapleLogger() << "MethodSignatureProfile" << ":"
+                               << strMap.at(methodSigProf->idx) << ":" << methodSigProf->num << "\n";
+      }
+      methodSigItem = reinterpret_cast<const MethodSignatureItem*>(data + offset + sizeof(MapleFileProf));
+      for (uint32 item = 0; item < methodSigProf->num; ++item, ++methodSigItem) {
+        std::string methodSigStr = GetMethodSigStr(methodSigItem->methodIdx, methodSigItem->sigIdx);
+        metaData.insert(methodSigStr);
+      }
+      // new maple file's profile
+    }
+    offset += sizeof(MapleFileProf) + methodSigProf->size;
   }
 }
 
@@ -334,6 +363,9 @@ bool Profile::DeCompress(const std::string &path, const std::string &dexNameInne
       case kIRCounter:
         ParseCounterTab(proFileData, profileDataInfo->mapleFileNum);
         break;
+      case kMethodSig:
+        ParseMethodSignature(proFileData, profileDataInfo->mapleFileNum, methodSigMeta);
+        break;
       case kFileDesc: {
         uint32_t appPackageNameIdx = *reinterpret_cast<uint32_t*>(proFileData);
         this->appPackageName = strMap.at(appPackageNameIdx);
@@ -392,6 +424,19 @@ bool Profile::CheckMethodHot(const std::string &className) const {
   }
   if (valid) {
     if (methodMeta.find(className) == methodMeta.end()) {
+      return false;
+    }
+    return true;
+  }
+  return false;
+}
+
+bool Profile::CheckMethodSigHot(const std::string &methodSigStr) const {
+  if (methodSigMeta.empty()) {
+    return false;
+  }
+  if (valid) {
+    if (methodSigMeta.find(methodSigStr) == methodSigMeta.end()) {
       return false;
     }
     return true;

@@ -58,8 +58,7 @@ class DoCheckCastGeneration : public ModulePhase {
 
   AnalysisResult *Run(MIRModule *mod, ModuleResultMgr *mrm) override {
     OPT_TEMPLATE(CheckCastGenerator);
-    memPoolCtrler.DeleteMemPool(mod->GetPragmaMemPool());
-    mod->ChangePragmaMemPool(nullptr);
+    mrm->InvalidAnalysisResult(MoPhase_ANNOTATIONANALYSIS, mod);
     return nullptr;
   }
 };

@@ -51,6 +51,8 @@ class MeCFG {
   }
 
  private:
+  void ReplaceSwitchContainsOneCaseBranchWithBrtrue(BB &bb, MapleVector<BB*> &exitBlocks);
+  void AddCatchHandlerForTryBB(BB &bb, MapleVector<BB*> &exitBlocks);
   std::string ConstructFileNameToDump(const std::string &prefix) const;
   void DumpToFileInStrs(std::ofstream &cfgFile) const;
   void ConvertPhiList2IdentityAssigns(BB &meBB) const;

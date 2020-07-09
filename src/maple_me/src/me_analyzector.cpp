@@ -54,6 +54,10 @@ void AnalyzeCtor::ProcessFunc() {
 // collect field ids which are assigned inside the stmt and mark sideeffect
 // flag for non-ctor calls
 void AnalyzeCtor::ProcessStmt(MeStmt &stmt) {
+  if (kOpcodeInfo.IsCall(stmt.GetOp())) {
+    hasSideEffect = true;
+    return;
+  }
   switch (stmt.GetOp()) {
     case OP_iassign: {
       auto &iassign = static_cast<IassignMeStmt&>(stmt);
@@ -69,17 +73,6 @@ void AnalyzeCtor::ProcessStmt(MeStmt &stmt) {
         }
       }
       fieldSet.insert(ivarMeExpr.GetFieldID());
-      break;
-    }
-    case OP_callassigned:
-    case OP_call:
-    case OP_icall:
-    case OP_intrinsiccall:
-    case OP_xintrinsiccall:
-    case OP_virtualcall:
-    case OP_superclasscall:
-    case OP_interfacecall: {
-      hasSideEffect = true;
       break;
     }
     default:

@@ -670,7 +670,10 @@ void Emitter::EmitAddrofSymbolConst(const MIRSymbol &mirSymbol, MIRConst &elemCo
     return;
   }
 
-  if ((idx == static_cast<uint32>(FieldPropertyCompact::kPOffset)) && mirSymbol.IsReflectionFieldsInfoCompact()) {
+  if (((idx == static_cast<uint32>(FieldPropertyCompact::kPOffset)) && mirSymbol.IsReflectionFieldsInfoCompact())  ||
+      ((idx == static_cast<uint32>(MethodProperty::kSigName)) && mirSymbol.IsReflectionMethodsInfo()) ||
+      ((idx == static_cast<uint32>(MethodSignatureProperty::kParameterTypes)) &&
+      mirSymbol.IsReflectionMethodSignature())) {
     Emit("\t.long\t");
     Emit(symAddrName + " - .\n");
     return;
@@ -1027,6 +1030,8 @@ void Emitter::EmitIntConst(const MIRSymbol &mirSymbol, MIRAggConst &aggConst, ui
   bool isFieldsInfo = (idx == static_cast<uint32>(FieldProperty::kTypeName) ||
                        idx == static_cast<uint32>(FieldProperty::kName) ||
                        idx == static_cast<uint32>(FieldProperty::kAnnotation)) && mirSymbol.IsReflectionFieldsInfo();
+  bool isMethodSignature = (idx == static_cast<uint32>(MethodSignatureProperty::kSignatureOffset)) &&
+                            mirSymbol.IsReflectionMethodSignature();
   /* RegisterTable has been Int Array, visit element instead of field. */
   bool isInOffsetTab = (idx == 1 || idx == methodTypeIdx) &&
                        (StringUtils::StartsWith(stName, kVtabOffsetTabStr) ||
@@ -1039,7 +1044,7 @@ void Emitter::EmitIntConst(const MIRSymbol &mirSymbol, MIRAggConst &aggConst, ui
                           StringUtils::StartsWith(stName, ITAB_CONFLICT_PREFIX_STR);
   bool isArrayClassCacheName = mirSymbol.IsArrayClassCacheName();
   if (isClassInfo || isMethodsInfo || isFieldsInfo || mirSymbol.IsRegJNITab() || isInOffsetTab ||
-      isStaticStr || isConflictPerfix || isArrayClassCacheName) {
+      isStaticStr || isConflictPerfix || isArrayClassCacheName || isMethodSignature) {
     /* compare with all 1s */
     uint32 index = static_cast<uint32>((safe_cast<MIRIntConst>(elemConst))->GetValue()) & 0xFFFFFFFF;
     bool isHotReflectStr = (index & 0x00000003) != 0;     /* use the last two bits of index in this expression */
@@ -1072,7 +1077,7 @@ void Emitter::EmitIntConst(const MIRSymbol &mirSymbol, MIRAggConst &aggConst, ui
 #endif  /* USE_32BIT_REF */
     Emit("+" + strTabName);
     if (mirSymbol.IsRegJNITab() || mirSymbol.IsReflectionMethodsInfo() || mirSymbol.IsReflectionFieldsInfo() ||
-        mirSymbol.IsArrayClassCacheName()) {
+        mirSymbol.IsArrayClassCacheName() || mirSymbol.IsReflectionMethodSignature()) {
       Emit("-.");
     }
     if (StringUtils::StartsWith(stName, kDecoupleStaticKeyStr)) {
@@ -1719,6 +1724,7 @@ void Emitter::EmitGlobalVariable() {
   std::vector<MIRSymbol*> muidVec = { nullptr };
   std::vector<MIRSymbol*> fieldOffsetDatas;
   std::vector<MIRSymbol*> methodAddrDatas;
+  std::vector<MIRSymbol*> methodSignatureDatas;
   std::vector<MIRSymbol*> staticDecoupleKeyVec;
   std::vector<MIRSymbol*> staticDecoupleValueVec;
   std::vector<MIRSymbol*> superClassStVec;
@@ -1800,6 +1806,9 @@ void Emitter::EmitGlobalVariable() {
       continue;
     } else if (mirSymbol->IsReflectionSuperclassInfo()) {
       superClassStVec.emplace_back(mirSymbol);
+      continue;
+    } else if (mirSymbol->IsReflectionMethodSignature()) {
+      methodSignatureDatas.push_back(mirSymbol);
       continue;
     }
 
@@ -2071,6 +2080,10 @@ void Emitter::EmitGlobalVariable() {
   EmitMetaDataSymbolWithMarkFlag(fieldOffsetDatas, strIdx2Type, kFieldOffsetDataPrefixStr, sectionNameIsEmpty, false);
   /* method address rw */
   EmitMetaDataSymbolWithMarkFlag(methodAddrDatas, strIdx2Type, kMethodAddrDataPrefixStr, sectionNameIsEmpty, false);
+  /* method address ro */
+  std::string methodSignatureSectionName("romethodsignature");
+  EmitMetaDataSymbolWithMarkFlag(methodSignatureDatas, strIdx2Type, kMethodSignaturePrefixStr,
+                                 methodSignatureSectionName, false);
 
   /* array class cache table */
   EmitMuidTable(arrayClassCacheVec, strIdx2Type, kArrayClassCacheTable);

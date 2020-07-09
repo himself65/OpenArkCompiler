@@ -216,16 +216,6 @@ void AnnotationParser::InitClassGenericDeclare(MemPool &pragmaMemPool, MIRStruct
   }
 }
 
-void AnnotationAnalysis::AnnotationCleanUp() {
-  const MapleVector<Klass*> &klasses = klassH->GetTopoSortedKlasses();
-  for (Klass *klass : klasses) {
-    MIRStructType *mirStruct = klass->GetMIRStructType();
-    mirStruct->GetPragmaVec().clear();
-    mirStruct->GetPragmaVec().shrink_to_fit();
-  }
-  memPoolCtrler.DeleteMemPool(mirModule->GetPragmaMemPool());
-}
-
 void AnnotationAnalysis::ByPassFollowingInfo(AnnotationParser &aParser, MIRStructType *sType) {
   ATokenKind t = aParser.GetNextToken();
   if (t == kTemplateStart) {
@@ -555,7 +545,6 @@ void AnnotationAnalysis::AnalysisAnnotation() {
 
 void AnnotationAnalysis::Run() {
   AnalysisAnnotation();
-  AnnotationCleanUp();
 }
 
 AnalysisResult *DoAnnotationAnalysis::Run(MIRModule *module, ModuleResultMgr *moduleResultMgr) {
@@ -563,10 +552,9 @@ AnalysisResult *DoAnnotationAnalysis::Run(MIRModule *module, ModuleResultMgr *mo
   MemPool *pragmaMemPool = memPoolCtrler.NewMemPool("New Pragma mempool");
   auto *kh = static_cast<KlassHierarchy*>(moduleResultMgr->GetAnalysisResult(MoPhase_CHA, module));
   ASSERT_NOT_NULL(kh);
-  AnnotationAnalysis AA(module, memPool, pragmaMemPool, kh);
-  AA.Run();
+  AnnotationAnalysis *aa = pragmaMemPool->New<AnnotationAnalysis>(module, memPool, pragmaMemPool, kh);
+  aa->Run();
   memPoolCtrler.DeleteMemPool(memPool);
-  module->ChangePragmaMemPool(pragmaMemPool);
-  return nullptr;
+  return aa;
 }
 }

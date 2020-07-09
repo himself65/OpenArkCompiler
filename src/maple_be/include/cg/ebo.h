@@ -50,6 +50,9 @@ struct OpndInfo {
   InsnInfo *insnInfo = nullptr;
   bool redefinedInBB = false;  /* A following definition exisit in bb. */
   bool redefined = false;  /* A following definition exisit. */
+#if TARGARM32
+  bool mayReDef = false;
+#endif
   OpndInfo *same = nullptr;  /* Other definitions of the same operand. */
   OpndInfo *prev = nullptr;
   OpndInfo *next = nullptr;
@@ -141,7 +144,10 @@ class Ebo {
   bool IsPhysicalReg(const Operand &opnd) const;
   bool HasAssignedReg(const Operand &opnd) const;
   bool IsOfSameClass(const Operand &op0, const Operand &op1) const;
-  bool OpndAvailableInBB(const BB &bb, OpndInfo &info);
+  bool OpndAvailableInBB(const BB &bb, OpndInfo *info);
+  bool ForwardPropCheck(const Operand *opndReplace, OpndInfo &opndInfo, const Operand &opnd, Insn &insn);
+  bool RegForwardCheck(Insn &insn, const Operand &opnd, const Operand *opndReplace, Operand &oldOpnd,
+                       const OpndInfo *tmpInfo);
   bool IsNotVisited(const BB &bb) {
     return !visitedBBs.at(bb.GetId());
   };
@@ -160,7 +166,6 @@ class Ebo {
   int32 ComputeOpndHash(const Operand &opnd) const;
   uint32 ComputeHashVal(const Insn &insn, const MapleVector<OpndInfo*> &opndInfo) const;
   void MarkOpndLiveIntoBB(const Operand &opnd, BB &intoBB, BB &outOfBB) const;
-  bool LiveOutOfBB(const Operand &opnd, const BB &bb) const;
   void RemoveInsn(InsnInfo &insnInfo);
   void RemoveUses(uint32 opndNum, const MapleVector<OpndInfo*> &origInfo);
   void HashInsn(Insn &insn, const MapleVector<OpndInfo*> &origInfo, const MapleVector<OpndInfo*> &opndInfo);
@@ -204,6 +209,7 @@ class Ebo {
   virtual bool IsClinitCheck(const Insn &insn) const = 0;
   virtual bool IsLastAndBranch(BB &bb, Insn &insn) const = 0;
   virtual bool ResIsNotDefAndUse(Insn &insn) const = 0;
+  virtual bool LiveOutOfBB(const Operand &opnd, const BB &bb) const = 0;
   OpndInfo *BuildMemOpndInfo(BB &bb, Insn &insn, Operand &opnd, int32 opndIndex);
   OpndInfo *BuildOperandInfo(BB &bb, Insn &insn, Operand &opnd, uint32 opndIndex, MapleVector<OpndInfo*> &origInfos);
   bool ForwardPropagateOpnd(Insn &insn, Operand *&opnd, uint32 opndIndex, OpndInfo *&opndInfo,
