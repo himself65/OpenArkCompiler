@@ -90,6 +90,7 @@ static constexpr const char kVtableKeyOffsetTabStr[] = "__vtable_offset_key_tabl
 static constexpr const char kVtableOffsetTabKeyStr[] = "__vtable_offset_key_table";
 static constexpr const char kFieldKeyOffsetTabStr[] = "__field_offset_table";
 static constexpr const char kOffsetTabStr[] = "__offset_value_table";
+static constexpr const char kInlineCacheTabStr[] = "__inline_cache_table";
 static constexpr const char kLocalClassInfoStr[] = "__local_classinfo_table";
 static constexpr const char kMethodsInfoPrefixStr[] = "__methods_info__";
 static constexpr const char kMethodsInfoCompactPrefixStr[] = "__methods_infocompact__";
