@@ -913,8 +913,6 @@ MIRSymbol *ReflectionAnalysis::GetMethodSignatureSymbol(std::string signature) {
   MIRModule &module = *mirModule;
   MIRStructType &methodSignatureType =
       static_cast<MIRStructType&>(*GlobalTables::GetTypeTable().GetTypeFromTyIdx(methodSignatureTyIdx));
-  MIRArrayType &methodSignatureArrayType = *GlobalTables::GetTypeTable().GetOrCreateArrayType(methodSignatureType, 1);
-  MIRAggConst *aggConst = module.GetMemPool()->New<MIRAggConst>(module, methodSignatureArrayType);
   MIRAggConst *newConst = module.GetMemPool()->New<MIRAggConst>(module, methodSignatureType);
 
   uint32 fieldID = 1;
@@ -922,13 +920,12 @@ MIRSymbol *ReflectionAnalysis::GetMethodSignatureSymbol(std::string signature) {
   mirBuilder.AddIntFieldConst(methodSignatureType, *newConst, fieldID++, signatureIdx);
   MIRSymbol *parameterTypesSymbol = GetParameterTypesSymbol(typeNames.size(), mapMethodSignature.size());
   mirBuilder.AddAddrofFieldConst(methodSignatureType, *newConst, fieldID++, *parameterTypesSymbol);
-  aggConst->PushBack(newConst);
 
   MIRSymbol *methodSignatureSt =
       GetOrCreateSymbol(namemangler::kMethodSignaturePrefixStr + std::to_string(mapMethodSignature.size()),
       methodSignatureType.GetTypeIndex(), true);
   methodSignatureSt->SetStorageClass(kScFstatic);
-  methodSignatureSt->SetKonst(aggConst);
+  methodSignatureSt->SetKonst(newConst);
   mapMethodSignature[signature] = methodSignatureSt;
   return methodSignatureSt;
 }
