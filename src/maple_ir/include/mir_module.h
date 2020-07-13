@@ -24,6 +24,7 @@
 #if MIR_FEATURE_FULL
 #include <string>
 #include <unordered_set>
+#include <shared_mutex>
 #include "mempool.h"
 #include "mempool_allocator.h"
 #include "maple_string.h"
@@ -137,6 +138,12 @@ class MIRModule {
   const MapleAllocator &GetMPAllocator() const {
     return memPoolAllocator;
   }
+
+  void ChangePragmaMemPool(MemPool *newPragma) {
+    pragmaMemPool = newPragma;
+    pragmaMemPoolAllocator.SetMemPool(newPragma);
+  }
+
   MapleAllocator &GetMPAllocator() {
     return memPoolAllocator;
   }
@@ -288,9 +295,11 @@ class MIRModule {
   }
 
   const MapleMap<PUIdx, MapleSet<FieldID>*> &GetPuIdxFieldInitializedMap() const {
+    std::shared_lock<std::shared_timed_mutex> lock(fieldMapMutex);
     return puIdxFieldInitializedMap;
   }
   void SetPuIdxFieldSet(PUIdx puIdx, MapleSet<FieldID> *fieldIDSet) {
+    std::unique_lock<std::shared_timed_mutex> lock(fieldMapMutex);
     puIdxFieldInitializedMap[puIdx] = fieldIDSet;
   }
   const auto &GetRealCaller() const {
@@ -302,6 +311,7 @@ class MIRModule {
   }
 
   const MapleSet<FieldID> *GetPUIdxFieldInitializedMapItem(PUIdx key) const {
+    std::shared_lock<std::shared_timed_mutex> lock(fieldMapMutex);
     auto it = puIdxFieldInitializedMap.find(key);
     if (it != puIdxFieldInitializedMap.end()) {
       return it->second;
@@ -556,6 +566,7 @@ class MIRModule {
   // if puIdx appears in the map, and the value of first corresponding MapleSet is 0, the puIdx appears in this module
   // and writes to all field id otherwise, it writes the field ids in MapleSet
   MapleMap<PUIdx, MapleSet<FieldID>*> puIdxFieldInitializedMap;
+  mutable std::shared_timed_mutex fieldMapMutex;
   std::map<std::pair<GStrIdx, GStrIdx>, GStrIdx> realCaller;
 };
 #endif  // MIR_FEATURE_FULL

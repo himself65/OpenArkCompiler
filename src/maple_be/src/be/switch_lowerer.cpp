@@ -59,11 +59,11 @@ void SwitchLowerer::FindClusters(MapleVector<Cluster> &clusters) {
   while (i < length - kClusterSwitchCutoff) {
     for (int32 j = length - 1; j > i; --j) {
       float tmp1 = static_cast<float>(j - i);
-      float tmp2 = static_cast<float>(stmt->GetCasePair(j).first - stmt->GetCasePair(i).first);
+      float tmp2 = static_cast<float>(stmt->GetCasePair(j).first) - static_cast<float>(stmt->GetCasePair(i).first);
       if (((j - i) >= kClusterSwitchCutoff) &&
-          ((stmt->GetSwitchTable()[j].first - stmt->GetCasePair(i).first) < kMaxRangeGotoTableSize) &&
+          (tmp2 < kMaxRangeGotoTableSize) &&
           ((tmp1 / tmp2) >= kClusterSwitchDensity)) {
-        clusters.push_back(Cluster(i, j));
+        clusters.emplace_back(Cluster(i, j));
         i = j;
         break;
       }
@@ -75,21 +75,21 @@ void SwitchLowerer::FindClusters(MapleVector<Cluster> &clusters) {
 void SwitchLowerer::InitSwitchItems(MapleVector<Cluster> &clusters) {
   if (clusters.empty()) {
     for (int32 i = 0; i < static_cast<int>(stmt->GetSwitchTable().size()); ++i) {
-      switchItems.push_back(SwitchItem(i, 0));
+      switchItems.emplace_back(SwitchItem(i, 0));
     }
   } else {
     int32 j = 0;
     Cluster front = clusters[j];
     for (int32 i = 0; i < static_cast<int>(stmt->GetSwitchTable().size()); ++i) {
       if (i == front.first) {
-        switchItems.push_back(SwitchItem(i, front.second));
+        switchItems.emplace_back(SwitchItem(i, front.second));
         i = front.second;
         ++j;
         if (static_cast<int>(clusters.size()) > j) {
           front = clusters[j];
         }
       } else {
-        switchItems.push_back(SwitchItem(i, 0));
+        switchItems.emplace_back(SwitchItem(i, 0));
       }
     }
   }

@@ -185,6 +185,7 @@ BaseNode &OpMeExpr::EmitExpr(SSATab &ssaTab) {
     case OP_ceil:
     case OP_cvt:
     case OP_floor:
+    case OP_round:
     case OP_trunc: {
       auto *cvtNode = ssaTab.GetModule().CurFunction()->GetCodeMempool()->New<TypeCvtNode>(
           Opcode(GetOp()), PrimType(GetPrimType()));

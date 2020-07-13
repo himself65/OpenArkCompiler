@@ -219,6 +219,11 @@ TokenKind MIRLexer::GetIntConst(uint32 valStart, bool negative) {
       val = -val;
     }
     theIntVal = (theIntVal * hexValue) + val;
+    if (val < 0) {
+      ASSERT(theIntVal < 0, "int value overflow");
+    } else if (val > 0) {
+      ASSERT(theIntVal > 0, "int value overflow");
+    }
     c = GetNextCurrentCharWithUpperCheck();
   }
   if (c == 'u' || c == 'U') {  // skip 'u' or 'U'
@@ -330,6 +335,7 @@ TokenKind MIRLexer::GetTokenWithPrefixPercent() {
     c = GetNextCurrentCharWithUpperCheck();
     while (isdigit(c)) {
       theIntVal = (theIntVal * 10) + HexCharToDigit(c);
+      ASSERT(theIntVal >= 0, "int value overflow");
       c = GetNextCurrentCharWithUpperCheck();
     }
     name = line.substr(valStart, curIdx - valStart);

@@ -13,6 +13,9 @@
  * See the Mulan PSL v1 for more details.
  */
 FUNCAPHASE(kCGFuncPhaseLIVE, CgDoLiveAnalysis)
+#ifdef TARGARM32
+FUNCAPHASE(kCGFuncPhaseLIVERANGE, CgDoLrAnalysis)
+#endif  /* TARGARM32 */
 FUNCAPHASE(kCGFuncPhaseREACHDEF, CgDoReachingDefinition)
 FUNCAPHASE(kCGFuncPhaseCLEARRDINFO, CgDoClearRDInfo)
 FUNCAPHASE(kCGFuncPhaseLOOP, CgDoLoopAnalysis)

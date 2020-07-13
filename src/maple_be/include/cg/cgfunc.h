@@ -71,6 +71,9 @@ class SpillMemOperandSet {
   MapleSet<MemOperand*, MemOpndCmp> reuseSpillLocMem;
 };
 
+#if TARGARM32
+class LiveRange;
+#endif  /* TARGARM32 */
 constexpr uint32 kVRegisterNumber = 80;
 class CGFunc {
  public:
@@ -229,6 +232,7 @@ class CGFunc {
   virtual void SelectRangeGoto(RangeGotoNode &rangeGotoNode, Operand &opnd0) = 0;
   virtual Operand *SelectLazyLoad(Operand &opnd0, PrimType primType) = 0;
   virtual Operand *SelectLazyLoadStatic(MIRSymbol &st, int64 offset, PrimType primType) = 0;
+  virtual Operand *SelectLoadArrayClassCache(MIRSymbol &st, int64 offset, PrimType primType) = 0;
   virtual void GenerateYieldpoint(BB &bb) = 0;
   virtual Operand &ProcessReturnReg(PrimType primType) = 0;
 
@@ -329,7 +333,7 @@ class CGFunc {
   }
 
   /* return Register Type */
-  RegType GetRegisterType(regno_t rNum) const {
+  virtual RegType GetRegisterType(regno_t rNum) const {
     CHECK(rNum < vRegTable.size(), "index out of range in GetVRegSize");
     return vRegTable[rNum].GetType();
   }
@@ -561,7 +565,7 @@ class CGFunc {
   }
 
   void PushBackExitBBsVec(BB &bb) {
-    exitBBVec.push_back(&bb);
+    exitBBVec.emplace_back(&bb);
   }
 
   void ClearExitBBsVec() {
@@ -634,7 +638,7 @@ class CGFunc {
   }
 
   void AddEmitSt(MIRSymbol &symbol) {
-    emitStVec.push_back(&symbol);
+    emitStVec.emplace_back(&symbol);
   }
 
   MapleVector<CGFuncLoops*> &GetLoops() {
@@ -646,8 +650,34 @@ class CGFunc {
   }
 
   void PushBackLoops(CGFuncLoops &loop) {
-    loops.push_back(&loop);
+    loops.emplace_back(&loop);
   }
+
+#if TARGARM32
+  MapleVector<BB*> &GetSortedBBs() {
+    return sortedBBs;
+  }
+
+  const MapleVector<BB*> &GetSortedBBs() const {
+    return sortedBBs;
+  }
+
+  void SetSortedBBs(MapleVector<BB*> &bbVec) {
+    sortedBBs = bbVec;
+  }
+
+  MapleVector<LiveRange*> &GetLrVec() {
+    return lrVec;
+  }
+
+  const MapleVector<LiveRange*> &GetLrVec() const {
+    return lrVec;
+  }
+
+  void SetLrVec(MapleVector<LiveRange*> &newLrVec) {
+    lrVec = newLrVec;
+  }
+#endif  /* TARGARM32 */
 
   CGCFG *GetTheCFG() {
     return theCFG;
@@ -757,11 +787,10 @@ class CGFunc {
   uint32 vRegCount;                       /* for assigning a number for each CG virtual register */
   uint32 maxRegCount;                     /* for the current virtual register number limit */
   MapleVector<VirtualRegNode> vRegTable;  /* table of CG's virtual registers indexed by v_reg no */
-  MapleMap<regno_t, RegOperand*> vRegOperandTable;
-  MapleMap<PregIdx, MemOperand*> pRegSpillMemOperands;
-  MapleMap<regno_t, MemOperand*> spillRegMemOperands;
-  MapleSet<MemOperand*> spillRegMemOperandsAdj;
-  MapleMap<uint32, SpillMemOperandSet*> reuseSpillLocMem;
+  MapleUnorderedMap<regno_t, RegOperand*> vRegOperandTable;
+  MapleUnorderedMap<PregIdx, MemOperand*> pRegSpillMemOperands;
+  MapleUnorderedMap<regno_t, MemOperand*> spillRegMemOperands;
+  MapleUnorderedMap<uint32, SpillMemOperandSet*> reuseSpillLocMem;
   LabelIdx firstCGGenLabelIdx;
   MapleMap<LabelIdx, uint64> labelMap;
 #if DEBUG
@@ -838,11 +867,15 @@ class CGFunc {
   BB *dummyBB;   /* use this bb for add some instructions to bb that is no curBB. */
   Insn *volReleaseInsn = nullptr;  /* use to record the release insn for volatile strore */
   MapleVector<BB*> exitBBVec;
-  MapleMap<LabelIdx, BB*> lab2BBMap;
+  MapleUnorderedMap<LabelIdx, BB*> lab2BBMap;
   BECommon &beCommon;
   MemLayout *memLayout = nullptr;
   MapleAllocator *funcScopeAllocator;
   MapleVector<MIRSymbol*> emitStVec;  /* symbol that needs to be emit as a local symbol. i.e, switch table */
+#if TARGARM32
+  MapleVector<BB*> sortedBBs;
+  MapleVector<LiveRange*> lrVec;
+#endif  /* TARGARM32 */
   MapleVector<CGFuncLoops*> loops;
   CGCFG *theCFG = nullptr;
   uint32 nextSpillLocation = 0;

@@ -22,12 +22,117 @@
 
 namespace {
 constexpr int kFuncNameLenLimit = 80;
+static bool CaseValOfSwitchIsSuccInt(const maple::CaseVector &switchTable) {
+  ASSERT(!switchTable.empty(), "switch table is empty");
+  size_t caseNum = switchTable.size();
+  int val = switchTable[0].first;
+  for (size_t id = 1; id < caseNum; id++) {
+    val++;
+    if (val != switchTable[id].first) {
+      return false;
+    }
+  }
+  return true;
+}
 }
 
 namespace maple {
+
+void MeCFG::ReplaceSwitchContainsOneCaseBranchWithBrtrue(maple::BB &bb, MapleVector<BB*> &exitBlocks) {
+  StmtNode &lastStmt = bb.GetStmtNodes().back();
+  ASSERT(lastStmt.GetOpCode() == OP_switch, "runtime check error");
+  auto &switchStmt = static_cast<SwitchNode&>(lastStmt);
+  auto &swithcTable = switchStmt.GetSwitchTable();
+  if (!CaseValOfSwitchIsSuccInt(swithcTable)) {
+    return;
+  }
+  LabelIdx defaultLabelIdx = switchStmt.GetDefaultLabel();
+  int32 minCaseVal = swithcTable.front().first;
+  int32 maxCaseVal = swithcTable.back().first;
+  auto *baseNode = switchStmt.Opnd(0);
+
+  auto &mirBuilder = func.GetMIRModule().GetMIRBuilder();
+  auto *minCaseNode = mirBuilder->CreateIntConst(minCaseVal, PTY_i32);
+  auto *ltNode = mirBuilder->CreateExprCompare(OP_lt, GetTypeFromTyIdx(TyIdx(PTY_u1)),
+                                               GetTypeFromTyIdx(TyIdx(PTY_i32)), baseNode, minCaseNode);
+  auto *condGoto = mirBuilder->CreateStmtCondGoto(ltNode, OP_brtrue, defaultLabelIdx);
+  bb.ReplaceStmt(&switchStmt, condGoto);
+  bb.SetKind(kBBCondGoto);
+
+  auto *newBB = func.NewBasicBlock();
+  auto *maxCaseNode = mirBuilder->CreateIntConst(maxCaseVal, PTY_i32);
+  auto *gtNode = mirBuilder->CreateExprCompare(OP_gt, GetTypeFromTyIdx(TyIdx(PTY_u1)),
+                                               GetTypeFromTyIdx(TyIdx(PTY_i32)), baseNode, maxCaseNode);
+  condGoto = mirBuilder->CreateStmtCondGoto(gtNode, OP_brtrue, defaultLabelIdx);
+  newBB->GetStmtNodes().push_back(condGoto);
+  newBB->SetKind(kBBCondGoto);
+
+  BB *defaultBB = func.GetLabelBBAt(defaultLabelIdx);
+  ASSERT(defaultBB != nullptr, "null ptr check");
+  while (!bb.GetSucc().empty()) {
+    bb.RemoveSucc(*bb.GetSucc(0));
+  }
+  bb.AddSucc(*newBB);
+  bb.AddSucc(*defaultBB);
+
+  BB *caseBB = func.GetLabelBBAt(switchStmt.GetSwitchTable().front().second);
+  ASSERT(caseBB != nullptr, "null ptr check");
+  newBB->AddSucc(*caseBB);
+  newBB->AddSucc(*defaultBB);
+
+  if (bb.GetAttributes(kBBAttrIsTry)) {
+    newBB->SetAttributes(kBBAttrIsTry);
+    func.SetBBTryNodeMap(*newBB, *func.GetBBTryNodeMap().at(&bb));
+    AddCatchHandlerForTryBB(bb, exitBlocks);
+    AddCatchHandlerForTryBB(*newBB, exitBlocks);
+  }
+}
+
+void MeCFG::AddCatchHandlerForTryBB(BB &bb, MapleVector<BB*> &exitBlocks) {
+  if (!bb.GetAttributes(kBBAttrIsTry)) {
+    return;
+  }
+  auto it = func.GetBBTryNodeMap().find(&bb);
+  CHECK_FATAL(it != func.GetBBTryNodeMap().end(), "try bb without try");
+  StmtNode *currTry = it->second;
+  const auto *tryNode = static_cast<const TryNode*>(currTry);
+  bool hasFinallyHandler = false;
+  // add exception handler bb
+  for (size_t j = 0; j < tryNode->GetOffsetsCount(); ++j) {
+    LabelIdx labelIdx = tryNode->GetOffset(j);
+    ASSERT(func.GetLabelBBIdMap().find(labelIdx) != func.GetLabelBBIdMap().end(), "runtime check error");
+    BB *meBB = func.GetLabelBBAt(labelIdx);
+    CHECK_FATAL(meBB != nullptr, "null ptr check");
+    ASSERT(meBB->GetAttributes(kBBAttrIsCatch), "runtime check error");
+    if (meBB->GetAttributes(kBBAttrIsJSFinally) || meBB->GetAttributes(kBBAttrIsCatch)) {
+      hasFinallyHandler = true;
+    }
+    // avoid redundant succ
+    if (!meBB->IsSuccBB(bb)) {
+      bb.AddSucc(*meBB);
+    }
+  }
+  // if try block don't have finally catch handler, add common_exit_bb as its succ
+  if (!hasFinallyHandler) {
+    if (!bb.GetAttributes(kBBAttrIsExit)) {
+      bb.SetAttributes(kBBAttrIsExit);  // may exit
+      exitBlocks.push_back(&bb);
+    }
+  } else if ((func.GetMIRModule().GetSrcLang() == kSrcLangJava) && bb.GetAttributes(kBBAttrIsExit)) {
+    // deal with throw bb, if throw bb in a tryblock and has finallyhandler
+    auto &stmtNodes = bb.GetStmtNodes();
+    if (!stmtNodes.empty() && stmtNodes.back().GetOpCode() == OP_throw) {
+      bb.ClearAttributes(kBBAttrIsExit);
+      ASSERT(&bb == exitBlocks.back(), "runtime check error");
+      exitBlocks.pop_back();
+    }
+  }
+}
+
 void MeCFG::BuildMirCFG() {
   MapleVector<BB*> entryBlocks(func.GetAlloc().Adapter());
   MapleVector<BB*> exitBlocks(func.GetAlloc().Adapter());
+  std::vector<BB*> switchBBsWithOneCaseBranch;
   auto eIt = func.valid_end();
   for (auto bIt = func.valid_begin(); bIt != eIt; ++bIt) {
     if (bIt == func.common_entry() || bIt == func.common_exit()) {
@@ -67,7 +172,16 @@ void MeCFG::BuildMirCFG() {
         auto &gotoStmt = static_cast<CondGotoNode&>(lastStmt);
         LabelIdx lblIdx = gotoStmt.GetOffset();
         BB *meBB = func.GetLabelBBAt(lblIdx);
-        bb->AddSucc(*meBB);
+        if (*rightNextBB == meBB) {
+          constexpr char tmpBool[] = "tmpBool";
+          auto *mirBuilder = func.GetMIRModule().GetMIRBuilder();
+          MIRSymbol *st = mirBuilder->GetOrCreateLocalDecl(tmpBool, *GlobalTables::GetTypeTable().GetUInt1());
+          auto *dassign = mirBuilder->CreateStmtDassign(st->GetStIdx(), 0, lastStmt.Opnd(0));
+          bb->ReplaceStmt(&lastStmt, dassign);
+          bb->SetKind(kBBFallthru);
+        } else {
+          bb->AddSucc(*meBB);
+        }
         break;
       }
       case kBBSwitch: {
@@ -77,14 +191,22 @@ void MeCFG::BuildMirCFG() {
         LabelIdx lblIdx = switchStmt.GetDefaultLabel();
         BB *mirBB = func.GetLabelBBAt(lblIdx);
         bb->AddSucc(*mirBB);
+        std::set<LabelIdx> caseLabels;
         for (size_t j = 0; j < switchStmt.GetSwitchTable().size(); ++j) {
           lblIdx = switchStmt.GetCasePair(j).second;
           BB *meBB = func.GetLabelBBAt(lblIdx);
+          (void)caseLabels.insert(lblIdx);
           // Avoid duplicate succs.
           auto it = std::find(bb->GetSucc().begin(), bb->GetSucc().end(), meBB);
           if (it == bb->GetSucc().end()) {
             bb->AddSucc(*meBB);
           }
+        }
+        if (bb->GetSucc().size() == 1) {
+          bb->RemoveLastStmt();
+          bb->SetKind(kBBFallthru);
+        } else if (caseLabels.size() == 1) {
+          switchBBsWithOneCaseBranch.push_back(bb);
         }
         break;
       }
@@ -100,44 +222,14 @@ void MeCFG::BuildMirCFG() {
         break;
       }
     }
-    // deal try blocks, add catch handler to try's succ
+    // deal try blocks, add catch handler to try's succ. SwitchBB dealed individually
     if (bb->GetAttributes(kBBAttrIsTry)) {
-      auto it = func.GetBBTryNodeMap().find(bb);
-      CHECK_FATAL(it != func.GetBBTryNodeMap().end(), "try bb without try");
-      StmtNode *currTry = it->second;
-      const auto *tryNode = static_cast<const TryNode*>(currTry);
-      bool hasFinallyHandler = false;
-      // add exception handler bb
-      for (size_t j = 0; j < tryNode->GetOffsetsCount(); ++j) {
-        LabelIdx labelIdx = tryNode->GetOffset(j);
-        ASSERT(func.GetLabelBBIdMap().find(labelIdx) != func.GetLabelBBIdMap().end(), "runtime check error");
-        BB *meBB = func.GetLabelBBAt(labelIdx);
-        CHECK_FATAL(meBB != nullptr, "null ptr check");
-        ASSERT(meBB->GetAttributes(kBBAttrIsCatch), "runtime check error");
-        if (meBB->GetAttributes(kBBAttrIsJSFinally) || meBB->GetAttributes(kBBAttrIsCatch)) {
-          hasFinallyHandler = true;
-        }
-        // avoid redundant succ
-        if (!meBB->IsSuccBB(*bb)) {
-          bb->AddSucc(*meBB);
-        }
-      }
-      // if try block don't have finally catch handler, add common_exit_bb as its succ
-      if (!hasFinallyHandler) {
-        if (!bb->GetAttributes(kBBAttrIsExit)) {
-          bb->SetAttributes(kBBAttrIsExit);  // may exit
-          exitBlocks.push_back(bb);
-        }
-      } else if ((func.GetMIRModule().GetSrcLang() == kSrcLangJava) && bb->GetAttributes(kBBAttrIsExit)) {
-        // deal with throw bb, if throw bb in a tryblock and has finallyhandler
-        auto &stmtNodes = bb->GetStmtNodes();
-        if (!stmtNodes.empty() && stmtNodes.back().GetOpCode() == OP_throw) {
-          bb->ClearAttributes(kBBAttrIsExit);
-          ASSERT(bb == exitBlocks.back(), "runtime check error");
-          exitBlocks.pop_back();
-        }
-      }
+      AddCatchHandlerForTryBB(*bb, exitBlocks);
     }
+  }
+
+  for (BB *switchBB : switchBBsWithOneCaseBranch) {
+    ReplaceSwitchContainsOneCaseBranchWithBrtrue(*switchBB, exitBlocks);
   }
   // merge all blocks in entryBlocks
   for (BB *bb : entryBlocks) {
@@ -436,8 +528,9 @@ void MeCFG::FixTryBB(maple::BB &startBB, maple::BB &nextBB) {
   for (size_t i = 0; i < nextBB.GetPred().size(); ++i) {
     nextBB.GetPred(i)->ReplaceSucc(&nextBB, &startBB);
   }
-  nextBB.RemoveAllPred();
-  startBB.ReplaceSucc(startBB.GetSucc(0), &nextBB);
+  ASSERT(nextBB.GetPred().empty(), "pred of nextBB should be empty");
+  startBB.RemoveAllSucc();
+  startBB.AddSucc(nextBB);
 }
 
 // analyse the CFG to find the BBs that are not reachable from function entries
@@ -825,8 +918,9 @@ void MeCFG::DumpToFile(const std::string &prefix, bool dumpInStrs, bool dumpEdge
     if (bIt == func.common_exit()) {
       // specical case for common_exit_bb
       for (auto it = bb->GetPred().begin(); it != bb->GetPred().end(); ++it) {
-        cfgFile << "BB" << (*it)->GetBBId() << " -> "
-                << "BB" << bb->GetBBId() << "[style=dotted];\n";
+        dumpEdgeFreq ? cfgFile << "BB" << (*it)->GetBBId() << "_freq_" << (*it)->GetFrequency() << " -> " <<
+            "BB" << bb->GetBBId() << "_freq_" << bb->GetFrequency() << "[style=dotted];\n" :
+            cfgFile << "BB" << (*it)->GetBBId()<< " -> " << "BB" << bb->GetBBId() << "[style=dotted];\n";
       }
       continue;
     }
@@ -835,8 +929,9 @@ void MeCFG::DumpToFile(const std::string &prefix, bool dumpInStrs, bool dumpEdge
     }
 
     for (auto it = bb->GetSucc().begin(); it != bb->GetSucc().end(); ++it) {
-      cfgFile << "BB" << bb->GetBBId() << " -> "
-              << "BB" << (*it)->GetBBId();
+      dumpEdgeFreq ? cfgFile << "BB" << bb->GetBBId() << "_freq_" << bb->GetFrequency() << " -> " <<
+          "BB" << (*it)->GetBBId() << "_freq_" << (*it)->GetFrequency() :
+          cfgFile << "BB" << bb->GetBBId() << " -> " << "BB" << (*it)->GetBBId();
       if (bb == func.GetCommonEntryBB()) {
         cfgFile << "[style=dotted]";
         continue;

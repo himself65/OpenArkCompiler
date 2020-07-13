@@ -17,20 +17,20 @@
 #include "utils/meta.h"
 
 namespace maple {
-template <typename ToT>
-struct SafeCastCondition : std::false_type {};
+template<typename ToT>
+struct SafeCastCondition : public std::false_type {};
 
 #define REGISTER_SAFE_CAST(type, condition)                             \
-template <>                                                             \
-struct SafeCastCondition<type> : std::true_type {                     \
-  template <typename FromT>                                             \
+template<>                                                             \
+struct SafeCastCondition<type> : public std::true_type {               \
+  template<typename FromT>                                             \
   static inline bool DoIt(const FromT &from) {                          \
     return (condition);                                                 \
   }                                                                     \
 }
 
 namespace impl {
-template <typename ToT, typename FromT,
+template<typename ToT, typename FromT,
     typename = std::enable_if_t<std::is_base_of<FromT, ToT>::value>>
 struct InstanceOfImpl {
   static inline bool DoIt(const FromT &from) {
@@ -38,30 +38,30 @@ struct InstanceOfImpl {
   }
 };
 
-template <typename ToT, typename FromT>
+template<typename ToT, typename FromT>
 struct InstanceOfImpl<ToT, FromT, typename std::enable_if_t<std::is_base_of<ToT, FromT>::value>> {
   static inline bool DoIt(const FromT&) {
     return true;
   }
 };
 
-template <typename ToT, typename FromT>
-struct EnabledSafeCast : utils::meta_or<std::is_base_of<ToT, FromT>, SafeCastCondition<ToT>>::type {};
+template<typename ToT, typename FromT>
+struct EnabledSafeCast : public utils::meta_or<std::is_base_of<ToT, FromT>, SafeCastCondition<ToT>>::type {};
 }
 
-template <typename ToT, typename FromT,
+template<typename ToT, typename FromT,
     typename = std::enable_if_t<impl::EnabledSafeCast<ToT, FromT>::value>>
 inline bool instance_of(FromT &from) {
   return impl::InstanceOfImpl<ToT, FromT>::DoIt(from);
 }
 
-template <typename ToT, typename FromT,
+template<typename ToT, typename FromT,
     typename = std::enable_if_t<impl::EnabledSafeCast<ToT, FromT>::value>>
 inline bool instance_of(FromT *from) {
   return (from != nullptr && instance_of<ToT>(*from));
 }
 
-template <typename ToT, typename FromT,
+template<typename ToT, typename FromT,
     typename RetT = std::conditional_t<
         std::is_const<FromT>::value || std::is_const<std::remove_pointer_t<ToT>>::value,
         std::add_pointer_t<std::add_const_t<std::remove_cv_t<ToT>>>,
@@ -71,7 +71,7 @@ inline RetT safe_cast(FromT &from) {
   return (instance_of<ToT>(from) ? static_cast<RetT>(&from) : nullptr);
 }
 
-template <typename ToT, typename FromT,
+template<typename ToT, typename FromT,
     typename RetT = std::conditional_t<
         std::is_const<FromT>::value || std::is_const<std::remove_pointer_t<ToT>>::value,
         std::add_pointer_t<std::add_const_t<std::remove_cv_t<ToT>>>,

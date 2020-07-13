@@ -27,6 +27,7 @@ constexpr uint32 kClinitTailInsnCount = 2;
 constexpr uint32 kLazyLdrInsnCount = 2;
 constexpr uint32 kLazyLdrStaticInsnCount = 3;
 constexpr uint32 kCheckThrowPendingExceptionInsnCount = 5;
+constexpr uint32 kArrayClassCacheLoadCount = 3;
 }
 
 uint32 AArch64Insn::GetResultNum() const {
@@ -844,6 +845,57 @@ void AArch64Insn::EmitLazyLoadStatic(Emitter &emitter) const {
   emitter.Emit("]\t// lazy load static.\n");
 }
 
+void AArch64Insn::EmitArrayClassCacheLoad(Emitter &emitter) const {
+  /* adrp xd, :got:__arrayClassCacheTable$$xxx+offset
+   * ldr wd, [xd, #:got_lo12:__arrayClassCacheTable$$xxx+offset]
+   * ldr wzr, [xd]
+   */
+  const AArch64MD *md = &AArch64CG::kMd[MOP_arrayclass_cache_ldr];
+  uint32 opndIndex = 0;
+  uint32 propIndex = 0;
+  Operand *opnd0 = opnds[opndIndex++];
+  Operand *opnd1 = opnds[opndIndex++];
+  AArch64OpndProp *prop0 = md->GetOperand(propIndex++);
+  auto *stImmOpnd = static_cast<StImmOperand*>(opnd1);
+  CHECK_FATAL(stImmOpnd != nullptr, "stImmOpnd is null in AArch64Insn::EmitLazyLoadStatic");
+
+  /* emit "adrp xd, :got:__arrayClassCacheTable$$xxx+offset" */
+  emitter.Emit("\t").Emit("adrp").Emit("\t");
+  opnd0->Emit(emitter, prop0);
+  emitter.Emit(", ");
+  emitter.Emit(stImmOpnd->GetName());
+  if (stImmOpnd->GetOffset() != 0) {
+    emitter.Emit("+").Emit(stImmOpnd->GetOffset());
+  }
+  emitter.Emit("\t// load array class.\n");
+
+  /* emit "ldr wd, [xd, #:got_lo12:__arrayClassCacheTable$$xxx+offset]" */
+  emitter.Emit("\tldr\t");
+  static_cast<AArch64RegOperand*>(opnd0)->SetRefField(true);
+#ifdef USE_32BIT_REF
+  AArch64OpndProp prop2(prop0->GetOperandType(), prop0->GetRegProp(), prop0->GetSize() / 2);
+  opnd0->Emit(emitter, &prop2); /* ldr wd, ... for emui */
+#else
+  opnd0->Emit(emitter, prop0);  /* ldr xd, ... for qemu */
+#endif /* USE_32BIT_REF */
+  static_cast<AArch64RegOperand*>(opnd0)->SetRefField(false);
+  emitter.Emit(", ");
+  emitter.Emit("[");
+  opnd0->Emit(emitter, prop0);
+  emitter.Emit(",");
+  emitter.Emit("#");
+  emitter.Emit(":lo12:").Emit(stImmOpnd->GetName());
+  if (stImmOpnd->GetOffset() != 0) {
+    emitter.Emit("+").Emit(stImmOpnd->GetOffset());
+  }
+  emitter.Emit("]\t// load array class.\n");
+
+  /* emit "ldr wzr, [xd]" */
+  emitter.Emit("\t").Emit("ldr\twzr, [");
+  opnd0->Emit(emitter, prop0);
+  emitter.Emit("]\t// check resolve array class.\n");
+}
+
 void AArch64Insn::EmitCheckThrowPendingException(const CG& cg, Emitter &emitter) const {
   /*
    * mrs x16, TPIDR_EL0
@@ -871,7 +923,7 @@ void AArch64Insn::Emit(const CG &cg, Emitter &emitter) const {
   emitter.SetCurrentMOP(mOp);
   const AArch64MD *md = &AArch64CG::kMd[mOp];
 
-  if (!cg.GenerateVerboseAsm() && mOp == MOP_comment) {
+  if (!cg.GenerateVerboseAsm() && !cg.GenerateVerboseCG() && mOp == MOP_comment) {
     return;
   }
 
@@ -911,6 +963,11 @@ void AArch64Insn::Emit(const CG &cg, Emitter &emitter) const {
     case MOP_lazy_ldr_static: {
       EmitLazyLoadStatic(emitter);
       emitter.IncreaseJavaInsnCount(kLazyLdrStaticInsnCount);
+      return;
+    }
+    case MOP_arrayclass_cache_ldr: {
+      EmitArrayClassCacheLoad(emitter);
+      emitter.IncreaseJavaInsnCount(kArrayClassCacheLoadCount);
       return;
     }
     case MOP_get_and_addI:
@@ -962,15 +1019,7 @@ void AArch64Insn::Emit(const CG &cg, Emitter &emitter) const {
     }
   }
 
-  bool isRefField = false;
-  /* set opnd0 ref-field flag, so we can emit the right register */
-  if (IsAccessRefField() && AccessMem()) {
-    Operand *opnd0 = opnds[seq[0]];
-    if (opnd0->IsRegister()) {
-      static_cast<AArch64RegOperand*>(opnd0)->SetRefField(true);
-      isRefField = true;
-    }
-  }
+  bool isRefField = (opndSize == 0) ? false : CheckRefField(seq[0], true);
   if (mOp != MOP_comment) {
     emitter.IncreaseJavaInsnCount();
   }
@@ -1023,14 +1072,28 @@ void AArch64Insn::Emit(const CG &cg, Emitter &emitter) const {
       emitter.IncreaseJavaInsnCount(kLazyBindingRoutineInsnCount);
     }
   }
-  if (cg.GenerateVerboseAsm()) {
-    MapleString comment = GetComment();
-    if (comment.c_str() != nullptr && strlen(comment.c_str()) > 0) {
-      emitter.Emit("\t\t// ").Emit(comment.c_str());
+  if (cg.GenerateVerboseCG() || (cg.GenerateVerboseAsm() && mOp == MOP_comment)) {
+    const char *comment = GetComment().c_str();
+    if (comment != nullptr && strlen(comment) > 0) {
+      emitter.Emit("\t\t// ").Emit(comment);
     }
   }
 
   emitter.Emit("\n");
+}
+
+/* set opnd0 ref-field flag, so we can emit the right register */
+bool AArch64Insn::CheckRefField(int32 opndIndex, bool isEmit) const {
+  if (IsAccessRefField() && AccessMem()) {
+    Operand *opnd0 = opnds[opndIndex];
+    if (opnd0->IsRegister()) {
+      if (isEmit) {
+        static_cast<AArch64RegOperand*>(opnd0)->SetRefField(true);
+      }
+      return true;
+    }
+  }
+  return false;
 }
 
 Operand *AArch64Insn::GetResult(uint32 id) const {
@@ -1171,6 +1234,10 @@ bool AArch64Insn::IsLazyLoad() const {
 
 bool AArch64Insn::IsAdrpLdr() const {
   return mOp == MOP_adrp_ldr;
+}
+
+bool AArch64Insn::IsArrayClassCache() const {
+  return mOp == MOP_arrayclass_cache_ldr;
 }
 
 bool AArch64Insn::CanThrow() const {

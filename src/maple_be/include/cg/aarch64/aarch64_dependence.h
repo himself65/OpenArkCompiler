@@ -74,13 +74,14 @@ class AArch64DepAnalysis : public DepAnalysis {
   DepNode *GenerateDepNode(Insn &insn, MapleVector<DepNode*> &nodes, int32 nodeSum, const MapleVector<Insn*> &comments);
   void BuildAmbiInsnDependency(Insn &insn);
   void BuildMayThrowInsnDependency(Insn &insn);
-  void UpdateRegUseAndDef(Insn &insn, DepNode &depNode);
+  void UpdateRegUseAndDef(Insn &insn, DepNode &depNode, MapleVector<DepNode*> &nodes);
   void UpdateStackAndHeapDependency(DepNode &depNode, Insn &insn, const Insn &locInsn);
   AArch64MemOperand *BuildNextMemOperandByByteSize(AArch64MemOperand &aarchMemOpnd, uint32 byteSize) const;
   void AddDependence4InsnInVectorByType(MapleVector<Insn*> &insns, Insn &insn, const DepType &type);
   void AddDependence4InsnInVectorByTypeAndCmp(MapleVector<Insn*> &insns, Insn &insn, const DepType &type);
   void ReplaceDepNodeWithNewInsn(DepNode &firstNode, DepNode &secondNode, Insn& newInsn, bool isFromClinit) const;
   void ClearDepNodeInfo(DepNode &depNode) const;
+  void AddEndSeparatorNode(MapleVector<DepNode*> &nodes);
 
   Insn **regDefs = nullptr;
   RegList **regUses = nullptr;
@@ -89,8 +90,6 @@ class AArch64DepAnalysis : public DepAnalysis {
   Insn *lastCallInsn = nullptr;
   uint32 separatorIndex = 0;
   Insn *lastFrameDef = nullptr;
-  MapleVector<regno_t> useRegnos;
-  MapleVector<regno_t> defRegnos;
   MapleVector<Insn*> stackUses;
   MapleVector<Insn*> stackDefs;
   MapleVector<Insn*> heapUses;
@@ -100,6 +99,8 @@ class AArch64DepAnalysis : public DepAnalysis {
   MapleVector<Insn*> ambiInsns;
   /* register number that catch bb and cleanup bb uses. */
   MapleSet<regno_t> ehInRegs;
+  /* the bb to be scheduling currently */
+  BB *curBB = nullptr;
 };
 }
 

@@ -39,7 +39,7 @@ const char *GetIntrinsicName(MIRIntrinsicID intrn) {
 }
 
 const char *BaseNode::GetOpName() const {
-  return kOpcodeInfo.GetTableItemAt(GetOpCode()).name;
+  return kOpcodeInfo.GetTableItemAt(GetOpCode()).name.c_str();
 }
 
 bool BaseNode::MayThrowException() {
@@ -133,10 +133,30 @@ bool AddrofNode::CheckNode(const MIRModule &mod) const {
   }
 }
 
+bool IreadNode::IsVolatile() const {
+  MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
+  ASSERT(type != nullptr, "null ptr check");
+  ASSERT(type->IsMIRPtrType(), "type of iread should be pointer type");
+  return static_cast<MIRPtrType*>(type)->IsPointedTypeVolatile(fieldID);
+}
+
 bool AddrofNode::IsVolatile(const MIRModule &mod) const {
   auto *symbol = mod.CurFunction()->GetLocalOrGlobalSymbol(stIdx);
   ASSERT(symbol != nullptr, "null ptr check on symbol");
   return symbol->IsVolatile();
+}
+
+bool DassignNode::AssigningVolatile(const MIRModule &mod) const {
+  auto *symbol = mod.CurFunction()->GetLocalOrGlobalSymbol(stIdx);
+  ASSERT(symbol != nullptr, "null ptr check on symbol");
+  return symbol->IsVolatile();
+}
+
+bool IassignNode::AssigningVolatile() const {
+  MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
+  ASSERT(type != nullptr, "null ptr check");
+  ASSERT(type->IsMIRPtrType(), "type of iassign should be pointer type");
+  return static_cast<MIRPtrType*>(type)->IsPointedTypeVolatile(fieldID);
 }
 
 void BlockNode::AddStatement(StmtNode *stmt) {

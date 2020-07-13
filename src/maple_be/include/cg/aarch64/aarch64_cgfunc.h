@@ -32,13 +32,13 @@ class AArch64CGFunc : public CGFunc {
         calleeSavedRegs(mallocator.Adapter()),
         formalRegList(mallocator.Adapter()),
         phyRegOperandTable(std::less<AArch64RegOperand>(), mallocator.Adapter()),
-        hashLabelOpndTable(std::less<LabelIdx>(), mallocator.Adapter()),
+        hashLabelOpndTable(mallocator.Adapter()),
         hashOfstOpndTable(std::less<AArch64OfstOperand>(), mallocator.Adapter()),
         hashMemOpndTable(std::less<AArch64MemOperand>(), mallocator.Adapter()),
         memOpndsRequiringOffsetAdjustment(std::less<StIdx>(), mallocator.Adapter()),
         memOpndsForStkPassedArguments(std::less<StIdx>(), mallocator.Adapter()),
-        immOpndsRequiringOffsetAdjustment(std::less<AArch64SymbolAlloc*>(), mallocator.Adapter()),
-        immOpndsRequiringOffsetAdjustmentForRefloc(std::less<AArch64SymbolAlloc*>(), mallocator.Adapter()) {
+        immOpndsRequiringOffsetAdjustment(mallocator.Adapter()),
+        immOpndsRequiringOffsetAdjustmentForRefloc(mallocator.Adapter()) {
     uCatch.regNOCatch = 0;
     CGFunc::SetMemlayout(*memPool.New<AArch64MemLayout>(b, f, mallocator));
     CGFunc::GetMemlayout()->SetCurrFunction(*this);
@@ -51,7 +51,7 @@ class AArch64CGFunc : public CGFunc {
   }
 
   void PushElemIntoFormalRegList(AArch64reg reg) {
-    formalRegList.push_back(reg);
+    formalRegList.emplace_back(reg);
   }
 
   uint32 GetRefCount() const {
@@ -196,6 +196,7 @@ class AArch64CGFunc : public CGFunc {
   void SelectRangeGoto(RangeGotoNode &rangeGotoNode, Operand &opnd0) override;
   Operand *SelectLazyLoad(Operand &opnd0, PrimType primType) override;
   Operand *SelectLazyLoadStatic(MIRSymbol &st, int64 offset, PrimType primType) override;
+  Operand *SelectLoadArrayClassCache(MIRSymbol &st, int64 offset, PrimType primType) override;
   RegOperand &SelectCopy(Operand &src, PrimType stype, PrimType dtype) override;
   void SelectCopy(Operand &dest, PrimType dtype, Operand &src, PrimType stype);
   void SelectCopyImm(Operand &dest, ImmOperand &src, PrimType dtype);
@@ -332,7 +333,7 @@ class AArch64CGFunc : public CGFunc {
     if (find(calleeSavedRegs.begin(), calleeSavedRegs.end(), reg) != calleeSavedRegs.end()) {
       return;
     }
-    calleeSavedRegs.push_back(reg);
+    calleeSavedRegs.emplace_back(reg);
     ASSERT((AArch64isa::IsGPRegister(reg) || AArch64isa::IsFPSIMDRegister(reg)), "Int or FP registers are expected");
     if (AArch64isa::IsGPRegister(reg)) {
       ++numIntregToCalleeSave;
@@ -467,6 +468,8 @@ class AArch64CGFunc : public CGFunc {
     return memPool->New<AArch64InsnVisitor>(*this);
   }
 
+  RegType GetRegisterType(regno_t reg) const override;
+
  private:
   enum RelationOperator : uint8 {
     kAND,
@@ -496,7 +499,7 @@ class AArch64CGFunc : public CGFunc {
   IntrinsiccallNode *cleanEANode = nullptr;
 
   MapleMap<AArch64RegOperand, AArch64RegOperand*> phyRegOperandTable;  /* machine register operand table */
-  MapleMap<LabelIdx, LabelOperand*> hashLabelOpndTable;
+  MapleUnorderedMap<LabelIdx, LabelOperand*> hashLabelOpndTable;
   MapleMap<AArch64OfstOperand, AArch64OfstOperand*> hashOfstOpndTable;
   MapleMap<AArch64MemOperand, AArch64MemOperand*> hashMemOpndTable;
   /*
@@ -505,8 +508,8 @@ class AArch64CGFunc : public CGFunc {
    */
   MapleMap<StIdx, AArch64MemOperand*> memOpndsRequiringOffsetAdjustment;
   MapleMap<StIdx, AArch64MemOperand*> memOpndsForStkPassedArguments;
-  MapleMap<AArch64SymbolAlloc*, AArch64ImmOperand*> immOpndsRequiringOffsetAdjustment;
-  MapleMap<AArch64SymbolAlloc*, AArch64ImmOperand*> immOpndsRequiringOffsetAdjustmentForRefloc;
+  MapleUnorderedMap<AArch64SymbolAlloc*, AArch64ImmOperand*> immOpndsRequiringOffsetAdjustment;
+  MapleUnorderedMap<AArch64SymbolAlloc*, AArch64ImmOperand*> immOpndsRequiringOffsetAdjustmentForRefloc;
   union {
     regno_t regNOCatch;  /* For O2. */
     Operand *opndCatch;  /* For O0-O1. */

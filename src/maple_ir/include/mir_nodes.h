@@ -460,16 +460,8 @@ class IreadNode : public UnaryNode {
     return *base;
   }
 
-  bool IsVolatile() const {
-    MIRType *type = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
-    ASSERT(type != nullptr, "null ptr check");
-    if (fieldID == 0) {
-      return (type->HasVolatileField());
-    }
-    ASSERT(type->IsStructType(), "Agg type check");
-    auto *structType = static_cast<MIRStructType*>(type);
-    return structType->IsFieldVolatile(fieldID);
-  }
+  bool IsVolatile() const;
+
  protected:
   TyIdx tyIdx = TyIdx(0);
   FieldID fieldID = 0;
@@ -1554,6 +1546,8 @@ class IassignNode : public StmtNode {
     rhs = node;
   }
 
+  bool AssigningVolatile() const;
+
  private:
   TyIdx tyIdx;
   FieldID fieldID;
@@ -2026,6 +2020,8 @@ class DassignNode : public UnaryStmtNode {
     fieldID = f;
   }
 
+  bool AssigningVolatile(const MIRModule &mod) const;
+
  private:
   StIdx stIdx;
   FieldID fieldID = 0;
@@ -2136,6 +2132,10 @@ class RangeGotoNode : public UnaryStmtNode {
 
   const SmallCaseVector &GetRangeGotoTable() const {
     return rangegotoTable;
+  }
+
+  const SmallCasePair &GetRangeGotoTableItem(size_t i) const {
+    return rangegotoTable.at(i);
   }
 
   void SetRangeGotoTable(SmallCaseVector rt) {
@@ -2701,6 +2701,18 @@ class NaryStmtNode : public StmtNode, public NaryOpnds {
     if (node != nullptr) {
       GetNopnd().push_back(node);
     }
+    SetNumOpnds(GetNopndSize());
+  }
+
+  void InsertOpnd(BaseNode *node, size_t idx) {
+    if (node == nullptr || idx > GetNopndSize()) {
+      return;
+    }
+    auto begin = GetNopnd().begin();
+    for (size_t i = 0; i < idx; ++i) {
+      ++begin;
+    }
+    GetNopnd().insert(begin, node);
     SetNumOpnds(GetNopndSize());
   }
 };

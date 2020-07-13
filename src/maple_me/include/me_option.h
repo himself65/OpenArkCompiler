@@ -74,6 +74,9 @@ class MeOption : public MapleDriverOptionBase {
   static uint32 profileBBHotRate;
   static uint32 profileBBColdRate;
   static bool ignoreIPA;
+  static bool aggressiveABCO;
+  static bool commonABCO;
+  static bool conservativeABCO;
   static bool epreIncludeRef;
   static bool epreLocalRefVar;
   static bool epreLHSIvar;

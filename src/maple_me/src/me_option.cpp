@@ -36,6 +36,9 @@ bool MeOption::noDot = false;
 bool MeOption::stmtNum = false;
 uint8 MeOption::optLevel = 0;
 bool MeOption::ignoreIPA = true;
+bool MeOption::aggressiveABCO = false;
+bool MeOption::commonABCO = true;
+bool MeOption::conservativeABCO = false;
 bool MeOption::lessThrowAlias = true;
 bool MeOption::regreadAtReturn = true;
 bool MeOption::propBase = true;
@@ -98,6 +101,9 @@ enum OptionIndex {
   kDelrcpuLimit,
   kProfileBBHotRate,
   kProfileBBColdRate,
+  kAggressiveABCO,
+  kCommonABCO,
+  kConservativeABCO,
   kEpreIncludeRef,
   kNoEpreIncludeRef,
   kEpreLocalRefVar,
@@ -377,6 +383,36 @@ const Descriptor kUsage[] = {
     "  --profile-bb-cold-rate=99  \tA count is regarded as cold if it is in the smallest 1%\n",
     "me",
     {} },
+  { kAggressiveABCO,
+    kEnable,
+    "",
+    "aggressiveABCO",
+    kBuildTypeExperimental,
+    kArgCheckPolicyBool,
+    "  --aggressiveABCO                 \tEnable aggressive array boundary check optimization\n"
+    "  --no-aggressiveABCO              \tDon't enable aggressive array boundary check optimization\n",
+    "me",
+    {} },
+  { kCommonABCO,
+    kEnable,
+    "",
+    "commonABCO",
+    kBuildTypeExperimental,
+    kArgCheckPolicyBool,
+    "  --commonABCO                 \tEnable aggressive array boundary check optimization\n"
+    "  --no-commonABCO              \tDon't enable aggressive array boundary check optimization\n",
+    "me",
+    {} },
+  { kConservativeABCO,
+    kEnable,
+    "",
+    "conservativeABCO",
+    kBuildTypeExperimental,
+    kArgCheckPolicyBool,
+    "  --conservativeABCO                 \tEnable aggressive array boundary check optimization\n"
+    "  --no-conservativeABCO              \tDon't enable aggressive array boundary check optimization\n",
+    "me",
+    {} },
   { kEpreIncludeRef,
     kEnable,
     "",
@@ -602,6 +638,15 @@ bool MeOption::SolveOptions(const std::vector<mapleOption::Option> &opts, bool i
         break;
       case kProfileBBColdRate:
         profileBBColdRate = std::stoul(opt.Args(), nullptr);
+        break;
+      case kAggressiveABCO:
+        aggressiveABCO = (opt.Type() == kEnable);
+        break;
+      case kCommonABCO:
+        commonABCO = (opt.Type() == kEnable);
+        break;
+      case kConservativeABCO:
+        conservativeABCO = (opt.Type() == kEnable);
         break;
       case kEpreIncludeRef:
         epreIncludeRef = (opt.Type() == kEnable);

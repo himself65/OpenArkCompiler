@@ -298,8 +298,10 @@ class TypeTable {
   }
 
   // Get or Create derived types.
-  MIRType *GetOrCreatePointerType(TyIdx pointedTyIdx, PrimType primType = PTY_ptr);
-  MIRType *GetOrCreatePointerType(const MIRType &pointTo, PrimType primType = PTY_ptr);
+  MIRType *GetOrCreatePointerType(TyIdx pointedTyIdx, PrimType primType = PTY_ptr,
+                                  const std::vector<TypeAttrs> attrs = std::vector<TypeAttrs>());
+  MIRType *GetOrCreatePointerType(const MIRType &pointTo, PrimType primType = PTY_ptr,
+                                  const std::vector<TypeAttrs> attrs = std::vector<TypeAttrs>());
   const MIRType *GetPointedTypeIfApplicable(MIRType &type) const;
   MIRType *GetPointedTypeIfApplicable(MIRType &type);
   MIRType *GetVoidPtr() const {
@@ -541,6 +543,11 @@ class FunctionTable {
   MIRFunction *GetFunctionFromPuidx(PUIdx pIdx) const {
     CHECK_FATAL(pIdx < funcTable.size(), "Invalid puIdx");
     return funcTable.at(pIdx);
+  }
+
+  void SetFunctionItem(uint32 pIdx, MIRFunction *func) {
+    CHECK_FATAL(pIdx < funcTable.size(), "Invalid puIdx");
+    funcTable[pIdx] = func;
   }
 
  private:

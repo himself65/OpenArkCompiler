@@ -69,11 +69,13 @@ MIRType *TypeTable::CreateAndUpdateMirTypeNode(MIRType &pType) {
   typeTable.push_back(nType);
 
   if (pType.IsMIRPtrType()) {
-    MIRPtrType &pty = static_cast<MIRPtrType&>(pType);
-    if (pty.GetPrimType() == PTY_ptr) {
-      ptrTypeMap[pty.GetPointedTyIdx()] = nType->GetTypeIndex();
-    } else {
-      refTypeMap[pty.GetPointedTyIdx()] = nType->GetTypeIndex();
+    auto &pty = static_cast<MIRPtrType&>(pType);
+    if (pty.GetTypeAttrs() == TypeAttrs()) {
+      if (pty.GetPrimType() == PTY_ptr) {
+        ptrTypeMap[pty.GetPointedTyIdx()] = nType->GetTypeIndex();
+      } else {
+        refTypeMap[pty.GetPointedTyIdx()] = nType->GetTypeIndex();
+      }
     }
   } else {
     typeHashTable.insert(nType);
@@ -84,19 +86,21 @@ MIRType *TypeTable::CreateAndUpdateMirTypeNode(MIRType &pType) {
 MIRType* TypeTable::GetOrCreateMIRTypeNode(MIRType &pType) {
   if (pType.IsMIRPtrType()) {
     auto &type = static_cast<MIRPtrType&>(pType);
-    auto *pMap = (type.GetPrimType() == PTY_ptr ? &ptrTypeMap : &refTypeMap);
-    auto *otherPMap = (type.GetPrimType() == PTY_ref ? &ptrTypeMap : &refTypeMap);
-    {
-      const auto it = pMap->find(type.GetPointedTyIdx());
-      if (it != pMap->end()) {
-        return GetTypeFromTyIdx(it->second);
+    if (type.GetTypeAttrs() == TypeAttrs()) {
+      auto *pMap = (type.GetPrimType() == PTY_ptr ? &ptrTypeMap : &refTypeMap);
+      auto *otherPMap = (type.GetPrimType() == PTY_ref ? &ptrTypeMap : &refTypeMap);
+      {
+        const auto it = pMap->find(type.GetPointedTyIdx());
+        if (it != pMap->end()) {
+          return GetTypeFromTyIdx(it->second);
+        }
       }
+      CHECK_FATAL(!(type.GetPointedTyIdx().GetIdx() >= kPtyDerived && type.GetPrimType() == PTY_ref &&
+                    otherPMap->find(type.GetPointedTyIdx()) != otherPMap->end()),
+                  "GetOrCreateMIRType: ref pointed-to type %d has previous ptr occurrence",
+                  type.GetPointedTyIdx().GetIdx());
+      return CreateAndUpdateMirTypeNode(pType);
     }
-    CHECK_FATAL(!(type.GetPointedTyIdx().GetIdx() >= kPtyDerived && type.GetPrimType() == PTY_ref &&
-                  otherPMap->find(type.GetPointedTyIdx()) != otherPMap->end()),
-                "GetOrCreateMIRType: ref pointed-to type %d has previous ptr occurrence",
-                type.GetPointedTyIdx().GetIdx());
-    return CreateAndUpdateMirTypeNode(pType);
   }
   {
     const auto it = typeHashTable.find(&pType);
@@ -109,18 +113,25 @@ MIRType* TypeTable::GetOrCreateMIRTypeNode(MIRType &pType) {
 
 MIRType *TypeTable::voidPtrType = nullptr;
 // get or create a type that pointing to pointedTyIdx
-MIRType *TypeTable::GetOrCreatePointerType(TyIdx pointedTyIdx, PrimType primType) {
+  MIRType *TypeTable::GetOrCreatePointerType(TyIdx pointedTyIdx, PrimType primType,
+                                             const std::vector<TypeAttrs> attrs) {
   MIRPtrType type(pointedTyIdx, primType);
+  if (!attrs.empty()) {
+    for (auto &attr : attrs) {
+      type.SetTypeAttrs(attr);
+    }
+  }
   TyIdx tyIdx = GetOrCreateMIRType(&type);
   ASSERT(tyIdx < typeTable.size(), "index out of range in TypeTable::GetOrCreatePointerType");
   return typeTable.at(tyIdx);
 }
 
-MIRType *TypeTable::GetOrCreatePointerType(const MIRType &pointTo, PrimType primType) {
+MIRType *TypeTable::GetOrCreatePointerType(const MIRType &pointTo, PrimType primType,
+                                           const std::vector<TypeAttrs> attrs) {
   if (pointTo.GetPrimType() == PTY_constStr) {
     primType = PTY_ptr;
   }
-  return GetOrCreatePointerType(pointTo.GetTypeIndex(), primType);
+  return GetOrCreatePointerType(pointTo.GetTypeIndex(), primType, attrs);
 }
 
 const MIRType *TypeTable::GetPointedTypeIfApplicable(MIRType &type) const {

@@ -12,8 +12,8 @@
  * FIT FOR A PARTICULAR PURPOSE.
  * See the Mulan PSL v1 for more details.
  */
-#ifndef MAPLE_IPA_INCLUDE_CALLGRAPH_H
-#define MAPLE_IPA_INCLUDE_CALLGRAPH_H
+#ifndef MAPLE_IPA_INCLUDE_CALL_GRAPH_H
+#define MAPLE_IPA_INCLUDE_CALL_GRAPH_H
 #include "module_phase.h"
 #include "mir_nodes.h"
 #include "class_hierarchy.h"
@@ -51,25 +51,25 @@ struct Comparator {
 // Information description of each callsite
 class CallInfo {
  public:
-  CallInfo(CallType type, MIRFunction &call, StmtNode *s, uint32 ld, uint32 stmtId, bool local = false)
-      : areAllArgsLocal(local), ctype(type), mirFunc(&call), callStmt(s), loopDepth(ld), id(stmtId) {}
+  CallInfo(CallType type, MIRFunction &call, StmtNode *node, uint32 ld, uint32 stmtId, bool local = false)
+      : areAllArgsLocal(local), cType(type), mirFunc(&call), callStmt(node), loopDepth(ld), id(stmtId) {}
 
-  virtual ~CallInfo() {}
+  ~CallInfo() = default;
 
   uint32 GetID() const {
     return id;
   }
 
-  const char *GetCalleeName() const;
+  const std::string GetCalleeName() const;
   CallType GetCallType() const {
-    return ctype;
+    return cType;
   }
 
   uint32 GetLoopDepth() const {
     return loopDepth;
   }
 
-  const char *GetCallTypeName() const;
+  const std::string GetCallTypeName() const;
   StmtNode *GetCallStmt() const {
     return callStmt;
   }
@@ -88,7 +88,7 @@ class CallInfo {
 
  private:
   bool areAllArgsLocal;
-  CallType ctype;       // Call type
+  CallType cType;       // Call type
   MIRFunction *mirFunc; // Used to get signature
   StmtNode *callStmt;   // Call statement
   uint32 loopDepth;
@@ -123,7 +123,7 @@ class CGNode {
         mustNotBeInlined(false),
         vcallCands(alloc->Adapter()) {}
 
-  ~CGNode() {}
+  ~CGNode() = default;
 
   void Dump(std::ofstream &fout) const;
   void DumpDetail() const;
@@ -170,7 +170,7 @@ class CGNode {
     return vcallCands;
   }
 
-  /* add caller to CGNode */
+  // add caller to CGNode
   void AddCaller(CGNode *caller) {
     callerSet.insert(caller);
   }
@@ -313,10 +313,10 @@ class SCCNode {
         callerScc(alloc.Adapter()),
         calleeScc(alloc.Adapter()) {}
 
-  virtual ~SCCNode() {}
+  ~SCCNode() = default;
 
-  void AddCGNode(CGNode *cgn) {
-    cgNodes.push_back(cgn);
+  void AddCGNode(CGNode *node) {
+    cgNodes.push_back(node);
   }
 
   void Dump() const;
@@ -359,7 +359,7 @@ class SCCNode {
 class CallGraph : public AnalysisResult {
  public:
   CallGraph(MIRModule &m, MemPool &memPool, KlassHierarchy &kh, const std::string &fn);
-  ~CallGraph() {}
+  ~CallGraph() = default;
 
   void InitCallExternal() {
     callExternal = cgAlloc.GetMemPool()->New<CGNode>(static_cast<MIRFunction*>(nullptr), cgAlloc, numOfNodes++);
@@ -392,7 +392,7 @@ class CallGraph : public AnalysisResult {
 
   void HandleBody(MIRFunction&, BlockNode&, CGNode&, uint32);
   void AddCallGraphNode(MIRFunction&);
-  void DumpToFile(bool dumpAll = true);
+  void DumpToFile(bool dumpAll = true) const;
   void Dump() const;
   CGNode *GetCGNode(MIRFunction *func) const;
   CGNode *GetCGNode(PUIdx puIdx) const;
@@ -408,7 +408,7 @@ class CallGraph : public AnalysisResult {
     return mirModule->IsInIPA();
   }
 
-  /* iterator */
+  // iterator
   using iterator = MapleMap<MIRFunction*, CGNode*>::iterator;
   iterator Begin() {
     return nodesMap.begin();
@@ -429,16 +429,26 @@ class CallGraph : public AnalysisResult {
   void DelNode(CGNode &node);
   void BuildSCC();
   void VerifySCC() const;
-  void BuildSCCDFS(CGNode &caller, unsigned int &visitIndex, std::vector<SCCNode*> &sccNodes,
-                   std::vector<CGNode*> &cgNodes, std::vector<uint32> &visitedOrder,
-                   std::vector<uint32> &lowestOrder, std::vector<bool> &inStack,
-                   std::vector<uint32> &visitStack);
+  void BuildSCCDFS(CGNode &caller, uint32 &visitIndex, std::vector<SCCNode*> &sccNodes,
+                   std::vector<CGNode*> &cgNodes, std::vector<uint32> &visitedOrder);
 
   void SetDebugFlag(bool flag) {
     debugFlag = flag;
   }
 
  private:
+  void GenCallGraph();
+  CGNode *GetOrGenCGNode(PUIdx puIdx, bool isVcall = false, bool isIcall = false);
+  CallType GetCallType(Opcode op) const;
+  void FindRootNodes();
+  void SCCTopologicalSort(const std::vector<SCCNode*> &sccNodes);
+  void SetCompilationFunclist() const;
+  void IncrNodesCount(CGNode *cgNode, BaseNode *bn);
+
+  CallInfo *GenCallInfo(CallType type, MIRFunction *call, StmtNode *s, uint32 loopDepth, uint32 callsiteID) {
+    return cgAlloc.GetMemPool()->New<CallInfo>(type, *call, s, loopDepth, callsiteID);
+  }
+
   bool debugFlag = false;
   bool debugScc = false;
   MIRModule *mirModule;
@@ -446,69 +456,61 @@ class CallGraph : public AnalysisResult {
   MIRBuilder *mirBuilder;
   CGNode *entryNode;  // For main function, nullptr if there is multiple entries
   MapleVector<CGNode*> rootNodes;
-  std::string fileName; /* used for output dot file */
+  std::string fileName; // used for output dot file
   KlassHierarchy *klassh;
   MapleMap<MIRFunction*, CGNode*, NodeComparator> nodesMap;
   MapleVector<SCCNode*> sccTopologicalVec;
-  CGNode *callExternal = nullptr; /* Auxiliary node used in icall/intrinsic call */
+  CGNode *callExternal = nullptr; // Auxiliary node used in icall/intrinsic call
   uint32 numOfNodes;
   uint32 numOfSccs;
   std::unordered_set<uint64> callsiteHash;
-  void GenCallGraph();
-  CGNode *GetOrGenCGNode(PUIdx puIdx, bool isVcall = false, bool isIcall = false);
-  CallType GetCallType(Opcode op) const;
-  CallInfo *GenCallInfo(CallType type, MIRFunction *call, StmtNode *s, uint32 loopDepth, uint32 callsiteID) {
-    return cgAlloc.GetMemPool()->New<CallInfo>(type, *call, s, loopDepth, callsiteID);
-  }
-
-  void FindRootNodes();
-  void SCCTopologicalSort(const std::vector<SCCNode*> &sccNodes);
-  void SetCompilationFunclist() const;
-  void IncrNodesCount(CGNode *cgNode, BaseNode *bn);
+  MapleVector<uint32> lowestOrder;
+  MapleVector<bool> inStack;
+  MapleVector<uint32> visitStack;
 };
 
 class DoCallGraph : public ModulePhase {
  public:
   explicit DoCallGraph(ModulePhaseID id) : ModulePhase(id) {}
 
-  AnalysisResult *Run(MIRModule *module, ModuleResultMgr *m) override;
+  AnalysisResult *Run(MIRModule *module, ModuleResultMgr *mgr) override;
   std::string PhaseName() const override {
     return "callgraph";
   }
 
-  virtual ~DoCallGraph(){};
+  ~DoCallGraph() = default;
 };
 
 class IPODevirtulize {
  public:
   IPODevirtulize(MIRModule *m, MemPool *memPool, KlassHierarchy *kh)
-      : cgalloc(memPool), mirBuilder(cgalloc.GetMemPool()->New<MIRBuilder>(m)), klassh(kh), debugFlag(false) {}
+      : cgAlloc(memPool), mirBuilder(cgAlloc.GetMemPool()->New<MIRBuilder>(m)), klassh(kh), debugFlag(false) {}
 
-  virtual ~IPODevirtulize() = default;
+  ~IPODevirtulize() = default;
   void DevirtualFinal();
   KlassHierarchy *GetKlassh() const {
     return klassh;
   }
 
  private:
-  MapleAllocator cgalloc;
+  void SearchDefInMemberMethods(const Klass &klass);
+  void SearchDefInClinit(const Klass &klass);
+  MapleAllocator cgAlloc;
   MIRBuilder *mirBuilder;
   KlassHierarchy *klassh;
   bool debugFlag;
-  void SearchDefInMemberMethods(const Klass &klass);
-  void SearchDefInClinit(const Klass &klass);
 };
 
 class DoIPODevirtulize : public ModulePhase {
  public:
   explicit DoIPODevirtulize(ModulePhaseID id) : ModulePhase(id) {}
 
-  AnalysisResult *Run(MIRModule *module, ModuleResultMgr *m) override;
+  AnalysisResult *Run(MIRModule *module, ModuleResultMgr *mgr) override;
   std::string PhaseName() const override {
     return "ipodevirtulize";
   }
 
-  virtual ~DoIPODevirtulize(){};
+  ~DoIPODevirtulize() = default;
 };
 }  // namespace maple
 #endif  // MAPLE_IPA_INCLUDE_CALLGRAPH_H

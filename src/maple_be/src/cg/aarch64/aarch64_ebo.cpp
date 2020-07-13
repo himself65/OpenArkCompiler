@@ -75,6 +75,20 @@ bool AArch64Ebo::ResIsNotDefAndUse(Insn &insn) const {
   return true;
 }
 
+/* Return true if opnd live out of bb. */
+bool AArch64Ebo::LiveOutOfBB(const Operand &opnd, const BB &bb) const {
+  CHECK_FATAL(opnd.IsRegister(), "expect register here.");
+  /* when optimize_level < 2, there is need to anlyze live range. */
+  if (live == nullptr) {
+    return false;
+  }
+  bool isLiveOut = false;
+  if (bb.GetLiveOut()->TestBit(static_cast<RegOperand const*>(&opnd)->GetRegisterNumber())) {
+    isLiveOut = true;
+  }
+  return isLiveOut;
+}
+
 bool AArch64Ebo::IsLastAndBranch(BB &bb, Insn &insn) const {
   return (bb.GetLastInsn() == &insn) && insn.IsBranch();
 }
@@ -104,9 +118,9 @@ OpndInfo *AArch64Ebo::OperandInfoDef(BB &currentBB, Insn &currentInsn, Operand &
   }
   opndInfo->same = opndInfoPrev;
   if ((opndInfoPrev != nullptr)) {
-    opndInfoPrev->redefined = TRUE;
+    opndInfoPrev->redefined = true;
     if (opndInfoPrev->bb == &currentBB) {
-      opndInfoPrev->redefinedInBB = TRUE;
+      opndInfoPrev->redefinedInBB = true;
     }
     UpdateOpndInfo(localOpnd, *opndInfoPrev, opndInfo, hashVal);
   } else {
@@ -131,22 +145,22 @@ void AArch64Ebo::BuildCallerSaveRegisters() {
   callerSaveRegTable.clear();
   RegOperand &phyOpndR0 = a64CGFunc->GetOrCreatePhysicalRegisterOperand(R0, k64BitSize, kRegTyInt);
   RegOperand &phyOpndV0 = a64CGFunc->GetOrCreatePhysicalRegisterOperand(V0, k64BitSize, kRegTyFloat);
-  callerSaveRegTable.push_back(&phyOpndR0);
-  callerSaveRegTable.push_back(&phyOpndV0);
+  callerSaveRegTable.emplace_back(&phyOpndR0);
+  callerSaveRegTable.emplace_back(&phyOpndV0);
   for (uint32 i = R1; i <= R18; i++) {
     RegOperand &phyOpnd =
         a64CGFunc->GetOrCreatePhysicalRegisterOperand(static_cast<AArch64reg>(i), k64BitSize, kRegTyInt);
-    callerSaveRegTable.push_back(&phyOpnd);
+    callerSaveRegTable.emplace_back(&phyOpnd);
   }
   for (uint32 i = V1; i <= V7; i++) {
     RegOperand &phyOpnd =
         a64CGFunc->GetOrCreatePhysicalRegisterOperand(static_cast<AArch64reg>(i), k64BitSize, kRegTyFloat);
-    callerSaveRegTable.push_back(&phyOpnd);
+    callerSaveRegTable.emplace_back(&phyOpnd);
   }
   for (uint32 i = V16; i <= V31; i++) {
     RegOperand &phyOpnd =
         a64CGFunc->GetOrCreatePhysicalRegisterOperand(static_cast<AArch64reg>(i), k64BitSize, kRegTyFloat);
-    callerSaveRegTable.push_back(&phyOpnd);
+    callerSaveRegTable.emplace_back(&phyOpnd);
   }
   CHECK_FATAL(callerSaveRegTable.size() < kMaxCallerSaveReg,
       "number of elements in callerSaveRegTable must less then 45!");
@@ -299,9 +313,8 @@ bool AArch64Ebo::DoConstProp(Insn &insn, uint32 idx, Operand &opnd) {
     case MOP_waddrrr:
     case MOP_xsubrrr:
     case MOP_wsubrrr: {
-      if ((idx != kInsnThirdOpnd) || !src->IsInBitSize(kMaxAarch64ImmVal24Bits) ||
-          !(src->IsInBitSize(kMaxAarch64ImmVal12Bits) ||
-          src->IsInBitSize(kMaxAarch64ImmVal12Bits, kMaxAarch64ImmVal12Bits))) {
+      if ((idx != kInsnThirdOpnd) || !src->IsInBitSize(kMaxImmVal24Bits, 0) ||
+          !(src->IsInBitSize(kMaxImmVal12Bits, 0) || src->IsInBitSize(kMaxImmVal12Bits, kMaxImmVal12Bits))) {
         return false;
       }
       Operand &result = insn.GetOperand(0);
@@ -441,21 +454,6 @@ bool AArch64Ebo::SimplifyConstOperand(Insn &insn, const MapleVector<Operand*> &o
       op = &(insn.GetOperand(kInsnSecondOpnd));
     }
   } else if (bothConstant) {
-    /* special orr insn :
-     * orr resOp, imm1, 0
-     * =======>
-     * mov resOp, #0 */
-    if ((insn.GetMachineOpcode() == MOP_wiorrri12) || (insn.GetMachineOpcode() == MOP_xiorrri13) ||
-        (insn.GetMachineOpcode() == MOP_xiorri13r) || (insn.GetMachineOpcode() == MOP_wiorri12r)) {
-      immOpnd = static_cast<AArch64ImmOperand*>(op1);
-      op = op0;
-      if (op->IsMemoryAccessOperand()) {
-        op = &(insn.GetOperand(kInsnSecondOpnd));
-      }
-    } else {
-      return false;
-    }
-  } else if (bothConstant) {
     /* i) special orr insn, one of imm is 0:
      * orr resOp, imm1, #0  |  orr resOp, #0, imm1
      * =======>
@@ -469,21 +467,16 @@ bool AArch64Ebo::SimplifyConstOperand(Insn &insn, const MapleVector<Operand*> &o
         (insn.GetMachineOpcode() == MOP_xiorri13r) || (insn.GetMachineOpcode() == MOP_wiorri12r)) {
       AArch64ImmOperand *immOpnd0 = static_cast<AArch64ImmOperand*>(op0);
       AArch64ImmOperand *immOpnd1 = static_cast<AArch64ImmOperand*>(op1);
-      if (immOpnd0->IsZero() && immOpnd1->IsZero()) {
-        immOpnd = immOpnd0;
-        op = op0;
-      } else if (immOpnd0->IsZero()) {
-        immOpnd = immOpnd0;
+      immOpnd = immOpnd1;
+      op = op0;
+      if (immOpnd0->IsZero()) {
         op = op1;
-      } else if (immOpnd1->IsZero()) {
-        immOpnd = immOpnd1;
-        op = op0;
-      } else {
-        return false;
+        immOpnd = immOpnd0;
       }
-      if (op->IsMemoryAccessOperand()) {
-        op = &(insn.GetOperand(kInsnSecondOpnd));
-      }
+      MOperator mOp = opndSize == k64BitSize ? MOP_xmovri64 : MOP_xmovri32;
+      Insn &newInsn = cgFunc->GetCG()->BuildInstruction<AArch64Insn>(mOp, *res, *op);
+      bb->ReplaceInsn(insn, newInsn);
+      return true;
     } else {
       return false;
     }
@@ -510,15 +503,14 @@ bool AArch64Ebo::SimplifyConstOperand(Insn &insn, const MapleVector<Operand*> &o
   }
 
   if ((insn.GetMachineOpcode() == MOP_xaddrrr) || (insn.GetMachineOpcode() == MOP_waddrrr)) {
-    if (immOpnd->IsInBitSize(kMaxAarch64ImmVal24Bits)) {
+    if (immOpnd->IsInBitSize(kMaxImmVal24Bits, 0)) {
       /*
        * ADD Wd|WSP, Wn|WSP, #imm{, shift} ; 32-bit general registers
        * ADD Xd|SP,  Xn|SP,  #imm{, shift} ; 64-bit general registers
        * imm : 0 ~ 4095, shift: none, LSL #0, or LSL #12
        * aarch64 assembly takes up to 24-bits, if the lower 12 bits is all 0
        */
-      if ((immOpnd->IsInBitSize(kMaxAarch64ImmVal12Bits) ||
-           immOpnd->IsInBitSize(kMaxAarch64ImmVal12Bits, kMaxAarch64ImmVal12Bits))) {
+      if (immOpnd->IsInBitSize(kMaxImmVal12Bits, 0) || immOpnd->IsInBitSize(kMaxImmVal12Bits, kMaxImmVal12Bits)) {
         MOperator mOp = opndSize == k64BitSize ? MOP_xaddrri12 : MOP_waddrri12;
         Insn &newInsn = cgFunc->GetCG()->BuildInstruction<AArch64Insn>(mOp, *res, *op, *immOpnd);
         bb->ReplaceInsn(insn, newInsn);
@@ -540,8 +532,8 @@ bool AArch64Ebo::SimplifyConstOperand(Insn &insn, const MapleVector<Operand*> &o
       AArch64ImmOperand &imm0 = static_cast<AArch64ImmOperand&>(prev->GetOperand(kInsnThirdOpnd));
       int64_t val = imm0.GetValue() + immOpnd->GetValue();
       AArch64ImmOperand &imm1 = a64CGFunc->CreateImmOperand(val, opndSize, imm0.IsSignedValue());
-      if (imm1.IsInBitSize(kMaxAarch64ImmVal24Bits) && (imm1.IsInBitSize(kMaxAarch64ImmVal12Bits) ||
-          imm1.IsInBitSize(kMaxAarch64ImmVal12Bits, kMaxAarch64ImmVal12Bits))) {
+      if (imm1.IsInBitSize(kMaxImmVal24Bits, 0) && (imm1.IsInBitSize(kMaxImmVal12Bits, 0) ||
+                                                    imm1.IsInBitSize(kMaxImmVal12Bits, kMaxImmVal12Bits))) {
         MOperator mOp = (opndSize == k64BitSize ? MOP_xaddrri12 : MOP_waddrri12);
         bb->ReplaceInsn(insn, cgFunc->GetCG()->BuildInstruction<AArch64Insn>(mOp, *res, prevOpnd0, imm1));
         result = true;
@@ -697,6 +689,9 @@ bool AArch64Ebo::SpecialSequence(Insn &insn, const MapleVector<OpndInfo*> &origI
 
       if ((baseInfo != nullptr) && (baseInfo->insn != nullptr)) {
         Insn *insn1 = baseInfo->insn;
+        if (insn1->GetBB() != insn.GetBB()) {
+          return false;
+        }
         InsnInfo *insnInfo1 = baseInfo->insnInfo;
         CHECK_NULL_FATAL(insnInfo1);
         MOperator opc1 = insn1->GetMachineOpcode();
@@ -741,8 +736,7 @@ bool AArch64Ebo::SpecialSequence(Insn &insn, const MapleVector<OpndInfo*> &origI
             auto &res1 = static_cast<RegOperand&>(insn1->GetOperand(kInsnFirstOpnd));
             if (RegistersIdentical(res1, *op1) && RegistersIdentical(res1, res2) &&
                 (GetOpndInfo(base2, -1) != nullptr) && !GetOpndInfo(base2, -1)->redefined) {
-              immVal =
-                  imm0Val + imm1.GetValue() + (static_cast<uint64>(immOpnd2.GetValue()) << kMaxAarch64ImmVal12Bits);
+              immVal = imm0Val + imm1.GetValue() + (static_cast<uint64>(immOpnd2.GetValue()) << kMaxImmVal12Bits);
               op1 = &base2;
             } else {
               return false;
@@ -754,8 +748,13 @@ bool AArch64Ebo::SpecialSequence(Insn &insn, const MapleVector<OpndInfo*> &origI
           /* multiple of 4 and 8 */
           const int multiOfFour = 4;
           const int multiOfEight = 8;
+          is64bits = is64bits && (!static_cast<AArch64Insn&>(insn).CheckRefField(kInsnFirstOpnd, false));
           if ((!is64bits && (immVal < kStrLdrImm32UpperBound) && (immVal % multiOfFour == 0)) ||
               (is64bits && (immVal < kStrLdrImm64UpperBound) && (immVal % multiOfEight == 0))) {
+            /* Reserved physicalReg beforeRA */
+            if (beforeRegAlloc && op1->IsPhysicalRegister()) {
+              return false;
+            }
             MemOperand &mo = aarchFunc->CreateMemOpnd(*op1, immVal, size);
             Insn &ldrInsn = cgFunc->GetCG()->BuildInstruction<AArch64Insn>(opCode, res, mo);
             insn.GetBB()->ReplaceInsn(insn, ldrInsn);

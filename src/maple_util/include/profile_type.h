@@ -33,6 +33,7 @@ enum ProfileType : uint8_t {
   kBBInfo = 0x06,
   kIRCounter = 0x07,
   kAll = 0x08,
+  kMethodSig = 0x09,
   kFileDesc = 0xFF
 };
 
@@ -76,6 +77,12 @@ struct FuncCounterItem {
 struct MetaItem {
   uint32_t idx;
   MetaItem(uint32_t idx) : idx(idx) {}
+};
+
+struct MethodSignatureItem {
+  uint32_t methodIdx;
+  uint32_t sigIdx;
+  MethodSignatureItem(uint32_t methodIdx, uint32_t sigIdx) : methodIdx(methodIdx), sigIdx(sigIdx) {}
 };
 
 struct ReflectionStrItem {

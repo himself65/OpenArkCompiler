@@ -519,7 +519,7 @@ void VtableAnalysis::ReplaceInterfaceInvoke(CallNode &stmt) {
   ASSERT_NOT_NULL(currentFuncMp);
   auto *resolveNode = currentFuncMp->New<ResolveFuncNode>(
       OP_resolveinterfacefunc, GlobalTables::GetTypeTable().GetCompactPtr()->GetPrimType(), stmt.GetPUIdx(),
-      tabBaseAddress, builder->GetConstUInt32(0));
+      tabBaseAddress, tabBaseAddress->Opnd(0));
   stmt.SetOpCode(OP_interfaceicallassigned);
   stmt.GetNopnd().insert(stmt.GetNopnd().begin(), resolveNode);
   stmt.SetNumOpnds(stmt.GetNumOpnds() + 1);

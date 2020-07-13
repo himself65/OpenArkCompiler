@@ -255,11 +255,15 @@ class BB {
   }
 
   void RemoveAllPred() {
-    pred.clear();
+    while (!pred.empty()) {
+      RemovePred(*pred.back());
+    }
   }
 
   void RemoveAllSucc() {
-    succ.clear();
+    while (!succ.empty()) {
+      RemoveSucc(*succ.back());
+    }
     succFreq.clear();
   }
 
@@ -355,6 +359,10 @@ class BB {
   void SetPred(size_t cnt, BB *pp) {
     CHECK_FATAL(cnt < pred.size(), "out of range in BB::SetPred");
     pred[cnt] = pp;
+  }
+
+  void PushBackSuccFreq(uint64 freq) {
+    return succFreq.push_back(freq);
   }
 
   MapleVector<uint64> &GetSuccFreq() {

@@ -30,6 +30,7 @@ struct IRProfileDesc {
   uint64 funcHash = 0;
   IRProfileDesc() = default;
   IRProfileDesc(uint64 hash, uint32 start, uint32 end) : counterStart(start), counterEnd(end), funcHash(hash) {}
+  ~IRProfileDesc() = default;
 };
 
 class Profile {
@@ -48,12 +49,14 @@ class Profile {
         : funcHash(hash), totalCounter(num), counter(counter) {}
     BBInfo(uint64 hash, uint32 num, const std::initializer_list<uint32> &iList)
         : funcHash(hash), totalCounter(num), counter(iList) {}
+    ~BBInfo() = default;
   };
 
   static const uint8 stringEnd;
   void InitTestData();
   bool CheckFuncHot(const std::string &className) const;
   bool CheckMethodHot(const std::string &className) const;
+  bool CheckMethodSigHot(const std::string &methodSigStr) const;
   bool CheckFieldHot(const std::string &className) const;
   bool CheckClassHot(const std::string &className) const;
   bool CheckLiteralHot(const std::string &literal) const;
@@ -91,6 +94,7 @@ class Profile {
   std::unordered_set<std::string> classMeta;
   std::unordered_set<std::string> methodMeta;
   std::unordered_set<std::string> fieldMeta;
+  std::unordered_set<std::string> methodSigMeta;
   std::unordered_set<std::string> literal;
   std::unordered_map<std::string, uint8> reflectionStrData;
   std::unordered_map<std::string, Profile::FuncItem> funcProfData;
@@ -99,9 +103,13 @@ class Profile {
   std::unordered_map<std::string, bool> funcBBProfUseInfo;
   std::unordered_map<std::string, IRProfileDesc> funcDesc;
   std::vector<uint32> counterTab;
+  static const std::string preClassHot[];
+  static const std::string preMethodHot[];
   bool CheckProfileHeader(const Header &header) const;
   std::string GetProfileNameByType(uint8 type) const;
   std::string GetFunctionName(uint32 classIdx, uint32 methodIdx, uint32 sigIdx) const;
+  std::string GetMethodSigStr(uint32 methodIdx, uint32 sigIdx) const;
+  void ParseMethodSignature(const char *data, int fileNum, std::unordered_set<std::string> &metaData) const;
   void ParseMeta(const char *data, int fileNum, std::unordered_set<std::string> &metaData) const;
   void ParseReflectionStr(const char *data, int fileNum);
   void ParseFunc(const char *data, int fileNum);

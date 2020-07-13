@@ -29,11 +29,13 @@ constexpr uint32 kFuncDefSizeIndex = 0;
 constexpr uint32 kFuncDefNameIndex = 1;
 constexpr uint32 kRangeBeginIndex = 0;
 constexpr int32_t kDecoupleAndLazy = 3;
+constexpr uint32_t kShiftBit16 = 16;
+constexpr uint32_t kShiftBit15 = 15;
 
 enum RangeIdx {
   // 0,1 entry is reserved for a stamp
-  kVtab = 2,
-  kItab = 3,
+  kVtabAndItab = 2,
+  kItabConflict = 3,
   kVtabOffset = 4,
   kFieldOffset = 5,
   kValueOffset = 6,
@@ -52,7 +54,22 @@ enum RangeIdx {
   kDecoupleStaticValue = 19,
   kBssStart = 20,
   kLinkerSoHash = 21,
-  kNewMaxNum = 22 // New num
+  kArrayClassCache = 22,
+  kArrayClassCacheName = 23,
+  kNewMaxNum = 24 // New num
+};
+
+struct SourceFileMethod {
+  uint32 sourceFileIndex;
+  uint32 sourceClassIndex;
+  uint32 sourceMethodIndex;
+  bool isVirtual;
+};
+
+struct SourceFileField {
+  uint32 sourceFileIndex;
+  uint32 sourceClassIndex;
+  uint32 sourceFieldIndex;
 };
 
 class MUIDReplacement : public FuncOptimizeImpl {
@@ -76,6 +93,7 @@ class MUIDReplacement : public FuncOptimizeImpl {
 
  private:
   using SymIdxPair = std::pair<MIRSymbol*, uint32>;
+  using SourceIndexPair = std::pair<uint32, uint32>;
   enum LazyBindingOption : uint32 {
     kNoLazyBinding = 0,
     kConservativeLazyBinding = 1,
@@ -116,8 +134,15 @@ class MUIDReplacement : public FuncOptimizeImpl {
   void GenerateCompilerVersionNum();
   int64 GetDefOrUndefOffsetWithMask(uint64, bool isDef, bool muidIndex32Mod = false) const;
   void CollectSuperClassArraySymbolData();
+  void GenerateSourceInfo();
   static MIRSymbol *GetSymbolFromName(const std::string &name);
   ConstvalNode* GetConstvalNode(int64 index);
+  void InsertArrayClassSet(const MIRType &type);
+  MIRType *GetIntrinsicConstArrayClass(StmtNode &stmt);
+  void CollectArrayClass();
+  void GenArrayClassCache();
+  void ReleasePragmaMemPool();
+  std::unordered_set<std::string> arrayClassSet;
   // The following sets are for internal uses. Sorting order does not matter here.
   std::unordered_set<MIRFunction*> funcDefSet;
   std::unordered_set<MIRFunction*> funcUndefSet;
@@ -171,6 +196,9 @@ class MUIDReplacement : public FuncOptimizeImpl {
   std::map<MUID, SymIdxPair> funcUndefMap;
   std::map<MUID, SymIdxPair> dataUndefMap;
   std::map<MUID, uint32> defMuidIdxMap;
+  std::map<MUID, SourceIndexPair> sourceIndexMap;
+  std::map<MUID, const SourceFileMethod> sourceFileMethodMap;
+  std::map<MUID, const SourceFileField> sourceFileFieldMap;
   static MUID mplMuid;
   std::string mplMuidStr;
 };

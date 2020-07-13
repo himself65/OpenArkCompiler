@@ -105,6 +105,7 @@ void CgFuncPhaseManager::AddPhases(std::vector<std::string> &phases) {
         ADDPHASE("cfgo");
       }
 
+#if TARGAARCH64
       if (JAVALANG && CGOptions::DoStoreLoadOpt()) {
         ADDPHASE("storeloadopt");
       }
@@ -116,6 +117,7 @@ void CgFuncPhaseManager::AddPhases(std::vector<std::string> &phases) {
       if ((JAVALANG && CGOptions::DoStoreLoadOpt()) || CGOptions::DoGlobalOpt()) {
         ADDPHASE("clearrdinfo");
       }
+#endif
 
       if (CGOptions::DoPrePeephole()) {
         ADDPHASE("prepeephole1");
@@ -295,7 +297,7 @@ int64 CgFuncPhaseManager::DumpCGTimers() {
                               (kPercent * phaseTimers[i] / total) << "%" << std::setw(10) << std::setprecision(0) <<
                               (phaseTimers[i] / kMicroSecPerMilliSec) << "ms" << "\n";
   }
-  LogInfo::flags();
+  LogInfo::Flags();
   return total;
 }
 }  /* namespace maplebe */

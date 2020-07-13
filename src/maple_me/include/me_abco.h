@@ -19,18 +19,11 @@
 #include "me_ir.h"
 #include "me_inequality_graph.h"
 #include "me_cfg.h"
+#include "mir_module.h"
+#include "mir_builder.h"
+#include "me_ssi.h"
 
 namespace maple {
-struct StmtComparator {
-  bool operator()(const std::pair<MeStmt*, size_t> &lhs, const std::pair<MeStmt*, size_t> &rhs) const {
-    if (lhs.first != rhs.first) {
-      return lhs.first < rhs.first;
-    } else {
-      return lhs.second < rhs.second;
-    }
-  }
-};
-
 class CarePoint {
  public:
   enum CareKind {
@@ -84,116 +77,6 @@ class CarePoint {
   CareStmt value;
 };
 
-class DefPoint {
- public:
-  enum DefineKind {
-    kDefByPi,
-    kDefByPhi
-  };
-
-  explicit DefPoint(DefineKind dk) : defKind(dk) {}
-  ~DefPoint() = default;
-
-  void SetDefPi(PiassignMeStmt &s) {
-    CHECK_FATAL(defKind == kDefByPi, "must be");
-    value.pi = &s;
-  }
-
-  PiassignMeStmt *GetPiStmt() {
-    CHECK_FATAL(defKind == kDefByPi, "must be");
-    return value.pi;
-  }
-
-  const PiassignMeStmt *GetPiStmt() const {
-    CHECK_FATAL(defKind == kDefByPi, "must be");
-    return value.pi;
-  }
-
-  void SetDefPhi(MePhiNode &s) {
-    CHECK_FATAL(defKind == kDefByPhi, "must be");
-    value.phi = &s;
-  }
-
-  BB *GetBB() const {
-    if (defKind == kDefByPi) {
-      return value.pi->GetBB();
-    } else {
-      return value.phi->GetDefBB();
-    }
-  }
-
-  BB *GetGeneratedByBB() const {
-    CHECK_FATAL(defKind == kDefByPi, "must be");
-    return value.pi->GetGeneratedBy()->GetBB();
-  }
-
-  VarMeExpr *GetRHS() const {
-    if (defKind == kDefByPi) {
-      return value.pi->GetRHS();
-    } else {
-      return static_cast<VarMeExpr*>(value.phi->GetOpnd(0));
-    }
-  }
-
-  VarMeExpr *GetLHS() const {
-    if (defKind == kDefByPi) {
-      return value.pi->GetLHS();
-    } else {
-      return  static_cast<VarMeExpr*>(value.phi->GetLHS());
-    }
-  }
-
-  const OStIdx &GetOStIdx() const {
-    if (defKind == kDefByPi) {
-      return value.pi->GetRHS()->GetOStIdx();
-    } else {
-      return value.phi->GetOpnd(0)->GetOStIdx();
-    }
-  }
-
-  bool IsPiStmt() const {
-    return defKind == kDefByPi;
-  }
-
-  bool IsGeneratedByBr() const {
-    CHECK_FATAL(defKind == kDefByPi, "must be");
-    MeStmt *stmt = value.pi->GetGeneratedBy();
-    if (stmt->GetOp() == OP_brtrue || stmt->GetOp() == OP_brfalse) {
-      return true;
-    }
-    return false;
-  }
-
-  void RemoveFromBB() {
-    if (defKind == kDefByPi) {
-      if (IsGeneratedByBr()) {
-        GetBB()->GetPiList().clear();
-      } else {
-        GetBB()->RemoveMeStmt(value.pi);
-      }
-    } else {
-      GetBB()->GetMePhiList().erase(GetOStIdx());
-    }
-  }
-
-  void Dump(const IRMap &irMap) {
-    LogInfo::MapleLogger() << "New Def : " << '\n';
-    if (defKind == kDefByPi) {
-      value.pi->Dump(&irMap);
-    } else {
-      value.phi->Dump(&irMap);
-    }
-    LogInfo::MapleLogger() << '\n';
-  }
-
- private:
-  DefineKind defKind;
-  union DefStmt {
-    PiassignMeStmt *pi;
-    MePhiNode *phi;
-  };
-  DefStmt value;
-};
 
 class MeABC {
  public:
@@ -206,55 +89,43 @@ class MeABC {
         allocator(&pool),
         inequalityGraph(nullptr),
         prove(nullptr),
-        currentCheck(nullptr) {}
+        currentCheck(nullptr) {
+          ssi = std::make_unique<MeSSI>(meFunction, dom, map, pool, &arrayChecks, &containsBB);
+          ssi->SetSSIType(kArrayBoundsCheckOpt);
+        }
   ~MeABC() = default;
   void ExecuteABCO();
 
  private:
   bool CollectABC();
-  void RemoveExtraNodes();
-  void InsertPiNodes();
-  bool ExistedPhiNode(BB &bb, VarMeExpr &rhs);
-  void InsertPhiNodes();
-  void Rename();
-  void RenameStartPiBr(DefPoint &newDefPoint);
-  void RenameStartPiArray(DefPoint &newDefPoint);
-  void RenameStartPhi(DefPoint &newDefPoint);
-  void ReplacePiPhiInSuccs(BB &bb, VarMeExpr &newVar);
-  bool ReplaceStmt(MeStmt &meStmt, VarMeExpr &newVar, VarMeExpr &oldVar);
-  void ReplaceBB(BB &bb, BB &parentBB, DefPoint &newDefPoint);
-  bool IsLegal(MeStmt &meStmt);
   void ABCCollectArrayExpr(MeStmt &meStmt, MeExpr &meExpr, bool isUpdate = false);
   void CollectCareInsns();
-  bool ExistedPiNode(BB &bb, BB &parentBB, const VarMeExpr &rhs);
-  void CreatePhi(VarMeExpr &rhs, BB &dfBB);
-  VarMeExpr *CreateNewPiExpr(const MeExpr &opnd);
-  void CreateNewPiStmt(VarMeExpr *lhs, MeExpr &rhs, BB &bb, MeStmt &generatedBy, bool isToken);
-  void CreateNewPiStmt(VarMeExpr *lhs, MeExpr &rhs, MeStmt &generatedBy);
-  MeExpr *ReplaceMeExprExpr(MeExpr &origExpr, MeExpr &oldVar, MeExpr &repExpr);
-  MeExpr *NewMeExpr(MeExpr &meExpr);
-  bool ReplaceMeExprStmtOpnd(uint32 opndID, MeStmt &meStmt, MeExpr &oldVar, MeExpr &newVar, bool update);
-  bool ReplaceStmtWithNewVar(MeStmt &meStmt, MeExpr &oldVar, MeExpr &newVar, bool update);
   bool IsVirtualVar(const VarMeExpr &var, const SSATab &ssaTab) const;
   ESSABaseNode *GetOrCreateRHSNode(MeExpr &expr);
   void BuildPhiInGraph(MePhiNode &phi);
   void BuildSoloPiInGraph(const PiassignMeStmt &piMeStmt);
-  bool PiExcuteBeforeCurrentCheck(const PiassignMeStmt &piMeStmt);
+  bool PiExecuteBeforeCurrentCheck(const PiassignMeStmt &piMeStmt);
+  void AddEdgePair(ESSABaseNode &from, ESSABaseNode &to, int64 value, EdgeType type);
   bool BuildArrayCheckInGraph(MeStmt &meStmt);
   bool BuildBrMeStmtInGraph(MeStmt &meStmt);
   bool BuildAssignInGraph(MeStmt &meStmt);
+  MeExpr *TryToResolveVar(MeExpr &expr, bool isConst);
   MeExpr *TryToResolveVar(MeExpr &expr, std::set<MePhiNode*> &visitedPhi, MeExpr &dummyExpr, bool isConst);
   bool BuildStmtInGraph(MeStmt &meStmt);
   void AddUseDef(MeExpr &meExpr);
   void AddCareInsn(MeStmt &defS);
   void AddCarePhi(MePhiNode &defP);
   void BuildInequalityGraph();
+  bool IsLessOrEuqal(const MeExpr &opnd1, const MeExpr &opnd2);
+  void ProcessCallParameters(CallMeStmt &callNode);
   void FindRedundantABC(MeStmt &meStmt, NaryMeExpr &naryMeExpr);
-  void InitNewStartPoint(MeStmt &meStmt, const NaryMeExpr &nMeExpr);
+  void InitNewStartPoint(MeStmt &meStmt, MeExpr &opnd1, MeExpr &opnd2, bool clearGraph = true);
   void DeleteABC();
   bool CleanABCInStmt(MeStmt &meStmt, NaryMeExpr &naryMeExpr);
   MeExpr *ReplaceArrayExpr(MeExpr &rhs, MeExpr &naryMeExpr, MeStmt *ivarStmt);
-
+  bool HasRelativeWithLength(MeExpr &meExpr);
+  bool ProveGreaterZ(const MeExpr &weight);
+  void ReSolveEdge();
   Dominance *GetDominace() {
     return dom;
   }
@@ -279,18 +150,17 @@ class MeABC {
   std::unique_ptr<InequalityGraph> inequalityGraph;
   std::unique_ptr<ABCD> prove;
   MeStmt *currentCheck;
+  std::unique_ptr<MeSSI> ssi;
   std::map<MeStmt*, NaryMeExpr*> arrayChecks;
   std::map<MeStmt*, NaryMeExpr*> arrayNewChecks;
   std::set<MeStmt*> careMeStmts;
   std::set<MePhiNode*> careMePhis;
   std::map<BB*, std::vector<MeStmt*>> containsBB;
-  std::vector<DefPoint*> newDefPoints;
   std::vector<CarePoint*> carePoints;
-  std::map<DefPoint*, VarMeExpr*> newDef2Old;
-  std::map<std::pair<MeStmt*, size_t>, MeExpr*, StmtComparator> modifiedStmt;
-  std::map<MePhiNode*, std::vector<ScalarMeExpr*>> modifiedPhi;
-  std::set<BB*> visitedBBs;
   std::set<MeStmt*> targetMeStmt;
+  std::set<MePhiNode*> visited;
+  // map<std::pair<a, b>, c>; a = b + c  b is relative with length, c is var weight
+  std::map<std::pair<MeExpr*, MeExpr*>, MeExpr*> unresolveEdge;
 };
 
 class MeDoABCOpt : public MeFuncPhase {

@@ -160,7 +160,16 @@ class BECommon {
     typeSizeTable.at(idx) = value;
   }
   void AddTypeSize(uint64 value) {
-    typeSizeTable.push_back(value);
+    typeSizeTable.emplace_back(value);
+  }
+
+  void AddTypeSizeAndAlign(TyIdx tyIdx, uint64 value) {
+    if (typeSizeTable.size() == tyIdx) {
+      typeSizeTable.emplace_back(value);
+      tableAlignTable.emplace_back(value);
+    } else {
+      CHECK_FATAL(typeSizeTable.size() > tyIdx, "there are some types haven't set type size and align, %d");
+    }
   }
 
   uint8 GetTypeAlign(uint32 idx) const {
@@ -176,7 +185,7 @@ class BECommon {
     tableAlignTable.at(idx) = value;
   }
   void AddTypeAlign(uint8 value) {
-    tableAlignTable.push_back(value);
+    tableAlignTable.emplace_back(value);
   }
 
   FieldID GetStructFieldCount(uint32 idx) const {

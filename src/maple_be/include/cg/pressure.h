@@ -30,23 +30,23 @@ struct RegList {
 class RegPressure {
  public:
   explicit RegPressure(MapleAllocator &alloc)
-      : uses(alloc.Adapter()), defs(alloc.Adapter()),
-        regUses(alloc.Adapter()) {}
+      : regUses(alloc.Adapter()), regDefs(alloc.Adapter()),
+        pressure(alloc.Adapter()), deadDefNum(alloc.Adapter()) {}
 
   virtual ~RegPressure() = default;
 
   void DumpRegPressure() const;
 
-  void AddUseReg(regno_t regNO) {
-    uses.insert(regNO);
+  void SetRegUses(RegList *regList) {
+    regUses.emplace_back(regList);
   }
 
-  void AddDefReg(regno_t regNO) {
-    defs.insert(regNO);
-  }
-
-  void SetRegUses(regno_t regNO, RegList *regList) {
-    regUses.insert(std::pair<regno_t, RegList*>(regNO, regList));
+  void SetRegDefs(size_t idx, RegList *regList) {
+    if (idx < regDefs.size()) {
+      regDefs[idx] = regList;
+    } else {
+      regDefs.emplace_back(regList);
+    }
   }
 
   static void SetMaxRegClassNum(int32 maxClassNum) {
@@ -88,13 +88,8 @@ class RegPressure {
   void SetIncPressure(bool value) {
     incPressure = value;
   }
-
-  const int32 *GetPressure() const {
+  const MapleVector<int32> &GetPressure() const {
     return pressure;
-  }
-
-  void SetPressure(int32 *pressure) {
-    this->pressure = pressure;
   }
 
   void IncPressureByIndex(int32 index) {
@@ -106,37 +101,82 @@ class RegPressure {
   }
 
   void InitPressure() {
-    FOR_ALL_REGCLASS(i) {
-      pressure[i] = 0;
-      incPressure = false;
-    }
+    pressure.resize(maxRegClassNum, 0);
+    deadDefNum.resize(maxRegClassNum, 0);
+    incPressure = false;
   }
 
-  const MapleSet<regno_t> &GetUses() const {
-    return uses;
+  const MapleVector<int32> &GetDeadDefNum() const {
+    return deadDefNum;
   }
 
-  const MapleSet<regno_t> &GetDefs() const {
-    return defs;
+  void IncDeadDefByIndex(int32 index) {
+    ++deadDefNum[index];
   }
 
-  const MapleMap<regno_t, RegList*> &GetRegUses() const {
-    return regUses;
+  RegList *GetRegUses(size_t idx) const {
+    return regUses[idx];
+  }
+
+  void InitRegUsesSize(size_t size) {
+    regUses.reserve(size);
+  }
+
+  RegList *GetRegDefs(size_t idx) const {
+    return regDefs[idx];
+  }
+
+  void InitRegDefsSize(size_t size) {
+    regDefs.reserve(size);
+  }
+
+  void SetHasPreg(bool value) {
+    hasPreg = value;
+  }
+
+  bool GetHasPreg() const {
+    return hasPreg;
+  }
+
+  void SetNumCall(int32 value) {
+    callNum = value;
+  }
+
+  int32 GetNumCall() const {
+    return callNum;
+  }
+
+  void SetHasNativeCallRegister(bool value) {
+    hasNativeCallRegister = value;
+  }
+
+  bool GetHasNativeCallRegister() const {
+    return hasNativeCallRegister;
   }
 
  private:
-  MapleSet<regno_t> uses;
-  MapleSet<regno_t> defs;
   /* save reglist of every uses'register */
-  MapleMap<regno_t, RegList*> regUses;
-  int32 *pressure = nullptr;
+  MapleVector<RegList*> regUses;
+  /* save reglist of every defs'register */
+  MapleVector<RegList*> regDefs;
+
+  /* the number of the node needs registers */
+  MapleVector<int32> pressure;
+  /* the count of dead define registers */
+  MapleVector<int32> deadDefNum;
   /* max number of reg's class */
   static int32 maxRegClassNum;
   int32 priority = 0;
   int32 maxDepth = 0;
   int32 near = 0;
+  /* the number of successor call */
+  int32 callNum = 0;
   /* if a type register increase then set incPressure as true. */
   bool incPressure = false;
+  /* if define physical register, set hasPreg as true */
+  bool hasPreg = false;
+  /* it is call native special register */
+  bool hasNativeCallRegister = false;
 };
 } /* namespace maplebe */
 

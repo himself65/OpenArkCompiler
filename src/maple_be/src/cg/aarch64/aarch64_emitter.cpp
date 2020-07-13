@@ -255,7 +255,7 @@ void AArch64Emitter::EmitBBHeaderLabel(const std::string &name, LabelIdx labIdx)
     label.SetLabelOrder(currCG->GetLabelOrderCnt());
     currCG->IncreaseLabelOrderCnt();
   }
-  if (currCG->GenerateVerboseAsm()) {
+  if (currCG->GenerateVerboseCG()) {
     emitter.Emit(".L.").Emit(name).Emit(".").Emit(labIdx).Emit(":\t//label order ").Emit(label.GetLabelOrder());
     emitter.Emit("\n");
   } else {
@@ -297,19 +297,23 @@ void AArch64Emitter::Run() {
   const std::string &funcName = std::string(cgFunc->GetShortFuncName().c_str());
 
 
+  std::string funcStName = funcSt->GetName();
   if (funcSt->GetFunction()->GetAttr(FUNCATTR_weak)) {
-    emitter.Emit("\t.weak\t" + funcSt->GetName() + "\n");
-    emitter.Emit("\t.hidden\t" + funcSt->GetName() + "\n");
+    emitter.Emit("\t.weak\t" + funcStName + "\n");
+    emitter.Emit("\t.hidden\t" + funcStName + "\n");
   } else if (funcSt->GetFunction()->GetAttr(FUNCATTR_local)) {
-    emitter.Emit("\t.local\t" + funcSt->GetName() + "\n");
+    emitter.Emit("\t.local\t" + funcStName + "\n");
   } else {
-    emitter.Emit("\t.globl\t" + funcSt->GetName() + "\n");
-    emitter.Emit("\t.hidden\t" + funcSt->GetName() + "\n");
+    bool isExternFunction = false;
+    emitter.Emit("\t.globl\t").Emit(funcSt->GetName()).Emit("\n");
+    if (!currCG->GetMIRModule()->IsCModule() || !isExternFunction) {
+      emitter.Emit("\t.hidden\t").Emit(funcSt->GetName()).Emit("\n");
+    }
   }
-  emitter.Emit("\t.type\t" + funcSt->GetName() + ", %function\n");
+  emitter.Emit("\t.type\t" + funcStName + ", %function\n");
   /* add these messege , solve the simpleperf tool error */
   EmitRefToMethodDesc(emitter);
-  emitter.Emit(funcSt->GetName() + ":\n");
+  emitter.Emit(funcStName + ":\n");
   /* if the last  insn is call, then insert nop */
   bool found = false;
   FOR_ALL_BB_REV(bb, aarchCGFunc) {
@@ -329,7 +333,7 @@ void AArch64Emitter::Run() {
   }
   /* emit instructions */
   FOR_ALL_BB(bb, aarchCGFunc) {
-    if (currCG->GenerateVerboseAsm()) {
+    if (currCG->GenerateVerboseCG()) {
       emitter.Emit("#    freq:").Emit(bb->GetFrequency()).Emit("\n");
     }
     /* emit bb headers */
@@ -343,9 +347,9 @@ void AArch64Emitter::Run() {
   }
   if (CGOptions::IsMapleLinker()) {
     /* Emit a label for calculating method size */
-    emitter.Emit(".Label.end." + funcSt->GetName() + ":\n");
+    emitter.Emit(".Label.end." + funcStName + ":\n");
   }
-  emitter.Emit("\t.size\t" + funcSt->GetName() + ", .-").Emit(funcSt->GetName() + "\n");
+  emitter.Emit("\t.size\t" + funcStName + ", .-").Emit(funcStName + "\n");
 
   EHFunc *ehFunc = cgFunc->GetEHFunc();
   /* emit LSDA */

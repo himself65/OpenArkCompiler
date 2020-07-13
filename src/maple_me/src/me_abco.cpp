@@ -20,8 +20,14 @@
 namespace maple {
 bool MeABC::isDebug = false;
 constexpr int kNumOpnds = 2;
-constexpr int kPiStmtUpperBound = 2;
 constexpr int kPiListSize = 2;
+
+void MeABC::AddEdgePair(ESSABaseNode &from, ESSABaseNode &to, int64 value, EdgeType type) {
+  InequalEdge *pairEdge1 = inequalityGraph->AddEdge(from, to, value, type);
+  InequalEdge *pairEdge2 = inequalityGraph->AddEdge(to, from, -value, type);
+  pairEdge1->SetPairEdge(*pairEdge2);
+  pairEdge2->SetPairEdge(*pairEdge1);
+}
 
 void MeABC::ABCCollectArrayExpr(MeStmt &meStmt, MeExpr &meExpr, bool isUpdate) {
   if (meExpr.GetOp() == OP_array) {
@@ -48,128 +54,6 @@ void MeABC::ABCCollectArrayExpr(MeStmt &meStmt, MeExpr &meExpr, bool isUpdate) {
   }
 }
 
-bool MeABC::IsLegal(MeStmt &meStmt) {
-  CHECK_FATAL(meStmt.IsCondBr(), "must be");
-  auto *brMeStmt = static_cast<CondGotoMeStmt*>(&meStmt);
-  MeExpr *meCmp = brMeStmt->GetOpnd();
-  // may be we need consider ne, eq, and only one opnd in branch insn
-  if (meCmp->GetMeOp() != kMeOpOp) {
-    return false;
-  }
-  auto *opMeExpr = static_cast<OpMeExpr*>(meCmp);
-  CHECK_FATAL(opMeExpr->GetNumOpnds() == kNumOpnds, "must be");
-  if (opMeExpr->GetOp() != OP_ge && opMeExpr->GetOp() != OP_le &&
-      opMeExpr->GetOp() != OP_lt && opMeExpr->GetOp() != OP_gt &&
-      opMeExpr->GetOp() != OP_ne && opMeExpr->GetOp() != OP_eq) {
-    return false;
-  }
-  MeExpr *opnd1 = opMeExpr->GetOpnd(0);
-  MeExpr *opnd2 = opMeExpr->GetOpnd(1);
-  if ((opnd1->GetMeOp() != kMeOpVar && opnd1->GetMeOp() != kMeOpConst) ||
-      (opnd2->GetMeOp() != kMeOpVar && opnd2->GetMeOp() != kMeOpConst)) {
-    return false;
-  }
-  if (!IsPrimitivePureScalar(opnd1->GetPrimType()) || !IsPrimitivePureScalar(opnd2->GetPrimType())) {
-    return false;
-  }
-  return true;
-}
-
-VarMeExpr *MeABC::CreateNewPiExpr(const MeExpr &opnd) {
-  if (opnd.GetMeOp() == kMeOpConst) {
-    return nullptr;
-  }
-  CHECK_FATAL(opnd.GetMeOp() == kMeOpVar, "must be");
-  SSATab &ssaTab = irMap->GetSSATab();
-  OriginalSt *ost = ssaTab.GetOriginalStFromID(static_cast<const VarMeExpr*>(&opnd)->GetOStIdx());
-  CHECK_NULL_FATAL(ost);
-  CHECK_FATAL(!ost->IsVolatile(), "must be");
-  VarMeExpr *var = irMap->NewInPool<VarMeExpr>(irMap->GetExprID(), ost->GetIndex(),
-                                               irMap->GetVerst2MeExprTable().size());
-  irMap->SetExprID(irMap->GetExprID() + 1);
-  irMap->PushBackVerst2MeExprTable(var);
-  ost->PushbackVersionIndex(var->GetVstIdx());
-  var->InitBase(opnd.GetOp(), opnd.GetPrimType(), 0);
-  return var;
-}
-
-void MeABC::CreateNewPiStmt(VarMeExpr *lhs, MeExpr &rhs, BB &bb, MeStmt &generatedBy, bool isToken) {
-  if (lhs == nullptr) {
-    return;
-  }
-  PiassignMeStmt *meStmt = GetMemPool()->New<PiassignMeStmt>(&GetAllocator());
-  meStmt->SetGeneratedBy(generatedBy);
-  meStmt->SetRHS(*(static_cast<VarMeExpr*>(&rhs)));
-  meStmt->SetLHS(*lhs);
-  meStmt->SetBB(&bb);
-  meStmt->SetIsToken(isToken);
-  lhs->SetDefBy(kDefByStmt);
-  lhs->SetDefStmt(meStmt);
-  bb.InsertPi(*(generatedBy.GetBB()), *meStmt);
-  DefPoint *newDef = GetMemPool()->New<DefPoint>(DefPoint::DefineKind::kDefByPi);
-  newDef->SetDefPi(*meStmt);
-  newDefPoints.push_back(newDef);
-  newDef2Old[newDef] = static_cast<VarMeExpr*>(&rhs);
-}
-
-void MeABC::CreateNewPiStmt(VarMeExpr *lhs, MeExpr &rhs, MeStmt &generatedBy) {
-  if (lhs == nullptr) {
-    return;
-  }
-  PiassignMeStmt *meStmt = GetMemPool()->New<PiassignMeStmt>(&GetAllocator());
-  meStmt->SetGeneratedBy(generatedBy);
-  meStmt->SetRHS(*(static_cast<VarMeExpr*>(&rhs)));
-  meStmt->SetLHS(*lhs);
-  meStmt->SetBB(generatedBy.GetBB());
-  lhs->SetDefBy(kDefByStmt);
-  lhs->SetDefStmt(meStmt);
-  generatedBy.GetBB()->InsertMeStmtAfter(&generatedBy, meStmt);
-  DefPoint *newDef = GetMemPool()->New<DefPoint>(DefPoint::DefineKind::kDefByPi);
-  newDef->SetDefPi(*meStmt);
-  newDefPoints.push_back(newDef);
-  newDef2Old[newDef] = static_cast<VarMeExpr*>(&rhs);
-}
-
-void MeABC::InsertPiNodes() {
-  for (auto bIt = meFunc->valid_begin(), eIt = meFunc->valid_end(); bIt != eIt; ++bIt) {
-    BB *bb = *bIt;
-    if (bb->GetKind() == kBBCondGoto && IsLegal(*(bb->GetLastMe()))) {
-      auto *brMeStmt = static_cast<CondGotoMeStmt*>(bb->GetLastMe());
-      BB *brTarget = bb->GetSucc(1);
-      BB *brFallThru = bb->GetSucc(0);
-      CHECK_FATAL(brMeStmt->GetOffset() == brTarget->GetBBLabel(), "must be");
-      auto *opMeExpr = static_cast<OpMeExpr*>(brMeStmt->GetOpnd());
-      MeExpr *opnd1 = opMeExpr->GetOpnd(0);
-      MeExpr *opnd2 = opMeExpr->GetOpnd(1);
-      VarMeExpr *brTargetNewOpnd1 = CreateNewPiExpr(*opnd1);
-      VarMeExpr *brTargetNewOpnd2 = CreateNewPiExpr(*opnd2);
-      CreateNewPiStmt(brTargetNewOpnd1, *opnd1, *brTarget, *brMeStmt, true);
-      CreateNewPiStmt(brTargetNewOpnd2, *opnd2, *brTarget, *brMeStmt, true);
-      VarMeExpr *brFallThruNewOpnd1 = CreateNewPiExpr(*opnd1);
-      VarMeExpr *brFallThruNewOpnd2 = CreateNewPiExpr(*opnd2);
-      CreateNewPiStmt(brFallThruNewOpnd1, *opnd1, *brFallThru, *brMeStmt, false);
-      CreateNewPiStmt(brFallThruNewOpnd2, *opnd2, *brFallThru, *brMeStmt, false);
-    }
-    auto it = containsBB.find(bb);
-    if (it == containsBB.end()) {
-      continue;
-    }
-    std::vector<MeStmt*> &arryChk = it->second;
-    for (MeStmt *meStmt : arryChk) {
-      NaryMeExpr *naryMeExpr = arrayChecks[meStmt];
-      CHECK_FATAL(naryMeExpr->GetOpnds().size() == kNumOpnds, "must be");
-      MeExpr *opnd1 = naryMeExpr->GetOpnd(0);
-      MeExpr *opnd2 = naryMeExpr->GetOpnd(1);
-      // consider whether we should create pi if opnd2 is const
-      CHECK_FATAL(opnd1->GetMeOp() == kMeOpVar, "must be");
-      CHECK_FATAL(opnd1->GetPrimType() == PTY_ref, "must be");
-      CHECK_FATAL(opnd2->GetMeOp() == kMeOpVar || opnd2->GetMeOp() == kMeOpConst, "must be");
-      VarMeExpr *arrayCheckOpnd2 = CreateNewPiExpr(*opnd2);
-      CreateNewPiStmt(arrayCheckOpnd2, *opnd2, *meStmt);
-    }
-  }
-}
-
 bool MeABC::CollectABC() {
   auto eIt = meFunc->valid_end();
   for (auto bIt = meFunc->valid_begin(); bIt != eIt; ++bIt) {
@@ -180,422 +64,6 @@ bool MeABC::CollectABC() {
     }
   }
   return !arrayChecks.empty();
-}
-
-bool MeABC::ExistedPhiNode(BB &bb, VarMeExpr &rhs) {
-  return bb.GetMePhiList().find(rhs.GetOStIdx()) != bb.GetMePhiList().end();
-}
-
-bool MeABC::ExistedPiNode(BB &bb, BB &parentBB, const VarMeExpr &rhs) {
-  MapleMap<BB*, std::vector<PiassignMeStmt*>> &piList = bb.GetPiList();
-  auto it = piList.find(&parentBB);
-  if (it == piList.end()) {
-    return false;
-  }
-  std::vector<PiassignMeStmt*> &piStmts = it->second;
-  CHECK_FATAL(!piStmts.empty(), "should not be empty");
-  CHECK_FATAL(piStmts.size() <= kPiStmtUpperBound, "must be");
-  PiassignMeStmt *pi1 = piStmts.at(0);
-  if (pi1->GetLHS()->GetOStIdx() == rhs.GetOStIdx()) {
-    return true;
-  }
-  if (piStmts.size() == kPiStmtUpperBound) {
-    PiassignMeStmt *pi2 = piStmts.at(1);
-    if (pi2->GetLHS()->GetOStIdx() == rhs.GetOStIdx()) {
-      return true;
-    }
-  }
-  return false;
-}
-
-void MeABC::CreatePhi(VarMeExpr &rhs, BB &dfBB) {
-  VarMeExpr *phiNewLHS = CreateNewPiExpr(rhs);
-  ASSERT_NOT_NULL(phiNewLHS);
-  MePhiNode *newPhi = GetMemPool()->New<MePhiNode>(phiNewLHS, &GetAllocator());
-  newPhi->SetDefBB(&dfBB);
-  newPhi->GetOpnds().resize(dfBB.GetPred().size(), &rhs);
-  newPhi->SetPiAdded();
-  dfBB.GetMePhiList().insert(std::make_pair(phiNewLHS->GetOStIdx(), newPhi));
-  DefPoint *newDef = GetMemPool()->New<DefPoint>(DefPoint::DefineKind::kDefByPhi);
-  newDef->SetDefPhi(*newPhi);
-  newDefPoints.push_back(newDef);
-  newDef2Old[newDef] = &rhs;
-}
-
-void MeABC::InsertPhiNodes() {
-  for (size_t i = 0; i < newDefPoints.size(); ++i) {
-    DefPoint *newDefStmt = newDefPoints[i];
-    BB *newDefBB = newDefStmt->GetBB();
-    CHECK_NULL_FATAL(newDefBB);
-    VarMeExpr *rhs = newDefStmt->GetRHS();
-    if (newDefStmt->IsPiStmt()) {
-      BB *genByBB = newDefStmt->GetGeneratedByBB();
-      if (!dom->Dominate(*genByBB, *newDefBB)) {
-        if (!ExistedPhiNode(*newDefBB, *rhs)) {
-          CreatePhi(*rhs, *newDefBB);
-        }
-        continue;
-      }
-    }
-    BB *oldDefBB = rhs->DefByBB();
-    if (oldDefBB == nullptr) {
-      oldDefBB = meFunc->GetCommonEntryBB();
-      CHECK_FATAL(rhs->IsZeroVersion(irMap->GetSSATab()), "must be");
-    }
-    CHECK_NULL_FATAL(oldDefBB);
-    MapleSet<BBId> &dfs = dom->GetDomFrontier(newDefBB->GetBBId());
-    for (auto bbID : dfs) {
-      BB *dfBB = meFunc->GetBBFromID(bbID);
-      if (!dom->Dominate(*oldDefBB, *dfBB)) {
-        MapleSet<BBId> &dfsTmp = dom->GetDomFrontier(oldDefBB->GetBBId());
-        CHECK_FATAL(dfsTmp.find(bbID) != dfsTmp.end(), "must be");
-        continue;
-      }
-      if (ExistedPhiNode(*dfBB, *rhs)) {
-        continue;
-      }
-      CreatePhi(*rhs, *dfBB);
-    }
-  }
-}
-
-void MeABC::RenameStartPiBr(DefPoint &newDefPoint) {
-  const OStIdx &ostIdx = newDefPoint.GetOStIdx();
-  BB *newDefBB = newDefPoint.GetBB();
-  if (!ExistedPhiNode(*(newDefPoint.GetBB()), *(newDefPoint.GetRHS()))) {
-    RenameStartPhi(newDefPoint);
-    return;
-  }
-  MePhiNode* phi = newDefBB->GetMePhiList()[ostIdx];
-  BB *genByBB = newDefPoint.GetGeneratedByBB();
-  size_t index = 0;
-  while (index < newDefBB->GetPred().size()) {
-    if (newDefBB->GetPred(index) == genByBB) {
-      break;
-    }
-    ++index;
-  }
-  CHECK_FATAL(index < newDefBB->GetPred().size(), "must be");
-  ScalarMeExpr*oldVar = phi->GetOpnd(index);
-  phi->SetOpnd(index, newDefPoint.GetLHS());
-  if (!phi->IsPiAdded()) {
-    if (modifiedPhi.find(phi) == modifiedPhi.end()) {
-      modifiedPhi[phi] = std::vector<ScalarMeExpr*>(phi->GetOpnds().size(), nullptr);
-    }
-    if (modifiedPhi[phi][index] == nullptr) {
-      modifiedPhi[phi][index] = oldVar;
-    }
-  }
-}
-
-void MeABC::RenameStartPiArray(DefPoint &newDefPoint) {
-  BB *newDefBB = newDefPoint.GetBB();
-  MeStmt *piStmt = newDefPoint.GetPiStmt();
-  if (piStmt != newDefBB->GetLastMe()) {
-    for (MeStmt *meStmt = piStmt->GetNext(); meStmt != nullptr; meStmt = meStmt->GetNext()) {
-      if (ReplaceStmt(*meStmt, *(newDefPoint.GetLHS()), *(newDef2Old[&newDefPoint]))) {
-        return;
-      }
-    }
-  }
-  ReplacePiPhiInSuccs(*newDefBB, *(newDefPoint.GetLHS()));
-  const MapleSet<BBId> &children = dom->GetDomChildren(newDefBB->GetBBId());
-  for (const BBId &child : children) {
-    ReplaceBB(*(meFunc->GetBBFromID(child)), *newDefBB, newDefPoint);
-  }
-}
-
-void MeABC::RenameStartPhi(DefPoint &newDefPoint) {
-  BB *newDefBB = newDefPoint.GetBB();
-  for (MeStmt &meStmt : newDefBB->GetMeStmts()) {
-    if (ReplaceStmt(meStmt, *newDefPoint.GetLHS(), *newDef2Old[&newDefPoint])) {
-      return;
-    }
-  }
-  ReplacePiPhiInSuccs(*newDefBB, *(newDefPoint.GetLHS()));
-  const MapleSet<BBId> &children = dom->GetDomChildren(newDefBB->GetBBId());
-  for (const BBId &child : children) {
-    ReplaceBB(*(meFunc->GetBBFromID(child)), *newDefBB, newDefPoint);
-  }
-}
-
-void MeABC::ReplacePiPhiInSuccs(BB &bb, VarMeExpr &newVar) {
-  for (BB *succBB : bb.GetSucc()) {
-    MapleMap<BB*, std::vector<PiassignMeStmt*>> &piList = succBB->GetPiList();
-    auto it1 = piList.find(&bb);
-    if (it1 != piList.end()) {
-      std::vector<PiassignMeStmt*> &piStmts = it1->second;
-      // the size of pi statements must be 1 or 2
-      CHECK_FATAL(!piStmts.empty(), "should not be empty");
-      CHECK_FATAL(piStmts.size() <= 2, "must be");
-      PiassignMeStmt *pi1 = piStmts.at(0);
-      if (pi1->GetLHS()->GetOStIdx() == newVar.GetOStIdx()) {
-        pi1->SetRHS(newVar);
-        continue;
-      }
-      if (piStmts.size() == kPiStmtUpperBound) {
-        PiassignMeStmt *pi2 = piStmts.at(1);
-        if (pi2->GetLHS()->GetOStIdx() == newVar.GetOStIdx()) {
-          pi2->SetRHS(newVar);
-          continue;
-        }
-      }
-    }
-    size_t index = 0;
-    while (index < succBB->GetPred().size()) {
-      if (succBB->GetPred(index) == &bb) {
-        break;
-      }
-      ++index;
-    }
-    CHECK_FATAL(index < succBB->GetPred().size(), "must be");
-    MapleMap<OStIdx, MePhiNode*> &phiList = succBB->GetMePhiList();
-    auto it2 = phiList.find(newVar.GetOStIdx());
-    if (it2 != phiList.end()) {
-      MePhiNode *phi = it2->second;
-      ScalarMeExpr *oldVar = phi->GetOpnd(index);
-      phi->SetOpnd(index, &newVar);
-      if (!phi->IsPiAdded()) {
-        if (modifiedPhi.find(phi) == modifiedPhi.end()) {
-          modifiedPhi[phi] = std::vector<ScalarMeExpr*>(phi->GetOpnds().size(), nullptr);
-        }
-        if (modifiedPhi[phi][index] == nullptr) {
-          modifiedPhi[phi][index] = oldVar;
-        }
-      }
-    }
-  }
-}
-
-MeExpr *MeABC::NewMeExpr(MeExpr &meExpr) {
-  switch (meExpr.GetMeOp()) {
-    case kMeOpIvar: {
-      auto &ivarMeExpr = static_cast<IvarMeExpr&>(meExpr);
-      IvarMeExpr *newIvarExpr = GetMemPool()->New<IvarMeExpr>(irMap->GetExprID(), ivarMeExpr);
-      irMap->SetExprID(irMap->GetExprID() + 1);
-      return newIvarExpr;
-    }
-    case kMeOpOp: {
-      auto &opMeExpr = static_cast<OpMeExpr&>(meExpr);
-      OpMeExpr *newOpMeExpr = GetMemPool()->New<OpMeExpr>(opMeExpr, irMap->GetExprID());
-      irMap->SetExprID(irMap->GetExprID() + 1);
-      return newOpMeExpr;
-    }
-    case kMeOpNary: {
-      auto &naryMeExpr = static_cast<NaryMeExpr&>(meExpr);
-      NaryMeExpr *newNaryMeExpr = GetMemPool()->New<NaryMeExpr>(&GetAllocator(), irMap->GetExprID(), naryMeExpr);
-      irMap->SetExprID(irMap->GetExprID() + 1);
-      newNaryMeExpr->InitBase(meExpr.GetOp(), meExpr.GetPrimType(), meExpr.GetNumOpnds());
-      return newNaryMeExpr;
-    }
-    default:
-      CHECK_FATAL(false, "impossible");
-  }
-}
-
-MeExpr *MeABC::ReplaceMeExprExpr(MeExpr &origExpr, MeExpr &meExpr, MeExpr &repExpr) {
-  if (origExpr.IsLeaf()) {
-    return &origExpr;
-  }
-  switch (origExpr.GetMeOp()) {
-    case kMeOpOp: {
-      auto &opMeExpr = static_cast<OpMeExpr&>(origExpr);
-      OpMeExpr newMeExpr(opMeExpr, kInvalidExprID);
-      bool needRehash = false;
-      for (uint32 i = 0; i < kOperandNumTernary; ++i) {
-        if (opMeExpr.GetOpnd(i) == nullptr) {
-          continue;
-        }
-        if (opMeExpr.GetOpnd(i) == &meExpr) {
-          needRehash = true;
-          newMeExpr.SetOpnd(i, &repExpr);
-        } else if (!opMeExpr.GetOpnd(i)->IsLeaf()) {
-          newMeExpr.SetOpnd(i, ReplaceMeExprExpr(*newMeExpr.GetOpnd(i), meExpr, repExpr));
-          if (newMeExpr.GetOpnd(i) != opMeExpr.GetOpnd(i)) {
-            needRehash = true;
-          }
-        }
-      }
-      return needRehash ? NewMeExpr(newMeExpr) : &origExpr;
-    }
-    case kMeOpNary: {
-      auto &naryMeExpr = static_cast<NaryMeExpr&>(origExpr);
-      NaryMeExpr newMeExpr(&GetAllocator(), kInvalidExprID, naryMeExpr);
-      const MapleVector<MeExpr*> &opnds = naryMeExpr.GetOpnds();
-      bool needRehash = false;
-      for (size_t i = 0; i < opnds.size(); ++i) {
-        MeExpr *opnd = opnds[i];
-        if (opnd == &meExpr) {
-          newMeExpr.SetOpnd(i, &repExpr);
-          needRehash = true;
-        } else if (!opnd->IsLeaf()) {
-          newMeExpr.SetOpnd(i, ReplaceMeExprExpr(*newMeExpr.GetOpnd(i), meExpr, repExpr));
-          if (newMeExpr.GetOpnd(i) != opnd) {
-            needRehash = true;
-          }
-        }
-      }
-      return needRehash ? NewMeExpr(newMeExpr) : &origExpr;
-    }
-    case kMeOpIvar: {
-      auto &ivarExpr = static_cast<IvarMeExpr&>(origExpr);
-      IvarMeExpr newMeExpr(kInvalidExprID, ivarExpr);
-      bool needRehash = false;
-      if (ivarExpr.GetBase() == &meExpr) {
-        newMeExpr.SetBase(&repExpr);
-        needRehash = true;
-      } else if (!ivarExpr.GetBase()->IsLeaf()) {
-        newMeExpr.SetBase(ReplaceMeExprExpr(*newMeExpr.GetBase(), meExpr, repExpr));
-        if (newMeExpr.GetBase() != ivarExpr.GetBase()) {
-          needRehash = true;
-        }
-      }
-      return needRehash ? NewMeExpr(newMeExpr) : &origExpr;
-    }
-    default:
-      CHECK_FATAL(false, "NYI");
-  }
-}
-
-bool MeABC::ReplaceMeExprStmtOpnd(uint32 opndID, MeStmt &meStmt, MeExpr &oldVar, MeExpr &newVar, bool update) {
-  MeExpr *opnd = meStmt.GetOpnd(opndID);
-  bool isFromIassign = (meStmt.GetOp() == OP_iassign) && (opndID == 0);
-  if (isFromIassign) {
-    opnd = static_cast<IassignMeStmt*>(&meStmt)->GetLHSVal();
-  }
-  bool replaced = false;
-  MeExpr *newExpr = nullptr;
-  if (opnd == &oldVar) {
-    if (isFromIassign) {
-      static_cast<IassignMeStmt*>(&meStmt)->SetLHSVal(static_cast<IvarMeExpr*>(&newVar));
-    } else {
-      meStmt.SetOpnd(opndID, &newVar);
-    }
-    replaced = true;
-  } else if (!opnd->IsLeaf()) {
-    newExpr = ReplaceMeExprExpr(*opnd, oldVar, newVar);
-    replaced = (newExpr != opnd);
-    if (isFromIassign) {
-      static_cast<IassignMeStmt*>(&meStmt)->SetLHSVal(static_cast<IvarMeExpr*>(newExpr));
-    } else {
-      meStmt.SetOpnd(opndID, newExpr);
-    }
-  }
-  if (replaced && update) {
-    if (modifiedStmt.find(std::make_pair(&meStmt, opndID)) == modifiedStmt.end()) {
-      modifiedStmt[std::make_pair(&meStmt, opndID)] = opnd;
-    }
-  }
-  return replaced;
-}
-
-bool MeABC::ReplaceStmtWithNewVar(MeStmt &meStmt, MeExpr &oldVar, MeExpr &newVar, bool update) {
-  switch (meStmt.GetOp()) {
-    case OP_dassign:
-    case OP_maydassign:
-    case OP_brtrue:
-    case OP_brfalse: {
-      return ReplaceMeExprStmtOpnd(0, meStmt, oldVar, newVar, update);
-    }
-    case OP_iassign: {
-      bool baseIsReplaced = ReplaceMeExprStmtOpnd(0, meStmt, oldVar, newVar, update);
-      bool rhsReplaced = ReplaceMeExprStmtOpnd(1, meStmt, oldVar, newVar, update);
-      return baseIsReplaced || rhsReplaced;
-    }
-    case OP_regassign: {
-      CHECK_FATAL(false, "should not happen");
-    }
-    default: {
-      break;
-    }
-  }
-  return false;
-}
-
-bool MeABC::ReplaceStmt(MeStmt &meStmt, VarMeExpr &newVar, VarMeExpr &oldVar) {
-  if (meStmt.GetOp() == OP_piassign) {
-    auto *pi = static_cast<PiassignMeStmt*>(&meStmt);
-    if (pi->GetRHS() == &oldVar) {
-      pi->SetRHS(newVar);
-    }
-  } else {
-    (void)ReplaceStmtWithNewVar(meStmt, oldVar, newVar, true);
-  }
-  const OStIdx &ostIdx = newVar.GetOStIdx();
-  MapleMap<OStIdx, ChiMeNode*> *chiList = meStmt.GetChiList();
-  if (chiList != nullptr && chiList->find(ostIdx) != chiList->end()) {
-    return true;
-  }
-  MeExpr *lhs = meStmt.GetAssignedLHS();
-  if (lhs != nullptr && lhs->GetMeOp() == kMeOpVar && static_cast<VarMeExpr*>(lhs)->GetOStIdx() == ostIdx) {
-    return true;
-  }
-  lhs = meStmt.GetLHS();
-  return (lhs != nullptr && lhs->GetMeOp() == kMeOpVar && static_cast<VarMeExpr*>(lhs)->GetOStIdx() == ostIdx);
-}
-
-void MeABC::Rename() {
-  for (size_t i = 0; i < newDefPoints.size(); ++i) {
-    DefPoint *newDefStmt = newDefPoints[i];
-    visitedBBs.clear();
-    if (newDefStmt->IsPiStmt()) {
-      if (newDefStmt->IsGeneratedByBr()) {
-        RenameStartPiBr(*newDefStmt);
-      } else {
-        RenameStartPiArray(*newDefStmt);
-      }
-    } else {
-      RenameStartPhi(*newDefStmt);
-    }
-  }
-}
-
-void MeABC::ReplaceBB(BB &bb, BB &parentBB, DefPoint &newDefPoint) {
-  if (visitedBBs.find(&bb) != visitedBBs.end()) {
-    return;
-  }
-  visitedBBs.insert(&bb);
-  if (ExistedPhiNode(bb, *(newDefPoint.GetLHS())) || ExistedPiNode(bb, parentBB, *(newDefPoint.GetLHS()))) {
-    return;
-  }
-  for (MeStmt &meStmt : bb.GetMeStmts()) {
-    if (ReplaceStmt(meStmt, *(newDefPoint.GetLHS()), *(newDef2Old[&newDefPoint]))) {
-      return;
-    }
-  }
-  ReplacePiPhiInSuccs(bb, *(newDefPoint.GetLHS()));
-  const MapleSet<BBId> &children = dom->GetDomChildren(bb.GetBBId());
-  for (const BBId &child : children) {
-    ReplaceBB(*(meFunc->GetBBFromID(child)), bb, newDefPoint);
-  }
-}
-
-void MeABC::RemoveExtraNodes() {
-  for (DefPoint *defP : newDefPoints) {
-    defP->RemoveFromBB();
-  }
-  for (auto pair : modifiedStmt) {
-    MeStmt *meStmt = pair.first.first;
-    MeExpr *newVar = nullptr;
-    if ((meStmt->GetOp() == OP_iassign) && (pair.first.second == 0)) {
-      newVar = static_cast<IassignMeStmt*>(meStmt)->GetLHSVal();
-    } else {
-      newVar = meStmt->GetOpnd(pair.first.second);
-    }
-    MeExpr *oldVar = pair.second;
-    bool replaced = ReplaceStmtWithNewVar(*meStmt, *newVar, *oldVar, false);
-    CHECK_FATAL(replaced, "must be");
-  }
-  for (auto pair : modifiedPhi) {
-    MePhiNode *phi = pair.first;
-    for (size_t i = 0; i < pair.second.size(); ++i) {
-      size_t index = i;
-      ScalarMeExpr*oldVar = pair.second[i];
-      if (oldVar != nullptr) {
-        phi->SetOpnd(index, oldVar);
-      }
-    }
-  }
 }
 
 bool MeABC::IsVirtualVar(const VarMeExpr &var, const SSATab &ssaTab) const {
@@ -618,16 +86,11 @@ ESSABaseNode *MeABC::GetOrCreateRHSNode(MeExpr &expr) {
 void MeABC::BuildPhiInGraph(MePhiNode &phi) {
   if (!IsPrimitivePureScalar(phi.GetLHS()->GetPrimType())) {
     MeExpr *varExpr = phi.GetLHS();
-    std::set<MePhiNode*> visitedPhi;
-    ConstMeExpr dummyExpr(kInvalidExprID, nullptr);
-    varExpr = TryToResolveVar(*varExpr, visitedPhi, dummyExpr, false);
-    if (varExpr != nullptr && varExpr != &dummyExpr) {
+    varExpr = TryToResolveVar(*varExpr, false);
+    if (varExpr != nullptr) {
       ESSAArrayNode *arrayNode = inequalityGraph->GetOrCreateArrayNode(*(phi.GetLHS()));
       ESSAVarNode *varNode = inequalityGraph->GetOrCreateVarNode(*varExpr);
-      InequalEdge *pairEdge1 = inequalityGraph->AddEdge(*arrayNode, *varNode, 0, EdgeType::kUpper);
-      InequalEdge *pairEdge2 = inequalityGraph->AddEdge(*varNode, *arrayNode, 0, EdgeType::kUpper);
-      pairEdge1->SetPairEdge(*pairEdge2);
-      pairEdge2->SetPairEdge(*pairEdge1);
+      AddEdgePair(*arrayNode, *varNode, 0, EdgeType::kUpper);
     }
     return;
   }
@@ -650,7 +113,7 @@ void MeABC::BuildSoloPiInGraph(const PiassignMeStmt &piMeStmt) {
   (void)inequalityGraph->AddEdge(*piLHSNode, *piRHSNode, 0, EdgeType::kLower);
 }
 
-bool MeABC::PiExcuteBeforeCurrentCheck(const PiassignMeStmt &piMeStmt) {
+bool MeABC::PiExecuteBeforeCurrentCheck(const PiassignMeStmt &piMeStmt) {
   BB *currentCheckBB = currentCheck->GetBB();
   BB *piBB = piMeStmt.GetBB();
   if (currentCheckBB != piBB) {
@@ -672,7 +135,7 @@ bool MeABC::BuildArrayCheckInGraph(MeStmt &meStmt) {
   CHECK_FATAL(meStmt.GetOp() == OP_piassign, "must be");
   auto *piMeStmt = static_cast<PiassignMeStmt*>(&meStmt);
   BuildSoloPiInGraph(*piMeStmt);
-  if (!PiExcuteBeforeCurrentCheck(*piMeStmt)) {
+  if (!PiExecuteBeforeCurrentCheck(*piMeStmt)) {
     return true;
   }
   MeStmt *generatedByMeStmt = piMeStmt->GetGeneratedBy();
@@ -785,31 +248,29 @@ bool MeABC::BuildBrMeStmtInGraph(MeStmt &meStmt) {
       break;
     }
     case OP_ne: {
-      InequalEdge *pairEdge1 = inequalityGraph->AddEdge(*brFallThruOpnd1, *brFallThruOpnd2, 0, EdgeType::kUpper);
-      InequalEdge *pairEdge2 = inequalityGraph->AddEdge(*brFallThruOpnd2, *brFallThruOpnd1, 0, EdgeType::kUpper);
-      pairEdge1->SetPairEdge(*pairEdge2);
-      pairEdge2->SetPairEdge(*pairEdge1);
-      pairEdge1 = inequalityGraph->AddEdge(*brFallThruOpnd2, *brFallThruOpnd1, 0, EdgeType::kLower);
-      pairEdge2 = inequalityGraph->AddEdge(*brFallThruOpnd1, *brFallThruOpnd2, 0, EdgeType::kLower);
-      pairEdge1->SetPairEdge(*pairEdge2);
-      pairEdge2->SetPairEdge(*pairEdge1);
+      AddEdgePair(*brFallThruOpnd1, *brFallThruOpnd2, 0, EdgeType::kUpper);
+      AddEdgePair(*brFallThruOpnd2, *brFallThruOpnd1, 0, EdgeType::kLower);
       break;
     }
     case OP_eq: {
-      InequalEdge *pairEdge1 = inequalityGraph->AddEdge(*brTargetOpnd1, *brTargetOpnd2, 0, EdgeType::kUpper);
-      InequalEdge *pairEdge2 = inequalityGraph->AddEdge(*brTargetOpnd2, *brTargetOpnd1, 0, EdgeType::kUpper);
-      pairEdge1->SetPairEdge(*pairEdge2);
-      pairEdge2->SetPairEdge(*pairEdge1);
-      pairEdge1 = inequalityGraph->AddEdge(*brTargetOpnd2, *brTargetOpnd1, 0, EdgeType::kLower);
-      pairEdge2 = inequalityGraph->AddEdge(*brTargetOpnd1, *brTargetOpnd2, 0, EdgeType::kLower);
-      pairEdge1->SetPairEdge(*pairEdge2);
-      pairEdge2->SetPairEdge(*pairEdge1);
+      AddEdgePair(*brTargetOpnd1, *brTargetOpnd2, 0, EdgeType::kUpper);
+      AddEdgePair(*brTargetOpnd2, *brTargetOpnd1, 0, EdgeType::kLower);
       break;
     }
     default:
       CHECK_FATAL(false, "impossible");
   }
   return true;
+}
+
+MeExpr *MeABC::TryToResolveVar(MeExpr &expr, bool isConst) {
+  std::set<MePhiNode*> visitedPhi;
+  ConstMeExpr dummyExpr(kInvalidExprID, nullptr);
+  MeExpr *tmp = TryToResolveVar(expr, visitedPhi, dummyExpr, isConst);
+  if (tmp != nullptr && tmp != &dummyExpr) {
+    return tmp;
+  }
+  return nullptr;
 }
 
 MeExpr *MeABC::TryToResolveVar(MeExpr &expr, std::set<MePhiNode*> &visitedPhi, MeExpr &dummyExpr, bool isConst) {
@@ -888,24 +349,25 @@ bool MeABC::BuildAssignInGraph(MeStmt &meStmt) {
           AddUseDef(*(opMeExpr->GetOpnd(0)));
           // Try to resolve Var is assigned from Const
           MeExpr *varExpr = opMeExpr->GetOpnd(0);
-          std::set<MePhiNode*> visitedPhi;
-          ConstMeExpr dummyExpr(kInvalidExprID, nullptr);
-          varExpr = TryToResolveVar(*varExpr, visitedPhi, dummyExpr, true);
-          if (varExpr != nullptr && varExpr != &dummyExpr) {
+          varExpr = TryToResolveVar(*varExpr, true);
+          if (varExpr != nullptr) {
             CHECK_FATAL(varExpr->GetMeOp() == kMeOpConst, "must be");
             ESSAConstNode *constNode = inequalityGraph->GetOrCreateConstNode(
                 static_cast<ConstMeExpr*>(varExpr)->GetIntValue());
-            (void)inequalityGraph->AddEdge(*arrLength, *constNode, 0, EdgeType::kNone);
+            AddEdgePair(*arrLength, *constNode, 0, EdgeType::kNone);
           }
         } else {
           CHECK_FATAL(opMeExpr->GetOpnd(0)->GetMeOp() == kMeOpConst, "must be");
           rhsNode = inequalityGraph->GetOrCreateConstNode(
               static_cast<ConstMeExpr*>(opMeExpr->GetOpnd(0))->GetIntValue());
+          AddEdgePair(*arrLength, *rhsNode, 0, EdgeType::kNone);
         }
-        (void)inequalityGraph->AddEdge(*arrLength, *rhsNode, 0, EdgeType::kNone);
         return true;
       }
       case OP_sub: {
+        if (MeOption::conservativeABCO) {
+          return false;
+        }
         CHECK_FATAL(opMeExpr->GetNumOpnds() == kNumOpnds, "must be");
         MeExpr *opnd1 = opMeExpr->GetOpnd(0);
         MeExpr *opnd2 = opMeExpr->GetOpnd(1);
@@ -917,20 +379,16 @@ bool MeABC::BuildAssignInGraph(MeStmt &meStmt) {
           if (opnd1->GetMeOp() == kMeOpConst && opnd2->GetMeOp() == kMeOpConst) {
             CHECK_FATAL(false, "consider this pattern");
           } else if (opnd2->GetMeOp() == kMeOpConst) {
+            visited.clear();
+            if (!HasRelativeWithLength(*opnd1)) {
+              return false;
+            }
             ESSABaseNode *rhsNode = GetOrCreateRHSNode(*opnd1);
             AddUseDef(*opnd1);
-            InequalEdge *pairEdge1 = inequalityGraph->AddEdge(*rhsNode, *lhsNode,
+            AddEdgePair(*rhsNode, *lhsNode,
                 -static_cast<ConstMeExpr*>(opnd2)->GetIntValue(), EdgeType::kUpper);
-            InequalEdge *pairEdge2 = inequalityGraph->AddEdge(*lhsNode, *rhsNode,
-                static_cast<ConstMeExpr*>(opnd2)->GetIntValue(), EdgeType::kUpper);
-            pairEdge1->SetPairEdge(*pairEdge2);
-            pairEdge2->SetPairEdge(*pairEdge1);
-            pairEdge1 = inequalityGraph->AddEdge(*lhsNode, *rhsNode,
+            AddEdgePair(*lhsNode, *rhsNode,
                 static_cast<ConstMeExpr*>(opnd2)->GetIntValue(), EdgeType::kLower);
-            pairEdge2 = inequalityGraph->AddEdge(*rhsNode, *lhsNode,
-                -static_cast<ConstMeExpr*>(opnd2)->GetIntValue(), EdgeType::kLower);
-            pairEdge1->SetPairEdge(*pairEdge2);
-            pairEdge2->SetPairEdge(*pairEdge1);
             return true;
           }else {
             // support this pattern later
@@ -938,27 +396,21 @@ bool MeABC::BuildAssignInGraph(MeStmt &meStmt) {
           }
         } else if (opnd1->GetMeOp() == kMeOpVar && opnd2->GetMeOp() == kMeOpVar) {
           // Try to resolve Var is assigned from Const
-          std::set<MePhiNode*> visitedPhi;
-          ConstMeExpr dummyExpr(kInvalidExprID, nullptr);
-          opnd2 = TryToResolveVar(*opnd2, visitedPhi, dummyExpr, true);
-          if (opnd2 == nullptr || opnd2 == &dummyExpr) {
+          opnd2 = TryToResolveVar(*opnd2, true);
+          if (opnd2 == nullptr) {
             return false;
           }
           CHECK_FATAL(opnd2->GetMeOp() == kMeOpConst, "must be");
+          visited.clear();
+          if (!HasRelativeWithLength(*opnd1)) {
+            return false;
+          }
           ESSABaseNode *rhsNode = GetOrCreateRHSNode(*opnd1);
           AddUseDef(*opnd1);
-          InequalEdge *pairEdge1 = inequalityGraph->AddEdge(*rhsNode, *lhsNode,
+          AddEdgePair(*rhsNode, *lhsNode,
               -static_cast<ConstMeExpr*>(opnd2)->GetIntValue(), EdgeType::kUpper);
-          InequalEdge *pairEdge2 = inequalityGraph->AddEdge(*lhsNode, *rhsNode,
-              static_cast<ConstMeExpr*>(opnd2)->GetIntValue(), EdgeType::kUpper);
-          pairEdge1->SetPairEdge(*pairEdge2);
-          pairEdge2->SetPairEdge(*pairEdge1);
-          pairEdge1 = inequalityGraph->AddEdge(*lhsNode, *rhsNode,
+          AddEdgePair(*lhsNode, *rhsNode,
               static_cast<ConstMeExpr*>(opnd2)->GetIntValue(), EdgeType::kLower);
-          pairEdge2 = inequalityGraph->AddEdge(*rhsNode, *lhsNode,
-              -static_cast<ConstMeExpr*>(opnd2)->GetIntValue(), EdgeType::kLower);
-          pairEdge1->SetPairEdge(*pairEdge2);
-          pairEdge2->SetPairEdge(*pairEdge1);
           return true;
         } else {
           // support this pattern later
@@ -967,6 +419,9 @@ bool MeABC::BuildAssignInGraph(MeStmt &meStmt) {
         CHECK_FATAL(false, "impossible");
       }
       case OP_add: {
+        if (MeOption::conservativeABCO) {
+          return false;
+        }
         CHECK_FATAL(opMeExpr->GetNumOpnds() == kNumOpnds, "must be");
         MeExpr *opnd1 = opMeExpr->GetOpnd(0);
         MeExpr *opnd2 = opMeExpr->GetOpnd(1);
@@ -975,42 +430,63 @@ bool MeABC::BuildAssignInGraph(MeStmt &meStmt) {
         }
         ESSAVarNode *lhsNode = inequalityGraph->GetOrCreateVarNode(*lhs);
         if (opnd1->GetMeOp() != kMeOpConst && opnd2->GetMeOp() != kMeOpConst) {
-          // support this pattern later
+          CHECK_FATAL(opnd1->GetMeOp() == kMeOpVar, "must be");
+          CHECK_FATAL(opnd2->GetMeOp() == kMeOpVar, "must be");
+          MeExpr *tmpVar = opnd2;
+          tmpVar = TryToResolveVar(*tmpVar, true);
+          if (tmpVar != nullptr) {
+            CHECK_FATAL(tmpVar->GetMeOp() == kMeOpConst, "must be");
+            visited.clear();
+            if (!HasRelativeWithLength(*opnd1)) {
+              return false;
+            }
+            AddUseDef(*opnd1);
+            ESSABaseNode *rhsNode = GetOrCreateRHSNode(*opnd1);
+            AddEdgePair(*rhsNode, *lhsNode,
+                static_cast<ConstMeExpr*>(tmpVar)->GetIntValue(), EdgeType::kUpper);
+            AddEdgePair(*lhsNode, *rhsNode,
+                -static_cast<ConstMeExpr*>(tmpVar)->GetIntValue(), EdgeType::kLower);
+            return true;
+          }
+          visited.clear();
+          if (HasRelativeWithLength(*opnd1)) {
+            unresolveEdge[std::make_pair(lhs, opnd1)] = opnd2;
+            AddUseDef(*opnd1);
+            AddUseDef(*opnd2);
+          }
+          visited.clear();
+          if (HasRelativeWithLength(*opnd2)) {
+            unresolveEdge[std::make_pair(lhs, opnd2)] = opnd1;
+            AddUseDef(*opnd1);
+            AddUseDef(*opnd2);
+          }
           return false;
         }
         if (opnd1->GetMeOp() == kMeOpConst && opnd2->GetMeOp() == kMeOpConst) {
           CHECK_FATAL(false, "consider this pattern");
         } else if (opnd2->GetMeOp() == kMeOpConst) {
+          visited.clear();
+          if (!HasRelativeWithLength(*opnd1)) {
+            return false;
+          }
           ESSABaseNode *rhsNode = GetOrCreateRHSNode(*opnd1);
           AddUseDef(*opnd1);
-          InequalEdge *pairEdge1 = inequalityGraph->AddEdge(*rhsNode, *lhsNode,
+          AddEdgePair(*rhsNode, *lhsNode,
               static_cast<ConstMeExpr*>(opnd2)->GetIntValue(), EdgeType::kUpper);
-          InequalEdge *pairEdge2 = inequalityGraph->AddEdge(*lhsNode, *rhsNode,
-              -static_cast<ConstMeExpr*>(opnd2)->GetIntValue(), EdgeType::kUpper);
-          pairEdge1->SetPairEdge(*pairEdge2);
-          pairEdge2->SetPairEdge(*pairEdge1);
-          pairEdge1 = inequalityGraph->AddEdge(*lhsNode, *rhsNode,
+          AddEdgePair(*lhsNode, *rhsNode,
               -static_cast<ConstMeExpr*>(opnd2)->GetIntValue(), EdgeType::kLower);
-          pairEdge2 = inequalityGraph->AddEdge(*rhsNode, *lhsNode,
-              static_cast<ConstMeExpr*>(opnd2)->GetIntValue(), EdgeType::kLower);
-          pairEdge1->SetPairEdge(*pairEdge2);
-          pairEdge2->SetPairEdge(*pairEdge1);
           return true;
         } else {
+          visited.clear();
+          if (!HasRelativeWithLength(*opnd2)) {
+            return false;
+          }
           ESSABaseNode *rhsNode = GetOrCreateRHSNode(*opnd2);
           AddUseDef(*opnd2);
-          InequalEdge *pairEdge1 = inequalityGraph->AddEdge(*rhsNode, *lhsNode,
+          AddEdgePair(*rhsNode, *lhsNode,
               static_cast<ConstMeExpr*>(opnd1)->GetIntValue(), EdgeType::kUpper);
-          InequalEdge *pairEdge2 = inequalityGraph->AddEdge(*lhsNode, *rhsNode,
-              -static_cast<ConstMeExpr*>(opnd1)->GetIntValue(), EdgeType::kUpper);
-          pairEdge1->SetPairEdge(*pairEdge2);
-          pairEdge2->SetPairEdge(*pairEdge1);
-          pairEdge1 = inequalityGraph->AddEdge(*lhsNode, *rhsNode,
+          AddEdgePair(*lhsNode, *rhsNode,
               -static_cast<ConstMeExpr*>(opnd1)->GetIntValue(), EdgeType::kLower);
-          pairEdge2 = inequalityGraph->AddEdge(*rhsNode, *lhsNode,
-              static_cast<ConstMeExpr*>(opnd1)->GetIntValue(), EdgeType::kLower);
-          pairEdge1->SetPairEdge(*pairEdge2);
-          pairEdge2->SetPairEdge(*pairEdge1);
           return true;
         }
         CHECK_FATAL(false, "impossible");
@@ -1049,6 +525,40 @@ bool MeABC::BuildAssignInGraph(MeStmt &meStmt) {
         (void)inequalityGraph->AddEdge(*lhsNode, *(inequalityGraph->GetOrCreateConstNode(0)), 0, EdgeType::kNone);
         return true;
       }
+      case OP_div: {
+        if (MeOption::conservativeABCO) {
+          return false;
+        }
+        CHECK_FATAL(opMeExpr->GetNumOpnds() == kNumOpnds, "must be");
+        MeExpr *opnd1 = opMeExpr->GetOpnd(0);
+        MeExpr *opnd2 = opMeExpr->GetOpnd(1);
+        if (!opnd1->IsLeaf() || !opnd2->IsLeaf()) {
+          return false;
+        }
+        if (opnd2->GetMeOp() == kMeOpConst) {
+          if (static_cast<ConstMeExpr*>(opnd2)->GetIntValue() > 0) {
+            visited.clear();
+            if (HasRelativeWithLength(*opnd1)) {
+              unresolveEdge[std::make_pair(lhs, nullptr)] = opnd2;
+              AddUseDef(*opnd1);
+            }
+          }
+          return false;
+        }
+        MeExpr *varExpr = opnd2;
+        varExpr = TryToResolveVar(*varExpr, true);
+        if (varExpr != nullptr) {
+          CHECK_FATAL(varExpr->GetMeOp() == kMeOpConst, "must be");
+          if (static_cast<ConstMeExpr*>(varExpr)->GetIntValue() > 0) {
+            visited.clear();
+            if (HasRelativeWithLength(*opnd1)) {
+              unresolveEdge[std::make_pair(lhs, nullptr)] = opnd2;
+              AddUseDef(*opnd1);
+            }
+          }
+        }
+        return false;
+      }
       default:
         return false;
     }
@@ -1075,10 +585,10 @@ bool MeABC::BuildAssignInGraph(MeStmt &meStmt) {
     }
     ESSAVarNode *ivarNode = inequalityGraph->GetOrCreateVarNode(*rhs);
     ESSAArrayNode *arrayNode = inequalityGraph->GetOrCreateArrayNode(*lhs);
-    InequalEdge *pairEdge1 = inequalityGraph->AddEdge(*ivarNode, *arrayNode, 0, EdgeType::kUpper);
-    InequalEdge *pairEdge2 = inequalityGraph->AddEdge(*arrayNode, *ivarNode, 0, EdgeType::kUpper);
-    pairEdge1->SetPairEdge(*pairEdge2);
-    pairEdge2->SetPairEdge(*pairEdge1);
+    AddEdgePair(*ivarNode, *arrayNode, 0, EdgeType::kUpper);
+    if (rhs->GetMeOp() == kMeOpVar) {
+      AddUseDef(*rhs);
+    }
     return true;
   } else {
     CHECK_FATAL(rhs->GetMeOp() == kMeOpVar || rhs->GetMeOp() == kMeOpConst, "must be");
@@ -1086,27 +596,83 @@ bool MeABC::BuildAssignInGraph(MeStmt &meStmt) {
     if (rhs->GetMeOp() == kMeOpVar) {
       AddUseDef(*rhs);
       ESSABaseNode *rhsNode = GetOrCreateRHSNode(*rhs);
-      InequalEdge *pairEdge1 = inequalityGraph->AddEdge(*rhsNode, *lhsNode, 0, EdgeType::kUpper);
-      InequalEdge *pairEdge2 = inequalityGraph->AddEdge(*lhsNode, *rhsNode, 0, EdgeType::kUpper);
-      pairEdge1->SetPairEdge(*pairEdge2);
-      pairEdge2->SetPairEdge(*pairEdge1);
-      pairEdge1 = inequalityGraph->AddEdge(*lhsNode, *rhsNode, 0, EdgeType::kLower);
-      pairEdge2 = inequalityGraph->AddEdge(*rhsNode, *lhsNode, 0, EdgeType::kLower);
-      pairEdge1->SetPairEdge(*pairEdge2);
-      pairEdge2->SetPairEdge(*pairEdge1);
+      AddEdgePair(*rhsNode, *lhsNode, 0, EdgeType::kUpper);
+      AddEdgePair(*lhsNode, *rhsNode, 0, EdgeType::kLower);
     } else {
       ESSAConstNode *rhsNode = inequalityGraph->GetOrCreateConstNode(static_cast<ConstMeExpr*>(rhs)->GetIntValue());
-      InequalEdge *pairEdge1 = inequalityGraph->AddEdge(*rhsNode, *lhsNode, 0, EdgeType::kUpper);
-      InequalEdge *pairEdge2 = inequalityGraph->AddEdge(*lhsNode, *rhsNode, 0, EdgeType::kUpper);
-      pairEdge1->SetPairEdge(*pairEdge2);
-      pairEdge2->SetPairEdge(*pairEdge1);
-      pairEdge1 = inequalityGraph->AddEdge(*lhsNode, *rhsNode, 0, EdgeType::kLower);
-      pairEdge2 = inequalityGraph->AddEdge(*rhsNode, *lhsNode, 0, EdgeType::kLower);
-      pairEdge1->SetPairEdge(*pairEdge2);
-      pairEdge2->SetPairEdge(*pairEdge1);
+      AddEdgePair(*rhsNode, *lhsNode, 0, EdgeType::kUpper);
+      AddEdgePair(*lhsNode, *rhsNode, 0, EdgeType::kLower);
     }
     return true;
   }
+}
+
+bool MeABC::HasRelativeWithLength(MeExpr &meExpr) {
+  if (MeOption::aggressiveABCO) {
+    return true;
+  }
+  if (meExpr.GetMeOp() != kMeOpVar) {
+    return false;
+  }
+  auto *varOpnd1 = static_cast<VarMeExpr*>(&meExpr);
+  switch (varOpnd1->GetDefBy()) {
+    case kDefByStmt: {
+      MeStmt *meStmt = varOpnd1->GetDefStmt();
+      if (meStmt->GetOp() == OP_dassign) {
+        DassignMeStmt *dassignMeStmt = static_cast<DassignMeStmt*>(meStmt);
+        MeExpr *rhs = dassignMeStmt->GetRHS();
+        if (rhs->GetMeOp() == kMeOpVar) {
+          return HasRelativeWithLength(*rhs);
+        } else if (rhs->GetMeOp() == kMeOpOp && (rhs->GetOp() == OP_add || rhs->GetOp() == OP_sub)) {
+          auto *opMeExpr = static_cast<OpMeExpr*>(rhs);
+          CHECK_FATAL(opMeExpr->GetNumOpnds() == kNumOpnds, "must be");
+          MeExpr *opnd1 = opMeExpr->GetOpnd(0);
+          MeExpr *opnd2 = opMeExpr->GetOpnd(1);
+          return HasRelativeWithLength(*opnd1) || HasRelativeWithLength(*opnd2);
+        }
+      } else if (meStmt->GetOp() == OP_piassign) {
+        PiassignMeStmt *piMeStmt = static_cast<PiassignMeStmt*>(meStmt);
+        if (piMeStmt->GetGeneratedBy()->IsCondBr()) {
+          auto *opMeExpr = static_cast<OpMeExpr*>(piMeStmt->GetGeneratedBy()->GetOpnd(0));
+          MeExpr *opOpnd1 = opMeExpr->GetOpnd(0);
+          MeExpr *opOpnd2 = opMeExpr->GetOpnd(1);
+          return HasRelativeWithLength(*opOpnd1) || HasRelativeWithLength(*opOpnd2);
+        } else {
+          return HasRelativeWithLength(*piMeStmt->GetRHS());
+        }
+      }
+      break;
+    }
+    case kDefByChi: {
+      MeStmt *meStmt = varOpnd1->GetDefChi().GetBase();
+      MeExpr *rhs = meStmt->GetRHS();
+      if (rhs == nullptr || rhs->GetMeOp() != kMeOpNary) {
+        return false;
+      }
+      auto *nary = static_cast<NaryMeExpr*>(rhs);
+      if (nary->GetIntrinsic() != INTRN_JAVA_ARRAY_LENGTH) {
+        return false;
+      }
+      return true;
+    }
+    case kDefByPhi: {
+      MePhiNode &defPhi = varOpnd1->GetDefPhi();
+      if (visited.find(&defPhi) != visited.end()) {
+        return false;
+      }
+      visited.insert(&defPhi);
+      for (MeExpr *expr : defPhi.GetOpnds()) {
+        if (HasRelativeWithLength(*expr)) {
+          return true;
+        }
+      }
+      break;
+    }
+    case kDefByNo:
+    case kDefByMustDef:
+      break;
+  }
+  return false;
 }
 
 bool MeABC::BuildStmtInGraph(MeStmt &meStmt) {
@@ -1195,6 +761,34 @@ void MeABC::CollectCareInsns() {
   CHECK_FATAL(arrayNewChecks.size() == arrayChecks.size(), "must be");
 }
 
+bool MeABC::ProveGreaterZ(const MeExpr &weight) {
+  ESSABaseNode &zNode = inequalityGraph->GetNode(0);
+  ESSABaseNode *idxNode = &(inequalityGraph->GetNode(weight));
+  bool lowerResult = prove->DemandProve(zNode, *idxNode, kLower);
+  return lowerResult;
+}
+
+void MeABC::ReSolveEdge() {
+  for (auto pair : unresolveEdge) {
+    MeExpr *weight = pair.second;
+    if (!inequalityGraph->HasNode(*weight)) {
+      continue;
+    }
+    if (ProveGreaterZ(*weight)) {
+      MeExpr *lhs = pair.first.first;
+      MeExpr *rhs = pair.first.second;
+      ESSAVarNode *lhsNode = inequalityGraph->GetOrCreateVarNode(*lhs);
+      ESSABaseNode *rhsNode = nullptr;
+      if (rhs != nullptr) {
+        rhsNode = GetOrCreateRHSNode(*rhs);
+      } else {
+        rhsNode = &(inequalityGraph->GetNode(0));
+      }
+      (void)inequalityGraph->AddEdge(*lhsNode, *rhsNode, 0, EdgeType::kNone);
+    }
+  }
+}
+
 void MeABC::BuildInequalityGraph() {
   for (size_t i = 0; i < carePoints.size(); ++i) {
     CarePoint *cp = carePoints[i];
@@ -1205,6 +799,24 @@ void MeABC::BuildInequalityGraph() {
     }
   }
   inequalityGraph->ConnectTrivalEdge();
+  ReSolveEdge();
+}
+
+// opnds <= opnd1.length
+bool MeABC::IsLessOrEuqal(const MeExpr &opnd1, const MeExpr &opnd2) {
+  CHECK_FATAL(opnd1.GetMeOp() == kMeOpVar, "must be");
+  CHECK_FATAL(opnd1.GetPrimType() == PTY_ref, "must be");
+  if (!inequalityGraph->HasNode(opnd1)) {
+    return false;
+  }
+  if (opnd2.GetMeOp() == kMeOpVar && !inequalityGraph->HasNode(opnd2)) {
+    return false;
+  }
+  if (prove->IsLessOrEqual(opnd1, opnd2)) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 void MeABC::FindRedundantABC(MeStmt &meStmt, NaryMeExpr &naryMeExpr) {
@@ -1313,26 +925,29 @@ void MeABC::DeleteABC() {
     bool replaced = CleanABCInStmt(*meStmt, *naryMeExpr);
     CHECK_FATAL(replaced, "must be");
   }
+  inequalityGraph = nullptr;
+  prove = nullptr;
+  ssi = nullptr;
 }
 
-void MeABC::InitNewStartPoint(MeStmt &meStmt, const NaryMeExpr &nMeExpr) {
+void MeABC::InitNewStartPoint(MeStmt &meStmt, MeExpr &opnd1, MeExpr &opnd2, bool clearGraph) {
   careMeStmts.clear();
   careMePhis.clear();
   carePoints.clear();
-  inequalityGraph = std::make_unique<InequalityGraph>(*meFunc);
+  unresolveEdge.clear();
+  if (clearGraph) {
+    inequalityGraph = std::make_unique<InequalityGraph>(*meFunc);
+  }
   CHECK_FATAL(inequalityGraph != nullptr, "inequalityGraph is nullptr");
   prove = std::make_unique<ABCD>(*inequalityGraph);
   CHECK_FATAL(prove != nullptr, "prove is nullptr");
-  CHECK_FATAL(nMeExpr.GetNumOpnds() == kNumOpnds, "msut be");
-  MeExpr *opnd1 = nMeExpr.GetOpnd(0);
-  MeExpr *opnd2 = nMeExpr.GetOpnd(1);
-  CHECK_FATAL(opnd1->GetMeOp() == kMeOpVar, "must be");
-  AddUseDef(*opnd1);
-  if (opnd2->GetMeOp() == kMeOpVar) {
-    AddUseDef(*opnd2);
+  CHECK_FATAL(opnd1.GetMeOp() == kMeOpVar, "must be");
+  AddUseDef(opnd1);
+  if (opnd2.GetMeOp() == kMeOpVar) {
+    AddUseDef(opnd2);
   } else {
-    CHECK_FATAL(opnd2->GetMeOp() == kMeOpConst, "must be");
-    (void)inequalityGraph->GetOrCreateConstNode(static_cast<ConstMeExpr*>(opnd2)->GetIntValue());
+    CHECK_FATAL(opnd2.GetMeOp() == kMeOpConst, "must be");
+    (void)inequalityGraph->GetOrCreateConstNode(static_cast<ConstMeExpr*>(&opnd2)->GetIntValue());
   }
   BB *curBB = meStmt.GetBB();
   if (curBB->GetPiList().size()) {
@@ -1345,19 +960,94 @@ void MeABC::InitNewStartPoint(MeStmt &meStmt, const NaryMeExpr &nMeExpr) {
   currentCheck = &meStmt;
 }
 
+void MeABC::ProcessCallParameters(CallMeStmt &callNode) {
+  MIRFunction *callFunc = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(callNode.GetPUIdx());
+  if (callFunc->GetBaseClassName().compare("Ljava_2Flang_2FSystem_3B") == 0 &&
+      callFunc->GetBaseFuncName().compare("arraycopy") == 0) {
+    MeExpr *opnd1 = callNode.GetOpnd(1); // The 1th parameter.
+    MeExpr *opnd3 = callNode.GetOpnd(3); // The 3th parameter.
+    CHECK_FATAL(opnd1->GetOp() == OP_dread, "must be");
+    CHECK_FATAL(opnd3->GetOp() == OP_dread, "must be");
+    ConstMeExpr *constOpnd1 = nullptr;
+    ConstMeExpr *constOpnd3 = nullptr;
+    VarMeExpr *varOpnd1 = static_cast<VarMeExpr*>(opnd1);
+    if (varOpnd1->GetDefBy() == kDefByStmt) {
+      MeStmt *defOpnd1Stmt = varOpnd1->GetDefStmt();
+      if (defOpnd1Stmt->GetOp() == OP_dassign && defOpnd1Stmt->GetOpnd(0)->GetOp() == OP_constval) {
+        constOpnd1 = static_cast<ConstMeExpr*>(defOpnd1Stmt->GetOpnd(0));
+      }
+    }
+    VarMeExpr *varOpnd3 = static_cast<VarMeExpr*>(opnd3);
+    if (varOpnd3->GetDefBy() == kDefByStmt) {
+      MeStmt *defOpnd3Stmt = varOpnd3->GetDefStmt();
+      if (defOpnd3Stmt->GetOp() == OP_dassign && defOpnd3Stmt->GetOpnd(0)->GetOp() == OP_constval) {
+        constOpnd3 = static_cast<ConstMeExpr*>(defOpnd3Stmt->GetOpnd(0));
+      }
+    }
+    if (constOpnd1 != nullptr && constOpnd3 != nullptr && constOpnd1->IsZero() && constOpnd3->IsZero()) {
+      MeExpr *opnd0 = callNode.GetOpnd(0); // The 0th parameter.
+      MeExpr *opnd2 = callNode.GetOpnd(2); // The 2th parameter.
+      MeExpr *opnd4 = callNode.GetOpnd(4); // The 4th parameter.
+      InitNewStartPoint(callNode, *opnd0, *opnd4);
+      BuildInequalityGraph();
+      bool opnd0Proved = IsLessOrEuqal(*opnd0, *opnd4);
+      InitNewStartPoint(callNode, *opnd2, *opnd4, false);
+      BuildInequalityGraph();
+      bool opnd2Proved = IsLessOrEuqal(*opnd2, *opnd4);
+      bool boundaryCheck = false;
+      if (opnd0Proved && opnd2Proved) {
+        boundaryCheck = true;
+      }
+      CHECK_FATAL(opnd0->GetOp() == OP_dread, "must be");
+      CHECK_FATAL(opnd2->GetOp() == OP_dread, "must be");
+      VarMeExpr *array0 = static_cast<VarMeExpr*>(opnd0);
+      VarMeExpr *array2 = static_cast<VarMeExpr*>(opnd2);
+      bool nullCheck = false;
+      if (!array0->GetMaybeNull() && !array2->GetMaybeNull()) {
+        nullCheck = true;
+      }
+      bool typeCheck = false;
+      bool isScalar = false;
+      if (array0->GetInferredTyIdx() != 0 && array2->GetInferredTyIdx() != 0) {
+        MIRType *type0 = GlobalTables::GetTypeTable().GetTypeFromTyIdx(array0->GetInferredTyIdx());
+        MIRType *type2 = GlobalTables::GetTypeTable().GetTypeFromTyIdx(array2->GetInferredTyIdx());
+        if (type0 && type2 && type0->IsMIRJarrayType() && type2->IsMIRJarrayType()) {
+          MIRArrayType *arrayType0 = static_cast<MIRArrayType*>(type0);
+          MIRArrayType *arrayType2 = static_cast<MIRArrayType*>(type2);
+          if (arrayType0->GetElemTyIdx() == arrayType2->GetElemTyIdx()) {
+            typeCheck = true;
+            if (arrayType0->GetElemType()->IsScalarType()) {
+              isScalar = true;
+            }
+          }
+        }
+      }
+      if (boundaryCheck && nullCheck && typeCheck) {
+        if (isScalar) {
+          MIRFunction *arrayCopyFunc = meFunc->GetMIRModule().GetMIRBuilder()->GetOrCreateFunction(
+              "Native_java_lang_System_arraycopyCharUnchecked___3CI_3CII", (TyIdx) (PTY_void));
+          callNode.SetPUIdx(arrayCopyFunc->GetPuidx());
+          return;
+        } // ref can be handled, but need to extend ABI.
+      }
+    }
+    if (callFunc->GetBaseFuncNameWithType().compare(
+        "arraycopy_7C_28Ljava_2Flang_2FObject_3BILjava_2Flang_2FObject_3BII_29V") == 0) {
+      MIRFunction *arrayCopyFunc = meFunc->GetMIRModule().GetMIRBuilder()->GetOrCreateFunction(
+          "Native_java_lang_System_arraycopy__Ljava_lang_Object_2ILjava_lang_Object_2II", (TyIdx)(PTY_void));
+      callNode.SetPUIdx(arrayCopyFunc->GetPuidx());
+    }
+  }
+}
+
 void MeABC::ExecuteABCO() {
   MeABC::isDebug = false;
   if (CollectABC()) {
-    if (MeABC::isDebug) {
-      LogInfo::MapleLogger() << meFunc->GetName() << "\n";
-      irMap->Dump();
-    }
-    InsertPiNodes();
-    InsertPhiNodes();
-    Rename();
+    ssi->ConvertToSSI();
     CollectCareInsns();
     for (auto pair : arrayNewChecks) {
-      InitNewStartPoint(*(pair.first), *(static_cast<NaryMeExpr*>(pair.second)));
+      InitNewStartPoint(*(pair.first), *((static_cast<NaryMeExpr *>(pair.second))->GetOpnd(0)),
+                        *((static_cast<NaryMeExpr *>(pair.second))->GetOpnd(1)));
       BuildInequalityGraph();
       if (MeABC::isDebug) {
         meFunc->GetTheCfg()->DumpToFile(meFunc->GetName());
@@ -1366,10 +1056,8 @@ void MeABC::ExecuteABCO() {
       }
       FindRedundantABC(*(pair.first), *(static_cast<NaryMeExpr*>(pair.second)));
     }
-    RemoveExtraNodes();
+    ssi->ConvertToSSA();
     DeleteABC();
-    inequalityGraph = nullptr;
-    prove = nullptr;
   }
 }
 

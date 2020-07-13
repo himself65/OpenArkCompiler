@@ -33,12 +33,12 @@ using namespace maple;
 
 void CFGOptimizer::InitOptimizePatterns() {
   /* Initialize cfg optimization patterns */
-  diffPassPatterns.push_back(memPool->New<ChainingPattern>(*cgFunc));
-  diffPassPatterns.push_back(memPool->New<SequentialJumpPattern>(*cgFunc));
-  diffPassPatterns.push_back(memPool->New<FlipBRPattern>(*cgFunc));
-  diffPassPatterns.push_back(memPool->New<DuplicateBBPattern>(*cgFunc));
-  diffPassPatterns.push_back(memPool->New<UnreachBBPattern>(*cgFunc));
-  diffPassPatterns.push_back(memPool->New<EmptyBBPattern>(*cgFunc));
+  diffPassPatterns.emplace_back(memPool->New<ChainingPattern>(*cgFunc));
+  diffPassPatterns.emplace_back(memPool->New<SequentialJumpPattern>(*cgFunc));
+  diffPassPatterns.emplace_back(memPool->New<FlipBRPattern>(*cgFunc));
+  diffPassPatterns.emplace_back(memPool->New<DuplicateBBPattern>(*cgFunc));
+  diffPassPatterns.emplace_back(memPool->New<UnreachBBPattern>(*cgFunc));
+  diffPassPatterns.emplace_back(memPool->New<EmptyBBPattern>(*cgFunc));
 }
 
 /* return true if to is put after from and there is no real insns between from and to, */
@@ -672,7 +672,7 @@ bool DuplicateBBPattern::Optimize(BB &curBB) {
 
 #if TARGARM32
   FOR_BB_INSNS(insn, (&curBB)) {
-    if (insn->IsPCLoad()) {
+    if (insn->IsPCLoad() || insn->IsClinit()) {
       return false;
     }
   }
@@ -690,7 +690,7 @@ bool DuplicateBBPattern::Optimize(BB &curBB) {
     std::vector<BB*> candidates;
     for (BB *bb : curBB.GetPreds()) {
       if (bb->GetKind() == BB::kBBGoto && bb->GetNext() != &curBB && bb != &curBB && !bb->IsEmpty()) {
-        candidates.push_back(bb);
+        candidates.emplace_back(bb);
       }
     }
     if (candidates.empty()) {

@@ -53,10 +53,10 @@ class OptionParser {
 
   bool SetOption(const std::string &key, const std::string &value, const std::string &exeName,
                  std::vector<mapleOption::Option> &exeOption);
-  void PrintUsage(const std::string &helpType, const unsigned int helpLevel = kBuildTypeDefault) const;
+  void PrintUsage(const std::string &helpType, const uint32_t helpLevel = kBuildTypeDefault) const;
 
  private:
-  bool HandleKeyValue(const std::string &key, const std::string &value, bool isValueEmpty,
+  bool HandleKeyValue(const std::string &key, const std::string &value,
                       std::vector<mapleOption::Option> &inputOption, const std::string &exeName,
                       bool isAllOption = true);
   bool CheckOpt(const std::string option, std::string &lastKey, bool &isLastMatch,
@@ -71,6 +71,7 @@ class OptionParser {
   std::multimap<std::string, Descriptor> usages;
   std::vector<Option> options;
   std::vector<std::string> nonOptionsArgs;
+  bool isValueEmpty = false;
 };
 enum MatchedIndex {
   kMatchNone,

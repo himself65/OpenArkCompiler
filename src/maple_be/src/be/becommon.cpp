@@ -26,7 +26,8 @@ using namespace maple;
 BECommon::BECommon(MIRModule &mod)
     : mirModule(mod),
       typeSizeTable(GlobalTables::GetTypeTable().GetTypeTable().size(), 0, mirModule.GetMPAllocator().Adapter()),
-      tableAlignTable(GlobalTables::GetTypeTable().GetTypeTable().size(), 0, mirModule.GetMPAllocator().Adapter()),
+      tableAlignTable(GlobalTables::GetTypeTable().GetTypeTable().size(), mirModule.IsCModule(),
+          mirModule.GetMPAllocator().Adapter()),
       structFieldCountTable(GlobalTables::GetTypeTable().GetTypeTable().size(),
                             0, mirModule.GetMPAllocator().Adapter()),
       jClassLayoutTable(mirModule.GetMPAllocator().Adapter()) {
@@ -179,7 +180,7 @@ void BECommon::ComputeClassTypeSizesAligns(MIRType &ty, const TyIdx &tyIdx, uint
 
     JClassLayout *layout = mirModule.GetMemPool()->New<JClassLayout>(mirModule.GetMPAllocator().Adapter());
     /* add parent's record to the front */
-    layout->push_back(JClassFieldInfo(false, false, false, allocedSize));
+    layout->emplace_back(JClassFieldInfo(false, false, false, allocedSize));
     /* copy parent's layout plan into my plan */
     if (HasJClassLayout(*parentType)) {  /* parent may have incomplete type definition. */
       const JClassLayout &parentLayout = GetJClassLayout(*parentType);
@@ -586,14 +587,14 @@ bool BECommon::TyIsInSizeAlignTable(const MIRType &ty) const {
 
 void BECommon::AddAndComputeSizeAlign(MIRType &ty) {
   CHECK_FATAL(ty.GetTypeIndex() == typeSizeTable.size(), "make sure the ty idx is exactly the table size");
-  tableAlignTable.push_back(0);
-  typeSizeTable.push_back(0);
+  tableAlignTable.emplace_back(mirModule.IsCModule());
+  typeSizeTable.emplace_back(0);
   ComputeTypeSizesAligns(ty);
 }
 
 void BECommon::AddElementToJClassLayout(MIRClassType &klass, JClassFieldInfo info) {
   JClassLayout &layout = *(jClassLayoutTable.at(&klass));
-  layout.push_back(info);
+  layout.emplace_back(info);
 }
 
 MIRType *BECommon::BeGetOrCreatePointerType(const MIRType &pointedType) {

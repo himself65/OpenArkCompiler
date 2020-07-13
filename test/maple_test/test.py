@@ -145,11 +145,15 @@ class Result:
 
         if self.status == FAIL:
             failure = ElementTree.SubElement(case, "failure")
-            failure.text = "List of commands:\n"
-            for cmd in self.commands:
-                failure.text += "EXEC: {}\n".format(cmd)
-            failure.text += "----\n"
-            failure.text += self.command_result_to_text(self.commands_result[-1])
+            if isinstance(self.commands_result, str):
+                failure.text = "Test case preparation failed, "
+                failure.text += self.commands_result
+            else:
+                failure.text = "List of commands:\n"
+                for cmd in self.commands:
+                    failure.text += "EXEC: {}\n".format(cmd)
+                failure.text += "----\n"
+                failure.text += self.command_result_to_text(self.commands_result[-1])
         elif self.status == UNRESOLVED:
             skipped = ElementTree.SubElement(case, "skipped")
             skipped.text = "No valid command statement was found."

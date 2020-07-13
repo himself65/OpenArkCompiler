@@ -318,6 +318,7 @@ class MIRSymbol {
   bool IsReflectionSuperclassInfo() const;
   bool IsReflectionFieldOffsetData() const;
   bool IsReflectionMethodAddrData() const;
+  bool IsReflectionMethodSignature() const;
   bool IsReflectionClassInfo() const;
   bool IsReflectionArrayClassInfo() const;
   bool IsReflectionClassInfoPtr() const;
@@ -347,6 +348,8 @@ class MIRSymbol {
   bool IsMuidDataUndefMuidTab() const;
   bool IsMuidFuncMuidIdxMuidTab() const;
   bool IsMuidRangeTab() const;
+  bool IsArrayClassCache() const;
+  bool IsArrayClassCacheName() const;
   bool IsGctibSym() const;
   bool IsPrimordialObject() const;
   bool IgnoreRC() const;

@@ -102,14 +102,17 @@ class DepNode {
         eStart(0), lStart(0), visit(0), type(kNodeTypeNormal), state(kNormal), index(0), simulateCycle(0),
         schedCycle(0), bruteForceSchedCycle(0), validPredsSize(0), validSuccsSize(0),
         preds(alloc.Adapter()), succs(alloc.Adapter()), comments(alloc.Adapter()),
-        cfiInsns(alloc.Adapter()), clinitInsns(alloc.Adapter()), locInsn(nullptr), regPressure(nullptr) {}
+        cfiInsns(alloc.Adapter()), clinitInsns(alloc.Adapter()), locInsn(nullptr), useRegnos(alloc.Adapter()),
+        defRegnos(alloc.Adapter()), regPressure(nullptr) {}
 
   DepNode(Insn &insn, MapleAllocator &alloc, Unit * const *unit, uint32 num, Reservation &rev)
       : insn(&insn), units(unit),
         reservation(&rev), unitNum(num), eStart(0), lStart(0), visit(0), type(kNodeTypeNormal), state(kNormal),
         index(0), simulateCycle(0), schedCycle(0), bruteForceSchedCycle(0), validPredsSize(0), validSuccsSize(0),
         preds(alloc.Adapter()), succs(alloc.Adapter()), comments(alloc.Adapter()), cfiInsns(alloc.Adapter()),
-        clinitInsns(alloc.Adapter()), locInsn(nullptr), regPressure(nullptr) {}
+        clinitInsns(alloc.Adapter()), locInsn(nullptr), useRegnos(alloc.Adapter()), defRegnos(alloc.Adapter()),
+        regPressure(nullptr) {}
+
   virtual ~DepNode() = default;
 
   Insn *GetInsn() const {
@@ -215,8 +218,11 @@ class DepNode {
   const MapleVector<DepLink*> &GetPreds() const {
     return preds;
   }
+  void ReservePreds(size_t size) {
+    preds.reserve(size);
+  }
   void AddPred(DepLink &depLink) {
-    preds.push_back(&depLink);
+    preds.emplace_back(&depLink);
   }
   void RemovePred() {
     preds.pop_back();
@@ -224,8 +230,11 @@ class DepNode {
   const MapleVector<DepLink*> &GetSuccs() const{
     return succs;
   }
+  void ReserveSuccs(size_t size) {
+    succs.reserve(size);
+  }
   void AddSucc(DepLink &depLink) {
-    succs.push_back(&depLink);
+    succs.emplace_back(&depLink);
   }
   void RemoveSucc() {
     succs.pop_back();
@@ -237,7 +246,7 @@ class DepNode {
     comments = com;
   }
   void AddComments(Insn &insn) {
-    comments.push_back(&insn);
+    comments.emplace_back(&insn);
   }
   void ClearComments() {
     comments.clear();
@@ -249,7 +258,7 @@ class DepNode {
     cfiInsns = insns;
   }
   void AddCfiInsn(Insn &insn) {
-    cfiInsns.push_back(&insn);
+    cfiInsns.emplace_back(&insn);
   }
   void ClearCfiInsns() {
     cfiInsns.clear();
@@ -261,7 +270,7 @@ class DepNode {
     clinitInsns = insns;
   }
   void AddClinitInsn(Insn &insn) {
-    clinitInsns.push_back(&insn);
+    clinitInsns.emplace_back(&insn);
   }
   const RegPressure *GetRegPressure() const {
     return regPressure;
@@ -277,27 +286,31 @@ class DepNode {
   void InitPressure() {
     regPressure->InitPressure();
   }
-  const int32 *GetPressure() const {
+  const MapleVector<int32> &GetPressure() const {
     return regPressure->GetPressure();
   }
-  void SetPressure(int32 &pressure) {
-    regPressure->SetPressure(&pressure);
-  }
+
   void IncPressureByIndex(int32 idx) {
     regPressure->IncPressureByIndex(idx);
   }
   void DecPressureByIndex(int32 idx) {
     regPressure->DecPressureByIndex(idx);
   }
-  void AddUseReg(regno_t reg) {
-    regPressure->AddUseReg(reg);
+
+  const MapleVector<int32> &GetDeadDefNum() const {
+    return regPressure->GetDeadDefNum();
   }
-  void AddDefReg(regno_t reg) {
-    regPressure->AddDefReg(reg);
+  void IncDeadDefByIndex(int32 idx) {
+    regPressure->IncDeadDefByIndex(idx);
   }
-  void SetRegUses(regno_t regNO, RegList &regList) {
-    regPressure->SetRegUses(regNO, &regList);
+
+  void SetRegUses(RegList &regList) {
+    regPressure->SetRegUses(&regList);
   }
+  void SetRegDefs(size_t idx, RegList *regList) {
+    regPressure->SetRegDefs(idx, regList);
+  }
+
   int32 GetIncPressure() const {
     return regPressure->GetIncPressure();
   }
@@ -322,14 +335,33 @@ class DepNode {
   void SetPriority(int32 value) {
     regPressure->SetPriority(value);
   }
-  const MapleSet<regno_t> &GetUses() const {
-    return regPressure->GetUses();
+  RegList *GetRegUses(size_t idx) const {
+    return regPressure->GetRegUses(idx);
   }
-  const MapleSet<regno_t> &GetDefs() const {
-    return regPressure->GetDefs();
+  void InitRegUsesSize(size_t size) {
+    regPressure->InitRegUsesSize(size);
   }
-  const MapleMap<regno_t, RegList*> &GetRegUses() const {
-    return regPressure->GetRegUses();
+  RegList *GetRegDefs(size_t idx) const {
+    return regPressure->GetRegDefs(idx);
+  }
+  void InitRegDefsSize(size_t size) {
+    regPressure->InitRegDefsSize(size);
+  }
+
+  void SetNumCall(int32 value) {
+    regPressure->SetNumCall(value);
+  }
+
+  int32 GetNumCall() const {
+    return regPressure->GetNumCall();
+  }
+
+  void SetHasNativeCallRegister(bool value) const {
+    regPressure->SetHasNativeCallRegister(value);
+  }
+
+  bool GetHasNativeCallRegister() const {
+    return regPressure->GetHasNativeCallRegister();
   }
 
   const Insn *GetLocInsn() const {
@@ -349,6 +381,42 @@ class DepNode {
     PRINT_STR_VAL("validPredsSize: ", validPredsSize);
     PRINT_STR_VAL("validSuccsSize: ", validSuccsSize);
     LogInfo::MapleLogger() << '\n';
+
+    constexpr int32 width = 12;
+    LogInfo::MapleLogger() << std::left << std::setw(width) << "usereg: ";
+    for (const auto &useReg : useRegnos) {
+      LogInfo::MapleLogger() << "R" << useReg << " ";
+    }
+    LogInfo::MapleLogger() << "\n";
+    LogInfo::MapleLogger() << std::left << std::setw(width) << "defreg: ";
+    for (const auto &defReg : defRegnos) {
+      LogInfo::MapleLogger() << "R" << defReg << " ";
+    }
+    LogInfo::MapleLogger() << "\n";
+  }
+
+  void SetHasPreg(bool value) {
+    regPressure->SetHasPreg(value);
+  }
+
+  bool GetHasPreg() const {
+    return regPressure->GetHasPreg();
+  }
+
+  void AddUseReg(regno_t reg) {
+    useRegnos.emplace_back(reg);
+  }
+
+  const MapleVector<regno_t> &GetUseRegnos() const {
+    return useRegnos;
+  }
+
+  void AddDefReg(regno_t reg) {
+    defRegnos.emplace_back(reg);
+  }
+
+  const MapleVector<regno_t> &GetDefRegnos() const {
+    return defRegnos;
   }
 
  private:
@@ -385,6 +453,9 @@ class DepNode {
 
   /* loc insn which indicate insn location in source file */
   const Insn *locInsn;
+
+  MapleVector<regno_t> useRegnos;
+  MapleVector<regno_t> defRegnos;
 
   /* For register pressure analysis */
   RegPressure *regPressure;

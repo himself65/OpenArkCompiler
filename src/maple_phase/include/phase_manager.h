@@ -76,7 +76,7 @@ class PhaseManager {
     return &allocator;
   }
 
-  MemPool *GetMemPool() {
+  MemPool *GetMemPool() const {
     return allocator.GetMemPool();
   }
 

@@ -58,6 +58,7 @@ class DoCheckCastGeneration : public ModulePhase {
 
   AnalysisResult *Run(MIRModule *mod, ModuleResultMgr *mrm) override {
     OPT_TEMPLATE(CheckCastGenerator);
+    mrm->InvalidAnalysisResult(MoPhase_ANNOTATIONANALYSIS, mod);
     return nullptr;
   }
 };

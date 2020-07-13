@@ -28,21 +28,17 @@
 #include "types_def.h"
 
 namespace maple {
-#define MP_SYNC        \
-  (stmt) GlobalLock(); \
-  stmt GlobalUnlock();
-
 class MplTaskParam {
  public:
   MplTaskParam() = default;
-  virtual ~MplTaskParam() = default;
+  ~MplTaskParam() = default;
 };
 
 class MplTask {
  public:
   MplTask() : taskId(0) {}
 
-  virtual ~MplTask() {}
+  virtual ~MplTask() = default;
 
   void SetTaskId(uint32 id) {
     taskId = id;
@@ -75,13 +71,13 @@ class MplTask {
 class MplSchedulerParam {
  public:
   MplSchedulerParam() = default;
-  virtual ~MplSchedulerParam() = default;
+  ~MplSchedulerParam() = default;
 };
 
 class MplScheduler {
  public:
   explicit MplScheduler(const std::string &name);
-  virtual ~MplScheduler() {}
+  virtual ~MplScheduler() = default;
 
   void Init();
   virtual void AddTask(MplTask *task);
@@ -134,7 +130,7 @@ class MplScheduler {
   ThreadStatus statusFinish;
   virtual int FinishTask(const MplTask &task);
   virtual MplTask *GetTaskToRun();
-  virtual uint32 GetTaskIdsFinishSize();
+  virtual size_t GetTaskIdsFinishSize();
   virtual MplTask *GetTaskFinishFirst();
   virtual void RemoveTaskFinish(uint32 id);
   virtual void TaskIdFinish(uint32 id);
@@ -151,11 +147,11 @@ class MplScheduler {
 
   virtual void CallbackThreadFinishEnd() {}
 
-  virtual MplTaskParam *CallbackGetTaskRunParam() {
+  virtual MplTaskParam *CallbackGetTaskRunParam() const {
     return nullptr;
   }
 
-  virtual MplTaskParam *CallbackGetTaskFinishParam() {
+  virtual MplTaskParam *CallbackGetTaskFinishParam() const {
     return nullptr;
   }
 };

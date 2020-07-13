@@ -60,7 +60,7 @@ void CG::GenExtraTypeMetadata(const std::string &classListFileName, const std::s
       }
 
       visited.insert(name);
-      classesToGenerate.push_back(classType);
+      classesToGenerate.emplace_back(classType);
     }
   } else {
     /* Visit listed classes. */
@@ -77,7 +77,7 @@ void CG::GenExtraTypeMetadata(const std::string &classListFileName, const std::s
         return;
       }
 
-      classesToGenerate.push_back(classType);
+      classesToGenerate.emplace_back(classType);
     }
   }
 
@@ -223,7 +223,7 @@ static void AppendReferenceOffsets64(const BECommon &beCommon, MIRStructType &cu
       if (!CGOptions::IsQuiet()) {
         LogInfo::MapleLogger() << "      ** Is a pointer field.\n";
       }
-      result.push_back(myOffset);
+      result.emplace_back(myOffset);
     }
 
     if ((fieldTypeKind == kTypeArray) || (fieldTypeKind == kTypeStruct) || (fieldTypeKind == kTypeClass) ||
@@ -246,7 +246,7 @@ std::vector<int64> CG::GetReferenceOffsets64(const BECommon &beCommon, MIRStruct
   if (structType.GetKind() == kTypeClass) {
     for (auto fieldInfo : beCommon.GetJClassLayout(static_cast<MIRClassType&>(structType))) {
       if (fieldInfo.IsRef()) {
-        result.push_back(static_cast<int64>(fieldInfo.GetOffset()));
+        result.emplace_back(static_cast<int64>(fieldInfo.GetOffset()));
       }
     }
   } else if (structType.GetKind() != kTypeInterface) {  /* interface doesn't have reference fields */
@@ -270,6 +270,10 @@ const std::string CG::ExtractFuncName(const std::string &str) {
     return str;
   }
   std::string funcName = str.substr(pos1 + offset, pos2 - pos1 - offset);
+  /* avoid funcName like __LINE__ and __FILE__ which will be resolved by assembler */
+  if (funcName.find("__") != std::string::npos) {
+    return str;
+  }
   if (funcName == "_3Cinit_3E") {
     return "init";
   }

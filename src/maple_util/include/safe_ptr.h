@@ -14,7 +14,7 @@
  */
 #ifndef MAPLE_UTIL_SAFE_PTR_H
 #define MAPLE_UTIL_SAFE_PTR_H
-#include <mpl_logging.h>
+#include "mpl_logging.h"
 #include "ptr.h"
 
 namespace maple {
@@ -29,44 +29,36 @@ class SafePtr {
   using Base = Ptr<T, AssertNotNull<T>>;
  public:
   using pointer = typename Base::Pointer;
-  using ElementType = typename Base::element_type;
+  using ElementType = typename Base::ElementType;
 
   constexpr SafePtr() noexcept = delete;
 
   constexpr SafePtr(std::nullptr_t) noexcept = delete;
 
-  SafePtr(pointer ptr)
-      : base(ptr) {}
+  SafePtr(pointer ptr) : base(ptr) {}
 
-  SafePtr(T &ref)
-      : base(ref, CheckNothing<T>) {}
+  SafePtr(T &ref) : base(ref, CheckNothing<T>) {}
 
   SafePtr(T &&ref) = delete;
 
   template<typename U, typename = std::enable_if_t<std::is_convertible<U, T>::value>>
-  SafePtr(U *ptr)
-      : base(ptr) {}
+  SafePtr(U *ptr) : base(ptr) {}
 
   template<typename U, typename = std::enable_if_t<std::is_convertible<U, T>::value>>
-  SafePtr(U &ref)
-      : base(ref, CheckNothing<T>) {}
+  SafePtr(U &ref) : base(ref, CheckNothing<T>) {}
 
   template<typename U, typename = std::enable_if_t<std::is_convertible<U, T>::value>>
   SafePtr(U &&ref) = delete;
 
-  SafePtr(const SafePtr &other)
-      : base(other.base) {}
+  SafePtr(const SafePtr &other) : base(other.base) {}
 
-  SafePtr(SafePtr &&other) noexcept
-      : base(std::move(other.base)) {}
+  SafePtr(SafePtr &&other) noexcept : base(std::move(other.base)) {}
 
   template<typename U, typename = std::enable_if_t<std::is_convertible<U, T>::value>>
-  explicit SafePtr(const SafePtr<U> &other)
-      : base(other.get(), CheckNothing<T>) {}
+  explicit SafePtr(const SafePtr<U> &other) : base(other.get(), CheckNothing<T>) {}
 
   template<typename U, typename = std::enable_if_t<std::is_convertible<U, T>::value>>
-  explicit SafePtr(SafePtr<U> &&other)
-      : base(other.get(), CheckNothing<T>) {}
+  explicit SafePtr(SafePtr<U> &&other) : base(other.get(), CheckNothing<T>) {}
 
   ~SafePtr() = default;
 
@@ -200,15 +192,15 @@ inline bool operator>=(const SafePtr<T> &lhs, std::nullptr_t) = delete;
 template<typename T>
 inline bool operator>=(std::nullptr_t, const SafePtr<T> &rhs) = delete;
 
-template <typename T>
+template<typename T>
 inline T &ToRef(SafePtr<T> ptr) {
   return *ptr;
 }
-}}
+}
+}
 
-namespace std
-{
-template <class T>
+namespace std {
+template<class T>
 struct hash<maple::utils::SafePtr<T>> {
   std::size_t operator()(const maple::utils::SafePtr<T> &safePtr) const {
     return hash<typename maple::utils::SafePtr<T>::pointer>()(safePtr.get());

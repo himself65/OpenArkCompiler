@@ -61,7 +61,7 @@ void AArch64ReachingDefinition::InitStartGen() {
 
     Insn &pseudoInsn = cgFunc->GetCG()->BuildInstruction<AArch64Insn>(mOp, regOpnd);
     bb->InsertInsnBegin(pseudoInsn);
-    pseudoInsns.push_back(&pseudoInsn);
+    pseudoInsns.emplace_back(&pseudoInsn);
 
     {
       /*
@@ -89,7 +89,7 @@ void AArch64ReachingDefinition::InitStartGen() {
         MOperator mopTemp = firstStackSize <= k4ByteSize ? MOP_pseudo_param_store_w : MOP_pseudo_param_store_x;
         Insn &pseudoInsnTemp = cgFunc->GetCG()->BuildInstruction<AArch64Insn>(mopTemp, *memOpnd);
         bb->InsertInsnBegin(pseudoInsnTemp);
-        pseudoInsns.push_back(&pseudoInsnTemp);
+        pseudoInsns.emplace_back(&pseudoInsnTemp);
       }
     }
   }
@@ -103,7 +103,7 @@ void AArch64ReachingDefinition::InitStartGen() {
     Insn &pseudoInsn = cgFunc->GetCG()->BuildInstruction<AArch64Insn>(MOP_pseudo_ref_init_x, *memOpnd);
 
     bb->InsertInsnBegin(pseudoInsn);
-    pseudoInsns.push_back(&pseudoInsn);
+    pseudoInsns.emplace_back(&pseudoInsn);
   }
 }
 
@@ -115,13 +115,13 @@ void AArch64ReachingDefinition::InitEhDefine(BB &bb) {
   RegOperand &regOpnd1 = aarchCGFunc->GetOrCreatePhysicalRegisterOperand(R1, k64BitSize, kRegTyInt);
   Insn &pseudoInsn = cgFunc->GetCG()->BuildInstruction<AArch64Insn>(MOP_pseudo_eh_def_x, regOpnd1);
   bb.InsertInsnBegin(pseudoInsn);
-  pseudoInsns.push_back(&pseudoInsn);
+  pseudoInsns.emplace_back(&pseudoInsn);
 
   /* insert MOP_pseudo_eh_def_x R0. */
   RegOperand &regOpnd2 = aarchCGFunc->GetOrCreatePhysicalRegisterOperand(R0, k64BitSize, kRegTyInt);
   Insn &newPseudoInsn = cgFunc->GetCG()->BuildInstruction<AArch64Insn>(MOP_pseudo_eh_def_x, regOpnd2);
   bb.InsertInsnBegin(newPseudoInsn);
-  pseudoInsns.push_back(&newPseudoInsn);
+  pseudoInsns.emplace_back(&newPseudoInsn);
 }
 
 /* insert pseudoInsns for return value R0/V0 */
@@ -136,14 +136,14 @@ void AArch64ReachingDefinition::AddRetPseudoInsn(BB &bb) {
         static_cast<AArch64CGFunc*>(cgFunc)->GetOrCreatePhysicalRegisterOperand(regNO, k64BitSize, kRegTyInt);
     Insn &retInsn = cgFunc->GetCG()->BuildInstruction<AArch64Insn>(MOP_pseudo_ret_int, regOpnd);
     bb.AppendInsn(retInsn);
-    pseudoInsns.push_back(&retInsn);
+    pseudoInsns.emplace_back(&retInsn);
   } else {
     ASSERT(regNO == V0, "CG internal error. Return value should be R0 or V0.");
     RegOperand &regOpnd =
         static_cast<AArch64CGFunc*>(cgFunc)->GetOrCreatePhysicalRegisterOperand(regNO, k64BitSize, kRegTyFloat);
     Insn &retInsn = cgFunc->GetCG()->BuildInstruction<AArch64Insn>(MOP_pseudo_ret_float, regOpnd);
     bb.AppendInsn(retInsn);
-    pseudoInsns.push_back(&retInsn);
+    pseudoInsns.emplace_back(&retInsn);
   }
 }
 
@@ -196,7 +196,7 @@ std::vector<Insn*> AArch64ReachingDefinition::FindRegDefBetweenInsn(uint32 regNO
 
     const AArch64MD *md = &AArch64CG::kMd[static_cast<AArch64Insn*>(insn)->GetMachineOpcode()];
     if (insn->IsCall() && IsCallerSavedReg(regNO)) {
-      defInsnVec.push_back(insn);
+      defInsnVec.emplace_back(insn);
       return defInsnVec;
     }
     uint32 opndNum = insn->GetOperandSize();
@@ -218,13 +218,13 @@ std::vector<Insn*> AArch64ReachingDefinition::FindRegDefBetweenInsn(uint32 regNO
           if (memOpnd.GetAddrMode() == AArch64MemOperand::kAddrModeBOi &&
               (memOpnd.IsPostIndexed() || memOpnd.IsPreIndexed()) &&
               base->GetRegisterNumber() == regNO) {
-            defInsnVec.push_back(insn);
+            defInsnVec.emplace_back(insn);
             return defInsnVec;
           }
         }
       } else if ((opnd.IsConditionCode() || opnd.IsRegister()) &&
                  (static_cast<RegOperand&>(opnd).GetRegisterNumber() == regNO)) {
-        defInsnVec.push_back(insn);
+        defInsnVec.emplace_back(insn);
         return defInsnVec;
       }
     }
@@ -313,7 +313,7 @@ std::vector<Insn*> AArch64ReachingDefinition::FindMemDefBetweenInsn(uint32 offse
 
     if (insn->IsCall()) {
       if (CallInsnClearDesignateStackRef(*insn, offset)) {
-        defInsnVec.push_back(insn);
+        defInsnVec.emplace_back(insn);
         return defInsnVec;
       }
       continue;
@@ -340,7 +340,7 @@ std::vector<Insn*> AArch64ReachingDefinition::FindMemDefBetweenInsn(uint32 offse
         int64 memOffset = memOpnd.GetOffsetImmediate()->GetOffsetValue();
         if ((offset == memOffset) ||
             (insn->IsStorePair() && offset == memOffset + GetEachMemSizeOfPair(insn->GetMachineOpcode()))) {
-          defInsnVec.push_back(insn);
+          defInsnVec.emplace_back(insn);
           return defInsnVec;
         }
       }

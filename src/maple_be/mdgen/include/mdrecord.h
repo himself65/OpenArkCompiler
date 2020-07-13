@@ -164,7 +164,7 @@ class VecElement : public MDElement {
   ~VecElement() override = default;
 
   void appendElement(MDElement *curElement) {
-    vecData.push_back(curElement);
+    vecData.emplace_back(curElement);
   }
 
   const maple::MapleVector<MDElement*> GetVecData() const {
@@ -195,7 +195,7 @@ class MDObject {
   const MDElement *GetOneMDElement(size_t index) const;
 
   void AddMDElements(MDElement* curElement) {
-    mdElements.push_back(curElement);
+    mdElements.emplace_back(curElement);
   }
 
   unsigned int GetIdx() const {

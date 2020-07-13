@@ -35,7 +35,7 @@ class AnalysisResult {
 
   virtual ~AnalysisResult() = default;
 
-  MemPool *GetMempool() {
+  MemPool *GetMempool() const {
     return memPool;
   }
 
@@ -94,12 +94,12 @@ class Phase {
   }
 
  private:
-  unsigned int memPoolCount = 0;
+  uint32 memPoolCount = 0;
   std::set<MemPool*> memPools;
   MemPoolCtrler *mpCtrler = &memPoolCtrler;
 };
 
-template <typename UnitIR, typename PhaseIDT, typename PhaseT>
+template<typename UnitIR, typename PhaseIDT, typename PhaseT>
 class AnalysisResultManager {
  public:
   explicit AnalysisResultManager(MapleAllocator *alloc)
@@ -148,25 +148,24 @@ class AnalysisResultManager {
     std::pair<PhaseIDT, UnitIR*> key = std::make_pair(id, ir);
     auto it = analysisResults.find(key);
     if (it != analysisResults.end()) {
-      AnalysisResult *r = analysisResults[key];
-      r->EraseMemPool();
+      AnalysisResult *result = analysisResults[key];
+      result->EraseMemPool();
       analysisResults.erase(it);
     }
   }
 
   void InvalidIRbaseAnalysisResult(UnitIR &ir) {
-    PhaseIDT id;
     for (auto it = analysisPhases.begin(); it != analysisPhases.end(); ++it) {
-      id = it->first;
+      PhaseIDT id = it->first;
       InvalidAnalysisResult(id, &ir);
     }
   }
 
   void InvalidAllResults() {
     for (auto it = analysisResults.begin(); it != analysisResults.end(); ++it) {
-      AnalysisResult *r = it->second;
-      ASSERT(r != nullptr, "r is null in AnalysisResultManager::InvalidAllResults");
-      r->EraseMemPool();
+      AnalysisResult *result = it->second;
+      ASSERT(result != nullptr, "result is null in AnalysisResultManager::InvalidAllResults");
+      result->EraseMemPool();
     }
     analysisResults.clear();
   }

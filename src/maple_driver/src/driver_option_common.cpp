@@ -18,7 +18,7 @@ namespace {
 using namespace maple;
 using namespace mapleOption;
 const mapleOption::Descriptor usages[] = {
-  // index, type , shortOption , longOption, enableBuildType, checkPolicy, help, exeName, extra bins
+  // index, type, shortOption, longOption, enableBuildType, checkPolicy, help, exeName, extra bins
   { kUnknown,
     0,
     "",

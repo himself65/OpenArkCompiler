@@ -149,12 +149,12 @@ class TypeAttrs {
   TypeAttrs &operator=(const TypeAttrs &t) = default;
   ~TypeAttrs() = default;
 
-  void SetAlignValue(uint8 flag) {
-    attrFlag = flag;
+  void SetAlignValue(uint8 align) {
+    attrAlign = align;
   }
 
   uint8 GetAlignValue() const {
-    return attrFlag;
+    return attrAlign;
   }
 
   void SetAttrFlag(uint64 flag) {
@@ -538,6 +538,18 @@ class MIRPtrType : public MIRType {
     pointedTyIdx = idx;
   }
 
+  TypeAttrs &GetTypeAttrs() {
+    return typeAttrs;
+  }
+
+  const TypeAttrs &GetTypeAttrs() const {
+    return typeAttrs;
+  }
+
+  void SetTypeAttrs(TypeAttrs attrs) {
+    typeAttrs = attrs;
+  }
+
   bool EqualTo(const MIRType &type) const override;
 
   bool HasTypeParam() const override;
@@ -548,7 +560,10 @@ class MIRPtrType : public MIRType {
   TyIdx GetPointedTyIdxWithFieldID(FieldID fieldID) const;
   size_t GetHashIndex() const override {
     constexpr uint8 idxShift = 4;
-    return ((static_cast<size_t>(pointedTyIdx) << idxShift) + (typeKind << kShiftNumOfTypeKind)) % kTypeHashLength;
+    constexpr uint8 attrShift = 3;
+    size_t hIdx = (static_cast<size_t>(pointedTyIdx) << idxShift) + (typeKind << kShiftNumOfTypeKind);
+    hIdx += (typeAttrs.GetAttrFlag() << attrShift) + typeAttrs.GetAlignValue();
+    return hIdx % kTypeHashLength;
   }
 
   bool PointsToConstString() const override;
@@ -558,6 +573,7 @@ class MIRPtrType : public MIRType {
   std::string GetCompactMplTypeName() const override;
  private:
   TyIdx pointedTyIdx;
+  TypeAttrs typeAttrs;
 };
 
 class MIRArrayType : public MIRType {
@@ -694,7 +710,9 @@ using MethodPair = std::pair<StIdx, TyidxFuncAttrPair>;
 using MethodVector = std::vector<MethodPair>;
 using MethodPtrVector = std::vector<MethodPair*>;
 using MIREncodedArray = std::vector<EncodedValue>;
-
+class GenericDeclare;
+class AnnotationType;
+class GenericType;
 // used by kTypeStruct, kTypeStructIncomplete, kTypeUnion
 class MIRStructType : public MIRType {
  public:
@@ -741,6 +759,14 @@ class MIRStructType : public MIRType {
   }
   const FieldVector &GetStaticFields() const {
     return staticFields;
+  }
+
+  const FieldPair &GetStaticFieldsPair(size_t i) const {
+    return staticFields.at(i);
+  }
+
+  GStrIdx GetStaticFieldsGStrIdx(size_t i) const {
+    return staticFields.at(i).first;
   }
 
   FieldVector &GetParentFields() {
@@ -974,6 +1000,36 @@ class MIRStructType : public MIRType {
     CHECK_FATAL(false, "can not use GetPragmaVec");
   }
 
+  std::vector<GenericDeclare*>& GetGenericDeclare() {
+    return genericDeclare;
+  }
+
+  void AddClassGenericDeclare(GenericDeclare *gd) {
+    genericDeclare.push_back(gd);
+  }
+
+  void AddFieldGenericDeclare(GStrIdx g, AnnotationType *a) {
+    if (fieldGenericDeclare.find(g) != fieldGenericDeclare.end()) {
+      CHECK_FATAL(fieldGenericDeclare[g] == a, "MUST BE");
+    }
+    fieldGenericDeclare[g] = a;
+  }
+
+  AnnotationType *GetFieldGenericDeclare(GStrIdx g) {
+    if (fieldGenericDeclare.find(g) == fieldGenericDeclare.end()) {
+      return nullptr;
+    }
+    return fieldGenericDeclare[g];
+  }
+
+  void AddInheritaceGeneric(GenericType *a) {
+    inheritanceGeneric.push_back(a);
+  }
+
+  std::vector<GenericType*> &GetInheritanceGeneric() {
+    return inheritanceGeneric;
+  }
+
   virtual const MIREncodedArray &GetStaticValue() const {
     CHECK_FATAL(false, "can not use GetStaticValue");
   }
@@ -1013,6 +1069,9 @@ class MIRStructType : public MIRType {
   mutable bool hasVolatileField = false;     // for caching computed value
   mutable bool hasVolatileFieldSet = false;  // if true, just read hasVolatileField;
                                              // otherwise compute to initialize hasVolatileField
+  std::vector<GenericDeclare*> genericDeclare;
+  std::map<GStrIdx, AnnotationType*> fieldGenericDeclare;
+  std::vector<GenericType*> inheritanceGeneric;
  private:
   FieldPair TraverseToField(FieldID fieldID) const ;
   FieldPair TraverseToField(GStrIdx fieldStrIdx) const ;

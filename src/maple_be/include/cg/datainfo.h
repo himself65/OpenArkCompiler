@@ -26,7 +26,7 @@ class DataInfo {
       : allocator(&mp),
         info(allocator.Adapter()) {
     for (uint64 i = 0;i < (bitNum / kWordSize + 1); ++i) {
-      info.push_back(0);
+      info.emplace_back(0);
     }
   }
 
@@ -132,7 +132,7 @@ class DataInfo {
     /* add one more size for each enlarge action */
     auto sizeToEnlarge = static_cast<int32>((bitNO / kWordSize + 1) - info.size());
     for (int32 i = 0; i < sizeToEnlarge; i++) {
-      info.push_back(0ULL);
+      info.emplace_back(0ULL);
     }
   }
 

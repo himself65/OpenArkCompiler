@@ -158,6 +158,14 @@ bool MIRSymbol::IsMuidRangeTab() const {
   return StringUtils::StartsWith(GetName(), kMuidRangeTabPrefixStr);
 }
 
+bool MIRSymbol::IsArrayClassCache() const {
+  return StringUtils::StartsWith(GetName(), kArrayClassCacheTable);
+}
+
+bool MIRSymbol::IsArrayClassCacheName() const {
+  return StringUtils::StartsWith(GetName(), kArrayClassCacheNameTable);
+}
+
 bool MIRSymbol::IsClassInitBridge() const {
   return StringUtils::StartsWith(GetName(), CLASS_INIT_BRIDGE_PREFIX_STR);
 }
@@ -190,6 +198,10 @@ bool MIRSymbol::IsReflectionFieldOffsetData() const {
 
 bool MIRSymbol::IsReflectionMethodAddrData() const {
   return (GetName().find(kMethodAddrDataPrefixStr) == 0);
+}
+
+bool MIRSymbol::IsReflectionMethodSignature() const {
+  return (GetName().find(kMethodSignaturePrefixStr) == 0);
 }
 
 bool MIRSymbol::IsReflectionClassInfo() const {

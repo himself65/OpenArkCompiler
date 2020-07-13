@@ -147,6 +147,9 @@ bool MIRBuilder::TraverseToNamedFieldWithTypeAndMatchStyle(MIRStructType &struct
     unsigned int style = matchStyle & kMatchAnyField;
     if (fieldType->IsStructType()) {
       auto *subStructType = static_cast<MIRStructType*>(fieldType);
+      if (subStructType->GetKind() == kTypeUnion) {
+        continue;
+      }
       if (TraverseToNamedFieldWithTypeAndMatchStyle(*subStructType, nameIdx, typeIdx, fieldID, style)) {
         return true;
       }
@@ -433,7 +436,11 @@ MIRSymbol *MIRBuilder::GetSymbol(TyIdx tyIdx, const std::string &name, MIRSymKin
 // when sametype is true, it means match everything the of the symbol
 MIRSymbol *MIRBuilder::GetSymbol(TyIdx tyIdx, GStrIdx strIdx, MIRSymKind mClass, MIRStorageClass sClass,
                                  uint8 scpID, bool sameType = false) const {
-  return MIRSymbolBuilder::Instance().GetSymbol(tyIdx, strIdx, mClass, sClass, scpID, sameType);
+  if (scpID != kScopeGlobal) {
+    ERR(kLncErr, "not yet implemented");
+    return nullptr;
+  }
+  return MIRSymbolBuilder::Instance().GetSymbol(tyIdx, strIdx, mClass, sClass, sameType);
 }
 
 MIRSymbol *MIRBuilder::GetOrCreateSymbol(TyIdx tyIdx, const std::string &name, MIRSymKind mClass,
@@ -655,8 +662,12 @@ JarrayMallocNode *MIRBuilder::CreateExprJarrayMalloc(Opcode opcode, const MIRTyp
   return GetCurrentFuncCodeMp()->New<JarrayMallocNode>(opcode, pType.GetPrimType(), type.GetTypeIndex(), opnd);
 }
 
+TypeCvtNode *MIRBuilder::CreateExprTypeCvt(Opcode o, PrimType  toPrimType, PrimType fromPrimType, BaseNode &opnd) {
+  return GetCurrentFuncCodeMp()->New<TypeCvtNode>(o, toPrimType, fromPrimType, &opnd);
+}
+
 TypeCvtNode *MIRBuilder::CreateExprTypeCvt(Opcode o, const MIRType &type, const MIRType &fromType, BaseNode *opnd) {
-  return GetCurrentFuncCodeMp()->New<TypeCvtNode>(o, type.GetPrimType(), fromType.GetPrimType(), opnd);
+  return CreateExprTypeCvt(o, type.GetPrimType(), fromType.GetPrimType(), *opnd);
 }
 
 ExtractbitsNode *MIRBuilder::CreateExprExtractbits(Opcode o, const MIRType &type, uint32 bOffset, uint32 bSize,

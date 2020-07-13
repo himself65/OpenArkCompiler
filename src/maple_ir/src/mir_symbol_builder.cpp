@@ -60,12 +60,7 @@ MIRSymbol *MIRSymbolBuilder::CreateGlobalDecl(GStrIdx strIdx, const MIRType &typ
 
 // when sametype is true, it means match everything the of the symbol
 MIRSymbol *MIRSymbolBuilder::GetSymbol(TyIdx tyIdx, GStrIdx strIdx, MIRSymKind mClass, MIRStorageClass sClass,
-                                       uint8 scpID, bool sameType) const {
-  if (scpID != kScopeGlobal) {
-    ERR(kLncErr, "not yet implemented");
-    return nullptr;
-  }
-
+                                       bool sameType) const {
   MIRSymbol *st = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(strIdx);
   if (st == nullptr || st->GetTyIdx() != tyIdx) {
     return nullptr;

@@ -44,8 +44,18 @@ inline bool FindNotIn(const std::set<T, Comparator> &set, const T &item) {
   return set.find(item) == set.end();
 }
 
+template <typename T, typename Comparator = std::less<T>>
+inline bool FindNotIn(const std::unordered_set<T, Comparator> &set, const T &item) {
+  return set.find(item) == set.end();
+}
+
 template <typename T>
 inline bool FindNotIn(const MapleSet<T> &set, const T &item) {
+  return set.find(item) == set.end();
+}
+
+template <typename T>
+inline bool FindNotIn(const MapleUnorderedSet<T> &set, const T &item) {
   return set.find(item) == set.end();
 }
 
@@ -59,8 +69,18 @@ inline bool FindIn(const std::set<T, Comparator> &set, const T &item) {
   return set.find(item) != set.end();
 }
 
+template <typename T, typename Comparator = std::less<T>>
+inline bool FindIn(const std::unordered_set<T, Comparator> &set, const T &item) {
+  return set.find(item) != set.end();
+}
+
 template<typename T>
 inline bool FindIn(const MapleSet<T> &set, const T &item) {
+  return set.find(item) != set.end();
+}
+
+template<typename T>
+inline bool FindIn(const MapleUnorderedSet<T> &set, const T &item) {
   return set.find(item) != set.end();
 }
 
@@ -571,8 +591,7 @@ class LocalRaInfo {
  public:
   explicit LocalRaInfo(MapleAllocator &allocator)
       : defCnt(allocator.Adapter()),
-        useCnt(allocator.Adapter()),
-        globalPreg(allocator.Adapter()) {}
+        useCnt(allocator.Adapter()) {}
 
   ~LocalRaInfo() = default;
 
@@ -600,32 +619,9 @@ class LocalRaInfo {
     useCnt[key] = value;
   }
 
-  void InsertElemToGlobalPreg(regno_t regNO) {
-    globalPreg.insert(regNO);
-  }
-
-  uint64 GetGlobalPregMask() const {
-    return globalPregMask;
-  }
-
-  void SetGlobalPregMask(uint64 mask) {
-    globalPregMask = mask;
-  }
-
-  uint64 GetLocalPregMask() const {
-    return localPregMask;
-  }
-
-  void SetLocalPregMask(uint64 mask) {
-    localPregMask = mask;
-  }
-
  private:
   MapleMap<regno_t, uint16> defCnt;
   MapleMap<regno_t, uint16> useCnt;
-  MapleSet<regno_t> globalPreg;
-  uint64 globalPregMask = 0;  /* global phys reg used in bb */
-  uint64 localPregMask  = 0;  /* local phys reg used in bb */
 };
 
 /* For each bb, record info pertain to allocation */
@@ -722,13 +718,13 @@ class FinalizeRegisterInfo {
   }
 
   void SetDefOperand(Operand &opnd, const int32 idx) {
-    defOperands.push_back(&opnd);
-    defIdx.push_back(idx);
+    defOperands.emplace_back(&opnd);
+    defIdx.emplace_back(idx);
   }
 
   void SetUseOperand(Operand &opnd, const int32 idx) {
-    useOperands.push_back(&opnd);
-    useIdx.push_back(idx);
+    useOperands.emplace_back(&opnd);
+    useIdx.emplace_back(idx);
   }
 
   int32 GetMemOperandIdx() const {
@@ -1147,13 +1143,13 @@ class GraphColorRegAllocator : public AArch64RegAllocator {
   void CalculatePriority(LiveRange &lr) const;
   bool CreateLiveRangeHandleLocal(regno_t regNO, BB &bb, bool isDef);
   LiveRange *CreateLiveRangeAllocateAndUpdate(regno_t regNO, const BB &bb, bool isDef, uint32 currId);
-  bool CreateLiveRange(regno_t regNO, BB &bb, bool isDef, uint32 currPoint, bool update_cnt);
+  bool CreateLiveRange(regno_t regNO, BB &bb, bool isDef, uint32 currPoint, bool updateCount);
   bool SetupLiveRangeByOpHandlePhysicalReg(RegOperand &op, Insn &insn, regno_t regNO, bool isDef);
   void SetupLiveRangeByOp(Operand &op, Insn &insn, bool isDef, uint32 &numUses);
   void SetupLiveRangeByRegNO(regno_t liveOut, BB &bb, uint32 currPoint);
   bool UpdateInsnCntAndSkipUseless(Insn &insn, uint32 &currPoint);
   void UpdateCallInfo(uint32 bbId);
-  void ClassifyOperand(std::set<regno_t> &pregs, std::set<regno_t> &vregs, const Operand &opnd);
+  void ClassifyOperand(std::unordered_set<regno_t> &pregs, std::unordered_set<regno_t> &vregs, const Operand &opnd);
   void SetOpndConflict(const Insn &insn, bool onlyDef);
   void UpdateOpndConflict(const Insn &insn, bool multiDef);
   void ComputeLiveRangesForEachDefOperand(Insn &insn, bool &multiDef);
@@ -1199,8 +1195,8 @@ class GraphColorRegAllocator : public AArch64RegAllocator {
                                 RegType regType);
   MemOperand *GetReuseMem(uint32 vregNO, uint32 size, RegType regType);
   MemOperand *GetSpillMem(uint32 vregNO, bool isDest, Insn &insn, AArch64reg regNO, bool &isOutOfRange);
-  bool SetAvailableSpillReg(std::set<regno_t> &cannotUseReg, LiveRange &lr, uint64 &usedRegMask);
-  void CollectCannotUseReg(std::set<regno_t> &cannotUseReg, LiveRange &lr, Insn &insn);
+  bool SetAvailableSpillReg(std::unordered_set<regno_t> &cannotUseReg, LiveRange &lr, uint64 &usedRegMask);
+  void CollectCannotUseReg(std::unordered_set<regno_t> &cannotUseReg, LiveRange &lr, Insn &insn);
   regno_t PickRegForSpill(uint64 &usedRegMask, RegType regType, uint32 spillIdx, bool &needSpillLr);
   bool SetRegForSpill(LiveRange &lr, Insn &insn, uint32 spillIdx, uint64 &usedRegMask, bool isDef);
   bool GetSpillReg(Insn &insn, LiveRange &lr, uint32 &spillIdx, uint64 &usedRegMask, bool isDef);
@@ -1217,6 +1213,7 @@ class GraphColorRegAllocator : public AArch64RegAllocator {
   regno_t FindColorForLr(const LiveRange &lr) const;
   bool ShouldUseCallee(LiveRange &lr, const MapleSet<regno_t> &calleeUsed,
                        const MapleVector<LiveRange*> &delayed) const;
+  void AddCalleeUsed(regno_t regNO, RegType regType);
   bool AssignColorToLr(LiveRange &lr, bool isDelayed = false);
   void PruneLrForSplit(LiveRange &lr, BB &bb, bool remove, std::set<CGFuncLoops*, CGFuncLoopCmp> &candidateInLoop,
                        std::set<CGFuncLoops*, CGFuncLoopCmp> &defInLoop);
@@ -1229,26 +1226,26 @@ class GraphColorRegAllocator : public AArch64RegAllocator {
   void ComputeBBForNewSplit(LiveRange &newLr, LiveRange &oldLr);
   void ClearLrBBFlags(const std::set<BB*, SortedBBCmpFunc> &member);
   void ComputeBBForOldSplit(LiveRange &newLr, LiveRange &oldLr);
-  bool LrCanBeColored(LiveRange &lr, BB &bbAdded, std::set<regno_t> &conflictRegs);
+  bool LrCanBeColored(LiveRange &lr, BB &bbAdded, std::unordered_set<regno_t> &conflictRegs);
   void MoveLrBBInfo(LiveRange &oldLr, LiveRange &newLr, BB &bb);
   bool ContainsLoop(const CGFuncLoops &loop, const std::set<CGFuncLoops*, CGFuncLoopCmp> &loops) const;
   void GetAllLrMemberLoops(LiveRange &lr, std::set<CGFuncLoops*, CGFuncLoopCmp> &loop);
   bool SplitLrShouldSplit(LiveRange &lr);
-  bool SplitLrFindCandidateLr(LiveRange &lr, LiveRange &newLr, std::set<regno_t> &conflictRegs);
+  bool SplitLrFindCandidateLr(LiveRange &lr, LiveRange &newLr, std::unordered_set<regno_t> &conflictRegs);
   void SplitLrHandleLoops(LiveRange &lr, LiveRange &newLr, const std::set<CGFuncLoops*, CGFuncLoopCmp> &oldLoops,
                           const std::set<CGFuncLoops*, CGFuncLoopCmp> &newLoops);
   void SplitLrFixNewLrCallsAndRlod(LiveRange &newLr, const std::set<CGFuncLoops*, CGFuncLoopCmp> &origLoops);
   void SplitLrFixOrigLrCalls(LiveRange &lr);
   void SplitLrUpdateInterference(LiveRange &lr);
-  void SplitLrUpdateRegInfo(LiveRange &origLr, LiveRange &newLr, std::set<regno_t> &conflictRegs);
+  void SplitLrUpdateRegInfo(LiveRange &origLr, LiveRange &newLr, std::unordered_set<regno_t> &conflictRegs);
   void SplitLrErrorCheckAndDebug(LiveRange &origLr);
   void SplitLr(LiveRange &lr);
 
   static constexpr uint16 kMaxUint16 = 0x7fff;
 
   MapleVector<BB*> bbVec;
-  MapleSet<regno_t> vregLive;
-  MapleSet<regno_t> pregLive;
+  MapleUnorderedSet<regno_t> vregLive;
+  MapleUnorderedSet<regno_t> pregLive;
   MapleVector<LiveRange*> lrVec;
   MapleVector<LocalRaInfo*> localRegVec;  /* local reg info for each bb, no local reg if null */
   MapleVector<BBAssignInfo*> bbRegInfo;   /* register assignment info for each bb */

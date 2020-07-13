@@ -190,6 +190,43 @@ class SSARename2Preg {
     return name;
   }
 
+  void CollectRefedOst(MeExpr &meExpr) {
+    MeExprOp op = meExpr.GetMeOp();
+    switch (op) {
+      case kMeOpOp: {
+        OpMeExpr &expr = static_cast<OpMeExpr&>(meExpr);
+        for (uint32 i = 0; i < kOperandNumTernary; ++i) {
+          MeExpr *opnd = expr.GetOpnd(i);
+          if (opnd != nullptr) {
+            CollectRefedOst(*opnd);
+          }
+        }
+        break;
+      }
+      case kMeOpNary: {
+        NaryMeExpr &expr = static_cast<NaryMeExpr&>(meExpr);
+        MapleVector<MeExpr*> &opnds = expr.GetOpnds();
+        for (MapleVector<MeExpr*>::iterator it = opnds.begin(); it != opnds.end(); ++it) {
+          CollectRefedOst(*(*it));
+        }
+        break;
+      }
+      case kMeOpIvar: {
+        IvarMeExpr &expr = static_cast<IvarMeExpr&>(meExpr);
+        CollectRefedOst(*(expr.GetBase()));
+        break;
+      }
+      case kMeOpAddrof: {
+        AddrofMeExpr &expr = static_cast<AddrofMeExpr&>(meExpr);
+        referencedOst[expr.GetOstIdx().GetIdx()] = true;
+        break;
+      }
+      default:
+        break;
+    }
+    return;
+  }
+
   void Run(MeFunction &func, MeFuncResultMgr *pFuncRst) {
     bool emptyFunc = func.empty();
     if (!emptyFunc) {
@@ -198,6 +235,16 @@ class SSARename2Preg {
       const AliasClass &aliasClass = utils::ToRef(GetAnalysisResult<MeFuncPhase_ALIASCLASS>(func, funcRst));
 
       cacheProxy.Init(utils::ToRef(ssaTab), irMap);
+      // first pass: collect var that is referenced
+      for (auto it = func.valid_begin(), eIt = func.valid_end(); it != eIt; ++it) {
+        BB &bb = utils::ToRef(*it);
+        for (MeStmt &stmt : bb.GetMeStmts()) {
+          for (size_t i = 0; i < stmt.NumMeStmtOpnds(); ++i) {
+            CollectRefedOst(*stmt.GetOpnd(i));
+          }
+        }
+      }
+
       for (auto it = func.valid_begin(), eIt = func.valid_end(); it != eIt; ++it) {
         BB &bb = utils::ToRef(*it);
 
@@ -331,7 +378,7 @@ class SSARename2Preg {
       return;
     }
 
-    VarMeExpr &varExpr =(utils::ToRef(lhs));
+    VarMeExpr &varExpr = (utils::ToRef(lhs));
     RegMeExpr *pRegExpr = RenameVar(aliasClass, varExpr);
     if (pRegExpr == nullptr) {
       return;
@@ -364,7 +411,15 @@ class SSARename2Preg {
       return nullptr;
     }
 
+    if (varExpr.GetPrimType() == PTY_agg) {
+      return nullptr;
+    }
+
     if (ost.GetIndirectLev() != 0) {
+      return nullptr;
+    }
+
+    if (referencedOst[ost.GetIndex().GetIdx()]) {
       return nullptr;
     }
 
@@ -420,6 +475,7 @@ class SSARename2Preg {
 
   CacheProxy cacheProxy;
   FormalRenaming formal;
+  std::unordered_map<uint32, bool> referencedOst;
 };
 }
 

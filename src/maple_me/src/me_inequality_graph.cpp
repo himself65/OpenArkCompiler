@@ -326,6 +326,21 @@ void InequalityGraph::DumpDotFile(IRMap &irMap, DumpType dumpType) const {
   fileBuf.close();
 }
 
+bool ABCD::IsLessOrEqual(const MeExpr &arrayNode, const MeExpr &idx) {
+  ESSABaseNode &aNode = inequalityGraph->GetNode(arrayNode);
+  ESSABaseNode *idxNode = nullptr;
+  if (idx.GetMeOp() == kMeOpVar) {
+    idxNode = &(inequalityGraph->GetNode(idx));
+  } else {
+    CHECK_FATAL(idx.GetMeOp() == kMeOpConst, "must be");
+    idxNode = &(inequalityGraph->GetNode(static_cast<const ConstMeExpr&>(idx).GetIntValue()));
+  }
+  std::unique_ptr<InequalEdge> e = std::make_unique<InequalEdge>(kLowerBound, kUpper);
+  active.clear();
+  ProveResult res = Prove(aNode, *idxNode, *e.get());
+  return res == kTrue;
+}
+
 bool ABCD::DemandProve(const MeExpr &arrayNode, const MeExpr &idx) {
   ESSABaseNode &aNode = inequalityGraph->GetNode(arrayNode);
   ESSABaseNode *idxNode = nullptr;

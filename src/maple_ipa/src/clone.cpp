@@ -15,7 +15,7 @@
 #include "clone.h"
 #include <iostream>
 #include <algorithm>
-#include <mir_symbol.h>
+#include "mir_symbol.h"
 
 // For some funcs, when we can ignore their return-values, we clone a new func of
 // them without return-values. We configure a list to save these funcs and clone
@@ -83,7 +83,7 @@ void Clone::CloneLabels(MIRFunction &newFunc, const MIRFunction &oldFunc) {
   for (size_t i = 1; i < labelTabSize; ++i) {
     const std::string &labelName = oldFunc.GetLabelTabItem(i);
     GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(labelName);
-    newFunc.GetLabelTab()->AddLabel(strIdx);
+    (void)newFunc.GetLabelTab()->AddLabel(strIdx);
   }
 }
 
@@ -102,9 +102,9 @@ MIRFunction *Clone::CloneFunction(MIRFunction &originalFunction, const std::stri
   fullName = fullName.append(
       namemangler::kNameSplitterStr).append(newBaseFuncName).append(namemangler::kNameSplitterStr).append(signature);
   MIRFunction *newFunc =
-      dexBuilder.CreateFunction(fullName, *retType, argument, false, originalFunction.GetBody() != nullptr);
+      mirBuilder.CreateFunction(fullName, *retType, argument, false, originalFunction.GetBody() != nullptr);
   CHECK_FATAL(newFunc != nullptr, "create cloned function failed");
-  dexBuilder.GetMirModule().AddFunction(newFunc);
+  mirBuilder.GetMirModule().AddFunction(newFunc);
   Klass *klass = kh->GetKlassFromName(originalFunction.GetBaseClassName());
   CHECK_FATAL(klass != nullptr, "getklass failed");
   klass->AddMethod(newFunc);
@@ -119,13 +119,13 @@ MIRFunction *Clone::CloneFunction(MIRFunction &originalFunction, const std::stri
   newFunc->SetBaseClassFuncNames(GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(fullName));
   if (originalFunction.GetBody() != nullptr) {
     CopyFuncInfo(originalFunction, *newFunc);
-    MIRFunction *originalCurrFunction = dexBuilder.GetCurrentFunctionNotNull();
-    dexBuilder.SetCurrentFunction(*newFunc);
+    MIRFunction *originalCurrFunction = mirBuilder.GetCurrentFunctionNotNull();
+    mirBuilder.SetCurrentFunction(*newFunc);
     newFunc->SetBody(
         originalFunction.GetBody()->CloneTree(originalFunction.GetModule()->GetCurFuncCodeMPAllocator()));
     CloneSymbols(*newFunc, originalFunction);
     CloneLabels(*newFunc, originalFunction);
-    dexBuilder.SetCurrentFunction(*originalCurrFunction);
+    mirBuilder.SetCurrentFunction(*originalCurrFunction);
   }
   return newFunc;
 }
@@ -140,9 +140,9 @@ void Clone::CopyFuncInfo(const MIRFunction &originalFunction, MIRFunction &newFu
   auto funcNameIdx = newFunc.GetBaseFuncNameStrIdx();
   auto fullNameIdx = newFunc.GetNameStrIdx();
   auto classNameIdx = newFunc.GetBaseClassNameStrIdx();
-  auto metaFullNameIdx = dexBuilder.GetOrCreateStringIndex(kFullNameStr);
-  auto metaClassNameIdx = dexBuilder.GetOrCreateStringIndex(kClassNameStr);
-  auto metaFuncNameIdx = dexBuilder.GetOrCreateStringIndex(kFuncNameStr);
+  auto metaFullNameIdx = mirBuilder.GetOrCreateStringIndex(kFullNameStr);
+  auto metaClassNameIdx = mirBuilder.GetOrCreateStringIndex(kClassNameStr);
+  auto metaFuncNameIdx = mirBuilder.GetOrCreateStringIndex(kFuncNameStr);
   const MIRInfoVector &fnInfo = originalFunction.GetInfoVector();
   const MapleVector<bool> &infoIsString = originalFunction.InfoIsString();
   size_t size = fnInfo.size();
@@ -162,10 +162,10 @@ void Clone::CopyFuncInfo(const MIRFunction &originalFunction, MIRFunction &newFu
 
 void Clone::UpdateFuncInfo(MIRFunction &newFunc) {
   auto fullNameIdx = newFunc.GetNameStrIdx();
-  auto metaFullNameIdx = dexBuilder.GetOrCreateStringIndex(kFullNameStr);
+  auto metaFullNameIdx = mirBuilder.GetOrCreateStringIndex(kFullNameStr);
   size_t size = newFunc.GetInfoVector().size();
   for (size_t i = 0; i < size; ++i) {
-    if (newFunc.GetInfoVector()[i].first == metaFullNameIdx) {
+    if (newFunc.GetInfoPair(i).first == metaFullNameIdx) {
       newFunc.SetMIRInfoNum(i, fullNameIdx);
       break;
     }
@@ -174,23 +174,23 @@ void Clone::UpdateFuncInfo(MIRFunction &newFunc) {
 
 // Clone all functions that would be invoked with their return value ignored
 // @param original_function The original function to be cloned
-// @param dexBuilder A helper object
+// @param mirBuilder A helper object
 // @return Pointer to the newly cloned function
 MIRFunction *Clone::CloneFunctionNoReturn(MIRFunction &originalFunction) {
   const std::string oldSignature = originalFunction.GetSignature();
   const std::string kNewMethodBaseName = replaceRetIgnored->GenerateNewBaseName(originalFunction);
-  MIRFunction *originalCurrFunction = dexBuilder.GetMirModule().CurFunction();
+  MIRFunction *originalCurrFunction = mirBuilder.GetMirModule().CurFunction();
   MIRFunction *newFunction =
       CloneFunction(originalFunction, kNewMethodBaseName, GlobalTables::GetTypeTable().GetTypeFromTyIdx(1));
 
-  // new stmt should be located in the newFunction->codemp, dexBuilder.CreateStmtReturn will use CurFunction().codemp
+  // new stmt should be located in the newFunction->codemp, mirBuilder.CreateStmtReturn will use CurFunction().codemp
   // to assign space for the new stmt. So we set it correctly here.
-  dexBuilder.GetMirModule().SetCurFunction(newFunction);
+  mirBuilder.GetMirModule().SetCurFunction(newFunction);
   if (originalFunction.GetBody() != nullptr) {
     auto *body = newFunction->GetBody();
     for (auto &stmt : body->GetStmtNodes()) {
       if (stmt.GetOpCode() == OP_return) {
-        body->ReplaceStmt1WithStmt2(&stmt, dexBuilder.CreateStmtReturn(nullptr));
+        body->ReplaceStmt1WithStmt2(&stmt, mirBuilder.CreateStmtReturn(nullptr));
       }
     }
   }
@@ -203,7 +203,7 @@ MIRFunction *Clone::CloneFunctionNoReturn(MIRFunction &originalFunction) {
   funcSt->SetNameStrIdx(fullNameStrIdx);
   GlobalTables::GetGsymTable().AddToStringSymbolMap(*funcSt);
   UpdateFuncInfo(*newFunction);
-  dexBuilder.GetMirModule().SetCurFunction(originalCurrFunction);
+  mirBuilder.GetMirModule().SetCurFunction(originalCurrFunction);
   return newFunction;
 }
 
@@ -235,13 +235,13 @@ void Clone::DoClone() {
   }
 }
 
-AnalysisResult *DoClone::Run(MIRModule *module, ModuleResultMgr *mrm) {
+AnalysisResult *DoClone::Run(MIRModule *module, ModuleResultMgr *mgr) {
   MemPool *memPool = memPoolCtrler.NewMemPool(PhaseName());
   maple::MIRBuilder dexMirBuilder(module);
-  KlassHierarchy *kh = static_cast<KlassHierarchy*>(mrm->GetAnalysisResult(MoPhase_CHA, module));
+  KlassHierarchy *kh = static_cast<KlassHierarchy*>(mgr->GetAnalysisResult(MoPhase_CHA, module));
   Clone *clone = memPool->New<Clone>(module, memPool, dexMirBuilder, kh);
   clone->DoClone();
-  mrm->AddResult(GetPhaseID(), *module, *clone);
+  mgr->AddResult(GetPhaseID(), *module, *clone);
   return clone;
 }
 }  // namespace maple

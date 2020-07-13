@@ -332,8 +332,9 @@ CG *DriverRunner::CreateCGAndBeCommon(const std::string &outputFile, const std::
 void DriverRunner::RunCGFunctions(CG &cg, CgFuncPhaseManager &cgfpm) const {
   MIRLower mirLowerer(*theModule, nullptr);
   mirLowerer.Init();
-  CGLowerer theLowerer(*theModule, *beCommon, cg.GenerateExceptionHandlingCode(), cg.GenerateVerboseAsm());
+  CGLowerer theLowerer(*theModule, *beCommon, cg.GenerateExceptionHandlingCode(), cg.GenerateVerboseCG());
   theLowerer.RegisterBuiltIns();
+  theLowerer.InitArrayClassCacheTableIndex();
   theLowerer.RegisterExternalLibraryFunctions();
   theLowerer.SetCheckLoadStore(CGOptions::IsCheckArrayStore());
 

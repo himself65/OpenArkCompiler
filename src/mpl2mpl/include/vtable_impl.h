@@ -37,6 +37,8 @@ class VtableImpl : public FuncOptimizeImpl {
 
  private:
   void ReplaceResolveInterface(StmtNode &stmt, const ResolveFuncNode &resolveNode);
+  void ItabProcess(StmtNode &stmt, const ResolveFuncNode &resolveNode, const std::string &signature,
+                   PregIdx &pregFuncPtr, const MIRType &compactPtrType, const PrimType &compactPtrPrim);
   bool Intrinsify(MIRFunction &func, CallNode &cnode);
   MIRModule *mirModule;
   MIRFunction *mccItabFunc;

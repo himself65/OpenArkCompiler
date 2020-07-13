@@ -143,41 +143,28 @@ class MIRFunction {
     CHECK_FATAL(funcType != nullptr, "funcType is nullptr");
     return funcType->GetParamTypeList().size();
   }
+
   const MapleVector<TyIdx> &GetParamTypes() const {
     CHECK_FATAL(funcType != nullptr, "funcType is nullptr");
     return funcType->GetParamTypeList();
   }
+
   TyIdx GetNthParamTyIdx(size_t i) const {
     ASSERT(i < funcType->GetParamTypeList().size(), "array index out of range");
     return funcType->GetParamTypeList()[i];
   }
+
   const MIRType *GetNthParamType(size_t i) const;
   MIRType *GetNthParamType(size_t i);
+
   const TypeAttrs &GetNthParamAttr(size_t i) const {
-    CHECK_FATAL(funcType != nullptr, "funcType is nullptr");
-    ASSERT(i < funcType->GetParamAttrsList().size(), "array index out of range");
-    return funcType->GetNthParamAttrs(i);
+    ASSERT(i < formals.size(), "array index out of range");
+    return formals[i]->GetAttrs();
   }
 
-  void SetNthParamAttr(size_t i, TypeAttrs attrs) {
-    CHECK_FATAL(funcType != nullptr, "funcType is nullptr");
-    ASSERT(i < funcType->GetParamAttrsList().size(), "array index out of range");
-    funcType->SetNthParamAttrs(i, attrs);
-  }
-
-  void SetNthParamAttrKind(size_t i, AttrKind x) const {
-    CHECK_FATAL(funcType != nullptr, "funcType is nullptr");
-    CHECK_FATAL(i < funcType->GetParamAttrsList().size(), "array index out of range");
-    funcType->GetNthParamAttrs(i).SetAttr(x);
-  }
-
-  void AddArgument(MIRSymbol *symbol) {
-    formals.push_back(symbol);
-    CHECK_FATAL(funcType != nullptr, "funcType is nullptr");
-    funcType->GetParamTypeList().push_back(symbol->GetTyIdx());
-    funcType->GetParamAttrsList().push_back(symbol->GetAttrs());
-  }
-
+  void UpdateFuncTypeAndFormals(const std::vector<MIRSymbol*> &symbols, bool clearOldArgs = false);
+  void UpdateFuncTypeAndFormalsAndReturnType(const std::vector<MIRSymbol*> &symbols, TyIdx retTyIdx,
+                                             bool clearOldArgs = false);
   LabelIdx GetOrCreateLableIdxFromName(const std::string &name);
   GStrIdx GetLabelStringIndex(LabelIdx labelIdx) const {
     CHECK_FATAL(labelTab != nullptr, "labelTab is nullptr");
@@ -450,30 +437,11 @@ class MIRFunction {
   TyIdx GetInferredReturnTyIdx() const {
     return inferredReturnTyIdx;
   }
+
   void SetInferredReturnTyIdx(TyIdx tyIdx) {
     inferredReturnTyIdx = tyIdx;
   }
 
-  const MapleVector<TyIdx> &GetArgumentsTyIdx() const {
-    return argumentsTyIdx;
-  }
-  void ClearArgumentsTyIdx() {
-    argumentsTyIdx.clear();
-  }
-  TyIdx GetArgumentsTyIdxItem(size_t i) const {
-    ASSERT(i < argumentsTyIdx.size(), "array index out of range");
-    return argumentsTyIdx.at(i);
-  }
-  size_t GetArgumentsTyIdxSize() const {
-    return argumentsTyIdx.size();
-  }
-
-  const MapleVector<TypeAttrs> &GetArgumentsAttrs() const {
-    return argumentsAttrs;
-  }
-  void ClearArgumentsAttrs() {
-    argumentsAttrs.clear();
-  }
   bool HaveTypeNameTab() {
     return typeNameTab != nullptr;
   }
@@ -559,9 +527,15 @@ class MIRFunction {
   const MIRInfoVector &GetInfoVector() const {
     return info;
   }
+
+  const MIRInfoPair &GetInfoPair(size_t i) const {
+    return info.at(i);
+  }
+
   void PushbackMIRInfo(const MIRInfoPair &pair) {
     info.push_back(pair);
   }
+
   void SetMIRInfoNum(size_t idx, uint32 num) {
     info[idx].second = num;
   }
@@ -786,6 +760,41 @@ class MIRFunction {
     return codeMemPoolAllocator;
   }
 
+  void AddFuncGenericDeclare(GenericDeclare *g) {
+    genericDeclare.push_back(g);
+  }
+
+  void AddFuncGenericArg(AnnotationType *a) {
+    genericArg.push_back(a);
+  }
+
+  void AddFuncGenericRet(AnnotationType *r) {
+    genericRet = r;
+  }
+
+  void AddFuncLocalGenericVar(GStrIdx str, AnnotationType *at) {
+    genericLocalVar[str] = at;
+  }
+
+  MapleVector<GenericDeclare*> &GetFuncGenericDeclare() {
+    return genericDeclare;
+  }
+
+  MapleVector<AnnotationType*> &GetFuncGenericArg() {
+    return genericArg;
+  }
+
+  AnnotationType *GetFuncGenericRet() {
+    return genericRet;
+  }
+
+  AnnotationType *GetFuncLocalGenericVar(GStrIdx str) {
+    if (genericLocalVar.find(str) == genericLocalVar.end()) {
+      return nullptr;
+    }
+    return genericLocalVar[str];
+  }
+
 
   void AddProfileDesc(uint64 hash, uint32 start, uint32 end) {
     profileDesc = module->GetMemPool()->New<IRProfileDesc>(hash, start, end);
@@ -805,14 +814,16 @@ class MIRFunction {
   PUIdx puIdxOrigin = 0;     // the original puIdx when initial generation
   StIdx symbolTableIdx;  // the symbol table index of this function
   MIRFuncType *funcType = nullptr;
-  TyIdx returnTyIdx{0};                // the declared return type of this function
-  TyIdx inferredReturnTyIdx{0};        // the actual return type of of this function (may be a
+  TyIdx inferredReturnTyIdx{0};     // the actual return type of of this function (may be a
                                     // subclass of the above). 0 means can not be inferred.
-  TyIdx classTyIdx{0};                 // class/interface type this function belongs to
+  TyIdx classTyIdx{0};              // class/interface type this function belongs to
   MapleVector<MIRSymbol*> formals{module->GetMPAllocator().Adapter()};  // formal parameter symbols of this function
   MapleSet<MIRSymbol*> retRefSym{module->GetMPAllocator().Adapter()};
-  MapleVector<TyIdx> argumentsTyIdx{module->GetMPAllocator().Adapter()};  // arguments types of this function
-  MapleVector<TypeAttrs> argumentsAttrs{module->GetMPAllocator().Adapter()};
+
+  MapleVector<GenericDeclare*> genericDeclare{module->GetMPAllocator().Adapter()};
+  MapleVector<AnnotationType*> genericArg{module->GetMPAllocator().Adapter()};
+  MapleMap<GStrIdx, AnnotationType*> genericLocalVar{module->GetMPAllocator().Adapter()};
+  AnnotationType *genericRet = nullptr;
 
   MIRSymbolTable *symTab = nullptr;
   MIRTypeNameTable *typeNameTab = nullptr;
@@ -882,6 +893,7 @@ class MIRFunction {
   GStrIdx signatureStrIdx{0};
 
   void DumpFlavorLoweredThanMmpl() const;
+  MIRFuncType *ReconstructFormals(const std::vector<MIRSymbol*> &symbols, bool clearOldArgs);
 };
 }  // namespace maple
 #endif  // MAPLE_IR_INCLUDE_MIR_FUNCTION_H

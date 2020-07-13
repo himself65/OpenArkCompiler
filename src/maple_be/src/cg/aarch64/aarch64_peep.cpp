@@ -1686,7 +1686,7 @@ bool LoadFloatPointAArch64::FindLoadFloatPoint(std::vector<Insn*> &optInsn, Insn
   if (mOp != MOP_xmovzri16) {
     return false;
   }
-  optInsn.push_back(&insn);
+  optInsn.emplace_back(&insn);
 
   Insn *insnMov2 = insn.GetNextMachineInsn();
   if (insnMov2 == nullptr) {
@@ -1695,7 +1695,7 @@ bool LoadFloatPointAArch64::FindLoadFloatPoint(std::vector<Insn*> &optInsn, Insn
   if (insnMov2->GetMachineOpcode() != MOP_xmovkri16) {
     return false;
   }
-  optInsn.push_back(insnMov2);
+  optInsn.emplace_back(insnMov2);
 
   Insn *insnMov3 = insnMov2->GetNextMachineInsn();
   if (insnMov3 == nullptr) {
@@ -1704,7 +1704,7 @@ bool LoadFloatPointAArch64::FindLoadFloatPoint(std::vector<Insn*> &optInsn, Insn
   if (insnMov3->GetMachineOpcode() != MOP_xmovkri16) {
     return false;
   }
-  optInsn.push_back(insnMov3);
+  optInsn.emplace_back(insnMov3);
 
   Insn *insnMov4 = insnMov3->GetNextMachineInsn();
   if (insnMov4 == nullptr) {
@@ -1713,7 +1713,7 @@ bool LoadFloatPointAArch64::FindLoadFloatPoint(std::vector<Insn*> &optInsn, Insn
   if (insnMov4->GetMachineOpcode() != MOP_xmovkri16) {
     return false;
   }
-  optInsn.push_back(insnMov4);
+  optInsn.emplace_back(insnMov4);
   return true;
 }
 
@@ -1910,7 +1910,7 @@ bool LongIntCompareWithZAArch64::FindLondIntCmpWithZ(std::vector<Insn*> &optInsn
   if (thisMop != MOP_xcmpri) {
     return false;
   }
-  optInsn.push_back(&insn);
+  optInsn.emplace_back(&insn);
 
   /* second */
   Insn *nextInsn1 = insn.GetNextMachineInsn();
@@ -1921,7 +1921,7 @@ bool LongIntCompareWithZAArch64::FindLondIntCmpWithZ(std::vector<Insn*> &optInsn
   if (nextMop1 != MOP_wcsinvrrrc) {
     return false;
   }
-  optInsn.push_back(nextInsn1);
+  optInsn.emplace_back(nextInsn1);
 
   /* third */
   Insn *nextInsn2 = nextInsn1->GetNextMachineInsn();
@@ -1932,7 +1932,7 @@ bool LongIntCompareWithZAArch64::FindLondIntCmpWithZ(std::vector<Insn*> &optInsn
   if (nextMop2 != MOP_wcsincrrrc) {
     return false;
   }
-  optInsn.push_back(nextInsn2);
+  optInsn.emplace_back(nextInsn2);
 
   /* forth */
   Insn *nextInsn3 = nextInsn2->GetNextMachineInsn();
@@ -1943,7 +1943,7 @@ bool LongIntCompareWithZAArch64::FindLondIntCmpWithZ(std::vector<Insn*> &optInsn
   if (nextMop3 != MOP_wcmpri) {
     return false;
   }
-  optInsn.push_back(nextInsn3);
+  optInsn.emplace_back(nextInsn3);
   return true;
 }
 
@@ -2075,18 +2075,18 @@ void ComplexMemOperandPreAddAArch64::Run(BB &bb, Insn &insn) {
   }
 }
 
-bool ComplexMemOperandLSLAArch64::CheckShiftValid(AArch64MemOperand &memOpnd, BitShiftOperand &lsl) {
+bool ComplexMemOperandLSLAArch64::CheckShiftValid(const AArch64MemOperand &memOpnd, BitShiftOperand &lsl) const {
   /* check if shift amount is valid */
   uint32 lslAmount = lsl.GetShiftAmount();
-  if ((memOpnd.GetSize() == k32BitSize && (lsl.GetShiftAmount() != 0 && lslAmount != 2)) ||
-      (memOpnd.GetSize() == k64BitSize && (lsl.GetShiftAmount() != 0 && lslAmount != 3))) {
+  constexpr uint8 twoShiftBits = 2;
+  constexpr uint8 threeShiftBits = 3;
+  if ((memOpnd.GetSize() == k32BitSize && (lsl.GetShiftAmount() != 0 && lslAmount != twoShiftBits)) ||
+      (memOpnd.GetSize() == k64BitSize && (lsl.GetShiftAmount() != 0 && lslAmount != threeShiftBits))) {
     return false;
   }
-
   if (memOpnd.GetSize() != (k8BitSize << lslAmount)) {
     return false;
   }
-
   return true;
 }
 
@@ -2202,7 +2202,7 @@ bool WriteFieldCallAArch64::WriteFieldCallOptPatternMatch(const Insn &writeField
   if (fieldValueDefInsnDestReg.GetRegisterNumber() != R2) {
     return false;
   }
-  paramDefInsns.push_back(fieldValueDefInsn);
+  paramDefInsns.emplace_back(fieldValueDefInsn);
   param.fieldValue = &(fieldValueDefInsn->GetOperand(kInsnSecondOpnd));
   Insn *fieldParamDefInsn = fieldValueDefInsn->GetPreviousMachineInsn();
   if (fieldParamDefInsn == nullptr || fieldParamDefInsn->GetMachineOpcode() != MOP_xmovrr) {
@@ -2213,7 +2213,7 @@ bool WriteFieldCallAArch64::WriteFieldCallOptPatternMatch(const Insn &writeField
   if (fieldParamDestReg.GetRegisterNumber() != R1) {
     return false;
   }
-  paramDefInsns.push_back(fieldParamDefInsn);
+  paramDefInsns.emplace_back(fieldParamDefInsn);
   Insn *fieldDesignateInsn = fieldParamDefInsn->GetPreviousMachineInsn();
   if (fieldDesignateInsn == nullptr || fieldDesignateInsn->GetMachineOpcode() != MOP_xaddrri12) {
     return false;
@@ -2227,7 +2227,7 @@ bool WriteFieldCallAArch64::WriteFieldCallOptPatternMatch(const Insn &writeField
   param.fieldBaseOpnd = &(static_cast<RegOperand&>(fieldDesignateBaseOpnd));
   auto &immOpnd = static_cast<AArch64ImmOperand&>(fieldDesignateInsn->GetOperand(kInsnThirdOpnd));
   param.fieldOffset = immOpnd.GetValue();
-  paramDefInsns.push_back(fieldDesignateInsn);
+  paramDefInsns.emplace_back(fieldDesignateInsn);
   Insn *objDesignateInsn = fieldDesignateInsn->GetPreviousMachineInsn();
   if (objDesignateInsn == nullptr || objDesignateInsn->GetMachineOpcode() != MOP_xmovrr) {
     return false;
@@ -2243,7 +2243,7 @@ bool WriteFieldCallAArch64::WriteFieldCallOptPatternMatch(const Insn &writeField
     return false;
   }
   param.objOpnd = &(objDesignateInsn->GetOperand(kInsnSecondOpnd));
-  paramDefInsns.push_back(objDesignateInsn);
+  paramDefInsns.emplace_back(objDesignateInsn);
   return true;
 }
 
@@ -2357,7 +2357,7 @@ bool ComputationTreeAArch64::FindComputationTree(std::vector<Insn*> &optInsn, In
   if (thisMop != MOP_xaddrri12) {
     return false;
   }
-  optInsn.push_back(&insn);
+  optInsn.emplace_back(&insn);
   /* second */
   Insn *nextInsn1 = insn.GetNextMachineInsn();
   if (nextInsn1 == nullptr) {
@@ -2367,7 +2367,7 @@ bool ComputationTreeAArch64::FindComputationTree(std::vector<Insn*> &optInsn, In
   if (nextMop1 != MOP_waddrrr) {
     return false;
   }
-  optInsn.push_back(nextInsn1);
+  optInsn.emplace_back(nextInsn1);
   /* third */
   Insn *nextInsn2 = nextInsn1->GetNextMachineInsn();
   if (nextInsn2 == nullptr) {
@@ -2377,7 +2377,7 @@ bool ComputationTreeAArch64::FindComputationTree(std::vector<Insn*> &optInsn, In
   if (nextMop2 != MOP_waddrri12) {
     return false;
   }
-  optInsn.push_back(nextInsn2);
+  optInsn.emplace_back(nextInsn2);
   /* forth */
   Insn *nextInsn3 = nextInsn2->GetNextMachineInsn();
   if (nextInsn3 == nullptr) {
@@ -2387,7 +2387,7 @@ bool ComputationTreeAArch64::FindComputationTree(std::vector<Insn*> &optInsn, In
   if (nextMop3 != MOP_xsxtw64) {
     return false;
   }
-  optInsn.push_back(nextInsn3);
+  optInsn.emplace_back(nextInsn3);
   /* fifth */
   Insn *nextInsn4 = nextInsn3->GetNextMachineInsn();
   if (nextInsn4 == nullptr) {
@@ -2397,7 +2397,7 @@ bool ComputationTreeAArch64::FindComputationTree(std::vector<Insn*> &optInsn, In
   if (nextMop4 != MOP_xaddrrrs) {
     return false;
   }
-  optInsn.push_back(nextInsn4);
+  optInsn.emplace_back(nextInsn4);
   return true;
 }
 
@@ -2462,13 +2462,11 @@ void ComputationTreeAArch64::Run(BB &bb, Insn &insn) {
     if (lsl.GetShiftAmount() == lslShiftAmountCaseA) {
       sxtw = &aarch64CGFunc->CreateExtendShiftOperand(ExtendShiftOperand::kSXTW,
                                                       lslShiftAmountCaseA + 1, lslBitLenth);
-      imm = &aarch64CGFunc->CreateImmOperand(oriAddEnd + (1ULL << lslShiftAmountCaseA),
-                                             kMaxAarch64ImmVal12Bits, true);
+      imm = &aarch64CGFunc->CreateImmOperand(oriAddEnd + (1ULL << lslShiftAmountCaseA), kMaxImmVal12Bits, true);
     } else if (lsl.GetShiftAmount() == lslShiftAmountCaseB) {
       sxtw = &aarch64CGFunc->CreateExtendShiftOperand(ExtendShiftOperand::kSXTW,
                                                       lslShiftAmountCaseB + 1, lslBitLenth);
-      imm = &aarch64CGFunc->CreateImmOperand(oriAddEnd + (1ULL << lslShiftAmountCaseB),
-                                             kMaxAarch64ImmVal12Bits, true);
+      imm = &aarch64CGFunc->CreateImmOperand(oriAddEnd + (1ULL << lslShiftAmountCaseB), kMaxImmVal12Bits, true);
     }
     Insn &newInsn = cgFunc.GetCG()->BuildInstruction<AArch64Insn>(MOP_xxwaddrrre,
                                                                   sxtwInsn->GetOperand(kInsnFirstOpnd),

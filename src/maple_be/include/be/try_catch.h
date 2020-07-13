@@ -83,7 +83,7 @@ class TryEndTryBlock {
   }
 
   void PushToEnclosedBBs(BBT &bb) {
-    enclosedBBs.push_back(&bb);
+    enclosedBBs.emplace_back(&bb);
   }
 
   MapleVector<BBT*> &GetLabeledBBsInTry() {
@@ -130,8 +130,8 @@ class TryCatchBlocksLower {
   bool bodyEndWithEndTry = false;
   bool generateEHCode = false;
   MapleVector<BBT*> bbList;
-  MapleMap<BBT*, BBT*> prevBBOfTry;
-  MapleMap<StmtNode*, BBT*> firstStmtToBBMap;
+  MapleUnorderedMap<BBT*, BBT*> prevBBOfTry;
+  MapleUnorderedMap<StmtNode*, BBT*> firstStmtToBBMap;
   MapleVector<BBT*> catchesSeenSoFar;
 
   void ProcessEnclosedBBBetweenTryEndTry();

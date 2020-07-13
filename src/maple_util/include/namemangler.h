@@ -26,6 +26,7 @@ namespace namemangler {
 
 #define VTAB_PREFIX               __vtb_
 #define ITAB_PREFIX               __itb_
+#define VTAB_AND_ITAB_PREFIX      __vtb_and_itb_
 #define ITAB_CONFLICT_PREFIX      __itbC_
 #define CLASSINFO_PREFIX          __cinf_
 #define CLASSINFO_RO_PREFIX       __classinforo__
@@ -38,6 +39,7 @@ namespace namemangler {
 
 #define VTAB_PREFIX_STR               TO_STR(VTAB_PREFIX)
 #define ITAB_PREFIX_STR               TO_STR(ITAB_PREFIX)
+#define VTAB_AND_ITAB_PREFIX_STR      TO_STR(VTAB_AND_ITAB_PREFIX)
 #define ITAB_CONFLICT_PREFIX_STR      TO_STR(ITAB_CONFLICT_PREFIX)
 #define CLASSINFO_PREFIX_STR          TO_STR(CLASSINFO_PREFIX)
 #define CLASSINFO_RO_PREFIX_STR       TO_STR(CLASSINFO_RO_PREFIX)
@@ -63,8 +65,10 @@ static constexpr const char kMuidFuncDefMuidTabPrefixStr[] = "__muid_ro_func_def
 static constexpr const char kMuidDataDefMuidTabPrefixStr[] = "__muid_ro_data_def_muid_tab";
 static constexpr const char kMuidFuncUndefMuidTabPrefixStr[] = "__muid_ro_func_undef_muid_tab";
 static constexpr const char kMuidDataUndefMuidTabPrefixStr[] = "__muid_ro_data_undef_muid_tab";
-static constexpr const char kMuidVtabPrefixStr[] = "__muid_vtab";
-static constexpr const char kMuidItabPrefixStr[] = "__muid_itab";
+static constexpr const char kMuidVtabAndItabPrefixStr[] = "__muid_vtab_and_itab";
+static constexpr const char kMuidItabConflictPrefixStr[] = "__muid_itab_conflict";
+static constexpr const char kMuidColdVtabAndItabPrefixStr[] = "__muid_cold_vtab_and_itab";
+static constexpr const char kMuidColdItabConflictPrefixStr[] = "__muid_cold_itab_conflict";
 static constexpr const char kMuidVtabOffsetPrefixStr[] = "__muid_vtab_offset_tab";
 static constexpr const char kMuidFieldOffsetPrefixStr[] = "__muid_field_offset_tab";
 static constexpr const char kMuidVtabOffsetKeyPrefixStr[] = "__muid_vtable_offset_key_tab";
@@ -86,6 +90,7 @@ static constexpr const char kVtableKeyOffsetTabStr[] = "__vtable_offset_key_tabl
 static constexpr const char kVtableOffsetTabKeyStr[] = "__vtable_offset_key_table";
 static constexpr const char kFieldKeyOffsetTabStr[] = "__field_offset_table";
 static constexpr const char kOffsetTabStr[] = "__offset_value_table";
+static constexpr const char kInlineCacheTabStr[] = "__inline_cache_table";
 static constexpr const char kLocalClassInfoStr[] = "__local_classinfo_table";
 static constexpr const char kMethodsInfoPrefixStr[] = "__methods_info__";
 static constexpr const char kMethodsInfoCompactPrefixStr[] = "__methods_infocompact__";
@@ -93,6 +98,8 @@ static constexpr const char kFieldsInfoPrefixStr[] = "__fields_info__";
 static constexpr const char kFieldsInfoCompactPrefixStr[] = "__fields_infocompact__";
 static constexpr const char kFieldOffsetDataPrefixStr[] = "__fieldOffsetData__";
 static constexpr const char kMethodAddrDataPrefixStr[] = "__methodAddrData__";
+static constexpr const char kMethodSignaturePrefixStr[] = "__methodSignature__";
+static constexpr const char kParameterTypesPrefixStr[] = "__parameterTypes__";
 static constexpr const char kRegJNITabPrefixStr[] = "__reg_jni_tab";
 static constexpr const char kRegJNIFuncTabPrefixStr[] = "__reg_jni_func_tab";
 static constexpr const char kReflectionStrtabPrefixStr[] = "__reflection_strtab";
@@ -156,6 +163,8 @@ static constexpr const char kCallFastNativeExt[] = "MCC_CallFastNativeExt";
 static constexpr const char kCallSlowNativeExt[] = "MCC_CallSlowNativeExt";
 static constexpr const char kSetReliableUnwindContextFunc[] = "MCC_SetReliableUnwindContext";
 
+static constexpr const char kArrayClassCacheTable[] = "__arrayClassCacheTable";
+static constexpr const char kArrayClassCacheNameTable[] = "__muid_ro_arrayClassCacheNameTable";
 static constexpr const char kFunctionLayoutStr[] = "__func_layout__";
 
 static constexpr const char kFunctionProfileTabPrefixStr[] = "__muid_profile_func_tab";

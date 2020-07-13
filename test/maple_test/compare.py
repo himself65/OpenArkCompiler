@@ -27,7 +27,7 @@ from utils import split_comment, filter_line, escape
 
 ASSERT_FLAG = "ASSERT"
 EXPECTED_FLAG = "EXPECTED"
-EXPECTED_REGEX = r"{line_num}.*\:.*"
+EXPECTED_REGEX = r"\:{line_num}\:.*\:.*"
 
 SCAN_KEYWORDS = ["auto", "not", "next", "end"]
 CMP_KEYWORDS = ["end", "not", "next", "full"]
@@ -84,8 +84,6 @@ def main():
                 )
         else:
             raise CompareError("Unsupport flag: {!r}".format(flag))
-        if not is_valid_pattern(pattern):
-            raise CompareError("Not valid pattern: {!r}".format(pattern))
 
         keywords = pattern_flag.split("-")
         match_func = gen_match_func(keywords)
@@ -172,6 +170,8 @@ def is_valid_pattern(pattern):
 
 def regex_match(content, line_map, pattern, start=0):
     pattern = r"\s+".join([word for word in pattern.split()])
+    if not is_valid_pattern(pattern):
+        raise CompareError("Not valid pattern: {!r}".format(pattern))
     matches = re.finditer(str(pattern), content, re.MULTILINE)
     end = 0
     for _, match in enumerate(matches, start=1):

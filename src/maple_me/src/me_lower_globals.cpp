@@ -66,6 +66,11 @@ void MeLowerGlobals::LowerGlobalDreads(MeStmt &stmt, MeExpr &expr) {
       }
       auto *addrofExpr = static_cast<AddrofMeExpr*>(irMap->CreateAddrofMeExpr(varExpr));
       MIRPtrType ptrType(baseOst->GetTyIdx(), PTY_ptr);
+      if (ost->IsVolatile()) {
+        TypeAttrs attrs;
+        attrs.SetAttr(ATTR_volatile);
+        ptrType.SetTypeAttrs(attrs);
+      }
       TyIdx addrTyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&ptrType);
       auto *ivarExpr = static_cast<IvarMeExpr*>(irMap->CreateIvarMeExpr(varExpr, addrTyIdx, *addrofExpr));
       (void)irMap->ReplaceMeExprStmt(stmt, varExpr, *ivarExpr);
@@ -119,6 +124,11 @@ void MeLowerGlobals::Run() {
         }
         MeExpr *addrof = irMap->CreateAddrofMeExpr(baseOst->GetIndex());
         MIRPtrType ptrType(baseOst->GetTyIdx(), PTY_ptr);
+        if (ost->IsVolatile()) {
+          TypeAttrs attrs;
+          attrs.SetAttr(ATTR_volatile);
+          ptrType.SetTypeAttrs(attrs);
+        }
         TyIdx addrTyIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(&ptrType);
         MeExpr *lhs = dass.GetLHS();
         CHECK_NULL_FATAL(lhs);

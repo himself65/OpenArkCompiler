@@ -387,6 +387,10 @@ class MeFunction : public FuncEmit {
     irmap = currIRMap;
   }
 
+  void SetBBTryNodeMap(BB &bb, StmtNode &tryStmt) {
+    bbTryNodeMap[&bb] = &tryStmt;
+  }
+
   const MapleUnorderedMap<BB*, StmtNode*> &GetBBTryNodeMap() const {
     return bbTryNodeMap;
   }

@@ -205,6 +205,7 @@ class MIRBuilder {
   UnaryNode *CreateExprUnary(Opcode opcode, const MIRType &type, BaseNode *opnd);
   GCMallocNode *CreateExprGCMalloc(Opcode opcode, const MIRType &ptype, const MIRType &type);
   JarrayMallocNode *CreateExprJarrayMalloc(Opcode opcode, const MIRType &ptype, const MIRType &type, BaseNode *opnd);
+  TypeCvtNode *CreateExprTypeCvt(Opcode o, PrimType toPrimType, PrimType fromPrimType, BaseNode &opnd);
   TypeCvtNode *CreateExprTypeCvt(Opcode o, const MIRType &type, const MIRType &fromtype, BaseNode *opnd);
   ExtractbitsNode *CreateExprExtractbits(Opcode o, const MIRType &type, uint32 bOffset, uint32 bSize, BaseNode *opnd);
   RetypeNode *CreateExprRetype(const MIRType &type, const MIRType &fromType, BaseNode *opnd);

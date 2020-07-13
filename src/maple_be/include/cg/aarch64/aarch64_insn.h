@@ -94,6 +94,7 @@ class AArch64Insn : public Insn {
   bool IsClinit() const final;
   bool IsLazyLoad() const final;
   bool IsAdrpLdr() const final;
+  bool IsArrayClassCache() const final;
   bool HasLoop() const final;
   bool IsSpecialIntrinsic() const final;
   bool CanThrow() const final;
@@ -154,6 +155,8 @@ class AArch64Insn : public Insn {
 
   uint32 GetLatencyType() const override;
 
+  bool CheckRefField(int32 opndIndex, bool isEmit) const;
+
  private:
   void CheckOpnd(Operand &opnd, OpndProp &mopd) const;
   void EmitClinit(const CG&, Emitter&) const;
@@ -162,6 +165,7 @@ class AArch64Insn : public Insn {
   void EmitClinitTail(Emitter&) const;
   void EmitLazyLoad(Emitter&) const;
   void EmitLazyLoadStatic(Emitter&) const;
+  void EmitArrayClassCacheLoad(Emitter&) const;
   void EmitCheckThrowPendingException(const CG&, Emitter&) const;
   void EmitGetAndAddInt(Emitter &emitter) const;
   void EmitGetAndSetInt(Emitter &emitter) const;

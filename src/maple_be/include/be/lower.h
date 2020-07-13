@@ -34,7 +34,7 @@ class CGLowerer {
   enum Option : uint64 {
     kUndefined = 0,
     kGenEh = 1ULL << 0,
-    kVerboseAsm = 1ULL << 1,
+    kVerboseCG = 1ULL << 1,
   };
 
   using BuiltinFunctionID = uint32;
@@ -49,15 +49,15 @@ class CGLowerer {
     SetCurrentFunc(func);
   }
 
-  CGLowerer(MIRModule &mod, BECommon &common, bool genEh, bool verboseAsm)
+  CGLowerer(MIRModule &mod, BECommon &common, bool genEh, bool verboseCG)
       : mirModule(mod),
         beCommon(common) {
     OptionFlag option = 0;
     if (genEh) {
       option |= kGenEh;
     }
-    if (verboseAsm) {
-      option |= kVerboseAsm;
+    if (verboseCG) {
+      option |= kVerboseCG;
     }
     SetOptions(option);
     mirBuilder = mod.GetMIRBuilder();
@@ -193,6 +193,7 @@ class CGLowerer {
 
   /* if it defines a built-in to use for the given intrinsic, return the name. otherwise, return nullptr */
   PUIdx GetBuiltinToUse(BuiltinFunctionID id) const;
+  void InitArrayClassCacheTableIndex();
 
   MIRModule &mirModule;
   BECommon &beCommon;
@@ -226,7 +227,7 @@ class CGLowerer {
   }
 
   bool ShouldAddAdditionalComment() const {
-    return (options & kVerboseAsm) != 0;
+    return (options & kVerboseCG) != 0;
   }
 
   bool GenerateExceptionHandlingCode() const {
@@ -256,6 +257,7 @@ class CGLowerer {
   BlockNode *GenBlockNode(StmtNode &newCall, const CallReturnVector &p2nRets, const Opcode &opcode,
                           const PUIdx &funcCalled, bool handledAtLowerLevel);
   BaseNode *GetClassInfoExprFromRuntime(const std::string &classInfo);
+  BaseNode *GetClassInfoExprFromArrayClassCache(const std::string &classInfo);
   BaseNode *GetClassInfoExpr(const std::string &classInfo);
   BaseNode *GetBaseNodeFromCurFunc(MIRFunction &curFunc, bool isJarray);
 
@@ -267,6 +269,7 @@ class CGLowerer {
   MIRBuilder *mirBuilder = nullptr;
   uint32 labelIdx = 0;
   static std::unordered_map<IntrinDesc*, PUIdx> intrinFuncIDs;
+  static std::unordered_map<std::string, size_t> arrayClassCacheIndex;
 };
 }  /* namespace maplebe */
 

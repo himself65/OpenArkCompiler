@@ -93,6 +93,38 @@ MIRType *MIRFunction::GetNthParamType(size_t i) {
   return const_cast<MIRType*>(const_cast<const MIRFunction*>(this)->GetNthParamType(i));
 }
 
+// reconstruct formals, and return a new MIRFuncType
+MIRFuncType *MIRFunction::ReconstructFormals(const std::vector<MIRSymbol*> &symbols, bool clearOldArgs) {
+  auto *newFuncType = static_cast<MIRFuncType*>(funcType->CopyMIRTypeNode());
+  if (clearOldArgs) {
+    formals.clear();
+    newFuncType->GetParamTypeList().clear();
+    newFuncType->GetParamAttrsList().clear();
+  }
+  for (auto *symbol : symbols) {
+    formals.push_back(symbol);
+    newFuncType->GetParamTypeList().push_back(symbol->GetTyIdx());
+    newFuncType->GetParamAttrsList().push_back(symbol->GetAttrs());
+  }
+  return newFuncType;
+}
+
+void MIRFunction::UpdateFuncTypeAndFormals(const std::vector<MIRSymbol*> &symbols, bool clearOldArgs) {
+  auto *newFuncType = ReconstructFormals(symbols, clearOldArgs);
+  auto newFuncTypeIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(newFuncType);
+  funcType = static_cast<MIRFuncType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(newFuncTypeIdx));
+  delete newFuncType;
+}
+
+void MIRFunction::UpdateFuncTypeAndFormalsAndReturnType(const std::vector<MIRSymbol*> &symbols, TyIdx retTyIdx,
+                                                        bool clearOldArgs) {
+  auto *newFuncType = ReconstructFormals(symbols, clearOldArgs);
+  newFuncType->SetRetTyIdx(retTyIdx);
+  auto newFuncTypeIdx = GlobalTables::GetTypeTable().GetOrCreateMIRType(newFuncType);
+  funcType = static_cast<MIRFuncType*>(GlobalTables::GetTypeTable().GetTypeFromTyIdx(newFuncTypeIdx));
+  delete newFuncType;
+}
+
 LabelIdx MIRFunction::GetOrCreateLableIdxFromName(const std::string &name) {
   GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(name);
   LabelIdx labelIdx = GetLabelTab()->GetLabelIdxFromStrIdx(strIdx);
@@ -210,8 +242,9 @@ void MIRFunction::DumpFlavorLoweredThanMmpl() const {
     constexpr int kIndent = 2;
     const MIRType *type = GetNthParamType(i);
     type->Dump(kIndent);
-    const TypeAttrs &attrs = GetNthParamAttr(i);
-    attrs.DumpAttributes();
+    if (symbol->GetAttr(ATTR_localrefvar)) {
+      LogInfo::MapleLogger() << " localrefvar";
+    }
     if (i != (argSize - 1)) {
       LogInfo::MapleLogger() << ", ";
     }
