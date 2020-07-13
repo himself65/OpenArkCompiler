@@ -27,7 +27,7 @@ from utils import split_comment, filter_line, escape
 
 ASSERT_FLAG = "ASSERT"
 EXPECTED_FLAG = "EXPECTED"
-EXPECTED_REGEX = r"{line_num}.*\:.*"
+EXPECTED_REGEX = r"\:{line_num}\:.*\:.*"
 
 SCAN_KEYWORDS = ["auto", "not", "next", "end"]
 CMP_KEYWORDS = ["end", "not", "next", "full"]
