@@ -15,6 +15,7 @@ RUN sed -i 's/archive.ubuntu.com/mirrors.163.com/g' /etc/apt/sources.list && \
 # export http_proxy=http://192.168.3.81:1081 && export https_proxy=http://192.168.3.81:1081 && \
 # 原因都懂的, 还有容器内别用127.0.0.1                    
 RUN cd /tools && \
+    export http_proxy=http://192.168.3.81:1081 && export https_proxy=http://192.168.3.81:1081 && \
     curl -C - -LO http://releases.llvm.org/8.0.0/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz && \
     curl -LO https://github.com/ninja-build/ninja/releases/download/v1.9.0/ninja-linux.zip && \
     curl -L -o /tools/gn/gn https://archive.softwareheritage.org/browse/content/sha1_git:2dc0d5b26caef44f467de8120b26f8aad8b878be/raw/?filename=gn && \
@@ -34,7 +35,7 @@ RUN mkdir -p /OpenArkCompiler/tools /OpenArkCompiler/tools/gn && \
     ln -s /tools/gn/gn /OpenArkCompiler/tools/gn/gn && \
     ln -s /tools/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04 /OpenArkCompiler/tools/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04
 # compile
-RUN ["/bin/bash", "-c", "source build/envsetup.sh && make"]
+RUN ["/bin/bash", "-c", "source build/envsetup.sh && make && ls -al "]
 
 # build final docker image
 FROM ubuntu:16.04
@@ -42,7 +43,7 @@ RUN sed -i 's/archive.ubuntu.com/mirrors.163.com/g' /etc/apt/sources.list && \
     apt-get -y update && \
     apt-get install -y openjdk-8-jdk curl vim && \
     rm -rf /var/cache/apt/archives
-COPY --from=build-env /OpenArkCompiler/out /OpenArkCompiler
+COPY --from=build-env /OpenArkCompiler/output /OpenArkCompiler
 VOLUME /OpenArkCompiler
 ENV PATH=/OpenArkCompiler/bin:$PATH
 CMD maple -h
