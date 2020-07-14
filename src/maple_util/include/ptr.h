@@ -295,5 +295,4 @@ inline bool operator>=(std::nullptr_t, const Ptr<T, CheckT> &rhs) {
 }
 }
 }
-
-#endif //DIY_CPLUSPLUS_SAFE_PTR_H
+#endif // DIY_CPLUSPLUS_SAFE_PTR_H

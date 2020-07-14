@@ -37,6 +37,25 @@ enum ProfileType : uint8_t {
   kFileDesc = 0xFF
 };
 
+enum FuncIRItemIndex : uint8_t {
+  kFuncIRItemNameIndex,
+  kCounterStartIndex,
+  kCounterEndIndex,
+  kHashIndex
+};
+
+enum FuncItemIndex : uint8_t {
+  kFuncItemNameIndex,
+  kFuncTypeIndex,
+  kFuncCallTimesIndex
+};
+
+enum FuncNameIndex : uint8_t {
+  kClassNameIndex,
+  kFuncNameIndex,
+  kSignatureNameIndex,
+};
+
 struct ProfileDataInfo {
   uint32_t profileDataOff;
   uint8_t profileType;

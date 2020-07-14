@@ -207,4 +207,4 @@ struct hash<maple::utils::SafePtr<T>> {
   }
 };
 } // namespace std
-#endif //DIY_CPLUSPLUS_SAFE_PTR_H
+#endif // DIY_CPLUSPLUS_SAFE_PTR_H

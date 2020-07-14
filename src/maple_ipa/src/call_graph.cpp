@@ -1319,6 +1319,7 @@ void CallGraph::DumpToFile(bool dumpAll) const {
     outName = (outfile.append("-callgraphlight.dot")).c_str();
   }
   cgFile.open(outName, std::ios::trunc);
+  CHECK_FATAL(cgFile.is_open(), "open file fail in call graph");
   cgFile << "digraph graphname {\n";
   for (auto const &it : nodesMap) {
     CGNode *node = it.second;
