@@ -207,7 +207,7 @@ class TestSuiteTask:
                 case_files.update(_cases)
             else:
                 logger.info(
-                    "Testlist: {}, ALL-TEST-CASE: {} is contain not test case".format(
+                    "Testlist: {}, ALL-TEST-CASE: {} is invalid test case".format(
                         testlist_path, pattern
                     )
                 )
@@ -217,7 +217,7 @@ class TestSuiteTask:
                 case_files -= _cases
             else:
                 logger.info(
-                    "Testlist: {}, EXCLUDE-TEST-CASE: {} is contain not test case".format(
+                    "Testlist: {}, EXCLUDE-TEST-CASE: {} is invalid test case".format(
                         testlist_path, pattern
                     )
                 )

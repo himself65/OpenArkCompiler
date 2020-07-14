@@ -31,7 +31,7 @@ EXPECTED_REGEX = r"\:{line_num}\:.*\:.*"
 
 SCAN_KEYWORDS = ["auto", "not", "next", "end"]
 CMP_KEYWORDS = ["end", "not", "next", "full"]
-EXPECTED_KEYWORDS = ["scan", "scan-not"]
+EXPECTED_KEYWORDS = ["scan", "scan-not", "scan-auto"]
 
 
 class CompareError(Exception):
@@ -74,9 +74,13 @@ def main():
         pattern_flag, pattern = split_pattern_line(compare_pattern)
 
         info = ""
+        keywords = pattern_flag.split("-")
         if flag.strip() in assert_flags:
             info = "It's a assert, "
         elif flag.strip() in expected_flags:
+            if "auto" in keywords:
+                pattern = r"\s+".join([re.escape(word) for word in pattern.split()])
+                keywords.remove("auto")
             pattern = EXPECTED_REGEX.format(line_num=line_num) + pattern
             if pattern_flag.strip() not in EXPECTED_KEYWORDS:
                 raise CompareError(
@@ -85,7 +89,6 @@ def main():
         else:
             raise CompareError("Unsupport flag: {!r}".format(flag))
 
-        keywords = pattern_flag.split("-")
         match_func = gen_match_func(keywords)
         if "next" not in keywords and "end" not in keywords:
             start = 0
