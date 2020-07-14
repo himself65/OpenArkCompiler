@@ -1273,7 +1273,6 @@ void CallGraph::GenCallGraph() {
   std::vector<MIRFunction*> &funcTable = GlobalTables::GetFunctionTable().GetFuncTable();
   // don't optimize this loop to iterator or range-base loop
   // because AddCallGraphNode(mirFunc) will change GlobalTables::GetFunctionTable().GetFuncTable()
-  // see: https://gitlab.huawei.com/Maple/ArkKit/issues/122
   for (size_t index = 0; index < funcTable.size(); ++index) {
     MIRFunction *mirFunc = funcTable.at(index);
     if (mirFunc == nullptr || mirFunc->GetBody() == nullptr) {
