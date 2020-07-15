@@ -17,9 +17,9 @@
 import shlex
 from functools import total_ordering
 
-from maple_test.utils import PASS, EXEC_FLAG, EXPECT_FLAG, DEPENDENCE_FLAG
+from maple_test.utils import PASS, EXEC_FLAG, ERRCHECK_FLAG, EXPECT_FLAG, DEPENDENCE_FLAG
 from maple_test.utils import read_file
-from maple_test.utils import split_comment, filter_line
+from maple_test.utils import split_comment, filter_line, filter_command_line
 from maple_test.utils import FAIL, UNRESOLVED
 
 
@@ -79,7 +79,7 @@ def extract_commands(comment_lines):
     flag = False
     merge_command = ""
     for command in comment_lines:
-        command = filter_line(command, EXEC_FLAG)
+        command = filter_command_line(command)
         if not command:
             continue
         if command.strip()[-1] == "\\":
