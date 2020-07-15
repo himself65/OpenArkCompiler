@@ -753,15 +753,11 @@ bool CGFunc::CheckSkipMembarOp(StmtNode &stmt) {
   if ((opCode == OP_membarstorestore) && func.IsConstructor() && MemBarOpt(stmt)) {
     return true;;
   }
-#if TARGARM32
-  if (nextStmt->GetOpCode() == OP_membaracquire) {
-    isVolLoad = true;
-  }
-#else
+#if TARGAARCH64
   if ((!CGOptions::UseBarriersForVolatile()) && (nextStmt->GetOpCode() == OP_membaracquire)) {
     isVolLoad = true;
   }
-#endif /* TARGARM32 */
+#endif /* TARGAARCH64 */
   return false;
 }
 
@@ -787,10 +783,6 @@ void CGFunc::GenerateInstruction() {
     if (tempLoad && !isVolLoad) {
       stmt = stmt->GetNext();
     }
-
-#if TARGARM32
-    isVolLoad = false;
-#endif
 
     /*
      * skip the membarstoreload if there is the pattern for volatile write( membarrelease + store + membarstoreload )
