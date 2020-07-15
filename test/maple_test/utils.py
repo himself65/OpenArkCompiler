@@ -27,6 +27,7 @@ from functools import wraps
 from pathlib import Path
 
 EXEC_FLAG = "EXEC"
+ERRCHECK_FLAG = "ERRCHECK"
 ASSERT_FLAG = "ASSERT"
 EXPECT_FLAG = "EXPECT"
 DEPENDENCE_FLAG = "DEPENDENCE"
@@ -138,8 +139,22 @@ def filter_line(line, flag=None):
         return line
     line_flag = line.strip().split(":")[0].strip()
     if line_flag == flag:
-        new_line = line.strip()[len(flag) + 1 :].strip().lstrip(":").strip()
+        new_line = line.strip()[len(flag) + 1:].strip().lstrip(":").strip()
         return new_line
+    return None
+
+
+def filter_command_line(line):
+    """Returns and updates the command line starting with the flag"""
+    line_flag = line.strip().split(":")[0].strip()
+    new_line = line.strip()[len(line_flag) + 1:].strip().lstrip(":").strip()
+    if line_flag == EXEC_FLAG:
+        return new_line
+    elif line_flag == ERRCHECK_FLAG:
+        if platform.system() == "Windows":
+            return new_line + " 2>&1 1>$NUL | compare %f"
+        else:
+            return new_line + " 2>&1 1>/dev/null | compare %f"
     return None
 
 
