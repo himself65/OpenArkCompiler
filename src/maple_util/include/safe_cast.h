@@ -81,4 +81,4 @@ inline RetT safe_cast(FromT *from) {
   return (instance_of<ToT>(from) ? static_cast<RetT>(from) : nullptr);
 }
 }
-#endif //MAPLE_UTIL_INCLUDE_SAFE_CAST_H
+#endif // MAPLE_UTIL_INCLUDE_SAFE_CAST_H

@@ -63,7 +63,6 @@ bool MeDoBypathEH::DoBypathException(BB *tryBB, BB *catchBB, const Klass *catchC
            * when cfg changed, this phase will re-run,
            * some throw would like:
            * throw (constval ref 0)
-           * see: https://gitlab.huawei.com/Maple/ArkKit/issues/283
            */
           continue;
         } else {

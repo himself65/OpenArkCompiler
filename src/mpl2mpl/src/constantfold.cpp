@@ -1499,7 +1499,6 @@ std::pair<BaseNode*, int64> ConstantFold::FoldBinary(BinaryNode *node) {
 }
 
 BaseNode *ConstantFold::SimplifyDoubleCompare(CompareNode &compareNode) const {
-  // For cases on gitlab issue 636.
   // See arm manual B.cond(P2993) and FCMP(P1091)
   CompareNode *node = &compareNode;
   BaseNode *result = node;

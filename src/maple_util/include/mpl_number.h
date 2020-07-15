@@ -287,4 +287,4 @@ namespace std {
     return std::to_string(val.get());
   }
 }
-#endif //MAPLE_UTIL_INCLUDE_MPL_NUMBER_H
+#endif // MAPLE_UTIL_INCLUDE_MPL_NUMBER_H

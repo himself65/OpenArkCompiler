@@ -85,5 +85,4 @@ enum Level {
   kLevelThree = 3
 };
 }  // namespace mapleOption
-
 #endif  // MAPLE_UTIL_INCLUDE_OPTION_PARSER_H

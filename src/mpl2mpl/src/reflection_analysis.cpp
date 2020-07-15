@@ -549,14 +549,7 @@ uint16 GetFieldHash(const std::vector<std::pair<FieldPair, uint16>> &fieldV, con
 
 MIRSymbol *ReflectionAnalysis::GetOrCreateSymbol(const std::string &name, TyIdx tyIdx, bool needInit = false) {
   const GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(name);
-  MIRSymbol *st = nullptr;
-  std::string symbolOfJavaLangString(namemangler::kJavaLangStringStr);
-  if (name == CLASSINFO_PREFIX_STR + symbolOfJavaLangString) {
-    // Previous String Symbol have been generated in dex2mpl, so this Symbol won't create again here
-    st = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(strIdx);
-  } else {
-    st = GetSymbol(strIdx, tyIdx);
-  }
+  MIRSymbol *st = GetSymbol(strIdx, tyIdx);
   if (st != nullptr && !needInit) {
     // Previous symbol is a forward declaration, create a new symbol for definiton.
     return st;
@@ -590,8 +583,17 @@ static bool IsSameType(TyIdx tyIdx1, TyIdx tyIdx2) {
 
 MIRSymbol *ReflectionAnalysis::GetSymbol(GStrIdx strIdx, TyIdx tyIdx) {
   MIRSymbol *st = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(strIdx);
-  if (st != nullptr && st->GetSKind() == kStVar && IsSameType(st->GetTyIdx(), tyIdx)) {
-    return st;
+  if (st != nullptr && st->GetSKind() == kStVar) {
+    if (IsSameType(st->GetTyIdx(), tyIdx)) {
+      return st;
+    } else {
+      auto *type1 = GlobalTables::GetTypeTable().GetTypeFromTyIdx(tyIdx);
+      auto *type2 = GlobalTables::GetTypeTable().GetTypeFromTyIdx(st->GetTyIdx());
+      if (type1->GetKind() == kTypeStruct && type2->GetKind() == kTypeStructIncomplete) {
+        st->SetTyIdx(tyIdx);
+        return st;
+      }
+    }
   }
   return nullptr;
 }

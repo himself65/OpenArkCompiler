@@ -139,5 +139,4 @@ enum EnabledIndex {
   kEnable
 };
 }  // namespace mapleOption
-
-#endif //MAPLE_OPTION_DESCRIPTOR_H
+#endif // MAPLE_OPTION_DESCRIPTOR_H

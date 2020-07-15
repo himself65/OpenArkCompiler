@@ -115,6 +115,8 @@ static constexpr const char kDecoupleStr[] = "__decouple";
 static constexpr const char kCompilerVersionNum[] = "__compilerVersionNum";
 static constexpr const char kCompilerVersionNumStr[] = "__compilerVersionNumTab";
 static constexpr const char kCompilerMfileStatus[]  = "__compiler_mfile_status";
+static constexpr const char kMapleGlobalVariable[]  = "maple_global_variable";
+static constexpr const char kMapleLiteralString[]  = "maple_literal_string";
 
 static constexpr const char kSourceMuid[] = "__sourceMuid";
 static constexpr const char kSourceMuidSectionStr[] = "__sourceMuidTab";

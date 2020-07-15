@@ -1465,7 +1465,7 @@ void Emitter::EmitLiteral(const MIRSymbol &literal, const std::map<GStrIdx, MIRT
   EmitAsmLabel(literal, kAsmType);
   /* literal should always be fstatic and readonly? */
   EmitAsmLabel(literal, kAsmLocal);  /* alwasy fstatic */
-  EmitAsmLabel(kAsmData);
+  Emit("\t.section\t." + std::string(kMapleLiteralString) + ",\"aw\", %progbits\n");
   EmitAsmLabel(literal, kAsmAlign);
   EmitAsmLabel(literal, kAsmSyname);
   /* literal is an array */
@@ -1899,7 +1899,7 @@ void Emitter::EmitGlobalVariable() {
         secName.erase(0, 2);
         Emit("\t.section\t." + secName + ",\"a\",%progbits\n");
       } else {
-        EmitAsmLabel(kAsmData);
+        Emit("\t.section\t." + std::string(kMapleGlobalVariable) + ",\"aw\", %progbits\n");
       }
       /* Emit size and align by type */
       if (mirSymbol->GetStorageClass() == kScGlobal) {

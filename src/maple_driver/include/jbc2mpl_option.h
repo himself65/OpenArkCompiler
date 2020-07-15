@@ -43,4 +43,4 @@ const mapleOption::Descriptor jbcUsage[] = {
     {} }
 };
 } // namespace maple
-#endif //MAPLE_JBC2MPL_OPTION_H
+#endif // MAPLE_JBC2MPL_OPTION_H

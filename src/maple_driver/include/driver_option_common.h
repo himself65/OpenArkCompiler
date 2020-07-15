@@ -67,4 +67,4 @@ class DriverOptionCommon : public MapleDriverOptionBase {
   DriverOptionCommon();
 };
 }  // namespace maple
-#endif //DRIVER_OPTIONS_COMMON_H
+#endif // DRIVER_OPTIONS_COMMON_H

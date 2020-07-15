@@ -1554,11 +1554,17 @@ Operand *SelectLiteral(T *c, MIRFunction *func, uint32 labelIdx, AArch64CGFunc *
   st->SetTyIdx(TyIdx(primType));
   uint32 typeBitSize = GetPrimTypeBitSize(primType);
 
-  if ((c->GetPrimType() == PTY_f32) || (c->GetPrimType() == PTY_f64)) {
-    return c->IsZero() ? static_cast<Operand*>(&cgFunc->GetOrCreateFpZeroOperand(typeBitSize))
-                       : static_cast<Operand*>(&cgFunc->GetOrCreateMemOpnd(*st, 0, typeBitSize));
+  if (T::GetPrimType() == PTY_f32) {
+    return (fabs(c->GetValue()) < std::numeric_limits<float>::denorm_min())
+        ? static_cast<Operand*>(&cgFunc->GetOrCreateFpZeroOperand(typeBitSize))
+        : static_cast<Operand*>(&cgFunc->GetOrCreateMemOpnd(*st, 0, typeBitSize));
+  } else if (T::GetPrimType() == PTY_f64) {
+    return (fabs(c->GetValue()) < std::numeric_limits<double>::denorm_min())
+        ? static_cast<Operand*>(&cgFunc->GetOrCreateFpZeroOperand(typeBitSize))
+        : static_cast<Operand*>(&cgFunc->GetOrCreateMemOpnd(*st, 0, typeBitSize));
+  } else {
+    CHECK_FATAL(false, "Unsupported const type");
   }
-  CHECK_FATAL(false, "Unsupported const type");
   return nullptr;
 }
 

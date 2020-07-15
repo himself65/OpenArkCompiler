@@ -149,7 +149,7 @@ class CGNode {
   }
 
   int32 GetPuIdx() const {
-    return (mirFunc != nullptr) ? mirFunc->GetPuidx() : -1;
+    return (mirFunc != nullptr) ? mirFunc->GetPuidx() : -1; // -1 is invalid idx
   }
 
   const std::string &GetMIRFuncName() const {

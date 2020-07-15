@@ -113,7 +113,7 @@ class BaseNode {
 
   const char *GetOpName() const;
   bool MayThrowException();
-  virtual uint8 NumOpnds() const {
+  virtual size_t NumOpnds() const {
     return numOpnds;
   }
 
@@ -221,7 +221,7 @@ class UnaryNode : public BaseNode {
     return uOpnd;
   }
 
-  uint8 NumOpnds() const override {
+  size_t NumOpnds() const override {
     return 1;
   }
 
@@ -594,7 +594,7 @@ class BinaryNode : public BaseNode, public BinaryOpnds {
     return GetBOpnd(i);
   }
 
-  uint8 NumOpnds() const override {
+  size_t NumOpnds() const override {
     return kOperandNumBinary;
   }
 
@@ -762,7 +762,7 @@ class TernaryNode : public BaseNode {
     return topnd[i];
   }
 
-  uint8 NumOpnds() const override {
+  size_t NumOpnds() const override {
     return kOperandNumTernary;
   }
 
@@ -855,7 +855,7 @@ class NaryNode : public BaseNode, public NaryOpnds {
     return GetNopndAt(i);
   }
 
-  uint8 NumOpnds() const override {
+  size_t NumOpnds() const override {
     ASSERT(numOpnds == GetNopndSize(), "NaryNode has wrong numOpnds field");
     return GetNopndSize();
   }
@@ -1133,7 +1133,7 @@ class ArrayNode : public NaryNode {
   bool Verify() const override;
   bool IsSameBase(ArrayNode*);
 
-  uint8 NumOpnds() const override {
+  size_t NumOpnds() const override {
     ASSERT(numOpnds == GetNopndSize(), "ArrayNode has wrong numOpnds field");
     return GetNopndSize();
   }
@@ -1502,7 +1502,7 @@ class IassignNode : public StmtNode {
     return rhs;
   }
 
-  uint8 NumOpnds() const override {
+  size_t NumOpnds() const override {
     return kOperandNumBinary;
   }
 
@@ -1984,7 +1984,7 @@ class DassignNode : public UnaryStmtNode {
     return node;
   }
 
-  uint8 NumOpnds() const override {
+  size_t NumOpnds() const override {
     return 1;
   }
 
@@ -2313,7 +2313,7 @@ class IfStmtNode : public UnaryStmtNode {
     elsePart = node;
   }
 
-  uint8 NumOpnds() const override {
+  size_t NumOpnds() const override {
     return numOpnds;
   }
 
@@ -2458,7 +2458,7 @@ class DoloopNode : public StmtNode {
     return *(&doBody + i - 3);
   }
 
-  uint8 NumOpnds() const override {
+  size_t NumOpnds() const override {
     return kOperandNumDoloop;
   }
 
@@ -2522,7 +2522,7 @@ class ForeachelemNode : public StmtNode {
     return loopBody;
   }
 
-  uint8 NumOpnds() const override {
+  size_t NumOpnds() const override {
     return numOpnds;
   }
 
@@ -2564,7 +2564,7 @@ class BinaryStmtNode : public StmtNode, public BinaryOpnds {
     return GetBOpnd(i);
   }
 
-  uint8 NumOpnds() const override {
+  size_t NumOpnds() const override {
     return kOperandNumBinary;
   }
 
@@ -2687,7 +2687,7 @@ class NaryStmtNode : public StmtNode, public NaryOpnds {
     SetNOpndAt(i, node);
   }
 
-  uint8 NumOpnds() const override {
+  size_t NumOpnds() const override {
     ASSERT(numOpnds == GetNopndSize(), "NaryStmtNode has wrong numOpnds field");
     return GetNopndSize();
   }
@@ -2817,7 +2817,7 @@ class CallNode : public NaryStmtNode {
     returnValues = vec;
   }
 
-  uint8 NumOpnds() const override {
+  size_t NumOpnds() const override {
     ASSERT(numOpnds == GetNopndSize(), "CallNode has wrong numOpnds field");
     return GetNopndSize();
   }
@@ -2896,7 +2896,7 @@ class IcallNode : public NaryStmtNode {
     returnValues = vec;
   }
 
-  uint8 NumOpnds() const override {
+  size_t NumOpnds() const override {
     ASSERT(numOpnds == GetNopndSize(), "IcallNode has wrong numOpnds field");
     return GetNopndSize();
   }
@@ -2986,7 +2986,7 @@ class IntrinsiccallNode : public NaryStmtNode {
     returnValues = vec;
   }
 
-  uint8 NumOpnds() const override {
+  size_t NumOpnds() const override {
     ASSERT(numOpnds == GetNopndSize(), "IntrinsiccallNode has wrong numOpnds field");
     return GetNopndSize();
   }

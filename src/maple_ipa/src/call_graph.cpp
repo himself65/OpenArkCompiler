@@ -124,6 +124,7 @@ void CGNode::Dump(std::ofstream &fout) const {
   // if dumpall == 1, dump whole call graph
   // else dump callgraph with function defined in same module
   CHECK_NULL_FATAL(mirFunc);
+  constexpr size_t withoutRingNodeSize = 1;
   if (callees.empty()) {
     fout << "\"" << mirFunc->GetName() << "\";\n";
     return;
@@ -138,7 +139,7 @@ void CGNode::Dump(std::ofstream &fout) const {
       MIRFunction *func = node->GetMIRFunction();
       fout << "\"" << mirFunc->GetName() << "\" -> ";
       if (func != nullptr) {
-        if (node->GetSCCNode() != nullptr && node->GetSCCNode()->GetCGNodes().size() > 1) {
+        if (node->GetSCCNode() != nullptr && node->GetSCCNode()->GetCGNodes().size() > withoutRingNodeSize) {
           fout << "\"" << func->GetName() << "\"[label=" << node->GetSCCNode()->GetID() << " color=red];\n";
         } else {
           fout << "\"" << func->GetName() << "\"[label=" << 0 << " color=blue];\n";
@@ -1273,7 +1274,6 @@ void CallGraph::GenCallGraph() {
   std::vector<MIRFunction*> &funcTable = GlobalTables::GetFunctionTable().GetFuncTable();
   // don't optimize this loop to iterator or range-base loop
   // because AddCallGraphNode(mirFunc) will change GlobalTables::GetFunctionTable().GetFuncTable()
-  // see: https://gitlab.huawei.com/Maple/ArkKit/issues/122
   for (size_t index = 0; index < funcTable.size(); ++index) {
     MIRFunction *mirFunc = funcTable.at(index);
     if (mirFunc == nullptr || mirFunc->GetBody() == nullptr) {
@@ -1319,6 +1319,7 @@ void CallGraph::DumpToFile(bool dumpAll) const {
     outName = (outfile.append("-callgraphlight.dot")).c_str();
   }
   cgFile.open(outName, std::ios::trunc);
+  CHECK_FATAL(cgFile.is_open(), "open file fail in call graph");
   cgFile << "digraph graphname {\n";
   for (auto const &it : nodesMap) {
     CGNode *node = it.second;
@@ -1371,8 +1372,8 @@ void CallGraph::SetCompilationFunclist() const {
   mirModule->GetCompilationList().clear();
   mirModule->GetFunctionList().clear();
   const MapleVector<SCCNode*> &sccTopVec = GetSCCTopVec();
-  for (int i = sccTopVec.size() - 1; i >= 0; --i) {
-    SCCNode *sccNode = sccTopVec[i];
+  for (MapleVector<SCCNode*>::const_reverse_iterator it = sccTopVec.rbegin(); it != sccTopVec.rend(); ++it) {
+    SCCNode *sccNode = *it;
     std::sort(sccNode->GetCGNodes().begin(), sccNode->GetCGNodes().end(), CGNodeCompare);
     for (auto const kIt : sccNode->GetCGNodes()) {
       CGNode *node = kIt;

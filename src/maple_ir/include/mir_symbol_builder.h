@@ -59,5 +59,4 @@ class MIRSymbolBuilder {
   MIRSymbolBuilder &operator=(const MIRSymbolBuilder&&) = delete;
 };
 } // maple
-
 #endif // MAPLEIR_INCLUDE_MIRSYMBOLBUILDER_H
