@@ -172,7 +172,6 @@ def is_valid_pattern(pattern):
 
 
 def regex_match(content, line_map, pattern, start=0):
-    pattern = r"\s+".join([word for word in pattern.split()])
     if not is_valid_pattern(pattern):
         raise CompareError("Not valid pattern: {!r}".format(pattern))
     matches = re.finditer(str(pattern), content, re.MULTILINE)
