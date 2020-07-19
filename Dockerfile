@@ -13,7 +13,7 @@ RUN sed -i 's/archive.ubuntu.com/mirrors.163.com/g' /etc/apt/sources.list && \
     mkdir -p /tools/ninja /tools/gn
 # 在国内请在run下面一行添加
 # export http_proxy=http://192.168.3.81:1081 && export https_proxy=http://192.168.3.81:1081 && \
-# 原因都懂的, 还有容器内别用127.0.0.1                    
+# 因为容器也是个单独的系统，所以别用127.0.0.1
 RUN cd /tools && \
     curl -C - -LO http://releases.llvm.org/8.0.0/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz && \
     curl -LO https://github.com/ninja-build/ninja/releases/download/v1.9.0/ninja-linux.zip && \
