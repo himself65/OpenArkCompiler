@@ -355,6 +355,8 @@ bool MeABC::BuildAssignInGraph(MeStmt &meStmt) {
             ESSAConstNode *constNode = inequalityGraph->GetOrCreateConstNode(
                 static_cast<ConstMeExpr*>(varExpr)->GetIntValue());
             AddEdgePair(*arrLength, *constNode, 0, EdgeType::kNone);
+          } else {
+            AddEdgePair(*arrLength, *rhsNode, 0, EdgeType::kNone);
           }
         } else {
           CHECK_FATAL(opMeExpr->GetOpnd(0)->GetMeOp() == kMeOpConst, "must be");
