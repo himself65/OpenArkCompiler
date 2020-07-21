@@ -11,9 +11,11 @@ RUN sed -i 's/archive.ubuntu.com/mirrors.163.com/g' /etc/apt/sources.list && \
     apt-get -y install python3-paramiko python-paramiko python-jenkins python-requests python-xlwt && \
     apt-get -y install gcc-5-aarch64-linux-gnu g++-5-aarch64-linux-gnu aria2 && \
     mkdir -p /tools/ninja /tools/gn
-# 在国内请在run下面一行添加
-# export http_proxy=http://192.168.3.81:1081 && export https_proxy=http://192.168.3.81:1081 && \
-# 因为容器也是个单独的系统，所以别用127.0.0.1
+
+# 在国内请反注释下行, 因为容器也是个单独的系统，所以别用127.0.0.1
+#ENV http_proxy=http://192.168.3.81:1081 \ 
+#    https_proxy=http://192.168.3.81:1081
+
 RUN cd /tools && \
     curl -C - -LO http://releases.llvm.org/8.0.0/clang+llvm-8.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz && \
     curl -LO https://github.com/ninja-build/ninja/releases/download/v1.9.0/ninja-linux.zip && \
