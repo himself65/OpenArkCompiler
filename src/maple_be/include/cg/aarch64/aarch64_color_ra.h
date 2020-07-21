@@ -258,6 +258,14 @@ class LiveRange {
     this->priority = priority;
   }
 
+  bool IsMustAssigned() const {
+    return mustAssigned;
+  }
+
+  void SetMustAssigned() {
+    mustAssigned = true;
+  }
+
   void SetBBBuckets(uint32 bucketNum) {
     bbBuckets = bucketNum;
   }
@@ -553,11 +561,12 @@ class LiveRange {
 
  private:
   regno_t regNO = 0;
-  uint32 id     = 0;                  /* for priority tie breaker */
+  uint32 id = 0;                      /* for priority tie breaker */
   regno_t assignedRegNO = 0;          /* color assigned */
-  uint32 numCall  = 0;
+  uint32 numCall = 0;
   RegType regType = kRegTyUndef;
-  float priority  = 0.0;
+  float priority = 0.0;
+  bool mustAssigned = false;
   uint32 bbBuckets = 0;               /* size of bit array for bb (each bucket == 64 bits) */
   uint32 regBuckets = 0;              /* size of bit array for reg (each bucket == 64 bits) */
   uint32 numBBMembers = 0;            /* number of bits set in bbMember */
@@ -569,7 +578,7 @@ class LiveRange {
   uint32 numForbidden = 0;
 
   uint32 numBBConflicts = 0;          /* number of bits set in bbConflict */
-  uint64 *bbConflict   = nullptr;     /* vreg interference from graph neighbors (bit) */
+  uint64 *bbConflict = nullptr;       /* vreg interference from graph neighbors (bit) */
   uint64 *oldConflict = nullptr;
   MapleSet<regno_t> prefs;            /* pregs that prefer */
   MapleMap<uint32, LiveUnit*> luMap;  /* info for each bb */
@@ -1071,6 +1080,7 @@ class GraphColorRegAllocator : public AArch64RegAllocator {
         bbRegInfo(alloc.Adapter()),
         unconstrained(alloc.Adapter()),
         constrained(alloc.Adapter()),
+        mustAssigned(alloc.Adapter()),
 #ifdef OPTIMIZE_FOR_PROLOG
         intDelayed(alloc.Adapter()),
         fpDelayed(alloc.Adapter()),
@@ -1152,12 +1162,11 @@ class GraphColorRegAllocator : public AArch64RegAllocator {
   void ClassifyOperand(std::unordered_set<regno_t> &pregs, std::unordered_set<regno_t> &vregs, const Operand &opnd);
   void SetOpndConflict(const Insn &insn, bool onlyDef);
   void UpdateOpndConflict(const Insn &insn, bool multiDef);
+  void SetupMustAssignedLiveRanges(const Insn &insn);
   void ComputeLiveRangesForEachDefOperand(Insn &insn, bool &multiDef);
   void ComputeLiveRangesForEachUseOperand(Insn &insn);
   void ComputeLiveRangesUpdateIfInsnIsCall(const Insn &insn);
   void ComputeLiveRangesUpdateLiveUnitInsnRange(BB &bb, uint32 currPoint);
-  void UpdateRegLive(BB &bb, BB &succBB);
-  void ComputeLiveOut(BB &bb);
   void ComputeLiveRanges();
   MemOperand *CreateSpillMem(uint32 spillIdx);
   bool CheckOverlap(uint64 val, uint32 &lastBitSet, uint32 &overlapNum, uint32 i) const;
@@ -1167,6 +1176,7 @@ class GraphColorRegAllocator : public AArch64RegAllocator {
   void SetBBInfoGlobalAssigned(uint32 bbID, regno_t regNO);
   bool HaveAvailableColor(const LiveRange &lr, uint32 num) const;
   void Separate();
+  void SplitAndColorForEachLr(MapleVector<LiveRange*> &targetLrVec, bool isConstrained);
   void SplitAndColor();
   void ColorForOptPrologEpilog();
   bool IsLocalReg(regno_t regNO) const;
@@ -1251,6 +1261,7 @@ class GraphColorRegAllocator : public AArch64RegAllocator {
   MapleVector<BBAssignInfo*> bbRegInfo;   /* register assignment info for each bb */
   MapleVector<LiveRange*> unconstrained;
   MapleVector<LiveRange*> constrained;
+  MapleVector<LiveRange*> mustAssigned;
 #ifdef OPTIMIZE_FOR_PROLOG
   MapleVector<LiveRange*> intDelayed;
   MapleVector<LiveRange*> fpDelayed;

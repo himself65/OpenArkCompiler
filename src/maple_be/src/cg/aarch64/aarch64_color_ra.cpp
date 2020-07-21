@@ -849,6 +849,26 @@ void GraphColorRegAllocator::UpdateCallInfo(uint32 bbId) {
   }
 }
 
+void GraphColorRegAllocator::SetupMustAssignedLiveRanges(const Insn &insn) {
+  if (!insn.IsSpecialIntrinsic()) {
+    return;
+  }
+  uint32 opndNum = insn.GetOperandSize();
+  for (uint32 i = 0; i < opndNum; ++i) {
+    Operand &opnd = insn.GetOperand(i);
+    if (!opnd.IsRegister()) {
+      continue;
+    }
+    auto &regOpnd = static_cast<RegOperand&>(opnd);
+    regno_t regNO = regOpnd.GetRegisterNumber();
+    LiveRange *lr = lrVec[regNO];
+    if (lr != nullptr) {
+      lr->SetMustAssigned();
+      lr->SetIsNonLocal(true);
+    }
+  }
+}
+
 /*
  *  For each succ bb->GetSuccs(), if bb->liveout - succ->livein is not empty, the vreg(s) is
  *  dead on this path (but alive on the other path as there is some use of it on the
@@ -893,6 +913,7 @@ void GraphColorRegAllocator::ComputeLiveRanges() {
       ComputeLiveRangesForEachUseOperand(*insn);
 
       UpdateOpndConflict(*insn, multiDef);
+      SetupMustAssignedLiveRanges(*insn);
 
       if (ninsn != nullptr && ninsn->IsCall()) {
         UpdateCallInfo(bb->GetId());
@@ -1003,7 +1024,7 @@ void GraphColorRegAllocator::BuildInterferenceGraphSeparateIntFp(std::vector<Liv
       continue;
     }
 #ifdef USE_LRA
-    if (lr->GetNumBBMembers() == 1) {
+    if (IsLocalReg(*lr)) {
       continue;
     }
 #endif  /* USE_LRA */
@@ -1102,6 +1123,8 @@ void GraphColorRegAllocator::Separate() {
 #endif  /* OPTIMIZE_FOR_PROLOG */
     if (HaveAvailableColor(*lr, lr->GetNumBBConflicts() + lr->GetPregvetoSize() + lr->GetForbiddenSize())) {
       unconstrained.emplace_back(lr);
+    } else if (lr->IsMustAssigned()) {
+      mustAssigned.emplace_back(lr);
     } else {
       constrained.emplace_back(lr);
     }
@@ -1114,6 +1137,11 @@ void GraphColorRegAllocator::Separate() {
     LogInfo::MapleLogger() << "\n";
     LogInfo::MapleLogger() << "Constrained : ";
     for (auto lr : constrained) {
+      LogInfo::MapleLogger() << lr->GetRegNO() << " ";
+    }
+    LogInfo::MapleLogger() << "\n";
+    LogInfo::MapleLogger() << "mustAssigned : ";
+    for (auto lr : mustAssigned) {
       LogInfo::MapleLogger() << lr->GetRegNO() << " ";
     }
     LogInfo::MapleLogger() << "\n";
@@ -1914,24 +1942,26 @@ void GraphColorRegAllocator::ColorForOptPrologEpilog() {
  *
  *  Color the unconstrained LRs.
  */
-void GraphColorRegAllocator::SplitAndColor() {
-  /* handle constrained */
-  while (!constrained.empty()) {
-    auto highestIt = GetHighPriorityLr(constrained);
+void GraphColorRegAllocator::SplitAndColorForEachLr(MapleVector<LiveRange*> &targetLrVec, bool isConstrained) {
+  while (!targetLrVec.empty()) {
+    auto highestIt = GetHighPriorityLr(targetLrVec);
     LiveRange *lr = *highestIt;
     /* check those lrs in lr->sconflict which is in unconstrained whether it turns to constrined */
-    if (highestIt != constrained.end()) {
-      constrained.erase(highestIt);
+    if (highestIt != targetLrVec.end()) {
+      targetLrVec.erase(highestIt);
     } else {
-      ASSERT(false, "Error: not in constrained");
+      ASSERT(false, "Error: not in targetLrVec");
     }
     if (AssignColorToLr(*lr)) {
       continue;
     }
+    if (!isConstrained) {
+      ASSERT(false, "unconstrained lr should be colorable");
+      LogInfo::MapleLogger() << "error: LR should be colorable " << lr->GetRegNO() << "\n";
+    }
 #ifdef USE_SPLIT
     SplitLr(*lr);
 #endif  /* USE_SPLIT */
-
     /*
      * When LR is spilled, it potentially has no conflicts as
      * each def/use is spilled/reloaded.
@@ -1944,26 +1974,17 @@ void GraphColorRegAllocator::SplitAndColor() {
     }
 #endif  /* COLOR_SPLIT */
   }
+}
+
+void GraphColorRegAllocator::SplitAndColor() {
+  /* handle mustAssigned */
+  SplitAndColorForEachLr(mustAssigned, true);
+
+  /* handle constrained */
+  SplitAndColorForEachLr(constrained, true);
 
   /* assign color for unconstained */
-  while (!unconstrained.empty()) {
-    MapleVector<LiveRange*>::iterator highestIt = GetHighPriorityLr(unconstrained);
-    LiveRange *lr = *highestIt;
-    if (highestIt != unconstrained.end()) {
-      unconstrained.erase(highestIt);
-    } else {
-      ASSERT(false, "Error: not in unconstrained");
-      LogInfo::MapleLogger() << "Error: not in unconstrained\n";
-      /* with error, iterator not erased */
-      break;
-    }
-    if (!AssignColorToLr(*lr)) {
-      ASSERT(false, "LR should be colorable");
-      LogInfo::MapleLogger() << "error: LR should be colorable " << lr->GetRegNO() << "\n";
-      /* with error, iterator not erased */
-      break;
-    }
-  }
+  SplitAndColorForEachLr(unconstrained, false);
 
 #ifdef OPTIMIZE_FOR_PROLOG
   ColorForOptPrologEpilog();
