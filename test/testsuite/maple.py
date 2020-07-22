@@ -258,6 +258,7 @@ def do_prepare(components, info, maple_root):
 
     components["javac"].update_info(None, info["javac"])
     components["jar"].update_info(None, info["jar"])
+    components["jbc2mpl"].update_info(maple_out_bin_path, info["jbc2mpl"])
     components["maple"].update_info(maple_out_bin_path, info["maple"])
     components["as"].update_info(gnu_bin_path, info["as"])
     components["cc"].update_info(gnu_bin_path, info["cc"])
@@ -280,12 +281,20 @@ def do_prepare(components, info, maple_root):
 def do_update(components, file_type):
     if file_type == "javac":
         components.pop("jar")
+        components.pop("jbc2mpl")
         components.pop("maple")
         components.pop("as")
         components.pop("cc")
         components.pop("cxx")
         components.pop("ld")
     elif file_type == "jar":
+        components.pop("jbc2mpl")
+        components.pop("maple")
+        components.pop("as")
+        components.pop("cc")
+        components.pop("cxx")
+        components.pop("ld")
+    elif file_type == "jbc2mpl":
         components.pop("maple")
         components.pop("as")
         components.pop("cc")
@@ -333,7 +342,8 @@ def main():
     components = collections.OrderedDict()
     components["javac"] = Javac("/usr/bin/javac", ".java", ".class", "")
     components["jar"] = Jar("/usr/bin/jar", ".class", ".jar", "")
-    components["maple"] = SingleCompiler("maple", ".jar", ".VtableImpl.s", "")
+    components["jbc2mpl"] = SingleCompiler("jbc2mpl", ".jar", ".mpl", "")
+    components["maple"] = SingleCompiler("maple", ".mpl", ".VtableImpl.s", "")
     components["as"] = MultiCompiler("clang++", ".s", ".o", "")
     components["cc"] = MultiCompiler("clang", ".c", ".o", "")
     components["cxx"] = MultiCompiler("clang++", ".cpp", ".o", "")
