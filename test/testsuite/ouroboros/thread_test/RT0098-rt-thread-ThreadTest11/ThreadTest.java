@@ -39,4 +39,4 @@ public class ThreadTest {
 }
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan The\s*newly\s*created\s*thread\s*must\s*not\s*be\s*daemon\,\s*and\s*isDaemon\(\)\'s\s*result\s*is\s*\-\-\s*false\s*The\s*thread\s*must\s*be\s*daemon\,\s*and\s*isDaemon\(\)\'s\s*result\s*is\s*\-\-\s*true
+// ASSERT: scan-full The newly created thread must not be daemon, and isDaemon()'s result is -- false\nThe thread must be daemon, and isDaemon()'s result is -- true\n

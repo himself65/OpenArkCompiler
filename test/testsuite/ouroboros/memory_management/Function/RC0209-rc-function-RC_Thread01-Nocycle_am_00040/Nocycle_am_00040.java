@@ -306,4 +306,4 @@ public class Nocycle_am_00040 {
 }
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan ExpectResult\nExpectResult\n
+// ASSERT: scan-full ExpectResult\nExpectResult\n

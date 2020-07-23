@@ -57,4 +57,4 @@ public class StringConvertToDoubleTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan 1\.124\s*0
+// ASSERT: scan-full 1.124\n0\n

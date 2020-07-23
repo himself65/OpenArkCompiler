@@ -66,4 +66,4 @@ public class StringValueOfLongTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan 0\s*013\s*1234567890\s*123456789013\s*0
+// ASSERT: scan-full 0\n013\n1234567890\n123456789013\n0\n

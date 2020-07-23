@@ -88,4 +88,4 @@ public class StringContentEqualsCharSequenceTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan false\s*false\s*true\s*false\s*false\s*false\s*false\s*true\s*false\s*0
+// ASSERT: scan-full false\nfalse\ntrue\nfalse\nfalse\nfalse\nfalse\ntrue\nfalse\n0\n

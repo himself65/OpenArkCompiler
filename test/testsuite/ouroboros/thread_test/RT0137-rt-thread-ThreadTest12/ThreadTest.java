@@ -85,4 +85,4 @@ public class ThreadTest {
 }
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan the\s*child\s*thread\s*of\s*a\s*daemon\s*thread\s*is\s*daemon\s*\-\-\-\s*true\s*the\s*child\s*thread\s*of\s*a\s*non\-daemon\s*thread\s*is\s*non\-daemon\s*\-\-\-\s*false
+// ASSERT: scan-full the child thread of a daemon thread is daemon --- true\nthe child thread of a non-daemon thread is non-daemon --- false\n

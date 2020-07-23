@@ -88,4 +88,4 @@ public class StringConcatTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan \<begin\>qwertyuiop\{\}\[\]\\\|asdfghjkl\;\:\'\"zxcvbnm\,\.\<\>\/\?\~\`1234567890\-\=\!\@\#\$\%\^\&\*\(\)_\+\s*ASDFGHJKLQWERTYUIOPZXCVBNM0x96\<end\>\s*\<begin\>\s*\@\!\.\&\%\<end\>\s*\<begin\>abc123abc\<end\>\s*\<begin\>\<end\>\s*\<begin\>\<end\>\s*\<begin\>qwertyuiop\{\}\[\]\\\|asdfghjkl\;\:\'\"zxcvbnm\,\.\<\>\/\?\~\`1234567890\-\=\!\@\#\$\%\^\&\*\(\)_\+\s*ASDFGHJKLQWERTYUIOPZXCVBNM0x96\<end\>\s*\<begin\>\s*\@\!\.\&\%\<end\>\s*\<begin\>abc123ABC\<end\>\s*\<begin\>\<end\>\s*0
+// ASSERT: scan-full <begin>qwertyuiop{}[]\|asdfghjkl;:'"zxcvbnm,.<>/?~`1234567890-=!@#$%^&*()_+ ASDFGHJKLQWERTYUIOPZXCVBNM0x96<end>\n<begin> @!.&%<end>\n<begin>abc123abc<end>\n<begin><end>\n<begin><end>\n<begin>qwertyuiop{}[]\|asdfghjkl;:'"zxcvbnm,.<>/?~`1234567890-=!@#$%^&*()_+ ASDFGHJKLQWERTYUIOPZXCVBNM0x96<end>\n<begin> @!.&%<end>\n<begin>abc123ABC<end>\n<begin><end>\n0\n

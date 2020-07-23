@@ -59,4 +59,4 @@ public class ThreadTest {
 }
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan The\s*default\s*handler\s*has\s*been\s*set\,\s*should\s*print\s*true\s*\-\-\s*true\s*Default\s*handler\s*should\s*be\s*null\,\s*and\s*the\s*test\s*is\s*\-\-\s*null\s*PASS
+// ASSERT: scan-full The default handler has been set, should print true -- true\nDefault handler should be null, and the test is -- null\nPASS\n

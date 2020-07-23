@@ -113,4 +113,4 @@ public class StringGetBytesIntIntBytesIntTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan ABertF\s*ABqweF\s*ABCDEF\s*ABCDEF\s*eBCDEF\s*ABCDEe\s*AB\!\.\&F\s*AB\s*\@\!F\s*ABCDEF\s*ABCDEF\s*\!BCDEF\s*ABCDE\!\s*ABc12F\s*ABabcF\s*ABCDEF\s*ABCDEF\s*cBCDEF\s*ABCDEc\s*ABertF\s*ABqweF\s*ABCDEF\s*ABCDEF\s*eBCDEF\s*ABCDEe\s*AB\!\.\&F\s*AB\s*\@\!F\s*ABCDEF\s*ABCDEF\s*\!BCDEF\s*ABCDE\!\s*ABc12F\s*ABabcF\s*ABCDEF\s*ABCDEF\s*cBCDEF\s*ABCDEc\s*0
+// ASSERT: scan-full ABertF\nABqweF\nABCDEF\nABCDEF\neBCDEF\nABCDEe\nAB!.&F\nAB @!F\nABCDEF\nABCDEF\n!BCDEF\nABCDE!\nABc12F\nABabcF\nABCDEF\nABCDEF\ncBCDEF\nABCDEc\nABertF\nABqweF\nABCDEF\nABCDEF\neBCDEF\nABCDEe\nAB!.&F\nAB @!F\nABCDEF\nABCDEF\n!BCDEF\nABCDE!\nABc12F\nABabcF\nABCDEF\nABCDEF\ncBCDEF\nABCDEc\n0\n

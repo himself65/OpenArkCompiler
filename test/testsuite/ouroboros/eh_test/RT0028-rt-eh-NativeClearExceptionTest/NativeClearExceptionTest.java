@@ -96,4 +96,4 @@ public class NativeClearExceptionTest extends Exception {
 // DEPENDENCE: jniNativeClearExceptionTest.cpp
 // EXEC:%maple  NativeClearExceptionTest.java jniNativeClearExceptionTest.cpp %build_option -o %n.so
 // EXEC:%run %n.so NativeClearExceptionTest  %run_option | compare %f
-// ASSERT: scan \-\-\-\-\-\-\>CheckPoint\:CcanContinue
+// ASSERT: scan-full ------>CheckPoint:CcanContinue\n

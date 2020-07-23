@@ -92,4 +92,4 @@ public class NativeCheckFatalErrorExceptionTest extends Exception {
 // DEPENDENCE: jniNativeCheckFatalErrorExceptionTest.cpp
 // EXEC:%maple  NativeCheckFatalErrorExceptionTest.java jniNativeCheckFatalErrorExceptionTest.cpp %build_option -o %n.so
 // EXEC:%run %n.so NativeCheckFatalErrorExceptionTest  2>&1 %run_option | compare %f
-// ASSERT: scan \-\-\-\-\-\-\>CheckPoint\:CcanContinue\s*\=\=\=\=\=\=\>JavaMethodThrows
+// ASSERT: scan-full ------>CheckPoint:CcanContinue\n======>JavaMethodThrows\n

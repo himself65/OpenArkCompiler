@@ -65,4 +65,4 @@ class ThreadCleaner implements Runnable {
 }
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan ExpectResult\n
+// ASSERT: scan-full ExpectResult\n

@@ -51,4 +51,4 @@ public class ThreadTest extends Thread {
 }
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan isInterrupted\(\)\s*returns\s*\-\-\s*false\s*after\s*executing\s*interrupt\(\)\s*isInterrupted\(\)\s*returns\s*\-\-\s*true\s*1st\s*should\s*true\s*\-\-\s*true\s*isInterrupted\(\)\s*returns\s*\-\-\s*false\s*2nd\s*should\s*false\s*\-\-\s*false\s*isInterrupted\(\)\s*returns\s*\-\-\s*false\s*PASS
+// ASSERT: scan-full isInterrupted() returns -- false\nafter executing interrupt()\nisInterrupted() returns -- true\n1st should true -- true\nisInterrupted() returns -- false\n2nd should false -- false\nisInterrupted() returns -- false\nPASS\n

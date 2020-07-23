@@ -79,4 +79,4 @@ class ThreadTest {
 }
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan interrupt\s*status\s*has\s*not\s*changed\s*to\s*true\s*\-\-\s*false\s*PASS
+// ASSERT: scan-full interrupt status has not changed to true -- false\nPASS\n

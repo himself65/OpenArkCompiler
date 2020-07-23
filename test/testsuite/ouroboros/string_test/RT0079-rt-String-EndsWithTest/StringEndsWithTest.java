@@ -86,4 +86,4 @@ public class StringEndsWithTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan false\s*true\s*false\s*true\s*true\s*true\s*false\s*true\s*false\s*true\s*false\s*true\s*false\s*true\s*false\s*true\s*false\s*true\s*0
+// ASSERT: scan-full false\ntrue\nfalse\ntrue\ntrue\ntrue\nfalse\ntrue\nfalse\ntrue\nfalse\ntrue\nfalse\ntrue\nfalse\ntrue\nfalse\ntrue\n0\n

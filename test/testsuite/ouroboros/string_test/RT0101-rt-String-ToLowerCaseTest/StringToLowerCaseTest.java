@@ -85,4 +85,4 @@ public class StringToLowerCaseTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan qwertyuiop\{\}\[\]\\\|asdfghjkl\;\:\'\"zxcvbnm\,\.\<\>\/\?\~\`1234567890\-\=\!\@\#\$\%\^\&\*\(\)_\+\s*asdfghjklqwertyuiopzxcvbnm0x96\s*\@\!\.\&\%\s*abc\.123\.abc\.\~\!\@\#\$\%\^\&\*\(\)_\+\;\'\/\.\?\s*qwertyuiop\{\}\[\]\\\|asdfghjkl\;\:\'\"zxcvbnm\,\.\<\>\/\?\~\`1234567890\-\=\!\@\#\$\%\^\&\*\(\)_\+\s*asdfghjklqwertyuiopzxcvbnm0x96\s*\@\!\.\&\%\s*abc\.123\.abc\s*0
+// ASSERT: scan-full qwertyuiop{}[]\|asdfghjkl;:'"zxcvbnm,.<>/?~`1234567890-=!@#$%^&*()_+ asdfghjklqwertyuiopzxcvbnm0x96\n @!.&%\nabc.123.abc.~!@#$%^&*()_+;'/.?\n\n\nqwertyuiop{}[]\|asdfghjkl;:'"zxcvbnm,.<>/?~`1234567890-=!@#$%^&*()_+ asdfghjklqwertyuiopzxcvbnm0x96\n @!.&%\nabc.123.abc\n\n0\n

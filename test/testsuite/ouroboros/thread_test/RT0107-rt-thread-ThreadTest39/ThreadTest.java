@@ -58,4 +58,4 @@ public class ThreadTest {
 }
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan Thread\s*group\s*of\s*a\s*dead\s*thread\s*must\s*be\s*null\s*\-\-\-\s*null\s*PASS
+// ASSERT: scan-full Thread group of a dead thread must be null --- null\nPASS\n

@@ -86,4 +86,4 @@ public class StringReplaceCharCharTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan qwertyuiop\{\}\[\]\\\|\@sdfghjkl\;\:\'\"zxcvbnm\,\.\<\>\/\?\~\`\!234567890\-\=\!\@\#\$\%\^\&\*\(\)_\+\s*ASDFGHJKLQWERTYUIOPZXCVBNM0x96\s*\@\!\.\&\%\s*\@bc\!23\@bc\s*qwertyuiop\{\}\[\]\\\|\@sdfghjkl\;\:\'\"zxcvbnm\,\.\<\>\/\?\~\`\!234567890\-\=\!\@\#\$\%\^\&\*\(\)_\+\s*ASDFGHJKLQWERTYUIOPZXCVBNM0x96\s*\@\!\.\&\%\s*\@bc\!23ABC\s*0
+// ASSERT: scan-full qwertyuiop{}[]\|@sdfghjkl;:'"zxcvbnm,.<>/?~`!234567890-=!@#$%^&*()_+ ASDFGHJKLQWERTYUIOPZXCVBNM0x96\n @!.&%\n@bc!23@bc\n\n\nqwertyuiop{}[]\|@sdfghjkl;:'"zxcvbnm,.<>/?~`!234567890-=!@#$%^&*()_+ ASDFGHJKLQWERTYUIOPZXCVBNM0x96\n @!.&%\n@bc!23ABC\n\n0\n

@@ -110,4 +110,5 @@ public class StringLengthTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan 99\s*\*\*\*\*\*\s*6\s*\*\*\*\*\*\s*6\s*\*\*\*\*\*\s*0\s*is\:isEmpty\s*is\:\"\"\s*\*\*\*\*\*\s*0\s*is\:isEmpty\s*is\:\"\"\s*\*\*\*\*\*\s*99\s*\*\*\*\*\*\s*6\s*\*\*\*\*\*\s*6\s*\*\*\*\*\*\s*0\s*is\:isEmpty\s*is\:\"\"\s*\*\*\*\*\*\s*0
+// ASSERT: scan-full 99\n*****\n6\n*****\n6\n*****\n0\n is:isEmpty\n is:""\n*****\n0\n is:isEmpty\n is:""\n*****\n99\n*****\n6\n*****\n6\n*****\n0\n is:isEmpty\n is:""\n*****\n0\n
+

@@ -84,4 +84,4 @@ public class ThreadTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan thread\s*count\s*\:\s*7
+// ASSERT: scan-full thread count : 7\n

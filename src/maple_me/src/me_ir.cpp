@@ -1373,6 +1373,14 @@ bool VarMeExpr::PointsToStringLiteral(SSATab &ssaTab) {
       }
     }
   }
+  const OriginalSt *ost = ssaTab.GetOriginalStFromID(var.GetOstIdx());
+  if (!ost->IsSymbolOst()) {
+    return false;
+  }
+  const MIRSymbol *sym = ost->GetMIRSymbol();
+  if (sym->IsLiteralPtr()) {
+    return true;
+  }
   return false;
 }
 

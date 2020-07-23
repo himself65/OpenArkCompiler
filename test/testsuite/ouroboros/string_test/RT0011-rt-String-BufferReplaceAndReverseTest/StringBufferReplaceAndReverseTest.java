@@ -105,4 +105,5 @@ public class StringBufferReplaceAndReverseTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan qwxyzuiop\{\}\[\]\\\|asdfghjkl\;\:\'\"zxcvbnm\,\.\<\>\/\?\~\`1234567890\-\=\!\@\#\$\%\^\&\*\(\)_\+\s*ASDFGHJKLQWERTYUIOPZXCVBNM0x96\s*xyzqwxyzuiop\{\}\[\]\\\|asdfghjkl\;\:\'\"zxcvbnm\,\.\<\>\/\?\~\`1234567890\-\=\!\@\#\$\%\^\&\*\(\)_\+\s*ASDFGHJKLQWERTYUIOPZXCVBNM0x96\s*xyz\s*xyzxyz\s*\@xyz\s*xyz\s*\@xyz\s*xyz\s*xyzxyz\s*abxyzabc\s*xyzabxyzabc\s*xyz\s*xyzxyz\s*69x0MNBVCXZPOIUYTREWQLKJHGFDSA\s*\+_\)\(\*\&\^\%\$\#\@\!\=\-0987654321\`\~\?\/\>\<\.\,mnbvcxz\"\'\:\;lkjhgfdsa\|\\\]\[\}\{poiuytrewq\s*\%\&\.\!\@\s*cba321cba\s*0
+// ASSERT: scan-full qwxyzuiop{}[]\\|asdfghjkl;:\'"zxcvbnm,.<>/?~`1234567890-=!@#$%^&*()_+ ASDFGHJKLQWERTYUIOPZXCVBNM0x96\nxyzqwxyzuiop{}[]\\|asdfghjkl;:\'"zxcvbnm,.<>/?~`1234567890-=!@#$%^&*()_+ ASDFGHJKLQWERTYUIOPZXCVBNM0x96\nxyz\nxyzxyz\n @xyz\nxyz @xyz\nxyz\nxyzxyz\nabxyzabc\nxyzabxyzabc\nxyz\nxyzxyz\n69x0MNBVCXZPOIUYTREWQLKJHGFDSA +_)(*&^%$#@!=-0987654321`~?/><.,mnbvcxz"\':;lkjhgfdsa|\\][}{poiuytrewq\n%&.!@ \ncba321cba\n\n\n0\n
+

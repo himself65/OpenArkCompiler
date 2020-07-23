@@ -190,4 +190,4 @@ interface Interface {
 // DEPENDENCE: AnnoB.java AnnoC.java AnnoA.java ENUMA.java AnnoD.java
 // EXEC:%maple  %f AnnoA.java AnnoB.java AnnoC.java AnnoD.java ENUMA.java %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan 0\n
+// ASSERT: scan-full 0\n

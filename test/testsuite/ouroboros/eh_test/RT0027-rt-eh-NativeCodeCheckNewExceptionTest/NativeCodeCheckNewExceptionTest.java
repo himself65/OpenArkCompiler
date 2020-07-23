@@ -93,4 +93,4 @@ public class NativeCodeCheckNewExceptionTest extends Exception {
 // DEPENDENCE: jniNativeCodeCheckNewExceptionTest.cpp
 // EXEC:%maple  NativeCodeCheckNewExceptionTest.java jniNativeCodeCheckNewExceptionTest.cpp %build_option -o %n.so
 // EXEC:%run %n.so NativeCodeCheckNewExceptionTest  %run_option | compare %f
-// ASSERT: scan \-\-\-\-\-\-\>CheckPoint\:CcanContinue
+// ASSERT: scan-full ------>CheckPoint:CcanContinue\n

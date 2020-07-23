@@ -69,4 +69,4 @@ public class StringCreateStringArrayTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan b\s*a\s*b\s*c\s*1\s*2\s*3\s*B\s*0
+// ASSERT: scan-full b\na\nb\nc\n1\n2\n3\nB\n0\n

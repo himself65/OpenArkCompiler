@@ -106,4 +106,4 @@ public class LiverangeSubsumeRCTest11 {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan a100\n
+// ASSERT: scan-full a100\n

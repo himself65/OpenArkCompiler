@@ -55,4 +55,4 @@ class ThreadTest extends Thread {
 }
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan t1\s*\-\-\s*1\s*t1\s*\-\-\s*2\s*t1\s*\-\-\s*3\s*t1\s*\-\-\s*4\s*t2\s*\-\-\s*1\s*t2\s*\-\-\s*2\s*t2\s*\-\-\s*3\s*t2\s*\-\-\s*4
+// ASSERT: scan-full t1 -- 1\nt1 -- 2\nt1 -- 3\nt1 -- 4\nt2 -- 1\nt2 -- 2\nt2 -- 3\nt2 -- 4\n

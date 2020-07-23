@@ -88,4 +88,4 @@ public class NullToStringTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan str1\s*\:\s*\<0\>\s*str1\s*\:\s*\<123\>\s*str1\s*\:\s*\<null\>\s*str2\s*\:\s*\<\>\s*str2\s*\:\s*\<abc\>\s*str2\s*\:\s*\<null\>\s*null\s*\<null\>\s*0
+// ASSERT: scan-full str1 : <0>\nstr1 : <123>\nstr1 : <null>\nstr2 : <>\nstr2 : <abc>\nstr2 : <null>\nnull\n<null>\n0\n

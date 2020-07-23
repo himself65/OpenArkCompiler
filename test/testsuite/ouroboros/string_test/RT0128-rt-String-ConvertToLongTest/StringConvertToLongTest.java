@@ -77,4 +77,4 @@ public class StringConvertToLongTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan 1234\s*0\s*111\s*0\s*\-187\s*86\s*2147483647\s*\-2147483648\s*5586836\s*0
+// ASSERT: scan-full 1234\n0\n111\n0\n-187\n86\n2147483647\n-2147483648\n5586836\n0\n

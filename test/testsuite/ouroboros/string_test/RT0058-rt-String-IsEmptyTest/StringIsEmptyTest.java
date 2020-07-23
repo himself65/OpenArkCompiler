@@ -109,4 +109,5 @@ public class StringIsEmptyTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan false\s*\*\*\*\*\*\s*false\s*\*\*\*\*\*\s*false\s*\*\*\*\*\*\s*true\s*is\:isEmpty\s*is\:\"\"\s*\*\*\*\*\*\s*true\s*is\:isEmpty\s*is\:\"\"\s*\*\*\*\*\*\s*false\s*\*\*\*\*\*\s*false\s*\*\*\*\*\*\s*false\s*\*\*\*\*\*\s*true\s*is\:isEmpty\s*is\:\"\"\s*\*\*\*\*\*\s*0
+// ASSERT: scan-full false\n*****\nfalse\n*****\nfalse\n*****\ntrue\n is:isEmpty\n is:""\n*****\ntrue\n is:isEmpty\n is:""\n*****\nfalse\n*****\nfalse\n*****\nfalse\n*****\ntrue\n is:isEmpty\n is:""\n*****\n0\n
+

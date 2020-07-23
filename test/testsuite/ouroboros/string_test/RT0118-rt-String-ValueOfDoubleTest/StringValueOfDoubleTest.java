@@ -66,4 +66,4 @@ public class StringValueOfDoubleTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan 0\.0\s*0\.013\s*1\.23\s*1\.2313\s*0
+// ASSERT: scan-full 0.0\n0.013\n1.23\n1.2313\n0\n

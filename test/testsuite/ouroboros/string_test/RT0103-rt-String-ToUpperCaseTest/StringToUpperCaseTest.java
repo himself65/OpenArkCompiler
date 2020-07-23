@@ -83,4 +83,5 @@ public class StringToUpperCaseTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan QWERTYUIOP\{\}\[\]\\\|ASDFGHJKL\;\:\'\"ZXCVBNM\,\.\<\>\/\?\~\`1234567890\-\=\!\@\#\$\%\^\&\*\(\)_\+\s*ASDFGHJKLQWERTYUIOPZXCVBNM0X96\s*\@\!\.\&\%\s*ABC\.123\.ABC\.\~\!\@\#\$\%\^\&\*\(\)_\+\;\'\/\.\?\s*QWERTYUIOP\{\}\[\]\\\|ASDFGHJKL\;\:\'\"ZXCVBNM\,\.\<\>\/\?\~\`1234567890\-\=\!\@\#\$\%\^\&\*\(\)_\+\s*ASDFGHJKLQWERTYUIOPZXCVBNM0X96\s*\@\!\.\&\%\s*ABC\.123\.ABC\s*0
+// ASSERT: scan-full QWERTYUIOP{}[]\\|ASDFGHJKL;:\'"ZXCVBNM,.<>/?~`1234567890-=!@#$%^&*()_+ ASDFGHJKLQWERTYUIOPZXCVBNM0X96\n @!.&%\nABC.123.ABC.~!@#$%^&*()_+;\'/.?\n\n\nQWERTYUIOP{}[]\\|ASDFGHJKL;:\'"ZXCVBNM,.<>/?~`1234567890-=!@#$%^&*()_+ ASDFGHJKLQWERTYUIOPZXCVBNM0X96\n @!.&%\nABC.123.ABC\n\n0\n
+

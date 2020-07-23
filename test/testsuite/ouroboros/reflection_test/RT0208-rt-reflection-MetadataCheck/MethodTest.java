@@ -447,4 +447,4 @@ interface TestMethod11 {
 // DEPENDENCE: FieldTest.java
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan 0\n
+// ASSERT: scan-full 0\n

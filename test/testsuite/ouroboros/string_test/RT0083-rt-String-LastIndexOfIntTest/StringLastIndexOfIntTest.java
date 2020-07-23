@@ -85,4 +85,4 @@ public class StringLastIndexOfIntTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan 33\s*\-1\s*7\s*\-1\s*\-1\s*33\s*\-1\s*1\s*\-1\s*0
+// ASSERT: scan-full 33\n-1\n7\n-1\n-1\n33\n-1\n1\n-1\n0\n

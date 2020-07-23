@@ -101,20 +101,26 @@ class StructEmitInfo {
   uint64 totalSize = 0;
 };
 
-class Emitter {
+class FuncEmitInfo {
  public:
-  Emitter(CG &cg, const std::string &asmFileName)
-      : cg(&cg),
-        rangeIdx2PrefixStr(cg.GetMIRModule()->GetMPAllocator().Adapter()),
-        hugeSoTargets(cg.GetMIRModule()->GetMPAllocator().Adapter()) {
-    outStream.open(asmFileName, std::ios::trunc);
-    MIRModule &mirModule = *cg.GetMIRModule();
-    memPool = mirModule.GetMemPool();
-    asmInfo = memPool->New<AsmInfo>(*memPool);
+  CGFunc &GetCGFunc() {
+    return cgFunc;
   }
 
-  ~Emitter() = default;
+  const CGFunc &GetCGFunc() const {
+    return cgFunc;
+  }
 
+ protected:
+  explicit FuncEmitInfo(CGFunc &func) : cgFunc(func) {}
+  ~FuncEmitInfo() = default;
+
+ private:
+  CGFunc &cgFunc;
+};
+
+class Emitter {
+ public:
   void CloseOutput() {
     if (outStream.is_open()) {
       outStream.close();
@@ -250,6 +256,19 @@ class Emitter {
     hugeSoTargets.insert(target);
   }
 #endif
+
+ protected:
+  Emitter(CG &cg, const std::string &fileName)
+      : cg(&cg),
+        rangeIdx2PrefixStr(cg.GetMIRModule()->GetMPAllocator().Adapter()),
+        hugeSoTargets(cg.GetMIRModule()->GetMPAllocator().Adapter()) {
+    outStream.open(fileName, std::ios::trunc);
+    MIRModule &mirModule = *cg.GetMIRModule();
+    memPool = mirModule.GetMemPool();
+    asmInfo = memPool->New<AsmInfo>(*memPool);
+  }
+
+  ~Emitter() = default;
 
  private:
   AsmLabel GetTypeAsmInfoName(PrimType primType) const;

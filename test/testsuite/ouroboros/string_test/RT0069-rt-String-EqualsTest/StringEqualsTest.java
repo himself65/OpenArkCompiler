@@ -81,4 +81,4 @@ public class StringEqualsTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan abc123\s*equals\s*\*\*\*\*\*\*\s*\:\s*false\s*abc123\s*equals\s*abc123\s*\:\s*true\s*abc123\s*equals\s*\:\s*false\s*abc123\s*equals\s*\:\s*false\s*abc123\s*equals\s*ABc123\s*\:\s*false\s*\*\*\*\*\*\*\s*equals\s*\*\*\*\*\*\*\s*\:\s*true\s*abc123\s*equals\s*\*\*\*\*\*\*\s*\:\s*false\s*abc123\s*equals\s*abc123\s*\:\s*true\s*abc123\s*equals\s*\:\s*false\s*abc123\s*equals\s*null\s*\:\s*false\s*abc123\s*equals\s*abc123\s*\:\s*true\s*0
+// ASSERT: scan-full abc123 equals ****** : false\nabc123 equals abc123 : true\nabc123 equals  : false\nabc123 equals  : false\nabc123 equals ABc123 : false\n****** equals ****** : true\nabc123 equals ****** : false\nabc123 equals abc123 : true\nabc123 equals  : false\nabc123 equals null : false\nabc123 equals abc123 : true\n0\n

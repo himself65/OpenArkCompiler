@@ -84,4 +84,4 @@ public class StringCompareToIgnoreCaseTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan 0\s*55\s*0\s*6\s*6\s*0\s*55\s*0\s*6\s*0
+// ASSERT: scan-full 0\n55\n0\n6\n6\n0\n55\n0\n6\n0\n

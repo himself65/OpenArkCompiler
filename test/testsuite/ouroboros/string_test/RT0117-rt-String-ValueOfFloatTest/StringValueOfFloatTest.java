@@ -66,4 +66,4 @@ public class StringValueOfFloatTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan 0\.0\s*0\.013\s*13\.0\s*13\.013\s*0
+// ASSERT: scan-full 0.0\n0.013\n13.0\n13.013\n0\n

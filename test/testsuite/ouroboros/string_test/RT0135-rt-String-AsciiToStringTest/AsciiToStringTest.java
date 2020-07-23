@@ -72,4 +72,4 @@ public class AsciiToStringTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan a\s*b\^c\~AB\s*a\s*b\^c\~AB\s*a\s*b\^c\~AB\s*0
+// ASSERT: scan-full a b^c~AB\na b^c~AB\na b^c~AB\n0\n

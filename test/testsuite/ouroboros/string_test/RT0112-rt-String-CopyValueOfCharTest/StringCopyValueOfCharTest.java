@@ -69,4 +69,4 @@ public class StringCopyValueOfCharTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan abc123\s*abc123\s*abc123\s*abc123\s*0
+// ASSERT: scan-full abc123\nabc123\nabc123\nabc123\n0\n

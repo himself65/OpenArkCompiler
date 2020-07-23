@@ -23,8 +23,10 @@
 #include "lower.h"
 #if TARGAARCH64
 #include "aarch64/aarch64_cg.h"
+#include "aarch64/aarch64_emitter.h"
 #elif TARGARM32
 #include "arm32/arm32_cg.h"
+#include "arm32/arm32_emitter.h"
 #else
 #error "Unsupported target"
 #endif
@@ -288,16 +290,14 @@ void DriverRunner::ProcessCGPhase(const std::string &outputFile, const std::stri
 CG *DriverRunner::CreateCGAndBeCommon(const std::string &outputFile, const std::string &originBaseName) {
   CG *cg = nullptr;
 
-#if TARGX86
-  cg = new X86CG(*cgOptions, cgOptions->IsRunCG(), outputFile.c_str());
-#elif TARGARM
-  cg = new ArmCG(*cgOptions, cgOptions->IsRunCG(), outputFile.c_str());
-#elif TARGAARCH64
+#if TARGAARCH64
   cg = new AArch64CG(*theModule, *cgOptions, cgOptions->GetEHExclusiveFunctionNameVec(),
                      CGOptions::GetCyclePatternMap());
+  cg->SetEmitter(*theModule->GetMemPool()->New<AArch64AsmEmitter>(*cg, outputFile));
 #elif TARGARM32
   cg = new Arm32CG(*theModule, *cgOptions, cgOptions->GetEHExclusiveFunctionNameVec(),
-                     CGOptions::GetCyclePatternMap());
+                   CGOptions::GetCyclePatternMap());
+  cg->SetEmitter(*theModule->GetMemPool()->New<Arm32AsmEmitter>(*cg, outputFile));
 #else
 #error "unknown platform"
 #endif
@@ -322,8 +322,6 @@ CG *DriverRunner::CreateCGAndBeCommon(const std::string &outputFile, const std::
     CHECK_FATAL(cgOptions->IsInsertCall(), "handling of --insert-call is not correct");
     cg->SetInstrumentationFunction(cgOptions->GetInstrumentationFunction());
   }
-
-  cg->SetEmitter(*theModule->GetMemPool()->New<Emitter>(*cg, outputFile));
 
   return cg;
 }

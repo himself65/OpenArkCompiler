@@ -77,4 +77,4 @@ public class StringConsBytesIntIntStringTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan abc\s*abc123\s*3\s*0
+// ASSERT: scan-full abc\nabc123\n\n3\n0\n

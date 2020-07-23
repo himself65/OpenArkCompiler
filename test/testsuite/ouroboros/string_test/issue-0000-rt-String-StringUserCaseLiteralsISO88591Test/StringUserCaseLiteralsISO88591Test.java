@@ -98,4 +98,4 @@ public class StringUserCaseLiteralsISO88591Test {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan \=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=StringUserCaseLiteralsISO88591Test_1\s*jag\s*ls\s*dig
+// ASSERT: scan-full ========================StringUserCaseLiteralsISO88591Test_1\njag ls dig\n

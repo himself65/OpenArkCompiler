@@ -83,4 +83,4 @@ public class StringGetClassTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan class\s*java\.lang\.String\s*class\s*java\.lang\.String\s*class\s*java\.lang\.String\s*class\s*java\.lang\.String\s*class\s*java\.lang\.String\s*class\s*java\.lang\.String\s*class\s*java\.lang\.String\s*class\s*java\.lang\.String\s*class\s*java\.lang\.String\s*0
+// ASSERT: scan-full class java.lang.String\nclass java.lang.String\nclass java.lang.String\nclass java.lang.String\nclass java.lang.String\nclass java.lang.String\nclass java.lang.String\nclass java.lang.String\nclass java.lang.String\n0\n

@@ -68,4 +68,4 @@ class ThreadTest {
 }
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan sleeping\s*thread\s*has\s*received\s*the\s*InterruptedException\s*interrupt\s*status\s*has\s*been\s*cleared\,\s*if\s*the\s*output\s*is\s*false\s*\-\-\s*false
+// ASSERT: scan-full sleeping thread has received the InterruptedException\ninterrupt status has been cleared, if the output is false -- false\n

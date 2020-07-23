@@ -84,4 +84,4 @@ public class StringHashCodeTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan \-736345066\s*976266700\s*\-1113531438\s*0\s*0\s*\-736345066\s*976266700\s*\-1113563214\s*0\s*0
+// ASSERT: scan-full -736345066\n976266700\n-1113531438\n0\n0\n-736345066\n976266700\n-1113563214\n0\n0\n

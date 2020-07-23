@@ -69,4 +69,4 @@ class ThreadTest {
 }
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan thread\'s\s*state\s*is\s*\-\-\s*NEW\s*isInterrupted\(\)\s*finally\s*returns\s*\-\-\s*false\s*interrupt\s*status\s*has\s*not\s*changed\s*to\s*true
+// ASSERT: scan-full thread's state is -- NEW\nisInterrupted() finally returns -- false\ninterrupt status has not changed to true\n

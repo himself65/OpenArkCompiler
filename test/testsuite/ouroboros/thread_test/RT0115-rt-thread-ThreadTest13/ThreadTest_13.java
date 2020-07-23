@@ -63,4 +63,4 @@ public class ThreadTest_13 {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan run\(\)\s*should\s*do\s*nothing\s*\-\-\-\s*true\s*run\(\)\s*should\s*do\s*nothing\s*\-\-\-\s*true\s*run\(\)\s*should\s*do\s*nothing\s*\-\-\-\s*NEW\s*helloworld\s*run\(\)\s*should\s*do\s*nothing\s*\-\-\-\s*true\s*run\(\)\s*should\s*do\s*nothing\s*\-\-\-\s*true
+// ASSERT: scan-full run() should do nothing --- true\nrun() should do nothing --- true\nrun() should do nothing --- NEW\nhelloworld\nrun() should do nothing --- true\nrun() should do nothing --- true\n
