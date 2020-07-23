@@ -88,4 +88,4 @@ public class StringCompareByEqualsTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan str1\s*\!\s*str1\s*\!\s*str\s*\=\=\s*abc123abc\s*str1\s*\!\s*str1\s*\!\s*str1\s*\!\s*str1\s*\!\s*str1\s*\!\s*str1\s*\!\s*0
+// ASSERT: scan-full str1 !\nstr1 !\nstr == abc123abc\nstr1 !\nstr1 !\nstr1 !\nstr1 !\nstr1 !\nstr1 !\n0\n

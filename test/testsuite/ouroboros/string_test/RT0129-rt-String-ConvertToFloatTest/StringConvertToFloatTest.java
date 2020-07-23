@@ -57,4 +57,4 @@ public class StringConvertToFloatTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan 12\.34\s*0
+// ASSERT: scan-full 12.34\n0\n

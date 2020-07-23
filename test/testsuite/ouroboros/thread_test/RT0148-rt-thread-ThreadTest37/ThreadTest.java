@@ -80,4 +80,4 @@ public class ThreadTest {
 }
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan sleep\(long\s*millis\)\s*OK\s*IllegalArgumentException\s*for\s*sleep\(long\s*millis\)\s*as\:\s*millis\s*\<\s*0\s*sleep\(long\s*millis\,\s*int\s*nanos\)\s*OK\s*IllegalArgumentException\s*for\s*sleep\(long\s*millis\,\s*int\s*nanos\)\s*as\:\s*nanos\s*\<\s*0\s*IllegalArgumentException\s*for\s*sleep\(long\s*millis\,\s*int\s*nanos\)\s*as\:\s*nanos\s*\>\s*999999\s*IllegalArgumentException\s*for\s*sleep\(long\s*millis\,\s*int\s*nanos\)\s*as\:\s*millis\s*\<\s*0
+// ASSERT: scan-full sleep(long millis) OK\nIllegalArgumentException for sleep(long millis) as: millis < 0\nsleep(long millis, int nanos) OK\nIllegalArgumentException for sleep(long millis, int nanos) as: nanos < 0\nIllegalArgumentException for sleep(long millis, int nanos) as: nanos > 999999\nIllegalArgumentException for sleep(long millis, int nanos) as: millis < 0\n

@@ -58,4 +58,4 @@ public class ThreadTest {
 }
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan Thread\[main\,5\,main\]\s*Thread\[main\,5\,main\]\s*main\s*thread\'s\s*name\s*is\s*\-\-\s*Thread\-0\s*\-\-\s*7\s*thread\'s\s*priority\s*is\s*\-\-\s*5\s*\-\-\s*15\s*thread\'s\s*group\s*is\s*\-\-\s*main\s*\-\-\s*18\s*thread\s*name\s*\-\-\s*Thread\[Thread\-1\,5\,main\]\s*thread\s*group\s*\-\-\-\s*java\.lang\.ThreadGroup\[name\=main\,maxpri\=10\]\s*\-\-\-\s*java\.lang\.ThreadGroup\[name\=main\,maxpri\=10\]
+// ASSERT: scan-full Thread[main,5,main]\nThread[main,5,main]\nmain\nthread's name is -- Thread-0 -- 7\nthread's priority is -- 5 -- 15\nthread's group is -- main -- 18\nthread name -- Thread[Thread-1,5,main]\nthread group --- java.lang.ThreadGroup[name=main,maxpri=10] --- java.lang.ThreadGroup[name=main,maxpri=10]\n

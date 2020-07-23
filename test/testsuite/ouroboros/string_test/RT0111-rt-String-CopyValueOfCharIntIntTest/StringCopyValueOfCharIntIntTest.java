@@ -79,4 +79,4 @@ public class StringCopyValueOfCharIntIntTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan bc1\s*abc\s*abc123\s*3\s*bc1\s*abc\s*abc123\s*3\s*bc1\s*abc\s*abc123\s*3\s*bc1\s*abc\s*abc123\s*3\s*0
+// ASSERT: scan-full bc1\nabc\n\nabc123\n3\nbc1\nabc\n\nabc123\n3\nbc1\nabc\n\nabc123\n3\nbc1\nabc\n\nabc123\n3\n0\n

@@ -95,4 +95,4 @@ public class ThreadTest {
 }
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan 9\s*9\s*\-\-\s*10\s*\-\-\s*9\s*4\s*\=\=\=\s*4\s*IllegalArgumentException\s*has\s*be\s*thrown\s*when\s*new\s*priority\s*out\s*of\s*the\s*legal\s*range\s*helloworld2\s*TERMINATED\s*5\s*5
+// ASSERT: scan-full 9\n9 -- 10 -- 9\n4 === 4\nIllegalArgumentException has be thrown when new priority out of the legal range\nhelloworld2\nTERMINATED\n5\n5\n

@@ -70,4 +70,4 @@ public class StringConvertToIntTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan convert\(10\)\s*to\s*int\:\s*1234\s*convert\(8\)\s*to\s*int\:\s*668\s*0
+// ASSERT: scan-full convert(10) to int: 1234\nconvert(8) to int: 668\n0\n

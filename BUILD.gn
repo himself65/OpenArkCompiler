@@ -30,6 +30,15 @@ group("mplfe") {
   ]
 }
 
+group("ast2mpl") {
+  deps = []
+  if (IS_AST2MPL_EXISTS == "1") {
+    deps = [
+      "${AST2MPL_ROOT}/src:ast2mpl",
+    ]
+  }
+}
+
 group("aarch64isa_headers") {
   exec_script(
       "${MAPLEALL_ROOT}/maple_be/src/cg/script/genmop.py",

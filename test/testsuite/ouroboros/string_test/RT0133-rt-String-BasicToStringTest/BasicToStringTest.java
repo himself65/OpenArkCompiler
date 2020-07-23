@@ -126,4 +126,4 @@ public class BasicToStringTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan 0\s*111\s*2147483647\s*0\s*111\s*2147483647\s*0\.0\s*11\.1\s*2147483\.8\s*0\.0\s*1\.11\s*2\.147483647E7\s*0
+// ASSERT: scan-full 0\n111\n2147483647\n0\n111\n2147483647\n0.0\n11.1\n2147483.8\n0.0\n1.11\n2.147483647E7\n0\n

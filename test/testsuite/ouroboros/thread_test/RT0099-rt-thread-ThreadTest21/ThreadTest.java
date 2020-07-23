@@ -47,4 +47,4 @@ public class ThreadTest {
 }
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan helloworld\s*executes\s*interrupt\(\)\s*isInterrupted\(\)\s*returns\s*\-\-\s*true\s*1st\s*interrupted\(\)\s*should\s*true\s*\-\-\s*true\s*isInterrupted\(\)\s*returns\s*\-\-\s*false\s*2nd\s*interrupted\(\)\s*should\s*false\s*\-\-\s*false\s*isInterrupted\(\)\s*returns\s*\-\-\s*false\s*PASS
+// ASSERT: scan-full helloworld executes interrupt()\nisInterrupted() returns -- true\n1st interrupted() should true -- true\nisInterrupted() returns -- false\n2nd interrupted() should false -- false\nisInterrupted() returns -- false\nPASS\n

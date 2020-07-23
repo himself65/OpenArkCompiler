@@ -110,4 +110,5 @@ public class StringSubstringIntIntExceptionTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan erty\s*EXCEPTION\s*1_2\s*EXCEPTION\s*1_3\s*ertyuio\s*\!\.\&\%\s*EXCEPTION\s*1_2\s*EXCEPTION\s*1_3\s*\!\.\&\%\(\)\*\s*c123\s*EXCEPTION\s*1_2\s*EXCEPTION\s*1_3\s*c123abc\s*erty\s*EXCEPTION\s*1_2\s*EXCEPTION\s*1_3\s*ertyuio\s*\!\.\&\%\s*EXCEPTION\s*1_2\s*EXCEPTION\s*1_3\s*EXCEPTION\s*1_4\s*c123\s*EXCEPTION\s*1_2\s*EXCEPTION\s*1_3\s*c123ABC\s*0
+// ASSERT: scan-full erty\nEXCEPTION 1_2\nEXCEPTION 1_3\nertyuio\n!.&%\nEXCEPTION 1_2\nEXCEPTION 1_3\n!.&%()*\nc123\nEXCEPTION 1_2\nEXCEPTION 1_3\nc123abc\nerty\nEXCEPTION 1_2\nEXCEPTION 1_3\nertyuio\n!.&%\nEXCEPTION 1_2\nEXCEPTION 1_3\nEXCEPTION 1_4\nc123\nEXCEPTION 1_2\nEXCEPTION 1_3\nc123ABC\n0\n
+

@@ -74,4 +74,4 @@ class StringAsVariableAndFieldAndParamTest_1 {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan null\s*abc1_1\s*abcabc\s*abcabc\s*0
+// ASSERT: scan-full null\nabc1_1\nabcabc\nabcabc\n0\n

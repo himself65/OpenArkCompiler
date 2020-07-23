@@ -15,26 +15,24 @@
 #ifndef MAPLEBE_INCLUDE_CG_AARCH64_AARCH64_EMITTER_H
 #define MAPLEBE_INCLUDE_CG_AARCH64_AARCH64_EMITTER_H
 
-#include "emit.h"
+#include "asm_emit.h"
 
 namespace maplebe {
 using namespace maple;
 
-class AArch64Emitter {
+class AArch64AsmEmitter : public AsmEmitter {
  public:
-  explicit AArch64Emitter(CGFunc &func) : cgFunc(&func) {}
-  ~AArch64Emitter() = default;
+  AArch64AsmEmitter(CG &cg, const std::string &asmFileName) : AsmEmitter(cg, asmFileName) {}
+  ~AArch64AsmEmitter() = default;
 
-  void EmitRefToMethodDesc(Emitter &emitter);
-  void EmitRefToMethodInfo(Emitter &emitter);
-  void EmitMethodDesc(Emitter &emitter);
-  void EmitFastLSDA();
-  void EmitFullLSDA();
-  void EmitBBHeaderLabel(const std::string &name, LabelIdx labIdx);
-  void EmitJavaInsnAddr();
-  void Run();
- private:
-  CGFunc *cgFunc;
+  void EmitRefToMethodDesc(FuncEmitInfo &funcEmitInfo, Emitter &emitter) override;
+  void EmitRefToMethodInfo(FuncEmitInfo &funcEmitInfo, Emitter &emitter) override;
+  void EmitMethodDesc(FuncEmitInfo &funcEmitInfo, Emitter &emitter) override;
+  void EmitFastLSDA(FuncEmitInfo &funcEmitInfo) override;
+  void EmitFullLSDA(FuncEmitInfo &funcEmitInfo) override;
+  void EmitBBHeaderLabel(FuncEmitInfo &funcEmitInfo, const std::string &name, LabelIdx labIdx) override;
+  void EmitJavaInsnAddr(FuncEmitInfo &funcEmitInfo) override;
+  void Run(FuncEmitInfo &funcEmitInfo) override;
 };
 }  /* namespace maplebe */
 

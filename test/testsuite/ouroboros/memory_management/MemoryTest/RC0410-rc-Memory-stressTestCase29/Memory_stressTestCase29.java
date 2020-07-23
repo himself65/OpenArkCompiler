@@ -176,4 +176,4 @@ public class Memory_stressTestCase29 {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan ExpectResult
+// ASSERT: scan-full ExpectResult\n

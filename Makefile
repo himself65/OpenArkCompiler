@@ -47,6 +47,10 @@ maple: maplegendef
 irbuild:
 	$(call build_gn, ${GN_OPTIONS}, irbuild)
 
+.PHONY: ast2mpl
+ast2mpl:
+	$(call build_gn, ${GN_OPTIONS}, ast2mpl)
+
 .PHONY: mplfe
 mplfe:
 	$(call build_gn, ${GN_OPTIONS}, mplfe)

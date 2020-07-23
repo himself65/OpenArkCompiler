@@ -73,4 +73,4 @@ public class ThreadTest {
 }
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan threads\s*have\s*finished\s*successfully\s*\-\-\-\s*true\s*\-\-\-\s*true\s*PASS
+// ASSERT: scan-full threads have finished successfully --- true --- true\nPASS\n

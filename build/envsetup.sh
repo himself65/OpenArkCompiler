@@ -20,3 +20,9 @@ export MAPLE_ROOT=${curdir}
 unset MAPLE_BUILD_CORE
 export MAPLE_BUILD_CORE=${MAPLE_ROOT}/build/core
 export PATH=$PATH:${MAPLE_ROOT}/output/bin
+unset IS_AST2MPL_EXISTS
+if [ -d ${MAPLE_ROOT}/src/ast2mpl ]; then
+  export IS_AST2MPL_EXISTS=1
+else
+  export IS_AST2MPL_EXISTS=0
+fi

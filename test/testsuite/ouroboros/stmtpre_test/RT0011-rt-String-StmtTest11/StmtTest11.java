@@ -72,4 +72,4 @@ public class StmtTest11 {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan AB\nExpectResult\n
+// ASSERT: scan-full AB\nExpectResult\n

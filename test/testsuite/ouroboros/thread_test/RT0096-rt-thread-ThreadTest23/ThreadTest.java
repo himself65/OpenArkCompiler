@@ -77,4 +77,4 @@ class ThreadTest {
 }
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan isInterrupted\(\)\s*finally\s*returns\s*\-\-\s*true\s*PASS
+// ASSERT: scan-full isInterrupted() finally returns -- true\nPASS\n

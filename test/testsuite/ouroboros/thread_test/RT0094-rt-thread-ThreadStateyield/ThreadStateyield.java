@@ -77,4 +77,4 @@ public class ThreadStateyield extends Thread {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan TERMINATED\s*TIMED_WAITING
+// ASSERT: scan-full TERMINATED\nTIMED_WAITING\n

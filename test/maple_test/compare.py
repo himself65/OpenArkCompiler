@@ -29,8 +29,8 @@ ASSERT_FLAG = "ASSERT"
 EXPECTED_FLAG = "EXPECTED"
 EXPECTED_REGEX = r"\:{line_num}\:.*\:.*"
 
-SCAN_KEYWORDS = ["auto", "not", "next", "end"]
-CMP_KEYWORDS = ["end", "not", "next", "full"]
+SCAN_KEYWORDS = ["full", "not", "begin", "next", "end"]
+REGEX_KEYWORDS = ["auto", "not", "next", "end"]
 EXPECTED_KEYWORDS = ["scan", "scan-not", "scan-auto"]
 
 
@@ -135,11 +135,11 @@ def gen_match_func(keywords):
     assert_mode = keywords[0]
     match_func = None
     if assert_mode == "scan":
-        match_func = regex_match
+        match_func = in_match
         valid_keywords = SCAN_KEYWORDS
-    elif assert_mode == "cmp":
-        match_func = cmp_match
-        valid_keywords = CMP_KEYWORDS
+    elif assert_mode == "regex":
+        match_func = regex_match
+        valid_keywords = REGEX_KEYWORDS
     else:
         raise CompareError("scan mode: {} is not valid".format(assert_mode))
     for keyword in keywords[1:]:
@@ -153,6 +153,8 @@ def gen_match_func(keywords):
             match_func = partial(not_match, match_func=match_func)
         elif keyword == "next":
             match_func = partial(next_match, match_func=match_func)
+        elif keyword == "begin":
+            match_func = partial(begin_match, match_func=match_func)
         elif keyword == "end":
             match_func = end_match
         elif keyword == "full":
@@ -185,13 +187,8 @@ def regex_match(content, line_map, pattern, start=0):
     return False, start
 
 
-def cmp_match(content, line_map, pattern, start=0):
-    line_num = text_index_to_line_num(line_map, start)
-    line = content.splitlines()[line_num]
-    if line == pattern:
-        return True, line_map[line_num] + 1
-    else:
-        return False, start
+def begin_match(content, line_map, pattern, start=0, match_func=regex_match):
+    return match_func(content.splitlines()[0], line_map, pattern, start=0, match_func=regex_match)
 
 
 def auto_regex_match(content, line_map, pattern, start=0, match_func=regex_match):
@@ -201,11 +198,15 @@ def auto_regex_match(content, line_map, pattern, start=0, match_func=regex_match
 
 def not_match(content, line_map, pattern, start=0, match_func=regex_match):
     result, end = match_func(content, line_map, pattern, start)
-    return not result, end
+    if not result:
+        line_num = text_index_to_line_num(line_map, start)
+        return not result, line_map[line_num] + 1
+    return not result, start
 
 
 def next_match(content, line_map, pattern, start=0, match_func=regex_match):
-    return match_func(content, line_map, pattern, start)
+    line_num = text_index_to_line_num(line_map, start)
+    return match_func(content.splitlines()[line_num], line_map, pattern, start)
 
 
 def end_match(content, line_map, pattern, start=0, match_func=regex_match):
@@ -216,10 +217,19 @@ def end_match(content, line_map, pattern, start=0, match_func=regex_match):
 
 
 def full_match(content, line_map, pattern, start=0, match_func=regex_match):
+    line_num = text_index_to_line_num(line_map, start)
     pattern = pattern.encode("utf-8").decode("unicode_escape")
     if content != pattern:
         return False, start
-    return True, start
+    return True, line_map[line_num] + 1
+
+
+def in_match(content, line_map, pattern, start=0, match_func=regex_match):
+    line_num = text_index_to_line_num(line_map, start)
+    pattern = pattern.encode("utf-8").decode("unicode_escape")
+    if content.find(pattern) == -1:
+        return False, start
+    return True, line_map[line_num] + 1
 
 
 def gen_line_map(text):

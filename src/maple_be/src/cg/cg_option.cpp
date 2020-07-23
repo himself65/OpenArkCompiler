@@ -74,6 +74,7 @@ bool CGOptions::hotFix = false;
 bool CGOptions::debugSched = false;
 bool CGOptions::bruteForceSched = false;
 bool CGOptions::simulateSched = false;
+CGOptions::EmitFileType CGOptions::emitFileType = kAsm;
 bool CGOptions::genLongCalls = false;
 bool CGOptions::gcOnly = false;
 bool CGOptions::quiet = true;
@@ -142,6 +143,7 @@ enum OptionIndex : uint64 {
   kDebugSched,
   kBruteForceSched,
   kSimulateSched,
+  kEmitFileType,
   kLongCalls,
 };
 
@@ -719,6 +721,18 @@ const Descriptor kUsage[] = {
     "  --no-simulate-schedule\n",
     "mplcg",
     {} },
+  { kEmitFileType,
+    0,
+    "",
+    "filetype",
+    kBuildTypeExperimental,
+    kArgCheckPolicyRequired,
+    "  --filetype=name             \tChoose a file type.\n"
+    "                              \tname=asm: Emit an assembly file (Default)\n"
+    "                              \tname=obj: Emit an object file\n"
+    "                              \tname=null: not support yet\n",
+    "mplcg",
+    {} },
   { kLongCalls,
     kEnable,
     "",
@@ -1019,6 +1033,9 @@ bool CGOptions::SolveOptions(const std::vector<Option> &opts, bool isDebug) {
         break;
       case kSimulateSched:
         (opt.Type() == kEnable) ? EnableSimulateSched() : DisableSimulateSched();
+        break;
+      case kEmitFileType:
+        SetEmitFileType(opt.Args());
         break;
       case kLongCalls:
         (opt.Type() == kEnable) ? EnableLongCalls() : DisableLongCalls();

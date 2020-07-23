@@ -122,4 +122,4 @@ public class ThreadTest {
 }
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan in\s*join\(millis\)\,\s*millis\s*is\s*negative\s*join\(millis\)\s*OK\s*in\s*join\(millis\,\s*nanos\)\,\s*nanosecond\s*out\s*of\s*range\s*in\s*join\(millis\,\s*nanos\)\,\s*millis\s*is\s*negative\s*join\(millis\,\s*nanos\)\s*OK\s*PASS
+// ASSERT: scan-full in join(millis), millis is negative\njoin(millis) OK\nin join(millis, nanos), nanosecond out of range\nin join(millis, nanos), millis is negative\njoin(millis, nanos) OK\nPASS\n

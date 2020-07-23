@@ -111,4 +111,4 @@ public class SetMaxPriority {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan SetMaxPriority\s*passed
+// ASSERT: scan-full SetMaxPriority passed\n

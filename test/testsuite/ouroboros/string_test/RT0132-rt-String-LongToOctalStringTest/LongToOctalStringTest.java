@@ -81,4 +81,4 @@ public class LongToOctalStringTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan 0\s*157\s*17777777777\s*0\s*157\s*17777777777\s*0
+// ASSERT: scan-full 0\n157\n17777777777\n0\n157\n17777777777\n0\n

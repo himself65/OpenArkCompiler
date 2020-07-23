@@ -45,4 +45,4 @@ public class ThreadTest {
 }
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan set\s*the\s*new\s*name\s*\-\-\s*maple_thread\s*\-\-\-\-\s*maple_thread\s*setName\(\)\s*should\s*not\s*accept\s*null\s*names
+// ASSERT: scan-full set the new name -- maple_thread ---- maple_thread\nsetName() should not accept null names\n

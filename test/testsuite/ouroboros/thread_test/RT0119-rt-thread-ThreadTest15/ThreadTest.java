@@ -37,4 +37,4 @@ public class ThreadTest {
 }
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan main\s*true
+// ASSERT: scan-full main\ntrue\n

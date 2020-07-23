@@ -84,6 +84,12 @@ class CGOptions : public MapleDriverOptionBase {
     kABISoft,
     kABISoftFP
   };
+
+  enum EmitFileType : uint8 {
+    kAsm,
+    kObj,
+    kNone,
+  };
   /*
    * The default CG option values are:
    * Don't BE_QUITE; verbose,
@@ -743,6 +749,23 @@ class CGOptions : public MapleDriverOptionBase {
   }
 
 
+  static void SetEmitFileType(const std::string &type) {
+    if (type == "asm") {
+      emitFileType = kAsm;
+    } else if (type == "obj") {
+      emitFileType = kObj;
+    } else if (type == "null") {
+      emitFileType = kNone;
+      CHECK_FATAL(false, "null is not supported Currently.");
+    } else {
+      CHECK_FATAL(false, "unexpected file-type, only asm, obj, and null are supported");
+    }
+  }
+
+  static EmitFileType GetEmitFileType() {
+    return emitFileType;
+  }
+
   static void EnableLongCalls() {
     genLongCalls = true;
   }
@@ -828,6 +851,7 @@ class CGOptions : public MapleDriverOptionBase {
   static bool bruteForceSched;
   /* if true do SimulateSched */
   static bool simulateSched;
+  static EmitFileType emitFileType;
   /* if true generate adrp/ldr/blr */
   static bool genLongCalls;
   static bool gcOnly;

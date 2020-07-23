@@ -86,4 +86,4 @@ public class ThreadTest {
 }
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan Thread\s*1\'\s*state\s*\-\-\s*TIMED_WAITING\s*IllegalThreadStateException\s*has\s*been\s*thrown\s*when\s*start\s*the\s*already\s*started\s*thread\s*Thread\s*2\'\s*state\s*\-\-\s*TERMINATED\s*IllegalThreadStateException\s*has\s*been\s*thrown\s*when\s*start\s*the\s*already\s*finished\s*thread\s*PASS
+// ASSERT: scan-full Thread 1' state -- TIMED_WAITING\nIllegalThreadStateException has been thrown when start the already started thread\nThread 2' state -- TERMINATED\nIllegalThreadStateException has been thrown when start the already finished thread\nPASS\n

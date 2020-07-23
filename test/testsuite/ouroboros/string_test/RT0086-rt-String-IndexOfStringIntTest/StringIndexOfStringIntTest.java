@@ -91,4 +91,4 @@ public class StringIndexOfStringIntTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan 31\s*31\s*\-1\s*\-1\s*\-1\s*\-1\s*2\s*8\s*\-1\s*\-1\s*\-1\s*\-1\s*\-1\s*\-1\s*\-1\s*31\s*31\s*\-1\s*\-1\s*\-1\s*\-1\s*2\s*\-1\s*\-1\s*\-1\s*\-1\s*\-1\s*0
+// ASSERT: scan-full 31\n31\n-1\n-1\n-1\n-1\n2\n8\n-1\n-1\n-1\n-1\n-1\n-1\n-1\n31\n31\n-1\n-1\n-1\n-1\n2\n-1\n-1\n-1\n-1\n-1\n0\n

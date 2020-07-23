@@ -73,4 +73,4 @@ public class ThreadTest {
 }
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan should\s*be\s*same\s*\-\-\s*true\s*Thread\'s\s*thread\s*group\s*is\s*expected\s*to\s*be\s*a\s*handler\s*\-\-\s*true\s*PASS
+// ASSERT: scan-full should be same -- true\nThread's thread group is expected to be a handler -- true\nPASS\n

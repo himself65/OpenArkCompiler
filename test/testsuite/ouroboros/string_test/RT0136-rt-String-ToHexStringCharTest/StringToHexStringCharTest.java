@@ -93,4 +93,4 @@ public class StringToHexStringCharTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan 61\s*20\s*62\s*5e\s*63\s*7e\s*41\s*42\s*61\s*20\s*62\s*5e\s*63\s*7e\s*41\s*42\s*61\s*20\s*62\s*5e\s*63\s*7e\s*41\s*42\s*4e2d\s*56fd\s*4e2d\s*56fd\s*4e2d\s*56fd\s*61\s*62\s*63\s*4e2d\s*56fd\s*61\s*62\s*63\s*0
+// ASSERT: scan-full 61\n20\n62\n5e\n63\n7e\n41\n42\n61\n20\n62\n5e\n63\n7e\n41\n42\n61\n20\n62\n5e\n63\n7e\n41\n42\n4e2d\n56fd\n4e2d\n56fd\n4e2d\n56fd\n61\n62\n63\n4e2d\n56fd\n61\n62\n63\n0\n

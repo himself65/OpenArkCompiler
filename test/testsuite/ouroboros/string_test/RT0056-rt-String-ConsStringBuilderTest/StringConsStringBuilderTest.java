@@ -68,4 +68,4 @@ public class StringConsStringBuilderTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan These\s*are\s*abcdefghijklmnopqrstuvwxyz\s*These\s*are\s*abcdefghijklmnopqrstuvwxyz\s*These\s*are\s*abcdefghijklmnopqrstuvwxyz\s*0
+// ASSERT: scan-full These are abcdefghijklmnopqrstuvwxyz\nThese are abcdefghijklmnopqrstuvwxyz\nThese are abcdefghijklmnopqrstuvwxyz\n0\n

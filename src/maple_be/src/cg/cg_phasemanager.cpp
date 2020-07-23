@@ -167,7 +167,7 @@ void CgFuncPhaseManager::AddPhases(std::vector<std::string> &phases) {
 void CgFuncPhaseManager::Emit(CGFunc &func) {
   PhaseID id = kCGFuncPhaseEMIT;
   FuncPhase *funcPhase = static_cast<FuncPhase*>(GetPhase(id));
-  CHECK_FATAL(funcPhase != nullptr, "p is null in CgFuncPhaseManager::Run");
+  CHECK_FATAL(funcPhase != nullptr, "funcPhase is null in CgFuncPhaseManager::Run");
 
   const std::string kPhaseBeforeEmit = "fixshortbranch";
   funcPhase->SetPreviousPhaseName(kPhaseBeforeEmit); /* prev phase name is for filename used in emission after phase */

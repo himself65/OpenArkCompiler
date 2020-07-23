@@ -77,4 +77,4 @@ public class StringGenericTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan true\s*2\s*0
+// ASSERT: scan-full true\n2\n0\n

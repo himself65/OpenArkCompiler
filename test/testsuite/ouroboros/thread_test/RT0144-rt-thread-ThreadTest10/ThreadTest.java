@@ -36,4 +36,4 @@ public class ThreadTest {
 }
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan Test\s*sleep\(long\s*millis\)\s*OK\s*\-\-
+// ASSERT: scan-full Test sleep(long millis) OK --\n

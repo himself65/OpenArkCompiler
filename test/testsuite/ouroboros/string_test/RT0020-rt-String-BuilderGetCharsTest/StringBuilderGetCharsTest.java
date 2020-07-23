@@ -110,4 +110,5 @@ public class StringBuilderGetCharsTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan ABertF\s*ABqweF\s*ABCDEF\s*ertDEF\s*ABCDEF\s*ABCDEF\s*x9CDEF\s*ABCDEq\s*AB\!\.\&F\s*AB\s*\@\!F\s*ABCDEF\s*\!\.\&DEF\s*ABCDEF\s*ABCDEF\s*\(\)CDEF\s*ABCDE\s*ABc12F\s*ABabcF\s*ABCDEF\s*c12DEF\s*ABCDEF\s*ABCDEF\s*12CDEF\s*ABCDEa\s*0
+// ASSERT: scan-full ABertF\nABqweF\nABCDEF\nertDEF\nABCDEF\nABCDEF\nx9CDEF\nABCDEq\nAB!.&F\nAB @!F\nABCDEF\n!.&DEF\nABCDEF\nABCDEF\n()CDEF\nABCDE \nABc12F\nABabcF\nABCDEF\nc12DEF\nABCDEF\nABCDEF\n12CDEF\nABCDEa\n0\n
+

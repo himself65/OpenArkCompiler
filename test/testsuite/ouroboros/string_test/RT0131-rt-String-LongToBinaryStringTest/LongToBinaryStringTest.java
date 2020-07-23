@@ -81,4 +81,4 @@ public class LongToBinaryStringTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan 0\s*1101111\s*1111111111111111111111111111111\s*0\s*1101111\s*1111111111111111111111111111111\s*0
+// ASSERT: scan-full 0\n1101111\n1111111111111111111111111111111\n0\n1101111\n1111111111111111111111111111111\n0\n

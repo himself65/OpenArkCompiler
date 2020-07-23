@@ -55,4 +55,4 @@ public class StringVoluationTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan abc\s*0
+// ASSERT: scan-full abc\n0\n

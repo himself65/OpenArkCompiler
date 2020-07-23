@@ -84,4 +84,4 @@ public class StringEqualsIgnoreCaseTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan true\s*false\s*true\s*false\s*false\s*true\s*false\s*true\s*false\s*0
+// ASSERT: scan-full true\nfalse\ntrue\nfalse\nfalse\ntrue\nfalse\ntrue\nfalse\n0\n

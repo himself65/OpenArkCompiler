@@ -97,4 +97,4 @@ public class StartOOMTest {
 }
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan java\.lang\.OutOfMemoryError\:\s*throw\s*OutOfMemoryError\s*100\s*activeCount\s*\=\s*0
+// ASSERT: scan-full java.lang.OutOfMemoryError: throw OutOfMemoryError\n100\nactiveCount = 0\n

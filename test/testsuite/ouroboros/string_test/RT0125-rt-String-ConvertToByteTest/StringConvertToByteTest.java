@@ -70,4 +70,4 @@ public class StringConvertToByteTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan 123\s*convert\(8\)\s*to\s*Byte\:83\s*\-1a\s*convert\(16\)\s*to\s*Byte\:\-26\s*0
+// ASSERT: scan-full 123 convert(8) to Byte:83\n-1a convert(16) to Byte:-26\n0\n

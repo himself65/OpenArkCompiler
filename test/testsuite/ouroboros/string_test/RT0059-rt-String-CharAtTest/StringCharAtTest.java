@@ -112,4 +112,5 @@ public class StringCharAtTest {
 
 // EXEC:%maple  %f %build_option -o %n.so
 // EXEC:%run %n.so %n %run_option | compare %f
-// ASSERT: scan q\s*6\s*\*\*\*\*\*\s*\%\s*\*\*\*\*\*\s*a\s*3\s*\*\*\*\*\*\s*is\:isEmpty\s*is\:\"\"\s*\*\*\*\*\*\s*is\:isEmpty\s*is\:\"\"\s*\*\*\*\*\*\s*q\s*6\s*\*\*\*\*\*\s*\%\s*\*\*\*\*\*\s*a\s*3\s*\*\*\*\*\*\s*is\:isEmpty\s*is\:\"\"\s*\*\*\*\*\*\s*0
+// ASSERT: scan-full q\n6\n*****\n \n%\n*****\na\n3\n*****\n is:isEmpty\n is:""\n*****\n is:isEmpty\n is:""\n*****\nq\n6\n*****\n \n%\n*****\na\n3\n*****\n is:isEmpty\n is:""\n*****\n0\n
+
