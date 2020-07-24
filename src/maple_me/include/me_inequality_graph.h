@@ -202,19 +202,19 @@ class ESSABaseNode {
   }
 
   virtual void InsertOutWithConstEdgeMap(ESSABaseNode &node, InequalEdge &e) {
-    outWithConstEdge.insert(std::pair<ESSABaseNode*, InequalEdge*>(&node, &e));
+    (void)outWithConstEdge.insert(std::pair<ESSABaseNode*, InequalEdge*>(&node, &e));
   }
 
   virtual void InsertOutWithVarEdgeMap(ESSABaseNode &node, InequalEdge &e) {
-    outWithVarEdge.insert(std::pair<ESSABaseNode*, InequalEdge*>(&node, &e));
+    (void)outWithVarEdge.insert(std::pair<ESSABaseNode*, InequalEdge*>(&node, &e));
   }
 
   virtual void InsertInWithConstEdgeMap(ESSABaseNode &node, InequalEdge &e) {
-    inWithConstEdge.insert(std::pair<ESSABaseNode*, InequalEdge*>(&node, &e));
+    (void)inWithConstEdge.insert(std::pair<ESSABaseNode*, InequalEdge*>(&node, &e));
   }
 
   virtual void InsertInWithVarEdgeMap(ESSABaseNode &node, InequalEdge &e) {
-    inWithVarEdge.insert(std::pair<ESSABaseNode*, InequalEdge*>(&node, &e));
+    (void)inWithVarEdge.insert(std::pair<ESSABaseNode*, InequalEdge*>(&node, &e));
   }
 
   virtual void InsertEdges(std::unique_ptr<InequalEdge> e) {
@@ -292,10 +292,10 @@ class ESSAPhiNode : public ESSABaseNode {
     return outPhiNodes;
   }
   void InsertInPhiEdgeMap(ESSABaseNode &node, InequalEdge &e) {
-    inPhiNodes.insert(std::pair<ESSABaseNode*, InequalEdge*>(&node, &e));
+    (void)inPhiNodes.insert(std::pair<ESSABaseNode*, InequalEdge*>(&node, &e));
   }
   void InsertOutPhiEdgeMap(ESSABaseNode &node, InequalEdge &e) {
-    outPhiNodes.insert(std::pair<ESSABaseNode*, InequalEdge*>(&node, &e));
+    (void)outPhiNodes.insert(std::pair<ESSABaseNode*, InequalEdge*>(&node, &e));
   }
 
  private:

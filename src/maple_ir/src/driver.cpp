@@ -40,7 +40,7 @@ void ConstantFoldModule(MIRModule &module) {
 int main(int argc, char **argv) {
   constexpr int judgeNumber = 2;
   if (argc < judgeNumber) {
-    MIR_PRINTF(
+    (void)MIR_PRINTF(
         "usage: ./irbuild [i|e] <any number of mpl files>\n\n"
         "The optional 'i' flag will convert the binary mplt input file to ascii\n\n"
         "The optional 'e' flag will convert the textual mplt input file to binary\n");
@@ -83,7 +83,7 @@ int main(int argc, char **argv) {
       BinaryMplImport binMplt(module);
       binMplt.SetImported(false);
       const std::string &modID = module.GetFileName();
-      binMplt.Import(modID, true);
+      (void)binMplt.Import(modID, true);
       module.OutputAsciiMpl(".irb");
     }
     ++i;

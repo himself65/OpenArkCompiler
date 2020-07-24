@@ -736,7 +736,8 @@ bool AArch64Ebo::SpecialSequence(Insn &insn, const MapleVector<OpndInfo*> &origI
             auto &res1 = static_cast<RegOperand&>(insn1->GetOperand(kInsnFirstOpnd));
             if (RegistersIdentical(res1, *op1) && RegistersIdentical(res1, res2) &&
                 (GetOpndInfo(base2, -1) != nullptr) && !GetOpndInfo(base2, -1)->redefined) {
-              immVal = imm0Val + imm1.GetValue() + (static_cast<uint64>(immOpnd2.GetValue()) << kMaxImmVal12Bits);
+              immVal = imm0Val + imm1.GetValue() +
+                       static_cast<int64>(static_cast<uint64>(immOpnd2.GetValue()) << kMaxImmVal12Bits);
               op1 = &base2;
             } else {
               return false;
@@ -748,7 +749,8 @@ bool AArch64Ebo::SpecialSequence(Insn &insn, const MapleVector<OpndInfo*> &origI
           /* multiple of 4 and 8 */
           const int multiOfFour = 4;
           const int multiOfEight = 8;
-          is64bits = is64bits && (!static_cast<AArch64Insn&>(insn).CheckRefField(kInsnFirstOpnd, false));
+          is64bits = is64bits &&
+                     (!static_cast<AArch64Insn&>(insn).CheckRefField(static_cast<size_t>(kInsnFirstOpnd), false));
           if ((!is64bits && (immVal < kStrLdrImm32UpperBound) && (immVal % multiOfFour == 0)) ||
               (is64bits && (immVal < kStrLdrImm64UpperBound) && (immVal % multiOfEight == 0))) {
             /* Reserved physicalReg beforeRA */

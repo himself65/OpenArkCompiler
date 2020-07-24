@@ -919,19 +919,19 @@ bool CGOptions::SolveOptions(const std::vector<Option> &opts, bool isDebug) {
         SetClassListFile(opt.Args());
         break;
       case kGenDef:
-        SetOrClear(GetGenerateFlags(), CGOptions::kCMacroDef, opt.Type());
+        SetOrClear(GetGenerateFlags(), CGOptions::kCMacroDef, static_cast<bool>(opt.Type()));
         break;
       case kGenGctib:
-        SetOrClear(GetGenerateFlags(), CGOptions::kGctib, opt.Type());
+        SetOrClear(GetGenerateFlags(), CGOptions::kGctib, static_cast<bool>(opt.Type()));
         break;
       case kGenPrimorList:
-        SetOrClear(GetGenerateFlags(), CGOptions::kPrimorList, opt.Type());
+        SetOrClear(GetGenerateFlags(), CGOptions::kPrimorList, static_cast<bool>(opt.Type()));
         break;
       case kYieldPoing:
-        SetOrClear(GetGenerateFlags(), CGOptions::kGenYieldPoint, opt.Type());
+        SetOrClear(GetGenerateFlags(), CGOptions::kGenYieldPoint, static_cast<bool>(opt.Type()));
         break;
       case kLocalRc:
-        SetOrClear(GetGenerateFlags(), CGOptions::kGenLocalRc, opt.Type());
+        SetOrClear(GetGenerateFlags(), CGOptions::kGenLocalRc, static_cast<bool>(opt.Type()));
         break;
       case kEhList: {
         const std::string &ehList = opt.Args();
@@ -1125,7 +1125,7 @@ void CGOptions::EnableO2() {
 void CGOptions::SplitPhases(const std::string &str, std::unordered_set<std::string> &set) {
   const std::string& tmpStr{ str };
   if ((tmpStr.compare("*") == 0) || (tmpStr.compare("cgir") == 0)) {
-    set.insert(tmpStr);
+    (void)set.insert(tmpStr);
     return;
   }
   StringUtils::Split(tmpStr, set, ',');

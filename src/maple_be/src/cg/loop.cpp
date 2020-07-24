@@ -92,7 +92,7 @@ bool LoopFinder::DetectLoopSub(BB &header,  BB &back, std::set<BB*, BBIdCmp> &tr
     return true;
   }
 
-  traversed.insert(&header);
+  (void)traversed.insert(&header);
   for (auto succ : header.GetSuccs()) {
     bool alreadyInLoop = false;
     for (auto candi : candidate) {
@@ -142,7 +142,7 @@ bool LoopFinder::DetectLoopSub(BB &header,  BB &back, std::set<BB*, BBIdCmp> &tr
 /* backege -> header */
 void LoopFinder::DetectLoop(BB &header, BB &back) {
   std::set<BB*, BBIdCmp> traversed;
-  traversed.insert(&header);
+  (void)traversed.insert(&header);
   candidate.push_back(&header);
   candidate.push_back(&back);
 

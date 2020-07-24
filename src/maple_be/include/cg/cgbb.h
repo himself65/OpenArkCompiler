@@ -449,7 +449,7 @@ class BB {
     return liveInRegNO;
   }
   void InsertLiveInRegNO(regno_t arg) {
-    liveInRegNO.insert(arg);
+    (void)liveInRegNO.insert(arg);
   }
   void EraseLiveInRegNO(MapleSet<regno_t>::iterator it) {
     liveInRegNO.erase(it);
@@ -464,7 +464,7 @@ class BB {
     return liveOutRegNO;
   }
   void InsertLiveOutRegNO(regno_t arg) {
-    liveOutRegNO.insert(arg);
+    (void)liveOutRegNO.insert(arg);
   }
   void EraseLiveOutRegNO(MapleSet<regno_t>::iterator it) {
     liveOutRegNO.erase(it);

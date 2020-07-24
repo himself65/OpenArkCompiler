@@ -254,13 +254,13 @@ void OptimizeLogger::Log(const std::string &patternName) {
   if (itemInGlobal != globalStat.end()) {
     itemInGlobal->second++;
   } else {
-    globalStat.insert(std::pair<const std::string, int>(patternName, 1));
+    (void)globalStat.insert(std::pair<const std::string, int>(patternName, 1));
   }
   auto itemInLocal = localStat.find(patternName);
   if (itemInLocal != localStat.end()) {
     itemInLocal->second++;
   } else {
-    localStat.insert(std::pair<const std::string, int>(patternName, 1));
+    (void)localStat.insert(std::pair<const std::string, int>(patternName, 1));
   }
 }
 

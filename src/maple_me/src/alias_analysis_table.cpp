@@ -31,7 +31,7 @@ MapleVector<OriginalSt*> *AliasAnalysisTable::GetNextLevelNodes(const OriginalSt
 
   MapleVector<OriginalSt*> *newOriginalStVec =
       alloc.GetMemPool()->New<MapleVector<OriginalSt*>>(alloc.Adapter());
-  nextLevelNodes.insert(std::make_pair(ost.GetIndex(), newOriginalStVec));
+  (void)nextLevelNodes.insert(std::make_pair(ost.GetIndex(), newOriginalStVec));
   return newOriginalStVec;
 }
 
@@ -51,7 +51,7 @@ OriginalSt *AliasAnalysisTable::FindOrCreateAddrofSymbolOriginalSt(OriginalSt &o
   prevLevelOst->SetTyIdx(newTyIdx);
   prevLevelOst->SetFieldID(ost.GetFieldID());
   GetNextLevelNodes(*prevLevelOst)->push_back(&ost);
-  prevLevelNode.insert(std::make_pair(ost.GetIndex(), prevLevelOst));
+  (void)prevLevelNode.insert(std::make_pair(ost.GetIndex(), prevLevelOst));
   return prevLevelOst;
 }
 
@@ -79,7 +79,7 @@ OriginalSt *AliasAnalysisTable::FindOrCreateExtraLevSymOrRegOriginalSt(OriginalS
   originalStTab.GetOriginalStVector().push_back(nextLevOst);
   CHECK_FATAL(ost.GetIndirectLev() < INT8_MAX, "boundary check");
   nextLevOst->SetIndirectLev(ost.GetIndirectLev() + 1);
-  prevLevelNode.insert(std::make_pair(nextLevOst->GetIndex(), &ost));
+  (void)prevLevelNode.insert(std::make_pair(nextLevOst->GetIndex(), &ost));
   tyIdx = (tyIdx == 0u) ? ost.GetTyIdx() : tyIdx;
   if (tyIdx != 0u) {
     // use the tyIdx info from the instruction

@@ -271,7 +271,7 @@ void MIRStr16Const::Dump() const {
   std::u16string str16 = GlobalTables::GetU16StrTable().GetStringFromStrIdx(value);
   // UTF-16 string are dumped as UTF-8 string in mpl to keep the printable chars in ascii form
   std::string str;
-  namemangler::UTF16ToUTF8(str, str16);
+  (void)namemangler::UTF16ToUTF8(str, str16);
   PrintString(str);
 }
 

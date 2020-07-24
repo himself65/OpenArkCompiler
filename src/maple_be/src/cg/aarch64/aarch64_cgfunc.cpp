@@ -1976,12 +1976,13 @@ void AArch64CGFunc::SelectAdd(Operand &resOpnd, Operand &opnd0, Operand &opnd1, 
       if (!(immOpnd->IsInBitSize(kMaxImmVal12Bits, 0) ||
             immOpnd->IsInBitSize(kMaxImmVal12Bits, kMaxImmVal12Bits))) {
         /* process higher 12 bits */
-        ImmOperand &immOpnd2 = CreateImmOperand(static_cast<uint64>(immOpnd->GetValue()) >> kMaxImmVal12Bits,
-                                                immOpnd->GetSize(), immOpnd->IsSignedValue());
+        ImmOperand &immOpnd2 =
+            CreateImmOperand(static_cast<int64>(static_cast<uint64>(immOpnd->GetValue()) >> kMaxImmVal12Bits),
+                             immOpnd->GetSize(), immOpnd->IsSignedValue());
         mOpCode = is64Bits ? MOP_xaddrri24 : MOP_waddrri24;
         Insn &newInsn = GetCG()->BuildInstruction<AArch64Insn>(mOpCode, resOpnd, opnd0, immOpnd2, addSubLslOperand);
         GetCurBB()->AppendInsn(newInsn);
-        immOpnd->ModuloByPow2(kMaxImmVal12Bits);
+        immOpnd->ModuloByPow2(static_cast<int32>(kMaxImmVal12Bits));
         newOpnd0 = &resOpnd;
       }
       /* process lower 12  bits */
@@ -2077,12 +2078,13 @@ void AArch64CGFunc::SelectSub(Operand &resOpnd, Operand &opnd0, Operand &opnd1, 
     if (!(immOpnd->IsInBitSize(kMaxImmVal12Bits, 0) ||
           immOpnd->IsInBitSize(kMaxImmVal12Bits, kMaxImmVal12Bits))) {
       /* process higher 12 bits */
-      ImmOperand &immOpnd2 = CreateImmOperand(static_cast<uint64>(immOpnd->GetValue()) >> kMaxImmVal12Bits,
-                                              immOpnd->GetSize(), immOpnd->IsSignedValue());
+      ImmOperand &immOpnd2 =
+          CreateImmOperand(static_cast<int64>(static_cast<uint64>(immOpnd->GetValue()) >> kMaxImmVal12Bits),
+                           immOpnd->GetSize(), immOpnd->IsSignedValue());
       mOpCode = is64Bits ? MOP_xsubrri24 : MOP_wsubrri24;
       Insn &newInsn = GetCG()->BuildInstruction<AArch64Insn>(mOpCode, resOpnd, *opnd0Bak, immOpnd2, addSubLslOperand);
       GetCurBB()->AppendInsn(newInsn);
-      immOpnd->ModuloByPow2(kMaxImmVal12Bits);
+      immOpnd->ModuloByPow2(static_cast<int64>(kMaxImmVal12Bits));
       opnd0Bak = &resOpnd;
     }
     /* process lower 12 bits */
@@ -5433,11 +5435,11 @@ void AArch64CGFunc::SelectLibCall(const std::string &funcName, std::vector<Opera
   std::vector<TyIdx> vec;
   std::vector<TypeAttrs> vecAt;
   for (size_t i = 1; i < opndVec.size(); ++i) {
-    vec.emplace_back(GlobalTables::GetTypeTable().GetTypeTable()[static_cast<int32>(primType)]->GetTypeIndex());
+    vec.emplace_back(GlobalTables::GetTypeTable().GetTypeTable()[static_cast<size_t>(primType)]->GetTypeIndex());
     vecAt.emplace_back(TypeAttrs());
   }
 
-  MIRType *retType = GlobalTables::GetTypeTable().GetTypeTable().at(static_cast<int32>(primType));
+  MIRType *retType = GlobalTables::GetTypeTable().GetTypeTable().at(static_cast<size_t>(primType));
   st->SetTyIdx(GetBecommon().BeGetOrCreateFunctionType(retType->GetTypeIndex(), vec, vecAt)->GetTypeIndex());
 
   if (GetCG()->GenerateVerboseCG()) {
@@ -5452,7 +5454,7 @@ void AArch64CGFunc::SelectLibCall(const std::string &funcName, std::vector<Opera
   AArch64ListOperand *srcOpnds = memPool->New<AArch64ListOperand>(*GetFuncScopeAllocator());
   for (size_t i = 1; i < opndVec.size(); ++i) {
     MIRType *ty;
-    ty = GlobalTables::GetTypeTable().GetTypeTable()[static_cast<uint32>(primType)];
+    ty = GlobalTables::GetTypeTable().GetTypeTable()[static_cast<size_t>(primType)];
     Operand *stOpnd = opndVec[i];
     if (stOpnd->GetKind() != Operand::kOpdRegister) {
       stOpnd = &SelectCopy(*stOpnd, primType, primType);
@@ -5565,8 +5567,9 @@ void AArch64CGFunc::SelectAddAfterInsn(Operand &resOpnd, Operand &opnd0, Operand
     if (!(immOpnd->IsInBitSize(kMaxImmVal12Bits, 0) ||
           immOpnd->IsInBitSize(kMaxImmVal12Bits, kMaxImmVal12Bits))) {
       /* process higher 12 bits */
-      ImmOperand &immOpnd2 = CreateImmOperand(static_cast<uint64>(immOpnd->GetValue()) >> kMaxImmVal12Bits,
-                                              immOpnd->GetSize(), immOpnd->IsSignedValue());
+      ImmOperand &immOpnd2 =
+          CreateImmOperand(static_cast<int64>(static_cast<uint64>(immOpnd->GetValue()) >> kMaxImmVal12Bits),
+                           immOpnd->GetSize(), immOpnd->IsSignedValue());
       mOpCode = is64Bits ? MOP_xaddrri24 : MOP_waddrri24;
       Insn &newInsn = GetCG()->BuildInstruction<AArch64Insn>(mOpCode, resOpnd, opnd0, immOpnd2, addSubLslOperand);
       if (isDest) {
@@ -5575,7 +5578,7 @@ void AArch64CGFunc::SelectAddAfterInsn(Operand &resOpnd, Operand &opnd0, Operand
         insn.GetBB()->InsertInsnBefore(insn, newInsn);
       }
       /* get lower 12 bits value */
-      immOpnd->ModuloByPow2(kMaxImmVal12Bits);
+      immOpnd->ModuloByPow2(static_cast<int32>(kMaxImmVal12Bits));
       newOpnd0 = &resOpnd;
     }
     /* process lower 12 bits value */
@@ -5668,7 +5671,7 @@ MemOperand *AArch64CGFunc::GetOrCreatSpillMem(regno_t vrNum) {
     if (it != reuseSpillLocMem.end()) {
       MemOperand *memOpnd = it->second->GetOne();
       if (memOpnd != nullptr) {
-        spillRegMemOperands.insert(std::pair<regno_t, MemOperand*>(vrNum, memOpnd));
+        (void)spillRegMemOperands.insert(std::pair<regno_t, MemOperand*>(vrNum, memOpnd));
         return memOpnd;
       }
     }
@@ -5678,7 +5681,7 @@ MemOperand *AArch64CGFunc::GetOrCreatSpillMem(regno_t vrNum) {
     AArch64OfstOperand *offsetOpnd = memPool->New<AArch64OfstOperand>(offset, k64BitSize);
     MemOperand *memOpnd = memPool->New<AArch64MemOperand>(AArch64MemOperand::kAddrModeBOi, dataSize, baseOpnd,
                                                           nullptr, offsetOpnd, nullptr);
-    spillRegMemOperands.insert(std::pair<regno_t, MemOperand*>(vrNum, memOpnd));
+    (void)spillRegMemOperands.insert(std::pair<regno_t, MemOperand*>(vrNum, memOpnd));
     return memOpnd;
   } else {
     return p->second;
@@ -5699,10 +5702,10 @@ MemOperand *AArch64CGFunc::GetPseudoRegisterSpillMemoryOperand(PregIdx i) {
   MemOperand &memOpnd = GetOrCreateMemOpnd(AArch64MemOperand::kAddrModeBOi, bitLen, &base, nullptr, &ofstOpnd, nullptr);
   if (IsImmediateOffsetOutOfRange(static_cast<AArch64MemOperand&>(memOpnd), bitLen)) {
     MemOperand &newMemOpnd = SplitOffsetWithAddInstruction(static_cast<AArch64MemOperand&>(memOpnd), bitLen);
-    pRegSpillMemOperands.insert(std::pair<PregIdx, MemOperand*>(i, &newMemOpnd));
+    (void)pRegSpillMemOperands.insert(std::pair<PregIdx, MemOperand*>(i, &newMemOpnd));
     return &newMemOpnd;
   }
-  pRegSpillMemOperands.insert(std::pair<PregIdx, MemOperand*>(i, &memOpnd));
+  (void)pRegSpillMemOperands.insert(std::pair<PregIdx, MemOperand*>(i, &memOpnd));
   return &memOpnd;
 }
 

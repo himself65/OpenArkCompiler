@@ -292,7 +292,7 @@ void AArch64DepAnalysis::CombineDependence(DepNode &firstNode, DepNode &secondNo
     if (predLink->GetDepType() == kDependenceTypeTrue) {
       predLink->SetLatency(mad.GetLatency(*predLink->GetFrom().GetInsn(), *firstNode.GetInsn()));
     }
-    uniqueNodes.insert(&predLink->GetFrom());
+    (void)uniqueNodes.insert(&predLink->GetFrom());
   }
   for (auto predLink : secondNode.GetPreds()) {
     if (&predLink->GetFrom() != &firstNode) {
@@ -307,7 +307,7 @@ void AArch64DepAnalysis::CombineDependence(DepNode &firstNode, DepNode &secondNo
     if (succLink->GetDepType() == kDependenceTypeTrue) {
       succLink->SetLatency(mad.GetLatency(*succLink->GetFrom().GetInsn(), *firstNode.GetInsn()));
     }
-    uniqueNodes.insert(&(succLink->GetTo()));
+    (void)uniqueNodes.insert(&(succLink->GetTo()));
   }
   for (auto succLink : secondNode.GetSuccs()) {
     if (uniqueNodes.insert(&(succLink->GetTo())).second) {
@@ -520,7 +520,7 @@ void AArch64DepAnalysis::BuildDepsMemBar(Insn &insn) {
 /* A pseudo separator node depends all the other nodes. */
 void AArch64DepAnalysis::BuildDepsSeparator(DepNode &newSepNode, MapleVector<DepNode*> &nodes) {
   uint32 nextSepIndex = (separatorIndex + kMaxDependenceNum) < nodes.size() ? (separatorIndex + kMaxDependenceNum)
-                                                                            : nodes.size() - 1;
+                                                                            : static_cast<uint32>(nodes.size() - 1);
   newSepNode.ReservePreds(nextSepIndex - separatorIndex);
   newSepNode.ReserveSuccs(nextSepIndex - separatorIndex);
   for (uint32 i = separatorIndex; i < nextSepIndex; ++i) {

@@ -26,7 +26,7 @@ using namespace maple;
 BECommon::BECommon(MIRModule &mod)
     : mirModule(mod),
       typeSizeTable(GlobalTables::GetTypeTable().GetTypeTable().size(), 0, mirModule.GetMPAllocator().Adapter()),
-      tableAlignTable(GlobalTables::GetTypeTable().GetTypeTable().size(), mirModule.IsCModule(),
+      tableAlignTable(GlobalTables::GetTypeTable().GetTypeTable().size(), static_cast<uint8>(mirModule.IsCModule()),
           mirModule.GetMPAllocator().Adapter()),
       structFieldCountTable(GlobalTables::GetTypeTable().GetTypeTable().size(),
                             0, mirModule.GetMPAllocator().Adapter()),

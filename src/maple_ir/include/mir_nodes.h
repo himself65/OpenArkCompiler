@@ -1675,7 +1675,7 @@ class TryNode : public StmtNode {
 
   void OffsetsInsert(MapleVector<LabelIdx>::iterator a, MapleVector<LabelIdx>::iterator b,
                      MapleVector<LabelIdx>::iterator c) {
-    offsets.insert(a, b, c);
+    (void)offsets.insert(a, b, c);
   }
 
   TryNode *CloneTree(MapleAllocator &allocator) const override {
@@ -2712,7 +2712,7 @@ class NaryStmtNode : public StmtNode, public NaryOpnds {
     for (size_t i = 0; i < idx; ++i) {
       ++begin;
     }
-    GetNopnd().insert(begin, node);
+    (void)GetNopnd().insert(begin, node);
     SetNumOpnds(GetNopndSize());
   }
 };
@@ -3101,7 +3101,7 @@ class LabelNode : public StmtNode {
 
 class CommentNode : public StmtNode {
  public:
-  explicit CommentNode(MapleAllocator &allocator) : StmtNode(OP_comment), comment(allocator.GetMemPool()) {}
+  explicit CommentNode(const MapleAllocator &allocator) : StmtNode(OP_comment), comment(allocator.GetMemPool()) {}
 
   explicit CommentNode(const MIRModule &mod) : CommentNode(mod.GetCurFuncCodeMPAllocator()) {}
 
@@ -3110,7 +3110,7 @@ class CommentNode : public StmtNode {
 
   CommentNode(const MIRModule &mod, const std::string &cmt) : CommentNode(mod.GetCurFuncCodeMPAllocator(), cmt) {}
 
-  CommentNode(MapleAllocator &allocator, const CommentNode &node)
+  CommentNode(const MapleAllocator &allocator, const CommentNode &node)
       : StmtNode(node.GetOpCode(), node.GetPrimType(), node.numOpnds),
         comment(node.comment, allocator.GetMemPool()) {}
 

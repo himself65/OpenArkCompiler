@@ -81,7 +81,7 @@ std::string Compiler::MakeOption(const MplOptions &options) const {
 void Compiler::AppendDefaultOptions(std::map<std::string, MplOption> &finalOptions,
                                     const std::map<std::string, MplOption> &defaultOptions) const {
   for (const auto &defaultIt : defaultOptions) {
-    finalOptions.insert(make_pair(defaultIt.first, defaultIt.second));
+    (void)finalOptions.insert(make_pair(defaultIt.first, defaultIt.second));
   }
 }
 
@@ -102,7 +102,7 @@ std::map<std::string, MplOption> Compiler::MakeDefaultOptions(const MplOptions &
   std::map<std::string, MplOption> defaultOptions;
   if (rawDefaultOptions.mplOptions != nullptr) {
     for (uint32_t i = 0; i < rawDefaultOptions.length; ++i) {
-      defaultOptions.insert(std::make_pair(rawDefaultOptions.mplOptions[i].GetKey(),
+      (void)defaultOptions.insert(std::make_pair(rawDefaultOptions.mplOptions[i].GetKey(),
           rawDefaultOptions.mplOptions[i]));
     }
   }
@@ -116,7 +116,7 @@ void Compiler::AppendOptions(std::map<std::string, MplOption> &finalOptions, con
     finalOpt->second.SetValue(value);
   } else {
     MplOption option(key, value);
-    finalOptions.insert(make_pair(key, option));
+    (void)finalOptions.insert(make_pair(key, option));
   }
 }
 }  // namespace maple

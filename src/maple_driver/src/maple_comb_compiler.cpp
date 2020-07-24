@@ -60,7 +60,7 @@ void MapleCombCompiler::GetTmpFilesToDelete(const MplOptions &mplOptions, std::v
 
 std::unordered_set<std::string> MapleCombCompiler::GetFinalOutputs(const MplOptions &mplOptions) const {
   std::unordered_set<std::string> finalOutputs;
-  finalOutputs.insert(mplOptions.GetOutputFolder() + mplOptions.GetOutputName() + ".VtableImpl.mpl");
+  (void)finalOutputs.insert(mplOptions.GetOutputFolder() + mplOptions.GetOutputName() + ".VtableImpl.mpl");
   return finalOutputs;
 }
 

@@ -172,11 +172,11 @@ class CGNode {
 
   // add caller to CGNode
   void AddCaller(CGNode *caller) {
-    callerSet.insert(caller);
+    (void)callerSet.insert(caller);
   }
 
   void DelCaller(CGNode *caller) {
-    callerSet.erase(caller);
+    (void)callerSet.erase(caller);
   }
 
   bool HasCaller() const {
@@ -253,7 +253,7 @@ class CGNode {
   }
 
   void AddVcallCandidate(CGNode *item) {
-    vcallCandidates.insert(item);
+    (void)vcallCandidates.insert(item);
   }
 
   MapleSet<CGNode*, Comparator<CGNode>> &GetVcallCandidates() {
@@ -269,7 +269,7 @@ class CGNode {
   }
 
   void AddIcallCandidate(CGNode *item) {
-    icallCandidates.insert(item);
+    (void)icallCandidates.insert(item);
   }
 
   MapleSet<CGNode*, Comparator<CGNode>> &GetIcallCandidates() {

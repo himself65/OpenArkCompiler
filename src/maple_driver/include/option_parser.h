@@ -63,7 +63,7 @@ class OptionParser {
                 std::vector<mapleOption::Option> &inputOption, const std::string &exeName);
   void InsertOption(const std::string &opt, const Descriptor &usage) {
     if (usage.IsEnabledForCurrentBuild()) {
-      usages.insert(make_pair(opt, usage));
+      (void)usages.insert(make_pair(opt, usage));
     }
   }
   bool CheckSpecialOption(const std::string &option, std::string &key, std::string &value);

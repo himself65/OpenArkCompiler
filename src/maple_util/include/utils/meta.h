@@ -20,26 +20,26 @@ namespace maple {
 namespace utils {
 template <typename T, typename U>
 struct meta_and
-    : std::conditional_t<T::value, U, T> {};
+    : public std::conditional_t<T::value, U, T> {};
 
 template <typename T, typename U>
 struct meta_or
-    : std::conditional_t<T::value, T, U> {};
+    : public std::conditional_t<T::value, T, U> {};
 
 template <typename T>
 struct meta_not
-    : std::integral_constant<bool, !static_cast<bool>(T::value)>::type {};
+    : public std::integral_constant<bool, !static_cast<bool>(T::value)>::type {};
 
 template <typename ...>
 struct is_signed;
 
 template <typename T>
 struct is_signed<T>
-    : std::is_signed<T>::type {};
+    : public std::is_signed<T>::type {};
 
 template <typename T, typename U>
 struct is_signed<T, U>
-    : meta_and<std::is_signed<T>, std::is_signed<U>>::type {};
+    : public meta_and<std::is_signed<T>, std::is_signed<U>>::type {};
 
 template <typename ...T>
 constexpr bool is_signed_v = is_signed<T...>::value;
@@ -49,47 +49,47 @@ struct is_unsigned;
 
 template <typename T>
 struct is_unsigned<T>
-    : std::is_unsigned<T>::type {};
+    : public std::is_unsigned<T>::type {};
 
 template <typename T, typename U>
 struct is_unsigned<T, U>
-    : meta_and<std::is_unsigned<T>, std::is_unsigned<U>>::type {};
+    : public meta_and<std::is_unsigned<T>, std::is_unsigned<U>>::type {};
 
 template <typename ...T>
 constexpr bool is_unsigned_v = is_unsigned<T...>::value;
 
 template <typename T, typename U>
 struct is_same_sign
-    : meta_or<is_signed<T, U>, is_unsigned<T, U>>::type {};
+    : public meta_or<is_signed<T, U>, is_unsigned<T, U>>::type {};
 
 template <typename T, typename U>
 struct is_diff_sign
-    : meta_not<is_same_sign<T, U>>::type {};
+    : public meta_not<is_same_sign<T, U>>::type {};
 
 template <typename ...>
 struct is_pointer;
 
 template <typename T>
 struct is_pointer<T>
-    : std::is_pointer<T>::type {};
+    : public std::is_pointer<T>::type {};
 
 template <typename T, typename U>
 struct is_pointer<T, U>
-    : meta_and<is_pointer<T>, is_pointer<U>>::type {};
+    : public meta_and<is_pointer<T>, is_pointer<U>>::type {};
 
 template <typename ...T>
 constexpr bool is_pointer_v = is_pointer<T...>::value;
 
 template <typename T, typename U>
 struct const_of
-    : meta_and<std::is_const<U>, std::is_same<std::add_const_t<T>, U>>::type {};
+    : public meta_and<std::is_const<U>, std::is_same<std::add_const_t<T>, U>>::type {};
 
 template <typename T, typename U>
 constexpr bool const_of_v = const_of<T, U>::value;
 
 template <typename T, typename U>
 struct is_ncv_same
-    : std::is_same<std::remove_cv_t<T>, std::remove_cv_t<U>>::type {};
+    : public std::is_same<std::remove_cv_t<T>, std::remove_cv_t<U>>::type {};
 
 template <typename T, typename U>
 constexpr bool is_ncv_same_v = is_ncv_same<T, U>::value;
@@ -97,14 +97,14 @@ constexpr bool is_ncv_same_v = is_ncv_same<T, U>::value;
 namespace ptr {
 template <typename T, typename U, typename = std::enable_if_t<is_pointer_v<T, U>>>
 struct const_of
-    : utils::const_of<std::remove_pointer_t<T>, std::remove_pointer_t<U>>::type {};
+    : public utils::const_of<std::remove_pointer_t<T>, std::remove_pointer_t<U>>::type {};
 
 template <typename T, typename U, typename = std::enable_if_t<is_pointer_v<T, U>>>
 constexpr bool const_of_v = const_of<T, U>::value;
 
 template <typename T, typename U, typename = std::enable_if_t<is_pointer_v<T, U>>>
 struct is_ncv_same
-    : utils::is_ncv_same<std::remove_pointer_t<T>, std::remove_pointer_t<U>>::type {};
+    : public utils::is_ncv_same<std::remove_pointer_t<T>, std::remove_pointer_t<U>>::type {};
 
 template <typename T, typename U, typename = std::enable_if_t<is_pointer_v<T, U>>>
 constexpr bool is_ncv_same_v = is_ncv_same<T, U>::value;

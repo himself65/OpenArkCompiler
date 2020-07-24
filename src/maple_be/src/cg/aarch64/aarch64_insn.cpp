@@ -651,7 +651,7 @@ void AArch64Insn::EmitClinit(const CG &cg, Emitter &emitter) const {
     emitter.Emit("\tadrp\t");
     opnd0->Emit(emitter, prop0);
     emitter.Emit(",");
-    emitter.Emit(namemangler::kPtrPrefixStr + stImmOpnd->GetName());
+    (void)emitter.Emit(namemangler::kPtrPrefixStr + stImmOpnd->GetName());
     emitter.Emit("\n");
 
     /* ldr     x3, [x3, #:lo12:_PTR__cinf_Ljava_2Futil_2Fconcurrent_2Fatomic_2FAtomicInteger_3B] */
@@ -660,7 +660,7 @@ void AArch64Insn::EmitClinit(const CG &cg, Emitter &emitter) const {
     emitter.Emit(", [");
     opnd0->Emit(emitter, prop0);
     emitter.Emit(", #:lo12:");
-    emitter.Emit(namemangler::kPtrPrefixStr + stImmOpnd->GetName());
+    (void)emitter.Emit(namemangler::kPtrPrefixStr + stImmOpnd->GetName());
     emitter.Emit("]\n");
   }
   /* emit "ldr  x0,[x0,#48]" */
@@ -1019,7 +1019,7 @@ void AArch64Insn::Emit(const CG &cg, Emitter &emitter) const {
     }
   }
 
-  bool isRefField = (opndSize == 0) ? false : CheckRefField(seq[0], true);
+  bool isRefField = (opndSize == 0) ? false : CheckRefField(static_cast<size_t>(static_cast<uint>(seq[0])), true);
   if (mOp != MOP_comment) {
     emitter.IncreaseJavaInsnCount();
   }
@@ -1075,7 +1075,7 @@ void AArch64Insn::Emit(const CG &cg, Emitter &emitter) const {
   if (cg.GenerateVerboseCG() || (cg.GenerateVerboseAsm() && mOp == MOP_comment)) {
     const char *comment = GetComment().c_str();
     if (comment != nullptr && strlen(comment) > 0) {
-      emitter.Emit("\t\t// ").Emit(comment);
+      (void)emitter.Emit("\t\t// ").Emit(comment);
     }
   }
 
@@ -1083,7 +1083,7 @@ void AArch64Insn::Emit(const CG &cg, Emitter &emitter) const {
 }
 
 /* set opnd0 ref-field flag, so we can emit the right register */
-bool AArch64Insn::CheckRefField(int32 opndIndex, bool isEmit) const {
+bool AArch64Insn::CheckRefField(size_t opndIndex, bool isEmit) const {
   if (IsAccessRefField() && AccessMem()) {
     Operand *opnd0 = opnds[opndIndex];
     if (opnd0->IsRegister()) {

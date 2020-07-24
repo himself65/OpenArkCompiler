@@ -71,8 +71,8 @@ void AArch64AsmEmitter::EmitMethodDesc(FuncEmitInfo &funcEmitInfo, Emitter &emit
   AArch64CGFunc &aarchCGFunc = static_cast<AArch64CGFunc&>(cgFunc);
   IntrinsiccallNode *cleanEANode = aarchCGFunc.GetCleanEANode();
   if (cleanEANode != nullptr) {
-    refNum += cleanEANode->NumOpnds();
-    refOffset -= cleanEANode->NumOpnds() * kIntregBytelen;
+    refNum += static_cast<uint32>(cleanEANode->NumOpnds());
+    refOffset -= static_cast<int32>(cleanEANode->NumOpnds() * kIntregBytelen);
   }
   emitter.Emit("\t.short ").Emit(refOffset).Emit("\n");
   emitter.Emit("\t.short ").Emit(refNum).Emit("\n");
@@ -90,8 +90,8 @@ void AArch64AsmEmitter::EmitFastLSDA(FuncEmitInfo &funcEmitInfo) {
    * .word 0xFFFFFFFF
    * .word .Label.LTest_3B_7C_3Cinit_3E_7C_28_29V3-func_start_label
    */
-  emitter->Emit("\t.word 0xFFFFFFFF\n");
-  emitter->Emit("\t.word .L." + funcName + ".");
+  (void)emitter->Emit("\t.word 0xFFFFFFFF\n");
+  (void)emitter->Emit("\t.word .L." + funcName + ".");
   if (aarchCGFunc.NeedCleanup()) {
     emitter->Emit(cgFunc.GetCleanupLabel()->GetLabelIdx());
   } else {
@@ -163,9 +163,9 @@ void AArch64AsmEmitter::EmitFullLSDA(FuncEmitInfo &funcEmitInfo) {
         cleaupCode.SetEndOffset(cgFunc.GetCleanupLabel());
         emitter->EmitLabelPair(funcName, cleaupCode);
       } else if (cgFunc.GetFunction().IsJava()) {
-        ASSERT(!cgFunc.GetExitBBsVec().empty(), "exitbbsvec is empty in AArch64AsmEmitter::EmitFullLSDA");
-        emitter->Emit(".L." + funcName).Emit(".").Emit(cgFunc.GetExitBB(0)->GetLabIdx());
-        emitter->Emit(" - .L." + funcName).Emit(".").Emit(cgFunc.GetStartLabel()->GetLabelIdx()).Emit("\n");
+        ASSERT(!cgFunc.GetExitBBsVec().empty(), "exitbbsvec is empty in AArch64Emitter::EmitFullLSDA");
+        (void)emitter->Emit(".L." + funcName).Emit(".").Emit(cgFunc.GetExitBB(0)->GetLabIdx());
+        (void)emitter->Emit(" - .L." + funcName).Emit(".").Emit(cgFunc.GetStartLabel()->GetLabelIdx()).Emit("\n");
       } else {
         emitter->Emit("0\n");
       }
@@ -201,8 +201,8 @@ void AArch64AsmEmitter::EmitFullLSDA(FuncEmitInfo &funcEmitInfo) {
       emitter->EmitLabelPair(funcName, cleaupCode);
     } else {
       ASSERT(!cgFunc.GetExitBBsVec().empty(), "exitbbsvec is empty in AArch64AsmEmitter::EmitFullLSDA");
-      emitter->Emit(".L." + funcName).Emit(".").Emit(cgFunc.GetExitBB(0)->GetLabIdx());
-      emitter->Emit(" - .L." + funcName).Emit(".").Emit(cgFunc.GetStartLabel()->GetLabelIdx()).Emit("\n");
+      (void)emitter->Emit(".L." + funcName).Emit(".").Emit(cgFunc.GetExitBB(0)->GetLabIdx());
+      (void)emitter->Emit(" - .L." + funcName).Emit(".").Emit(cgFunc.GetStartLabel()->GetLabelIdx()).Emit("\n");
     }
     emitter->Emit("\t.uleb128 0\n");
     if (!cgFunc.GetFunction().IsJava()) {
@@ -262,10 +262,10 @@ void AArch64AsmEmitter::EmitBBHeaderLabel(FuncEmitInfo &funcEmitInfo, const std:
     currCG->IncreaseLabelOrderCnt();
   }
   if (currCG->GenerateVerboseCG()) {
-    emitter.Emit(".L.").Emit(name).Emit(".").Emit(labIdx).Emit(":\t//label order ").Emit(label.GetLabelOrder());
+    (void)emitter.Emit(".L.").Emit(name).Emit(".").Emit(labIdx).Emit(":\t//label order ").Emit(label.GetLabelOrder());
     emitter.Emit("\n");
   } else {
-    emitter.Emit(".L.").Emit(name).Emit(".").Emit(labIdx).Emit(":\n");
+    (void)emitter.Emit(".L.").Emit(name).Emit(".").Emit(labIdx).Emit(":\n");
   }
 }
 
@@ -288,40 +288,40 @@ void AArch64AsmEmitter::Run(FuncEmitInfo &funcEmitInfo) {
   Emitter &emitter = *currCG->GetEmitter();
   // insert for  __cxx_global_var_init
   if (cgFunc.GetName() == "__cxx_global_var_init") {
-    emitter.Emit("\t.section\t.init_array,\"aw\"\n");
-    emitter.Emit("\t.quad\t").Emit(cgFunc.GetName()).Emit("\n");
+    (void)emitter.Emit("\t.section\t.init_array,\"aw\"\n");
+    (void)emitter.Emit("\t.quad\t").Emit(cgFunc.GetName()).Emit("\n");
   }
   emitter.Emit("\n");
   EmitMethodDesc(funcEmitInfo, emitter);
   /* emit java code to the java section. */
   if (cgFunc.GetFunction().IsJava()) {
     std::string sectionName = namemangler::kMuidJavatextPrefixStr;
-    emitter.Emit("\t.section  ." + sectionName + ",\"ax\"\n");
+    (void)emitter.Emit("\t.section  ." + sectionName + ",\"ax\"\n");
   } else {
-    emitter.Emit("\t.text\n");
+    (void)emitter.Emit("\t.text\n");
   }
-  emitter.Emit("\t.align 2\n");
+  (void)emitter.Emit("\t.align 2\n");
   MIRSymbol *funcSt = GlobalTables::GetGsymTable().GetSymbolFromStidx(cgFunc.GetFunction().GetStIdx().Idx());
   const std::string &funcName = std::string(cgFunc.GetShortFuncName().c_str());
 
 
   std::string funcStName = funcSt->GetName();
   if (funcSt->GetFunction()->GetAttr(FUNCATTR_weak)) {
-    emitter.Emit("\t.weak\t" + funcStName + "\n");
-    emitter.Emit("\t.hidden\t" + funcStName + "\n");
+    (void)emitter.Emit("\t.weak\t" + funcStName + "\n");
+    (void)emitter.Emit("\t.hidden\t" + funcStName + "\n");
   } else if (funcSt->GetFunction()->GetAttr(FUNCATTR_local)) {
-    emitter.Emit("\t.local\t" + funcStName + "\n");
+    (void)emitter.Emit("\t.local\t" + funcStName + "\n");
   } else {
     bool isExternFunction = false;
-    emitter.Emit("\t.globl\t").Emit(funcSt->GetName()).Emit("\n");
+    (void)emitter.Emit("\t.globl\t").Emit(funcSt->GetName()).Emit("\n");
     if (!currCG->GetMIRModule()->IsCModule() || !isExternFunction) {
-      emitter.Emit("\t.hidden\t").Emit(funcSt->GetName()).Emit("\n");
+      (void)emitter.Emit("\t.hidden\t").Emit(funcSt->GetName()).Emit("\n");
     }
   }
-  emitter.Emit("\t.type\t" + funcStName + ", %function\n");
+  (void)emitter.Emit("\t.type\t" + funcStName + ", %function\n");
   /* add these messege , solve the simpleperf tool error */
   EmitRefToMethodDesc(funcEmitInfo, emitter);
-  emitter.Emit(funcStName + ":\n");
+  (void)emitter.Emit(funcStName + ":\n");
   /* if the last  insn is call, then insert nop */
   bool found = false;
   FOR_ALL_BB_REV(bb, &aarchCGFunc) {
@@ -355,9 +355,9 @@ void AArch64AsmEmitter::Run(FuncEmitInfo &funcEmitInfo) {
   }
   if (CGOptions::IsMapleLinker()) {
     /* Emit a label for calculating method size */
-    emitter.Emit(".Label.end." + funcStName + ":\n");
+    (void)emitter.Emit(".Label.end." + funcStName + ":\n");
   }
-  emitter.Emit("\t.size\t" + funcStName + ", .-").Emit(funcStName + "\n");
+  (void)emitter.Emit("\t.size\t" + funcStName + ", .-").Emit(funcStName + "\n");
 
   EHFunc *ehFunc = cgFunc.GetEHFunc();
   /* emit LSDA */
@@ -368,8 +368,8 @@ void AArch64AsmEmitter::Run(FuncEmitInfo &funcEmitInfo) {
     } else if (ehFunc->NeedFullLSDA()) {
       LSDAHeader *lsdaHeader = ehFunc->GetLSDAHeader();
       /*  .word .Label.lsda_label-func_start_label */
-      emitter.Emit("\t.word .L." + funcName).Emit(".").Emit(lsdaHeader->GetLSDALabel()->GetLabelIdx());
-      emitter.Emit("-.L." + funcName).Emit(".").Emit(cgFunc.GetStartLabel()->GetLabelIdx()).Emit("\n");
+      (void)emitter.Emit("\t.word .L." + funcName).Emit(".").Emit(lsdaHeader->GetLSDALabel()->GetLabelIdx());
+      (void)emitter.Emit("-.L." + funcName).Emit(".").Emit(cgFunc.GetStartLabel()->GetLabelIdx()).Emit("\n");
       emitter.IncreaseJavaInsnCount();
     } else if (ehFunc->NeedFastLSDA()) {
       EmitFastLSDA(funcEmitInfo);
@@ -438,8 +438,8 @@ void AArch64AsmEmitter::Run(FuncEmitInfo &funcEmitInfo) {
     for (size_t i = 0; i < arrayConst->GetConstVec().size(); i++) {
       MIRLblConst *lblConst = safe_cast<MIRLblConst>(arrayConst->GetConstVecItem(i));
       CHECK_FATAL(lblConst != nullptr, "null ptr check");
-      emitter.Emit("\t.quad\t.L." + funcName).Emit(".").Emit(lblConst->GetValue());
-      emitter.Emit(" - " + st->GetName() + "\n");
+      (void)emitter.Emit("\t.quad\t.L." + funcName).Emit(".").Emit(lblConst->GetValue());
+      (void)emitter.Emit(" - " + st->GetName() + "\n");
       emitter.IncreaseJavaInsnCount(kQuadInsnCount);
     }
   }

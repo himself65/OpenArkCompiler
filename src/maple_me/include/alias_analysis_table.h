@@ -21,7 +21,7 @@
 namespace maple {
 class AliasAnalysisTable {
  public:
-  AliasAnalysisTable(SSATab &ssaTable, MapleAllocator allocator, KlassHierarchy &kh)
+  AliasAnalysisTable(SSATab &ssaTable, const MapleAllocator &allocator, KlassHierarchy &kh)
       : ssaTab(ssaTable),
         alloc(allocator),
         prevLevelNode(alloc.Adapter()),

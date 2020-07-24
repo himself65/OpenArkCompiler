@@ -163,7 +163,7 @@ class MIRFunction {
   }
 
   void UpdateFuncTypeAndFormals(const std::vector<MIRSymbol*> &symbols, bool clearOldArgs = false);
-  void UpdateFuncTypeAndFormalsAndReturnType(const std::vector<MIRSymbol*> &symbols, TyIdx retTyIdx,
+  void UpdateFuncTypeAndFormalsAndReturnType(const std::vector<MIRSymbol*> &symbols, const TyIdx &retTyIdx,
                                              bool clearOldArgs = false);
   LabelIdx GetOrCreateLableIdxFromName(const std::string &name);
   GStrIdx GetLabelStringIndex(LabelIdx labelIdx) const {
@@ -736,7 +736,7 @@ class MIRFunction {
     return retRefSym;
   }
   void InsertMIRSymbol(MIRSymbol *sym) {
-    retRefSym.insert(sym);
+    (void)retRefSym.insert(sym);
   }
 
   MemPool *GetDataMemPool() const {
@@ -772,7 +772,7 @@ class MIRFunction {
     genericRet = r;
   }
 
-  void AddFuncLocalGenericVar(GStrIdx str, AnnotationType *at) {
+  void AddFuncLocalGenericVar(const GStrIdx &str, AnnotationType *at) {
     genericLocalVar[str] = at;
   }
 
@@ -788,7 +788,7 @@ class MIRFunction {
     return genericRet;
   }
 
-  AnnotationType *GetFuncLocalGenericVar(GStrIdx str) {
+  AnnotationType *GetFuncLocalGenericVar(const GStrIdx &str) {
     if (genericLocalVar.find(str) == genericLocalVar.end()) {
       return nullptr;
     }

@@ -274,7 +274,7 @@ class MIRModule {
   }
 
   void addSuperCall(const std::string &func) {
-    superCallSet.insert(func);
+    (void)superCallSet.insert(func);
   }
 
   bool findSuperCall(const std::string &func) const {
@@ -485,7 +485,7 @@ class MIRModule {
     return it->second.find(key) != it->second.end();
   }
   void InsertTargetHash(PUIdx idx, uint32 key) {
-    method2TargetHash[idx].insert(key);
+    (void)method2TargetHash[idx].insert(key);
   }
   void AddValueToMethod2TargetHash(PUIdx idx, const std::unordered_set<uint32> &value) {
     method2TargetHash[idx] = value;

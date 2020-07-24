@@ -56,7 +56,7 @@ void IRMap::BuildPhiMeNode(BB &bb) {
 
     auto *phiMeNode = NewInPool<MePhiNode>();
     phiMeNode->SetDefBB(&bb);
-    bb.GetMePhiList().insert(std::make_pair(oSt->GetIndex(), phiMeNode));
+    (void)bb.GetMePhiList().insert(std::make_pair(oSt->GetIndex(), phiMeNode));
     if (oSt->IsPregOst()) {
       RegMeExpr *meDef = GetOrCreateRegFromVerSt(*vSt);
       phiMeNode->UpdateLHS(*meDef);

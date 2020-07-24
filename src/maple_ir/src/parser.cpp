@@ -2689,7 +2689,7 @@ bool MIRParser::ParseMIRForImport() {
   }
   GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(importFileName);
   auto it = mod.GetImportFiles().begin();
-  mod.GetImportFiles().insert(it, strIdx);
+  (void)mod.GetImportFiles().insert(it, strIdx);
   // record the imported file for later reading summary info, if exists
   mod.PushbackImportedMplt(importFileName);
   lexer.NextToken();

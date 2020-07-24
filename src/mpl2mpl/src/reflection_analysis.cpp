@@ -349,7 +349,8 @@ uint32 GetClassAccessFlags(const MIRStructType &classType) {
         const std::string &name = GlobalTables::GetStrTable().GetStringFromStrIdx(elem->GetNameStrIdx());
         if (name == kAccessFlags) {
           accessFlag = elem->GetI32Val();
-          accessFlag |= (originAF & kModPublic) << (kModifierAFOriginPublic - 1);
+          accessFlag |= static_cast<int32>((originAF & static_cast<uint32>(kModPublic)) <<
+                                           static_cast<uint32>(kModifierAFOriginPublic - 1));
           return static_cast<uint32>(accessFlag);
         }
       }

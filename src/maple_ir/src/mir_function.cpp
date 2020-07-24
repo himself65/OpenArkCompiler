@@ -116,7 +116,7 @@ void MIRFunction::UpdateFuncTypeAndFormals(const std::vector<MIRSymbol*> &symbol
   delete newFuncType;
 }
 
-void MIRFunction::UpdateFuncTypeAndFormalsAndReturnType(const std::vector<MIRSymbol*> &symbols, TyIdx retTyIdx,
+void MIRFunction::UpdateFuncTypeAndFormalsAndReturnType(const std::vector<MIRSymbol*> &symbols, const TyIdx &retTyIdx,
                                                         bool clearOldArgs) {
   auto *newFuncType = ReconstructFormals(symbols, clearOldArgs);
   newFuncType->SetRetTyIdx(retTyIdx);

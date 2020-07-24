@@ -174,8 +174,8 @@ void AArch64CG::FindOrCreateRepresentiveSym(std::vector<uint64> &bitmapWords, ui
     if (gcTIBName.compare("MCC_GCTIB__Ljava_2Flang_2FObject_3B") == 0) {
       ptn->SetName("MCC_GCTIB__Ljava_2Flang_2FObject_3B");
     }
-    keyPatternMap.insert(std::make_pair(key, ptn));
-    symbolPatternMap.insert(std::make_pair(gcTIBName, ptn));
+    (void)keyPatternMap.insert(std::make_pair(key, ptn));
+    (void)symbolPatternMap.insert(std::make_pair(gcTIBName, ptn));
 
     /* Emit GCTIB pattern */
     std::string ptnString = "\t.type " + ptn->GetName() + ", %object\n" + "\t.data\n" + "\t.align 3\n";
@@ -221,7 +221,7 @@ void AArch64CG::FindOrCreateRepresentiveSym(std::vector<uint64> &bitmapWords, ui
       keyPatternMap[key] = ptn;
     }
   } else {
-    symbolPatternMap.insert(make_pair(gcTIBName, iter->second));
+    (void)symbolPatternMap.insert(make_pair(gcTIBName, iter->second));
   }
 }
 

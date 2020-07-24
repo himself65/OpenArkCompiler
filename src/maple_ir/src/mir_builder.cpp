@@ -61,7 +61,7 @@ bool MIRBuilder::TraverseToNamedField(MIRStructType &structType, GStrIdx nameIdx
 void MIRBuilder::TraverseToNamedFieldWithType(MIRStructType &structType, GStrIdx nameIdx, TyIdx typeIdx,
                                               uint32 &fieldID, uint32 &idx) {
   if (structType.IsIncomplete()) {
-    incompleteTypeRefedSet.insert(structType.GetTypeIndex());
+    (void)incompleteTypeRefedSet.insert(structType.GetTypeIndex());
   }
   // process parent
   if (structType.GetKind() == kTypeClass || structType.GetKind() == kTypeClassIncomplete) {
@@ -108,7 +108,7 @@ void MIRBuilder::TraverseToNamedFieldWithType(MIRStructType &structType, GStrIdx
 bool MIRBuilder::TraverseToNamedFieldWithTypeAndMatchStyle(MIRStructType &structType, GStrIdx nameIdx, TyIdx typeIdx,
                                                            uint32 &fieldID, unsigned int matchStyle) {
   if (structType.IsIncomplete()) {
-    incompleteTypeRefedSet.insert(structType.GetTypeIndex());
+    (void)incompleteTypeRefedSet.insert(structType.GetTypeIndex());
   }
   if (matchStyle & kParentFirst) {
     // process parent

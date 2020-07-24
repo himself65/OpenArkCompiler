@@ -195,14 +195,14 @@ void BlockNode::ReplaceStmt1WithStmt2(const StmtNode *stmtNode1, StmtNode *stmtN
   } else {
     // replace stmtNode1 with stmtNode2
     stmtNodeList.insert(stmtNode1, stmtNode2);
-    stmtNodeList.erase(stmtNode1);
+    (void)stmtNodeList.erase(stmtNode1);
   }
 }
 
 // remove sstmtNode1 from block
 void BlockNode::RemoveStmt(StmtNode *stmtNode1) {
   ASSERT(stmtNode1 != nullptr, "delete a null stmtment");
-  stmtNodeList.erase(stmtNode1);
+  (void)stmtNodeList.erase(stmtNode1);
 }
 
 /// Insert stmtNode2 before stmtNode1 in current block.
@@ -513,7 +513,7 @@ void Conststr16Node::Dump(int32) const {
   const std::u16string kStr16 = GlobalTables::GetU16StrTable().GetStringFromStrIdx(U16StrIdx(strIdx));
   // UTF-16 string are dumped as UTF-8 string in mpl to keep the printable chars in ascii form
   std::string str;
-  namemangler::UTF16ToUTF8(str, kStr16);
+  (void)namemangler::UTF16ToUTF8(str, kStr16);
   PrintString(str);
 }
 

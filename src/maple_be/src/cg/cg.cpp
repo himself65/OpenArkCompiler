@@ -59,7 +59,7 @@ void CG::GenExtraTypeMetadata(const std::string &classListFileName, const std::s
         continue;  /* Skip duplicated class definitions. */
       }
 
-      visited.insert(name);
+      (void)visited.insert(name);
       classesToGenerate.emplace_back(classType);
     }
   } else {

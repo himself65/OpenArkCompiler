@@ -153,7 +153,7 @@ void CGNode::Dump(std::ofstream &fout) const {
 }
 
 void CGNode::AddCallsite(CallInfo *ci, MapleSet<CGNode*, Comparator<CGNode>> *callee) {
-  callees.insert(std::pair<CallInfo*, MapleSet<CGNode*, Comparator<CGNode>>*>(ci, callee));
+  (void)callees.insert(std::pair<CallInfo*, MapleSet<CGNode*, Comparator<CGNode>>*>(ci, callee));
 }
 
 void CGNode::AddCallsite(CallInfo &ci, CGNode *node) {
@@ -326,7 +326,7 @@ CGNode *CallGraph::GetOrGenCGNode(PUIdx puIdx, bool isVcall, bool isIcall) {
   if (node == nullptr) {
     MIRFunction *mirFunc = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(puIdx);
     node = cgAlloc.GetMemPool()->New<CGNode>(mirFunc, cgAlloc, numOfNodes++);
-    nodesMap.insert(std::make_pair(mirFunc, node));
+    (void)nodesMap.insert(std::make_pair(mirFunc, node));
   }
   if (isVcall && !node->IsVcallCandidatesValid()) {
     MIRFunction *mirFunc = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(puIdx);
@@ -1515,7 +1515,7 @@ void SCCNode::Setup() {
         if (calleeNode->GetSCCNode() == this) {
           continue;
         }
-        calleeScc.insert(calleeNode->GetSCCNode());
+        (void)calleeScc.insert(calleeNode->GetSCCNode());
       }
     }
     for (auto itCaller = node->CallerBegin(); itCaller != node->CallerEnd(); ++itCaller) {
@@ -1523,7 +1523,7 @@ void SCCNode::Setup() {
       if (callerNode->GetSCCNode() == this) {
         continue;
       }
-      callerScc.insert(callerNode->GetSCCNode());
+      (void)callerScc.insert(callerNode->GetSCCNode());
     }
   }
 }
@@ -1619,7 +1619,7 @@ void CallGraph::SCCTopologicalSort(const std::vector<SCCNode*> &sccNodes) {
   for (SCCNode * const &node : sccNodes) {
     if (!node->HasCaller()) {
       sccTopologicalVec.push_back(node);
-      inQueue.insert(node);
+      (void)inQueue.insert(node);
     }
   }
   // Top-down iterates all nodes
@@ -1638,7 +1638,7 @@ void CallGraph::SCCTopologicalSort(const std::vector<SCCNode*> &sccNodes) {
         }
         if (callerAllVisited) {
           sccTopologicalVec.push_back(callee);
-          inQueue.insert(callee);
+          (void)inQueue.insert(callee);
         }
       }
     }

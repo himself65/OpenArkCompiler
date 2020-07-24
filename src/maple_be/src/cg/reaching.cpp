@@ -562,9 +562,9 @@ void ReachingDefinition::Initialize() {
       if (bb->GetFirstStmt() == cgFunc->GetCleanupLabel()) {
         firstCleanUpBB = bb;
       }
-      cleanUpBBSet.insert(bb);
+      (void)cleanUpBBSet.insert(bb);
     } else {
-      normalBBSet.insert(bb);
+      (void)normalBBSet.insert(bb);
     }
   }
   maxInsnNO = 0;
@@ -597,16 +597,16 @@ void ReachingDefinition::BuildInOutForFuncBody() {
     setItr = normalBBSetBak.begin();
     BB *bb = *setItr;
     ASSERT(bb != nullptr, "null ptr check");
-    normalBBSetBak.erase(setItr);
+    (void)normalBBSetBak.erase(setItr);
 
     if (GenerateIn(*bb)) {
       if (GenerateOut(*bb)) {
         for (auto succ : bb->GetSuccs()) {
-          normalBBSetBak.insert(succ);
+          (void)normalBBSetBak.insert(succ);
         }
 
         for (auto ehSucc : bb->GetEhSuccs()) {
-          normalBBSetBak.insert(ehSucc);
+          (void)normalBBSetBak.insert(ehSucc);
         }
       }
     }
@@ -625,11 +625,11 @@ void ReachingDefinition::UpdateInOut(BB &changedBB) {
   std::set<BB*, BBIdCmp>::iterator setItr;
 
   for (auto succ : changedBB.GetSuccs()) {
-    bbSet.insert(succ);
+    (void)bbSet.insert(succ);
   }
 
   for (auto ehSucc : changedBB.GetEhSuccs()) {
-    bbSet.insert(ehSucc);
+    (void)bbSet.insert(ehSucc);
   }
 
   while (!bbSet.empty()) {
@@ -641,11 +641,11 @@ void ReachingDefinition::UpdateInOut(BB &changedBB) {
     if (GenerateIn(*bb)) {
       if (GenerateOut(*bb)) {
         for (auto succ : bb->GetSuccs()) {
-          bbSet.insert(succ);
+          (void)bbSet.insert(succ);
         }
 
         for (auto ehSucc : bb->GetEhSuccs()) {
-          bbSet.insert(ehSucc);
+          (void)bbSet.insert(ehSucc);
         }
       }
     }
@@ -678,11 +678,11 @@ void ReachingDefinition::UpdateInOut(BB &changedBB, bool isReg) {
   std::set<BB*, BBIdCmp> bbSet;
   std::set<BB*, BBIdCmp>::iterator setItr;
   for (auto &succ : changedBB.GetSuccs()) {
-    bbSet.insert(succ);
+    (void)bbSet.insert(succ);
   }
 
   for (auto &ehSucc : changedBB.GetEhSuccs()) {
-    bbSet.insert(ehSucc);
+    (void)bbSet.insert(ehSucc);
   }
   while (!bbSet.empty()) {
     setItr = bbSet.begin();
@@ -691,10 +691,10 @@ void ReachingDefinition::UpdateInOut(BB &changedBB, bool isReg) {
     if (GenerateIn(*bb, changedInfoIndex, isReg)) {
       if (GenerateOut(*bb, changedInfoIndex, isReg)) {
         for (auto &succ : bb->GetSuccs()) {
-          bbSet.insert(succ);
+          (void)bbSet.insert(succ);
         }
         for (auto &ehSucc : bb->GetEhSuccs()) {
-          bbSet.insert(ehSucc);
+          (void)bbSet.insert(ehSucc);
         }
       }
     }
@@ -722,10 +722,10 @@ void ReachingDefinition::BuildInOutForCleanUpBB() {
     if (GenerateIn(*bb)) {
       if (GenerateOut(*bb)) {
         for (auto succ : bb->GetSuccs()) {
-          cleanupBBSetBak.insert(succ);
+          (void)cleanupBBSetBak.insert(succ);
         }
         for (auto ehSucc : bb->GetEhSuccs()) {
-          cleanupBBSetBak.insert(ehSucc);
+          (void)cleanupBBSetBak.insert(ehSucc);
         }
       }
     }
@@ -747,10 +747,10 @@ void ReachingDefinition::BuildInOutForCleanUpBB(bool isReg, const std::set<uint3
     if (GenerateIn(*bb, index, isReg)) {
       if (GenerateOut(*bb, index, isReg)) {
         for (auto &succ : bb->GetSuccs()) {
-          cleanupBBSetBak.insert(succ);
+          (void)cleanupBBSetBak.insert(succ);
         }
         for (auto &ehSucc : bb->GetEhSuccs()) {
-          cleanupBBSetBak.insert(ehSucc);
+          (void)cleanupBBSetBak.insert(ehSucc);
         }
       }
     }

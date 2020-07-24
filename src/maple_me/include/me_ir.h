@@ -197,7 +197,7 @@ class IassignMeStmt;  // circular dependency exists, no other choice
 // base class for VarMeExpr and RegMeExpr
 class ScalarMeExpr : public MeExpr {
  public:
-  ScalarMeExpr(int32 exprid, OStIdx oidx, uint32 vidx, MeExprOp meop)
+  ScalarMeExpr(int32 exprid, const OStIdx &oidx, uint32 vidx, MeExprOp meop)
       : MeExpr(exprid, meop),
         ostIdx(oidx),
         vstIdx(vidx),
@@ -246,7 +246,7 @@ class ScalarMeExpr : public MeExpr {
   }
 
   void SetVstIdx(size_t vstIdxVal) {
-    vstIdx = vstIdxVal;
+    vstIdx = static_cast<uint32>(vstIdxVal);
   }
 
   MeDefBy GetDefBy() const {
@@ -1902,15 +1902,15 @@ class NaryMeStmt : public MeStmt {
   }
 
   void EraseOpnds(const MapleVector<MeExpr*>::const_iterator begin, const MapleVector<MeExpr*>::const_iterator end) {
-    opnds.erase(begin, end);
+    (void)opnds.erase(begin, end);
   }
 
   void EraseOpnds(const MapleVector<MeExpr *>::const_iterator it) {
-    opnds.erase(it);
+    (void)opnds.erase(it);
   }
 
   void InsertOpnds(const MapleVector<MeExpr*>::const_iterator begin, MeExpr *expr) {
-    opnds.insert(begin, expr);
+    (void)opnds.insert(begin, expr);
   }
 
   void DumpOpnds(const IRMap*) const;
@@ -2492,7 +2492,7 @@ class SwitchMeStmt : public UnaryMeStmt {
 
 class CommentMeStmt : public MeStmt {
  public:
-  CommentMeStmt(MapleAllocator *alloc, const StmtNode *stt) : MeStmt(stt), comment(alloc->GetMemPool()) {
+  CommentMeStmt(const MapleAllocator *alloc, const StmtNode *stt) : MeStmt(stt), comment(alloc->GetMemPool()) {
     comment = static_cast<const CommentNode*>(stt)->GetComment();
   }
 

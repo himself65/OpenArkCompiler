@@ -230,7 +230,7 @@ void Clone::DoClone() {
       GStrIdx gStrIdxOfFunc = GlobalTables::GetStrTable().GetStrIdxFromName(std::string(funcName.c_str()));
       MIRFunction *oriFunc = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(gStrIdxOfFunc)->GetFunction();
       mirModule->SetCurFunction(oriFunc);
-      clonedNewFuncMap.insert(CloneFunctionNoReturn(*oriFunc)->GetName());
+      (void)clonedNewFuncMap.insert(CloneFunctionNoReturn(*oriFunc)->GetName());
     }
   }
 }

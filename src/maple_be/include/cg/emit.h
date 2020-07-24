@@ -253,7 +253,7 @@ class Emitter {
   }
 
   void InsertHugeSoTarget(const std::string &target) {
-    hugeSoTargets.insert(target);
+    (void)hugeSoTargets.insert(target);
   }
 #endif
 

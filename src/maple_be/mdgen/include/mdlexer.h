@@ -31,9 +31,9 @@ class MDLexer {
   MDLexer() {
     keywords.clear();
     /* input can be improved */
-    keywords.insert(std::make_pair("Def", kMDDef));
-    keywords.insert(std::make_pair("Class", kMDClass));
-    keywords.insert(std::make_pair("DefType", kMDDefType));
+    (void)keywords.insert(std::make_pair("Def", kMDDef));
+    (void)keywords.insert(std::make_pair("Class", kMDClass));
+    (void)keywords.insert(std::make_pair("DefType", kMDDefType));
   };
   ~MDLexer() {
     if (mdFileInternal.is_open()) {

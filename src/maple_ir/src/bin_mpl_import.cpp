@@ -144,7 +144,7 @@ MIRConst *BinaryMplImport::ImportConst(MIRFunction *func) {
         ostr << Read();
       }
       std::u16string str16;
-      namemangler::UTF8ToUTF16(str16, ostr.str());
+      (void)namemangler::UTF8ToUTF16(str16, ostr.str());
       cs->SetStrIdx(GlobalTables::GetU16StrTable().GetOrCreateStrIdxFromName(str16));
       return memPool->New<MIRStr16Const>(cs->GetStrIdx(), *type);
     }
@@ -385,9 +385,9 @@ void BinaryMplImport::ImportInfoIsStringOfStructType(MIRStructType &type) {
 }
 
 void BinaryMplImport::ImportInfoOfStructType(MIRStructType &type) {
-  int64 size = ReadNum();
+  uint64 size = static_cast<uint64>(ReadNum());
   bool isEmpty = type.GetInfo().empty();
-  for (int64 i = 0; i < size; ++i) {
+  for (size_t i = 0; i < size; ++i) {
     GStrIdx idx = ImportStr();
     int64 x = (type.GetInfoIsStringElemt(i)) ? static_cast<int64>(ImportStr()) : ReadNum();
     CHECK_FATAL(x >= 0, "ReadNum nagative, x: %d", x);

@@ -273,10 +273,10 @@ BaseNode *CGLowerer::LowerArrayDim(ArrayNode &array, int32 dim) {
     BaseNode *mpyNode = mirModule.CurFuncCodeMemPool()->New<BinaryNode>(OP_mul);
     BaseNode *item = NodeConvert(array.GetPrimType(), *array.GetDim(mirModule, GlobalTables::GetTypeTable(), dim - 1));
     if (mirModule.IsCModule()) {
-      item = NodeConvert(array.GetPrimType(), *array.GetIndex(i));
+      item = NodeConvert(array.GetPrimType(), *array.GetIndex(static_cast<size_t>(static_cast<uint>(i))));
       int64 offsetSize = 1;
-      for (int j = i + 1; j < dim; j++) {
-        offsetSize *= arrayType->GetSizeArrayItem(j);
+      for (int32 j = i + 1; j < dim; ++j) {
+        offsetSize *= arrayType->GetSizeArrayItem(static_cast<uint32>(j));
       }
       MIRIntConst *offsetCst = mirModule.CurFuncCodeMemPool()->New<MIRIntConst>(
           offsetSize, *GlobalTables::GetTypeTable().GetTypeFromTyIdx(array.GetPrimType()));
@@ -1831,7 +1831,7 @@ StmtNode *CGLowerer::LowerIntrinsicopDassign(const DassignNode &dsNode,
   AddrofNode *addrofNode = mirBuilder->CreateAddrof(*dst, PTY_a32);
   MapleVector<BaseNode*> newOpnd(mirModule.CurFuncCodeMemPoolAllocator()->Adapter());
   newOpnd.emplace_back(addrofNode);
-  newOpnd.insert(newOpnd.end(), nOpnds.begin(), nOpnds.end());
+  (void)newOpnd.insert(newOpnd.end(), nOpnds.begin(), nOpnds.end());
   CallNode *callStmt = mirModule.CurFuncCodeMemPool()->New<CallNode>(mirModule, OP_call);
   callStmt->SetPUIdx(st->GetFunction()->GetPuidx());
   callStmt->SetNOpnd(newOpnd);
@@ -1890,7 +1890,7 @@ BaseNode *CGLowerer::LowerJavascriptIntrinsicop(IntrinsicopNode &intrinNode, con
     AddrofNode *addrofNode = mirBuilder->CreateAddrof(*tmpSt, PTY_a32);
     MapleVector<BaseNode*> newOpnd(mirModule.CurFuncCodeMemPoolAllocator()->Adapter());
     newOpnd.emplace_back(addrofNode);
-    newOpnd.insert(newOpnd.end(), nOpnds.begin(), nOpnds.end());
+    (void)newOpnd.insert(newOpnd.end(), nOpnds.begin(), nOpnds.end());
     CallNode *callStmt = mirModule.CurFuncCodeMemPool()->New<CallNode>(mirModule, OP_call);
     callStmt->SetPUIdx(st->GetFunction()->GetPuidx());
     callStmt->SetNOpnd(newOpnd);

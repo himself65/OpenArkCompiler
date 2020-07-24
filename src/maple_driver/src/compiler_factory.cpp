@@ -60,7 +60,7 @@ CompilerFactory::~CompilerFactory() {
 }
 
 void CompilerFactory::Insert(const std::string &name, Compiler *value) {
-  supportedCompilers.insert(make_pair(name, value));
+  (void)supportedCompilers.insert(make_pair(name, value));
 }
 
 ErrorCode CompilerFactory::DeleteTmpFiles(const MplOptions &mplOptions, const std::vector<std::string> &tempFiles,

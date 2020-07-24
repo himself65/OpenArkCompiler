@@ -66,7 +66,7 @@ void OutputConstStr16(const MIRConst &constVal, BinaryMplExport &mplExport) {
   const auto &mirStr16 = static_cast<const MIRStr16Const&>(constVal);
   std::u16string str16 = GlobalTables::GetU16StrTable().GetStringFromStrIdx(mirStr16.GetValue());
   std::string str;
-  namemangler::UTF16ToUTF8(str, str16);
+  (void)namemangler::UTF16ToUTF8(str, str16);
   mplExport.WriteNum(str.length());
   for (char c : str) {
     mplExport.Write(static_cast<uint8>(c));

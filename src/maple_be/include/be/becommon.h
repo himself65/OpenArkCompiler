@@ -163,7 +163,7 @@ class BECommon {
     typeSizeTable.emplace_back(value);
   }
 
-  void AddTypeSizeAndAlign(TyIdx tyIdx, uint64 value) {
+  void AddTypeSizeAndAlign(const TyIdx tyIdx, uint64 value) {
     if (typeSizeTable.size() == tyIdx) {
       typeSizeTable.emplace_back(value);
       tableAlignTable.emplace_back(value);

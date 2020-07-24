@@ -499,7 +499,7 @@ void Emitter::EmitScalarConstant(MIRConst &mirConst, bool newLine, bool flag32) 
       MIRAddroffuncConst &funcAddr = static_cast<MIRAddroffuncConst&>(mirConst);
       MIRFunction *func = GlobalTables::GetFunctionTable().GetFuncTable().at(funcAddr.GetValue());
       MIRSymbol *symAddrSym = GlobalTables::GetGsymTable().GetSymbolFromStidx(func->GetStIdx().Idx());
-      Emit("\t.quad\t" + symAddrSym->GetName());
+      (void)Emit("\t.quad\t" + symAddrSym->GetName());
       break;
     }
     default:
@@ -1141,12 +1141,12 @@ void Emitter::EmitIntConst(const MIRSymbol &mirSymbol, MIRAggConst &aggConst, ui
       bool isDefTabIndex = (muidDataTabAddr & kFromDefIndexMask32Mod) == kFromDefIndexMask32Mod;
       std::string muidDataTabPrefix = isDefTabIndex ? kMuidDataDefTabPrefixStr : kMuidDataUndefTabPrefixStr;
       std::string muidDataTabName = muidDataTabPrefix + cg->GetMIRModule()->GetFileNameAsPostfix();
-      Emit(muidDataTabName + "+");
+      (void)Emit(muidDataTabName + "+");
       uint32 muidDataTabIndex = muidDataTabAddr & 0x3FFFFFFF; // high 2 bit is the mask of muid tab
-      Emit(std::to_string(muidDataTabIndex * width));
-      Emit("-.\n");
+      (void)Emit(std::to_string(muidDataTabIndex * width));
+      (void)Emit("-.\n");
     } else {
-      Emit(muidDataTabAddr);
+      (void)Emit(muidDataTabAddr);
       Emit("\n");
     }
     return;
@@ -1154,7 +1154,7 @@ void Emitter::EmitIntConst(const MIRSymbol &mirSymbol, MIRAggConst &aggConst, ui
     std::string strTabName = kRegJNITabPrefixStr + cg->GetMIRModule()->GetFileNameAsPostfix();
     EmitScalarConstant(*elemConst, false);
 #ifdef TARGARM32
-    Emit("+" + strTabName).Emit("+").Emit(MByteRef::kPositiveOffsetBias).Emit("-.\n");
+    (void)Emit("+" + strTabName).Emit("+").Emit(MByteRef::kPositiveOffsetBias).Emit("-.\n");
 #else
     Emit("+" + strTabName + "\n");
 #endif
@@ -1326,9 +1326,9 @@ void Emitter::EmitConstantTable(const MIRSymbol &mirSymbol, MIRConst &mirConst,
         Emit("\t.quad\t");
 #endif
         if (i == 0) {
-          Emit(namemangler::kVtabOffsetTabStr + cg->GetMIRModule()->GetFileNameAsPostfix() + " - .\n");
+          (void)Emit(namemangler::kVtabOffsetTabStr + cg->GetMIRModule()->GetFileNameAsPostfix() + " - .\n");
         } else {
-          Emit(namemangler::kFieldOffsetTabStr + cg->GetMIRModule()->GetFileNameAsPostfix() + " - .\n");
+          (void)Emit(namemangler::kFieldOffsetTabStr + cg->GetMIRModule()->GetFileNameAsPostfix() + " - .\n");
         }
       } else {
         EmitConstantTable(mirSymbol, *elemConst, strIdx2Type);
@@ -1465,7 +1465,7 @@ void Emitter::EmitLiteral(const MIRSymbol &literal, const std::map<GStrIdx, MIRT
   EmitAsmLabel(literal, kAsmType);
   /* literal should always be fstatic and readonly? */
   EmitAsmLabel(literal, kAsmLocal);  /* alwasy fstatic */
-  Emit("\t.section\t." + std::string(kMapleLiteralString) + ",\"aw\", %progbits\n");
+  (void)Emit("\t.section\t." + std::string(kMapleLiteralString) + ",\"aw\", %progbits\n");
   EmitAsmLabel(literal, kAsmAlign);
   EmitAsmLabel(literal, kAsmSyname);
   /* literal is an array */
@@ -1659,7 +1659,7 @@ void Emitter::EmitGlobalVars(std::vector<std::pair<MIRSymbol*, bool>> &globalVar
   }
   std::string globalVarName;
   while (inFile >> globalVarName) {
-    hotVars.insert(globalVarName);
+    (void)hotVars.insert(globalVarName);
   }
   inFile.close();
   bool hotBeginSet = false;
@@ -1899,7 +1899,7 @@ void Emitter::EmitGlobalVariable() {
         secName.erase(0, 2);
         Emit("\t.section\t." + secName + ",\"a\",%progbits\n");
       } else {
-        Emit("\t.section\t." + std::string(kMapleGlobalVariable) + ",\"aw\", %progbits\n");
+        (void)Emit("\t.section\t." + std::string(kMapleGlobalVariable) + ",\"aw\", %progbits\n");
       }
       /* Emit size and align by type */
       if (mirSymbol->GetStorageClass() == kScGlobal) {
@@ -2323,12 +2323,12 @@ void Emitter::EmitHexUnsigned(uint64 num) {
 #define str(s) #s
 
 void Emitter::EmitDIHeader() {
-  Emit("\t.section ." + std::string(namemangler::kMuidJavatextPrefixStr) + ",\"ax\"\n");
+  (void)Emit("\t.section ." + std::string(namemangler::kMuidJavatextPrefixStr) + ",\"ax\"\n");
   Emit(".L" XSTR(TEXT_BEGIN) ":\n");
 }
 
 void Emitter::EmitDIFooter() {
-  Emit("\t.section ." + std::string(namemangler::kMuidJavatextPrefixStr) + ",\"ax\"\n");
+  (void)Emit("\t.section ." + std::string(namemangler::kMuidJavatextPrefixStr) + ",\"ax\"\n");
   Emit(".L" XSTR(TEXT_END) ":\n");
 }
 
@@ -2345,7 +2345,7 @@ void Emitter::EmitHugeSoRoutines(bool lastRoutine) {
     return;
   }
   for (auto &target : hugeSoTargets) {
-    Emit("\t.section ." + std::string(namemangler::kMuidJavatextPrefixStr) + ",\"ax\"\n");
+    (void)Emit("\t.section ." + std::string(namemangler::kMuidJavatextPrefixStr) + ",\"ax\"\n");
     Emit("\t.align 2\n");
     std::string routineName = target + HugeSoPostFix();
     Emit("\t.type\t" + routineName + ", %function\n");
@@ -2365,7 +2365,7 @@ void ImmOperand::Dump() const {
 
 void LabelOperand::Emit(Emitter &emitter, const OpndProp *opndProp) const {
   (void)opndProp;
-  emitter.Emit(".L.").Emit(parentFunc).Emit(".").Emit(labelIndex);
+  (void)emitter.Emit(".L.").Emit(parentFunc).Emit(".").Emit(labelIndex);
 }
 
 void LabelOperand::Dump() const {

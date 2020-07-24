@@ -274,7 +274,7 @@ void ForwardPropPattern::Optimize(Insn &insn) {
         if (((useInsn->GetMachineOpcode() == MOP_xmovrr) || (useInsn->GetMachineOpcode() == MOP_wmovrr)) &&
             (static_cast<RegOperand&>(useInsn->GetOperand(kInsnSecondOpnd)).IsVirtualRegister()) &&
             (static_cast<RegOperand&>(useInsn->GetOperand(kInsnFirstOpnd)).IsVirtualRegister())) {
-          modifiedBB.insert(useInsn->GetBB());
+          (void)modifiedBB.insert(useInsn->GetBB());
         }
         cgFunc.GetRD()->InitGenUse(*useInsn->GetBB(), false);
       } else if (opnd.IsMemoryAccessOperand()) {
@@ -512,7 +512,7 @@ void BackPropPattern::Run() {
         if (!CheckCondition(*insn)) {
           continue;
         }
-        modifiedBB.insert(bb);
+        (void)modifiedBB.insert(bb);
         Optimize(*insn);
       }
       cgFunc.GetRD()->UpdateInOut(*bb);
@@ -727,7 +727,7 @@ uint32 RedundantUxtPattern::GetMaximumValidBit(Insn &insn, uint8 index, InsnSet 
       continue;
     }
 
-    visitedInsn.insert(defInsn);
+    (void)visitedInsn.insert(defInsn);
     MOperator mOp = defInsn->GetMachineOpcode();
     if ((mOp == MOP_wmovrr) || (mOp == MOP_xmovrr)) {
       validBit = GetMaximumValidBit(*defInsn, 1, visitedInsn);

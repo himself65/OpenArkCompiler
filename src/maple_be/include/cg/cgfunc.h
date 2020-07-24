@@ -51,7 +51,7 @@ class SpillMemOperandSet {
   virtual ~SpillMemOperandSet() = default;
 
   void Add(MemOperand &op) {
-    reuseSpillLocMem.insert(&op);
+    (void)reuseSpillLocMem.insert(&op);
   }
 
   void Remove(MemOperand &op) {
@@ -662,7 +662,7 @@ class CGFunc {
     return sortedBBs;
   }
 
-  void SetSortedBBs(MapleVector<BB*> &bbVec) {
+  void SetSortedBBs(const MapleVector<BB*> &bbVec) {
     sortedBBs = bbVec;
   }
 
@@ -674,7 +674,7 @@ class CGFunc {
     return lrVec;
   }
 
-  void SetLrVec(MapleVector<LiveRange*> &newLrVec) {
+  void SetLrVec(const MapleVector<LiveRange*> &newLrVec) {
     lrVec = newLrVec;
   }
 #endif  /* TARGARM32 */

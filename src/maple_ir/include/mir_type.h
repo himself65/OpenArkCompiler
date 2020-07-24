@@ -385,8 +385,8 @@ class GenericAttrs {
 };
 
 #if MIR_FEATURE_FULL
-constexpr int kShiftNumOfTypeKind = 8;
-constexpr int kShiftNumOfNameStrIdx = 6;
+constexpr size_t kShiftNumOfTypeKind = 8;
+constexpr size_t kShiftNumOfNameStrIdx = 6;
 class MIRType {
  public:
   MIRType(MIRTypeKind kind, PrimType pType) : typeKind(kind), primType(pType) {}
@@ -546,7 +546,7 @@ class MIRPtrType : public MIRType {
     return typeAttrs;
   }
 
-  void SetTypeAttrs(TypeAttrs attrs) {
+  void SetTypeAttrs(const TypeAttrs &attrs) {
     typeAttrs = attrs;
   }
 
@@ -932,7 +932,7 @@ class MIRStructType : public MIRType {
 
   void SetElemInferredTyIdx(size_t n, TyIdx tyIdx) {
     if (n >= fieldInferredTyIdx.size()) {
-      fieldInferredTyIdx.insert(fieldInferredTyIdx.end(), n + 1 - fieldInferredTyIdx.size(), kInitTyIdx);
+      (void)fieldInferredTyIdx.insert(fieldInferredTyIdx.end(), n + 1 - fieldInferredTyIdx.size(), kInitTyIdx);
     }
     ASSERT(n < fieldInferredTyIdx.size(), "array index out of range");
     fieldInferredTyIdx.at(n) = tyIdx;
@@ -940,7 +940,7 @@ class MIRStructType : public MIRType {
 
   TyIdx GetElemInferredTyIdx(size_t n) {
     if (n >= fieldInferredTyIdx.size()) {
-      fieldInferredTyIdx.insert(fieldInferredTyIdx.end(), n + 1 - fieldInferredTyIdx.size(), kInitTyIdx);
+      (void)fieldInferredTyIdx.insert(fieldInferredTyIdx.end(), n + 1 - fieldInferredTyIdx.size(), kInitTyIdx);
     }
     ASSERT(n < fieldInferredTyIdx.size(), "array index out of range");
     return fieldInferredTyIdx.at(n);
@@ -1008,14 +1008,14 @@ class MIRStructType : public MIRType {
     genericDeclare.push_back(gd);
   }
 
-  void AddFieldGenericDeclare(GStrIdx g, AnnotationType *a) {
+  void AddFieldGenericDeclare(const GStrIdx &g, AnnotationType *a) {
     if (fieldGenericDeclare.find(g) != fieldGenericDeclare.end()) {
       CHECK_FATAL(fieldGenericDeclare[g] == a, "MUST BE");
     }
     fieldGenericDeclare[g] = a;
   }
 
-  AnnotationType *GetFieldGenericDeclare(GStrIdx g) {
+  AnnotationType *GetFieldGenericDeclare(const GStrIdx &g) {
     if (fieldGenericDeclare.find(g) == fieldGenericDeclare.end()) {
       return nullptr;
     }

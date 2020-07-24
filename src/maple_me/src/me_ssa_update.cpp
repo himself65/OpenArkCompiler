@@ -56,7 +56,7 @@ void MeSSAUpdate::InsertPhis() {
       auto *phiMeNode = irMap.NewInPool<MePhiNode>();
       phiMeNode->SetDefBB(bb);
       phiMeNode->GetOpnds().resize(bb->GetPred().size());
-      bb->GetMePhiList().insert(std::make_pair(it->first, phiMeNode));
+      (void)bb->GetMePhiList().insert(std::make_pair(it->first, phiMeNode));
     }
     // initialize its rename stack
     renameStacks[it->first] = ssaUpdateMp.New<MapleStack<ScalarMeExpr*>>(ssaUpdateAlloc.Adapter());
