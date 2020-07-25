@@ -17,6 +17,4 @@
     memory_management/Annotation
     reflection_test/issue-0000-rt-Reflection-ReflectionforName2
     reflection_test/RT0202-rt-reflection-AnnotationMultiThread
-    eh_test/RT0030-rt-eh-NativeCheckFatalErrorExceptionTest
-    string_test/RT0043-rt-String-NoParamConstructorTest
 
