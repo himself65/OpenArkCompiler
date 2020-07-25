@@ -179,7 +179,7 @@ def regex_match(content, line_map, pattern, start=0):
     matches = re.finditer(str(pattern), content, re.MULTILINE)
     end = 0
     for _, match in enumerate(matches, start=1):
-        end = match.end()
+        end = match.end() + start
         line_num = text_index_to_line_num(line_map, end)
         if line_num + 1 >= len(line_map):
             return True, end
