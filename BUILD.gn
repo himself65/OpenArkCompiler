@@ -14,19 +14,19 @@
 #
 group("maple") {
   deps = [
-    "${MAPLE_ROOT}/src:maple",
+    "${MAPLEALL_ROOT}:maple",
   ]
 }
 
 group("irbuild") {
   deps = [
-    "${MAPLE_ROOT}/src:irbuild",
+    "${MAPLEALL_ROOT}:irbuild",
   ]
 }
 
 group("mplfe") {
   deps = [
-    "${MAPLE_ROOT}/src:mplfe",
+    "${MPLFE_ROOT}:mplfe",
   ]
 }
 

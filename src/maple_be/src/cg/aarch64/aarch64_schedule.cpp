@@ -285,7 +285,7 @@ uint32 AArch64Schedule::ComputeEstart(uint32 cycle) {
   ASSERT(nodes[maxIndex]->GetType() == kNodeTypeSeparator,
          "CG internal error, nodes[maxIndex] should be a separator node.");
 
-  readyNodes.insert(readyNodes.begin(), readyList.begin(), readyList.end());
+  (void)readyNodes.insert(readyNodes.begin(), readyList.begin(), readyList.end());
 
   uint32 maxEstart = cycle;
   for (uint32 i = lastSeparatorIndex; i <= maxIndex; ++i) {
@@ -681,7 +681,7 @@ uint32 AArch64Schedule::DoSchedule() {
   ASSERT(scheduleInfo.SizeOfScheduledNodes() == nodes.size(), "CG internal error, Not all nodes scheduled.");
 
   nodes.clear();
-  nodes.insert(nodes.begin(), scheduleInfo.GetScheduledNodes().begin(), scheduleInfo.GetScheduledNodes().end());
+  (void)nodes.insert(nodes.begin(), scheduleInfo.GetScheduledNodes().begin(), scheduleInfo.GetScheduledNodes().end());
   /* the second to last node is the true last node, because the last is kNodeTypeSeparator node */
   ASSERT(nodes.size() - 2 >= 0, "size of nodes should be greater than or equal 2");
   return (nodes[nodes.size() - 2]->GetSchedCycle());

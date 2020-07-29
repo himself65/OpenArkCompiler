@@ -662,7 +662,7 @@ bool MeABC::HasRelativeWithLength(MeExpr &meExpr) {
       if (visited.find(&defPhi) != visited.end()) {
         return false;
       }
-      visited.insert(&defPhi);
+      (void)visited.insert(&defPhi);
       for (MeExpr *expr : defPhi.GetOpnds()) {
         if (HasRelativeWithLength(*expr)) {
           return true;

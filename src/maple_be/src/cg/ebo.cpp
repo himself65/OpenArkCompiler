@@ -151,7 +151,7 @@ bool Ebo::OpndAvailableInBB(const BB &bb, OpndInfo *info) {
   return true;
 }
 
-bool Ebo::ForwardPropCheck(const Operand *opndReplace, OpndInfo &opndInfo, const Operand &opnd, Insn &insn) {
+bool Ebo::ForwardPropCheck(const Operand *opndReplace, const OpndInfo &opndInfo, const Operand &opnd, Insn &insn) {
   if (opndReplace == nullptr) {
     return false;
   }

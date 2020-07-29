@@ -244,7 +244,7 @@ void AArch64ReachingDefinition::FindRegDefInBB(uint32 regNO, BB &bb, InsnSet &de
 
     const AArch64MD *md = &AArch64CG::kMd[static_cast<AArch64Insn*>(insn)->GetMachineOpcode()];
     if (insn->IsCall() && IsCallerSavedReg(regNO)) {
-      defInsnSet.insert(insn);
+      (void)defInsnSet.insert(insn);
       continue;
     }
 
@@ -267,12 +267,12 @@ void AArch64ReachingDefinition::FindRegDefInBB(uint32 regNO, BB &bb, InsnSet &de
           if (memOpnd.GetAddrMode() == AArch64MemOperand::kAddrModeBOi &&
               (memOpnd.IsPostIndexed() || memOpnd.IsPreIndexed()) &&
               base->GetRegisterNumber() == regNO) {
-            defInsnSet.insert(insn);
+            (void)defInsnSet.insert(insn);
           }
         }
       } else if ((opnd.IsConditionCode() || opnd.IsRegister()) &&
                  (static_cast<RegOperand&>(opnd).GetRegisterNumber() == regNO)) {
-        defInsnSet.insert(insn);
+        (void)defInsnSet.insert(insn);
       }
     }
   }
@@ -361,7 +361,7 @@ void AArch64ReachingDefinition::FindMemDefInBB(uint32 offset, BB &bb, InsnSet &d
 
     if (insn->IsCall()) {
       if (CallInsnClearDesignateStackRef(*insn, offset)) {
-        defInsnSet.insert(insn);
+        (void)defInsnSet.insert(insn);
       }
       continue;
     }
@@ -385,11 +385,11 @@ void AArch64ReachingDefinition::FindMemDefInBB(uint32 offset, BB &bb, InsnSet &d
         ASSERT(memOpnd.GetOffsetImmediate() != nullptr, "offset must be a immediate value");
         int64 memOffset = memOpnd.GetOffsetImmediate()->GetOffsetValue();
         if (offset == memOffset) {
-          defInsnSet.insert(insn);
+          (void)defInsnSet.insert(insn);
           break;
         }
         if (insn->IsStorePair() && offset == memOffset + GetEachMemSizeOfPair(insn->GetMachineOpcode())) {
-          defInsnSet.insert(insn);
+          (void)defInsnSet.insert(insn);
           break;
         }
       }
@@ -557,7 +557,7 @@ bool AArch64ReachingDefinition::FindRegUseBetweenInsn(uint32 regNO, Insn *startI
           RegOperand *regOpnd = static_cast<RegOperand*>(listElem);
           ASSERT(regOpnd != nullptr, "parameter operand must be RegOperand");
           if (regNO == regOpnd->GetRegisterNumber()) {
-            regUseInsnSet.insert(insn);
+            (void)regUseInsnSet.insert(insn);
           }
         }
         continue;
@@ -589,16 +589,16 @@ bool AArch64ReachingDefinition::FindRegUseBetweenInsn(uint32 regNO, Insn *startI
         RegOperand *index = memOpnd.GetIndexRegister();
         if ((base != nullptr && base->GetRegisterNumber() == regNO) ||
             (index != nullptr && index->GetRegisterNumber() == regNO)) {
-          regUseInsnSet.insert(insn);
+          (void)regUseInsnSet.insert(insn);
         }
       } else if (opnd.IsConditionCode()) {
         Operand &rflagOpnd = cgFunc->GetOrCreateRflag();
         RegOperand &rflagReg = static_cast<RegOperand&>(rflagOpnd);
         if (rflagReg.GetRegisterNumber() == regNO) {
-          regUseInsnSet.insert(insn);
+          (void)regUseInsnSet.insert(insn);
         }
       } else if (opnd.IsRegister() && (static_cast<RegOperand&>(opnd).GetRegisterNumber() == regNO)) {
-        regUseInsnSet.insert(insn);
+        (void)regUseInsnSet.insert(insn);
       }
     }
 
@@ -671,9 +671,9 @@ bool AArch64ReachingDefinition::FindMemUseBetweenInsn(uint32 offset, Insn *start
       }
 
       if (offset == memOffset) {
-        memUseInsnSet.insert(insn);
+        (void)memUseInsnSet.insert(insn);
       } else if (insn->IsLoadPair() && offset == memOffset + GetEachMemSizeOfPair(insn->GetMachineOpcode())) {
-        memUseInsnSet.insert(insn);
+        (void)memUseInsnSet.insert(insn);
       }
     }
 

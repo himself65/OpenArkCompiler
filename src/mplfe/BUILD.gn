@@ -15,8 +15,8 @@
 configs = [ "${MAPLEALL_ROOT}:mapleallcompilecfg" ]
 
 include_directories = [
-  "${MAPLEALL_ROOT}/mplfe/common/include",
-  "${MAPLEALL_ROOT}/mplfe/jbc_input/include",
+  "${MPLFE_ROOT}/common/include",
+  "${MPLFE_ROOT}/jbc_input/include",
   "${MAPLEALL_ROOT}/maple_ir/include",
   "${MAPLEALL_ROOT}/maple_ipa/include",
   "${MAPLEALL_ROOT}/maple_util/include",
@@ -30,56 +30,56 @@ include_directories = [
 
 static_library("lib_mplfe_util") {
   sources = [
-    "${MAPLEALL_ROOT}/mplfe/common/src/base64.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/basic_io.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/fe_config_parallel.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/fe_file_ops.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/fe_file_type.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/fe_function.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/fe_function_phase_result.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/fe_input_helper.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/fe_manager.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/fe_options.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/fe_java_string_manager.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/fe_timer_ns.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/fe_type_hierarchy.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/fe_type_manager.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/fe_struct_elem_info.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/fe_utils.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/fe_utils_java.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/feir_builder.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/feir_dfg.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/feir_stmt.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/feir_type.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/feir_type_helper.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/feir_type_infer.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/feir_var.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/feir_var_name.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/feir_var_reg.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/feir_var_type_scatter.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/general_bb.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/general_cfg.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/general_stmt.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/mplfe_compiler.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/mplfe_compiler_component.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/mplfe_env.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/mplfe_options.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/simple_xml.cpp",
-    "${MAPLEALL_ROOT}/mplfe/common/src/simple_zip.cpp",
+    "${MPLFE_ROOT}/common/src/base64.cpp",
+    "${MPLFE_ROOT}/common/src/basic_io.cpp",
+    "${MPLFE_ROOT}/common/src/fe_config_parallel.cpp",
+    "${MPLFE_ROOT}/common/src/fe_file_ops.cpp",
+    "${MPLFE_ROOT}/common/src/fe_file_type.cpp",
+    "${MPLFE_ROOT}/common/src/fe_function.cpp",
+    "${MPLFE_ROOT}/common/src/fe_function_phase_result.cpp",
+    "${MPLFE_ROOT}/common/src/fe_input_helper.cpp",
+    "${MPLFE_ROOT}/common/src/fe_manager.cpp",
+    "${MPLFE_ROOT}/common/src/fe_options.cpp",
+    "${MPLFE_ROOT}/common/src/fe_java_string_manager.cpp",
+    "${MPLFE_ROOT}/common/src/fe_timer_ns.cpp",
+    "${MPLFE_ROOT}/common/src/fe_type_hierarchy.cpp",
+    "${MPLFE_ROOT}/common/src/fe_type_manager.cpp",
+    "${MPLFE_ROOT}/common/src/fe_struct_elem_info.cpp",
+    "${MPLFE_ROOT}/common/src/fe_utils.cpp",
+    "${MPLFE_ROOT}/common/src/fe_utils_java.cpp",
+    "${MPLFE_ROOT}/common/src/feir_builder.cpp",
+    "${MPLFE_ROOT}/common/src/feir_dfg.cpp",
+    "${MPLFE_ROOT}/common/src/feir_stmt.cpp",
+    "${MPLFE_ROOT}/common/src/feir_type.cpp",
+    "${MPLFE_ROOT}/common/src/feir_type_helper.cpp",
+    "${MPLFE_ROOT}/common/src/feir_type_infer.cpp",
+    "${MPLFE_ROOT}/common/src/feir_var.cpp",
+    "${MPLFE_ROOT}/common/src/feir_var_name.cpp",
+    "${MPLFE_ROOT}/common/src/feir_var_reg.cpp",
+    "${MPLFE_ROOT}/common/src/feir_var_type_scatter.cpp",
+    "${MPLFE_ROOT}/common/src/general_bb.cpp",
+    "${MPLFE_ROOT}/common/src/general_cfg.cpp",
+    "${MPLFE_ROOT}/common/src/general_stmt.cpp",
+    "${MPLFE_ROOT}/common/src/mplfe_compiler.cpp",
+    "${MPLFE_ROOT}/common/src/mplfe_compiler_component.cpp",
+    "${MPLFE_ROOT}/common/src/mplfe_env.cpp",
+    "${MPLFE_ROOT}/common/src/mplfe_options.cpp",
+    "${MPLFE_ROOT}/common/src/simple_xml.cpp",
+    "${MPLFE_ROOT}/common/src/simple_zip.cpp",
   ]
   include_dirs = include_directories
 }
 
 static_library("lib_mplfe_input") {
   sources = [
-    "${MAPLEALL_ROOT}/mplfe/common/src/fe_input_helper.cpp",
+    "${MPLFE_ROOT}/common/src/fe_input_helper.cpp",
   ]
   include_dirs = include_directories
 }
 
 executable("mplfe") {
   sources = [
-    "${MAPLEALL_ROOT}/mplfe/common/src/mplfe.cpp",
+    "${MPLFE_ROOT}/common/src/mplfe.cpp",
   ]
   include_dirs = include_directories
   deps = [
@@ -99,8 +99,8 @@ executable("mplfe") {
 }
 
 include_jbc_input_directories = [
-  "${MAPLEALL_ROOT}/mplfe/common/include",
-  "${MAPLEALL_ROOT}/mplfe/jbc_input/include",
+  "${MPLFE_ROOT}/common/include",
+  "${MPLFE_ROOT}/jbc_input/include",
   "${MAPLEALL_ROOT}/maple_ir/include",
   "${MAPLEALL_ROOT}/maple_util/include",
   "${MAPLEALL_ROOT}/maple_driver/include",
@@ -110,23 +110,23 @@ include_jbc_input_directories = [
 
 static_library("lib_mplfe_jbc_input") {
   sources = [
-    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_attr.cpp",
-    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_attr_item.cpp",
-    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_bb.cpp",
-    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_class.cpp",
-    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_class2fe_helper.cpp",
-    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_class_const.cpp",
-    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_class_const_pool.cpp",
-    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_compiler_component.cpp",
-    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_function.cpp",
-    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_function_context.cpp",
-    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_input.cpp",
-    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_opcode.cpp",
-    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_opcode_helper.cpp",
-    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_stack2fe_helper.cpp",
-    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_stack_helper.cpp",
-    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_stmt.cpp",
-    "${MAPLEALL_ROOT}/mplfe/jbc_input/src/jbc_util.cpp",
+    "${MPLFE_ROOT}/jbc_input/src/jbc_attr.cpp",
+    "${MPLFE_ROOT}/jbc_input/src/jbc_attr_item.cpp",
+    "${MPLFE_ROOT}/jbc_input/src/jbc_bb.cpp",
+    "${MPLFE_ROOT}/jbc_input/src/jbc_class.cpp",
+    "${MPLFE_ROOT}/jbc_input/src/jbc_class2fe_helper.cpp",
+    "${MPLFE_ROOT}/jbc_input/src/jbc_class_const.cpp",
+    "${MPLFE_ROOT}/jbc_input/src/jbc_class_const_pool.cpp",
+    "${MPLFE_ROOT}/jbc_input/src/jbc_compiler_component.cpp",
+    "${MPLFE_ROOT}/jbc_input/src/jbc_function.cpp",
+    "${MPLFE_ROOT}/jbc_input/src/jbc_function_context.cpp",
+    "${MPLFE_ROOT}/jbc_input/src/jbc_input.cpp",
+    "${MPLFE_ROOT}/jbc_input/src/jbc_opcode.cpp",
+    "${MPLFE_ROOT}/jbc_input/src/jbc_opcode_helper.cpp",
+    "${MPLFE_ROOT}/jbc_input/src/jbc_stack2fe_helper.cpp",
+    "${MPLFE_ROOT}/jbc_input/src/jbc_stack_helper.cpp",
+    "${MPLFE_ROOT}/jbc_input/src/jbc_stmt.cpp",
+    "${MPLFE_ROOT}/jbc_input/src/jbc_util.cpp",
   ]
   include_dirs = include_jbc_input_directories
 }

@@ -143,7 +143,7 @@ class SafeExe {
         ++iter;
       }
     }
-    tmpArgs.insert(tmpArgs.begin(), cmd);
+    (void)tmpArgs.insert(tmpArgs.begin(), cmd);
     return tmpArgs;
   }
 };

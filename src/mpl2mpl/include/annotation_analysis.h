@@ -209,7 +209,7 @@ class AnnotationParser {
  public:
   explicit AnnotationParser(std::string &s) : signature(s), curIndex(0) {}
   ~AnnotationParser() = default;
-  ATokenKind GetNextToken(char *endC = nullptr);
+  ATokenKind GetNextToken(const char *endC = nullptr);
   GenericDeclare *GetOrCreateDeclare(GStrIdx gStrIdx, MemPool &mp, bool check = false, MIRStructType *sType = nullptr);
   AnnotationType *GetOrCreateArrayType(AnnotationType *containsType, MemPool &pragmaMemPool);
   void BackOne() {
@@ -234,7 +234,7 @@ class AnnotationParser {
 
  private:
   std::string &signature;
-  int curIndex;
+  size_t curIndex;
   std::map<GStrIdx, GenericDeclare*> created;
   std::map<AnnotationType*, ExtendGeneric*> createdArrayType;
   std::string curStrToken;
@@ -260,9 +260,9 @@ class AnnotationAnalysis : public AnalysisResult {
   void Run();
  private:
   void AnalysisAnnotation();
-  void AnalysisAnnotationForClass(MIRPragma &classPragma);
+  void AnalysisAnnotationForClass(const MIRPragma &classPragma);
   void AnalysisAnnotationForVar(const MIRPragma &varPragma, MIRStructType &structType);
-  void AnalysisAnnotationForFunc(MIRPragma &funcPragma, MIRStructType &structType);
+  void AnalysisAnnotationForFunc(const MIRPragma &funcPragma, MIRStructType &structType);
   AnnotationType *ReadInGenericType(AnnotationParser &aParser, MIRStructType *sType);
   GenericDeclare *ReadInGenericDeclare(AnnotationParser &aParser, MIRStructType *mirStructType = nullptr);
   std::string ReadInAllSubString(const MIRPragma &classPragma);

@@ -69,8 +69,8 @@ void AnnotationType::Dump() {
 
 void GenericType::ReWriteType(std::string &subClass) {
   std::string className = mirStructType->GetName();
-  int ClassMethodSplitterStrSize = strlen(namemangler::kClassMethodSplitterStr);
-  className.replace(className.size() - ClassMethodSplitterStrSize, ClassMethodSplitterStrSize, subClass);
+  size_t ClassMethodSplitterStrSize = strlen(namemangler::kClassMethodSplitterStr);
+  (void)className.replace(className.size() - ClassMethodSplitterStrSize, ClassMethodSplitterStrSize, subClass);
   mirStructType = GetClassTypeFromName(className);
   typeName = GlobalTables::GetStrTable().GetStrIdxFromName(className);
   GenericArg.clear();
@@ -96,7 +96,7 @@ GenericDeclare *AnnotationParser::GetOrCreateDeclare(GStrIdx gStrIdx, MemPool &m
   return gd;
 }
 
-ATokenKind AnnotationParser::GetNextToken(char *endC) {
+ATokenKind AnnotationParser::GetNextToken(const char *endC) {
   if (curIndex == signature.size()) {
     ++curIndex;
     return kEnd;
@@ -147,8 +147,8 @@ ATokenKind AnnotationParser::GetNextToken(char *endC) {
   size_t endPos = signature.find_first_of(endC, curIndex);
   CHECK_FATAL(endPos != std::string::npos, "must be");
   curStrToken = signature.substr(curIndex, endPos - curIndex);
-  curIndex = endPos + 1;
-  if (*endC == ':' && signature[endPos + 1] == ':') {
+  curIndex = endPos + 1u;
+  if (*endC == ':' && signature[curIndex] == ':') {
     ++curIndex;
   }
   return kString;
@@ -164,7 +164,7 @@ std::string AnnotationParser::GetNextClassName(bool forSubClass) {
   curStrToken += ";";
   curIndex = pos;
   if (forSubClass) {
-    for (int i = 0; i < curStrToken.size(); ++i) {
+    for (size_t i = 0; i < curStrToken.size(); ++i) {
       if (curStrToken[i] == '.') {
         curStrToken[i] = '$';
       }
@@ -222,20 +222,20 @@ void AnnotationAnalysis::ByPassFollowingInfo(AnnotationParser &aParser, MIRStruc
     t = aParser.GetNextToken();
     while (t != kTemplateEnd) {
       aParser.BackOne();
-      ReadInGenericType(aParser, sType);
+      (void)ReadInGenericType(aParser, sType);
       t = aParser.GetNextToken();
     }
     CHECK_FATAL(t == kTemplateEnd, "must be");
     t = aParser.GetNextToken();
   }
   while (t == kSubClass) {
-    std::string subClassName = aParser.GetNextClassName(true);
+    (void)aParser.GetNextClassName(true);
     t = aParser.GetNextToken();
     if (t == kTemplateStart) {
       t = aParser.GetNextToken();
       while (t != kTemplateEnd) {
         aParser.BackOne();
-        ReadInGenericType(aParser, sType);
+        (void)ReadInGenericType(aParser, sType);
         t = aParser.GetNextToken();
       }
       CHECK_FATAL(t == kTemplateEnd, "must be");
@@ -272,14 +272,14 @@ AnnotationType *AnnotationAnalysis::ReadInGenericType(AnnotationParser &aParser,
       ATokenKind t = aParser.GetNextToken();
       if (t == kTemplateStart) {
         AAForClassInfo(*mirStruct);
-        for (int i = 0; i < gdVector.size(); ++i) {
+        for (size_t i = 0; i < gdVector.size(); ++i) {
           AnnotationType *tmp = ReadInGenericType(aParser, sType);
           gt->AddGenericPair(gdVector[i], tmp);
         }
         t = aParser.GetNextToken();
         while (t != kTemplateEnd) {
           aParser.BackOne();
-          ReadInGenericType(aParser, sType);
+          (void)ReadInGenericType(aParser, sType);
           t = aParser.GetNextToken();
         }
         CHECK_FATAL(t == kTemplateEnd, "must be");
@@ -292,14 +292,14 @@ AnnotationType *AnnotationAnalysis::ReadInGenericType(AnnotationParser &aParser,
         if (t == kTemplateStart) {
           AAForClassInfo(*gt->GetMIRStructType());
           std::vector<GenericDeclare*>& gdTmpVector = gt->GetMIRStructType()->GetGenericDeclare();
-          for (int i = 0; i < gdTmpVector.size(); ++i) {
+          for (size_t i = 0; i < gdTmpVector.size(); ++i) {
             AnnotationType *tmp = ReadInGenericType(aParser, sType);
             gt->AddGenericPair(gdTmpVector[i], tmp);
           }
           t = aParser.GetNextToken();
           while (t != kTemplateEnd) {
             aParser.BackOne();
-            ReadInGenericType(aParser, sType);
+            (void)ReadInGenericType(aParser, sType);
             t = aParser.GetNextToken();
           }
           CHECK_FATAL(t == kTemplateEnd, "must be");
@@ -311,7 +311,7 @@ AnnotationType *AnnotationAnalysis::ReadInGenericType(AnnotationParser &aParser,
       break;
     }
     case kTemplateName: {
-      aParser.GetNextToken(&annoSemiColon);
+      (void)aParser.GetNextToken(&annoSemiColon);
       GStrIdx s = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(aParser.GetCurStrToken());
       retType = aParser.GetOrCreateDeclare(s, *pragmaMemPool, true, sType);
       if (retType == nullptr) {
@@ -345,7 +345,7 @@ AnnotationType *AnnotationAnalysis::ReadInGenericType(AnnotationParser &aParser,
 }
 
 GenericDeclare *AnnotationAnalysis::ReadInGenericDeclare(AnnotationParser &aParser, MIRStructType *mirStructType) {
-  aParser.GetNextToken(&annoDeclare);
+  (void)aParser.GetNextToken(&annoDeclare);
   GenericDeclare *gDeclare = nullptr;
   if (aParser.GetCurStrToken() != "") {
     GStrIdx gStrIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(aParser.GetCurStrToken());
@@ -367,7 +367,7 @@ std::string AnnotationAnalysis::ReadInAllSubString(const MIRPragma &classPragma)
     CHECK_FATAL(pragmaElement->GetType() == kValueArray, "must be");
     for (MIRPragmaElement *subPragmaEle : pragmaElement->GetSubElemVec()) {
       CHECK_FATAL(subPragmaEle->GetType() == kValueString, "must be");
-      gStrIdx.reset(subPragmaEle->GetU64Val());
+      gStrIdx.reset(static_cast<uint32>(subPragmaEle->GetU64Val()));
       const std::string &str = GlobalTables::GetStrTable().GetStringFromStrIdx(gStrIdx);
       signature += str;
     }
@@ -414,10 +414,10 @@ void AnnotationAnalysis::AnalysisAnnotationForFuncLocalVar(MIRFunction &func, An
   }
 }
 
-void AnnotationAnalysis::AnalysisAnnotationForFunc(MIRPragma &funcPragma, MIRStructType &structType) {
+void AnnotationAnalysis::AnalysisAnnotationForFunc(const MIRPragma &funcPragma, MIRStructType &structType) {
   MIRSymbol *funcSymbol = GlobalTables::GetGsymTable().GetSymbolFromStrIdx(funcPragma.GetStrIdx());
   MIRFunction *func = funcSymbol->GetFunction();
-  analysisedFunc.insert(func);
+  (void)analysisedFunc.insert(func);
   CHECK_FATAL(func->GetFuncGenericDeclare().size() == 0, "must be");
   CHECK_FATAL(func->GetFuncGenericArg().size() == 0, "must be");
   std::string signature = ReadInAllSubString(funcPragma);
@@ -427,7 +427,7 @@ void AnnotationAnalysis::AnalysisAnnotationForFunc(MIRPragma &funcPragma, MIRStr
     aParser.InitFuncGenericDeclare(*pragmaMemPool, *func);
     while (aParser.GetNextToken() != kTemplateEnd) {
       aParser.BackOne();
-      ReadInGenericDeclare(aParser, &structType);
+      (void)ReadInGenericDeclare(aParser, &structType);
     }
     tk = aParser.GetNextToken();
   }
@@ -454,7 +454,7 @@ void AnnotationAnalysis::AnalysisAnnotationForVar(const MIRPragma &varPragma, MI
   structType.AddFieldGenericDeclare(varPragma.GetStrIdx(), at);
 }
 
-void AnnotationAnalysis::AnalysisAnnotationForClass(MIRPragma &classPragma) {
+void AnnotationAnalysis::AnalysisAnnotationForClass(const MIRPragma &classPragma) {
   TyIdx classTyIdx = GlobalTables::GetTypeNameTable().GetTyIdxFromGStrIdx(classPragma.GetStrIdx());
   MIRType &classType = GetTypeFromTyIdx(classTyIdx);
   CHECK_FATAL(classType.GetKind() == kTypeClass || classType.GetKind() == kTypeInterface, "must be");
@@ -467,7 +467,7 @@ void AnnotationAnalysis::AnalysisAnnotationForClass(MIRPragma &classPragma) {
   aParser.InitClassGenericDeclare(*pragmaMemPool, static_cast<MIRStructType&>(classType));
   while (aParser.GetNextToken() != kTemplateEnd) {
     aParser.BackOne();
-    ReadInGenericDeclare(aParser);
+    (void)ReadInGenericDeclare(aParser);
   }
   while (aParser.GetNextToken() != kEnd) {
     aParser.BackOne();
@@ -484,7 +484,7 @@ void AnnotationAnalysis::AAForClassInfo(MIRStructType &structType) {
   if (analysised.find(&structType) != analysised.end() || structType.IsIncomplete()) {
     return;
   }
-  analysised.insert(&structType);
+  (void)analysised.insert(&structType);
   std::vector<MIRPragma*> &pragmaVec = structType.GetPragmaVec();
   for (MIRPragma *pragma : pragmaVec) {
     MIRType *pragmaType = GlobalTables::GetTypeTable().GetTypeFromTyIdx(pragma->GetTyIdx());

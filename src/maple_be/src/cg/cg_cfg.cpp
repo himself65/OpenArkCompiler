@@ -278,20 +278,20 @@ void CGCFG::FindAndMarkUnreachable(CGFunc &func) {
   while (!toBeAnalyzedBBs.empty()) {
     bb = toBeAnalyzedBBs.top();
     toBeAnalyzedBBs.pop();
-    instackBBs.insert(bb);
+    (void)instackBBs.insert(bb);
 
     bb->SetUnreachable(false);
 
     for (BB *succBB : bb->GetSuccs()) {
       if (instackBBs.count(succBB) == 0) {
         toBeAnalyzedBBs.push(succBB);
-        instackBBs.insert(succBB);
+        (void)instackBBs.insert(succBB);
       }
     }
     for (BB *succBB : bb->GetEhSuccs()) {
       if (instackBBs.count(succBB) == 0) {
         toBeAnalyzedBBs.push(succBB);
-        instackBBs.insert(succBB);
+        (void)instackBBs.insert(succBB);
       }
     }
   }
@@ -317,7 +317,7 @@ void CGCFG::FlushUnReachableStatusAndRemoveRelations(BB &bb, const CGFunc &func)
   BB *it = nullptr;
   while (!toBeAnalyzedBBs.empty()) {
     it = toBeAnalyzedBBs.top();
-    instackBBs.insert(it->GetId());
+    (void)instackBBs.insert(it->GetId());
     toBeAnalyzedBBs.pop();
     /* Check if bb is the first or the last BB of the function */
     isFirstBBInfunc = (it == func.GetFirstBB());
@@ -337,7 +337,7 @@ void CGCFG::FlushUnReachableStatusAndRemoveRelations(BB &bb, const CGFunc &func)
     for (BB *succ : it->GetSuccs()) {
       if (instackBBs.count(succ->GetId()) == 0) {
         toBeAnalyzedBBs.push(succ);
-        instackBBs.insert(succ->GetId());
+        (void)instackBBs.insert(succ->GetId());
       }
       succ->RemovePreds(*it);
       succ->RemoveEhPreds(*it);
@@ -346,7 +346,7 @@ void CGCFG::FlushUnReachableStatusAndRemoveRelations(BB &bb, const CGFunc &func)
     for (BB *succ : it->GetEhSuccs()) {
       if (instackBBs.count(succ->GetId()) == 0) {
         toBeAnalyzedBBs.push(succ);
-        instackBBs.insert(succ->GetId());
+        (void)instackBBs.insert(succ->GetId());
       }
       succ->RemoveEhPreds(*it);
       succ->RemovePreds(*it);
@@ -513,7 +513,7 @@ void CGCFG::UnreachCodeAnalysis() {
         bb == cgFunc->GetFirstBB() || bb == cgFunc->GetLastBB() || bb->GetKind() == BB::kBBReturn) {
       toBeAnalyzedBBs.push_front(bb);
     } else {
-      unreachBBs.insert(bb);
+      (void)unreachBBs.insert(bb);
     }
     bb->SetUnreachable(true);
     bb = bb->GetNext();

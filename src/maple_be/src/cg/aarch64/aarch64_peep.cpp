@@ -2462,11 +2462,13 @@ void ComputationTreeAArch64::Run(BB &bb, Insn &insn) {
     if (lsl.GetShiftAmount() == lslShiftAmountCaseA) {
       sxtw = &aarch64CGFunc->CreateExtendShiftOperand(ExtendShiftOperand::kSXTW,
                                                       lslShiftAmountCaseA + 1, lslBitLenth);
-      imm = &aarch64CGFunc->CreateImmOperand(oriAddEnd + (1ULL << lslShiftAmountCaseA), kMaxImmVal12Bits, true);
+      imm = &aarch64CGFunc->CreateImmOperand(oriAddEnd + static_cast<int64>(1ULL << lslShiftAmountCaseA),
+                                             kMaxImmVal12Bits, true);
     } else if (lsl.GetShiftAmount() == lslShiftAmountCaseB) {
       sxtw = &aarch64CGFunc->CreateExtendShiftOperand(ExtendShiftOperand::kSXTW,
                                                       lslShiftAmountCaseB + 1, lslBitLenth);
-      imm = &aarch64CGFunc->CreateImmOperand(oriAddEnd + (1ULL << lslShiftAmountCaseB), kMaxImmVal12Bits, true);
+      imm = &aarch64CGFunc->CreateImmOperand(oriAddEnd + static_cast<int64>(1ULL << lslShiftAmountCaseB),
+                                             kMaxImmVal12Bits, true);
     }
     Insn &newInsn = cgFunc.GetCG()->BuildInstruction<AArch64Insn>(MOP_xxwaddrrre,
                                                                   sxtwInsn->GetOperand(kInsnFirstOpnd),

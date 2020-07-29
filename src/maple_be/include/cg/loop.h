@@ -64,13 +64,13 @@ class LoopHierarchy {
     return loopMembers.erase(it);
   }
   void InsertLoopMembers(BB &bb) {
-    loopMembers.insert(&bb);
+    (void)loopMembers.insert(&bb);
   }
   void InsertBackedge(BB &bb) {
-    backedge.insert(&bb);
+    (void)backedge.insert(&bb);
   }
   void InsertInnerLoops(LoopHierarchy &loop) {
-    innerLoops.insert(&loop);
+    (void)innerLoops.insert(&loop);
   }
   void SetHeader(BB &bb) {
     header = &bb;

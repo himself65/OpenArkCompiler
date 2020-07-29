@@ -356,7 +356,7 @@ ConstvalNode *ConstantFold::FoldIntConstBinary(Opcode opcode, PrimType resultTyp
       if (useResult64) {
         result64 = intValueOfConst0 + intValueOfConst1;
       } else {
-        result32 = static_cast<int32>(intValueOfConst0) + static_cast<int32>(intValueOfConst1);
+        result32 = static_cast<uint32>(static_cast<int32>(intValueOfConst0) + static_cast<int32>(intValueOfConst1));
       }
       break;
     }
@@ -370,7 +370,7 @@ ConstvalNode *ConstantFold::FoldIntConstBinary(Opcode opcode, PrimType resultTyp
     }
     case OP_mul: {
       if (useResult64) {
-        result64 = intValueOfConst0 * intValueOfConst1;
+        result64 = static_cast<uint64>(intValueOfConst0 * intValueOfConst1);
       } else {
         result32 = static_cast<uint32>(static_cast<int32>(intValueOfConst0) * static_cast<int32>(intValueOfConst1));
       }
@@ -531,7 +531,7 @@ ConstvalNode *ConstantFold::FoldIntConstBinary(Opcode opcode, PrimType resultTyp
     constValue = GlobalTables::GetIntConstTable().GetOrCreateIntConst(0, type);
     constValue->SetValue(kJsTypeNumberInHigh32Bit | (static_cast<uint64>(result32)));
   } else if (useResult64) {
-    constValue = GlobalTables::GetIntConstTable().GetOrCreateIntConst(result64, type);
+    constValue = GlobalTables::GetIntConstTable().GetOrCreateIntConst(static_cast<int64>(result64), type);
   } else {
     constValue = GlobalTables::GetIntConstTable().GetOrCreateIntConst(result32, type);
   }
@@ -875,7 +875,7 @@ ConstvalNode *ConstantFold::FoldIntConstUnary(Opcode opcode, PrimType resultType
     constValue = GlobalTables::GetIntConstTable().GetOrCreateIntConst(0, type);
     constValue->SetValue(kJsTypeNumberInHigh32Bit | (static_cast<uint64>(result32)));
   } else if (useResult64) {
-    constValue = GlobalTables::GetIntConstTable().GetOrCreateIntConst(result64, type);
+    constValue = GlobalTables::GetIntConstTable().GetOrCreateIntConst(static_cast<int64>(result64), type);
   } else {
     constValue = GlobalTables::GetIntConstTable().GetOrCreateIntConst(result32, type);
   }
@@ -1252,7 +1252,7 @@ MIRConst *ConstantFold::FoldSignExtendMIRConst(Opcode opcode, PrimType resultTyp
     result64 = ((static_cast<uint64>(constVal->GetValue())) << (64u - size)) >> (64u - size);
   }
   MIRType &type = *GlobalTables::GetTypeTable().GetPrimType(resultType);
-  MIRIntConst *constValue = GlobalTables::GetIntConstTable().GetOrCreateIntConst(result64, type);
+  MIRIntConst *constValue = GlobalTables::GetIntConstTable().GetOrCreateIntConst(static_cast<int64>(result64), type);
   return constValue;
 }
 

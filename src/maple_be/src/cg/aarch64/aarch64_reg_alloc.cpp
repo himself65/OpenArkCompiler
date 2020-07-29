@@ -35,7 +35,7 @@ Operand *AArch64RegAllocator::HandleRegOpnd(Operand &opnd) {
   }
   if (!regOpnd.IsVirtualRegister()) {
     availRegSet[regOpnd.GetRegisterNumber()] = false;
-    liveReg.insert(regOpnd.GetRegisterNumber());
+    (void)liveReg.insert(regOpnd.GetRegisterNumber());
     return static_cast<AArch64RegOperand*>(&regOpnd);
   }
   auto regMapIt = regMap.find(regOpnd.GetRegisterNumber());
@@ -44,12 +44,12 @@ Operand *AArch64RegAllocator::HandleRegOpnd(Operand &opnd) {
     ASSERT(AArch64isa::IsPhysicalRegister(regMapIt->second), "must be a physical register");
     AArch64reg newRegNO = regMapIt->second;
     availRegSet[newRegNO] = false;  /* make sure the real register can not be allocated and live */
-    liveReg.insert(newRegNO);
-    allocatedSet.insert(&opnd);
+    (void)liveReg.insert(newRegNO);
+    (void)allocatedSet.insert(&opnd);
     return &a64CGFunc->GetOrCreatePhysicalRegisterOperand(newRegNO, regOpnd.GetSize(), regOpnd.GetRegisterType());
   }
   if (AllocatePhysicalRegister(regOpnd)) {
-    allocatedSet.insert(&opnd);
+    (void)allocatedSet.insert(&opnd);
     auto regMapItSecond = regMap.find(regOpnd.GetRegisterNumber());
     ASSERT(regMapItSecond != regMap.end(), " ERROR: can not find register number in regmap ");
     return &a64CGFunc->GetOrCreatePhysicalRegisterOperand(regMapItSecond->second, regOpnd.GetSize(),
@@ -95,7 +95,7 @@ Operand *AArch64RegAllocator::HandleMemOpnd(Operand &opnd) {
       ASSERT(false, "ERROR: should not run here");
       break;
   }
-  allocatedSet.insert(&opnd);
+  (void)allocatedSet.insert(&opnd);
   return memOpnd;
 }
 
@@ -148,7 +148,7 @@ Operand *AArch64RegAllocator::AllocDestOpnd(Operand &opnd, const Insn &insn) {
                                                             regOpnd.GetRegisterType());
     }
   }
-  allocatedSet.insert(&opnd);
+  (void)allocatedSet.insert(&opnd);
   return &a64CGFunc->GetOrCreatePhysicalRegisterOperand(regMapIt->second, regOpnd.GetSize(), regOpnd.GetRegisterType());
 }
 
@@ -199,7 +199,7 @@ void AArch64RegAllocator::AllocHandleCallee(Insn &insn, const AArch64MD &md) {
       ASSERT(!regOpnd->IsVirtualRegister(), "not be a virtual register");
       auto physicalReg = static_cast<AArch64reg>(regOpnd->GetRegisterNumber());
       availRegSet[physicalReg] = false;
-      liveReg.insert(physicalReg);
+      (void)liveReg.insert(physicalReg);
       srcOpndsNew->PushOpnd(
           a64CGFunc->GetOrCreatePhysicalRegisterOperand(physicalReg, regOpnd->GetSize(), regOpnd->GetRegisterType()));
     }
@@ -329,7 +329,7 @@ bool AArch64RegAllocator::AllocatePhysicalRegister(RegOperand &opnd) {
 
     regMap[opnd.GetRegisterNumber()] = AArch64reg(reg);
     availRegSet[reg] = false;
-    liveReg.insert(reg);  /* this register is live now */
+    (void)liveReg.insert(reg);  /* this register is live now */
     return true;
   }
   return false;
@@ -586,7 +586,7 @@ bool DefaultO0RegAllocator::AllocateRegisters() {
           auto &regOpnd = static_cast<RegOperand&>(opnd);
           AArch64reg reg = regMap[regOpnd.GetRegisterNumber()];
           availRegSet[reg] = false;
-          liveReg.insert(reg);  /* this register is live now */
+          (void)liveReg.insert(reg);  /* this register is live now */
           insn->SetOperand(i, a64CGFunc->GetOrCreatePhysicalRegisterOperand(reg, regOpnd.GetSize(),
                                                                             regOpnd.GetRegisterType()));
         } else {

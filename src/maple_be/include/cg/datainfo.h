@@ -140,7 +140,7 @@ class DataInfo {
     auto infoSize = static_cast<const int32>(info.size());
     for (int32 i = 0; i < infoSize; i++) {
       if (info[i] != 0ULL) {
-        index.insert(i);
+        (void)index.insert(i);
       }
     }
   }
@@ -162,7 +162,7 @@ class DataInfo {
         if (index == k64BitSize) {
           /* when the highest bit is 1, the shift operation will cause error, need special treatment. */
           result = i * kWordSize + (index - 1);
-          wordRes.insert(result);
+          (void)wordRes.insert(result);
           break;
         }
         if (firstTime) {
@@ -174,7 +174,7 @@ class DataInfo {
           baseWord = 0;
         }
         result += baseWord + offset;
-        wordRes.insert(result);
+        (void)wordRes.insert(result);
         word = word >> static_cast<uint64>(index);
       }
     }

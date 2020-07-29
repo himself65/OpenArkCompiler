@@ -94,6 +94,30 @@ class MIRSymbol {
     return isImported;
   }
 
+  void SetWPOFakeParm() {
+    wpoFakeParam = true;
+  }
+
+  bool IsWpoFakeParm() const {
+    return wpoFakeParam;
+  }
+
+  bool IsWpoFakeRet() const {
+    return wpoFakeRet;
+  }
+
+  void SetWPOFakeRet() {
+    wpoFakeRet = true;
+  }
+
+  void SetIsTmpUnused(bool used) {
+    isTmpUnused = used;
+  }
+
+  bool IsTmpUnused() const {
+    return isTmpUnused;
+  }
+
   void SetTyIdx(TyIdx tyIdx) {
     this->tyIdx = tyIdx;
   }
@@ -282,6 +306,10 @@ class MIRSymbol {
     value.preg = preg;
   }
 
+  bool CanBeIgnored() const {
+    return isDeleted;
+  }
+
   void SetLocalRefVar() {
     SetAttr(ATTR_localrefvar);
   }
@@ -375,9 +403,12 @@ class MIRSymbol {
   MIRSymKind sKind{ kStInvalid };
   bool isTmp = false;
   bool needForwDecl = false;  // addrof of this symbol used in initialization, NOT serialized
+  bool wpoFakeParam = false;  // fake symbol introduced in wpo phase for a parameter, NOT serialized
+  bool wpoFakeRet = false;    // fake symbol introduced in wpo phase for return value, NOT serialized
   bool isDeleted = false;     // tell if it is deleted, NOT serialized
   bool instrumented = false;  // a local ref pointer instrumented by RC opt, NOT serialized
   bool isImported = false;
+  bool isTmpUnused = false;  // when parse the mplt_inline file, mark all the new symbol as tmpunused
   StIdx stIdx { 0, 0 };
   TypeAttrs typeAttrs;
   GStrIdx nameStrIdx{ 0 };

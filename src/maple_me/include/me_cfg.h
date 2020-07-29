@@ -27,7 +27,7 @@ class MeCFG {
   void BuildMirCFG();
   void FixMirCFG();
   void ConvertPhis2IdentityAssigns(BB &meBB) const;
-  void UnreachCodeAnalysis(bool updatePhi = false);
+  bool UnreachCodeAnalysis(bool updatePhi = false);
   void WontExitAnalysis();
   void Verify() const;
   void VerifyLabels() const;

@@ -556,7 +556,7 @@ bool MIRParser::ParseStmtSwitch(StmtNodePtr &stmt) {
       return false;
     }
     switchNode->InsertCasePair(CasePair(constVal, lbl));
-    casesSet.insert(constVal);
+    (void)casesSet.insert(constVal);
     tk = lexer.GetTokenKind();
   }
   lexer.NextToken();
@@ -616,7 +616,7 @@ bool MIRParser::ParseStmtRangegoto(StmtNodePtr &stmt) {
       maxIdx = constVal;
     }
     rangeGotoNode->AddRangeGoto(static_cast<uint32>(constVal), static_cast<uint32>(lbl));
-    casesSet.insert(constVal);
+    (void)casesSet.insert(constVal);
     tk = lexer.GetTokenKind();
   }
   ASSERT(rangeGotoNode->GetNumOpnds() == 1, "Rangegoto is a UnaryOpnd; numOpnds must be 1");
@@ -1924,7 +1924,7 @@ bool MIRParser::ParseExprConststr16(BaseNodePtr &expr) {
   // so we need to do a UTF8ToUTF16 conversion
   std::string str = lexer.GetName();
   std::u16string str16;
-  namemangler::UTF8ToUTF16(str16, str);
+  (void)namemangler::UTF8ToUTF16(str16, str);
   str16Const->SetStrIdx(GlobalTables::GetU16StrTable().GetOrCreateStrIdxFromName(str16));
   expr = str16Const;
   lexer.NextToken();

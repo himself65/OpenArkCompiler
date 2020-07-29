@@ -298,7 +298,7 @@ class TypeTable {
   }
 
   // Get or Create derived types.
-  MIRType *GetOrCreatePointerType(TyIdx pointedTyIdx, PrimType primType = PTY_ptr,
+  MIRType *GetOrCreatePointerType(const TyIdx &pointedTyIdx, PrimType primType = PTY_ptr,
                                   const std::vector<TypeAttrs> attrs = std::vector<TypeAttrs>());
   MIRType *GetOrCreatePointerType(const MIRType &pointTo, PrimType primType = PTY_ptr,
                                   const std::vector<TypeAttrs> attrs = std::vector<TypeAttrs>());
@@ -625,7 +625,7 @@ class ConstPool {
   }
 
   void InsertConstPool(GStrIdx strIdx, MIRConst *cst) {
-    constMap.insert(std::pair<GStrIdx, MIRConst*>(strIdx, cst));
+    (void)constMap.insert(std::pair<GStrIdx, MIRConst*>(strIdx, cst));
   }
 
   MIRConst *GetConstFromPool(GStrIdx strIdx) {
@@ -633,7 +633,7 @@ class ConstPool {
   }
 
   void PutLiteralNameAsImported(GStrIdx gIdx) {
-    importedLiteralNames.insert(gIdx);
+    (void)importedLiteralNames.insert(gIdx);
   }
 
   bool LookUpLiteralNameFromImported(GStrIdx gIdx) {

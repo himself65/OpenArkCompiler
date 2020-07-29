@@ -78,6 +78,7 @@ bool MPLFECompilerComponent::ProcessFunctionParallelImpl(uint32 nthreads) {
   timer.StartAndDump(ss.str());
   FE_INFO_LEVEL(FEOptions::kDumpLevelInfo, "===== Process %s =====", ss.str().c_str());
   FEFunctionProcessSchedular schedular(ss.str());
+  schedular.Init();
   for (const std::unique_ptr<FEFunction> &function : functions) {
     schedular.AddFunctionProcessTask(function);
   }

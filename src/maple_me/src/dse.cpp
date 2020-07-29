@@ -390,7 +390,7 @@ void DSE::MarkSpecialStmtRequired() {
 // Find all not null expr used as ivar's base、OP_array's or OP_assertnonnull's opnd
 // And save to notNullExpr2Stmt
 void DSE::CollectNotNullNode(StmtNode &stmt, BB &bb) {
-  uint8 opndNum = stmt.NumOpnds();
+  uint8 opndNum = static_cast<uint8>(stmt.NumOpnds());
   uint8 nodeType = kNodeTypeNormal;
   for (uint8 i = 0; i < opndNum; ++i) {
     BaseNode *opnd = stmt.Opnd(i);

@@ -16,6 +16,7 @@
 #include "compiler.h"
 #include "default_options.def"
 #include "mpl_logging.h"
+#include "mpl_timer.h"
 #include "driver_runner.h"
 
 namespace maple {
@@ -109,6 +110,8 @@ ErrorCode MplcgCompiler::Compile(const MplOptions &options, MIRModulePtr &theMod
   bool parsed = false;
   std::unique_ptr<MIRParser> theParser;
   if (theModule == nullptr) {
+    MPLTimer timer;
+    timer.Start();
     theModule = new MIRModule(fileName);
     theModule->SetWithMe(
         std::find(options.GetRunningExes().begin(), options.GetRunningExes().end(),
@@ -126,6 +129,8 @@ ErrorCode MplcgCompiler::Compile(const MplOptions &options, MIRModulePtr &theMod
       memPoolCtrler.DeleteMemPool(optMp);
       return kErrorCompileFail;
     }
+    timer.Stop();
+    LogInfo::MapleLogger() << "Mplcg Parser consumed " << timer.ElapsedMilliseconds() << "ms\n";
   }
 
   LogInfo::MapleLogger() << "Starting mplcg\n";

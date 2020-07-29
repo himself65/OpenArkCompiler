@@ -632,9 +632,7 @@ void Prop::TraversalBB(BB &bb) {
     return;
   }
   bbVisited[bb.GetBBId()] = true;
-
   curBB = &bb;
-  UpdateCurFunction(bb);
 
   // record stack size for variable versions before processing rename. It is used for stack pop up.
   std::vector<size_t> curStackSizeVec(vstLiveStackVec.size());

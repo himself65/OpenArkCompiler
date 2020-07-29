@@ -286,6 +286,7 @@ int64 CgFuncPhaseManager::GetOptimizeTotalTime() const {
 int64 CgFuncPhaseManager::DumpCGTimers() {
   int64 total = GetOptimizeTotalTime();
   total += extraTotal;
+  std::ios::fmtflags flag(std::cout.flags());
   for (size_t i = 0; i < phaseTimers.size(); ++i) {
     CHECK_FATAL(total != 0, "calculation check");
     /*
@@ -297,7 +298,7 @@ int64 CgFuncPhaseManager::DumpCGTimers() {
                               (kPercent * phaseTimers[i] / total) << "%" << std::setw(10) << std::setprecision(0) <<
                               (phaseTimers[i] / kMicroSecPerMilliSec) << "ms" << "\n";
   }
-  LogInfo::Flags();
+  (void)std::cout.flags(flag);
   return total;
 }
 }  /* namespace maplebe */

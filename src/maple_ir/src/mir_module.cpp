@@ -67,24 +67,24 @@ MemPool *MIRModule::CurFuncCodeMemPool() const {
 }
 
 MapleAllocator *MIRModule::CurFuncCodeMemPoolAllocator() const {
-  MIRFunction *curFunction = CurFunction();
-  CHECK_FATAL(curFunction != nullptr, "curFunction is null");
-  return &curFunction->GetCodeMempoolAllocator();
+  MIRFunction *curFunc = CurFunction();
+  CHECK_FATAL(curFunc != nullptr, "curFunction is null");
+  return &curFunc->GetCodeMempoolAllocator();
 }
 
 MapleAllocator &MIRModule::GetCurFuncCodeMPAllocator() const {
-  MIRFunction *curFunction = CurFunction();
-  CHECK_FATAL(curFunction != nullptr, "curFunction is null");
-  return curFunction->GetCodeMPAllocator();
+  MIRFunction *curFunc = CurFunction();
+  CHECK_FATAL(curFunc != nullptr, "curFunction is null");
+  return curFunc->GetCodeMPAllocator();
 }
 
 void MIRModule::AddExternStructType(TyIdx tyIdx) {
-  externStructTypeSet.insert(tyIdx);
+  (void)externStructTypeSet.insert(tyIdx);
 }
 
 void MIRModule::AddExternStructType(const MIRType *t) {
   ASSERT(t != nullptr, "MIRType is null");
-  externStructTypeSet.insert(t->GetTypeIndex());
+  (void)externStructTypeSet.insert(t->GetTypeIndex());
 }
 
 void MIRModule::AddSymbol(StIdx stIdx) {
@@ -92,7 +92,7 @@ void MIRModule::AddSymbol(StIdx stIdx) {
   if (it == symbolSet.end()) {
     symbolDefOrder.push_back(stIdx);
   }
-  symbolSet.insert(stIdx);
+  (void)symbolSet.insert(stIdx);
 }
 
 void MIRModule::AddSymbol(const MIRSymbol *s) {
@@ -431,7 +431,7 @@ void MIRModule::DumpClassToFile(const std::string &path) const {
     std::string outClassFile(name);
     /* replace class name / with - */
     std::replace(outClassFile.begin(), outClassFile.end(), '/', '-');
-    outClassFile.insert(0, strPath);
+    (void)outClassFile.insert(0, strPath);
     outClassFile.append(".mpl");
     std::ofstream mplFile;
     mplFile.open(outClassFile, std::ios::trunc);
@@ -517,11 +517,11 @@ std::string MIRModule::GetFileNameAsPostfix() const {
 }
 
 void MIRModule::AddClass(TyIdx tyIdx) {
-  classList.insert(tyIdx);
+  (void)classList.insert(tyIdx);
 }
 
 void MIRModule::RemoveClass(TyIdx tyIdx) {
-  classList.erase(tyIdx);
+  (void)classList.erase(tyIdx);
 }
 
 #endif  // MIR_FEATURE_FULL

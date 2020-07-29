@@ -921,7 +921,7 @@ void MeStmtPre::BuildWorkListBB(BB *bb) {
         if (!unaryStmt.GetOpnd()->IsLeaf()) {
           break;
         }
-        (void)CreateStmtRealOcc(stmt, seqStmt);
+        (void)CreateStmtRealOcc(stmt, static_cast<int>(seqStmt));
         break;
       }
       case OP_dassign: {
@@ -943,7 +943,7 @@ void MeStmtPre::BuildWorkListBB(BB *bb) {
           stmtWkCand->SetLHSIsFinal(true);
         } else if (!dassMeStmt.GetRHS()->SymAppears(varMeExpr->GetOStIdx()) && dassMeStmt.GetRHS()->Pure()) {
           if (NoPriorUseInBB(dassMeStmt.GetVarLHS(), &stmt)) {
-            (void)CreateStmtRealOcc(stmt, seqStmt);
+            (void)CreateStmtRealOcc(stmt, static_cast<int>(seqStmt));
           }
         } else if (dassMeStmt.GetLHS() != nullptr && dassMeStmt.GetLHS()->IsUseSameSymbol(*dassMeStmt.GetRHS())) {
           RemoveUnnecessaryDassign(dassMeStmt);
@@ -962,7 +962,7 @@ void MeStmtPre::BuildWorkListBB(BB *bb) {
           break;
         }
         if (intrnStmt.GetIntrinsic() == INTRN_JAVA_CLINIT_CHECK) {
-          (void)CreateStmtRealOcc(stmt, seqStmt);
+          (void)CreateStmtRealOcc(stmt, static_cast<int>(seqStmt));
         }
         break;
       }
@@ -979,7 +979,7 @@ void MeStmtPre::BuildWorkListBB(BB *bb) {
           break;
         }
         if (intrnStmt.GetIntrinsic() == INTRN_MPL_BOUNDARY_CHECK) {
-          (void)CreateStmtRealOcc(stmt, seqStmt);
+          (void)CreateStmtRealOcc(stmt, static_cast<int>(seqStmt));
         }
         VersionStackChiListUpdate(*intrnStmt.GetChiList());
         break;

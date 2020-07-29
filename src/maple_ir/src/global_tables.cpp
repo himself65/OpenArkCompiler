@@ -60,7 +60,7 @@ TypeTable::~TypeTable() {
 }
 
 void TypeTable::PutToHashTable(MIRType *mirType) {
-  typeHashTable.insert(mirType);
+  (void)typeHashTable.insert(mirType);
 }
 
 MIRType *TypeTable::CreateAndUpdateMirTypeNode(MIRType &pType) {
@@ -78,7 +78,7 @@ MIRType *TypeTable::CreateAndUpdateMirTypeNode(MIRType &pType) {
       }
     }
   } else {
-    typeHashTable.insert(nType);
+    (void)typeHashTable.insert(nType);
   }
   return nType;
 }
@@ -113,7 +113,7 @@ MIRType* TypeTable::GetOrCreateMIRTypeNode(MIRType &pType) {
 
 MIRType *TypeTable::voidPtrType = nullptr;
 // get or create a type that pointing to pointedTyIdx
-  MIRType *TypeTable::GetOrCreatePointerType(TyIdx pointedTyIdx, PrimType primType,
+  MIRType *TypeTable::GetOrCreatePointerType(const TyIdx &pointedTyIdx, PrimType primType,
                                              const std::vector<TypeAttrs> attrs) {
   MIRPtrType type(pointedTyIdx, primType);
   if (!attrs.empty()) {

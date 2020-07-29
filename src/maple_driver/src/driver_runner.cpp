@@ -257,21 +257,17 @@ void DriverRunner::ProcessCGPhase(const std::string &outputFile, const std::stri
   CG *cg = CreateCGAndBeCommon(outputFile, originBaseName);
 
   if (cgOptions->IsRunCG()) {
-    std::chrono::system_clock::time_point timeStart = std::chrono::system_clock::now();
-
     // Generate the output file
     CHECK_FATAL(cg != nullptr, "cg is null");
     CHECK_FATAL(cg->GetEmitter(), "emitter is null");
     if (!cgOptions->SuppressFileInfo()) {
       cg->GetEmitter()->EmitFileInfo(actualInput);
     }
-    ADD_EXTRA_PHASE("lowerir", CGOptions::IsEnableTimePhases(), timeStart);
-
     // Run the cg optimizations phases
-    RunCGFunctions(*cg, cgfpm);
+    RunCGFunctions(*cg, cgfpm, extraPhasesTime, extraPhasesName);
 
     // Emit global info
-    timeStart = std::chrono::system_clock::now();
+    std::chrono::system_clock::time_point timeStart = std::chrono::system_clock::now();
     EmitGlobalInfo(*cg);
     ADD_EXTRA_PHASE("emitglobalinfo", CGOptions::IsEnableTimePhases(), timeStart);
   } else {
@@ -327,7 +323,12 @@ CG *DriverRunner::CreateCGAndBeCommon(const std::string &outputFile, const std::
 }
 
 
-void DriverRunner::RunCGFunctions(CG &cg, CgFuncPhaseManager &cgfpm) const {
+void DriverRunner::RunCGFunctions(CG &cg, CgFuncPhaseManager &cgfpm, std::vector<long> &extraPhasesTime,
+                                  std::vector<std::string> &extraPhasesName) const {
+  MPLTimer timer;
+  long lowerTime = 0;
+  long constFoldTime = 0;
+  timer.Start();
   MIRLower mirLowerer(*theModule, nullptr);
   mirLowerer.Init();
   CGLowerer theLowerer(*theModule, *beCommon, cg.GenerateExceptionHandlingCode(), cg.GenerateVerboseCG());
@@ -335,6 +336,8 @@ void DriverRunner::RunCGFunctions(CG &cg, CgFuncPhaseManager &cgfpm) const {
   theLowerer.InitArrayClassCacheTableIndex();
   theLowerer.RegisterExternalLibraryFunctions();
   theLowerer.SetCheckLoadStore(CGOptions::IsCheckArrayStore());
+  timer.Stop();
+  lowerTime += timer.ElapsedMicroseconds();
 
   if (cg.AddStackGuard()) {
     cg.AddStackGuardvar();
@@ -351,6 +354,7 @@ void DriverRunner::RunCGFunctions(CG &cg, CgFuncPhaseManager &cgfpm) const {
 
     // LowerIR.
     theModule->SetCurFunction(mirFunc);
+    timer.Start();
     // if maple_me not run, needs extra lowering
     if (theModule->GetFlavor() <= kFeProduced) {
       mirLowerer.SetLowerCG();
@@ -371,6 +375,8 @@ void DriverRunner::RunCGFunctions(CG &cg, CgFuncPhaseManager &cgfpm) const {
       mirFunc->Dump();
       LogInfo::MapleLogger() << "************* end    CGLowerer **************" << '\n';
     }
+    timer.Stop();
+    lowerTime += timer.ElapsedMicroseconds();
 
     MIRSymbol *funcSt = GlobalTables::GetGsymTable().GetSymbolFromStidx(mirFunc->GetStIdx().Idx());
     MemPool *funcMp = memPoolCtrler.NewMemPool(funcSt->GetName());
@@ -397,6 +403,12 @@ void DriverRunner::RunCGFunctions(CG &cg, CgFuncPhaseManager &cgfpm) const {
     ++rangeNum;
   }
   cg.GetEmitter()->EmitHugeSoRoutines(true);
+  extraPhasesTime.push_back(lowerTime);
+  std::string lowerName = "lowerir";
+  extraPhasesName.push_back(lowerName);
+  extraPhasesTime.push_back(constFoldTime);
+  std::string constFoldName = "constFold";
+  extraPhasesName.push_back(constFoldName);
 }
 
 void DriverRunner::EmitGlobalInfo(CG &cg) const {

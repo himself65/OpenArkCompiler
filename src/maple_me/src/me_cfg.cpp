@@ -535,93 +535,89 @@ void MeCFG::FixTryBB(maple::BB &startBB, maple::BB &nextBB) {
 
 // analyse the CFG to find the BBs that are not reachable from function entries
 // and delete them
-void MeCFG::UnreachCodeAnalysis(bool updatePhi) {
+bool MeCFG::UnreachCodeAnalysis(bool updatePhi) {
   std::vector<bool> visitedBBs(func.NumBBs(), false);
   func.GetCommonEntryBB()->FindReachableBBs(visitedBBs);
   // delete the unreached bb
+  bool cfgChanged = false;
   auto eIt = func.valid_end();
   for (auto bIt = func.valid_begin(); bIt != eIt; ++bIt) {
     if (bIt == func.common_exit()) {
       continue;
     }
     auto *bb = *bIt;
+    if (bb->GetAttributes(kBBAttrIsEntry)) {
+      continue;
+    }
     BBId idx = bb->GetBBId();
-    if (!visitedBBs[idx] && !bb->GetAttributes(kBBAttrIsEntry)) {
-      // if bb is StartTryBB, relationship between endtry and try should be maintained
-      if (IsStartTryBB(*bb)) {
-        bool needFixTryBB = false;
-        size_t size = func.GetAllBBs().size();
-        for (size_t nextIdx = idx + 1; nextIdx < size; ++nextIdx) {
-          auto nextBB = func.GetBBFromID(BBId(nextIdx));
-          if (nextBB == nullptr) {
-            continue;
-          }
-          if (!visitedBBs[nextIdx] && nextBB->GetAttributes(kBBAttrIsTryEnd)) {
-            break;
-          }
-          if (visitedBBs[nextIdx]) {
-            needFixTryBB = true;
-            visitedBBs[idx] = true;
-            FixTryBB(*bb, *nextBB);
-            break;
-          }
-        }
-        if (needFixTryBB) {
+    if (visitedBBs[idx]) {
+      continue;
+    }
+
+    // if bb is StartTryBB, relationship between endtry and try should be maintained
+    if (IsStartTryBB(*bb)) {
+      bool needFixTryBB = false;
+      size_t size = func.GetAllBBs().size();
+      for (size_t nextIdx = idx + 1; nextIdx < size; ++nextIdx) {
+        auto nextBB = func.GetBBFromID(BBId(nextIdx));
+        if (nextBB == nullptr) {
           continue;
         }
-      }
-      bb->SetAttributes(kBBAttrWontExit);
-      // avoid redundant pred before adding to common_exit_bb's pred list
-      size_t pi = 0;
-      for (; pi < func.GetCommonExitBB()->GetPred().size(); ++pi) {
-        if (bb == func.GetCommonExitBB()->GetPred(pi)) {
+        if (!visitedBBs[nextIdx] && nextBB->GetAttributes(kBBAttrIsTryEnd)) {
+          break;
+        }
+        if (visitedBBs[nextIdx]) {
+          needFixTryBB = true;
+          visitedBBs[idx] = true;
+          FixTryBB(*bb, *nextBB);
+          cfgChanged = true;
           break;
         }
       }
-      if (pi == func.GetCommonExitBB()->GetPred().size()) {
-        func.GetCommonExitBB()->AddExit(*bb);
+      if (needFixTryBB) {
+        continue;
       }
-      if (!MeOption::quiet) {
-        LogInfo::MapleLogger() << "#### BB " << bb->GetBBId() << " deleted because unreachable\n";
-      }
-      if (bb->GetAttributes(kBBAttrIsTryEnd)) {
-        // unreachable bb has try end info
-        auto bbIt = std::find(func.rbegin(), func.rend(), bb);
-        auto prevIt = ++bbIt;
-        for (auto it = prevIt; it != func.rend(); ++it) {
-          if (*it != nullptr) {
-            // move entrytry tag to previous bb with try
-            if ((*it)->GetAttributes(kBBAttrIsTry) && !(*it)->GetAttributes(kBBAttrIsTryEnd)) {
-              (*it)->SetAttributes(kBBAttrIsTryEnd);
-              func.SetTryBBByOtherEndTryBB(*it, bb);
-            }
-            break;
+    }
+    if (!MeOption::quiet) {
+      LogInfo::MapleLogger() << "#### BB " << bb->GetBBId() << " deleted because unreachable\n";
+    }
+    if (bb->GetAttributes(kBBAttrIsTryEnd)) {
+      // unreachable bb has try end info
+      auto bbIt = std::find(func.rbegin(), func.rend(), bb);
+      auto prevIt = ++bbIt;
+      for (auto it = prevIt; it != func.rend(); ++it) {
+        if (*it != nullptr) {
+          // move entrytry tag to previous bb with try
+          if ((*it)->GetAttributes(kBBAttrIsTry) && !(*it)->GetAttributes(kBBAttrIsTryEnd)) {
+            (*it)->SetAttributes(kBBAttrIsTryEnd);
+            func.SetTryBBByOtherEndTryBB(*it, bb);
           }
-        }
-      }
-      func.DeleteBasicBlock(*bb);
-      // remove the bb from its succ's pred_ list
-      while (bb->GetSucc().size() > 0) {
-        BB *sucBB = bb->GetSucc(0);
-        sucBB->RemovePred(*bb, updatePhi);
-        if (updatePhi) {
-          if (sucBB->GetPred().empty()) {
-            sucBB->ClearPhiList();
-          } else if (sucBB->GetPred().size() == 1) {
-            ConvertPhis2IdentityAssigns(*sucBB);
-          }
-        }
-      }
-      // remove the bb from common_exit_bb's pred list if it is there
-      for (auto it = func.GetCommonExitBB()->GetPred().begin();
-           it != func.GetCommonExitBB()->GetPred().end(); ++it) {
-        if (*it == bb) {
-          func.GetCommonExitBB()->RemoveExit(*bb);
           break;
         }
       }
     }
+    func.DeleteBasicBlock(*bb);
+    cfgChanged = true;
+    // remove the bb from its succ's pred_ list
+    while (bb->GetSucc().size() > 0) {
+      BB *sucBB = bb->GetSucc(0);
+      sucBB->RemovePred(*bb, updatePhi);
+      if (updatePhi) {
+        if (sucBB->GetPred().empty()) {
+          sucBB->ClearPhiList();
+        } else if (sucBB->GetPred().size() == 1) {
+          ConvertPhis2IdentityAssigns(*sucBB);
+        }
+      }
+    }
+    // remove the bb from common_exit_bb's pred list if it is there
+    auto &predsOfCommonExit = func.GetCommonExitBB()->GetPred();
+    auto it = std::find(predsOfCommonExit.begin(), predsOfCommonExit.end(), bb);
+    if (it != predsOfCommonExit.end()) {
+      func.GetCommonExitBB()->RemoveExit(*bb);
+    }
   }
+  return cfgChanged;
 }
 
 void MeCFG::ConvertPhiList2IdentityAssigns(BB &meBB) const {

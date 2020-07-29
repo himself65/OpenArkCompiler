@@ -225,7 +225,7 @@ void RegPressureSchedule::CalculatePressure(DepNode &node, regno_t reg, bool def
 void RegPressureSchedule::UpdateLiveReg(const DepNode &node, regno_t reg, bool def) {
   if (def) {
     if (liveReg.find(reg) == liveReg.end()) {
-      liveReg.insert(reg);
+      (void)liveReg.insert(reg);
     }
     /* if no use list, a register is only defined, not be used */
     size_t i = 0;
@@ -311,7 +311,7 @@ void RegPressureSchedule::UpdatePriority(DepNode &node) {
   node.SetPriority(maxPriority++);
   do {
     DepNode *nowNode = workQueue.front();
-    workQueue.erase(workQueue.begin());
+    (void)workQueue.erase(workQueue.begin());
     for (auto pred : nowNode->GetPreds()) {
       DepNode &from = pred->GetFrom();
       if (from.GetState() != kScheduled && from.GetPriority() < maxPriority) {

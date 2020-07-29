@@ -126,7 +126,7 @@ void SSA::RenameUses(StmtNode &stmt) {
   if (kOpcodeInfo.HasSSAUse(stmt.GetOpCode())) {
     RenameMayUses(stmt);
   }
-  for (int i = 0; i < stmt.NumOpnds(); ++i) {
+  for (size_t i = 0; i < stmt.NumOpnds(); ++i) {
     RenameExpr(*stmt.Opnd(i));
   }
 }

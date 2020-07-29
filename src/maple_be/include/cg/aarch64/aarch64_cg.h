@@ -28,7 +28,7 @@ class GCTIBKey {
  public:
   GCTIBKey(MapleAllocator &allocator, uint32 rcHeader, std::vector<uint64> &patternWords)
       : header(rcHeader), bitMapWords(allocator.Adapter()) {
-    bitMapWords.insert(bitMapWords.begin(), patternWords.begin(), patternWords.end());
+    (void)bitMapWords.insert(bitMapWords.begin(), patternWords.begin(), patternWords.end());
   }
 
   ~GCTIBKey() = default;

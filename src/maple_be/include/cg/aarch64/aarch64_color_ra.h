@@ -448,7 +448,7 @@ class LiveRange {
   }
 
   void InsertElemToPrefs(regno_t regNO) {
-    prefs.insert(regNO);
+    (void)prefs.insert(regNO);
   }
 
   const MapleMap<uint32, LiveUnit*> &GetLuMap() const {
@@ -1151,7 +1151,7 @@ class GraphColorRegAllocator : public AArch64RegAllocator {
   bool IsUnconcernedReg(const RegOperand &regOpnd) const;
   LiveRange *NewLiveRange();
   void CalculatePriority(LiveRange &lr) const;
-  bool CreateLiveRangeHandleLocal(regno_t regNO, BB &bb, bool isDef);
+  bool CreateLiveRangeHandleLocal(regno_t regNO, const BB &bb, bool isDef);
   LiveRange *CreateLiveRangeAllocateAndUpdate(regno_t regNO, const BB &bb, bool isDef, uint32 currId);
   bool CreateLiveRange(regno_t regNO, BB &bb, bool isDef, uint32 currPoint, bool updateCount);
   bool SetupLiveRangeByOpHandlePhysicalReg(RegOperand &op, Insn &insn, regno_t regNO, bool isDef);
@@ -1206,7 +1206,7 @@ class GraphColorRegAllocator : public AArch64RegAllocator {
   MemOperand *GetReuseMem(uint32 vregNO, uint32 size, RegType regType);
   MemOperand *GetSpillMem(uint32 vregNO, bool isDest, Insn &insn, AArch64reg regNO, bool &isOutOfRange);
   bool SetAvailableSpillReg(std::unordered_set<regno_t> &cannotUseReg, LiveRange &lr, uint64 &usedRegMask);
-  void CollectCannotUseReg(std::unordered_set<regno_t> &cannotUseReg, LiveRange &lr, Insn &insn);
+  void CollectCannotUseReg(std::unordered_set<regno_t> &cannotUseReg, const LiveRange &lr, Insn &insn);
   regno_t PickRegForSpill(uint64 &usedRegMask, RegType regType, uint32 spillIdx, bool &needSpillLr);
   bool SetRegForSpill(LiveRange &lr, Insn &insn, uint32 spillIdx, uint64 &usedRegMask, bool isDef);
   bool GetSpillReg(Insn &insn, LiveRange &lr, uint32 &spillIdx, uint64 &usedRegMask, bool isDef);
@@ -1236,7 +1236,7 @@ class GraphColorRegAllocator : public AArch64RegAllocator {
   void ComputeBBForNewSplit(LiveRange &newLr, LiveRange &oldLr);
   void ClearLrBBFlags(const std::set<BB*, SortedBBCmpFunc> &member);
   void ComputeBBForOldSplit(LiveRange &newLr, LiveRange &oldLr);
-  bool LrCanBeColored(LiveRange &lr, BB &bbAdded, std::unordered_set<regno_t> &conflictRegs);
+  bool LrCanBeColored(const LiveRange &lr, const BB &bbAdded, std::unordered_set<regno_t> &conflictRegs);
   void MoveLrBBInfo(LiveRange &oldLr, LiveRange &newLr, BB &bb);
   bool ContainsLoop(const CGFuncLoops &loop, const std::set<CGFuncLoops*, CGFuncLoopCmp> &loops) const;
   void GetAllLrMemberLoops(LiveRange &lr, std::set<CGFuncLoops*, CGFuncLoopCmp> &loop);

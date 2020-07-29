@@ -120,7 +120,7 @@ void BB::InsertPhi(MapleAllocator *alloc, VersionSt *versionSt) {
   for (auto prevIt = pred.begin(); prevIt != pred.end(); ++prevIt) {
     phiNode.GetPhiOpnds().push_back(versionSt);
   }
-  phiList.insert(std::make_pair(versionSt->GetOrigSt()->GetIndex(), phiNode));
+  (void)phiList.insert(std::make_pair(versionSt->GetOrigSt()->GetIndex(), phiNode));
 }
 
 bool BB::IsInList(const MapleVector<BB*> &bbList) const {

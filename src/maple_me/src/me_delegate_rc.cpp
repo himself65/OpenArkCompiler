@@ -264,7 +264,7 @@ bool DelegateRC::MayThrowException(const MeStmt &stmt) const {
 // make use of verStUseCounts in its determination. In addition, if it comes
 // across any stmt that can raise exception, also return false.
 bool DelegateRC::ContainAllTheUses(const VarMeExpr &rhsVar, const MeStmt &fromStmt, const MeStmt &toStmt) const {
-  int32 remainingUses = static_cast<uint32>(verStUseCounts[rhsVar.GetVstIdx()]) - 1;
+  int32 remainingUses = static_cast<int32>(verStUseCounts[rhsVar.GetVstIdx()]) - 1;
   for (MeStmt *cur = fromStmt.GetPrev(); cur != &toStmt; cur = cur->GetPrev()) {
     // do not count decref operands
     if (IsVarDecRefStmt(*cur)) {

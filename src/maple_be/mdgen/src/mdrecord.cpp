@@ -45,7 +45,7 @@ const MDObject &MDClass::GetOneMDObject(size_t index) const {
 
 void MDClass::AddClassMember(MDObject inputObj) {
   mdObjects.emplace_back(inputObj);
-  childObjNames.insert(inputObj.GetIdx());
+  (void)childObjNames.insert(inputObj.GetIdx());
 }
 
 bool MDClass::IsClassMember(unsigned int curIdx) const {
@@ -96,11 +96,11 @@ void MDClassRange::ModifyStrTyInTable(const std::string &inStr, RecordType newTy
 }
 
 void MDClassRange::AddDefinedType(unsigned int typesName, std::set<unsigned int> typesSet) {
-  definedTypes.insert(std::make_pair(typesName, typesSet));
+  (void)definedTypes.insert(std::make_pair(typesName, typesSet));
 }
 
 void MDClassRange::AddMDClass(MDClass curClass) {
-  allClasses.insert(std::make_pair(curClass.GetClassIdx(), curClass));
+  (void)allClasses.insert(std::make_pair(curClass.GetClassIdx(), curClass));
 }
 
 void MDClassRange::FillMDClass(unsigned int givenIdx, const MDObject &insertObj) {

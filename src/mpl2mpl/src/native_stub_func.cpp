@@ -548,7 +548,6 @@ void NativeStubFuncGeneration::GenerateHelperFuncDecl() {
   MRTCheckThrowPendingExceptionFunc->SetAttr(FUNCATTR_nosideeffect);
   MRTCheckThrowPendingExceptionFunc->SetBody(nullptr);
   // MRT_PreNativeCall
-  ArgVector preArgs(GetMIRModule().GetMPAllocator().Adapter());
   MRTPreNativeFunc = builder->GetOrCreateFunction(namemangler::kPreNativeFunc, voidType->GetTypeIndex());
   CHECK_FATAL(MRTPreNativeFunc != nullptr, "MRTPreNativeFunc is null.");
   MRTPreNativeFunc->SetBody(nullptr);
