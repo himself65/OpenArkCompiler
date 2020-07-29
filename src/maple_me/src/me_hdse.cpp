@@ -101,8 +101,9 @@ AnalysisResult *MeDoHDSE::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResult
   MeHDSE hdse(*func, *postDom, *hMap, DEBUGFUNC(func));
   hdse.RunHDSE();
   MakeEmptyTrysUnreachable(*func);
-  func->GetTheCfg()->UnreachCodeAnalysis(true);
-  m->InvalidAnalysisResult(MeFuncPhase_DOMINANCE, func);
+  if (func->GetTheCfg()->UnreachCodeAnalysis(true)) {
+    m->InvalidAnalysisResult(MeFuncPhase_DOMINANCE, func);
+  }
   if (DEBUGFUNC(func)) {
     LogInfo::MapleLogger() << "\n============== HDSE =============" << '\n';
     func->Dump(false);

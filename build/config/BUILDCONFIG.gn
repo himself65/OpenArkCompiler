@@ -36,6 +36,7 @@ OPENSOURCE_OUTPUT = "${MAPLE_ROOT}/output"
 AST2MPL_ROOT= "${MAPLE_ROOT}/src/ast2mpl"
 IS_AST2MPL_EXISTS = getenv("IS_AST2MPL_EXISTS")
 MAPLEALL_ROOT = "${MAPLE_ROOT}/src"
+MPLFE_ROOT = "${MAPLE_ROOT}/src/mplfe"
 THIRD_PARTY_ROOT = "${MAPLE_ROOT}/src/third_party"
 
 # Put all built library files under lib
