@@ -126,6 +126,10 @@ class MplOptions {
     return optimizationLevel;
   }
 
+  const std::string &GetMpltFile() const {
+    return mpltFile;
+  }
+
   bool HasSetDefaultLevel() const {
     return setDefaultLevel;
   }
@@ -192,6 +196,7 @@ class MplOptions {
   std::string outputFolder = "";
   std::string outputName = "maple";
   std::string exeFolder = "";
+  std::string mpltFile = "";
   InputFileType inputFileType = InputFileType::kNone;
   OptimizationLevel optimizationLevel = OptimizationLevel::kO0;
   RunMode runMode = RunMode::kUnkownRun;

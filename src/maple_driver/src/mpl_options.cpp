@@ -151,6 +151,7 @@ ErrorCode MplOptions::HandleGeneralOptions() {
         }
         break;
       case kInMplt:
+        mpltFile = opt.Args();
         break;
       case kAllDebug:
         debugFlag = true;
@@ -302,16 +303,6 @@ ErrorCode MplOptions::AddOption(const mapleOption::Option &option) {
     }
     // For compilers, such as me, mpl2mpl
     exeOptions[exeName].push_back(option);
-    // Fill extraOption
-    // For compiler bins called by system()
-    auto &extraOption = extras[exeName];
-    if (option.Args() != "") {
-      MplOption mplOption("-" + option.OptionKey(), option.Args());
-      extraOption.push_back(mplOption);
-    } else {
-      MplOption mplOption("-" + option.OptionKey(), "");
-      extraOption.push_back(mplOption);
-    }
   }
   return kErrorNoError;
 }
@@ -418,18 +409,6 @@ ErrorCode MplOptions::UpdatePhaseOption(const std::string &args, const std::stri
   ErrorCode ret = optionParser->HandleInputArgs(tmpArgs, exeName, exeOption);
   if (ret != kErrorNoError) {
     return ret;
-  }
-  // Fill extraOption
-  // For compiler bins called by system()
-  auto &extraOption = extras[exeName];
-  for (size_t i = 0; i < exeOption.size(); ++i) {
-    if (exeOption[i].Args() != "") {
-      MplOption mplOption("-" + exeOption[i].OptionKey(), exeOption[i].Args());
-      extraOption.push_back(mplOption);
-    } else {
-      MplOption mplOption("-" + exeOption[i].OptionKey(), "");
-      extraOption.push_back(mplOption);
-    }
   }
   return ret;
 }

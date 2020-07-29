@@ -70,11 +70,13 @@ class Compiler {
   const std::string name;
   std::string MakeOption(const MplOptions &options) const;
   void AppendDefaultOptions(std::map<std::string, MplOption> &finalOptions,
-                            const std::map<std::string, MplOption> &defaultOptions) const;
+                            const std::map<std::string, MplOption> &defaultOptions,
+                            std::ostringstream &strOption, bool isDebug) const;
   void AppendOptions(std::map<std::string, MplOption> &finalOptions, const std::string &key,
                      const std::string &value) const;
   void AppendExtraOptions(std::map<std::string, MplOption> &finalOptions,
-                          const std::map<std::string, std::vector<MplOption>> &extraOptions) const;
+                          const MplOptions &options,
+                          std::ostringstream &strOption, bool isDebug) const;
   std::map<std::string, MplOption> MakeDefaultOptions(const MplOptions &options) const;
   int Exe(const MplOptions &mplOptions, const std::string &options) const;
   const std::string &GetName() const {
