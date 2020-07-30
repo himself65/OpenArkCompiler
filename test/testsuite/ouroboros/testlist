@@ -18,4 +18,5 @@
     reflection_test/issue-0000-rt-Reflection-ReflectionforName2
     reflection_test/RT0202-rt-reflection-AnnotationMultiThread
     thread_test/RT0180-rt-thread-MonitorTestCase8
+    memory_management/MemoryTest/RC0410-rc-Memory-stressTestCase29
 
