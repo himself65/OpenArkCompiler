@@ -218,7 +218,7 @@ def end_match(content, line_map, pattern, start=0, match_func=regex_match):
 
 def full_match(content, line_map, pattern, start=0, match_func=regex_match):
     line_num = text_index_to_line_num(line_map, start)
-    pattern = pattern.encode("utf-8").decode("unicode_escape")
+    pattern = re.sub(r'([^\u0100-\uffff]+)', lambda x:(x.group(1) + r' ').encode("utf-8").decode("unicode_escape")[:-1], pattern)
     if content != pattern:
         return False, start
     return True, line_map[line_num] + 1
@@ -226,7 +226,7 @@ def full_match(content, line_map, pattern, start=0, match_func=regex_match):
 
 def in_match(content, line_map, pattern, start=0, match_func=regex_match):
     line_num = text_index_to_line_num(line_map, start)
-    pattern = pattern.encode("utf-8").decode("unicode_escape")
+    pattern = re.sub(r'([^\u0100-\uffff]+)', lambda x:(x.group(1) + r' ').encode("utf-8").decode("unicode_escape")[:-1], pattern)
     if content.find(pattern) == -1:
         return False, start
     return True, line_map[line_num] + 1
