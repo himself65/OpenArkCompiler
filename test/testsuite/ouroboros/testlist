@@ -17,4 +17,5 @@
     memory_management/Annotation
     reflection_test/issue-0000-rt-Reflection-ReflectionforName2
     reflection_test/RT0202-rt-reflection-AnnotationMultiThread
+    thread_test/RT0180-rt-thread-MonitorTestCase8
 
