@@ -1436,6 +1436,10 @@ bool MIRParser::ParseStmtBlock(BlockNodePtr &blk) {
 }
 
 void MIRParser::ParseStmtBlockForSeenComment(BlockNodePtr blk, uint32 mplNum) {
+  if (Options::noComment) {
+    lexer.seenComments.clear();
+    return;
+  }
   // collect accumulated comments into comment statement nodes
   if (!lexer.seenComments.empty()) {
     for (size_t i = 0; i < lexer.seenComments.size(); ++i) {

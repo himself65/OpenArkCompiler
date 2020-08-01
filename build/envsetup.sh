@@ -26,3 +26,5 @@ if [ -d ${MAPLE_ROOT}/src/ast2mpl ]; then
 else
   export IS_AST2MPL_EXISTS=0
 fi
+export GCOV_PREFIX=${MAPLE_ROOT}/report/gcda
+export GCOV_PREFIX_STRIP=7

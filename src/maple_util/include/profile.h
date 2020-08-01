@@ -82,12 +82,12 @@ class Profile {
 
  private:
   bool valid = false;
-  bool initialized = false;
   bool profileMode = false;
   bool isCoreSo = false;
   bool isAppProfile = false;
   static bool debug;
   static uint32 hotFuncCountThreshold;
+  static bool initialized;
   std::vector<std::string> strMap;
   std::string dexName;
   std::string appPackageName;

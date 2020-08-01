@@ -964,6 +964,9 @@ uint32 MIRClassType::GetInfo(const std::string &infoStr) const {
 }
 
 bool MIRClassType::IsFinal() const {
+  if (!IsStructType()) {
+    return false;
+  }
   uint32 attrStrIdx = GetInfo(GlobalTables::GetStrTable().GetOrCreateStrIdxFromName("INFO_attribute_string"));
   CHECK(attrStrIdx < GlobalTables::GetStrTable().StringTableSize(), "out of range of vector");
   const std::string &kAttrString = GlobalTables::GetStrTable().GetStringFromStrIdx(GStrIdx(attrStrIdx));

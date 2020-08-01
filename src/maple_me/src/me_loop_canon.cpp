@@ -547,12 +547,16 @@ void MeDoLoopCanon::ExecuteLoopNormalization(MeFunction &func,  MeFuncResultMgr 
   FindHeadBBs(func, dom, func.GetCommonEntryBB());
   AddPreheader(func);
   Merge(func);
-  m->InvalidAnalysisResult(MeFuncPhase_DOMINANCE, &func);
-  m->InvalidAnalysisResult(MeFuncPhase_MELOOP, &func);
+  // cfg changes only if heads is not empty
+  if (!heads.empty()) {
+    m->InvalidAnalysisResult(MeFuncPhase_DOMINANCE, &func);
+    m->InvalidAnalysisResult(MeFuncPhase_MELOOP, &func);
+  }
   IdentifyLoops *meLoop = static_cast<IdentifyLoops*>(m->GetAnalysisResult(MeFuncPhase_MELOOP, &func));
   if (meLoop == nullptr) {
     return;
   }
+  bool cfgChange = false;
   for (auto loop : meLoop->GetMeLoops()) {
     if (loop->HasTryBB()) {
       continue;
@@ -562,10 +566,12 @@ void MeDoLoopCanon::ExecuteLoopNormalization(MeFunction &func,  MeFuncResultMgr 
       CHECK_FATAL(loop->inloopBB2exitBBs.size() == 0, "must be zero");
       InsertExitBB(func, *loop);
       loop->SetIsCanonicalLoop(true);
+      cfgChange = true;
     }
     if (loop->inloopBB2exitBBs.size() == 1 && loop->inloopBB2exitBBs.begin()->second->size() == 1 &&
         IsDoWhileLoop(func, *loop)) {
       SplitCondGotBB(func, *loop);
+      cfgChange = true;
     }
   }
   if (DEBUGFUNC(&func)) {
@@ -573,8 +579,10 @@ void MeDoLoopCanon::ExecuteLoopNormalization(MeFunction &func,  MeFuncResultMgr 
     func.Dump(true);
     func.GetTheCfg()->DumpToFile("cfgafterLoopNormalization");
   }
-  m->InvalidAnalysisResult(MeFuncPhase_DOMINANCE, &func);
-  m->InvalidAnalysisResult(MeFuncPhase_MELOOP, &func);
+  if (cfgChange) {
+    m->InvalidAnalysisResult(MeFuncPhase_DOMINANCE, &func);
+    m->InvalidAnalysisResult(MeFuncPhase_MELOOP, &func);
+  }
 }
 
 AnalysisResult *MeDoLoopCanon::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResultMgr*) {

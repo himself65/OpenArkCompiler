@@ -30,6 +30,12 @@ group("mplfe") {
   ]
 }
 
+group("mplfeUT") {
+  deps = [
+    "${MPLFE_ROOT}/test:mplfeUT",
+  ]
+}
+
 group("ast2mpl") {
   deps = []
   if (IS_AST2MPL_EXISTS == "1") {

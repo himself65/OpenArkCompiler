@@ -28,7 +28,7 @@ std::string MapleCombCompiler::GetInputFileName(const MplOptions &options) const
       return options.GetInputFiles();
     }
   }
-  if (options.GetInputFileType() == InputFileType::kVtableImplMpl) {
+  if (options.GetInputFileType() == InputFileType::kFileTypeVtableImplMpl) {
     return options.GetOutputFolder() + options.GetOutputName() + ".VtableImpl.mpl";
   }
   return options.GetOutputFolder() + options.GetOutputName() + ".mpl";
@@ -106,7 +106,7 @@ bool MapleCombCompiler::MakeMeOptions(const MplOptions &options) {
   }
   bool result = meOption.SolveOptions(it->second, options.HasSetDebugFlag());
   if (result == false) {
-    LogInfo::MapleLogger() << "Meet error mpl2mpl options\n";
+    LogInfo::MapleLogger() << "Meet error me options\n";
     return false;
   }
   return true;
@@ -127,10 +127,14 @@ bool MapleCombCompiler::MakeMpl2MplOptions(const MplOptions &options) {
   return true;
 }
 
-ErrorCode MapleCombCompiler::Compile(const MplOptions &options, MIRModulePtr &theModule) {
+ErrorCode MapleCombCompiler::Compile(const MplOptions &options, std::unique_ptr<MIRModule> &theModule) {
   MemPool *optMp = memPoolCtrler.NewMemPool("maplecomb mempool");
   std::string fileName = GetInputFileName(options);
-  theModule = new MIRModule(fileName);
+  bool fileParsed = true;
+  if (theModule == nullptr) {
+    theModule = std::make_unique<MIRModule>(fileName);
+    fileParsed = false;
+  }
   MeOption &meOptions = MeOption::GetInstance();
   Options &mpl2mplOptions = Options::GetInstance();
   auto it = std::find(options.GetRunningExes().begin(), options.GetRunningExes().end(), kBinNameMe);
@@ -150,8 +154,8 @@ ErrorCode MapleCombCompiler::Compile(const MplOptions &options, MIRModulePtr &th
 
   LogInfo::MapleLogger() << "Starting mpl2mpl&mplme\n";
   PrintCommand(options);
-  DriverRunner runner(theModule, options.GetRunningExes(), &mpl2mplOptions, fileName, &meOptions,
-                      fileName, fileName, optMp,
+  DriverRunner runner(theModule.get(), options.GetRunningExes(), &mpl2mplOptions, fileName, &meOptions,
+                      fileName, fileName, optMp, fileParsed,
                       options.HasSetTimePhases(), options.HasSetGenVtableImpl(), options.HasSetGenMeMpl());
   ErrorCode nErr = runner.Run();
 

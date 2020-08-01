@@ -55,6 +55,10 @@ ast2mpl:
 mplfe:
 	$(call build_gn, ${GN_OPTIONS}, mplfe)
 
+.PHONY: mplfeUT
+mplfeUT:
+	$(call build_gn, ${GN_OPTIONS} COV_CHECK=1, mplfeUT)
+
 .PHONY: install
 install: maple
 	$(shell mkdir -p $(MAPLE_ROOT)/output/ops/linker/; \

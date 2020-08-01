@@ -399,7 +399,7 @@ class MIRType {
   virtual void Dump(int indent, bool dontUseName = false) const;
   virtual void DumpAsCxx(int indent) const;
   virtual bool EqualTo(const MIRType &mirType) const;
-  virtual bool IsStructType() {
+  virtual bool IsStructType() const {
     return false;
   }
 
@@ -722,7 +722,7 @@ class MIRStructType : public MIRType {
 
   ~MIRStructType() override = default;
 
-  bool IsStructType() override {
+  bool IsStructType() const override {
     return true;
   }
 

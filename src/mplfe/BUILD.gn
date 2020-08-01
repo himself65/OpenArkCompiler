@@ -13,6 +13,9 @@
 # See the Mulan PSL v1 for more details.
 #
 configs = [ "${MAPLEALL_ROOT}:mapleallcompilecfg" ]
+if (COV_CHECK == 1) {
+  cflags = [ "-DENABLE_COV_CHECK=1" ]
+}
 
 include_directories = [
   "${MPLFE_ROOT}/common/include",
@@ -38,13 +41,13 @@ static_library("lib_mplfe_util") {
     "${MPLFE_ROOT}/common/src/fe_function.cpp",
     "${MPLFE_ROOT}/common/src/fe_function_phase_result.cpp",
     "${MPLFE_ROOT}/common/src/fe_input_helper.cpp",
+    "${MPLFE_ROOT}/common/src/fe_java_string_manager.cpp",
     "${MPLFE_ROOT}/common/src/fe_manager.cpp",
     "${MPLFE_ROOT}/common/src/fe_options.cpp",
-    "${MPLFE_ROOT}/common/src/fe_java_string_manager.cpp",
+    "${MPLFE_ROOT}/common/src/fe_struct_elem_info.cpp",
     "${MPLFE_ROOT}/common/src/fe_timer_ns.cpp",
     "${MPLFE_ROOT}/common/src/fe_type_hierarchy.cpp",
     "${MPLFE_ROOT}/common/src/fe_type_manager.cpp",
-    "${MPLFE_ROOT}/common/src/fe_struct_elem_info.cpp",
     "${MPLFE_ROOT}/common/src/fe_utils.cpp",
     "${MPLFE_ROOT}/common/src/fe_utils_java.cpp",
     "${MPLFE_ROOT}/common/src/feir_builder.cpp",
@@ -87,9 +90,9 @@ executable("mplfe") {
     ":lib_mplfe_jbc_input",
     ":lib_mplfe_util",
     "${MAPLEALL_ROOT}/huawei_secure_c:libHWSecureC",
+    "${MAPLEALL_ROOT}/maple_driver:libdriver_option",
     "${MAPLEALL_ROOT}/maple_ir:libmplir",
     "${MAPLEALL_ROOT}/mpl2mpl:libmpl2mpl",
-    "${MAPLEALL_ROOT}/maple_driver:libdriver_option",
   ]
   libs = [
     "${OPENSOURCE_DEPS}/libmempool.a",

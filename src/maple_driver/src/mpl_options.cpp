@@ -162,6 +162,7 @@ ErrorCode MplOptions::HandleGeneralOptions() {
     }
     ret = AddOption(opt);
   }
+
   return ret;
 }
 
@@ -219,20 +220,20 @@ ErrorCode MplOptions::DecideRunningPhases() {
   bool isNeedMapleComb = true;
   bool isNeedMplcg = true;
   switch (inputFileType) {
-    case InputFileType::kJar:
+    case InputFileType::kFileTypeJar:
       // fall-through
-    case InputFileType::kClass:
+    case InputFileType::kFileTypeClass:
       UpdateRunningExe(kBinNameJbc2mpl);
       break;
-    case InputFileType::kMpl:
+    case InputFileType::kFileTypeMpl:
       break;
-    case InputFileType::kVtableImplMpl:
+    case InputFileType::kFileTypeVtableImplMpl:
       isNeedMapleComb = false;
       break;
-    case InputFileType::kS:
+    case InputFileType::kFileTypeS:
       isNeedMplcg = false;
       break;
-    case InputFileType::kNone:
+    case InputFileType::kFileTypeNone:
       break;
     default:
       break;
@@ -319,18 +320,18 @@ bool MplOptions::Init(const std::string &inputFile) {
   outputName = FileUtils::GetFileName(firstInputFile, false);
   std::string extensionName = FileUtils::GetFileExtension(firstInputFile);
   if (extensionName == "class") {
-    inputFileType = InputFileType::kClass;
+    inputFileType = InputFileType::kFileTypeClass;
   }
   else if (extensionName == "jar") {
-    inputFileType = InputFileType::kJar;
+    inputFileType = InputFileType::kFileTypeJar;
   } else if (extensionName == "mpl") {
     if (firstInputFile.find("VtableImpl") == std::string::npos) {
-      inputFileType = InputFileType::kMpl;
+      inputFileType = InputFileType::kFileTypeMpl;
     } else {
-      inputFileType = InputFileType::kVtableImplMpl;
+      inputFileType = InputFileType::kFileTypeVtableImplMpl;
     }
   } else if (extensionName == "s") {
-    inputFileType = InputFileType::kS;
+    inputFileType = InputFileType::kFileTypeS;
   } else {
     return false;
   }

@@ -38,7 +38,7 @@ class Compiler {
 
   virtual ~Compiler() = default;
 
-  virtual ErrorCode Compile(const MplOptions &options, MIRModulePtr &theModule);
+  virtual ErrorCode Compile(const MplOptions &options, std::unique_ptr<MIRModule> &theModule);
 
   virtual void GetTmpFilesToDelete(const MplOptions&, std::vector<std::string>&) const {}
 
@@ -103,7 +103,7 @@ class MapleCombCompiler : public Compiler {
 
   ~MapleCombCompiler() = default;
 
-  ErrorCode Compile(const MplOptions &options, MIRModulePtr &theModule) override;
+  ErrorCode Compile(const MplOptions &options, std::unique_ptr<MIRModule> &theModule) override;
   void PrintCommand(const MplOptions &options) const override;
   std::string GetInputFileName(const MplOptions &options) const override;
 
@@ -120,7 +120,7 @@ class MplcgCompiler : public Compiler {
   explicit MplcgCompiler(const std::string &name) : Compiler(name) {}
 
   ~MplcgCompiler() = default;
-  ErrorCode Compile(const MplOptions &options, MIRModulePtr &theModule) override;
+  ErrorCode Compile(const MplOptions &options, std::unique_ptr<MIRModule> &theModule) override;
   void PrintCommand(const MplOptions &options) const override;
  private:
   std::string GetInputFileName(const MplOptions &options) const override;

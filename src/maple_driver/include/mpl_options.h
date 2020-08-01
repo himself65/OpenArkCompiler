@@ -29,12 +29,12 @@
 
 namespace maple {
 enum InputFileType {
-  kNone,
-  kClass,
-  kJar,
-  kMpl,
-  kVtableImplMpl,
-  kS,
+  kFileTypeNone,
+  kFileTypeClass,
+  kFileTypeJar,
+  kFileTypeMpl,
+  kFileTypeVtableImplMpl,
+  kFileTypeS,
 };
 
 enum OptimizationLevel {
@@ -197,7 +197,7 @@ class MplOptions {
   std::string outputName = "maple";
   std::string exeFolder = "";
   std::string mpltFile = "";
-  InputFileType inputFileType = InputFileType::kNone;
+  InputFileType inputFileType = InputFileType::kFileTypeNone;
   OptimizationLevel optimizationLevel = OptimizationLevel::kO0;
   RunMode runMode = RunMode::kUnkownRun;
   bool setDefaultLevel = false;

@@ -19,6 +19,7 @@
 #include "mpl_timer.h"
 #include "mir_function.h"
 #include "mir_parser.h"
+#include "file_utils.h"
 
 #include "lower.h"
 #if TARGAARCH64
@@ -104,10 +105,6 @@ ErrorCode DriverRunner::Run() {
   return kErrorNoError;
 }
 
-bool DriverRunner::FuncOrderLessThan(const MIRFunction *left, const MIRFunction *right) {
-  return left->GetLayoutType() < right->GetLayoutType();
-}
-
 bool DriverRunner::IsFramework() const {
   return false;
 }
@@ -134,10 +131,13 @@ ErrorCode DriverRunner::ParseInput(const std::string &outputFile, const std::str
 
   MIRParser parser(*theModule);
   ErrorCode ret = kErrorNoError;
-  bool parsed = parser.ParseMIR(0, 0, false, true);
-  if (!parsed) {
-    ret = kErrorExit;
-    parser.EmitError(outputFile);
+  bool parsed;
+  if (!fileParsed) {
+    parsed = parser.ParseMIR(0, 0, false, true);
+    if (!parsed) {
+      ret = kErrorExit;
+      parser.EmitError(outputFile);
+    }
   }
   timer.Stop();
   LogInfo::MapleLogger() << "Parse consumed " << timer.Elapsed() << "s" << '\n';
