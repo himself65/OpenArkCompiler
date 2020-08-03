@@ -176,7 +176,7 @@ def add_run_path(new_path):
     run_env = os.environ.copy()
     old_path = run_env.get("PATH")
     if old_path:
-        run_env["PATH"] = old_path + ":" + new_path
+        run_env["PATH"] = old_path + os.pathsep + new_path
     else:
         run_env["PATH"] = new_path
     return run_env
