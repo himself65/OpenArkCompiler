@@ -454,39 +454,18 @@ bool AArch64Ebo::SimplifyConstOperand(Insn &insn, const MapleVector<Operand*> &o
       op = &(insn.GetOperand(kInsnSecondOpnd));
     }
   } else if (bothConstant) {
-    /* i) special orr insn, one of imm is 0:
-     * orr resOp, imm1, #0  |  orr resOp, #0, imm1
-     * =======>
-     * mov resOp, imm1
-     *
-     * ii) special orr insn, both of imm is 0:
-     * orr resOp, #0, #0
-     * =======>
-     * mov resOp, #0 */
-    if ((insn.GetMachineOpcode() == MOP_wiorrri12) || (insn.GetMachineOpcode() == MOP_xiorrri13) ||
-        (insn.GetMachineOpcode() == MOP_xiorri13r) || (insn.GetMachineOpcode() == MOP_wiorri12r)) {
-      AArch64ImmOperand *immOpnd0 = static_cast<AArch64ImmOperand*>(op0);
-      AArch64ImmOperand *immOpnd1 = static_cast<AArch64ImmOperand*>(op1);
-      immOpnd = immOpnd1;
-      op = op0;
-      if (immOpnd0->IsZero()) {
-        op = op1;
-        immOpnd = immOpnd0;
-      }
-      MOperator mOp = opndSize == k64BitSize ? MOP_xmovri64 : MOP_xmovri32;
-      Insn &newInsn = cgFunc->GetCG()->BuildInstruction<AArch64Insn>(mOp, *res, *op);
-      bb->ReplaceInsn(insn, newInsn);
-      return true;
-    } else {
-      return false;
-    }
+    AArch64ImmOperand *immOpnd0 = static_cast<AArch64ImmOperand*>(op0);
+    AArch64ImmOperand *immOpnd1 = static_cast<AArch64ImmOperand*>(op1);
+    return SimplifyBothConst(*insn.GetBB(), insn, *immOpnd0, *immOpnd1, opndSize);
   }
   CHECK_FATAL(immOpnd != nullptr, "constant operand required!");
   CHECK_FATAL(op != nullptr, "constant operand required!");
-  /* For orr insn and one of the opnd is zero */
+  /* For orr insn and one of the opnd is zero
+   * orr resOp, imm1, #0  |  orr resOp, #0, imm1
+   * =======>
+   * mov resOp, imm1 */
   if (((insn.GetMachineOpcode() == MOP_wiorrri12) || (insn.GetMachineOpcode() == MOP_xiorrri13) ||
-       (insn.GetMachineOpcode() == MOP_xiorri13r) || (insn.GetMachineOpcode() == MOP_wiorri12r)) &&
-       immOpnd->IsZero()) {
+       (insn.GetMachineOpcode() == MOP_xiorri13r) || (insn.GetMachineOpcode() == MOP_wiorri12r)) && immOpnd->IsZero()) {
     MOperator mOp = opndSize == k64BitSize ? MOP_xmovrr : MOP_wmovrr;
     Insn &newInsn = cgFunc->GetCG()->BuildInstruction<AArch64Insn>(mOp, *res, *op);
     bb->ReplaceInsn(insn, newInsn);
@@ -576,6 +555,53 @@ bool AArch64Ebo::CheckCondCode(const CondOperand &cond) const {
     default:
       return false;
   }
+}
+
+bool AArch64Ebo::SimplifyBothConst(BB &bb, Insn &insn, const AArch64ImmOperand &immOperand0,
+                                   const AArch64ImmOperand &immOperand1, uint32 opndSize) {
+  MOperator mOp = insn.GetMachineOpcode();
+  int64 val = 0;
+  /* do not support negative const simplify yet */
+  if (immOperand0.GetValue() < 0 || immOperand1.GetValue() < 0) {
+    return false;
+  }
+  switch (mOp) {
+    case MOP_weorrri12:
+    case MOP_weorrrr:
+    case MOP_xeorrri13:
+    case MOP_xeorrrr:
+      val = immOperand0.GetValue() ^ immOperand1.GetValue();
+      break;
+    case MOP_wandrri12:
+    case MOP_waddrri24:
+    case MOP_wandrrr:
+    case MOP_xandrri13:
+    case MOP_xandrrr:
+      val = immOperand0.GetValue() & immOperand1.GetValue();
+      break;
+    case MOP_wiorrri12:
+    case MOP_wiorri12r:
+    case MOP_wiorrrr:
+    case MOP_xiorrri13:
+    case MOP_xiorri13r:
+    case MOP_xiorrrr:
+      val = immOperand0.GetValue() | immOperand1.GetValue();
+      break;
+    default:
+      return false;
+  }
+  Operand *res = insn.GetResult(0);
+  AArch64ImmOperand *immOperand = &a64CGFunc->CreateImmOperand(val, opndSize, false);
+  if (!immOperand->IsSingleInstructionMovable()) {
+    ASSERT(res->IsRegister(), " expect a register operand");
+    static_cast<AArch64CGFunc*>(cgFunc)->SplitMovImmOpndInstruction(val, *(static_cast<RegOperand*>(res)));
+    bb.RemoveInsn(insn);
+  } else {
+    MOperator newmOp = opndSize == k64BitSize ? MOP_xmovri64 : MOP_xmovri32;
+    Insn &newInsn = cgFunc->GetCG()->BuildInstruction<AArch64Insn>(newmOp, *res, *immOperand);
+    bb.ReplaceInsn(insn, newInsn);
+  }
+  return true;
 }
 
 /* Do some special pattern */

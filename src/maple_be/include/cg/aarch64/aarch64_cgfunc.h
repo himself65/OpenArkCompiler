@@ -312,6 +312,8 @@ class AArch64CGFunc : public CGFunc {
     return *memPool->New<ExtendShiftOperand>(op, amount, bitLen);
   }
 
+  void SplitMovImmOpndInstruction(int64 immVal, RegOperand &destReg);
+
   Operand &GetOrCreateFuncNameOpnd(const MIRSymbol &symbol);
   void GenerateYieldpoint(BB &bb) override;
   Operand &ProcessReturnReg(PrimType primType) override;
@@ -576,7 +578,6 @@ class AArch64CGFunc : public CGFunc {
   void SelectCopyMemOpnd(Operand &dest, PrimType dtype, uint32 dsize, Operand &src, PrimType stype);
   void SelectCopyRegOpnd(Operand &dest, PrimType dtype, Operand::OperandType opndType, uint32 dsize, Operand &src,
                          PrimType stype);
-  void SplitMovImmOpndInstruction(int64 immVal, RegOperand &destReg);
   bool GenerateCompareWithZeroInstruction(Opcode jmpOp, Opcode cmpOp, bool is64Bits,
                                           LabelOperand &targetOpnd, Operand &opnd0);
   void SelectMPLClinitCheck(IntrinsiccallNode&);
