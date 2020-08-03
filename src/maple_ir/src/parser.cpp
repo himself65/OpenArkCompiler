@@ -2714,6 +2714,10 @@ void MIRParser::PrepareParsingMIR() {
   lexer.PrepareForFile(mod.GetFileName());
 }
 
+void MIRParser::PrepareParsingMplt() {
+  lexer.PrepareForFile(mod.GetFileName());
+}
+
 bool MIRParser::ParseTypeFromString(const std::string &src, TyIdx &tyIdx) {
   lexer.PrepareForString(src);
   return ParseType(tyIdx);

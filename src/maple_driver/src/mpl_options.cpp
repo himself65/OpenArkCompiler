@@ -151,6 +151,7 @@ ErrorCode MplOptions::HandleGeneralOptions() {
         }
         break;
       case kInMplt:
+        mpltFile = opt.Args();
         break;
       case kAllDebug:
         debugFlag = true;
@@ -161,6 +162,7 @@ ErrorCode MplOptions::HandleGeneralOptions() {
     }
     ret = AddOption(opt);
   }
+
   return ret;
 }
 
@@ -218,20 +220,20 @@ ErrorCode MplOptions::DecideRunningPhases() {
   bool isNeedMapleComb = true;
   bool isNeedMplcg = true;
   switch (inputFileType) {
-    case InputFileType::kJar:
+    case InputFileType::kFileTypeJar:
       // fall-through
-    case InputFileType::kClass:
+    case InputFileType::kFileTypeClass:
       UpdateRunningExe(kBinNameJbc2mpl);
       break;
-    case InputFileType::kMpl:
+    case InputFileType::kFileTypeMpl:
       break;
-    case InputFileType::kVtableImplMpl:
+    case InputFileType::kFileTypeVtableImplMpl:
       isNeedMapleComb = false;
       break;
-    case InputFileType::kS:
+    case InputFileType::kFileTypeS:
       isNeedMplcg = false;
       break;
-    case InputFileType::kNone:
+    case InputFileType::kFileTypeNone:
       break;
     default:
       break;
@@ -302,16 +304,6 @@ ErrorCode MplOptions::AddOption(const mapleOption::Option &option) {
     }
     // For compilers, such as me, mpl2mpl
     exeOptions[exeName].push_back(option);
-    // Fill extraOption
-    // For compiler bins called by system()
-    auto &extraOption = extras[exeName];
-    if (option.Args() != "") {
-      MplOption mplOption("-" + option.OptionKey(), option.Args());
-      extraOption.push_back(mplOption);
-    } else {
-      MplOption mplOption("-" + option.OptionKey(), "");
-      extraOption.push_back(mplOption);
-    }
   }
   return kErrorNoError;
 }
@@ -328,18 +320,18 @@ bool MplOptions::Init(const std::string &inputFile) {
   outputName = FileUtils::GetFileName(firstInputFile, false);
   std::string extensionName = FileUtils::GetFileExtension(firstInputFile);
   if (extensionName == "class") {
-    inputFileType = InputFileType::kClass;
+    inputFileType = InputFileType::kFileTypeClass;
   }
   else if (extensionName == "jar") {
-    inputFileType = InputFileType::kJar;
+    inputFileType = InputFileType::kFileTypeJar;
   } else if (extensionName == "mpl") {
     if (firstInputFile.find("VtableImpl") == std::string::npos) {
-      inputFileType = InputFileType::kMpl;
+      inputFileType = InputFileType::kFileTypeMpl;
     } else {
-      inputFileType = InputFileType::kVtableImplMpl;
+      inputFileType = InputFileType::kFileTypeVtableImplMpl;
     }
   } else if (extensionName == "s") {
-    inputFileType = InputFileType::kS;
+    inputFileType = InputFileType::kFileTypeS;
   } else {
     return false;
   }
@@ -418,18 +410,6 @@ ErrorCode MplOptions::UpdatePhaseOption(const std::string &args, const std::stri
   ErrorCode ret = optionParser->HandleInputArgs(tmpArgs, exeName, exeOption);
   if (ret != kErrorNoError) {
     return ret;
-  }
-  // Fill extraOption
-  // For compiler bins called by system()
-  auto &extraOption = extras[exeName];
-  for (size_t i = 0; i < exeOption.size(); ++i) {
-    if (exeOption[i].Args() != "") {
-      MplOption mplOption("-" + exeOption[i].OptionKey(), exeOption[i].Args());
-      extraOption.push_back(mplOption);
-    } else {
-      MplOption mplOption("-" + exeOption[i].OptionKey(), "");
-      extraOption.push_back(mplOption);
-    }
   }
   return ret;
 }

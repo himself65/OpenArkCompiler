@@ -299,6 +299,7 @@ void BinaryMplImport::ImportMethodPair(MethodPair &memPool) {
     funcSt->SetSKind(kStFunc);
     funcSt->SetTyIdx(funcTyIdx);
     funcSt->SetIsImported(imported);
+    funcSt->SetIsImportedDecl(imported);
     methodSymbols.push_back(funcSt);
 
     fn = mod.GetMemPool()->New<MIRFunction>(&mod, funcSt->GetStIdx());

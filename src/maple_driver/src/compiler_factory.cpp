@@ -53,10 +53,6 @@ CompilerFactory::~CompilerFactory() {
     delete compilerSelector;
     compilerSelector = nullptr;
   }
-  if (theModule != nullptr) {
-    delete theModule;
-    theModule = nullptr;
-  }
 }
 
 void CompilerFactory::Insert(const std::string &name, Compiler *value) {

@@ -266,7 +266,7 @@ void MIRModule::DumpGlobals(bool emitStructureType) const {
       if (s->IsJavaClassInterface()) {
         continue;
       }
-      if (!s->IsDeleted() && !s->GetIsImported()) {
+      if (!s->IsDeleted() && !s->GetIsImported() && !s->GetIsImportedDecl()) {
         s->Dump(false, 0);
       }
     }

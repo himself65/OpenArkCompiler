@@ -40,7 +40,7 @@ class CompilerFactory {
                            const std::unordered_set<std::string> &finalOutputs) const;
   SupportedCompilers supportedCompilers;
   CompilerSelector *compilerSelector;
-  MIRModule *theModule = nullptr;
+  std::unique_ptr<MIRModule> theModule;
 };
 }  // namespace maple
 #endif  // MAPLE_DRIVER_INCLUDE_COMPILER_FACTORY_H

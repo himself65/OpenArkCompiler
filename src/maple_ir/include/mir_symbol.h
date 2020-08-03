@@ -113,6 +113,13 @@ class MIRSymbol {
   void SetIsTmpUnused(bool used) {
     isTmpUnused = used;
   }
+  void SetIsImportedDecl(bool imported) {
+    isImportedDecl = imported;
+  }
+
+  bool GetIsImportedDecl() const {
+    return isImportedDecl;
+  }
 
   bool IsTmpUnused() const {
     return isTmpUnused;
@@ -408,6 +415,7 @@ class MIRSymbol {
   bool isDeleted = false;     // tell if it is deleted, NOT serialized
   bool instrumented = false;  // a local ref pointer instrumented by RC opt, NOT serialized
   bool isImported = false;
+  bool isImportedDecl = false;
   bool isTmpUnused = false;  // when parse the mplt_inline file, mark all the new symbol as tmpunused
   StIdx stIdx { 0, 0 };
   TypeAttrs typeAttrs;

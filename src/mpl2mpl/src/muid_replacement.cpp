@@ -75,8 +75,9 @@ ConstvalNode* MUIDReplacement::GetConstvalNode(int64 index) {
 void MUIDReplacement::DumpMUIDFile(bool isFunc) {
   std::ofstream outFile;
   const std::string &mplName = GetMIRModule().GetFileName();
-  CHECK_FATAL(mplName.rfind(".mpl") != std::string::npos, "can not find .mpl");
-  std::string prefix = mplName.substr(0, mplName.rfind(".mpl"));
+  size_t index = mplName.rfind(".");
+  CHECK_FATAL(index != std::string::npos, "can not find src file");
+  std::string prefix = mplName.substr(0, index);
   std::string outFileName;
   if (isFunc) {
     outFileName = prefix + ".func.muid";

@@ -97,7 +97,7 @@ bool MplcgCompiler::MakeCGOptions(const MplOptions &options) {
   return true;
 }
 
-ErrorCode MplcgCompiler::Compile(const MplOptions &options, MIRModulePtr &theModule) {
+ErrorCode MplcgCompiler::Compile(const MplOptions &options, std::unique_ptr<MIRModule> &theModule) {
   MemPool *optMp = memPoolCtrler.NewMemPool("maplecg mempool");
   CGOptions &cgOption = CGOptions::GetInstance();
   bool result = MakeCGOptions(options);
@@ -109,10 +109,12 @@ ErrorCode MplcgCompiler::Compile(const MplOptions &options, MIRModulePtr &theMod
   std::string output = baseName + ".s";
   bool parsed = false;
   std::unique_ptr<MIRParser> theParser;
+  bool fileparsed = true;
   if (theModule == nullptr) {
     MPLTimer timer;
     timer.Start();
-    theModule = new MIRModule(fileName);
+    fileparsed = false;
+    theModule = std::make_unique<MIRModule>(fileName);
     theModule->SetWithMe(
         std::find(options.GetRunningExes().begin(), options.GetRunningExes().end(),
                   kBinNameMe) != options.GetRunningExes().end());
@@ -134,7 +136,8 @@ ErrorCode MplcgCompiler::Compile(const MplOptions &options, MIRModulePtr &theMod
   }
 
   LogInfo::MapleLogger() << "Starting mplcg\n";
-  DriverRunner runner(theModule, options.GetRunningExes(), fileName, optMp, options.HasSetTimePhases());
+  DriverRunner runner(theModule.get(), options.GetRunningExes(), fileName, optMp,
+      fileparsed, options.HasSetTimePhases());
   PrintCommand(options);
   runner.SetCGInfo(&cgOption, fileName);
   runner.ProcessCGPhase(output, baseName);

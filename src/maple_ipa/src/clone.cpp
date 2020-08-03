@@ -127,6 +127,10 @@ MIRFunction *Clone::CloneFunction(MIRFunction &originalFunction, const std::stri
     CloneLabels(*newFunc, originalFunction);
     mirBuilder.SetCurrentFunction(*originalCurrFunction);
   }
+  // clone pregIndex
+  if (newFunc->GetPregTab() != nullptr && originalFunction.GetPregTab() != nullptr) {
+    newFunc->GetPregTab()->SetIndex(originalFunction.GetPregTab()->GetIndex());
+  }
   return newFunc;
 }
 

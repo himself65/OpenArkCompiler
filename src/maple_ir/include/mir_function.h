@@ -442,6 +442,11 @@ class MIRFunction {
     inferredReturnTyIdx = tyIdx;
   }
 
+  void AllocTypeNameTab() {
+    if (typeNameTab == nullptr) {
+      typeNameTab = module->GetMemPool()->New<MIRTypeNameTable>(module->GetMPAllocator());
+    }
+  }
   bool HaveTypeNameTab() {
     return typeNameTab != nullptr;
   }
@@ -463,6 +468,11 @@ class MIRFunction {
     return labelTab->GetName(labelIdx);
   }
 
+  void AllocLabelTab() {
+    if (labelTab == nullptr) {
+      labelTab = module->GetMemPool()->New<MIRLabelTable>(module->GetMPAllocator());
+    }
+  }
   MIRPregTable *GetPregTab() {
     return pregTab;
   }
@@ -471,6 +481,11 @@ class MIRFunction {
   }
   void SetPregTab(MIRPregTable *tab) {
     pregTab = tab;
+  }
+  void AllocPregTab() {
+    if (pregTab == nullptr) {
+      pregTab = module->GetMemPool()->New<MIRPregTable>(module, &module->GetMPAllocator());
+    }
   }
   MIRPreg *GetPregItem(PregIdx idx) {
     return const_cast<MIRPreg*>(const_cast<const MIRFunction*>(this)->GetPregItem(idx));
@@ -717,7 +732,11 @@ class MIRFunction {
   MIRSymbolTable *GetSymTab() {
     return symTab;
   }
-
+  void AllocSymTab() {
+    if (symTab == nullptr) {
+      symTab = module->GetMemPool()->New<MIRSymbolTable>(module->GetMPAllocator());
+    }
+  }
   const MIRLabelTable *GetLabelTab() const {
     CHECK_FATAL(labelTab != nullptr, "must be");
     return labelTab;

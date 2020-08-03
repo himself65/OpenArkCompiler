@@ -38,7 +38,7 @@ class Compiler {
 
   virtual ~Compiler() = default;
 
-  virtual ErrorCode Compile(const MplOptions &options, MIRModulePtr &theModule);
+  virtual ErrorCode Compile(const MplOptions &options, std::unique_ptr<MIRModule> &theModule);
 
   virtual void GetTmpFilesToDelete(const MplOptions&, std::vector<std::string>&) const {}
 
@@ -70,11 +70,13 @@ class Compiler {
   const std::string name;
   std::string MakeOption(const MplOptions &options) const;
   void AppendDefaultOptions(std::map<std::string, MplOption> &finalOptions,
-                            const std::map<std::string, MplOption> &defaultOptions) const;
+                            const std::map<std::string, MplOption> &defaultOptions,
+                            std::ostringstream &strOption, bool isDebug) const;
   void AppendOptions(std::map<std::string, MplOption> &finalOptions, const std::string &key,
                      const std::string &value) const;
   void AppendExtraOptions(std::map<std::string, MplOption> &finalOptions,
-                          const std::map<std::string, std::vector<MplOption>> &extraOptions) const;
+                          const MplOptions &options,
+                          std::ostringstream &strOption, bool isDebug) const;
   std::map<std::string, MplOption> MakeDefaultOptions(const MplOptions &options) const;
   int Exe(const MplOptions &mplOptions, const std::string &options) const;
   const std::string &GetName() const {
@@ -101,7 +103,7 @@ class MapleCombCompiler : public Compiler {
 
   ~MapleCombCompiler() = default;
 
-  ErrorCode Compile(const MplOptions &options, MIRModulePtr &theModule) override;
+  ErrorCode Compile(const MplOptions &options, std::unique_ptr<MIRModule> &theModule) override;
   void PrintCommand(const MplOptions &options) const override;
   std::string GetInputFileName(const MplOptions &options) const override;
 
@@ -118,7 +120,7 @@ class MplcgCompiler : public Compiler {
   explicit MplcgCompiler(const std::string &name) : Compiler(name) {}
 
   ~MplcgCompiler() = default;
-  ErrorCode Compile(const MplOptions &options, MIRModulePtr &theModule) override;
+  ErrorCode Compile(const MplOptions &options, std::unique_ptr<MIRModule> &theModule) override;
   void PrintCommand(const MplOptions &options) const override;
  private:
   std::string GetInputFileName(const MplOptions &options) const override;

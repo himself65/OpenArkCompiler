@@ -66,6 +66,8 @@ std::string Options::proFileData = "";
 std::string Options::proFileFuncData = "";
 std::string Options::proFileClassData = "";
 bool Options::checkArrayStore = false;
+bool Options::noComment = false;
+
 enum OptionIndex {
   kMpl2MplDumpPhase = kCommonOptionEnd + 1,
   kMpl2MplSkipPhase,
@@ -103,6 +105,7 @@ enum OptionIndex {
   kMpl2MplNoDot,
   kGenIRProfile,
   kProfileTest,
+  kNoComment
 };
 
 const Descriptor kUsage[] = {
@@ -446,6 +449,15 @@ const Descriptor kUsage[] = {
     "  --no-profile-test           \tDisable profile test\n",
     "mpl2mpl",
     {} },
+  { kNoComment,
+    0,
+    "",
+    "no-comment",
+    kBuildTypeProduct,
+    kArgCheckPolicyBool,
+    "  --no-comment             \tbuild inlineCache 0:off, 1:open\n",
+    "mpl2mpl",
+    {} },
   { kUnknown,
     0,
     "",
@@ -650,6 +662,9 @@ bool Options::SolveOptions(const std::vector<Option> &opts, bool isDebug) const 
         break;
       case kProfileTest:
         profileTest = (opt.Type() == kEnable);
+        break;
+      case kNoComment:
+        noComment = true;
         break;
       default:
         WARN(kLncWarn, "input invalid key for mpl2mpl " + opt.OptionKey());

@@ -1,0 +1,91 @@
+#
+# Copyright (c) [2020] Huawei Technologies Co.,Ltd.All rights reserved.
+#
+# OpenArkCompiler is licensed under the Mulan PSL v1.
+# You can use this software according to the terms and conditions of the Mulan PSL v1.
+# You may obtain a copy of Mulan PSL v1 at:
+#
+#     http://license.coscl.org.cn/MulanPSL
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR
+# FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v1 for more details.
+#
+configs = [ "${MAPLEALL_ROOT}:mapleallcompilecfg" ]
+cflags += [
+  "-fprofile-arcs",
+  "-ftest-coverage",
+  "-DMIR_FEATURE_FULL=1",
+  "-DMPLFE_FULL_INFO_DUMP=1",
+  "-DENABLE_COV_CHECK=1",
+]
+
+include_directories = [
+  "${MPLFE_ROOT}/common/include",
+  "${MPLFE_ROOT}/jbc_input/include",
+  "${MAPLEALL_ROOT}/huawei_secure_c/include",
+  "${MAPLEALL_ROOT}/maple_ir/include",
+  "${MAPLEALL_ROOT}/maple_util/include",
+  "${MAPLEALL_ROOT}/maple_driver/include",
+  "${MAPLEALL_ROOT}/mempool/include",
+  "${MAPLE_ROOT}/build/prebuilt/gtestlib/include",
+]
+
+executable("mplfeUT") {
+  sources = [
+    "${MPLFE_ROOT}/test/base64_test.cpp",
+    "${MPLFE_ROOT}/test/basic_io_test.cpp",
+    "${MPLFE_ROOT}/test/fe_algorithm_test.cpp",
+    "${MPLFE_ROOT}/test/fe_file_ops_test.cpp",
+    "${MPLFE_ROOT}/test/fe_file_type_test.cpp",
+    "${MPLFE_ROOT}/test/fe_function_test.cpp",
+    "${MPLFE_ROOT}/test/fe_struct_elem_info_test.cpp",
+    "${MPLFE_ROOT}/test/fe_type_hierarchy_test.cpp",
+    "${MPLFE_ROOT}/test/fe_type_manager_test.cpp",
+    "${MPLFE_ROOT}/test/fe_utils_test.cpp",
+    "${MPLFE_ROOT}/test/feir_builder_test.cpp",
+    "${MPLFE_ROOT}/test/feir_stmt_dfg_test.cpp",
+    "${MPLFE_ROOT}/test/feir_stmt_test.cpp",
+    "${MPLFE_ROOT}/test/feir_test_base.cpp",
+    "${MPLFE_ROOT}/test/feir_type_helper_test.cpp",
+    "${MPLFE_ROOT}/test/feir_type_test.cpp",
+    "${MPLFE_ROOT}/test/feir_var_test.cpp",
+    "${MPLFE_ROOT}/test/jbc_class2fe_helper_test.cpp",
+    "${MPLFE_ROOT}/test/jbc_class_const_test.cpp",
+    "${MPLFE_ROOT}/test/jbc_class_test.cpp",
+    "${MPLFE_ROOT}/test/jbc_function_test.cpp",
+    "${MPLFE_ROOT}/test/jbc_opcode_helper_test.cpp",
+    "${MPLFE_ROOT}/test/jbc_stack2fe_helper_test.cpp",
+    "${MPLFE_ROOT}/test/jbc_stack_helper_test.cpp",
+    "${MPLFE_ROOT}/test/jbc_util_test.cpp",
+    "${MPLFE_ROOT}/test/mplfeUT.cpp",
+    "${MPLFE_ROOT}/test/mplfe_ut_options.cpp",
+    "${MPLFE_ROOT}/test/mplfe_ut_regx.cpp",
+    "${MPLFE_ROOT}/test/mplfe_ut_regx_test.cpp",
+  ]
+  include_dirs = include_directories
+  deps = [
+    "${MAPLEALL_ROOT}/huawei_secure_c:libHWSecureC",
+    "${MAPLEALL_ROOT}/maple_ir:libmplir",
+    "${MAPLEALL_ROOT}/mpl2mpl:libmpl2mpl",
+    "${MPLFE_ROOT}:lib_mplfe_jbc_input",
+    "${MPLFE_ROOT}:lib_mplfe_util",
+  ]
+  libs = [
+    "${OPENSOURCE_DEPS}/libmempool.a",
+    "${OPENSOURCE_DEPS}/libmplutil.a",
+    "${MAPLE_ROOT}/build/prebuilt/gtestlib/lib/libgmock.so",
+    "${MAPLE_ROOT}/build/prebuilt/gtestlib/lib/libgmock_main.so",
+    "${MAPLE_ROOT}/build/prebuilt/gtestlib/lib/libgtest.so",
+    "${MAPLE_ROOT}/build/prebuilt/gtestlib/lib/libgtest_main.so",
+    "z",
+    "pthread",
+  ]
+  ldflags = [
+    "-fprofile-arcs",
+    "-ftest-coverage",
+    "-Wno-defaulted-function-deleted",
+    "-Wl,-rpath,${MAPLE_ROOT}/build/prebuilt/gtestlib/lib",
+  ]
+}

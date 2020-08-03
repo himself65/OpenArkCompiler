@@ -32,6 +32,7 @@ namespace maple {
 constexpr uint8 Profile::stringEnd = 0x00;
 uint32 Profile::hotFuncCountThreshold = 0;
 bool Profile::debug = false;
+bool Profile::initialized = false;
 constexpr uint32 kPrecision = 1000000;
 // preHot data
 const std::string Profile::preClassHot[] = {
@@ -259,6 +260,7 @@ void Profile::InitPreHot() {
 
 bool Profile::DeCompress(const std::string &path, const std::string &dexNameInner, ProfileType type) {
   if (initialized) {
+    LogInfo::MapleLogger() << "System server Profile has been decompressed before" << '\n';
     return valid;
   }
   initialized = true;

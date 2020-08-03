@@ -21,6 +21,7 @@ declare_args() {
   GN_BUILD_TYPE = ""
   HOST_ARCH = 64
   MIR_JAVA = 1
+  COV_CHECK = 0
 }
 
 # Define global args

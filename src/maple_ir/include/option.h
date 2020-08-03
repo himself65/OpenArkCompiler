@@ -99,6 +99,7 @@ class Options : public MapleDriverOptionBase {
   static bool genIRProfile;
   static bool profileTest;
   static bool checkArrayStore;
+  static bool noComment;
  private:
   void DecideMpl2MplRealLevel(const std::vector<mapleOption::Option> &inputOptions) const;
   std::vector<std::string> phaseSeq;
