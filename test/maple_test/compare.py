@@ -31,7 +31,7 @@ EXPECTED_REGEX = r"\:{line_num}\:.*\:.*"
 
 SCAN_KEYWORDS = ["full", "not", "begin", "next", "end"]
 REGEX_KEYWORDS = ["auto", "not", "next", "end"]
-EXPECTED_KEYWORDS = ["scan", "scan-not", "scan-auto"]
+EXPECTED_KEYWORDS = ["regex", "regex-auto", "regex-not"]
 
 
 class CompareError(Exception):
