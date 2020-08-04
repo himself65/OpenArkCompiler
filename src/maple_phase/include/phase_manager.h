@@ -26,7 +26,8 @@ class PhaseManager {
         allocator(&memPool),
         registeredPhases(std::less<PhaseID>(), allocator.Adapter()),
         phaseSequences(allocator.Adapter()),
-        phaseTimers(allocator.Adapter()) {}
+        phaseTimers(allocator.Adapter()),
+        extraMeTimers(allocator.Adapter()) {}
 
   virtual ~PhaseManager() = default;
 
@@ -130,20 +131,34 @@ class PhaseManager {
   }
 
   long DumpTimers() {
+    auto TimeLogger = [](const std::string &itemName, time_t itemTimeUs, time_t totalTimeUs) {
+      LogInfo::MapleLogger() << std::left << std::setw(25) << itemName << std::setw(10)
+                             << std::right << std::fixed << std::setprecision(2)
+                             << (100.0 * itemTimeUs / totalTimeUs) << "%" << std::setw(10)
+                             << std::setprecision(0) << (itemTimeUs / 1000.0) << "ms\n";
+    };
     long total = 0;
+    // extra timer
+    for (auto it = extraMeTimers.cbegin(); it != extraMeTimers.cend(); ++it) {
+      total += it->second;
+    }
+    bool isMePM = total > 0;
     for (size_t i = 0; i < phaseTimers.size(); ++i) {
       total += phaseTimers[i];
     }
-    for (size_t i = 0; i < phaseTimers.size(); ++i) {
-      ASSERT(total != 0, "calculation check");
-      ASSERT(registeredPhases[phaseSequences[i]] != nullptr, "Phase null ptr check");
-      std::ios::fmtflags f(LogInfo::MapleLogger().flags());
-      LogInfo::MapleLogger() << std::left << std::setw(25) <<
-          registeredPhases[phaseSequences[i]]->PhaseName() << std::setw(10) << std::right << std::fixed <<
-          std::setprecision(2) << (100.0 * phaseTimers[i] / total) << "%" << std::setw(10) <<
-          std::setprecision(0) << (phaseTimers[i] / 1000.0) << "ms" << '\n';
-      LogInfo::MapleLogger().flags(f);
+    // Dump extra timer
+    ASSERT(total != 0, "calculation check");
+    std::ios::fmtflags f(LogInfo::MapleLogger().flags());
+    if (isMePM) {
+      for (auto it = extraMeTimers.cbegin(); it != extraMeTimers.cend(); ++it) {
+        TimeLogger(it->first, it->second, total);
+      }
     }
+    for (size_t i = 0; i < phaseTimers.size(); ++i) {
+      ASSERT(registeredPhases[phaseSequences[i]] != nullptr, "Phase null ptr check");
+      TimeLogger(registeredPhases[phaseSequences[i]]->PhaseName(), phaseTimers[i], total);
+    }
+    LogInfo::MapleLogger().flags(f);
     return total;
   }
 
@@ -157,6 +172,7 @@ class PhaseManager {
   MapleMap<PhaseID, Phase*> registeredPhases;
   MapleVector<PhaseID> phaseSequences;
   MapleVector<long> phaseTimers;
+  MapleMap<std::string, long> extraMeTimers;
 };
 }  // namespace maple
 #endif  // MAPLE_PHASE_INCLUDE_PHASE_MANAGER_H

@@ -373,10 +373,9 @@ IvarMeExpr *IRMap::BuildLHSIvarFromIassMeStmt(IassignMeStmt &iassignMeStmt) {
 }
 
 // build Me chilist from MayDefNode list
-void IRMap::BuildChiList(MeStmt &meStmt, MapleMap<OStIdx, MayDefNode> &mayDefNodes,
+void IRMap::BuildChiList(MeStmt &meStmt, TypeOfMayDefList &mayDefNodes,
                          MapleMap<OStIdx, ChiMeNode*> &outList) {
-  for (auto it = mayDefNodes.begin(); it != mayDefNodes.end(); ++it) {
-    MayDefNode &mayDefNode = it->second;
+  for (auto &mayDefNode : mayDefNodes) {
     VersionSt *opndSt = mayDefNode.GetOpnd();
     VersionSt *resSt = mayDefNode.GetResult();
     auto *chiMeStmt = New<ChiMeNode>(&meStmt);
@@ -389,10 +388,9 @@ void IRMap::BuildChiList(MeStmt &meStmt, MapleMap<OStIdx, MayDefNode> &mayDefNod
   }
 }
 
-void IRMap::BuildMustDefList(MeStmt &meStmt, MapleVector<MustDefNode> &mustDefList,
+void IRMap::BuildMustDefList(MeStmt &meStmt, TypeOfMustDefList &mustDefList,
                              MapleVector<MustDefMeNode> &mustDefMeList) {
-  for (auto it = mustDefList.begin(); it != mustDefList.end(); ++it) {
-    MustDefNode &mustDefNode = *it;
+  for (auto &mustDefNode : mustDefList) {
     VersionSt *vst = mustDefNode.GetResult();
     VarMeExpr *lhs = GetOrCreateVarFromVerSt(*vst);
     ASSERT(lhs->GetMeOp() == kMeOpReg || lhs->GetMeOp() == kMeOpVar, "unexpected opcode");
@@ -574,9 +572,8 @@ MeStmt *IRMap::BuildMeStmt(StmtNode &stmt) {
   return func(this, stmt, *ssaPart);
 }
 
-void IRMap::BuildMuList(MapleMap<OStIdx, MayUseNode> &mayUseList, MapleMap<OStIdx, VarMeExpr*> &muList) {
-  for (std::pair<OStIdx, MayUseNode> mapItem : mayUseList) {
-    MayUseNode &mayUseNode = mapItem.second;
+void IRMap::BuildMuList(TypeOfMayUseList &mayUseList, MapleMap<OStIdx, VarMeExpr*> &muList) {
+  for (auto &mayUseNode : mayUseList) {
     VersionSt *vst = mayUseNode.GetOpnd();
     VarMeExpr *varMeExpr = GetOrCreateVarFromVerSt(*vst);
     muList.insert(std::make_pair(varMeExpr->GetOStIdx(), varMeExpr));

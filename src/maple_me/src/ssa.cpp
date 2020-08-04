@@ -72,9 +72,9 @@ void SSA::RenameDefs(StmtNode &stmt, BB &defBB) {
     theSSAPart->SetSSAVar(*newVersionSym);
   }
   if (kOpcodeInfo.HasSSADef(opcode)) {
-    MapleMap<OStIdx, MayDefNode> &mayDefList = theSSAPart->GetMayDefNodes();
+    TypeOfMayDefList &mayDefList = theSSAPart->GetMayDefNodes();
     for (auto it = mayDefList.begin(); it != mayDefList.end(); ++it) {
-      MayDefNode &mayDef = it->second;
+      MayDefNode &mayDef = *it;
       VersionSt *vSym = mayDef.GetResult();
       CHECK_FATAL(vSym->GetOrigIdx() < vstStacks.size(), "index out of range in SSA::RenameMayDefs");
       mayDef.SetOpnd(vstStacks[vSym->GetOrigIdx()]->top());
@@ -100,10 +100,10 @@ void SSA::RenameMustDefs(const StmtNode &stmt, BB &defBB) {
 }
 
 void SSA::RenameMayUses(BaseNode &node) {
-  MapleMap<OStIdx, MayUseNode> &mayUseList = ssaTab->GetStmtsSSAPart().GetMayUseNodesOf(static_cast<StmtNode&>(node));
-  MapleMap<OStIdx, MayUseNode>::iterator it = mayUseList.begin();
+  TypeOfMayUseList &mayUseList = ssaTab->GetStmtsSSAPart().GetMayUseNodesOf(static_cast<StmtNode&>(node));
+  auto it = mayUseList.begin();
   for (; it != mayUseList.end(); ++it) {
-    MayUseNode &mayUse = it->second;
+    MayUseNode &mayUse = *it;
     VersionSt *vSym = mayUse.GetOpnd();
     CHECK_FATAL(vSym->GetOrigIdx() < vstStacks.size(), "index out of range in SSA::RenameMayUses");
     mayUse.SetOpnd(vstStacks.at(vSym->GetOrigIdx())->top());

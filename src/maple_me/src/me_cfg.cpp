@@ -37,6 +37,11 @@ static bool CaseValOfSwitchIsSuccInt(const maple::CaseVector &switchTable) {
 }
 
 namespace maple {
+// determine if need to be replaced by assertnonnull
+bool MeCFG::IfReplaceWithAssertNonNull(const BB &bb) const {
+  (void) bb;
+  return false;
+}
 
 void MeCFG::ReplaceSwitchContainsOneCaseBranchWithBrtrue(maple::BB &bb, MapleVector<BB*> &exitBlocks) {
   StmtNode &lastStmt = bb.GetStmtNodes().back();
@@ -181,6 +186,10 @@ void MeCFG::BuildMirCFG() {
           bb->SetKind(kBBFallthru);
         } else {
           bb->AddSucc(*meBB);
+        }
+        // can the gotostmt be replaced by assertnonnull ?
+        if (IfReplaceWithAssertNonNull(*meBB)) {
+          patternSet.insert(lblIdx);
         }
         break;
       }
@@ -514,6 +523,11 @@ void MeCFG::FixMirCFG() {
       break;
     }
   }
+}
+
+
+// replace "if() throw NPE()" with assertnonnull
+void MeCFG::ReplaceWithAssertnonnull() {
 }
 
 bool MeCFG::IsStartTryBB(maple::BB &meBB) const {

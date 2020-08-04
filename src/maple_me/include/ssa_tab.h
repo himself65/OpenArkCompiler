@@ -113,7 +113,7 @@ class SSATab : public AnalysisResult {
   }
 
   // should check HasSSAUse first
-  const MapleMap<OStIdx, MayUseNode> &GetStmtMayUseNodes(const StmtNode &stmt) const {
+  const TypeOfMayUseList &GetStmtMayUseNodes(const StmtNode &stmt) const {
     return stmtsSSAPart.SSAPartOf(stmt)->GetMayUseNodes();
   }
   // should check IsCallAssigned first

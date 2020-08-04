@@ -231,34 +231,28 @@ class OriginalSt {
 
 class SymbolFieldPair {
  public:
-  SymbolFieldPair(uint32 stIndex, FieldID fld) : stIdx(stIndex), fldID(fld) {}
+  SymbolFieldPair(const StIdx &stIdx, FieldID fld) : stIdx(stIdx), fldID(fld) {}
   ~SymbolFieldPair() = default;
   bool operator==(const SymbolFieldPair& pairA) const {
     return (pairA.stIdx == stIdx) && (pairA.fldID == fldID);
   }
 
-  uint32 GetSymbolIndex() const {
+  const StIdx &GetStIdx() const {
     return stIdx;
   }
 
   FieldID GetFieldID() const {
     return fldID;
   }
+
  private:
-  uint32 stIdx;
+  StIdx stIdx;
   FieldID fldID;
 };
 
 struct HashSymbolFieldPair {
   size_t operator()(const SymbolFieldPair& symbolFldID) const {
-    return symbolFldID.GetSymbolIndex();
-  }
-};
-
-struct EqualSymbolFieldPair {
-  bool operator()(const SymbolFieldPair& symbolFldIDA, const SymbolFieldPair& symbolFldIDB) const {
-    return symbolFldIDA.GetSymbolIndex() == symbolFldIDB.GetSymbolIndex() &&
-           symbolFldIDA.GetFieldID() == symbolFldIDB.GetFieldID();
+    return symbolFldID.GetStIdx().FullIdx();
   }
 };
 
@@ -338,7 +332,7 @@ class OriginalStTable {
   MIRModule &mirModule;
   MapleVector<OriginalSt*> originalStVector;  // the vector that map a OriginalSt's index to its pointer
   // mir symbol to original table, this only exists for no-original variables.
-  MapleUnorderedMap<SymbolFieldPair, OStIdx, HashSymbolFieldPair, EqualSymbolFieldPair> mirSt2Ost;
+  MapleUnorderedMap<SymbolFieldPair, OStIdx, HashSymbolFieldPair> mirSt2Ost;
   MapleUnorderedMap<PregIdx, OStIdx> preg2Ost;
   // mir type to virtual variables in original table. this only exists for no-original variables.
   MapleMap<TyIdx, OStIdx> pType2Ost;

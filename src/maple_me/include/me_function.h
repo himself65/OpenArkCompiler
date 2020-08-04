@@ -280,6 +280,9 @@ class MeFunction : public FuncEmit {
     return nextBBId;
   }
 
+  void DumpFunction() const;
+  void DumpFunctionNoSSA() const;
+  void DumpMayDUFunction() const;
   void Dump(bool DumpSimpIr = false) const;
   virtual void Prepare(unsigned long rangeNum);
   void Verify() const;

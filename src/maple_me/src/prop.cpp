@@ -73,6 +73,10 @@ Prop::Prop(IRMap &irMap, Dominance &dom, MemPool &memPool, std::vector<BB*> &&bb
 MeExpr *Prop::SimplifyCvtMeExpr(const OpMeExpr &opMeExpr) const {
   MeExpr *opnd0 = opMeExpr.GetOpnd(0);
 
+  // convert a const expr
+  if (opnd0->GetMeOp() == kMeOpConst) {
+    return nullptr;
+  }
 
   // convert a convert expr
   if (opnd0->GetOp() == OP_cvt) {
@@ -129,6 +133,10 @@ MeExpr *Prop::SimplifyCompareSelectConstMeExpr(const OpMeExpr &opMeExpr, const M
   return irMap.HashMeExpr(newopMeExpr);
 }
 
+MeExpr *Prop::SimplifyCompareConstWithConst(OpMeExpr &opMeExpr) const {
+  return nullptr;
+}
+
 MeExpr *Prop::SimplifyCompareConstWithAddress(const OpMeExpr &opMeExpr) const {
   MeExpr *opnd0 = opMeExpr.GetOpnd(0);
   MeExpr *opnd1 = opMeExpr.GetOpnd(1);
@@ -168,6 +176,11 @@ MeExpr *Prop::SimplifyCompareWithZero(const OpMeExpr &opMeExpr) const {
 }
 
 MeExpr *Prop::SimplifyCompareMeExpr(OpMeExpr &opMeExpr) const {
+  // compare constant with constant
+  auto *newConstExpr = SimplifyCompareConstWithConst(opMeExpr);
+  if (newConstExpr != nullptr) {
+    return newConstExpr;
+  }
 
   // compare constant with addrof
   auto *newOpExpr = SimplifyCompareConstWithAddress(opMeExpr);

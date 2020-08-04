@@ -20,10 +20,12 @@
 namespace maple {
 class MeCFG {
  public:
-  explicit MeCFG(MeFunction &f) : func(f) {}
+  explicit MeCFG(MeFunction &f) : patternSet(f.GetAlloc().Adapter()), func(f) {}
 
   ~MeCFG() = default;
 
+  bool IfReplaceWithAssertNonNull(const BB &bb) const;
+  void ReplaceWithAssertnonnull();
   void BuildMirCFG();
   void FixMirCFG();
   void ConvertPhis2IdentityAssigns(BB &meBB) const;
@@ -59,6 +61,7 @@ class MeCFG {
   void ConvertMePhiList2IdentityAssigns(BB &meBB) const;
   bool IsStartTryBB(BB &meBB) const;
   void FixTryBB(BB &startBB, BB &nextBB);
+  MapleSet<LabelIdx> patternSet;
   MeFunction &func;
   bool hasDoWhile = false;
 };

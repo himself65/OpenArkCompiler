@@ -57,11 +57,11 @@ using namespace maplebe;
     phases.push_back(std::string(name)); \
   }
 
-#define ADD_EXTRA_PHASE(name, timephases, timeStart)                                                    \
-  if (timephases) {                                                                                     \
-    auto duration = std::chrono::system_clock::now() - (timeStart);                                       \
-    extraPhasesTime.push_back(std::chrono::duration_cast<std::chrono::microseconds>(duration).count()); \
-    extraPhasesName.push_back(name);                                                                    \
+#define ADD_EXTRA_PHASE(name, timephases, timeStart)                                                       \
+  if (timephases) {                                                                                        \
+    auto duration = std::chrono::system_clock::now() - (timeStart);                                        \
+    extraPhasesTime.emplace_back(std::chrono::duration_cast<std::chrono::microseconds>(duration).count()); \
+    extraPhasesName.emplace_back(name);                                                                    \
   }
 
 namespace maple {
@@ -133,7 +133,12 @@ ErrorCode DriverRunner::ParseInput(const std::string &outputFile, const std::str
   ErrorCode ret = kErrorNoError;
   bool parsed;
   if (!fileParsed) {
+    MPLTimer parseMirTimer;
+    parseMirTimer.Start();
     parsed = parser.ParseMIR(0, 0, false, true);
+    parseMirTimer.Stop();
+    InterleavedManager::interleavedTimer.emplace_back(
+        std::pair<std::string, time_t>("parseMpl", parseMirTimer.ElapsedMicroseconds()));
     if (!parsed) {
       ret = kErrorExit;
       parser.EmitError(outputFile);
@@ -141,7 +146,6 @@ ErrorCode DriverRunner::ParseInput(const std::string &outputFile, const std::str
   }
   timer.Stop();
   LogInfo::MapleLogger() << "Parse consumed " << timer.Elapsed() << "s" << '\n';
-
   return ret;
 }
 
@@ -150,24 +154,26 @@ void DriverRunner::ProcessMpl2mplAndMePhases(const std::string &outputFile, cons
   theMIRModule = theModule;
   if (mpl2mplOptions != nullptr || meOptions != nullptr) {
     LogInfo::MapleLogger() << "Processing mpl2mpl&mplme" << '\n';
-    MPLTimer timer;
-    timer.Start();
 
     InterleavedManager mgr(optMp, theModule, meInput, timePhases);
     std::vector<std::string> phases;
 #include "phases.def"
     InitPhases(mgr, phases);
+    MPLTimer timer;
+    timer.Start();
     mgr.Run();
-
+    MPLTimer emitVtableMplTimer;
+    emitVtableMplTimer.Start();
     // emit after module phase
     if (printOutExe == kMpl2mpl || printOutExe == kMplMe) {
       theModule->Emit(outputFile);
     } else if (genVtableImpl || Options::emitVtableImpl) {
       theModule->Emit(vtableImplFile);
     }
-
+    emitVtableMplTimer.Stop();
+    mgr.SetEmitVtableImplTime(emitVtableMplTimer.ElapsedMicroseconds());
     timer.Stop();
-    LogInfo::MapleLogger() << "Mpl2mpl&mplme consumed " << timer.Elapsed() << "s" << '\n';
+    LogInfo::MapleLogger() << " Mpl2mpl&mplme consumed " << timer.Elapsed() << "s" << '\n';
   }
 }
 
@@ -254,8 +260,9 @@ void DriverRunner::ProcessCGPhase(const std::string &outputFile, const std::stri
   cgfpm.SetCGPhase(kCgPhaseMainOpt);
   cgfpm.AddPhases(cgOptions->GetSequence());
 
+  std::chrono::system_clock::time_point timeStart = std::chrono::system_clock::now();
   CG *cg = CreateCGAndBeCommon(outputFile, originBaseName);
-
+  ADD_EXTRA_PHASE("createcg&becommon", CGOptions::IsEnableTimePhases(), timeStart);
   if (cgOptions->IsRunCG()) {
     // Generate the output file
     CHECK_FATAL(cg != nullptr, "cg is null");
@@ -267,7 +274,7 @@ void DriverRunner::ProcessCGPhase(const std::string &outputFile, const std::stri
     RunCGFunctions(*cg, cgfpm, extraPhasesTime, extraPhasesName);
 
     // Emit global info
-    std::chrono::system_clock::time_point timeStart = std::chrono::system_clock::now();
+    timeStart = std::chrono::system_clock::now();
     EmitGlobalInfo(*cg);
     ADD_EXTRA_PHASE("emitglobalinfo", CGOptions::IsEnableTimePhases(), timeStart);
   } else {
@@ -466,24 +473,8 @@ void DriverRunner::ProcessExtraTime(const std::vector<long> &extraPhasesTime,
     return;
   }
 
-  long total = 0;
   for (size_t i = 0; i < extraPhasesTime.size(); ++i) {
-    total += extraPhasesTime[i];
+    cgfpm.GetExtraPhasesTimer().insert({ extraPhasesName[i], extraPhasesTime[i] });
   }
-
-  cgfpm.SetExtraTotalTime(total);
-  total += cgfpm.GetOptimizeTotalTime();
-  CHECK_FATAL(total > 0, "Error in DriverRunner::ProcessExtraTime while counting total time");
-
-  std::ios::fmtflags f(std::cout.flags());
-  for (size_t i = 0; i < extraPhasesTime.size(); ++i) {
-    LogInfo::MapleLogger() << std::left << std::setw(25) << extraPhasesName[i] << std::setw(10) << std::right
-                           << std::fixed << std::setprecision(2) << (100.0 * extraPhasesTime[i] / total) << "%"
-                           << std::setw(10) << std::setprecision(0) << (extraPhasesTime[i] / 1000.0) << "ms"
-                           << '\n';
-  }
-  std::cout.flags(f);
-
-  LogInfo::MapleLogger() << '\n';
 }
 }  // namespace maple

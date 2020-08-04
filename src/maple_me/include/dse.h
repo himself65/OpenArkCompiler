@@ -27,12 +27,13 @@ namespace maple {
 class DSE {
  public:
   DSE(std::vector<BB*> &&bbVec, BB &commonEntryBB, BB &commonExitBB, SSATab &ssaTab,
-      Dominance &postDom, bool enableDebug = false)
+      Dominance &postDom, bool enableDebug = false, bool decouple = false)
       : enableDebug(enableDebug),
         bbVec(bbVec), commonEntryBB(commonEntryBB),
         commonExitBB(commonExitBB), ssaTab(ssaTab),
         postDom(postDom), bbRequired(bbVec.size(), false),
-        exprRequired(ssaTab.GetVersionStTableSize(), false) {}
+        exprRequired(ssaTab.GetVersionStTableSize(), false),
+        decoupleStatic(decouple) {}
 
   ~DSE() = default;
 
@@ -132,6 +133,7 @@ class DSE {
   // NPE will be throw if the value of this node is nullptr when stmt is executed
   // Or the node is opnd of a same type node
   static const uint8 kNodeTypeNotNull = 2;
+  bool decoupleStatic = false;
 };
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_DSE_H

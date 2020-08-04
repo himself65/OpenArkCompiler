@@ -98,6 +98,7 @@ class MeOption : public MapleDriverOptionBase {
   static bool lpreSpeculate;
   static bool spillAtCatch;
   static bool optDirectCall;
+  static bool decoupleStatic;
  private:
   void DecideMeRealLevel(const std::vector<mapleOption::Option> &inputOptions) const;
   std::unordered_set<std::string> skipPhases;

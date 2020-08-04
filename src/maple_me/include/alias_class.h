@@ -178,28 +178,27 @@ class AliasClass : public AnalysisResult {
   AliasElem &FindOrCreateAliasElemOfAddrofOSt(OriginalSt &oSt);
   void CollectMayDefForMustDefs(const StmtNode &stmt, std::set<OriginalSt*> &mayDefOsts);
   void CollectMayUseForCallOpnd(const StmtNode &stmt, std::set<OriginalSt*> &mayUseOsts);
-  void InsertMayDefNodeForCall(std::set<OriginalSt*> &mayDefOsts, MapleMap<OStIdx, MayDefNode> &mayDefNodes,
+  void InsertMayDefNodeForCall(std::set<OriginalSt*> &mayDefOsts, TypeOfMayDefList &mayDefNodes,
                                StmtNode &stmt, bool hasNoPrivateDefEffect);
   void InsertMayUseExpr(BaseNode &expr);
   void CollectMayUseFromGlobalsAffectedByCalls(std::set<OriginalSt*> &mayUseOsts);
   void CollectMayUseFromNADS(std::set<OriginalSt*> &mayUseOsts);
   void CollectMayUseFromDefinedFinalField(std::set<OriginalSt*> &mayUseOsts);
-  void InsertMayUseNode(std::set<OriginalSt*> &mayUseOsts, MapleMap<OStIdx, MayUseNode> &mayUseNodes);
+  void InsertMayUseNode(std::set<OriginalSt*> &mayUseOsts, TypeOfMayUseList &mayUseNodes);
   void InsertMayUseReturn(const StmtNode &stmt);
   void CollectPtsToOfReturnOpnd(const OriginalSt &ost, std::set<OriginalSt*> &mayUseOsts);
   void InsertReturnOpndMayUse(const StmtNode &stmt);
   void InsertMayUseAll(const StmtNode &stmt);
   void CollectMayDefForDassign(const StmtNode &stmt, std::set<OriginalSt*> &mayDefOsts);
-  void InsertMayDefNode(std::set<OriginalSt*> &mayDefOsts, MapleMap<OStIdx, MayDefNode> &mayDefNodes, StmtNode &stmt);
+  void InsertMayDefNode(std::set<OriginalSt*> &mayDefOsts, TypeOfMayDefList &mayDefNodes, StmtNode &stmt);
   void InsertMayDefDassign(StmtNode &stmt);
   bool IsEquivalentField(TyIdx tyIdxA, FieldID fldA, TyIdx tyIdxB, FieldID fldB) const;
   void CollectMayDefForIassign(StmtNode &stmt, std::set<OriginalSt*> &mayDefOsts);
-  void InsertMayDefNodeExcludeFinalOst(std::set<OriginalSt*> &mayDefOsts, MapleMap<OStIdx, MayDefNode> &mayDefNodes,
+  void InsertMayDefNodeExcludeFinalOst(std::set<OriginalSt*> &mayDefOsts, TypeOfMayDefList &mayDefNodes,
                                        StmtNode &stmt);
   void InsertMayDefIassign(StmtNode &stmt);
   void InsertMayDefUseSyncOps(StmtNode &stmt);
-  void InsertMayUseNodeExcludeFinalOst(const std::set<OriginalSt*> &mayUseOsts,
-                                       MapleMap<OStIdx, MayUseNode> &mayUseNodes);
+  void InsertMayUseNodeExcludeFinalOst(const std::set<OriginalSt*> &mayUseOsts, TypeOfMayUseList &mayUseNodes);
   void InsertMayDefUseIntrncall(StmtNode &stmt);
   void InsertMayDefUseClinitCheck(IntrinsiccallNode &stmt);
   virtual BB *GetBB(BBId id) = 0;

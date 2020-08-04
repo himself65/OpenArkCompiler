@@ -203,6 +203,11 @@ void CgFuncPhaseManager::Run(CGFunc &func) {
   bool skipFromFlag = false;
   bool skipAfterFlag = false;
   MPLTimer timer;
+  MPLTimer iteratorTimer;
+  if (timePhases) {
+    iteratorTimer.Start();
+  }
+  time_t loopBodyTime = 0;
   for (auto it = PhaseSequenceBegin(); it != PhaseSequenceEnd(); it++, ++phaseIndex) {
     PhaseID id = GetPhaseId(it);
     if (id == kCGFuncPhaseEMIT) {
@@ -237,6 +242,7 @@ void CgFuncPhaseManager::Run(CGFunc &func) {
       timer.Stop();
       CHECK_FATAL(phaseIndex < phaseTimers.size(), "invalid index for phaseTimers");
       phaseTimers[phaseIndex] += timer.ElapsedMicroseconds();
+      loopBodyTime += timer.ElapsedMicroseconds();
     }
     bool dumpPhases = CGOptions::DumpPhase(phaseName);
     if (((CGOptions::IsDumpAfter() && dumpPhase) || dumpPhases) && dumpFunc) {
@@ -262,6 +268,10 @@ void CgFuncPhaseManager::Run(CGFunc &func) {
       --it;  /* restore iterator */
     }
   }
+  if (timePhases) {
+    iteratorTimer.Stop();
+    extraPhasesTimer["iterator"] += iteratorTimer.ElapsedMicroseconds() - loopBodyTime;
+  }
 }
 
 void CgFuncPhaseManager::ClearPhaseNameInfo() {
@@ -283,22 +293,56 @@ int64 CgFuncPhaseManager::GetOptimizeTotalTime() const {
   return total;
 }
 
+int64 CgFuncPhaseManager::GetExtraPhasesTotalTime() const {
+  int64 total = 0;
+  for (auto &timer : extraPhasesTimer) {
+    total += timer.second;
+  }
+  return total;
+}
+
+time_t CgFuncPhaseManager::parserTime = 0;
+
 int64 CgFuncPhaseManager::DumpCGTimers() {
-  int64 total = GetOptimizeTotalTime();
-  total += extraTotal;
-  std::ios::fmtflags flag(std::cout.flags());
+  int64 parseTimeTotal = parserTime;
+  auto TimeLogger = [](const std::string &itemName, time_t itemTimeUs, time_t totalTimeUs) {
+    LogInfo::MapleLogger() << std::left << std::setw(25) << itemName <<
+                              std::setw(10) << std::right << std::fixed << std::setprecision(2) <<
+                              (kPercent * itemTimeUs / totalTimeUs) << "%" << std::setw(10) <<
+                              std::setprecision(0) << (itemTimeUs / kMicroSecPerMilliSec) << "ms\n";
+  };
+  LogInfo::MapleLogger() << "==================== PARSER ====================\n";
+  CHECK_FATAL(parseTimeTotal != 0, "calculation check");
+  TimeLogger("parser", parserTime, parseTimeTotal);
+
+  int64 phasesTotal = GetOptimizeTotalTime();
+  phasesTotal += GetExtraPhasesTotalTime();
+  std::ios::fmtflags flag(LogInfo::MapleLogger().flags());
+  LogInfo::MapleLogger() << "================== TIMEPHASES ==================\n";
+  for (auto &extraTimer : extraPhasesTimer) {
+    TimeLogger(extraTimer.first, extraTimer.second, phasesTotal);
+  }
+  LogInfo::MapleLogger() << "================================================\n";
   for (size_t i = 0; i < phaseTimers.size(); ++i) {
-    CHECK_FATAL(total != 0, "calculation check");
+    CHECK_FATAL(phasesTotal != 0, "calculation check");
     /*
      * output information by specified format, setw function parameter specifies show width
      * setprecision function parameter specifies precision
      */
-    LogInfo::MapleLogger() << std::left << std::setw(25) << registeredPhases[phaseSequences[i]]->PhaseName() <<
-                              std::setw(10) << std::right << std::fixed << std::setprecision(2) <<
-                              (kPercent * phaseTimers[i] / total) << "%" << std::setw(10) << std::setprecision(0) <<
-                              (phaseTimers[i] / kMicroSecPerMilliSec) << "ms" << "\n";
+    TimeLogger(registeredPhases[phaseSequences[i]]->PhaseName(), phaseTimers[i], phasesTotal);
   }
-  (void)std::cout.flags(flag);
-  return total;
+  LogInfo::MapleLogger() << "================================================\n";
+  LogInfo::MapleLogger() << "=================== SUMMARY ====================\n";
+  std::vector<std::pair<std::string, time_t>> timeSum;
+  timeSum.emplace_back(std::pair<std::string, time_t>{ "parser", parseTimeTotal });
+  timeSum.emplace_back(std::pair<std::string, time_t>{ "cgphase", phasesTotal });
+  int64 total = parseTimeTotal + phasesTotal;
+  timeSum.emplace_back(std::pair<std::string, time_t>{ "Total", total });
+  for (size_t i = 0; i < timeSum.size(); ++i) {
+    TimeLogger(timeSum[i].first, timeSum[i].second, total);
+  }
+  LogInfo::MapleLogger() << "================================================\n";
+  LogInfo::MapleLogger().flags(flag);
+  return phasesTotal;
 }
 }  /* namespace maplebe */

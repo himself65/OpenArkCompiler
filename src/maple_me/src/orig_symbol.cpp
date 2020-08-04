@@ -65,7 +65,7 @@ void OriginalStTable::Dump() {
 }
 
 OriginalSt *OriginalStTable::FindOrCreateSymbolOriginalSt(MIRSymbol &mirst, PUIdx pidx, FieldID fld) {
-  auto it = mirSt2Ost.find(SymbolFieldPair(mirst.GetStIndex(), fld));
+  auto it = mirSt2Ost.find(SymbolFieldPair(mirst.GetStIdx(), fld));
   if (it == mirSt2Ost.end()) {
     // create a new OriginalSt
     return CreateSymbolOriginalSt(mirst, pidx, fld);
@@ -96,7 +96,7 @@ OriginalSt *OriginalStTable::CreateSymbolOriginalSt(MIRSymbol &mirst, PUIdx pidx
     ost->SetIsPrivate(fattrs.GetAttr(FLDATTR_private));
   }
   originalStVector.push_back(ost);
-  mirSt2Ost[SymbolFieldPair(mirst.GetStIndex(), fld)] = ost->GetIndex();
+  mirSt2Ost[SymbolFieldPair(mirst.GetStIdx(), fld)] = ost->GetIndex();
   return ost;
 }
 
@@ -113,7 +113,7 @@ OriginalSt *OriginalStTable::CreatePregOriginalSt(PregIdx regidx, PUIdx pidx) {
 }
 
 OriginalSt *OriginalStTable::FindSymbolOriginalSt(MIRSymbol &mirst) {
-  auto it = mirSt2Ost.find(SymbolFieldPair(mirst.GetStIndex(), 0));
+  auto it = mirSt2Ost.find(SymbolFieldPair(mirst.GetStIdx(), 0));
   if (it == mirSt2Ost.end()) {
     return nullptr;
   }

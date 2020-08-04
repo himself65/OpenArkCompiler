@@ -53,8 +53,15 @@ class InterleavedManager {
   void AddPhases(const std::vector<std::string> &phases, bool isModulePhase, bool timePhases = false,
                  bool genMpl = false);
   void Run();
+  void RunMeOptimize(MeFuncPhaseManager &fpm);
   const PhaseManager *GetSupportPhaseManager(const std::string &phase);
-
+  long GetEmitVtableImplTime() const {
+    return emitVtableImplMplTime;
+  }
+  void SetEmitVtableImplTime(long time) {
+    emitVtableImplMplTime = time;
+  }
+  static std::vector<std::pair<std::string, time_t>> interleavedTimer;
  private:
   void InitSupportPhaseManagers();
   void OptimizeFuncs(MeFuncPhaseManager &fpm, MapleVector<MIRFunction*> &compList);
@@ -65,6 +72,8 @@ class InterleavedManager {
   MapleVector<PhaseManager*> supportPhaseManagers;  // Used to check whether a phase is supported and by which manager
   std::string meInput;
   bool timePasses = false;
+  time_t genMeMplTime = 0;
+  time_t emitVtableImplMplTime = 0;
 };
 }  // namespace maple
 #endif  // MAPLE_IPA_INCLUDE_INTERLEAVED_MANAGER_H

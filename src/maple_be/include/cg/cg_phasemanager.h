@@ -37,7 +37,8 @@ class CgFuncPhaseManager : public PhaseManager {
       : PhaseManager(memPool, "cg manager"),
         cgPhaseType(kCgPhaseInvalid),
         arFuncManager(GetMemAllocator()),
-        module(mod) {}
+        module(mod),
+        extraPhasesTimer(GetMemAllocator()->Adapter()) {}
 
   ~CgFuncPhaseManager() {
     arFuncManager.InvalidAllResults();
@@ -58,22 +59,23 @@ class CgFuncPhaseManager : public PhaseManager {
   void Run(CGFunc &func);
   void Run() override {}
 
-  void SetExtraTotalTime(int64 total) {
-    extraTotal = total;
+  auto &GetExtraPhasesTimer() {
+    return extraPhasesTimer;
   }
   int64 GetOptimizeTotalTime() const;
+  int64 GetExtraPhasesTotalTime() const;
   int64 DumpCGTimers();
 
   CgFuncResultMgr *GetAnalysisResultManager() {
     return &arFuncManager;
   }
   CgPhaseType cgPhaseType;
-
+  static time_t parserTime;
  private:
   /* analysis phase result manager */
   CgFuncResultMgr arFuncManager;
   MIRModule &module;
-  int64 extraTotal = 0L;
+  MapleMap<std::string, time_t> extraPhasesTimer;
 };
 }  /* namespace maplebe */
 
