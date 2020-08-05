@@ -37,8 +37,11 @@ int main(int argc, char **argv) {
   compiler.CheckInput();
   compiler.SetupOutputPathAndName();
   success = success && compiler.LoadMplt();
-  std::unique_ptr<MPLFECompilerComponent> jbcCompilerComp = std::make_unique<JBCCompilerComponent>(module);
-  compiler.RegisterCompilerComponent(std::move(jbcCompilerComp));
+  if (FEOptions::GetInstance().GetInputClassFiles().size() != 0 ||
+      FEOptions::GetInstance().GetInputJarFiles().size() != 0) {
+    std::unique_ptr<MPLFECompilerComponent> jbcCompilerComp = std::make_unique<JBCCompilerComponent>(module);
+    compiler.RegisterCompilerComponent(std::move(jbcCompilerComp));
+  }
   compiler.InitFromOptions();
   compiler.ParseInputs();
   compiler.PreProcessDecls();

@@ -36,6 +36,22 @@
 namespace maple {
 using namespace utils;
 
+void HDSE::RemoveNotRequiredCallAssignPart(MeStmt &stmt) {
+  if (!kOpcodeInfo.IsCallAssigned(stmt.GetOp())) {
+    return;
+  }
+  auto *assignPart = stmt.GetMustDefList();
+  bool assignPartRequired = false;
+  for (auto it = assignPart->begin(); it != assignPart->end(); ++it) {
+    if (IsExprNeeded(*it->GetLHS())) {
+      assignPartRequired = true;
+    }
+  }
+  if (!assignPartRequired) {
+    assignPart->clear();
+  }
+}
+
 void HDSE::RemoveNotRequiredStmtsInBB(BB &bb) {
   for (auto &meStmt : bb.GetMeStmts()) {
     if (!meStmt.GetIsLive()) {
@@ -43,7 +59,7 @@ void HDSE::RemoveNotRequiredStmtsInBB(BB &bb) {
         mirModule.GetOut() << "========== HSSA DSE is deleting this stmt: ";
         meStmt.Dump(&irMap);
       }
-      if (meStmt.GetOp() != OP_dassign && (meStmt.IsCondBr() || meStmt.GetOp() == OP_switch)) {
+      if (meStmt.IsCondBr() || meStmt.GetOp() == OP_switch) {
         // update CFG
         while (bb.GetSucc().size() != 1) {
           BB *succ = bb.GetSucc().back();
@@ -67,6 +83,7 @@ void HDSE::RemoveNotRequiredStmtsInBB(BB &bb) {
       }
       bb.RemoveMeStmt(&meStmt);
     }
+    RemoveNotRequiredCallAssignPart(meStmt);
   }
 }
 
@@ -87,7 +104,7 @@ bool HDSE::NeedNotNullCheck(MeExpr &meExpr, const BB &bb) {
 
 void HDSE::MarkMuListRequired(MapleMap<OStIdx, VarMeExpr*> &muList) {
   for (auto &pair : muList) {
-    workList.push_front(pair.second);
+    AddNewUse(*pair.second);
   }
 }
 
@@ -96,7 +113,7 @@ void HDSE::MarkChiNodeRequired(ChiMeNode &chiNode) {
     return;
   }
   chiNode.SetIsLive(true);
-  workList.push_front(chiNode.GetRHS());
+  AddNewUse(*chiNode.GetRHS());
   MeStmt *meStmt = chiNode.GetBase();
   MarkStmtRequired(*meStmt);
 }
@@ -115,30 +132,25 @@ void HDSE::MarkPhiRequired(VarOrRegPhiNode &mePhiNode) {
   MarkControlDependenceLive(*mePhiNode.GetDefBB());
 }
 
-void HDSE::MarkVarDefByStmt(VarMeExpr &varExpr) {
-  switch (varExpr.GetDefBy()) {
+void HDSE::MarkDefStmt(ScalarMeExpr &scalarExpr) {
+  switch (scalarExpr.GetDefBy()) {
     case kDefByNo:
       break;
     case kDefByStmt: {
-      auto *defStmt = varExpr.GetDefStmt();
-      if (defStmt != nullptr) {
-        MarkStmtRequired(*defStmt);
-      }
+      auto *defStmt = scalarExpr.GetDefStmt();
+      MarkStmtRequired(*defStmt);
       break;
     }
     case kDefByPhi: {
-      MarkPhiRequired(varExpr.GetDefPhi());
+      MarkPhiRequired(scalarExpr.GetDefPhi());
       break;
     }
     case kDefByChi: {
-      auto *defChi = &varExpr.GetDefChi();
-      if (defChi != nullptr) {
-        MarkChiNodeRequired(*defChi);
-      }
+      MarkChiNodeRequired(scalarExpr.GetDefChi());
       break;
     }
     case kDefByMustDef: {
-      auto *mustDef = &varExpr.GetDefMustDef();
+      auto *mustDef = &scalarExpr.GetDefMustDef();
       if (!mustDef->GetIsLive()) {
         mustDef->SetIsLive(true);
         MarkStmtRequired(*mustDef->GetBase());
@@ -151,62 +163,28 @@ void HDSE::MarkVarDefByStmt(VarMeExpr &varExpr) {
   }
 }
 
-void HDSE::MarkRegDefByStmt(RegMeExpr &regMeExpr) {
-  PregIdx regIdx = regMeExpr.GetRegIdx();
-  if (regIdx == -kSregRetval0) {
-    if (regMeExpr.GetDefStmt()) {
-      MarkStmtRequired(*regMeExpr.GetDefStmt());
-    }
-    return;
-  }
-  switch (regMeExpr.GetDefBy()) {
-    case kDefByNo:
-      break;
-    case kDefByStmt: {
-      auto *defStmt = regMeExpr.GetDefStmt();
-      if (defStmt != nullptr) {
-        MarkStmtRequired(*defStmt);
-      }
-      break;
-    }
-    case kDefByPhi:
-      MarkPhiRequired(regMeExpr.GetDefPhi());
-      break;
-    case kDefByMustDef: {
-      MustDefMeNode *mustDef = &regMeExpr.GetDefMustDef();
-      if (!mustDef->GetIsLive()) {
-        mustDef->SetIsLive(true);
-        MarkStmtRequired(*mustDef->GetBase());
-      }
-      break;
-    }
-    default:
-      ASSERT(false, "MarkRegDefByStmt unexpected defBy value");
-      break;
-  }
-}
-
 // Find all stmt contains ivar and save to stmt2NotNullExpr
 // Find all not null expr used as ivar's base、OP_array's or OP_assertnonnull's opnd
 // And save to notNullExpr2Stmt
 void HDSE::CollectNotNullExpr(MeStmt &stmt) {
   size_t opndNum = stmt.NumMeStmtOpnds();
-  uint8 exprType = kExprTypeNormal;
-  for (size_t i = 0; i < opndNum; ++i) {
-    MeExpr *opnd = stmt.GetOpnd(i);
-    if (i == 0 && instance_of<CallMeStmt>(stmt)) {
-      // A non-static call's first opnd is this, should be not null
-      CallMeStmt &callStmt = static_cast<CallMeStmt&>(stmt);
-      exprType = callStmt.GetTargetFunction().IsStatic() ? kExprTypeNormal : kExprTypeNotNull;
-    } else {
-      // A normal opnd not sure
-      MeExprOp meOp = opnd->GetMeOp();
-      if (meOp == kMeOpVar || meOp == kMeOpReg) {
-        continue;
-      }
-      exprType = kExprTypeNormal;
+  size_t i = 0;
+  if (opndNum > 0 && instance_of<CallMeStmt>(stmt)) {
+    CallMeStmt &callStmt = static_cast<CallMeStmt&>(stmt);
+    if (callStmt.GetTargetFunction().IsStatic()) {
+      CollectNotNullExpr(stmt, ToRef(stmt.GetOpnd(0)), kExprTypeNormal);
     }
-    CollectNotNullExpr(stmt, ToRef(opnd), exprType);
+    CollectNotNullExpr(stmt, ToRef(stmt.GetOpnd(0)), kExprTypeNotNull);
+    ++i;
+  }
+  for (; i < opndNum; ++i) {
+    MeExpr *opnd = stmt.GetOpnd(i);
+    // A normal opnd not sure
+    MeExprOp meOp = opnd->GetMeOp();
+    if (meOp == kMeOpVar || meOp == kMeOpReg) {
+      continue;
+    }
+    CollectNotNullExpr(stmt, ToRef(opnd), kExprTypeNormal);
   }
 }
 
@@ -235,7 +213,7 @@ void HDSE::CollectNotNullExpr(MeStmt &stmt, MeExpr &meExpr, uint8 exprType) {
     }
     default: {
       if (exprType != kExprTypeNormal) {
-        // Ref expr used in ivar、array or assertnotnull
+        // Ref expr used in ivar array or assertnotnull
         PrimType type = meExpr.GetPrimType();
         if (type == PTY_ref || type == PTY_ptr) {
           notNullExpr2Stmt[&meExpr].push_back(&stmt);
@@ -256,14 +234,9 @@ void HDSE::CollectNotNullExpr(MeStmt &stmt, MeExpr &meExpr, uint8 exprType) {
 
 void HDSE::PropagateUseLive(MeExpr &meExpr) {
   switch (meExpr.GetMeOp()) {
-    case kMeOpVar: {
-      auto &varMeExpr = static_cast<VarMeExpr&>(meExpr);
-      MarkVarDefByStmt(varMeExpr);
-      return;
-    }
+    case kMeOpVar:
     case kMeOpReg: {
-      auto &regMeExpr = static_cast<RegMeExpr&>(meExpr);
-      MarkRegDefByStmt(regMeExpr);
+      MarkDefStmt(static_cast<ScalarMeExpr&>(meExpr));
       return;
     }
     default: {
@@ -419,14 +392,16 @@ void HDSE::MarkSingleUseLive(MeExpr &meExpr) {
     case kMeOpVar:
     case kMeOpReg: {
       workList.push_front(&meExpr);
-      break;
+      return;
     }
     case kMeOpIvar: {
       auto *base = static_cast<IvarMeExpr&>(meExpr).GetBase();
       if (base != nullptr) {
         MarkSingleUseLive(*base);
       }
-      break;
+
+      MarkSingleUseLive(*static_cast<IvarMeExpr&>(meExpr).GetMu());
+      return;
     }
     default:
       break;
@@ -465,6 +440,10 @@ void HDSE::MarkStmtRequired(MeStmt &meStmt) {
   if (meStmt.GetOp() == OP_comment) {
     return;
   }
+  auto *prev = meStmt.GetPrev();
+  if (prev != nullptr && prev->GetOp() == OP_comment) {
+    prev->SetIsLive(true);
+  }
 
   // mark use
   MarkStmtUseLive(meStmt);
@@ -476,7 +455,7 @@ void HDSE::MarkStmtRequired(MeStmt &meStmt) {
 bool HDSE::StmtMustRequired(const MeStmt &meStmt, const BB &bb) const {
   Opcode op = meStmt.GetOp();
   // special opcode cannot be eliminated
-  if (IsStmtMustRequire(op) || op == OP_comment) {
+  if (IsStmtMustRequire(op)) {
     return true;
   }
   // control flow in an infinite loop cannot be eliminated
@@ -498,10 +477,10 @@ void HDSE::MarkSpecialStmtRequired() {
     auto &meStmtNodes = bb->GetMeStmts();
     for (auto itStmt = meStmtNodes.rbegin(); itStmt != meStmtNodes.rend(); ++itStmt) {
       MeStmt *pStmt = to_ptr(itStmt);
-      CollectNotNullExpr(*pStmt);
       if (pStmt->GetIsLive()) {
         continue;
       }
+      CollectNotNullExpr(*pStmt);
       if (StmtMustRequired(*pStmt, *bb)) {
         MarkStmtRequired(*pStmt);
       }
