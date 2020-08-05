@@ -15,7 +15,6 @@
 #include "prop.h"
 #include "me_irmap.h"
 #include "dominance.h"
-#define JAVALANG (irMap.GetSSATab().GetModule().IsJavaModule())
 
 namespace {
 using namespace maple;
@@ -73,6 +72,10 @@ Prop::Prop(IRMap &irMap, Dominance &dom, MemPool &memPool, std::vector<BB*> &&bb
 MeExpr *Prop::SimplifyCvtMeExpr(const OpMeExpr &opMeExpr) const {
   MeExpr *opnd0 = opMeExpr.GetOpnd(0);
 
+  // convert a const expr
+  if (opnd0->GetMeOp() == kMeOpConst) {
+    return nullptr;
+  }
 
   // convert a convert expr
   if (opnd0->GetOp() == OP_cvt) {
@@ -129,6 +132,10 @@ MeExpr *Prop::SimplifyCompareSelectConstMeExpr(const OpMeExpr &opMeExpr, const M
   return irMap.HashMeExpr(newopMeExpr);
 }
 
+MeExpr *Prop::SimplifyCompareConstWithConst(OpMeExpr &opMeExpr) const {
+  return nullptr;
+}
+
 MeExpr *Prop::SimplifyCompareConstWithAddress(const OpMeExpr &opMeExpr) const {
   MeExpr *opnd0 = opMeExpr.GetOpnd(0);
   MeExpr *opnd1 = opMeExpr.GetOpnd(1);
@@ -168,6 +175,11 @@ MeExpr *Prop::SimplifyCompareWithZero(const OpMeExpr &opMeExpr) const {
 }
 
 MeExpr *Prop::SimplifyCompareMeExpr(OpMeExpr &opMeExpr) const {
+  // compare constant with constant
+  auto *newConstExpr = SimplifyCompareConstWithConst(opMeExpr);
+  if (newConstExpr != nullptr) {
+    return newConstExpr;
+  }
 
   // compare constant with addrof
   auto *newOpExpr = SimplifyCompareConstWithAddress(opMeExpr);
@@ -231,7 +243,7 @@ void Prop::PropUpdateDef(MeExpr &meExpr) {
 
 void Prop::PropUpdateChiListDef(const MapleMap<OStIdx, ChiMeNode*> &chiList) {
   for (auto it = chiList.begin(); it != chiList.end(); ++it) {
-    PropUpdateDef(*static_cast<VarMeExpr*>(it->second->GetLHS()));
+    PropUpdateDef(*it->second->GetLHS());
   }
 }
 
@@ -262,23 +274,17 @@ void Prop::CollectSubVarMeExpr(const MeExpr &meExpr, std::vector<const MeExpr*> 
 // warning: I suppose the vector vervec is on the stack, otherwise would cause memory leak
 bool Prop::IsVersionConsistent(const std::vector<const MeExpr*> &vstVec,
                                const std::vector<std::stack<SafeMeExprPtr>> &vstLiveStack) const {
-  for (auto it = vstVec.begin(); it != vstVec.end(); ++it) {
+  for (auto *subExpr : vstVec) {
     // iterate each cur defintion of related symbols of rhs, check the version
-    const MeExpr *subExpr = *it;
     CHECK_FATAL(subExpr->GetMeOp() == kMeOpVar || subExpr->GetMeOp() == kMeOpReg, "error: sub expr error");
-    uint32 stackIdx = 0;
-    if (subExpr->GetMeOp() == kMeOpVar) {
-      stackIdx = static_cast<const VarMeExpr*>(subExpr)->GetOStIdx();
-    } else {
-      stackIdx = static_cast<const RegMeExpr*>(subExpr)->GetOstIdx();
-    }
+    uint32 stackIdx = static_cast<const ScalarMeExpr*>(subExpr)->GetOStIdx();
     auto &pStack = vstLiveStack.at(stackIdx);
     if (pStack.empty()) {
       // no definition so far go ahead
       continue;
     }
     SafeMeExprPtr curDef = pStack.top();
-    CHECK_FATAL(curDef->GetMeOp() == kMeOpVar || curDef->GetMeOp() == kMeOpReg, "error: cur def error");
+    ASSERT(curDef->GetMeOp() == subExpr->GetMeOp(), "error: cur def error");
     if (subExpr != curDef.get()) {
       return false;
     }
@@ -345,7 +351,7 @@ bool Prop::Propagatable(const MeExpr &expr, const BB &fromBB, bool atParm) const
       if (!IsVersionConsistent(varMeExprVec, vstLiveStackVec)) {
         return false;
       }
-      break;
+      return true;
     }
     case kMeOpIvar: {
       auto &ivarMeExpr = static_cast<const IvarMeExpr&>(expr);
@@ -404,6 +410,10 @@ MeExpr &Prop::PropVar(VarMeExpr &varMeExpr, bool atParm, bool checkPhi) const {
     if (rhs->GetDepth() <= kPropTreeLevel &&
         Propagatable(utils::ToRef(rhs), utils::ToRef(defStmt->GetBB()), atParm)) {
       // mark propagated for iread ref
+      if (rhs->GetMeOp() == kMeOpVar) {
+        auto &preRHS = PropVar(static_cast<VarMeExpr&>(*rhs), atParm, checkPhi);
+        return preRHS;
+      }
       if (rhs->GetMeOp() == kMeOpIvar && rhs->GetPrimType() == PTY_ref) {
         defStmt->SetPropagated(true);
       }
@@ -567,14 +577,12 @@ void Prop::TraversalMeStmt(MeStmt &meStmt) {
     case OP_return: {
       auto &retMeStmt = static_cast<RetMeStmt&>(meStmt);
       const MapleVector<MeExpr*> &opnds = retMeStmt.GetOpnds();
-      // java return operand cannot be expression because cleanup intrinsic is
-      // inserted before the return statement
-      if (JAVALANG && opnds.size() == 1 && opnds[0]->GetMeOp() == kMeOpVar) {
-        break;
-      }
       for (size_t i = 0; i < opnds.size(); ++i) {
         MeExpr *opnd = opnds[i];
-        retMeStmt.SetOpnd(i, &PropMeExpr(utils::ToRef(opnd), subProped, false));
+        auto &propedExpr = PropMeExpr(utils::ToRef(opnd), subProped, false);
+        if (propedExpr.GetMeOp() == kMeOpVar) {
+          retMeStmt.SetOpnd(i, &propedExpr);
+        }
       }
       break;
     }

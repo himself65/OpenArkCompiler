@@ -61,7 +61,7 @@ bool DSE::ExprNonDeletable(const BaseNode &expr) const {
     case OP_dread: {
       auto &dread = static_cast<const AddrofSSANode&>(expr);
       const MIRSymbol &sym = dread.GetMIRSymbol();
-      return sym.IsVolatile() || sym.IsTypeVolatile(dread.GetFieldID());
+      return sym.IsVolatile() || sym.IsTypeVolatile(dread.GetFieldID()) || (decoupleStatic && sym.IsGlobal());
     }
     case OP_iread: {
       auto &iread = static_cast<const IreadSSANode&>(expr);
@@ -324,7 +324,7 @@ void DSE::MarkSingleUseLive(const BaseNode &mirNode) {
         auto *mayDefList = SSAGenericGetMayDefsFromVersionSt(ToRef(verSt), ssaTab.GetStmtsSSAPart());
         if (mayDefList != nullptr) {
           for (auto it = mayDefList->begin(); it != mayDefList->end(); ++it) {
-            AddToWorkList(it->second.GetResult());
+            AddToWorkList(it->GetResult());
           }
         }
       }
@@ -346,8 +346,7 @@ void DSE::MarkStmtUseLive(const StmtNode &stmt) {
   }
 
   if (kOpcodeInfo.HasSSAUse(stmt.GetOpCode())) {
-    for (auto &pair : ssaTab.GetStmtMayUseNodes(stmt)) {
-      const MayUseNode &mayUse = pair.second;
+    for (auto &mayUse : ssaTab.GetStmtMayUseNodes(stmt)) {
       AddToWorkList(mayUse.GetOpnd());
     }
   }

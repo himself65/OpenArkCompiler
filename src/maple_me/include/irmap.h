@@ -240,9 +240,9 @@ class IRMap : public AnalysisResult {
   RegMeExpr *CreateRefRegMeExpr(const MIRSymbol&);
   VarMeExpr *GetOrCreateVarFromVerSt(const VersionSt &vst);
   RegMeExpr *GetOrCreateRegFromVerSt(const VersionSt &vst);
-  void BuildChiList(MeStmt&, MapleMap<OStIdx, MayDefNode>&, MapleMap<OStIdx, ChiMeNode*>&);
-  void BuildMustDefList(MeStmt &meStmt, MapleVector<MustDefNode>&, MapleVector<MustDefMeNode>&);
-  void BuildMuList(MapleMap<OStIdx, MayUseNode>&, MapleMap<OStIdx, VarMeExpr*>&);
+  void BuildChiList(MeStmt&, TypeOfMayDefList&, MapleMap<OStIdx, ChiMeNode*>&);
+  void BuildMustDefList(MeStmt &meStmt, TypeOfMustDefList&, MapleVector<MustDefMeNode>&);
+  void BuildMuList(TypeOfMayUseList&, MapleMap<OStIdx, VarMeExpr*>&);
   void BuildPhiMeNode(BB&);
   BB *GetFalseBrBB(const CondGotoMeStmt&);
   void SetMeExprOpnds(MeExpr &meExpr, BaseNode &mirNode);

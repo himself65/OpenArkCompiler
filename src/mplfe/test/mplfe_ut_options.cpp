@@ -62,7 +62,7 @@ MPLFEUTOptions::MPLFEUTOptions()
       }
 
 void MPLFEUTOptions::DumpUsage() const {
-  for (unsigned int i = 0; kUsage[i].help != ""; i++) {
+  for (unsigned int i = 0; !kUsage[i].help.empty(); i++) {
     std::cout << kUsage[i].help << std::endl;
   }
   exit(1);

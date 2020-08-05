@@ -31,9 +31,9 @@ AnalysisResult *MeDoMeProp::Run(MeFunction *func, MeFuncResultMgr *m, ModuleResu
   CHECK_NULL_FATAL(dom);
   auto *hMap = static_cast<MeIRMap*>(m->GetAnalysisResult(MeFuncPhase_IRMAP, func));
   CHECK_NULL_FATAL(hMap);
-  MeProp meProp(*hMap, *dom, *NewMemPool(), Prop::PropConfig { MeOption::propBase,
-      MeOption::propIloadRef, MeOption::propGlobalRef, MeOption::propFinaliLoadRef,
-      MeOption::propIloadRefNonParm, MeOption::propAtPhi });
+  bool propIloadRef = MeOption::propIloadRef;
+  MeProp meProp(*hMap, *dom, *NewMemPool(), Prop::PropConfig { MeOption::propBase, propIloadRef,
+      MeOption::propGlobalRef, MeOption::propFinaliLoadRef, MeOption::propIloadRefNonParm, MeOption::propAtPhi });
   meProp.DoProp();
   if (DEBUGFUNC(func)) {
     LogInfo::MapleLogger() << "\n============== After Copy Propagation  =============" << '\n';

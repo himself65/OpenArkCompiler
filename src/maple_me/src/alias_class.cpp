@@ -676,10 +676,10 @@ void AliasClass::CollectMayUseFromDefinedFinalField(std::set<OriginalSt*> &mayUs
 }
 
 // insert the ost of mayUseOsts into mayUseNodes
-void AliasClass::InsertMayUseNode(std::set<OriginalSt*> &mayUseOsts, MapleMap<OStIdx, MayUseNode> &mayUseNodes) {
+void AliasClass::InsertMayUseNode(std::set<OriginalSt*> &mayUseOsts, TypeOfMayUseList &mayUseNodes) {
   for (OriginalSt *ost : mayUseOsts) {
-    (void)mayUseNodes.insert(std::make_pair(
-        ost->GetIndex(), MayUseNode(ssaTab.GetVersionStTable().GetVersionStFromID(ost->GetZeroVersionIndex()))));
+    mayUseNodes.emplace_back(
+        MayUseNode(ssaTab.GetVersionStTable().GetVersionStFromID(ost->GetZeroVersionIndex())));
   }
 }
 
@@ -698,7 +698,7 @@ void AliasClass::InsertMayUseReturn(const StmtNode &stmt) {
   if (mirModule.CurFunction()->IsConstructor()) {
     CollectMayUseFromDefinedFinalField(mayUseOsts);
   }
-  MapleMap<OStIdx, MayUseNode> &mayUseNodes = ssaTab.GetStmtsSSAPart().GetMayUseNodesOf(stmt);
+  TypeOfMayUseList &mayUseNodes = ssaTab.GetStmtsSSAPart().GetMayUseNodesOf(stmt);
   InsertMayUseNode(mayUseOsts, mayUseNodes);
 }
 
@@ -735,19 +735,18 @@ void AliasClass::InsertReturnOpndMayUse(const StmtNode &stmt) {
         }
       }
       // insert mayUses
-      MapleMap<OStIdx, MayUseNode> &mayUseNodes = ssaTab.GetStmtsSSAPart().GetMayUseNodesOf(stmt);
+      TypeOfMayUseList &mayUseNodes = ssaTab.GetStmtsSSAPart().GetMayUseNodesOf(stmt);
       InsertMayUseNode(mayUseOsts, mayUseNodes);
     }
   }
 }
 
 void AliasClass::InsertMayUseAll(const StmtNode &stmt) {
-  MapleMap<OStIdx, MayUseNode> &mayUseNodes = ssaTab.GetStmtsSSAPart().GetMayUseNodesOf(stmt);
+  TypeOfMayUseList &mayUseNodes = ssaTab.GetStmtsSSAPart().GetMayUseNodesOf(stmt);
   for (AliasElem *aliasElem : id2Elem) {
     if (aliasElem->GetOriginalSt().GetIndirectLev() >= 0 && !aliasElem->GetOriginalSt().IsPregOst()) {
-      (void)mayUseNodes.insert(std::make_pair(
-          aliasElem->GetOriginalSt().GetIndex(),
-          MayUseNode(ssaTab.GetVersionStTable().GetVersionStFromID(aliasElem->GetOriginalSt().GetZeroVersionIndex()))));
+      mayUseNodes.emplace_back(
+          MayUseNode(ssaTab.GetVersionStTable().GetVersionStFromID(aliasElem->GetOriginalSt().GetZeroVersionIndex())));
     }
   }
 }
@@ -769,19 +768,18 @@ void AliasClass::CollectMayDefForDassign(const StmtNode &stmt, std::set<Original
   }
 }
 
-void AliasClass::InsertMayDefNode(std::set<OriginalSt*> &mayDefOsts, MapleMap<OStIdx, MayDefNode> &mayDefNodes,
+void AliasClass::InsertMayDefNode(std::set<OriginalSt*> &mayDefOsts, TypeOfMayDefList &mayDefNodes,
                                   StmtNode &stmt) {
   for (OriginalSt *mayDefOst : mayDefOsts) {
-    (void)mayDefNodes.insert(std::make_pair(
-        mayDefOst->GetIndex(),
-        MayDefNode(ssaTab.GetVersionStTable().GetVersionStFromID(mayDefOst->GetZeroVersionIndex()), &stmt)));
+    mayDefNodes.emplace_back(
+        MayDefNode(ssaTab.GetVersionStTable().GetVersionStFromID(mayDefOst->GetZeroVersionIndex()), &stmt));
   }
 }
 
 void AliasClass::InsertMayDefDassign(StmtNode &stmt) {
   std::set<OriginalSt*> mayDefOsts;
   CollectMayDefForDassign(stmt, mayDefOsts);
-  MapleMap<OStIdx, MayDefNode> &mayDefNodes = ssaTab.GetStmtsSSAPart().GetMayDefNodesOf(stmt);
+  TypeOfMayDefList &mayDefNodes = ssaTab.GetStmtsSSAPart().GetMayDefNodesOf(stmt);
   InsertMayDefNode(mayDefOsts, mayDefNodes, stmt);
 }
 
@@ -828,12 +826,11 @@ void AliasClass::CollectMayDefForIassign(StmtNode &stmt, std::set<OriginalSt*> &
 }
 
 void AliasClass::InsertMayDefNodeExcludeFinalOst(std::set<OriginalSt*> &mayDefOsts,
-                                                 MapleMap<OStIdx, MayDefNode> &mayDefNodes, StmtNode &stmt) {
+                                                 TypeOfMayDefList &mayDefNodes, StmtNode &stmt) {
   for (OriginalSt *mayDefOst : mayDefOsts) {
     if (!mayDefOst->IsFinal()) {
-      (void)mayDefNodes.insert(std::make_pair(
-          mayDefOst->GetIndex(),
-          MayDefNode(ssaTab.GetVersionStTable().GetVersionStFromID(mayDefOst->GetZeroVersionIndex()), &stmt)));
+      mayDefNodes.emplace_back(
+          MayDefNode(ssaTab.GetVersionStTable().GetVersionStFromID(mayDefOst->GetZeroVersionIndex()), &stmt));
     }
   }
 }
@@ -841,7 +838,7 @@ void AliasClass::InsertMayDefNodeExcludeFinalOst(std::set<OriginalSt*> &mayDefOs
 void AliasClass::InsertMayDefIassign(StmtNode &stmt) {
   std::set<OriginalSt*> mayDefOsts;
   CollectMayDefForIassign(stmt, mayDefOsts);
-  MapleMap<OStIdx, MayDefNode> &mayDefNodes = ssaTab.GetStmtsSSAPart().GetMayDefNodesOf(stmt);
+  TypeOfMayDefList &mayDefNodes = ssaTab.GetStmtsSSAPart().GetMayDefNodesOf(stmt);
   if (mayDefOsts.size() == 1) {
     InsertMayDefNode(mayDefOsts, mayDefNodes, stmt);
   } else {
@@ -886,10 +883,9 @@ void AliasClass::InsertMayDefUseSyncOps(StmtNode &stmt) {
     AliasElem *aliasElem = id2Elem[elemID];
     OriginalSt &ostOfAliasAE = aliasElem->GetOriginalSt();
     if (!ostOfAliasAE.IsFinal()) {
-      OStIdx ostIdx = ostOfAliasAE.GetIndex();
       VersionSt *vst0 = ssaTab.GetVersionStTable().GetVersionStFromID(ostOfAliasAE.GetZeroVersionIndex());
-      (void)theSSAPart->GetMayUseNodes().insert(std::make_pair(ostIdx, MayUseNode(vst0)));
-      (void)theSSAPart->GetMayDefNodes().insert(std::make_pair(ostIdx, MayDefNode(vst0, &stmt)));
+      theSSAPart->GetMayUseNodes().emplace_back(MayUseNode(vst0));
+      theSSAPart->GetMayDefNodes().emplace_back(MayDefNode(vst0, &stmt));
     }
   }
 }
@@ -966,13 +962,12 @@ void AliasClass::CollectMayUseForCallOpnd(const StmtNode &stmt, std::set<Origina
   }
 }
 
-void AliasClass::InsertMayDefNodeForCall(std::set<OriginalSt*> &mayDefOsts, MapleMap<OStIdx, MayDefNode> &mayDefNodes,
+void AliasClass::InsertMayDefNodeForCall(std::set<OriginalSt*> &mayDefOsts, TypeOfMayDefList &mayDefNodes,
                                          StmtNode &stmt, bool hasNoPrivateDefEffect) {
   for (OriginalSt *mayDefOst : mayDefOsts) {
     if (!hasNoPrivateDefEffect || !mayDefOst->IsPrivate()) {
-      (void)mayDefNodes.insert(std::make_pair(
-          mayDefOst->GetIndex(),
-          MayDefNode(ssaTab.GetVersionStTable().GetVersionStFromID(mayDefOst->GetZeroVersionIndex()), &stmt)));
+      mayDefNodes.emplace_back(
+          MayDefNode(ssaTab.GetVersionStTable().GetVersionStFromID(mayDefOst->GetZeroVersionIndex()), &stmt));
     }
   }
 }
@@ -1009,12 +1004,11 @@ void AliasClass::InsertMayDefUseCall(StmtNode &stmt, bool hasSideEffect, bool ha
 }
 
 void AliasClass::InsertMayUseNodeExcludeFinalOst(const std::set<OriginalSt*> &mayUseOsts,
-                                                 MapleMap<OStIdx, MayUseNode> &mayUseNodes) {
+                                                 TypeOfMayUseList &mayUseNodes) {
   for (OriginalSt *mayUseOst : mayUseOsts) {
     if (!mayUseOst->IsFinal()) {
-      (void)mayUseNodes.insert(
-          std::make_pair(mayUseOst->GetIndex(),
-                         MayUseNode(ssaTab.GetVersionStTable().GetVersionStFromID(mayUseOst->GetZeroVersionIndex()))));
+      mayUseNodes.emplace_back(
+          MayUseNode(ssaTab.GetVersionStTable().GetVersionStFromID(mayUseOst->GetZeroVersionIndex())));
     }
   }
 }
@@ -1044,16 +1038,15 @@ void AliasClass::InsertMayDefUseIntrncall(StmtNode &stmt) {
 }
 
 void AliasClass::InsertMayDefUseClinitCheck(IntrinsiccallNode &stmt) {
-  MapleMap<OStIdx, MayDefNode> &mayDefNodes = ssaTab.GetStmtsSSAPart().GetMayDefNodesOf(stmt);
+  TypeOfMayDefList &mayDefNodes = ssaTab.GetStmtsSSAPart().GetMayDefNodesOf(stmt);
   for (OStIdx ostIdx : globalsMayAffectedByClinitCheck) {
     AliasElem *aliasElem = osym2Elem[ostIdx];
     OriginalSt &ostOfAE = aliasElem->GetOriginalSt();
     std::string typeNameOfOst = ostOfAE.GetMIRSymbol()->GetName();
     std::string typeNameOfStmt = GlobalTables::GetTypeTable().GetTypeFromTyIdx(stmt.GetTyIdx())->GetName();
     if (typeNameOfOst.find(typeNameOfStmt) != std::string::npos) {
-      (void)mayDefNodes.insert(std::make_pair(
-          ostOfAE.GetIndex(),
-          MayDefNode(ssaTab.GetVersionStTable().GetVersionStFromID(ostOfAE.GetZeroVersionIndex()), &stmt)));
+      mayDefNodes.emplace_back(
+          MayDefNode(ssaTab.GetVersionStTable().GetVersionStFromID(ostOfAE.GetZeroVersionIndex()), &stmt));
     }
   }
 }

@@ -133,6 +133,7 @@ ErrorCode MplcgCompiler::Compile(const MplOptions &options, std::unique_ptr<MIRM
     }
     timer.Stop();
     LogInfo::MapleLogger() << "Mplcg Parser consumed " << timer.ElapsedMilliseconds() << "ms\n";
+    CgFuncPhaseManager::parserTime = timer.ElapsedMicroseconds();
   }
 
   LogInfo::MapleLogger() << "Starting mplcg\n";

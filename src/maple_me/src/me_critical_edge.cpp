@@ -158,6 +158,7 @@ AnalysisResult *MeDoSplitCEdge::Run(MeFunction *func, MeFuncResultMgr *m, Module
   if (!criticalEdge.empty()) {
     if (DEBUGFUNC(func)) {
       LogInfo::MapleLogger() << "*******************before break dump function*****************\n";
+      func->DumpFunctionNoSSA();
       func->GetTheCfg()->DumpToFile("cfgbeforebreak");
     }
     for (auto it = criticalEdge.begin(); it != criticalEdge.end(); ++it) {
@@ -168,11 +169,7 @@ AnalysisResult *MeDoSplitCEdge::Run(MeFunction *func, MeFuncResultMgr *m, Module
       func->Dump(true);
       func->GetTheCfg()->DumpToFile("cfgafterbreak");
     }
-    if (func->GetMIRModule().IsInIPA()) {
-      m->InvalidAnalysisResult(MeFuncPhase_DOMINANCE, func);
-    } else {
-      m->InvalidAllResults();
-    }
+    m->InvalidAnalysisResult(MeFuncPhase_DOMINANCE, func);
   }
   return nullptr;
 }

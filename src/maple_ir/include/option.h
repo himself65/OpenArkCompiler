@@ -92,6 +92,7 @@ class Options : public MapleDriverOptionBase {
   static bool nativeOpt;
   static bool O2;
   static bool noDot;
+  static bool decoupleStatic;
   static std::string proFileData;
   static std::string proFileFuncData;
   static std::string proFileClassData;

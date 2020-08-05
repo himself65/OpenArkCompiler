@@ -35,7 +35,7 @@ void MeFunction::PartialInit(bool isSecondPass) {
   regNum = 0;
   hasEH = false;
   secondPass = isSecondPass;
-  if ((mirModule.GetSrcLang() == kSrcLangJava) && (!mirModule.CurFunction()->GetInfoVector().empty())) {
+  if (mirModule.IsJavaModule() && (!mirModule.CurFunction()->GetInfoVector().empty())) {
     std::string string("INFO_registers");
     GStrIdx strIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(string);
     regNum = mirModule.CurFunction()->GetInfo(strIdx);
@@ -46,10 +46,69 @@ void MeFunction::PartialInit(bool isSecondPass) {
   }
 }
 
+void MeFunction::DumpFunction() const {
+  if (meSSATab == nullptr) {
+    LogInfo::MapleLogger() << "no ssa info, just dump simpfunction\n";
+    DumpFunctionNoSSA();
+    return;
+  }
+  auto eIt = valid_end();
+  for (auto bIt = valid_begin(); bIt != eIt; ++bIt) {
+    auto *bb = *bIt;
+    bb->DumpHeader(&mirModule);
+    for (auto &phiPair : bb->GetPhiList()) {
+      phiPair.second.Dump();
+    }
+    for (auto &stmt : bb->GetStmtNodes()) {
+      GenericSSAPrint(mirModule, stmt, 1, meSSATab->GetStmtsSSAPart());
+    }
+  }
+}
+
+void MeFunction::DumpFunctionNoSSA() const {
+  auto eIt = valid_end();
+  for (auto bIt = valid_begin(); bIt != eIt; ++bIt) {
+    auto *bb = *bIt;
+    bb->DumpHeader(&mirModule);
+    for (auto &phiPair : bb->GetPhiList()) {
+      phiPair.second.Dump();
+    }
+    for (auto &stmt : bb->GetStmtNodes()) {
+      stmt.Dump(1);
+    }
+  }
+}
+
+void MeFunction::DumpMayDUFunction() const {
+  auto eIt = valid_end();
+  for (auto bIt = valid_begin(); bIt != eIt; ++bIt) {
+    auto *bb = *bIt;
+    bb->DumpHeader(&mirModule);
+    bool skipStmt = false;
+    CHECK_FATAL(meSSATab != nullptr, "meSSATab is null");
+    for (auto &stmt : bb->GetStmtNodes()) {
+      if (meSSATab->GetStmtsSSAPart().HasMayDef(stmt) || HasMayUseOpnd(stmt, *meSSATab) ||
+          kOpcodeInfo.NotPure(stmt.GetOpCode())) {
+        if (skipStmt) {
+          mirModule.GetOut() << "......\n";
+        }
+        GenericSSAPrint(mirModule, stmt, 1, meSSATab->GetStmtsSSAPart());
+        skipStmt = false;
+      } else {
+        skipStmt = true;
+      }
+    }
+    if (skipStmt) {
+      mirModule.GetOut() << "......\n";
+    }
+  }
+}
 
 void MeFunction::Dump(bool DumpSimpIr) const {
   LogInfo::MapleLogger() << ">>>>> Dump IR for Function " << mirFunc->GetName() << "<<<<<\n";
   if (irmap == nullptr || DumpSimpIr) {
+    LogInfo::MapleLogger() << "no ssa or irmap info, just dump simp function\n";
+    DumpFunction();
     return;
   }
   auto eIt = valid_end();
@@ -192,7 +251,7 @@ void MeFunction::CreateBasicBlocks() {
         break;
       }
       case OP_endtry:
-        if (mirModule.GetSrcLang() == kSrcLangJava) {
+        if (mirModule.IsJavaModule()) {
           if (tryStmt == nullptr) {
             break;
           }
@@ -309,7 +368,7 @@ void MeFunction::CreateBasicBlocks() {
                   curBB->GetStmtNodes().rbegin().base().d() == lastStmt),
                  "something wrong building BB");
           if (curBB->GetStmtNodes().rbegin().base().d() == nullptr && (lastStmt->GetOpCode() != OP_label)) {
-            if (mirModule.GetSrcLang() == kSrcLangJava && lastStmt->GetOpCode() == OP_endtry) {
+            if (mirModule.IsJavaModule() && lastStmt->GetOpCode() == OP_endtry) {
               if (curBB->GetStmtNodes().empty()) {
                 curBB->SetLast(nullptr);
               } else {
@@ -414,6 +473,7 @@ void MeFunction::Prepare(unsigned long rangeNum) {
   if (MeOption::optLevel > mapleOption::kLevelZero) {
     theCFG->FixMirCFG();
   }
+  theCFG->ReplaceWithAssertnonnull();
   theCFG->VerifyLabels();
   theCFG->UnreachCodeAnalysis();
   theCFG->WontExitAnalysis();
@@ -497,7 +557,6 @@ void MeFunction::CloneBasicBlock(BB &newBB, const BB &orig) {
 }
 
 void MeFunction::SplitBBPhysically(BB &bb, StmtNode &splitPoint, BB &newBB) {
-
   StmtNode *newBBStart = splitPoint.GetNext();
   // Fix Stmt in BB.
   if (newBBStart != nullptr) {

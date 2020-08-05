@@ -24,6 +24,7 @@
 #include "mpl_timer.h"
 
 namespace maple {
+std::vector<std::pair<std::string, time_t>> InterleavedManager::interleavedTimer;
 void InterleavedManager::AddPhases(const std::vector<std::string> &phases, bool isModulePhase, bool timePhases,
                                    bool genMpl) {
   ModuleResultMgr *mrm = nullptr;
@@ -72,59 +73,88 @@ void InterleavedManager::OptimizeFuncs(MeFuncPhaseManager &fpm, MapleVector<MIRF
 
 
 void InterleavedManager::Run() {
+  MPLTimer optTimer;
   for (auto *pm : phaseManagers) {
     if (pm == nullptr) {
       continue;
     }
     auto *fpm = dynamic_cast<MeFuncPhaseManager*>(pm);
     if (fpm == nullptr) {
+      optTimer.Start();
       pm->Run();
+      optTimer.Stop();
+      LogInfo::MapleLogger() << "[mpl2mpl]" << " Module phases cost " << optTimer.ElapsedMilliseconds() << "ms\n";
       continue;
     }
     if (fpm->GetPhaseSequence()->empty()) {
       continue;
     }
-    MapleVector<MIRFunction*> *compList;
-    if (!mirModule.GetCompilationList().empty()) {
-      if ((mirModule.GetCompilationList().size() != mirModule.GetFunctionList().size()) &&
-          (mirModule.GetCompilationList().size() !=
-           mirModule.GetFunctionList().size() - mirModule.GetOptFuncsSize())) {
-        ASSERT(false, "should be equal");
-      }
-      compList = &mirModule.GetCompilationList();
-    } else {
-      compList = &mirModule.GetFunctionList();
-    }
-
-    MPLTimer optTimer;
-    optTimer.Start();
-    std::string logPrefix = mirModule.IsInIPA() ? "[ipa]" : "[me]";
-    OptimizeFuncs(*fpm, *compList);
-    optTimer.Stop();
-    LogInfo::MapleLogger() << logPrefix << " Function phases cost " << optTimer.ElapsedMilliseconds() << "ms\n";
-    if (fpm->GetGenMeMpl()) {
-      mirModule.Emit("comb.me.mpl");
-    }
+    RunMeOptimize(*fpm);
   }
+}
+
+void InterleavedManager::RunMeOptimize(MeFuncPhaseManager &fpm) {
+  MapleVector<MIRFunction*> *compList;
+  if (!mirModule.GetCompilationList().empty()) {
+    if ((mirModule.GetCompilationList().size() != mirModule.GetFunctionList().size()) &&
+        (mirModule.GetCompilationList().size() !=
+          mirModule.GetFunctionList().size() - mirModule.GetOptFuncsSize())) {
+      ASSERT(false, "should be equal");
+    }
+    compList = &mirModule.GetCompilationList();
+  } else {
+    compList = &mirModule.GetFunctionList();
+  }
+  MPLTimer optTimer;
+  optTimer.Start();
+  std::string logPrefix = mirModule.IsInIPA() ? "[ipa]" : "[me]";
+  OptimizeFuncs(fpm, *compList);
+  optTimer.Stop();
+  LogInfo::MapleLogger() << logPrefix << " Function phases cost " << optTimer.ElapsedMilliseconds() << "ms\n";
+  optTimer.Start();
+  if (fpm.GetGenMeMpl()) {
+    mirModule.Emit("comb.me.mpl");
+  }
+  optTimer.Stop();
+  genMeMplTime += optTimer.ElapsedMicroseconds();
 }
 
 void InterleavedManager::DumpTimers() {
   std::ios_base::fmtflags f(LogInfo::MapleLogger().flags());
+  auto TimeLogger = [](const std::string &itemName, time_t itemTimeUs, time_t totalTimeUs) {
+    LogInfo::MapleLogger() << std::left << std::setw(25) << itemName << std::setw(10)
+                           << std::right << std::fixed << std::setprecision(2)
+                           << (100.0 * itemTimeUs / totalTimeUs) << "%" << std::setw(10)
+                           << std::setprecision(0) << (itemTimeUs / 1000.0) << "ms\n";
+  };
   std::vector<std::pair<std::string, time_t>> timeVec;
   long total = 0;
-  LogInfo::MapleLogger() << "=================== TIMEPHASES =================\n";
+  long parserTotal = 0;
+  LogInfo::MapleLogger() << "==================== PARSER ====================\n";
+  for (const auto &parserTimer : interleavedTimer) {
+    parserTotal += parserTimer.second;
+  }
+  for (const auto &parserTimer : interleavedTimer) {
+    TimeLogger(parserTimer.first, parserTimer.second, parserTotal);
+  }
+  total += parserTotal;
+  timeVec.emplace_back(std::pair<std::string, time_t>("parser", parserTotal));
+  LogInfo::MapleLogger() << "================== TIMEPHASES ==================\n";
   for (auto *manager : phaseManagers) {
     long temp = manager->DumpTimers();
     total += temp;
     timeVec.push_back(std::pair<std::string, time_t>(manager->GetMgrName(), temp));
     LogInfo::MapleLogger() << "================================================\n";
   }
-  LogInfo::MapleLogger() << "==================== SUMMARY ===================\n";
+  total += genMeMplTime;
+  total += emitVtableImplMplTime;
+  timeVec.emplace_back(std::pair<std::string, time_t>("genMeMplFile", genMeMplTime));
+  timeVec.emplace_back(std::pair<std::string, time_t>("emitVtableImplMpl", emitVtableImplMplTime));
+  timeVec.emplace_back(std::pair<std::string, time_t>("Total", total));
+  LogInfo::MapleLogger() << "=================== SUMMARY ====================\n";
   CHECK_FATAL(total != 0, "calculation check");
   for (const auto &lapse : timeVec) {
-    LogInfo::MapleLogger() << std::left << std::setw(25) << lapse.first << std::setw(10) << std::right << std::fixed
-                           << std::setprecision(2) << (100.0 * lapse.second / total) << "%" << std::setw(10)
-                           << (lapse.second / 1000) << "ms" << "\n";
+    TimeLogger(lapse.first, lapse.second, total);
   }
   LogInfo::MapleLogger() << "================================================\n";
   LogInfo::MapleLogger().flags(f);

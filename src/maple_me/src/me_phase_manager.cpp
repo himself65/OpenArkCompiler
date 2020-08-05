@@ -137,6 +137,13 @@ void MeFuncPhaseManager::Run(MIRFunction *mirFunc, uint64 rangeNum, const std::s
     LogInfo::MapleLogger() << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>> Optimizing Function  < " << mirFunc->GetName()
                            << " id=" << mirFunc->GetPuidxOrigin() << " >---\n";
   }
+  MPLTimer runPhasetimer;
+  MPLTimer funcPrepareTimer;
+  MPLTimer iteratorTimer;
+  MPLTimer invalidTimer;
+  if (timePhases) {
+    funcPrepareTimer.Start();
+  }
   MemPool *funcMP = localMpCtrler.NewMemPool("maple_me per-function mempool");
   MemPool *versMP = localMpCtrler.NewMemPool("first verst mempool");
   MeFunction &func = *(funcMP->New<MeFunction>(&mirModule, mirFunc, funcMP, versMP, meInput));
@@ -146,6 +153,10 @@ void MeFuncPhaseManager::Run(MIRFunction *mirFunc, uint64 rangeNum, const std::s
   globalFunc = &func;
 #endif
   func.Prepare(rangeNum);
+  if (timePhases) {
+    funcPrepareTimer.Stop();
+    extraMeTimers["prepareFunc"] += funcPrepareTimer.ElapsedMicroseconds();
+  }
   if (ipa) {
     mirFunc->SetMeFunc(&func);
   }
@@ -154,19 +165,20 @@ void MeFuncPhaseManager::Run(MIRFunction *mirFunc, uint64 rangeNum, const std::s
   // each function level phase
   bool dumpFunc = FuncFilter(MeOption::dumpFunc, func.GetName());
   size_t phaseIndex = 0;
+  if (timePhases) {
+    iteratorTimer.Start();
+  }
+  long runPhasesTime = 0;
   for (auto it = PhaseSequenceBegin(); it != PhaseSequenceEnd(); ++it, ++phaseIndex) {
+    if (timePhases) {
+      runPhasetimer.Start();
+    }
     PhaseID id = GetPhaseId(it);
     auto *p = static_cast<MeFuncPhase*>(GetPhase(id));
     p->SetPreviousPhaseName(phaseName); // prev phase name is for filename used in emission after phase
     phaseName = p->PhaseName();         // new phase name
     bool dumpPhase = MeOption::DumpPhase(phaseName);
-    MPLTimer timer;
-    timer.Start();
     RunFuncPhase(&func, p);
-    if (timePhases) {
-      timer.Stop();
-      phaseTimers[phaseIndex] += timer.ElapsedMicroseconds();
-    }
     if ((MeOption::dumpAfter || dumpPhase) && dumpFunc) {
       LogInfo::MapleLogger() << ">>>>> Dump after " << phaseName << " <<<<<\n";
       if (phaseName != "emit") {
@@ -179,20 +191,45 @@ void MeFuncPhaseManager::Run(MIRFunction *mirFunc, uint64 rangeNum, const std::s
       p->ClearChangeCFG();
       break;
     }
+    if (timePhases) {
+      runPhasetimer.Stop();
+      phaseTimers[phaseIndex] += runPhasetimer.ElapsedMicroseconds();
+      runPhasesTime += runPhasetimer.ElapsedMicroseconds();
+    }
   }
+  if (timePhases) {
+    iteratorTimer.Stop();
+    extraMeTimers["iterator"] += iteratorTimer.ElapsedMicroseconds() - runPhasesTime;
+    runPhasesTime = 0;
+  }
+
   if (!ipa) {
+    invalidTimer.Start();
     GetAnalysisResultManager()->InvalidAllResults();
+    invalidTimer.Stop();
+    extraMeTimers["invalidResult"] += invalidTimer.ElapsedMicroseconds();
   }
   if (changeCFGPhase != nullptr) {
     if (ipa) {
       CHECK_FATAL(false, "phases in ipa will not chang cfg.");
+    }
+    if (timePhases) {
+      funcPrepareTimer.Start();
     }
     // do all the phases start over
     MemPool *versMemPool = localMpCtrler.NewMemPool("second verst mempool");
     MeFunction function(&mirModule, mirFunc, funcMP, versMemPool, meInput);
     function.PartialInit(true);
     function.Prepare(rangeNum);
+    if (timePhases) {
+      funcPrepareTimer.Stop();
+      extraMeTimers["prepareFunc"] += funcPrepareTimer.ElapsedMicroseconds();
+      iteratorTimer.Start();
+    }
     for (auto it = PhaseSequenceBegin(); it != PhaseSequenceEnd(); ++it) {
+      if (timePhases) {
+        runPhasetimer.Start();
+      }
       PhaseID id = GetPhaseId(it);
       auto *p = static_cast<MeFuncPhase*>(GetPhase(id));
       if (p == changeCFGPhase) {
@@ -209,11 +246,37 @@ void MeFuncPhaseManager::Run(MIRFunction *mirFunc, uint64 rangeNum, const std::s
         }
         LogInfo::MapleLogger() << ">>>>> Second time Dump after End <<<<<\n\n";
       }
+      if (timePhases) {
+        runPhasetimer.Stop();
+        phaseTimers[phaseIndex] += runPhasetimer.ElapsedMicroseconds();
+        runPhasesTime += runPhasetimer.ElapsedMicroseconds();
+      }
     }
+    if (timePhases) {
+      iteratorTimer.Stop();
+      extraMeTimers["iterator"] += iteratorTimer.ElapsedMicroseconds() - runPhasesTime;
+      runPhasesTime = 0;
+      invalidTimer.Start();
+    }
+
     GetAnalysisResultManager()->InvalidAllResults();
+
+    if (timePhases) {
+      invalidTimer.Stop();
+      extraMeTimers["invalidResult"] += invalidTimer.ElapsedMicroseconds();
+    }
   }
   if (!ipa) {
+    if (timePhases) {
+      invalidTimer.Start();
+    }
+
     localMpCtrler.DeleteMemPool(funcMP);
+
+    if (timePhases) {
+      invalidTimer.Stop();
+      extraMeTimers["invalidResult"] += invalidTimer.ElapsedMicroseconds();
+    }
   }
 }
 

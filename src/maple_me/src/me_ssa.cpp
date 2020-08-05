@@ -64,15 +64,17 @@ void MeSSA::CollectDefBBs(std::map<OStIdx, std::set<BBId>> &ostDefBBs) {
       if (!kOpcodeInfo.HasSSADef(stmt.GetOpCode())) {
         continue;
       }
-      MapleMap<OStIdx, MayDefNode> &mayDefs = GetSSATab()->GetStmtsSSAPart().GetMayDefNodesOf(stmt);
+      TypeOfMayDefList &mayDefs = GetSSATab()->GetStmtsSSAPart().GetMayDefNodesOf(stmt);
       for (auto iter = mayDefs.begin(); iter != mayDefs.end(); ++iter) {
-        const OriginalSt *ost = func->GetMeSSATab()->GetOriginalStFromID(iter->first);
+        auto &mayDef = *iter;
+        OStIdx ostIdx = mayDef.GetResult()->GetOrigIdx();
+        const OriginalSt *ost = func->GetMeSSATab()->GetOriginalStFromID(ostIdx);
         if (ost != nullptr && (!ost->IsFinal() || func->GetMirFunc()->IsConstructor())) {
-          ostDefBBs[iter->first].insert(bb->GetBBId());
+          ostDefBBs[ostIdx].insert(bb->GetBBId());
         } else if (stmt.GetOpCode() == OP_intrinsiccallwithtype) {
           auto &inNode = static_cast<IntrinsiccallNode&>(stmt);
           if (inNode.GetIntrinsic() == INTRN_JAVA_CLINIT_CHECK) {
-            ostDefBBs[iter->first].insert(bb->GetBBId());
+            ostDefBBs[ostIdx].insert(bb->GetBBId());
           }
         }
       }
@@ -227,6 +229,9 @@ AnalysisResult *MeDoSSA::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, Modu
   ssa->VerifySSA();
   if (DEBUGFUNC(func)) {
     ssaTab->GetVersionStTable().Dump(&ssaTab->GetModule());
+  }
+  if (DEBUGFUNC(func)) {
+    func->DumpFunction();
   }
   return ssa;
 }

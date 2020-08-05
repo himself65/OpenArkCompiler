@@ -64,6 +64,8 @@ class AArch64Ebo : public Ebo {
   static constexpr int32 kMaxCallerSaveReg = 45;
   bool IsZeroRegister(const Operand &opnd) const;
   bool CheckCondCode(const CondOperand &cond) const;
+  bool SimplifyBothConst(BB &bb, Insn &insn, const AArch64ImmOperand &immOperand0, const AArch64ImmOperand &immOperand1,
+                         uint32 opndSize);
   AArch64CC_t GetReverseCond(const CondOperand &cond) const;
 };
 }  /* namespace maplebe */

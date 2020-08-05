@@ -129,31 +129,34 @@ class MustDefNode {
   StmtNode *stmt = nullptr;
 };
 
+using TypeOfMayUseList = MapleVector<MayUseNode>;
+using TypeOfMayDefList = MapleVector<MayDefNode>;
+using TypeOfMustDefList = MapleVector<MustDefNode>;
 class AccessSSANodes {
  public:
   AccessSSANodes() = default;
   virtual ~AccessSSANodes() = default;
 
-  virtual const MapleMap<OStIdx, MayDefNode> &GetMayDefNodes() const {
+  virtual const TypeOfMayDefList &GetMayDefNodes() const {
     CHECK_FATAL(false, "No mayDefNodes");
   }
 
-  virtual MapleMap<OStIdx, MayDefNode> &GetMayDefNodes() {
+  virtual TypeOfMayDefList &GetMayDefNodes() {
     CHECK_FATAL(false, "No mayDefNodes");
   }
 
-  virtual const MapleMap<OStIdx, MayUseNode> &GetMayUseNodes() const {
+  virtual const TypeOfMayUseList &GetMayUseNodes() const {
     CHECK_FATAL(false, "No mayUseNodes");
   }
 
-  virtual MapleMap<OStIdx, MayUseNode> &GetMayUseNodes() {
+  virtual TypeOfMayUseList &GetMayUseNodes() {
     CHECK_FATAL(false, "No mayUseNodes");
   }
 
-  virtual const MapleVector<MustDefNode> &GetMustDefNodes() const {
+  virtual const TypeOfMustDefList &GetMustDefNodes() const {
     CHECK_FATAL(false, "No mustDefNodes");
   }
-  virtual MapleVector<MustDefNode> &GetMustDefNodes() {
+  virtual TypeOfMustDefList &GetMustDefNodes() {
     CHECK_FATAL(false, "No mustDefNodes");
   }
 
@@ -171,13 +174,13 @@ class AccessSSANodes {
 
   virtual void DumpMayDefNodes(const MIRModule&) const {
     for (const auto &mayDefNode : GetMayDefNodes()) {
-      mayDefNode.second.Dump();
+      mayDefNode.Dump();
     }
   }
 
   virtual void DumpMayUseNodes(const MIRModule&) const {
     for (const auto &mapItem : GetMayUseNodes()) {
-      mapItem.second.Dump();
+      mapItem.Dump();
     }
   }
 
@@ -189,48 +192,48 @@ class AccessSSANodes {
 
   virtual void InsertMayDefNode(VersionSt *vst, StmtNode *stmtNode) {
     CHECK_FATAL(vst != nullptr, "null ptr check");
-    (void)GetMayDefNodes().insert(std::make_pair(vst->GetOrigSt()->GetIndex(), MayDefNode(vst, stmtNode)));
+    GetMayDefNodes().emplace_back(MayDefNode(vst, stmtNode));
   }
 
   virtual void InsertMustDefNode(VersionSt *sym, StmtNode *s) {
-    GetMustDefNodes().push_back(MustDefNode(sym, s));
+    GetMustDefNodes().emplace_back(MustDefNode(sym, s));
   }
 };
 
 class MayDefPart : public AccessSSANodes {
  public:
-  explicit MayDefPart(MapleAllocator *alloc) : mayDefNodes(std::less<OStIdx>(), alloc->Adapter()) {}
+  explicit MayDefPart(MapleAllocator *alloc) : mayDefNodes(alloc->Adapter()) {}
 
   ~MayDefPart() override = default;
 
-  const MapleMap<OStIdx, MayDefNode> &GetMayDefNodes() const override {
+  const TypeOfMayDefList &GetMayDefNodes() const override {
     return mayDefNodes;
   }
 
-  MapleMap<OStIdx, MayDefNode> &GetMayDefNodes() override {
+  TypeOfMayDefList &GetMayDefNodes() override {
     return mayDefNodes;
   }
 
  private:
-  MapleMap<OStIdx, MayDefNode> mayDefNodes;
+  TypeOfMayDefList mayDefNodes;
 };
 
 class MayUsePart : public AccessSSANodes {
  public:
-  explicit MayUsePart(MapleAllocator *alloc) : mayUseNodes(std::less<OStIdx>(), alloc->Adapter()) {}
+  explicit MayUsePart(MapleAllocator *alloc) : mayUseNodes(alloc->Adapter()) {}
 
   ~MayUsePart() override = default;
 
-  const MapleMap<OStIdx, MayUseNode> &GetMayUseNodes() const override {
+  const TypeOfMayUseList &GetMayUseNodes() const override {
     return mayUseNodes;
   }
 
-  MapleMap<OStIdx, MayUseNode> &GetMayUseNodes() override {
+  TypeOfMayUseList &GetMayUseNodes() override {
     return mayUseNodes;
   }
 
  private:
-  MapleMap<OStIdx, MayUseNode> mayUseNodes;
+  TypeOfMayUseList mayUseNodes;
 };
 
 class MustDefPart : public AccessSSANodes {
@@ -239,29 +242,29 @@ class MustDefPart : public AccessSSANodes {
 
   ~MustDefPart() override = default;
 
-  const MapleVector<MustDefNode> &GetMustDefNodes() const override {
+  const TypeOfMustDefList &GetMustDefNodes() const override {
     return mustDefNodes;
   }
-  MapleVector<MustDefNode> &GetMustDefNodes() override {
+
+  TypeOfMustDefList &GetMustDefNodes() override {
     return mustDefNodes;
   }
 
  private:
-  MapleVector<MustDefNode> mustDefNodes;
+  TypeOfMustDefList mustDefNodes;
 };
 
 class MayDefPartWithVersionSt : public AccessSSANodes {
  public:
-  explicit MayDefPartWithVersionSt(MapleAllocator *alloc)
-      : mayDefNodes(std::less<OStIdx>(), alloc->Adapter()) {}
+  explicit MayDefPartWithVersionSt(MapleAllocator *alloc) : mayDefNodes(alloc->Adapter()) {}
 
   ~MayDefPartWithVersionSt() override = default;
 
-  const MapleMap<OStIdx, MayDefNode> &GetMayDefNodes() const override {
+  const TypeOfMayDefList &GetMayDefNodes() const override {
     return mayDefNodes;
   }
 
-  MapleMap<OStIdx, MayDefNode> &GetMayDefNodes() override {
+  TypeOfMayDefList &GetMayDefNodes() override {
     return mayDefNodes;
   }
 
@@ -279,7 +282,7 @@ class MayDefPartWithVersionSt : public AccessSSANodes {
 
  private:
   VersionSt *ssaVar = nullptr;
-  MapleMap<OStIdx, MayDefNode> mayDefNodes;
+  TypeOfMayDefList mayDefNodes;
 };
 
 class VersionStPart : public AccessSSANodes {
@@ -306,67 +309,67 @@ class VersionStPart : public AccessSSANodes {
 class MayDefMayUsePart : public AccessSSANodes {
  public:
   explicit MayDefMayUsePart(MapleAllocator *alloc)
-      : mayDefNodes(std::less<OStIdx>(), alloc->Adapter()), mayUseNodes(std::less<OStIdx>(), alloc->Adapter()) {}
+      : mayDefNodes(alloc->Adapter()), mayUseNodes(alloc->Adapter()) {}
 
   ~MayDefMayUsePart() override = default;
 
-  const MapleMap<OStIdx, MayDefNode> &GetMayDefNodes() const override {
+  const TypeOfMayDefList &GetMayDefNodes() const override {
     return mayDefNodes;
   }
 
-  MapleMap<OStIdx, MayDefNode> &GetMayDefNodes() override {
+  TypeOfMayDefList &GetMayDefNodes() override {
     return mayDefNodes;
   }
 
-  const MapleMap<OStIdx, MayUseNode> &GetMayUseNodes() const override {
+  const TypeOfMayUseList &GetMayUseNodes() const override {
     return mayUseNodes;
   }
 
-  MapleMap<OStIdx, MayUseNode> &GetMayUseNodes() override {
+  TypeOfMayUseList &GetMayUseNodes() override {
     return mayUseNodes;
   }
 
  private:
-  MapleMap<OStIdx, MayDefNode> mayDefNodes;
-  MapleMap<OStIdx, MayUseNode> mayUseNodes;
+  TypeOfMayDefList mayDefNodes;
+  TypeOfMayUseList mayUseNodes;
 };
 
 class MayDefMayUseMustDefPart : public AccessSSANodes {
  public:
   explicit MayDefMayUseMustDefPart(MapleAllocator *alloc)
-      : mayDefNodes(std::less<OStIdx>(), alloc->Adapter()),
-        mayUseNodes(std::less<OStIdx>(), alloc->Adapter()),
+      : mayDefNodes(alloc->Adapter()),
+        mayUseNodes(alloc->Adapter()),
         mustDefNodes(alloc->Adapter()) {}
 
   ~MayDefMayUseMustDefPart() override = default;
 
-  const MapleMap<OStIdx, MayDefNode> &GetMayDefNodes() const override {
+  const TypeOfMayDefList &GetMayDefNodes() const override {
     return mayDefNodes;
   }
 
-  MapleMap<OStIdx, MayDefNode> &GetMayDefNodes() override {
+  TypeOfMayDefList &GetMayDefNodes() override {
     return mayDefNodes;
   }
 
-  const MapleMap<OStIdx, MayUseNode> &GetMayUseNodes() const override {
+  const TypeOfMayUseList &GetMayUseNodes() const override {
     return mayUseNodes;
   }
 
-  MapleMap<OStIdx, MayUseNode> &GetMayUseNodes() override {
+  TypeOfMayUseList &GetMayUseNodes() override {
     return mayUseNodes;
   }
 
-  const MapleVector<MustDefNode> &GetMustDefNodes() const override {
+  const TypeOfMustDefList &GetMustDefNodes() const override {
     return mustDefNodes;
   }
-  MapleVector<MustDefNode> &GetMustDefNodes() override {
+  TypeOfMustDefList &GetMustDefNodes() override {
     return mustDefNodes;
   }
 
  private:
-  MapleMap<OStIdx, MayDefNode> mayDefNodes;
-  MapleMap<OStIdx, MayUseNode> mayUseNodes;
-  MapleVector<MustDefNode> mustDefNodes;
+  TypeOfMayDefList mayDefNodes;
+  TypeOfMayUseList mayUseNodes;
+  TypeOfMustDefList mustDefNodes;
 };
 
 // statement nodes are covered by StmtsSSAPart
@@ -396,11 +399,11 @@ class StmtsSSAPart {
     return kOpcodeInfo.HasSSADef(stmt.GetOpCode()) && !GetMayDefNodesOf(stmt).empty();
   }
 
-  MapleMap<OStIdx, MayDefNode> &GetMayDefNodesOf(const StmtNode &stmt) {
+  TypeOfMayDefList &GetMayDefNodesOf(const StmtNode &stmt) {
     return ssaPart[stmt.GetStmtID()]->GetMayDefNodes();
   }
 
-  MapleMap<OStIdx, MayUseNode> &GetMayUseNodesOf(const StmtNode &stmt) {
+  TypeOfMayUseList &GetMayUseNodesOf(const StmtNode &stmt) {
     return ssaPart[stmt.GetStmtID()]->GetMayUseNodes();
   }
 
@@ -554,7 +557,7 @@ class RegreadSSANode : public SSANode {
 };
 
 void GenericSSAPrint(const MIRModule &mod, const StmtNode &stmtNode, int32 indent, StmtsSSAPart &stmtsSSAPart);
-MapleMap<OStIdx, MayDefNode> *SSAGenericGetMayDefsFromVersionSt(const VersionSt &sym, StmtsSSAPart &stmtsSSAPart);
+TypeOfMayDefList *SSAGenericGetMayDefsFromVersionSt(const VersionSt &sym, StmtsSSAPart &stmtsSSAPart);
 bool HasMayUseOpnd(const BaseNode &baseNode, SSATab &func);
 }  // namespace maple
 #endif  // MAPLE_ME_INCLUDE_SSA_MIR_NODES_H

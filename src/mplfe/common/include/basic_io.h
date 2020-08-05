@@ -93,7 +93,7 @@ class BasicIOMapFile {
  public:
   explicit BasicIOMapFile(const std::string &name);
   BasicIOMapFile(const std::string &name, const uint8 *ptrIn, long lengthIn);
-  ~BasicIOMapFile();
+  virtual ~BasicIOMapFile();
   bool OpenAndMap();
   void Close();
   static std::unique_ptr<BasicIOMapFile> GenFileInMemory(const std::string &name, const uint8 *buf, size_t len);
@@ -118,7 +118,7 @@ class BasicIOMapFile {
     return fileName;
   }
 
- private:
+ protected:
   int fd;
   const uint8 *ptr;
   uint8 *ptrMemMap;
@@ -173,6 +173,11 @@ class BasicIORead {
   const uint8 *GetSafeBuffer(uint32 size) const {
     CHECK_FATAL(pos + size <= file.GetLength(), "not enough data");
     return file.GetPtrOffset(pos);
+  }
+
+  const uint8 *GetSafeBufferAt(uint32 pos0, uint32 size) const {
+    CHECK_FATAL(pos0 + size <= file.GetLength(), "not enough data");
+    return file.GetPtrOffset(pos0);
   }
 
   uint32 GetPos() const {

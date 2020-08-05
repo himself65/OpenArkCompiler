@@ -70,6 +70,7 @@ bool MeOption::rcLowering = true;
 bool MeOption::optDirectCall = false;
 bool MeOption::propAtPhi = true;
 bool MeOption::dseKeepRef = false;
+bool MeOption::decoupleStatic = false;
 
 enum OptionIndex {
   kMeHelp = kCommonOptionEnd + 1,

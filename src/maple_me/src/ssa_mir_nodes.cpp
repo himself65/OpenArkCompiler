@@ -65,7 +65,7 @@ void GenericSSAPrint(const MIRModule &mod, const StmtNode &stmtNode, int32 inden
   }
 }
 
-static MapleMap<OStIdx, MayDefNode> *SSAGenericGetMayDefsFromVersionSt(const VersionSt &vst,
+static TypeOfMayDefList *SSAGenericGetMayDefsFromVersionSt(const VersionSt &vst,
     StmtsSSAPart &stmtsSSAPart, std::unordered_set<const VersionSt*> &visited) {
   if (vst.IsInitVersion() || visited.find(&vst) != visited.end()) {
     return nullptr;
@@ -75,7 +75,7 @@ static MapleMap<OStIdx, MayDefNode> *SSAGenericGetMayDefsFromVersionSt(const Ver
     const PhiNode *phi = vst.GetPhi();
     for (size_t i = 0; i < phi->GetPhiOpnds().size(); ++i) {
       const VersionSt *vSym = phi->GetPhiOpnd(i);
-      MapleMap<OStIdx, MayDefNode> *mayDefs = SSAGenericGetMayDefsFromVersionSt(*vSym, stmtsSSAPart, visited);
+      TypeOfMayDefList *mayDefs = SSAGenericGetMayDefsFromVersionSt(*vSym, stmtsSSAPart, visited);
       if (mayDefs != nullptr) {
         return mayDefs;
       }
@@ -87,7 +87,7 @@ static MapleMap<OStIdx, MayDefNode> *SSAGenericGetMayDefsFromVersionSt(const Ver
   return nullptr;
 }
 
-MapleMap<OStIdx, MayDefNode> *SSAGenericGetMayDefsFromVersionSt(const VersionSt &sym, StmtsSSAPart &stmtsSSAPart) {
+TypeOfMayDefList *SSAGenericGetMayDefsFromVersionSt(const VersionSt &sym, StmtsSSAPart &stmtsSSAPart) {
   std::unordered_set<const VersionSt*> visited;
   return SSAGenericGetMayDefsFromVersionSt(sym, stmtsSSAPart, visited);
 }
@@ -95,7 +95,7 @@ MapleMap<OStIdx, MayDefNode> *SSAGenericGetMayDefsFromVersionSt(const VersionSt 
 bool HasMayUseOpnd(const BaseNode &baseNode, SSATab &func) {
   const auto &stmtNode = static_cast<const StmtNode&>(baseNode);
   if (kOpcodeInfo.HasSSAUse(stmtNode.GetOpCode())) {
-    MapleMap<OStIdx, MayUseNode> &mayUses = func.GetStmtsSSAPart().GetMayUseNodesOf(stmtNode);
+    TypeOfMayUseList &mayUses = func.GetStmtsSSAPart().GetMayUseNodesOf(stmtNode);
     if (!mayUses.empty()) {
       return true;
     }
