@@ -304,16 +304,17 @@ int64 CgFuncPhaseManager::GetExtraPhasesTotalTime() const {
 time_t CgFuncPhaseManager::parserTime = 0;
 
 int64 CgFuncPhaseManager::DumpCGTimers() {
-  int64 parseTimeTotal = parserTime;
   auto TimeLogger = [](const std::string &itemName, time_t itemTimeUs, time_t totalTimeUs) {
     LogInfo::MapleLogger() << std::left << std::setw(25) << itemName <<
                               std::setw(10) << std::right << std::fixed << std::setprecision(2) <<
                               (kPercent * itemTimeUs / totalTimeUs) << "%" << std::setw(10) <<
                               std::setprecision(0) << (itemTimeUs / kMicroSecPerMilliSec) << "ms\n";
   };
-  LogInfo::MapleLogger() << "==================== PARSER ====================\n";
-  CHECK_FATAL(parseTimeTotal != 0, "calculation check");
-  TimeLogger("parser", parserTime, parseTimeTotal);
+  int64 parseTimeTotal = parserTime;
+  if (parseTimeTotal != 0) {
+    LogInfo::MapleLogger() << "==================== PARSER ====================\n";
+    TimeLogger("parser", parserTime, parseTimeTotal);
+  }
 
   int64 phasesTotal = GetOptimizeTotalTime();
   phasesTotal += GetExtraPhasesTotalTime();
@@ -334,7 +335,9 @@ int64 CgFuncPhaseManager::DumpCGTimers() {
   LogInfo::MapleLogger() << "================================================\n";
   LogInfo::MapleLogger() << "=================== SUMMARY ====================\n";
   std::vector<std::pair<std::string, time_t>> timeSum;
-  timeSum.emplace_back(std::pair<std::string, time_t>{ "parser", parseTimeTotal });
+  if (parseTimeTotal != 0) {
+    timeSum.emplace_back(std::pair<std::string, time_t>{ "parser", parseTimeTotal });
+  }
   timeSum.emplace_back(std::pair<std::string, time_t>{ "cgphase", phasesTotal });
   int64 total = parseTimeTotal + phasesTotal;
   timeSum.emplace_back(std::pair<std::string, time_t>{ "Total", total });
