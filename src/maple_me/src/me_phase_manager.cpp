@@ -116,6 +116,7 @@ void MeFuncPhaseManager::AddPhases(const std::unordered_set<std::string> &skipPh
     addPhase("aliasclass");
     addPhase("ssa");
     addPhase("rclowering");
+    addPhase("bblayout");
     addPhase("emit");
   }
 }

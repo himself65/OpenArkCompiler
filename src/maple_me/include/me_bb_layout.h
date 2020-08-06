@@ -19,11 +19,10 @@
 #include "me_pgo_instrument.h"
 
 namespace maple {
-class BBLayout : public AnalysisResult {
+class BBLayout{
  public:
   BBLayout(MemPool &memPool, MeFunction &f, bool enabledDebug)
-      : AnalysisResult(&memPool),
-        func(f),
+      : func(f),
         layoutAlloc(&memPool),
         layoutBBs(layoutAlloc.Adapter()),
         startTryBBVec(func.GetAllBBs().size(), false, layoutAlloc.Adapter()),
@@ -35,7 +34,7 @@ class BBLayout : public AnalysisResult {
     laidOut[func.GetCommonExitBB()->GetBBId()] = true;
   }
 
-  virtual ~BBLayout() = default;
+  ~BBLayout() = default;
   BB *NextBB() {
     // return the next BB following strictly program input order
     ++curBBId;

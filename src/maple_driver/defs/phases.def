@@ -43,6 +43,7 @@ ADD_PHASE("rclowering", JAVALANG)
 ADD_PHASE("rename2preg", MeOption::optLevel == 2)
 //ADD_PHASE("lpre", MeOption::optLevel == 2)
 ADD_PHASE("pregrename", MeOption::optLevel == 2)
+ADD_PHASE("bblayout", MeOption::optLevel == 2 || JAVALANG)
 ADD_PHASE("emit", MeOption::optLevel == 2 || JAVALANG)
 // mephase end
 ADD_PHASE("GenNativeStubFunc", true)

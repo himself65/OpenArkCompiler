@@ -170,6 +170,7 @@ class MeFunction : public FuncEmit {
         mirFunc(func),
         labelBBIdMap(alloc.Adapter()),
         bbVec(alloc.Adapter()),
+        laidOutBBVec(alloc.Adapter()),
         bbTryNodeMap(alloc.Adapter()),
         endTryBB2TryBB(alloc.Adapter()),
         sccTopologicalVec(alloc.Adapter()),
@@ -339,6 +340,25 @@ class MeFunction : public FuncEmit {
 
   MapleVector<BB*> &GetAllBBs() {
     return bbVec;
+  }
+
+  const MapleVector<BB*> &GetLaidOutBBs() const {
+    return laidOutBBVec;
+  }
+
+  void SetLaidOutBBs(const MapleVector<BB*> &laidout) {
+    laidOutBBVec = laidout;
+  }
+
+  bool HasLaidOut() const {
+    return !laidOutBBVec.empty();
+  }
+
+  void ClearLayout() {
+    if (laidOutBBVec.empty()) {
+      return;
+    }
+    laidOutBBVec.clear();
   }
 
   BB *GetBBFromID(BBId bbID) {
@@ -514,6 +534,7 @@ class MeFunction : public FuncEmit {
   /* mempool */
   MapleUnorderedMap<LabelIdx, BB*> labelBBIdMap;
   BBPtrHolder bbVec;
+  MapleVector<BB*> laidOutBBVec;
   MeCFG *theCFG = nullptr;
   SSATab *meSSATab = nullptr;
   MeIRMap *irmap = nullptr;

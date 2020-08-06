@@ -835,13 +835,12 @@ AnalysisResult *MeDoBBLayout::Run(MeFunction *func, MeFuncResultMgr *funcResMgr,
     func->GetTheCfg()->DumpToFile("beforeBBLayout", false);
   }
   bbLayout->RunLayout();
-  if (bbLayout->IsNewBBInLayout()) {
-    funcResMgr->InvalidAnalysisResult(MeFuncPhase_DOMINANCE, func);
-  }
+  func->SetLaidOutBBs(bbLayout->GetBBs());
+  funcResMgr->InvalidAnalysisResult(MeFuncPhase_DOMINANCE, func);
   if (DEBUGFUNC(func)) {
     bbLayout->DumpBBPhyOrder();
     func->GetTheCfg()->DumpToFile("afterBBLayout", false);
   }
-  return bbLayout;
+  return nullptr;
 }
 }  // namespace maple
