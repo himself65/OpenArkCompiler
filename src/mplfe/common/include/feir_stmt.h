@@ -157,9 +157,11 @@ class FEIRStmt : public GeneralStmt {
   void SetKind(FEIRNodeKind argKind) {
     kind = argKind;
   }
-
+  bool IsStmtInstComment() const;
+  bool ShouldHaveLOC() const;
  protected:
   virtual std::list<StmtNode*> GenMIRStmtsImpl(MIRBuilder &mirBuilder) const;
+  virtual bool IsStmtInstImpl() const;
 
   FEIRNodeKind kind;
 };

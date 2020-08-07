@@ -140,6 +140,7 @@ class FEFunction {
   void TypeInfer();
   bool SetupFEIRStmtGoto(FEIRStmtGoto &stmt);
   bool SetupFEIRStmtSwitch(FEIRStmtSwitch &stmt);
+  FEIRStmtPesudoLOC *GetLOCForStmt(const FEIRStmt &feStmt);
 
   std::list<std::unique_ptr<GeneralStmt>> genStmtList;
   std::list<std::unique_ptr<GeneralBB>> genBBList;

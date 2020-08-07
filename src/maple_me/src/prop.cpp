@@ -243,7 +243,7 @@ void Prop::PropUpdateDef(MeExpr &meExpr) {
 
 void Prop::PropUpdateChiListDef(const MapleMap<OStIdx, ChiMeNode*> &chiList) {
   for (auto it = chiList.begin(); it != chiList.end(); ++it) {
-    PropUpdateDef(*it->second->GetLHS());
+    PropUpdateDef(*static_cast<VarMeExpr*>(it->second->GetLHS()));
   }
 }
 
@@ -274,17 +274,23 @@ void Prop::CollectSubVarMeExpr(const MeExpr &meExpr, std::vector<const MeExpr*> 
 // warning: I suppose the vector vervec is on the stack, otherwise would cause memory leak
 bool Prop::IsVersionConsistent(const std::vector<const MeExpr*> &vstVec,
                                const std::vector<std::stack<SafeMeExprPtr>> &vstLiveStack) const {
-  for (auto *subExpr : vstVec) {
+  for (auto it = vstVec.begin(); it != vstVec.end(); ++it) {
     // iterate each cur defintion of related symbols of rhs, check the version
+    const MeExpr *subExpr = *it;
     CHECK_FATAL(subExpr->GetMeOp() == kMeOpVar || subExpr->GetMeOp() == kMeOpReg, "error: sub expr error");
-    uint32 stackIdx = static_cast<const ScalarMeExpr*>(subExpr)->GetOStIdx();
+    uint32 stackIdx = 0;
+    if (subExpr->GetMeOp() == kMeOpVar) {
+      stackIdx = static_cast<const VarMeExpr*>(subExpr)->GetOStIdx();
+    } else {
+      stackIdx = static_cast<const RegMeExpr*>(subExpr)->GetOstIdx();
+    }
     auto &pStack = vstLiveStack.at(stackIdx);
     if (pStack.empty()) {
       // no definition so far go ahead
       continue;
     }
     SafeMeExprPtr curDef = pStack.top();
-    ASSERT(curDef->GetMeOp() == subExpr->GetMeOp(), "error: cur def error");
+    CHECK_FATAL(curDef->GetMeOp() == kMeOpVar || curDef->GetMeOp() == kMeOpReg, "error: cur def error");
     if (subExpr != curDef.get()) {
       return false;
     }
@@ -351,7 +357,7 @@ bool Prop::Propagatable(const MeExpr &expr, const BB &fromBB, bool atParm) const
       if (!IsVersionConsistent(varMeExprVec, vstLiveStackVec)) {
         return false;
       }
-      return true;
+      break;
     }
     case kMeOpIvar: {
       auto &ivarMeExpr = static_cast<const IvarMeExpr&>(expr);
@@ -410,10 +416,6 @@ MeExpr &Prop::PropVar(VarMeExpr &varMeExpr, bool atParm, bool checkPhi) const {
     if (rhs->GetDepth() <= kPropTreeLevel &&
         Propagatable(utils::ToRef(rhs), utils::ToRef(defStmt->GetBB()), atParm)) {
       // mark propagated for iread ref
-      if (rhs->GetMeOp() == kMeOpVar) {
-        auto &preRHS = PropVar(static_cast<VarMeExpr&>(*rhs), atParm, checkPhi);
-        return preRHS;
-      }
       if (rhs->GetMeOp() == kMeOpIvar && rhs->GetPrimType() == PTY_ref) {
         defStmt->SetPropagated(true);
       }

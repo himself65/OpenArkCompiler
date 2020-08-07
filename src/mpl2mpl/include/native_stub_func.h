@@ -110,7 +110,10 @@ class DoGenerateNativeStubFunc : public ModulePhase {
   }
 
   AnalysisResult *Run(MIRModule *mod, ModuleResultMgr *mrm) override {
+    bool origUsePreg = Options::usePreg;
+    Options::usePreg = false;  // As a pre mpl2mpl phase, NativeStubFunc always use symbols
     OPT_TEMPLATE(NativeStubFuncGeneration);
+    Options::usePreg = origUsePreg;
     return nullptr;
   }
 };
