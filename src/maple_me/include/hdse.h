@@ -64,7 +64,7 @@ class HDSE {
   void MarkLastBranchStmtInBBRequired(BB &bb);
   void MarkLastStmtInPDomBBRequired(const BB &bb);
   void MarkLastUnconditionalGotoInPredBBRequired(const BB &bb);
-  void MarkDefStmt(ScalarMeExpr &scalarExpr);
+  void MarkVarDefByStmt(VarMeExpr &varMeExpr);
   void MarkRegDefByStmt(RegMeExpr &regMeExpr);
   void CollectNotNullExpr(MeStmt &stmt);
   // NotNullExpr means it is impossible value of the expr is nullptr after go through this stmt.
@@ -79,14 +79,6 @@ class HDSE {
     exprLive.at(static_cast<size_t>(static_cast<uint32>(meExpr.GetExprID()))) = true;
   }
 
-  void AddNewUse(MeExpr &meExpr) {
-    if (IsExprNeeded(meExpr)) {
-      return;
-    }
-    SetExprNeeded(meExpr);
-    workList.push_front(&meExpr);
-  }
-
   void PropagateLive() {
     while (!workList.empty()) {
       MeExpr *meExpr = workList.front();
@@ -94,8 +86,6 @@ class HDSE {
       PropagateUseLive(*meExpr);
     }
   }
-
-  void RemoveNotRequiredCallAssignPart(MeStmt &stmt);
 
   void RemoveNotRequiredStmts() {
     for (auto *bb : bbVec) {

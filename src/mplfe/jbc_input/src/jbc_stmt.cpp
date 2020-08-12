@@ -1529,6 +1529,8 @@ std::string JBCStmtPesudoLOC::DumpDotStringImpl() const {
 
 std::list<UniqueFEIRStmt> JBCStmtPesudoLOC::EmitToFEIRImpl(JBCFunctionContext &context, bool &success) const {
   std::list<UniqueFEIRStmt> ans;
+  UniqueFEIRStmt stmt = std::make_unique<FEIRStmtPesudoLOC>(srcFileIdx, lineNumber);
+  ans.push_back(std::move(stmt));
   return ans;
 }
 }  // namespace maple

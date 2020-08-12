@@ -19,45 +19,29 @@
 
 namespace maple {
 // emit IR to specified file
-AnalysisResult *MeDoEmit::Run(MeFunction *func, MeFuncResultMgr *funcResMgr, ModuleResultMgr*) {
-  bool emitHssaOrAfter = (func->GetIRMap() != nullptr);
+AnalysisResult *MeDoEmit::Run(MeFunction *func, MeFuncResultMgr*, ModuleResultMgr*) {
   if (func->NumBBs() > 0) {
+    CHECK_FATAL(func->GetIRMap() != nullptr, "Why not hssa?");
     // generate bblist after layout (bb physical position)
-    if (!MeOption::quiet) {
-      CHECK_FATAL(funcResMgr->GetAnalysisPhase(MeFuncPhase_BBLAYOUT) != nullptr, "null ptr check");
-      LogInfo::MapleLogger() << "===== Check/run Depended Phase [ "
-                             << funcResMgr->GetAnalysisPhase(MeFuncPhase_BBLAYOUT)->PhaseName() << " ]=====\n";
+    CHECK_FATAL(func->HasLaidOut(), "Check/Run bb layout phase.");
+    auto layoutBBs = func->GetLaidOutBBs();
+    MIRFunction *mirFunction = func->GetMirFunc();
+    if (mirFunction->GetCodeMempool() != nullptr) {
+      mirFunction->GetCodeMempool()->Release();
     }
-    auto *layoutBBs = static_cast<BBLayout*>(funcResMgr->GetAnalysisResult(MeFuncPhase_BBLAYOUT, func));
-    if (!MeOption::quiet) {
-      LogInfo::MapleLogger() << "===== Depended Phase ended =====\n";
+    mirFunction->SetCodeMemPool(memPoolCtrler.NewMemPool("IR from IRMap::Emit()"));
+    mirFunction->GetCodeMPAllocator().SetMemPool(mirFunction->GetCodeMempool());
+    mirFunction->SetBody(mirFunction->GetCodeMempool()->New<BlockNode>());
+    // initialize is_deleted field to true; will reset when emitting Maple IR
+    for (size_t k = 1; k < mirFunction->GetSymTab()->GetSymbolTableSize(); ++k) {
+      MIRSymbol *sym = mirFunction->GetSymTab()->GetSymbolFromStIdx(k);
+      if (sym->GetSKind() == kStVar) {
+        sym->SetIsDeleted();
+      }
     }
-    ASSERT(layoutBBs != nullptr, "layout phase has problem");
-    if (emitHssaOrAfter) {
-      ASSERT(func->GetIRMap() != nullptr, "null ptr check");
-      MIRFunction *mirFunction = func->GetMirFunc();
-      if (mirFunction->GetCodeMempool() != nullptr) {
-        mirFunction->GetCodeMempool()->Release();
-      }
-      mirFunction->SetCodeMemPool(memPoolCtrler.NewMemPool("IR from IRMap::Emit()"));
-      mirFunction->GetCodeMPAllocator().SetMemPool(mirFunction->GetCodeMempool());
-      mirFunction->SetBody(mirFunction->GetCodeMempool()->New<BlockNode>());
-      // initialize is_deleted field to true; will reset when emitting Maple IR
-      for (size_t k = 1; k < mirFunction->GetSymTab()->GetSymbolTableSize(); ++k) {
-        MIRSymbol *sym = mirFunction->GetSymTab()->GetSymbolFromStIdx(k);
-        if (sym->GetSKind() == kStVar) {
-          sym->SetIsDeleted();
-        }
-      }
-      for (BB *bb : layoutBBs->GetBBs()) {
-        ASSERT(bb != nullptr, "null ptr check");
-        func->GetIRMap()->EmitBB(*bb, *mirFunction->GetBody());
-      }
-    } else {
-      auto *mirFunc = func->GetMirFunc();
-      if (mirFunc != nullptr) {
-        func->EmitBeforeHSSA(*mirFunc, layoutBBs->GetBBs());
-      }
+    for (BB *bb : layoutBBs) {
+      ASSERT(bb != nullptr, "Check bblayout phase");
+      func->GetIRMap()->EmitBB(*bb, *mirFunction->GetBody());
     }
     if (DEBUGFUNC(func)) {
       LogInfo::MapleLogger() << "\n==============after meemit =============" << '\n';

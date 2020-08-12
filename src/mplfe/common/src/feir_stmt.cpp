@@ -28,6 +28,41 @@ std::list<StmtNode*> FEIRStmt::GenMIRStmtsImpl(MIRBuilder &mirBuilder) const {
   return std::list<StmtNode*>();
 }
 
+bool FEIRStmt::IsStmtInstImpl() const {
+  switch (kind) {
+    case kStmtAssign:
+    case kStmtNonAssign:
+    case kStmtDAssign:
+    case kStmtJavaTypeCheck:
+    case kStmtJavaConstClass:
+    case kStmtJavaConstString:
+    case kStmtJavaMultiANewArray:
+    case kStmtCallAssign:
+    case kStmtJavaDynamicCallAssign:
+    case kStmtIAssign:
+    case kStmtUseOnly:
+    case kStmtReturn:
+    case kStmtBranch:
+    case kStmtGoto:
+    case kStmtCondGoto:
+    case kStmtSwitch:
+    case kStmtArrayStore:
+    case kStmtFieldStore:
+    case kStmtFieldLoad:
+      return true;
+    default:
+      return false;
+  }
+}
+
+bool FEIRStmt::IsStmtInstComment() const {
+  return (kind == kStmtPesudoComment);
+}
+
+bool FEIRStmt::ShouldHaveLOC() const {
+  return (IsStmtInstImpl() || IsStmtInstComment());
+}
+
 // ---------- FEIRStmtCheckPoint ----------
 void FEIRStmtCheckPoint::Reset() {
   predCPs.clear();

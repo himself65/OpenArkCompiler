@@ -454,6 +454,25 @@ bool FEFunction::ReleaseGenStmts(const std::string &phaseName) {
   return phaseResult.Finish();
 }
 
+FEIRStmtPesudoLOC *FEFunction::GetLOCForStmt(const FEIRStmt &feIRStmt) {
+  if (!feIRStmt.ShouldHaveLOC()) {
+    return nullptr;
+  }
+  FELinkListNode *prevNode = static_cast<FELinkListNode*>(feIRStmt.GetPrev());
+  while (prevNode != nullptr) {
+    if ((*static_cast<FEIRStmt*>(prevNode)).ShouldHaveLOC()) {
+      return nullptr;
+    }
+    FEIRStmt *stmt = static_cast<FEIRStmt*>(prevNode);
+    if (stmt->GetKind() == kStmtPesudoLOC) {
+      FEIRStmtPesudoLOC *loc = static_cast<FEIRStmtPesudoLOC*>(stmt);
+      return loc;
+    }
+    prevNode = prevNode->GetPrev();
+  }
+  return nullptr;
+}
+
 void FEFunction::BuildMapLabelIdx() {
   FELinkListNode *nodeStmt = feirStmtHead->GetNext();
   while (nodeStmt != nullptr && nodeStmt != feirStmtTail) {
@@ -572,7 +591,12 @@ void FEFunction::EmitToMIRStmt() {
   FELinkListNode *nodeStmt = feirStmtHead->GetNext();
   while (nodeStmt != nullptr && nodeStmt != feirStmtTail) {
     FEIRStmt *stmt = static_cast<FEIRStmt*>(nodeStmt);
+    FEIRStmtPesudoLOC *pesudoLoc = GetLOCForStmt(*stmt);
     std::list<StmtNode*> mirStmts = stmt->GenMIRStmts(FEManager::GetMIRBuilder());
+    if (pesudoLoc != nullptr) {
+      mirStmts.front()->GetSrcPos().SetFileNum(static_cast<uint16>(pesudoLoc->GetSrcFileIdx()));
+      mirStmts.front()->GetSrcPos().SetLineNum(pesudoLoc->GetLineNumber());
+    }
     for (StmtNode *mirStmt : mirStmts) {
       FEManager::GetMIRBuilder().AddStmtInCurrentFunctionBody(*mirStmt);
     }

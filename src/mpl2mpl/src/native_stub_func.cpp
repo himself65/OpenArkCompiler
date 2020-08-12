@@ -329,26 +329,27 @@ void NativeStubFuncGeneration::GenerateRegisteredNativeFuncCall(MIRFunction &fun
     nrets.push_back(CallReturnPair(ret->GetStIdx(), RegFieldPair(0, 0)));
   }
   size_t loc = regFuncTabConst->GetConstVec().size();
-  auto &regArrayType = static_cast<MIRArrayType&>(regFuncTabConst->GetType());
+  auto &arrayType = static_cast<MIRArrayType&>(regFuncTabConst->GetType());
   AddrofNode *regFuncExpr = builder->CreateExprAddrof(0, *regFuncSymbol);
-  ArrayNode *arrayExpr = builder->CreateExprArray(regArrayType, regFuncExpr, builder->CreateIntConst(loc - 1, PTY_i32));
+  ArrayNode *arrayExpr = builder->CreateExprArray(arrayType, regFuncExpr, builder->CreateIntConst(loc - 1, PTY_i32));
   arrayExpr->SetBoundsCheck(false);
-  auto *elemType = static_cast<MIRArrayType&>(regArrayType).GetElemType();
+  auto *elemType = static_cast<MIRArrayType&>(arrayType).GetElemType();
   BaseNode *ireadExpr =
       builder->CreateExprIread(*elemType, *GlobalTables::GetTypeTable().GetOrCreatePointerType(*elemType),
                                0, arrayExpr);
-  // assign registered func ptr to a preg.
-  auto funcptrPreg = func.GetPregTab()->CreatePreg(PTY_ptr);
-  RegassignNode *funcptrAssign = builder->CreateStmtRegassign(PTY_ptr, funcptrPreg, ireadExpr);
-  // read func ptr from preg
-  auto readFuncPtr = builder->CreateExprRegread(PTY_ptr, funcptrPreg);
+  // assign registered func ptr to a symbol.
+  auto funcPtrSym = builder->CreateSymbol(GlobalTables::GetTypeTable().GetVoidPtr()->GetTypeIndex(), "func_ptr",
+                                          kStVar, kScAuto, &func, kScopeLocal);
+  DassignNode *funcPtrAssign = builder->CreateStmtDassign(*funcPtrSym, 0, ireadExpr);
+  // read func ptr from symbol
+  auto readFuncPtr = builder->CreateExprDread(*funcPtrSym);
   NativeFuncProperty funcProperty;
   bool needCheckThrowPendingExceptionFunc =
       (!func.GetAttr(FUNCATTR_critical_native)) && (funcProperty.jniType == kJniTypeNormal);
   bool needIndirectCall = func.GetAttr(FUNCATTR_critical_native) || func.GetAttr(FUNCATTR_fast_native);
 
   // Get current native method function ptr from reg_jni_func_tab slot
-  BaseNode *regReadExpr = builder->CreateExprRegread(PTY_ptr, funcptrPreg);
+  BaseNode *regReadExpr = builder->CreateExprDread(*funcPtrSym);
 #ifdef TARGARM32
   BaseNode *checkRegExpr =
       builder->CreateExprCompare(OP_lt, *GlobalTables::GetTypeTable().GetUInt1(),
@@ -359,13 +360,14 @@ void NativeStubFuncGeneration::GenerateRegisteredNativeFuncCall(MIRFunction &fun
   constexpr int intConstLength = 1;
   BaseNode *andExpr = builder->CreateExprBinary(OP_band, *GlobalTables::GetTypeTable().GetPtr(), regReadExpr,
                                                 builder->CreateIntConst(intConstLength, PTY_u32));
-  auto funcPtrAndOpPreg = func.GetPregTab()->CreatePreg(PTY_ptr);
-  RegassignNode *funcPtrAndOpAssign = builder->CreateStmtRegassign(PTY_ptr, funcPtrAndOpPreg, andExpr);
-  auto readFuncPtrAndReg = builder->CreateExprRegread(PTY_ptr, funcPtrAndOpPreg);
+  auto flagSym = builder->CreateSymbol(GlobalTables::GetTypeTable().GetVoidPtr()->GetTypeIndex(), "flag",
+                                       kStVar, kScAuto, &func, kScopeLocal);
+  auto flagSymAssign = builder->CreateStmtDassign(*flagSym, 0, andExpr);
+  auto readFlag = builder->CreateExprDread(*flagSym);
   BaseNode *checkRegExpr =
       builder->CreateExprCompare(OP_eq, *GlobalTables::GetTypeTable().GetUInt1(),
                                  *GlobalTables::GetTypeTable().GetPtr(),
-                                 readFuncPtrAndReg, builder->CreateIntConst(kInvalidCode, PTY_ptr));
+                                 readFlag, builder->CreateIntConst(kInvalidCode, PTY_ptr));
 #endif
 
   auto *ifStmt = static_cast<IfStmtNode*>(builder->CreateStmtIf(checkRegExpr));
@@ -383,42 +385,43 @@ void NativeStubFuncGeneration::GenerateRegisteredNativeFuncCall(MIRFunction &fun
     if (IsStaticBindingMethod(func.GetName())) {
       // Get current func_ptr (strong/weak symbol address)
       auto *nativeFuncAddr = builder->CreateExprAddroffunc(nativeFunc.GetPuidx());
-      funcptrAssign = builder->CreateStmtRegassign(PTY_ptr, funcptrPreg, nativeFuncAddr);
-      func.GetBody()->AddStatement(funcptrAssign);
+      funcPtrAssign = builder->CreateStmtDassign(*funcPtrSym, 0, nativeFuncAddr);
+      func.GetBody()->AddStatement(funcPtrAssign);
       // Define wrapper function call
       StmtNode *wrapperCall = CreateNativeWrapperCallNode(func, readFuncPtr, args, ret, needIndirectCall);
       func.GetBody()->AddStatement(wrapperCall);
     } else if (!Options::regNativeDynamicOnly) { // Qemu
-      func.GetBody()->AddStatement(funcptrAssign);
+      func.GetBody()->AddStatement(funcPtrAssign);
 #ifdef TARGAARCH64
-      func.GetBody()->AddStatement(funcPtrAndOpAssign);
+      func.GetBody()->AddStatement(flagSymAssign);
 #endif
       // Get find_native_func function
       MIRFunction *findNativeFunc = builder->GetOrCreateFunction(namemangler::kFindNativeFuncNoeh,
                                                                  voidPointerType->GetTypeIndex());
       findNativeFunc->SetAttr(FUNCATTR_nosideeffect);
       // CallAssigned statement for unregistered situation
-      CallNode *callGetFindNativeFunc = builder->CreateStmtCallRegassigned(findNativeFunc->GetPuidx(), dynamicStubOpnds,
-                                                                           funcptrPreg, OP_callassigned);
+      CallNode *callGetFindNativeFunc = builder->CreateStmtCallAssigned(findNativeFunc->GetPuidx(), dynamicStubOpnds,
+                                                                        funcPtrSym, OP_callassigned);
       // Check return value of dynamic linking stub
       MIRFunction *dummyNativeFunc = builder->GetOrCreateFunction(namemangler::kDummyNativeFunc,
                                                                   voidPointerType->GetTypeIndex());
       dummyNativeFunc->SetAttr(FUNCATTR_nosideeffect);
-      auto dummyFuncPreg = func.GetPregTab()->CreatePreg(PTY_ptr);
-      auto readDummyFuncPtr = builder->CreateExprRegread(PTY_ptr, dummyFuncPreg);
+      auto dummyFuncSym = builder->CreateSymbol(voidPointerType->GetTypeIndex(), "dummy_ret",
+                                                kStVar, kScAuto, &func, kScopeLocal);
+      auto readDummyFuncPtr = builder->CreateExprDread(*dummyFuncSym);
       MapleVector<BaseNode*> dummyFuncOpnds(func.GetCodeMempoolAllocator().Adapter());
-      CallNode *callDummyNativeFunc = builder->CreateStmtCallRegassigned(dummyNativeFunc->GetPuidx(), dummyFuncOpnds,
-                                                                         dummyFuncPreg, OP_callassigned);
+      CallNode *callDummyNativeFunc = builder->CreateStmtCallAssigned(dummyNativeFunc->GetPuidx(), dummyFuncOpnds,
+                                                                      dummyFuncSym, OP_callassigned);
       BaseNode *checkStubReturnExpr =
           builder->CreateExprCompare(OP_eq, *GlobalTables::GetTypeTable().GetUInt1(),
                                      *GlobalTables::GetTypeTable().GetPtr(), readFuncPtr, readDummyFuncPtr);
       auto *subIfStmt = static_cast<IfStmtNode*>(builder->CreateStmtIf(checkStubReturnExpr));
       // Assign with address of strong/weak symbol
       auto *nativeFuncAddr = builder->CreateExprAddroffunc(nativeFunc.GetPuidx());
-      funcptrAssign = builder->CreateStmtRegassign(PTY_ptr, funcptrPreg, nativeFuncAddr);
-      subIfStmt->GetThenPart()->AddStatement(funcptrAssign);
+      funcPtrAssign = builder->CreateStmtDassign(*funcPtrSym, 0, nativeFuncAddr);
+      subIfStmt->GetThenPart()->AddStatement(funcPtrAssign);
       // Rewrite reg_jni_func_tab with current funcIdx_ptr(weak/strong symbol address)
-      auto nativeMethodPtr = builder->CreateExprRegread(PTY_ptr, funcptrPreg);
+      auto nativeMethodPtr = builder->CreateExprDread(*funcPtrSym);
       IassignNode *nativeFuncTableEntry = builder->CreateStmtIassign(
           *GlobalTables::GetTypeTable().GetOrCreatePointerType(*elemType), 0, arrayExpr, nativeMethodPtr);
       subIfStmt->GetThenPart()->AddStatement(nativeFuncTableEntry);
@@ -445,16 +448,16 @@ void NativeStubFuncGeneration::GenerateRegisteredNativeFuncCall(MIRFunction &fun
         func.GetBody()->AddStatement(ifStmt);
       }
     } else { // EMUI
-      func.GetBody()->AddStatement(funcptrAssign);
+      func.GetBody()->AddStatement(funcPtrAssign);
 #ifdef TARGAARCH64
-      func.GetBody()->AddStatement(funcPtrAndOpAssign);
+      func.GetBody()->AddStatement(flagSymAssign);
 #endif
       MIRFunction *findNativeFunc = builder->GetOrCreateFunction(namemangler::kFindNativeFunc,
                                                                  voidPointerType->GetTypeIndex());
       findNativeFunc->SetAttr(FUNCATTR_nosideeffect);
       // CallAssigned statement for unregistered situation
-      CallNode *callGetFindNativeFunc = builder->CreateStmtCallRegassigned(findNativeFunc->GetPuidx(), dynamicStubOpnds,
-                                                                           funcptrPreg, OP_callassigned);
+      CallNode *callGetFindNativeFunc = builder->CreateStmtCallAssigned(findNativeFunc->GetPuidx(), dynamicStubOpnds,
+                                                                        funcPtrSym, OP_callassigned);
       // Add if-statement to function body
       ifStmt->GetThenPart()->AddStatement(callGetFindNativeFunc);
       if (!needCheckThrowPendingExceptionFunc) {
@@ -485,7 +488,7 @@ void NativeStubFuncGeneration::GenerateRegisteredNativeFuncCall(MIRFunction &fun
   findNativeFunc->SetAttr(FUNCATTR_nosideeffect);
   // CallAssigned statement for unregistered situation
   CallNode *callGetFindNativeFunc =
-      builder->CreateStmtCallRegassigned(findNativeFunc->GetPuidx(), dynamicStubOpnds, funcptrPreg, OP_callassigned);
+      builder->CreateStmtCallAssigned(findNativeFunc->GetPuidx(), dynamicStubOpnds, funcPtrSym, OP_callassigned);
   ifStmt->GetThenPart()->AddStatement(callGetFindNativeFunc);
   if (!needCheckThrowPendingExceptionFunc) {
     MapleVector<BaseNode*> opnds(builder->GetCurrentFuncCodeMpAllocator()->Adapter());

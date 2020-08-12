@@ -36,6 +36,9 @@ namespace maple {
 bool AliasClass::CallHasNoSideEffectOrPrivateDefEffect(const CallNode &stmt, FuncAttrKind attrKind) const {
   ASSERT(attrKind == FUNCATTR_nosideeffect || attrKind == FUNCATTR_noprivate_defeffect, "Not supportted attrKind");
   MIRFunction *callee = GlobalTables::GetFunctionTable().GetFunctionFromPuidx(stmt.GetPUIdx());
+  if (callee == nullptr) {
+    return false;
+  }
   bool hasAttr = false;
   if (callee->GetFuncAttrs().GetAttr(attrKind)) {
     hasAttr = true;
