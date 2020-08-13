@@ -180,6 +180,12 @@ class BasicIORead {
     return file.GetPtrOffset(pos0);
   }
 
+  const uint8 *GetSafeDataAt(uint32 offset) const {
+    CHECK_FATAL(0 < offset && offset < file.GetLength(), "Invalid offset: 0x%x, file total size: 0x%x",
+                offset, file.GetLength());
+    return file.GetPtrOffset(offset);
+  }
+
   uint32 GetPos() const {
     return pos;
   }
