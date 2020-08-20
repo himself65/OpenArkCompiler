@@ -38,7 +38,7 @@ bool BasicIOMapFile::OpenAndMap() {
   fd = -1;
   fd = open(fileName.c_str(), O_RDONLY);
   if (fd < 0) {
-    FATAL(kLncFatal, "Unable to open %s.\nError %d in open()", fileName.c_str(), errno);
+    ERR(kLncErr, "Unable to open %s.\nError %d in open()", fileName.c_str(), errno);
     return false;
   }
   long start = lseek(fd, 0L, SEEK_SET);
