@@ -331,6 +331,7 @@ void InitHandleExprFactory() {
   RegisterFactoryFunction<HandleExprFactory>(OP_conststr, HandleConstStr);
   RegisterFactoryFunction<HandleExprFactory>(OP_conststr16, HandleConstStr16);
   RegisterFactoryFunction<HandleExprFactory>(OP_add, HandleAdd);
+  RegisterFactoryFunction<HandleExprFactory>(OP_CG_array_elem_add, HandleCGArrayElemAdd);
   RegisterFactoryFunction<HandleExprFactory>(OP_ashr, HandleShift);
   RegisterFactoryFunction<HandleExprFactory>(OP_lshr, HandleShift);
   RegisterFactoryFunction<HandleExprFactory>(OP_shl, HandleShift);
@@ -1067,6 +1068,7 @@ void CGFunc::ProcessExitBBVec() {
     lab2BBMap[newLabelIdx] = bb;
   }
 }
+
 
 void CGFunc::HandleFunction() {
   /* select instruction */

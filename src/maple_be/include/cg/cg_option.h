@@ -413,6 +413,10 @@ class CGOptions : public MapleDriverOptionBase {
     duplicateAsmFile = fileName;
   }
 
+  static bool UseRange() {
+    return range.enable;
+  }
+
   static void EnableBarriersForVolatile() {
     useBarriersForVolatile = true;
   }
@@ -459,6 +463,18 @@ class CGOptions : public MapleDriverOptionBase {
 
   static void DisableTimePhases() {
     timePhases = false;
+  }
+
+  static void EnableInRange() {
+    inRange = true;
+  }
+
+  static void DisableInRange() {
+    inRange = false;
+  }
+
+  static bool IsInRange() {
+    return inRange;
   }
 
   static void EnableEBO() {
@@ -543,6 +559,18 @@ class CGOptions : public MapleDriverOptionBase {
 
   static bool DoPeephole() {
     return doPeephole;
+  }
+
+  static void EnablePreSchedule() {
+    doPreSchedule = true;
+  }
+
+  static void DisablePreSchedule() {
+    doPreSchedule = false;
+  }
+
+  static bool DoPreSchedule() {
+    return doPreSchedule;
   }
 
   static void EnableSchedule() {
@@ -666,6 +694,10 @@ class CGOptions : public MapleDriverOptionBase {
 
   static bool IsGlobalVarProFileEmpty() {
     return globalVarProfile.empty();
+  }
+
+  static bool IsEmitBlockMarker() {
+    return emitBlockMarker;
   }
 
   static void EnableNativeOpt() {
@@ -855,6 +887,10 @@ class CGOptions : public MapleDriverOptionBase {
   /* if true generate adrp/ldr/blr */
   static bool genLongCalls;
   static bool gcOnly;
+  static bool doPreSchedule;
+  static bool emitBlockMarker;
+  static Range range;
+  static bool inRange;
 };
 }  /* namespace maplebe */
 

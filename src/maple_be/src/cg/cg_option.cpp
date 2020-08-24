@@ -43,6 +43,7 @@ std::string CGOptions::duplicateAsmFile = "";
 #else
 std::string CGOptions::duplicateAsmFile = "maple/mrt/codetricks/arch/arm64/duplicateFunc.s";
 #endif
+Range CGOptions::range = Range();
 #if TARGAARCH64
 bool CGOptions::useBarriersForVolatile = false;
 #else
@@ -79,6 +80,9 @@ bool CGOptions::genLongCalls = false;
 bool CGOptions::gcOnly = false;
 bool CGOptions::quiet = true;
 
+bool CGOptions::doPreSchedule = false;
+bool CGOptions::emitBlockMarker = true;
+bool CGOptions::inRange = false;
 
 enum OptionIndex : uint64 {
   kCGQuiet = kCommonOptionEnd + 1,
@@ -1116,6 +1120,7 @@ void CGOptions::EnableO2() {
   doPeephole = true;
   doStoreLoadOpt = true;
   doGlobalOpt = true;
+  doPreSchedule = false;
   doSchedule = true;
   doWriteRefFieldOpt = true;
   ClearOption(kProEpilogueOpt);

@@ -348,6 +348,9 @@ BaseNode *CGLowerer::LowerArray(ArrayNode &array, const BaseNode &parent) {
     MIRIntConst *eConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(idx * eSize, arrayTypes);
     rMul = mirModule.CurFuncCodeMemPool()->New<ConstvalNode>(eConst);
     rMul->SetPrimType(array.GetPrimType());
+    if (dim == 1) {
+      opAdd = OP_CG_array_elem_add;
+    }
   } else {
     MIRIntConst *eConst = GlobalTables::GetIntConstTable().GetOrCreateIntConst(eSize, arrayTypes);
     BaseNode *tmpNode = mirModule.CurFuncCodeMemPool()->New<ConstvalNode>(eConst);
