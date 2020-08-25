@@ -27,6 +27,9 @@ using namespace mapleOption;
 enum OptionIndex : uint32 {
   kMplfeHelp = kCommonOptionEnd + 1,
   // input control options
+  kMpltSys,
+  kMpltApk,
+  kMplt,
   kInClass,
   kInJar,
   // output control options
@@ -69,11 +72,22 @@ const mapleOption::Descriptor kUsage[] = {
   { static_cast<uint32>(kVersion), 0, "v", "version",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyNone,
     "  -v, --version          : print version and exit", "mplfe", {} },
-
   // input control options
   { static_cast<uint32>(kUnknown), 0, "", "",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyUnknown,
     "========== Input Control Options ==========", "mplfe", {} },
+  { static_cast<uint32>(kMpltSys), 0, "", "mplt-sys",
+    mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyRequired,
+    "  -mplt-sys sys1.mplt,sys2.mplt\n"
+    "                         : input sys mplt files", "mplfe", {} },
+  { static_cast<uint32>(kMpltApk), 0, "", "mplt-apk",
+    mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyRequired,
+    "  -mplt-apk apk1.mplt,apk2.mplt\n"
+    "                         : input apk mplt files", "mplfe", {} },
+  { static_cast<uint32>(kMplt), 0, "", "mplt",
+    mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyRequired,
+    "  -mplt lib1.mplt,lib2.mplt\n"
+    "                         : input mplt files", "mplfe", {} },
   { static_cast<uint32>(kInClass), 0, "", "in-class",
     mapleOption::kBuildTypeAll, mapleOption::kArgCheckPolicyRequired,
     "  --in-class file1.jar,file2.jar\n"
@@ -203,6 +217,12 @@ bool MPLFEOptions::InitFactory() {
                                                 &MPLFEOptions::ProcessVersion);
 
   // input control options
+  RegisterFactoryFunction<OptionProcessFactory>(static_cast<uint32>(kMpltSys),
+                                                &MPLFEOptions::ProcessInputMpltFromSys);
+  RegisterFactoryFunction<OptionProcessFactory>(static_cast<uint32>(kMpltApk),
+                                                &MPLFEOptions::ProcessInputMpltFromApk);
+  RegisterFactoryFunction<OptionProcessFactory>(static_cast<uint32>(kMplt),
+                                                &MPLFEOptions::ProcessInputMplt);
   RegisterFactoryFunction<OptionProcessFactory>(static_cast<uint32>(kInClass),
                                                 &MPLFEOptions::ProcessInClass);
   RegisterFactoryFunction<OptionProcessFactory>(static_cast<uint32>(kInJar),

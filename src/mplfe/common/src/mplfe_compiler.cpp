@@ -98,12 +98,10 @@ bool MPLFECompiler::LoadMplt() {
   const std::list<std::string> &mpltsFromSys = FEOptions::GetInstance().GetInputMpltFilesFromSys();
   success = success && FEManager::GetTypeManager().LoadMplts(mpltsFromSys, FETypeFlag::kSrcMpltSys,
                                                              "Load mplt from sys");
-
   // load mplt from apk
   const std::list<std::string> &mpltsFromApk = FEOptions::GetInstance().GetInputMpltFilesFromApk();
   success = success && FEManager::GetTypeManager().LoadMplts(mpltsFromApk, FETypeFlag::kSrcMpltApk,
                                                              "Load mplt from apk");
-
   // load mplt
   const std::list<std::string> &mplts = FEOptions::GetInstance().GetInputMpltFiles();
   success = success && FEManager::GetTypeManager().LoadMplts(mplts, FETypeFlag::kSrcMplt, "Load mplt");
