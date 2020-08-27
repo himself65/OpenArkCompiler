@@ -77,7 +77,7 @@ class JBCClassMethod2FEHelper : public FEInputMethodHelper {
  protected:
   bool ProcessDeclImpl(MapleAllocator &allocator) override;
   void SolveReturnAndArgTypesImpl(MapleAllocator &allocator) override;
-  std::string GetMethodNameImpl(bool inMpl) const override;
+  std::string GetMethodNameImpl(bool inMpl, bool full) const override;
   FuncAttrs GetAttrsImpl() const override;
   bool IsStaticImpl() const override;
   bool IsVargImpl() const override;

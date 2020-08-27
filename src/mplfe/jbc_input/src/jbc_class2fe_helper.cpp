@@ -255,10 +255,13 @@ void JBCClassMethod2FEHelper::SolveReturnAndArgTypesImpl(MapleAllocator &allocat
   }
 }
 
-std::string JBCClassMethod2FEHelper::GetMethodNameImpl(bool inMpl) const {
+std::string JBCClassMethod2FEHelper::GetMethodNameImpl(bool inMpl, bool full) const {
   const jbc::JBCConstPool &constPool = method.GetConstPool();
   std::string klassName = method.GetClassName();
   std::string methodName = method.GetName(constPool);
+  if (!full) {
+    return inMpl ? namemangler::EncodeName(methodName) : methodName;
+  }
   std::string descName = method.GetDescription(constPool);
   std::string fullName = klassName + "|" + methodName + "|" + descName;
   return inMpl ? namemangler::EncodeName(fullName) : fullName;

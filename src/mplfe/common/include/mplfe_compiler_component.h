@@ -101,6 +101,10 @@ class MPLFECompilerComponent {
     DumpPhaseTimeTotalImpl();
   }
 
+  uint32 GetFunctionsSize() const {
+    return static_cast<uint32>(functions.size());
+  }
+
  protected:
   virtual bool InitFromOptionsImpl() = 0;
   virtual bool ParseInputImpl() = 0;

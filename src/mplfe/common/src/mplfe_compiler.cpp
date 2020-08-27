@@ -31,6 +31,7 @@ MPLFECompiler::~MPLFECompiler() {
 void MPLFECompiler::Init() {
   FEManager::Init(module);
   FEStructMethodInfo::InitJavaPolymorphicWhiteList();
+  module.SetFlavor(maple::kFeProduced);
 }
 
 void MPLFECompiler::Release() {
@@ -183,6 +184,7 @@ void MPLFECompiler::ProcessFunctions() {
   FETimer timer;
   bool success = true;
   timer.StartAndDump("MPLFECompiler::ProcessFunctions()");
+  uint32 funcSize = 0;
   for (const std::unique_ptr<MPLFECompilerComponent> &comp : components) {
     ASSERT(comp != nullptr, "nullptr check");
     uint32 nthreads = FEOptions::GetInstance().GetNThreads();
@@ -192,10 +194,12 @@ void MPLFECompiler::ProcessFunctions() {
     } else {
       success = comp->ProcessFunctionSerial() && success;
     }
+    funcSize += comp->GetFunctionsSize();
     if (FEOptions::GetInstance().IsDumpPhaseTime()) {
       comp->DumpPhaseTimeTotal();
     }
   }
+  module.SetNumFuncs(funcSize);
   timer.StopAndDumpTimeMS("MPLFECompiler::ProcessFunctions()");
   CHECK_FATAL(success, "ProcessFunction error");
 }
