@@ -1445,7 +1445,45 @@ void Emitter::EmitStructConstant(MIRConst &mirConst) {
 /* BlockMarker is for Debugging/Profiling */
 void Emitter::EmitBlockMarker(const std::string &markerName, const std::string &sectionName,
                               bool withAddr, const std::string &addrName) {
-  return;
+  /*
+   * .type $marker_name$, %object
+   * .global $marker_name$
+   * .data
+   * .align 3
+   * $marker_name$:
+   * .quad 0xdeadbeefdeadbeef
+   * .size $marker_name$, 8
+   */
+  Emit(asmInfo->GetType());
+  Emit(markerName);
+  Emit(", %object\n");
+  if (CGOptions::IsEmitBlockMarker()) {  /* exposed as global symbol, for profiling */
+    Emit(asmInfo->GetGlobal());
+  } else {                               /* exposed as local symbol, for release. */
+    Emit(asmInfo->GetLocal());
+  }
+  Emit(markerName);
+  Emit("\n");
+
+  if (!sectionName.empty()) {
+    Emit("\t.section ." + sectionName);
+    if (sectionName.find("ro") == 0) {
+      Emit(",\"a\",%progbits\n");
+    } else {
+      Emit(",\"aw\",%progbits\n");
+    }
+  } else {
+    EmitAsmLabel(kAsmData);
+  }
+  Emit(asmInfo->GetAlign());
+  Emit("  3\n" + markerName + ":\n");
+  if (withAddr) {
+    Emit("\t.quad " + addrName + "\n");
+  } else {
+    Emit("\t.quad\t0xdeadbeefdeadbeef\n"); /* hexspeak in aarch64 represents crash or dead lock */
+  }
+  Emit(asmInfo->GetSize());
+  Emit(markerName + ", 8\n");
 }
 
 void Emitter::EmitLiteral(const MIRSymbol &literal, const std::map<GStrIdx, MIRType*> &strIdx2Type) {
@@ -1537,8 +1575,29 @@ void Emitter::EmitStaticFields(const std::vector<MIRSymbol*> &fields) {
 
 void Emitter::EmitLiterals(std::vector<std::pair<MIRSymbol*, bool>> &literals,
                            const std::map<GStrIdx, MIRType*> &strIdx2Type) {
+  /*
+   * load literals profile
+   * currently only used here, so declare it as local
+   */
+  if (!cg->GetMIRModule()->GetProfile().GetLiteralProfileSize()) {
+    for (const auto &literalPair : literals) {
+      EmitLiteral(*(literalPair.first), strIdx2Type);
+    }
+    return;
+  }
   /* emit hot literal start symbol */
   EmitBlockMarker("__MBlock_literal_hot_begin", "", false);
+  /*
+   * emit literals into .data section
+   * emit literals in the profile first
+   */
+  for (auto &literalPair : literals) {
+    if (cg->GetMIRModule()->GetProfile().CheckLiteralHot(literalPair.first->GetName())) {
+      /* it's in the literal profiling data, means it's "hot" */
+      EmitLiteral(*(literalPair.first), strIdx2Type);
+      literalPair.second = true;
+    }
+  }
   /* emit hot literal end symbol */
   EmitBlockMarker("__MBlock_literal_hot_end", "", false);
 
@@ -1559,12 +1618,19 @@ void Emitter::GetHotAndColdMetaSymbolInfo(const std::vector<MIRSymbol*> &mirSymb
                                           std::vector<MIRSymbol*> &hotFieldInfoSymbolVec,
                                           std::vector<MIRSymbol*> &coldFieldInfoSymbolVec, const std::string &prefixStr,
                                           bool forceCold) {
-  bool isHot = true;
+  bool isHot = false;
   for (auto mirSymbol : mirSymbolVec) {
     CHECK_FATAL(prefixStr.length() < mirSymbol->GetName().length(), "string length check");
     std::string name = mirSymbol->GetName().substr(prefixStr.length());
     std::string klassJavaDescriptor;
     namemangler::DecodeMapleNameToJavaDescriptor(name, klassJavaDescriptor);
+    if (prefixStr == kFieldsInfoPrefixStr) {
+      isHot = cg->GetMIRModule()->GetProfile().CheckFieldHot(klassJavaDescriptor);
+    } else if (prefixStr == kMethodsInfoPrefixStr) {
+      isHot = cg->GetMIRModule()->GetProfile().CheckMethodHot(klassJavaDescriptor);
+    } else {
+      isHot = cg->GetMIRModule()->GetProfile().CheckClassHot(klassJavaDescriptor);
+    }
     if (isHot && !forceCold) {
       hotFieldInfoSymbolVec.emplace_back(mirSymbol);
     } else {

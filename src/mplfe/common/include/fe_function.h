@@ -147,6 +147,7 @@ class FEFunction {
   std::list<UniqueFEIRStmt> feirStmtList;
   std::list<std::unique_ptr<GeneralBB>> feirBBList;
   MIRFunction &mirFunction;
+  std::unique_ptr<FEIRVar> varThis;
 };
 }  // namespace maple
 #endif  // MPLFE_INCLUDE_COMMON_FE_FUNCTION_H

@@ -126,6 +126,9 @@ void CgFuncPhaseManager::AddPhases(std::vector<std::string> &phases) {
       if (CGOptions::DoEBO()) {
         ADDPHASE("ebo1");
       }
+      if (CGOptions::DoPreSchedule()) {
+        ADDPHASE("prescheduling");
+      }
 
       ADDPHASE("regalloc");
       ADDPHASE("generateproepilog");
@@ -229,6 +232,14 @@ void CgFuncPhaseManager::Run(CGFunc &func) {
 
     funcPhase->SetPreviousPhaseName(phaseName); /* prev phase name is for filename used in emission after phase */
     phaseName = funcPhase->PhaseName();         /* new phase name */
+    if (CGOptions::UseRange()) {
+      if (!CGOptions::IsInRange() &&
+          ((phaseName == "ebo") || (phaseName == "ebo1") || (phaseName == "postebo") ||
+           (phaseName == "ico") || (phaseName == "cfgo") ||
+           (phaseName == "peephole0") || (phaseName == "peephole"))) {
+        continue;
+      }
+    }
     bool dumpPhase = IS_STR_IN_SET(CGOptions::GetDumpPhases(), phaseName);
     if (CGOptions::IsDumpBefore() && dumpFunc && dumpPhase) {
       LogInfo::MapleLogger() << "******** CG IR Before " << phaseName << ": *********" << "\n";

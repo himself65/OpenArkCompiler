@@ -31,6 +31,7 @@ MPLFECompiler::~MPLFECompiler() {
 void MPLFECompiler::Init() {
   FEManager::Init(module);
   FEStructMethodInfo::InitJavaPolymorphicWhiteList();
+  module.SetFlavor(maple::kFeProduced);
 }
 
 void MPLFECompiler::Release() {
@@ -98,12 +99,10 @@ bool MPLFECompiler::LoadMplt() {
   const std::list<std::string> &mpltsFromSys = FEOptions::GetInstance().GetInputMpltFilesFromSys();
   success = success && FEManager::GetTypeManager().LoadMplts(mpltsFromSys, FETypeFlag::kSrcMpltSys,
                                                              "Load mplt from sys");
-
   // load mplt from apk
   const std::list<std::string> &mpltsFromApk = FEOptions::GetInstance().GetInputMpltFilesFromApk();
   success = success && FEManager::GetTypeManager().LoadMplts(mpltsFromApk, FETypeFlag::kSrcMpltApk,
                                                              "Load mplt from apk");
-
   // load mplt
   const std::list<std::string> &mplts = FEOptions::GetInstance().GetInputMpltFiles();
   success = success && FEManager::GetTypeManager().LoadMplts(mplts, FETypeFlag::kSrcMplt, "Load mplt");
@@ -185,6 +184,7 @@ void MPLFECompiler::ProcessFunctions() {
   FETimer timer;
   bool success = true;
   timer.StartAndDump("MPLFECompiler::ProcessFunctions()");
+  uint32 funcSize = 0;
   for (const std::unique_ptr<MPLFECompilerComponent> &comp : components) {
     ASSERT(comp != nullptr, "nullptr check");
     uint32 nthreads = FEOptions::GetInstance().GetNThreads();
@@ -194,10 +194,12 @@ void MPLFECompiler::ProcessFunctions() {
     } else {
       success = comp->ProcessFunctionSerial() && success;
     }
+    funcSize += comp->GetFunctionsSize();
     if (FEOptions::GetInstance().IsDumpPhaseTime()) {
       comp->DumpPhaseTimeTotal();
     }
   }
+  module.SetNumFuncs(funcSize);
   timer.StopAndDumpTimeMS("MPLFECompiler::ProcessFunctions()");
   CHECK_FATAL(success, "ProcessFunction error");
 }

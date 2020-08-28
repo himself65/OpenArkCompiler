@@ -113,8 +113,8 @@ class FEInputMethodHelper {
     SolveReturnAndArgTypesImpl(allocator);
   }
 
-  std::string GetMethodName(bool inMpl) const {
-    return GetMethodNameImpl(inMpl);
+  std::string GetMethodName(bool inMpl, bool full = true) const {
+    return GetMethodNameImpl(inMpl, full);
   }
 
   FuncAttrs GetAttrs() const {
@@ -144,7 +144,7 @@ class FEInputMethodHelper {
  protected:
   virtual bool ProcessDeclImpl(MapleAllocator &allocator);
   virtual void SolveReturnAndArgTypesImpl(MapleAllocator &allocator) = 0;
-  virtual std::string GetMethodNameImpl(bool inMpl) const = 0;
+  virtual std::string GetMethodNameImpl(bool inMpl, bool full) const = 0;
   virtual FuncAttrs GetAttrsImpl() const = 0;
   virtual bool IsStaticImpl() const = 0;
   virtual bool IsVargImpl() const = 0;

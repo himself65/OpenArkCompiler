@@ -260,8 +260,12 @@ void FEInputStructHelper::ProcessMethodDef() {
 bool FEInputMethodHelper::ProcessDeclImpl(MapleAllocator &allocator) {
   MPLFE_PARALLEL_FORBIDDEN();
   ASSERT(srcLang != kSrcLangUnknown, "src lang not set");
+  std::string methodShortName = GetMethodName(false, false);
   std::string methodName = GetMethodName(true);
   CHECK_FATAL(!methodName.empty(), "error: method name is empty");
+  if (methodShortName.compare("main") == 0) {
+    FEManager::GetMIRBuilder().GetMirModule().SetEntryFuncName(methodName);
+  }
   methodNameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName(methodName);
   SolveReturnAndArgTypes(allocator);
   FuncAttrs attrs = GetAttrs();

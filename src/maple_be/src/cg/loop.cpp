@@ -14,6 +14,7 @@
  */
 #include "loop.h"
 #include "cg.h"
+#include "optimize_common.h"
 
 namespace maplebe {
 #define LOOP_ANALYSIS_DUMP CG_DEBUG_FUNC(cgFunc)
@@ -448,6 +449,9 @@ void LoopFinder::FormLoopHierarchy() {
 AnalysisResult *CgDoLoopAnalysis::Run(CGFunc *cgFunc, CgFuncResultMgr *cgFuncResultMgr) {
   (void)cgFuncResultMgr;
   CHECK_FATAL(cgFunc != nullptr, "nullptr check");
+  if (LOOP_ANALYSIS_DUMP) {
+    DotGenerator::GenerateDot("buildloop", *cgFunc, cgFunc->GetMirModule());
+  }
   cgFunc->ClearLoopInfo();
   MemPool *loopMemPool = NewMemPool();
   LoopFinder *loopFinder = loopMemPool->New<LoopFinder>(*cgFunc, *loopMemPool);

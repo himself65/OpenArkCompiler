@@ -25,6 +25,7 @@ enum DriverOptionIndex {
   kInMplt,
   kOptimization0,
   kOptimization2,
+  kProfilePath,
   kGCOnly,
   kMplcgOpt,
   kMeOpt,

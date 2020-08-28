@@ -5396,9 +5396,21 @@ MemOperand &AArch64CGFunc::CreateMemOpnd(PrimType ptype, const BaseNode &parent,
   }
   Operand *addrOpnd = HandleExpr(parent, addrExpr);
   addrOpnd = static_cast<RegOperand*>(&LoadIntoRegister(*addrOpnd, PTY_a64));
-  AArch64OfstOperand &ofstOpnd = GetOrCreateOfstOpnd(offset, k32BitSize);
-  return GetOrCreateMemOpnd(AArch64MemOperand::kAddrModeBOi, GetPrimTypeBitSize(ptype),
-                            static_cast<AArch64RegOperand*>(addrOpnd), nullptr, &ofstOpnd, nullptr);
+  if ((addrExpr.GetOpCode() == OP_CG_array_elem_add) && (offset == 0) && GetCurBB() && GetCurBB()->GetLastInsn() &&
+      (GetCurBB()->GetLastInsn()->GetMachineOpcode() == MOP_xadrpl12)) {
+    Operand &opnd = GetCurBB()->GetLastInsn()->GetOperand(kInsnThirdOpnd);
+    StImmOperand &stOpnd = static_cast<StImmOperand&>(opnd);
+
+    AArch64OfstOperand &ofstOpnd = GetOrCreateOfstOpnd(stOpnd.GetOffset(), k32BitSize);
+    MemOperand &tmpMemOpnd = GetOrCreateMemOpnd(AArch64MemOperand::kAddrModeLo12Li, GetPrimTypeBitSize(ptype),
+        static_cast<AArch64RegOperand*>(addrOpnd), nullptr, &ofstOpnd, stOpnd.GetSymbol());
+    GetCurBB()->RemoveInsn(*GetCurBB()->GetLastInsn());
+    return tmpMemOpnd;
+  } else {
+    AArch64OfstOperand &ofstOpnd = GetOrCreateOfstOpnd(offset, k32BitSize);
+    return GetOrCreateMemOpnd(AArch64MemOperand::kAddrModeBOi, GetPrimTypeBitSize(ptype),
+                              static_cast<AArch64RegOperand*>(addrOpnd), nullptr, &ofstOpnd, nullptr);
+  }
 }
 
 Operand &AArch64CGFunc::GetOrCreateFuncNameOpnd(const MIRSymbol &symbol) {

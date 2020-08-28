@@ -20,6 +20,7 @@
 #include "feir_var_name.h"
 #include "feir_var_reg.h"
 #include "mplfe_env.h"
+#include "feir_builder.h"
 
 namespace maple {
 FEFunction::FEFunction(MIRFunction &argMIRFunction, const std::unique_ptr<FEFunctionPhaseResult> &argPhaseResultTotal)
@@ -425,7 +426,7 @@ bool FEFunction::UpdateFormal(const std::string &phaseName) {
     MIRSymbol *sym = nullptr;
     if (idx == 0 && HasThis()) {
       GStrIdx thisNameIdx = GlobalTables::GetStrTable().GetOrCreateStrIdxFromName("_this");
-      std::unique_ptr<FEIRVar> varThis = std::make_unique<FEIRVarName>(thisNameIdx, argVar->GetType()->Clone());
+      varThis = std::make_unique<FEIRVarName>(thisNameIdx, argVar->GetType()->Clone());
       sym = varThis->GenerateMIRSymbol(FEManager::GetMIRBuilder());
     } else {
       sym = argVar->GenerateMIRSymbol(FEManager::GetMIRBuilder());
@@ -588,6 +589,14 @@ bool FEFunction::SetupFEIRStmtSwitch(FEIRStmtSwitch &stmt) {
 }
 
 void FEFunction::EmitToMIRStmt() {
+  if (HasThis()) {
+    // Insert _this assignment
+    UniqueFEIRExpr exprDRead = FEIRBuilder::CreateExprDRead(varThis->Clone());
+    UniqueFEIRStmt stmtDAssign = FEIRBuilder::CreateStmtDAssign(argVarList.begin()->get()->Clone(),
+                                                                std::move(exprDRead));
+    FEIRStmt *ptrFEIRStmt = RegisterFEIRStmt(std::move(stmtDAssign));
+    feirStmtHead->InsertAfter(ptrFEIRStmt);
+  }
   FELinkListNode *nodeStmt = feirStmtHead->GetNext();
   while (nodeStmt != nullptr && nodeStmt != feirStmtTail) {
     FEIRStmt *stmt = static_cast<FEIRStmt*>(nodeStmt);
