@@ -53,7 +53,11 @@ BASE_DIR = Path(__file__).parent.absolute()
 
 ENCODING = locale.getpreferredencoding(False)
 OS_SEP = os.path.sep
-EXECUTABLE = sys.executable
+OS = platform.system()
+if OS == 'Windows' and ' ' in sys.executable:
+    EXECUTABLE = '"' + sys.executable + '"'
+else:
+    EXECUTABLE = sys.executable
 COMPARE = BASE_DIR / "compare.py"
 
 
